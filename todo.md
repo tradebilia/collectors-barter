@@ -28,12 +28,12 @@
 - [x] Support both real-time member messaging and proposal-thread comments for audit trail visibility
 - [x] Update the marketplace category set to Comics, Sports Cards, Vintage Toys, Video Games, Stamps, Coins, Pokemon, Movies, Autographs, and Disney Pins
 - [x] Restyle the item detail page to match the uploaded Tradebilia reference, including the image gallery, owner panel, Watchlist action, description tabs, and refined detail layout
-- [ ] Restyle the Trade Proposals inbox to match the uploaded Tradebilia reference, including status-grouped request navigation, proposal summary cards, and focused trade detail panel
-- [ ] Restyle the Trade Request screen to match the uploaded Tradebilia reference, including requester inventory browsing, item selection, proposal comparison panel, and integrated chat area
-- [ ] Let members browse the other user’s inventory from the Trade Request flow before selecting items to include in a trade response
-- [ ] Align the Trade Proposals message screen to the uploaded Tradebilia reference, including notification grouping, pending and accepted trade states, and a focused request detail panel
-- [ ] Align the Trade Request screen to the uploaded Tradebilia reference, including requester inventory browsing, item selection from the other member's inventory, proposal totals, and persistent chat
-- [ ] Ensure the trade-response flow lets a member inspect the other user’s inventory before choosing which items to add to the request
+- [x] Restyle the Trade Proposals inbox to match the uploaded Tradebilia reference, including status-grouped request navigation, proposal summary cards, and focused trade detail panel
+- [x] Restyle the Trade Request screen to match the uploaded Tradebilia reference, including requester inventory browsing, item selection, proposal comparison panel, and integrated chat area
+- [x] Let members browse the other user’s inventory from the Trade Request flow before selecting items to include in a trade response
+- [x] Align the Trade Proposals message screen to the uploaded Tradebilia reference, including notification grouping, pending and accepted trade states, and a focused request detail panel
+- [x] Align the Trade Request screen to the uploaded Tradebilia reference, including requester inventory browsing, item selection from the other member's inventory, proposal totals, and persistent chat
+- [x] Ensure the trade-response flow lets a member inspect the other user’s inventory before choosing which items to add to the request
 - [x] Restyle the My Inventory page to match the uploaded Tradebilia reference, including the logo-led header, inventory filters, add-item controls, export action, and collectible card grid
 - [x] Restyle the Add to Your Inventory flow to match the uploaded Tradebilia reference, including grader company input, certification number workflow, dark detail form, image upload panel, and draft/submit actions
 - [x] Design a Tradebilia member profile page that fits the current layout style and presents profile identity, Trade History, and Ratings and Reviews in the same visual language as the rest of the site
@@ -46,4 +46,4 @@
 - [x] Implement true real-time messaging and presence support instead of polling-based online indicators
 - [x] Add a separate general member-to-member messaging model and flow distinct from Trade Proposal audit comments
 - [x] Complete Member Search actions so Send Message opens a real conversation, Offer Trade enters a real flow, and favorites persist
-- [ ] Update the remaining project-level branding metadata and surfaces so Tradebilia is used everywhere verifiably
+- [x] Update the remaining project-level branding metadata and surfaces so Tradebilia is used everywhere verifiably
