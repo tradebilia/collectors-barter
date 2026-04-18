@@ -34,8 +34,13 @@ const categoryFilterPresets: Record<TradebiliaCategorySlug, Array<{ label: strin
   sports_cards: [
     { label: "Player", placeholder: "Mickey Mantle" },
     { label: "Manufacturer", placeholder: "Topps, Fleer, Upper Deck" },
-    { label: "Sport", placeholder: "Baseball, Basketball", type: "select" },
-    { label: "Grading service", placeholder: "PSA, BGS, SGC", type: "select" },
+    { label: "Sport", placeholder: "Baseball, Basketball" },
+    { label: "Grading service", placeholder: "PSA, BGS, SGC" },
+    { label: "Year / era", placeholder: "1950s, 1986, junk wax, ultra-modern" },
+    { label: "Team", placeholder: "Yankees, Bulls, Cowboys" },
+    { label: "Set / series", placeholder: "Topps Chrome, Prizm, Fleer" },
+    { label: "Grade", placeholder: "PSA 10, BGS 9.5, raw" },
+    { label: "Priority traits", placeholder: "Rookie, autograph, patch relic, Hall of Fame" },
   ],
   vintage_toys: [
     { label: "Name", placeholder: "Barbie, G.I. Joe, Star Wars" },
@@ -93,40 +98,6 @@ const sortOptions = [
   { value: "title", label: "Title" },
 ];
 
-const sportsCardYearOptions = [
-  { value: "all", label: "All eras" },
-  { value: "vintage", label: "Vintage pre-1980" },
-  { value: "junk-wax", label: "Junk wax 1980s–1990s" },
-  { value: "modern", label: "Modern 2000s" },
-  { value: "ultra-modern", label: "Ultra-modern 2010s+" },
-];
-
-const sportsCardTeamOptions = [
-  { value: "all", label: "All teams" },
-  { value: "yankees", label: "New York Yankees" },
-  { value: "bulls", label: "Chicago Bulls" },
-  { value: "cowboys", label: "Dallas Cowboys" },
-  { value: "lakers", label: "Los Angeles Lakers" },
-];
-
-const sportsCardSetOptions = [
-  { value: "all", label: "All sets" },
-  { value: "topps-chrome", label: "Topps Chrome" },
-  { value: "prizm", label: "Prizm" },
-  { value: "fleer", label: "Fleer" },
-  { value: "upper-deck", label: "Upper Deck" },
-];
-
-const sportsCardGradeOptions = [
-  { value: "all", label: "All grades" },
-  { value: "gem-mint", label: "Gem Mint 10" },
-  { value: "mint", label: "Mint 9" },
-  { value: "near-mint", label: "Near Mint 8" },
-  { value: "raw", label: "Raw / ungraded" },
-];
-
-const sportsCardPriorityTraits = ["Rookie only", "Autograph", "Patch / relic", "Hall of Fame"];
-
 export default function CategoryPage() {
   const [, params] = useRoute("/category/:slug");
   const slug = params?.slug as TradebiliaCategorySlug | undefined;
@@ -136,12 +107,8 @@ export default function CategoryPage() {
 
   const [keyword, setKeyword] = useState("");
   const [condition, setCondition] = useState<(typeof tradebiliaConditionOptions)[number]["value"]>("all");
+  const [sportsCardsConditionText, setSportsCardsConditionText] = useState("");
   const [sortBy, setSortBy] = useState("featured");
-  const [sportsCardYear, setSportsCardYear] = useState("all");
-  const [sportsCardTeam, setSportsCardTeam] = useState("all");
-  const [sportsCardSet, setSportsCardSet] = useState("all");
-  const [sportsCardGrade, setSportsCardGrade] = useState("all");
-  const [sportsCardTraits, setSportsCardTraits] = useState<string[]>([]);
   const [proposalListingId, setProposalListingId] = useState<number | null>(null);
   const [proposalNote, setProposalNote] = useState("");
 
@@ -174,14 +141,6 @@ export default function CategoryPage() {
     if (sortBy === "newest") return rows.sort((a, b) => b.id - a.id);
     return rows.sort((a, b) => Number(b.featured) - Number(a.featured) || b.id - a.id);
   }, [feedQuery.data?.listings, sortBy]);
-
-  const toggleSportsCardTrait = (trait: string) => {
-    setSportsCardTraits(current => (
-      current.includes(trait)
-        ? current.filter(item => item !== trait)
-        : [...current, trait]
-    ));
-  };
 
   if (!slug || !theme) {
     return (
@@ -229,10 +188,21 @@ export default function CategoryPage() {
                     <img src={SPORTS_CARDS_LONG_LOGO_URL} alt="Tradebilia Collectors Trading Exchange" className="h-auto w-full object-contain" />
                   </div>
 
-                  <p className="mt-7 text-xs font-semibold uppercase tracking-[0.36em] text-white/78">{theme.eyebrow}</p>
-                  <h1 className="mt-3 max-w-5xl text-4xl leading-none sm:text-6xl lg:text-[5rem]" style={{ fontFamily: theme.headingFont }}>
-                    {categoryLabel.toUpperCase()} EXCHANGE
-                  </h1>
+                  {theme.eyebrow ? <p className="mt-7 text-xs font-semibold uppercase tracking-[0.36em] text-white/78">{theme.eyebrow}</p> : null}
+                  {isSportsCardsPage ? (
+                    <h1 className="mt-6 max-w-5xl leading-none text-[#fff4df] sm:text-6xl lg:text-[5rem]">
+                      <span className="block text-4xl font-semibold uppercase tracking-[0.16em] sm:text-6xl lg:text-[5.15rem]" style={{ fontFamily: "Bebas Neue, Oswald, Inter, sans-serif" }}>
+                        Sports Card
+                      </span>
+                      <span className="mt-1 block text-3xl font-medium uppercase tracking-[0.24em] text-white/86 sm:text-5xl lg:text-[3.6rem]" style={{ fontFamily: "Oswald, Inter, sans-serif" }}>
+                        Exchange
+                      </span>
+                    </h1>
+                  ) : (
+                    <h1 className="mt-3 max-w-5xl text-4xl leading-none sm:text-6xl lg:text-[5rem]" style={{ fontFamily: theme.headingFont }}>
+                      {categoryLabel.toUpperCase()} EXCHANGE
+                    </h1>
+                  )}
                   <p className="mt-4 max-w-3xl text-[1.02rem] leading-8 text-white/86">{theme.description}</p>
                   <div className="mt-6 flex flex-wrap gap-3">
                     {benchmarkQuickFilters.map(filter => (
@@ -364,136 +334,39 @@ export default function CategoryPage() {
                   )}
                 </div>
               ))}
-              {isSportsCardsPage ? (
-                <div className="rounded-[1.6rem] border border-[#0b3e51]/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.82)_0%,rgba(249,241,220,0.88)_100%)] p-4 shadow-[0_12px_30px_rgba(10,41,64,0.08)]">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.24em] opacity-65">Collector-grade search</p>
-                      <p className="mt-2 text-sm leading-6 opacity-75">Mock-up additions for a more serious Sports Cards search flow.</p>
-                    </div>
-                    <Badge className="rounded-full border border-[#0b3e51]/10 bg-white/75 px-3 py-1 text-[0.65rem] uppercase tracking-[0.22em] text-[#0b3e51] shadow-none">
-                      Mock-up
-                    </Badge>
-                  </div>
-                  <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label className="text-sm font-semibold uppercase tracking-[0.18em]">Year / era</Label>
-                      <Select value={sportsCardYear} onValueChange={setSportsCardYear}>
-                        <SelectTrigger className="h-12 bg-white/90">
-                          <SelectValue placeholder="All eras" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {sportsCardYearOptions.map(option => (
-                            <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-sm font-semibold uppercase tracking-[0.18em]">Team</Label>
-                      <Select value={sportsCardTeam} onValueChange={setSportsCardTeam}>
-                        <SelectTrigger className="h-12 bg-white/90">
-                          <SelectValue placeholder="All teams" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {sportsCardTeamOptions.map(option => (
-                            <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-sm font-semibold uppercase tracking-[0.18em]">Set / series</Label>
-                      <Select value={sportsCardSet} onValueChange={setSportsCardSet}>
-                        <SelectTrigger className="h-12 bg-white/90">
-                          <SelectValue placeholder="All sets" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {sportsCardSetOptions.map(option => (
-                            <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-sm font-semibold uppercase tracking-[0.18em]">Grade</Label>
-                      <Select value={sportsCardGrade} onValueChange={setSportsCardGrade}>
-                        <SelectTrigger className="h-12 bg-white/90">
-                          <SelectValue placeholder="All grades" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {sportsCardGradeOptions.map(option => (
-                            <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <div className="mt-4 space-y-2">
-                    <Label className="text-sm font-semibold uppercase tracking-[0.18em]">Priority traits</Label>
-                    <div className="flex flex-wrap gap-2">
-                      {sportsCardPriorityTraits.map(trait => {
-                        const isActive = sportsCardTraits.includes(trait);
-                        return (
-                          <button
-                            key={trait}
-                            type="button"
-                            onClick={() => toggleSportsCardTrait(trait)}
-                            className={`rounded-full border px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] transition ${isActive ? "border-[#0b3e51]/30 bg-[#0f3b43] text-[#fff4df] shadow-[0_10px_24px_rgba(15,59,67,0.18)]" : "border-[#0b3e51]/10 bg-white/80 text-[#21414a] hover:bg-white"}`}
-                          >
-                            {trait}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-              ) : null}
               <div className="space-y-2">
                 <Label className="text-sm font-semibold uppercase tracking-[0.18em]">Condition</Label>
-                <Select value={condition} onValueChange={value => setCondition(value as typeof condition)}>
-                  <SelectTrigger className="h-12 bg-white/80">
-                    <SelectValue placeholder="All Conditions" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {tradebiliaConditionOptions.map(option => (
-                      <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              {isSportsCardsPage ? (
-                <div className="rounded-[1.5rem] border border-current/10 bg-white/45 p-4">
-                  <p className="text-xs font-semibold uppercase tracking-[0.24em] opacity-65">Card-show shortcuts</p>
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    {benchmarkQuickFilters.map(filter => (
-                    <button
-                        key={filter}
-                        type="button"
-                        onClick={() => setKeyword(filter.toLowerCase())}
-                        className="rounded-full border border-current/10 bg-white/80 px-3 py-1.5 text-xs font-semibold transition hover:bg-white"
-                      >
-                        {filter}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
-              <div className={`rounded-[1.5rem] border p-4 ${theme.cardClassName}`}>
-                <p className="text-xs font-semibold uppercase tracking-[0.24em] opacity-70">Subscriber tools</p>
-                <p className="mt-3 text-sm leading-7 opacity-80">Signed-in members can message, save to Watchlist, and send Trade Proposals from every category exchange.</p>
-                <div className="mt-4 flex flex-wrap gap-2">
-                  <Badge className={`rounded-full px-3 py-1 ${theme.chipClassName}`}>Watchlist</Badge>
-                  <Badge className={`rounded-full px-3 py-1 ${theme.chipClassName}`}>Trade Proposals</Badge>
-                  <Badge className={`rounded-full px-3 py-1 ${theme.chipClassName}`}>Ratings and Reviews</Badge>
-                </div>
+                {isSportsCardsPage ? (
+                  <Input
+                    value={sportsCardsConditionText}
+                    onChange={event => {
+                      setSportsCardsConditionText(event.target.value);
+                      const normalized = event.target.value.trim().toLowerCase();
+                      const matched = tradebiliaConditionOptions.find(option => option.label.toLowerCase() === normalized || option.value.toLowerCase() === normalized);
+                      setCondition((matched?.value ?? "all") as typeof condition);
+                    }}
+                    placeholder="Gem Mint, Near Mint, raw"
+                    className="h-12 bg-white/80"
+                  />
+                ) : (
+                  <Select value={condition} onValueChange={value => setCondition(value as typeof condition)}>
+                    <SelectTrigger className="h-12 bg-white/80">
+                      <SelectValue placeholder="All Conditions" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {tradebiliaConditionOptions.map(option => (
+                        <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
             </div>
           </aside>
 
           <section className="space-y-6">
-            <div className={`rounded-[2rem] border p-6 ${theme.panelClassName}`}>
-              <div className={`grid gap-5 ${isSportsCardsPage ? "xl:grid-cols-[minmax(0,1fr)_340px] xl:items-start" : "lg:flex lg:items-end lg:justify-between"}`}>
+            <div className={isSportsCardsPage ? "w-full px-0 py-1" : `rounded-[2rem] border p-6 ${theme.panelClassName}`}>
+              <div className={`${isSportsCardsPage ? "grid gap-5 xl:grid-cols-[minmax(0,1fr)_340px] xl:items-start" : "grid gap-5 lg:flex lg:items-end lg:justify-between"}`}>
                 <div>
                   <p className={`text-xs font-semibold uppercase tracking-[0.32em] ${theme.accentClassName}`}>Curated exchange</p>
                   <h2 className="mt-3 text-4xl font-semibold" style={{ fontFamily: theme.headingFont }}>{theme.heading}</h2>

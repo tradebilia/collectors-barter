@@ -11,8 +11,12 @@ describe("Tradebilia category page layout", () => {
   it("uses the transparent longform Tradebilia logo in the Sports Cards header without the old circular badge", () => {
     expect(categoryPageSource).toContain('const SPORTS_CARDS_LONG_LOGO_URL = "/manus-storage/tradebilia-longform-no-navy-clean_d2f04453.png"');
     expect(categoryPageSource).toContain('alt="Tradebilia Collectors Trading Exchange"');
+    expect(categoryPageSource).toContain('Sports Card');
+    expect(categoryPageSource).toContain('Exchange');
+    expect(categoryPageSource).toContain('fontFamily: "Bebas Neue, Oswald, Inter, sans-serif"');
     expect(categoryPageSource).not.toContain('rounded-full bg-[rgba(255,243,213,0.08)]');
     expect(categoryPageSource).not.toContain('SPORTS_CARDS_SHORT_LOGO_URL');
+    expect(categoryPageSource).not.toContain('Hall-of-fame cardboard');
   });
 
   it("keeps the Sports Cards spotlight area aligned with the flatter retro card-table benchmark", () => {
@@ -24,13 +28,19 @@ describe("Tradebilia category page layout", () => {
     expect(categoryPageSource).toContain('className={isSportsCardsPage ? "h-full w-full object-contain p-3" : "h-full w-full object-cover"}');
   });
 
-  it("adds a collector-focused Sports Cards filters mock-up with premium search facets", () => {
-    expect(categoryPageSource).toContain("Collector-grade search");
-    expect(categoryPageSource).toContain("Year / era");
-    expect(categoryPageSource).toContain("Set / series");
-    expect(categoryPageSource).toContain("Grade");
-    expect(categoryPageSource).toContain("Rookie only");
-    expect(categoryPageSource).toContain("Patch / relic");
+  it("uses manual-entry Sports Cards filters without the extra boxed helper sections", () => {
+    expect(categoryPageSource).toContain('{ label: "Year / era", placeholder: "1950s, 1986, junk wax, ultra-modern" }');
+    expect(categoryPageSource).toContain('{ label: "Set / series", placeholder: "Topps Chrome, Prizm, Fleer" }');
+    expect(categoryPageSource).toContain('{ label: "Priority traits", placeholder: "Rookie, autograph, patch relic, Hall of Fame" }');
+    expect(categoryPageSource).toContain('placeholder="Gem Mint, Near Mint, raw"');
+    expect(categoryPageSource).not.toContain("Collector-grade search");
+    expect(categoryPageSource).not.toContain("Card-show shortcuts");
+    expect(categoryPageSource).not.toContain("Subscriber tools");
+  });
+
+  it("lets the Sports Cards top content section run full-width without the old bordered panel wrapper", () => {
+    expect(categoryPageSource).toContain('isSportsCardsPage ? "w-full px-0 py-1"');
+    expect(categoryPageSource).not.toContain('isSportsCardsPage ? "grid gap-5 xl:grid-cols-[minmax(0,1fr)_340px] xl:items-start" : "lg:flex lg:items-end lg:justify-between"');
   });
 
   it("extends the inventory-style spotlight treatment to the broader category rollout", () => {

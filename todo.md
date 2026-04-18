@@ -108,3 +108,11 @@
 - [x] Replace the current shortform logo and Tradebilia name in the Sports Cards header with the longform logo, with no circle around it
 - [x] Refine the Sports Cards page filters section so its layout, controls, and visual hierarchy feel more polished and intentional
 - [x] Create a Sports Cards filters mock-up that adds premium collector filters such as grade, year, team, set, rookie, and autograph/relic cues for user review
+- [x] Remove all Sports Cards filter dropdown menus so every search term is entered manually
+- [x] Remove the Subscriber tools section from the Sports Cards filter rail
+- [x] Remove the Card-show shortcuts section from the Sports Cards filter rail
+- [x] Integrate the collector-grade search fields directly into the main Sports Cards filter flow instead of using a separate boxed section
+- [x] Stretch the Sports Cards top content section fully left-to-right and remove its border treatment
+- [x] Remove the phrase "Hall-of-fame cardboard" from the Sports Cards header
+- [x] Rename the Sports Cards heading to "Sports Card Exchange"
+- [x] Give the words "Sports Card" a more sporty display-font treatment in the Sports Cards header
