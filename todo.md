@@ -49,4 +49,4 @@
 - [x] Update the remaining project-level branding metadata and surfaces so Tradebilia is used everywhere verifiably
 - [x] Diagnose why the homepage does not match the uploaded reference and restyle it to align with the intended design
 - [x] Restyle the homepage to match the re-uploaded Wix-style reference more closely, including the slim top search bar, compact category strip, oversized centered logo banner, silver metrics bar, left quick-links panel, five-card Recently Added shelf, and four-column ranked footer panels
-- [ ] Restructure the homepage so the key sections read more left-to-right like the Wix reference instead of feeling vertically stacked
+- [x] Restructure the homepage so the key sections read more left-to-right like the Wix reference instead of feeling vertically stacked

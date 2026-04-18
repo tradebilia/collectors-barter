@@ -54,6 +54,42 @@ const conditionOptions = [
   { value: "poor", label: "Poor" },
 ] as const;
 
+const fallbackRecentItems = [
+  { id: -1, title: "Baseball Legends Card Pack", price: "$100.00", subtitle: "4.7 ★ · 67 reviews", imageUrl: null },
+  { id: -2, title: "Transformers Action Figures Set", price: "$120.00", subtitle: "4.8 ★ · 51 reviews", imageUrl: null },
+  { id: -3, title: "Action Comics Collection", price: "$150.00", subtitle: "4.9 ★ · 41 reviews", imageUrl: null },
+  { id: -4, title: "Classic Barbie Doll", price: "$80.00", subtitle: "4.6 ★ · 38 reviews", imageUrl: null },
+  { id: -5, title: "Comic Book Mystery Bundle", price: "$80.00", subtitle: "4.4 ★ · 29 reviews", imageUrl: null },
+] as const;
+
+const fallbackMostViewed = [
+  "1986 Fleer Michael Jordan Rookie PSA 9",
+  "1989 Upper Deck Ken Griffey Jr Rookie PSA 10",
+  "Amazing Spider-Man #300 CGC 9.8",
+  "1776 US Quarter CGC 7.0",
+  "1975 Star Wars Luke Skywalker figure",
+];
+
+const fallbackMostRequested = [
+  "Hulk #181 CGC 9.8",
+  "1986 Fleer Michael Jordan Rookie PSA 9",
+  "1989 Upper Deck Ken Griffey Jr Rookie PSA 10",
+  "Amazing Spider-Man #300 CGC 9.8",
+  "1776 US Quarter CGC 7.0",
+  "1975 Star Wars Luke Skywalker figure",
+];
+
+const fallbackTopTraders = ["BillyBob123", "DarthVader99", "JoeFalco22", "MarioLemieux66", "LeoCap00", "TheDude44"];
+
+const fallbackTradeValues = [
+  "Hulk #181 CGC 9.8 ($60,000)",
+  "1986 Fleer Michael Jordan Rookie PSA 9 ($25,000)",
+  "1989 Upper Deck Ken Griffey Jr Rookie PSA 10 ($11,000)",
+  "Amazing Spider-Man #300 CGC 9.8 ($10,000)",
+  "1776 US Quarter CGC 7.0 ($7,000)",
+  "1975 Star Wars Luke Skywalker figure ($5,000)",
+];
+
 function initials(name: string) {
   return name
     .split(" ")
@@ -242,6 +278,42 @@ export default function Home() {
       icon: ShieldCheck,
     },
   ];
+
+  const recentShelfItems = (marketplaceQuery.data?.listings ?? []).length
+    ? (marketplaceQuery.data?.listings ?? []).slice(0, 5).map(listing => ({
+        id: listing.id,
+        title: listing.title,
+        price: "$100.00",
+        subtitle: `${listing.ownerRating.averageRating.toFixed(1)} ★ · ${listing.ownerRating.reviewCount} reviews`,
+        imageUrl: listing.primaryPhotoUrl,
+        href: `/listings/${listing.id}`,
+        tradeListingId: listing.id,
+        savedToWatchlist: listing.savedToWatchlist,
+        ownerId: listing.ownerId,
+      }))
+    : fallbackRecentItems.map(item => ({
+        ...item,
+        href: undefined,
+        tradeListingId: null,
+        savedToWatchlist: false,
+        ownerId: null,
+      }));
+
+  const mostViewedItems = (marketplaceQuery.data?.listings ?? []).length
+    ? (marketplaceQuery.data?.listings ?? []).slice(0, 6).map(listing => listing.title)
+    : fallbackMostViewed;
+
+  const mostRequestedItems = (marketplaceQuery.data?.listings ?? []).length
+    ? (marketplaceQuery.data?.listings ?? []).slice(0, 6).reverse().map(listing => listing.title)
+    : fallbackMostRequested;
+
+  const topTraderItems = (marketplaceQuery.data?.listings ?? []).length
+    ? (marketplaceQuery.data?.listings ?? []).slice(0, 6).map(listing => listing.owner.displayName)
+    : fallbackTopTraders;
+
+  const highestTradeValueItems = spotlightStats.some(stat => Number(stat.value) > 0)
+    ? spotlightStats.map(stat => `${stat.label}: ${stat.value}`)
+    : fallbackTradeValues;
 
   const beginProposal = (listingId: number) => {
     if (!isAuthenticated) {
@@ -439,11 +511,11 @@ export default function Home() {
                 <div className="bg-white px-3 py-3 lg:px-5 lg:py-3">
                   <h2 className="text-center font-serif text-[1.55rem] font-medium tracking-tight text-[#2d241e] sm:text-[1.8rem]">Recently Added</h2>
                   <div className="mx-auto mt-2 grid max-w-5xl gap-2 sm:grid-cols-2 lg:grid-cols-5">
-                    {(marketplaceQuery.data?.listings ?? []).slice(0, 5).map(listing => (
-                      <Card key={listing.id} className="overflow-hidden rounded-none border border-slate-300 bg-white shadow-none">
+                    {recentShelfItems.map(item => (
+                      <Card key={item.id} className="overflow-hidden rounded-none border border-slate-300 bg-white shadow-none">
                         <div className="aspect-[0.68] overflow-hidden bg-[#f0ebe5]">
-                          {listing.primaryPhotoUrl ? (
-                            <img src={listing.primaryPhotoUrl} alt={listing.title} className="h-full w-full object-cover" />
+                          {item.imageUrl ? (
+                            <img src={item.imageUrl} alt={item.title} className="h-full w-full object-cover" />
                           ) : (
                             <div className="flex h-full items-center justify-center bg-[linear-gradient(135deg,#f6efe3_0%,#ece5d7_100%)] text-slate-500">
                               <Sparkles className="h-8 w-8" />
@@ -451,18 +523,24 @@ export default function Home() {
                           )}
                         </div>
                         <CardContent className="space-y-0.5 px-1.5 py-1.5">
-                          <Link href={`/listings/${listing.id}`} className="line-clamp-2 text-[11px] font-medium leading-3.5 text-slate-900 transition hover:text-primary">
-                            {listing.title}
-                          </Link>
-                          <p className="text-[10px] text-[#7a46ff]">$100.00</p>
-                          <p className="text-[9px] text-slate-500">{listing.ownerRating.averageRating.toFixed(1)} ★ · {listing.ownerRating.reviewCount} reviews</p>
-                          <div className="flex flex-wrap gap-1 pt-0.5">
-                            <Link href={`/listings/${listing.id}`} className="inline-flex h-5 items-center rounded-full border border-slate-300 px-1.5 text-[9px] font-medium text-slate-700 transition hover:border-primary hover:text-primary">
-                              View
+                          {item.href ? (
+                            <Link href={item.href} className="line-clamp-2 text-[11px] font-medium leading-3.5 text-slate-900 transition hover:text-primary">
+                              {item.title}
                             </Link>
+                          ) : (
+                            <p className="line-clamp-2 text-[11px] font-medium leading-3.5 text-slate-900">{item.title}</p>
+                          )}
+                          <p className="text-[10px] text-[#7a46ff]">{item.price}</p>
+                          <p className="text-[9px] text-slate-500">{item.subtitle}</p>
+                          <div className="flex flex-wrap gap-1 pt-0.5">
+                            {item.href ? (
+                              <Link href={item.href} className="inline-flex h-5 items-center rounded-full border border-slate-300 px-1.5 text-[9px] font-medium text-slate-700 transition hover:border-primary hover:text-primary">
+                                View
+                              </Link>
+                            ) : null}
                             <Dialog>
                               <DialogTrigger asChild>
-                                <Button size="sm" className="h-5 rounded-full px-1.5 text-[9px]" onClick={() => beginProposal(listing.id)} disabled={user?.id === listing.ownerId}>
+                                <Button size="sm" className="h-5 rounded-full px-1.5 text-[9px]" onClick={() => item.tradeListingId ? beginProposal(item.tradeListingId) : toast.info('Sign in and add live listings to begin trading.')} disabled={item.ownerId ? user?.id === item.ownerId : false}>
                                   Trade
                                 </Button>
                               </DialogTrigger>
@@ -470,7 +548,7 @@ export default function Home() {
                                 <DialogHeader>
                                   <DialogTitle className="text-3xl">Create a Trade Proposal</DialogTitle>
                                   <DialogDescription>
-                                    Send an expression of interest for <span className="font-semibold text-foreground">{listing.title}</span>. The item owner will then review your inventory and select any items they would like to request in return.
+                                    Send an expression of interest for <span className="font-semibold text-foreground">{item.title}</span>. The item owner will then review your inventory and select any items they would like to request in return.
                                   </DialogDescription>
                                 </DialogHeader>
                                 {isAuthenticated ? (
@@ -479,11 +557,11 @@ export default function Home() {
                                       Your Trade Proposal starts as an expression of interest. You do not select exchange items at this stage. Once the owner reviews your request, they can choose one or more items from your inventory or refuse if they do not see anything of interest.
                                     </div>
                                     <div className="space-y-2">
-                                      <Label htmlFor={`proposal-note-${listing.id}`}>Message</Label>
+                                      <Label htmlFor={`proposal-note-${item.id}`}>Message</Label>
                                       <Textarea
-                                        id={`proposal-note-${listing.id}`}
+                                        id={`proposal-note-${item.id}`}
                                         value={proposalDraft.note}
-                                        onChange={event => setProposalDraft(current => ({ ...current, requestedListingId: listing.id, note: event.target.value }))}
+                                        onChange={event => setProposalDraft(current => ({ ...current, requestedListingId: item.tradeListingId ?? current.requestedListingId, note: event.target.value }))}
                                         placeholder="Introduce yourself, explain what interests you about this item, and invite the owner to review your inventory."
                                         rows={5}
                                       />
@@ -505,10 +583,10 @@ export default function Home() {
                               size="sm"
                               variant="outline"
                               className="h-5 rounded-full px-1.5 text-[9px]"
-                              disabled={!isAuthenticated || watchlistMutation.isPending}
-                              onClick={() => watchlistMutation.mutate({ listingId: listing.id })}
+                              disabled={!isAuthenticated || watchlistMutation.isPending || !item.tradeListingId}
+                              onClick={() => item.tradeListingId ? watchlistMutation.mutate({ listingId: item.tradeListingId }) : toast.info('Add live listings to use the Watchlist.')}
                             >
-                              <Heart className={`mr-1 h-3 w-3 ${listing.savedToWatchlist ? "fill-current" : ""}`} />
+                              <Heart className={`mr-1 h-3 w-3 ${item.savedToWatchlist ? "fill-current" : ""}`} />
                               Save
                             </Button>
                           </div>
@@ -525,9 +603,10 @@ export default function Home() {
                     <CardTitle className="text-sm uppercase tracking-[0.28em] text-white/78">Most Viewed</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-1 pb-4 text-[9.5px] leading-4 text-white/85">
-                    {(marketplaceQuery.data?.listings ?? []).slice(0, 6).map((listing, index) => (
-                      <p key={listing.id}>{index + 1}. {listing.title}</p>
-                    ))}
+                      {mostViewedItems.map((entry, index) => (
+                        <p key={`${entry}-${index}`}>{index + 1}. {entry}</p>
+                      ))}
+
                   </CardContent>
                 </Card>
                 <Card className="overflow-hidden rounded-none border-0 bg-[linear-gradient(135deg,#090b10_0%,#262937_100%)] text-white shadow-none">
@@ -535,9 +614,10 @@ export default function Home() {
                     <CardTitle className="text-sm uppercase tracking-[0.28em] text-white/78">Most Requested</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-1 pb-4 text-[9.5px] leading-4 text-white/85">
-                    {(marketplaceQuery.data?.listings ?? []).slice(0, 6).reverse().map((listing, index) => (
-                      <p key={listing.id}>{index + 1}. {listing.title}</p>
-                    ))}
+                      {mostRequestedItems.map((entry, index) => (
+                        <p key={`${entry}-${index}`}>{index + 1}. {entry}</p>
+                      ))}
+
                   </CardContent>
                 </Card>
                 <Card className="overflow-hidden rounded-none border-0 bg-[linear-gradient(135deg,#d7bba9_0%,#f3e8de_100%)] text-slate-900 shadow-none">
@@ -545,9 +625,10 @@ export default function Home() {
                     <CardTitle className="text-sm uppercase tracking-[0.28em] text-slate-700">Top Rated Traders</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-1 pb-4 text-[9.5px] leading-4 text-slate-700">
-                    {(marketplaceQuery.data?.listings ?? []).slice(0, 6).map((listing, index) => (
-                      <p key={listing.id}>{index + 1}. {listing.owner.displayName}</p>
-                    ))}
+                      {topTraderItems.map((entry, index) => (
+                        <p key={`${entry}-${index}`}>{index + 1}. {entry}</p>
+                      ))}
+
                   </CardContent>
                 </Card>
                 <Card className="overflow-hidden rounded-none border-0 bg-[radial-gradient(circle_at_top,rgba(18,222,255,0.35),transparent_35%),linear-gradient(135deg,#00477b_0%,#0a86b4_100%)] text-white shadow-none">
@@ -555,9 +636,10 @@ export default function Home() {
                     <CardTitle className="text-sm uppercase tracking-[0.28em] text-white/78">Highest Trade Value</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-1 pb-4 text-[9.5px] leading-4 text-white/85">
-                    {spotlightStats.map(stat => (
-                      <p key={stat.label}>{stat.label}: {stat.value}</p>
-                    ))}
+                      {highestTradeValueItems.map((entry, index) => (
+                        <p key={`${entry}-${index}`}>{index + 1}. {entry}</p>
+                      ))}
+
                   </CardContent>
                 </Card>
               </div>
