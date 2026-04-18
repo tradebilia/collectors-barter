@@ -467,11 +467,12 @@ export default function Home() {
       </header>
 
       <main className="pb-24">
-        <section className="relative overflow-hidden bg-[linear-gradient(90deg,#15184f_0%,#181b59_36%,#15184f_100%)] text-white">
-          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:180px_100%] opacity-35" />
-          <div className="container relative flex min-h-[96px] items-center justify-center py-0.5 sm:min-h-[115px] lg:min-h-[128px]">
-            <img src={TRADEBILIA_LOGO_URL} alt="Tradebilia logo" className="h-auto w-full max-w-[30rem] drop-shadow-[0_8px_14px_rgba(0,0,0,0.32)]" />
-          </div>
+        <section className="relative overflow-hidden bg-[#161a57] text-white">
+          <img
+            src={TRADEBILIA_LOGO_URL}
+            alt="Tradebilia logo"
+            className="block h-auto min-h-[96px] w-full object-cover object-center sm:min-h-[115px] lg:min-h-[128px]"
+          />
         </section>
 
         <section className="border-y border-black/25 bg-[linear-gradient(90deg,#8e9093_0%,#d7dde6_50%,#8e9093_100%)] py-1.5 text-black">
