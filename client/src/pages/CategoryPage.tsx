@@ -93,6 +93,40 @@ const sortOptions = [
   { value: "title", label: "Title" },
 ];
 
+const sportsCardYearOptions = [
+  { value: "all", label: "All eras" },
+  { value: "vintage", label: "Vintage pre-1980" },
+  { value: "junk-wax", label: "Junk wax 1980s–1990s" },
+  { value: "modern", label: "Modern 2000s" },
+  { value: "ultra-modern", label: "Ultra-modern 2010s+" },
+];
+
+const sportsCardTeamOptions = [
+  { value: "all", label: "All teams" },
+  { value: "yankees", label: "New York Yankees" },
+  { value: "bulls", label: "Chicago Bulls" },
+  { value: "cowboys", label: "Dallas Cowboys" },
+  { value: "lakers", label: "Los Angeles Lakers" },
+];
+
+const sportsCardSetOptions = [
+  { value: "all", label: "All sets" },
+  { value: "topps-chrome", label: "Topps Chrome" },
+  { value: "prizm", label: "Prizm" },
+  { value: "fleer", label: "Fleer" },
+  { value: "upper-deck", label: "Upper Deck" },
+];
+
+const sportsCardGradeOptions = [
+  { value: "all", label: "All grades" },
+  { value: "gem-mint", label: "Gem Mint 10" },
+  { value: "mint", label: "Mint 9" },
+  { value: "near-mint", label: "Near Mint 8" },
+  { value: "raw", label: "Raw / ungraded" },
+];
+
+const sportsCardPriorityTraits = ["Rookie only", "Autograph", "Patch / relic", "Hall of Fame"];
+
 export default function CategoryPage() {
   const [, params] = useRoute("/category/:slug");
   const slug = params?.slug as TradebiliaCategorySlug | undefined;
@@ -103,6 +137,11 @@ export default function CategoryPage() {
   const [keyword, setKeyword] = useState("");
   const [condition, setCondition] = useState<(typeof tradebiliaConditionOptions)[number]["value"]>("all");
   const [sortBy, setSortBy] = useState("featured");
+  const [sportsCardYear, setSportsCardYear] = useState("all");
+  const [sportsCardTeam, setSportsCardTeam] = useState("all");
+  const [sportsCardSet, setSportsCardSet] = useState("all");
+  const [sportsCardGrade, setSportsCardGrade] = useState("all");
+  const [sportsCardTraits, setSportsCardTraits] = useState<string[]>([]);
   const [proposalListingId, setProposalListingId] = useState<number | null>(null);
   const [proposalNote, setProposalNote] = useState("");
 
@@ -135,6 +174,14 @@ export default function CategoryPage() {
     if (sortBy === "newest") return rows.sort((a, b) => b.id - a.id);
     return rows.sort((a, b) => Number(b.featured) - Number(a.featured) || b.id - a.id);
   }, [feedQuery.data?.listings, sortBy]);
+
+  const toggleSportsCardTrait = (trait: string) => {
+    setSportsCardTraits(current => (
+      current.includes(trait)
+        ? current.filter(item => item !== trait)
+        : [...current, trait]
+    ));
+  };
 
   if (!slug || !theme) {
     return (
@@ -317,6 +364,91 @@ export default function CategoryPage() {
                   )}
                 </div>
               ))}
+              {isSportsCardsPage ? (
+                <div className="rounded-[1.6rem] border border-[#0b3e51]/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.82)_0%,rgba(249,241,220,0.88)_100%)] p-4 shadow-[0_12px_30px_rgba(10,41,64,0.08)]">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.24em] opacity-65">Collector-grade search</p>
+                      <p className="mt-2 text-sm leading-6 opacity-75">Mock-up additions for a more serious Sports Cards search flow.</p>
+                    </div>
+                    <Badge className="rounded-full border border-[#0b3e51]/10 bg-white/75 px-3 py-1 text-[0.65rem] uppercase tracking-[0.22em] text-[#0b3e51] shadow-none">
+                      Mock-up
+                    </Badge>
+                  </div>
+                  <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label className="text-sm font-semibold uppercase tracking-[0.18em]">Year / era</Label>
+                      <Select value={sportsCardYear} onValueChange={setSportsCardYear}>
+                        <SelectTrigger className="h-12 bg-white/90">
+                          <SelectValue placeholder="All eras" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {sportsCardYearOptions.map(option => (
+                            <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-sm font-semibold uppercase tracking-[0.18em]">Team</Label>
+                      <Select value={sportsCardTeam} onValueChange={setSportsCardTeam}>
+                        <SelectTrigger className="h-12 bg-white/90">
+                          <SelectValue placeholder="All teams" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {sportsCardTeamOptions.map(option => (
+                            <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-sm font-semibold uppercase tracking-[0.18em]">Set / series</Label>
+                      <Select value={sportsCardSet} onValueChange={setSportsCardSet}>
+                        <SelectTrigger className="h-12 bg-white/90">
+                          <SelectValue placeholder="All sets" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {sportsCardSetOptions.map(option => (
+                            <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-sm font-semibold uppercase tracking-[0.18em]">Grade</Label>
+                      <Select value={sportsCardGrade} onValueChange={setSportsCardGrade}>
+                        <SelectTrigger className="h-12 bg-white/90">
+                          <SelectValue placeholder="All grades" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {sportsCardGradeOptions.map(option => (
+                            <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="mt-4 space-y-2">
+                    <Label className="text-sm font-semibold uppercase tracking-[0.18em]">Priority traits</Label>
+                    <div className="flex flex-wrap gap-2">
+                      {sportsCardPriorityTraits.map(trait => {
+                        const isActive = sportsCardTraits.includes(trait);
+                        return (
+                          <button
+                            key={trait}
+                            type="button"
+                            onClick={() => toggleSportsCardTrait(trait)}
+                            className={`rounded-full border px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] transition ${isActive ? "border-[#0b3e51]/30 bg-[#0f3b43] text-[#fff4df] shadow-[0_10px_24px_rgba(15,59,67,0.18)]" : "border-[#0b3e51]/10 bg-white/80 text-[#21414a] hover:bg-white"}`}
+                          >
+                            {trait}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              ) : null}
               <div className="space-y-2">
                 <Label className="text-sm font-semibold uppercase tracking-[0.18em]">Condition</Label>
                 <Select value={condition} onValueChange={value => setCondition(value as typeof condition)}>

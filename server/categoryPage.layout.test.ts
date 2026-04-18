@@ -24,6 +24,15 @@ describe("Tradebilia category page layout", () => {
     expect(categoryPageSource).toContain('className={isSportsCardsPage ? "h-full w-full object-contain p-3" : "h-full w-full object-cover"}');
   });
 
+  it("adds a collector-focused Sports Cards filters mock-up with premium search facets", () => {
+    expect(categoryPageSource).toContain("Collector-grade search");
+    expect(categoryPageSource).toContain("Year / era");
+    expect(categoryPageSource).toContain("Set / series");
+    expect(categoryPageSource).toContain("Grade");
+    expect(categoryPageSource).toContain("Rookie only");
+    expect(categoryPageSource).toContain("Patch / relic");
+  });
+
   it("extends the inventory-style spotlight treatment to the broader category rollout", () => {
     expect(categoryPageSource).toContain("Collector spotlights");
     expect(categoryPageSource).toContain("Featured pieces that keep the exchange feeling curated.");

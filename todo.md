@@ -106,3 +106,5 @@
 - [x] Identify why the shortform logo on the Sports Cards page appears inside a circle and adjust that container treatment if needed
 - [x] Create and save a longform Tradebilia logo file without the dark navy blue background for use in the current Sports Cards branding work
 - [x] Replace the current shortform logo and Tradebilia name in the Sports Cards header with the longform logo, with no circle around it
+- [x] Refine the Sports Cards page filters section so its layout, controls, and visual hierarchy feel more polished and intentional
+- [x] Create a Sports Cards filters mock-up that adds premium collector filters such as grade, year, team, set, rookie, and autograph/relic cues for user review
