@@ -1,0 +1,49 @@
+# Project TODO
+
+- [x] Create an elegant, refined visual system with polished typography, spacing, and hierarchy across all screens
+- [x] Add subscriber profile support with display name, avatar, and full Trade History presentation
+- [x] Add collectible item listings with title, category, condition, description, and photo upload support
+- [x] Add browsing and search/filtering for listings by category, condition, and keyword search
+- [x] Add Trade Proposals so users can offer one or more of their own listings in exchange for another user's listing
+- [x] Add a trade management dashboard for incoming and outgoing Trade Proposals with accept and decline actions
+- [x] Add subscriber messaging for trade-specific conversations before finalization
+- [x] Add Ratings and Reviews so both parties can review one another after completed trades
+- [x] Add a Watchlist for saving listings for later reference
+- [x] Preserve the requested terminology in labels, section names, and UI copy, including Trade Proposals, Watchlist, Trade History, and Ratings and Reviews
+- [x] Add automated tests covering the new backend logic and critical flows
+- [x] Validate the application in the browser and prepare a final checkpoint for handoff
+- [x] Rename the website and branding across the project to Tradebilia
+- [x] Align the company name and website brand everywhere in the project to Tradebilia
+- [x] Integrate the uploaded Tradebilia logo into the website branding and company identity across the experience
+- [x] Restyle the homepage to align with the uploaded Tradebilia reference, including the top search/navigation strip, hero banner treatment, logo-led branding, metric band, category emphasis, and product showcase layout
+- [x] Add category-specific browsing pages so each collectible category has its own separate page
+- [x] Add item detail pages that let visitors read more about each listing before sending a Trade Proposal
+- [x] Restrict transactions, inventory creation, and member messaging to signed-in users while keeping browsing public
+- [x] Update the Trade Proposal flow so the item owner can review the requester’s inventory, select desired items, and generate a trade request for the other member to accept, counter, or refuse
+- [x] Reveal full contact information to both parties only after a trade proposal is accepted
+- [x] Support real-time messaging indicators and conversations when members are online and logged in
+- [x] Start Trade Proposals as expressions of interest from the item detail page before the owner reviews the requester inventory
+- [x] Let owners select multiple items from the requester inventory or refuse when nothing is of interest
+- [x] Reveal the member's submitted full contact information only after a trade is accepted
+- [x] Support both real-time member messaging and proposal-thread comments for audit trail visibility
+- [x] Update the marketplace category set to Comics, Sports Cards, Vintage Toys, Video Games, Stamps, Coins, Pokemon, Movies, Autographs, and Disney Pins
+- [x] Restyle the item detail page to match the uploaded Tradebilia reference, including the image gallery, owner panel, Watchlist action, description tabs, and refined detail layout
+- [ ] Restyle the Trade Proposals inbox to match the uploaded Tradebilia reference, including status-grouped request navigation, proposal summary cards, and focused trade detail panel
+- [ ] Restyle the Trade Request screen to match the uploaded Tradebilia reference, including requester inventory browsing, item selection, proposal comparison panel, and integrated chat area
+- [ ] Let members browse the other user’s inventory from the Trade Request flow before selecting items to include in a trade response
+- [ ] Align the Trade Proposals message screen to the uploaded Tradebilia reference, including notification grouping, pending and accepted trade states, and a focused request detail panel
+- [ ] Align the Trade Request screen to the uploaded Tradebilia reference, including requester inventory browsing, item selection from the other member's inventory, proposal totals, and persistent chat
+- [ ] Ensure the trade-response flow lets a member inspect the other user’s inventory before choosing which items to add to the request
+- [x] Restyle the My Inventory page to match the uploaded Tradebilia reference, including the logo-led header, inventory filters, add-item controls, export action, and collectible card grid
+- [x] Restyle the Add to Your Inventory flow to match the uploaded Tradebilia reference, including grader company input, certification number workflow, dark detail form, image upload panel, and draft/submit actions
+- [x] Design a Tradebilia member profile page that fits the current layout style and presents profile identity, Trade History, and Ratings and Reviews in the same visual language as the rest of the site
+- [x] Restyle the separate Messages page to match the uploaded Tradebilia reference, including inbox folders, message list, conversation detail panel, and the same branded dark workspace layout
+- [x] Add a dedicated Member Search page that matches the uploaded Tradebilia reference, including member ID/name search, location and verification filters, member summary card, top-member rankings panel, and actions for Send Message, Offer Trade, and Add to Favorites
+- [x] Restyle the Sports Cards category page to match the uploaded Tradebilia reference, including its teal-and-cream card-showcase identity, left filter rail, and graded card gallery
+- [x] Restyle the Stamps category page to match the uploaded Tradebilia reference, including its lavender philatelic identity, archival filter rail, and slabbed stamp gallery
+- [x] Restyle the Video Games category page to match the uploaded Tradebilia reference, including its neon-green arcade identity, dense collector filters, and graded game gallery
+- [x] Restyle the Vintage Toys category page to match the uploaded Tradebilia reference, including its muted silver-and-gold identity, left filter rail, and boxed-figure gallery
+- [x] Implement true real-time messaging and presence support instead of polling-based online indicators
+- [x] Add a separate general member-to-member messaging model and flow distinct from Trade Proposal audit comments
+- [x] Complete Member Search actions so Send Message opens a real conversation, Offer Trade enters a real flow, and favorites persist
+- [ ] Update the remaining project-level branding metadata and surfaces so Tradebilia is used everywhere verifiably
