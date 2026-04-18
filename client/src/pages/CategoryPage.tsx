@@ -189,8 +189,8 @@ export default function CategoryPage() {
                     <img src={SPORTS_CARDS_LONG_LOGO_URL} alt="Tradebilia Collectors Trading Exchange" className="h-auto w-full object-contain" />
                   </div>
 
-                  {theme.eyebrow ? <p className="mt-7 text-xs font-semibold uppercase tracking-[0.36em] text-white/78">{theme.eyebrow}</p> : null}
-                  <h1 className="mt-6 max-w-5xl leading-none text-[#fff4df] sm:text-6xl lg:text-[5rem]">
+                  {theme.eyebrow ? <p className="mt-3 text-xs font-semibold uppercase tracking-[0.36em] text-white/78">{theme.eyebrow}</p> : null}
+                  <h1 className="mt-3 max-w-5xl leading-none text-[#fff4df] sm:text-6xl lg:text-[5rem]">
                     <span className="block text-4xl font-semibold uppercase tracking-[0.16em] sm:text-6xl lg:text-[5.15rem]" style={{ fontFamily: "Bebas Neue, Oswald, Inter, sans-serif" }}>
                       Sports Card
                     </span>
@@ -198,8 +198,8 @@ export default function CategoryPage() {
                       Exchange
                     </span>
                   </h1>
-                  <p className="mt-4 max-w-3xl text-[1.02rem] leading-8 text-white/86">{theme.description}</p>
-                  <div className="mt-6 flex flex-wrap gap-3">
+                  <p className="mt-2 max-w-3xl text-[1.02rem] leading-8 text-white/86">{theme.description}</p>
+                  <div className="mt-3 flex flex-wrap gap-3">
                     {benchmarkQuickFilters.map(filter => (
                       <button
                         key={filter}
@@ -211,7 +211,7 @@ export default function CategoryPage() {
                       </button>
                     ))}
                   </div>
-                  <div className="mt-7 grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(260px,320px)] lg:items-start">
+                  <div className="mt-3 grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(260px,320px)] lg:items-start">
                     <div className="rounded-[1.5rem] border border-white/12 bg-black/18 p-5 backdrop-blur-sm">
                       <div className="flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.28em] text-white/72">
                         <Trophy className="h-4 w-4" />
