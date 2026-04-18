@@ -51,3 +51,4 @@
 - [x] Restyle the homepage to match the re-uploaded Wix-style reference more closely, including the slim top search bar, compact category strip, oversized centered logo banner, silver metrics bar, left quick-links panel, five-card Recently Added shelf, and four-column ranked footer panels
 - [x] Restructure the homepage so the key sections read more left-to-right like the Wix reference instead of feeling vertically stacked
 - [x] Make the homepage hero logo treatment span the full width so there are no contrasting left and right side colors around the banner
+- [x] Reduce the top and bottom empty space in the full-width homepage logo banner so the hero is much shorter and closer to the Wix reference

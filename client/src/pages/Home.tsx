@@ -471,7 +471,7 @@ export default function Home() {
           <img
             src={TRADEBILIA_LOGO_URL}
             alt="Tradebilia logo"
-            className="block h-auto min-h-[96px] w-full object-cover object-center sm:min-h-[115px] lg:min-h-[128px]"
+            className="block h-auto min-h-[64px] w-full object-cover object-center sm:min-h-[76px] lg:min-h-[88px]"
           />
         </section>
 
