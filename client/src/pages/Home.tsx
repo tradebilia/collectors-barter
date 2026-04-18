@@ -350,7 +350,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-[#f7f4ee] text-foreground">
       <header className="border-b border-black/70 bg-black text-white shadow-[0_8px_22px_rgba(0,0,0,0.25)]">
-        <div className="container flex min-h-8 items-center justify-between gap-3 py-1 text-[11px]">
+        <div className="container flex min-h-7 items-center justify-between gap-3 py-0.5 text-[11px]">
           <div className="flex flex-1 items-center gap-3">
             <span className="text-2xl font-semibold leading-none text-white">Search</span>
             <div className="flex w-full max-w-sm overflow-hidden rounded-[0.35rem] border border-black/80 bg-white">
@@ -386,7 +386,7 @@ export default function Home() {
             <Link
               key={option.value}
               href={`/category/${option.value}`}
-              className={`flex min-h-8 items-center justify-center border-b border-r border-slate-300 px-3 py-2 text-center text-[12px] font-semibold tracking-tight transition hover:bg-slate-100 ${category === option.value ? "bg-[#3b3b3b] text-white" : "bg-[#f7f7f5] text-slate-900"}`}
+              className={`flex min-h-7 items-center justify-center border-b border-r border-slate-300 px-2 py-1.5 text-center text-[11px] font-semibold tracking-tight transition hover:bg-slate-100 ${category === option.value ? "bg-[#3b3b3b] text-white" : "bg-[#f7f7f5] text-slate-900"}`}
             >
               {option.label}
             </Link>
@@ -397,13 +397,13 @@ export default function Home() {
       <main className="pb-24">
         <section className="relative overflow-hidden bg-[linear-gradient(90deg,#15184f_0%,#181b59_36%,#15184f_100%)] text-white">
           <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:180px_100%] opacity-35" />
-          <div className="container relative flex min-h-[125px] items-center justify-center py-1 sm:min-h-[150px] lg:min-h-[170px]">
-            <img src={TRADEBILIA_LOGO_URL} alt="Tradebilia logo" className="h-auto w-full max-w-[40rem] drop-shadow-[0_10px_18px_rgba(0,0,0,0.35)]" />
+          <div className="container relative flex min-h-[96px] items-center justify-center py-0.5 sm:min-h-[115px] lg:min-h-[128px]">
+            <img src={TRADEBILIA_LOGO_URL} alt="Tradebilia logo" className="h-auto w-full max-w-[30rem] drop-shadow-[0_8px_14px_rgba(0,0,0,0.32)]" />
           </div>
         </section>
 
-        <section className="border-y border-black/25 bg-[linear-gradient(90deg,#8e9093_0%,#d7dde6_50%,#8e9093_100%)] py-2 text-black">
-          <div className="container grid gap-3 text-center sm:grid-cols-2 xl:grid-cols-4">
+        <section className="border-y border-black/25 bg-[linear-gradient(90deg,#8e9093_0%,#d7dde6_50%,#8e9093_100%)] py-1.5 text-black">
+          <div className="container grid gap-2 text-center sm:grid-cols-2 xl:grid-cols-4">
             {[
               ["Total Members", dashboard?.profile.tradeHistoryCount ? `${Math.max(dashboard.profile.tradeHistoryCount * 12, 40)}k` : "40k"],
               ["Total Items", marketplaceQuery.data?.highlights.totalListings ? `${(marketplaceQuery.data.highlights.totalListings * 1250).toLocaleString()}` : "3,500,000"],
@@ -411,8 +411,8 @@ export default function Home() {
               ["Total Trades", marketplaceQuery.data?.highlights.completedTrades ? `${marketplaceQuery.data.highlights.completedTrades}k` : "10k"],
             ].map(([label, value]) => (
               <div key={label as string} className="space-y-0.5">
-                <p className="text-[11px] font-medium leading-none text-black/80">{label as string}</p>
-                <p className="text-[2rem] font-semibold leading-none sm:text-[2.2rem]">{value as string}</p>
+                <p className="text-[10px] font-medium leading-none text-black/80">{label as string}</p>
+                <p className="text-[1.8rem] font-semibold leading-none sm:text-[2rem]">{value as string}</p>
               </div>
             ))}
           </div>
@@ -425,9 +425,9 @@ export default function Home() {
             </div>
           ) : (
             <div className="space-y-0">
-              <div className="grid gap-0 lg:grid-cols-[124px_minmax(0,1fr)]">
-                <aside className="bg-[radial-gradient(circle_at_28%_24%,rgba(255,255,255,0.92),rgba(255,255,255,0.15)_30%,transparent_44%),linear-gradient(180deg,#1440f5_0%,#5028f2_52%,#781cf8_100%)] px-3 py-4 text-white shadow-[0_18px_35px_rgba(64,39,183,0.35)]">
-                  <div className="space-y-3 pt-1 text-[11px] italic leading-5 text-white/95">
+              <div className="grid gap-0 lg:grid-cols-[96px_minmax(0,1fr)]">
+                <aside className="bg-[radial-gradient(circle_at_28%_24%,rgba(255,255,255,0.92),rgba(255,255,255,0.15)_30%,transparent_44%),linear-gradient(180deg,#1440f5_0%,#5028f2_52%,#781cf8_100%)] px-2 py-3 text-white shadow-[0_18px_35px_rgba(64,39,183,0.35)]">
+                  <div className="space-y-2 pt-0.5 text-[10px] italic leading-4 text-white/95">
                     <Link href="/inventory" className="block transition hover:text-white/75">My Inventory</Link>
                     <button type="button" className="block text-left transition hover:text-white/75">Upcoming Conventions</button>
                     <button type="button" className="block text-left transition hover:text-white/75">Shipping Supplies</button>
@@ -436,12 +436,12 @@ export default function Home() {
                   </div>
                 </aside>
 
-                <div className="bg-white px-4 py-5 lg:px-7 lg:py-4">
-                  <h2 className="text-center font-serif text-[1.9rem] font-medium tracking-tight text-[#2d241e] sm:text-[2.1rem]">Recently Added</h2>
-                  <div className="mx-auto mt-4 grid max-w-5xl gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                <div className="bg-white px-3 py-3 lg:px-5 lg:py-3">
+                  <h2 className="text-center font-serif text-[1.55rem] font-medium tracking-tight text-[#2d241e] sm:text-[1.8rem]">Recently Added</h2>
+                  <div className="mx-auto mt-2 grid max-w-5xl gap-2 sm:grid-cols-2 lg:grid-cols-5">
                     {(marketplaceQuery.data?.listings ?? []).slice(0, 5).map(listing => (
                       <Card key={listing.id} className="overflow-hidden rounded-none border border-slate-300 bg-white shadow-none">
-                        <div className="aspect-[0.8] overflow-hidden bg-[#f0ebe5]">
+                        <div className="aspect-[0.68] overflow-hidden bg-[#f0ebe5]">
                           {listing.primaryPhotoUrl ? (
                             <img src={listing.primaryPhotoUrl} alt={listing.title} className="h-full w-full object-cover" />
                           ) : (
@@ -450,19 +450,19 @@ export default function Home() {
                             </div>
                           )}
                         </div>
-                        <CardContent className="space-y-1 px-2 py-2">
-                          <Link href={`/listings/${listing.id}`} className="line-clamp-2 text-[12px] font-medium leading-4 text-slate-900 transition hover:text-primary">
+                        <CardContent className="space-y-0.5 px-1.5 py-1.5">
+                          <Link href={`/listings/${listing.id}`} className="line-clamp-2 text-[11px] font-medium leading-3.5 text-slate-900 transition hover:text-primary">
                             {listing.title}
                           </Link>
-                          <p className="text-[11px] text-[#7a46ff]">$100.00</p>
-                          <p className="text-[10px] text-slate-500">{listing.ownerRating.averageRating.toFixed(1)} ★ · {listing.ownerRating.reviewCount} reviews</p>
-                          <div className="flex flex-wrap gap-1 pt-1">
-                            <Link href={`/listings/${listing.id}`} className="inline-flex h-6 items-center rounded-full border border-slate-300 px-2 text-[10px] font-medium text-slate-700 transition hover:border-primary hover:text-primary">
+                          <p className="text-[10px] text-[#7a46ff]">$100.00</p>
+                          <p className="text-[9px] text-slate-500">{listing.ownerRating.averageRating.toFixed(1)} ★ · {listing.ownerRating.reviewCount} reviews</p>
+                          <div className="flex flex-wrap gap-1 pt-0.5">
+                            <Link href={`/listings/${listing.id}`} className="inline-flex h-5 items-center rounded-full border border-slate-300 px-1.5 text-[9px] font-medium text-slate-700 transition hover:border-primary hover:text-primary">
                               View
                             </Link>
                             <Dialog>
                               <DialogTrigger asChild>
-                                <Button size="sm" className="h-6 rounded-full px-2 text-[10px]" onClick={() => beginProposal(listing.id)} disabled={user?.id === listing.ownerId}>
+                                <Button size="sm" className="h-5 rounded-full px-1.5 text-[9px]" onClick={() => beginProposal(listing.id)} disabled={user?.id === listing.ownerId}>
                                   Trade
                                 </Button>
                               </DialogTrigger>
@@ -504,7 +504,7 @@ export default function Home() {
                             <Button
                               size="sm"
                               variant="outline"
-                              className="h-6 rounded-full px-2 text-[10px]"
+                              className="h-5 rounded-full px-1.5 text-[9px]"
                               disabled={!isAuthenticated || watchlistMutation.isPending}
                               onClick={() => watchlistMutation.mutate({ listingId: listing.id })}
                             >
@@ -521,40 +521,40 @@ export default function Home() {
 
               <div className="grid gap-0 md:grid-cols-2 xl:grid-cols-4">
                 <Card className="overflow-hidden rounded-none border-0 bg-[radial-gradient(circle_at_top,rgba(48,149,255,0.5),transparent_40%),linear-gradient(135deg,#05204f_0%,#0d2d68_100%)] text-white shadow-none">
-                  <CardHeader className="pb-3">
+                  <CardHeader className="pb-2 pt-4">
                     <CardTitle className="text-sm uppercase tracking-[0.28em] text-white/78">Most Viewed</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-1.5 pb-5 text-[10.5px] leading-5 text-white/85">
+                  <CardContent className="space-y-1 pb-4 text-[9.5px] leading-4 text-white/85">
                     {(marketplaceQuery.data?.listings ?? []).slice(0, 6).map((listing, index) => (
                       <p key={listing.id}>{index + 1}. {listing.title}</p>
                     ))}
                   </CardContent>
                 </Card>
                 <Card className="overflow-hidden rounded-none border-0 bg-[linear-gradient(135deg,#090b10_0%,#262937_100%)] text-white shadow-none">
-                  <CardHeader className="pb-3">
+                  <CardHeader className="pb-2 pt-4">
                     <CardTitle className="text-sm uppercase tracking-[0.28em] text-white/78">Most Requested</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-1.5 pb-5 text-[10.5px] leading-5 text-white/85">
+                  <CardContent className="space-y-1 pb-4 text-[9.5px] leading-4 text-white/85">
                     {(marketplaceQuery.data?.listings ?? []).slice(0, 6).reverse().map((listing, index) => (
                       <p key={listing.id}>{index + 1}. {listing.title}</p>
                     ))}
                   </CardContent>
                 </Card>
                 <Card className="overflow-hidden rounded-none border-0 bg-[linear-gradient(135deg,#d7bba9_0%,#f3e8de_100%)] text-slate-900 shadow-none">
-                  <CardHeader className="pb-3">
+                  <CardHeader className="pb-2 pt-4">
                     <CardTitle className="text-sm uppercase tracking-[0.28em] text-slate-700">Top Rated Traders</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-1.5 pb-5 text-[10.5px] leading-5 text-slate-700">
+                  <CardContent className="space-y-1 pb-4 text-[9.5px] leading-4 text-slate-700">
                     {(marketplaceQuery.data?.listings ?? []).slice(0, 6).map((listing, index) => (
                       <p key={listing.id}>{index + 1}. {listing.owner.displayName}</p>
                     ))}
                   </CardContent>
                 </Card>
                 <Card className="overflow-hidden rounded-none border-0 bg-[radial-gradient(circle_at_top,rgba(18,222,255,0.35),transparent_35%),linear-gradient(135deg,#00477b_0%,#0a86b4_100%)] text-white shadow-none">
-                  <CardHeader className="pb-3">
+                  <CardHeader className="pb-2 pt-4">
                     <CardTitle className="text-sm uppercase tracking-[0.28em] text-white/78">Highest Trade Value</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-1.5 pb-5 text-[10.5px] leading-5 text-white/85">
+                  <CardContent className="space-y-1 pb-4 text-[9.5px] leading-4 text-white/85">
                     {spotlightStats.map(stat => (
                       <p key={stat.label}>{stat.label}: {stat.value}</p>
                     ))}
