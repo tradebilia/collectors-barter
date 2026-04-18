@@ -177,29 +177,29 @@ export default function CategoryPage() {
             <div className={`pointer-events-none absolute inset-0 ${theme.textureClassName}`} />
             <div className="pointer-events-none absolute inset-0">
               <div className="absolute inset-0">
-                <img src={SPORTS_CARDS_WALLPAPER_URL} alt="" aria-hidden="true" className="h-full w-full object-cover opacity-[0.34]" />
+                <img src={SPORTS_CARDS_WALLPAPER_URL} alt="" aria-hidden="true" className="h-full w-full object-cover opacity-[0.5]" />
               </div>
               <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(8,39,48,0.94)_0%,rgba(8,39,48,0.68)_26%,rgba(8,39,48,0.34)_54%,rgba(8,39,48,0.76)_100%)]" />
               <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(8,39,48,0.4)_0%,rgba(8,39,48,0.1)_35%,rgba(8,39,48,0.64)_100%)]" />
             </div>
-            <div className="container relative py-2 lg:py-3">
-              <div className="relative px-1 py-0 lg:py-1">
+            <div className="container relative py-0 lg:py-1 max-h-[300px] overflow-hidden">
+              <div className="relative px-1 py-0 lg:py-0">
                 <div className="relative max-w-4xl text-[#fff4df]">
-                  <div className="max-w-[26rem] lg:max-w-[34rem]">
+                  <div className="max-w-[16rem] lg:max-w-[20rem]">
                     <img src={SPORTS_CARDS_LONG_LOGO_URL} alt="Tradebilia Collectors Trading Exchange" className="h-auto w-full object-contain" />
                   </div>
 
-                  {theme.eyebrow ? <p className="mt-3 text-xs font-semibold uppercase tracking-[0.36em] text-white/78">{theme.eyebrow}</p> : null}
-                  <h1 className="mt-3 max-w-5xl leading-none text-[#fff4df] sm:text-6xl lg:text-[5rem]">
-                    <span className="block text-4xl font-semibold uppercase tracking-[0.16em] sm:text-6xl lg:text-[5.15rem]" style={{ fontFamily: "Bebas Neue, Oswald, Inter, sans-serif" }}>
+                  {theme.eyebrow ? <p className="hidden text-xs font-semibold uppercase tracking-[0.36em] text-white/78">{theme.eyebrow}</p> : null}
+                  <h1 className="mt-0 max-w-5xl leading-none text-[#fff4df] sm:text-3xl lg:text-4xl">
+                    <span className="block text-2xl font-semibold uppercase tracking-[0.16em] sm:text-3xl lg:text-4xl" style={{ fontFamily: "Bebas Neue, Oswald, Inter, sans-serif" }}>
                       Sports Card
                     </span>
-                    <span className="mt-1 block text-3xl font-medium uppercase tracking-[0.24em] text-white/86 sm:text-5xl lg:text-[3.6rem]" style={{ fontFamily: "Oswald, Inter, sans-serif" }}>
+                    <span className="mt-0 block text-xl font-medium uppercase tracking-[0.24em] text-white/86 sm:text-2xl lg:text-3xl" style={{ fontFamily: "Oswald, Inter, sans-serif" }}>
                       Exchange
                     </span>
                   </h1>
-                  <p className="mt-2 max-w-3xl text-[1.02rem] leading-8 text-white/86">{theme.description}</p>
-                  <div className="mt-3 flex flex-wrap gap-3">
+                  <p className="hidden lg:block mt-1 max-w-3xl text-sm leading-6 text-white/86">{theme.description}</p>
+                  <div className="hidden lg:flex mt-2 flex-wrap gap-3">
                     {benchmarkQuickFilters.map(filter => (
                       <button
                         key={filter}
@@ -211,7 +211,7 @@ export default function CategoryPage() {
                       </button>
                     ))}
                   </div>
-                  <div className="mt-3 grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(260px,320px)] lg:items-start">
+                  <div className="hidden lg:grid mt-2 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(260px,320px)] lg:items-start">
                     <div className="rounded-[1.5rem] border border-white/12 bg-black/18 p-5 backdrop-blur-sm">
                       <div className="flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.28em] text-white/72">
                         <Trophy className="h-4 w-4" />
@@ -225,9 +225,9 @@ export default function CategoryPage() {
                         ["Collectors", String(feedQuery.data?.highlights.activeCollectors ?? 0)],
                         ["Completed Trades", String(feedQuery.data?.highlights.completedTrades ?? 0)],
                       ].map(([label, value]) => (
-                        <div key={label} className="rounded-[1.35rem] border border-white/12 bg-black/18 px-4 py-3 text-[#fff3d5] backdrop-blur-sm">
-                          <p className="text-[10px] uppercase tracking-[0.3em] text-white/60">{label}</p>
-                          <p className="mt-2 text-2xl font-semibold text-white">{value}</p>
+                        <div key={label} className="rounded-[1.35rem] border border-white/12 bg-black/18 px-3 py-2 text-[#fff3d5] backdrop-blur-sm">
+                          <p className="text-[8px] uppercase tracking-[0.3em] text-white/60">{label}</p>
+                          <p className="mt-1 text-lg font-semibold text-white">{value}</p>
                         </div>
                       ))}
                     </div>

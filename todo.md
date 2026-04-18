@@ -121,3 +121,6 @@
 - [x] Reduce the height of the Sports Cards top section so users can see the search filters without scrolling
 - [x] Cut the space between the top and bottom sections of the Sports Cards hero by half to reduce the overall height
 - [x] Cut the overall height of the Sports Cards hero section in half by reducing vertical padding
+- [x] Reduce the Sports Cards hero section to 250-300px tall by removing or hiding elements and compressing the layout
+- [x] Adjust the wallpaper opacity and visibility to work better with the smaller hero size
+- [x] Adjust the stat cards (Listings, Collectors, Completed Trades) to fit the compact hero
