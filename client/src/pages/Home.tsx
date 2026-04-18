@@ -13,7 +13,7 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { getLoginUrl } from "@/const";
-import { Heart, Loader2, MessageSquareText, Search, ShieldCheck, Sparkles, Star, ArrowRightLeft, Clock3, Plus } from "lucide-react";
+import { Heart, Loader2, MessageSquareText, Search, ShieldCheck, Sparkles, Star, ArrowRightLeft, Clock3, Plus, Bell, Mail, Settings2 } from "lucide-react";
 import { ChangeEvent, FormEvent, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Link } from "wouter";
@@ -348,290 +348,221 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <header className="sticky top-0 z-40 border-b border-white/10 bg-[#04030f] text-white shadow-[0_10px_30px_rgba(0,0,0,0.28)]">
-        <div className="container flex flex-col gap-3 py-3">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex flex-1 items-center gap-3">
-              <span className="text-2xl font-semibold tracking-tight text-white">Search</span>
-              <div className="relative w-full max-w-xl">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/55" />
-                <Input
-                  value={keyword}
-                  onChange={event => setKeyword(event.target.value)}
-                  placeholder="Search listings, categories, and collectors"
-                  className="h-10 rounded-md border-white/15 bg-white/92 pl-9 text-sm text-slate-900 placeholder:text-slate-500"
-                />
-              </div>
-            </div>
-            <div className="flex flex-wrap items-center gap-2 text-sm">
-              {isAuthenticated && dashboard ? (
-                <Link href="/profile" className="flex items-center gap-3 rounded-full border border-white/15 bg-white/5 px-3 py-1.5 transition hover:bg-white/10">
-                  <Avatar className="h-9 w-9 border border-white/15">
-                    <AvatarImage src={dashboard.profile.avatarUrl ?? undefined} alt={dashboard.profile.displayName} />
-                    <AvatarFallback>{initials(dashboard.profile.displayName)}</AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <p className="font-semibold text-white">My TRADEBILIA</p>
-                    <p className="text-xs text-white/70">{dashboard.profile.displayName} · Trade History: {dashboard.profile.tradeHistoryCount}</p>
-                  </div>
-                </Link>
-              ) : (
-                <div className="rounded-full border border-white/15 bg-white/5 px-3 py-2 text-xs font-medium uppercase tracking-[0.22em] text-white/80">
-                  Tradebilia Subscriber Exchange
-                </div>
-              )}
-              <Button variant="outline" className="rounded-full border-white/20 bg-transparent text-white hover:bg-white/10 hover:text-white" onClick={() => (isAuthenticated ? logout() : (window.location.href = getLoginUrl()))}>
-                {isAuthenticated ? "Sign out" : "Subscriber Sign In"}
-              </Button>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 overflow-hidden rounded-md border border-white/10 bg-white/95 text-slate-900 sm:grid-cols-4 lg:grid-cols-8">
-            {categoryOptions.filter(option => option.value !== "all").map(option => (
-              <Link
-                key={option.value}
-                href={`/category/${option.value}`}
-                className={`min-h-12 border-b border-r border-slate-200 px-4 py-3 text-center text-xs font-semibold uppercase tracking-[0.16em] transition hover:bg-slate-100 lg:text-[11px] ${category === option.value ? "bg-[#303030] text-white" : "bg-white text-slate-900"}`}
+    <div className="min-h-screen bg-[#f7f4ee] text-foreground">
+      <header className="border-b border-black/70 bg-black text-white shadow-[0_8px_22px_rgba(0,0,0,0.25)]">
+        <div className="container flex min-h-8 items-center justify-between gap-3 py-1 text-[11px]">
+          <div className="flex flex-1 items-center gap-3">
+            <span className="text-2xl font-semibold leading-none text-white">Search</span>
+            <div className="flex w-full max-w-sm overflow-hidden rounded-[0.35rem] border border-black/80 bg-white">
+              <Input
+                value={keyword}
+                onChange={event => setKeyword(event.target.value)}
+                placeholder="Search..."
+                className="h-7 rounded-none border-0 bg-white px-3 text-[11px] text-slate-900 placeholder:text-slate-500 focus-visible:ring-0"
+              />
+              <button
+                type="button"
+                className="inline-flex h-7 w-9 items-center justify-center bg-[#7f31ff] text-white transition hover:bg-[#6925dd]"
+                onClick={() => marketplaceQuery.refetch()}
               >
-                {option.label}
-              </Link>
-            ))}
+                <Search className="h-3.5 w-3.5" />
+              </button>
+            </div>
           </div>
+          <div className="hidden items-center gap-2 md:flex">
+            <Link href="/profile" className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/90 transition hover:text-white">
+              My Tradebilia
+            </Link>
+            <span className="text-white/45">|</span>
+            <div className="flex items-center gap-1 text-[#d4e86d]">
+              <Bell className="h-4 w-4" />
+              <Settings2 className="h-4 w-4" />
+              <Mail className="h-4 w-4" />
+            </div>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 overflow-hidden border-t border-white/15 bg-[#f7f7f5] text-slate-900 sm:grid-cols-5 xl:grid-cols-10">
+          {categoryOptions.filter(option => option.value !== "all").map(option => (
+            <Link
+              key={option.value}
+              href={`/category/${option.value}`}
+              className={`flex min-h-8 items-center justify-center border-b border-r border-slate-300 px-3 py-2 text-center text-[12px] font-semibold tracking-tight transition hover:bg-slate-100 ${category === option.value ? "bg-[#3b3b3b] text-white" : "bg-[#f7f7f5] text-slate-900"}`}
+            >
+              {option.label}
+            </Link>
+          ))}
         </div>
       </header>
 
       <main className="pb-24">
-        <section className="relative overflow-hidden bg-[radial-gradient(circle_at_center,_rgba(56,48,136,0.32),_transparent_55%),linear-gradient(90deg,#11164b_0%,#171d63_45%,#11164b_100%)] text-white">
-          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0.04)_1px,transparent_1px)] bg-[size:150px_100%] opacity-25" />
-          <div className="container relative py-10 sm:py-14 lg:py-20">
-            <div className="mx-auto flex max-w-5xl flex-col items-center gap-8 text-center">
-              <img src={TRADEBILIA_LOGO_URL} alt="Tradebilia logo" className="h-auto w-full max-w-3xl drop-shadow-[0_20px_35px_rgba(0,0,0,0.35)]" />
-              <div className="max-w-3xl space-y-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.36em] text-white/70">Trusted collector-to-collector trading</p>
-                <h2 className="font-serif text-4xl leading-tight text-white sm:text-5xl lg:text-6xl">A collector marketplace shaped by community trust, Trade Proposals, and meaningful exchanges.</h2>
-                <p className="mx-auto max-w-2xl text-base leading-8 text-white/78 sm:text-lg">
-                  Tradebilia brings subscriber profiles, collectible item listings, Watchlist tracking, messaging, Ratings and Reviews, and Trade History together in one polished trading environment.
-                </p>
-              </div>
-            </div>
+        <section className="relative overflow-hidden bg-[linear-gradient(90deg,#15184f_0%,#181b59_36%,#15184f_100%)] text-white">
+          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:180px_100%] opacity-35" />
+          <div className="container relative flex min-h-[125px] items-center justify-center py-1 sm:min-h-[150px] lg:min-h-[170px]">
+            <img src={TRADEBILIA_LOGO_URL} alt="Tradebilia logo" className="h-auto w-full max-w-[40rem] drop-shadow-[0_10px_18px_rgba(0,0,0,0.35)]" />
           </div>
         </section>
 
-        <section className="bg-[linear-gradient(90deg,#8d8f93_0%,#c6d7ea_50%,#8d8f93_100%)] py-5 text-slate-950">
-          <div className="container grid gap-5 text-center sm:grid-cols-2 xl:grid-cols-4">
+        <section className="border-y border-black/25 bg-[linear-gradient(90deg,#8e9093_0%,#d7dde6_50%,#8e9093_100%)] py-2 text-black">
+          <div className="container grid gap-3 text-center sm:grid-cols-2 xl:grid-cols-4">
             {[
               ["Total Members", dashboard?.profile.tradeHistoryCount ? `${Math.max(dashboard.profile.tradeHistoryCount * 12, 40)}k` : "40k"],
               ["Total Items", marketplaceQuery.data?.highlights.totalListings ? `${(marketplaceQuery.data.highlights.totalListings * 1250).toLocaleString()}` : "3,500,000"],
               ["Total Value", marketplaceQuery.data?.highlights.totalListings ? `$${(marketplaceQuery.data.highlights.totalListings * 7500).toLocaleString()}` : "$20,500,000"],
               ["Total Trades", marketplaceQuery.data?.highlights.completedTrades ? `${marketplaceQuery.data.highlights.completedTrades}k` : "10k"],
             ].map(([label, value]) => (
-              <div key={label as string}>
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-700">{label as string}</p>
-                <p className="mt-1 text-3xl font-semibold">{value as string}</p>
+              <div key={label as string} className="space-y-0.5">
+                <p className="text-[11px] font-medium leading-none text-black/80">{label as string}</p>
+                <p className="text-[2rem] font-semibold leading-none sm:text-[2.2rem]">{value as string}</p>
               </div>
             ))}
           </div>
         </section>
 
-        <section className="container grid gap-6 py-10 lg:grid-cols-[220px_minmax(0,1fr)] lg:items-start">
-          <aside className="overflow-hidden rounded-[1.75rem] bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.85),transparent_24%),linear-gradient(180deg,#2758ff_0%,#4e28d7_50%,#8b2cf3_100%)] p-5 text-white shadow-[0_20px_45px_rgba(40,34,112,0.35)]">
-            <p className="text-xs font-semibold uppercase tracking-[0.26em] text-white/70">Tradebilia</p>
-            <div className="mt-6 space-y-4 text-sm">
-              {["Upcoming Conventions", "Shipping Supplies", "Report a User", "Referral Request"].map(item => (
-                <button key={item} type="button" className="block text-left font-medium text-white/92 transition hover:text-white">
-                  {item}
-                </button>
-              ))}
-              <Link href="/inventory" className="block text-left font-medium text-white transition hover:text-white/80">
-                My Inventory
-              </Link>
+        <section className="container py-0">
+          {marketplaceQuery.isLoading ? (
+            <div className="flex justify-center py-20">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
-          </aside>
+          ) : (
+            <div className="space-y-0">
+              <div className="grid gap-0 lg:grid-cols-[124px_minmax(0,1fr)]">
+                <aside className="bg-[radial-gradient(circle_at_28%_24%,rgba(255,255,255,0.92),rgba(255,255,255,0.15)_30%,transparent_44%),linear-gradient(180deg,#1440f5_0%,#5028f2_52%,#781cf8_100%)] px-3 py-4 text-white shadow-[0_18px_35px_rgba(64,39,183,0.35)]">
+                  <div className="space-y-3 pt-1 text-[11px] italic leading-5 text-white/95">
+                    <Link href="/inventory" className="block transition hover:text-white/75">My Inventory</Link>
+                    <button type="button" className="block text-left transition hover:text-white/75">Upcoming Conventions</button>
+                    <button type="button" className="block text-left transition hover:text-white/75">Shipping Supplies</button>
+                    <button type="button" className="block text-left transition hover:text-white/75">Report a User</button>
+                    <button type="button" className="block text-left transition hover:text-white/75">Referral Request</button>
+                  </div>
+                </aside>
 
-          <div className="space-y-8">
-            <div className="flex flex-col gap-5 rounded-[1.75rem] border border-border/70 bg-card/70 p-5 shadow-[0_18px_45px_-30px_rgba(43,30,86,0.32)] lg:flex-row lg:items-end lg:justify-between">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.26em] text-muted-foreground">Marketplace controls</p>
-                <h3 className="mt-2 font-serif text-4xl text-foreground">Recently Added</h3>
-              </div>
-              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                <div className="space-y-2">
-                  <Label>Category</Label>
-                  <Select value={category} onValueChange={value => setCategory(value as typeof category)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="All Categories" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categoryOptions.map(option => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>Condition</Label>
-                  <Select value={condition} onValueChange={value => setCondition(value as typeof condition)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="All Conditions" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {conditionOptions.map(option => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2 md:col-span-2 xl:col-span-1">
-                  <Label htmlFor="keyword-secondary">Keyword search</Label>
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input id="keyword-secondary" value={keyword} onChange={event => setKeyword(event.target.value)} placeholder="Search by title or description" className="pl-9" />
+                <div className="bg-white px-4 py-5 lg:px-7 lg:py-4">
+                  <h2 className="text-center font-serif text-[1.9rem] font-medium tracking-tight text-[#2d241e] sm:text-[2.1rem]">Recently Added</h2>
+                  <div className="mx-auto mt-4 grid max-w-5xl gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                    {(marketplaceQuery.data?.listings ?? []).slice(0, 5).map(listing => (
+                      <Card key={listing.id} className="overflow-hidden rounded-none border border-slate-300 bg-white shadow-none">
+                        <div className="aspect-[0.8] overflow-hidden bg-[#f0ebe5]">
+                          {listing.primaryPhotoUrl ? (
+                            <img src={listing.primaryPhotoUrl} alt={listing.title} className="h-full w-full object-cover" />
+                          ) : (
+                            <div className="flex h-full items-center justify-center bg-[linear-gradient(135deg,#f6efe3_0%,#ece5d7_100%)] text-slate-500">
+                              <Sparkles className="h-8 w-8" />
+                            </div>
+                          )}
+                        </div>
+                        <CardContent className="space-y-1 px-2 py-2">
+                          <Link href={`/listings/${listing.id}`} className="line-clamp-2 text-[12px] font-medium leading-4 text-slate-900 transition hover:text-primary">
+                            {listing.title}
+                          </Link>
+                          <p className="text-[11px] text-[#7a46ff]">$100.00</p>
+                          <p className="text-[10px] text-slate-500">{listing.ownerRating.averageRating.toFixed(1)} ★ · {listing.ownerRating.reviewCount} reviews</p>
+                          <div className="flex flex-wrap gap-1 pt-1">
+                            <Link href={`/listings/${listing.id}`} className="inline-flex h-6 items-center rounded-full border border-slate-300 px-2 text-[10px] font-medium text-slate-700 transition hover:border-primary hover:text-primary">
+                              View
+                            </Link>
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button size="sm" className="h-6 rounded-full px-2 text-[10px]" onClick={() => beginProposal(listing.id)} disabled={user?.id === listing.ownerId}>
+                                  Trade
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent className="max-w-2xl rounded-[2rem]">
+                                <DialogHeader>
+                                  <DialogTitle className="text-3xl">Create a Trade Proposal</DialogTitle>
+                                  <DialogDescription>
+                                    Send an expression of interest for <span className="font-semibold text-foreground">{listing.title}</span>. The item owner will then review your inventory and select any items they would like to request in return.
+                                  </DialogDescription>
+                                </DialogHeader>
+                                {isAuthenticated ? (
+                                  <form className="space-y-5" onSubmit={submitProposal}>
+                                    <div className="rounded-[1.5rem] border border-border/70 bg-muted/30 p-4 text-sm leading-7 text-muted-foreground">
+                                      Your Trade Proposal starts as an expression of interest. You do not select exchange items at this stage. Once the owner reviews your request, they can choose one or more items from your inventory or refuse if they do not see anything of interest.
+                                    </div>
+                                    <div className="space-y-2">
+                                      <Label htmlFor={`proposal-note-${listing.id}`}>Message</Label>
+                                      <Textarea
+                                        id={`proposal-note-${listing.id}`}
+                                        value={proposalDraft.note}
+                                        onChange={event => setProposalDraft(current => ({ ...current, requestedListingId: listing.id, note: event.target.value }))}
+                                        placeholder="Introduce yourself, explain what interests you about this item, and invite the owner to review your inventory."
+                                        rows={5}
+                                      />
+                                    </div>
+                                    <Button type="submit" className="rounded-full" disabled={createProposalMutation.isPending}>
+                                      {createProposalMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                                      Send Trade Proposal
+                                    </Button>
+                                  </form>
+                                ) : (
+                                  <div className="space-y-4 rounded-[1.5rem] border border-border/70 bg-muted/40 p-6">
+                                    <p className="text-sm leading-7 text-muted-foreground">You need a subscriber account to send Trade Proposals, message other collectors, and maintain a Watchlist.</p>
+                                    <Button className="rounded-full" onClick={() => (window.location.href = getLoginUrl())}>Subscriber Sign In</Button>
+                                  </div>
+                                )}
+                              </DialogContent>
+                            </Dialog>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-6 rounded-full px-2 text-[10px]"
+                              disabled={!isAuthenticated || watchlistMutation.isPending}
+                              onClick={() => watchlistMutation.mutate({ listingId: listing.id })}
+                            >
+                              <Heart className={`mr-1 h-3 w-3 ${listing.savedToWatchlist ? "fill-current" : ""}`} />
+                              Save
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
                   </div>
                 </div>
               </div>
+
+              <div className="grid gap-0 md:grid-cols-2 xl:grid-cols-4">
+                <Card className="overflow-hidden rounded-none border-0 bg-[radial-gradient(circle_at_top,rgba(48,149,255,0.5),transparent_40%),linear-gradient(135deg,#05204f_0%,#0d2d68_100%)] text-white shadow-none">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm uppercase tracking-[0.28em] text-white/78">Most Viewed</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-1.5 pb-5 text-[10.5px] leading-5 text-white/85">
+                    {(marketplaceQuery.data?.listings ?? []).slice(0, 6).map((listing, index) => (
+                      <p key={listing.id}>{index + 1}. {listing.title}</p>
+                    ))}
+                  </CardContent>
+                </Card>
+                <Card className="overflow-hidden rounded-none border-0 bg-[linear-gradient(135deg,#090b10_0%,#262937_100%)] text-white shadow-none">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm uppercase tracking-[0.28em] text-white/78">Most Requested</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-1.5 pb-5 text-[10.5px] leading-5 text-white/85">
+                    {(marketplaceQuery.data?.listings ?? []).slice(0, 6).reverse().map((listing, index) => (
+                      <p key={listing.id}>{index + 1}. {listing.title}</p>
+                    ))}
+                  </CardContent>
+                </Card>
+                <Card className="overflow-hidden rounded-none border-0 bg-[linear-gradient(135deg,#d7bba9_0%,#f3e8de_100%)] text-slate-900 shadow-none">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm uppercase tracking-[0.28em] text-slate-700">Top Rated Traders</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-1.5 pb-5 text-[10.5px] leading-5 text-slate-700">
+                    {(marketplaceQuery.data?.listings ?? []).slice(0, 6).map((listing, index) => (
+                      <p key={listing.id}>{index + 1}. {listing.owner.displayName}</p>
+                    ))}
+                  </CardContent>
+                </Card>
+                <Card className="overflow-hidden rounded-none border-0 bg-[radial-gradient(circle_at_top,rgba(18,222,255,0.35),transparent_35%),linear-gradient(135deg,#00477b_0%,#0a86b4_100%)] text-white shadow-none">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm uppercase tracking-[0.28em] text-white/78">Highest Trade Value</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-1.5 pb-5 text-[10.5px] leading-5 text-white/85">
+                    {spotlightStats.map(stat => (
+                      <p key={stat.label}>{stat.label}: {stat.value}</p>
+                    ))}
+                  </CardContent>
+                </Card>
+              </div>
             </div>
-
-            {marketplaceQuery.isLoading ? (
-              <div className="flex justify-center py-16">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              </div>
-            ) : (
-              <div className="space-y-8">
-                <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-5">
-                  {(marketplaceQuery.data?.listings ?? []).slice(0, 5).map(listing => (
-                    <Card key={listing.id} className="surface-card overflow-hidden border-border/70 bg-white/95">
-                      <div className="aspect-[4/4.4] overflow-hidden bg-muted">
-                        {listing.primaryPhotoUrl ? (
-                          <img src={listing.primaryPhotoUrl} alt={listing.title} className="h-full w-full object-cover" />
-                        ) : (
-                          <div className="flex h-full items-center justify-center bg-gradient-to-br from-accent/80 to-secondary text-accent-foreground">
-                            <Sparkles className="h-10 w-10" />
-                          </div>
-                        )}
-                      </div>
-                      <CardContent className="space-y-3 p-4">
-                        <div>
-                          <Link href={`/listings/${listing.id}`} className="line-clamp-2 text-lg font-semibold text-foreground transition hover:text-primary">
-                            {listing.title}
-                          </Link>
-                          <p className="mt-1 text-xs uppercase tracking-[0.14em] text-muted-foreground">{listing.categoryLabel}</p>
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          <p>{listing.conditionLabel}</p>
-                          <p>Ratings and Reviews: {listing.ownerRating.averageRating.toFixed(1)} · {listing.ownerRating.reviewCount}</p>
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                          <Link href={`/listings/${listing.id}`} className="inline-flex h-9 items-center rounded-full border border-border/70 px-4 text-sm font-medium text-foreground transition hover:border-primary hover:text-primary">
-                            View details
-                          </Link>
-                          <Dialog>
-                            <DialogTrigger asChild>
-                              <Button size="sm" className="rounded-full" onClick={() => beginProposal(listing.id)} disabled={user?.id === listing.ownerId}>
-                                Trade Proposals
-                              </Button>
-                            </DialogTrigger>
-                          <DialogContent className="max-w-2xl rounded-[2rem]">
-                            <DialogHeader>
-                              <DialogTitle className="text-3xl">Create a Trade Proposal</DialogTitle>
-                              <DialogDescription>
-                                Send an expression of interest for <span className="font-semibold text-foreground">{listing.title}</span>. The item owner will then review your inventory and select any items they would like to request in return.
-                              </DialogDescription>
-                            </DialogHeader>
-                            {isAuthenticated ? (
-                              <form className="space-y-5" onSubmit={submitProposal}>
-                                <div className="rounded-[1.5rem] border border-border/70 bg-muted/30 p-4 text-sm leading-7 text-muted-foreground">
-                                  Your Trade Proposal starts as an expression of interest. You do not select exchange items at this stage. Once the owner reviews your request, they can choose one or more items from your inventory or refuse if they do not see anything of interest.
-                                </div>
-                                <div className="space-y-2">
-                                  <Label htmlFor={`proposal-note-${listing.id}`}>Message</Label>
-                                  <Textarea
-                                    id={`proposal-note-${listing.id}`}
-                                    value={proposalDraft.note}
-                                    onChange={event => setProposalDraft(current => ({ ...current, requestedListingId: listing.id, note: event.target.value }))}
-                                    placeholder="Introduce yourself, explain what interests you about this item, and invite the owner to review your inventory."
-                                    rows={5}
-                                  />
-                                </div>
-                                <Button type="submit" className="rounded-full" disabled={createProposalMutation.isPending}>
-                                  {createProposalMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                                  Send Trade Proposal
-                                </Button>
-                              </form>
-                            ) : (
-
-                                <div className="space-y-4 rounded-[1.5rem] border border-border/70 bg-muted/40 p-6">
-                                  <p className="text-sm leading-7 text-muted-foreground">You need a subscriber account to send Trade Proposals, message other collectors, and maintain a Watchlist.</p>
-                                  <Button className="rounded-full" onClick={() => (window.location.href = getLoginUrl())}>Subscriber Sign In</Button>
-                                </div>
-                              )}
-                            </DialogContent>
-                          </Dialog>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="rounded-full"
-                            disabled={!isAuthenticated || watchlistMutation.isPending}
-                            onClick={() => watchlistMutation.mutate({ listingId: listing.id })}
-                          >
-                            <Heart className={`mr-2 h-4 w-4 ${listing.savedToWatchlist ? "fill-current" : ""}`} />
-                            Watchlist
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-
-                <div className="grid gap-5 xl:grid-cols-4">
-                  <Card className="overflow-hidden border-0 bg-[radial-gradient(circle_at_top,rgba(52,146,255,0.45),transparent_45%),linear-gradient(135deg,#071b4d_0%,#0f3469_100%)] text-white shadow-[0_20px_50px_rgba(10,25,70,0.28)] xl:col-span-1">
-                    <CardHeader>
-                      <CardTitle className="text-sm uppercase tracking-[0.28em] text-white/75">Most Viewed</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-2 text-sm text-white/85">
-                      {(marketplaceQuery.data?.listings ?? []).slice(0, 5).map((listing, index) => (
-                        <p key={listing.id}>{index + 1}. {listing.title}</p>
-                      ))}
-                    </CardContent>
-                  </Card>
-                  <Card className="overflow-hidden border-0 bg-[linear-gradient(135deg,#06070d_0%,#292b35_100%)] text-white shadow-[0_20px_50px_rgba(0,0,0,0.3)] xl:col-span-1">
-                    <CardHeader>
-                      <CardTitle className="text-sm uppercase tracking-[0.28em] text-white/75">Most Requested</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-2 text-sm text-white/85">
-                      {(marketplaceQuery.data?.listings ?? []).slice(0, 5).reverse().map((listing, index) => (
-                        <p key={listing.id}>{index + 1}. {listing.title}</p>
-                      ))}
-                    </CardContent>
-                  </Card>
-                  <Card className="overflow-hidden border-0 bg-[linear-gradient(135deg,#dfc6b8_0%,#efe3df_100%)] text-slate-900 shadow-[0_20px_50px_rgba(98,78,63,0.2)] xl:col-span-1">
-                    <CardHeader>
-                      <CardTitle className="text-sm uppercase tracking-[0.28em] text-slate-700">Top Rated Traders</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-2 text-sm text-slate-700">
-                      {(marketplaceQuery.data?.listings ?? []).slice(0, 5).map((listing, index) => (
-                        <p key={listing.id}>{index + 1}. {listing.owner.displayName}</p>
-                      ))}
-                    </CardContent>
-                  </Card>
-                  <Card className="overflow-hidden border-0 bg-[radial-gradient(circle_at_top,rgba(18,222,255,0.35),transparent_35%),linear-gradient(135deg,#003870_0%,#0c75a5_100%)] text-white shadow-[0_20px_50px_rgba(3,64,98,0.32)] xl:col-span-1">
-                    <CardHeader>
-                      <CardTitle className="text-sm uppercase tracking-[0.28em] text-white/75">Highest Trade Value</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-2 text-sm text-white/85">
-                      {spotlightStats.map(stat => (
-                        <p key={stat.label}>{stat.label}: {stat.value}</p>
-                      ))}
-                    </CardContent>
-                  </Card>
-                </div>
-              </div>
-            )}
-          </div>
+          )}
         </section>
 
         {isAuthenticated && dashboard ? (

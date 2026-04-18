@@ -47,3 +47,5 @@
 - [x] Add a separate general member-to-member messaging model and flow distinct from Trade Proposal audit comments
 - [x] Complete Member Search actions so Send Message opens a real conversation, Offer Trade enters a real flow, and favorites persist
 - [x] Update the remaining project-level branding metadata and surfaces so Tradebilia is used everywhere verifiably
+- [x] Diagnose why the homepage does not match the uploaded reference and restyle it to align with the intended design
+- [x] Restyle the homepage to match the re-uploaded Wix-style reference more closely, including the slim top search bar, compact category strip, oversized centered logo banner, silver metrics bar, left quick-links panel, five-card Recently Added shelf, and four-column ranked footer panels
