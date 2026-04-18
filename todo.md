@@ -133,3 +133,6 @@
 - [x] Redesign hero layout: Tradebilia logo top-left, Sports Card title centered and larger, Exchange below centered and smaller
 - [x] Change the wallpaper to use a tile/repeat pattern instead of stretched to maintain card detail
 - [x] Fade the wallpaper and add navy blue tint overlay to make it more subtle and blend better with text
+- [x] Remove the navy blue area just below the category bar
+- [x] Make the "Sports Card" font pop more (increase weight and/or size)
+- [x] Make the Tradebilia name/logo larger

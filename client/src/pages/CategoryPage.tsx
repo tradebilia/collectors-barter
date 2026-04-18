@@ -177,19 +177,19 @@ export default function CategoryPage() {
             <div className="pointer-events-none absolute inset-0">
               <div className="absolute inset-0" style={{ backgroundImage: `url(${SPORTS_CARDS_WALLPAPER_URL})`, backgroundRepeat: 'repeat', backgroundSize: 'auto', backgroundPosition: 'top left', opacity: 0.35 }}>
               </div>
-              <div className="absolute inset-0 bg-gradient-to-b from-[#0a2a3a]/70 via-[#0a2a3a]/60 to-[#0a2a3a]/75" />
+
             </div>
             <div className="relative py-4 lg:py-6 max-h-[300px] overflow-hidden flex items-center px-4 lg:px-8">
               <div className="w-full">
                 <div className="flex justify-between items-center gap-4">
                   <div className="flex-shrink-0">
-                    <div className="max-w-[11rem] lg:max-w-[13rem]">
+                    <div className="max-w-[14rem] lg:max-w-[16rem]">
                       <img src={SPORTS_CARDS_LONG_LOGO_URL} alt="Tradebilia Collectors Trading Exchange" className="h-auto w-full object-contain" />
                     </div>
                   </div>
                   <div className="flex-1 text-center">
                     <h1 className="leading-none text-[#fff4df]">
-                      <span className="block text-5xl lg:text-6xl font-bold uppercase tracking-[0.08em] lg:tracking-[0.1em]" style={{ fontFamily: "Bebas Neue, Oswald, Inter, sans-serif" }}>
+                      <span className="block text-6xl lg:text-7xl font-black uppercase tracking-[0.06em] lg:tracking-[0.08em]" style={{ fontFamily: "Bebas Neue, Oswald, Inter, sans-serif" }}>
                         Sports Card
                       </span>
                       <span className="mt-0.5 lg:mt-1 block text-3xl lg:text-4xl font-semibold uppercase tracking-[0.12em]" style={{ fontFamily: "Oswald, Inter, sans-serif" }}>
