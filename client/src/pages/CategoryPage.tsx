@@ -174,8 +174,10 @@ export default function CategoryPage() {
       <header className={`relative overflow-hidden border-b ${theme.borderClassName} ${theme.heroClassName}`}>
         {isSportsCardsPage ? (
           <>
-            <div className="pointer-events-none absolute inset-0" style={{ backgroundImage: `url(${SPORTS_CARDS_WALLPAPER_URL})`, backgroundRepeat: 'repeat', backgroundSize: 'auto', backgroundPosition: 'top left' }}>
-              <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/50 to-black/70" />
+            <div className="pointer-events-none absolute inset-0">
+              <div className="absolute inset-0" style={{ backgroundImage: `url(${SPORTS_CARDS_WALLPAPER_URL})`, backgroundRepeat: 'repeat', backgroundSize: 'auto', backgroundPosition: 'top left', opacity: 0.35 }}>
+              </div>
+              <div className="absolute inset-0 bg-gradient-to-b from-[#0a2a3a]/70 via-[#0a2a3a]/60 to-[#0a2a3a]/75" />
             </div>
             <div className="relative py-4 lg:py-6 max-h-[300px] overflow-hidden flex items-center px-4 lg:px-8">
               <div className="w-full">
