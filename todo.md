@@ -120,3 +120,4 @@
 - [x] Stretch the Sports Cards wallpaper so it fills the entire background in the top section
 - [x] Reduce the height of the Sports Cards top section so users can see the search filters without scrolling
 - [x] Cut the space between the top and bottom sections of the Sports Cards hero by half to reduce the overall height
+- [x] Cut the overall height of the Sports Cards hero section in half by reducing vertical padding

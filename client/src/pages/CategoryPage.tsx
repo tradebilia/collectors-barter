@@ -182,8 +182,8 @@ export default function CategoryPage() {
               <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(8,39,48,0.94)_0%,rgba(8,39,48,0.68)_26%,rgba(8,39,48,0.34)_54%,rgba(8,39,48,0.76)_100%)]" />
               <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(8,39,48,0.4)_0%,rgba(8,39,48,0.1)_35%,rgba(8,39,48,0.64)_100%)]" />
             </div>
-            <div className="container relative py-4 lg:py-6">
-              <div className="relative px-1 py-1 lg:py-2">
+            <div className="container relative py-2 lg:py-3">
+              <div className="relative px-1 py-0 lg:py-1">
                 <div className="relative max-w-4xl text-[#fff4df]">
                   <div className="max-w-[26rem] lg:max-w-[34rem]">
                     <img src={SPORTS_CARDS_LONG_LOGO_URL} alt="Tradebilia Collectors Trading Exchange" className="h-auto w-full object-contain" />
