@@ -166,7 +166,7 @@ export default function CategoryPage() {
     ...card,
     imageUrl: resolveTradebiliaListingImage({ title: card.title, category: slug }),
   }));
-  const SPORTS_CARDS_WALLPAPER_URL = "/manus-storage/Sportscards_c0a71f5f.jpg";
+  const SPORTS_CARDS_WALLPAPER_URL = "/manus-storage/Sportscards_03a41ec0.jpg";
   const SPORTS_CARDS_LONG_LOGO_URL = "/manus-storage/tradebilia-longform-no-navy-clean_d2f04453.png";
 
   return (
@@ -174,13 +174,9 @@ export default function CategoryPage() {
       <header className={`relative overflow-hidden border-b ${theme.borderClassName} ${theme.heroClassName}`}>
         {isSportsCardsPage ? (
           <>
-            <div className={`pointer-events-none absolute inset-0 ${theme.textureClassName}`} />
             <div className="pointer-events-none absolute inset-0">
-              <div className="absolute inset-0">
-                <img src={SPORTS_CARDS_WALLPAPER_URL} alt="" aria-hidden="true" className="h-full w-full object-cover opacity-[0.5]" />
-              </div>
-              <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(8,39,48,0.94)_0%,rgba(8,39,48,0.68)_26%,rgba(8,39,48,0.34)_54%,rgba(8,39,48,0.76)_100%)]" />
-              <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(8,39,48,0.4)_0%,rgba(8,39,48,0.1)_35%,rgba(8,39,48,0.64)_100%)]" />
+              <img src={SPORTS_CARDS_WALLPAPER_URL} alt="" aria-hidden="true" className="h-full w-full object-cover" />
+              <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-black/60" />
             </div>
             <div className="container relative py-0 lg:py-1 max-h-[300px] overflow-hidden">
               <div className="relative px-1 py-0 lg:py-0">
@@ -199,18 +195,6 @@ export default function CategoryPage() {
                     </span>
                   </h1>
                   <p className="hidden lg:block mt-1 max-w-3xl text-sm leading-6 text-white/86">{theme.description}</p>
-                  <div className="hidden lg:flex mt-2 flex-wrap gap-3">
-                    {benchmarkQuickFilters.map(filter => (
-                      <button
-                        key={filter}
-                        type="button"
-                        onClick={() => setKeyword(filter.toLowerCase())}
-                        className="rounded-full border border-white/16 bg-white/10 px-4 py-2 text-sm font-semibold text-[#fff3d5] backdrop-blur-sm transition hover:bg-white/18"
-                      >
-                        {filter}
-                      </button>
-                    ))}
-                  </div>
                   <div className="hidden lg:grid mt-2 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(260px,320px)] lg:items-start">
                     <div className="rounded-[1.5rem] border border-white/12 bg-black/18 p-5 backdrop-blur-sm">
                       <div className="flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.28em] text-white/72">
