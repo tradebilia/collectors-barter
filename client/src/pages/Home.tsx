@@ -469,11 +469,24 @@ export default function Home() {
 
       <main className="pb-24">
         <section className="relative overflow-hidden bg-[#161a57] text-white">
-          <img
-            src={TRADEBILIA_LOGO_URL}
-            alt="Tradebilia logo"
-            className="block h-[240px] w-full object-cover object-center sm:h-[280px] lg:h-[325px]"
-          />
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(57,68,149,0.3)_0%,rgba(22,26,87,0)_58%)]" />
+          <div className="container relative flex min-h-[240px] items-center justify-center py-8 sm:min-h-[280px] sm:py-10 lg:min-h-[325px]">
+            <div className="flex flex-wrap items-center justify-center gap-5 sm:gap-7 lg:gap-8">
+              <div className="tradebilia-wheel-home relative h-24 w-24 overflow-hidden rounded-full shadow-[0_14px_35px_rgba(0,0,0,0.28)] sm:h-28 sm:w-28 lg:h-32 lg:w-32">
+                <img
+                  src={TRADEBILIA_LOGO_URL}
+                  alt=""
+                  aria-hidden="true"
+                  className="absolute left-1/2 top-1/2 h-[290%] max-w-none -translate-x-[32%] -translate-y-1/2"
+                />
+              </div>
+              <div className="hidden h-24 w-px bg-white/45 sm:block lg:h-28" />
+              <div className="text-center sm:text-left">
+                <p className="text-[clamp(2.5rem,6vw,5rem)] font-black uppercase leading-none tracking-[0.02em] text-white">Tradebilia</p>
+                <p className="mt-2 text-sm tracking-[0.06em] text-white/85 sm:text-base lg:text-lg">Collectors Trading Exchange</p>
+              </div>
+            </div>
+          </div>
         </section>
 
         <section className="border-y border-black/25 bg-[linear-gradient(90deg,#8e9093_0%,#d7dde6_50%,#8e9093_100%)] py-1.5 text-black">

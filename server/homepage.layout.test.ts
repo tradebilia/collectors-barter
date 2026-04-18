@@ -12,9 +12,8 @@ describe("Tradebilia homepage layout", () => {
     expect(homepageSource).toContain(
       `font-['Oswald'] text-[2.15rem] font-semibold leading-none tracking-[-0.05em] text-white sm:text-[2.45rem]">Search</span>`,
     );
-    expect(homepageSource).toContain(
-      'className="block h-[240px] w-full object-cover object-center sm:h-[280px] lg:h-[325px]"',
-    );
+    expect(homepageSource).toContain('tradebilia-wheel-home relative h-24 w-24');
+    expect(homepageSource).toContain('Collectors Trading Exchange');
     expect(homepageSource).toContain('bg-[linear-gradient(90deg,#8e9093_0%,#d7dde6_50%,#8e9093_100%)]');
   });
 

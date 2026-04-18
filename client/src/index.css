@@ -206,6 +206,28 @@
     box-shadow: 0 24px 60px -32px rgba(79, 53, 34, 0.35);
   }
 
+  .tradebilia-wheel-home {
+    animation: tradebilia-wheel-spin 18s linear infinite;
+    transform-origin: center;
+    will-change: transform;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .tradebilia-wheel-home {
+      animation: none;
+    }
+  }
+
+  @keyframes tradebilia-wheel-spin {
+    from {
+      transform: rotate(0deg);
+    }
+
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
   @media (min-width: 640px) {
     .container {
       padding-left: 1.5rem;

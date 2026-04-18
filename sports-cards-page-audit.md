@@ -46,3 +46,17 @@ After repointing the three Sports Cards showcase items to freshly uploaded asset
 ## Asset delivery check
 
 The Sports Cards showcase images are now loading correctly at the browser level. The latest live inspection confirms that the Jordan, Payton, and Henderson assets resolve with non-zero intrinsic dimensions, which means the earlier failure was caused by the previous asset paths rather than by the page layout itself. Any remaining work on this page can now focus on presentation and polish instead of broken media delivery.
+
+## Visual-design focus audit
+
+The current Sports Cards page has a stronger structure than before, but the upper hero still feels visually imbalanced. The left side carries a large headline and image block while the right stat column reads more like a secondary dashboard than part of a premium category story, so the composition does not yet feel fully unified. The teal hero background is directionally right, yet the top image still behaves more like a logo panel than a convincing collector centerpiece.
+
+Below the hero, the cream content area improves readability, but the transition from hero to filters and summary content feels abrupt. The filter rail is useful, yet it competes with the editorial summary instead of framing it. The page would likely benefit from a tighter first-screen composition, stronger emphasis on one dominant showcase card, and clearer spacing rhythm between the summary block, showcase cards, and empty-state section.
+
+## Live review after hero redesign
+
+The Sports Cards page now has a much stronger first impression. The headline, benchmark label, and centerpiece card create clearer category identity, and the page finally reads like a focused market rather than a generic listing screen. The main remaining visual issue is that the right side of the hero feels too vertically stacked: the notes card and three stat cards read like a narrow side rail, which makes the hero heavier on the right edge than in the center. The next pass should reduce the dashboard-like feeling by giving the notes and metrics a wider, more integrated arrangement that supports the hero art instead of boxing it in.
+
+## Live review after top-banner rewrite
+
+The current Sports Cards top banner now restores the **Tradebilia** wordmark and circle logo prominently on the left, removes the old benchmark centerpiece card, and treats the collectible-card wallpaper as a contained background layer rather than a cropped hero image. The banner is much closer to the retro marketplace direction, although the page still appears to have a faint outer wallpaper treatment behind the new inner banner card, so one final cleanup pass should remove that redundant layer before the design is presented as the benchmark.

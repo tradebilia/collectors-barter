@@ -160,57 +160,116 @@ export default function CategoryPage() {
     ...card,
     imageUrl: resolveTradebiliaListingImage({ title: card.title, category: slug }),
   }));
+  const sportsCardsWallpaperImages = isSportsCardsPage
+    ? [
+        benchmarkSpotlights[0]?.imageUrl,
+        resolveTradebiliaListingImage({ title: "1976 Walter Payton Rookie", category: slug }),
+        resolveTradebiliaListingImage({ title: "1980 Rickey Henderson Rookie", category: slug }),
+        resolveTradebiliaListingImage({ title: "1981 Joe Montana Rookie", category: slug }),
+        resolveTradebiliaListingImage({ title: "Mickey Mantle", category: slug }),
+      ].filter(Boolean)
+    : [];
 
   return (
     <div className={`min-h-screen ${theme.pageClassName}`}>
       <header className={`border-b ${theme.borderClassName} ${theme.heroClassName}`}>
         <div className={`relative overflow-hidden ${theme.textureClassName}`}>
-          <div className={`container ${isSportsCardsPage ? "py-6 lg:py-8" : "py-8 lg:py-12"}`}>
-            <div className={`grid gap-8 ${isSportsCardsPage ? "xl:grid-cols-[minmax(0,1.15fr)_340px] xl:items-end" : "lg:grid-cols-[minmax(0,1fr)_340px] lg:items-end"}`}>
-              <div className="max-w-4xl">
-                <img
-                  src={TRADEBILIA_LOGO_URL}
-                  alt="Tradebilia"
-                  className={`h-auto w-full drop-shadow-[0_20px_35px_rgba(0,0,0,0.25)] ${isSportsCardsPage ? "max-w-md" : "max-w-xl"}`}
-                />
-                <p className="mt-5 text-xs font-semibold uppercase tracking-[0.36em] opacity-80">{theme.eyebrow}</p>
-                <h1 className={`mt-3 leading-none ${isSportsCardsPage ? "text-4xl sm:text-6xl lg:text-[5.25rem]" : "text-5xl sm:text-6xl lg:text-7xl"}`} style={{ fontFamily: theme.headingFont }}>
-                  {categoryLabel.toUpperCase()} EXCHANGE
-                </h1>
-                <p className={`max-w-3xl opacity-90 ${isSportsCardsPage ? "mt-4 text-[1.05rem] leading-8" : "mt-5 text-base leading-8 sm:text-lg"}`}>{theme.description}</p>
-                {isSportsCardsPage ? (
+          <div className={`container relative ${isSportsCardsPage ? "py-6 lg:py-8" : "py-8 lg:py-12"}`}>
+            {isSportsCardsPage ? (
+              <div className="relative overflow-hidden rounded-[2.25rem] border border-white/12 bg-[linear-gradient(135deg,rgba(12,55,66,0.94)_0%,rgba(28,111,127,0.78)_44%,rgba(8,33,42,0.95)_100%)] px-6 py-8 shadow-[0_34px_80px_rgba(6,20,29,0.34)] lg:px-10 lg:py-10">
+                <div className="pointer-events-none absolute inset-0 opacity-[0.28]">
+                  <div className="absolute inset-0 grid grid-cols-2 gap-3 px-4 py-4 sm:grid-cols-3 lg:grid-cols-5 lg:gap-4 lg:px-8 lg:py-7">
+                    {sportsCardsWallpaperImages.map((imageUrl, index) => (
+                      <div
+                        key={`${imageUrl}-${index}`}
+                        className={`flex items-center justify-center rounded-[1.25rem] border border-white/8 bg-[#123b49]/18 p-2 shadow-[0_10px_30px_rgba(0,0,0,0.14)] ${index % 2 === 0 ? "rotate-[-7deg]" : "rotate-[6deg]"}`}
+                      >
+                        <img src={imageUrl} alt="" aria-hidden="true" className="h-full max-h-[16rem] w-full object-contain" />
+                      </div>
+                    ))}
+                  </div>
+                  <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(8,39,48,0.94)_0%,rgba(8,39,48,0.68)_26%,rgba(8,39,48,0.34)_54%,rgba(8,39,48,0.76)_100%)]" />
+                  <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(8,39,48,0.4)_0%,rgba(8,39,48,0.1)_35%,rgba(8,39,48,0.64)_100%)]" />
+                </div>
+                <div className="relative max-w-4xl text-[#fff4df]">
+                  <div className="flex flex-wrap items-center gap-4 lg:gap-6">
+                    <img src={TRADEBILIA_LOGO_URL} alt="Tradebilia" className="h-20 w-20 rounded-full object-cover shadow-[0_10px_25px_rgba(0,0,0,0.24)] lg:h-24 lg:w-24" />
+                    <div className="border-l border-white/30 pl-4 lg:pl-6">
+                      <p className="text-[clamp(2.35rem,5vw,4.6rem)] font-black uppercase leading-none tracking-[0.03em] text-[#fff3d5]" style={{ fontFamily: theme.headingFont }}>Tradebilia</p>
+                      <p className="mt-2 text-sm uppercase tracking-[0.28em] text-white/80 lg:text-base">Collectors Trading Exchange</p>
+                    </div>
+                  </div>
+                  <p className="mt-7 text-xs font-semibold uppercase tracking-[0.36em] text-white/78">{theme.eyebrow}</p>
+                  <h1 className="mt-3 max-w-5xl text-4xl leading-none sm:text-6xl lg:text-[5rem]" style={{ fontFamily: theme.headingFont }}>
+                    {categoryLabel.toUpperCase()} EXCHANGE
+                  </h1>
+                  <p className="mt-4 max-w-3xl text-[1.02rem] leading-8 text-white/86">{theme.description}</p>
                   <div className="mt-6 flex flex-wrap gap-3">
                     {benchmarkQuickFilters.map(filter => (
                       <button
                         key={filter}
                         type="button"
                         onClick={() => setKeyword(filter.toLowerCase())}
-                        className="rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-semibold text-[#fff3d5] backdrop-blur-sm transition hover:bg-white/16"
+                        className="rounded-full border border-white/16 bg-white/10 px-4 py-2 text-sm font-semibold text-[#fff3d5] backdrop-blur-sm transition hover:bg-white/18"
                       >
                         {filter}
                       </button>
                     ))}
                   </div>
-                ) : null}
-              </div>
-              <div className="grid gap-4">
-                <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
-                  {[
-                    ["Listings", String(listings.length)],
-                    ["Collectors", String(feedQuery.data?.highlights.activeCollectors ?? 0)],
-                    ["Completed Trades", String(feedQuery.data?.highlights.completedTrades ?? 0)],
-                  ].map(([label, value]) => (
-                    <div key={label} className="rounded-[1.5rem] border border-white/15 bg-black/15 p-4 text-center backdrop-blur-sm">
-                      <p className="text-xs uppercase tracking-[0.3em] opacity-70">{label}</p>
-                      <p className="mt-3 text-3xl font-semibold">{value}</p>
+                  <div className="mt-7 grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(260px,320px)] lg:items-start">
+                    <div className="rounded-[1.5rem] border border-white/12 bg-black/18 p-5 backdrop-blur-sm">
+                      <div className="flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.28em] text-white/72">
+                        <Trophy className="h-4 w-4" />
+                        {benchmark?.heroNotesEyebrow}
+                      </div>
+                      <p className="mt-4 text-base leading-8 text-white/84">{benchmark?.heroNotes[0]}</p>
                     </div>
-                  ))}
+                    <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
+                      {[
+                        ["Listings", String(listings.length)],
+                        ["Collectors", String(feedQuery.data?.highlights.activeCollectors ?? 0)],
+                        ["Completed Trades", String(feedQuery.data?.highlights.completedTrades ?? 0)],
+                      ].map(([label, value]) => (
+                        <div key={label} className="rounded-[1.35rem] border border-white/12 bg-black/18 px-4 py-3 text-[#fff3d5] backdrop-blur-sm">
+                          <p className="text-[10px] uppercase tracking-[0.3em] text-white/60">{label}</p>
+                          <p className="mt-2 text-2xl font-semibold text-white">{value}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
-                {isSportsCardsPage ? (
+              </div>
+            ) : (
+              <div className={`grid gap-8 ${isSportsCardsPage ? "xl:grid-cols-[minmax(0,1.02fr)_420px] xl:items-stretch" : "lg:grid-cols-[minmax(0,1fr)_340px] lg:items-end"}`}>
+                <div className="max-w-4xl">
+                  <img
+                    src={TRADEBILIA_LOGO_URL}
+                    alt="Tradebilia"
+                    className={`h-auto w-full drop-shadow-[0_20px_35px_rgba(0,0,0,0.25)] ${isSportsCardsPage ? "max-w-md" : "max-w-xl"}`}
+                  />
+                  <p className="mt-5 text-xs font-semibold uppercase tracking-[0.36em] opacity-80">{theme.eyebrow}</p>
+                  <h1 className={`mt-3 leading-none ${isSportsCardsPage ? "max-w-5xl text-4xl sm:text-6xl lg:text-[5.2rem]" : "text-5xl sm:text-6xl lg:text-7xl"}`} style={{ fontFamily: theme.headingFont }}>
+                    {categoryLabel.toUpperCase()} EXCHANGE
+                  </h1>
+                  <p className={`max-w-3xl opacity-90 ${isSportsCardsPage ? "mt-4 text-[1.05rem] leading-8 text-white/88" : "mt-5 text-base leading-8 sm:text-lg"}`}>{theme.description}</p>
+                </div>
+                <div className="grid gap-4">
+                  <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
+                    {[
+                      ["Listings", String(listings.length)],
+                      ["Collectors", String(feedQuery.data?.highlights.activeCollectors ?? 0)],
+                      ["Completed Trades", String(feedQuery.data?.highlights.completedTrades ?? 0)],
+                    ].map(([label, value]) => (
+                      <div key={label} className="rounded-[1.5rem] border border-white/15 bg-black/15 p-4 text-center backdrop-blur-sm">
+                        <p className="text-xs uppercase tracking-[0.3em] opacity-70">{label}</p>
+                        <p className="mt-3 text-3xl font-semibold">{value}</p>
+                      </div>
+                    ))}
+                  </div>
                   <div className="rounded-[1.75rem] border border-white/15 bg-black/20 p-5 text-[#fff3d5] backdrop-blur-sm">
                     <div className="flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.28em] text-white/70">
                       <Trophy className="h-4 w-4" />
-                      {benchmark?.heroNotesEyebrow ?? "Show floor notes"}
+                      {benchmark?.heroNotesEyebrow}
                     </div>
                     <div className="mt-4 space-y-3 text-sm leading-7 text-white/82">
                       <p>{benchmark?.heroNotes[0]}</p>
@@ -221,9 +280,9 @@ export default function CategoryPage() {
                       </div>
                     </div>
                   </div>
-                ) : null}
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
         <nav className="border-t border-black/20 bg-black/65 backdrop-blur-sm">
@@ -242,8 +301,8 @@ export default function CategoryPage() {
       </header>
 
       <main className="container py-8 lg:py-10">
-        <div className={`grid gap-6 ${isSportsCardsPage ? "xl:grid-cols-[300px_minmax(0,1fr)]" : "xl:grid-cols-[280px_minmax(0,1fr)]"}`}>
-          <aside className={`rounded-[2rem] border p-6 shadow-[0_20px_60px_rgba(0,0,0,0.12)] ${theme.panelClassName}`}>
+        <div className={`grid gap-6 ${isSportsCardsPage ? "xl:grid-cols-[320px_minmax(0,1fr)] xl:items-start" : "xl:grid-cols-[280px_minmax(0,1fr)]"}`}>
+          <aside className={`rounded-[2rem] border p-6 shadow-[0_20px_60px_rgba(0,0,0,0.12)] ${theme.panelClassName} ${isSportsCardsPage ? "xl:sticky xl:top-6" : ""}`}>
             <div className="flex items-center gap-3">
               <Search className={`h-5 w-5 ${theme.accentClassName}`} />
               <h2 className="text-3xl font-semibold" style={{ fontFamily: theme.headingFont }}>Filters</h2>
@@ -319,7 +378,7 @@ export default function CategoryPage() {
 
           <section className="space-y-6">
             <div className={`rounded-[2rem] border p-6 ${theme.panelClassName}`}>
-              <div className={`grid gap-4 ${isSportsCardsPage ? "xl:grid-cols-[minmax(0,1fr)_320px] xl:items-end" : "lg:flex lg:items-end lg:justify-between"}`}>
+              <div className={`grid gap-5 ${isSportsCardsPage ? "xl:grid-cols-[minmax(0,1fr)_340px] xl:items-start" : "lg:flex lg:items-end lg:justify-between"}`}>
                 <div>
                   <p className={`text-xs font-semibold uppercase tracking-[0.32em] ${theme.accentClassName}`}>Curated exchange</p>
                   <h2 className="mt-3 text-4xl font-semibold" style={{ fontFamily: theme.headingFont }}>{theme.heading}</h2>
@@ -344,16 +403,19 @@ export default function CategoryPage() {
                 </div>
               </div>
               {isSportsCardsPage ? (
-                <div className="mt-6 grid gap-4 lg:grid-cols-3">
+                <div className="mt-7 grid gap-4 lg:grid-cols-[1.15fr_1fr_1fr]">
                   {benchmark?.summaryHighlights.map((item, index) => {
                     const Icon = index === 0 ? Trophy : index === 1 ? ShieldCheck : ArrowRight;
                     return (
-                      <div key={item.eyebrow} className="rounded-[1.5rem] border border-current/10 bg-white/50 p-5 shadow-[0_16px_35px_rgba(8,47,73,0.08)]">
+                      <div
+                        key={item.eyebrow}
+                        className={`rounded-[1.65rem] border p-5 shadow-[0_16px_35px_rgba(8,47,73,0.08)] ${index === 0 ? "border-[#0b3e51]/18 bg-[#fff5df]" : "border-current/10 bg-white/58"}`}
+                      >
                         <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.22em] opacity-65">
                           <Icon className="h-4 w-4" />
                           {item.eyebrow}
                         </div>
-                        <p className="mt-4 text-lg font-semibold leading-7">{item.title}</p>
+                        <p className={`mt-4 font-semibold leading-7 ${index === 0 ? "text-[1.45rem]" : "text-lg"}`}>{item.title}</p>
                         <p className="mt-3 text-sm leading-7 opacity-75">{item.description}</p>
                       </div>
                     );
@@ -371,22 +433,28 @@ export default function CategoryPage() {
                   </div>
                   <p className="max-w-2xl text-sm leading-7 opacity-75">These editorial cards should feel closer to featured inventory than placeholders, giving the Sports Cards exchange enough collector energy even before the live grid fills out.</p>
                 </div>
-                <div className="grid gap-5 lg:grid-cols-[1.2fr_0.9fr_0.9fr]">
+                <div className="grid gap-5 lg:grid-cols-[1.25fr_0.92fr_0.92fr] lg:items-stretch">
                   {benchmarkSpotlights.map((card, index) => (
                     <article
                       key={card.title}
-                      className={`group overflow-hidden rounded-[2rem] border shadow-[0_22px_55px_rgba(15,76,92,0.16)] transition hover:-translate-y-1 ${theme.cardClassName} ${index === 0 ? "lg:row-span-1" : ""}`}
+                      className={`group overflow-hidden rounded-[2rem] border shadow-[0_22px_55px_rgba(15,76,92,0.16)] transition hover:-translate-y-1 ${index === 0 ? "border-[#104255]/25 bg-[#fff7e8]" : theme.cardClassName}`}
                     >
-                      <div className={`relative overflow-hidden border-b border-current/10 bg-[#12394b] ${index === 0 ? "aspect-[16/11]" : "aspect-[4/3]"}`}>
-                        <img src={card.imageUrl} alt={card.title} className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]" />
-                        <div className="absolute inset-0 bg-gradient-to-t from-[#06202c]/70 via-transparent to-transparent" />
+                      <div className={`relative overflow-hidden border-b border-current/10 bg-[#12394b] ${index === 0 ? "aspect-[16/12]" : "aspect-[4/3]"}`}>
+                        <img src={card.imageUrl} alt={card.title} className={`h-full w-full transition duration-500 group-hover:scale-[1.03] ${index === 0 ? "object-cover object-top" : "object-cover"}`} />
+                        <div className={`absolute inset-0 ${index === 0 ? "bg-gradient-to-t from-[#041821]/82 via-[#041821]/14 to-transparent" : "bg-gradient-to-t from-[#06202c]/70 via-transparent to-transparent"}`} />
                         <div className="absolute left-4 top-4 rounded-full border border-white/25 bg-[#06202c]/70 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-[#fff3d5] backdrop-blur-sm">
                           {index === 0 ? "Centerpiece" : "Showcase"}
                         </div>
+                        {index === 0 ? (
+                          <div className="absolute inset-x-0 bottom-0 p-5 text-[#fff3d5]">
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.32em] text-white/65">Card-show headliner</p>
+                            <p className="mt-3 text-3xl font-semibold leading-tight">{card.title}</p>
+                          </div>
+                        ) : null}
                       </div>
-                      <div className="space-y-3 p-5 lg:p-6">
+                      <div className={`space-y-3 ${index === 0 ? "p-6 lg:p-7" : "p-5 lg:p-6"}`}>
                         <p className="text-xs font-semibold uppercase tracking-[0.24em] opacity-60">{card.eyebrow}</p>
-                        <h3 className={`font-semibold leading-tight ${index === 0 ? "text-[2rem]" : "text-2xl"}`}>{card.title}</h3>
+                        {index === 0 ? null : <h3 className="text-2xl font-semibold leading-tight">{card.title}</h3>}
                         <p className="text-sm leading-7 opacity-80">{card.description}</p>
                       </div>
                     </article>

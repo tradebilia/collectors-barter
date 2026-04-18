@@ -87,3 +87,13 @@
 - [ ] Verify that the non-Sports-Cards category pages render the benchmark support sections, shortcut chips, spotlight cards, and stronger empty states correctly
 - [ ] Extend benchmark coverage beyond Sports Cards and Comics so the broader rollout is protected by tests
 - [x] Focus the current refinement pass exclusively on the Sports Cards category page before making further changes to other category pages
+- [ ] Refine the Sports Cards page visual look, spacing, and layout hierarchy until it feels like the settled category benchmark
+- [ ] Redesign the Sports Cards page to match the uploaded retro sports-card marketplace reference more closely, especially the flatter cream-and-teal layout, stronger left filter column, and literal card-grid presentation
+- [x] Redesign the Sports Cards top banner so it uses a reflected wallpaper of collectible cards behind the heading, closer to the uploaded sports-card reference
+- [x] Remove the Sports Cards top-banner benchmark centerpiece panel so the header feels closer to the uploaded retro reference
+- [x] Redesign the Sports Cards top-banner wallpaper so collectible card photos stay uncropped and more legible in the background
+- [x] Restore the Tradebilia wordmark and circle logo prominently inside the Sports Cards top banner
+- [x] Review the current Tradebilia logo in context before making further Sports Cards or broader category-page branding changes
+- [x] Correct the Tradebilia logo review so the surrounding deep navy field is treated as presentation background rather than part of the logo mark itself
+- [x] Add a spinning motion treatment for the Tradebilia multicolor wheel while keeping the rest of the brand mark stable and legible
+- [x] Apply the spinning multicolor Tradebilia wheel on the main homepage only while keeping all other logo appearances static
