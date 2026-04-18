@@ -13,7 +13,7 @@ describe("resolveTradebiliaListingImage", () => {
     expect(resolveTradebiliaListingImage({
       title: "1986-87 Michael Jordan Rookie",
       category: "sports_cards",
-    })).toBe("/manus-storage/1986-87%20Michael%20Jordan_a9dcf0a5.jpg");
+    })).toBe("/manus-storage/michael-jordan-rookie_4440f620.jpg");
   });
 
   it("falls back to the category image when no keyword match exists", () => {

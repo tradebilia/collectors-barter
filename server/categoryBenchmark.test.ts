@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { getTradebiliaCategoryBenchmark, getTradebiliaCategoryTheme } from "@/lib/tradebilia";
 
-describe("sports cards category benchmark", () => {
+describe("tradebilia category benchmarks", () => {
   it("defines the expected quick filters, summary panels, and spotlight cards", () => {
     const benchmark = getTradebiliaCategoryBenchmark("sports_cards");
 
@@ -28,5 +28,21 @@ describe("sports cards category benchmark", () => {
     expect(theme?.pageClassName).toContain("#ead6ac");
     expect(benchmark?.emptyStateTitle).toBe("No live sports-card listings match these filters yet.");
     expect(benchmark?.emptyStateBuildoutNotes).toHaveLength(2);
+  });
+
+  it("provides benchmark content for comics so the sports-cards structure can roll out without losing category identity", () => {
+    const theme = getTradebiliaCategoryTheme("comics");
+    const benchmark = getTradebiliaCategoryBenchmark("comics");
+
+    expect(theme?.heading).toContain("Comic grails");
+    expect(benchmark?.quickFilters).toEqual([
+      "Key issues",
+      "Signed copies",
+      "Golden age",
+      "First appearances",
+    ]);
+    expect(benchmark?.heroNotesEyebrow).toBe("Collector notes");
+    expect(benchmark?.spotlights).toHaveLength(3);
+    expect(benchmark?.emptyStateTitle).toBe("No live comics listings match these filters yet.");
   });
 });

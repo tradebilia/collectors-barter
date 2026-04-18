@@ -22,3 +22,9 @@ The Sports Cards page includes several details that should **not** be copied ver
 ## Reusable implementation intent
 
 The benchmark should now be treated as a **layout model** rather than a one-off visual exception. As the remaining category pages are refined, the implementation should favor shared composition patterns where possible, with each category swapping in its own theme data, shortcut vocabulary, and spotlight content.
+
+## Rollout audit notes
+
+The first comparison pass confirms that **Comics** still uses the older category-page structure. Relative to Sports Cards, it lacks the tighter benchmark support panel in the hero, the category-specific shortcut chips, the richer curated-summary blocks, and the more purposeful standby treatment when listings are sparse. This makes Comics the clearest next candidate for adopting the shared benchmark structure while preserving its own crimson editorial identity.
+
+The **Vintage Toys** page now shows the benchmark structure much more clearly than the earlier Comics state: the tighter hero is in place, the summary card is stronger, and the new support section has begun to appear beneath the summary area. This suggests the broader rollout is taking hold, but the remaining pages still need explicit verification one by one before the all-category audit can be considered complete.

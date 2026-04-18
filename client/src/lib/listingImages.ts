@@ -20,15 +20,15 @@ const categoryImageMap: Record<string, string> = {
 const keywordImageMap: Array<{ keywords: string[]; imageUrl: string }> = [
   {
     keywords: ["michael jordan", "jordan rookie"],
-    imageUrl: "/manus-storage/1986-87 Michael Jordan_a9dcf0a5.jpg",
+    imageUrl: "/manus-storage/michael-jordan-rookie_4440f620.jpg",
   },
   {
     keywords: ["walter payton"],
-    imageUrl: "/manus-storage/1976 Walter Payton_0773dd5e.png",
+    imageUrl: "/manus-storage/walter-payton-rookie_9fa05678.png",
   },
   {
     keywords: ["rickey henderson"],
-    imageUrl: "/manus-storage/1980 Rickey Henderson_b1d52546.png",
+    imageUrl: "/manus-storage/rickey-henderson-rookie_49b0e3a1.png",
   },
   {
     keywords: ["joe montana"],

@@ -275,6 +275,263 @@ export const tradebiliaCategoryBenchmarks: Partial<Record<TradebiliaCategorySlug
   },
 };
 
+const fallbackCategoryBenchmarks: Partial<Record<TradebiliaCategorySlug, TradebiliaCategoryBenchmark>> = {
+  comics: {
+    quickFilters: ["Key issues", "Signed copies", "Golden age", "First appearances"],
+    railGuidance: "Use the Comics rail to move from issue search into publisher, era, and condition signals without losing the editorial feel.",
+    heroNotesEyebrow: "Collector notes",
+    heroNotes: [
+      "Frame Comics like a premium convention wall: dramatic hero tone, decisive search, and visible issue context from the first screen.",
+      "Keep signed books, keys, and slabbed grails in the first browsing impression.",
+      "Let the crimson editorial styling stay specific to Comics even while the shared benchmark structure remains intact.",
+    ],
+    summaryHighlights: [
+      { eyebrow: "Editorial lane", title: "Lead with key issues and collector-significant appearances.", description: "The page should feel curated before it feels crowded." },
+      { eyebrow: "Trust cues", title: "Surface grading and signature confidence before trade actions appear.", description: "Collectors should see condition logic early." },
+      { eyebrow: "Discovery intent", title: "Use spotlight cards to keep the exchange lively even when live inventory is thin.", description: "The layout should still teach visitors what belongs here." },
+    ],
+    spotlights: [
+      { eyebrow: "Silver-age grail", title: "Amazing Fantasy #15", description: "Use an unmistakable marquee issue to anchor the editorial row." },
+      { eyebrow: "Mutant milestone", title: "Giant-Size X-Men #1", description: "A second lane keeps the page broader than one franchise or publisher." },
+      { eyebrow: "Signed showcase", title: "Signed Spawn #1", description: "Show how autograph-forward inventory can still sit comfortably inside the Comics exchange." },
+    ],
+    emptyStateEyebrow: "Comics exchange standby",
+    emptyStateTitle: "No live comics listings match these filters yet.",
+    emptyStateDescription: "The benchmark layout keeps Comics purposeful even while inventory is light, steering visitors toward members and adjacent discovery instead of a dead end.",
+    emptyStateBuildoutTitle: "Suggested next build-outs",
+    emptyStateBuildoutNotes: [
+      "Seed a few showcase comics so the editorial row always demonstrates the page rhythm.",
+      "Carry this benchmark structure into the other narrative-heavy categories next.",
+    ],
+  },
+  vintage_toys: {
+    quickFilters: ["Boxed legends", "Star Wars", "Mint on card", "1980s favorites"],
+    railGuidance: "Use the Vintage Toys rail to move from franchise search into era, maker, and packaging condition without losing the museum-like tone.",
+    heroNotesEyebrow: "Collector notes",
+    heroNotes: [
+      "Vintage Toys should read like a curated showroom: clean hierarchy, boxed nostalgia, and a stronger sense of franchise-era browsing.",
+      "Keep boxed figures, carded toys, and franchise grails near the top of the first impression.",
+      "Let the benchmark structure carry the page while the silver-olive palette remains specific to Vintage Toys.",
+    ],
+    summaryHighlights: [
+      { eyebrow: "Showcase lane", title: "Lead with boxed icons and mint-on-card staples.", description: "The page should feel archival but not static." },
+      { eyebrow: "Trust cues", title: "Keep package condition, franchise, and completeness visible early.", description: "Toy collectors need confidence before trade intent builds." },
+      { eyebrow: "Discovery intent", title: "Use spotlight cards to prove depth even when live inventory is limited.", description: "The benchmark should still communicate collector breadth." },
+    ],
+    spotlights: [
+      { eyebrow: "Franchise anchor", title: "Star Wars Kenner Figure", description: "Anchor the page with a universally recognizable vintage toy lane." },
+      { eyebrow: "Carded classic", title: "1980s G.I. Joe Mint on Card", description: "Support the boxed-to-carded range in a single browsing row." },
+      { eyebrow: "Playroom legend", title: "Vintage Hot Wheels Redline", description: "Give the lower shelf enough visual energy to feel curated rather than sparse." },
+    ],
+    emptyStateEyebrow: "Vintage Toys exchange standby",
+    emptyStateTitle: "No live vintage-toy listings match these filters yet.",
+    emptyStateDescription: "This showroom layout is ready for fuller inventory, but until then it should still guide visitors toward sellers, franchise paths, and adjacent category discovery.",
+    emptyStateBuildoutTitle: "Suggested next build-outs",
+    emptyStateBuildoutNotes: [
+      "Seed a few boxed and carded toy examples so the page always feels alive.",
+      "Reuse this benchmark rhythm in the remaining nostalgia-forward categories.",
+    ],
+  },
+  video_games: {
+    quickFilters: ["Sealed games", "Nintendo", "PlayStation", "Graded copies"],
+    railGuidance: "Use the Video Games rail to move from title search into platform, publisher, and condition with an arcade-clean browsing pattern.",
+    heroNotesEyebrow: "Collector notes",
+    heroNotes: [
+      "Video Games should feel like a premium retro aisle: bright platform energy, quick search, and high-confidence condition cues.",
+      "Prioritize sealed games, grail-era franchises, and graded copies in the first impression.",
+      "Keep the neon-green contrast unique to Video Games while the page structure follows the benchmark.",
+    ],
+    summaryHighlights: [
+      { eyebrow: "Console lane", title: "Lead with sealed classics and recognizable franchise anchors.", description: "The page should feel energetic before the grid even fills in." },
+      { eyebrow: "Trust cues", title: "Surface platform, completeness, and grading context before trade actions.", description: "Collectors need certainty around edition and state." },
+      { eyebrow: "Discovery intent", title: "Spotlight cards should demonstrate range across consoles and eras.", description: "The row should teach the visitor what belongs in the exchange." },
+    ],
+    spotlights: [
+      { eyebrow: "Sealed grail", title: "Sealed Super Mario Bros.", description: "Anchor the row with an iconic sealed game benchmark." },
+      { eyebrow: "Platform legend", title: "Legend of Zelda Ocarina of Time", description: "A second lane broadens the page beyond one generation." },
+      { eyebrow: "Collector showcase", title: "Graded Sonic the Hedgehog", description: "Keep the final spotlight energetic and immediately recognizable." },
+    ],
+    emptyStateEyebrow: "Video Games exchange standby",
+    emptyStateTitle: "No live video-game listings match these filters yet.",
+    emptyStateDescription: "The benchmark keeps the arcade-floor energy intact even while inventory is thin, guiding members toward other discovery paths instead of an abrupt stop.",
+    emptyStateBuildoutTitle: "Suggested next build-outs",
+    emptyStateBuildoutNotes: [
+      "Seed a few platform-defining games so the spotlight row always teaches the intended rhythm.",
+      "Carry this benchmark structure into the brighter, high-energy categories next.",
+    ],
+  },
+  stamps: {
+    quickFilters: ["Classic issues", "Postal history", "Mint sets", "International"],
+    railGuidance: "Use the Stamps rail to balance calm archival browsing with quick access to country, era, and condition cues.",
+    heroNotesEyebrow: "Collector notes",
+    heroNotes: [
+      "Stamps should feel archival and measured: softer motion, precise language, and a clean collector-catalog hierarchy.",
+      "Prioritize classic issues, mint sets, and postal-history highlights in the opening view.",
+      "Keep the lavender catalog tone unique to Stamps while the benchmark structure remains shared.",
+    ],
+    summaryHighlights: [
+      { eyebrow: "Archive lane", title: "Lead with country-defining issues and mint-set highlights.", description: "The page should feel curated like a formal catalog." },
+      { eyebrow: "Trust cues", title: "Keep era, origin, and condition clarity visible before trade intent appears.", description: "Philatelic trust comes from precise detail." },
+      { eyebrow: "Discovery intent", title: "Use spotlight cards to keep a quiet category visually alive.", description: "The benchmark should avoid flat empty-state browsing." },
+    ],
+    spotlights: [
+      { eyebrow: "Historic anchor", title: "Inverted Jenny Showcase", description: "Lead with a universally recognized philatelic reference point." },
+      { eyebrow: "Postal history", title: "Victorian Postal Cover", description: "Use a second lane to signal broader collecting styles." },
+      { eyebrow: "Mint-set lane", title: "Classic U.S. Mint Sheet", description: "Give the lower row enough visual gravity for light-inventory moments." },
+    ],
+    emptyStateEyebrow: "Stamps exchange standby",
+    emptyStateTitle: "No live stamp listings match these filters yet.",
+    emptyStateDescription: "The benchmark now gives Stamps a more intentional catalog-like rhythm, guiding visitors toward related discovery rather than an empty-feeling stop.",
+    emptyStateBuildoutTitle: "Suggested next build-outs",
+    emptyStateBuildoutNotes: [
+      "Seed a few postal-history and mint examples so the page always communicates category depth.",
+      "Use this benchmark as the template for the quieter archival categories.",
+    ],
+  },
+  coins: {
+    quickFilters: ["Gold coins", "Morgan dollars", "Ancients", "Certified rarities"],
+    railGuidance: "Use the Coins rail to move from denomination search into era, metal, and certification without sacrificing the formal cabinet feel.",
+    heroNotesEyebrow: "Collector notes",
+    heroNotes: [
+      "Coins should feel formal and high-trust: deep cabinet tones, clear rarity language, and confident certification signals.",
+      "Lead with gold, key-date, and certified standout pieces in the first browsing impression.",
+      "Keep the navy-and-metallic identity unique to Coins while the benchmark layout pattern stays reusable.",
+    ],
+    summaryHighlights: [
+      { eyebrow: "Cabinet lane", title: "Lead with high-confidence rarities and recognizable denomination anchors.", description: "The page should feel premium before it feels dense." },
+      { eyebrow: "Trust cues", title: "Surface certification, metal, and era context before trade actions.", description: "Numismatic browsing depends on provenance and clarity." },
+      { eyebrow: "Discovery intent", title: "Use spotlight cards to keep the category ceremonial even when inventory is sparse.", description: "The layout should still communicate prestige." },
+    ],
+    spotlights: [
+      { eyebrow: "Gold anchor", title: "Saint-Gaudens Double Eagle", description: "Use a flagship gold piece to anchor the editorial row." },
+      { eyebrow: "Silver classic", title: "Morgan Dollar Showcase", description: "A second lane broadens the page into mainstream numismatic collecting." },
+      { eyebrow: "Ancient lane", title: "Roman Imperial Coin", description: "Keep the final card distinctive enough to suggest depth across eras." },
+    ],
+    emptyStateEyebrow: "Coins exchange standby",
+    emptyStateTitle: "No live coin listings match these filters yet.",
+    emptyStateDescription: "The benchmark gives Coins a stronger auction-cabinet rhythm, helping visitors continue discovery even when the live inventory is temporarily light.",
+    emptyStateBuildoutTitle: "Suggested next build-outs",
+    emptyStateBuildoutNotes: [
+      "Seed a few denomination anchors so the page always demonstrates the intended cabinet rhythm.",
+      "Use this benchmark to guide the remaining formal luxury-leaning categories.",
+    ],
+  },
+  pokemon: {
+    quickFilters: ["Chase cards", "Vintage holo", "Charizard", "PSA slabs"],
+    railGuidance: "Use the Pokemon rail to move from card-name search into set, era, and grading cues with a brighter collector-friendly hierarchy.",
+    heroNotesEyebrow: "Collector notes",
+    heroNotes: [
+      "Pokemon should feel energetic and bright: recognizable chase-card language, clean search behavior, and playful but premium hierarchy.",
+      "Lead with vintage holos, Charizard-class icons, and slabbed chase cards in the opening view.",
+      "Keep the cobalt-and-yellow energy specific to Pokemon while the benchmark structure remains shared.",
+    ],
+    summaryHighlights: [
+      { eyebrow: "Chase lane", title: "Lead with recognizable grails and set-defining chase cards.", description: "The page should communicate excitement before it communicates volume." },
+      { eyebrow: "Trust cues", title: "Surface set, era, and grading clarity before trade actions appear.", description: "Pokemon collectors move quickly when the signals are clear." },
+      { eyebrow: "Discovery intent", title: "Use spotlight cards to keep the exchange playful even during low inventory moments.", description: "The structure should feel alive and collector-specific." },
+    ],
+    spotlights: [
+      { eyebrow: "Signature grail", title: "1999 Charizard Holo", description: "Anchor the row with a universally understood Pokemon centerpiece." },
+      { eyebrow: "Modern chase", title: "Sun & Moon Alt Art", description: "A second lane keeps the page relevant to newer collectors too." },
+      { eyebrow: "Web-era discovery", title: "Edge of Spider-Verse Variant", description: "Use a lively third card to maintain color and discovery energy." },
+    ],
+    emptyStateEyebrow: "Pokemon exchange standby",
+    emptyStateTitle: "No live Pokemon listings match these filters yet.",
+    emptyStateDescription: "The benchmark now gives Pokemon a stronger chase-card rhythm, guiding visitors into members and adjacent discovery instead of an abrupt empty result.",
+    emptyStateBuildoutTitle: "Suggested next build-outs",
+    emptyStateBuildoutNotes: [
+      "Seed a few chase-card examples so the page always demonstrates the intended energy.",
+      "Carry this benchmark into the other bright, fandom-driven categories next.",
+    ],
+  },
+  movies: {
+    quickFilters: ["Posters", "Props", "Signed memorabilia", "Franchise pieces"],
+    railGuidance: "Use the Movies rail to move from title search into format, franchise, and authenticity without losing the premiere-night tone.",
+    heroNotesEyebrow: "Collector notes",
+    heroNotes: [
+      "Movies should feel like a red-carpet catalog: strong cinematic contrast, quick title search, and visible provenance cues.",
+      "Lead with posters, certified autographs, and franchise props in the first impression.",
+      "Keep the burgundy-and-marquee feel specific to Movies while the benchmark structure remains shared.",
+    ],
+    summaryHighlights: [
+      { eyebrow: "Premiere lane", title: "Lead with posters, props, and certified film memorabilia.", description: "The page should read like a premiere-night catalog." },
+      { eyebrow: "Trust cues", title: "Surface format, certification, and franchise confidence before trade actions.", description: "Film memorabilia needs provenance-first browsing." },
+      { eyebrow: "Discovery intent", title: "Use spotlight cards to keep the category cinematic even when inventory runs light.", description: "The layout should still teach the visitor what belongs here." },
+    ],
+    spotlights: [
+      { eyebrow: "Poster anchor", title: "Star Wars One-Sheet", description: "Lead with a universally recognizable poster format for instant clarity." },
+      { eyebrow: "Prop lane", title: "Screen-Used Film Prop", description: "A second lane broadens the category beyond paper collectibles." },
+      { eyebrow: "Signed showcase", title: "Signed Franchise Lobby Card", description: "Keep the final spotlight distinctly cinematic and collectible." },
+    ],
+    emptyStateEyebrow: "Movies exchange standby",
+    emptyStateTitle: "No live movie listings match these filters yet.",
+    emptyStateDescription: "The benchmark gives Movies a stronger marquee rhythm, helping visitors keep exploring even when the live exchange is quiet.",
+    emptyStateBuildoutTitle: "Suggested next build-outs",
+    emptyStateBuildoutNotes: [
+      "Seed a few poster and prop examples so the page always demonstrates the cinematic layout rhythm.",
+      "Use this benchmark in the remaining fandom-forward categories where atmosphere matters most.",
+    ],
+  },
+  autographs: {
+    quickFilters: ["Signed photos", "Authenticated", "Hall of Fame", "Premium ink"],
+    railGuidance: "Use the Autographs rail to move from signer search into item type, authentication, and era without breaking the formal gallery feel.",
+    heroNotesEyebrow: "Collector notes",
+    heroNotes: [
+      "Autographs should feel ceremonious and trust-heavy: clear signature provenance, strong item framing, and elegant restraint.",
+      "Lead with authenticated signatures, signed photos, and high-recognition names in the opening view.",
+      "Keep the charcoal-and-parchment gallery mood unique to Autographs while the benchmark structure remains shared.",
+    ],
+    summaryHighlights: [
+      { eyebrow: "Gallery lane", title: "Lead with authenticated signatures and high-recognition names.", description: "The page should feel elegant before it feels transactional." },
+      { eyebrow: "Trust cues", title: "Surface authenticator and item-type confidence before trade actions.", description: "Ink collecting depends heavily on provenance." },
+      { eyebrow: "Discovery intent", title: "Use spotlight cards to keep the gallery alive even when inventory is limited.", description: "The benchmark should communicate prestige and clarity." },
+    ],
+    spotlights: [
+      { eyebrow: "Signature anchor", title: "Joe Montana Signed Card", description: "Use a clear autograph centerpiece with broad collector recognition." },
+      { eyebrow: "Hall-of-fame lane", title: "Walter Payton Signed Photo", description: "A second lane shows how the category spans more than one format." },
+      { eyebrow: "Premium ink", title: "Authenticated Celebrity Signature", description: "Keep the final spotlight refined and provenance-driven." },
+    ],
+    emptyStateEyebrow: "Autographs exchange standby",
+    emptyStateTitle: "No live autograph listings match these filters yet.",
+    emptyStateDescription: "The benchmark gives Autographs a stronger gallery rhythm, helping visitors continue discovery even during a quiet inventory window.",
+    emptyStateBuildoutTitle: "Suggested next build-outs",
+    emptyStateBuildoutNotes: [
+      "Seed a few authenticated signatures so the page always demonstrates its intended gallery tone.",
+      "Carry this benchmark into any remaining provenance-heavy experiences.",
+    ],
+  },
+  disney_pins: {
+    quickFilters: ["Park releases", "Limited edition", "Character sets", "Framed displays"],
+    railGuidance: "Use the Disney Pins rail to move from character or park search into series, edition, and display context without losing the playful premium tone.",
+    heroNotesEyebrow: "Collector notes",
+    heroNotes: [
+      "Disney Pins should feel playful but collected: brighter storytelling, clean edition cues, and a polished enamel-display rhythm.",
+      "Lead with park exclusives, limited editions, and character-driven sets in the first impression.",
+      "Keep the jewel-tone whimsy specific to Disney Pins while the benchmark structure remains shared.",
+    ],
+    summaryHighlights: [
+      { eyebrow: "Showcase lane", title: "Lead with limited editions and recognizable character-driven releases.", description: "The page should feel lively without becoming noisy." },
+      { eyebrow: "Trust cues", title: "Surface series, park origin, and edition confidence before trade actions.", description: "Pin collectors rely on release clarity and finish cues." },
+      { eyebrow: "Discovery intent", title: "Use spotlight cards to keep the page magical even when inventory is light.", description: "The benchmark should preserve delight alongside structure." },
+    ],
+    spotlights: [
+      { eyebrow: "Park anchor", title: "Limited Edition Park Pin", description: "Anchor the row with a polished, instantly legible park-release lane." },
+      { eyebrow: "Character set", title: "Character Trio Pin Set", description: "A second lane shows the page can support set-based collecting too." },
+      { eyebrow: "Display showcase", title: "Framed Resort Pin Display", description: "Use a final spotlight that feels premium rather than merely playful." },
+    ],
+    emptyStateEyebrow: "Disney Pins exchange standby",
+    emptyStateTitle: "No live Disney Pin listings match these filters yet.",
+    emptyStateDescription: "The benchmark now gives Disney Pins a more intentional enamel-display rhythm, guiding visitors toward adjacent discovery instead of a dead end.",
+    emptyStateBuildoutTitle: "Suggested next build-outs",
+    emptyStateBuildoutNotes: [
+      "Seed a few limited-edition and park-release examples so the page always demonstrates the intended rhythm.",
+      "Use this benchmark to finish the most playful category experiences with consistent structure.",
+    ],
+  },
+};
+
 export function getTradebiliaCategoryBenchmark(slug: string) {
-  return tradebiliaCategoryBenchmarks[slug as TradebiliaCategorySlug] ?? null;
+  return tradebiliaCategoryBenchmarks[slug as TradebiliaCategorySlug]
+    ?? fallbackCategoryBenchmarks[slug as TradebiliaCategorySlug]
+    ?? null;
 }

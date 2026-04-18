@@ -348,12 +348,13 @@ export default function CategoryPage() {
                   {benchmark?.summaryHighlights.map((item, index) => {
                     const Icon = index === 0 ? Trophy : index === 1 ? ShieldCheck : ArrowRight;
                     return (
-                      <div key={item.eyebrow} className="rounded-[1.5rem] border border-current/10 bg-white/45 p-5">
+                      <div key={item.eyebrow} className="rounded-[1.5rem] border border-current/10 bg-white/50 p-5 shadow-[0_16px_35px_rgba(8,47,73,0.08)]">
                         <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.22em] opacity-65">
                           <Icon className="h-4 w-4" />
                           {item.eyebrow}
                         </div>
-                        <p className="mt-4 text-lg font-semibold">{item.title}</p>
+                        <p className="mt-4 text-lg font-semibold leading-7">{item.title}</p>
+                        <p className="mt-3 text-sm leading-7 opacity-75">{item.description}</p>
                       </div>
                     );
                   })}
@@ -362,20 +363,36 @@ export default function CategoryPage() {
             </div>
 
             {isSportsCardsPage ? (
-              <div className="grid gap-5 md:grid-cols-3">
-                {benchmarkSpotlights.map(card => (
-                  <article key={card.title} className={`overflow-hidden rounded-[2rem] border ${theme.cardClassName}`}>
-                    <div className="aspect-[4/3] overflow-hidden border-b border-current/10 bg-black/10">
-                      <img src={card.imageUrl} alt={card.title} className="h-full w-full object-cover" />
-                    </div>
-                    <div className="space-y-3 p-5">
-                      <p className="text-xs font-semibold uppercase tracking-[0.24em] opacity-60">{card.eyebrow}</p>
-                      <h3 className="text-2xl font-semibold leading-tight">{card.title}</h3>
-                      <p className="text-sm leading-7 opacity-80">{card.description}</p>
-                    </div>
-                  </article>
-                ))}
-              </div>
+              <section className="space-y-5">
+                <div className="flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
+                  <div>
+                    <p className={`text-xs font-semibold uppercase tracking-[0.3em] ${theme.accentClassName}`}>Showcase grails</p>
+                    <h3 className="mt-3 text-3xl font-semibold" style={{ fontFamily: theme.headingFont }}>Featured cardboard that makes the benchmark page feel alive.</h3>
+                  </div>
+                  <p className="max-w-2xl text-sm leading-7 opacity-75">These editorial cards should feel closer to featured inventory than placeholders, giving the Sports Cards exchange enough collector energy even before the live grid fills out.</p>
+                </div>
+                <div className="grid gap-5 lg:grid-cols-[1.2fr_0.9fr_0.9fr]">
+                  {benchmarkSpotlights.map((card, index) => (
+                    <article
+                      key={card.title}
+                      className={`group overflow-hidden rounded-[2rem] border shadow-[0_22px_55px_rgba(15,76,92,0.16)] transition hover:-translate-y-1 ${theme.cardClassName} ${index === 0 ? "lg:row-span-1" : ""}`}
+                    >
+                      <div className={`relative overflow-hidden border-b border-current/10 bg-[#12394b] ${index === 0 ? "aspect-[16/11]" : "aspect-[4/3]"}`}>
+                        <img src={card.imageUrl} alt={card.title} className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-[#06202c]/70 via-transparent to-transparent" />
+                        <div className="absolute left-4 top-4 rounded-full border border-white/25 bg-[#06202c]/70 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-[#fff3d5] backdrop-blur-sm">
+                          {index === 0 ? "Centerpiece" : "Showcase"}
+                        </div>
+                      </div>
+                      <div className="space-y-3 p-5 lg:p-6">
+                        <p className="text-xs font-semibold uppercase tracking-[0.24em] opacity-60">{card.eyebrow}</p>
+                        <h3 className={`font-semibold leading-tight ${index === 0 ? "text-[2rem]" : "text-2xl"}`}>{card.title}</h3>
+                        <p className="text-sm leading-7 opacity-80">{card.description}</p>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              </section>
             ) : null}
 
             {feedQuery.isLoading ? (

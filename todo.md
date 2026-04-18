@@ -83,3 +83,7 @@
 - [x] Document the reusable Sports Cards benchmark rules so the remaining category pages can be updated consistently
 - [x] Refactor the Sports Cards benchmark improvements into clearer shared category-page patterns where appropriate
 - [x] Add benchmark-specific test coverage that verifies the Sports Cards layout sections and empty-state structure beyond image resolution alone
+- [ ] Audit Comics, Vintage Toys, Video Games, Stamps, Coins, Pokemon, Movies, Autographs, and Disney Pins against the Sports Cards benchmark
+- [ ] Verify that the non-Sports-Cards category pages render the benchmark support sections, shortcut chips, spotlight cards, and stronger empty states correctly
+- [ ] Extend benchmark coverage beyond Sports Cards and Comics so the broader rollout is protected by tests
+- [x] Focus the current refinement pass exclusively on the Sports Cards category page before making further changes to other category pages

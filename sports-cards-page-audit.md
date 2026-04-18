@@ -26,3 +26,23 @@ There is, however, one important issue that surfaced during the visual review: t
 | Summary and template cards | The page now explains itself much more clearly and reads like a designed experience. | Reuse this pattern in a lighter form on future category pages. |
 | Editorial spotlight row | Good concept and helpful for filling the page when live inventory is light. | Fix the image sources so the cards display real artwork instead of broken placeholders. |
 | Empty state | Considerably improved and now supports discovery instead of dead-ending the user. | This standby pattern is worth adapting to the other categories. |
+
+## Below-the-fold review
+
+The lower portion of the Sports Cards page confirms two important things. First, the structural direction is strong: the three summary tiles, spotlight row, and standby section create a real benchmark pattern that is more intentional than the earlier category layouts. Second, the current spotlight cards still feel underpowered because the image area is not carrying enough visual weight. In the live page, the image region reads too quiet relative to the strong typography beneath it, so the cards do not yet deliver the premium card-show energy implied by the rest of the page.
+
+The most useful next refinement would be to strengthen the spotlight-card presentation itself. The Sports Cards page would benefit from either larger, more decisive imagery, a tighter card aspect ratio, or a more clearly framed showcase treatment so the Michael Jordan, Walter Payton, and Rickey Henderson references feel like featured grails rather than placeholder editorial blocks.
+
+## Live review after showcase refinement
+
+The Sports Cards page now has a clearer editorial middle section. The summary cards are richer because they include supporting copy, and the new showcase header gives the lower half of the page a stronger narrative handoff from filters into featured content. That part is moving in the right direction.
+
+The main remaining issue is that the showcase image panels still are not delivering the expected visual payoff. In the live browser, the card tops read mostly as dark teal blocks rather than clear collectible photography, so the section still feels more like a layout scaffold than a fully convincing premium marketplace surface. The next Sports Cards-specific fix should therefore focus on the image treatment itself: either confirm the image sources, adjust the resolver mapping, or change the presentation so the collectible artwork is unmistakably visible.
+
+## Follow-up after remapping Sports Cards assets
+
+After repointing the three Sports Cards showcase items to freshly uploaded asset URLs, the page structure still improves more than the imagery itself. In the live page, the card tops continue to read as mostly dark teal image fields rather than unmistakable collectible photos, so there is still a gap between the intended premium showcase and what the viewer actually perceives. This means the remaining problem is no longer just benchmark layout; it is now specifically about how the chosen artwork is rendering inside the showcase treatment.
+
+## Asset delivery check
+
+The Sports Cards showcase images are now loading correctly at the browser level. The latest live inspection confirms that the Jordan, Payton, and Henderson assets resolve with non-zero intrinsic dimensions, which means the earlier failure was caused by the previous asset paths rather than by the page layout itself. Any remaining work on this page can now focus on presentation and polish instead of broken media delivery.
