@@ -264,7 +264,7 @@ export default function CategoryPage() {
           </div>
         )}
       </header>
-      <nav className="border-t border-black/20 bg-black/65 backdrop-blur-sm">
+      <nav className="border-t border-black/20 bg-transparent backdrop-blur-none">
           <div className="container grid overflow-hidden md:grid-cols-5 xl:grid-cols-10">
             {tradebiliaCategories.map(category => (
               <Link
