@@ -175,7 +175,7 @@ export default function CategoryPage() {
         {isSportsCardsPage ? (
           <>
             <div className="pointer-events-none absolute inset-0">
-              <img src={SPORTS_CARDS_WALLPAPER_URL} alt="" aria-hidden="true" className="h-full w-full object-cover" />
+              <img src={SPORTS_CARDS_WALLPAPER_URL} alt="" aria-hidden="true" className="h-full w-full object-contain" />
               <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-black/60" />
             </div>
             <div className="container relative py-0 lg:py-1 max-h-[300px] overflow-hidden">

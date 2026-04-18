@@ -126,3 +126,4 @@
 - [x] Adjust the stat cards (Listings, Collectors, Completed Trades) to fit the compact hero
 - [x] Remove the quick filter shortcut bubbles (Rookie cards, Hall of Fame, Signed slabs, Low-pop grails) from the Sports Cards hero section
 - [x] Rebuild the Sports Cards hero wallpaper background from scratch using the new Sports Cards image
+- [x] Adjust the wallpaper to show more cards from the image (use object-contain instead of object-cover to fit more of the image)
