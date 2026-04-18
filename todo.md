@@ -103,3 +103,6 @@
 - [x] Replace the current image to the left of the Tradebilia wordmark on the Sports Cards page with the shortform logo
 - [x] Remove the logo from the top-left area of the Sports Cards page header
 - [x] Place the shortform logo to the left of the Tradebilia name on the Sports Cards page header
+- [x] Identify why the shortform logo on the Sports Cards page appears inside a circle and adjust that container treatment if needed
+- [x] Create and save a longform Tradebilia logo file without the dark navy blue background for use in the current Sports Cards branding work
+- [x] Replace the current shortform logo and Tradebilia name in the Sports Cards header with the longform logo, with no circle around it

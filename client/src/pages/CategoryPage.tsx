@@ -161,7 +161,7 @@ export default function CategoryPage() {
     imageUrl: resolveTradebiliaListingImage({ title: card.title, category: slug }),
   }));
   const SPORTS_CARDS_WALLPAPER_URL = "/manus-storage/Sportscards_c0a71f5f.jpg";
-  const SPORTS_CARDS_SHORT_LOGO_URL = "/manus-storage/tradebilia-wheel-no-navy_32ff07d3.png";
+  const SPORTS_CARDS_LONG_LOGO_URL = "/manus-storage/tradebilia-longform-no-navy-clean_d2f04453.png";
 
   return (
     <div className={`min-h-screen ${theme.pageClassName}`}>
@@ -177,16 +177,11 @@ export default function CategoryPage() {
                   <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(8,39,48,0.94)_0%,rgba(8,39,48,0.68)_26%,rgba(8,39,48,0.34)_54%,rgba(8,39,48,0.76)_100%)]" />
                   <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(8,39,48,0.4)_0%,rgba(8,39,48,0.1)_35%,rgba(8,39,48,0.64)_100%)]" />
                 </div>
-                <div className="relative max-w-4xl text-[#fff4df]">
-                  <div className="flex flex-wrap items-center gap-4 lg:gap-6">
-                    <div className="flex h-20 w-20 items-center justify-center rounded-full bg-[rgba(255,243,213,0.08)] shadow-[0_10px_25px_rgba(0,0,0,0.24)] backdrop-blur-[2px] lg:h-24 lg:w-24">
-                      <img src={SPORTS_CARDS_SHORT_LOGO_URL} alt="Tradebilia short logo" className="h-14 w-14 object-contain lg:h-16 lg:w-16" />
-                    </div>
-                    <div className="border-l border-white/30 pl-4 lg:pl-6">
-                      <p className="text-[clamp(2.35rem,5vw,4.6rem)] font-black uppercase leading-none tracking-[0.03em] text-[#fff3d5]" style={{ fontFamily: theme.headingFont }}>Tradebilia</p>
-                      <p className="mt-2 text-sm uppercase tracking-[0.28em] text-white/80 lg:text-base">Collectors Trading Exchange</p>
-                    </div>
+                  <div className="relative max-w-4xl text-[#fff4df]">
+                  <div className="max-w-[26rem] lg:max-w-[34rem]">
+                    <img src={SPORTS_CARDS_LONG_LOGO_URL} alt="Tradebilia Collectors Trading Exchange" className="h-auto w-full object-contain" />
                   </div>
+
                   <p className="mt-7 text-xs font-semibold uppercase tracking-[0.36em] text-white/78">{theme.eyebrow}</p>
                   <h1 className="mt-3 max-w-5xl text-4xl leading-none sm:text-6xl lg:text-[5rem]" style={{ fontFamily: theme.headingFont }}>
                     {categoryLabel.toUpperCase()} EXCHANGE

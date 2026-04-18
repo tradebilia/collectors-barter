@@ -8,6 +8,13 @@ describe("Tradebilia category page layout", () => {
     "utf8",
   );
 
+  it("uses the transparent longform Tradebilia logo in the Sports Cards header without the old circular badge", () => {
+    expect(categoryPageSource).toContain('const SPORTS_CARDS_LONG_LOGO_URL = "/manus-storage/tradebilia-longform-no-navy-clean_d2f04453.png"');
+    expect(categoryPageSource).toContain('alt="Tradebilia Collectors Trading Exchange"');
+    expect(categoryPageSource).not.toContain('rounded-full bg-[rgba(255,243,213,0.08)]');
+    expect(categoryPageSource).not.toContain('SPORTS_CARDS_SHORT_LOGO_URL');
+  });
+
   it("keeps the Sports Cards spotlight area aligned with the flatter retro card-table benchmark", () => {
     expect(categoryPageSource).toContain("Show-floor highlights");
     expect(categoryPageSource).toContain("Featured cardboard arranged more like a real card table.");
