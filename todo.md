@@ -131,3 +131,4 @@
 - [x] Remove the Show Floor Notes section from the hero
 - [x] Move stat cards to the right, shrink them so all are visible (Listings, Collectors, Completed Trades)
 - [x] Redesign hero layout: Tradebilia logo top-left, Sports Card title centered and larger, Exchange below centered and smaller
+- [x] Change the wallpaper to use a tile/repeat pattern instead of stretched to maintain card detail
