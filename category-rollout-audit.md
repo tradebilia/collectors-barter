@@ -23,3 +23,11 @@ The Comics page now inherits the shared **collector spotlight** treatment succes
 ## Validation snapshot: Pokemon
 
 The Pokemon page also renders the shared **collector spotlight** section correctly, confirming that the broader rollout is not limited to Sports Cards and Comics. The brighter yellow-and-cobalt identity remains distinct, while the new spotlight row still reads as collectible inventory instead of a loose editorial band. This gives stronger confidence that the shared benchmark treatment can scale across additional high-energy categories without flattening their personalities.
+
+## Validation snapshot: Vintage Toys
+
+The Vintage Toys page preserves a distinct silver-olive museum tone while still rendering the shared **collector spotlight** structure, summary block, and empty-state behavior cleanly. The page feels consistent with the benchmark rollout, and no structural issue stands out beyond the still-open need to complete the same browser check across the rest of the remaining categories.
+
+## Validation snapshot: Video Games
+
+The Video Games page keeps its neon arcade identity while still following the shared benchmark layout, including the summary support area, spotlight lanes, and stronger empty-state guidance. The category-specific voice remains intact, so the page currently reads as a successful adaptation of the benchmark rather than a copy of Sports Cards.

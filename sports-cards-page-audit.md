@@ -72,3 +72,7 @@ The refined spotlight row now reads substantially closer to a literal **card-tab
 ### Validation after page-wide card-grid tightening
 
 The latest Sports Cards review shows the left filter rail and the spotlight row working together more convincingly as a retro marketplace layout. The cream rail now reads as a clear control column against the content area, while the three highlight cards retain the flatter portrait-slab treatment that makes the page feel closer to a literal card-show browse rather than a magazine feature. The top half and lower content sections now feel more coordinated as a single benchmark experience.
+
+### Validation after user-supplied wallpaper and shortform logo update
+
+The Sports Cards header now uses the user-provided vintage card collage as the wallpaper source, and the image reads across the banner without the earlier multi-tile treatment. The shortform Tradebilia wheel also now appears without the dark navy background block, which makes the mark sit more cleanly beside the wordmark. The overall header still preserves the teal arena-glass mood while bringing the page closer to the user’s preferred branding treatment.

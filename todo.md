@@ -97,3 +97,7 @@
 - [x] Correct the Tradebilia logo review so the surrounding deep navy field is treated as presentation background rather than part of the logo mark itself
 - [x] Add a spinning motion treatment for the Tradebilia multicolor wheel while keeping the rest of the brand mark stable and legible
 - [x] Apply the spinning multicolor Tradebilia wheel on the main homepage only while keeping all other logo appearances static
+- [x] Use the user-provided Sports Cards collage as the Sports Cards page wallpaper treatment
+- [x] Create and apply a shortform Tradebilia logo treatment without the dark navy blue background color for the Sports Cards branding update
+- [x] Pause broader category-page rollout work and keep the current refinement scope limited to the Sports Cards page only
+- [x] Replace the current image to the left of the Tradebilia wordmark on the Sports Cards page with the shortform logo

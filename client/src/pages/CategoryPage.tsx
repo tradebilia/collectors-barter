@@ -160,15 +160,8 @@ export default function CategoryPage() {
     ...card,
     imageUrl: resolveTradebiliaListingImage({ title: card.title, category: slug }),
   }));
-  const sportsCardsWallpaperImages = isSportsCardsPage
-    ? [
-        benchmarkSpotlights[0]?.imageUrl,
-        resolveTradebiliaListingImage({ title: "1976 Walter Payton Rookie", category: slug }),
-        resolveTradebiliaListingImage({ title: "1980 Rickey Henderson Rookie", category: slug }),
-        resolveTradebiliaListingImage({ title: "1981 Joe Montana Rookie", category: slug }),
-        resolveTradebiliaListingImage({ title: "Mickey Mantle", category: slug }),
-      ].filter(Boolean)
-    : [];
+  const SPORTS_CARDS_WALLPAPER_URL = "/manus-storage/Sportscards_c0a71f5f.jpg";
+  const SPORTS_CARDS_SHORT_LOGO_URL = "/manus-storage/tradebilia-wheel-no-navy_32ff07d3.png";
 
   return (
     <div className={`min-h-screen ${theme.pageClassName}`}>
@@ -177,23 +170,18 @@ export default function CategoryPage() {
           <div className={`container relative ${isSportsCardsPage ? "py-6 lg:py-8" : "py-8 lg:py-12"}`}>
             {isSportsCardsPage ? (
               <div className="relative overflow-hidden rounded-[2.25rem] border border-white/12 bg-[linear-gradient(135deg,rgba(12,55,66,0.94)_0%,rgba(28,111,127,0.78)_44%,rgba(8,33,42,0.95)_100%)] px-6 py-8 shadow-[0_34px_80px_rgba(6,20,29,0.34)] lg:px-10 lg:py-10">
-                <div className="pointer-events-none absolute inset-0 opacity-[0.28]">
-                  <div className="absolute inset-0 grid grid-cols-2 gap-3 px-4 py-4 sm:grid-cols-3 lg:grid-cols-5 lg:gap-4 lg:px-8 lg:py-7">
-                    {sportsCardsWallpaperImages.map((imageUrl, index) => (
-                      <div
-                        key={`${imageUrl}-${index}`}
-                        className={`flex items-center justify-center rounded-[1.25rem] border border-white/8 bg-[#123b49]/18 p-2 shadow-[0_10px_30px_rgba(0,0,0,0.14)] ${index % 2 === 0 ? "rotate-[-7deg]" : "rotate-[6deg]"}`}
-                      >
-                        <img src={imageUrl} alt="" aria-hidden="true" className="h-full max-h-[16rem] w-full object-contain" />
-                      </div>
-                    ))}
+                <div className="pointer-events-none absolute inset-0">
+                  <div className="absolute inset-0 flex items-center justify-center px-3 py-3 opacity-[0.34] sm:px-6 sm:py-5 lg:px-10 lg:py-8">
+                    <img src={SPORTS_CARDS_WALLPAPER_URL} alt="" aria-hidden="true" className="h-full w-full object-contain" />
                   </div>
                   <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(8,39,48,0.94)_0%,rgba(8,39,48,0.68)_26%,rgba(8,39,48,0.34)_54%,rgba(8,39,48,0.76)_100%)]" />
                   <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(8,39,48,0.4)_0%,rgba(8,39,48,0.1)_35%,rgba(8,39,48,0.64)_100%)]" />
                 </div>
                 <div className="relative max-w-4xl text-[#fff4df]">
                   <div className="flex flex-wrap items-center gap-4 lg:gap-6">
-                    <img src={TRADEBILIA_LOGO_URL} alt="Tradebilia" className="h-20 w-20 rounded-full object-cover shadow-[0_10px_25px_rgba(0,0,0,0.24)] lg:h-24 lg:w-24" />
+                    <div className="flex h-20 w-20 items-center justify-center rounded-full bg-[rgba(255,243,213,0.08)] shadow-[0_10px_25px_rgba(0,0,0,0.24)] backdrop-blur-[2px] lg:h-24 lg:w-24">
+                      <img src={SPORTS_CARDS_SHORT_LOGO_URL} alt="Tradebilia short logo" className="h-14 w-14 object-contain lg:h-16 lg:w-16" />
+                    </div>
                     <div className="border-l border-white/30 pl-4 lg:pl-6">
                       <p className="text-[clamp(2.35rem,5vw,4.6rem)] font-black uppercase leading-none tracking-[0.03em] text-[#fff3d5]" style={{ fontFamily: theme.headingFont }}>Tradebilia</p>
                       <p className="mt-2 text-sm uppercase tracking-[0.28em] text-white/80 lg:text-base">Collectors Trading Exchange</p>
