@@ -116,3 +116,4 @@
 - [x] Remove the phrase "Hall-of-fame cardboard" from the Sports Cards header
 - [x] Rename the Sports Cards heading to "Sports Card Exchange"
 - [x] Give the words "Sports Card" a more sporty display-font treatment in the Sports Cards header
+- [x] Remove the nested dark-blue Sports Cards hero panel so the top section reads as one continuous full-width background

@@ -14,6 +14,8 @@ describe("Tradebilia category page layout", () => {
     expect(categoryPageSource).toContain('Sports Card');
     expect(categoryPageSource).toContain('Exchange');
     expect(categoryPageSource).toContain('fontFamily: "Bebas Neue, Oswald, Inter, sans-serif"');
+    expect(categoryPageSource).toContain('pointer-events-none absolute inset-0');
+    expect(categoryPageSource).not.toContain('rounded-[2.25rem] border border-white/12 bg-[linear-gradient(135deg,rgba(12,55,66,0.94)_0%,rgba(28,111,127,0.78)_44%,rgba(8,33,42,0.95)_100%)]');
     expect(categoryPageSource).not.toContain('rounded-full bg-[rgba(255,243,213,0.08)]');
     expect(categoryPageSource).not.toContain('SPORTS_CARDS_SHORT_LOGO_URL');
     expect(categoryPageSource).not.toContain('Hall-of-fame cardboard');

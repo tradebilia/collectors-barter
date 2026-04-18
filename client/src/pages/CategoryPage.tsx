@@ -171,38 +171,33 @@ export default function CategoryPage() {
 
   return (
     <div className={`min-h-screen ${theme.pageClassName}`}>
-      <header className={`border-b ${theme.borderClassName} ${theme.heroClassName}`}>
-        <div className={`relative overflow-hidden ${theme.textureClassName}`}>
-          <div className={`container relative ${isSportsCardsPage ? "py-6 lg:py-8" : "py-8 lg:py-12"}`}>
-            {isSportsCardsPage ? (
-              <div className="relative overflow-hidden rounded-[2.25rem] border border-white/12 bg-[linear-gradient(135deg,rgba(12,55,66,0.94)_0%,rgba(28,111,127,0.78)_44%,rgba(8,33,42,0.95)_100%)] px-6 py-8 shadow-[0_34px_80px_rgba(6,20,29,0.34)] lg:px-10 lg:py-10">
-                <div className="pointer-events-none absolute inset-0">
-                  <div className="absolute inset-0 flex items-center justify-center px-3 py-3 opacity-[0.34] sm:px-6 sm:py-5 lg:px-10 lg:py-8">
-                    <img src={SPORTS_CARDS_WALLPAPER_URL} alt="" aria-hidden="true" className="h-full w-full object-contain" />
-                  </div>
-                  <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(8,39,48,0.94)_0%,rgba(8,39,48,0.68)_26%,rgba(8,39,48,0.34)_54%,rgba(8,39,48,0.76)_100%)]" />
-                  <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(8,39,48,0.4)_0%,rgba(8,39,48,0.1)_35%,rgba(8,39,48,0.64)_100%)]" />
-                </div>
-                  <div className="relative max-w-4xl text-[#fff4df]">
+      <header className={`relative overflow-hidden border-b ${theme.borderClassName} ${theme.heroClassName}`}>
+        {isSportsCardsPage ? (
+          <>
+            <div className={`pointer-events-none absolute inset-0 ${theme.textureClassName}`} />
+            <div className="pointer-events-none absolute inset-0">
+              <div className="absolute inset-0 flex items-center justify-center px-3 py-3 opacity-[0.34] sm:px-6 sm:py-5 lg:px-10 lg:py-8">
+                <img src={SPORTS_CARDS_WALLPAPER_URL} alt="" aria-hidden="true" className="h-full w-full object-contain" />
+              </div>
+              <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(8,39,48,0.94)_0%,rgba(8,39,48,0.68)_26%,rgba(8,39,48,0.34)_54%,rgba(8,39,48,0.76)_100%)]" />
+              <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(8,39,48,0.4)_0%,rgba(8,39,48,0.1)_35%,rgba(8,39,48,0.64)_100%)]" />
+            </div>
+            <div className="container relative py-6 lg:py-8">
+              <div className="relative px-1 py-2 lg:py-4">
+                <div className="relative max-w-4xl text-[#fff4df]">
                   <div className="max-w-[26rem] lg:max-w-[34rem]">
                     <img src={SPORTS_CARDS_LONG_LOGO_URL} alt="Tradebilia Collectors Trading Exchange" className="h-auto w-full object-contain" />
                   </div>
 
                   {theme.eyebrow ? <p className="mt-7 text-xs font-semibold uppercase tracking-[0.36em] text-white/78">{theme.eyebrow}</p> : null}
-                  {isSportsCardsPage ? (
-                    <h1 className="mt-6 max-w-5xl leading-none text-[#fff4df] sm:text-6xl lg:text-[5rem]">
-                      <span className="block text-4xl font-semibold uppercase tracking-[0.16em] sm:text-6xl lg:text-[5.15rem]" style={{ fontFamily: "Bebas Neue, Oswald, Inter, sans-serif" }}>
-                        Sports Card
-                      </span>
-                      <span className="mt-1 block text-3xl font-medium uppercase tracking-[0.24em] text-white/86 sm:text-5xl lg:text-[3.6rem]" style={{ fontFamily: "Oswald, Inter, sans-serif" }}>
-                        Exchange
-                      </span>
-                    </h1>
-                  ) : (
-                    <h1 className="mt-3 max-w-5xl text-4xl leading-none sm:text-6xl lg:text-[5rem]" style={{ fontFamily: theme.headingFont }}>
-                      {categoryLabel.toUpperCase()} EXCHANGE
-                    </h1>
-                  )}
+                  <h1 className="mt-6 max-w-5xl leading-none text-[#fff4df] sm:text-6xl lg:text-[5rem]">
+                    <span className="block text-4xl font-semibold uppercase tracking-[0.16em] sm:text-6xl lg:text-[5.15rem]" style={{ fontFamily: "Bebas Neue, Oswald, Inter, sans-serif" }}>
+                      Sports Card
+                    </span>
+                    <span className="mt-1 block text-3xl font-medium uppercase tracking-[0.24em] text-white/86 sm:text-5xl lg:text-[3.6rem]" style={{ fontFamily: "Oswald, Inter, sans-serif" }}>
+                      Exchange
+                    </span>
+                  </h1>
                   <p className="mt-4 max-w-3xl text-[1.02rem] leading-8 text-white/86">{theme.description}</p>
                   <div className="mt-6 flex flex-wrap gap-3">
                     {benchmarkQuickFilters.map(filter => (
@@ -239,7 +234,11 @@ export default function CategoryPage() {
                   </div>
                 </div>
               </div>
-            ) : (
+            </div>
+          </>
+        ) : (
+          <div className={`relative overflow-hidden ${theme.textureClassName}`}>
+            <div className="container relative py-8 lg:py-12">
               <div className={`grid gap-8 ${isSportsCardsPage ? "xl:grid-cols-[minmax(0,1.02fr)_420px] xl:items-stretch" : "lg:grid-cols-[minmax(0,1fr)_340px] lg:items-end"}`}>
                 <div className="max-w-4xl">
                   <img
@@ -282,10 +281,11 @@ export default function CategoryPage() {
                   </div>
                 </div>
               </div>
-            )}
+            </div>
           </div>
-        </div>
-        <nav className="border-t border-black/20 bg-black/65 backdrop-blur-sm">
+        )}
+      </header>
+      <nav className="border-t border-black/20 bg-black/65 backdrop-blur-sm">
           <div className="container grid overflow-hidden md:grid-cols-5 xl:grid-cols-10">
             {tradebiliaCategories.map(category => (
               <Link
@@ -298,7 +298,6 @@ export default function CategoryPage() {
             ))}
           </div>
         </nav>
-      </header>
 
       <main className="container py-8 lg:py-10">
         <div className={`grid gap-6 ${isSportsCardsPage ? "xl:grid-cols-[320px_minmax(0,1fr)] xl:items-start" : "xl:grid-cols-[280px_minmax(0,1fr)]"}`}>
