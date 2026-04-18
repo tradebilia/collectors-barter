@@ -19,3 +19,7 @@ The public Wix homepage uses a very bold oversized **Search** wordmark at the fa
 ## Current preview gap check
 
 The latest preview is closer, but it still differs from the Wix homepage in several visible ways. The hero logo is still too large relative to the banner height, so the banner feels more dominant than the Wix version. The metrics numbers are closer, but the top header account area remains smaller and lighter than the Wix reference. The left quick-links rail now exists, yet the overall page still needs the left-edge treatment to feel more continuous and structural across the content bands. The next pass should reduce the hero logo scale, tighten the header and category spacing further, and strengthen the left-side column continuity so the first viewport reads more like the Wix homepage.
+
+## Latest viewport comparison
+
+The latest public Wix viewport confirms that the hero height is now close, but the Wix header is still slightly more compact and the category row uses fewer visible tabs before collapsing to a "More" item. The metric strip in Wix uses slightly smaller labels and more centered number blocks. The left rail begins flush with the page edge and aligns tightly to the top of the Recently Added section. The current Tradebilia preview is now structurally close, so the remaining work is mostly spacing and alignment polish rather than major layout reconstruction.

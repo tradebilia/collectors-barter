@@ -424,13 +424,13 @@ export default function Home() {
       <header className="border-b border-black/70 bg-black text-white shadow-[0_8px_22px_rgba(0,0,0,0.25)]">
         <div className="container flex min-h-7 items-center justify-between gap-3 py-0.5 text-[11px]">
           <div className="flex flex-1 items-center gap-3">
-            <span className="font-['Oswald'] text-[2.35rem] font-semibold leading-none tracking-[-0.05em] text-white sm:text-[2.7rem]">Search</span>
+            <span className="font-['Oswald'] text-[2.15rem] font-semibold leading-none tracking-[-0.05em] text-white sm:text-[2.45rem]">Search</span>
             <div className="flex w-full max-w-sm overflow-hidden rounded-[0.35rem] border border-black/80 bg-white">
               <Input
                 value={keyword}
                 onChange={event => setKeyword(event.target.value)}
                 placeholder="Search..."
-                className="h-7 rounded-none border-0 bg-white px-3 text-[10px] text-slate-900 placeholder:text-slate-500 focus-visible:ring-0"
+                className="h-7 rounded-none border-0 bg-white px-3 text-[9.5px] text-slate-900 placeholder:text-slate-500 focus-visible:ring-0"
               />
               <button
                 type="button"
@@ -458,7 +458,7 @@ export default function Home() {
             <Link
               key={option.value}
               href={`/category/${option.value}`}
-              className={`flex min-h-8 items-center justify-center border-b border-r border-slate-300 px-1.5 py-1 text-center font-['Oswald'] text-[13px] font-semibold tracking-[0.01em] transition hover:bg-slate-100 ${category === option.value ? "bg-[#3b3b3b] text-white" : "bg-[#f7f7f5] text-slate-900"}`}
+              className={`flex min-h-8 items-center justify-center border-b border-r border-slate-300 px-1.5 py-1 text-center font-['Oswald'] text-[12px] font-semibold tracking-[0.01em] transition hover:bg-slate-100 ${category === option.value ? "bg-[#3b3b3b] text-white" : "bg-[#f7f7f5] text-slate-900"}`}
             >
               {option.label}
             </Link>
@@ -471,7 +471,7 @@ export default function Home() {
           <img
             src={TRADEBILIA_LOGO_URL}
             alt="Tradebilia logo"
-            className="block h-auto min-h-[64px] w-full object-cover object-center sm:min-h-[76px] lg:min-h-[88px]"
+            className="block h-[240px] w-full object-cover object-center sm:h-[280px] lg:h-[325px]"
           />
         </section>
 
@@ -484,8 +484,8 @@ export default function Home() {
               ["Total Trades", marketplaceQuery.data?.highlights.completedTrades ? `${marketplaceQuery.data.highlights.completedTrades}k` : "10k"],
             ].map(([label, value]) => (
               <div key={label as string} className="space-y-0.5 px-2 py-1.5">
-                <p className="text-[11px] font-medium leading-none text-black/80">{label as string}</p>
-                <p className="text-[2.45rem] font-semibold leading-none sm:text-[2.85rem]">{value as string}</p>
+                <p className="text-[10px] font-medium leading-none text-black/80">{label as string}</p>
+                <p className="text-[2.3rem] font-semibold leading-none sm:text-[2.7rem]">{value as string}</p>
               </div>
             ))}
           </div>
@@ -510,9 +510,9 @@ export default function Home() {
                   <div className="mt-4 hidden min-h-[225px] rounded-none bg-[radial-gradient(circle_at_top,rgba(84,190,255,0.4),transparent_42%),linear-gradient(180deg,#0a2958_0%,#153e78_48%,#3d4aa8_100%)] lg:block" />
                 </aside>
 
-                <div className="bg-white px-3 py-4 lg:px-6 lg:py-4">
-                  <h2 className="text-center font-serif text-[2.7rem] font-medium tracking-[-0.035em] text-[#2d241e] sm:text-[3.05rem]">Recently Added</h2>
-                  <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
+                <div className="bg-white px-3 py-3 lg:px-6 lg:py-3">
+                  <h2 className="text-center font-serif text-[2.45rem] font-medium tracking-[-0.035em] text-[#2d241e] sm:text-[2.8rem]">Recently Added</h2>
+                  <div className="mt-1.5 grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
                     {recentShelfItems.map(item => (
                       <Card key={item.id} className="overflow-hidden rounded-none border border-slate-300 bg-white shadow-none">
                         <div className="aspect-[0.68] overflow-hidden bg-[#f0ebe5]">
@@ -597,9 +597,8 @@ export default function Home() {
                     ))}
                   </div>
                 </div>
-              </div>
 
-              <div className="grid gap-0 md:grid-cols-2 xl:grid-cols-4 lg:col-start-2">
+                <div className="grid gap-0 md:grid-cols-2 xl:grid-cols-4 lg:col-start-2">
                 <Card className="overflow-hidden rounded-none border-0 bg-[radial-gradient(circle_at_top,rgba(48,149,255,0.5),transparent_40%),linear-gradient(135deg,#05204f_0%,#0d2d68_100%)] text-white shadow-none">
                   <CardHeader className="pb-2 pt-4">
                     <CardTitle className="font-['Oswald'] text-[0.86rem] uppercase tracking-[0.22em] text-white/78">Most Viewed</CardTitle>
@@ -644,6 +643,7 @@ export default function Home() {
 
                   </CardContent>
                 </Card>
+                </div>
               </div>
             </div>
           )}
