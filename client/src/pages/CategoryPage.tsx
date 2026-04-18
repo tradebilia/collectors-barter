@@ -176,14 +176,14 @@ export default function CategoryPage() {
           <>
             <div className={`pointer-events-none absolute inset-0 ${theme.textureClassName}`} />
             <div className="pointer-events-none absolute inset-0">
-              <div className="absolute inset-0 flex items-center justify-center px-3 py-3 opacity-[0.34] sm:px-6 sm:py-5 lg:px-10 lg:py-8">
-                <img src={SPORTS_CARDS_WALLPAPER_URL} alt="" aria-hidden="true" className="h-full w-full object-contain" />
+              <div className="absolute inset-0">
+                <img src={SPORTS_CARDS_WALLPAPER_URL} alt="" aria-hidden="true" className="h-full w-full object-cover opacity-[0.34]" />
               </div>
               <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(8,39,48,0.94)_0%,rgba(8,39,48,0.68)_26%,rgba(8,39,48,0.34)_54%,rgba(8,39,48,0.76)_100%)]" />
               <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(8,39,48,0.4)_0%,rgba(8,39,48,0.1)_35%,rgba(8,39,48,0.64)_100%)]" />
             </div>
-            <div className="container relative py-6 lg:py-8">
-              <div className="relative px-1 py-2 lg:py-4">
+            <div className="container relative py-4 lg:py-6">
+              <div className="relative px-1 py-1 lg:py-2">
                 <div className="relative max-w-4xl text-[#fff4df]">
                   <div className="max-w-[26rem] lg:max-w-[34rem]">
                     <img src={SPORTS_CARDS_LONG_LOGO_URL} alt="Tradebilia Collectors Trading Exchange" className="h-auto w-full object-contain" />
