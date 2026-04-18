@@ -58,3 +58,8 @@
 - [x] Continue refining homepage typography to more precisely match the Wix reference across the header, category strip, metrics band, and Recently Added section
 - [x] Extend the left-edge column treatment consistently through the homepage content bands so the layout matches the Wix reference more faithfully
 - [x] Rework the homepage structure and spacing further to mirror the public Wix Tradebilia homepage more exactly, then revalidate against the reference
+- [x] Audit the current Tradebilia page coverage and identify whether any important pages still need to be created
+- [x] Create a standalone Report a User page that matches the current Tradebilia layout, styling, and visual language
+- [x] Create a standalone Referral Request page that matches the current Tradebilia layout, styling, and visual language
+- [x] Create a standalone Watchlist page that matches the current Tradebilia layout, styling, and visual language
+- [x] Reserve the Upcoming Convention page for a later data-driven implementation once the source website is provided

@@ -12,6 +12,9 @@ import Profile from "./pages/Profile";
 import Messages from "./pages/Messages";
 import MemberSearch from "./pages/MemberSearch";
 import CategoryPage from "./pages/CategoryPage";
+import ReportUser from "./pages/ReportUser";
+import ReferralRequest from "./pages/ReferralRequest";
+import Watchlist from "./pages/Watchlist";
 
 function Router() {
   return (
@@ -22,6 +25,9 @@ function Router() {
       <Route path="/profile" component={Profile} />
       <Route path="/messages" component={Messages} />
       <Route path="/members" component={MemberSearch} />
+      <Route path="/report-user" component={ReportUser} />
+      <Route path="/referral-request" component={ReferralRequest} />
+      <Route path="/watchlist" component={Watchlist} />
       <Route path="/category/:slug" component={CategoryPage} />
       <Route path="/listings/:listingId" component={ItemDetail} />
       <Route path="/404" component={NotFound} />

@@ -504,8 +504,9 @@ export default function Home() {
                     <Link href="/inventory" className="block transition hover:text-white/75">My Inventory</Link>
                     <button type="button" className="block text-left transition hover:text-white/75">Upcoming Conventions</button>
                     <button type="button" className="block text-left transition hover:text-white/75">Shipping Supplies</button>
-                    <button type="button" className="block text-left transition hover:text-white/75">Report a User</button>
-                    <button type="button" className="block text-left transition hover:text-white/75">Referral Request</button>
+                    <Link href="/report-user" className="block transition hover:text-white/75">Report a User</Link>
+                    <Link href="/referral-request" className="block transition hover:text-white/75">Referral Request</Link>
+                    <Link href="/watchlist" className="block transition hover:text-white/75">Watchlist</Link>
                   </div>
                   <div className="mt-4 hidden min-h-[225px] rounded-none bg-[radial-gradient(circle_at_top,rgba(84,190,255,0.4),transparent_42%),linear-gradient(180deg,#0a2958_0%,#153e78_48%,#3d4aa8_100%)] lg:block" />
                 </aside>
