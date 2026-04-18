@@ -101,3 +101,4 @@
 - [x] Create and apply a shortform Tradebilia logo treatment without the dark navy blue background color for the Sports Cards branding update
 - [x] Pause broader category-page rollout work and keep the current refinement scope limited to the Sports Cards page only
 - [x] Replace the current image to the left of the Tradebilia wordmark on the Sports Cards page with the shortform logo
+- [x] Remove the logo from the top-left area of the Sports Cards page header
