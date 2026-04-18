@@ -85,10 +85,10 @@
 - [x] Add benchmark-specific test coverage that verifies the Sports Cards layout sections and empty-state structure beyond image resolution alone
 - [ ] Audit Comics, Vintage Toys, Video Games, Stamps, Coins, Pokemon, Movies, Autographs, and Disney Pins against the Sports Cards benchmark
 - [ ] Verify that the non-Sports-Cards category pages render the benchmark support sections, shortcut chips, spotlight cards, and stronger empty states correctly
-- [ ] Extend benchmark coverage beyond Sports Cards and Comics so the broader rollout is protected by tests
+- [x] Extend benchmark coverage beyond Sports Cards and Comics so the broader rollout is protected by tests
 - [x] Focus the current refinement pass exclusively on the Sports Cards category page before making further changes to other category pages
-- [ ] Refine the Sports Cards page visual look, spacing, and layout hierarchy until it feels like the settled category benchmark
-- [ ] Redesign the Sports Cards page to match the uploaded retro sports-card marketplace reference more closely, especially the flatter cream-and-teal layout, stronger left filter column, and literal card-grid presentation
+- [x] Refine the Sports Cards page visual look, spacing, and layout hierarchy until it feels like the settled category benchmark
+- [x] Redesign the Sports Cards page to match the uploaded retro sports-card marketplace reference more closely, especially the flatter cream-and-teal layout, stronger left filter column, and literal card-grid presentation
 - [x] Redesign the Sports Cards top banner so it uses a reflected wallpaper of collectible cards behind the heading, closer to the uploaded sports-card reference
 - [x] Remove the Sports Cards top-banner benchmark centerpiece panel so the header feels closer to the uploaded retro reference
 - [x] Redesign the Sports Cards top-banner wallpaper so collectible card photos stay uncropped and more legible in the background

@@ -45,4 +45,19 @@ describe("tradebilia category benchmarks", () => {
     expect(benchmark?.spotlights).toHaveLength(3);
     expect(benchmark?.emptyStateTitle).toBe("No live comics listings match these filters yet.");
   });
+
+  it("keeps additional rollout-priority categories populated with shared benchmark structure", () => {
+    const rolloutCategories = ["pokemon", "vintage_toys", "video_games"] as const;
+
+    rolloutCategories.forEach(slug => {
+      const benchmark = getTradebiliaCategoryBenchmark(slug);
+
+      expect(benchmark, `${slug} benchmark should exist`).not.toBeNull();
+      expect(benchmark?.quickFilters, `${slug} quick filters`).toHaveLength(4);
+      expect(benchmark?.heroNotes, `${slug} hero notes`).toHaveLength(3);
+      expect(benchmark?.summaryHighlights, `${slug} summary highlights`).toHaveLength(3);
+      expect(benchmark?.spotlights, `${slug} spotlight cards`).toHaveLength(3);
+      expect(benchmark?.emptyStateBuildoutNotes, `${slug} empty-state notes`).toHaveLength(2);
+    });
+  });
 });

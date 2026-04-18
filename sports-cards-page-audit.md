@@ -60,3 +60,15 @@ The Sports Cards page now has a much stronger first impression. The headline, be
 ## Live review after top-banner rewrite
 
 The current Sports Cards top banner now restores the **Tradebilia** wordmark and circle logo prominently on the left, removes the old benchmark centerpiece card, and treats the collectible-card wallpaper as a contained background layer rather than a cropped hero image. The banner is much closer to the retro marketplace direction, although the page still appears to have a faint outer wallpaper treatment behind the new inner banner card, so one final cleanup pass should remove that redundant layer before the design is presented as the benchmark.
+
+## Reassessment after homepage logo-motion update
+
+The Sports Cards banner is now cleaner than before and the identity block is much more stable, but the page still does not fully land on the flatter **retro marketplace / PSA-card-show** direction the user asked for. The top banner remains more atmospheric and cinematic than literal, while the cream content area below still feels broader and more editorial than a tighter show-floor browsing layout. The strongest remaining opportunities are to make the left filter rail feel more dominant and practical, reduce some of the hero moodiness, and push the listing and showcase treatment toward a more literal card-grid rhythm.
+
+### Validation after spotlight-grid refinement
+
+The refined spotlight row now reads substantially closer to a literal **card-table** presentation. The three featured cards sit in a flatter, more inventory-like rhythm, the oversized editorial centerpiece treatment has been removed from the showcase row, and the slab images now read more clearly as collectible objects rather than banner art. The left filter rail also feels stronger in relation to the showcase area because the highlight cards are more compact and grid-like. The page still retains the teal hero identity, but the content section below the fold is now much closer to the requested retro marketplace benchmark.
+
+### Validation after page-wide card-grid tightening
+
+The latest Sports Cards review shows the left filter rail and the spotlight row working together more convincingly as a retro marketplace layout. The cream rail now reads as a clear control column against the content area, while the three highlight cards retain the flatter portrait-slab treatment that makes the page feel closer to a literal card-show browse rather than a magazine feature. The top half and lower content sections now feel more coordinated as a single benchmark experience.

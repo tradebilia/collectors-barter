@@ -424,42 +424,77 @@ export default function CategoryPage() {
               ) : null}
             </div>
 
-            {isSportsCardsPage ? (
+            {benchmarkSpotlights.length > 0 ? (
               <section className="space-y-5">
-                <div className="flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
-                  <div>
-                    <p className={`text-xs font-semibold uppercase tracking-[0.3em] ${theme.accentClassName}`}>Showcase grails</p>
-                    <h3 className="mt-3 text-3xl font-semibold" style={{ fontFamily: theme.headingFont }}>Featured cardboard that makes the benchmark page feel alive.</h3>
-                  </div>
-                  <p className="max-w-2xl text-sm leading-7 opacity-75">These editorial cards should feel closer to featured inventory than placeholders, giving the Sports Cards exchange enough collector energy even before the live grid fills out.</p>
-                </div>
-                <div className="grid gap-5 lg:grid-cols-[1.25fr_0.92fr_0.92fr] lg:items-stretch">
-                  {benchmarkSpotlights.map((card, index) => (
-                    <article
-                      key={card.title}
-                      className={`group overflow-hidden rounded-[2rem] border shadow-[0_22px_55px_rgba(15,76,92,0.16)] transition hover:-translate-y-1 ${index === 0 ? "border-[#104255]/25 bg-[#fff7e8]" : theme.cardClassName}`}
-                    >
-                      <div className={`relative overflow-hidden border-b border-current/10 bg-[#12394b] ${index === 0 ? "aspect-[16/12]" : "aspect-[4/3]"}`}>
-                        <img src={card.imageUrl} alt={card.title} className={`h-full w-full transition duration-500 group-hover:scale-[1.03] ${index === 0 ? "object-cover object-top" : "object-cover"}`} />
-                        <div className={`absolute inset-0 ${index === 0 ? "bg-gradient-to-t from-[#041821]/82 via-[#041821]/14 to-transparent" : "bg-gradient-to-t from-[#06202c]/70 via-transparent to-transparent"}`} />
-                        <div className="absolute left-4 top-4 rounded-full border border-white/25 bg-[#06202c]/70 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-[#fff3d5] backdrop-blur-sm">
-                          {index === 0 ? "Centerpiece" : "Showcase"}
-                        </div>
-                        {index === 0 ? (
-                          <div className="absolute inset-x-0 bottom-0 p-5 text-[#fff3d5]">
-                            <p className="text-[10px] font-semibold uppercase tracking-[0.32em] text-white/65">Card-show headliner</p>
-                            <p className="mt-3 text-3xl font-semibold leading-tight">{card.title}</p>
+                {isSportsCardsPage ? (
+                  <>
+                    <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+                      <div>
+                        <p className={`text-xs font-semibold uppercase tracking-[0.3em] ${theme.accentClassName}`}>Show-floor highlights</p>
+                        <h3 className="mt-3 text-3xl font-semibold" style={{ fontFamily: theme.headingFont }}>Featured cardboard arranged more like a real card table.</h3>
+                      </div>
+                      <p className="max-w-2xl text-sm leading-7 opacity-75">Each spotlight should read like a premium listing card rather than an editorial poster, keeping the benchmark closer to a retro PSA-card-show browse pattern.</p>
+                    </div>
+                    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                      {benchmarkSpotlights.map(card => (
+                        <article
+                          key={card.title}
+                          className="group overflow-hidden rounded-[1.65rem] border border-[#0f4658]/16 bg-[#fff7e8] shadow-[0_20px_45px_rgba(15,76,92,0.12)] transition hover:-translate-y-1"
+                        >
+                          <div className="border-b border-[#0f4658]/12 bg-[linear-gradient(180deg,#f3e4bc_0%,#e8d6a8_100%)] p-4">
+                            <div className="rounded-[1.25rem] border border-[#0f4658]/10 bg-[#f7ecd2] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)]">
+                              <div className="aspect-[7/9] overflow-hidden rounded-[1rem] bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.5),rgba(18,57,75,0.1)_72%)]">
+                                <img src={card.imageUrl} alt={card.title} className="h-full w-full object-contain p-3 transition duration-500 group-hover:scale-[1.02]" />
+                              </div>
+                            </div>
                           </div>
-                        ) : null}
+                          <div className="space-y-3 p-5 text-[#153746]">
+                            <div className="flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-[0.24em] text-[#0f4658]/70">
+                              <span className="rounded-full border border-[#0f4658]/12 bg-white/80 px-3 py-1 font-semibold">{card.eyebrow}</span>
+                              <span className="rounded-full border border-[#0f4658]/10 bg-[#e6f1f3] px-3 py-1 font-semibold">Show-floor pick</span>
+                            </div>
+                            <h3 className="text-2xl font-semibold leading-tight">{card.title}</h3>
+                            <p className="text-sm leading-7 text-[#153746]/78">{card.description}</p>
+                          </div>
+                        </article>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+                      <div>
+                        <p className={`text-xs font-semibold uppercase tracking-[0.3em] ${theme.accentClassName}`}>Collector spotlights</p>
+                        <h3 className="mt-3 text-3xl font-semibold" style={{ fontFamily: theme.headingFont }}>Featured pieces that keep the exchange feeling curated.</h3>
                       </div>
-                      <div className={`space-y-3 ${index === 0 ? "p-6 lg:p-7" : "p-5 lg:p-6"}`}>
-                        <p className="text-xs font-semibold uppercase tracking-[0.24em] opacity-60">{card.eyebrow}</p>
-                        {index === 0 ? null : <h3 className="text-2xl font-semibold leading-tight">{card.title}</h3>}
-                        <p className="text-sm leading-7 opacity-80">{card.description}</p>
-                      </div>
-                    </article>
-                  ))}
-                </div>
+                      <p className="max-w-2xl text-sm leading-7 opacity-75">These benchmark cards should feel more like collectible inventory lanes than oversized editorial panels, so each category stays useful and legible even when live listings are light.</p>
+                    </div>
+                    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                      {benchmarkSpotlights.map(card => (
+                        <article
+                          key={card.title}
+                          className={`group overflow-hidden rounded-[1.65rem] border shadow-[0_20px_45px_rgba(15,23,42,0.12)] transition hover:-translate-y-1 ${theme.cardClassName}`}
+                        >
+                          <div className="border-b border-current/10 p-4">
+                            <div className="rounded-[1.25rem] border border-current/10 bg-white/55 p-4">
+                              <div className="aspect-[7/9] overflow-hidden rounded-[1rem] bg-black/5">
+                                <img src={card.imageUrl} alt={card.title} className="h-full w-full object-contain p-3 transition duration-500 group-hover:scale-[1.02]" />
+                              </div>
+                            </div>
+                          </div>
+                          <div className="space-y-3 p-5">
+                            <div className="flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-[0.24em] opacity-70">
+                              <span className={`rounded-full border border-current/10 px-3 py-1 font-semibold ${theme.chipClassName}`}>{card.eyebrow}</span>
+                              <span className="rounded-full border border-current/10 bg-white/55 px-3 py-1 font-semibold">Benchmark lane</span>
+                            </div>
+                            <h3 className="text-2xl font-semibold leading-tight" style={{ fontFamily: theme.headingFont }}>{card.title}</h3>
+                            <p className="text-sm leading-7 opacity-80">{card.description}</p>
+                          </div>
+                        </article>
+                      ))}
+                    </div>
+                  </>
+                )}
               </section>
             ) : null}
 
@@ -505,17 +540,19 @@ export default function CategoryPage() {
                 )}
               </div>
             ) : (
-              <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+              <div className={`grid gap-5 ${isSportsCardsPage ? "md:grid-cols-2 xl:grid-cols-3" : "md:grid-cols-2 xl:grid-cols-3"}`}>
                 {listings.map(listing => (
-                  <Card key={listing.id} className={`overflow-hidden rounded-[2rem] border ${theme.cardClassName}`}>
-                    <div className="aspect-[4/5] overflow-hidden border-b border-current/10 bg-black/10">
-                      <img
-                        src={resolveTradebiliaListingImage({ title: listing.title, category: listing.category, primaryPhotoUrl: listing.primaryPhotoUrl })}
-                        alt={listing.title}
-                        className="h-full w-full object-cover"
-                      />
+                  <Card key={listing.id} className={`overflow-hidden border ${theme.cardClassName} ${isSportsCardsPage ? "rounded-[1.75rem] shadow-[0_18px_44px_rgba(15,76,92,0.12)]" : "rounded-[2rem]"}`}>
+                    <div className={`overflow-hidden border-b border-current/10 ${isSportsCardsPage ? "aspect-[7/9] bg-[linear-gradient(180deg,rgba(243,228,188,0.92)_0%,rgba(232,214,168,0.92)_100%)] p-4" : "aspect-[4/5] bg-black/10"}`}>
+                      <div className={isSportsCardsPage ? "h-full rounded-[1.25rem] border border-[#0f4658]/10 bg-[#f7ecd2] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)]" : "h-full"}>
+                        <img
+                          src={resolveTradebiliaListingImage({ title: listing.title, category: listing.category, primaryPhotoUrl: listing.primaryPhotoUrl })}
+                          alt={listing.title}
+                          className={isSportsCardsPage ? "h-full w-full object-contain p-3" : "h-full w-full object-cover"}
+                        />
+                      </div>
                     </div>
-                    <CardContent className="space-y-5 p-5">
+                    <CardContent className={`space-y-5 ${isSportsCardsPage ? "p-5 text-[#153746]" : "p-5"}`}>
                       <div className="flex items-start justify-between gap-3">
                         <div>
                           <p className="text-xs font-semibold uppercase tracking-[0.24em] opacity-60">{listing.categoryLabel}</p>
