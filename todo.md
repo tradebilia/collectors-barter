@@ -136,3 +136,5 @@
 - [x] Remove the navy blue area just below the category bar (changed nav from bg-black/65 to bg-transparent)
 - [x] Make the "Sports Card" font pop more (increase weight and/or size)
 - [x] Make the Tradebilia name/logo larger
+- [x] Make the category navigation bar black in color
+- [x] Move the category bar lower so it sits right above the "Curated Exchange" section
