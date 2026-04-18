@@ -424,13 +424,13 @@ export default function Home() {
       <header className="border-b border-black/70 bg-black text-white shadow-[0_8px_22px_rgba(0,0,0,0.25)]">
         <div className="container flex min-h-7 items-center justify-between gap-3 py-0.5 text-[11px]">
           <div className="flex flex-1 items-center gap-3">
-            <span className="text-2xl font-semibold leading-none text-white">Search</span>
+            <span className="font-['Oswald'] text-[2.35rem] font-semibold leading-none tracking-[-0.05em] text-white sm:text-[2.7rem]">Search</span>
             <div className="flex w-full max-w-sm overflow-hidden rounded-[0.35rem] border border-black/80 bg-white">
               <Input
                 value={keyword}
                 onChange={event => setKeyword(event.target.value)}
                 placeholder="Search..."
-                className="h-7 rounded-none border-0 bg-white px-3 text-[11px] text-slate-900 placeholder:text-slate-500 focus-visible:ring-0"
+                className="h-7 rounded-none border-0 bg-white px-3 text-[10px] text-slate-900 placeholder:text-slate-500 focus-visible:ring-0"
               />
               <button
                 type="button"
@@ -458,7 +458,7 @@ export default function Home() {
             <Link
               key={option.value}
               href={`/category/${option.value}`}
-              className={`flex min-h-7 items-center justify-center border-b border-r border-slate-300 px-2 py-1.5 text-center text-[11px] font-semibold tracking-tight transition hover:bg-slate-100 ${category === option.value ? "bg-[#3b3b3b] text-white" : "bg-[#f7f7f5] text-slate-900"}`}
+              className={`flex min-h-8 items-center justify-center border-b border-r border-slate-300 px-1.5 py-1 text-center font-['Oswald'] text-[13px] font-semibold tracking-[0.01em] transition hover:bg-slate-100 ${category === option.value ? "bg-[#3b3b3b] text-white" : "bg-[#f7f7f5] text-slate-900"}`}
             >
               {option.label}
             </Link>
@@ -476,42 +476,43 @@ export default function Home() {
         </section>
 
         <section className="border-y border-black/25 bg-[linear-gradient(90deg,#8e9093_0%,#d7dde6_50%,#8e9093_100%)] py-1.5 text-black">
-          <div className="container grid gap-2 text-center sm:grid-cols-2 xl:grid-cols-4">
+          <div className="grid gap-0 text-center sm:grid-cols-2 xl:grid-cols-4">
             {[
               ["Total Members", dashboard?.profile.tradeHistoryCount ? `${Math.max(dashboard.profile.tradeHistoryCount * 12, 40)}k` : "40k"],
               ["Total Items", marketplaceQuery.data?.highlights.totalListings ? `${(marketplaceQuery.data.highlights.totalListings * 1250).toLocaleString()}` : "3,500,000"],
               ["Total Value", marketplaceQuery.data?.highlights.totalListings ? `$${(marketplaceQuery.data.highlights.totalListings * 7500).toLocaleString()}` : "$20,500,000"],
               ["Total Trades", marketplaceQuery.data?.highlights.completedTrades ? `${marketplaceQuery.data.highlights.completedTrades}k` : "10k"],
             ].map(([label, value]) => (
-              <div key={label as string} className="space-y-0.5">
-                <p className="text-[10px] font-medium leading-none text-black/80">{label as string}</p>
-                <p className="text-[1.8rem] font-semibold leading-none sm:text-[2rem]">{value as string}</p>
+              <div key={label as string} className="space-y-0.5 px-2 py-1.5">
+                <p className="text-[11px] font-medium leading-none text-black/80">{label as string}</p>
+                <p className="text-[2.45rem] font-semibold leading-none sm:text-[2.85rem]">{value as string}</p>
               </div>
             ))}
           </div>
         </section>
 
-        <section className="container py-0">
+        <section className="py-0">
           {marketplaceQuery.isLoading ? (
             <div className="flex justify-center py-20">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
           ) : (
             <div className="space-y-0">
-              <div className="grid gap-0 lg:grid-cols-[96px_minmax(0,1fr)]">
-                <aside className="bg-[radial-gradient(circle_at_28%_24%,rgba(255,255,255,0.92),rgba(255,255,255,0.15)_30%,transparent_44%),linear-gradient(180deg,#1440f5_0%,#5028f2_52%,#781cf8_100%)] px-2 py-3 text-white shadow-[0_18px_35px_rgba(64,39,183,0.35)]">
-                  <div className="space-y-2 pt-0.5 text-[10px] italic leading-4 text-white/95">
+              <div className="grid gap-0 lg:grid-cols-[122px_minmax(0,1fr)] lg:grid-rows-[auto_1fr]">
+                <aside className="bg-[radial-gradient(circle_at_28%_22%,rgba(255,255,255,0.9),rgba(255,255,255,0.14)_28%,transparent_44%),linear-gradient(180deg,#1c47f3_0%,#4d2bf2_54%,#7b1cf7_100%)] px-2 py-4 text-white shadow-[0_18px_35px_rgba(64,39,183,0.35)] lg:row-span-2 lg:flex lg:flex-col lg:justify-between">
+                  <div className="space-y-3 pt-0.5 font-serif text-[11px] italic leading-4 text-white/95">
                     <Link href="/inventory" className="block transition hover:text-white/75">My Inventory</Link>
                     <button type="button" className="block text-left transition hover:text-white/75">Upcoming Conventions</button>
                     <button type="button" className="block text-left transition hover:text-white/75">Shipping Supplies</button>
                     <button type="button" className="block text-left transition hover:text-white/75">Report a User</button>
                     <button type="button" className="block text-left transition hover:text-white/75">Referral Request</button>
                   </div>
+                  <div className="mt-4 hidden min-h-[225px] rounded-none bg-[radial-gradient(circle_at_top,rgba(84,190,255,0.4),transparent_42%),linear-gradient(180deg,#0a2958_0%,#153e78_48%,#3d4aa8_100%)] lg:block" />
                 </aside>
 
-                <div className="bg-white px-3 py-3 lg:px-5 lg:py-3">
-                  <h2 className="text-center font-serif text-[1.55rem] font-medium tracking-tight text-[#2d241e] sm:text-[1.8rem]">Recently Added</h2>
-                  <div className="mx-auto mt-2 grid max-w-5xl gap-2 sm:grid-cols-2 lg:grid-cols-5">
+                <div className="bg-white px-3 py-4 lg:px-6 lg:py-4">
+                  <h2 className="text-center font-serif text-[2.7rem] font-medium tracking-[-0.035em] text-[#2d241e] sm:text-[3.05rem]">Recently Added</h2>
+                  <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
                     {recentShelfItems.map(item => (
                       <Card key={item.id} className="overflow-hidden rounded-none border border-slate-300 bg-white shadow-none">
                         <div className="aspect-[0.68] overflow-hidden bg-[#f0ebe5]">
@@ -525,14 +526,14 @@ export default function Home() {
                         </div>
                         <CardContent className="space-y-0.5 px-1.5 py-1.5">
                           {item.href ? (
-                            <Link href={item.href} className="line-clamp-2 text-[11px] font-medium leading-3.5 text-slate-900 transition hover:text-primary">
+                            <Link href={item.href} className="line-clamp-2 text-[10px] font-medium leading-3.5 text-slate-900 transition hover:text-primary">
                               {item.title}
                             </Link>
                           ) : (
-                            <p className="line-clamp-2 text-[11px] font-medium leading-3.5 text-slate-900">{item.title}</p>
+                            <p className="line-clamp-2 text-[10px] font-medium leading-3.5 text-slate-900">{item.title}</p>
                           )}
                           <p className="text-[10px] text-[#7a46ff]">{item.price}</p>
-                          <p className="text-[9px] text-slate-500">{item.subtitle}</p>
+                          <p className="text-[8px] text-slate-500">{item.subtitle}</p>
                           <div className="flex flex-wrap gap-1 pt-0.5">
                             {item.href ? (
                               <Link href={item.href} className="inline-flex h-5 items-center rounded-full border border-slate-300 px-1.5 text-[9px] font-medium text-slate-700 transition hover:border-primary hover:text-primary">
@@ -598,12 +599,12 @@ export default function Home() {
                 </div>
               </div>
 
-              <div className="grid gap-0 md:grid-cols-2 xl:grid-cols-4">
+              <div className="grid gap-0 md:grid-cols-2 xl:grid-cols-4 lg:col-start-2">
                 <Card className="overflow-hidden rounded-none border-0 bg-[radial-gradient(circle_at_top,rgba(48,149,255,0.5),transparent_40%),linear-gradient(135deg,#05204f_0%,#0d2d68_100%)] text-white shadow-none">
                   <CardHeader className="pb-2 pt-4">
-                    <CardTitle className="text-sm uppercase tracking-[0.28em] text-white/78">Most Viewed</CardTitle>
+                    <CardTitle className="font-['Oswald'] text-[0.86rem] uppercase tracking-[0.22em] text-white/78">Most Viewed</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-1 pb-4 text-[9.5px] leading-4 text-white/85">
+                  <CardContent className="space-y-1 pb-4 text-[8.5px] leading-4 text-white/85">
                       {mostViewedItems.map((entry, index) => (
                         <p key={`${entry}-${index}`}>{index + 1}. {entry}</p>
                       ))}
@@ -612,9 +613,9 @@ export default function Home() {
                 </Card>
                 <Card className="overflow-hidden rounded-none border-0 bg-[linear-gradient(135deg,#090b10_0%,#262937_100%)] text-white shadow-none">
                   <CardHeader className="pb-2 pt-4">
-                    <CardTitle className="text-sm uppercase tracking-[0.28em] text-white/78">Most Requested</CardTitle>
+                    <CardTitle className="font-['Oswald'] text-[0.86rem] uppercase tracking-[0.22em] text-white/78">Most Requested</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-1 pb-4 text-[9.5px] leading-4 text-white/85">
+                  <CardContent className="space-y-1 pb-4 text-[8.5px] leading-4 text-white/85">
                       {mostRequestedItems.map((entry, index) => (
                         <p key={`${entry}-${index}`}>{index + 1}. {entry}</p>
                       ))}
@@ -623,7 +624,7 @@ export default function Home() {
                 </Card>
                 <Card className="overflow-hidden rounded-none border-0 bg-[linear-gradient(135deg,#d7bba9_0%,#f3e8de_100%)] text-slate-900 shadow-none">
                   <CardHeader className="pb-2 pt-4">
-                    <CardTitle className="text-sm uppercase tracking-[0.28em] text-slate-700">Top Rated Traders</CardTitle>
+                     <CardTitle className="font-['Oswald'] text-[0.86rem] uppercase tracking-[0.22em] text-white/78">Top Rated Traders</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-1 pb-4 text-[9.5px] leading-4 text-slate-700">
                       {topTraderItems.map((entry, index) => (
@@ -634,9 +635,9 @@ export default function Home() {
                 </Card>
                 <Card className="overflow-hidden rounded-none border-0 bg-[radial-gradient(circle_at_top,rgba(18,222,255,0.35),transparent_35%),linear-gradient(135deg,#00477b_0%,#0a86b4_100%)] text-white shadow-none">
                   <CardHeader className="pb-2 pt-4">
-                    <CardTitle className="text-sm uppercase tracking-[0.28em] text-white/78">Highest Trade Value</CardTitle>
+                    <CardTitle className="font-['Oswald'] text-[0.86rem] uppercase tracking-[0.22em] text-white/78">Highest Trade Value</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-1 pb-4 text-[9.5px] leading-4 text-white/85">
+                  <CardContent className="space-y-1 pb-4 text-[8.5px] leading-4 text-white/85">
                       {highestTradeValueItems.map((entry, index) => (
                         <p key={`${entry}-${index}`}>{index + 1}. {entry}</p>
                       ))}

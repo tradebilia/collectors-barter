@@ -52,3 +52,9 @@
 - [x] Restructure the homepage so the key sections read more left-to-right like the Wix reference instead of feeling vertically stacked
 - [x] Make the homepage hero logo treatment span the full width so there are no contrasting left and right side colors around the banner
 - [x] Reduce the top and bottom empty space in the full-width homepage logo banner so the hero is much shorter and closer to the Wix reference
+- [x] Match the homepage font sizes more closely to the Wix reference, especially the header, category strip, metrics band, and Recently Added title
+- [x] Extend the homepage left-side column treatment so the left edge reads more like the Wix reference across the stacked horizontal bands
+- [x] Rebuild the homepage to mirror the public Wix Tradebilia homepage as exactly as possible in structure, spacing, font sizing, and left-edge column treatment
+- [ ] Continue refining homepage typography to more precisely match the Wix reference across the header, category strip, metrics band, and Recently Added section
+- [ ] Extend the left-edge column treatment consistently through the homepage content bands so the layout matches the Wix reference more faithfully
+- [ ] Rework the homepage structure and spacing further to mirror the public Wix Tradebilia homepage more exactly, then revalidate against the reference
