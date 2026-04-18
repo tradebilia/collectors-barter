@@ -100,16 +100,24 @@ const keywordImageMap: Array<{ keywords: string[]; imageUrl: string }> = [
   },
 ];
 
+function normalizeListingImageUrl(url: string) {
+  if (url.startsWith("/manus-storage/")) {
+    return encodeURI(url);
+  }
+
+  return url;
+}
+
 export function resolveTradebiliaListingImage(input: TradebiliaListingImageInput) {
-  if (input.primaryPhotoUrl) return input.primaryPhotoUrl;
+  if (input.primaryPhotoUrl) return normalizeListingImageUrl(input.primaryPhotoUrl);
 
   const title = input.title.toLowerCase();
   const keywordMatch = keywordImageMap.find(entry => entry.keywords.some(keyword => title.includes(keyword)));
-  if (keywordMatch) return keywordMatch.imageUrl;
+  if (keywordMatch) return normalizeListingImageUrl(keywordMatch.imageUrl);
 
   if (input.category && categoryImageMap[input.category]) {
-    return categoryImageMap[input.category];
+    return normalizeListingImageUrl(categoryImageMap[input.category]);
   }
 
-  return "/manus-storage/Comicpage2_6d086599.png";
+  return normalizeListingImageUrl("/manus-storage/Comicpage2_6d086599.png");
 }

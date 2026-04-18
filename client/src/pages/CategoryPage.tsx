@@ -12,13 +12,14 @@ import { resolveTradebiliaListingImage } from "@/lib/listingImages";
 import { trpc } from "@/lib/trpc";
 import {
   TRADEBILIA_LOGO_URL,
+  getTradebiliaCategoryBenchmark,
   getTradebiliaCategoryLabel,
   getTradebiliaCategoryTheme,
   tradebiliaCategories,
   tradebiliaConditionOptions,
   type TradebiliaCategorySlug,
 } from "@/lib/tradebilia";
-import { Heart, Loader2, MessageSquareText, Search, Sparkles, Star } from "lucide-react";
+import { ArrowRight, Heart, Loader2, MessageSquareText, Search, ShieldCheck, Sparkles, Star, Trophy } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Link, useRoute } from "wouter";
@@ -152,32 +153,75 @@ export default function CategoryPage() {
 
   const categoryLabel = getTradebiliaCategoryLabel(slug);
   const activeFilters = categoryFilterPresets[slug];
+  const benchmark = getTradebiliaCategoryBenchmark(slug);
+  const isSportsCardsPage = slug === "sports_cards";
+  const benchmarkQuickFilters = benchmark?.quickFilters ?? [];
+  const benchmarkSpotlights = (benchmark?.spotlights ?? []).map(card => ({
+    ...card,
+    imageUrl: resolveTradebiliaListingImage({ title: card.title, category: slug }),
+  }));
 
   return (
     <div className={`min-h-screen ${theme.pageClassName}`}>
       <header className={`border-b ${theme.borderClassName} ${theme.heroClassName}`}>
         <div className={`relative overflow-hidden ${theme.textureClassName}`}>
-          <div className="container py-8 lg:py-12">
-            <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
+          <div className={`container ${isSportsCardsPage ? "py-6 lg:py-8" : "py-8 lg:py-12"}`}>
+            <div className={`grid gap-8 ${isSportsCardsPage ? "xl:grid-cols-[minmax(0,1.15fr)_340px] xl:items-end" : "lg:grid-cols-[minmax(0,1fr)_340px] lg:items-end"}`}>
               <div className="max-w-4xl">
-                <img src={TRADEBILIA_LOGO_URL} alt="Tradebilia" className="h-auto w-full max-w-xl drop-shadow-[0_20px_35px_rgba(0,0,0,0.25)]" />
-                <p className="mt-6 text-xs font-semibold uppercase tracking-[0.36em] opacity-80">{theme.eyebrow}</p>
-                <h1 className="mt-4 text-5xl leading-none sm:text-6xl lg:text-7xl" style={{ fontFamily: theme.headingFont }}>
+                <img
+                  src={TRADEBILIA_LOGO_URL}
+                  alt="Tradebilia"
+                  className={`h-auto w-full drop-shadow-[0_20px_35px_rgba(0,0,0,0.25)] ${isSportsCardsPage ? "max-w-md" : "max-w-xl"}`}
+                />
+                <p className="mt-5 text-xs font-semibold uppercase tracking-[0.36em] opacity-80">{theme.eyebrow}</p>
+                <h1 className={`mt-3 leading-none ${isSportsCardsPage ? "text-4xl sm:text-6xl lg:text-[5.25rem]" : "text-5xl sm:text-6xl lg:text-7xl"}`} style={{ fontFamily: theme.headingFont }}>
                   {categoryLabel.toUpperCase()} EXCHANGE
                 </h1>
-                <p className="mt-5 max-w-3xl text-base leading-8 opacity-90 sm:text-lg">{theme.description}</p>
-              </div>
-              <div className="grid gap-3 sm:grid-cols-3 lg:max-w-md lg:flex-1">
-                {[
-                  ["Listings", String(listings.length)],
-                  ["Collectors", String(feedQuery.data?.highlights.activeCollectors ?? 0)],
-                  ["Completed Trades", String(feedQuery.data?.highlights.completedTrades ?? 0)],
-                ].map(([label, value]) => (
-                  <div key={label} className="rounded-[1.5rem] border border-white/15 bg-black/15 p-4 text-center backdrop-blur-sm">
-                    <p className="text-xs uppercase tracking-[0.3em] opacity-70">{label}</p>
-                    <p className="mt-3 text-3xl font-semibold">{value}</p>
+                <p className={`max-w-3xl opacity-90 ${isSportsCardsPage ? "mt-4 text-[1.05rem] leading-8" : "mt-5 text-base leading-8 sm:text-lg"}`}>{theme.description}</p>
+                {isSportsCardsPage ? (
+                  <div className="mt-6 flex flex-wrap gap-3">
+                    {benchmarkQuickFilters.map(filter => (
+                      <button
+                        key={filter}
+                        type="button"
+                        onClick={() => setKeyword(filter.toLowerCase())}
+                        className="rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-semibold text-[#fff3d5] backdrop-blur-sm transition hover:bg-white/16"
+                      >
+                        {filter}
+                      </button>
+                    ))}
                   </div>
-                ))}
+                ) : null}
+              </div>
+              <div className="grid gap-4">
+                <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
+                  {[
+                    ["Listings", String(listings.length)],
+                    ["Collectors", String(feedQuery.data?.highlights.activeCollectors ?? 0)],
+                    ["Completed Trades", String(feedQuery.data?.highlights.completedTrades ?? 0)],
+                  ].map(([label, value]) => (
+                    <div key={label} className="rounded-[1.5rem] border border-white/15 bg-black/15 p-4 text-center backdrop-blur-sm">
+                      <p className="text-xs uppercase tracking-[0.3em] opacity-70">{label}</p>
+                      <p className="mt-3 text-3xl font-semibold">{value}</p>
+                    </div>
+                  ))}
+                </div>
+                {isSportsCardsPage ? (
+                  <div className="rounded-[1.75rem] border border-white/15 bg-black/20 p-5 text-[#fff3d5] backdrop-blur-sm">
+                    <div className="flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.28em] text-white/70">
+                      <Trophy className="h-4 w-4" />
+                      {benchmark?.heroNotesEyebrow ?? "Show floor notes"}
+                    </div>
+                    <div className="mt-4 space-y-3 text-sm leading-7 text-white/82">
+                      <p>{benchmark?.heroNotes[0]}</p>
+                      <div className="grid gap-3 text-[0.92rem]">
+                        {benchmark?.heroNotes.slice(1).map(note => (
+                          <div key={note} className="rounded-2xl border border-white/12 bg-white/8 px-4 py-3">{note}</div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
               </div>
             </div>
           </div>
@@ -198,12 +242,15 @@ export default function CategoryPage() {
       </header>
 
       <main className="container py-8 lg:py-10">
-        <div className="grid gap-6 xl:grid-cols-[280px_minmax(0,1fr)]">
+        <div className={`grid gap-6 ${isSportsCardsPage ? "xl:grid-cols-[300px_minmax(0,1fr)]" : "xl:grid-cols-[280px_minmax(0,1fr)]"}`}>
           <aside className={`rounded-[2rem] border p-6 shadow-[0_20px_60px_rgba(0,0,0,0.12)] ${theme.panelClassName}`}>
             <div className="flex items-center gap-3">
               <Search className={`h-5 w-5 ${theme.accentClassName}`} />
               <h2 className="text-3xl font-semibold" style={{ fontFamily: theme.headingFont }}>Filters</h2>
             </div>
+            {isSportsCardsPage ? (
+              <p className="mt-4 text-sm leading-7 opacity-75">{benchmark?.railGuidance}</p>
+            ) : null}
             <div className="mt-6 space-y-5">
               <div className="space-y-2">
                 <Label className="text-sm font-semibold uppercase tracking-[0.18em]">Keyword</Label>
@@ -241,6 +288,23 @@ export default function CategoryPage() {
                   </SelectContent>
                 </Select>
               </div>
+              {isSportsCardsPage ? (
+                <div className="rounded-[1.5rem] border border-current/10 bg-white/45 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.24em] opacity-65">Card-show shortcuts</p>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {benchmarkQuickFilters.map(filter => (
+                    <button
+                        key={filter}
+                        type="button"
+                        onClick={() => setKeyword(filter.toLowerCase())}
+                        className="rounded-full border border-current/10 bg-white/80 px-3 py-1.5 text-xs font-semibold transition hover:bg-white"
+                      >
+                        {filter}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
               <div className={`rounded-[1.5rem] border p-4 ${theme.cardClassName}`}>
                 <p className="text-xs font-semibold uppercase tracking-[0.24em] opacity-70">Subscriber tools</p>
                 <p className="mt-3 text-sm leading-7 opacity-80">Signed-in members can message, save to Watchlist, and send Trade Proposals from every category exchange.</p>
@@ -255,7 +319,7 @@ export default function CategoryPage() {
 
           <section className="space-y-6">
             <div className={`rounded-[2rem] border p-6 ${theme.panelClassName}`}>
-              <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+              <div className={`grid gap-4 ${isSportsCardsPage ? "xl:grid-cols-[minmax(0,1fr)_320px] xl:items-end" : "lg:flex lg:items-end lg:justify-between"}`}>
                 <div>
                   <p className={`text-xs font-semibold uppercase tracking-[0.32em] ${theme.accentClassName}`}>Curated exchange</p>
                   <h2 className="mt-3 text-4xl font-semibold" style={{ fontFamily: theme.headingFont }}>{theme.heading}</h2>
@@ -263,7 +327,7 @@ export default function CategoryPage() {
                     Showing {listings.length} {categoryLabel.toLowerCase()} listings with Watchlist actions, public browsing, and subscriber-only trading controls.
                   </p>
                 </div>
-                <div className="grid gap-3 sm:grid-cols-2 lg:w-[22rem]">
+                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-2">
                   <Select value={sortBy} onValueChange={setSortBy}>
                     <SelectTrigger className="h-12 bg-white/80 text-slate-950">
                       <SelectValue placeholder="Sort by" />
@@ -279,17 +343,81 @@ export default function CategoryPage() {
                   </Button>
                 </div>
               </div>
+              {isSportsCardsPage ? (
+                <div className="mt-6 grid gap-4 lg:grid-cols-3">
+                  {benchmark?.summaryHighlights.map((item, index) => {
+                    const Icon = index === 0 ? Trophy : index === 1 ? ShieldCheck : ArrowRight;
+                    return (
+                      <div key={item.eyebrow} className="rounded-[1.5rem] border border-current/10 bg-white/45 p-5">
+                        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.22em] opacity-65">
+                          <Icon className="h-4 w-4" />
+                          {item.eyebrow}
+                        </div>
+                        <p className="mt-4 text-lg font-semibold">{item.title}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : null}
             </div>
+
+            {isSportsCardsPage ? (
+              <div className="grid gap-5 md:grid-cols-3">
+                {benchmarkSpotlights.map(card => (
+                  <article key={card.title} className={`overflow-hidden rounded-[2rem] border ${theme.cardClassName}`}>
+                    <div className="aspect-[4/3] overflow-hidden border-b border-current/10 bg-black/10">
+                      <img src={card.imageUrl} alt={card.title} className="h-full w-full object-cover" />
+                    </div>
+                    <div className="space-y-3 p-5">
+                      <p className="text-xs font-semibold uppercase tracking-[0.24em] opacity-60">{card.eyebrow}</p>
+                      <h3 className="text-2xl font-semibold leading-tight">{card.title}</h3>
+                      <p className="text-sm leading-7 opacity-80">{card.description}</p>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            ) : null}
 
             {feedQuery.isLoading ? (
               <div className="flex min-h-[20rem] items-center justify-center rounded-[2rem] border border-dashed border-current/25">
                 <Loader2 className="h-8 w-8 animate-spin" />
               </div>
             ) : listings.length === 0 ? (
-              <div className={`rounded-[2rem] border p-10 text-center ${theme.panelClassName}`}>
-                <Sparkles className="mx-auto h-10 w-10" />
-                <h3 className="mt-5 text-3xl font-semibold" style={{ fontFamily: theme.headingFont }}>No listings match these filters yet.</h3>
-                <p className="mt-4 text-base leading-8 opacity-80">Try broadening the search or explore another Tradebilia category exchange.</p>
+              <div className={`rounded-[2rem] border p-8 ${theme.panelClassName}`}>
+                {isSportsCardsPage ? (
+                  <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_300px] lg:items-center">
+                    <div>
+                      <div className="flex items-center gap-3 text-sm font-semibold uppercase tracking-[0.24em] opacity-65">
+                        <Sparkles className="h-5 w-5" />
+                        {benchmark?.emptyStateEyebrow}
+                      </div>
+                      <h3 className="mt-4 text-4xl font-semibold" style={{ fontFamily: theme.headingFont }}>{benchmark?.emptyStateTitle}</h3>
+                      <p className="mt-4 max-w-2xl text-base leading-8 opacity-80">{benchmark?.emptyStateDescription}</p>
+                      <div className="mt-6 flex flex-wrap gap-3">
+                        <Button asChild className="rounded-full px-5">
+                          <Link href="/inventory">Browse member inventory</Link>
+                        </Button>
+                        <Button variant="outline" className="rounded-full bg-transparent" asChild>
+                          <Link href="/members">Find Sports Cards traders</Link>
+                        </Button>
+                      </div>
+                    </div>
+                    <div className={`rounded-[1.75rem] border p-5 ${theme.cardClassName}`}>
+                      <p className="text-xs font-semibold uppercase tracking-[0.24em] opacity-60">{benchmark?.emptyStateBuildoutTitle}</p>
+                      <div className="mt-4 space-y-3 text-sm leading-7 opacity-80">
+                        {benchmark?.emptyStateBuildoutNotes.map(note => (
+                          <p key={note}>{note}</p>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center">
+                    <Sparkles className="mx-auto h-10 w-10" />
+                    <h3 className="mt-5 text-3xl font-semibold" style={{ fontFamily: theme.headingFont }}>No listings match these filters yet.</h3>
+                    <p className="mt-4 text-base leading-8 opacity-80">Try broadening the search or explore another Tradebilia category exchange.</p>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">

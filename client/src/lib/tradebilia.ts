@@ -193,3 +193,88 @@ export function getTradebiliaCategoryTheme(slug: string) {
 export function getTradebiliaCategoryLabel(slug: string) {
   return tradebiliaCategories.find(category => category.value === slug)?.label ?? "Category";
 }
+
+export type TradebiliaBenchmarkNote = {
+  eyebrow: string;
+  title: string;
+  description: string;
+};
+
+export type TradebiliaBenchmarkSpotlight = {
+  title: string;
+  eyebrow: string;
+  description: string;
+};
+
+export type TradebiliaCategoryBenchmark = {
+  quickFilters: string[];
+  railGuidance: string;
+  heroNotesEyebrow: string;
+  heroNotes: string[];
+  summaryHighlights: TradebiliaBenchmarkNote[];
+  spotlights: TradebiliaBenchmarkSpotlight[];
+  emptyStateEyebrow: string;
+  emptyStateTitle: string;
+  emptyStateDescription: string;
+  emptyStateBuildoutTitle: string;
+  emptyStateBuildoutNotes: string[];
+};
+
+export const tradebiliaCategoryBenchmarks: Partial<Record<TradebiliaCategorySlug, TradebiliaCategoryBenchmark>> = {
+  sports_cards: {
+    quickFilters: ["Rookie cards", "Hall of Fame", "Signed slabs", "Low-pop grails"],
+    railGuidance: "Use this left rail as the benchmark pattern: immediate search, player and maker context, then grading-focused controls underneath.",
+    heroNotesEyebrow: "Show floor notes",
+    heroNotes: [
+      "Build this page like a premium convention aisle: strong filtering on the left, clear market story on the right, and enough visual energy to feel alive even in low-inventory moments.",
+      "Prioritize rookie cards, vintage icons, and slabbed grails in the first browsing impression.",
+      "Use teal, cream, and dark arena shadows as the benchmark language for future category refinement.",
+    ],
+    summaryHighlights: [
+      {
+        eyebrow: "Premium lane",
+        title: "Highlight rookie cards and low-pop slabs at the top of the browsing experience.",
+        description: "Sports Cards should feel like a curated show floor, not a generic grid.",
+      },
+      {
+        eyebrow: "Trust cues",
+        title: "Keep grader and collector confidence visible before members decide whether to trade.",
+        description: "Confidence markers should support action without overpowering the browse flow.",
+      },
+      {
+        eyebrow: "Template intent",
+        title: "Use this tighter summary block as the layout model when we replicate the improvements in other categories.",
+        description: "The structure is reusable even though the language remains sports-specific.",
+      },
+    ],
+    spotlights: [
+      {
+        eyebrow: "Benchmark grail",
+        title: "1986-87 Michael Jordan Rookie",
+        description: "Anchor the benchmark page with a centerpiece rookie that immediately signals premium card-show quality.",
+      },
+      {
+        eyebrow: "Vintage football",
+        title: "1976 Walter Payton Rookie",
+        description: "Use a second lane to suggest era-based browsing and reinforce that the page can carry more than one sport cleanly.",
+      },
+      {
+        eyebrow: "Baseball spotlight",
+        title: "1980 Rickey Henderson Rookie",
+        description: "Give the lower section real visual gravity so the page still feels curated even when live listings are temporarily thin.",
+      },
+    ],
+    emptyStateEyebrow: "Sports Cards exchange standby",
+    emptyStateTitle: "No live sports-card listings match these filters yet.",
+    emptyStateDescription: "The layout is now prepared to carry a fuller card-show experience. Until more Sports Cards inventory is added, the benchmark page should guide visitors toward other discovery paths instead of feeling empty.",
+    emptyStateBuildoutTitle: "Suggested next build-outs",
+    emptyStateBuildoutNotes: [
+      "Add featured Sports Cards listings or seeded showcase cards so this benchmark page always demonstrates the intended card-grid rhythm.",
+      "Once this structure feels final, mirror its spacing, editorial cards, and stronger empty-state behavior across the other category pages.",
+    ],
+  },
+};
+
+export function getTradebiliaCategoryBenchmark(slug: string) {
+  return tradebiliaCategoryBenchmarks[slug as TradebiliaCategorySlug] ?? null;
+}

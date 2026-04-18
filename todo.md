@@ -76,3 +76,10 @@
 - [x] Keep the Upcoming Convention page deferred until source website links are provided
 - [x] Generate and integrate Tradebilia item images so listed trade items no longer appear blank
 - [x] Replace generic listing imagery with the user’s uploaded item files wherever listed trade items are currently blank or using stand-in artwork
+- [ ] Audit all individual Tradebilia category pages for layout, imagery, copy, and interaction consistency
+- [ ] Refine the highest-priority category page issues identified during the audit
+- [x] Audit the Sports Cards category page first and define it as the benchmark layout for the remaining category pages
+- [x] Refine the Sports Cards category page layout, filters, listing presentation, and visual hierarchy so it can serve as the template for other categories
+- [x] Document the reusable Sports Cards benchmark rules so the remaining category pages can be updated consistently
+- [x] Refactor the Sports Cards benchmark improvements into clearer shared category-page patterns where appropriate
+- [x] Add benchmark-specific test coverage that verifies the Sports Cards layout sections and empty-state structure beyond image resolution alone
