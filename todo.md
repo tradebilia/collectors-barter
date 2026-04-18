@@ -127,3 +127,7 @@
 - [x] Remove the quick filter shortcut bubbles (Rookie cards, Hall of Fame, Signed slabs, Low-pop grails) from the Sports Cards hero section
 - [x] Rebuild the Sports Cards hero wallpaper background from scratch using the new Sports Cards image
 - [x] Adjust the wallpaper to show more cards from the image (use object-contain instead of object-cover to fit more of the image)
+- [x] Stretch the wallpaper to fill the entire hero section and blend it better into the background
+- [x] Remove the Show Floor Notes section from the hero
+- [x] Move stat cards to the right, shrink them so all are visible (Listings, Collectors, Completed Trades)
+- [x] Redesign hero layout: Tradebilia logo top-left, Sports Card title centered and larger, Exchange below centered and smaller

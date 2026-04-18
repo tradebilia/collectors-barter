@@ -175,43 +175,37 @@ export default function CategoryPage() {
         {isSportsCardsPage ? (
           <>
             <div className="pointer-events-none absolute inset-0">
-              <img src={SPORTS_CARDS_WALLPAPER_URL} alt="" aria-hidden="true" className="h-full w-full object-contain" />
-              <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-black/60" />
+              <img src={SPORTS_CARDS_WALLPAPER_URL} alt="" aria-hidden="true" className="h-full w-full object-cover" />
+              <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/50 to-black/70" />
             </div>
-            <div className="container relative py-0 lg:py-1 max-h-[300px] overflow-hidden">
-              <div className="relative px-1 py-0 lg:py-0">
-                <div className="relative max-w-4xl text-[#fff4df]">
-                  <div className="max-w-[16rem] lg:max-w-[20rem]">
-                    <img src={SPORTS_CARDS_LONG_LOGO_URL} alt="Tradebilia Collectors Trading Exchange" className="h-auto w-full object-contain" />
-                  </div>
-
-                  {theme.eyebrow ? <p className="hidden text-xs font-semibold uppercase tracking-[0.36em] text-white/78">{theme.eyebrow}</p> : null}
-                  <h1 className="mt-0 max-w-5xl leading-none text-[#fff4df] sm:text-3xl lg:text-4xl">
-                    <span className="block text-2xl font-semibold uppercase tracking-[0.16em] sm:text-3xl lg:text-4xl" style={{ fontFamily: "Bebas Neue, Oswald, Inter, sans-serif" }}>
-                      Sports Card
-                    </span>
-                    <span className="mt-0 block text-xl font-medium uppercase tracking-[0.24em] text-white/86 sm:text-2xl lg:text-3xl" style={{ fontFamily: "Oswald, Inter, sans-serif" }}>
-                      Exchange
-                    </span>
-                  </h1>
-                  <p className="hidden lg:block mt-1 max-w-3xl text-sm leading-6 text-white/86">{theme.description}</p>
-                  <div className="hidden lg:grid mt-2 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(260px,320px)] lg:items-start">
-                    <div className="rounded-[1.5rem] border border-white/12 bg-black/18 p-5 backdrop-blur-sm">
-                      <div className="flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.28em] text-white/72">
-                        <Trophy className="h-4 w-4" />
-                        {benchmark?.heroNotesEyebrow}
-                      </div>
-                      <p className="mt-4 text-base leading-8 text-white/84">{benchmark?.heroNotes[0]}</p>
+            <div className="relative py-4 lg:py-6 max-h-[300px] overflow-hidden flex items-center px-4 lg:px-8">
+              <div className="w-full">
+                <div className="flex justify-between items-center gap-4">
+                  <div className="flex-shrink-0">
+                    <div className="max-w-[11rem] lg:max-w-[13rem]">
+                      <img src={SPORTS_CARDS_LONG_LOGO_URL} alt="Tradebilia Collectors Trading Exchange" className="h-auto w-full object-contain" />
                     </div>
-                    <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
+                  </div>
+                  <div className="flex-1 text-center">
+                    <h1 className="leading-none text-[#fff4df]">
+                      <span className="block text-5xl lg:text-6xl font-bold uppercase tracking-[0.08em] lg:tracking-[0.1em]" style={{ fontFamily: "Bebas Neue, Oswald, Inter, sans-serif" }}>
+                        Sports Card
+                      </span>
+                      <span className="mt-0.5 lg:mt-1 block text-3xl lg:text-4xl font-semibold uppercase tracking-[0.12em]" style={{ fontFamily: "Oswald, Inter, sans-serif" }}>
+                        Exchange
+                      </span>
+                    </h1>
+                  </div>
+                  <div className="flex-shrink-0">
+                    <div className="grid gap-2 sm:grid-cols-3 lg:grid-cols-1">
                       {[
                         ["Listings", String(listings.length)],
                         ["Collectors", String(feedQuery.data?.highlights.activeCollectors ?? 0)],
                         ["Completed Trades", String(feedQuery.data?.highlights.completedTrades ?? 0)],
                       ].map(([label, value]) => (
-                        <div key={label} className="rounded-[1.35rem] border border-white/12 bg-black/18 px-3 py-2 text-[#fff3d5] backdrop-blur-sm">
-                          <p className="text-[8px] uppercase tracking-[0.3em] text-white/60">{label}</p>
-                          <p className="mt-1 text-lg font-semibold text-white">{value}</p>
+                        <div key={label} className="rounded-lg border border-white/12 bg-black/25 px-2.5 py-1.5 text-[#fff3d5] backdrop-blur-sm">
+                          <p className="text-[7px] uppercase tracking-[0.25em] text-white/50">{label}</p>
+                          <p className="mt-0.5 text-sm font-semibold text-white">{value}</p>
                         </div>
                       ))}
                     </div>
