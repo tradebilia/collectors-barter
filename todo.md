@@ -102,3 +102,4 @@
 - [x] Pause broader category-page rollout work and keep the current refinement scope limited to the Sports Cards page only
 - [x] Replace the current image to the left of the Tradebilia wordmark on the Sports Cards page with the shortform logo
 - [x] Remove the logo from the top-left area of the Sports Cards page header
+- [x] Place the shortform logo to the left of the Tradebilia name on the Sports Cards page header

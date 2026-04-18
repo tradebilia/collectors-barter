@@ -178,8 +178,11 @@ export default function CategoryPage() {
                   <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(8,39,48,0.4)_0%,rgba(8,39,48,0.1)_35%,rgba(8,39,48,0.64)_100%)]" />
                 </div>
                 <div className="relative max-w-4xl text-[#fff4df]">
-                  <div className="flex flex-wrap items-center">
-                    <div>
+                  <div className="flex flex-wrap items-center gap-4 lg:gap-6">
+                    <div className="flex h-20 w-20 items-center justify-center rounded-full bg-[rgba(255,243,213,0.08)] shadow-[0_10px_25px_rgba(0,0,0,0.24)] backdrop-blur-[2px] lg:h-24 lg:w-24">
+                      <img src={SPORTS_CARDS_SHORT_LOGO_URL} alt="Tradebilia short logo" className="h-14 w-14 object-contain lg:h-16 lg:w-16" />
+                    </div>
+                    <div className="border-l border-white/30 pl-4 lg:pl-6">
                       <p className="text-[clamp(2.35rem,5vw,4.6rem)] font-black uppercase leading-none tracking-[0.03em] text-[#fff3d5]" style={{ fontFamily: theme.headingFont }}>Tradebilia</p>
                       <p className="mt-2 text-sm uppercase tracking-[0.28em] text-white/80 lg:text-base">Collectors Trading Exchange</p>
                     </div>
