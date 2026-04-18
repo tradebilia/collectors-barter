@@ -1,5 +1,6 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
+import { trpc } from "@/lib/trpc";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -40,6 +41,22 @@ export default function ReferralRequest() {
 
   const referrer = useMemo(() => user?.name || user?.email || "Tradebilia member", [user?.email, user?.name]);
 
+  const referralMutation = trpc.market.referralRequest.useMutation({
+    onSuccess: result => {
+      if (result.success) {
+        toast.success(result.message);
+        setFriendName("");
+        setFriendEmail("");
+        setCollectorFocus("");
+      } else {
+        toast.error(result.message);
+      }
+    },
+    onError: error => {
+      toast.error(error.message);
+    },
+  });
+
   const submitReferral = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -48,10 +65,12 @@ export default function ReferralRequest() {
       return;
     }
 
-    toast.success(`Referral request prepared for ${friendName || friendEmail || "your collector invite"}.`);
-    setFriendName("");
-    setFriendEmail("");
-    setCollectorFocus("");
+    referralMutation.mutate({
+      friendName,
+      friendEmail,
+      collectorFocus,
+      message,
+    });
   };
 
   return (
@@ -146,7 +165,7 @@ export default function ReferralRequest() {
             <CardHeader className="pb-4">
               <CardTitle className="text-3xl sm:text-4xl">Refer a collector with context</CardTitle>
               <CardDescription className="max-w-2xl text-base leading-7 text-white/65">
-                This page establishes the standalone referral experience now. If you want later, I can connect it to invitation emails, approval workflows, or member reward logic.
+                Submit a real referral request for owner review while keeping the same polished Tradebilia visual language used across the rest of the member experience.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -182,7 +201,7 @@ export default function ReferralRequest() {
                   {[
                     ["Community fit", "Collectors who understand condition, provenance, and communication etiquette."],
                     ["Trust signal", "A direct referral carries more context than a cold signup."],
-                    ["Future-ready", "This can later connect to approvals, invite links, or bonuses."],
+                    ["Review-ready", "Referral requests now reach a real owner-review workflow instead of stopping at a front-end-only shell."],
                   ].map(([title, body]) => (
                     <div key={title as string}>
                       <p className="text-sm font-semibold text-white">{title as string}</p>
@@ -192,9 +211,9 @@ export default function ReferralRequest() {
                 </div>
 
                 <div className="flex flex-wrap gap-3">
-                  <Button type="submit" className="rounded-full bg-white text-slate-950 hover:bg-white/90">
+                  <Button type="submit" className="rounded-full bg-white text-slate-950 hover:bg-white/90" disabled={referralMutation.isPending}>
                     <Send className="mr-2 h-4 w-4" />
-                    Send referral request
+                    {referralMutation.isPending ? "Sending referral..." : "Send referral request"}
                   </Button>
                   <Button type="button" variant="outline" className="rounded-full border-white/15 bg-transparent text-white hover:bg-white/10" onClick={() => toast.info(`${firstName(referrer)} can customize incentive rules later.`)}>
                     Preview referral program

@@ -16,7 +16,12 @@ const dbMocks = vi.hoisted(() => ({
   updateProfile: vi.fn(),
 }));
 
+const notificationMocks = vi.hoisted(() => ({
+  notifyOwner: vi.fn(),
+}));
+
 vi.mock("./db", () => dbMocks);
+vi.mock("./_core/notification", () => notificationMocks);
 
 const { appRouter } = await import("./routers");
 
@@ -154,5 +159,49 @@ describe("market router", () => {
       review: "Excellent communication and careful packaging.",
     });
     expect(result).toEqual({ ratingsAndReviews: [] });
+  });
+
+  it("sends a Tradebilia report to owner review", async () => {
+    notificationMocks.notifyOwner.mockResolvedValue(true);
+
+    const caller = appRouter.createCaller(createContext());
+    const result = await caller.market.reportUser({
+      reportedMember: "Collector 88",
+      listingReference: "Listing #42",
+      concernType: "Harassment or abusive conduct",
+      contactEmail: "collector@example.com",
+      details: "The member repeatedly sent abusive messages after a declined proposal.",
+      supportingNotes: "Conversation thread captured in proposal comments.",
+    });
+
+    expect(notificationMocks.notifyOwner).toHaveBeenCalledWith({
+      title: "Tradebilia report submitted: Harassment or abusive conduct",
+      content: expect.stringContaining("Reported member: Collector 88"),
+    });
+    expect(result).toEqual({
+      success: true,
+      message: "Your report was sent to the Tradebilia moderation review queue.",
+    });
+  });
+
+  it("sends a Tradebilia referral request for owner review", async () => {
+    notificationMocks.notifyOwner.mockResolvedValue(true);
+
+    const caller = appRouter.createCaller(createContext());
+    const result = await caller.market.referralRequest({
+      friendName: "Jordan Example",
+      friendEmail: "jordan@example.com",
+      collectorFocus: "graded sports cards and vintage sealed wax",
+      message: "Jordan is a careful collector who would add value to the Tradebilia community.",
+    });
+
+    expect(notificationMocks.notifyOwner).toHaveBeenCalledWith({
+      title: "Tradebilia referral request: Jordan Example",
+      content: expect.stringContaining("Referral candidate email: jordan@example.com"),
+    });
+    expect(result).toEqual({
+      success: true,
+      message: "Your referral request was sent for Tradebilia review.",
+    });
   });
 });

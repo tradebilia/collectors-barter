@@ -1,4 +1,5 @@
 import { useAuth } from "@/_core/hooks/useAuth";
+import { resolveTradebiliaListingImage } from "@/lib/listingImages";
 import { trpc } from "@/lib/trpc";
 import { getLoginUrl } from "@/const";
 import { Badge } from "@/components/ui/badge";
@@ -142,13 +143,11 @@ export default function Watchlist() {
                   {filteredWatchlist.map(listing => (
                     <Card key={listing.id} className="overflow-hidden rounded-[1.5rem] border-white/10 bg-white/5 text-white shadow-none">
                       <div className="aspect-[1.05] overflow-hidden bg-[linear-gradient(135deg,#f6efe3_0%,#ece5d7_100%)]">
-                        {listing.primaryPhotoUrl ? (
-                          <img src={listing.primaryPhotoUrl} alt={listing.title} className="h-full w-full object-cover" />
-                        ) : (
-                          <div className="flex h-full items-center justify-center text-slate-500">
-                            <Sparkles className="h-10 w-10" />
-                          </div>
-                        )}
+                        <img
+                          src={resolveTradebiliaListingImage({ title: listing.title, category: listing.category, primaryPhotoUrl: listing.primaryPhotoUrl })}
+                          alt={listing.title}
+                          className="h-full w-full object-cover"
+                        />
                       </div>
                       <CardContent className="space-y-3 p-5">
                         <div>

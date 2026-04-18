@@ -1,4 +1,5 @@
 import { useAuth } from "@/_core/hooks/useAuth";
+import { resolveTradebiliaListingImage } from "@/lib/listingImages";
 import { trpc } from "@/lib/trpc";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -55,11 +56,11 @@ const conditionOptions = [
 ] as const;
 
 const fallbackRecentItems = [
-  { id: -1, title: "Baseball Legends Card Pack", price: "$100.00", subtitle: "4.7 ★ · 67 reviews", imageUrl: null },
-  { id: -2, title: "Transformers Action Figures Set", price: "$120.00", subtitle: "4.8 ★ · 51 reviews", imageUrl: null },
-  { id: -3, title: "Action Comics Collection", price: "$150.00", subtitle: "4.9 ★ · 41 reviews", imageUrl: null },
-  { id: -4, title: "Classic Barbie Doll", price: "$80.00", subtitle: "4.6 ★ · 38 reviews", imageUrl: null },
-  { id: -5, title: "Comic Book Mystery Bundle", price: "$80.00", subtitle: "4.4 ★ · 29 reviews", imageUrl: null },
+  { id: -1, title: "Baseball Legends Card Pack", price: "$100.00", subtitle: "4.7 ★ · 67 reviews", imageUrl: "/manus-storage/sportscards2_50e2e734.png" },
+  { id: -2, title: "Transformers Action Figures Set", price: "$120.00", subtitle: "4.8 ★ · 51 reviews", imageUrl: "/manus-storage/Vintagetoys2_b56d7fdc.png" },
+  { id: -3, title: "Action Comics Collection", price: "$150.00", subtitle: "4.9 ★ · 41 reviews", imageUrl: "/manus-storage/Comicpage2_6d086599.png" },
+  { id: -4, title: "Classic Barbie Doll", price: "$80.00", subtitle: "4.6 ★ · 38 reviews", imageUrl: "/manus-storage/Vintagetoys2_b56d7fdc.png" },
+  { id: -5, title: "Comic Book Mystery Bundle", price: "$80.00", subtitle: "4.4 ★ · 29 reviews", imageUrl: "/manus-storage/Comicpage2_6d086599.png" },
 ] as const;
 
 const fallbackMostViewed = [
@@ -285,7 +286,7 @@ export default function Home() {
         title: listing.title,
         price: "$100.00",
         subtitle: `${listing.ownerRating.averageRating.toFixed(1)} ★ · ${listing.ownerRating.reviewCount} reviews`,
-        imageUrl: listing.primaryPhotoUrl,
+        imageUrl: resolveTradebiliaListingImage({ title: listing.title, category: listing.category, primaryPhotoUrl: listing.primaryPhotoUrl }),
         href: `/listings/${listing.id}`,
         tradeListingId: listing.id,
         savedToWatchlist: listing.savedToWatchlist,
@@ -501,9 +502,19 @@ export default function Home() {
               <div className="grid gap-0 lg:grid-cols-[122px_minmax(0,1fr)] lg:grid-rows-[auto_1fr]">
                 <aside className="bg-[radial-gradient(circle_at_28%_22%,rgba(255,255,255,0.9),rgba(255,255,255,0.14)_28%,transparent_44%),linear-gradient(180deg,#1c47f3_0%,#4d2bf2_54%,#7b1cf7_100%)] px-2 py-4 text-white shadow-[0_18px_35px_rgba(64,39,183,0.35)] lg:row-span-2 lg:flex lg:flex-col lg:justify-between">
                   <div className="space-y-3 pt-0.5 font-serif text-[11px] italic leading-4 text-white/95">
+                    <div className="pb-2 text-[9px] uppercase tracking-[0.2em] not-italic text-white/65">
+                      Subscriber tools
+                      <p className="mt-2 normal-case tracking-normal text-[9px] leading-3 text-white/52">Browsing is public. Watchlist, Trade Proposals, inventory, and messaging require sign-in.</p>
+                    </div>
                     <Link href="/inventory" className="block transition hover:text-white/75">My Inventory</Link>
-                    <button type="button" className="block text-left transition hover:text-white/75">Upcoming Conventions</button>
-                    <button type="button" className="block text-left transition hover:text-white/75">Shipping Supplies</button>
+                    <div className="space-y-1 text-white/72">
+                      <p>Upcoming Conventions</p>
+                      <p className="text-[9px] uppercase tracking-[0.18em] not-italic text-white/48">Awaiting source links</p>
+                    </div>
+                    <div className="space-y-1 text-white/72">
+                      <p>Shipping Supplies</p>
+                      <p className="text-[9px] uppercase tracking-[0.18em] not-italic text-white/48">Planned next</p>
+                    </div>
                     <Link href="/report-user" className="block transition hover:text-white/75">Report a User</Link>
                     <Link href="/referral-request" className="block transition hover:text-white/75">Referral Request</Link>
                     <Link href="/watchlist" className="block transition hover:text-white/75">Watchlist</Link>
@@ -520,9 +531,7 @@ export default function Home() {
                           {item.imageUrl ? (
                             <img src={item.imageUrl} alt={item.title} className="h-full w-full object-cover" />
                           ) : (
-                            <div className="flex h-full items-center justify-center bg-[linear-gradient(135deg,#f6efe3_0%,#ece5d7_100%)] text-slate-500">
-                              <Sparkles className="h-8 w-8" />
-                            </div>
+                            <img src={resolveTradebiliaListingImage({ title: item.title })} alt={item.title} className="h-full w-full object-cover" />
                           )}
                         </div>
                         <CardContent className="space-y-0.5 px-1.5 py-1.5">
@@ -780,7 +789,7 @@ export default function Home() {
                   {dashboard.ownListings.map(listing => (
                     <Card key={listing.id} className="surface-card overflow-hidden bg-card/90">
                       <div className="aspect-[4/3] bg-muted">
-                        {listing.primaryPhotoUrl ? <img src={listing.primaryPhotoUrl} alt={listing.title} className="h-full w-full object-cover" /> : null}
+                        <img src={resolveTradebiliaListingImage({ title: listing.title, category: listing.category, primaryPhotoUrl: listing.primaryPhotoUrl })} alt={listing.title} className="h-full w-full object-cover" />
                       </div>
                       <CardContent className="space-y-3 p-5">
                         <div className="flex items-center justify-between gap-3">
@@ -1022,7 +1031,7 @@ export default function Home() {
                     {dashboard.watchlist.length > 0 ? dashboard.watchlist.map(listing => (
                       <div key={listing.id} className="overflow-hidden rounded-[1.75rem] border border-border/70 bg-background/70">
                         <div className="aspect-[4/3] bg-muted">
-                          {listing.primaryPhotoUrl ? <img src={listing.primaryPhotoUrl} alt={listing.title} className="h-full w-full object-cover" /> : null}
+                          <img src={resolveTradebiliaListingImage({ title: listing.title, category: listing.category, primaryPhotoUrl: listing.primaryPhotoUrl })} alt={listing.title} className="h-full w-full object-cover" />
                         </div>
                         <div className="space-y-3 p-5">
                           <h4 className="text-2xl font-semibold text-foreground">{listing.title}</h4>

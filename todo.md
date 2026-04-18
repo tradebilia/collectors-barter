@@ -63,3 +63,16 @@
 - [x] Create a standalone Referral Request page that matches the current Tradebilia layout, styling, and visual language
 - [x] Create a standalone Watchlist page that matches the current Tradebilia layout, styling, and visual language
 - [x] Reserve the Upcoming Convention page for a later data-driven implementation once the source website is provided
+- [x] Implement a real Report a User workflow with backend handling, validation, and success/error states
+- [x] Implement a real Referral Request workflow with backend handling, validation, and success/error states
+- [x] Improve navigation clarity so placeholder-style links are either implemented or clearly deferred
+- [x] Strengthen subscriber-only action cues so visitors can more easily tell what requires sign-in
+- [x] Keep the Upcoming Convention page deferred until source website links are provided
+- [x] Implement a real Report a User workflow with backend handling, validation, and success/error states
+- [x] Implement a real Referral Request workflow with backend handling, validation, and success/error states
+- [x] Build a Tradebilia account settings experience that matches the provided reference screen in structure and visual language
+- [x] Improve navigation clarity so placeholder-style links are either implemented or clearly deferred
+- [x] Strengthen subscriber-only action cues so visitors can more easily tell what requires sign-in
+- [x] Keep the Upcoming Convention page deferred until source website links are provided
+- [x] Generate and integrate Tradebilia item images so listed trade items no longer appear blank
+- [x] Replace generic listing imagery with the user’s uploaded item files wherever listed trade items are currently blank or using stand-in artwork

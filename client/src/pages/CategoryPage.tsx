@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { resolveTradebiliaListingImage } from "@/lib/listingImages";
 import { trpc } from "@/lib/trpc";
 import {
   TRADEBILIA_LOGO_URL,
@@ -295,13 +296,11 @@ export default function CategoryPage() {
                 {listings.map(listing => (
                   <Card key={listing.id} className={`overflow-hidden rounded-[2rem] border ${theme.cardClassName}`}>
                     <div className="aspect-[4/5] overflow-hidden border-b border-current/10 bg-black/10">
-                      {listing.primaryPhotoUrl ? (
-                        <img src={listing.primaryPhotoUrl} alt={listing.title} className="h-full w-full object-cover" />
-                      ) : (
-                        <div className="flex h-full items-center justify-center bg-black/10 px-8 text-center text-sm opacity-70">
-                          No listing photo uploaded yet.
-                        </div>
-                      )}
+                      <img
+                        src={resolveTradebiliaListingImage({ title: listing.title, category: listing.category, primaryPhotoUrl: listing.primaryPhotoUrl })}
+                        alt={listing.title}
+                        className="h-full w-full object-cover"
+                      />
                     </div>
                     <CardContent className="space-y-5 p-5">
                       <div className="flex items-start justify-between gap-3">

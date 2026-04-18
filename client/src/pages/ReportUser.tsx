@@ -1,5 +1,6 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
+import { trpc } from "@/lib/trpc";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -58,6 +59,24 @@ export default function ReportUser() {
 
   const memberName = useMemo(() => user?.name || user?.email || "Subscriber", [user?.email, user?.name]);
 
+  const reportMutation = trpc.market.reportUser.useMutation({
+    onSuccess: result => {
+      if (result.success) {
+        toast.success(result.message);
+        setReportedMember("");
+        setListingReference("");
+        setConcernType("");
+        setDetails("");
+        setSupportingNotes("");
+      } else {
+        toast.error(result.message);
+      }
+    },
+    onError: error => {
+      toast.error(error.message);
+    },
+  });
+
   const submitReport = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -66,12 +85,19 @@ export default function ReportUser() {
       return;
     }
 
-    toast.success("Report draft submitted for moderation review.");
-    setReportedMember("");
-    setListingReference("");
-    setConcernType("");
-    setDetails("");
-    setSupportingNotes("");
+    if (!concernType) {
+      toast.error("Please choose a concern type before submitting your report.");
+      return;
+    }
+
+    reportMutation.mutate({
+      reportedMember,
+      listingReference,
+      concernType,
+      contactEmail,
+      details,
+      supportingNotes,
+    });
   };
 
   return (
@@ -172,7 +198,7 @@ export default function ReportUser() {
               <Badge className="w-fit rounded-full bg-white/10 px-3 py-1 text-white/80 hover:bg-white/10">Community moderation form</Badge>
               <CardTitle className="mt-3 text-3xl sm:text-4xl">Document the concern clearly</CardTitle>
               <CardDescription className="max-w-2xl text-base leading-7 text-white/65">
-                This page is designed to feel native to the rest of Tradebilia while giving members a focused, high-trust workflow for reporting suspicious or harmful behavior.
+                Submit a real moderation request for suspicious or harmful behavior while staying inside the same Tradebilia visual language used across the rest of the site.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -219,11 +245,13 @@ export default function ReportUser() {
                 </div>
 
                 <div className="rounded-[1.5rem] border border-white/10 bg-white/5 p-5 text-sm leading-7 text-white/70">
-                  This first version provides the full page and form experience in the new site style. If you want later, I can connect it to a real moderation queue or owner notification flow.
+                  Submitted reports now route into a real owner-review notification so moderation concerns can be acted on instead of remaining a visual-only placeholder.
                 </div>
 
                 <div className="flex flex-wrap gap-3">
-                  <Button type="submit" className="rounded-full bg-white text-slate-950 hover:bg-white/90">Submit report</Button>
+                  <Button type="submit" className="rounded-full bg-white text-slate-950 hover:bg-white/90" disabled={reportMutation.isPending}>
+                    {reportMutation.isPending ? "Submitting report..." : "Submit report"}
+                  </Button>
                   <Button type="button" variant="outline" className="rounded-full border-white/15 bg-transparent text-white hover:bg-white/10" onClick={() => toast.info("Draft saving can be added next.")}>Save as draft</Button>
                 </div>
               </form>

@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { resolveTradebiliaListingImage } from "@/lib/listingImages";
 import { trpc } from "@/lib/trpc";
 import { getLoginUrl } from "@/const";
 import { Heart, Loader2, MessageCircleMore, Menu, Search, Star, UserRound } from "lucide-react";
@@ -75,9 +76,15 @@ export default function ItemDetail() {
   const [activePhotoIndex, setActivePhotoIndex] = useState(0);
 
   const activePhoto = useMemo(() => {
-    if (!listing?.photos?.length) return null;
+    if (!listing) return null;
+    if (!listing.photos?.length) {
+      return {
+        imageUrl: resolveTradebiliaListingImage({ title: listing.title, category: listing.category, primaryPhotoUrl: listing.primaryPhotoUrl }),
+        altText: listing.title,
+      };
+    }
     return listing.photos[Math.min(activePhotoIndex, listing.photos.length - 1)] ?? null;
-  }, [activePhotoIndex, listing?.photos]);
+  }, [activePhotoIndex, listing]);
 
   const startTradeProposal = () => {
     if (!listing) return;
@@ -173,17 +180,13 @@ export default function ItemDetail() {
             <div>
               <div className="overflow-hidden rounded-[2rem] border border-white/10 bg-black/20 shadow-[0_40px_90px_rgba(0,0,0,0.35)]">
                 <div className="aspect-[0.78] bg-black/30">
-                  {activePhoto?.imageUrl ? (
-                    <img src={activePhoto.imageUrl} alt={activePhoto.altText ?? listing.title} className="h-full w-full object-cover" />
-                  ) : (
-                    <div className="flex h-full items-center justify-center text-white/40">No image available</div>
-                  )}
+                  <img src={activePhoto?.imageUrl ?? resolveTradebiliaListingImage({ title: listing.title, category: listing.category, primaryPhotoUrl: listing.primaryPhotoUrl })} alt={activePhoto?.altText ?? listing.title} className="h-full w-full object-cover" />
                 </div>
               </div>
               <div className="mt-5">
                 <p className="text-xl font-medium text-white/90">View additional images</p>
                 <div className="mt-4 flex flex-wrap gap-4">
-                  {listing.photos.map((photo, index) => (
+                  {(listing.photos.length ? listing.photos : [{ imageUrl: resolveTradebiliaListingImage({ title: listing.title, category: listing.category, primaryPhotoUrl: listing.primaryPhotoUrl }), altText: listing.title }]).map((photo, index) => (
                     <button
                       key={`${photo.imageUrl}-${index}`}
                       type="button"
@@ -317,7 +320,7 @@ export default function ItemDetail() {
                         {similarListings.map(item => (
                           <Link key={item.id} href={`/listings/${item.id}`} className="block overflow-hidden rounded-[1.5rem] border border-white/10 bg-white/5 transition hover:-translate-y-1 hover:bg-white/10">
                             <div className="aspect-[0.82] bg-black/20">
-                              {item.primaryPhotoUrl ? <img src={item.primaryPhotoUrl} alt={item.title} className="h-full w-full object-cover" /> : null}
+                              <img src={resolveTradebiliaListingImage({ title: item.title, category: item.category, primaryPhotoUrl: item.primaryPhotoUrl })} alt={item.title} className="h-full w-full object-cover" />
                             </div>
                             <div className="space-y-3 p-5">
                               <p className="text-xs uppercase tracking-[0.2em] text-white/45">{item.categoryLabel}</p>

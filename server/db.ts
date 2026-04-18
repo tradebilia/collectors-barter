@@ -735,6 +735,10 @@ export async function getDashboardData(user: Pick<User, "id" | "name">) {
         displayName: userProfiles.displayName,
         avatarUrl: userProfiles.avatarUrl,
         bio: userProfiles.bio,
+        contactFullName: userProfiles.contactFullName,
+        contactEmail: userProfiles.contactEmail,
+        contactPhone: userProfiles.contactPhone,
+        contactAddress: userProfiles.contactAddress,
       })
       .from(userProfiles)
       .where(eq(userProfiles.userId, user.id))
@@ -806,6 +810,10 @@ export async function getDashboardData(user: Pick<User, "id" | "name">) {
       displayName: profileRows[0]?.displayName ?? user.name ?? `Collector ${user.id}`,
       avatarUrl: profileRows[0]?.avatarUrl ?? null,
       bio: profileRows[0]?.bio ?? "Open to thoughtful, collector-to-collector trades.",
+      contactFullName: profileRows[0]?.contactFullName ?? user.name ?? "",
+      contactEmail: profileRows[0]?.contactEmail ?? "",
+      contactPhone: profileRows[0]?.contactPhone ?? "",
+      contactAddress: profileRows[0]?.contactAddress ?? "",
       rating,
       tradeHistoryCount: proposalCards.length,
     },
@@ -833,7 +841,15 @@ export async function getDashboardData(user: Pick<User, "id" | "name">) {
 
 export async function updateProfile(
   user: Pick<User, "id" | "name">,
-  input: { displayName: string; bio?: string; avatar?: AvatarUploadInput | null },
+  input: {
+    displayName: string;
+    bio?: string;
+    contactFullName?: string;
+    contactEmail?: string;
+    contactPhone?: string;
+    contactAddress?: string;
+    avatar?: AvatarUploadInput | null;
+  },
 ) {
   const db = await requireDb();
   await ensureUserProfileRecord(user);
@@ -841,6 +857,10 @@ export async function updateProfile(
   const updateSet: Record<string, unknown> = {
     displayName: input.displayName.trim().slice(0, 120),
     bio: input.bio?.trim() ? input.bio.trim() : null,
+    contactFullName: input.contactFullName?.trim() ? input.contactFullName.trim().slice(0, 160) : null,
+    contactEmail: input.contactEmail?.trim() ? input.contactEmail.trim().slice(0, 320) : null,
+    contactPhone: input.contactPhone?.trim() ? input.contactPhone.trim().slice(0, 40) : null,
+    contactAddress: input.contactAddress?.trim() ? input.contactAddress.trim().slice(0, 320) : null,
   };
 
   if (input.avatar) {

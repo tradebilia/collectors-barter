@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { getLoginUrl } from "@/const";
+import { resolveTradebiliaListingImage } from "@/lib/listingImages";
 import { trpc } from "@/lib/trpc";
 import { Download, Loader2, Menu, Pencil, Plus, Search, Share2 } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -283,11 +284,11 @@ export default function Inventory() {
                     </div>
                     <Link href={`/listings/${listing.id}`} className="block px-6 pb-6">
                       <div className="mx-auto flex aspect-[0.72] max-w-[12rem] items-center justify-center overflow-hidden rounded-[1.25rem] border border-slate-200 bg-slate-50">
-                        {listing.primaryPhotoUrl ? (
-                          <img src={listing.primaryPhotoUrl} alt={listing.title} className="h-full w-full object-cover" />
-                        ) : (
-                          <div className="px-6 text-center text-sm text-slate-400">No photo uploaded</div>
-                        )}
+                        <img
+                          src={resolveTradebiliaListingImage({ title: listing.title, category: listing.category, primaryPhotoUrl: listing.primaryPhotoUrl })}
+                          alt={listing.title}
+                          className="h-full w-full object-cover"
+                        />
                       </div>
                       <div className="mt-5 space-y-3">
                         <div className="flex items-start justify-between gap-3">
