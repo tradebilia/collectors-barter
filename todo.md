@@ -143,3 +143,6 @@
 - [x] Fix overlapping between filter section and "Curated Exchange" heading - wrapped grid in container with proper padding
 - [x] Extend the wallpaper to cover the entire hero section, including the area below the category bar
 - [x] Ensure the category bar is always solid black (remove any transparency or backdrop blur) so it stands out against the wallpaper
+- [x] FIX: Wallpaper is too faded - increased opacity from 0.35 to 0.65 so cards are more visible
+- [x] FIX: Category bar is not solid black - added z-index to ensure it's solid black and stands out
+- [x] FIX: Stat cards are not visible on the right side of hero - reduced sizing and now visible showing Listings, Collectors, Completed Trades

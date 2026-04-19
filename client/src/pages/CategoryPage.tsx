@@ -175,7 +175,7 @@ export default function CategoryPage() {
         {isSportsCardsPage ? (
           <>
             <div className="pointer-events-none absolute inset-0 h-full">
-              <div className="absolute inset-0 h-full" style={{ backgroundImage: `url(${SPORTS_CARDS_WALLPAPER_URL})`, backgroundRepeat: 'repeat', backgroundSize: 'auto', backgroundPosition: 'top left', opacity: 0.35 }}>
+              <div className="absolute inset-0 h-full" style={{ backgroundImage: `url(${SPORTS_CARDS_WALLPAPER_URL})`, backgroundRepeat: 'repeat', backgroundSize: 'auto', backgroundPosition: 'top left', opacity: 0.65 }}>
               </div>
             </div>
             <div className="relative py-4 lg:py-6 max-h-[300px] overflow-hidden flex items-center px-4 lg:px-8">
@@ -203,9 +203,9 @@ export default function CategoryPage() {
                         ["Collectors", String(feedQuery.data?.highlights.activeCollectors ?? 0)],
                         ["Completed Trades", String(feedQuery.data?.highlights.completedTrades ?? 0)],
                       ].map(([label, value]) => (
-                        <div key={label} className="rounded-lg border border-white/12 bg-black/25 px-2.5 py-1.5 text-[#fff3d5] backdrop-blur-sm">
-                          <p className="text-[7px] uppercase tracking-[0.25em] text-white/50">{label}</p>
-                          <p className="mt-0.5 text-sm font-semibold text-white">{value}</p>
+                        <div key={label} className="rounded-lg border border-white/12 bg-black/25 px-2 py-1 text-[#fff3d5] backdrop-blur-sm">
+                          <p className="text-[6px] uppercase tracking-[0.2em] text-white/50">{label}</p>
+                          <p className="mt-0.5 text-xs font-semibold text-white">{value}</p>
                         </div>
                       ))}
                     </div>
@@ -262,7 +262,7 @@ export default function CategoryPage() {
             </div>
           </div>
         )}
-        <nav className="border-t border-black bg-black">
+        <nav className="relative z-10 border-t border-black bg-black">
           <div className="container grid overflow-hidden md:grid-cols-5 xl:grid-cols-10">
             {tradebiliaCategories.map(category => (
               <Link
