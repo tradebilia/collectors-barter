@@ -177,6 +177,7 @@ export default function CategoryPage() {
             <div className="pointer-events-none absolute inset-0">
               <div className="absolute inset-0" style={{ backgroundImage: `url(${SPORTS_CARDS_WALLPAPER_URL})`, backgroundRepeat: 'repeat', backgroundSize: 'auto', backgroundPosition: 'top left', opacity: 0.35 }}>
               </div>
+
             </div>
             <div className="relative py-4 lg:py-6 max-h-[300px] overflow-hidden flex items-center px-4 lg:px-8">
               <div className="w-full">
