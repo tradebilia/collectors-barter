@@ -141,3 +141,4 @@
 - [x] Move the category bar down to the very bottom of the hero section
 - [x] Move the filter section all the way to the left side (now extends to the left edge with no container padding)
 - [x] Fix overlapping between filter section and "Curated Exchange" heading - wrapped grid in container with proper padding
+- [x] Extend the wallpaper to cover the entire hero section, including the area below the category bar
