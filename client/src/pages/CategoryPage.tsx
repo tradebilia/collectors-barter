@@ -279,9 +279,8 @@ export default function CategoryPage() {
       </header>
 
       <main className="">
-        <div className="container py-8 lg:py-10">
         <div className={`grid gap-6 ${isSportsCardsPage ? "xl:grid-cols-[320px_minmax(0,1fr)] xl:items-start" : "xl:grid-cols-[280px_minmax(0,1fr)]"}`}>
-          <aside className={`rounded-[2rem] border p-6 shadow-[0_20px_60px_rgba(0,0,0,0.12)] ${theme.panelClassName} ${isSportsCardsPage ? "xl:sticky xl:top-6" : ""} -ml-4 lg:-ml-8`}>
+          <aside className={`rounded-[2rem] border p-6 shadow-[0_20px_60px_rgba(0,0,0,0.12)] ${theme.panelClassName} ${isSportsCardsPage ? "xl:sticky xl:top-6" : ""}`}>
             <div className="flex items-center gap-3">
               <Search className={`h-5 w-5 ${theme.accentClassName}`} />
               <h2 className="text-3xl font-semibold" style={{ fontFamily: theme.headingFont }}>Filters</h2>
@@ -391,6 +390,7 @@ export default function CategoryPage() {
               ) : null}
             </div>
 
+            <div className="container py-8 lg:py-10">
             {benchmarkSpotlights.length > 0 ? (
               <section className="space-y-5">
                 {isSportsCardsPage ? (
@@ -605,8 +605,8 @@ export default function CategoryPage() {
                 ))}
               </div>
             )}
+            </div>
           </section>
-        </div>
         </div>
       </main>
     </div>
