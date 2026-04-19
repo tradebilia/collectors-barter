@@ -138,3 +138,4 @@
 - [x] Make the Tradebilia name/logo larger
 - [x] Make the category navigation bar black in color
 - [x] Move the category bar lower so it sits right above the "Curated Exchange" section
+- [x] Remove the dark navy blue tint overlay from the hero section entirely

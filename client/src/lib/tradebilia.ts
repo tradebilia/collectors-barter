@@ -62,7 +62,7 @@ export const tradebiliaCategoryThemes: Record<TradebiliaCategorySlug, {
     eyebrow: "",
     heading: "Card-show clarity with premium slab energy and arena-blue contrast.",
     description: "The Sports Card exchange leans into teal glass, cream card-show surfaces, and condensed athletic headlines inspired by the uploaded reference.",
-    heroClassName: "bg-[linear-gradient(135deg,#0f3b43_0%,#27758b_42%,#102732_100%)] text-[#fff4e0]",
+    heroClassName: "bg-white text-[#1a1814]",
     pageClassName: "bg-[linear-gradient(180deg,#0d2c36_0%,#16414a_14%,#ead6ac_14%,#ead6ac_100%)] text-[#1a1814]",
     panelClassName: "bg-[#f6e5bf]/95 border-[#3c6f77]/25",
     accentClassName: "text-[#0e5766]",
