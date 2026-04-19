@@ -150,3 +150,4 @@
 - [x] Remove the "Curated Exchange" section from the Sports Cards page
 - [x] Fade the wallpaper in the hero section (reduced opacity from 0.65 to 0.35)
 - [x] Increase the hero section height by 25% vertically (from 300px to 375px)
+- [x] Move the filters section all the way to the left edge of the page (no left margin/padding)
