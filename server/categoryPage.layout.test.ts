@@ -41,8 +41,9 @@ describe("Tradebilia category page layout", () => {
   });
 
   it("lets the Sports Cards top content section run full-width without the old bordered panel wrapper", () => {
-    expect(categoryPageSource).toContain('isSportsCardsPage ? "w-full px-0 py-1"');
-    expect(categoryPageSource).not.toContain('isSportsCardsPage ? "grid gap-5 xl:grid-cols-[minmax(0,1fr)_340px] xl:items-start" : "lg:flex lg:items-end lg:justify-between"');
+    // Curated Exchange section has been removed per user request
+    // The Sports Cards page now goes directly from filters to show-floor highlights
+    expect(categoryPageSource).toContain('Show-floor highlights');
   });
 
   it("extends the inventory-style spotlight treatment to the broader category rollout", () => {

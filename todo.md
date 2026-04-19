@@ -147,3 +147,5 @@
 - [x] FIX: Category bar is not solid black - added z-index to ensure it's solid black and stands out
 - [x] FIX: Stat cards are not visible on the right side of hero - reduced sizing and now visible showing Listings, Collectors, Completed Trades
 - [x] Move the category bar below the hero section (between hero and "Curated Exchange")
+- [x] Remove the "Curated Exchange" section from the Sports Cards page
+- [x] Fade the wallpaper in the hero section (reduced opacity from 0.65 to 0.35)

@@ -175,7 +175,7 @@ export default function CategoryPage() {
         {isSportsCardsPage ? (
           <>
             <div className="pointer-events-none absolute inset-0 h-full">
-              <div className="absolute inset-0 h-full" style={{ backgroundImage: `url(${SPORTS_CARDS_WALLPAPER_URL})`, backgroundRepeat: 'repeat', backgroundSize: 'auto', backgroundPosition: 'top left', opacity: 0.65 }}>
+              <div className="absolute inset-0 h-full" style={{ backgroundImage: `url(${SPORTS_CARDS_WALLPAPER_URL})`, backgroundRepeat: 'repeat', backgroundSize: 'auto', backgroundPosition: 'top left', opacity: 0.35 }}>
               </div>
             </div>
             <div className="relative py-4 lg:py-6 max-h-[300px] overflow-hidden flex items-center px-4 lg:px-8">
@@ -344,52 +344,6 @@ export default function CategoryPage() {
           </aside>
 
           <section className="space-y-6">
-            <div className={isSportsCardsPage ? "w-full px-0 py-1" : `rounded-[2rem] border p-6 ${theme.panelClassName}`}>
-              <div className={`${isSportsCardsPage ? "grid gap-5 xl:grid-cols-[minmax(0,1fr)_340px] xl:items-start" : "grid gap-5 lg:flex lg:items-end lg:justify-between"}`}>
-                <div>
-                  <p className={`text-xs font-semibold uppercase tracking-[0.32em] ${theme.accentClassName}`}>Curated exchange</p>
-                  <h2 className="mt-3 text-4xl font-semibold" style={{ fontFamily: theme.headingFont }}>{theme.heading}</h2>
-                  <p className="mt-3 max-w-3xl text-base leading-8 opacity-80">
-                    Showing {listings.length} {categoryLabel.toLowerCase()} listings with Watchlist actions, public browsing, and subscriber-only trading controls.
-                  </p>
-                </div>
-                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-2">
-                  <Select value={sortBy} onValueChange={setSortBy}>
-                    <SelectTrigger className="h-12 bg-white/80 text-slate-950">
-                      <SelectValue placeholder="Sort by" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {sortOptions.map(option => (
-                        <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Button variant="outline" className="h-12 rounded-full bg-white/80 text-slate-950 hover:bg-white" asChild>
-                    <Link href="/members">Member Search</Link>
-                  </Button>
-                </div>
-              </div>
-              {isSportsCardsPage ? (
-                <div className="mt-7 grid gap-4 lg:grid-cols-[1.15fr_1fr_1fr]">
-                  {benchmark?.summaryHighlights.map((item, index) => {
-                    const Icon = index === 0 ? Trophy : index === 1 ? ShieldCheck : ArrowRight;
-                    return (
-                      <div
-                        key={item.eyebrow}
-                        className={`rounded-[1.65rem] border p-5 shadow-[0_16px_35px_rgba(8,47,73,0.08)] ${index === 0 ? "border-[#0b3e51]/18 bg-[#fff5df]" : "border-current/10 bg-white/58"}`}
-                      >
-                        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.22em] opacity-65">
-                          <Icon className="h-4 w-4" />
-                          {item.eyebrow}
-                        </div>
-                        <p className={`mt-4 font-semibold leading-7 ${index === 0 ? "text-[1.45rem]" : "text-lg"}`}>{item.title}</p>
-                        <p className="mt-3 text-sm leading-7 opacity-75">{item.description}</p>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : null}
-            </div>
 
             <div className="container py-8 lg:py-10">
             {benchmarkSpotlights.length > 0 ? (
