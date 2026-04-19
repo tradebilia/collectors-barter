@@ -262,20 +262,21 @@ export default function CategoryPage() {
             </div>
           </div>
         )}
-        <nav className="relative z-10 border-t border-black bg-black">
-          <div className="container grid overflow-hidden md:grid-cols-5 xl:grid-cols-10">
-            {tradebiliaCategories.map(category => (
-              <Link
-                key={category.value}
-                href={`/category/${category.value}`}
-                className={`border-b border-r border-white/10 px-4 py-4 text-center text-xs font-semibold uppercase tracking-[0.16em] transition hover:bg-white/10 lg:text-[11px] ${category.value === slug ? "bg-white text-slate-950" : "text-white"}`}
-              >
-                {category.label}
-              </Link>
-            ))}
-          </div>
-        </nav>
       </header>
+
+      <nav className="relative z-10 border-t border-black bg-black">
+        <div className="container grid overflow-hidden md:grid-cols-5 xl:grid-cols-10">
+          {tradebiliaCategories.map(category => (
+            <Link
+              key={category.value}
+              href={`/category/${category.value}`}
+              className={`border-b border-r border-white/10 px-4 py-4 text-center text-xs font-semibold uppercase tracking-[0.16em] transition hover:bg-white/10 lg:text-[11px] ${category.value === slug ? "bg-white text-slate-950" : "text-white"}`}
+            >
+              {category.label}
+            </Link>
+          ))}
+        </div>
+      </nav>
 
       <main className="">
         <div className="container py-8 lg:py-10">

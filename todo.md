@@ -146,3 +146,4 @@
 - [x] FIX: Wallpaper is too faded - increased opacity from 0.35 to 0.65 so cards are more visible
 - [x] FIX: Category bar is not solid black - added z-index to ensure it's solid black and stands out
 - [x] FIX: Stat cards are not visible on the right side of hero - reduced sizing and now visible showing Listings, Collectors, Completed Trades
+- [x] Move the category bar below the hero section (between hero and "Curated Exchange")
