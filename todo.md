@@ -161,3 +161,4 @@
 - [x] Condense the filter section (reduce padding, spacing, and font sizes)
 - [x] Reduce the item size in the search results body by 50%
 - [x] Adjust grid layout to consistently show 6 items per row
+- [x] Add size variation to the search result cards (some larger, some smaller for visual interest)

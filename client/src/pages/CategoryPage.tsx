@@ -479,9 +479,13 @@ export default function CategoryPage() {
               </div>
             ) : (
               <div className={`grid gap-3 ${isSportsCardsPage ? "grid-cols-6" : "md:grid-cols-2 xl:grid-cols-3"}`}>
-                {listings.map(listing => (
-                  <Card key={listing.id} className={`overflow-hidden border ${theme.cardClassName} ${isSportsCardsPage ? "rounded-md shadow-sm" : "rounded-[2rem]"}`}>
-                    <div className={`overflow-hidden border-b border-current/10 ${isSportsCardsPage ? "aspect-[7/9] bg-[linear-gradient(180deg,rgba(243,228,188,0.92)_0%,rgba(232,214,168,0.92)_100%)] p-1" : "aspect-[4/5] bg-black/10"}`}>
+                {listings.map((listing, index) => {
+                  const isLarge = (index + 1) % 6 === 5 || (index + 1) % 6 === 0;
+                  const sizeClass = isLarge ? "col-span-1 row-span-2" : "col-span-1";
+                  const aspectClass = isLarge ? "aspect-[7/18]" : "aspect-[7/9]";
+                  return (
+                  <Card key={listing.id} className={`overflow-hidden border ${theme.cardClassName} ${isSportsCardsPage ? `rounded-md shadow-sm ${sizeClass}` : "rounded-[2rem]"}`}>
+                    <div className={`overflow-hidden border-b border-current/10 ${isSportsCardsPage ? `${aspectClass} bg-[linear-gradient(180deg,rgba(243,228,188,0.92)_0%,rgba(232,214,168,0.92)_100%)] p-1` : "aspect-[4/5] bg-black/10"}`}>
                       <div className={isSportsCardsPage ? "h-full rounded-sm border border-[#0f4658]/10 bg-[#f7ecd2] p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)]" : "h-full"}>
                         <img
                           src={resolveTradebiliaListingImage({ title: listing.title, category: listing.category, primaryPhotoUrl: listing.primaryPhotoUrl })}
@@ -572,7 +576,8 @@ export default function CategoryPage() {
                       </div>
                     </CardContent>
                   </Card>
-                ))}
+                  );
+                })}
               </div>
             )}
           </section>
