@@ -32,11 +32,11 @@ const keywordImageMap: Array<{ keywords: string[]; imageUrl: string }> = [
   },
   {
     keywords: ["joe montana"],
-    imageUrl: "/manus-storage/1981 Joe Montana_38be360b.png",
+    imageUrl: "/manus-storage/1981JoeMontana_f9fb9609.png",
   },
   {
     keywords: ["martin brodeur"],
-    imageUrl: "/manus-storage/1990 Martin Brodeur_2168abc2.png",
+    imageUrl: "/manus-storage/1990MartinBrodeur_b8430777.png",
   },
   {
     keywords: ["charizard holo", "charizard - holo", "1999 charizard"],

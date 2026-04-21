@@ -163,3 +163,4 @@
 - [x] Adjust grid layout to consistently show 6 items per row
 - [x] Make all item images the same size with 6 items per row
 - [x] Convert Sport, Grading Service, Priority Traits, and Condition filters to dropdown menus with predefined options
+- [x] Add the 1981 Joe Montana and 1990 Martin Brodeur sports card images to the Sports Cards page listings
