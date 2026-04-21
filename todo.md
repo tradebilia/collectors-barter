@@ -155,3 +155,4 @@
 - [x] Adjust the Sports Cards hero section height to 380px (slight increase from 375px)
 - [x] Move filter section to fixed left sidebar with search results on the right (eBay-style layout)
 - [x] Reduce the size of search result images to fit more items per page (now showing 5-6 columns instead of 3)
+- [x] Add a home button to the navigation to return to the main page

@@ -266,6 +266,12 @@ export default function CategoryPage() {
 
       <nav className="relative z-10 border-t border-black bg-black">
         <div className="container grid overflow-hidden md:grid-cols-5 xl:grid-cols-10">
+          <Link
+            href="/"
+            className="border-b border-r border-white/10 px-4 py-4 text-center text-xs font-semibold uppercase tracking-[0.16em] transition hover:bg-white/10 lg:text-[11px] text-white"
+          >
+            Home
+          </Link>
           {tradebiliaCategories.map(category => (
             <Link
               key={category.value}
