@@ -171,10 +171,10 @@ export default function CategoryPage() {
 
   return (
     <div className={`min-h-screen ${theme.pageClassName}`}>
-      <div className="border-b border-white/10 bg-black/50 px-4 py-3">
-        <div className="container flex items-center justify-between gap-4">
+      <div className="border-b border-white/10 bg-black/50">
+        <div className="flex items-center justify-between gap-4 pl-2 pr-4 py-3">
           <div className="flex-shrink-0">
-            <img src={SPORTS_CARDS_LONG_LOGO_URL} alt="Tradebilia" className="h-8 w-auto object-contain" />
+            <img src={SPORTS_CARDS_LONG_LOGO_URL} alt="Tradebilia" className="h-12 w-auto object-contain" />
           </div>
           <div className="flex items-center gap-4">
           <button className="rounded-lg p-2 text-white/70 transition hover:bg-white/10 hover:text-white" title="Messages">
