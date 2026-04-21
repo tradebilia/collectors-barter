@@ -172,7 +172,11 @@ export default function CategoryPage() {
   return (
     <div className={`min-h-screen ${theme.pageClassName}`}>
       <div className="border-b border-white/10 bg-black/50 px-4 py-3">
-        <div className="container flex items-center justify-end gap-4">
+        <div className="container flex items-center justify-between gap-4">
+          <div className="flex-shrink-0">
+            <img src={SPORTS_CARDS_LONG_LOGO_URL} alt="Tradebilia" className="h-8 w-auto object-contain" />
+          </div>
+          <div className="flex items-center gap-4">
           <button className="rounded-lg p-2 text-white/70 transition hover:bg-white/10 hover:text-white" title="Messages">
             <MessageSquareText className="h-5 w-5" />
           </button>
@@ -182,6 +186,7 @@ export default function CategoryPage() {
           <button className="rounded-lg p-2 text-white/70 transition hover:bg-white/10 hover:text-white" title="Notifications">
             <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
           </button>
+          </div>
         </div>
       </div>
       <header className={`relative overflow-hidden border-b ${theme.borderClassName} ${theme.heroClassName}`}>

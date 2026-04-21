@@ -171,3 +171,4 @@
 - [x] Adjust category bar so name boxes stretch full width with no gaps between left and right borders
 - [x] Improve visibility of site statistics in hero section (increase contrast, adjust colors, better styling)
 - [x] Apply premium styling to item cards: gold borders, refined shadows, gold "View Details" buttons
+- [x] Move Tradebilia name/logo to top left corner in the bar above hero section
