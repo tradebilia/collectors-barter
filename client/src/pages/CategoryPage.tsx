@@ -199,20 +199,21 @@ export default function CategoryPage() {
               </div>
               <div className="w-full text-center">
                 <h1 className="leading-none">
-                  <span className="block text-7xl lg:text-8xl font-black uppercase tracking-[0.06em] lg:tracking-[0.08em] text-white" style={{ fontFamily: "Bebas Neue, Oswald, Inter, sans-serif", textShadow: "2px 2px 0 #000, 4px 4px 0 #000, 6px 6px 0 #000" }}>
+                  <span className="block text-8xl lg:text-9xl font-black uppercase tracking-[0.06em] lg:tracking-[0.08em] text-white" style={{ fontFamily: "Bebas Neue, Oswald, Inter, sans-serif", textShadow: "3px 3px 0 #000, 6px 6px 0 #000, 9px 9px 0 #000" }}>
                     Sports Card
                   </span>
-                  <span className="mt-1 lg:mt-2 block text-4xl lg:text-5xl font-semibold uppercase tracking-[0.12em] text-white" style={{ fontFamily: "Oswald, Inter, sans-serif", textShadow: "2px 2px 0 #000, 4px 4px 0 #000, 6px 6px 0 #000" }}>
+                  <span className="mt-2 lg:mt-3 block text-5xl lg:text-6xl font-semibold uppercase tracking-[0.12em] text-white" style={{ fontFamily: "Oswald, Inter, sans-serif", textShadow: "3px 3px 0 #000, 6px 6px 0 #000, 9px 9px 0 #000" }}>
                     Exchange
                   </span>
                 </h1>
               </div>
               <div className="mt-4">
-                <div className="grid gap-2 sm:grid-cols-3 lg:grid-cols-3">
+                <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
                   {[
                     ["Listings", String(listings.length)],
                     ["Collectors", String(feedQuery.data?.highlights.activeCollectors ?? 0)],
                     ["Completed Trades", String(feedQuery.data?.highlights.completedTrades ?? 0)],
+                    ["Total Value Listed", "$20.5M"],
                   ].map(([label, value]) => (
                     <div key={label} className="rounded-lg border border-white/12 bg-black/25 px-2 py-1 text-[#fff3d5] backdrop-blur-sm">
                       <p className="text-[6px] uppercase tracking-[0.2em] text-white/50">{label}</p>

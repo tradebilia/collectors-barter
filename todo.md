@@ -166,3 +166,5 @@
 - [x] Add the 1981 Joe Montana and 1990 Martin Brodeur sports card images to the Sports Cards page listings
 - [x] Add basic sorting options for search results (Featured, Newest, Title)
 - [x] Update hero section: center "Sports Card Exchange" text, increase font size, white color with black outline, move Tradebilia name closer
+- [x] Increase the size of "Sports Card Exchange" text in hero section
+- [x] Add "Total Value Listed" as a fourth stat in the hero section stats
