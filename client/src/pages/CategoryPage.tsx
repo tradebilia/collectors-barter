@@ -278,89 +278,101 @@ export default function CategoryPage() {
         </div>
       </nav>
 
-      <main className="">
-        {/* Filters section - flows naturally below category bar */}
-        <div className="border-b border-current/10 bg-current/5">
-          <div className="ml-0 w-full px-0">
-            <aside className={`rounded-none border-none p-6 shadow-none ${theme.panelClassName}`}>
-              <div className="flex items-center gap-3">
-                <Search className={`h-5 w-5 ${theme.accentClassName}`} />
-                <h2 className="text-3xl font-semibold" style={{ fontFamily: theme.headingFont }}>Filters</h2>
+      <main className="container py-8 lg:py-10">
+        <div className="grid gap-8 lg:grid-cols-[280px_1fr]">
+          {/* Left sidebar: Filters */}
+          <aside className={`rounded-lg border p-6 shadow-sm ${theme.panelClassName}`}>
+            <div className="flex items-center gap-3">
+              <Search className={`h-5 w-5 ${theme.accentClassName}`} />
+              <h2 className="text-2xl font-semibold" style={{ fontFamily: theme.headingFont }}>Filters</h2>
+            </div>
+            {isSportsCardsPage ? (
+              <p className="mt-4 text-sm leading-7 opacity-75">{benchmark?.railGuidance}</p>
+            ) : null}
+            <div className="mt-6 space-y-5">
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold uppercase tracking-[0.18em]">Keyword</Label>
+                <Input value={keyword} onChange={event => setKeyword(event.target.value)} placeholder={`Search ${categoryLabel.toLowerCase()}`} className="h-12 bg-white/80" />
               </div>
-              {isSportsCardsPage ? (
-                <p className="mt-4 text-sm leading-7 opacity-75">{benchmark?.railGuidance}</p>
-              ) : null}
-              <div className="mt-6 space-y-5">
-                <div className="space-y-2">
-                  <Label className="text-sm font-semibold uppercase tracking-[0.18em]">Keyword</Label>
-                  <Input value={keyword} onChange={event => setKeyword(event.target.value)} placeholder={`Search ${categoryLabel.toLowerCase()} listings`} className="h-12 bg-white/80" />
-                </div>
-                {activeFilters.map(filter => (
-                  <div key={filter.label} className="space-y-2">
-                    <Label className="text-sm font-semibold uppercase tracking-[0.18em]">{filter.label}</Label>
-                    {filter.type === "select" ? (
-                      <Select defaultValue="all">
-                        <SelectTrigger className="h-12 bg-white/80">
-                          <SelectValue placeholder={filter.placeholder} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">All</SelectItem>
-                          <SelectItem value="featured">Featured</SelectItem>
-                          <SelectItem value="certified">Certified</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    ) : (
-                      <Input placeholder={filter.placeholder} className="h-12 bg-white/80" />
-                    )}
-                  </div>
-                ))}
-                <div className="space-y-2">
-                  <Label className="text-sm font-semibold uppercase tracking-[0.18em]">Condition</Label>
-                  {isSportsCardsPage ? (
-                    <Input
-                      value={sportsCardsConditionText}
-                      onChange={event => {
-                        setSportsCardsConditionText(event.target.value);
-                        const normalized = event.target.value.trim().toLowerCase();
-                        const matched = tradebiliaConditionOptions.find(option => option.label.toLowerCase() === normalized || option.value.toLowerCase() === normalized);
-                        setCondition((matched?.value ?? "all") as typeof condition);
-                      }}
-                      placeholder="Gem Mint, Near Mint, raw"
-                      className="h-12 bg-white/80"
-                    />
-                  ) : (
-                    <Select value={condition} onValueChange={value => setCondition(value as typeof condition)}>
+              {activeFilters.map(filter => (
+                <div key={filter.label} className="space-y-2">
+                  <Label className="text-sm font-semibold uppercase tracking-[0.18em]">{filter.label}</Label>
+                  {filter.type === "select" ? (
+                    <Select defaultValue="all">
                       <SelectTrigger className="h-12 bg-white/80">
-                        <SelectValue placeholder="All Conditions" />
+                        <SelectValue placeholder={filter.placeholder} />
                       </SelectTrigger>
                       <SelectContent>
-                        {tradebiliaConditionOptions.map(option => (
-                          <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
-                        ))}
+                        <SelectItem value="all">All</SelectItem>
+                        <SelectItem value="featured">Featured</SelectItem>
+                        <SelectItem value="certified">Certified</SelectItem>
                       </SelectContent>
                     </Select>
+                  ) : (
+                    <Input placeholder={filter.placeholder} className="h-12 bg-white/80" />
                   )}
                 </div>
+              ))}
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold uppercase tracking-[0.18em]">Condition</Label>
+                {isSportsCardsPage ? (
+                  <Input
+                    value={sportsCardsConditionText}
+                    onChange={event => {
+                      setSportsCardsConditionText(event.target.value);
+                      const normalized = event.target.value.trim().toLowerCase();
+                      const matched = tradebiliaConditionOptions.find(option => option.label.toLowerCase() === normalized || option.value.toLowerCase() === normalized);
+                      setCondition((matched?.value ?? "all") as typeof condition);
+                    }}
+                    placeholder="Gem Mint, Near Mint, raw"
+                    className="h-12 bg-white/80"
+                  />
+                ) : (
+                  <Select value={condition} onValueChange={value => setCondition(value as typeof condition)}>
+                    <SelectTrigger className="h-12 bg-white/80">
+                      <SelectValue placeholder="All Conditions" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {tradebiliaConditionOptions.map(option => (
+                        <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
-            </aside>
-          </div>
-        </div>
+            </div>
+          </aside>
 
-        {/* Main content area */}
-        <div className="container py-8 lg:py-10">
-          <section className="space-y-6">
+          {/* Right side: Content */}
+          <section className="space-y-8">
+            {/* Sort controls and header */}
+            <div className="flex items-center justify-between gap-4 border-b border-current/10 pb-4">
+              <div>
+                <h3 className="text-xl font-semibold">Browse listings</h3>
+                <p className="mt-1 text-sm opacity-70">{listings.length} items available</p>
+              </div>
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="Sort by" />
+                </SelectTrigger>
+                <SelectContent>
+                  {sortOptions.map(option => (
+                    <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Spotlight cards */}
             {benchmarkSpotlights.length > 0 ? (
               <section className="space-y-5">
                 {isSportsCardsPage ? (
                   <>
-                    <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-                      <div>
-                        <p className={`text-xs font-semibold uppercase tracking-[0.3em] ${theme.accentClassName}`}>Show-floor highlights</p>
-                        <h3 className="mt-3 text-3xl font-semibold" style={{ fontFamily: theme.headingFont }}>Featured cardboard arranged more like a real card table.</h3>
-                      </div>
-                      <p className="max-w-2xl text-sm leading-7 opacity-75">Each spotlight should read like a premium listing card rather than an editorial poster, keeping the benchmark closer to a retro PSA-card-show browse pattern.</p>
+                    <div>
+                      <p className={`text-xs font-semibold uppercase tracking-[0.3em] ${theme.accentClassName}`}>Show-floor highlights</p>
+                      <h3 className="mt-2 text-2xl font-semibold" style={{ fontFamily: theme.headingFont }}>Featured cardboard</h3>
                     </div>
-                    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                    <div className="grid gap-4 sm:grid-cols-2">
                       {benchmarkSpotlights.map(card => (
                         <article
                           key={card.title}
@@ -376,7 +388,6 @@ export default function CategoryPage() {
                           <div className="space-y-3 p-5 text-[#153746]">
                             <div className="flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-[0.24em] text-[#0f4658]/70">
                               <span className="rounded-full border border-[#0f4658]/12 bg-white/80 px-3 py-1 font-semibold">{card.eyebrow}</span>
-                              <span className="rounded-full border border-[#0f4658]/10 bg-[#e6f1f3] px-3 py-1 font-semibold">Show-floor pick</span>
                             </div>
                             <h3 className="text-2xl font-semibold leading-tight">{card.title}</h3>
                             <p className="text-sm leading-7 text-[#153746]/78">{card.description}</p>
@@ -387,14 +398,11 @@ export default function CategoryPage() {
                   </>
                 ) : (
                   <>
-                    <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-                      <div>
-                        <p className={`text-xs font-semibold uppercase tracking-[0.3em] ${theme.accentClassName}`}>Collector spotlights</p>
-                        <h3 className="mt-3 text-3xl font-semibold" style={{ fontFamily: theme.headingFont }}>Featured pieces that keep the exchange feeling curated.</h3>
-                      </div>
-                      <p className="max-w-2xl text-sm leading-7 opacity-75">These benchmark cards should feel more like collectible inventory lanes than oversized editorial panels, so each category stays useful and legible even when live listings are light.</p>
+                    <div>
+                      <p className={`text-xs font-semibold uppercase tracking-[0.3em] ${theme.accentClassName}`}>Collector spotlights</p>
+                      <h3 className="mt-2 text-2xl font-semibold" style={{ fontFamily: theme.headingFont }}>Featured pieces that keep the exchange feeling curated.</h3>
                     </div>
-                    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                    <div className="grid gap-4 sm:grid-cols-2">
                       {benchmarkSpotlights.map(card => (
                         <article
                           key={card.title}
@@ -423,6 +431,7 @@ export default function CategoryPage() {
               </section>
             ) : null}
 
+            {/* Listings grid */}
             {feedQuery.isLoading ? (
               <div className="flex min-h-[20rem] items-center justify-center rounded-[2rem] border border-dashed border-current/25">
                 <Loader2 className="h-8 w-8 animate-spin" />
