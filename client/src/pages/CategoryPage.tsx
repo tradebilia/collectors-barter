@@ -197,11 +197,6 @@ export default function CategoryPage() {
               </div>
             </div>
             <div className="relative py-4 lg:py-6 min-h-[380px] overflow-hidden flex flex-col items-center justify-center px-4 lg:px-8 gap-2">
-              <div className="flex-shrink-0 mb-2">
-                <div className="max-w-[12rem] lg:max-w-[14rem]">
-                  <img src={SPORTS_CARDS_LONG_LOGO_URL} alt="Tradebilia Collectors Trading Exchange" className="h-auto w-full object-contain" />
-                </div>
-              </div>
               <div className="w-full text-center">
                 <h1 className="leading-none">
                   <span className="block text-8xl lg:text-9xl font-black uppercase tracking-[0.06em] lg:tracking-[0.08em] text-white" style={{ fontFamily: "Bebas Neue, Oswald, Inter, sans-serif", textShadow: "3px 3px 0 #000, 6px 6px 0 #000, 9px 9px 0 #000" }}>

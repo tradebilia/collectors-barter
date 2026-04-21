@@ -10,7 +10,6 @@ describe("Tradebilia category page layout", () => {
 
   it("uses the transparent longform Tradebilia logo in the Sports Cards header without the old circular badge", () => {
     expect(categoryPageSource).toContain('const SPORTS_CARDS_LONG_LOGO_URL = "/manus-storage/tradebilia-longform-no-navy-clean_d2f04453.png"');
-    expect(categoryPageSource).toContain('alt="Tradebilia Collectors Trading Exchange"');
     expect(categoryPageSource).toContain('Sports Card');
     expect(categoryPageSource).toContain('Exchange');
     expect(categoryPageSource).toContain('fontFamily: "Bebas Neue, Oswald, Inter, sans-serif"');
