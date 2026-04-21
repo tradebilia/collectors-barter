@@ -32,8 +32,9 @@ describe("Tradebilia category page layout", () => {
   it("uses manual-entry Sports Cards filters without the extra boxed helper sections", () => {
     expect(categoryPageSource).toContain('{ label: "Year / era", placeholder: "1950s, 1986, junk wax, ultra-modern" }');
     expect(categoryPageSource).toContain('{ label: "Set / series", placeholder: "Topps Chrome, Prizm, Fleer" }');
-    expect(categoryPageSource).toContain('{ label: "Priority traits", placeholder: "Rookie, autograph, patch relic, Hall of Fame" }');
-    expect(categoryPageSource).toContain('placeholder="Gem Mint, Near Mint, raw"');
+    expect(categoryPageSource).toContain('{ label: "Priority traits", placeholder: "Rookie, autograph, patch relic, Hall of Fame", type: "select" as const }');
+    expect(categoryPageSource).toContain('{ label: "Sport", placeholder: "Baseball, Basketball", type: "select" as const }');
+    expect(categoryPageSource).toContain('{ label: "Grading service", placeholder: "PSA, BGS, SGC", type: "select" as const }');
     expect(categoryPageSource).not.toContain("Collector-grade search");
     expect(categoryPageSource).not.toContain("Card-show shortcuts");
     expect(categoryPageSource).not.toContain("Subscriber tools");

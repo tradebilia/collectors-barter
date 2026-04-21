@@ -34,13 +34,13 @@ const categoryFilterPresets: Record<TradebiliaCategorySlug, Array<{ label: strin
   sports_cards: [
     { label: "Player", placeholder: "Mickey Mantle" },
     { label: "Manufacturer", placeholder: "Topps, Fleer, Upper Deck" },
-    { label: "Sport", placeholder: "Baseball, Basketball" },
-    { label: "Grading service", placeholder: "PSA, BGS, SGC" },
+    { label: "Sport", placeholder: "Baseball, Basketball", type: "select" as const },
+    { label: "Grading service", placeholder: "PSA, BGS, SGC", type: "select" as const },
     { label: "Year / era", placeholder: "1950s, 1986, junk wax, ultra-modern" },
     { label: "Team", placeholder: "Yankees, Bulls, Cowboys" },
     { label: "Set / series", placeholder: "Topps Chrome, Prizm, Fleer" },
     { label: "Grade", placeholder: "PSA 10, BGS 9.5, raw" },
-    { label: "Priority traits", placeholder: "Rookie, autograph, patch relic, Hall of Fame" },
+    { label: "Priority traits", placeholder: "Rookie, autograph, patch relic, Hall of Fame", type: "select" as const },
   ],
   vintage_toys: [
     { label: "Name", placeholder: "Barbie, G.I. Joe, Star Wars" },
@@ -331,30 +331,16 @@ export default function CategoryPage() {
             ))}
             <div className="space-y-1">
               <Label className="text-xs font-semibold uppercase tracking-[0.16em]">Condition</Label>
-              {isSportsCardsPage ? (
-                <Input
-                  value={sportsCardsConditionText}
-                  onChange={event => {
-                    setSportsCardsConditionText(event.target.value);
-                    const normalized = event.target.value.trim().toLowerCase();
-                    const matched = tradebiliaConditionOptions.find(option => option.label.toLowerCase() === normalized || option.value.toLowerCase() === normalized);
-                    setCondition((matched?.value ?? "all") as typeof condition);
-                  }}
-                  placeholder="Gem Mint, Near Mint, raw"
-                  className="h-9 bg-white/80 text-sm"
-                />
-              ) : (
-                <Select value={condition} onValueChange={value => setCondition(value as typeof condition)}>
-                  <SelectTrigger className="h-9 bg-white/80 text-sm">
-                    <SelectValue placeholder="All Conditions" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {tradebiliaConditionOptions.map(option => (
-                      <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
+              <Select value={condition} onValueChange={value => setCondition(value as typeof condition)}>
+                <SelectTrigger className="h-9 bg-white/80 text-sm">
+                  <SelectValue placeholder="All Conditions" />
+                </SelectTrigger>
+                <SelectContent>
+                  {tradebiliaConditionOptions.map(option => (
+                    <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </aside>
