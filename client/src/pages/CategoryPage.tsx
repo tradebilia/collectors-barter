@@ -373,26 +373,24 @@ export default function CategoryPage() {
                       </div>
                       <p className="max-w-2xl text-sm leading-7 opacity-75">Each spotlight should read like a premium listing card rather than an editorial poster, keeping the benchmark closer to a retro PSA-card-show browse pattern.</p>
                     </div>
-                    <div className={`grid gap-4 ${isSportsCardsPage ? "grid-cols-6" : "sm:grid-cols-2 xl:grid-cols-3"}`}>
+                    <div className={`grid ${isSportsCardsPage ? "gap-2 grid-cols-6" : "gap-4 sm:grid-cols-2 xl:grid-cols-3"}`}>
                       {benchmarkSpotlights.map(card => (
                         <article
                           key={card.title}
-                          className="group overflow-hidden rounded-[1.65rem] border border-[#0f4658]/16 bg-[#fff7e8] shadow-[0_20px_45px_rgba(15,76,92,0.12)] transition hover:-translate-y-1"
+                          className={`group overflow-hidden transition ${isSportsCardsPage ? "rounded-md border border-[#0f4658]/16 bg-[#fff7e8] shadow-sm hover:-translate-y-0.5" : "rounded-[1.65rem] border border-[#0f4658]/16 bg-[#fff7e8] shadow-[0_20px_45px_rgba(15,76,92,0.12)] hover:-translate-y-1"}`}
                         >
-                          <div className="border-b border-[#0f4658]/12 bg-[linear-gradient(180deg,#f3e4bc_0%,#e8d6a8_100%)] p-4">
-                            <div className="rounded-[1.25rem] border border-[#0f4658]/10 bg-[#f7ecd2] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)]">
-                              <div className="aspect-[7/9] overflow-hidden rounded-[1rem] bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.5),rgba(18,57,75,0.1)_72%)]">
-                                <img src={card.imageUrl} alt={card.title} className="h-full w-full object-contain p-3 transition duration-500 group-hover:scale-[1.02]" />
+                          <div className={`border-b border-[#0f4658]/12 bg-[linear-gradient(180deg,#f3e4bc_0%,#e8d6a8_100%)] ${isSportsCardsPage ? "p-1" : "p-4"}`}>
+                            <div className={`border border-[#0f4658]/10 bg-[#f7ecd2] shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] ${isSportsCardsPage ? "rounded-sm p-1" : "rounded-[1.25rem] p-4"}`}>
+                              <div className={`aspect-[7/9] overflow-hidden bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.5),rgba(18,57,75,0.1)_72%)] ${isSportsCardsPage ? "rounded-sm" : "rounded-[1rem]"}`}>
+                                <img src={card.imageUrl} alt={card.title} className={`h-full w-full object-contain transition duration-500 group-hover:scale-[1.02] ${isSportsCardsPage ? "p-0.5" : "p-3"}`} />
                               </div>
                             </div>
                           </div>
-                          <div className="space-y-3 p-5 text-[#153746]">
-                            <div className="flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-[0.24em] text-[#0f4658]/70">
-                              <span className="rounded-full border border-[#0f4658]/12 bg-white/80 px-3 py-1 font-semibold">{card.eyebrow}</span>
-                              <span className="rounded-full border border-[#0f4658]/10 bg-[#e6f1f3] px-3 py-1 font-semibold">Show-floor pick</span>
+                          <div className={`text-[#153746] ${isSportsCardsPage ? "space-y-0.5 p-1" : "space-y-3 p-5"}`}>
+                            <div className={`flex flex-wrap items-center uppercase tracking-[0.24em] text-[#0f4658]/70 ${isSportsCardsPage ? "gap-1 text-[8px]" : "gap-2 text-[11px]"}`}>
+                              <span className={`rounded-full border border-[#0f4658]/12 bg-white/80 font-semibold ${isSportsCardsPage ? "px-1.5 py-0.5 text-[7px]" : "px-3 py-1"}`}>{card.eyebrow}</span>
                             </div>
-                            <h3 className="text-2xl font-semibold leading-tight">{card.title}</h3>
-                            <p className="text-sm leading-7 text-[#153746]/78">{card.description}</p>
+                            <h3 className={`font-semibold leading-tight ${isSportsCardsPage ? "text-xs line-clamp-1" : "text-2xl"}`}>{card.title}</h3>
                           </div>
                         </article>
                       ))}
@@ -407,7 +405,7 @@ export default function CategoryPage() {
                       </div>
                       <p className="max-w-2xl text-sm leading-7 opacity-75">These benchmark cards should feel more like collectible inventory lanes than oversized editorial panels, so each category stays useful and legible even when live listings are light.</p>
                     </div>
-                    <div className={`grid gap-4 ${isSportsCardsPage ? "grid-cols-6" : "sm:grid-cols-2 xl:grid-cols-3"}`}>
+                    <div className={`grid ${isSportsCardsPage ? "gap-2 grid-cols-6" : "gap-4 sm:grid-cols-2 xl:grid-cols-3"}`}>
                       {benchmarkSpotlights.map(card => (
                         <article
                           key={card.title}

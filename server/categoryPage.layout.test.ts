@@ -24,7 +24,6 @@ describe("Tradebilia category page layout", () => {
   it("keeps the Sports Cards spotlight area aligned with the flatter retro card-table benchmark", () => {
     expect(categoryPageSource).toContain("Show-floor highlights");
     expect(categoryPageSource).toContain("Featured cardboard arranged more like a real card table.");
-    expect(categoryPageSource).toContain("Show-floor pick");
     expect(categoryPageSource).toContain('transition duration-500 group-hover:scale-[1.02]');
     expect(categoryPageSource).toContain('aspect-[7/9]');
     expect(categoryPageSource).toContain('object-contain');
@@ -42,7 +41,7 @@ describe("Tradebilia category page layout", () => {
 
   it("displays compact search result cards in a multi-column grid layout", () => {
     expect(categoryPageSource).toContain('grid-cols-6');
-    expect(categoryPageSource).toContain('gap-3');
+    expect(categoryPageSource).toContain('gap-2');
   });
 
   it("extends the inventory-style spotlight treatment to the broader category rollout", () => {
