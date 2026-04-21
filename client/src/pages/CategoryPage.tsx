@@ -373,7 +373,7 @@ export default function CategoryPage() {
                       </div>
                       <p className="max-w-2xl text-sm leading-7 opacity-75">Each spotlight should read like a premium listing card rather than an editorial poster, keeping the benchmark closer to a retro PSA-card-show browse pattern.</p>
                     </div>
-                    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                    <div className={`grid gap-4 ${isSportsCardsPage ? "grid-cols-6" : "sm:grid-cols-2 xl:grid-cols-3"}`}>
                       {benchmarkSpotlights.map(card => (
                         <article
                           key={card.title}
@@ -407,7 +407,7 @@ export default function CategoryPage() {
                       </div>
                       <p className="max-w-2xl text-sm leading-7 opacity-75">These benchmark cards should feel more like collectible inventory lanes than oversized editorial panels, so each category stays useful and legible even when live listings are light.</p>
                     </div>
-                    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                    <div className={`grid gap-4 ${isSportsCardsPage ? "grid-cols-6" : "sm:grid-cols-2 xl:grid-cols-3"}`}>
                       {benchmarkSpotlights.map(card => (
                         <article
                           key={card.title}
