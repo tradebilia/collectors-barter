@@ -360,10 +360,10 @@ export default function CategoryPage() {
                       {benchmarkSpotlights.map(card => (
                         <article
                           key={card.title}
-                          className={`group overflow-hidden transition ${isSportsCardsPage ? "rounded-md border border-[#0f4658]/16 bg-[#fff7e8] shadow-sm hover:-translate-y-0.5" : "rounded-[1.65rem] border border-[#0f4658]/16 bg-[#fff7e8] shadow-[0_20px_45px_rgba(15,76,92,0.12)] hover:-translate-y-1"}`}
+                          className={`group overflow-hidden transition ${isSportsCardsPage ? "rounded-md border-2 border-[#D4AF37] bg-[#fff7e8] shadow-[0_8px_24px_rgba(212,175,55,0.15)] hover:-translate-y-0.5" : "rounded-[1.65rem] border border-[#0f4658]/16 bg-[#fff7e8] shadow-[0_20px_45px_rgba(15,76,92,0.12)] hover:-translate-y-1"}`}
                         >
                           <div className={`border-b border-[#0f4658]/12 bg-[linear-gradient(180deg,#f3e4bc_0%,#e8d6a8_100%)] ${isSportsCardsPage ? "p-1" : "p-4"}`}>
-                            <div className={`border border-[#0f4658]/10 bg-[#f7ecd2] shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] ${isSportsCardsPage ? "rounded-sm p-1" : "rounded-[1.25rem] p-4"}`}>
+                            <div className={`border border-[#D4AF37]/30 bg-[#f7ecd2] shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] ${isSportsCardsPage ? "rounded-sm p-1" : "rounded-[1.25rem] p-4"}`}>
                               <div className={`aspect-[7/9] overflow-hidden bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.5),rgba(18,57,75,0.1)_72%)] ${isSportsCardsPage ? "rounded-sm" : "rounded-[1rem]"}`}>
                                 <img src={card.imageUrl} alt={card.title} className={`h-full w-full object-contain transition duration-500 group-hover:scale-[1.02] ${isSportsCardsPage ? "p-0.5" : "p-3"}`} />
                               </div>
@@ -504,7 +504,7 @@ export default function CategoryPage() {
                         </div>
                       </div>
                       <div className="flex flex-wrap gap-0.5">
-                        <Button asChild className="rounded-full px-2 py-0 text-[0.6rem] h-auto">
+                        <Button asChild className="rounded-full px-2 py-0 text-[0.6rem] h-auto bg-[#D4AF37] hover:bg-[#C9A227] text-black">
                           <Link href={`/listings/${listing.id}`}>View</Link>
                         </Button>
                         <Dialog open={proposalListingId === listing.id} onOpenChange={open => setProposalListingId(open ? listing.id : null)}>
