@@ -178,7 +178,7 @@ export default function CategoryPage() {
               <div className="absolute inset-0 h-full" style={{ backgroundImage: `url(${SPORTS_CARDS_WALLPAPER_URL})`, backgroundRepeat: 'repeat', backgroundSize: 'auto', backgroundPosition: 'top left', opacity: 0.35 }}>
               </div>
             </div>
-            <div className="relative py-4 lg:py-6 max-h-[469px] overflow-hidden flex items-center px-4 lg:px-8">
+            <div className="relative py-4 lg:py-6 min-h-[380px] overflow-hidden flex items-center px-4 lg:px-8">
               <div className="w-full">
                 <div className="flex justify-between items-center gap-4">
                   <div className="flex-shrink-0">
