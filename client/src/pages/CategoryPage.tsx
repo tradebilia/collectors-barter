@@ -191,38 +191,34 @@ export default function CategoryPage() {
               <div className="absolute inset-0 h-full" style={{ backgroundImage: `url(${SPORTS_CARDS_WALLPAPER_URL})`, backgroundRepeat: 'repeat', backgroundSize: 'auto', backgroundPosition: 'top left', opacity: 0.35 }}>
               </div>
             </div>
-            <div className="relative py-4 lg:py-6 min-h-[380px] overflow-hidden flex items-center px-4 lg:px-8">
-              <div className="w-full">
-                <div className="flex justify-between items-center gap-4">
-                  <div className="flex-shrink-0">
-                    <div className="max-w-[14rem] lg:max-w-[16rem]">
-                      <img src={SPORTS_CARDS_LONG_LOGO_URL} alt="Tradebilia Collectors Trading Exchange" className="h-auto w-full object-contain" />
+            <div className="relative py-4 lg:py-6 min-h-[380px] overflow-hidden flex flex-col items-center justify-center px-4 lg:px-8 gap-2">
+              <div className="flex-shrink-0 mb-2">
+                <div className="max-w-[12rem] lg:max-w-[14rem]">
+                  <img src={SPORTS_CARDS_LONG_LOGO_URL} alt="Tradebilia Collectors Trading Exchange" className="h-auto w-full object-contain" />
+                </div>
+              </div>
+              <div className="w-full text-center">
+                <h1 className="leading-none">
+                  <span className="block text-7xl lg:text-8xl font-black uppercase tracking-[0.06em] lg:tracking-[0.08em] text-white" style={{ fontFamily: "Bebas Neue, Oswald, Inter, sans-serif", textShadow: "2px 2px 0 #000, 4px 4px 0 #000, 6px 6px 0 #000" }}>
+                    Sports Card
+                  </span>
+                  <span className="mt-1 lg:mt-2 block text-4xl lg:text-5xl font-semibold uppercase tracking-[0.12em] text-white" style={{ fontFamily: "Oswald, Inter, sans-serif", textShadow: "2px 2px 0 #000, 4px 4px 0 #000, 6px 6px 0 #000" }}>
+                    Exchange
+                  </span>
+                </h1>
+              </div>
+              <div className="mt-4">
+                <div className="grid gap-2 sm:grid-cols-3 lg:grid-cols-3">
+                  {[
+                    ["Listings", String(listings.length)],
+                    ["Collectors", String(feedQuery.data?.highlights.activeCollectors ?? 0)],
+                    ["Completed Trades", String(feedQuery.data?.highlights.completedTrades ?? 0)],
+                  ].map(([label, value]) => (
+                    <div key={label} className="rounded-lg border border-white/12 bg-black/25 px-2 py-1 text-[#fff3d5] backdrop-blur-sm">
+                      <p className="text-[6px] uppercase tracking-[0.2em] text-white/50">{label}</p>
+                      <p className="mt-0.5 text-xs font-semibold text-white">{value}</p>
                     </div>
-                  </div>
-                  <div className="flex-1 text-center">
-                    <h1 className="leading-none text-[#fff4df]">
-                      <span className="block text-6xl lg:text-7xl font-black uppercase tracking-[0.06em] lg:tracking-[0.08em]" style={{ fontFamily: "Bebas Neue, Oswald, Inter, sans-serif" }}>
-                        Sports Card
-                      </span>
-                      <span className="mt-0.5 lg:mt-1 block text-3xl lg:text-4xl font-semibold uppercase tracking-[0.12em]" style={{ fontFamily: "Oswald, Inter, sans-serif" }}>
-                        Exchange
-                      </span>
-                    </h1>
-                  </div>
-                  <div className="flex-shrink-0">
-                    <div className="grid gap-2 sm:grid-cols-3 lg:grid-cols-1">
-                      {[
-                        ["Listings", String(listings.length)],
-                        ["Collectors", String(feedQuery.data?.highlights.activeCollectors ?? 0)],
-                        ["Completed Trades", String(feedQuery.data?.highlights.completedTrades ?? 0)],
-                      ].map(([label, value]) => (
-                        <div key={label} className="rounded-lg border border-white/12 bg-black/25 px-2 py-1 text-[#fff3d5] backdrop-blur-sm">
-                          <p className="text-[6px] uppercase tracking-[0.2em] text-white/50">{label}</p>
-                          <p className="mt-0.5 text-xs font-semibold text-white">{value}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+                  ))}
                 </div>
               </div>
             </div>

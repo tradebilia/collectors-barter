@@ -165,3 +165,4 @@
 - [x] Convert Sport, Grading Service, Priority Traits, and Condition filters to dropdown menus with predefined options
 - [x] Add the 1981 Joe Montana and 1990 Martin Brodeur sports card images to the Sports Cards page listings
 - [x] Add basic sorting options for search results (Featured, Newest, Title)
+- [x] Update hero section: center "Sports Card Exchange" text, increase font size, white color with black outline, move Tradebilia name closer
