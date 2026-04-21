@@ -153,3 +153,4 @@
 - [x] Move the filters section all the way to the left edge of the page (no left margin/padding)
 - [x] Reposition filters section to start right below the category bar (not fixed/locked, flows naturally with content)
 - [x] Adjust the Sports Cards hero section height to 380px (slight increase from 375px)
+- [x] Move filter section to fixed left sidebar with search results on the right (eBay-style layout)
