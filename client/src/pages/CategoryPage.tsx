@@ -178,9 +178,9 @@ export default function CategoryPage() {
               <div className="absolute inset-0 h-full" style={{ backgroundImage: `url(${SPORTS_CARDS_WALLPAPER_URL})`, backgroundRepeat: 'repeat', backgroundSize: 'auto', backgroundPosition: 'top left', opacity: 0.35 }}>
               </div>
             </div>
-            <div className="relative py-4 lg:py-6 min-h-[562px] overflow-hidden flex items-center px-4 lg:px-8">
+            <div className="relative py-4 lg:py-6 max-h-[375px] overflow-hidden flex items-center px-4 lg:px-8">
               <div className="w-full">
-                <div className="flex justify-between items-center gap-4 h-full">
+                <div className="flex justify-between items-center gap-4">
                   <div className="flex-shrink-0">
                     <div className="max-w-[14rem] lg:max-w-[16rem]">
                       <img src={SPORTS_CARDS_LONG_LOGO_URL} alt="Tradebilia Collectors Trading Exchange" className="h-auto w-full object-contain" />

@@ -152,4 +152,3 @@
 - [x] Increase the hero section height by 25% vertically (from 300px to 375px)
 - [x] Move the filters section all the way to the left edge of the page (no left margin/padding)
 - [x] Reposition filters section to start right below the category bar (not fixed/locked, flows naturally with content)
-- [x] Increase the vertical size of the Sports Cards hero section by 50% (from 375px to 562px)
