@@ -156,3 +156,5 @@
 - [x] Move filter section to fixed left sidebar with search results on the right (eBay-style layout)
 - [x] Reduce the size of search result images to fit more items per page (now showing 5-6 columns instead of 3)
 - [x] Add a home button to the navigation to return to the main page
+- [x] Make the category bar fit all items on one line (Home + 10 categories)
+- [x] Add a top bar above the hero section with shortcut icons (Mail, Account Settings, Notifications)
