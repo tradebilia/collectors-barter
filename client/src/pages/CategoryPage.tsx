@@ -478,7 +478,7 @@ export default function CategoryPage() {
                 )}
               </div>
             ) : (
-              <div className={`grid gap-3 ${isSportsCardsPage ? "sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6" : "md:grid-cols-2 xl:grid-cols-3"}`}>
+              <div className={`grid gap-3 ${isSportsCardsPage ? "grid-cols-6" : "md:grid-cols-2 xl:grid-cols-3"}`}>
                 {listings.map(listing => (
                   <Card key={listing.id} className={`overflow-hidden border ${theme.cardClassName} ${isSportsCardsPage ? "rounded-md shadow-sm" : "rounded-[2rem]"}`}>
                     <div className={`overflow-hidden border-b border-current/10 ${isSportsCardsPage ? "aspect-[7/9] bg-[linear-gradient(180deg,rgba(243,228,188,0.92)_0%,rgba(232,214,168,0.92)_100%)] p-1" : "aspect-[4/5] bg-black/10"}`}>

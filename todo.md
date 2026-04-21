@@ -160,3 +160,4 @@
 - [x] Add a top bar above the hero section with shortcut icons (Mail, Account Settings, Notifications)
 - [x] Condense the filter section (reduce padding, spacing, and font sizes)
 - [x] Reduce the item size in the search results body by 50%
+- [x] Adjust grid layout to consistently show 6 items per row

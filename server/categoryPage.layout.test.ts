@@ -41,7 +41,7 @@ describe("Tradebilia category page layout", () => {
   });
 
   it("displays compact search result cards in a multi-column grid layout", () => {
-    expect(categoryPageSource).toContain('sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6');
+    expect(categoryPageSource).toContain('grid-cols-6');
     expect(categoryPageSource).toContain('gap-3');
   });
 
