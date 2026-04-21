@@ -299,25 +299,23 @@ export default function CategoryPage() {
 
       <main className="flex">
         {/* Left sidebar filters */}
-        <aside className={`w-80 border-r border-current/10 bg-current/5 p-6 ${theme.panelClassName}`}>
-          <div className="flex items-center gap-3">
-            <Search className={`h-5 w-5 ${theme.accentClassName}`} />
-            <h2 className="text-3xl font-semibold" style={{ fontFamily: theme.headingFont }}>Filters</h2>
+        <aside className={`w-80 border-r border-current/10 bg-current/5 p-4 ${theme.panelClassName}`}>
+          <div className="flex items-center gap-2">
+            <Search className={`h-4 w-4 ${theme.accentClassName}`} />
+            <h2 className="text-lg font-semibold" style={{ fontFamily: theme.headingFont }}>Filters</h2>
           </div>
-          {isSportsCardsPage ? (
-            <p className="mt-4 text-sm leading-7 opacity-75">{benchmark?.railGuidance}</p>
-          ) : null}
-          <div className="mt-6 space-y-5">
-            <div className="space-y-2">
-              <Label className="text-sm font-semibold uppercase tracking-[0.18em]">Keyword</Label>
-              <Input value={keyword} onChange={event => setKeyword(event.target.value)} placeholder={`Search ${categoryLabel.toLowerCase()} listings`} className="h-12 bg-white/80" />
+
+          <div className="mt-4 space-y-3">
+            <div className="space-y-1">
+              <Label className="text-xs font-semibold uppercase tracking-[0.16em]">Keyword</Label>
+              <Input value={keyword} onChange={event => setKeyword(event.target.value)} placeholder={`Search ${categoryLabel.toLowerCase()}`} className="h-9 bg-white/80 text-sm" />
             </div>
             {activeFilters.map(filter => (
-              <div key={filter.label} className="space-y-2">
-                <Label className="text-sm font-semibold uppercase tracking-[0.18em]">{filter.label}</Label>
+              <div key={filter.label} className="space-y-1">
+                <Label className="text-xs font-semibold uppercase tracking-[0.16em]">{filter.label}</Label>
                 {filter.type === "select" ? (
                   <Select defaultValue="all">
-                    <SelectTrigger className="h-12 bg-white/80">
+                    <SelectTrigger className="h-9 bg-white/80 text-sm">
                       <SelectValue placeholder={filter.placeholder} />
                     </SelectTrigger>
                     <SelectContent>
@@ -327,12 +325,12 @@ export default function CategoryPage() {
                     </SelectContent>
                   </Select>
                 ) : (
-                  <Input placeholder={filter.placeholder} className="h-12 bg-white/80" />
+                  <Input placeholder={filter.placeholder} className="h-9 bg-white/80 text-sm" />
                 )}
               </div>
             ))}
-            <div className="space-y-2">
-              <Label className="text-sm font-semibold uppercase tracking-[0.18em]">Condition</Label>
+            <div className="space-y-1">
+              <Label className="text-xs font-semibold uppercase tracking-[0.16em]">Condition</Label>
               {isSportsCardsPage ? (
                 <Input
                   value={sportsCardsConditionText}
@@ -343,11 +341,11 @@ export default function CategoryPage() {
                     setCondition((matched?.value ?? "all") as typeof condition);
                   }}
                   placeholder="Gem Mint, Near Mint, raw"
-                  className="h-12 bg-white/80"
+                  className="h-9 bg-white/80 text-sm"
                 />
               ) : (
                 <Select value={condition} onValueChange={value => setCondition(value as typeof condition)}>
-                  <SelectTrigger className="h-12 bg-white/80">
+                  <SelectTrigger className="h-9 bg-white/80 text-sm">
                     <SelectValue placeholder="All Conditions" />
                   </SelectTrigger>
                   <SelectContent>
@@ -482,56 +480,56 @@ export default function CategoryPage() {
             ) : (
               <div className={`grid gap-3 ${isSportsCardsPage ? "sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6" : "md:grid-cols-2 xl:grid-cols-3"}`}>
                 {listings.map(listing => (
-                  <Card key={listing.id} className={`overflow-hidden border ${theme.cardClassName} ${isSportsCardsPage ? "rounded-lg shadow-sm" : "rounded-[2rem]"}`}>
-                    <div className={`overflow-hidden border-b border-current/10 ${isSportsCardsPage ? "aspect-[7/9] bg-[linear-gradient(180deg,rgba(243,228,188,0.92)_0%,rgba(232,214,168,0.92)_100%)] p-2" : "aspect-[4/5] bg-black/10"}`}>
-                      <div className={isSportsCardsPage ? "h-full rounded-md border border-[#0f4658]/10 bg-[#f7ecd2] p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)]" : "h-full"}>
+                  <Card key={listing.id} className={`overflow-hidden border ${theme.cardClassName} ${isSportsCardsPage ? "rounded-md shadow-sm" : "rounded-[2rem]"}`}>
+                    <div className={`overflow-hidden border-b border-current/10 ${isSportsCardsPage ? "aspect-[7/9] bg-[linear-gradient(180deg,rgba(243,228,188,0.92)_0%,rgba(232,214,168,0.92)_100%)] p-1" : "aspect-[4/5] bg-black/10"}`}>
+                      <div className={isSportsCardsPage ? "h-full rounded-sm border border-[#0f4658]/10 bg-[#f7ecd2] p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)]" : "h-full"}>
                         <img
                           src={resolveTradebiliaListingImage({ title: listing.title, category: listing.category, primaryPhotoUrl: listing.primaryPhotoUrl })}
                           alt={listing.title}
-                          className={isSportsCardsPage ? "h-full w-full object-contain p-1" : "h-full w-full object-cover"}
+                          className={isSportsCardsPage ? "h-full w-full object-contain p-0.5" : "h-full w-full object-cover"}
                         />
                       </div>
                     </div>
-                    <CardContent className={`space-y-2 ${isSportsCardsPage ? "p-3 text-[#153746]" : "p-5"}`}>
-                      <div className="flex items-start justify-between gap-2">
+                    <CardContent className={`space-y-1 ${isSportsCardsPage ? "p-1.5 text-[#153746]" : "p-5"}`}>
+                      <div className="flex items-start justify-between gap-1">
                         <div>
-                          <p className="text-[0.65rem] font-semibold uppercase tracking-[0.18em] opacity-60">{listing.categoryLabel}</p>
-                          <Link href={`/listings/${listing.id}`} className="mt-1 block text-sm font-semibold leading-tight hover:opacity-75">
+                          <p className="text-[0.5rem] font-semibold uppercase tracking-[0.12em] opacity-60">{listing.categoryLabel}</p>
+                          <Link href={`/listings/${listing.id}`} className="mt-0.5 block text-xs font-semibold leading-tight hover:opacity-75">
                             {listing.title}
                           </Link>
                         </div>
-                        {listing.featured ? <Badge className={`rounded-full px-2 py-0.5 text-[0.65rem] ${theme.chipClassName}`}>Featured</Badge> : null}
+                        {listing.featured ? <Badge className={`rounded-full px-1 py-0 text-[0.5rem] ${theme.chipClassName}`}>Featured</Badge> : null}
                       </div>
-                      <p className="line-clamp-2 text-xs leading-5 opacity-80">{listing.description}</p>
-                      <div className="grid grid-cols-2 gap-2 rounded-lg border border-current/10 bg-black/5 p-2 text-[0.65rem]">
+                      <p className="line-clamp-1 text-[0.65rem] leading-3 opacity-80">{listing.description}</p>
+                      <div className="grid grid-cols-2 gap-1 rounded-md border border-current/10 bg-black/5 p-1 text-[0.5rem]">
                         <div>
-                          <p className="text-[0.6rem] uppercase tracking-[0.18em] opacity-60">Collector</p>
-                          <p className="mt-0.5 font-semibold truncate">{listing.owner.displayName}</p>
+                          <p className="text-[0.45rem] uppercase tracking-[0.1em] opacity-60">Collector</p>
+                          <p className="mt-0 font-semibold truncate text-[0.55rem]">{listing.owner.displayName}</p>
                         </div>
                         <div>
-                          <p className="text-[0.6rem] uppercase tracking-[0.18em] opacity-60">Condition</p>
-                          <p className="mt-0.5 font-semibold truncate">{listing.conditionLabel}</p>
+                          <p className="text-[0.45rem] uppercase tracking-[0.1em] opacity-60">Condition</p>
+                          <p className="mt-0 font-semibold truncate text-[0.55rem]">{listing.conditionLabel}</p>
                         </div>
                         <div>
-                          <p className="text-[0.6rem] uppercase tracking-[0.18em] opacity-60">Trust</p>
-                          <div className="mt-0.5 flex items-center gap-1 font-semibold">
-                            <Star className="h-3 w-3 fill-current" />
-                            <span className="truncate">{listing.ownerRating.averageRating.toFixed(1)}</span>
+                          <p className="text-[0.45rem] uppercase tracking-[0.1em] opacity-60">Trust</p>
+                          <div className="mt-0 flex items-center gap-0.5 font-semibold">
+                            <Star className="h-2 w-2 fill-current" />
+                            <span className="truncate text-[0.55rem]">{listing.ownerRating.averageRating.toFixed(1)}</span>
                           </div>
                         </div>
                         <div>
-                          <p className="text-[0.6rem] uppercase tracking-[0.18em] opacity-60">Status</p>
-                          <p className="mt-0.5 font-semibold capitalize truncate">{listing.status}</p>
+                          <p className="text-[0.45rem] uppercase tracking-[0.1em] opacity-60">Status</p>
+                          <p className="mt-0 font-semibold capitalize truncate text-[0.55rem]">{listing.status}</p>
                         </div>
                       </div>
-                      <div className="flex flex-wrap gap-1">
-                        <Button asChild className="rounded-full px-3 py-1 text-xs h-auto">
+                      <div className="flex flex-wrap gap-0.5">
+                        <Button asChild className="rounded-full px-2 py-0 text-[0.6rem] h-auto">
                           <Link href={`/listings/${listing.id}`}>View</Link>
                         </Button>
                         <Dialog open={proposalListingId === listing.id} onOpenChange={open => setProposalListingId(open ? listing.id : null)}>
                           <DialogTrigger asChild>
-                            <Button variant="outline" className="rounded-full bg-transparent px-2 py-1 text-xs h-auto" disabled={!isAuthenticated}>
-                              <MessageSquareText className="h-3 w-3" />
+                            <Button variant="outline" className="rounded-full bg-transparent px-1 py-0 text-xs h-auto" disabled={!isAuthenticated}>
+                              <MessageSquareText className="h-2 w-2" />
                             </Button>
                           </DialogTrigger>
                           <DialogContent>

@@ -158,3 +158,5 @@
 - [x] Add a home button to the navigation to return to the main page
 - [x] Make the category bar fit all items on one line (Home + 10 categories)
 - [x] Add a top bar above the hero section with shortcut icons (Mail, Account Settings, Notifications)
+- [x] Condense the filter section (reduce padding, spacing, and font sizes)
+- [x] Reduce the item size in the search results body by 50%
