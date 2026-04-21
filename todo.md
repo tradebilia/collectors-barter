@@ -169,3 +169,4 @@
 - [x] Increase the size of "Sports Card Exchange" text in hero section
 - [x] Add "Total Value Listed" as a fourth stat in the hero section stats
 - [x] Adjust category bar so name boxes stretch full width with no gaps between left and right borders
+- [x] Improve visibility of site statistics in hero section (increase contrast, adjust colors, better styling)
