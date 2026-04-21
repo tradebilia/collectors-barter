@@ -275,10 +275,10 @@ export default function CategoryPage() {
       </header>
 
       <nav className="relative z-10 border-t border-black bg-black">
-        <div className="container flex overflow-x-auto">
+        <div className="flex w-full overflow-x-auto">
           <Link
             href="/"
-            className="flex-shrink-0 border-b border-r border-white/10 px-4 py-4 text-center text-xs font-semibold uppercase tracking-[0.16em] transition hover:bg-white/10 lg:text-[11px] text-white whitespace-nowrap"
+            className="flex-1 border-b border-r border-white/10 px-4 py-4 text-center text-xs font-semibold uppercase tracking-[0.16em] transition hover:bg-white/10 lg:text-[11px] text-white whitespace-nowrap"
           >
             Home
           </Link>
@@ -286,7 +286,7 @@ export default function CategoryPage() {
             <Link
               key={category.value}
               href={`/category/${category.value}`}
-              className={`flex-shrink-0 border-b border-r border-white/10 px-4 py-4 text-center text-xs font-semibold uppercase tracking-[0.16em] transition hover:bg-white/10 lg:text-[11px] whitespace-nowrap ${category.value === slug ? "bg-white text-slate-950" : "text-white"}`}
+              className={`flex-1 border-b border-r border-white/10 px-4 py-4 text-center text-xs font-semibold uppercase tracking-[0.16em] transition hover:bg-white/10 lg:text-[11px] whitespace-nowrap ${category.value === slug ? "bg-white text-slate-950" : "text-white"}`}
             >
               {category.label}
             </Link>

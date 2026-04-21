@@ -168,3 +168,4 @@
 - [x] Update hero section: center "Sports Card Exchange" text, increase font size, white color with black outline, move Tradebilia name closer
 - [x] Increase the size of "Sports Card Exchange" text in hero section
 - [x] Add "Total Value Listed" as a fourth stat in the hero section stats
+- [x] Adjust category bar so name boxes stretch full width with no gaps between left and right borders
