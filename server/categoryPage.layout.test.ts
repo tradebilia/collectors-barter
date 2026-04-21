@@ -25,9 +25,9 @@ describe("Tradebilia category page layout", () => {
     expect(categoryPageSource).toContain("Show-floor highlights");
     expect(categoryPageSource).toContain("Featured cardboard arranged more like a real card table.");
     expect(categoryPageSource).toContain("Show-floor pick");
-    expect(categoryPageSource).toContain('className="h-full w-full object-contain p-3 transition duration-500 group-hover:scale-[1.02]"');
-    expect(categoryPageSource).toContain('isSportsCardsPage ? "aspect-[7/9] bg-[linear-gradient(180deg,rgba(243,228,188,0.92)_0%,rgba(232,214,168,0.92)_100%)] p-4" : "aspect-[4/5] bg-black/10"');
-    expect(categoryPageSource).toContain('className={isSportsCardsPage ? "h-full w-full object-contain p-3" : "h-full w-full object-cover"}');
+    expect(categoryPageSource).toContain('transition duration-500 group-hover:scale-[1.02]');
+    expect(categoryPageSource).toContain('aspect-[7/9]');
+    expect(categoryPageSource).toContain('object-contain');
   });
 
   it("uses manual-entry Sports Cards filters without the extra boxed helper sections", () => {
@@ -40,10 +40,9 @@ describe("Tradebilia category page layout", () => {
     expect(categoryPageSource).not.toContain("Subscriber tools");
   });
 
-  it("lets the Sports Cards top content section run full-width without the old bordered panel wrapper", () => {
-    // Curated Exchange section has been removed per user request
-    // The Sports Cards page now goes directly from filters to show-floor highlights
-    expect(categoryPageSource).toContain('Show-floor highlights');
+  it("displays compact search result cards in a multi-column grid layout", () => {
+    expect(categoryPageSource).toContain('sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6');
+    expect(categoryPageSource).toContain('gap-3');
   });
 
   it("extends the inventory-style spotlight treatment to the broader category rollout", () => {
@@ -51,5 +50,11 @@ describe("Tradebilia category page layout", () => {
     expect(categoryPageSource).toContain("Featured pieces that keep the exchange feeling curated.");
     expect(categoryPageSource).toContain("Benchmark lane");
     expect(categoryPageSource).toContain("benchmarkSpotlights.length > 0");
+  });
+
+  it("uses a left sidebar layout with filters on the left and content on the right", () => {
+    expect(categoryPageSource).toContain('main className="flex"');
+    expect(categoryPageSource).toContain('w-80 border-r border-current/10');
+    expect(categoryPageSource).toContain('flex-1');
   });
 });

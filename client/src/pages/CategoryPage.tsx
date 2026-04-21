@@ -461,59 +461,58 @@ export default function CategoryPage() {
                 )}
               </div>
             ) : (
-              <div className={`grid gap-5 ${isSportsCardsPage ? "md:grid-cols-2 xl:grid-cols-3" : "md:grid-cols-2 xl:grid-cols-3"}`}>
+              <div className={`grid gap-3 ${isSportsCardsPage ? "sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6" : "md:grid-cols-2 xl:grid-cols-3"}`}>
                 {listings.map(listing => (
-                  <Card key={listing.id} className={`overflow-hidden border ${theme.cardClassName} ${isSportsCardsPage ? "rounded-[1.75rem] shadow-[0_18px_44px_rgba(15,76,92,0.12)]" : "rounded-[2rem]"}`}>
-                    <div className={`overflow-hidden border-b border-current/10 ${isSportsCardsPage ? "aspect-[7/9] bg-[linear-gradient(180deg,rgba(243,228,188,0.92)_0%,rgba(232,214,168,0.92)_100%)] p-4" : "aspect-[4/5] bg-black/10"}`}>
-                      <div className={isSportsCardsPage ? "h-full rounded-[1.25rem] border border-[#0f4658]/10 bg-[#f7ecd2] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)]" : "h-full"}>
+                  <Card key={listing.id} className={`overflow-hidden border ${theme.cardClassName} ${isSportsCardsPage ? "rounded-lg shadow-sm" : "rounded-[2rem]"}`}>
+                    <div className={`overflow-hidden border-b border-current/10 ${isSportsCardsPage ? "aspect-[7/9] bg-[linear-gradient(180deg,rgba(243,228,188,0.92)_0%,rgba(232,214,168,0.92)_100%)] p-2" : "aspect-[4/5] bg-black/10"}`}>
+                      <div className={isSportsCardsPage ? "h-full rounded-md border border-[#0f4658]/10 bg-[#f7ecd2] p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)]" : "h-full"}>
                         <img
                           src={resolveTradebiliaListingImage({ title: listing.title, category: listing.category, primaryPhotoUrl: listing.primaryPhotoUrl })}
                           alt={listing.title}
-                          className={isSportsCardsPage ? "h-full w-full object-contain p-3" : "h-full w-full object-cover"}
+                          className={isSportsCardsPage ? "h-full w-full object-contain p-1" : "h-full w-full object-cover"}
                         />
                       </div>
                     </div>
-                    <CardContent className={`space-y-5 ${isSportsCardsPage ? "p-5 text-[#153746]" : "p-5"}`}>
-                      <div className="flex items-start justify-between gap-3">
+                    <CardContent className={`space-y-2 ${isSportsCardsPage ? "p-3 text-[#153746]" : "p-5"}`}>
+                      <div className="flex items-start justify-between gap-2">
                         <div>
-                          <p className="text-xs font-semibold uppercase tracking-[0.24em] opacity-60">{listing.categoryLabel}</p>
-                          <Link href={`/listings/${listing.id}`} className="mt-2 block text-3xl font-semibold leading-tight hover:opacity-75">
+                          <p className="text-[0.65rem] font-semibold uppercase tracking-[0.18em] opacity-60">{listing.categoryLabel}</p>
+                          <Link href={`/listings/${listing.id}`} className="mt-1 block text-sm font-semibold leading-tight hover:opacity-75">
                             {listing.title}
                           </Link>
                         </div>
-                        {listing.featured ? <Badge className={`rounded-full px-3 py-1 ${theme.chipClassName}`}>Featured</Badge> : null}
+                        {listing.featured ? <Badge className={`rounded-full px-2 py-0.5 text-[0.65rem] ${theme.chipClassName}`}>Featured</Badge> : null}
                       </div>
-                      <p className="line-clamp-3 text-sm leading-7 opacity-80">{listing.description}</p>
-                      <div className="grid grid-cols-2 gap-3 rounded-[1.25rem] border border-current/10 bg-black/5 p-4 text-sm">
+                      <p className="line-clamp-2 text-xs leading-5 opacity-80">{listing.description}</p>
+                      <div className="grid grid-cols-2 gap-2 rounded-lg border border-current/10 bg-black/5 p-2 text-[0.65rem]">
                         <div>
-                          <p className="text-[0.7rem] uppercase tracking-[0.24em] opacity-60">Collector</p>
-                          <p className="mt-2 font-semibold">{listing.owner.displayName}</p>
+                          <p className="text-[0.6rem] uppercase tracking-[0.18em] opacity-60">Collector</p>
+                          <p className="mt-0.5 font-semibold truncate">{listing.owner.displayName}</p>
                         </div>
                         <div>
-                          <p className="text-[0.7rem] uppercase tracking-[0.24em] opacity-60">Condition</p>
-                          <p className="mt-2 font-semibold">{listing.conditionLabel}</p>
+                          <p className="text-[0.6rem] uppercase tracking-[0.18em] opacity-60">Condition</p>
+                          <p className="mt-0.5 font-semibold truncate">{listing.conditionLabel}</p>
                         </div>
                         <div>
-                          <p className="text-[0.7rem] uppercase tracking-[0.24em] opacity-60">Trust</p>
-                          <div className="mt-2 flex items-center gap-2 font-semibold">
-                            <Star className="h-4 w-4 fill-current" />
-                            {listing.ownerRating.averageRating.toFixed(1)} ({listing.ownerRating.reviewCount})
+                          <p className="text-[0.6rem] uppercase tracking-[0.18em] opacity-60">Trust</p>
+                          <div className="mt-0.5 flex items-center gap-1 font-semibold">
+                            <Star className="h-3 w-3 fill-current" />
+                            <span className="truncate">{listing.ownerRating.averageRating.toFixed(1)}</span>
                           </div>
                         </div>
                         <div>
-                          <p className="text-[0.7rem] uppercase tracking-[0.24em] opacity-60">Status</p>
-                          <p className="mt-2 font-semibold capitalize">{listing.status}</p>
+                          <p className="text-[0.6rem] uppercase tracking-[0.18em] opacity-60">Status</p>
+                          <p className="mt-0.5 font-semibold capitalize truncate">{listing.status}</p>
                         </div>
                       </div>
-                      <div className="flex flex-wrap gap-3">
-                        <Button asChild className="rounded-full px-5">
-                          <Link href={`/listings/${listing.id}`}>View listing</Link>
+                      <div className="flex flex-wrap gap-1">
+                        <Button asChild className="rounded-full px-3 py-1 text-xs h-auto">
+                          <Link href={`/listings/${listing.id}`}>View</Link>
                         </Button>
                         <Dialog open={proposalListingId === listing.id} onOpenChange={open => setProposalListingId(open ? listing.id : null)}>
                           <DialogTrigger asChild>
-                            <Button variant="outline" className="rounded-full bg-transparent" disabled={!isAuthenticated}>
-                              <MessageSquareText className="mr-2 h-4 w-4" />
-                              Trade Proposal
+                            <Button variant="outline" className="rounded-full bg-transparent px-2 py-1 text-xs h-auto" disabled={!isAuthenticated}>
+                              <MessageSquareText className="h-3 w-3" />
                             </Button>
                           </DialogTrigger>
                           <DialogContent>
