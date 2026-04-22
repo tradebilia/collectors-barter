@@ -172,3 +172,4 @@
 - [x] Improve visibility of site statistics in hero section (increase contrast, adjust colors, better styling)
 - [x] Apply premium styling to item cards: gold borders, refined shadows, gold "View Details" buttons
 - [x] Move Tradebilia name/logo flush left against margin and increase size
+- [x] Update "Sports Card Exchange" text to use Athletic/Sport-inspired font (#3) with dynamic, aggressive styling (Righteous font with italic)

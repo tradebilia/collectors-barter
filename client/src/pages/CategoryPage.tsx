@@ -199,10 +199,10 @@ export default function CategoryPage() {
             <div className="relative py-4 lg:py-6 min-h-[380px] overflow-hidden flex flex-col items-center justify-center px-4 lg:px-8 gap-2">
               <div className="w-full text-center">
                 <h1 className="leading-none">
-                  <span className="block text-8xl lg:text-9xl font-black uppercase tracking-[0.06em] lg:tracking-[0.08em] text-white" style={{ fontFamily: "Bebas Neue, Oswald, Inter, sans-serif", textShadow: "3px 3px 0 #000, 6px 6px 0 #000, 9px 9px 0 #000" }}>
+                  <span className="block text-8xl lg:text-9xl font-black uppercase tracking-[0.06em] lg:tracking-[0.08em] text-white italic" style={{ fontFamily: "Righteous, Bebas Neue, Oswald, sans-serif", textShadow: "3px 3px 0 #000, 6px 6px 0 #000, 9px 9px 0 #000" }}>
                     Sports Card
                   </span>
-                  <span className="mt-2 lg:mt-3 block text-5xl lg:text-6xl font-semibold uppercase tracking-[0.12em] text-white" style={{ fontFamily: "Oswald, Inter, sans-serif", textShadow: "3px 3px 0 #000, 6px 6px 0 #000, 9px 9px 0 #000" }}>
+                  <span className="mt-2 lg:mt-3 block text-5xl lg:text-6xl font-black uppercase tracking-[0.12em] text-white italic" style={{ fontFamily: "Righteous, Oswald, sans-serif", textShadow: "3px 3px 0 #000, 6px 6px 0 #000, 9px 9px 0 #000" }}>
                     Exchange
                   </span>
                 </h1>
