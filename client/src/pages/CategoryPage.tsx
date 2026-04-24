@@ -166,7 +166,7 @@ export default function CategoryPage() {
     ...card,
     imageUrl: resolveTradebiliaListingImage({ title: card.title, category: slug }),
   }));
-  const SPORTS_CARDS_WALLPAPER_URL = "/manus-storage/Sportscards_03a41ec0.jpg";
+  const SPORTS_CARDS_WALLPAPER_URL = "https://d2xsxph8kpxj0f.cloudfront.net/310519663570115757/nAx6ATm2BH4G46yabuMZgM/sports-card-diagonal-graded-multisport-v2-BmiDA4VV9E3WZ7eNxjZJex.png";
   const SPORTS_CARDS_LONG_LOGO_URL = "/manus-storage/tradebilia-longform-no-navy-clean_d2f04453.png";
 
   return (
@@ -345,77 +345,6 @@ export default function CategoryPage() {
         {/* Right side content area */}
         <div className="flex-1 py-8 lg:py-10 px-6">
           <section className="space-y-6">
-            {benchmarkSpotlights.length > 0 ? (
-              <section className="space-y-5">
-                {isSportsCardsPage ? (
-                  <>
-                    <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-                      <div>
-                        <p className={`text-xs font-semibold uppercase tracking-[0.3em] ${theme.accentClassName}`}>Show-floor highlights</p>
-                        <h3 className="mt-3 text-3xl font-semibold" style={{ fontFamily: theme.headingFont }}>Featured cardboard arranged more like a real card table.</h3>
-                      </div>
-                      <p className="max-w-2xl text-sm leading-7 opacity-75">Each spotlight should read like a premium listing card rather than an editorial poster, keeping the benchmark closer to a retro PSA-card-show browse pattern.</p>
-                    </div>
-                    <div className={`grid ${isSportsCardsPage ? "gap-2 grid-cols-6" : "gap-4 sm:grid-cols-2 xl:grid-cols-3"}`}>
-                      {benchmarkSpotlights.map(card => (
-                        <article
-                          key={card.title}
-                          className={`group overflow-hidden transition ${isSportsCardsPage ? "rounded-md border-2 border-[#D4AF37] bg-[#fff7e8] shadow-[0_8px_24px_rgba(212,175,55,0.15)] hover:-translate-y-0.5" : "rounded-[1.65rem] border border-[#0f4658]/16 bg-[#fff7e8] shadow-[0_20px_45px_rgba(15,76,92,0.12)] hover:-translate-y-1"}`}
-                        >
-                          <div className={`border-b border-[#0f4658]/12 bg-[linear-gradient(180deg,#f3e4bc_0%,#e8d6a8_100%)] ${isSportsCardsPage ? "p-1" : "p-4"}`}>
-                            <div className={`border border-[#D4AF37]/30 bg-[#f7ecd2] shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] ${isSportsCardsPage ? "rounded-sm p-1" : "rounded-[1.25rem] p-4"}`}>
-                              <div className={`aspect-[7/9] overflow-hidden bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.5),rgba(18,57,75,0.1)_72%)] ${isSportsCardsPage ? "rounded-sm" : "rounded-[1rem]"}`}>
-                                <img src={card.imageUrl} alt={card.title} className={`h-full w-full object-contain transition duration-500 group-hover:scale-[1.02] ${isSportsCardsPage ? "p-0.5" : "p-3"}`} />
-                              </div>
-                            </div>
-                          </div>
-                          <div className={`text-[#153746] ${isSportsCardsPage ? "space-y-0.5 p-1" : "space-y-3 p-5"}`}>
-                            <div className={`flex flex-wrap items-center uppercase tracking-[0.24em] text-[#0f4658]/70 ${isSportsCardsPage ? "gap-1 text-[8px]" : "gap-2 text-[11px]"}`}>
-                              <span className={`rounded-full border border-[#0f4658]/12 bg-white/80 font-semibold ${isSportsCardsPage ? "px-1.5 py-0.5 text-[7px]" : "px-3 py-1"}`}>{card.eyebrow}</span>
-                            </div>
-                            <h3 className={`font-semibold leading-tight ${isSportsCardsPage ? "text-xs line-clamp-1" : "text-2xl"}`}>{card.title}</h3>
-                          </div>
-                        </article>
-                      ))}
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-                      <div>
-                        <p className={`text-xs font-semibold uppercase tracking-[0.3em] ${theme.accentClassName}`}>Collector spotlights</p>
-                        <h3 className="mt-3 text-3xl font-semibold" style={{ fontFamily: theme.headingFont }}>Featured pieces that keep the exchange feeling curated.</h3>
-                      </div>
-                      <p className="max-w-2xl text-sm leading-7 opacity-75">These benchmark cards should feel more like collectible inventory lanes than oversized editorial panels, so each category stays useful and legible even when live listings are light.</p>
-                    </div>
-                    <div className={`grid ${isSportsCardsPage ? "gap-2 grid-cols-6" : "gap-4 sm:grid-cols-2 xl:grid-cols-3"}`}>
-                      {benchmarkSpotlights.map(card => (
-                        <article
-                          key={card.title}
-                          className={`group overflow-hidden rounded-[1.65rem] border shadow-[0_20px_45px_rgba(15,23,42,0.12)] transition hover:-translate-y-1 ${theme.cardClassName}`}
-                        >
-                          <div className="border-b border-current/10 p-4">
-                            <div className="rounded-[1.25rem] border border-current/10 bg-white/55 p-4">
-                              <div className="aspect-[7/9] overflow-hidden rounded-[1rem] bg-black/5">
-                                <img src={card.imageUrl} alt={card.title} className="h-full w-full object-contain p-3 transition duration-500 group-hover:scale-[1.02]" />
-                              </div>
-                            </div>
-                          </div>
-                          <div className="space-y-3 p-5">
-                            <div className="flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-[0.24em] opacity-70">
-                              <span className={`rounded-full border border-current/10 px-3 py-1 font-semibold ${theme.chipClassName}`}>{card.eyebrow}</span>
-                              <span className="rounded-full border border-current/10 bg-white/55 px-3 py-1 font-semibold">Benchmark lane</span>
-                            </div>
-                            <h3 className="text-2xl font-semibold leading-tight" style={{ fontFamily: theme.headingFont }}>{card.title}</h3>
-                            <p className="text-sm leading-7 opacity-80">{card.description}</p>
-                          </div>
-                        </article>
-                      ))}
-                    </div>
-                  </>
-                )}
-              </section>
-            ) : null}
 
             {feedQuery.isLoading ? (
               <div className="flex min-h-[20rem] items-center justify-center rounded-[2rem] border border-dashed border-current/25">
@@ -424,31 +353,8 @@ export default function CategoryPage() {
             ) : listings.length === 0 ? (
               <div className={`rounded-[2rem] border p-8 ${theme.panelClassName}`}>
                 {isSportsCardsPage ? (
-                  <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_300px] lg:items-center">
-                    <div>
-                      <div className="flex items-center gap-3 text-sm font-semibold uppercase tracking-[0.24em] opacity-65">
-                        <Sparkles className="h-5 w-5" />
-                        {benchmark?.emptyStateEyebrow}
-                      </div>
-                      <h3 className="mt-4 text-4xl font-semibold" style={{ fontFamily: theme.headingFont }}>{benchmark?.emptyStateTitle}</h3>
-                      <p className="mt-4 max-w-2xl text-base leading-8 opacity-80">{benchmark?.emptyStateDescription}</p>
-                      <div className="mt-6 flex flex-wrap gap-3">
-                        <Button asChild className="rounded-full px-5">
-                          <Link href="/inventory">Browse member inventory</Link>
-                        </Button>
-                        <Button variant="outline" className="rounded-full bg-transparent" asChild>
-                          <Link href="/members">Find Sports Cards traders</Link>
-                        </Button>
-                      </div>
-                    </div>
-                    <div className={`rounded-[1.75rem] border p-5 ${theme.cardClassName}`}>
-                      <p className="text-xs font-semibold uppercase tracking-[0.24em] opacity-60">{benchmark?.emptyStateBuildoutTitle}</p>
-                      <div className="mt-4 space-y-3 text-sm leading-7 opacity-80">
-                        {benchmark?.emptyStateBuildoutNotes.map(note => (
-                          <p key={note}>{note}</p>
-                        ))}
-                      </div>
-                    </div>
+                  <div className="text-center">
+                    <h3 className="text-4xl font-semibold" style={{ fontFamily: theme.headingFont }}>No Cards Are Available</h3>
                   </div>
                 ) : (
                   <div className="text-center">

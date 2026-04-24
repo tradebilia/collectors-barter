@@ -173,3 +173,5 @@
 - [x] Apply premium styling to item cards: gold borders, refined shadows, gold "View Details" buttons
 - [x] Move Tradebilia name/logo flush left against margin and increase size
 - [x] Update "Sports Card Exchange" text to use Athletic/Sport-inspired font (#3) with dynamic, aggressive styling (Righteous font with italic)
+- [ ] Create full-width (21:9) wallpaper backgrounds based on Variation 1 (Isometric 3D) and Variation 2 (Museum Gallery) styles
+- [ ] Test and implement the full-width wallpaper as hero background
