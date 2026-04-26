@@ -69,7 +69,7 @@ export const tradebiliaCategoryThemes: Record<TradebiliaCategorySlug, {
     chipClassName: "bg-[#0f5563] text-[#fff1d2] border-[#0f5563]/40",
     borderClassName: "border-[#345c63]/20",
     cardClassName: "bg-[#f4dfb4] border-[#2f6670]/20 text-[#19150d] shadow-[0_18px_50px_rgba(20,39,47,0.16)]",
-    headingFont: "Oswald, Inter, sans-serif",
+    headingFont: "'Playfair Display', serif",
     textureClassName: "bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.16),transparent_34%)]",
   },
   vintage_toys: {

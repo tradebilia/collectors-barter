@@ -24,7 +24,7 @@ describe("tradebilia category benchmarks", () => {
     const theme = getTradebiliaCategoryTheme("sports_cards");
     const benchmark = getTradebiliaCategoryBenchmark("sports_cards");
 
-    expect(theme?.headingFont).toContain("Oswald");
+    expect(theme?.headingFont).toContain("Playfair Display");
     expect(theme?.pageClassName).toContain("#ead6ac");
     expect(benchmark?.emptyStateTitle).toBe("No live sports-card listings match these filters yet.");
     expect(benchmark?.emptyStateBuildoutNotes).toHaveLength(2);

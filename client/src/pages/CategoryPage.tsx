@@ -108,7 +108,10 @@ export default function CategoryPage() {
   const [keyword, setKeyword] = useState("");
   const [condition, setCondition] = useState<(typeof tradebiliaConditionOptions)[number]["value"]>("all");
   const [sportsCardsConditionText, setSportsCardsConditionText] = useState("");
-  const [sortBy, setSortBy] = useState("featured");
+  const [sortBy, setSortBy] = useState("best_match");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [resultsPerPage, setResultsPerPage] = useState(24);
+  const [currentPage, setCurrentPage] = useState(1);
   const [proposalListingId, setProposalListingId] = useState<number | null>(null);
   const [proposalNote, setProposalNote] = useState("");
 
@@ -191,39 +194,15 @@ export default function CategoryPage() {
       </div>
       <header className={`relative overflow-hidden border-b ${theme.borderClassName} ${theme.heroClassName}`}>
         {isSportsCardsPage ? (
-          <>
+          <div className={`relative overflow-hidden ${theme.textureClassName}`}>
             <div className="pointer-events-none absolute inset-0 h-full">
               <div className="absolute inset-0 h-full" style={{ backgroundImage: `url(${SPORTS_CARDS_WALLPAPER_URL})`, backgroundRepeat: 'repeat', backgroundSize: 'auto', backgroundPosition: 'top left', opacity: 0.35 }}>
               </div>
             </div>
-            <div className="relative py-4 lg:py-6 min-h-[380px] overflow-hidden flex flex-col items-center justify-center px-4 lg:px-8 gap-2">
-              <div className="w-full text-center">
-                <h1 className="leading-none">
-                  <span className="block text-8xl lg:text-9xl font-black uppercase tracking-[0.06em] lg:tracking-[0.08em] text-white italic" style={{ fontFamily: "Righteous, Bebas Neue, Oswald, sans-serif", textShadow: "3px 3px 0 #000, 6px 6px 0 #000, 9px 9px 0 #000" }}>
-                    Sports Card
-                  </span>
-                  <span className="mt-2 lg:mt-3 block text-5xl lg:text-6xl font-black uppercase tracking-[0.12em] text-white italic" style={{ fontFamily: "Righteous, Oswald, sans-serif", textShadow: "3px 3px 0 #000, 6px 6px 0 #000, 9px 9px 0 #000" }}>
-                    Exchange
-                  </span>
-                </h1>
-              </div>
-              <div className="mt-4">
-                <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-                  {[
-                    ["Listings", String(listings.length)],
-                    ["Collectors", String(feedQuery.data?.highlights.activeCollectors ?? 0)],
-                    ["Completed Trades", String(feedQuery.data?.highlights.completedTrades ?? 0)],
-                    ["Total Value Listed", "$20.5M"],
-                  ].map(([label, value]) => (
-                    <div key={label} className="rounded-lg border-2 border-white/40 bg-white/15 px-3 py-2 text-white backdrop-blur-md shadow-lg">
-                      <p className="text-[7px] uppercase tracking-[0.2em] text-white/70 font-semibold">{label}</p>
-                      <p className="mt-1 text-sm font-bold text-white">{value}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
+            <div className="container relative py-8 lg:py-12">
+              <div></div>
             </div>
-          </>
+          </div>
         ) : (
           <div className={`relative overflow-hidden ${theme.textureClassName}`}>
             <div className="container relative py-8 lg:py-12">
@@ -235,9 +214,18 @@ export default function CategoryPage() {
                     className={`h-auto w-full drop-shadow-[0_20px_35px_rgba(0,0,0,0.25)] ${isSportsCardsPage ? "max-w-md" : "max-w-xl"}`}
                   />
                   <p className="mt-5 text-xs font-semibold uppercase tracking-[0.36em] opacity-80">{theme.eyebrow}</p>
-                  <h1 className={`mt-3 leading-none ${isSportsCardsPage ? "max-w-5xl text-4xl sm:text-6xl lg:text-[5.2rem]" : "text-5xl sm:text-6xl lg:text-7xl"}`} style={{ fontFamily: theme.headingFont }}>
-                    {categoryLabel.toUpperCase()} EXCHANGE
-                  </h1>
+                  <div className="mt-3 leading-none">
+                    <h1 className={`${isSportsCardsPage ? "max-w-5xl text-4xl sm:text-6xl lg:text-[5.2rem]" : "text-5xl sm:text-6xl lg:text-7xl"}`} style={{ fontFamily: "'Playfair Display', serif", letterSpacing: "0.08em", fontStyle: "normal", fontWeight: 700 }}>
+                      {categoryLabel.toUpperCase()}
+                    </h1>
+                    <div className="mt-2 flex items-center gap-4">
+                      <div className="flex-1 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent"></div>
+                      <p className="text-sm sm:text-base lg:text-lg font-semibold uppercase tracking-[0.2em]" style={{ fontFamily: "'Playfair Display', serif", color: "#d4af37" }}>
+                        EXCHANGE
+                      </p>
+                      <div className="flex-1 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent"></div>
+                    </div>
+                  </div>
                   <p className={`max-w-3xl opacity-90 ${isSportsCardsPage ? "mt-4 text-[1.05rem] leading-8 text-white/88" : "mt-5 text-base leading-8 sm:text-lg"}`}>{theme.description}</p>
                 </div>
                 <div className="grid gap-4">
@@ -274,6 +262,25 @@ export default function CategoryPage() {
         )}
       </header>
 
+      {isSportsCardsPage && (
+        <div className="bg-black border-t border-white/10 py-4">
+          <div className="container">
+            <div className="flex justify-center gap-8">
+              {[
+                ["Listings", String(listings.length)],
+                ["Collectors", String(feedQuery.data?.highlights.activeCollectors ?? 0)],
+                ["Completed Trades", String(feedQuery.data?.highlights.completedTrades ?? 0)],
+              ].map(([label, value]) => (
+                <div key={label} className="text-center">
+                  <p className="text-[11px] uppercase tracking-[0.2em] text-white/60 font-semibold">{label}</p>
+                  <p className="mt-1 text-lg font-bold text-white">{value}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       <nav className="relative z-10 border-t border-black bg-black">
         <div className="flex w-full overflow-x-auto">
           <Link
@@ -286,6 +293,7 @@ export default function CategoryPage() {
             <Link
               key={category.value}
               href={`/category/${category.value}`}
+              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
               className={`flex-1 border-b border-r border-white/10 px-4 py-4 text-center text-xs font-semibold uppercase tracking-[0.16em] transition hover:bg-white/10 lg:text-[11px] whitespace-nowrap ${category.value === slug ? "bg-white text-slate-950" : "text-white"}`}
             >
               {category.label}
@@ -345,6 +353,100 @@ export default function CategoryPage() {
         {/* Right side content area */}
         <div className="flex-1 py-8 lg:py-10 px-6">
           <section className="space-y-6">
+            {/* Filter summary bar */}
+            {(keyword || condition !== "all" || sportsCardsConditionText) && (
+              <div className="flex flex-wrap gap-2 items-center pb-3">
+                <span className="text-xs font-medium opacity-70">Active filters:</span>
+                {keyword && (
+                  <div className="inline-flex items-center gap-1 bg-blue-600/20 text-blue-600 px-2 py-1 rounded text-xs">
+                    {keyword}
+                    <button onClick={() => setKeyword("")} className="ml-1 hover:opacity-70">×</button>
+                  </div>
+                )}
+                {condition !== "all" && (
+                  <div className="inline-flex items-center gap-1 bg-blue-600/20 text-blue-600 px-2 py-1 rounded text-xs">
+                    {condition}
+                    <button onClick={() => setCondition("all")} className="ml-1 hover:opacity-70">×</button>
+                  </div>
+                )}
+                {sportsCardsConditionText && (
+                  <div className="inline-flex items-center gap-1 bg-blue-600/20 text-blue-600 px-2 py-1 rounded text-xs">
+                    {sportsCardsConditionText}
+                    <button onClick={() => setSportsCardsConditionText("")} className="ml-1 hover:opacity-70">×</button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Sorting bar - always visible */}
+            <div className="space-y-4 pb-4 border-b border-current/10">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium opacity-70">Showing {listings.length} results</p>
+                <div className="flex items-center gap-4">
+                  {/* View toggle */}
+                  <div className="flex gap-1 bg-white/10 rounded p-1">
+                    <button
+                      onClick={() => setViewMode("grid")}
+                      className={`px-3 py-1 text-xs font-medium rounded transition ${viewMode === "grid" ? "bg-white text-slate-950" : "text-white hover:bg-white/20"}`}
+                    >
+                      Grid
+                    </button>
+                    <button
+                      onClick={() => setViewMode("list")}
+                      className={`px-3 py-1 text-xs font-medium rounded transition ${viewMode === "list" ? "bg-white text-slate-950" : "text-white hover:bg-white/20"}`}
+                    >
+                      List
+                    </button>
+                  </div>
+                  {/* Sort dropdown */}
+                  <Select value={sortBy} onValueChange={setSortBy}>
+                    <SelectTrigger className="w-48 h-9 bg-white/80 text-sm">
+                      <SelectValue placeholder="Sort by" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="best_match">Best Match</SelectItem>
+                      <SelectItem value="price_low_high">Value: Low to High</SelectItem>
+                      <SelectItem value="price_high_low">Value: High to Low</SelectItem>
+                      <SelectItem value="newest">Newly Listed</SelectItem>
+                      <SelectItem value="condition">Condition: Best First</SelectItem>
+                      <SelectItem value="grade">Grade: Highest First</SelectItem>
+                      <SelectItem value="location">Location: Nearest First</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              {/* Results per page and active filters */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <span className="text-xs font-medium opacity-70">Per page:</span>
+                  <Select value={String(resultsPerPage)} onValueChange={(val) => { setResultsPerPage(Number(val)); setCurrentPage(1); }}>
+                    <SelectTrigger className="w-20 h-8 bg-white/80 text-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="12">12</SelectItem>
+                      <SelectItem value="24">24</SelectItem>
+                      <SelectItem value="48">48</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                {/* Clear filters button */}
+                {(keyword || condition !== "all" || sportsCardsConditionText) && (
+                  <button
+                    onClick={() => {
+                      setKeyword("");
+                      setCondition("all");
+                      setSportsCardsConditionText("");
+                      setCurrentPage(1);
+                    }}
+                    className="text-xs font-medium text-blue-600 hover:underline"
+                  >
+                    Clear all filters
+                  </button>
+                )}
+              </div>
+            </div>
+
 
             {feedQuery.isLoading ? (
               <div className="flex min-h-[20rem] items-center justify-center rounded-[2rem] border border-dashed border-current/25">
@@ -365,8 +467,9 @@ export default function CategoryPage() {
                 )}
               </div>
             ) : (
-              <div className={`grid gap-3 ${isSportsCardsPage ? "grid-cols-6" : "md:grid-cols-2 xl:grid-cols-3"}`}>
-                {listings.map(listing => (
+              <>
+                <div className={`grid gap-3 ${isSportsCardsPage ? "grid-cols-6" : "md:grid-cols-2 xl:grid-cols-3"}`}>
+                  {listings.map(listing => (
                   <Card key={listing.id} className={`overflow-hidden border ${theme.cardClassName} ${isSportsCardsPage ? "rounded-md shadow-sm" : "rounded-[2rem]"}`}>
                     <div className={`overflow-hidden border-b border-current/10 ${isSportsCardsPage ? "aspect-[7/9] bg-[linear-gradient(180deg,rgba(243,228,188,0.92)_0%,rgba(232,214,168,0.92)_100%)] p-1" : "aspect-[4/5] bg-black/10"}`}>
                       <div className={isSportsCardsPage ? "h-full rounded-sm border border-[#0f4658]/10 bg-[#f7ecd2] p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)]" : "h-full"}>
@@ -458,9 +561,10 @@ export default function CategoryPage() {
                         </Button>
                       </div>
                     </CardContent>
-                  </Card>
+                   </Card>
                 ))}
               </div>
+              </>
             )}
           </section>
         </div>
