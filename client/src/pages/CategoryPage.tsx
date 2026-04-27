@@ -309,7 +309,7 @@ export default function CategoryPage() {
       </header>
 
       {isSportsCardsPage && (
-        <div className="bg-transparent border-t-0 py-6">
+        <div className={`${theme.heroClassName} border-t-0 py-6`}>
           <div className="container">
             <div className="flex justify-center gap-6">
               {[
