@@ -263,17 +263,17 @@ export default function CategoryPage() {
       </header>
 
       {isSportsCardsPage && (
-        <div className="bg-black border-t border-white/10 py-4">
+        <div className="bg-transparent border-t-0 py-6">
           <div className="container">
-            <div className="flex justify-center gap-8">
+            <div className="flex justify-center gap-6">
               {[
                 ["Listings", String(listings.length)],
                 ["Collectors", String(feedQuery.data?.highlights.activeCollectors ?? 0)],
                 ["Completed Trades", String(feedQuery.data?.highlights.completedTrades ?? 0)],
               ].map(([label, value]) => (
-                <div key={label} className="text-center">
-                  <p className="text-[11px] uppercase tracking-[0.2em] text-white/60 font-semibold">{label}</p>
-                  <p className="mt-1 text-lg font-bold text-white">{value}</p>
+                <div key={label} className="rounded-[1.5rem] border border-white/15 bg-black/15 p-4 text-center backdrop-blur-sm">
+                  <p className="text-xs uppercase tracking-[0.3em] opacity-70">{label}</p>
+                  <p className="mt-3 text-3xl font-semibold">{value}</p>
                 </div>
               ))}
             </div>

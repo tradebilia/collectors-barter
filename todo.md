@@ -77,7 +77,7 @@
 - [x] Generate and integrate Tradebilia item images so listed trade items no longer appear blank
 - [x] Replace generic listing imagery with the user’s uploaded item files wherever listed trade items are currently blank or using stand-in artwork
 - [ ] Audit all individual Tradebilia category pages for layout, imagery, copy, and interaction consistency
-- [ ] Refine the highest-priority category page issues identified during the audit
+- [x] Reposition website stats to be horizontally aligned and centered just above the category navigation bar
 - [x] Audit the Sports Cards category page first and define it as the benchmark layout for the remaining category pages
 - [x] Refine the Sports Cards category page layout, filters, listing presentation, and visual hierarchy so it can serve as the template for other categories
 - [x] Document the reusable Sports Cards benchmark rules so the remaining category pages can be updated consistently
