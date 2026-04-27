@@ -11,8 +11,8 @@ describe("Tradebilia category page layout", () => {
   it("uses the transparent longform Tradebilia logo in the Sports Cards header without the old circular badge", () => {
     expect(categoryPageSource).toContain('const SPORTS_CARDS_LONG_LOGO_URL = "/manus-storage/tradebilia-longform-no-navy-clean_d2f04453.png"');
     expect(categoryPageSource).toContain('isSportsCardsPage');
-    expect(categoryPageSource).toContain('pointer-events-none absolute inset-0');
-    expect(categoryPageSource).toContain('SPORTS_CARDS_WALLPAPER_URL');
+    expect(categoryPageSource).toContain('TRADEBILIA_LOGO_URL');
+    expect(categoryPageSource).toContain('max-w-md');
     expect(categoryPageSource).not.toContain('rounded-[2.25rem] border border-white/12 bg-[linear-gradient(135deg,rgba(12,55,66,0.94)_0%,rgba(28,111,127,0.78)_44%,rgba(8,33,42,0.95)_100%)]');
     expect(categoryPageSource).not.toContain('rounded-full bg-[rgba(255,243,213,0.08)]');
     expect(categoryPageSource).not.toContain('SPORTS_CARDS_SHORT_LOGO_URL');

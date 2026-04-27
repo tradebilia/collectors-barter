@@ -195,12 +195,58 @@ export default function CategoryPage() {
       <header className={`relative overflow-hidden border-b ${theme.borderClassName} ${theme.heroClassName}`}>
         {isSportsCardsPage ? (
           <div className={`relative overflow-hidden ${theme.textureClassName}`}>
-            <div className="pointer-events-none absolute inset-0 h-full">
-              <div className="absolute inset-0 h-full" style={{ backgroundImage: `url(${SPORTS_CARDS_WALLPAPER_URL})`, backgroundRepeat: 'repeat', backgroundSize: 'auto', backgroundPosition: 'top left', opacity: 0.35 }}>
-              </div>
-            </div>
             <div className="container relative py-8 lg:py-12">
-              <div></div>
+              <div className={`grid gap-8 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-end`}>
+                <div className="max-w-4xl">
+                  <img
+                    src={TRADEBILIA_LOGO_URL}
+                    alt="Tradebilia"
+                    className="h-auto w-full drop-shadow-[0_20px_35px_rgba(0,0,0,0.25)] max-w-md"
+                  />
+                  <p className="mt-5 text-xs font-semibold uppercase tracking-[0.36em] opacity-80">{theme.eyebrow}</p>
+                  <div className="mt-3 leading-none">
+                    <h1 className="max-w-5xl text-4xl sm:text-6xl lg:text-[5.2rem]" style={{ fontFamily: "'Playfair Display', serif", letterSpacing: "0.08em", fontStyle: "normal", fontWeight: 700 }}>
+                      {categoryLabel.toUpperCase()}
+                    </h1>
+                    <div className="mt-2 flex items-center gap-4">
+                      <div className="flex-1 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent"></div>
+                      <p className="text-sm sm:text-base lg:text-lg font-semibold uppercase tracking-[0.2em]" style={{ fontFamily: "'Playfair Display', serif", color: "#d4af37" }}>
+                        EXCHANGE
+                      </p>
+                      <div className="flex-1 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent"></div>
+                    </div>
+                  </div>
+                  <p className="max-w-3xl opacity-90 mt-4 text-[1.05rem] leading-8 text-white/88">{theme.description}</p>
+                </div>
+                <div className="grid gap-4">
+                  <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
+                    {[
+                      ["Listings", String(listings.length)],
+                      ["Collectors", String(feedQuery.data?.highlights.activeCollectors ?? 0)],
+                      ["Completed Trades", String(feedQuery.data?.highlights.completedTrades ?? 0)],
+                    ].map(([label, value]) => (
+                      <div key={label} className="rounded-[1.5rem] border border-white/15 bg-black/15 p-4 text-center backdrop-blur-sm">
+                        <p className="text-xs uppercase tracking-[0.3em] opacity-70">{label}</p>
+                        <p className="mt-3 text-3xl font-semibold">{value}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="rounded-[1.75rem] border border-white/15 bg-black/20 p-5 text-[#fff3d5] backdrop-blur-sm">
+                    <div className="flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.28em] text-white/70">
+                      <Trophy className="h-4 w-4" />
+                      {benchmark?.heroNotesEyebrow}
+                    </div>
+                    <div className="mt-4 space-y-3 text-sm leading-7 text-white/82">
+                      <p>{benchmark?.heroNotes[0]}</p>
+                      <div className="grid gap-3 text-[0.92rem]">
+                        {benchmark?.heroNotes.slice(1).map(note => (
+                          <div key={note} className="rounded-2xl border border-white/12 bg-white/8 px-4 py-3">{note}</div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         ) : (
