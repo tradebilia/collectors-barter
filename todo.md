@@ -77,6 +77,7 @@
 - [x] Generate and integrate Tradebilia item images so listed trade items no longer appear blank
 - [x] Replace generic listing imagery with the user’s uploaded item files wherever listed trade items are currently blank or using stand-in artwork
 - [x] Remove the faint white line below EXCHANGE in the Sports Cards hero section
+- [x] Clean up Sports Cards code (remove unused constants and extra whitespace)
 - [ ] Audit all individual Tradebilia category pages for layout, imagery, copy, and interaction consistency
 - [x] Reposition website stats to be horizontally aligned and centered just above the category navigation bar
 - [x] Audit the Sports Cards category page first and define it as the benchmark layout for the remaining category pages
