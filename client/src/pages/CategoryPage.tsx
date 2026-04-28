@@ -169,7 +169,6 @@ export default function CategoryPage() {
     ...card,
     imageUrl: resolveTradebiliaListingImage({ title: card.title, category: slug }),
   }));
-  const SPORTS_CARDS_WALLPAPER_URL = "https://d2xsxph8kpxj0f.cloudfront.net/310519663570115757/nAx6ATm2BH4G46yabuMZgM/sports-card-diagonal-graded-multisport-v2-BmiDA4VV9E3WZ7eNxjZJex.png";
   const SPORTS_CARDS_LONG_LOGO_URL = "/manus-storage/tradebilia-longform-no-navy-clean_d2f04453.png";
 
   return (
@@ -280,10 +279,6 @@ export default function CategoryPage() {
           </div>
         )}
       </header>
-
-
-
-
 
       <nav className="relative z-10 border-t border-black bg-black">
         <div className="flex w-full overflow-x-auto">
