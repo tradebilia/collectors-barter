@@ -219,7 +219,7 @@ export default function CategoryPage() {
 
               </div>
               {/* Horizontal Stats Section */}
-              <div className="flex justify-center gap-6 flex-wrap mt-6 pt-6 border-t border-white/10">
+              <div className="flex justify-center gap-6 flex-wrap mt-6 pt-6">
                 {[
                   ["Listings", String(listings.length)],
                   ["Collectors", String(feedQuery.data?.highlights.activeCollectors ?? 0)],
