@@ -201,11 +201,11 @@ export default function CategoryPage() {
             backgroundAttachment: 'scroll'
           }}>
             <div className="absolute inset-0 bg-black/30"></div>
-            <div className="container relative py-8 lg:py-12 z-10">
-              <div className="max-w-4xl">
+            <div className="container relative py-12 lg:py-16 z-10">
+              <div className="max-w-4xl mx-auto text-center">
                 <p className="mt-5 text-xs font-semibold uppercase tracking-[0.36em] opacity-80">{theme.eyebrow}</p>
                 <div className="mt-3 leading-none">
-                  <h1 className="max-w-5xl text-4xl sm:text-6xl lg:text-[5.2rem]" style={{ fontFamily: "'Playfair Display', serif", letterSpacing: "0.08em", fontStyle: "normal", fontWeight: 700 }}>
+                  <h1 className="max-w-5xl mx-auto text-4xl sm:text-6xl lg:text-[5.2rem]" style={{ fontFamily: "'Playfair Display', serif", letterSpacing: "0.08em", fontStyle: "normal", fontWeight: 700 }}>
                     {categoryLabel.toUpperCase()}
                   </h1>
                   <div className="mt-2 flex items-center gap-4">
@@ -216,7 +216,7 @@ export default function CategoryPage() {
                     <div className="flex-1 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent"></div>
                   </div>
                 </div>
-                <p className="max-w-3xl opacity-90 mt-4 text-[1.05rem] leading-8 text-white/88">{theme.description}</p>
+
               </div>
               {/* Horizontal Stats Section */}
               <div className="flex justify-center gap-6 flex-wrap mt-6 pt-6 border-t border-white/10">
