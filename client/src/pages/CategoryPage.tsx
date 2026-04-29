@@ -34,13 +34,15 @@ const categoryFilterPresets: Record<TradebiliaCategorySlug, Array<{ label: strin
   sports_cards: [
     { label: "Player", placeholder: "Mickey Mantle" },
     { label: "Manufacturer", placeholder: "Topps, Fleer, Upper Deck" },
-    { label: "Sport", placeholder: "Baseball, Basketball", type: "select" as const },
-    { label: "Grading service", placeholder: "PSA, BGS, SGC", type: "select" as const },
+    { label: "Sport", placeholder: "Select a sport", type: "select" as const },
+    { label: "Grading service", placeholder: "Select a grading service", type: "select" as const },
     { label: "Year / era", placeholder: "1950s, 1986, junk wax, ultra-modern" },
     { label: "Team", placeholder: "Yankees, Bulls, Cowboys" },
     { label: "Set / series", placeholder: "Topps Chrome, Prizm, Fleer" },
-    { label: "Grade", placeholder: "PSA 10, BGS 9.5, raw" },
-    { label: "Priority traits", placeholder: "Rookie, autograph, patch relic, Hall of Fame", type: "select" as const },
+    { label: "Grade", placeholder: "Select grade 0-10", type: "select" as const },
+    { label: "Value Range", placeholder: "Min - Max", type: "input" as const },
+    { label: "Rookie", placeholder: "Select option", type: "select" as const },
+    { label: "Autographed", placeholder: "Select option", type: "select" as const },
   ],
   vintage_toys: [
     { label: "Name", placeholder: "Barbie, G.I. Joe, Star Wars" },
@@ -96,6 +98,48 @@ const sortOptions = [
   { value: "featured", label: "Featured" },
   { value: "newest", label: "Newest" },
   { value: "title", label: "Title" },
+];
+
+const sportsList = [
+  "Baseball",
+  "Basketball",
+  "Football",
+  "Hockey",
+  "Soccer",
+  "Tennis",
+  "Golf",
+  "Boxing",
+  "MMA",
+  "Wrestling",
+  "Track & Field",
+  "Swimming",
+  "Cycling",
+  "Motorsports",
+  "Other",
+];
+
+const gradingServicesList = [
+  "PSA",
+  "BGS",
+  "SGC",
+  "CGC",
+  "Beckett",
+  "Sportscard Guaranty",
+  "Raw",
+];
+
+const gradeOptions = Array.from({ length: 11 }, (_, i) => ({ value: i.toString(), label: i.toString() }));
+
+const rookieOptions = [
+  { value: "yes", label: "Yes" },
+  { value: "no", label: "No" },
+  { value: "both", label: "Both" },
+];
+
+const autographedOptions = [
+  { value: "yes", label: "Yes" },
+  { value: "no", label: "No" },
+  { value: "both", label: "Both" },
 ];
 
 export default function CategoryPage() {
@@ -311,38 +355,70 @@ export default function CategoryPage() {
               <Label className="text-xs font-semibold uppercase tracking-[0.16em]">Keyword</Label>
               <Input value={keyword} onChange={event => setKeyword(event.target.value)} placeholder={`Search ${categoryLabel.toLowerCase()}`} className="h-9 bg-white/80 text-sm" />
             </div>
-            {activeFilters.map(filter => (
-              <div key={filter.label} className="space-y-1">
-                <Label className="text-xs font-semibold uppercase tracking-[0.16em]">{filter.label}</Label>
-                {filter.type === "select" ? (
-                  <Select defaultValue="all">
-                    <SelectTrigger className="h-9 bg-white/80 text-sm">
-                      <SelectValue placeholder={filter.placeholder} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All</SelectItem>
-                      <SelectItem value="featured">Featured</SelectItem>
-                      <SelectItem value="certified">Certified</SelectItem>
-                    </SelectContent>
-                  </Select>
-                ) : (
-                  <Input placeholder={filter.placeholder} className="h-9 bg-white/80 text-sm" />
-                )}
+            {activeFilters.map(filter => {
+              if (isSportsCardsPage && ["Priority traits"].includes(filter.label)) {
+                return null;
+              }
+              
+              return (
+                <div key={filter.label} className="space-y-1">
+                  <Label className="text-xs font-semibold uppercase tracking-[0.16em]">{filter.label}</Label>
+                  {filter.type === "select" ? (
+                    <Select defaultValue="all">
+                      <SelectTrigger className="h-9 bg-white/80 text-sm">
+                        <SelectValue placeholder={filter.placeholder} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All</SelectItem>
+                        {filter.label === "Sport" && sportsList.map(sport => (
+                          <SelectItem key={sport} value={sport}>{sport}</SelectItem>
+                        ))}
+                        {filter.label === "Grading service" && gradingServicesList.map(service => (
+                          <SelectItem key={service} value={service}>{service}</SelectItem>
+                        ))}
+                        {filter.label === "Grade" && gradeOptions.map(grade => (
+                          <SelectItem key={grade.value} value={grade.value}>{grade.label}</SelectItem>
+                        ))}
+                        {filter.label === "Rookie" && rookieOptions.map(option => (
+                          <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                        ))}
+                        {filter.label === "Autographed" && autographedOptions.map(option => (
+                          <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                        ))}
+                        {!["Sport", "Grading service", "Grade", "Rookie", "Autographed"].includes(filter.label) && (
+                          <>
+                            <SelectItem value="featured">Featured</SelectItem>
+                            <SelectItem value="certified">Certified</SelectItem>
+                          </>
+                        )}
+                      </SelectContent>
+                    </Select>
+                  ) : filter.label === "Value Range" ? (
+                    <div className="flex gap-2">
+                      <Input placeholder="Min" className="h-9 bg-white/80 text-sm flex-1" type="number" />
+                      <Input placeholder="Max" className="h-9 bg-white/80 text-sm flex-1" type="number" />
+                    </div>
+                  ) : (
+                    <Input placeholder={filter.placeholder} className="h-9 bg-white/80 text-sm" />
+                  )}
+                </div>
+              );
+            })}
+            {!isSportsCardsPage && (
+              <div className="space-y-1">
+                <Label className="text-xs font-semibold uppercase tracking-[0.16em]">Condition</Label>
+                <Select value={condition} onValueChange={value => setCondition(value as typeof condition)}>
+                  <SelectTrigger className="h-9 bg-white/80 text-sm">
+                    <SelectValue placeholder="All Conditions" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {tradebiliaConditionOptions.map(option => (
+                      <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-            ))}
-            <div className="space-y-1">
-              <Label className="text-xs font-semibold uppercase tracking-[0.16em]">Condition</Label>
-              <Select value={condition} onValueChange={value => setCondition(value as typeof condition)}>
-                <SelectTrigger className="h-9 bg-white/80 text-sm">
-                  <SelectValue placeholder="All Conditions" />
-                </SelectTrigger>
-                <SelectContent>
-                  {tradebiliaConditionOptions.map(option => (
-                    <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            )}
           </div>
         </aside>
 

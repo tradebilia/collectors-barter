@@ -179,3 +179,4 @@
 - [x] Update "Sports Card Exchange" text to use Athletic/Sport-inspired font (#3) with dynamic, aggressive styling (Righteous font with italic)
 - [x] Create full-width (21:9) wallpaper backgrounds based on Variation 1 (Isometric 3D) and Variation 2 (Museum Gallery) styles
 - [x] Test and implement the full-width wallpaper as hero background
+- [ ] Update Sports Cards filter section: remove Condition, add Grade (0-10), remove Priority Traits, add Value Range, add Rookie dropdown, add Autographed dropdown, populate Sports and Grading Service dropdowns
