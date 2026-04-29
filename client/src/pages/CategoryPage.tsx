@@ -225,9 +225,9 @@ export default function CategoryPage() {
                   ["Completed Trades", String(feedQuery.data?.highlights.completedTrades ?? 0)],
                   ["Total Market Value", "$0"],
                 ].map(([label, value]) => (
-                  <div key={label} className="rounded-[1.5rem] border border-white/15 bg-black/15 px-6 py-4 text-center backdrop-blur-sm">
-                    <p className="text-xs uppercase tracking-[0.3em] opacity-70">{label}</p>
-                    <p className="mt-3 text-2xl font-semibold">{value}</p>
+                  <div key={label} className="rounded-[1rem] border border-white/15 bg-black/15 px-3 py-2 text-center backdrop-blur-sm">
+                    <p className="text-[0.65rem] uppercase tracking-[0.3em] opacity-70">{label}</p>
+                    <p className="mt-1 text-sm font-semibold">{value}</p>
                   </div>
                 ))}
               </div>
