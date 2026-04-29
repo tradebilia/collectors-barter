@@ -204,16 +204,13 @@ export default function CategoryPage() {
               <div className="max-w-4xl mx-auto text-center">
                 <p className="mt-5 text-xs font-semibold uppercase tracking-[0.36em] opacity-80">{theme.eyebrow}</p>
                 <div className="mt-3 leading-none">
-                  <h1 className="max-w-5xl mx-auto text-4xl sm:text-6xl lg:text-[5.2rem]" style={{ fontFamily: "'Playfair Display', serif", letterSpacing: "0.08em", fontStyle: "normal", fontWeight: 700 }}>
-                    {categoryLabel.toUpperCase()}
+                  <h1 className="max-w-5xl mx-auto text-4xl sm:text-6xl lg:text-[5.2rem]" style={{ fontFamily: "'Arial Black', sans-serif", letterSpacing: "0.05em", fontStyle: "normal", fontWeight: 900, color: "white", WebkitTextStroke: "2px black" }}>
+                    {slug === "sports_cards" ? "SPORTS CARD" : categoryLabel.toUpperCase()}
                   </h1>
-                  <div className="mt-2 flex items-center gap-4">
-                    <div className="flex-1 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent"></div>
-                    <p className="text-sm sm:text-base lg:text-lg font-semibold uppercase tracking-[0.2em]" style={{ fontFamily: "'Playfair Display', serif", color: "#d4af37" }}>
-                      EXCHANGE
-                    </p>
-                    <div className="flex-1 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent"></div>
-                  </div>
+                  <div className="mt-4 h-px bg-white/50 mx-auto" style={{ maxWidth: "300px" }}></div>
+                  <p className="mt-4 text-3xl sm:text-4xl lg:text-5xl font-black uppercase tracking-[0.1em]" style={{ fontFamily: "'Arial Black', sans-serif", color: "white", WebkitTextStroke: "2px black" }}>
+                    EXCHANGE
+                  </p>
                 </div>
 
               </div>
