@@ -173,7 +173,7 @@ export default function CategoryPage() {
 
   return (
     <div className={`min-h-screen ${theme.pageClassName}`}>
-      <div className="border-b border-white/10 bg-black/50">
+      <div className="border-b border-white/10 bg-black">
         <div className="flex items-center justify-between gap-4 pl-2 pr-4 py-3">
           <div className="flex-shrink-0">
             <img src={SPORTS_CARDS_LONG_LOGO_URL} alt="Tradebilia" className="h-12 w-auto object-contain" />
