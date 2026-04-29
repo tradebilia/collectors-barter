@@ -133,13 +133,11 @@ const gradeOptions = Array.from({ length: 11 }, (_, i) => ({ value: i.toString()
 const rookieOptions = [
   { value: "yes", label: "Yes" },
   { value: "no", label: "No" },
-  { value: "both", label: "Both" },
 ];
 
 const autographedOptions = [
   { value: "yes", label: "Yes" },
   { value: "no", label: "No" },
-  { value: "both", label: "Both" },
 ];
 
 export default function CategoryPage() {
