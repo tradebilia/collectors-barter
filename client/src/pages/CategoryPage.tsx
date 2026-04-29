@@ -204,11 +204,11 @@ export default function CategoryPage() {
               <div className="max-w-4xl mx-auto text-center">
                 <p className="mt-5 text-xs font-semibold uppercase tracking-[0.36em] opacity-80">{theme.eyebrow}</p>
                 <div className="mt-3 leading-none">
-                  <h1 className="max-w-5xl mx-auto text-6xl sm:text-8xl lg:text-[7rem]" style={{ fontFamily: "'Righteous', sans-serif", letterSpacing: "0.05em", fontStyle: "italic", fontWeight: 700, color: "#F4D03F", textShadow: "2px 2px 4px rgba(0,0,0,0.5)" }}>
+                  <h1 className="max-w-5xl mx-auto text-6xl sm:text-8xl lg:text-[7rem]" style={{ fontFamily: "'Righteous', sans-serif", letterSpacing: "0.05em", fontStyle: "italic", fontWeight: 700, color: "white", textShadow: "2px 2px 4px rgba(0,0,0,0.5)" }}>
                     {slug === "sports_cards" ? "SPORTS CARD" : categoryLabel.toUpperCase()}
                   </h1>
                   <div className="mt-4 h-px bg-white/50 mx-auto" style={{ maxWidth: "100%", width: "100%" }}></div>
-                  <p className="mt-4 text-3xl sm:text-4xl lg:text-5xl font-black uppercase tracking-[0.1em]" style={{ fontFamily: "'Righteous', sans-serif", fontStyle: "italic", color: "white", textShadow: "2px 2px 4px rgba(0,0,0,0.5)" }}>
+                  <p className="mt-4 text-3xl sm:text-4xl lg:text-5xl font-black uppercase tracking-[0.1em]" style={{ fontFamily: "'Righteous', sans-serif", fontStyle: "italic", color: "#F4D03F", textShadow: "2px 2px 4px rgba(0,0,0,0.5)" }}>
                     EXCHANGE
                   </p>
                 </div>
