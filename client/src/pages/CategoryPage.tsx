@@ -204,7 +204,7 @@ export default function CategoryPage() {
               <div className="max-w-4xl mx-auto text-center">
                 <p className="mt-5 text-xs font-semibold uppercase tracking-[0.36em] opacity-80">{theme.eyebrow}</p>
                 <div className="mt-3 leading-none">
-                  <h1 className="max-w-5xl mx-auto text-6xl sm:text-8xl lg:text-[7rem]" style={{ fontFamily: "'Righteous', sans-serif", letterSpacing: "0.05em", fontStyle: "italic", fontWeight: 700, color: "white", textShadow: "2px 2px 4px rgba(0,0,0,0.5)", WebkitTextStroke: "0.25px rgba(0,0,0,0.9)" }}>
+                  <h1 className="max-w-5xl mx-auto text-6xl sm:text-8xl lg:text-[7rem]" style={{ fontFamily: "'Righteous', sans-serif", letterSpacing: "0.05em", fontStyle: "italic", fontWeight: 700, color: "white", textShadow: "2px 2px 4px rgba(0,0,0,0.5)", WebkitTextStroke: "2px rgba(0,0,0,0.8)" }}>
                     {slug === "sports_cards" ? "SPORTS CARD" : categoryLabel.toUpperCase()}
                   </h1>
                   <div className="mt-4 h-px bg-white/50 mx-auto" style={{ maxWidth: "100%", width: "100%" }}></div>
