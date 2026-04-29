@@ -180,3 +180,9 @@
 - [x] Create full-width (21:9) wallpaper backgrounds based on Variation 1 (Isometric 3D) and Variation 2 (Museum Gallery) styles
 - [x] Test and implement the full-width wallpaper as hero background
 - [x] Update Sports Cards filter section: remove Condition, add Grade (0-10), remove Priority Traits, add Value Range, add Rookie dropdown, add Autographed dropdown, populate Sports and Grading Service dropdowns
+- [x] Remove 'Both' option from Rookie and Autographed filter dropdowns
+- [ ] Add Clear and Search buttons at the bottom of the filter section
+- [ ] Reduce filter section font sizes and spacing to make it more compact
+- [ ] Add Next/Previous pagination buttons to search results
+- [ ] Add Favorite/Watchlist icon to item cards for users to like items
+- [ ] Create a Watchlist/Favorites page where users can view all their liked items

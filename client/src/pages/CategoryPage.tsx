@@ -348,10 +348,10 @@ export default function CategoryPage() {
             <h2 className="text-lg font-semibold" style={{ fontFamily: theme.headingFont }}>Filters</h2>
           </div>
 
-          <div className="mt-4 space-y-3">
-            <div className="space-y-1">
-              <Label className="text-xs font-semibold uppercase tracking-[0.16em]">Keyword</Label>
-              <Input value={keyword} onChange={event => setKeyword(event.target.value)} placeholder={`Search ${categoryLabel.toLowerCase()}`} className="h-9 bg-white/80 text-sm" />
+          <div className="mt-4 space-y-2">
+            <div className="space-y-0.5">
+              <Label className="text-[0.65rem] font-semibold uppercase tracking-[0.16em]">Keyword</Label>
+              <Input value={keyword} onChange={event => setKeyword(event.target.value)} placeholder={`Search ${categoryLabel.toLowerCase()}`} className="h-8 bg-white/80 text-xs" />
             </div>
             {activeFilters.map(filter => {
               if (isSportsCardsPage && ["Priority traits"].includes(filter.label)) {
@@ -359,11 +359,11 @@ export default function CategoryPage() {
               }
               
               return (
-                <div key={filter.label} className="space-y-1">
-                  <Label className="text-xs font-semibold uppercase tracking-[0.16em]">{filter.label}</Label>
+                <div key={filter.label} className="space-y-0.5">
+                  <Label className="text-[0.65rem] font-semibold uppercase tracking-[0.16em]">{filter.label}</Label>
                   {filter.type === "select" ? (
                     <Select defaultValue="all">
-                      <SelectTrigger className="h-9 bg-white/80 text-sm">
+                      <SelectTrigger className="h-8 bg-white/80 text-xs">
                         <SelectValue placeholder={filter.placeholder} />
                       </SelectTrigger>
                       <SelectContent>
@@ -393,20 +393,20 @@ export default function CategoryPage() {
                     </Select>
                   ) : filter.label === "Value Range" ? (
                     <div className="flex gap-2">
-                      <Input placeholder="Min" className="h-9 bg-white/80 text-sm flex-1" type="number" />
-                      <Input placeholder="Max" className="h-9 bg-white/80 text-sm flex-1" type="number" />
+                      <Input placeholder="Min" className="h-8 bg-white/80 text-xs flex-1" type="number" />
+                      <Input placeholder="Max" className="h-8 bg-white/80 text-xs flex-1" type="number" />
                     </div>
                   ) : (
-                    <Input placeholder={filter.placeholder} className="h-9 bg-white/80 text-sm" />
+                    <Input placeholder={filter.placeholder} className="h-8 bg-white/80 text-xs" />
                   )}
                 </div>
               );
             })}
             {!isSportsCardsPage && (
-              <div className="space-y-1">
-                <Label className="text-xs font-semibold uppercase tracking-[0.16em]">Condition</Label>
+              <div className="space-y-0.5">
+                <Label className="text-[0.65rem] font-semibold uppercase tracking-[0.16em]">Condition</Label>
                 <Select value={condition} onValueChange={value => setCondition(value as typeof condition)}>
-                  <SelectTrigger className="h-9 bg-white/80 text-sm">
+                  <SelectTrigger className="h-8 bg-white/80 text-xs">
                     <SelectValue placeholder="All Conditions" />
                   </SelectTrigger>
                   <SelectContent>
@@ -417,6 +417,28 @@ export default function CategoryPage() {
                 </Select>
               </div>
             )}
+            {/* Clear and Search buttons */}
+            <div className="flex gap-2 mt-4 pt-2 border-t border-gray-300">
+              <Button 
+                onClick={() => {
+                  setKeyword("");
+                  setCondition("all");
+                  setSportsCardsConditionText("");
+                }}
+                variant="outline" 
+                size="sm"
+                className="flex-1 h-8 text-xs"
+              >
+                Clear
+              </Button>
+              <Button 
+                onClick={() => feedQuery.refetch()}
+                size="sm"
+                className="flex-1 h-8 text-xs bg-blue-600 hover:bg-blue-700"
+              >
+                Search
+              </Button>
+            </div>
           </div>
         </aside>
 
@@ -633,6 +655,30 @@ export default function CategoryPage() {
                     </CardContent>
                    </Card>
                 ))}
+              </div>
+              {/* Pagination controls */}
+              <div className="flex items-center justify-center gap-4 mt-8 pt-6 border-t border-current/10">
+                <Button
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                  variant="outline"
+                  size="sm"
+                  className="h-8 text-xs"
+                >
+                  ← Previous
+                </Button>
+                <span className="text-sm font-medium opacity-70">
+                  Page {currentPage}
+                </span>
+                <Button
+                  onClick={() => setCurrentPage(prev => prev + 1)}
+                  disabled={listings.length < resultsPerPage}
+                  variant="outline"
+                  size="sm"
+                  className="h-8 text-xs"
+                >
+                  Next →
+                </Button>
               </div>
               </>
             )}
