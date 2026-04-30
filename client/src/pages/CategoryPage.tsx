@@ -264,7 +264,7 @@ export default function CategoryPage() {
           backgroundAttachment: 'scroll'
         }}>
           <div className="absolute inset-0 bg-black/30"></div>
-          <div className="container relative py-12 lg:py-16 z-10">
+          <div className="container relative py-16 lg:py-24 z-10">
             <div className="max-w-4xl mx-auto text-center">
               <p className="mt-5 text-xs font-semibold uppercase tracking-[0.36em] opacity-80">{theme.eyebrow}</p>
               <div className="mt-3 leading-none">
