@@ -80,15 +80,15 @@
 - [x] Clean up Sports Cards code (remove unused constants and extra whitespace)
 - [x] Update Sports Cards hero section with bold outlined font styling (Arial Black with text stroke)
 - [x] Apply italic dynamic font style (Righteous) to Sports Cards hero section
-- [ ] Audit all individual Tradebilia category pages for layout, imagery, copy, and interaction consistency
+- [x] Audit all individual Tradebilia category pages for layout, imagery, copy, and interaction consistency
 - [x] Reposition website stats to be horizontally aligned and centered just above the category navigation bar
 - [x] Audit the Sports Cards category page first and define it as the benchmark layout for the remaining category pages
 - [x] Refine the Sports Cards category page layout, filters, listing presentation, and visual hierarchy so it can serve as the template for other categories
 - [x] Document the reusable Sports Cards benchmark rules so the remaining category pages can be updated consistently
 - [x] Refactor the Sports Cards benchmark improvements into clearer shared category-page patterns where appropriate
 - [x] Add benchmark-specific test coverage that verifies the Sports Cards layout sections and empty-state structure beyond image resolution alone
-- [ ] Audit Comics, Vintage Toys, Video Games, Stamps, Coins, Pokemon, Movies, Autographs, and Disney Pins against the Sports Cards benchmark
-- [ ] Verify that the non-Sports-Cards category pages render the benchmark support sections, shortcut chips, spotlight cards, and stronger empty states correctly
+- [x] Audit Comics, Vintage Toys, Video Games, Stamps, Coins, Pokemon, Movies, Autographs, and Disney Pins against the Sports Cards benchmark
+- [x] Verify that the non-Sports-Cards category pages render the benchmark support sections, shortcut chips, spotlight cards, and stronger empty states correctly
 - [x] Extend benchmark coverage beyond Sports Cards and Comics so the broader rollout is protected by tests
 - [x] Focus the current refinement pass exclusively on the Sports Cards category page before making further changes to other category pages
 - [x] Refine the Sports Cards page visual look, spacing, and layout hierarchy until it feels like the settled category benchmark
@@ -185,7 +185,7 @@
 - [x] Reduce filter section font sizes and spacing to make it more compact
 - [x] Add Next/Previous pagination buttons to search results
 - [x] Add Favorite/Watchlist icon to item cards for users to like items (already implemented)
-- [ ] Create a Watchlist/Favorites page where users can view all their liked items
+- [x] Create a Watchlist/Favorites page where users can view all their liked items
 - [x] Remove Player/Keyword filter from Sports Cards filter section
 - [x] Add search bar to top navigation bar
 - [x] Apply consistent hero section to Comics page with unique font

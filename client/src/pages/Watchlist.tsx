@@ -16,15 +16,15 @@ const TRADEBILIA_LOGO_URL = "/manus-storage/Tradebilialogo_886a61b7.webp";
 
 const categoryLinks = [
   ["Comics", "comics"],
-  ["Sports Cards", "sports-cards"],
-  ["Vintage Toys", "vintage-toys"],
-  ["Video Games", "video-games"],
+  ["Sports Cards", "sports_cards"],
+  ["Vintage Toys", "vintage_toys"],
+  ["Video Games", "video_games"],
   ["Stamps", "stamps"],
   ["Coins", "coins"],
   ["Pokemon", "pokemon"],
   ["Movies", "movies"],
   ["Autographs", "autographs"],
-  ["Disney Pins", "disney-pins"],
+  ["Disney Pins", "disney_pins"],
 ] as const;
 
 export default function Watchlist() {
