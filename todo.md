@@ -181,8 +181,8 @@
 - [x] Test and implement the full-width wallpaper as hero background
 - [x] Update Sports Cards filter section: remove Condition, add Grade (0-10), remove Priority Traits, add Value Range, add Rookie dropdown, add Autographed dropdown, populate Sports and Grading Service dropdowns
 - [x] Remove 'Both' option from Rookie and Autographed filter dropdowns
-- [ ] Add Clear and Search buttons at the bottom of the filter section
-- [ ] Reduce filter section font sizes and spacing to make it more compact
-- [ ] Add Next/Previous pagination buttons to search results
-- [ ] Add Favorite/Watchlist icon to item cards for users to like items
+- [x] Add Clear and Search buttons at the bottom of the filter section
+- [x] Reduce filter section font sizes and spacing to make it more compact
+- [x] Add Next/Previous pagination buttons to search results
+- [x] Add Favorite/Watchlist icon to item cards for users to like items (already implemented)
 - [ ] Create a Watchlist/Favorites page where users can view all their liked items

@@ -425,9 +425,8 @@ export default function CategoryPage() {
                   setCondition("all");
                   setSportsCardsConditionText("");
                 }}
-                variant="outline" 
                 size="sm"
-                className="flex-1 h-8 text-xs"
+                className="flex-1 h-8 text-xs bg-red-500 hover:bg-red-600 text-white"
               >
                 Clear
               </Button>
