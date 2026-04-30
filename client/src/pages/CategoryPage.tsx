@@ -261,7 +261,8 @@ export default function CategoryPage() {
           backgroundImage: isSportsCardsPage ? 'url(/manus-storage/Sportscardwallpaper_7d372f7d.webp)' : undefined,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
-          backgroundAttachment: 'scroll'
+          backgroundAttachment: 'scroll',
+          minHeight: '500px'
         }}>
           <div className="absolute inset-0 bg-black/30"></div>
           <div className="container relative py-16 lg:py-24 z-10">
