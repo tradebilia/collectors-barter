@@ -306,51 +306,7 @@ export default function CategoryPage() {
             </div>
           </div>
         </div>
-        {isSportsCardsPage ? null : (
-          <div className={`relative overflow-hidden ${theme.textureClassName}`}>
-            <div className="container relative py-8 lg:py-12">
-              <div className={`grid gap-8 ${isSportsCardsPage ? "xl:grid-cols-[minmax(0,1.02fr)_420px] xl:items-stretch" : "lg:grid-cols-[minmax(0,1fr)_340px] lg:items-end"}`}>
-                <div className="max-w-4xl">
-                  <img
-                    src={TRADEBILIA_LOGO_URL}
-                    alt="Tradebilia"
-                    className={`h-auto w-full drop-shadow-[0_20px_35px_rgba(0,0,0,0.25)] ${isSportsCardsPage ? "max-w-md" : "max-w-xl"}`}
-                  />
-                  <p className="mt-5 text-xs font-semibold uppercase tracking-[0.36em] opacity-80">{theme.eyebrow}</p>
-                  <div className="mt-3 leading-none">
-                    <h1 className={`${isSportsCardsPage ? "max-w-5xl text-4xl sm:text-6xl lg:text-[5.2rem]" : "text-5xl sm:text-6xl lg:text-7xl"}`} style={{ fontFamily: "'Playfair Display', serif", letterSpacing: "0.08em", fontStyle: "normal", fontWeight: 700 }}>
-                      {categoryLabel.toUpperCase()}
-                    </h1>
-                    <div className="mt-2 flex items-center gap-4">
-                      <div className="flex-1 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent"></div>
-                      <p className="text-sm sm:text-base lg:text-lg font-semibold uppercase tracking-[0.2em]" style={{ fontFamily: "'Playfair Display', serif", color: "#d4af37" }}>
-                        EXCHANGE
-                      </p>
-                      <div className="flex-1 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent"></div>
-                    </div>
-                  </div>
-                  <p className={`max-w-3xl opacity-90 ${isSportsCardsPage ? "mt-4 text-[1.05rem] leading-8 text-white/88" : "mt-5 text-base leading-8 sm:text-lg"}`}>{theme.description}</p>
-                </div>
-                <div className="grid gap-4">
-                  <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
-                    {[
-                      ["Listings", String(listings.length)],
-                      ["Collectors", String(feedQuery.data?.highlights.activeCollectors ?? 0)],
-                      ["Completed Trades", String(feedQuery.data?.highlights.completedTrades ?? 0)],
-                      ["Total Market Value", "$0"],
-                    ].map(([label, value]) => (
-                      <div key={label} className="rounded-[1.5rem] border border-white/15 bg-black/15 p-4 text-center backdrop-blur-sm">
-                        <p className="text-xs uppercase tracking-[0.3em] opacity-70">{label}</p>
-                        <p className="mt-3 text-3xl font-semibold">{value}</p>
-                      </div>
-                    ))}
-                  </div>
 
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
       </header>
 
       <nav className="relative z-10 border-t border-black bg-black">

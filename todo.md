@@ -195,3 +195,4 @@
 - [x] Refactor category pages to use unified getCategoryFont helper for consistent hero dimensions and layout
 - [x] Verify all 10 category pages render with benchmark Sports Cards dimensions and unique fonts
 - [x] Lock Sports Cards page from further modifications
+- [x] Remove duplicate hero section from non-Sports Cards category pages (was rendering Tradebilia logo and description above category navigation bar)
