@@ -217,7 +217,7 @@ export default function CategoryPage() {
       <div className="border-b border-white/10 bg-black">
         <div className="flex items-center justify-between gap-4 pl-2 pr-4 py-3">
           <div className="flex-shrink-0">
-            <img src={SPORTS_CARDS_LONG_LOGO_URL} alt="Tradebilia" className="h-12 w-auto object-contain" />
+            <img src={SPORTS_CARDS_LONG_LOGO_URL} alt="Tradebilia" className="h-14 w-auto object-contain" />
           </div>
           <div className="flex-1 flex justify-center">
             <div className="flex items-center gap-2 bg-white/10 rounded-lg px-4 py-2 max-w-2xl w-full">
