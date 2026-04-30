@@ -188,3 +188,10 @@
 - [ ] Create a Watchlist/Favorites page where users can view all their liked items
 - [x] Remove Player/Keyword filter from Sports Cards filter section
 - [x] Add search bar to top navigation bar
+- [x] Apply consistent hero section to Comics page with unique font
+- [x] Apply consistent hero section to Vintage Toys, Video Games, Stamps, Coins pages
+- [x] Apply consistent hero section to Pokemon page with Pokemon font
+- [x] Apply consistent hero section to Movies, Autographs, Disney Pins pages with unique fonts
+- [x] Refactor category pages to use unified getCategoryFont helper for consistent hero dimensions and layout
+- [x] Verify all 10 category pages render with benchmark Sports Cards dimensions and unique fonts
+- [x] Lock Sports Cards page from further modifications

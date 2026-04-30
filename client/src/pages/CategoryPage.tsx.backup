@@ -99,24 +99,6 @@ const sortOptions = [
   { value: "title", label: "Title" },
 ];
 
-// Helper function to get category-specific font
-const getCategoryFont = (slug: TradebiliaCategorySlug): string => {
-  const fontMap: Record<TradebiliaCategorySlug, string> = {
-    sports_cards: "'Righteous', sans-serif",
-    comics: "'Comic Sans MS', cursive",
-    vintage_toys: "'Fredoka One', sans-serif",
-    video_games: "'Press Start 2P', monospace",
-    stamps: "'Playfair Display', serif",
-    coins: "'Cinzel', serif",
-    pokemon: "'Pokemon', sans-serif",
-    movies: "'Bebas Neue', sans-serif",
-    autographs: "'Brush Script MT', cursive",
-    disney_pins: "'Disney', sans-serif",
-  };
-  return fontMap[slug] || "'Righteous', sans-serif";
-};
-
-
 const sportsList = [
   "Baseball",
   "Basketball",
@@ -257,56 +239,45 @@ export default function CategoryPage() {
         </div>
       </div>
       <header className={`relative overflow-hidden border-b ${theme.borderClassName} ${theme.heroClassName}`}>
-        <div className={`relative overflow-hidden ${theme.textureClassName}`} style={{
-          backgroundImage: isSportsCardsPage ? 'url(/manus-storage/Sportscardwallpaper_7d372f7d.webp)' : undefined,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundAttachment: 'scroll'
-        }}>
-          <div className="absolute inset-0 bg-black/30"></div>
-          <div className="container relative py-12 lg:py-16 z-10">
-            <div className="max-w-4xl mx-auto text-center">
-              <p className="mt-5 text-xs font-semibold uppercase tracking-[0.36em] opacity-80">{theme.eyebrow}</p>
-              <div className="mt-3 leading-none">
-                <h1 className="max-w-5xl mx-auto text-6xl sm:text-8xl lg:text-[7rem]" style={{
-                  fontFamily: getCategoryFont(slug),
-                  letterSpacing: "0.05em",
-                  fontStyle: "italic",
-                  fontWeight: 700,
-                  color: "white",
-                  textShadow: "2px 2px 4px rgba(0,0,0,0.5)"
-                }}>
-                  {slug === "sports_cards" ? "SPORTS CARD" : categoryLabel.toUpperCase()}
-                </h1>
-                <div className="mt-4 h-px bg-white/50 mx-auto" style={{ maxWidth: "100%", width: "100%" }}></div>
-                <p className="mt-4 text-3xl sm:text-4xl lg:text-5xl font-black uppercase tracking-[0.1em]" style={{
-                  fontFamily: getCategoryFont(slug),
-                  fontStyle: "italic",
-                  color: "#F4D03F",
-                  textShadow: "2px 2px 4px rgba(0,0,0,0.5)"
-                }}>
-                  EXCHANGE
-                </p>
-              </div>
-
-            </div>
-            {/* Horizontal Stats Section */}
-            <div className="flex justify-center gap-6 flex-wrap mt-6 pt-6">
-              {[
-                ["Listings", String(listings.length)],
-                ["Collectors", String(feedQuery.data?.highlights.activeCollectors ?? 0)],
-                ["Completed Trades", String(feedQuery.data?.highlights.completedTrades ?? 0)],
-                ["Total Market Value", "$0"],
-              ].map(([label, value]) => (
-                <div key={label} className="rounded-[1rem] border border-white/15 bg-black/15 px-3 py-2 text-center backdrop-blur-sm">
-                  <p className="text-[0.65rem] uppercase tracking-[0.3em] opacity-70">{label}</p>
-                  <p className="mt-1 text-sm font-semibold">{value}</p>
+        {isSportsCardsPage ? (
+          <div className={`relative overflow-hidden ${theme.textureClassName}`} style={{
+            backgroundImage: 'url(/manus-storage/Sportscardwallpaper_7d372f7d.webp)',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundAttachment: 'scroll'
+          }}>
+            <div className="absolute inset-0 bg-black/30"></div>
+            <div className="container relative py-12 lg:py-16 z-10">
+              <div className="max-w-4xl mx-auto text-center">
+                <p className="mt-5 text-xs font-semibold uppercase tracking-[0.36em] opacity-80">{theme.eyebrow}</p>
+                <div className="mt-3 leading-none">
+                  <h1 className="max-w-5xl mx-auto text-6xl sm:text-8xl lg:text-[7rem]" style={{ fontFamily: "'Righteous', sans-serif", letterSpacing: "0.05em", fontStyle: "italic", fontWeight: 700, color: "white", textShadow: "2px 2px 4px rgba(0,0,0,0.5)" }}>
+                    {slug === "sports_cards" ? "SPORTS CARD" : categoryLabel.toUpperCase()}
+                  </h1>
+                  <div className="mt-4 h-px bg-white/50 mx-auto" style={{ maxWidth: "100%", width: "100%" }}></div>
+                  <p className="mt-4 text-3xl sm:text-4xl lg:text-5xl font-black uppercase tracking-[0.1em]" style={{ fontFamily: "'Righteous', sans-serif", fontStyle: "italic", color: "#F4D03F", textShadow: "2px 2px 4px rgba(0,0,0,0.5)" }}>
+                    EXCHANGE
+                  </p>
                 </div>
-              ))}
+
+              </div>
+              {/* Horizontal Stats Section */}
+              <div className="flex justify-center gap-6 flex-wrap mt-6 pt-6">
+                {[
+                  ["Listings", String(listings.length)],
+                  ["Collectors", String(feedQuery.data?.highlights.activeCollectors ?? 0)],
+                  ["Completed Trades", String(feedQuery.data?.highlights.completedTrades ?? 0)],
+                  ["Total Market Value", "$0"],
+                ].map(([label, value]) => (
+                  <div key={label} className="rounded-[1rem] border border-white/15 bg-black/15 px-3 py-2 text-center backdrop-blur-sm">
+                    <p className="text-[0.65rem] uppercase tracking-[0.3em] opacity-70">{label}</p>
+                    <p className="mt-1 text-sm font-semibold">{value}</p>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
-        </div>
-        {isSportsCardsPage ? null : (
+        ) : (
           <div className={`relative overflow-hidden ${theme.textureClassName}`}>
             <div className="container relative py-8 lg:py-12">
               <div className={`grid gap-8 ${isSportsCardsPage ? "xl:grid-cols-[minmax(0,1.02fr)_420px] xl:items-stretch" : "lg:grid-cols-[minmax(0,1fr)_340px] lg:items-end"}`}>
