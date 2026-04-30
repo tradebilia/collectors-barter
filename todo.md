@@ -186,3 +186,5 @@
 - [x] Add Next/Previous pagination buttons to search results
 - [x] Add Favorite/Watchlist icon to item cards for users to like items (already implemented)
 - [ ] Create a Watchlist/Favorites page where users can view all their liked items
+- [x] Remove Player/Keyword filter from Sports Cards filter section
+- [x] Add search bar to top navigation bar

@@ -215,15 +215,12 @@ export default function CategoryPage() {
   return (
     <div className={`min-h-screen ${theme.pageClassName}`}>
       <div className="border-b border-white/10 bg-black">
-        <div className="flex items-center justify-between gap-4 pl-2 pr-4 py-3">
-          <div className="flex-shrink-0">
-            <img src={SPORTS_CARDS_LONG_LOGO_URL} alt="Tradebilia" className="h-12 w-auto object-contain" />
+        <div className="flex items-center justify-center gap-4 pl-2 pr-4 py-3">
+          <div className="flex items-center gap-2 bg-white/10 rounded-lg px-4 py-2 flex-1 max-w-2xl">
+            <Search className="h-4 w-4 text-white/70 flex-shrink-0" />
+            <input type="text" placeholder="Search sports cards..." className="bg-transparent text-white text-sm placeholder-white/50 outline-none w-full" />
           </div>
           <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 bg-white/10 rounded-lg px-3 py-2">
-            <Search className="h-4 w-4 text-white/70" />
-            <input type="text" placeholder="Search sports cards..." className="bg-transparent text-white text-sm placeholder-white/50 outline-none" />
-          </div>
           <button className="rounded-lg p-2 text-white/70 transition hover:bg-white/10 hover:text-white" title="Messages">
             <MessageSquareText className="h-5 w-5" />
           </button>
