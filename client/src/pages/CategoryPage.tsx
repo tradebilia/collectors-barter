@@ -32,7 +32,6 @@ const categoryFilterPresets: Record<TradebiliaCategorySlug, Array<{ label: strin
     { label: "Grading service", placeholder: "CGC, CBCS", type: "select" },
   ],
   sports_cards: [
-    { label: "Player", placeholder: "Mickey Mantle" },
     { label: "Manufacturer", placeholder: "Topps, Fleer, Upper Deck" },
     { label: "Sport", placeholder: "Select a sport", type: "select" as const },
     { label: "Grading service", placeholder: "Select a grading service", type: "select" as const },
@@ -221,6 +220,10 @@ export default function CategoryPage() {
             <img src={SPORTS_CARDS_LONG_LOGO_URL} alt="Tradebilia" className="h-12 w-auto object-contain" />
           </div>
           <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 bg-white/10 rounded-lg px-3 py-2">
+            <Search className="h-4 w-4 text-white/70" />
+            <input type="text" placeholder="Search sports cards..." className="bg-transparent text-white text-sm placeholder-white/50 outline-none" />
+          </div>
           <button className="rounded-lg p-2 text-white/70 transition hover:bg-white/10 hover:text-white" title="Messages">
             <MessageSquareText className="h-5 w-5" />
           </button>
