@@ -59,7 +59,7 @@ export const tradebiliaCategoryThemes: Record<TradebiliaCategorySlug, {
     textureClassName: "bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.12),transparent_35%)]",
   },
   sports_cards: {
-    eyebrow: "",
+    eyebrow: "Legendary athletes",
     heading: "Card-show clarity with premium slab energy and arena-blue contrast.",
     description: "The Sports Card exchange leans into teal glass, cream card-show surfaces, and condensed athletic headlines inspired by the uploaded reference.",
     heroClassName: "bg-[linear-gradient(135deg,#0f3b43_0%,#27758b_42%,#102732_100%)] text-[#fff4e0]",
