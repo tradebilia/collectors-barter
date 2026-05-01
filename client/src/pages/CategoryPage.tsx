@@ -275,7 +275,8 @@ export default function CategoryPage() {
                   fontStyle: "italic",
                   fontWeight: 700,
                   color: "white",
-                  textShadow: "2px 2px 4px rgba(0,0,0,0.5)"
+                  textShadow: "2px 2px 4px rgba(0,0,0,0.5)",
+                  lineHeight: "1"
                 }}>
                   {slug === "sports_cards" ? "SPORTS CARD" : categoryLabel.toUpperCase()}
                 </h1>
