@@ -198,3 +198,4 @@
 - [x] Remove duplicate hero section from non-Sports Cards category pages (was rendering Tradebilia logo and description above category navigation bar)
 - [x] Increase hero section vertical padding to match Sports Cards dimensions (py-16 lg:py-24)
 - [x] Add min-height to hero section to ensure consistent vertical dimensions across all categories
+- [x] Add min-height to header element (not just inner div) to ensure category bar stays in same position across all categories
