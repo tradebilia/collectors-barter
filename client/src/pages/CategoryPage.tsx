@@ -105,7 +105,7 @@ const getCategoryFont = (slug: TradebiliaCategorySlug): string => {
     sports_cards: "'Righteous', sans-serif",
     comics: "'Comic Sans MS', cursive",
     vintage_toys: "'Fredoka One', sans-serif",
-    video_games: "'Press Start 2P', monospace",
+    video_games: "'Orbitron', monospace",
     stamps: "'Playfair Display', serif",
     coins: "'Cinzel', serif",
     pokemon: "'Pokemon', sans-serif",
