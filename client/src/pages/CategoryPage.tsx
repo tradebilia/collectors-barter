@@ -262,7 +262,7 @@ export default function CategoryPage() {
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundAttachment: 'scroll',
-          minHeight: '500px'
+          height: '500px'
         }}>
           <div className="absolute inset-0 bg-black/30"></div>
           <div className="container relative py-16 lg:py-24 z-10">
@@ -276,7 +276,11 @@ export default function CategoryPage() {
                   fontWeight: 700,
                   color: "white",
                   textShadow: "2px 2px 4px rgba(0,0,0,0.5)",
-                  lineHeight: "1"
+                  lineHeight: "1",
+                  height: "120px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center"
                 }}>
                   {slug === "sports_cards" ? "SPORTS CARD" : categoryLabel.toUpperCase()}
                 </h1>
@@ -285,7 +289,12 @@ export default function CategoryPage() {
                   fontFamily: getCategoryFont(slug),
                   fontStyle: "italic",
                   color: "#F4D03F",
-                  textShadow: "2px 2px 4px rgba(0,0,0,0.5)"
+                  textShadow: "2px 2px 4px rgba(0,0,0,0.5)",
+                  height: "60px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  lineHeight: "1"
                 }}>
                   EXCHANGE
                 </p>
