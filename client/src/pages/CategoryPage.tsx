@@ -265,11 +265,11 @@ export default function CategoryPage() {
           height: '400px'
         }}>
           <div className="absolute inset-0 bg-black/30"></div>
-          <div className="container relative py-16 lg:py-24 z-10">
+          <div className="container relative py-6 lg:py-8 z-10">
             <div className="max-w-4xl mx-auto text-center">
               <p className="mt-5 text-xs font-semibold uppercase tracking-[0.36em] opacity-80">{theme.eyebrow}</p>
               <div className="mt-3 leading-none">
-                <h1 className="max-w-5xl mx-auto text-6xl sm:text-8xl lg:text-[7rem]" style={{
+                <h1 className="max-w-5xl mx-auto text-5xl sm:text-6xl lg:text-7xl" style={{
                   fontFamily: getCategoryFont(slug),
                   letterSpacing: "0.05em",
                   fontStyle: "italic",
@@ -277,7 +277,7 @@ export default function CategoryPage() {
                   color: "white",
                   textShadow: "2px 2px 4px rgba(0,0,0,0.5)",
                   lineHeight: "1",
-                  height: "120px",
+                  height: "80px",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center"
@@ -285,12 +285,12 @@ export default function CategoryPage() {
                   {slug === "sports_cards" ? "SPORTS CARD" : categoryLabel.toUpperCase()}
                 </h1>
                 <div className="mt-4 h-px bg-white/50 mx-auto" style={{ maxWidth: "100%", width: "100%" }}></div>
-                <p className="mt-4 text-3xl sm:text-4xl lg:text-5xl font-black uppercase tracking-[0.1em]" style={{
+                <p className="mt-2 text-2xl sm:text-3xl lg:text-4xl font-black uppercase tracking-[0.1em]" style={{
                   fontFamily: getCategoryFont(slug),
                   fontStyle: "italic",
                   color: "#F4D03F",
                   textShadow: "2px 2px 4px rgba(0,0,0,0.5)",
-                  height: "60px",
+                  height: "40px",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -302,7 +302,7 @@ export default function CategoryPage() {
 
             </div>
             {/* Horizontal Stats Section */}
-            <div className="flex justify-center gap-6 flex-wrap mt-6 pt-6">
+            <div className="flex justify-center gap-6 flex-wrap mt-3 pt-2">
               {[
                 ["Listings", String(listings.length)],
                 ["Collectors", String(feedQuery.data?.highlights.activeCollectors ?? 0)],
