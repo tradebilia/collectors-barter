@@ -256,13 +256,13 @@ export default function CategoryPage() {
           </div>
         </div>
       </div>
-      <header className={`relative overflow-hidden border-b ${theme.borderClassName} ${theme.heroClassName}`} style={{ minHeight: '500px' }}>
+      <header className={`relative overflow-hidden border-b ${theme.borderClassName} ${theme.heroClassName}`} style={{ minHeight: '400px' }}>
         <div className={`relative overflow-hidden ${theme.textureClassName}`} style={{
           backgroundImage: isSportsCardsPage ? 'url(/manus-storage/Sportscardwallpaper_7d372f7d.webp)' : undefined,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundAttachment: 'scroll',
-          height: '500px'
+          height: '400px'
         }}>
           <div className="absolute inset-0 bg-black/30"></div>
           <div className="container relative py-16 lg:py-24 z-10">
