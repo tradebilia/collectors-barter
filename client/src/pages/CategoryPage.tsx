@@ -262,7 +262,8 @@ export default function CategoryPage() {
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundAttachment: 'scroll',
-          height: '400px'
+          height: '400px',
+          filter: slug === 'video_games' ? 'brightness(1.1) contrast(1.2) saturate(1.1)' : 'none'
         }}>
           <div className="absolute inset-0 bg-black/30"></div>
           <div className="container relative py-6 lg:py-8 z-10">
