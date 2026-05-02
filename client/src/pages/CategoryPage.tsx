@@ -269,7 +269,7 @@ export default function CategoryPage() {
             <div className="max-w-4xl mx-auto text-center">
               <p className="mt-5 text-xs font-semibold uppercase tracking-[0.36em] opacity-80">{theme.eyebrow}</p>
               <div className="mt-3 leading-none">
-                <h1 className="max-w-5xl mx-auto text-6xl sm:text-7xl lg:text-8xl" style={{
+                <h1 className="max-w-full mx-auto text-6xl sm:text-7xl lg:text-8xl" style={{
                   fontFamily: getCategoryFont(slug),
                   letterSpacing: "0.05em",
                   fontStyle: "italic",
@@ -278,6 +278,7 @@ export default function CategoryPage() {
                   textShadow: "2px 2px 4px rgba(0,0,0,0.5)",
                   lineHeight: "1",
                   height: "80px",
+                  whiteSpace: "nowrap",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center"
