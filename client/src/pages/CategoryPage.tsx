@@ -258,7 +258,7 @@ export default function CategoryPage() {
       </div>
       <header className={`relative overflow-hidden border-b ${theme.borderClassName} ${theme.heroClassName}`} style={{ minHeight: '400px' }}>
         <div className={`relative overflow-hidden ${theme.textureClassName}`} style={{
-          backgroundImage: isSportsCardsPage ? 'url(/manus-storage/Sportscardwallpaper_7d372f7d.webp)' : slug === 'video_games' ? 'url(/manus-storage/O50T69H-space-invader-wallpaper_004230d0.jpg)' : undefined,
+          backgroundImage: isSportsCardsPage ? 'url(/manus-storage/Sportscardwallpaper_7d372f7d.webp)' : slug === 'video_games' ? 'url(/manus-storage/VideoGames2_d00bc5a7.jpg)' : undefined,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundAttachment: 'scroll',
