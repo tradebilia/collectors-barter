@@ -312,8 +312,8 @@ export default function CategoryPage() {
                 ["Total Market Value", "$0"],
               ].map(([label, value]) => (
                 <div key={label} className="rounded-[1rem] border border-white/15 bg-black/15 px-3 py-2 text-center backdrop-blur-sm">
-                  <p className="text-[0.65rem] uppercase tracking-[0.3em] opacity-70" style={{ color: '#ffffff' }}>{label}</p>
-                  <p className="mt-1 text-sm font-semibold" style={{ color: '#ffffff' }}>{value}</p>
+                  <p className="text-[0.65rem] uppercase tracking-[0.3em]" style={{ color: '#ffffff', fontWeight: 600 }}>{label}</p>
+                  <p className="mt-1 text-sm font-bold" style={{ color: '#ffffff' }}>{value}</p>
                 </div>
               ))}
             </div>
