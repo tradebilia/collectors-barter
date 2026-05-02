@@ -287,10 +287,9 @@ export default function CategoryPage() {
                   {slug === "sports_cards" ? "SPORTS CARD" : categoryLabel.toUpperCase()}
                 </h1>
                 <div className="mt-4 h-px bg-white/50 mx-auto" style={{ maxWidth: "100%", width: "100%" }}></div>
-                <p className="mt-2 text-3xl sm:text-4xl lg:text-5xl font-black uppercase tracking-[0.1em]" style={{
+                <p className={`mt-2 text-3xl sm:text-4xl lg:text-5xl font-black uppercase tracking-[0.1em] ${theme.accentClassName}`} style={{
                   fontFamily: getCategoryFont(slug),
                   fontStyle: "italic",
-                  color: "#F4D03F",
                   textShadow: "2px 2px 4px rgba(0,0,0,0.5)",
                   height: "40px",
                   display: "flex",
