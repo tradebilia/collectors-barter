@@ -97,7 +97,7 @@ export const tradebiliaCategoryThemes: Record<TradebiliaCategorySlug, {
     chipClassName: "bg-[#68dc43]/18 text-[#d8ffbc] border-[#68dc43]/30",
     borderClassName: "border-[#73e44e]/18",
     cardClassName: "bg-[#092011] border-[#68dc43]/18 text-[#f2ffe8] shadow-[0_18px_50px_rgba(1,14,7,0.35)]",
-    headingFont: "Bebas Neue, Inter, sans-serif",
+    headingFont: "Orbitron, Inter, sans-serif",
     textureClassName: "bg-[radial-gradient(circle_at_top,rgba(104,220,67,0.22),transparent_38%)]",
   },
   stamps: {
