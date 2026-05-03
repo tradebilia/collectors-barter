@@ -362,10 +362,6 @@ export default function CategoryPage() {
           </div>
 
           <div className="mt-4 space-y-2">
-            <div className="space-y-0.5">
-              <Label className="text-[0.65rem] font-semibold uppercase tracking-[0.16em]">Keyword</Label>
-              <Input value={keyword} onChange={event => setKeyword(event.target.value)} placeholder={`Search ${categoryLabel.toLowerCase()}`} className="h-8 bg-white/80 text-xs" />
-            </div>
             {activeFilters.map(filter => {
               if (isSportsCardsPage && ["Priority traits"].includes(filter.label)) {
                 return null;
