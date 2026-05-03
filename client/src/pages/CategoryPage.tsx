@@ -262,6 +262,7 @@ export default function CategoryPage() {
           backgroundSize: 'cover',
           backgroundPosition: slug === 'movies' ? 'center top' : 'center',
           backgroundAttachment: 'scroll',
+          backgroundRepeat: slug === 'movies' ? 'no-repeat' : 'repeat',
           height: '400px',
           filter: (slug === 'video_games' || slug === 'coins' || slug === 'stamps' || slug === 'vintage_toys' || slug === 'autographs' || slug === 'movies') ? 'contrast(1.2) saturate(1.1)' : 'none'
         }}>
