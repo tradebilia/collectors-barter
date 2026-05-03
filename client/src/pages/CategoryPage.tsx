@@ -240,7 +240,7 @@ export default function CategoryPage() {
           <div className="flex-1 flex justify-center">
             <div className="flex items-center gap-2 bg-white/10 rounded-lg px-4 py-2 max-w-2xl w-full">
               <Search className="h-4 w-4 text-white/70 flex-shrink-0" />
-              <input type="text" placeholder="Search sports cards..." className="bg-transparent text-white text-sm placeholder-white/50 outline-none w-full" />
+              <input type="text" placeholder={`Search ${getTradebiliaCategoryLabel(slug ?? '')}...`} className="bg-transparent text-white text-sm placeholder-white/50 outline-none w-full" />
             </div>
           </div>
           <div className="flex items-center gap-4 flex-shrink-0">
