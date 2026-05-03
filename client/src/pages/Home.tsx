@@ -29,7 +29,7 @@ type UploadedImage = {
 type ListingCategory = Exclude<(typeof categoryOptions)[number]["value"], "all">;
 type ListingCondition = Exclude<(typeof conditionOptions)[number]["value"], "all">;
 
-const TRADEBILIA_LOGO_URL = "/manus-storage/Tradebilialogo_886a61b7.webp";
+const TRADEBILIA_LOGO_URL = "/manus-storage/tradebilia_final_darkest(1)_3e8b98df.svg";
 
 const categoryOptions = [
   { value: "all", label: "All Categories" },
