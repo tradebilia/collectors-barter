@@ -284,7 +284,12 @@ export default function CategoryPage() {
                   alignItems: "center",
                   justifyContent: "center"
                 }}>
-                  {slug === "sports_cards" ? "SPORTS CARD" : categoryLabel.toUpperCase()}
+                  {slug === "disney_pins" ? (
+                    <>
+                      <span style={{ fontFamily: "Waltograph, cursive", marginRight: "0.2em" }}>DISNEY</span>
+                      <span>PINS</span>
+                    </>
+                  ) : slug === "sports_cards" ? "SPORTS CARD" : categoryLabel.toUpperCase()}
                 </h1>
                 <div className="mt-4 h-px bg-white/50 mx-auto" style={{ maxWidth: "100%", width: "100%" }}></div>
                 <p className="mt-2 text-3xl sm:text-4xl lg:text-5xl font-black uppercase tracking-[0.1em]" style={{
