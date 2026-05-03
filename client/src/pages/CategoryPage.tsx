@@ -26,10 +26,14 @@ import { Link, useRoute } from "wouter";
 
 const categoryFilterPresets: Record<TradebiliaCategorySlug, Array<{ label: string; placeholder: string; type?: "select" | "input" }>> = {
   comics: [
-    { label: "Title or key issue", placeholder: "Amazing Fantasy, X-Men, signed…" },
-    { label: "Publisher", placeholder: "Marvel, DC, Image" },
-    { label: "Era", placeholder: "Golden, Silver, Bronze", type: "select" },
-    { label: "Grading service", placeholder: "CGC, CBCS", type: "select" },
+    { label: "Keyword", placeholder: "Search by keyword" },
+    { label: "Title", placeholder: "Amazing Fantasy, X-Men" },
+    { label: "Issue Number", placeholder: "#1, #100, #50" },
+    { label: "Grading Service", placeholder: "Select grading service", type: "select" },
+    { label: "Grade", placeholder: "Select grade 0-10", type: "select" },
+    { label: "Value Range", placeholder: "Min - Max", type: "input" },
+    { label: "Signed", placeholder: "Select option", type: "select" },
+    { label: "Facsimile", placeholder: "Select option", type: "select" },
   ],
   sports_cards: [
     { label: "Manufacturer", placeholder: "Topps, Fleer, Upper Deck" },
