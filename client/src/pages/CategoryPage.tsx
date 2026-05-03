@@ -258,12 +258,12 @@ export default function CategoryPage() {
       </div>
       <header className={`relative overflow-hidden border-b ${theme.borderClassName} ${theme.heroClassName}`} style={{ minHeight: '400px' }}>
         <div className={`relative overflow-hidden ${theme.textureClassName}`} style={{
-          backgroundImage: isSportsCardsPage ? 'url(/manus-storage/Sportscardwallpaper_7d372f7d.webp)' : slug === 'video_games' ? 'url(/manus-storage/VideoGames2_d00bc5a7.jpg)' : slug === 'coins' ? 'url(/manus-storage/Coins2_54d5f0d9.png)' : slug === 'stamps' ? 'url(/manus-storage/Stamps5_7feb0c7e.png)' : undefined,
+          backgroundImage: isSportsCardsPage ? 'url(/manus-storage/Sportscardwallpaper_7d372f7d.webp)' : slug === 'video_games' ? 'url(/manus-storage/VideoGames2_d00bc5a7.jpg)' : slug === 'coins' ? 'url(/manus-storage/Coins2_54d5f0d9.png)' : slug === 'stamps' ? 'url(/manus-storage/Stamps5_7feb0c7e.png)' : slug === 'vintage_toys' ? 'url(/manus-storage/Toys4_70f212d6.png)' : undefined,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundAttachment: 'scroll',
           height: '400px',
-          filter: (slug === 'video_games' || slug === 'coins' || slug === 'stamps') ? 'contrast(1.2) saturate(1.1)' : 'none'
+          filter: (slug === 'video_games' || slug === 'coins' || slug === 'stamps' || slug === 'vintage_toys') ? 'contrast(1.2) saturate(1.1)' : 'none'
         }}>
           <div className="absolute inset-0 bg-black/30"></div>
           <div className="container relative py-6 lg:py-8 z-10">
