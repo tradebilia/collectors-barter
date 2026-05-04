@@ -227,3 +227,5 @@
 - [x] Replace hero section logo with new polished Tradebilia design (circular logo with text)
 - [x] Adjust hero section background to slightly darker blue (#141850)
 - [x] Fix hero section logo background to be transparent instead of black
+- [x] Replace hero section logo with new Tradebilia design (circular logo with divider line)
+- [x] Update hero section background color to match the new logo (#0a1428 - darker navy blue)
