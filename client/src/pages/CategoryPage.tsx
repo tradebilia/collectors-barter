@@ -262,13 +262,13 @@ export default function CategoryPage() {
       </div>
       <header className={`relative overflow-hidden border-b ${theme.borderClassName} ${theme.heroClassName}`} style={{ minHeight: '400px' }}>
         <div className={`relative overflow-hidden ${theme.textureClassName}`} style={{
-          backgroundImage: isSportsCardsPage ? 'url(/manus-storage/Sportscardwallpaper_7d372f7d.webp)' : slug === 'video_games' ? 'url(/manus-storage/VideoGames2_d00bc5a7.jpg)' : slug === 'coins' ? 'url(/manus-storage/Coins2_54d5f0d9.png)' : slug === 'stamps' ? 'url(/manus-storage/Stamps5_7feb0c7e.png)' : slug === 'vintage_toys' ? 'url(/manus-storage/Toys4_70f212d6.png)' : slug === 'autographs' ? 'url(/manus-storage/Auto2_41464c02.png)' : slug === 'movies' ? 'url(/manus-storage/VHS1_4fe4bb67.png)' : undefined,
+          backgroundImage: isSportsCardsPage ? 'url(/manus-storage/Sportscardwallpaper_7d372f7d.webp)' : slug === 'video_games' ? 'url(/manus-storage/VideoGames2_d00bc5a7.jpg)' : slug === 'coins' ? 'url(/manus-storage/Coins2_54d5f0d9.png)' : slug === 'stamps' ? 'url(/manus-storage/Stamps5_7feb0c7e.png)' : slug === 'vintage_toys' ? 'url(/manus-storage/Toys4_70f212d6.png)' : slug === 'autographs' ? 'url(/manus-storage/Auto2_41464c02.png)' : slug === 'movies' ? 'url(/manus-storage/VHS1_4fe4bb67.png)' : slug === 'comics' ? 'url(https://d2xsxph8kpxj0f.cloudfront.net/310519663570115757/nAx6ATm2BH4G46yabuMZgM/comics-background-YZiiH2cyV8YJx6GFQj4PKC.webp)' : slug === 'pokemon' ? 'url(https://d2xsxph8kpxj0f.cloudfront.net/310519663570115757/nAx6ATm2BH4G46yabuMZgM/pokemon-background-J6h7Mte6BSYA3GfQ4vtdFj.webp)' : undefined,
           backgroundSize: 'cover',
           backgroundPosition: slug === 'movies' ? 'center top' : 'center',
           backgroundAttachment: 'scroll',
-          backgroundRepeat: slug === 'movies' ? 'no-repeat' : 'repeat',
+          backgroundRepeat: (slug === 'movies' || slug === 'comics' || slug === 'pokemon') ? 'no-repeat' : 'repeat',
           height: '400px',
-          filter: (slug === 'video_games' || slug === 'coins' || slug === 'stamps' || slug === 'vintage_toys' || slug === 'autographs' || slug === 'movies') ? 'contrast(1.2) saturate(1.1)' : 'none'
+          filter: (slug === 'video_games' || slug === 'coins' || slug === 'stamps' || slug === 'vintage_toys' || slug === 'autographs' || slug === 'movies' || slug === 'comics' || slug === 'pokemon') ? 'contrast(1.2) saturate(1.1)' : 'none'
         }}>
           <div className={`absolute inset-0 ${slug === 'movies' ? 'bg-black/10' : 'bg-black/30'}`}></div>
           <div className="container relative py-6 lg:py-8 z-10">

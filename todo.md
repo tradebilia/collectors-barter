@@ -200,3 +200,16 @@
 - [x] Add min-height to hero section to ensure consistent vertical dimensions across all categories
 - [x] Add min-height to header element (not just inner div) to ensure category bar stays in same position across all categories
 - [x] Fix category bar position inconsistency by adding lineHeight: 1 to h1 title (different fonts were rendering at different heights)
+- [x] Simplify home page hero section to display only the SVG logo (removed spinning wheel, text, and tagline)
+- [x] Generate background images for Comics category (comic book collection with graded slabs and POW/BAM effects)
+- [x] Generate background images for Pokemon category (graded Pokemon trading cards with holographic shine and neon lighting)
+- [x] Add Comics and Pokemon background images to CategoryPage component with proper styling
+- [x] Apply contrast(1.2) and saturate(1.1) filters to Comics and Pokemon backgrounds for enhanced visual appeal
+- [x] Ensure Comics and Pokemon backgrounds use 'no-repeat' and 'cover' sizing for seamless display
+- [x] Populate database with 30 sample listings across all 10 categories (3 listings per category)
+- [x] Verify sample listings display correctly on all category pages
+- [x] Verify category-specific filters are working for all categories
+- [x] Verify all category pages render with unique backgrounds and styling
+- [x] Verify home page displays simplified hero section with Tradebilia logo
+- [x] Verify statistics (Listings, Collectors, Completed Trades, Total Market Value) display correctly across all pages
+- [x] Verify search bar placeholder is category-aware on all category pages
