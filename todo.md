@@ -213,3 +213,11 @@
 - [x] Verify home page displays simplified hero section with Tradebilia logo
 - [x] Verify statistics (Listings, Collectors, Completed Trades, Total Market Value) display correctly across all pages
 - [x] Verify search bar placeholder is category-aware on all category pages
+- [x] Generate background image for Video Games category (retro arcade with neon lighting and classic game cartridges)
+- [x] Generate background image for Disney Pins category (elegant pin collection with gold frames and magical aesthetic)
+- [x] Add Video Games background image to CategoryPage component with proper styling
+- [x] Add Disney Pins background image to CategoryPage component with proper styling
+- [x] Apply contrast(1.2) and saturate(1.1) filters to Video Games and Disney Pins backgrounds
+- [x] Ensure Video Games and Disney Pins backgrounds use 'no-repeat' sizing for seamless display
+- [x] Verify Video Games category page renders with new arcade-themed background
+- [x] Verify Disney Pins category page renders with new elegant pin collection background
