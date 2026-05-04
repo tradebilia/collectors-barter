@@ -221,3 +221,5 @@
 - [x] Ensure Video Games and Disney Pins backgrounds use 'no-repeat' sizing for seamless display
 - [x] Verify Video Games category page renders with new arcade-themed background
 - [x] Verify Disney Pins category page renders with new elegant pin collection background
+- [x] Fix homepage hero section showing two different background colors (dark blue hero with light beige sides)
+- [x] Make hero section full-width using w-screen and negative margin to extend edge-to-edge
