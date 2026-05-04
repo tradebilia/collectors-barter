@@ -226,3 +226,4 @@
 - [x] Remove radial gradient overlay from hero section to create uniform background color
 - [x] Replace hero section logo with new polished Tradebilia design (circular logo with text)
 - [x] Adjust hero section background to slightly darker blue (#141850)
+- [x] Fix hero section logo background to be transparent instead of black

@@ -471,7 +471,7 @@ export default function Home() {
         <section className="relative w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden bg-[#141850] text-white">
           <div className="container relative flex min-h-[240px] items-center justify-center py-8 sm:min-h-[280px] sm:py-10 lg:min-h-[325px]">
             <img
-              src="/manus-storage/tradebilia_polished_final_87d695b9.svg"
+              src="https://d2xsxph8kpxj0f.cloudfront.net/310519663570115757/nAx6ATm2BH4G46yabuMZgM/tradebilia_logo_transparent-7DCWDY29qhWDpKWMsF5k52.webp"
               alt="Tradebilia"
               className="h-auto w-full max-w-3xl"
             />
