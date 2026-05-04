@@ -469,7 +469,6 @@ export default function Home() {
 
       <main className="pb-24">
         <section className="relative w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden bg-[#161a57] text-white">
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(57,68,149,0.3)_0%,rgba(22,26,87,0)_58%)]" />
           <div className="container relative flex min-h-[240px] items-center justify-center py-8 sm:min-h-[280px] sm:py-10 lg:min-h-[325px]">
             <img
               src={TRADEBILIA_LOGO_URL}

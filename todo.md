@@ -223,3 +223,4 @@
 - [x] Verify Disney Pins category page renders with new elegant pin collection background
 - [x] Fix homepage hero section showing two different background colors (dark blue hero with light beige sides)
 - [x] Make hero section full-width using w-screen and negative margin to extend edge-to-edge
+- [x] Remove radial gradient overlay from hero section to create uniform background color
