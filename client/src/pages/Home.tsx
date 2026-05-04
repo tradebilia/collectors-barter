@@ -468,12 +468,12 @@ export default function Home() {
       </header>
 
       <main className="pb-24">
-        <section className="relative w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden bg-[#161a57] text-white">
+        <section className="relative w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden bg-[#141850] text-white">
           <div className="container relative flex min-h-[240px] items-center justify-center py-8 sm:min-h-[280px] sm:py-10 lg:min-h-[325px]">
             <img
-              src={TRADEBILIA_LOGO_URL}
+              src="/manus-storage/tradebilia_polished_final_87d695b9.svg"
               alt="Tradebilia"
-              className="h-auto w-full max-w-2xl"
+              className="h-auto w-full max-w-3xl"
             />
           </div>
         </section>

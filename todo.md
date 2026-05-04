@@ -224,3 +224,5 @@
 - [x] Fix homepage hero section showing two different background colors (dark blue hero with light beige sides)
 - [x] Make hero section full-width using w-screen and negative margin to extend edge-to-edge
 - [x] Remove radial gradient overlay from hero section to create uniform background color
+- [x] Replace hero section logo with new polished Tradebilia design (circular logo with text)
+- [x] Adjust hero section background to slightly darker blue (#141850)
