@@ -229,3 +229,4 @@
 - [x] Fix hero section logo background to be transparent instead of black
 - [x] Replace hero section logo with new Tradebilia design (circular logo with divider line)
 - [x] Update hero section background color to match the new logo (#0a1428 - darker navy blue)
+- [x] Correct hero section background color to #00143A to match the SVG background
