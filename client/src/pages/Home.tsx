@@ -478,7 +478,7 @@ export default function Home() {
           <div className="container relative flex min-h-0 items-center justify-center py-1 sm:min-h-0 sm:py-1 lg:min-h-0">
             <div className="flex w-full max-w-5xl items-center justify-center">
               <img
-                src="/manus-storage/tradebilia_final_darkest(1)_6548e0ac.svg"
+                src="/manus-storage/tradebilia_final_darkest(1)_8e8c5fba.svg"
                 alt="Tradebilia"
                 className="h-auto w-full"
               />

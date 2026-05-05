@@ -236,3 +236,4 @@
 - [x] Reduce hero section height by 100px
 - [x] Further reduce hero section height with minimal padding (py-1)
 - [x] Adjust layout to center TRADEBILIA text while positioning wheel to the left
+- [x] Center TRADEBILIA text in SVG while keeping wheel positioned to the left
