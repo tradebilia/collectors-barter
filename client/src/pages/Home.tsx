@@ -475,7 +475,7 @@ export default function Home() {
             backgroundPosition: 'center',
             backgroundRepeat: 'no-repeat'
           }} />
-          <div className="container relative flex min-h-[130px] items-center justify-center py-4 sm:min-h-[150px] sm:py-6 lg:min-h-[170px]">
+          <div className="container relative flex min-h-[0px] items-center justify-center py-2 sm:min-h-[0px] sm:py-2 lg:min-h-[20px]">
             <img
               src="/manus-storage/tradebilia_final_darkest(1)_6548e0ac.svg"
               alt="Tradebilia"

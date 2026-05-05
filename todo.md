@@ -233,3 +233,4 @@
 - [x] Add translucent hero section background with all 10 collector categories (opacity-20)
 - [x] Decrease hero section vertical length while keeping SVG logo size unchanged
 - [x] Reduce hero section height by additional 50px
+- [x] Reduce hero section height by 100px
