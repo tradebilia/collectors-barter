@@ -232,3 +232,4 @@
 - [x] Correct hero section background color to #00143A to match the SVG background
 - [x] Add translucent hero section background with all 10 collector categories (opacity-20)
 - [x] Remove blue background from Tradebilia logo SVG file
+- [x] Increase hero section logo size and improve centering
