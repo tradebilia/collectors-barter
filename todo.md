@@ -232,3 +232,4 @@
 - [x] Correct hero section background color to #00143A to match the SVG background
 - [x] Add translucent hero section background with all 10 collector categories (opacity-20)
 - [x] Decrease hero section vertical length while keeping SVG logo size unchanged
+- [x] Reduce hero section height by additional 50px
