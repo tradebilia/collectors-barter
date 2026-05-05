@@ -477,9 +477,9 @@ export default function Home() {
           }} />
           <div className="container relative flex min-h-[240px] items-center justify-center py-8 sm:min-h-[280px] sm:py-10 lg:min-h-[325px]">
             <img
-              src="/manus-storage/tradebilia_final_darkest(1)_6548e0ac.svg"
+              src="/manus-storage/tradebilia_final_darkest(1)_18567efe.svg"
               alt="Tradebilia"
-              className="h-auto w-full max-w-5xl"
+              className="h-auto w-full max-w-3xl"
             />
           </div>
         </section>
