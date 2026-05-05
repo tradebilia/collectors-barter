@@ -234,3 +234,5 @@
 - [x] Decrease hero section vertical length while keeping SVG logo size unchanged
 - [x] Reduce hero section height by additional 50px
 - [x] Reduce hero section height by 100px
+- [x] Further reduce hero section height with minimal padding (py-1)
+- [x] Adjust layout to center TRADEBILIA text while positioning wheel to the left
