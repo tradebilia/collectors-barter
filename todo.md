@@ -233,3 +233,4 @@
 - [x] Add translucent hero section background with all 10 collector categories (opacity-20)
 - [x] Remove blue background from Tradebilia logo SVG file
 - [x] Increase hero section logo size and improve centering
+- [x] Revert hero section height to original dimensions while keeping larger logo
