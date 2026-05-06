@@ -174,8 +174,8 @@ export default function Inventory() {
       <section className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 px-4 py-12 text-white lg:px-8">
         <div className="mx-auto max-w-6xl">
           <div className="flex items-center justify-center gap-8">
-            <img src={TRADEBILIA_LOGO_URL} alt="Tradebilia" className="h-40 w-40 opacity-90" />
-            <div className="h-32 w-1 bg-white opacity-40"></div>
+            <img src={TRADEBILIA_LOGO_URL} alt="Tradebilia" className="h-32 w-32 opacity-90" />
+            <div className="h-32 w-1 bg-white"></div>
             <div>
               <h1 className="text-4xl font-bold tracking-tight">My Inventory</h1>
               <p className="mt-2 text-slate-300">Manage and organize your collection</p>

@@ -265,3 +265,5 @@
 - [x] Increase My Inventory page logo size from h-24 w-24 to h-56 w-56
 - [x] Redesign My Inventory hero section with spinning wheel logo and vertical line separator
 - [x] Make spinning wheel SVG background translucent (opacity 0)
+- [x] Adjust spinning wheel size to h-32 w-32 to match divider height
+- [x] Change divider bar to white with full opacity (removed opacity-40)
