@@ -244,7 +244,7 @@
 
 ## My Inventory Page Refinements
 
-- [ ] Review and enhance My Inventory page layout and UI
+- [x] Fix My Inventory hero section to match homepage proportions (wheel, divider, text layout)
 - [ ] Improve inventory item card design and presentation
 - [ ] Add inline editing functionality for inventory items
 - [ ] Implement item deletion with confirmation dialog
