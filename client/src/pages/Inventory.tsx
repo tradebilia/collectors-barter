@@ -131,35 +131,35 @@ export default function Inventory() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f5f6fa] text-slate-950">
-      <header className="border-b border-black/10 bg-black text-white">
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100 text-slate-950">
+      <header className="border-b border-slate-200 bg-white shadow-sm">
         <div className="px-4 py-3 lg:px-8">
           <div className="flex flex-wrap items-center gap-4">
-            <Link href="/" className="text-[2rem] font-semibold tracking-tight text-white">Search</Link>
-            <div className="flex min-w-[18rem] flex-1 items-center rounded-[1rem] border border-white/10 bg-white/16 px-4 py-3">
-              <Search className="mr-3 h-4 w-4 text-white/60" />
+            <Link href="/" className="text-[2rem] font-bold tracking-tight text-slate-900">Search</Link>
+            <div className="flex min-w-[18rem] flex-1 items-center rounded-lg border border-slate-300 bg-white px-4 py-2.5 shadow-sm">
+              <Search className="mr-3 h-4 w-4 text-slate-400" />
               <input
                 value={keyword}
                 onChange={event => setKeyword(event.target.value)}
-                placeholder="Search..."
-                className="w-full bg-transparent text-white outline-none placeholder:text-white/50"
+                placeholder="Search your inventory..."
+                className="w-full bg-transparent text-slate-900 outline-none placeholder:text-slate-400"
               />
             </div>
-            <div className="ml-auto flex items-center gap-3 rounded-full border border-white/10 px-4 py-2 text-sm">
-              <span className="rounded-md bg-white/10 px-3 py-1 font-semibold">My</span>
-              <Avatar className="h-9 w-9 border border-white/15">
+            <div className="ml-auto flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm shadow-sm">
+              <span className="rounded-md bg-slate-100 px-3 py-1 font-semibold text-slate-700">My</span>
+              <Avatar className="h-8 w-8 border border-slate-200">
                 <AvatarImage src={profile?.avatarUrl ?? undefined} alt={profile?.displayName ?? user?.name ?? "Tradebilia member"} />
-                <AvatarFallback className="bg-white/10 text-white">{initials(profile?.displayName ?? user?.name ?? "Tradebilia")}</AvatarFallback>
+                <AvatarFallback className="bg-slate-200 text-slate-700">{initials(profile?.displayName ?? user?.name ?? "Tradebilia")}</AvatarFallback>
               </Avatar>
-              <Menu className="h-5 w-5 text-[#efe56c]" />
+              <Menu className="h-5 w-5 text-slate-600" />
             </div>
           </div>
-          <nav className="mt-4 grid overflow-hidden border border-slate-300 bg-white text-slate-950 md:grid-cols-5 xl:grid-cols-10">
+          <nav className="mt-4 grid overflow-x-auto border border-slate-200 bg-white text-slate-950 md:grid-cols-5 xl:grid-cols-10 rounded-lg shadow-sm">
             {categoryLinks.map(categoryLink => (
               <Link
                 key={categoryLink.value}
                 href={`/category/${categoryLink.value}`}
-                className={`border-b border-r border-slate-300 px-4 py-4 text-center text-sm font-semibold uppercase tracking-[0.12em] transition hover:bg-slate-100 ${category === categoryLink.value ? "bg-slate-900 text-white" : "bg-white text-slate-950"}`}
+                className={`border-r border-slate-200 px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider transition hover:bg-slate-50 ${category === categoryLink.value ? "bg-slate-900 text-white" : "bg-white text-slate-950"}`}
               >
                 {categoryLink.label}
               </Link>
@@ -168,32 +168,43 @@ export default function Inventory() {
         </div>
       </header>
 
-      <section className="bg-[linear-gradient(90deg,#12144a_0%,#171b58_50%,#10133f_100%)] px-4 py-10 text-white lg:px-8">
+      <section className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 px-4 py-12 text-white lg:px-8">
         <div className="mx-auto max-w-6xl">
-          <img src={TRADEBILIA_LOGO_URL} alt="Tradebilia" className="w-full max-w-[42rem]" />
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <h1 className="text-4xl font-bold tracking-tight">My Inventory</h1>
+              <p className="mt-2 text-slate-300">Manage and organize your collection</p>
+            </div>
+            <img src={TRADEBILIA_LOGO_URL} alt="Tradebilia" className="h-24 w-24 opacity-80" />
+          </div>
         </div>
       </section>
 
-      <main className="px-4 py-10 lg:px-8">
-        <div className="mx-auto max-w-6xl">
-          <div className="text-center">
-            <h1 className="text-5xl font-semibold tracking-tight text-slate-950">MY INVENTORY</h1>
-            <p className="mt-3 text-lg text-slate-700">Manage and view your collectibles</p>
-            <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
-              <Button className="min-w-[13rem] rounded-xl bg-[#2e68ff] px-6 py-6 text-lg font-semibold text-white hover:bg-[#2456dc]" onClick={() => (window.location.href = "/inventory/new")}>
-                <Plus className="mr-2 h-5 w-5" />
-                Add New Item
+      <main className="px-4 py-12 lg:px-8">
+        <div className="mx-auto max-w-7xl">
+          <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <h2 className="text-2xl font-bold text-slate-900">Your Collection</h2>
+              <p className="mt-1 text-slate-600">Total items: {filteredListings.length}</p>
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <Button className="rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 shadow-sm" onClick={() => (window.location.href = "/inventory/new")}>
+                <Plus className="mr-2 h-4 w-4" />
+                Add Item
               </Button>
-              <Button variant="outline" className="min-w-[13rem] rounded-xl border-[#2e68ff] bg-[#2e68ff] px-6 py-6 text-lg font-semibold text-white hover:bg-[#2456dc] hover:text-white" onClick={exportInventory}>
-                <Download className="mr-2 h-5 w-5" />
-                Export Inventory
+              <Button variant="outline" className="rounded-lg border-slate-300 px-6 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50" onClick={exportInventory}>
+                <Download className="mr-2 h-4 w-4" />
+                Export
               </Button>
             </div>
           </div>
 
-          <div className="mt-10 grid gap-8 lg:grid-cols-[250px_minmax(0,1fr)]">
-            <Card className="border-slate-200 bg-[#efefef] shadow-sm">
-              <CardContent className="space-y-5 p-5">
+          <div className="grid gap-8 lg:grid-cols-[280px_minmax(0,1fr)]">
+            <Card className="border-slate-200 bg-white shadow-sm rounded-lg">
+              <CardContent className="space-y-5 p-6">
+                <div className="pb-4 border-b border-slate-200">
+                  <h3 className="text-lg font-semibold text-slate-900">Filters</h3>
+                </div>
                 <div className="space-y-2">
                   <Label className="text-base font-medium text-slate-800">Search by Item Title or Certification #</Label>
                   <Input value={keyword} onChange={event => setKeyword(event.target.value)} placeholder="Search inventory" className="border-slate-300 bg-white" />
@@ -270,35 +281,40 @@ export default function Inventory() {
               </CardContent>
             </Card>
 
-            <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {filteredListings.map(listing => (
-                <Card key={listing.id} className="overflow-hidden border-slate-200 bg-white shadow-sm">
+                <Card key={listing.id} className="overflow-hidden border-slate-200 bg-white shadow-sm hover:shadow-lg transition-shadow rounded-lg">
                   <CardContent className="p-0">
-                    <div className="flex items-start justify-end gap-2 px-4 pt-4 text-slate-400">
-                      <button type="button" onClick={() => toast.info("Inline editing can be added to the next refinement pass.")} className="transition hover:text-slate-700">
-                        <Pencil className="h-4 w-4" />
-                      </button>
-                      <button type="button" onClick={() => shareListing(listing.id)} className="transition hover:text-slate-700">
-                        <Share2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                    <Link href={`/listings/${listing.id}`} className="block px-6 pb-6">
-                      <div className="mx-auto flex aspect-[0.72] max-w-[12rem] items-center justify-center overflow-hidden rounded-[1.25rem] border border-slate-200 bg-slate-50">
+                    <Link href={`/listings/${listing.id}`} className="block">
+                      <div className="relative flex aspect-square items-center justify-center overflow-hidden bg-gradient-to-br from-slate-100 to-slate-200">
                         <img
                           src={resolveTradebiliaListingImage({ title: listing.title, category: listing.category, primaryPhotoUrl: listing.primaryPhotoUrl })}
                           alt={listing.title}
                           className="h-full w-full object-cover"
                         />
-                      </div>
-                      <div className="mt-5 space-y-3">
-                        <div className="flex items-start justify-between gap-3">
-                          <h2 className="text-[2rem] font-medium leading-tight text-slate-950">{listing.title}</h2>
-                          <Badge variant="outline" className="rounded-full border-slate-300 capitalize text-slate-700">{listing.status}</Badge>
+                        <div className="absolute top-3 right-3 flex gap-2">
+                          <Badge variant="secondary" className="rounded-full text-xs font-semibold capitalize bg-blue-100 text-blue-700 border-0">{listing.status}</Badge>
                         </div>
-                        <p className="text-sm text-slate-600">{listing.categoryLabel}</p>
-                        <p className="text-sm text-slate-600 line-clamp-2">{listing.description}</p>
                       </div>
                     </Link>
+                    <div className="p-4 space-y-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <Link href={`/listings/${listing.id}`} className="flex-1">
+                          <h3 className="font-semibold text-slate-900 line-clamp-2 hover:text-blue-600 transition">{listing.title}</h3>
+                        </Link>
+                        <button type="button" onClick={() => shareListing(listing.id)} className="text-slate-400 hover:text-slate-600 transition flex-shrink-0" title="Share listing">
+                          <Share2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">{listing.categoryLabel}</p>
+                        <p className="text-sm text-slate-600 line-clamp-2">{listing.description}</p>
+                      </div>
+                      <button type="button" onClick={() => toast.info("Inline editing can be added to the next refinement pass.")} className="w-full mt-3 px-3 py-2 text-sm font-medium text-slate-700 border border-slate-300 rounded-md hover:bg-slate-50 transition flex items-center justify-center gap-2">
+                        <Pencil className="h-4 w-4" />
+                        Edit
+                      </button>
+                    </div>
                   </CardContent>
                 </Card>
               ))}
