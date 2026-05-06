@@ -245,6 +245,7 @@
 ## My Inventory Page Refinements
 
 - [x] Fix My Inventory hero section to match homepage proportions (wheel, divider, text layout)
+- [x] Add My Inventory SVG logo to hero section with compact height
 - [ ] Improve inventory item card design and presentation
 - [ ] Add inline editing functionality for inventory items
 - [ ] Implement item deletion with confirmation dialog

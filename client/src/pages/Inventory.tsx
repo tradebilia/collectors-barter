@@ -178,11 +178,11 @@ export default function Inventory() {
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat'
         }} />
-        <div className="container relative flex h-48 items-center justify-center py-0 sm:h-56 lg:h-64">
+        <div className="container relative flex h-48 items-center justify-center py-0 sm:h-56 lg:h-64 overflow-hidden">
           <img
             src="/manus-storage/Myinventory_467a8c30.svg"
             alt="My Inventory"
-            className="h-48 w-48 sm:h-64 sm:w-64 lg:h-80 lg:w-80"
+            className="h-64 w-64 sm:h-80 sm:w-80 lg:h-96 lg:w-96"
           />
         </div>
       </section>
