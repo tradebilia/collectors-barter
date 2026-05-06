@@ -182,7 +182,7 @@ export default function Inventory() {
           <img
             src="/manus-storage/Myinventory_467a8c30.svg"
             alt="My Inventory"
-            className="h-72 w-72 sm:h-80 sm:w-80 lg:h-96 lg:w-96"
+            className="h-80 w-80 sm:h-96 sm:w-96 lg:h-96 lg:w-96"
           />
         </div>
       </section>
