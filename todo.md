@@ -268,3 +268,4 @@
 - [x] Adjust spinning wheel size to h-64 w-64 to match divider height
 - [x] Increase divider bar height to h-64 to match wheel
 - [x] Change divider bar to white with full opacity
+- [x] Redesign My Inventory hero to match homepage layout (wheel left, divider, "My Inventory" centered right)

@@ -171,12 +171,23 @@ export default function Inventory() {
         </div>
       </header>
 
-      <section className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 px-4 py-12 text-white lg:px-8">
-        <div className="mx-auto max-w-6xl">
-          <div className="flex items-center justify-center gap-8">
-            <img src={TRADEBILIA_LOGO_URL} alt="Tradebilia" className="h-64 w-64 opacity-90" />
-            <div className="h-64 w-1 bg-white"></div>
-            <div>
+      <section className="relative w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden bg-[#00143A] text-white">
+        <div className="absolute inset-0 opacity-20" style={{
+          backgroundImage: 'url(/manus-storage/hero-background-fullwidth_e851e7cd.png)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat'
+        }} />
+        <div className="container relative flex h-64 items-center justify-center py-0 sm:h-72 sm:py-0 lg:h-80 lg:py-0">
+          <div className="flex w-full max-w-6xl items-center justify-center gap-8 -ml-32">
+            <img
+              src={TRADEBILIA_LOGO_URL}
+              alt="Tradebilia"
+              className="h-auto w-auto"
+              style={{ maxHeight: '200px', maxWidth: '200px' }}
+            />
+            <div className="h-64 w-1 bg-white sm:h-72 lg:h-80"></div>
+            <div className="flex-1 text-center">
               <h1 className="text-4xl font-bold tracking-tight">My Inventory</h1>
               <p className="mt-2 text-slate-300">Manage and organize your collection</p>
             </div>
