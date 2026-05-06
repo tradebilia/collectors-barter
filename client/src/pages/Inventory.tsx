@@ -15,7 +15,7 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Link } from "wouter";
 
-const TRADEBILIA_LOGO_URL = "/manus-storage/Tradebilialogo_886a61b7.webp";
+const TRADEBILIA_LOGO_URL = "/manus-storage/tradebilia_final_transparent_e2d9ff8a.svg";
 
 const categoryLinks = [
   { value: "comics", label: "Comics" },
@@ -136,6 +136,9 @@ export default function Inventory() {
         <div className="px-4 py-3 lg:px-8">
           <div className="flex flex-wrap items-center gap-4">
             <Link href="/" className="text-[2rem] font-bold tracking-tight text-slate-900">Search</Link>
+            <Link href="/" className="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition shadow-sm">
+              Home
+            </Link>
             <div className="flex min-w-[18rem] flex-1 items-center rounded-lg border border-slate-300 bg-white px-4 py-2.5 shadow-sm">
               <Search className="mr-3 h-4 w-4 text-slate-400" />
               <input

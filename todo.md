@@ -260,3 +260,5 @@
 - [x] Added hover effects and transitions to cards
 - [x] Improved filter sidebar styling and organization
 - [x] Updated grid layout to 4 columns on large screens for better content density
+- [x] Add home button to My Inventory page header
+- [x] Replace My Inventory page logo with latest transparent SVG version
