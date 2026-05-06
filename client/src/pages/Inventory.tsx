@@ -178,18 +178,17 @@ export default function Inventory() {
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat'
         }} />
-        <div className="container relative flex h-64 items-center justify-center py-0 sm:h-72 sm:py-0 lg:h-80 lg:py-0">
-          <div className="flex w-full max-w-6xl items-center justify-center gap-8 -ml-32">
+        <div className="container relative flex h-80 items-center justify-center py-0 sm:h-96 sm:py-0 lg:h-screen lg:py-0" style={{ maxHeight: '500px' }}>
+          <div className="flex w-full max-w-6xl items-center justify-center">
             <img
               src={TRADEBILIA_LOGO_URL}
               alt="Tradebilia"
-              className="h-auto w-auto"
-              style={{ maxHeight: '200px', maxWidth: '200px' }}
+              className="h-48 w-48 sm:h-56 sm:w-56 lg:h-64 lg:w-64 flex-shrink-0"
             />
-            <div className="h-64 w-1 bg-white sm:h-72 lg:h-80"></div>
+            <div className="mx-8 h-48 w-1.5 bg-white sm:mx-12 sm:h-56 lg:mx-16 lg:h-64"></div>
             <div className="flex-1 text-center">
-              <h1 className="text-4xl font-bold tracking-tight">My Inventory</h1>
-              <p className="mt-2 text-slate-300">Manage and organize your collection</p>
+              <h1 className="text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">My Inventory</h1>
+              <p className="mt-2 text-sm text-slate-300 sm:text-base">Manage and organize your collection</p>
             </div>
           </div>
         </div>
