@@ -178,7 +178,7 @@ export default function Inventory() {
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat'
         }} />
-        <div className="container relative flex h-80 items-center justify-center py-0 sm:h-96 lg:h-screen" style={{ maxHeight: '500px' }}>
+        <div className="container relative flex h-48 items-center justify-center py-0 sm:h-56 lg:h-64">
           <img
             src="/manus-storage/Myinventory_467a8c30.svg"
             alt="My Inventory"
