@@ -178,17 +178,17 @@ export default function Inventory() {
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat'
         }} />
-        <div className="container relative flex h-80 items-center justify-center py-0 sm:h-96 sm:py-0 lg:h-screen lg:py-0" style={{ maxHeight: '500px' }}>
+        <div className="container relative flex h-96 items-center justify-center py-0 sm:h-screen sm:py-0 lg:h-screen lg:py-0" style={{ maxHeight: '600px' }}>
           <div className="flex w-full max-w-6xl items-center justify-center">
             <img
               src={TRADEBILIA_LOGO_URL}
               alt="Tradebilia"
-              className="h-48 w-48 sm:h-56 sm:w-56 lg:h-64 lg:w-64 flex-shrink-0"
+              className="h-64 w-64 sm:h-80 sm:w-80 lg:h-96 lg:w-96 flex-shrink-0"
             />
-            <div className="mx-4 h-32 w-1 bg-white sm:mx-6 sm:h-40 lg:mx-8 lg:h-48"></div>
+            <div className="mx-6 h-48 w-2 bg-white sm:mx-8 sm:h-64 lg:mx-12 lg:h-80"></div>
             <div className="flex-1 text-center">
-              <h1 className="text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">My Inventory</h1>
-              <p className="mt-2 text-sm text-slate-300 sm:text-base">Manage and organize your collection</p>
+              <h1 className="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">My Inventory</h1>
+              <p className="mt-3 text-base text-slate-300 sm:text-lg">Manage and organize your collection</p>
             </div>
           </div>
         </div>
