@@ -185,7 +185,7 @@ export default function Inventory() {
               alt="Tradebilia"
               className="h-48 w-48 sm:h-56 sm:w-56 lg:h-64 lg:w-64 flex-shrink-0"
             />
-            <div className="mx-8 h-48 w-1.5 bg-white sm:mx-12 sm:h-56 lg:mx-16 lg:h-64"></div>
+            <div className="mx-4 h-32 w-1 bg-white sm:mx-6 sm:h-40 lg:mx-8 lg:h-48"></div>
             <div className="flex-1 text-center">
               <h1 className="text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">My Inventory</h1>
               <p className="mt-2 text-sm text-slate-300 sm:text-base">Manage and organize your collection</p>
