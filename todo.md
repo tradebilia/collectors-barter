@@ -240,3 +240,4 @@
 - [x] Position SVG logo to the left (with -ml-32) so TRADEBILIA text appears centered
 - [x] Reduce hero section height back to compact size (h-20/h-24/h-28) with logo positioned left
 - [x] Increase hero section height to h-48/h-56/h-64 for better TRADEBILIA visibility
+- [x] Replace hero section logo with new transparent SVG version
