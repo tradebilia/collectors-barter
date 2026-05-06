@@ -178,7 +178,7 @@ export default function Inventory() {
               <h1 className="text-4xl font-bold tracking-tight">My Inventory</h1>
               <p className="mt-2 text-slate-300">Manage and organize your collection</p>
             </div>
-            <img src={TRADEBILIA_LOGO_URL} alt="Tradebilia" className="h-32 w-32 opacity-80" />
+            <img src={TRADEBILIA_LOGO_URL} alt="Tradebilia" className="h-56 w-56 opacity-80" />
           </div>
         </div>
       </section>

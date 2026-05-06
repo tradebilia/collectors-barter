@@ -262,4 +262,4 @@
 - [x] Updated grid layout to 4 columns on large screens for better content density
 - [x] Add home button to My Inventory page header
 - [x] Replace My Inventory page logo with latest transparent SVG version
-- [x] Increase My Inventory page logo size from h-24 w-24 to h-32 w-32
+- [x] Increase My Inventory page logo size from h-24 w-24 to h-56 w-56
