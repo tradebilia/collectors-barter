@@ -264,3 +264,4 @@
 - [x] Replace My Inventory page logo with latest transparent SVG version
 - [x] Increase My Inventory page logo size from h-24 w-24 to h-56 w-56
 - [x] Redesign My Inventory hero section with spinning wheel logo and vertical line separator
+- [x] Make spinning wheel SVG background translucent (opacity 0)
