@@ -282,7 +282,7 @@
   - [x] MemberSearch page (added Home button to header)
   - [x] CategoryPage pages (already has Home button)
   - [x] ItemDetail page (already has href="/" link)
-  - [x] AddInventory page (already has href="/" link)
+  - [x] AddInventory page (added Home button to header)
   - [x] ReportUser page (added Home button to header)
   - [x] ReferralRequest page (added Home button to header)
   - [x] Watchlist page (already has href="/" link)
