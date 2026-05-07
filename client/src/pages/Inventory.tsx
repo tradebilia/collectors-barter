@@ -182,7 +182,7 @@ export default function Inventory() {
           <img
             src="/manus-storage/Myinventory_467a8c30.svg"
             alt="My Inventory"
-            className="h-80 w-80 sm:h-96 sm:w-96 lg:h-screen lg:w-screen"
+            style={{ height: '300px', width: '300px' }}
           />
         </div>
       </section>
