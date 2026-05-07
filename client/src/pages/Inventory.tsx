@@ -175,7 +175,7 @@ export default function Inventory() {
         <div className="absolute inset-0 opacity-20" style={{
           backgroundImage: 'url(/manus-storage/hero-background-fullwidth_e851e7cd.png)',
           backgroundSize: 'cover',
-          backgroundPosition: 'center top',
+          backgroundPosition: 'center bottom',
           backgroundRepeat: 'no-repeat'
         }} />
         <div className="relative flex h-48 items-center justify-center py-0 sm:h-56 lg:h-64 overflow-hidden" style={{ maxHeight: '300px' }}>
