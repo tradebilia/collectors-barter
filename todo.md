@@ -285,4 +285,20 @@
   - [x] AddInventory page (added Home button to header)
   - [x] ReportUser page (added Home button to header)
   - [x] ReferralRequest page (added Home button to header)
-  - [x] Watchlist page (already has href="/" link)
+  - [x] Watchlist page (added Home button to header)
+
+
+## IMPORTANT: For All New Pages Going Forward
+
+**REQUIREMENT:** Every new page created MUST have a Home button in the header (except Home page itself).
+
+**Home Button Template:**
+```tsx
+<Link href="/" className="rounded-lg border border-white/30 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-white/20">
+  Home
+</Link>
+```
+
+**Placement:** Add as the first element in the header's top navigation div, before other header content.
+
+**Exception:** Home page (/) does not need a Home button since it IS the home page.
