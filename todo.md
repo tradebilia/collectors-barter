@@ -270,3 +270,19 @@
 - [x] Increase divider bar height to h-64 to match wheel
 - [x] Change divider bar to white with full opacity
 - [x] Redesign My Inventory hero to match homepage layout (wheel left, divider, "My Inventory" centered right)
+
+
+## Navigation & UX Improvements
+
+- [x] Add Home button to every page for consistent navigation
+  - [x] Inventory page (already has Home button)
+  - [x] Home page (skip - already the home page)
+  - [x] Profile page (already has href="/" link)
+  - [x] Messages page (added Home button to header)
+  - [x] MemberSearch page (added Home button to header)
+  - [x] CategoryPage pages (already has Home button)
+  - [x] ItemDetail page (already has href="/" link)
+  - [x] AddInventory page (already has href="/" link)
+  - [x] ReportUser page (added Home button to header)
+  - [x] ReferralRequest page (added Home button to header)
+  - [x] Watchlist page (already has href="/" link)

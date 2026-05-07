@@ -103,6 +103,11 @@ export default function ReportUser() {
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,rgba(73,125,255,0.14),transparent_30%),linear-gradient(180deg,#050814_0%,#0b1220_32%,#111827_100%)] text-white">
       <header className="border-b border-white/10 bg-black">
+        <div className="flex flex-wrap items-center gap-2 px-4 py-2 sm:px-6">
+          <Link href="/" className="rounded-lg border border-white/30 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-white/20">
+            Home
+          </Link>
+        </div>
         <div className="flex flex-wrap items-center gap-4 px-4 py-2 sm:px-6">
           <div className="flex items-center gap-3">
             <span className="font-['Oswald'] text-[2.15rem] font-semibold leading-none tracking-[-0.05em] text-white sm:text-[2.45rem]">Search</span>
