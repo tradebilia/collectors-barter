@@ -178,11 +178,11 @@ export default function Inventory() {
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat'
         }} />
-        <div className="relative flex h-48 items-center justify-center py-0 sm:h-56 lg:h-64 overflow-hidden" style={{ maxHeight: '300px' }}>
+        <div className="relative flex w-full h-48 items-center justify-center py-0 sm:h-56 lg:h-64 overflow-hidden" style={{ maxHeight: '300px' }}>
           <img
             src="/manus-storage/Myinventory_467a8c30.svg"
             alt="My Inventory"
-            style={{ height: '800px', width: '800px', objectFit: 'contain' }}
+            style={{ height: '800px', width: '800px', objectFit: 'contain', maxWidth: '100%' }}
           />
         </div>
       </section>
