@@ -1,5 +1,6 @@
 import {
   boolean,
+  decimal,
   index,
   int,
   mysqlEnum,
@@ -53,6 +54,29 @@ export const tradeStatuses = [
   "cancelled",
 ] as const;
 
+export const gradeValues = [
+  "ungraded",
+  "1",
+  "1.5",
+  "2",
+  "2.5",
+  "3",
+  "3.5",
+  "4",
+  "4.5",
+  "5",
+  "5.5",
+  "6",
+  "6.5",
+  "7",
+  "7.5",
+  "8",
+  "8.5",
+  "9",
+  "9.5",
+  "10",
+] as const;
+
 export const userProfiles = mysqlTable(
   "userProfiles",
   {
@@ -82,6 +106,9 @@ export const listings = mysqlTable(
     title: varchar("title", { length: 160 }).notNull(),
     category: mysqlEnum("category", collectibleCategories).notNull(),
     condition: mysqlEnum("condition", itemConditions).notNull(),
+    grade: mysqlEnum("grade", gradeValues).default("ungraded").notNull(),
+    certificationCompany: varchar("certificationCompany", { length: 50 }),
+    estimatedValue: decimal("estimatedValue", { precision: 12, scale: 2 }),
     description: text("description").notNull(),
     status: mysqlEnum("status", listingStatuses).default("active").notNull(),
     featured: boolean("featured").default(false).notNull(),

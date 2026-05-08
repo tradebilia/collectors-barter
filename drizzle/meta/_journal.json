@@ -22,6 +22,13 @@
       "when": 1776465436132,
       "tag": "0002_pretty_franklin_storm",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "5",
+      "when": 1778195559222,
+      "tag": "0003_nappy_quasar",
+      "breakpoints": true
     }
   ]
 }

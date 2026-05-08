@@ -313,9 +313,15 @@ export default function Inventory() {
                           <Share2 className="h-4 w-4" />
                         </button>
                       </div>
-                      <div className="space-y-1">
-                        <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">{listing.categoryLabel}</p>
-                        <p className="text-sm text-slate-600 line-clamp-2">{listing.description}</p>
+                      <div className="space-y-2 text-sm">
+                        <div><span className="text-slate-600"><strong>Category:</strong> {listing.categoryLabel}</span></div>
+                        <div><span className="text-slate-600"><strong>Grade:</strong> {listing.grade !== 'ungraded' ? listing.grade : 'Not graded'}</span></div>
+                        {listing.certificationCompany ? (
+                          <div><span className="text-slate-600"><strong>Certification:</strong> {listing.certificationCompany}</span></div>
+                        ) : (
+                          <div><span className="text-slate-600"><strong>Condition:</strong> {listing.condition.replace(/_/g, ' ').charAt(0).toUpperCase() + listing.condition.replace(/_/g, ' ').slice(1)}</span></div>
+                        )}
+                        <div><span className="text-slate-600"><strong>Value:</strong> {listing.estimatedValue ? `$${Number(listing.estimatedValue).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : 'Not specified'}</span></div>
                       </div>
                       <button type="button" onClick={() => toast.info("Inline editing can be added to the next refinement pass.")} className="w-full mt-3 px-3 py-2 text-sm font-medium text-slate-700 border border-slate-300 rounded-md hover:bg-slate-50 transition flex items-center justify-center gap-2">
                         <Pencil className="h-4 w-4" />
