@@ -19,7 +19,7 @@ import {
 import { getLoginUrl } from "@/const";
 import { resolveTradebiliaListingImage } from "@/lib/listingImages";
 import { trpc } from "@/lib/trpc";
-import { Download, Loader2, Menu, Pencil, Plus, Search, Share2, Trash2 } from "lucide-react";
+import { Download, Loader2, Menu, MessageSquareText, Pencil, Plus, Search, Share2, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Link } from "wouter";
@@ -149,22 +149,30 @@ export default function Inventory() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100 text-slate-950">
-      <header className="border-b border-slate-200 bg-white shadow-sm">
-        <div className="px-4 py-3 lg:px-8">
-          <div className="flex flex-wrap items-center gap-4">
-            <Link href="/" className="text-[2rem] font-bold tracking-tight text-slate-900">Search</Link>
-            <div className="ml-auto flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm shadow-sm">
-              <span className="rounded-md bg-slate-100 px-3 py-1 font-semibold text-slate-700">My</span>
-              <Avatar className="h-8 w-8 border border-slate-200">
-                <AvatarImage src={profile?.avatarUrl ?? undefined} alt={profile?.displayName ?? user?.name ?? "Tradebilia member"} />
-                <AvatarFallback className="bg-slate-200 text-slate-700">{initials(profile?.displayName ?? user?.name ?? "Tradebilia")}</AvatarFallback>
-              </Avatar>
-              <Menu className="h-5 w-5 text-slate-600" />
+      <div className="border-b border-white/10 bg-black">
+        <div className="flex items-center justify-between gap-4 pl-2 pr-4 py-3">
+          <div className="flex-shrink-0">
+            <img src="/manus-storage/tradebilia-longform-no-navy-clean_d2f04453.png" alt="Tradebilia" className="h-14 w-auto object-contain" />
+          </div>
+          <div className="flex-1 flex justify-center">
+            <div className="flex items-center gap-2 bg-white/10 rounded-lg px-4 py-2 max-w-2xl w-full">
+              <Search className="h-4 w-4 text-white/70 flex-shrink-0" />
+              <input type="text" placeholder="Search inventory..." className="bg-transparent text-white text-sm placeholder-white/50 outline-none w-full" />
             </div>
           </div>
-
+          <div className="flex items-center gap-4 flex-shrink-0">
+            <button className="rounded-lg p-2 text-white/70 transition hover:bg-white/10 hover:text-white" title="Messages">
+              <MessageSquareText className="h-5 w-5" />
+            </button>
+            <button className="rounded-lg p-2 text-white/70 transition hover:bg-white/10 hover:text-white" title="Account Settings">
+              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+            </button>
+            <button className="rounded-lg p-2 text-white/70 transition hover:bg-white/10 hover:text-white" title="Notifications">
+              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
+            </button>
+          </div>
         </div>
-      </header>
+      </div>
 
       <section className="relative w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden bg-[#00143A] text-white">
         <div className="absolute inset-0 opacity-20" style={{
@@ -182,25 +190,23 @@ export default function Inventory() {
         </div>
       </section>
 
-      <nav className="border-b border-slate-200 bg-white text-slate-950 shadow-sm">
-        <div className="px-4 lg:px-8">
-          <div className="flex flex-nowrap overflow-x-auto">
+      <nav className="relative z-10 border-t border-black bg-black">
+        <div className="flex w-full overflow-x-auto">
+          <Link
+            href="/"
+            className="flex-1 border-b border-r border-white/10 px-4 py-4 text-center text-xs font-semibold uppercase tracking-[0.16em] transition hover:bg-white/10 lg:text-[11px] text-white whitespace-nowrap"
+          >
+            Home
+          </Link>
+          {categoryLinks.map(categoryLink => (
             <Link
-              href="/"
-              className="border-r border-slate-200 px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider transition hover:bg-slate-50 bg-white text-slate-950 whitespace-nowrap"
+              key={categoryLink.value}
+              href={`/category/${categoryLink.value}`}
+              className="flex-1 border-b border-r border-white/10 px-4 py-4 text-center text-xs font-semibold uppercase tracking-[0.16em] transition hover:bg-white/10 lg:text-[11px] text-white whitespace-nowrap"
             >
-              Home
+              {categoryLink.label}
             </Link>
-            {categoryLinks.map(categoryLink => (
-              <Link
-                key={categoryLink.value}
-                href={`/category/${categoryLink.value}`}
-                className={`border-r border-slate-200 px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider transition hover:bg-slate-50 whitespace-nowrap ${category === categoryLink.value ? "bg-slate-900 text-white" : "bg-white text-slate-950"}`}
-              >
-                {categoryLink.label}
-              </Link>
-            ))}
-          </div>
+          ))}
         </div>
       </nav>
 
@@ -378,35 +384,35 @@ export default function Inventory() {
                   <p className="mt-3 text-slate-600">Adjust the filter rail or add a new collectible to expand your Trade Proposal options.</p>
                 </div>
               ) : null}
-
-            <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Delete Item</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Are you sure you want to delete this item from your inventory? This action cannot be undone.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <div className="flex gap-3">
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={() => {
-                        if (listingToDelete) {
-                          toast.info("Delete functionality will be implemented with backend integration.");
-                          setDeleteDialogOpen(false);
-                          setListingToDelete(null);
-                        }
-                      }}
-                      className="bg-red-600 hover:bg-red-700"
-                    >
-                      Delete
-                    </AlertDialogAction>
-                  </div>
-                </AlertDialogContent>
-            </AlertDialog>
-              </div>
             </div>
           </div>
+        </div>
+
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Item</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete this item from your inventory? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <div className="flex gap-3">
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => {
+                  if (listingToDelete) {
+                    toast.info("Delete functionality will be implemented with backend integration.");
+                    setDeleteDialogOpen(false);
+                    setListingToDelete(null);
+                  }
+                }}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                Delete
+              </AlertDialogAction>
+            </div>
+          </AlertDialogContent>
+        </AlertDialog>
         </div>
       </main>
     </div>
