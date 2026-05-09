@@ -323,7 +323,7 @@ export default function Inventory() {
                         <img
                           src={resolveTradebiliaListingImage({ title: listing.title, category: listing.category, primaryPhotoUrl: listing.primaryPhotoUrl })}
                           alt={listing.title}
-                          className="h-full w-full object-cover"
+                          className="h-full w-full object-contain"
                         />
                         <div className="absolute top-3 right-3 flex gap-2">
                           <Badge variant="secondary" className="rounded-full text-xs font-semibold capitalize bg-blue-100 text-blue-700 border-0">{listing.status}</Badge>
