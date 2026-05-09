@@ -246,17 +246,17 @@ export default function Inventory() {
         <div className="flex flex-1">
           <aside className="w-64 border-r border-slate-200 bg-slate-50 p-6 overflow-y-auto">
             <Card className="border-0 bg-transparent shadow-none">
-              <CardContent className="space-y-5 p-6">
-                <div className="pb-4 border-b border-slate-200">
-                  <h3 className="text-lg font-semibold text-slate-900">Filters</h3>
+              <CardContent className="space-y-3 p-4">
+                <div className="pb-3 border-b border-slate-200">
+                  <h3 className="text-sm font-semibold text-slate-900">Filters</h3>
                 </div>
-                <div className="space-y-2">
-                  <Label className="text-base font-medium text-slate-800">Search by Item Title or Certification #</Label>
+                <div className="space-y-1">
+                  <Label className="text-xs font-medium text-slate-800">Search by Item Title or Certification #</Label>
                   <Input value={keyword} onChange={event => setKeyword(event.target.value)} placeholder="Search inventory" className="border-slate-300 bg-white" />
                 </div>
 
-                <div className="space-y-2">
-                  <Label className="text-base font-medium text-slate-800">Category</Label>
+                <div className="space-y-1">
+                  <Label className="text-xs font-medium text-slate-800">Category</Label>
                   <Select value={category} onValueChange={setCategory}>
                     <SelectTrigger className="border-slate-300 bg-white">
                       <SelectValue placeholder="Category" />
@@ -270,8 +270,8 @@ export default function Inventory() {
                   </Select>
                 </div>
 
-                <div className="space-y-2">
-                  <Label className="text-base font-medium text-slate-800">Grading Authority</Label>
+                <div className="space-y-1">
+                  <Label className="text-xs font-medium text-slate-800">Grading Authority</Label>
                   <Select value={graderCompany} onValueChange={setGraderCompany}>
                     <SelectTrigger className="border-slate-300 bg-white">
                       <SelectValue placeholder="Select grading company" />
@@ -286,8 +286,8 @@ export default function Inventory() {
                   </Select>
                 </div>
 
-                <div className="space-y-2">
-                  <Label className="text-base font-medium text-slate-800">Grade Range</Label>
+                <div className="space-y-1">
+                  <Label className="text-xs font-medium text-slate-800">Grade Range</Label>
                   <Select value={gradeRange} onValueChange={setGradeRange}>
                     <SelectTrigger className="border-slate-300 bg-white">
                       <SelectValue placeholder="1-10" />
@@ -302,8 +302,8 @@ export default function Inventory() {
                   </Select>
                 </div>
 
-                <div className="space-y-2">
-                  <Label className="text-base font-medium text-slate-800">Sort By</Label>
+                <div className="space-y-1">
+                  <Label className="text-xs font-medium text-slate-800">Sort By</Label>
                   <Select value={sortBy} onValueChange={setSortBy}>
                     <SelectTrigger className="border-slate-300 bg-white">
                       <SelectValue placeholder="Date Added" />
@@ -318,8 +318,8 @@ export default function Inventory() {
                   </Select>
                 </div>
 
-                <div className="space-y-2">
-                  <Label className="text-base font-medium text-slate-800">Condition</Label>
+                <div className="space-y-1">
+                  <Label className="text-xs font-medium text-slate-800">Condition</Label>
                   <Select value={condition} onValueChange={setCondition}>
                     <SelectTrigger className="border-slate-300 bg-white">
                       <SelectValue placeholder="All Conditions" />
@@ -336,8 +336,8 @@ export default function Inventory() {
                   </Select>
                 </div>
 
-                <div className="space-y-2">
-                  <Label className="text-base font-medium text-slate-800">Value Range</Label>
+                <div className="space-y-1">
+                  <Label className="text-xs font-medium text-slate-800">Value Range</Label>
                   <div className="flex gap-2">
                     <Input
                       type="number"
@@ -356,8 +356,8 @@ export default function Inventory() {
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label className="text-base font-medium text-slate-800">Status</Label>
+                <div className="space-y-1">
+                  <Label className="text-xs font-medium text-slate-800">Status</Label>
                   <Select value={status} onValueChange={setStatus}>
                     <SelectTrigger className="border-slate-300 bg-white">
                       <SelectValue placeholder="All Status" />
@@ -371,8 +371,8 @@ export default function Inventory() {
                   </Select>
                 </div>
 
-                <div className="space-y-2">
-                  <Label className="text-base font-medium text-slate-800">Date Added</Label>
+                <div className="space-y-1">
+                  <Label className="text-xs font-medium text-slate-800">Date Added</Label>
                   <Select value={dateRange} onValueChange={setDateRange}>
                     <SelectTrigger className="border-slate-300 bg-white">
                       <SelectValue placeholder="Any Time" />
@@ -387,10 +387,10 @@ export default function Inventory() {
                   </Select>
                 </div>
 
-                <div className="flex items-center justify-between rounded-xl border border-slate-300 bg-white px-4 py-3">
+                <div className="flex items-center justify-between rounded-xl border border-slate-300 bg-white px-3 py-2">
                   <div>
-                    <p className="text-base font-medium text-slate-900">Show Only Items</p>
-                    <p className="text-sm text-slate-600">Listed for Trade</p>
+                    <p className="text-xs font-medium text-slate-900">Show Only Items</p>
+                    <p className="text-xs text-slate-600">Listed for Trade</p>
                   </div>
                   <Switch checked={tradeOnly} onCheckedChange={setTradeOnly} />
                 </div>
