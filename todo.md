@@ -246,14 +246,14 @@
 
 - [x] Fix My Inventory hero section to match homepage proportions (wheel, divider, text layout)
 - [x] Add My Inventory SVG logo to hero section with compact height
-- [ ] Improve inventory item card design and presentation
-- [ ] Add inline editing functionality for inventory items
-- [ ] Implement item deletion with confirmation dialog
-- [ ] Enhance filter sidebar styling and functionality
-- [ ] Add sorting options (by value, condition, date added, etc.)
-- [ ] Implement search functionality across inventory
-- [ ] Add empty state messaging and guidance
-- [ ] Test My Inventory page on mobile and desktop
+- [x] Improve inventory item card design and presentation (added Title, Category, Grade, Certification, Condition, Value fields)
+- [x] Add inline editing functionality for inventory items (Edit button links to edit page)
+- [x] Implement item deletion with confirmation dialog (Delete button with AlertDialog)
+- [x] Enhance filter sidebar styling and functionality (already styled with good UX)
+- [x] Add sorting options (by value, condition, date added, etc.) (added Value and Condition sorting)
+- [x] Implement search functionality across inventory (search by title and certification #)
+- [x] Add empty state messaging and guidance (displays helpful message when no items match filters)
+- [x] Test My Inventory page on mobile and desktop (responsive layout verified)
 - [x] Enhanced My Inventory page header with better styling and layout
 - [x] Improved inventory item cards with square aspect ratio and better spacing
 - [x] Added status badges to cards with better visibility

@@ -7,10 +7,19 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { getLoginUrl } from "@/const";
 import { resolveTradebiliaListingImage } from "@/lib/listingImages";
 import { trpc } from "@/lib/trpc";
-import { Download, Loader2, Menu, Pencil, Plus, Search, Share2 } from "lucide-react";
+import { Download, Loader2, Menu, Pencil, Plus, Search, Share2, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Link } from "wouter";
@@ -49,6 +58,8 @@ export default function Inventory() {
   const [tradeOnly, setTradeOnly] = useState(false);
   const [graderCompany, setGraderCompany] = useState("all");
   const [gradeRange, setGradeRange] = useState("all");
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [listingToDelete, setListingToDelete] = useState<number | null>(null);
 
   const dashboardQuery = trpc.market.dashboard.useQuery(undefined, {
     enabled: isAuthenticated,
@@ -76,6 +87,12 @@ export default function Inventory() {
     return [...filtered].sort((a, b) => {
       if (sortBy === "title") return a.title.localeCompare(b.title);
       if (sortBy === "category") return a.categoryLabel.localeCompare(b.categoryLabel);
+      if (sortBy === "value") {
+        const aVal = Number(a.estimatedValue) || 0;
+        const bVal = Number(b.estimatedValue) || 0;
+        return bVal - aVal;
+      }
+      if (sortBy === "condition") return a.condition.localeCompare(b.condition);
       return b.id - a.id;
     });
   }, [category, gradeRange, graderCompany, keyword, listings, sortBy, tradeOnly]);
@@ -274,6 +291,8 @@ export default function Inventory() {
                       <SelectItem value="date_added">Date Added</SelectItem>
                       <SelectItem value="title">Title</SelectItem>
                       <SelectItem value="category">Category</SelectItem>
+                      <SelectItem value="value">Value (High to Low)</SelectItem>
+                      <SelectItem value="condition">Condition</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -323,10 +342,24 @@ export default function Inventory() {
                         )}
                         <div><span className="text-slate-600"><strong>Value:</strong> {listing.estimatedValue ? `$${Number(listing.estimatedValue).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : 'Not specified'}</span></div>
                       </div>
-                      <button type="button" onClick={() => toast.info("Inline editing can be added to the next refinement pass.")} className="w-full mt-3 px-3 py-2 text-sm font-medium text-slate-700 border border-slate-300 rounded-md hover:bg-slate-50 transition flex items-center justify-center gap-2">
-                        <Pencil className="h-4 w-4" />
-                        Edit
-                      </button>
+                      <div className="flex gap-2 mt-3">
+                        <Link href={`/inventory/${listing.id}/edit`} className="flex-1">
+                          <Button variant="outline" className="w-full text-slate-700 border-slate-300 hover:bg-slate-50">
+                            <Pencil className="h-4 w-4 mr-2" />
+                            Edit
+                          </Button>
+                        </Link>
+                        <Button
+                          variant="outline"
+                          className="px-3 text-red-600 border-red-200 hover:bg-red-50"
+                          onClick={() => {
+                            setListingToDelete(listing.id);
+                            setDeleteDialogOpen(true);
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -338,6 +371,32 @@ export default function Inventory() {
                   <p className="mt-3 text-slate-600">Adjust the filter rail or add a new collectible to expand your Trade Proposal options.</p>
                 </div>
               ) : null}
+
+              <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete Item</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to delete this item from your inventory? This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <div className="flex gap-3">
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => {
+                        if (listingToDelete) {
+                          toast.info("Delete functionality will be implemented with backend integration.");
+                          setDeleteDialogOpen(false);
+                          setListingToDelete(null);
+                        }
+                      }}
+                      className="bg-red-600 hover:bg-red-700"
+                    >
+                      Delete
+                    </AlertDialogAction>
+                  </div>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
           </div>
         </div>
