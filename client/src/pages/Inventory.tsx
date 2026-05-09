@@ -222,30 +222,10 @@ export default function Inventory() {
       </nav>
 
       <main className="flex flex-col">
-        <div className="px-4 py-8 lg:px-8 border-b border-slate-200">
-          <div className="mx-auto max-w-7xl">
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <div>
-                <p className="text-slate-600">Total items: {filteredListings.length}</p>
-              </div>
-              <div className="flex flex-wrap items-center gap-3">
-                <Button className="rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 shadow-sm" onClick={() => (window.location.href = "/inventory/new")}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add Item
-                </Button>
-                <Button variant="outline" className="rounded-lg border-slate-300 px-6 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50" onClick={exportInventory}>
-                  <Download className="mr-2 h-4 w-4" />
-                  Export
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-
         <div className="flex flex-1">
-          <aside className="w-64 border-r border-slate-200 bg-slate-50 p-6 overflow-y-auto">
+          <aside className="w-64 border-r border-slate-200 bg-slate-50 overflow-y-auto flex-shrink-0">
             <Card className="border-0 bg-transparent shadow-none">
-              <CardContent className="space-y-3 p-4">
+              <CardContent className="space-y-3 p-6">
                 <div className="pb-3 border-b border-slate-200">
                   <h3 className="text-sm font-semibold text-slate-900">Filters</h3>
                 </div>
@@ -396,8 +376,21 @@ export default function Inventory() {
               </CardContent>
             </Card>
           </aside>
-
-          <div className="flex-1 py-8 px-4">
+          <div className="flex-1 flex flex-col">
+            <div className="px-4 py-6 lg:px-8 border-b border-slate-200 flex items-center justify-between gap-4">
+              <p className="text-slate-600">Total items: {filteredListings.length}</p>
+              <div className="flex flex-wrap items-center gap-3">
+                <Button className="rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 shadow-sm" onClick={() => (window.location.href = "/inventory/new")}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Item
+                </Button>
+                <Button variant="outline" className="rounded-lg border-slate-300 px-6 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50" onClick={exportInventory}>
+                  <Download className="mr-2 h-4 w-4" />
+                  Export
+                </Button>
+              </div>
+            </div>
+            <div className="flex-1 py-8 px-4">
             <div>
               <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
               {filteredListings.map(listing => (
@@ -465,7 +458,8 @@ export default function Inventory() {
               ) : null}
             </div>
           </div>
-        </div>
+            </div>
+          </div>
 
         <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
           <AlertDialogContent>
