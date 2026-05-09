@@ -411,7 +411,7 @@ export default function Inventory() {
                     <div className="p-4 space-y-3">
                       <div className="flex items-start justify-between gap-2">
                         <Link href={`/listings/${listing.id}`} className="flex-1">
-                          <h3 className="font-semibold text-slate-900 line-clamp-2 hover:text-blue-600 transition">{listing.title}</h3>
+                          <h3 className="font-bold text-slate-900 line-clamp-2 hover:text-blue-600 transition">{listing.title}</h3>
                         </Link>
                         <button type="button" onClick={() => shareListing(listing.id)} className="text-slate-400 hover:text-slate-600 transition flex-shrink-0" title="Share listing">
                           <Share2 className="h-4 w-4" />
