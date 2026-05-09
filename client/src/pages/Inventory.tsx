@@ -377,7 +377,7 @@ export default function Inventory() {
             </Card>
           </aside>
           <div className="flex-1 flex flex-col">
-            <div className="px-4 py-6 lg:px-8 border-b border-slate-200 flex items-center justify-between gap-4">
+            <div className="px-4 py-6 lg:px-8 flex items-center justify-between gap-4">
               <p className="text-slate-600">Total items: {filteredListings.length}</p>
               <div className="flex flex-wrap items-center gap-3">
                 <Button className="rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 shadow-sm" onClick={() => (window.location.href = "/inventory/new")}>
