@@ -226,8 +226,7 @@ export default function Inventory() {
           <div className="mx-auto max-w-7xl">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
-                <h2 className="text-2xl font-bold text-slate-900">Your Collection</h2>
-                <p className="mt-1 text-slate-600">Total items: {filteredListings.length}</p>
+                <p className="text-slate-600">Total items: {filteredListings.length}</p>
               </div>
               <div className="flex flex-wrap items-center gap-3">
                 <Button className="rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 shadow-sm" onClick={() => (window.location.href = "/inventory/new")}>
