@@ -65,6 +65,22 @@ export default function Inventory() {
   const [dateRange, setDateRange] = useState("all");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [listingToDelete, setListingToDelete] = useState<number | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+
+  const clearAllFilters = () => {
+    setKeyword("");
+    setCategory("all");
+    setGraderCompany("all");
+    setGradeRange("all");
+    setCondition("all");
+    setMinValue("");
+    setMaxValue("");
+    setStatus("all");
+    setDateRange("all");
+    setTradeOnly(false);
+  };
+
+  const hasActiveFilters = keyword !== "" || category !== "all" || graderCompany !== "all" || gradeRange !== "all" || condition !== "all" || minValue !== "" || maxValue !== "" || status !== "all" || dateRange !== "all" || tradeOnly;
 
   const dashboardQuery = trpc.market.dashboard.useQuery(undefined, {
     enabled: isAuthenticated,
@@ -107,6 +123,24 @@ export default function Inventory() {
       return b.id - a.id;
     });
   }, [category, condition, dateRange, gradeRange, graderCompany, keyword, listings, maxValue, minValue, sortBy, status, tradeOnly]);
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === filteredListings.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filteredListings.map(l => l.id)));
+    }
+  };
+
+  const toggleSelectItem = (id: number) => {
+    const newSelected = new Set(selectedIds);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    setSelectedIds(newSelected);
+  };
 
   const exportInventory = () => {
     const payload = filteredListings.map(listing => ({
@@ -373,6 +407,16 @@ export default function Inventory() {
                   </div>
                   <Switch checked={tradeOnly} onCheckedChange={setTradeOnly} />
                 </div>
+
+                {hasActiveFilters && (
+                  <Button
+                    variant="outline"
+                    className="w-full text-xs font-medium text-slate-700 hover:bg-slate-100"
+                    onClick={clearAllFilters}
+                  >
+                    Clear All Filters
+                  </Button>
+                )}
               </CardContent>
             </Card>
           </aside>
@@ -392,6 +436,60 @@ export default function Inventory() {
             </div>
             <div className="flex-1 py-8 px-4">
             <div>
+              {hasActiveFilters && (
+                <div className="mb-4 flex flex-wrap gap-2">
+                  {keyword && (
+                    <Badge variant="secondary" className="bg-blue-100 text-blue-700 border-0 text-xs">
+                      Search: {keyword}
+                      <button onClick={() => setKeyword("")} className="ml-1 hover:opacity-70">x</button>
+                    </Badge>
+                  )}
+                  {category !== "all" && (
+                    <Badge variant="secondary" className="bg-blue-100 text-blue-700 border-0 text-xs">
+                      Category: {category}
+                      <button onClick={() => setCategory("all")} className="ml-1 hover:opacity-70">x</button>
+                    </Badge>
+                  )}
+                  {condition !== "all" && (
+                    <Badge variant="secondary" className="bg-blue-100 text-blue-700 border-0 text-xs">
+                      Condition: {condition}
+                      <button onClick={() => setCondition("all")} className="ml-1 hover:opacity-70">x</button>
+                    </Badge>
+                  )}
+                  {status !== "all" && (
+                    <Badge variant="secondary" className="bg-blue-100 text-blue-700 border-0 text-xs">
+                      Status: {status}
+                      <button onClick={() => setStatus("all")} className="ml-1 hover:opacity-70">x</button>
+                    </Badge>
+                  )}
+                  {(minValue || maxValue) && (
+                    <Badge variant="secondary" className="bg-blue-100 text-blue-700 border-0 text-xs">
+                      Value: ${minValue || "0"}-${maxValue || "max"}
+                      <button onClick={() => { setMinValue(""); setMaxValue(""); }} className="ml-1 hover:opacity-70">x</button>
+                    </Badge>
+                  )}
+                  {tradeOnly && (
+                    <Badge variant="secondary" className="bg-blue-100 text-blue-700 border-0 text-xs">
+                      For Trade Only
+                      <button onClick={() => setTradeOnly(false)} className="ml-1 hover:opacity-70">x</button>
+                    </Badge>
+                  )}
+                </div>
+              )}
+              <div className="mb-4 flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  checked={selectedIds.size === filteredListings.length && filteredListings.length > 0}
+                  onChange={toggleSelectAll}
+                  className="w-4 h-4 rounded border-slate-300"
+                  title="Select all items"
+                />
+                {selectedIds.size > 0 && (
+                  <span className="text-xs font-medium text-slate-600">
+                    {selectedIds.size} item{selectedIds.size !== 1 ? "s" : ""} selected
+                  </span>
+                )}
+              </div>
               <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
               {filteredListings.map(listing => (
                 <Card key={listing.id} className="overflow-hidden border-slate-200 bg-white shadow-sm hover:shadow-lg transition-shadow rounded-lg">
@@ -410,9 +508,18 @@ export default function Inventory() {
                     </Link>
                     <div className="p-4 space-y-3">
                       <div className="flex items-start justify-between gap-2">
-                        <Link href={`/listings/${listing.id}`} className="flex-1">
-                          <h3 className="font-bold text-slate-900 line-clamp-2 hover:text-blue-600 transition">{listing.title}</h3>
-                        </Link>
+                        <div className="flex items-start gap-2 flex-1">
+                          <input
+                            type="checkbox"
+                            checked={selectedIds.has(listing.id)}
+                            onChange={() => toggleSelectItem(listing.id)}
+                            className="w-4 h-4 rounded border-slate-300 mt-0.5 flex-shrink-0"
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                          <Link href={`/listings/${listing.id}`} className="flex-1">
+                            <h3 className="font-bold text-slate-900 line-clamp-2 hover:text-blue-600 transition">{listing.title}</h3>
+                          </Link>
+                        </div>
                         <button type="button" onClick={() => shareListing(listing.id)} className="text-slate-400 hover:text-slate-600 transition flex-shrink-0" title="Share listing">
                           <Share2 className="h-4 w-4" />
                         </button>
@@ -453,7 +560,20 @@ export default function Inventory() {
               {filteredListings.length === 0 ? (
                 <div className="col-span-full rounded-[1.75rem] border border-dashed border-slate-300 bg-white p-10 text-center">
                   <p className="text-xl font-semibold text-slate-900">No inventory items match these filters.</p>
-                  <p className="mt-3 text-slate-600">Adjust the filter rail or add a new collectible to expand your Trade Proposal options.</p>
+                  <p className="mt-3 text-slate-600">
+                    {hasActiveFilters
+                      ? "Try adjusting your filters or clearing them all to see your full collection."
+                      : "You haven't added any items yet. Click 'Add Item' to start building your collection."}
+                  </p>
+                  {hasActiveFilters && (
+                    <Button
+                      variant="outline"
+                      className="mt-4 text-slate-700 border-slate-300 hover:bg-slate-50"
+                      onClick={clearAllFilters}
+                    >
+                      Clear All Filters
+                    </Button>
+                  )}
                 </div>
               ) : null}
             </div>
