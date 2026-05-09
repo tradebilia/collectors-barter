@@ -312,7 +312,7 @@ export default function Inventory() {
             </Card>
           </aside>
 
-          <div className="flex-1 py-8">
+          <div className="flex-1 py-8 px-4">
             <div>
               <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
               {filteredListings.map(listing => (
