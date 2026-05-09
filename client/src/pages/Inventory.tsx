@@ -204,27 +204,31 @@ export default function Inventory() {
         </div>
       </section>
 
-      <main className="px-4 py-12 lg:px-8">
-        <div className="mx-auto max-w-7xl">
-          <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
-            <div>
-              <h2 className="text-2xl font-bold text-slate-900">Your Collection</h2>
-              <p className="mt-1 text-slate-600">Total items: {filteredListings.length}</p>
-            </div>
-            <div className="flex flex-wrap items-center gap-3">
-              <Button className="rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 shadow-sm" onClick={() => (window.location.href = "/inventory/new")}>
-                <Plus className="mr-2 h-4 w-4" />
-                Add Item
-              </Button>
-              <Button variant="outline" className="rounded-lg border-slate-300 px-6 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50" onClick={exportInventory}>
-                <Download className="mr-2 h-4 w-4" />
-                Export
-              </Button>
+      <main className="flex flex-col">
+        <div className="px-4 py-8 lg:px-8 border-b border-slate-200">
+          <div className="mx-auto max-w-7xl">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <h2 className="text-2xl font-bold text-slate-900">Your Collection</h2>
+                <p className="mt-1 text-slate-600">Total items: {filteredListings.length}</p>
+              </div>
+              <div className="flex flex-wrap items-center gap-3">
+                <Button className="rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 shadow-sm" onClick={() => (window.location.href = "/inventory/new")}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Item
+                </Button>
+                <Button variant="outline" className="rounded-lg border-slate-300 px-6 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50" onClick={exportInventory}>
+                  <Download className="mr-2 h-4 w-4" />
+                  Export
+                </Button>
+              </div>
             </div>
           </div>
+        </div>
 
-          <div className="grid gap-8 lg:grid-cols-[280px_minmax(0,1fr)]">
-            <Card className="border-slate-200 bg-white shadow-sm rounded-lg">
+        <div className="flex flex-1">
+          <aside className="w-64 border-r border-slate-200 bg-slate-50 p-6 overflow-y-auto">
+            <Card className="border-0 bg-transparent shadow-none">
               <CardContent className="space-y-5 p-6">
                 <div className="pb-4 border-b border-slate-200">
                   <h3 className="text-lg font-semibold text-slate-900">Filters</h3>
@@ -306,8 +310,11 @@ export default function Inventory() {
                 </div>
               </CardContent>
             </Card>
+          </aside>
 
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="flex-1 px-4 py-8 lg:px-8">
+            <div className="mx-auto max-w-7xl">
+              <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
               {filteredListings.map(listing => (
                 <Card key={listing.id} className="overflow-hidden border-slate-200 bg-white shadow-sm hover:shadow-lg transition-shadow rounded-lg">
                   <CardContent className="p-0">
@@ -372,7 +379,7 @@ export default function Inventory() {
                 </div>
               ) : null}
 
-              <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+            <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
                 <AlertDialogContent>
                   <AlertDialogHeader>
                     <AlertDialogTitle>Delete Item</AlertDialogTitle>
@@ -396,7 +403,8 @@ export default function Inventory() {
                     </AlertDialogAction>
                   </div>
                 </AlertDialogContent>
-              </AlertDialog>
+            </AlertDialog>
+              </div>
             </div>
           </div>
         </div>
