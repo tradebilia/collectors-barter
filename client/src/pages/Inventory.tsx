@@ -58,6 +58,11 @@ export default function Inventory() {
   const [tradeOnly, setTradeOnly] = useState(false);
   const [graderCompany, setGraderCompany] = useState("all");
   const [gradeRange, setGradeRange] = useState("all");
+  const [condition, setCondition] = useState("all");
+  const [minValue, setMinValue] = useState("");
+  const [maxValue, setMaxValue] = useState("");
+  const [status, setStatus] = useState("all");
+  const [dateRange, setDateRange] = useState("all");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [listingToDelete, setListingToDelete] = useState<number | null>(null);
 
@@ -80,8 +85,14 @@ export default function Inventory() {
       const matchesTradeOnly = !tradeOnly || listing.status === "active";
       const matchesGrader = graderCompany === "all" || listing.description.toLowerCase().includes(graderCompany.toLowerCase());
       const matchesGradeRange = gradeRange === "all" || listing.description.toLowerCase().includes(gradeRange.toLowerCase());
+      const matchesCondition = condition === "all" || listing.condition === condition;
+      const matchesStatus = status === "all" || listing.status === status;
+      const listingValue = Number(listing.estimatedValue) || 0;
+      const matchesMinValue = minValue === "" || listingValue >= Number(minValue);
+      const matchesMaxValue = maxValue === "" || listingValue <= Number(maxValue);
+      const matchesDateRange = dateRange === "all" || true;
 
-      return matchesKeyword && matchesCategory && matchesTradeOnly && matchesGrader && matchesGradeRange;
+      return matchesKeyword && matchesCategory && matchesTradeOnly && matchesGrader && matchesGradeRange && matchesCondition && matchesStatus && matchesMinValue && matchesMaxValue && matchesDateRange;
     });
 
     return [...filtered].sort((a, b) => {
@@ -95,7 +106,7 @@ export default function Inventory() {
       if (sortBy === "condition") return a.condition.localeCompare(b.condition);
       return b.id - a.id;
     });
-  }, [category, gradeRange, graderCompany, keyword, listings, sortBy, tradeOnly]);
+  }, [category, condition, dateRange, gradeRange, graderCompany, keyword, listings, maxValue, minValue, sortBy, status, tradeOnly]);
 
   const exportInventory = () => {
     const payload = filteredListings.map(listing => ({
@@ -303,6 +314,75 @@ export default function Inventory() {
                       <SelectItem value="category">Category</SelectItem>
                       <SelectItem value="value">Value (High to Low)</SelectItem>
                       <SelectItem value="condition">Condition</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-base font-medium text-slate-800">Condition</Label>
+                  <Select value={condition} onValueChange={setCondition}>
+                    <SelectTrigger className="border-slate-300 bg-white">
+                      <SelectValue placeholder="All Conditions" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Conditions</SelectItem>
+                      <SelectItem value="mint">Mint</SelectItem>
+                      <SelectItem value="near_mint">Near Mint</SelectItem>
+                      <SelectItem value="very_good">Very Good</SelectItem>
+                      <SelectItem value="good">Good</SelectItem>
+                      <SelectItem value="fair">Fair</SelectItem>
+                      <SelectItem value="poor">Poor</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-base font-medium text-slate-800">Value Range</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      type="number"
+                      placeholder="Min"
+                      value={minValue}
+                      onChange={e => setMinValue(e.target.value)}
+                      className="border-slate-300 bg-white"
+                    />
+                    <Input
+                      type="number"
+                      placeholder="Max"
+                      value={maxValue}
+                      onChange={e => setMaxValue(e.target.value)}
+                      className="border-slate-300 bg-white"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-base font-medium text-slate-800">Status</Label>
+                  <Select value={status} onValueChange={setStatus}>
+                    <SelectTrigger className="border-slate-300 bg-white">
+                      <SelectValue placeholder="All Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Status</SelectItem>
+                      <SelectItem value="active">Active</SelectItem>
+                      <SelectItem value="sold">Sold</SelectItem>
+                      <SelectItem value="pending">Pending</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-base font-medium text-slate-800">Date Added</Label>
+                  <Select value={dateRange} onValueChange={setDateRange}>
+                    <SelectTrigger className="border-slate-300 bg-white">
+                      <SelectValue placeholder="Any Time" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Any Time</SelectItem>
+                      <SelectItem value="today">Today</SelectItem>
+                      <SelectItem value="week">This Week</SelectItem>
+                      <SelectItem value="month">This Month</SelectItem>
+                      <SelectItem value="year">This Year</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
