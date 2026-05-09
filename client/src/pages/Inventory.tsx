@@ -422,7 +422,16 @@ export default function Inventory() {
           </aside>
           <div className="flex-1 flex flex-col">
             <div className="px-4 py-6 lg:px-8 flex items-center justify-between gap-4">
-              <p className="text-slate-600">Total items: {filteredListings.length}</p>
+              <div className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  checked={selectedIds.size === filteredListings.length && filteredListings.length > 0}
+                  onChange={toggleSelectAll}
+                  className="w-4 h-4 rounded border-slate-300"
+                  title="Select all items"
+                />
+                <p className="text-slate-600">Total items: {filteredListings.length}</p>
+              </div>
               <div className="flex flex-wrap items-center gap-3">
                 <Button className="rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 shadow-sm" onClick={() => (window.location.href = "/inventory/new")}>
                   <Plus className="mr-2 h-4 w-4" />
@@ -476,20 +485,7 @@ export default function Inventory() {
                   )}
                 </div>
               )}
-              <div className="mb-4 flex items-center gap-3">
-                <input
-                  type="checkbox"
-                  checked={selectedIds.size === filteredListings.length && filteredListings.length > 0}
-                  onChange={toggleSelectAll}
-                  className="w-4 h-4 rounded border-slate-300"
-                  title="Select all items"
-                />
-                {selectedIds.size > 0 && (
-                  <span className="text-xs font-medium text-slate-600">
-                    {selectedIds.size} item{selectedIds.size !== 1 ? "s" : ""} selected
-                  </span>
-                )}
-              </div>
+
               <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
               {filteredListings.map(listing => (
                 <Card key={listing.id} className="overflow-hidden border-slate-200 bg-white shadow-sm hover:shadow-lg transition-shadow rounded-lg">
