@@ -314,7 +314,7 @@ export default function Inventory() {
 
           <div className="flex-1 px-4 py-8 lg:px-8">
             <div className="mx-auto max-w-7xl">
-              <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
+              <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
               {filteredListings.map(listing => (
                 <Card key={listing.id} className="overflow-hidden border-slate-200 bg-white shadow-sm hover:shadow-lg transition-shadow rounded-lg">
                   <CardContent className="p-0">
