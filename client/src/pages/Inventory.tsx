@@ -153,18 +153,6 @@ export default function Inventory() {
         <div className="px-4 py-3 lg:px-8">
           <div className="flex flex-wrap items-center gap-4">
             <Link href="/" className="text-[2rem] font-bold tracking-tight text-slate-900">Search</Link>
-            <Link href="/" className="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition shadow-sm">
-              Home
-            </Link>
-            <div className="flex min-w-[18rem] flex-1 items-center rounded-lg border border-slate-300 bg-white px-4 py-2.5 shadow-sm">
-              <Search className="mr-3 h-4 w-4 text-slate-400" />
-              <input
-                value={keyword}
-                onChange={event => setKeyword(event.target.value)}
-                placeholder="Search your inventory..."
-                className="w-full bg-transparent text-slate-900 outline-none placeholder:text-slate-400"
-              />
-            </div>
             <div className="ml-auto flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm shadow-sm">
               <span className="rounded-md bg-slate-100 px-3 py-1 font-semibold text-slate-700">My</span>
               <Avatar className="h-8 w-8 border border-slate-200">
@@ -174,17 +162,7 @@ export default function Inventory() {
               <Menu className="h-5 w-5 text-slate-600" />
             </div>
           </div>
-          <nav className="mt-4 grid overflow-x-auto border border-slate-200 bg-white text-slate-950 md:grid-cols-5 xl:grid-cols-10 rounded-lg shadow-sm">
-            {categoryLinks.map(categoryLink => (
-              <Link
-                key={categoryLink.value}
-                href={`/category/${categoryLink.value}`}
-                className={`border-r border-slate-200 px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider transition hover:bg-slate-50 ${category === categoryLink.value ? "bg-slate-900 text-white" : "bg-white text-slate-950"}`}
-              >
-                {categoryLink.label}
-              </Link>
-            ))}
-          </nav>
+
         </div>
       </header>
 
@@ -203,6 +181,28 @@ export default function Inventory() {
           />
         </div>
       </section>
+
+      <nav className="border-b border-slate-200 bg-white text-slate-950 shadow-sm">
+        <div className="px-4 lg:px-8">
+          <div className="flex flex-nowrap overflow-x-auto">
+            <Link
+              href="/"
+              className="border-r border-slate-200 px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider transition hover:bg-slate-50 bg-white text-slate-950 whitespace-nowrap"
+            >
+              Home
+            </Link>
+            {categoryLinks.map(categoryLink => (
+              <Link
+                key={categoryLink.value}
+                href={`/category/${categoryLink.value}`}
+                className={`border-r border-slate-200 px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider transition hover:bg-slate-50 whitespace-nowrap ${category === categoryLink.value ? "bg-slate-900 text-white" : "bg-white text-slate-950"}`}
+              >
+                {categoryLink.label}
+              </Link>
+            ))}
+          </div>
+        </div>
+      </nav>
 
       <main className="flex flex-col">
         <div className="px-4 py-8 lg:px-8 border-b border-slate-200">
