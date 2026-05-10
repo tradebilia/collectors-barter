@@ -239,7 +239,7 @@ export default function Inventory() {
                   <h3 className="text-sm font-semibold text-slate-900">Filters</h3>
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs font-medium text-slate-800">Search by Item Title or Certification #</Label>
+                  <Label className="text-xs font-medium text-slate-800">Search by Keyword</Label>
                   <Input value={keyword} onChange={event => setKeyword(event.target.value)} placeholder="Search inventory" className="border-slate-300 bg-white text-xs h-8" />
                 </div>
 
