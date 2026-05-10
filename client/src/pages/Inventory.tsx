@@ -406,7 +406,7 @@ export default function Inventory() {
           </aside>
 
           <div className="flex-1 py-8 px-4 ml-64">
-            <div className="px-4 py-8 lg:px-8 border-b border-slate-200 -mx-4 -mt-8 -mb-8 px-4 mb-8">
+            <div className="px-4 py-4 lg:px-8 border-b border-slate-200 -mx-4 -mt-8 -mb-8 px-4 mb-4">
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div className="flex gap-4">
                   <div className="bg-blue-50 rounded-lg p-6 border border-blue-200 min-w-48">
