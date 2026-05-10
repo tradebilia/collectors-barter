@@ -382,6 +382,25 @@ export default function Inventory() {
                   </div>
                   <Switch checked={tradeOnly} onCheckedChange={setTradeOnly} />
                 </div>
+
+                <Button
+                  onClick={() => {
+                    setKeyword('');
+                    setCategory('all');
+                    setGraderCompany('all');
+                    setGradeRange('all');
+                    setSortBy('date_added');
+                    setCondition('all');
+                    setMinValue('');
+                    setMaxValue('');
+                    setStatus('all');
+                    setDateRange('all');
+                    setTradeOnly(false);
+                  }}
+                  className="w-full bg-slate-300 text-slate-900 hover:bg-slate-400 text-xs h-8 font-medium"
+                >
+                  Reset
+                </Button>
               </CardContent>
             </Card>
           </aside>
