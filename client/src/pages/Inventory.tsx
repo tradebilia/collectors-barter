@@ -174,12 +174,7 @@ export default function Inventory() {
           <div className="flex-shrink-0">
             <img src="/manus-storage/tradebilia-longform-no-navy-clean_d2f04453.png" alt="Tradebilia" className="h-14 w-auto object-contain" />
           </div>
-          <div className="flex-1 flex justify-center">
-            <div className="flex items-center gap-2 bg-white/10 rounded-lg px-4 py-2 max-w-2xl w-full">
-              <Search className="h-4 w-4 text-white/70 flex-shrink-0" />
-              <input type="text" placeholder="Search inventory..." className="bg-transparent text-white text-sm placeholder-white/50 outline-none w-full" />
-            </div>
-          </div>
+          <div className="flex-1"></div>
           <div className="flex items-center gap-4 flex-shrink-0">
             <button className="rounded-lg p-2 text-white/70 transition hover:bg-white/10 hover:text-white" title="Messages">
               <MessageSquareText className="h-5 w-5" />
