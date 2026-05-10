@@ -408,9 +408,15 @@ export default function Inventory() {
           <div className="flex-1 py-8 px-4 ml-64">
             <div className="px-4 py-8 lg:px-8 border-b border-slate-200 -mx-4 -mt-8 -mb-8 px-4 mb-8">
               <div className="flex flex-wrap items-center justify-between gap-4">
-                <div>
-                  <h2 className="text-2xl font-bold text-slate-900">Your Collection</h2>
-                  <p className="mt-1 text-slate-600">Total items: {filteredListings.length}</p>
+                <div className="flex gap-4">
+                  <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                    <p className="text-xs font-semibold text-blue-600 uppercase">Total Items</p>
+                    <p className="text-2xl font-bold text-blue-900 mt-1">{filteredListings.length}</p>
+                  </div>
+                  <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+                    <p className="text-xs font-semibold text-green-600 uppercase">Total Value</p>
+                    <p className="text-2xl font-bold text-green-900 mt-1">${filteredListings.reduce((sum, l) => sum + (Number(l.estimatedValue) || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                  </div>
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
                   <Button className="rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 shadow-sm" onClick={() => (window.location.href = "/inventory/new")}>
