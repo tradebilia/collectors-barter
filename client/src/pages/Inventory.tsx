@@ -240,13 +240,13 @@ export default function Inventory() {
                 </div>
                 <div className="space-y-1">
                   <Label className="text-xs font-medium text-slate-800">Search by Item Title or Certification #</Label>
-                  <Input value={keyword} onChange={event => setKeyword(event.target.value)} placeholder="Search inventory" className="border-slate-300 bg-white" />
+                  <Input value={keyword} onChange={event => setKeyword(event.target.value)} placeholder="Search inventory" className="border-slate-300 bg-white text-xs h-8" />
                 </div>
 
                 <div className="space-y-1">
                   <Label className="text-xs font-medium text-slate-800">Category</Label>
                   <Select value={category} onValueChange={setCategory}>
-                    <SelectTrigger className="border-slate-300 bg-white">
+                    <SelectTrigger className="border-slate-300 bg-white h-8 text-xs">
                       <SelectValue placeholder="Category" />
                     </SelectTrigger>
                     <SelectContent>
@@ -261,7 +261,7 @@ export default function Inventory() {
                 <div className="space-y-1">
                   <Label className="text-xs font-medium text-slate-800">Grading Authority</Label>
                   <Select value={graderCompany} onValueChange={setGraderCompany}>
-                    <SelectTrigger className="border-slate-300 bg-white">
+                    <SelectTrigger className="border-slate-300 bg-white h-8 text-xs">
                       <SelectValue placeholder="Select grading company" />
                     </SelectTrigger>
                     <SelectContent>
@@ -277,7 +277,7 @@ export default function Inventory() {
                 <div className="space-y-1">
                   <Label className="text-xs font-medium text-slate-800">Grade Range</Label>
                   <Select value={gradeRange} onValueChange={setGradeRange}>
-                    <SelectTrigger className="border-slate-300 bg-white">
+                    <SelectTrigger className="border-slate-300 bg-white h-8 text-xs">
                       <SelectValue placeholder="1-10" />
                     </SelectTrigger>
                     <SelectContent>
@@ -293,7 +293,7 @@ export default function Inventory() {
                 <div className="space-y-1">
                   <Label className="text-xs font-medium text-slate-800">Sort By</Label>
                   <Select value={sortBy} onValueChange={setSortBy}>
-                    <SelectTrigger className="border-slate-300 bg-white">
+                    <SelectTrigger className="border-slate-300 bg-white h-8 text-xs">
                       <SelectValue placeholder="Date Added" />
                     </SelectTrigger>
                     <SelectContent>
@@ -309,7 +309,7 @@ export default function Inventory() {
                 <div className="space-y-1">
                   <Label className="text-xs font-medium text-slate-800">Condition</Label>
                   <Select value={condition} onValueChange={setCondition}>
-                    <SelectTrigger className="border-slate-300 bg-white">
+                    <SelectTrigger className="border-slate-300 bg-white h-8 text-xs">
                       <SelectValue placeholder="All Conditions" />
                     </SelectTrigger>
                     <SelectContent>
@@ -332,14 +332,14 @@ export default function Inventory() {
                       placeholder="Min"
                       value={minValue}
                       onChange={e => setMinValue(e.target.value)}
-                      className="border-slate-300 bg-white"
+                      className="border-slate-300 bg-white text-xs h-8"
                     />
                     <Input
                       type="number"
                       placeholder="Max"
                       value={maxValue}
                       onChange={e => setMaxValue(e.target.value)}
-                      className="border-slate-300 bg-white"
+                      className="border-slate-300 bg-white text-xs h-8"
                     />
                   </div>
                 </div>
@@ -347,7 +347,7 @@ export default function Inventory() {
                 <div className="space-y-1">
                   <Label className="text-xs font-medium text-slate-800">Status</Label>
                   <Select value={status} onValueChange={setStatus}>
-                    <SelectTrigger className="border-slate-300 bg-white">
+                    <SelectTrigger className="border-slate-300 bg-white h-8 text-xs">
                       <SelectValue placeholder="All Status" />
                     </SelectTrigger>
                     <SelectContent>
@@ -362,7 +362,7 @@ export default function Inventory() {
                 <div className="space-y-1">
                   <Label className="text-xs font-medium text-slate-800">Date Added</Label>
                   <Select value={dateRange} onValueChange={setDateRange}>
-                    <SelectTrigger className="border-slate-300 bg-white">
+                    <SelectTrigger className="border-slate-300 bg-white h-8 text-xs">
                       <SelectValue placeholder="Any Time" />
                     </SelectTrigger>
                     <SelectContent>
