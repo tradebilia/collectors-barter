@@ -67,20 +67,13 @@ export default function Inventory() {
   const [listingToDelete, setListingToDelete] = useState<number | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
 
-  const clearAllFilters = () => {
-    setKeyword("");
-    setCategory("all");
-    setGraderCompany("all");
-    setGradeRange("all");
-    setCondition("all");
-    setMinValue("");
-    setMaxValue("");
-    setStatus("all");
-    setDateRange("all");
-    setTradeOnly(false);
+  const toggleSelectAll = () => {
+    if (selectedIds.size === filteredListings.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filteredListings.map(l => l.id)));
+    }
   };
-
-  const hasActiveFilters = keyword !== "" || category !== "all" || graderCompany !== "all" || gradeRange !== "all" || condition !== "all" || minValue !== "" || maxValue !== "" || status !== "all" || dateRange !== "all" || tradeOnly;
 
   const dashboardQuery = trpc.market.dashboard.useQuery(undefined, {
     enabled: isAuthenticated,
@@ -123,24 +116,6 @@ export default function Inventory() {
       return b.id - a.id;
     });
   }, [category, condition, dateRange, gradeRange, graderCompany, keyword, listings, maxValue, minValue, sortBy, status, tradeOnly]);
-
-  const toggleSelectAll = () => {
-    if (selectedIds.size === filteredListings.length) {
-      setSelectedIds(new Set());
-    } else {
-      setSelectedIds(new Set(filteredListings.map(l => l.id)));
-    }
-  };
-
-  const toggleSelectItem = (id: number) => {
-    const newSelected = new Set(selectedIds);
-    if (newSelected.has(id)) {
-      newSelected.delete(id);
-    } else {
-      newSelected.add(id);
-    }
-    setSelectedIds(newSelected);
-  };
 
   const exportInventory = () => {
     const payload = filteredListings.map(listing => ({
@@ -226,11 +201,11 @@ export default function Inventory() {
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat'
         }} />
-        <div className="relative flex w-full h-48 items-center justify-start py-0 sm:h-56 lg:h-64 overflow-hidden" style={{ maxHeight: '300px', marginLeft: '375px' }}>
+        <div className="relative flex w-full h-48 items-center justify-start py-0 sm:h-56 lg:h-64 overflow-hidden pl-8 lg:pl-16" style={{ maxHeight: '300px' }}>
           <img
             src="/manus-storage/Myinventory_467a8c30.svg"
             alt="My Inventory"
-            style={{ height: '900px', width: '900px', objectFit: 'contain', maxWidth: '100%' }}
+            style={{ height: '800px', width: '800px', objectFit: 'contain', maxWidth: '100%' }}
           />
         </div>
       </section>
@@ -256,20 +231,41 @@ export default function Inventory() {
       </nav>
 
       <main className="flex flex-col">
+        <div className="px-4 py-8 lg:px-8 border-b border-slate-200">
+          <div className="mx-auto max-w-7xl">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <h2 className="text-2xl font-bold text-slate-900">Your Collection</h2>
+                <p className="mt-1 text-slate-600">Total items: {filteredListings.length}</p>
+              </div>
+              <div className="flex flex-wrap items-center gap-3">
+                <Button className="rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 shadow-sm" onClick={() => (window.location.href = "/inventory/new")}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Item
+                </Button>
+                <Button variant="outline" className="rounded-lg border-slate-300 px-6 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50" onClick={exportInventory}>
+                  <Download className="mr-2 h-4 w-4" />
+                  Export
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div className="flex flex-1">
-          <aside className="w-64 border-r border-slate-200 bg-slate-50 overflow-y-auto flex-shrink-0">
+          <aside className="w-64 border-r border-slate-200 bg-slate-50 p-6 overflow-y-auto">
             <Card className="border-0 bg-transparent shadow-none">
-              <CardContent className="space-y-3 p-6">
-                <div className="pb-3 border-b border-slate-200">
-                  <h3 className="text-sm font-semibold text-slate-900">Filters</h3>
+              <CardContent className="space-y-5 p-6">
+                <div className="pb-4 border-b border-slate-200">
+                  <h3 className="text-lg font-semibold text-slate-900">Filters</h3>
                 </div>
-                <div className="space-y-1">
-                  <Label className="text-xs font-medium text-slate-800">Search by Item Title or Certification #</Label>
+                <div className="space-y-2">
+                  <Label className="text-base font-medium text-slate-800">Search by Item Title or Certification #</Label>
                   <Input value={keyword} onChange={event => setKeyword(event.target.value)} placeholder="Search inventory" className="border-slate-300 bg-white" />
                 </div>
 
-                <div className="space-y-1">
-                  <Label className="text-xs font-medium text-slate-800">Category</Label>
+                <div className="space-y-2">
+                  <Label className="text-base font-medium text-slate-800">Category</Label>
                   <Select value={category} onValueChange={setCategory}>
                     <SelectTrigger className="border-slate-300 bg-white">
                       <SelectValue placeholder="Category" />
@@ -283,8 +279,8 @@ export default function Inventory() {
                   </Select>
                 </div>
 
-                <div className="space-y-1">
-                  <Label className="text-xs font-medium text-slate-800">Grading Authority</Label>
+                <div className="space-y-2">
+                  <Label className="text-base font-medium text-slate-800">Grading Authority</Label>
                   <Select value={graderCompany} onValueChange={setGraderCompany}>
                     <SelectTrigger className="border-slate-300 bg-white">
                       <SelectValue placeholder="Select grading company" />
@@ -299,8 +295,8 @@ export default function Inventory() {
                   </Select>
                 </div>
 
-                <div className="space-y-1">
-                  <Label className="text-xs font-medium text-slate-800">Grade Range</Label>
+                <div className="space-y-2">
+                  <Label className="text-base font-medium text-slate-800">Grade Range</Label>
                   <Select value={gradeRange} onValueChange={setGradeRange}>
                     <SelectTrigger className="border-slate-300 bg-white">
                       <SelectValue placeholder="1-10" />
@@ -315,8 +311,8 @@ export default function Inventory() {
                   </Select>
                 </div>
 
-                <div className="space-y-1">
-                  <Label className="text-xs font-medium text-slate-800">Sort By</Label>
+                <div className="space-y-2">
+                  <Label className="text-base font-medium text-slate-800">Sort By</Label>
                   <Select value={sortBy} onValueChange={setSortBy}>
                     <SelectTrigger className="border-slate-300 bg-white">
                       <SelectValue placeholder="Date Added" />
@@ -331,8 +327,8 @@ export default function Inventory() {
                   </Select>
                 </div>
 
-                <div className="space-y-1">
-                  <Label className="text-xs font-medium text-slate-800">Condition</Label>
+                <div className="space-y-2">
+                  <Label className="text-base font-medium text-slate-800">Condition</Label>
                   <Select value={condition} onValueChange={setCondition}>
                     <SelectTrigger className="border-slate-300 bg-white">
                       <SelectValue placeholder="All Conditions" />
@@ -349,8 +345,8 @@ export default function Inventory() {
                   </Select>
                 </div>
 
-                <div className="space-y-1">
-                  <Label className="text-xs font-medium text-slate-800">Value Range</Label>
+                <div className="space-y-2">
+                  <Label className="text-base font-medium text-slate-800">Value Range</Label>
                   <div className="flex gap-2">
                     <Input
                       type="number"
@@ -369,8 +365,8 @@ export default function Inventory() {
                   </div>
                 </div>
 
-                <div className="space-y-1">
-                  <Label className="text-xs font-medium text-slate-800">Status</Label>
+                <div className="space-y-2">
+                  <Label className="text-base font-medium text-slate-800">Status</Label>
                   <Select value={status} onValueChange={setStatus}>
                     <SelectTrigger className="border-slate-300 bg-white">
                       <SelectValue placeholder="All Status" />
@@ -384,8 +380,8 @@ export default function Inventory() {
                   </Select>
                 </div>
 
-                <div className="space-y-1">
-                  <Label className="text-xs font-medium text-slate-800">Date Added</Label>
+                <div className="space-y-2">
+                  <Label className="text-base font-medium text-slate-800">Date Added</Label>
                   <Select value={dateRange} onValueChange={setDateRange}>
                     <SelectTrigger className="border-slate-300 bg-white">
                       <SelectValue placeholder="Any Time" />
@@ -400,95 +396,28 @@ export default function Inventory() {
                   </Select>
                 </div>
 
-                <div className="flex items-center justify-between rounded-xl border border-slate-300 bg-white px-3 py-2">
+                <div className="flex items-center justify-between rounded-xl border border-slate-300 bg-white px-4 py-3">
                   <div>
-                    <p className="text-xs font-medium text-slate-900">Show Only Items</p>
-                    <p className="text-xs text-slate-600">Listed for Trade</p>
+                    <p className="text-base font-medium text-slate-900">Show Only Items</p>
+                    <p className="text-sm text-slate-600">Listed for Trade</p>
                   </div>
                   <Switch checked={tradeOnly} onCheckedChange={setTradeOnly} />
                 </div>
-
-                {hasActiveFilters && (
-                  <Button
-                    variant="outline"
-                    className="w-full text-xs font-medium text-slate-700 hover:bg-slate-100"
-                    onClick={clearAllFilters}
-                  >
-                    Clear All Filters
-                  </Button>
-                )}
               </CardContent>
             </Card>
           </aside>
-          <div className="flex-1 flex flex-col">
-            <div className="px-4 py-6 lg:px-8 flex items-center justify-between gap-4">
-              <p className="text-slate-600">Total items: {filteredListings.length}</p>
-              <div className="flex flex-wrap items-center gap-3">
-                <Button className="rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 shadow-sm" onClick={() => (window.location.href = "/inventory/new")}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add Item
-                </Button>
-                <Button variant="outline" className="rounded-lg border-slate-300 px-6 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50" onClick={exportInventory}>
-                  <Download className="mr-2 h-4 w-4" />
-                  Export
-                </Button>
-              </div>
-            </div>
-            <div className="flex-1 py-8 px-4">
+
+          <div className="flex-1 py-8 px-4">
             <div>
-              {hasActiveFilters && (
-                <div className="mb-4 flex flex-wrap gap-2">
-                  {keyword && (
-                    <Badge variant="secondary" className="bg-blue-100 text-blue-700 border-0 text-xs">
-                      Search: {keyword}
-                      <button onClick={() => setKeyword("")} className="ml-1 hover:opacity-70">x</button>
-                    </Badge>
-                  )}
-                  {category !== "all" && (
-                    <Badge variant="secondary" className="bg-blue-100 text-blue-700 border-0 text-xs">
-                      Category: {category}
-                      <button onClick={() => setCategory("all")} className="ml-1 hover:opacity-70">x</button>
-                    </Badge>
-                  )}
-                  {condition !== "all" && (
-                    <Badge variant="secondary" className="bg-blue-100 text-blue-700 border-0 text-xs">
-                      Condition: {condition}
-                      <button onClick={() => setCondition("all")} className="ml-1 hover:opacity-70">x</button>
-                    </Badge>
-                  )}
-                  {status !== "all" && (
-                    <Badge variant="secondary" className="bg-blue-100 text-blue-700 border-0 text-xs">
-                      Status: {status}
-                      <button onClick={() => setStatus("all")} className="ml-1 hover:opacity-70">x</button>
-                    </Badge>
-                  )}
-                  {(minValue || maxValue) && (
-                    <Badge variant="secondary" className="bg-blue-100 text-blue-700 border-0 text-xs">
-                      Value: ${minValue || "0"}-${maxValue || "max"}
-                      <button onClick={() => { setMinValue(""); setMaxValue(""); }} className="ml-1 hover:opacity-70">x</button>
-                    </Badge>
-                  )}
-                  {tradeOnly && (
-                    <Badge variant="secondary" className="bg-blue-100 text-blue-700 border-0 text-xs">
-                      For Trade Only
-                      <button onClick={() => setTradeOnly(false)} className="ml-1 hover:opacity-70">x</button>
-                    </Badge>
-                  )}
-                </div>
-              )}
-              <div className="mb-4 flex items-center gap-3">
+              <div className="mb-4 flex items-center gap-2">
                 <input
                   type="checkbox"
+                  id="select-all"
                   checked={selectedIds.size === filteredListings.length && filteredListings.length > 0}
                   onChange={toggleSelectAll}
-                  className="w-4 h-4 rounded border-slate-300"
-                  title="Select all items"
+                  className="w-4 h-4 rounded border-slate-300 cursor-pointer"
                 />
-                {selectedIds.size > 0 && (
-                  <span className="text-xs font-medium text-slate-600">
-                    {selectedIds.size} item{selectedIds.size !== 1 ? "s" : ""} selected
-                  </span>
-                )}
+                <label htmlFor="select-all" className="text-sm font-medium text-slate-700 cursor-pointer">Select All</label>
               </div>
               <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
               {filteredListings.map(listing => (
@@ -508,18 +437,9 @@ export default function Inventory() {
                     </Link>
                     <div className="p-4 space-y-3">
                       <div className="flex items-start justify-between gap-2">
-                        <div className="flex items-start gap-2 flex-1">
-                          <input
-                            type="checkbox"
-                            checked={selectedIds.has(listing.id)}
-                            onChange={() => toggleSelectItem(listing.id)}
-                            className="w-4 h-4 rounded border-slate-300 mt-0.5 flex-shrink-0"
-                            onClick={(e) => e.stopPropagation()}
-                          />
-                          <Link href={`/listings/${listing.id}`} className="flex-1">
-                            <h3 className="font-bold text-slate-900 line-clamp-2 hover:text-blue-600 transition">{listing.title}</h3>
-                          </Link>
-                        </div>
+                        <Link href={`/listings/${listing.id}`} className="flex-1">
+                          <h3 className="font-semibold text-slate-900 line-clamp-2 hover:text-blue-600 transition">{listing.title}</h3>
+                        </Link>
                         <button type="button" onClick={() => shareListing(listing.id)} className="text-slate-400 hover:text-slate-600 transition flex-shrink-0" title="Share listing">
                           <Share2 className="h-4 w-4" />
                         </button>
@@ -560,26 +480,12 @@ export default function Inventory() {
               {filteredListings.length === 0 ? (
                 <div className="col-span-full rounded-[1.75rem] border border-dashed border-slate-300 bg-white p-10 text-center">
                   <p className="text-xl font-semibold text-slate-900">No inventory items match these filters.</p>
-                  <p className="mt-3 text-slate-600">
-                    {hasActiveFilters
-                      ? "Try adjusting your filters or clearing them all to see your full collection."
-                      : "You haven't added any items yet. Click 'Add Item' to start building your collection."}
-                  </p>
-                  {hasActiveFilters && (
-                    <Button
-                      variant="outline"
-                      className="mt-4 text-slate-700 border-slate-300 hover:bg-slate-50"
-                      onClick={clearAllFilters}
-                    >
-                      Clear All Filters
-                    </Button>
-                  )}
+                  <p className="mt-3 text-slate-600">Adjust the filter rail or add a new collectible to expand your Trade Proposal options.</p>
                 </div>
               ) : null}
             </div>
           </div>
-            </div>
-          </div>
+        </div>
 
         <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
           <AlertDialogContent>

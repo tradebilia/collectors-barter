@@ -15,7 +15,6 @@ import CategoryPage from "./pages/CategoryPage";
 import ReportUser from "./pages/ReportUser";
 import ReferralRequest from "./pages/ReferralRequest";
 import Watchlist from "./pages/Watchlist";
-import { EditInventory } from "./pages/EditInventory";
 
 function Router() {
   return (
@@ -23,7 +22,6 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/inventory" component={Inventory} />
       <Route path="/inventory/new" component={AddInventory} />
-      <Route path="/inventory/:id/edit" component={EditInventory} />
       <Route path="/profile" component={Profile} />
       <Route path="/messages" component={Messages} />
       <Route path="/members" component={MemberSearch} />
