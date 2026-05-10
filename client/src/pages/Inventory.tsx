@@ -409,11 +409,11 @@ export default function Inventory() {
             <div className="px-4 py-8 lg:px-8 border-b border-slate-200 -mx-4 -mt-8 -mb-8 px-4 mb-8">
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div className="flex gap-4">
-                  <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                  <div className="bg-blue-50 rounded-lg p-6 border border-blue-200 min-w-48">
                     <p className="text-xs font-semibold text-blue-600 uppercase">Total Items</p>
                     <p className="text-2xl font-bold text-blue-900 mt-1">{filteredListings.length}</p>
                   </div>
-                  <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+                  <div className="bg-green-50 rounded-lg p-6 border border-green-200 min-w-48">
                     <p className="text-xs font-semibold text-green-600 uppercase">Total Value</p>
                     <p className="text-2xl font-bold text-green-900 mt-1">${filteredListings.reduce((sum, l) => sum + (Number(l.estimatedValue) || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                   </div>
