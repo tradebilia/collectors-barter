@@ -422,6 +422,17 @@ export default function Inventory() {
                     <Download className="mr-2 h-4 w-4" />
                     Export
                   </Button>
+                  {selectedIds.size > 0 && (
+                    <Button className="rounded-lg bg-red-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-red-700 shadow-sm" onClick={() => {
+                      if (confirm(`Delete ${selectedIds.size} selected item(s)?`)) {
+                        setSelectedIds(new Set());
+                        alert(`Deleting ${selectedIds.size} items...`);
+                      }
+                    }}>
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Delete Selected ({selectedIds.size})
+                    </Button>
+                  )}
                 </div>
               </div>
             </div>
@@ -438,7 +449,24 @@ export default function Inventory() {
               </div>
               <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
               {filteredListings.map(listing => (
-                <Card key={listing.id} className="overflow-hidden border-slate-200 bg-white shadow-sm hover:shadow-lg transition-shadow rounded-lg">
+                <Card key={listing.id} className="overflow-hidden border-slate-200 bg-white shadow-sm hover:shadow-lg transition-shadow rounded-lg relative">
+                  <div className="absolute top-3 left-3 z-10">
+                    <input
+                      type="checkbox"
+                      id={`item-${listing.id}`}
+                      checked={selectedIds.has(listing.id)}
+                      onChange={(e) => {
+                        const newSelected = new Set(selectedIds);
+                        if (e.target.checked) {
+                          newSelected.add(listing.id);
+                        } else {
+                          newSelected.delete(listing.id);
+                        }
+                        setSelectedIds(newSelected);
+                      }}
+                      className="w-4 h-4 cursor-pointer"
+                    />
+                  </div>
                   <CardContent className="p-0">
                     <Link href={`/listings/${listing.id}`} className="block">
                       <div className="relative flex aspect-square items-center justify-center overflow-hidden bg-gradient-to-br from-slate-100 to-slate-200">
