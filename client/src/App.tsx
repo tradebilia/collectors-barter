@@ -15,6 +15,9 @@ import CategoryPage from "./pages/CategoryPage";
 import ReportUser from "./pages/ReportUser";
 import ReferralRequest from "./pages/ReferralRequest";
 import Watchlist from "./pages/Watchlist";
+import AccountSetup from "./pages/AccountSetup";
+import AccountSettings from "./pages/AccountSettings";
+import PublicProfile from "./pages/PublicProfile";
 
 function Router() {
   return (
@@ -23,6 +26,9 @@ function Router() {
       <Route path="/inventory" component={Inventory} />
       <Route path="/inventory/new" component={AddInventory} />
       <Route path="/profile" component={Profile} />
+      <Route path="/account-setup" component={AccountSetup} />
+      <Route path="/account-settings" component={AccountSettings} />
+      <Route path="/profile/:userId" component={PublicProfile} />
       <Route path="/messages" component={Messages} />
       <Route path="/members" component={MemberSearch} />
       <Route path="/report-user" component={ReportUser} />
