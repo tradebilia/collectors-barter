@@ -17,6 +17,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { getLoginUrl } from "@/const";
+
 import { resolveTradebiliaListingImage } from "@/lib/listingImages";
 import { trpc } from "@/lib/trpc";
 import { Download, Loader2, Menu, MessageSquareText, Pencil, Plus, Search, Share2, Trash2 } from "lucide-react";
@@ -422,17 +423,15 @@ export default function Inventory() {
                     <Download className="mr-2 h-4 w-4" />
                     Export
                   </Button>
-                  {selectedIds.size > 0 && (
-                    <Button className="rounded-lg bg-red-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-red-700 shadow-sm" onClick={() => {
-                      if (confirm(`Delete ${selectedIds.size} selected item(s)?`)) {
+                  <Button className="rounded-lg bg-red-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-red-700 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed" onClick={() => {
+                      if (selectedIds.size > 0 && confirm(`Delete ${selectedIds.size} selected item(s)?`)) {
                         setSelectedIds(new Set());
                         alert(`Deleting ${selectedIds.size} items...`);
                       }
-                    }}>
+                    }} disabled={selectedIds.size === 0}>
                       <Trash2 className="mr-2 h-4 w-4" />
                       Delete Selected ({selectedIds.size})
                     </Button>
-                  )}
                 </div>
               </div>
             </div>
@@ -448,21 +447,7 @@ export default function Inventory() {
                   />
                   <label htmlFor="select-all" className="text-sm font-medium text-slate-700 cursor-pointer">Select All</label>
                 </div>
-                {selectedIds.size > 0 && (
-                  <Button
-                    variant="outline"
-                    className="px-3 py-1 text-xs text-red-600 border-red-200 hover:bg-red-50"
-                    onClick={() => {
-                      if (confirm(`Delete ${selectedIds.size} selected item(s)?`)) {
-                        setSelectedIds(new Set());
-                        alert(`Deleting ${selectedIds.size} items...`);
-                      }
-                    }}
-                  >
-                    <Trash2 className="h-3 w-3 mr-1" />
-                    Delete
-                  </Button>
-                )}
+
               </div>
               <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
               {filteredListings.map(listing => (
