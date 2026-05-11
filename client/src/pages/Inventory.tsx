@@ -437,15 +437,32 @@ export default function Inventory() {
               </div>
             </div>
             <div>
-              <div className="mb-4 flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="select-all"
-                  checked={selectedIds.size === filteredListings.length && filteredListings.length > 0}
-                  onChange={toggleSelectAll}
-                  className="w-4 h-4 rounded border-slate-300 cursor-pointer"
-                />
-                <label htmlFor="select-all" className="text-sm font-medium text-slate-700 cursor-pointer">Select All</label>
+              <div className="mb-4 flex items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="select-all"
+                    checked={selectedIds.size === filteredListings.length && filteredListings.length > 0}
+                    onChange={toggleSelectAll}
+                    className="w-4 h-4 rounded border-slate-300 cursor-pointer"
+                  />
+                  <label htmlFor="select-all" className="text-sm font-medium text-slate-700 cursor-pointer">Select All</label>
+                </div>
+                {selectedIds.size > 0 && (
+                  <Button
+                    variant="outline"
+                    className="px-3 py-1 text-xs text-red-600 border-red-200 hover:bg-red-50"
+                    onClick={() => {
+                      if (confirm(`Delete ${selectedIds.size} selected item(s)?`)) {
+                        setSelectedIds(new Set());
+                        alert(`Deleting ${selectedIds.size} items...`);
+                      }
+                    }}
+                  >
+                    <Trash2 className="h-3 w-3 mr-1" />
+                    Delete
+                  </Button>
+                )}
               </div>
               <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
               {filteredListings.map(listing => (
