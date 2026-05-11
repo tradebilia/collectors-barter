@@ -302,7 +302,8 @@
 **Placement:** Add as the first element in the header's top navigation div, before other header content.
 
 **Exception:** Home page (/) does not need a Home button since it IS the home page.
-- [ ] Create Account Setup page for first-time user account configuration
-- [ ] Create Account Settings page for managing and adjusting account details after setup
-- [ ] Create public Profile page for other users to view user information
-- [ ] Add routing and navigation for Account Setup, Account Settings, and Profile pages
+- [x] Create Account Setup page for first-time user account configuration
+- [x] Create Account Settings page for managing and adjusting account details after setup
+- [x] Create public Profile page for other users to view user information
+- [x] Add routing and navigation for Account Setup, Account Settings, and Profile pages
+- [x] Add Login/Sign Up button to home page header that changes to Log Out when user is signed in
