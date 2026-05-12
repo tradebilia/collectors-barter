@@ -321,3 +321,4 @@
 - [x] Remove Bio section from Step 1
 - [x] Move Welcome heading and subtitle below hero section
 - [x] Add Tradebilia logo to hero section
+- [x] Add development step navigation to Account Setup (jump to any step without form validation)

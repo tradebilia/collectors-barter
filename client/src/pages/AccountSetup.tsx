@@ -30,6 +30,7 @@ export default function AccountSetup() {
   const utils = trpc.useUtils();
 
   const [currentStep, setCurrentStep] = useState(1);
+  const [showDevNav, setShowDevNav] = useState(true); // Development navigation
   const [isPhoneVerified, setIsPhoneVerified] = useState(false);
   const [verificationCode, setVerificationCode] = useState("");
   const [showVerification, setShowVerification] = useState(false);
@@ -275,6 +276,43 @@ export default function AccountSetup() {
           </div>
         </div>
       </section>
+
+      {/* Development Navigation */}
+      {showDevNav && (
+        <div className="bg-yellow-50 border-b border-yellow-200 px-4 py-3 lg:px-8">
+          <div className="flex items-center justify-between">
+            <div className="flex gap-2">
+              <Button
+                onClick={() => setCurrentStep(1)}
+                variant={currentStep === 1 ? "default" : "outline"}
+                size="sm"
+              >
+                Step 1
+              </Button>
+              <Button
+                onClick={() => setCurrentStep(2)}
+                variant={currentStep === 2 ? "default" : "outline"}
+                size="sm"
+              >
+                Step 2
+              </Button>
+              <Button
+                onClick={() => setCurrentStep(3)}
+                variant={currentStep === 3 ? "default" : "outline"}
+                size="sm"
+              >
+                Step 3
+              </Button>
+            </div>
+            <button
+              onClick={() => setShowDevNav(false)}
+              className="text-xs text-gray-500 hover:text-gray-700"
+            >
+              Hide Dev Nav
+            </button>
+          </div>
+        </div>
+      )}
 
       <main className="px-4 py-10 lg:px-8">
         <div className="mx-auto max-w-2xl space-y-8">
