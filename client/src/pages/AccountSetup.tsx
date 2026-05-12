@@ -14,14 +14,12 @@ import { Link, useLocation } from "wouter";
 
 const TRADEBILIA_LOGO_URL = "/manus-storage/Tradebilialogo_886a61b7.webp";
 
-type AccountSource = "ebay" | "paypal" | "facebook" | "google" | "amazon";
+type AccountSource = "ebay" | "paypal" | "facebook";
 
 const accountSources: { value: AccountSource; label: string; icon: string }[] = [
   { value: "ebay", label: "eBay", icon: "🏪" },
   { value: "paypal", label: "PayPal", icon: "💳" },
   { value: "facebook", label: "Facebook", icon: "f" },
-  { value: "google", label: "Google", icon: "G" },
-  { value: "amazon", label: "Amazon", icon: "🛒" },
 ];
 
 export default function AccountSetup() {
