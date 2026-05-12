@@ -494,9 +494,17 @@ export default function AccountSetup() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <p className="text-sm text-slate-600">
-                    Select any accounts you'd like to connect. This helps us verify your trading history and build trust in the community.
-                  </p>
+                  <div className="space-y-3">
+                    <p className="text-sm text-slate-600">
+                      Select any accounts you'd like to connect. This helps us verify your trading history and build trust in the community.
+                    </p>
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                      <p className="text-xs text-blue-900 font-medium">🔒 Your credentials are secure</p>
+                      <p className="text-xs text-blue-800 mt-1">
+                        You'll be redirected directly to each site to authorize the connection. We never store your login credentials. We only import your feedback ratings and trading history to build trust on Tradebilia.
+                      </p>
+                    </div>
+                  </div>
                   <div className="grid gap-3 sm:grid-cols-2">
                     {accountSources.map((source) => (
                       <label

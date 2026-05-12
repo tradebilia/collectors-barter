@@ -323,3 +323,4 @@
 - [x] Add Tradebilia logo to hero section
 - [x] Add development step navigation to Account Setup (jump to any step without form validation)
 - [x] Remove Google and Amazon account options from Step 2 import page
+- [x] Update Step 2 messaging to clarify OAuth flow and that only feedback ratings are imported
