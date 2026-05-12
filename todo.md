@@ -320,3 +320,4 @@
 - [x] Move password fields to come after User Name
 - [x] Remove Bio section from Step 1
 - [x] Move Welcome heading and subtitle below hero section
+- [x] Add Tradebilia logo to hero section
