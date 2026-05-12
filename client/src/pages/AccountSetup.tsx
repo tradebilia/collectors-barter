@@ -5,26 +5,24 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+
 import { trpc } from "@/lib/trpc";
-import { ChevronRight, Loader2 } from "lucide-react";
+import { ChevronRight, Loader2, Upload } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Link, useLocation } from "wouter";
 
 const TRADEBILIA_LOGO_URL = "/manus-storage/Tradebilialogo_886a61b7.webp";
 
-const categoryLinks = [
-  { value: "comics", label: "Comics" },
-  { value: "sports_cards", label: "Sports Cards" },
-  { value: "vintage_toys", label: "Vintage Toys" },
-  { value: "video_games", label: "Video Games" },
-  { value: "stamps", label: "Stamps" },
-  { value: "coins", label: "Coins" },
-  { value: "pokemon", label: "Pokemon" },
-  { value: "movies", label: "Movies" },
-  { value: "autographs", label: "Autographs" },
-  { value: "disney_pins", label: "Disney Pins" },
-] as const;
+type AccountSource = "ebay" | "paypal" | "facebook" | "google" | "amazon";
+
+const accountSources: { value: AccountSource; label: string; icon: string }[] = [
+  { value: "ebay", label: "eBay", icon: "🏪" },
+  { value: "paypal", label: "PayPal", icon: "💳" },
+  { value: "facebook", label: "Facebook", icon: "f" },
+  { value: "google", label: "Google", icon: "G" },
+  { value: "amazon", label: "Amazon", icon: "🛒" },
+];
 
 export default function AccountSetup() {
   const { user, isAuthenticated } = useAuth();
@@ -32,13 +30,21 @@ export default function AccountSetup() {
   const utils = trpc.useUtils();
 
   const [currentStep, setCurrentStep] = useState(1);
+  const [isPhoneVerified, setIsPhoneVerified] = useState(false);
+  const [verificationCode, setVerificationCode] = useState("");
+  const [showVerification, setShowVerification] = useState(false);
   const [formData, setFormData] = useState({
-    displayName: "",
+    userName: "",
     fullName: "",
-    location: "",
+    fullAddress: "",
+    email: "",
     phoneNumber: "",
+    password: "",
+    confirmPassword: "",
     bio: "",
+    avatarPreview: "",
   });
+  const [selectedSources, setSelectedSources] = useState<AccountSource[]>([]);
 
   const dashboardQuery = trpc.market.dashboard.useQuery(undefined, {
     enabled: isAuthenticated,
@@ -58,15 +64,17 @@ export default function AccountSetup() {
   useEffect(() => {
     if (dashboardQuery.data?.profile) {
       const profile = dashboardQuery.data.profile;
-      setFormData({
-        displayName: profile.displayName || user?.name || "",
+      setFormData((prev) => ({
+        ...prev,
+        userName: profile.displayName || user?.name || "",
         fullName: profile.contactFullName || user?.name || "",
-        location: profile.contactAddress || "",
+        fullAddress: profile.contactAddress || "",
+        email: user?.email || "",
         phoneNumber: profile.contactPhone || "",
         bio: profile.bio || "",
-      });
+      }));
     }
-  }, [dashboardQuery.data?.profile, user?.name]);
+  }, [dashboardQuery.data?.profile, user?.name, user?.email]);
 
   if (!isAuthenticated) {
     return (
@@ -101,10 +109,86 @@ export default function AccountSetup() {
     }));
   };
 
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setFormData((prev) => ({
+          ...prev,
+          avatarPreview: event.target?.result as string,
+        }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSourceToggle = (source: AccountSource) => {
+    setSelectedSources((prev) =>
+      prev.includes(source) ? prev.filter((s) => s !== source) : [...prev, source]
+    );
+  };
+
   const handleNextStep = () => {
+    // Validate step 1
+    if (currentStep === 1) {
+      if (!formData.userName.trim()) {
+        toast.error("User Name is required");
+        return;
+      }
+      if (!formData.fullName.trim()) {
+        toast.error("Full Name is required");
+        return;
+      }
+      if (!formData.fullAddress.trim()) {
+        toast.error("Full Home Address is required");
+        return;
+      }
+      if (!formData.password.trim()) {
+        toast.error("Password is required");
+        return;
+      }
+      if (formData.password !== formData.confirmPassword) {
+        toast.error("Passwords do not match");
+        return;
+      }
+      if (formData.password.length < 8) {
+        toast.error("Password must be at least 8 characters");
+        return;
+      }
+      if (!formData.phoneNumber.trim()) {
+        toast.error("Phone Number is required");
+        return;
+      }
+      // Show verification screen instead of moving to next step
+      setShowVerification(true);
+      toast.success("Verification code sent to your phone");
+      return;
+    }
     if (currentStep < 3) {
       setCurrentStep(currentStep + 1);
     }
+  };
+
+  const handleVerifyPhone = () => {
+    if (!verificationCode.trim()) {
+      toast.error("Please enter the verification code");
+      return;
+    }
+    // Simulate verification (in production, this would validate against backend)
+    if (verificationCode.length >= 4) {
+      setIsPhoneVerified(true);
+      setShowVerification(false);
+      setVerificationCode("");
+      toast.success("Phone number verified!");
+      setCurrentStep(2);
+    } else {
+      toast.error("Invalid verification code");
+    }
+  };
+
+  const handleResendCode = () => {
+    toast.success("Verification code resent to your phone");
   };
 
   const handlePreviousStep = () => {
@@ -113,15 +197,21 @@ export default function AccountSetup() {
     }
   };
 
+  const handleSkipStep = () => {
+    if (currentStep === 2) {
+      setCurrentStep(3);
+    }
+  };
+
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     saveProfileMutation.mutate({
-      displayName: formData.displayName,
+      displayName: formData.userName,
       bio: formData.bio,
       contactFullName: formData.fullName,
-      contactEmail: user?.email || "",
+      contactEmail: formData.email,
       contactPhone: formData.phoneNumber,
-      contactAddress: formData.location,
+      contactAddress: formData.fullAddress,
       avatar: null,
     });
   };
@@ -137,26 +227,19 @@ export default function AccountSetup() {
             <span>Account Setup</span>
           </div>
         </div>
-        <nav className="grid border-t border-white/10 bg-white text-center text-sm font-semibold text-slate-950 sm:grid-cols-5 xl:grid-cols-10">
-          {categoryLinks.map((category) => (
-            <Link
-              key={category.value}
-              href={`/category/${category.value}`}
-              className="border-r border-slate-200 px-3 py-3 transition hover:bg-slate-100 last:border-r-0"
-            >
-              {category.label}
-            </Link>
-          ))}
-        </nav>
       </header>
+
+      {/* Hero Section */}
+      <section className="relative w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden bg-gradient-to-br from-[#1a1a2e] to-[#0f3460] py-16 text-white">
+        <div className="container relative flex flex-col items-center justify-center text-center">
+          <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">Welcome to Tradebilia</h1>
+          <p className="mt-4 text-lg text-white/80">Let's set up your account in just a few steps</p>
+        </div>
+      </section>
 
       <main className="px-4 py-10 lg:px-8">
         <div className="mx-auto max-w-2xl space-y-8">
-          <div className="text-center">
-            <h1 className="text-4xl font-semibold tracking-tight text-slate-950">Welcome to Tradebilia</h1>
-            <p className="mt-3 text-lg text-slate-600">Let's set up your account in just a few steps</p>
-          </div>
-
+          {/* Progress Indicator */}
           <div className="flex justify-center gap-2">
             {[1, 2, 3].map((step) => (
               <div
@@ -169,6 +252,7 @@ export default function AccountSetup() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Step 1: Basic Information */}
             {currentStep === 1 && (
               <Card className="rounded-[1.5rem] border-slate-200 bg-white shadow-sm">
                 <CardHeader>
@@ -177,13 +261,13 @@ export default function AccountSetup() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="displayName">Display Name *</Label>
+                    <Label htmlFor="userName">User Name *</Label>
                     <Input
-                      id="displayName"
-                      name="displayName"
-                      value={formData.displayName}
+                      id="userName"
+                      name="userName"
+                      value={formData.userName}
                       onChange={handleInputChange}
-                      placeholder="How other collectors will see you"
+                      placeholder="Your unique username"
                       required
                       className="rounded-lg border-slate-200"
                     />
@@ -201,36 +285,41 @@ export default function AccountSetup() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="location">Location</Label>
+                    <Label htmlFor="fullAddress">Full Home Address *</Label>
                     <Input
-                      id="location"
-                      name="location"
-                      value={formData.location}
+                      id="fullAddress"
+                      name="fullAddress"
+                      value={formData.fullAddress}
                       onChange={handleInputChange}
-                      placeholder="City, State or Country"
+                      placeholder="Street address, city, state, zip"
+                      required
                       className="rounded-lg border-slate-200"
                     />
                   </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {currentStep === 2 && (
-              <Card className="rounded-[1.5rem] border-slate-200 bg-white shadow-sm">
-                <CardHeader>
-                  <CardTitle>Contact Information</CardTitle>
-                  <CardDescription>How other collectors can reach you</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="phoneNumber">Phone Number</Label>
+                    <Label htmlFor="password">Password *</Label>
                     <Input
-                      id="phoneNumber"
-                      name="phoneNumber"
-                      type="tel"
-                      value={formData.phoneNumber}
+                      id="password"
+                      name="password"
+                      type="password"
+                      value={formData.password}
                       onChange={handleInputChange}
-                      placeholder="(Optional) Your phone number"
+                      placeholder="Create a strong password (min 8 characters)"
+                      required
+                      className="rounded-lg border-slate-200"
+                    />
+                    <p className="text-xs text-slate-600">Must be at least 8 characters long.</p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="confirmPassword">Confirm Password *</Label>
+                    <Input
+                      id="confirmPassword"
+                      name="confirmPassword"
+                      type="password"
+                      value={formData.confirmPassword}
+                      onChange={handleInputChange}
+                      placeholder="Confirm your password"
+                      required
                       className="rounded-lg border-slate-200"
                     />
                   </div>
@@ -238,23 +327,26 @@ export default function AccountSetup() {
                     <Label>Email Address</Label>
                     <Input
                       disabled
-                      value={user?.email || ""}
+                      value={formData.email}
                       placeholder="Your email"
                       className="rounded-lg border-slate-200 bg-slate-100"
                     />
                     <p className="text-xs text-slate-600">Your email is verified and cannot be changed during setup.</p>
                   </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {currentStep === 3 && (
-              <Card className="rounded-[1.5rem] border-slate-200 bg-white shadow-sm">
-                <CardHeader>
-                  <CardTitle>About You</CardTitle>
-                  <CardDescription>Tell collectors about your collecting interests</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="phoneNumber">Phone Number *</Label>
+                    <Input
+                      id="phoneNumber"
+                      name="phoneNumber"
+                      type="tel"
+                      value={formData.phoneNumber}
+                      onChange={handleInputChange}
+                      placeholder="Your phone number (required for verification)"
+                      required
+                      className="rounded-lg border-slate-200"
+                    />
+                    <p className="text-xs text-slate-600">We'll send a verification code to this number.</p>
+                  </div>
                   <div className="space-y-2">
                     <Label htmlFor="bio">Bio</Label>
                     <Textarea
@@ -263,7 +355,7 @@ export default function AccountSetup() {
                       value={formData.bio}
                       onChange={handleInputChange}
                       placeholder="Share your collecting story, interests, and what you're looking for..."
-                      rows={6}
+                      rows={4}
                       className="rounded-lg border-slate-200"
                     />
                     <p className="text-xs text-slate-600">{formData.bio.length}/500 characters</p>
@@ -272,6 +364,83 @@ export default function AccountSetup() {
               </Card>
             )}
 
+            {/* Step 2: Import from Other Accounts */}
+            {currentStep === 2 && (
+              <Card className="rounded-[1.5rem] border-slate-200 bg-white shadow-sm">
+                <CardHeader>
+                  <CardTitle>Import Account Information</CardTitle>
+                  <CardDescription>
+                    Optionally import your information from other accounts to build your Tradebilia profile
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <p className="text-sm text-slate-600">
+                    Select any accounts you'd like to connect. This helps us verify your trading history and build trust in the community.
+                  </p>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {accountSources.map((source) => (
+                      <label
+                        key={source.value}
+                        className="flex items-center gap-3 rounded-lg border border-slate-200 p-4 cursor-pointer hover:bg-slate-50 transition"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedSources.includes(source.value)}
+                          onChange={() => handleSourceToggle(source.value)}
+                          className="h-4 w-4"
+                        />
+                        <span className="text-sm font-medium">{source.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                  <p className="text-xs text-slate-500 mt-4">
+                    You can skip this step and add accounts later from your account settings.
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Step 3: Avatar & Profile Customization */}
+            {currentStep === 3 && (
+              <Card className="rounded-[1.5rem] border-slate-200 bg-white shadow-sm">
+                <CardHeader>
+                  <CardTitle>Profile Picture</CardTitle>
+                  <CardDescription>Add a profile picture to complete your setup</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex flex-col items-center gap-4">
+                    {formData.avatarPreview ? (
+                      <img
+                        src={formData.avatarPreview}
+                        alt="Avatar preview"
+                        className="h-32 w-32 rounded-full border-4 border-slate-200 object-cover"
+                      />
+                    ) : (
+                      <div className="h-32 w-32 rounded-full border-4 border-dashed border-slate-300 flex items-center justify-center bg-slate-50">
+                        <span className="text-4xl">👤</span>
+                      </div>
+                    )}
+                    <label className="cursor-pointer">
+                      <Button type="button" variant="outline" className="rounded-lg">
+                        <Upload className="mr-2 h-4 w-4" />
+                        Upload Photo
+                      </Button>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleAvatarChange}
+                        className="hidden"
+                      />
+                    </label>
+                    <p className="text-xs text-slate-600 text-center">
+                      JPG, PNG or GIF. Max 5MB.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Action Buttons */}
             <div className="flex gap-4">
               {currentStep > 1 && (
                 <Button
@@ -281,6 +450,16 @@ export default function AccountSetup() {
                   className="flex-1 rounded-lg"
                 >
                   Previous
+                </Button>
+              )}
+              {currentStep === 2 && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleSkipStep}
+                  className="flex-1 rounded-lg"
+                >
+                  Skip
                 </Button>
               )}
               {currentStep < 3 && (
@@ -302,7 +481,7 @@ export default function AccountSetup() {
                   {saveProfileMutation.isPending ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Setting up...
+                      Completing Setup...
                     </>
                   ) : (
                     "Complete Setup"
@@ -311,6 +490,62 @@ export default function AccountSetup() {
               )}
             </div>
           </form>
+
+          {/* Phone Verification Modal */}
+          {showVerification && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+              <Card className="w-full max-w-md rounded-[1.5rem] border-slate-200 bg-white shadow-lg">
+                <CardHeader>
+                  <CardTitle>Verify Your Phone Number</CardTitle>
+                  <CardDescription>
+                    We've sent a verification code to {formData.phoneNumber}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="verificationCode">Verification Code</Label>
+                    <Input
+                      id="verificationCode"
+                      type="text"
+                      value={verificationCode}
+                      onChange={(e) => setVerificationCode(e.target.value)}
+                      placeholder="Enter 6-digit code"
+                      maxLength={6}
+                      className="rounded-lg border-slate-200 text-center text-2xl tracking-widest"
+                      autoFocus
+                    />
+                  </div>
+                  <p className="text-xs text-slate-600 text-center">
+                    Didn't receive the code?{" "}
+                    <button
+                      type="button"
+                      onClick={handleResendCode}
+                      className="text-blue-600 hover:underline font-medium"
+                    >
+                      Resend
+                    </button>
+                  </p>
+                </CardContent>
+                <div className="border-t border-slate-200 px-6 py-4 flex gap-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowVerification(false)}
+                    className="flex-1 rounded-lg"
+                  >
+                    Back
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={handleVerifyPhone}
+                    className="flex-1 rounded-lg bg-blue-600 hover:bg-blue-700"
+                  >
+                    Verify
+                  </Button>
+                </div>
+              </Card>
+            </div>
+          )}
         </div>
       </main>
     </div>
