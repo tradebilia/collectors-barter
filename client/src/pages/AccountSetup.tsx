@@ -258,7 +258,7 @@ export default function AccountSetup() {
       </header>
 
       {/* Hero Section */}
-      <section className="relative w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden bg-gradient-to-br from-[#1a1a2e] to-[#0f3460] py-8 text-white">
+      <section className="relative w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden bg-gradient-to-br from-[#1a1a2e] to-[#0f3460] py-2 text-white">
         <div className="container relative flex flex-col items-center justify-center text-center">
           <img src="/manus-storage/AccountSettings_bcd6f853.svg" alt="Tradebilia Logo" className="h-96 w-96" />
         </div>
