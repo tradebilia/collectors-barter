@@ -51,6 +51,12 @@ export default function AccountSetup() {
     businessLicense: "",
     taxId: "",
     storeDescription: "",
+    businessAddress: "",
+    businessPhone: "",
+    businessEmail: "",
+    businessWebsite: "",
+    yearsInBusiness: "",
+    businessType: "",
   });
   const [showMerchantFields, setShowMerchantFields] = useState(false);
   const [selectedSources, setSelectedSources] = useState<AccountSource[]>([]);
@@ -550,6 +556,80 @@ export default function AccountSetup() {
                           placeholder="Your tax ID or EIN"
                           className="rounded-lg border-slate-200"
                         />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="businessAddress">Business Address *</Label>
+                        <Input
+                          id="businessAddress"
+                          name="businessAddress"
+                          value={formData.businessAddress}
+                          onChange={handleInputChange}
+                          placeholder="Your business address"
+                          className="rounded-lg border-slate-200"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-2">
+                          <Label htmlFor="businessPhone">Business Phone *</Label>
+                          <Input
+                            id="businessPhone"
+                            name="businessPhone"
+                            type="tel"
+                            value={formData.businessPhone}
+                            onChange={handleInputChange}
+                            placeholder="Business phone number"
+                            className="rounded-lg border-slate-200"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="businessEmail">Business Email *</Label>
+                          <Input
+                            id="businessEmail"
+                            name="businessEmail"
+                            type="email"
+                            value={formData.businessEmail}
+                            onChange={handleInputChange}
+                            placeholder="Business email"
+                            className="rounded-lg border-slate-200"
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="businessWebsite">Business Website</Label>
+                        <Input
+                          id="businessWebsite"
+                          name="businessWebsite"
+                          type="url"
+                          value={formData.businessWebsite}
+                          onChange={handleInputChange}
+                          placeholder="https://yourstore.com"
+                          className="rounded-lg border-slate-200"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-2">
+                          <Label htmlFor="yearsInBusiness">Years in Business *</Label>
+                          <Input
+                            id="yearsInBusiness"
+                            name="yearsInBusiness"
+                            type="number"
+                            value={formData.yearsInBusiness}
+                            onChange={handleInputChange}
+                            placeholder="Number of years"
+                            className="rounded-lg border-slate-200"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="businessType">Business Type *</Label>
+                          <Input
+                            id="businessType"
+                            name="businessType"
+                            value={formData.businessType}
+                            onChange={handleInputChange}
+                            placeholder="e.g., Collectibles, Vintage, etc."
+                            className="rounded-lg border-slate-200"
+                          />
+                        </div>
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="storeDescription">Store Description</Label>
