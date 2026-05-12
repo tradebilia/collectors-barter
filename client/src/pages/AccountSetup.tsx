@@ -35,8 +35,12 @@ export default function AccountSetup() {
   const [showVerification, setShowVerification] = useState(false);
   const [formData, setFormData] = useState({
     userName: "",
-    fullName: "",
-    fullAddress: "",
+    firstName: "",
+    lastName: "",
+    street: "",
+    zipCode: "",
+    state: "",
+    country: "",
     email: "",
     phoneNumber: "",
     password: "",
@@ -64,11 +68,17 @@ export default function AccountSetup() {
   useEffect(() => {
     if (dashboardQuery.data?.profile) {
       const profile = dashboardQuery.data.profile;
+      const fullName = profile.contactFullName || user?.name || "";
+      const [first, last] = fullName.split(" ");
       setFormData((prev) => ({
         ...prev,
         userName: profile.displayName || user?.name || "",
-        fullName: profile.contactFullName || user?.name || "",
-        fullAddress: profile.contactAddress || "",
+        firstName: first || "",
+        lastName: last || "",
+        street: profile.contactAddress || "",
+        zipCode: "",
+        state: "",
+        country: "",
         email: user?.email || "",
         phoneNumber: profile.contactPhone || "",
         bio: profile.bio || "",
@@ -136,12 +146,28 @@ export default function AccountSetup() {
         toast.error("User Name is required");
         return;
       }
-      if (!formData.fullName.trim()) {
-        toast.error("Full Name is required");
+      if (!formData.firstName.trim()) {
+        toast.error("First Name is required");
         return;
       }
-      if (!formData.fullAddress.trim()) {
-        toast.error("Full Home Address is required");
+      if (!formData.lastName.trim()) {
+        toast.error("Last Name is required");
+        return;
+      }
+      if (!formData.street.trim()) {
+        toast.error("Street Address is required");
+        return;
+      }
+      if (!formData.zipCode.trim()) {
+        toast.error("Zip Code is required");
+        return;
+      }
+      if (!formData.state.trim()) {
+        toast.error("State is required");
+        return;
+      }
+      if (!formData.country.trim()) {
+        toast.error("Country is required");
         return;
       }
       if (!formData.password.trim()) {
@@ -205,13 +231,15 @@ export default function AccountSetup() {
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    const fullAddress = `${formData.street}, ${formData.zipCode}, ${formData.state}, ${formData.country}`;
+    const fullName = `${formData.firstName} ${formData.lastName}`;
     saveProfileMutation.mutate({
       displayName: formData.userName,
       bio: formData.bio,
-      contactFullName: formData.fullName,
+      contactFullName: fullName,
       contactEmail: formData.email,
       contactPhone: formData.phoneNumber,
-      contactAddress: formData.fullAddress,
+      contactAddress: fullAddress,
       avatar: null,
     });
   };
@@ -273,30 +301,6 @@ export default function AccountSetup() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="fullName">Full Name *</Label>
-                    <Input
-                      id="fullName"
-                      name="fullName"
-                      value={formData.fullName}
-                      onChange={handleInputChange}
-                      placeholder="Your full legal name"
-                      required
-                      className="rounded-lg border-slate-200"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="fullAddress">Full Home Address *</Label>
-                    <Input
-                      id="fullAddress"
-                      name="fullAddress"
-                      value={formData.fullAddress}
-                      onChange={handleInputChange}
-                      placeholder="Street address, city, state, zip"
-                      required
-                      className="rounded-lg border-slate-200"
-                    />
-                  </div>
-                  <div className="space-y-2">
                     <Label htmlFor="password">Password *</Label>
                     <Input
                       id="password"
@@ -323,6 +327,82 @@ export default function AccountSetup() {
                       className="rounded-lg border-slate-200"
                     />
                   </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <Label htmlFor="firstName">First Name *</Label>
+                      <Input
+                        id="firstName"
+                        name="firstName"
+                        value={formData.firstName}
+                        onChange={handleInputChange}
+                        placeholder="First name"
+                        required
+                        className="rounded-lg border-slate-200"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="lastName">Last Name *</Label>
+                      <Input
+                        id="lastName"
+                        name="lastName"
+                        value={formData.lastName}
+                        onChange={handleInputChange}
+                        placeholder="Last name"
+                        required
+                        className="rounded-lg border-slate-200"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="street">Street Address *</Label>
+                    <Input
+                      id="street"
+                      name="street"
+                      value={formData.street}
+                      onChange={handleInputChange}
+                      placeholder="Street address"
+                      required
+                      className="rounded-lg border-slate-200"
+                    />
+                  </div>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="space-y-2">
+                      <Label htmlFor="zipCode">Zip Code *</Label>
+                      <Input
+                        id="zipCode"
+                        name="zipCode"
+                        value={formData.zipCode}
+                        onChange={handleInputChange}
+                        placeholder="Zip code"
+                        required
+                        className="rounded-lg border-slate-200"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="state">State *</Label>
+                      <Input
+                        id="state"
+                        name="state"
+                        value={formData.state}
+                        onChange={handleInputChange}
+                        placeholder="State"
+                        required
+                        className="rounded-lg border-slate-200"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="country">Country *</Label>
+                      <Input
+                        id="country"
+                        name="country"
+                        value={formData.country}
+                        onChange={handleInputChange}
+                        placeholder="Country"
+                        required
+                        className="rounded-lg border-slate-200"
+                      />
+                    </div>
+                  </div>
                   <div className="space-y-2">
                     <Label>Email Address</Label>
                     <Input
@@ -346,19 +426,6 @@ export default function AccountSetup() {
                       className="rounded-lg border-slate-200"
                     />
                     <p className="text-xs text-slate-600">We'll send a verification code to this number.</p>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="bio">Bio</Label>
-                    <Textarea
-                      id="bio"
-                      name="bio"
-                      value={formData.bio}
-                      onChange={handleInputChange}
-                      placeholder="Share your collecting story, interests, and what you're looking for..."
-                      rows={4}
-                      className="rounded-lg border-slate-200"
-                    />
-                    <p className="text-xs text-slate-600">{formData.bio.length}/500 characters</p>
                   </div>
                 </CardContent>
               </Card>

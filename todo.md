@@ -315,3 +315,7 @@
 - [x] Update Account Setup Step 1 to include: User Name, Full Home Address, Password, Phone Number (mandatory with verification)
 - [x] Make phone number mandatory in Account Setup Step 1
 - [x] Add SMS verification flow for phone number validation
+- [x] Split Full Name into First Name and Last Name fields
+- [x] Split Full Home Address into Street, Zip Code, State, Country fields
+- [x] Move password fields to come after User Name
+- [x] Remove Bio section from Step 1
