@@ -307,11 +307,11 @@
 - [x] Create public Profile page for other users to view user information
 - [x] Add routing and navigation for Account Setup, Account Settings, and Profile pages
 - [x] Add Login/Sign Up button to home page header that changes to Log Out when user is signed in
-- [ ] Refactor Account Setup Step 1 to include all basic information (Display Name, Full Name, Location, Email, Phone, Bio)
-- [ ] Create Account Setup Step 2 for importing from other accounts (eBay, PayPal, Facebook, etc.) with skip option
-- [ ] Create Account Setup Step 3 for avatar and profile customization
-- [ ] Make phone number mandatory in Account Setup Step 1
-- [ ] Add SMS verification flow for phone number validation
+- [x] Refactor Account Setup Step 1 to include all basic information (Display Name, Full Name, Location, Email, Phone, Bio)
+- [x] Create Account Setup Step 2 for importing from other accounts (eBay, PayPal, Facebook, etc.) with skip option
+- [x] Create Account Setup Step 3 for avatar and profile customization
+- [x] Make phone number mandatory in Account Setup Step 1
+- [x] Add SMS verification flow for phone number validation
 - [x] Update Account Setup Step 1 to include: User Name, Full Home Address, Password, Phone Number (mandatory with verification)
 - [x] Make phone number mandatory in Account Setup Step 1
 - [x] Add SMS verification flow for phone number validation
