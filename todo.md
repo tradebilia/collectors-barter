@@ -319,3 +319,4 @@
 - [x] Split Full Home Address into Street, Zip Code, State, Country fields
 - [x] Move password fields to come after User Name
 - [x] Remove Bio section from Step 1
+- [x] Move Welcome heading and subtitle below hero section

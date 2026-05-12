@@ -260,13 +260,18 @@ export default function AccountSetup() {
       {/* Hero Section */}
       <section className="relative w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden bg-gradient-to-br from-[#1a1a2e] to-[#0f3460] py-16 text-white">
         <div className="container relative flex flex-col items-center justify-center text-center">
-          <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">Welcome to Tradebilia</h1>
-          <p className="mt-4 text-lg text-white/80">Let's set up your account in just a few steps</p>
+          {/* Hero content can go here if needed */}
         </div>
       </section>
 
       <main className="px-4 py-10 lg:px-8">
         <div className="mx-auto max-w-2xl space-y-8">
+          {/* Welcome Heading */}
+          <div className="text-center">
+            <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">Welcome to Tradebilia</h1>
+            <p className="mt-4 text-lg text-slate-600">Let's set up your account in just a few steps</p>
+          </div>
+
           {/* Progress Indicator */}
           <div className="flex justify-center gap-2">
             {[1, 2, 3].map((step) => (
