@@ -268,7 +268,7 @@ export default function AccountSetup() {
         <div className="container relative flex h-64 items-center justify-center py-0 sm:h-72 sm:py-0 lg:h-80 lg:py-0">
           <div className="flex w-full max-w-6xl items-center justify-center -ml-32">
             <img
-              src="/manus-storage/AccountSettings_bcd6f853.svg"
+              src="/manus-storage/AccountSetup_ffa83564.svg"
               alt="Tradebilia Logo"
               className="h-auto w-full"
             />
