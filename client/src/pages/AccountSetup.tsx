@@ -46,8 +46,22 @@ export default function AccountSetup() {
     confirmPassword: "",
     bio: "",
     avatarPreview: "",
+    isMerchant: false,
+    storeName: "",
+    businessLicense: "",
+    taxId: "",
+    storeDescription: "",
   });
+  const [showMerchantFields, setShowMerchantFields] = useState(false);
   const [selectedSources, setSelectedSources] = useState<AccountSource[]>([]);
+
+  const handleMerchantToggle = () => {
+    setShowMerchantFields(!showMerchantFields);
+    setFormData((prev) => ({
+      ...prev,
+      isMerchant: !prev.isMerchant,
+    }));
+  };
 
   const dashboardQuery = trpc.market.dashboard.useQuery(undefined, {
     enabled: isAuthenticated,
@@ -480,6 +494,77 @@ export default function AccountSetup() {
                     />
                     <p className="text-xs text-slate-600">We'll send a verification code to this number.</p>
                   </div>
+
+                  {/* Merchant Checkbox */}
+                  <div className="border-t border-slate-200 pt-4 mt-4">
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={formData.isMerchant}
+                        onChange={handleMerchantToggle}
+                        className="h-4 w-4 rounded border-slate-300"
+                      />
+                      <span className="text-sm font-medium text-slate-900">
+                        I'm a Store Owner or Professional Merchant
+                      </span>
+                      <span className="ml-auto inline-block bg-purple-100 text-purple-800 text-xs font-semibold px-2 py-1 rounded">Verified Merchant</span>
+                    </label>
+                    <p className="text-xs text-slate-500 mt-2 ml-7">
+                      Merchants get a special designation to build trust with collectors.
+                    </p>
+                  </div>
+
+                  {/* Conditional Merchant Fields */}
+                  {showMerchantFields && (
+                    <div className="space-y-3 bg-purple-50 border border-purple-200 rounded-lg p-4 mt-4">
+                      <h3 className="font-semibold text-slate-900">Store Information</h3>
+                      <div className="space-y-2">
+                        <Label htmlFor="storeName">Store Name *</Label>
+                        <Input
+                          id="storeName"
+                          name="storeName"
+                          value={formData.storeName}
+                          onChange={handleInputChange}
+                          placeholder="Your store name"
+                          className="rounded-lg border-slate-200"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="businessLicense">Business License Number *</Label>
+                        <Input
+                          id="businessLicense"
+                          name="businessLicense"
+                          value={formData.businessLicense}
+                          onChange={handleInputChange}
+                          placeholder="Your business license number"
+                          className="rounded-lg border-slate-200"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="taxId">Tax ID / EIN *</Label>
+                        <Input
+                          id="taxId"
+                          name="taxId"
+                          value={formData.taxId}
+                          onChange={handleInputChange}
+                          placeholder="Your tax ID or EIN"
+                          className="rounded-lg border-slate-200"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="storeDescription">Store Description</Label>
+                        <textarea
+                          id="storeDescription"
+                          name="storeDescription"
+                          value={formData.storeDescription}
+                          onChange={handleInputChange}
+                          placeholder="Tell collectors about your store and specialties"
+                          className="rounded-lg border border-slate-200 p-2 w-full text-sm"
+                          rows={3}
+                        />
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             )}

@@ -324,3 +324,5 @@
 - [x] Add development step navigation to Account Setup (jump to any step without form validation)
 - [x] Remove Google and Amazon account options from Step 2 import page
 - [x] Update Step 2 messaging to clarify OAuth flow and that only feedback ratings are imported
+- [x] Add merchant/store owner checkbox to Step 1
+- [x] Add conditional merchant store information fields (store name, business license, tax ID, etc.)
