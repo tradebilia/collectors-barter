@@ -327,3 +327,4 @@
 - [x] Add merchant/store owner checkbox to Step 1
 - [x] Add conditional merchant store information fields (store name, business license, tax ID, etc.)
 - [x] Expand merchant fields in Step 1: Business Address, Business Phone, Business Email, EIN, Business Website, Years in Business, Business Type
+- [x] Remove Business Type, Years in Business, and Store Description from merchant fields in Step 1

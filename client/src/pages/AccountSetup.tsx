@@ -55,8 +55,6 @@ export default function AccountSetup() {
     businessPhone: "",
     businessEmail: "",
     businessWebsite: "",
-    yearsInBusiness: "",
-    businessType: "",
   });
   const [showMerchantFields, setShowMerchantFields] = useState(false);
   const [selectedSources, setSelectedSources] = useState<AccountSource[]>([]);
@@ -606,43 +604,7 @@ export default function AccountSetup() {
                           className="rounded-lg border-slate-200"
                         />
                       </div>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="space-y-2">
-                          <Label htmlFor="yearsInBusiness">Years in Business *</Label>
-                          <Input
-                            id="yearsInBusiness"
-                            name="yearsInBusiness"
-                            type="number"
-                            value={formData.yearsInBusiness}
-                            onChange={handleInputChange}
-                            placeholder="Number of years"
-                            className="rounded-lg border-slate-200"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="businessType">Business Type *</Label>
-                          <Input
-                            id="businessType"
-                            name="businessType"
-                            value={formData.businessType}
-                            onChange={handleInputChange}
-                            placeholder="e.g., Collectibles, Vintage, etc."
-                            className="rounded-lg border-slate-200"
-                          />
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="storeDescription">Store Description</Label>
-                        <textarea
-                          id="storeDescription"
-                          name="storeDescription"
-                          value={formData.storeDescription}
-                          onChange={handleInputChange}
-                          placeholder="Tell collectors about your store and specialties"
-                          className="rounded-lg border border-slate-200 p-2 w-full text-sm"
-                          rows={3}
-                        />
-                      </div>
+
                     </div>
                   )}
                 </CardContent>
