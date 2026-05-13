@@ -328,3 +328,64 @@
 - [x] Add conditional merchant store information fields (store name, business license, tax ID, etc.)
 - [x] Expand merchant fields in Step 1: Business Address, Business Phone, Business Email, EIN, Business Website, Years in Business, Business Type
 - [x] Remove Business Type, Years in Business, and Store Description from merchant fields in Step 1
+- [ ] Add email verification flow to Step 1 (similar to phone verification)
+- [ ] Add Terms & Conditions and Privacy Policy acceptance checkbox to Step 1
+- [ ] Expand Step 3 with bio section, preferred collecting categories, and notification preferences preview
+- [ ] Add security questions to Step 1 for account recovery
+- [ ] Create Step 4: Account Review and Confirmation (review all entered information before final submission)
+
+## Account Setup Wizard Enhancement (May 2026)
+
+### Database Schema
+- [x] Extended userProfiles table with new columns for Account Setup
+  - acceptedTerms (boolean)
+  - isMerchant (boolean)
+  - securityQuestion (string)
+  - securityAnswer (string)
+  - preferredCategories (JSON)
+  - notificationPreferences (JSON)
+  - emailVerified (boolean)
+  - phoneVerified (boolean)
+
+### Backend (tRPC)
+- [x] Updated saveProfile procedure to accept new Account Setup fields
+- [x] Updated updateProfile function in db.ts to persist all new fields
+- [x] Added field validation and truncation for text fields
+
+### Frontend - Account Setup Wizard
+
+#### Step 1: Basic Information & Verification
+- [x] Added T&C validation before proceeding
+- [x] Added email verification modal with code entry
+- [x] Phone number verification (enhanced existing)
+- [x] Merchant checkbox with designation
+
+#### Step 3: Profile Customization & Preferences
+- [x] Expanded with bio textarea (500 char limit)
+- [x] Added preferred categories multi-select (10 categories)
+- [x] Added notification preferences (4 types)
+- [x] Avatar upload (existing)
+
+#### Step 4: Review & Confirmation (NEW)
+- [x] Review page showing all account information
+- [x] Merchant information section (conditional)
+- [x] Profile preferences summary
+- [x] Verification status display
+- [x] Complete Setup button with loading state
+
+### UI/UX Enhancements
+- [x] Updated progress indicator for 4 steps
+- [x] Updated dev navigation to support 4 steps
+- [x] Email verification modal UI
+- [x] Step 4 review card with organized sections
+- [x] Verification status display
+
+### Testing
+- [x] Created comprehensive vitest test suite (16 tests)
+- [x] All tests passing
+- [x] Coverage includes:
+  - Basic profile fields
+  - Account Setup specific fields
+  - Data validation
+  - Contact information
+  - Combined payload validation

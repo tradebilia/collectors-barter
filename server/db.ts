@@ -879,6 +879,19 @@ export async function updateProfile(
     contactPhone?: string;
     contactAddress?: string;
     avatar?: AvatarUploadInput | null;
+    acceptedTerms?: boolean;
+    isMerchant?: boolean;
+    securityQuestion?: string;
+    securityAnswer?: string;
+    preferredCategories?: (typeof collectibleCategories)[number][];
+    notificationPreferences?: {
+      tradeRequests?: boolean;
+      messages?: boolean;
+      feedback?: boolean;
+      systemUpdates?: boolean;
+    };
+    emailVerified?: boolean;
+    phoneVerified?: boolean;
   },
 ) {
   const db = await requireDb();
@@ -897,6 +910,31 @@ export async function updateProfile(
     const uploaded = await uploadImage("avatars", user.id, input.avatar);
     updateSet.avatarKey = uploaded.key;
     updateSet.avatarUrl = uploaded.url;
+  }
+
+  if (input.acceptedTerms !== undefined) {
+    updateSet.acceptedTerms = input.acceptedTerms;
+  }
+  if (input.isMerchant !== undefined) {
+    updateSet.isMerchant = input.isMerchant;
+  }
+  if (input.securityQuestion !== undefined) {
+    updateSet.securityQuestion = input.securityQuestion?.trim() ? input.securityQuestion.trim().slice(0, 255) : null;
+  }
+  if (input.securityAnswer !== undefined) {
+    updateSet.securityAnswer = input.securityAnswer?.trim() ? input.securityAnswer.trim().slice(0, 255) : null;
+  }
+  if (input.preferredCategories !== undefined) {
+    updateSet.preferredCategories = input.preferredCategories ? JSON.stringify(input.preferredCategories) : null;
+  }
+  if (input.notificationPreferences !== undefined) {
+    updateSet.notificationPreferences = input.notificationPreferences ? JSON.stringify(input.notificationPreferences) : null;
+  }
+  if (input.emailVerified !== undefined) {
+    updateSet.emailVerified = input.emailVerified;
+  }
+  if (input.phoneVerified !== undefined) {
+    updateSet.phoneVerified = input.phoneVerified;
   }
 
   await db.update(userProfiles).set(updateSet).where(eq(userProfiles.userId, user.id));

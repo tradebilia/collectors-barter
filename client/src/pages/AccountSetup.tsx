@@ -58,6 +58,20 @@ export default function AccountSetup() {
   });
   const [showMerchantFields, setShowMerchantFields] = useState(false);
   const [selectedSources, setSelectedSources] = useState<AccountSource[]>([]);
+  const [isEmailVerified, setIsEmailVerified] = useState(false);
+  const [emailVerificationCode, setEmailVerificationCode] = useState("");
+  const [showEmailVerification, setShowEmailVerification] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [securityQuestion, setSecurityQuestion] = useState("");
+  const [securityAnswer, setSecurityAnswer] = useState("");
+  const [preferredCategories, setPreferredCategories] = useState<string[]>([]);
+  const [bioText, setBioText] = useState("");
+  const [notificationPreferences, setNotificationPreferences] = useState({
+    tradeRequests: true,
+    messages: true,
+    feedback: true,
+    systemUpdates: true,
+  });
 
   const handleMerchantToggle = () => {
     setShowMerchantFields(!showMerchantFields);
@@ -203,6 +217,10 @@ export default function AccountSetup() {
         toast.error("Phone Number is required");
         return;
       }
+      if (!acceptedTerms) {
+        toast.error("You must accept the Terms & Conditions and Privacy Policy");
+        return;
+      }
       // Show verification screen instead of moving to next step
       setShowVerification(true);
       toast.success("Verification code sent to your phone");
@@ -319,6 +337,13 @@ export default function AccountSetup() {
               >
                 Step 3
               </Button>
+              <Button
+                onClick={() => setCurrentStep(4)}
+                variant={currentStep === 4 ? "default" : "outline"}
+                size="sm"
+              >
+                Step 4
+              </Button>
             </div>
             <button
               onClick={() => setShowDevNav(false)}
@@ -340,7 +365,7 @@ export default function AccountSetup() {
 
           {/* Progress Indicator */}
           <div className="flex justify-center gap-2">
-            {[1, 2, 3].map((step) => (
+            {[1, 2, 3, 4].map((step) => (
               <div
                 key={step}
                 className={`h-2 w-8 rounded-full transition ${
@@ -497,6 +522,21 @@ export default function AccountSetup() {
                       className="rounded-lg border-slate-200"
                     />
                     <p className="text-xs text-slate-600">We'll send a verification code to this number.</p>
+                  </div>
+
+                  {/* Terms & Conditions */}
+                  <div className="space-y-2">
+                    <label className="flex items-start gap-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={acceptedTerms}
+                        onChange={(e) => setAcceptedTerms(e.target.checked)}
+                        className="h-4 w-4 mt-1"
+                      />
+                      <span className="text-sm text-slate-700">
+                        I agree to the <a href="#" className="text-blue-600 hover:underline font-medium">Terms & Conditions</a> and <a href="#" className="text-blue-600 hover:underline font-medium">Privacy Policy</a> *
+                      </span>
+                    </label>
                   </div>
 
                   {/* Merchant Checkbox */}
@@ -659,37 +699,211 @@ export default function AccountSetup() {
             {currentStep === 3 && (
               <Card className="rounded-[1.5rem] border-slate-200 bg-white shadow-sm">
                 <CardHeader>
-                  <CardTitle>Profile Picture</CardTitle>
-                  <CardDescription>Add a profile picture to complete your setup</CardDescription>
+                  <CardTitle>Profile Picture & Preferences</CardTitle>
+                  <CardDescription>Customize your profile and set your preferences</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex flex-col items-center gap-4">
-                    {formData.avatarPreview ? (
-                      <img
-                        src={formData.avatarPreview}
-                        alt="Avatar preview"
-                        className="h-32 w-32 rounded-full border-4 border-slate-200 object-cover"
-                      />
-                    ) : (
-                      <div className="h-32 w-32 rounded-full border-4 border-dashed border-slate-300 flex items-center justify-center bg-slate-50">
-                        <span className="text-4xl">👤</span>
+                <CardContent className="space-y-6">
+                  {/* Avatar Section */}
+                  <div className="space-y-4">
+                    <h3 className="font-semibold text-slate-900">Profile Picture</h3>
+                    <div className="flex flex-col items-center gap-4">
+                      {formData.avatarPreview ? (
+                        <img
+                          src={formData.avatarPreview}
+                          alt="Avatar preview"
+                          className="h-32 w-32 rounded-full border-4 border-slate-200 object-cover"
+                        />
+                      ) : (
+                        <div className="h-32 w-32 rounded-full border-4 border-dashed border-slate-300 flex items-center justify-center bg-slate-50">
+                          <span className="text-4xl">👤</span>
+                        </div>
+                      )}
+                      <label className="cursor-pointer">
+                        <Button type="button" variant="outline" className="rounded-lg">
+                          <Upload className="mr-2 h-4 w-4" />
+                          Upload Photo
+                        </Button>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleAvatarChange}
+                          className="hidden"
+                        />
+                      </label>
+                      <p className="text-xs text-slate-600 text-center">
+                        JPG, PNG or GIF. Max 5MB.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Bio Section */}
+                  <div className="space-y-2 border-t border-slate-200 pt-4">
+                    <Label htmlFor="bio">About You (Bio)</Label>
+                    <Textarea
+                      id="bio"
+                      name="bio"
+                      value={formData.bio}
+                      onChange={handleInputChange}
+                      placeholder="Tell other collectors about yourself (max 500 characters)"
+                      maxLength={500}
+                      className="rounded-lg border-slate-200"
+                      rows={4}
+                    />
+                    <p className="text-xs text-slate-600">{formData.bio.length}/500 characters</p>
+                  </div>
+
+                  {/* Preferred Categories */}
+                  <div className="space-y-3 border-t border-slate-200 pt-4">
+                    <Label>Preferred Collecting Categories</Label>
+                    <p className="text-xs text-slate-600">Select the categories you're most interested in</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {["comics", "sports_cards", "vintage_toys", "video_games", "stamps", "coins", "pokemon", "movies", "autographs", "disney_pins"].map((cat) => (
+                        <label key={cat} className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={preferredCategories.includes(cat as any)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setPreferredCategories([...preferredCategories, cat as any]);
+                              } else {
+                                setPreferredCategories(preferredCategories.filter((c) => c !== cat));
+                              }
+                            }}
+                            className="h-4 w-4 rounded"
+                          />
+                          <span className="text-sm text-slate-700 capitalize">{cat.replace("_", " ")}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Notification Preferences */}
+                  <div className="space-y-3 border-t border-slate-200 pt-4">
+                    <Label>Notification Preferences</Label>
+                    <p className="text-xs text-slate-600">Choose how you'd like to be notified</p>
+                    <div className="space-y-2">
+                      <label className="flex items-center gap-3 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={notificationPreferences.tradeRequests}
+                          onChange={(e) => setNotificationPreferences({ ...notificationPreferences, tradeRequests: e.target.checked })}
+                          className="h-4 w-4 rounded"
+                        />
+                        <span className="text-sm text-slate-700">Trade Requests</span>
+                      </label>
+                      <label className="flex items-center gap-3 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={notificationPreferences.messages}
+                          onChange={(e) => setNotificationPreferences({ ...notificationPreferences, messages: e.target.checked })}
+                          className="h-4 w-4 rounded"
+                        />
+                        <span className="text-sm text-slate-700">Messages</span>
+                      </label>
+                      <label className="flex items-center gap-3 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={notificationPreferences.feedback}
+                          onChange={(e) => setNotificationPreferences({ ...notificationPreferences, feedback: e.target.checked })}
+                          className="h-4 w-4 rounded"
+                        />
+                        <span className="text-sm text-slate-700">Feedback & Ratings</span>
+                      </label>
+                      <label className="flex items-center gap-3 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={notificationPreferences.systemUpdates}
+                          onChange={(e) => setNotificationPreferences({ ...notificationPreferences, systemUpdates: e.target.checked })}
+                          className="h-4 w-4 rounded"
+                        />
+                        <span className="text-sm text-slate-700">System Updates</span>
+                      </label>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Step 4: Review & Confirm */}
+            {currentStep === 4 && (
+              <Card className="rounded-[1.5rem] border-slate-200 bg-white shadow-sm">
+                <CardHeader>
+                  <CardTitle>Review Your Information</CardTitle>
+                  <CardDescription>Please review your account details before completing setup</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Basic Information Summary */}
+                  <div className="space-y-3 border-b border-slate-200 pb-4">
+                    <h3 className="font-semibold text-slate-900">Account Information</h3>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <p className="text-slate-600">Username</p>
+                        <p className="font-medium text-slate-900">{formData.userName}</p>
                       </div>
-                    )}
-                    <label className="cursor-pointer">
-                      <Button type="button" variant="outline" className="rounded-lg">
-                        <Upload className="mr-2 h-4 w-4" />
-                        Upload Photo
-                      </Button>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleAvatarChange}
-                        className="hidden"
-                      />
-                    </label>
-                    <p className="text-xs text-slate-600 text-center">
-                      JPG, PNG or GIF. Max 5MB.
-                    </p>
+                      <div>
+                        <p className="text-slate-600">Full Name</p>
+                        <p className="font-medium text-slate-900">{formData.firstName} {formData.lastName}</p>
+                      </div>
+                      <div>
+                        <p className="text-slate-600">Email</p>
+                        <p className="font-medium text-slate-900">{formData.email}</p>
+                      </div>
+                      <div>
+                        <p className="text-slate-600">Phone</p>
+                        <p className="font-medium text-slate-900">{formData.phoneNumber}</p>
+                      </div>
+                      <div className="col-span-2">
+                        <p className="text-slate-600">Address</p>
+                        <p className="font-medium text-slate-900">{formData.street}, {formData.zipCode} {formData.state}, {formData.country}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Merchant Information */}
+                  {formData.isMerchant && (
+                    <div className="space-y-3 border-b border-slate-200 pb-4">
+                      <h3 className="font-semibold text-slate-900">Merchant Information</h3>
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <p className="text-slate-600">Store Name</p>
+                          <p className="font-medium text-slate-900">{formData.storeName}</p>
+                        </div>
+                        <div>
+                          <p className="text-slate-600">Tax ID</p>
+                          <p className="font-medium text-slate-900">{formData.taxId}</p>
+                        </div>
+                        <div className="col-span-2">
+                          <p className="text-slate-600">Business Email</p>
+                          <p className="font-medium text-slate-900">{formData.businessEmail}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Profile Preferences */}
+                  <div className="space-y-3 border-b border-slate-200 pb-4">
+                    <h3 className="font-semibold text-slate-900">Profile Preferences</h3>
+                    <div className="space-y-2 text-sm">
+                      {formData.bio && (
+                        <div>
+                          <p className="text-slate-600">Bio</p>
+                          <p className="font-medium text-slate-900">{formData.bio}</p>
+                        </div>
+                      )}
+                      {preferredCategories.length > 0 && (
+                        <div>
+                          <p className="text-slate-600">Preferred Categories</p>
+                          <p className="font-medium text-slate-900">{preferredCategories.map((c) => c.replace("_", " ")).join(", ")}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Verification Status */}
+                  <div className="space-y-2 bg-blue-50 border border-blue-200 rounded-lg p-3">
+                    <p className="text-sm font-medium text-blue-900">Verification Status</p>
+                    <p className="text-xs text-blue-800">Phone verified: {isPhoneVerified ? "Yes" : "No"}</p>
+                    <p className="text-xs text-blue-800">Terms accepted: {acceptedTerms ? "Yes" : "No"}</p>
                   </div>
                 </CardContent>
               </Card>
@@ -717,7 +931,7 @@ export default function AccountSetup() {
                   Skip
                 </Button>
               )}
-              {currentStep < 3 && (
+              {currentStep < 4 && (
                 <Button
                   type="button"
                   onClick={handleNextStep}
@@ -727,7 +941,7 @@ export default function AccountSetup() {
                   <ChevronRight className="ml-2 h-4 w-4" />
                 </Button>
               )}
-              {currentStep === 3 && (
+              {currentStep === 4 && (
                 <Button
                   type="submit"
                   disabled={saveProfileMutation.isPending}
@@ -745,6 +959,75 @@ export default function AccountSetup() {
               )}
             </div>
           </form>
+
+          {/* Email Verification Modal */}
+          {showEmailVerification && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+              <Card className="w-full max-w-md rounded-[1.5rem] border-slate-200 bg-white shadow-lg">
+                <CardHeader>
+                  <CardTitle>Verify Your Email Address</CardTitle>
+                  <CardDescription>
+                    We've sent a verification code to {formData.email}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="emailVerificationCode">Verification Code</Label>
+                    <Input
+                      id="emailVerificationCode"
+                      type="text"
+                      value={emailVerificationCode}
+                      onChange={(e) => setEmailVerificationCode(e.target.value)}
+                      placeholder="Enter 6-digit code"
+                      maxLength={6}
+                      className="rounded-lg border-slate-200 text-center text-2xl tracking-widest"
+                      autoFocus
+                    />
+                  </div>
+                  <p className="text-xs text-slate-600 text-center">
+                    Didn't receive the code?{" "}
+                    <button
+                      type="button"
+                      onClick={() => toast.success("Verification code resent to your email")}
+                      className="text-blue-600 hover:underline font-medium"
+                    >
+                      Resend
+                    </button>
+                  </p>
+                </CardContent>
+                <div className="border-t border-slate-200 px-6 py-4 flex gap-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowEmailVerification(false)}
+                    className="flex-1 rounded-lg"
+                  >
+                    Back
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      if (!emailVerificationCode.trim()) {
+                        toast.error("Please enter the verification code");
+                        return;
+                      }
+                      if (emailVerificationCode.length >= 4) {
+                        setIsEmailVerified(true);
+                        setShowEmailVerification(false);
+                        setEmailVerificationCode("");
+                        toast.success("Email verified!");
+                      } else {
+                        toast.error("Invalid verification code");
+                      }
+                    }}
+                    className="flex-1 rounded-lg bg-blue-600 hover:bg-blue-700"
+                  >
+                    Verify
+                  </Button>
+                </div>
+              </Card>
+            </div>
+          )}
 
           {/* Phone Verification Modal */}
           {showVerification && (
