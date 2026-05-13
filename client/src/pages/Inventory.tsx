@@ -470,7 +470,7 @@ export default function Inventory() {
                 </div>
 
               </div>
-              <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
+              <div className="grid gap-3 grid-cols-6">
               {filteredListings.map(listing => (
                 <Card key={listing.id} className="overflow-hidden border-slate-200 bg-white shadow-sm hover:shadow-lg transition-shadow rounded-lg relative">
                   <div className="absolute top-3 left-3 z-10">

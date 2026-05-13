@@ -318,6 +318,7 @@ async function formatListings(
     description: string;
     status: "active" | "traded" | "archived";
     featured: boolean;
+    isActive: boolean;
     createdAt: Date;
     updatedAt: Date;
   }>,
@@ -355,6 +356,7 @@ async function formatListings(
       description: listing.description,
       status: listing.status,
       featured: listing.featured,
+      isActive: listing.isActive,
       createdAt: listing.createdAt.getTime(),
       updatedAt: listing.updatedAt.getTime(),
       owner,
@@ -382,6 +384,7 @@ export async function getListingDetail(listingId: number, viewerId?: number | nu
       description: listings.description,
       status: listings.status,
       featured: listings.featured,
+      isActive: listings.isActive,
       createdAt: listings.createdAt,
       updatedAt: listings.updatedAt,
     })
@@ -421,6 +424,7 @@ export async function getListingDetail(listingId: number, viewerId?: number | nu
       description: listings.description,
       status: listings.status,
       featured: listings.featured,
+      isActive: listings.isActive,
       createdAt: listings.createdAt,
       updatedAt: listings.updatedAt,
     })
@@ -482,6 +486,7 @@ export async function getMarketplaceFeed(filters: ListingFilters, viewerId?: num
       description: listings.description,
       status: listings.status,
       featured: listings.featured,
+      isActive: listings.isActive,
       createdAt: listings.createdAt,
       updatedAt: listings.updatedAt,
     })
@@ -548,6 +553,7 @@ async function getProposalCards(userId: number) {
         description: listings.description,
         status: listings.status,
         featured: listings.featured,
+        isActive: listings.isActive,
         createdAt: listings.createdAt,
         updatedAt: listings.updatedAt,
       })
@@ -567,6 +573,7 @@ async function getProposalCards(userId: number) {
         description: listings.description,
         status: listings.status,
         featured: listings.featured,
+        isActive: listings.isActive,
         createdAt: listings.createdAt,
         updatedAt: listings.updatedAt,
       })
@@ -587,6 +594,7 @@ async function getProposalCards(userId: number) {
         description: listings.description,
         status: listings.status,
         featured: listings.featured,
+        isActive: listings.isActive,
         createdAt: listings.createdAt,
         updatedAt: listings.updatedAt,
       })
@@ -780,6 +788,7 @@ export async function getDashboardData(user: Pick<User, "id" | "name">) {
         description: listings.description,
         status: listings.status,
         featured: listings.featured,
+        isActive: listings.isActive,
         createdAt: listings.createdAt,
         updatedAt: listings.updatedAt,
       })
@@ -823,6 +832,7 @@ export async function getDashboardData(user: Pick<User, "id" | "name">) {
           description: listings.description,
           status: listings.status,
           featured: listings.featured,
+          isActive: listings.isActive,
           createdAt: listings.createdAt,
           updatedAt: listings.updatedAt,
         })
