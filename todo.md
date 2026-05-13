@@ -399,3 +399,10 @@
 - [x] Create clickable status badge component with tooltip
 - [x] Wire frontend to toggle listing status via tRPC mutation
 - [x] Write vitest tests for listing status toggle feature
+
+
+## Inventory Card Layout Improvements
+
+- [x] Reposition checkbox to top left corner of inventory item cards
+- [x] Reposition toggle button to top right corner of inventory item cards
+- [x] Ensure checkbox and toggle don't overlap the item image

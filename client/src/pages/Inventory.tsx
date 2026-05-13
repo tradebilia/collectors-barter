@@ -472,27 +472,27 @@ export default function Inventory() {
               </div>
               <div className="grid gap-3 grid-cols-6">
               {filteredListings.map(listing => (
-                <Card key={listing.id} className="overflow-hidden border-slate-200 bg-white shadow-sm hover:shadow-lg transition-shadow rounded-lg relative">
-                  <div className="absolute top-3 left-3 z-10">
-                    <input
-                      type="checkbox"
-                      id={`item-${listing.id}`}
-                      checked={selectedIds.has(listing.id)}
-                      onChange={(e) => {
-                        const newSelected = new Set(selectedIds);
-                        if (e.target.checked) {
-                          newSelected.add(listing.id);
-                        } else {
-                          newSelected.delete(listing.id);
-                        }
-                        setSelectedIds(newSelected);
-                      }}
-                      className="w-4 h-4 cursor-pointer"
-                    />
-                  </div>
+                <Card key={listing.id} className="overflow-hidden border-slate-200 bg-white shadow-sm hover:shadow-lg transition-shadow rounded-lg">
                   <CardContent className="p-0">
                     <Link href={`/listings/${listing.id}`} className="block">
                       <div className="relative flex aspect-square items-center justify-center overflow-hidden bg-gradient-to-br from-slate-100 to-slate-200">
+                        <div className="absolute top-3 left-3 z-10">
+                          <input
+                            type="checkbox"
+                            id={`item-${listing.id}`}
+                            checked={selectedIds.has(listing.id)}
+                            onChange={(e) => {
+                              const newSelected = new Set(selectedIds);
+                              if (e.target.checked) {
+                                newSelected.add(listing.id);
+                              } else {
+                                newSelected.delete(listing.id);
+                              }
+                              setSelectedIds(newSelected);
+                            }}
+                            className="w-4 h-4 cursor-pointer bg-white rounded"
+                          />
+                        </div>
                         <img
                           src={resolveTradebiliaListingImage({ title: listing.title, category: listing.category, primaryPhotoUrl: listing.primaryPhotoUrl })}
                           alt={listing.title}
