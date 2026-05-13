@@ -99,7 +99,7 @@ export const userProfiles = mysqlTable(
     emailVerified: boolean("emailVerified").default(false).notNull(),
     phoneVerified: boolean("phoneVerified").default(false).notNull(),
     createdAt: timestamp("createdAt").defaultNow().notNull(),
-    updatedAt: timestamp("updatedAt").onUpdateNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   },
   table => ({
     userIdUnique: uniqueIndex("userProfiles_userId_unique").on(table.userId),
