@@ -451,7 +451,9 @@ export default function Home() {
                 <span className="text-white/45">|</span>
                 <div className="flex items-center gap-1 text-[#d4e86d]">
                   <Bell className="h-4 w-4" />
-                  <Settings2 className="h-4 w-4" />
+                  <Link href="/account-settings" className="transition hover:text-[#c4d85d]">
+                    <Settings2 className="h-4 w-4" />
+                  </Link>
                   <Mail className="h-4 w-4" />
                 </div>
               </>
