@@ -14,6 +14,7 @@ import {
   sendTradeMessage,
   toggleWatchlist,
   updateProfile,
+  toggleListingStatus,
 } from "./db";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -222,6 +223,15 @@ export const appRouter = router({
       )
       .mutation(({ ctx, input }) => {
         return toggleWatchlist(ctx.user.id, input.listingId);
+      }),
+    toggleListingStatus: protectedProcedure
+      .input(
+        z.object({
+          listingId: z.number().int().positive(),
+        }),
+      )
+      .mutation(({ ctx, input }) => {
+        return toggleListingStatus(ctx.user.id, input.listingId);
       }),
     leaveTradeReview: protectedProcedure
       .input(

@@ -20,10 +20,11 @@ import { getLoginUrl } from "@/const";
 
 import { resolveTradebiliaListingImage } from "@/lib/listingImages";
 import { trpc } from "@/lib/trpc";
-import { Download, Loader2, Menu, MessageSquareText, Pencil, Plus, Search, Share2, Trash2 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { Download, Loader2, Menu, MessageSquareText, Pencil, Plus, Search, Share2, Trash2, Eye, EyeOff } from "lucide-react";
+import { useMemo, useState, useCallback } from "react";
 import { toast } from "sonner";
 import { Link } from "wouter";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const TRADEBILIA_LOGO_URL = "/manus-storage/tradebilia_final_spin_fixed(1)_4a57dd7d.svg";
 
@@ -67,6 +68,8 @@ export default function Inventory() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [listingToDelete, setListingToDelete] = useState<number | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [togglingId, setTogglingId] = useState<number | null>(null);
+  const toggleListingStatusMutation = trpc.market.toggleListingStatus.useMutation();
 
   const toggleSelectAll = () => {
     if (selectedIds.size === filteredListings.length) {
@@ -79,6 +82,24 @@ export default function Inventory() {
   const dashboardQuery = trpc.market.dashboard.useQuery(undefined, {
     enabled: isAuthenticated,
   });
+
+  const handleToggleListingStatus = useCallback(
+    async (listingId: number, e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setTogglingId(listingId);
+      try {
+        await toggleListingStatusMutation.mutateAsync({ listingId });
+        await dashboardQuery.refetch();
+        toast.success("Listing status updated");
+      } catch (error) {
+        toast.error("Failed to update listing status");
+      } finally {
+        setTogglingId(null);
+      }
+    },
+    [toggleListingStatusMutation, dashboardQuery],
+  );
 
   const listings = dashboardQuery.data?.ownListings ?? [];
   const profile = dashboardQuery.data?.profile;
@@ -478,7 +499,33 @@ export default function Inventory() {
                           className="h-full w-full object-contain"
                         />
                         <div className="absolute top-3 right-3 flex gap-2">
-                          <Badge variant="secondary" className="rounded-full text-xs font-semibold capitalize bg-blue-100 text-blue-700 border-0">{listing.status}</Badge>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <button
+                                  onClick={(e) => handleToggleListingStatus(listing.id, e)}
+                                  disabled={togglingId === listing.id}
+                                  className={`rounded-full text-xs font-semibold px-3 py-1 transition-all ${
+                                    listing.isActive
+                                      ? "bg-green-100 text-green-700 hover:bg-green-200"
+                                      : "bg-red-100 text-red-700 hover:bg-red-200"
+                                  } ${togglingId === listing.id ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+                                >
+                                  {togglingId === listing.id ? (
+                                    <Loader2 className="h-3 w-3 animate-spin inline mr-1" />
+                                  ) : listing.isActive ? (
+                                    <Eye className="h-3 w-3 inline mr-1" />
+                                  ) : (
+                                    <EyeOff className="h-3 w-3 inline mr-1" />
+                                  )}
+                                  {listing.isActive ? "Active" : "Not Listed"}
+                                </button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>{listing.isActive ? "Click to hide this listing from search" : "Click to show this listing in search"}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
                         </div>
                       </div>
                     </Link>

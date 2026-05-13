@@ -1197,6 +1197,27 @@ export async function toggleWatchlist(userId: number, listingId: number) {
   return { saved: true };
 }
 
+export async function toggleListingStatus(userId: number, listingId: number) {
+  const db = await requireDb();
+  const listing = await db
+    .select({ id: listings.id, ownerId: listings.ownerId, isActive: listings.isActive })
+    .from(listings)
+    .where(eq(listings.id, listingId))
+    .limit(1);
+
+  if (!listing[0]) {
+    throw new Error("Listing not found.");
+  }
+
+  if (listing[0].ownerId !== userId) {
+    throw new Error("You can only toggle your own listings.");
+  }
+
+  const newStatus = !listing[0].isActive;
+  await db.update(listings).set({ isActive: newStatus }).where(eq(listings.id, listingId));
+  return { isActive: newStatus };
+}
+
 export async function leaveTradeReview(
   userId: number,
   input: { proposalId: number; rating: number; review?: string },

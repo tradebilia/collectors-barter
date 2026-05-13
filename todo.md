@@ -389,3 +389,13 @@
   - Data validation
   - Contact information
   - Combined payload validation
+
+
+## Inventory Status Toggle Feature
+
+- [x] Add isActive field to listings table (default true for backward compatibility)
+- [x] Create and apply database migration for isActive field
+- [x] Update backend procedures to handle listing status toggle
+- [x] Create clickable status badge component with tooltip
+- [x] Wire frontend to toggle listing status via tRPC mutation
+- [x] Write vitest tests for listing status toggle feature
