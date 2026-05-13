@@ -328,11 +328,11 @@
 - [x] Add conditional merchant store information fields (store name, business license, tax ID, etc.)
 - [x] Expand merchant fields in Step 1: Business Address, Business Phone, Business Email, EIN, Business Website, Years in Business, Business Type
 - [x] Remove Business Type, Years in Business, and Store Description from merchant fields in Step 1
-- [ ] Add email verification flow to Step 1 (similar to phone verification)
-- [ ] Add Terms & Conditions and Privacy Policy acceptance checkbox to Step 1
-- [ ] Expand Step 3 with bio section, preferred collecting categories, and notification preferences preview
-- [ ] Add security questions to Step 1 for account recovery
-- [ ] Create Step 4: Account Review and Confirmation (review all entered information before final submission)
+- [x] Add email verification flow to Step 1 (similar to phone verification)
+- [x] Add Terms & Conditions and Privacy Policy acceptance checkbox to Step 1
+- [x] Expand Step 3 with bio section, preferred collecting categories, and notification preferences preview
+- [x] Add security questions to Step 1 for account recovery
+- [x] Create Step 4: Account Review and Confirmation (review all entered information before final submission)
 
 ## Account Setup Wizard Enhancement (May 2026)
 
