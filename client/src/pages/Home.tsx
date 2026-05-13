@@ -14,10 +14,11 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { getLoginUrl } from "@/const";
-import { Heart, Loader2, MessageSquareText, Search, ShieldCheck, Sparkles, Star, ArrowRightLeft, Clock3, Plus, Bell, Mail, Settings2 } from "lucide-react";
+import { Heart, Loader2, MessageSquareText, Search, ShieldCheck, Sparkles, Star, ArrowRightLeft, Clock3, Plus } from "lucide-react";
 import { ChangeEvent, FormEvent, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Link } from "wouter";
+import { PageHeader } from "@/components/PageHeader";
 
 type UploadedImage = {
   name: string;
@@ -26,13 +27,12 @@ type UploadedImage = {
   previewUrl: string;
 };
 
-type ListingCategory = Exclude<(typeof categoryOptions)[number]["value"], "all">;
+type ListingCategory = (typeof categoryOptions)[number]["value"];
 type ListingCondition = Exclude<(typeof conditionOptions)[number]["value"], "all">;
 
 const TRADEBILIA_LOGO_URL = "/manus-storage/tradebilia_final_darkest(1)_3e8b98df.svg";
 
 const categoryOptions = [
-  { value: "all", label: "All Categories" },
   { value: "comics", label: "Comics" },
   { value: "sports_cards", label: "Sports Cards" },
   { value: "vintage_toys", label: "Vintage Toys" },
@@ -130,7 +130,7 @@ export default function Home() {
   const utils = trpc.useUtils();
 
   const [keyword, setKeyword] = useState("");
-  const [category, setCategory] = useState<(typeof categoryOptions)[number]["value"]>("all");
+  const [category, setCategory] = useState<(typeof categoryOptions)[number]["value"] | "all">("all");
   const [condition, setCondition] = useState<(typeof conditionOptions)[number]["value"]>("all");
   const [listingDraft, setListingDraft] = useState<{
     title: string;
@@ -422,73 +422,17 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-[#f7f4ee] text-foreground">
-      <header className="border-b border-black/70 bg-black text-white shadow-[0_8px_22px_rgba(0,0,0,0.25)]">
-        <div className="container flex min-h-7 items-center justify-between gap-3 py-0.5 text-[11px]">
-          <div className="flex flex-1 items-center gap-3">
-            <span className="font-['Oswald'] text-[2.15rem] font-semibold leading-none tracking-[-0.05em] text-white sm:text-[2.45rem]">Search</span>
-            <div className="flex w-full max-w-sm overflow-hidden rounded-[0.35rem] border border-black/80 bg-white">
-              <Input
-                value={keyword}
-                onChange={event => setKeyword(event.target.value)}
-                placeholder="Search..."
-                className="h-7 rounded-none border-0 bg-white px-3 text-[9.5px] text-slate-900 placeholder:text-slate-500 focus-visible:ring-0"
-              />
-              <button
-                type="button"
-                className="inline-flex h-7 w-9 items-center justify-center bg-[#7f31ff] text-white transition hover:bg-[#6925dd]"
-                onClick={() => marketplaceQuery.refetch()}
-              >
-                <Search className="h-3.5 w-3.5" />
-              </button>
-            </div>
-          </div>
-          <div className="flex items-center gap-3 md:gap-4">
-            {isAuthenticated && (
-              <>
-                <Link href="/profile" className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/90 transition hover:text-white">
-                  My Tradebilia
-                </Link>
-                <span className="text-white/45">|</span>
-                <div className="flex items-center gap-1 text-[#d4e86d]">
-                  <Bell className="h-4 w-4" />
-                  <Link href="/account-settings" className="transition hover:text-[#c4d85d]">
-                    <Settings2 className="h-4 w-4" />
-                  </Link>
-                  <Mail className="h-4 w-4" />
-                </div>
-              </>
-            )}
-            <div className="flex items-center gap-2">
-              {isAuthenticated ? (
-                <Button
-                  onClick={logout}
-                  className="h-7 rounded-md bg-white/20 px-3 text-[11px] font-semibold text-white hover:bg-white/30"
-                >
-                  Log Out
-                </Button>
-              ) : (
-                <Button
-                  onClick={() => (window.location.href = getLoginUrl())}
-                  className="h-7 rounded-md bg-[#7f31ff] px-3 text-[11px] font-semibold text-white hover:bg-[#6925dd]"
-                >
-                  Sign In
-                </Button>
-              )}
-            </div>
-          </div>
-        </div>
-        <div className="grid grid-cols-2 overflow-hidden border-t border-white/15 bg-[#f7f7f5] text-slate-900 sm:grid-cols-5 xl:grid-cols-10">
-          {categoryOptions.filter(option => option.value !== "all").map(option => (
-            <Link
-              key={option.value}
-              href={`/category/${option.value}`}
-              className={`flex min-h-8 items-center justify-center border-b border-r border-slate-300 px-1.5 py-1 text-center font-['Oswald'] text-[12px] font-semibold tracking-[0.01em] transition hover:bg-slate-100 ${category === option.value ? "bg-[#3b3b3b] text-white" : "bg-[#f7f7f5] text-slate-900"}`}
-            >
-              {option.label}
-            </Link>
-          ))}
-        </div>
-      </header>
+      <PageHeader
+        showSearch={true}
+        showCategories={true}
+        categories={[...categoryOptions] as any}
+        activeCategory={category === "all" ? undefined : category}
+        keyword={keyword}
+        onKeywordChange={setKeyword}
+        onSearch={() => marketplaceQuery.refetch()}
+        isAuthenticated={isAuthenticated}
+        onLogout={logout}
+      />
 
       <main className="pb-24">
         <section className="relative w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden bg-[#00143A] text-white">
@@ -770,7 +714,7 @@ export default function Home() {
                                 <SelectValue placeholder="Select a category" />
                               </SelectTrigger>
                               <SelectContent>
-                                {categoryOptions.filter(option => option.value !== "all").map(option => (
+                                {[...categoryOptions].map(option => (
                                   <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
                                 ))}
                               </SelectContent>

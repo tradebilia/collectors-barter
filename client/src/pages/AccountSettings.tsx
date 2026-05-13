@@ -11,10 +11,11 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { trpc } from "@/lib/trpc";
-import { Bell, Lock, Mail, Loader2, Save, Shield, Link as LinkIcon, Upload, Eye, EyeOff } from "lucide-react";
+import { Bell, Lock, Mail, Loader2, Save, Shield, Link as LinkIcon, Upload, Eye, EyeOff, Cog } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Link } from "wouter";
+import { PageHeader } from "@/components/PageHeader";
 
 const TRADEBILIA_LOGO_URL = "/manus-storage/Tradebilialogo_886a61b7.webp";
 
@@ -51,7 +52,7 @@ function initials(name: string) {
 }
 
 export default function AccountSettings() {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, logout } = useAuth();
   const utils = trpc.useUtils();
   const dashboardQuery = trpc.market.dashboard.useQuery(undefined, {
     enabled: isAuthenticated,
@@ -217,16 +218,12 @@ export default function AccountSettings() {
 
   return (
     <div className="min-h-screen bg-[#f5f5f3] text-slate-950">
-      <header className="border-b border-black/10 bg-[#161616] text-white">
-        <div className="flex flex-wrap items-center gap-4 px-4 py-3 lg:px-8">
-          <Link href="/" className="font-['Oswald'] text-[2.2rem] font-semibold leading-none tracking-[-0.05em] text-white">
-            HOME
-          </Link>
-          <div className="ml-auto flex items-center gap-3 text-sm font-semibold">
-            <span>Account Settings</span>
-          </div>
-        </div>
-      </header>
+      <PageHeader
+        showSearch={false}
+        showCategories={false}
+        isAuthenticated={isAuthenticated}
+        onLogout={logout}
+      />
 
       {/* Hero Section */}
       <section className="relative w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden bg-[#00143A] text-white">
