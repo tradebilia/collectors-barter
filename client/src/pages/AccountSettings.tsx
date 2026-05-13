@@ -249,11 +249,6 @@ export default function AccountSettings() {
 
       <main className="px-4 py-10 lg:px-8">
         <div className="mx-auto max-w-4xl space-y-8">
-          <div className="text-center">
-            <h1 className="text-4xl font-semibold tracking-tight text-slate-950">Account Settings</h1>
-            <p className="mt-3 text-lg text-slate-600">Manage your profile, security, and preferences</p>
-          </div>
-
           <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
             <TabsList className="grid w-full grid-cols-5 rounded-lg bg-slate-200">
               <TabsTrigger value="profile">Profile</TabsTrigger>
