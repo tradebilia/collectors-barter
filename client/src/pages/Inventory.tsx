@@ -20,7 +20,7 @@ import { getLoginUrl } from "@/const";
 
 import { resolveTradebiliaListingImage } from "@/lib/listingImages";
 import { trpc } from "@/lib/trpc";
-import { Download, Loader2, Menu, MessageSquareText, Pencil, Plus, Search, Share2, Trash2, Eye, EyeOff } from "lucide-react";
+import { Download, Loader2, Menu, MessageSquareText, Pencil, Plus, Search, Share2, Trash2, Eye, EyeOff, CheckSquare, Square } from "lucide-react";
 import { useMemo, useState, useCallback } from "react";
 import { toast } from "sonner";
 import { Link } from "wouter";
@@ -53,7 +53,7 @@ function initials(name: string) {
 }
 
 export default function Inventory() {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, logout } = useAuth();
   const [keyword, setKeyword] = useState("");
   const [category, setCategory] = useState<string>("all");
   const [sortBy, setSortBy] = useState("date_added");
@@ -63,7 +63,7 @@ export default function Inventory() {
   const [condition, setCondition] = useState("all");
   const [minValue, setMinValue] = useState("");
   const [maxValue, setMaxValue] = useState("");
-  const [status, setStatus] = useState("all");
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "not_listed">("all");
   const [dateRange, setDateRange] = useState("all");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [listingToDelete, setListingToDelete] = useState<number | null>(null);
@@ -101,6 +101,32 @@ export default function Inventory() {
     [toggleListingStatusMutation, dashboardQuery],
   );
 
+  const handleBulkToggleStatus = useCallback(
+    async () => {
+      if (selectedIds.size === 0) return;
+      const selectedListings = filteredListings.filter(l => selectedIds.has(l.id));
+      const allActive = selectedListings.every(l => l.isActive);
+      const action = allActive ? "deactivate" : "activate";
+      
+      if (!confirm(`${action.charAt(0).toUpperCase() + action.slice(1)} ${selectedIds.size} selected item(s)?`)) return;
+      
+      try {
+        setTogglingId(-1);
+        for (const listingId of selectedIds) {
+          await toggleListingStatusMutation.mutateAsync({ listingId });
+        }
+        await dashboardQuery.refetch();
+        setSelectedIds(new Set());
+        toast.success(`${selectedIds.size} item(s) ${action}d successfully`);
+      } catch (error) {
+        toast.error(`Failed to ${action} items`);
+      } finally {
+        setTogglingId(null);
+      }
+    },
+    [selectedIds, filteredListings, toggleListingStatusMutation, dashboardQuery],
+  );
+
   const listings = dashboardQuery.data?.ownListings ?? [];
   const profile = dashboardQuery.data?.profile;
 
@@ -117,7 +143,7 @@ export default function Inventory() {
       const matchesGrader = graderCompany === "all" || listing.description.toLowerCase().includes(graderCompany.toLowerCase());
       const matchesGradeRange = gradeRange === "all" || listing.description.toLowerCase().includes(gradeRange.toLowerCase());
       const matchesCondition = condition === "all" || listing.condition === condition;
-      const matchesStatus = status === "all" || listing.status === status;
+      const matchesStatus = statusFilter === "all" || (statusFilter === "active" ? listing.isActive : !listing.isActive);
       const listingValue = Number(listing.estimatedValue) || 0;
       const matchesMinValue = minValue === "" || listingValue >= Number(minValue);
       const matchesMaxValue = maxValue === "" || listingValue <= Number(maxValue);
@@ -137,7 +163,7 @@ export default function Inventory() {
       if (sortBy === "condition") return a.condition.localeCompare(b.condition);
       return b.id - a.id;
     });
-  }, [category, condition, dateRange, gradeRange, graderCompany, keyword, listings, maxValue, minValue, sortBy, status, tradeOnly]);
+  }, [category, condition, dateRange, gradeRange, graderCompany, keyword, listings, maxValue, minValue, sortBy, statusFilter, tradeOnly]);
 
   const exportInventory = () => {
     const payload = filteredListings.map(listing => ({
@@ -362,16 +388,15 @@ export default function Inventory() {
                 </div>
 
                 <div className="space-y-1">
-                  <Label className="text-xs font-medium text-slate-800">Status</Label>
-                  <Select value={status} onValueChange={setStatus}>
+                  <Label className="text-xs font-medium text-slate-800">Listing Status</Label>
+                  <Select value={statusFilter} onValueChange={(val) => setStatusFilter(val as "all" | "active" | "not_listed")}>
                     <SelectTrigger className="border-slate-300 bg-white h-8 text-xs">
-                      <SelectValue placeholder="All Status" />
+                      <SelectValue placeholder="All" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All Status</SelectItem>
+                      <SelectItem value="all">All Listings</SelectItem>
                       <SelectItem value="active">Active</SelectItem>
-                      <SelectItem value="sold">Sold</SelectItem>
-                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="not_listed">Not Listed</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -410,7 +435,7 @@ export default function Inventory() {
                     setCondition('all');
                     setMinValue('');
                     setMaxValue('');
-                    setStatus('all');
+                    setStatusFilter('all');
                     setDateRange('all');
                     setTradeOnly(false);
                   }}
@@ -443,6 +468,10 @@ export default function Inventory() {
                   <Button variant="outline" className="rounded-lg border-slate-300 px-6 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50" onClick={exportInventory}>
                     <Download className="mr-2 h-4 w-4" />
                     Export
+                  </Button>
+                  <Button className="rounded-lg bg-amber-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-amber-700 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed" onClick={handleBulkToggleStatus} disabled={selectedIds.size === 0}>
+                    <Eye className="mr-2 h-4 w-4" />
+                    Toggle Status ({selectedIds.size})
                   </Button>
                   <Button className="rounded-lg bg-red-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-red-700 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed" onClick={() => {
                       if (selectedIds.size > 0 && confirm(`Delete ${selectedIds.size} selected item(s)?`)) {

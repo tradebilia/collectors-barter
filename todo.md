@@ -399,3 +399,11 @@
 - [x] Create clickable status badge component with tooltip
 - [x] Wire frontend to toggle listing status via tRPC mutation
 - [x] Write vitest tests for listing status toggle feature
+
+
+## Inventory Management Enhancements
+
+- [ ] Add status filter dropdown to My Inventory page (All, Active, Not Listed)
+- [ ] Implement bulk status toggle for selected items (toggle all selected from Active to Not Listed or vice versa)
+- [ ] Update marketplace search/browse to exclude Not Listed items from results
+- [ ] Write vitest tests for status filtering, bulk toggle, and search exclusion
