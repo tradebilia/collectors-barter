@@ -777,49 +777,7 @@ export default function AccountSetup() {
                     </div>
                   </div>
 
-                  {/* Notification Preferences */}
-                  <div className="space-y-3 border-t border-slate-200 pt-4">
-                    <Label>Notification Preferences</Label>
-                    <p className="text-xs text-slate-600">Choose how you'd like to be notified</p>
-                    <div className="space-y-2">
-                      <label className="flex items-center gap-3 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={notificationPreferences.tradeRequests}
-                          onChange={(e) => setNotificationPreferences({ ...notificationPreferences, tradeRequests: e.target.checked })}
-                          className="h-4 w-4 rounded"
-                        />
-                        <span className="text-sm text-slate-700">Trade Requests</span>
-                      </label>
-                      <label className="flex items-center gap-3 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={notificationPreferences.messages}
-                          onChange={(e) => setNotificationPreferences({ ...notificationPreferences, messages: e.target.checked })}
-                          className="h-4 w-4 rounded"
-                        />
-                        <span className="text-sm text-slate-700">Messages</span>
-                      </label>
-                      <label className="flex items-center gap-3 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={notificationPreferences.feedback}
-                          onChange={(e) => setNotificationPreferences({ ...notificationPreferences, feedback: e.target.checked })}
-                          className="h-4 w-4 rounded"
-                        />
-                        <span className="text-sm text-slate-700">Feedback & Ratings</span>
-                      </label>
-                      <label className="flex items-center gap-3 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={notificationPreferences.systemUpdates}
-                          onChange={(e) => setNotificationPreferences({ ...notificationPreferences, systemUpdates: e.target.checked })}
-                          className="h-4 w-4 rounded"
-                        />
-                        <span className="text-sm text-slate-700">System Updates</span>
-                      </label>
-                    </div>
-                  </div>
+
                 </CardContent>
               </Card>
             )}
