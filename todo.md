@@ -403,7 +403,7 @@
 
 ## Inventory Management Enhancements
 
-- [ ] Add status filter dropdown to My Inventory page (All, Active, Not Listed)
-- [ ] Implement bulk status toggle for selected items (toggle all selected from Active to Not Listed or vice versa)
-- [ ] Update marketplace search/browse to exclude Not Listed items from results
-- [ ] Write vitest tests for status filtering, bulk toggle, and search exclusion
+- [x] Add status filter dropdown to My Inventory page (All, Active, Not Listed)
+- [x] Implement bulk status toggle for selected items (toggle all selected from Active to Not Listed or vice versa)
+- [x] Update marketplace search/browse to exclude Not Listed items from results
+- [x] Write vitest tests for status filtering, bulk toggle, and search exclusion
