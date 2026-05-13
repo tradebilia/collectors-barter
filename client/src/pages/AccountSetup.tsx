@@ -524,21 +524,6 @@ export default function AccountSetup() {
                     <p className="text-xs text-slate-600">We'll send a verification code to this number.</p>
                   </div>
 
-                  {/* Terms & Conditions */}
-                  <div className="space-y-2">
-                    <label className="flex items-start gap-3 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={acceptedTerms}
-                        onChange={(e) => setAcceptedTerms(e.target.checked)}
-                        className="h-4 w-4 mt-1"
-                      />
-                      <span className="text-sm text-slate-700">
-                        I agree to the <a href="#" className="text-blue-600 hover:underline font-medium">Terms & Conditions</a> and <a href="#" className="text-blue-600 hover:underline font-medium">Privacy Policy</a> *
-                      </span>
-                    </label>
-                  </div>
-
                   {/* Merchant Checkbox */}
                   <div className="border-t border-slate-200 pt-4 mt-4">
                     <label className="flex items-center gap-3 cursor-pointer">
@@ -647,6 +632,21 @@ export default function AccountSetup() {
 
                     </div>
                   )}
+
+                  {/* Terms & Conditions - Bottom of Step 1 */}
+                  <div className="border-t border-slate-200 pt-4 mt-4 space-y-2">
+                    <label className="flex items-start gap-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={acceptedTerms}
+                        onChange={(e) => setAcceptedTerms(e.target.checked)}
+                        className="h-4 w-4 mt-1"
+                      />
+                      <span className="text-sm text-slate-700">
+                        I agree to the <a href="#" className="text-blue-600 hover:underline font-medium">Terms & Conditions</a> and <a href="#" className="text-blue-600 hover:underline font-medium">Privacy Policy</a> *
+                      </span>
+                    </label>
+                  </div>
                 </CardContent>
               </Card>
             )}
