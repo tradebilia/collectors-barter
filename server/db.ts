@@ -320,7 +320,6 @@ async function formatListings(
     featured: boolean;
     createdAt: Date;
     updatedAt: Date;
-    isActive?: boolean;
   }>,
   viewerId?: number | null,
 ) {
@@ -358,7 +357,6 @@ async function formatListings(
       featured: listing.featured,
       createdAt: listing.createdAt.getTime(),
       updatedAt: listing.updatedAt.getTime(),
-      isActive: listing.isActive ?? true,
       owner,
       ownerRating: rating,
       photos,
@@ -457,7 +455,7 @@ export async function getMarketplaceFeed(filters: ListingFilters, viewerId?: num
     };
   }
 
-  const whereClauses = [eq(listings.status, "active"), eq(listings.isActive, true)];
+  const whereClauses = [eq(listings.status, "active")];
   if (filters.category && filters.category !== "all") {
     whereClauses.push(eq(listings.category, filters.category));
   }
@@ -486,7 +484,6 @@ export async function getMarketplaceFeed(filters: ListingFilters, viewerId?: num
       featured: listings.featured,
       createdAt: listings.createdAt,
       updatedAt: listings.updatedAt,
-      isActive: listings.isActive,
     })
     .from(listings)
     .where(and(...whereClauses))
