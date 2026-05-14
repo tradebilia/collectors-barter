@@ -408,3 +408,6 @@
 - [x] Ensure checkbox and toggle don't overlap the item image
 - [x] Add mass activate button to bulk change selected items to Active status
 - [x] Add mass "Not Listed" button to bulk change selected items to Not Listed status
+- [x] Add mass activate button to bulk change selected items to Active status
+- [x] Add mass "Not Listed" button to bulk change selected items to Not Listed status
+- [x] Fix bulk update to use isActive field instead of status field for Listed/Not Listed state

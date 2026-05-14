@@ -161,7 +161,7 @@ export default function Inventory() {
       const matchesGrader = graderCompany === "all" || listing.description.toLowerCase().includes(graderCompany.toLowerCase());
       const matchesGradeRange = gradeRange === "all" || listing.description.toLowerCase().includes(gradeRange.toLowerCase());
       const matchesCondition = condition === "all" || listing.condition === condition;
-      const matchesStatus = status === "all" || listing.status === status;
+      const matchesStatus = status === "all" || (status === "listed" ? listing.isActive : !listing.isActive);
       const listingValue = Number(listing.estimatedValue) || 0;
       const matchesMinValue = minValue === "" || listingValue >= Number(minValue);
       const matchesMaxValue = maxValue === "" || listingValue <= Number(maxValue);
@@ -413,9 +413,8 @@ export default function Inventory() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Status</SelectItem>
-                      <SelectItem value="active">Active</SelectItem>
-                      <SelectItem value="sold">Sold</SelectItem>
-                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="listed">Listed</SelectItem>
+                      <SelectItem value="not-listed">Not Listed</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
