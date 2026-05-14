@@ -412,3 +412,4 @@
 - [x] Add mass "Not Listed" button to bulk change selected items to Not Listed status
 - [x] Fix bulk update to use isActive field instead of status field for Listed/Not Listed state
 - [x] Implement bulk delete functionality to remove multiple selected items at once
+- [x] Add undo functionality for bulk delete (30-second window to recover deleted items)

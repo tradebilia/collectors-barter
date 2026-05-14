@@ -17,6 +17,7 @@ import {
   toggleListingStatus,
   bulkUpdateListingStatus,
   bulkDeleteListings,
+  restoreDeletedListings,
 } from "./db";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -253,7 +254,21 @@ export const appRouter = router({
         }),
       )
       .mutation(async ({ ctx, input }) => {
-        await bulkDeleteListings(ctx.user.id, input.listingIds);
+        const result = await bulkDeleteListings(ctx.user.id, input.listingIds);
+        return {
+          ...result,
+          dashboard: await getDashboardData({ id: ctx.user.id, name: ctx.user.name }),
+        };
+      }),
+    restoreDeletedListings: protectedProcedure
+      .input(
+        z.object({
+          deletedListings: z.array(z.any()),
+          deletedPhotos: z.array(z.any()),
+        }),
+      )
+      .mutation(async ({ ctx, input }) => {
+        await restoreDeletedListings(ctx.user.id, input.deletedListings, input.deletedPhotos);
         return getDashboardData({ id: ctx.user.id, name: ctx.user.name });
       }),
     leaveTradeReview: protectedProcedure

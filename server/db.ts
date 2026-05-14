@@ -1253,15 +1253,20 @@ export async function bulkUpdateListingStatus(userId: number, listingIds: number
 export async function bulkDeleteListings(userId: number, listingIds: number[]) {
   const db = await requireDb();
   
-  // Verify all listings belong to the user
-  const userListings = await db
-    .select({ id: listings.id, ownerId: listings.ownerId })
+  // Fetch all listings and their photos before deletion (for undo)
+  const listingsToDelete = await db
+    .select()
     .from(listings)
     .where(and(eq(listings.ownerId, userId), inArray(listings.id, listingIds)));
 
-  if (userListings.length !== listingIds.length) {
+  if (listingsToDelete.length !== listingIds.length) {
     throw new Error("You can only delete your own listings.");
   }
+
+  const photosToDelete = await db
+    .select()
+    .from(listingPhotos)
+    .where(inArray(listingPhotos.listingId, listingIds));
 
   // Delete all listing photos first (foreign key constraint)
   await db
@@ -1273,7 +1278,34 @@ export async function bulkDeleteListings(userId: number, listingIds: number[]) {
     .delete(listings)
     .where(and(eq(listings.ownerId, userId), inArray(listings.id, listingIds)));
 
-  return { deleted: userListings.length };
+  // Return deleted data for undo functionality
+  return { 
+    deleted: listingsToDelete.length,
+    deletedListings: listingsToDelete,
+    deletedPhotos: photosToDelete,
+  };
+}
+
+export async function restoreDeletedListings(userId: number, listingsData: any[], photosData: any[]) {
+  const db = await requireDb();
+  
+  // Verify all listings belong to the user
+  const allBelongToUser = listingsData.every(l => l.ownerId === userId);
+  if (!allBelongToUser) {
+    throw new Error("You can only restore your own listings.");
+  }
+
+  // Re-insert listings
+  if (listingsData.length > 0) {
+    await db.insert(listings).values(listingsData);
+  }
+
+  // Re-insert photos
+  if (photosData.length > 0) {
+    await db.insert(listingPhotos).values(photosData);
+  }
+
+  return { restored: listingsData.length };
 }
 
 export async function leaveTradeReview(

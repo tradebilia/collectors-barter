@@ -70,9 +70,12 @@ export default function Inventory() {
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [togglingId, setTogglingId] = useState<number | null>(null);
   const [bulkUpdatingStatus, setBulkUpdatingStatus] = useState(false);
+  const [undoData, setUndoData] = useState<{ deletedListings: any[]; deletedPhotos: any[]; expiresAt: number } | null>(null);
+  const [undoTimer, setUndoTimer] = useState<NodeJS.Timeout | null>(null);
   const toggleListingStatusMutation = trpc.market.toggleListingStatus.useMutation();
   const bulkUpdateStatusMutation = trpc.market.bulkUpdateListingStatus.useMutation();
   const bulkDeleteMutation = trpc.market.bulkDeleteListings.useMutation();
+  const restoreMutation = trpc.market.restoreDeletedListings.useMutation();
 
   const toggleSelectAll = () => {
     if (selectedIds.size === filteredListings.length) {
@@ -149,22 +152,56 @@ export default function Inventory() {
   const handleBulkDelete = useCallback(
     async () => {
       if (selectedIds.size === 0) return;
-      if (!confirm(`Delete ${selectedIds.size} selected item(s)? This action cannot be undone.`)) return;
+      if (!confirm(`Delete ${selectedIds.size} selected item(s)? You can undo within 30 seconds.`)) return;
       setBulkUpdatingStatus(true);
       try {
-        await bulkDeleteMutation.mutateAsync({
+        const result = await bulkDeleteMutation.mutateAsync({
           listingIds: Array.from(selectedIds),
         });
+        
+        const expiresAt = Date.now() + 30000;
+        setUndoData({
+          deletedListings: result.deletedListings,
+          deletedPhotos: result.deletedPhotos,
+          expiresAt,
+        });
+        
+        if (undoTimer) clearTimeout(undoTimer);
+        const timer = setTimeout(() => {
+          setUndoData(null);
+        }, 30000);
+        setUndoTimer(timer);
+        
         setSelectedIds(new Set());
         await dashboardQuery.refetch();
-        toast.success(`${selectedIds.size} item(s) deleted`);
+        toast.success(`${selectedIds.size} item(s) deleted - Undo available for 30 seconds`);
       } catch (error) {
         toast.error("Failed to delete items");
       } finally {
         setBulkUpdatingStatus(false);
       }
     },
-    [selectedIds, bulkDeleteMutation, dashboardQuery],
+    [selectedIds, bulkDeleteMutation, dashboardQuery, undoTimer],
+  );
+
+  const handleUndo = useCallback(
+    async () => {
+      if (!undoData) return;
+      try {
+        await restoreMutation.mutateAsync({
+          deletedListings: undoData.deletedListings,
+          deletedPhotos: undoData.deletedPhotos,
+        });
+        setUndoData(null);
+        if (undoTimer) clearTimeout(undoTimer);
+        setUndoTimer(null);
+        await dashboardQuery.refetch();
+        toast.success("Items restored successfully");
+      } catch (error) {
+        toast.error("Failed to restore items");
+      }
+    },
+    [undoData, restoreMutation, dashboardQuery, undoTimer],
   );
 
   const listings = dashboardQuery.data?.ownListings ?? [];
@@ -521,6 +558,11 @@ export default function Inventory() {
                     {bulkUpdatingStatus ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <EyeOff className="mr-2 h-4 w-4" />}
                     Not Listed ({selectedIds.size})
                   </Button>
+                  {undoData && (
+                    <Button className="rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 shadow-sm" onClick={handleUndo} disabled={restoreMutation.isPending}>
+                      Undo ({Math.ceil((undoData.expiresAt - Date.now()) / 1000)}s)
+                    </Button>
+                  )}
                 </div>
               </div>
             </div>
