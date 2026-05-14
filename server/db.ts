@@ -1228,6 +1228,28 @@ export async function toggleListingStatus(userId: number, listingId: number) {
   return { isActive: newStatus };
 }
 
+export async function bulkUpdateListingStatus(userId: number, listingIds: number[], newStatus: boolean) {
+  const db = await requireDb();
+  
+  // Verify all listings belong to the user
+  const userListings = await db
+    .select({ id: listings.id, ownerId: listings.ownerId })
+    .from(listings)
+    .where(and(eq(listings.ownerId, userId), inArray(listings.id, listingIds)));
+
+  if (userListings.length !== listingIds.length) {
+    throw new Error("You can only update your own listings.");
+  }
+
+  // Update all listings to the new status
+  await db
+    .update(listings)
+    .set({ isActive: newStatus })
+    .where(and(eq(listings.ownerId, userId), inArray(listings.id, listingIds)));
+
+  return { updated: userListings.length, newStatus };
+}
+
 export async function leaveTradeReview(
   userId: number,
   input: { proposalId: number; rating: number; review?: string },

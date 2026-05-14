@@ -69,7 +69,9 @@ export default function Inventory() {
   const [listingToDelete, setListingToDelete] = useState<number | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [togglingId, setTogglingId] = useState<number | null>(null);
+  const [bulkUpdatingStatus, setBulkUpdatingStatus] = useState(false);
   const toggleListingStatusMutation = trpc.market.toggleListingStatus.useMutation();
+  const bulkUpdateStatusMutation = trpc.market.bulkUpdateListingStatus.useMutation();
 
   const toggleSelectAll = () => {
     if (selectedIds.size === filteredListings.length) {
@@ -99,6 +101,48 @@ export default function Inventory() {
       }
     },
     [toggleListingStatusMutation, dashboardQuery],
+  );
+
+  const handleBulkActivate = useCallback(
+    async () => {
+      if (selectedIds.size === 0) return;
+      setBulkUpdatingStatus(true);
+      try {
+        await bulkUpdateStatusMutation.mutateAsync({
+          listingIds: Array.from(selectedIds),
+          newStatus: true,
+        });
+        setSelectedIds(new Set());
+        await dashboardQuery.refetch();
+        toast.success(`${selectedIds.size} item(s) activated`);
+      } catch (error) {
+        toast.error("Failed to activate items");
+      } finally {
+        setBulkUpdatingStatus(false);
+      }
+    },
+    [selectedIds, bulkUpdateStatusMutation, dashboardQuery],
+  );
+
+  const handleBulkNotListed = useCallback(
+    async () => {
+      if (selectedIds.size === 0) return;
+      setBulkUpdatingStatus(true);
+      try {
+        await bulkUpdateStatusMutation.mutateAsync({
+          listingIds: Array.from(selectedIds),
+          newStatus: false,
+        });
+        setSelectedIds(new Set());
+        await dashboardQuery.refetch();
+        toast.success(`${selectedIds.size} item(s) marked as not listed`);
+      } catch (error) {
+        toast.error("Failed to update items");
+      } finally {
+        setBulkUpdatingStatus(false);
+      }
+    },
+    [selectedIds, bulkUpdateStatusMutation, dashboardQuery],
   );
 
   const listings = dashboardQuery.data?.ownListings ?? [];
@@ -453,6 +497,14 @@ export default function Inventory() {
                       <Trash2 className="mr-2 h-4 w-4" />
                       Delete Selected ({selectedIds.size})
                     </Button>
+                  <Button className="rounded-lg bg-green-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-green-700 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed" onClick={handleBulkActivate} disabled={selectedIds.size === 0 || bulkUpdatingStatus}>
+                    {bulkUpdatingStatus ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Eye className="mr-2 h-4 w-4" />}
+                    Activate ({selectedIds.size})
+                  </Button>
+                  <Button className="rounded-lg bg-orange-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-orange-700 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed" onClick={handleBulkNotListed} disabled={selectedIds.size === 0 || bulkUpdatingStatus}>
+                    {bulkUpdatingStatus ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <EyeOff className="mr-2 h-4 w-4" />}
+                    Not Listed ({selectedIds.size})
+                  </Button>
                 </div>
               </div>
             </div>
@@ -474,59 +526,57 @@ export default function Inventory() {
               {filteredListings.map(listing => (
                 <Card key={listing.id} className="overflow-hidden border-slate-200 bg-white shadow-sm hover:shadow-lg transition-shadow rounded-lg">
                   <CardContent className="p-0">
+                    <div className="flex items-center justify-between px-3 py-2 bg-slate-50 border-b border-slate-100">
+                      <input
+                        type="checkbox"
+                        id={`item-${listing.id}`}
+                        checked={selectedIds.has(listing.id)}
+                        onChange={(e) => {
+                          const newSelected = new Set(selectedIds);
+                          if (e.target.checked) {
+                            newSelected.add(listing.id);
+                          } else {
+                            newSelected.delete(listing.id);
+                          }
+                          setSelectedIds(newSelected);
+                        }}
+                        className="w-4 h-4 cursor-pointer"
+                      />
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <button
+                              onClick={(e) => handleToggleListingStatus(listing.id, e)}
+                              disabled={togglingId === listing.id}
+                              className={`rounded-full text-xs font-semibold px-3 py-1 transition-all ${
+                                listing.isActive
+                                  ? "bg-green-100 text-green-700 hover:bg-green-200"
+                                  : "bg-red-100 text-red-700 hover:bg-red-200"
+                              } ${togglingId === listing.id ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+                            >
+                              {togglingId === listing.id ? (
+                                <Loader2 className="h-3 w-3 animate-spin inline mr-1" />
+                              ) : listing.isActive ? (
+                                <Eye className="h-3 w-3 inline mr-1" />
+                              ) : (
+                                <EyeOff className="h-3 w-3 inline mr-1" />
+                              )}
+                              {listing.isActive ? "Active" : "Not Listed"}
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>{listing.isActive ? "Click to hide this listing from search" : "Click to show this listing in search"}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
                     <Link href={`/listings/${listing.id}`} className="block">
-                      <div className="relative flex aspect-square items-center justify-center overflow-hidden bg-gradient-to-br from-slate-100 to-slate-200">
-                        <div className="absolute top-3 left-3 z-10">
-                          <input
-                            type="checkbox"
-                            id={`item-${listing.id}`}
-                            checked={selectedIds.has(listing.id)}
-                            onChange={(e) => {
-                              const newSelected = new Set(selectedIds);
-                              if (e.target.checked) {
-                                newSelected.add(listing.id);
-                              } else {
-                                newSelected.delete(listing.id);
-                              }
-                              setSelectedIds(newSelected);
-                            }}
-                            className="w-4 h-4 cursor-pointer bg-white rounded"
-                          />
-                        </div>
+                      <div className="flex aspect-square items-center justify-center overflow-hidden bg-gradient-to-br from-slate-100 to-slate-200">
                         <img
                           src={resolveTradebiliaListingImage({ title: listing.title, category: listing.category, primaryPhotoUrl: listing.primaryPhotoUrl })}
                           alt={listing.title}
                           className="h-full w-full object-contain"
                         />
-                        <div className="absolute top-3 right-3 flex gap-2">
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <button
-                                  onClick={(e) => handleToggleListingStatus(listing.id, e)}
-                                  disabled={togglingId === listing.id}
-                                  className={`rounded-full text-xs font-semibold px-3 py-1 transition-all ${
-                                    listing.isActive
-                                      ? "bg-green-100 text-green-700 hover:bg-green-200"
-                                      : "bg-red-100 text-red-700 hover:bg-red-200"
-                                  } ${togglingId === listing.id ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
-                                >
-                                  {togglingId === listing.id ? (
-                                    <Loader2 className="h-3 w-3 animate-spin inline mr-1" />
-                                  ) : listing.isActive ? (
-                                    <Eye className="h-3 w-3 inline mr-1" />
-                                  ) : (
-                                    <EyeOff className="h-3 w-3 inline mr-1" />
-                                  )}
-                                  {listing.isActive ? "Active" : "Not Listed"}
-                                </button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>{listing.isActive ? "Click to hide this listing from search" : "Click to show this listing in search"}</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        </div>
                       </div>
                     </Link>
                     <div className="p-4 space-y-3">

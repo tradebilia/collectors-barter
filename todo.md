@@ -406,3 +406,5 @@
 - [x] Reposition checkbox to top left corner of inventory item cards
 - [x] Reposition toggle button to top right corner of inventory item cards
 - [x] Ensure checkbox and toggle don't overlap the item image
+- [x] Add mass activate button to bulk change selected items to Active status
+- [x] Add mass "Not Listed" button to bulk change selected items to Not Listed status

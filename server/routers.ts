@@ -15,6 +15,7 @@ import {
   toggleWatchlist,
   updateProfile,
   toggleListingStatus,
+  bulkUpdateListingStatus,
 } from "./db";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -232,6 +233,17 @@ export const appRouter = router({
       )
       .mutation(({ ctx, input }) => {
         return toggleListingStatus(ctx.user.id, input.listingId);
+      }),
+    bulkUpdateListingStatus: protectedProcedure
+      .input(
+        z.object({
+          listingIds: z.array(z.number().int().positive()),
+          newStatus: z.boolean(),
+        }),
+      )
+      .mutation(async ({ ctx, input }) => {
+        await bulkUpdateListingStatus(ctx.user.id, input.listingIds, input.newStatus);
+        return getDashboardData({ id: ctx.user.id, name: ctx.user.name });
       }),
     leaveTradeReview: protectedProcedure
       .input(
