@@ -72,6 +72,7 @@ export default function Inventory() {
   const [bulkUpdatingStatus, setBulkUpdatingStatus] = useState(false);
   const toggleListingStatusMutation = trpc.market.toggleListingStatus.useMutation();
   const bulkUpdateStatusMutation = trpc.market.bulkUpdateListingStatus.useMutation();
+  const bulkDeleteMutation = trpc.market.bulkDeleteListings.useMutation();
 
   const toggleSelectAll = () => {
     if (selectedIds.size === filteredListings.length) {
@@ -143,6 +144,27 @@ export default function Inventory() {
       }
     },
     [selectedIds, bulkUpdateStatusMutation, dashboardQuery],
+  );
+
+  const handleBulkDelete = useCallback(
+    async () => {
+      if (selectedIds.size === 0) return;
+      if (!confirm(`Delete ${selectedIds.size} selected item(s)? This action cannot be undone.`)) return;
+      setBulkUpdatingStatus(true);
+      try {
+        await bulkDeleteMutation.mutateAsync({
+          listingIds: Array.from(selectedIds),
+        });
+        setSelectedIds(new Set());
+        await dashboardQuery.refetch();
+        toast.success(`${selectedIds.size} item(s) deleted`);
+      } catch (error) {
+        toast.error("Failed to delete items");
+      } finally {
+        setBulkUpdatingStatus(false);
+      }
+    },
+    [selectedIds, bulkDeleteMutation, dashboardQuery],
   );
 
   const listings = dashboardQuery.data?.ownListings ?? [];
@@ -487,13 +509,8 @@ export default function Inventory() {
                     <Download className="mr-2 h-4 w-4" />
                     Export
                   </Button>
-                  <Button className="rounded-lg bg-red-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-red-700 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed" onClick={() => {
-                      if (selectedIds.size > 0 && confirm(`Delete ${selectedIds.size} selected item(s)?`)) {
-                        setSelectedIds(new Set());
-                        alert(`Deleting ${selectedIds.size} items...`);
-                      }
-                    }} disabled={selectedIds.size === 0}>
-                      <Trash2 className="mr-2 h-4 w-4" />
+                  <Button className="rounded-lg bg-red-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-red-700 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed" onClick={handleBulkDelete} disabled={selectedIds.size === 0 || bulkUpdatingStatus}>
+                    {bulkUpdatingStatus ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
                       Delete Selected ({selectedIds.size})
                     </Button>
                   <Button className="rounded-lg bg-green-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-green-700 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed" onClick={handleBulkActivate} disabled={selectedIds.size === 0 || bulkUpdatingStatus}>

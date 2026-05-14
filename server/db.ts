@@ -1250,6 +1250,32 @@ export async function bulkUpdateListingStatus(userId: number, listingIds: number
   return { updated: userListings.length, newStatus };
 }
 
+export async function bulkDeleteListings(userId: number, listingIds: number[]) {
+  const db = await requireDb();
+  
+  // Verify all listings belong to the user
+  const userListings = await db
+    .select({ id: listings.id, ownerId: listings.ownerId })
+    .from(listings)
+    .where(and(eq(listings.ownerId, userId), inArray(listings.id, listingIds)));
+
+  if (userListings.length !== listingIds.length) {
+    throw new Error("You can only delete your own listings.");
+  }
+
+  // Delete all listing photos first (foreign key constraint)
+  await db
+    .delete(listingPhotos)
+    .where(inArray(listingPhotos.listingId, listingIds));
+
+  // Delete all listings
+  await db
+    .delete(listings)
+    .where(and(eq(listings.ownerId, userId), inArray(listings.id, listingIds)));
+
+  return { deleted: userListings.length };
+}
+
 export async function leaveTradeReview(
   userId: number,
   input: { proposalId: number; rating: number; review?: string },
