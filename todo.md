@@ -422,7 +422,5 @@
 - [x] Match item detail page background color to category page background for visual unity
 - [x] Make owner avatar and name clickable to navigate to their profile page on item detail
 - [x] Add user avatar icon in top right bar when logged in to show sign-in status
-- [ ] Research major grading companies and their specialties
-- [ ] Update category page dropdowns with category-specific grading services
 - [x] Research major grading companies and their specialties
 - [x] Update category page dropdowns with category-specific grading services
