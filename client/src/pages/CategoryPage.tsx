@@ -139,15 +139,20 @@ const sportsList = [
   "Other",
 ];
 
-const gradingServicesList = [
-  "PSA",
-  "BGS",
-  "SGC",
-  "CGC",
-  "Beckett",
-  "Sportscard Guaranty",
-  "Raw",
-];
+const gradingServicesByCategory: Record<TradebiliaCategorySlug, string[]> = {
+  comics: ["CGC Cards", "PSA", "Beckett", "Raw"],
+  sports_cards: ["PSA", "BGS", "CGC Cards", "SGC", "Raw"],
+  pokemon: ["PSA", "BGS", "CGC Cards", "TAG", "Raw"],
+  vintage_toys: ["AFA", "CAS", "CGC", "Raw"],
+  video_games: ["VGA", "Wata", "CGC", "Raw"],
+  stamps: ["PSE", "PSAG", "Raw"],
+  coins: ["PCGS", "NGC", "Raw"],
+  autographs: ["PSA", "JSA", "BAS", "Raw"],
+  movies: ["CGC Home Video", "Beckett", "Raw"],
+  disney_pins: ["Raw"],
+};
+
+const gradingServicesList = ["Raw"];
 
 const gradeOptions = Array.from({ length: 11 }, (_, i) => ({ value: i.toString(), label: i.toString() }));
 
@@ -380,7 +385,16 @@ export default function CategoryPage() {
                         {filter.label === "Sport" && sportsList.map(sport => (
                           <SelectItem key={sport} value={sport}>{sport}</SelectItem>
                         ))}
-                        {filter.label === "Grading service" && gradingServicesList.map(service => (
+                        {filter.label === "Grading service" && slug && gradingServicesByCategory[slug]?.map(service => (
+                          <SelectItem key={service} value={service}>{service}</SelectItem>
+                        ))}
+                        {filter.label === "Grading company" && slug && gradingServicesByCategory[slug]?.map(service => (
+                          <SelectItem key={service} value={service}>{service}</SelectItem>
+                        ))}
+                        {filter.label === "Certification" && slug && gradingServicesByCategory[slug]?.map(service => (
+                          <SelectItem key={service} value={service}>{service}</SelectItem>
+                        ))}
+                        {filter.label === "Authentication" && slug && gradingServicesByCategory[slug]?.map(service => (
                           <SelectItem key={service} value={service}>{service}</SelectItem>
                         ))}
                         {filter.label === "Grade" && gradeOptions.map(grade => (
