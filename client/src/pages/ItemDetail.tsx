@@ -232,8 +232,8 @@ export default function ItemDetail() {
                 <Separator className="my-8 bg-white/10" />
 
                 <div className="flex flex-wrap items-center justify-between gap-5">
-                  <div className="flex items-center gap-4">
-                    <Avatar className="h-14 w-14 border border-white/15">
+                  <Link href={`/profile/${listing.owner.userId}`} className="flex items-center gap-4 hover:opacity-80 transition">
+                    <Avatar className="h-14 w-14 border border-white/15 cursor-pointer">
                       <AvatarImage src={listing.owner.avatarUrl ?? undefined} alt={listing.owner.displayName} />
                       <AvatarFallback className="bg-white/10 text-white">{initials(listing.owner.displayName)}</AvatarFallback>
                     </Avatar>
@@ -241,7 +241,7 @@ export default function ItemDetail() {
                       <p className="text-3xl font-medium text-white">{listing.owner.displayName}</p>
                       <p className="mt-1 text-sm text-white/55">Collector profile</p>
                     </div>
-                  </div>
+                  </Link>
                   <div className="text-right">
                     <div className="flex items-center justify-end gap-2 text-emerald-300">
                       <Star className="h-5 w-5 fill-current" />
