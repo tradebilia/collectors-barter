@@ -414,3 +414,5 @@
 - [x] Implement bulk delete functionality to remove multiple selected items at once
 - [x] Add undo functionality for bulk delete (30-second window to recover deleted items)
 - [x] Standardize item card sizes across all category pages to match Sports Cards page sizing
+- [x] Fix alert icon in top right corner to navigate to notifications/alerts page
+- [x] Fix mail icon in top right corner to navigate to messages page

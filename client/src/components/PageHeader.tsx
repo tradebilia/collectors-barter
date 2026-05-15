@@ -80,11 +80,15 @@ export function PageHeader({
               </Link>
               <span className="text-white/45">|</span>
               <div className="flex items-center gap-1 text-[#d4e86d]">
-                <Bell className="h-4 w-4" />
+                <Link href="/notifications" className="transition hover:text-[#c4d85d]" title="Notifications">
+                  <Bell className="h-4 w-4" />
+                </Link>
                 <Link href="/account-settings" className="transition hover:text-[#c4d85d]">
                   <Cog className="h-4 w-4" />
                 </Link>
-                <Mail className="h-4 w-4" />
+                <Link href="/messages" className="transition hover:text-[#c4d85d]" title="Messages">
+                  <Mail className="h-4 w-4" />
+                </Link>
               </div>
             </>
           )}

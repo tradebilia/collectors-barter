@@ -10,6 +10,7 @@ import Inventory from "./pages/Inventory";
 import AddInventory from "./pages/AddInventory";
 import Profile from "./pages/Profile";
 import Messages from "./pages/Messages";
+import Notifications from "./pages/Notifications";
 import MemberSearch from "./pages/MemberSearch";
 import CategoryPage from "./pages/CategoryPage";
 import ReportUser from "./pages/ReportUser";
@@ -30,6 +31,7 @@ function Router() {
       <Route path="/account-settings" component={AccountSettings} />
       <Route path="/profile/:userId" component={PublicProfile} />
       <Route path="/messages" component={Messages} />
+      <Route path="/notifications" component={Notifications} />
       <Route path="/members" component={MemberSearch} />
       <Route path="/report-user" component={ReportUser} />
       <Route path="/referral-request" component={ReferralRequest} />
