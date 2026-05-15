@@ -223,6 +223,8 @@ export default function AccountSettings() {
         showCategories={false}
         isAuthenticated={isAuthenticated}
         onLogout={logout}
+        userAvatar={dashboardQuery.data?.profile?.avatarUrl ?? null}
+        userName={dashboardQuery.data?.profile?.displayName ?? user?.name ?? "User"}
       />
 
       {/* Hero Section */}

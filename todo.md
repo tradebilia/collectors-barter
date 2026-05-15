@@ -421,3 +421,4 @@
 - [x] Fix item detail page to show full image without cutting it off
 - [x] Match item detail page background color to category page background for visual unity
 - [x] Make owner avatar and name clickable to navigate to their profile page on item detail
+- [x] Add user avatar icon in top right bar when logged in to show sign-in status

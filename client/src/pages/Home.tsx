@@ -432,6 +432,8 @@ export default function Home() {
         onSearch={() => marketplaceQuery.refetch()}
         isAuthenticated={isAuthenticated}
         onLogout={logout}
+        userAvatar={dashboard?.profile?.avatarUrl ?? null}
+        userName={dashboard?.profile?.displayName ?? user?.name ?? "User"}
       />
 
       <main className="pb-24">

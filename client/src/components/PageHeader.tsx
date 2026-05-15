@@ -2,6 +2,7 @@ import { Input } from "@/components/ui/input";
 import { Link } from "wouter";
 import { Search, Bell, Mail, Cog } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { getLoginUrl } from "@/const";
 
 interface PageHeaderProps {
@@ -15,6 +16,8 @@ interface PageHeaderProps {
   onSearch?: () => void;
   isAuthenticated?: boolean;
   onLogout?: () => void;
+  userAvatar?: string | null;
+  userName?: string;
 }
 
 const categoryOptions: Array<{ value: string; label: string }> = [
@@ -41,6 +44,8 @@ export function PageHeader({
   onSearch,
   isAuthenticated = false,
   onLogout,
+  userAvatar,
+  userName = "User",
 }: PageHeaderProps) {
   return (
     <header className="border-b border-black/70 bg-black text-white shadow-[0_8px_22px_rgba(0,0,0,0.25)]">
@@ -92,22 +97,34 @@ export function PageHeader({
               </div>
             </>
           )}
-          <div className="flex items-center gap-2">
-            {isAuthenticated ? (
-              <Button
-                onClick={onLogout}
-                className="h-7 rounded-md bg-white/20 px-3 text-[11px] font-semibold text-white hover:bg-white/30"
-              >
-                Log Out
-              </Button>
-            ) : (
-              <Button
-                onClick={() => (window.location.href = getLoginUrl())}
-                className="h-7 rounded-md bg-[#7f31ff] px-3 text-[11px] font-semibold text-white hover:bg-[#6925dd]"
-              >
-                Sign In
-              </Button>
+          <div className="flex items-center gap-3">
+            {isAuthenticated && userAvatar && (
+              <Link href="/profile" title="Your Profile">
+                <Avatar className="h-7 w-7 border border-white/30 cursor-pointer hover:border-white/60 transition">
+                  <AvatarImage src={userAvatar} alt={userName} />
+                  <AvatarFallback className="bg-[#7f31ff] text-white text-[10px]">
+                    {userName.charAt(0).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+              </Link>
             )}
+            <div className="flex items-center gap-2">
+              {isAuthenticated ? (
+                <Button
+                  onClick={onLogout}
+                  className="h-7 rounded-md bg-white/20 px-3 text-[11px] font-semibold text-white hover:bg-white/30"
+                >
+                  Log Out
+                </Button>
+              ) : (
+                <Button
+                  onClick={() => (window.location.href = getLoginUrl())}
+                  className="h-7 rounded-md bg-[#7f31ff] px-3 text-[11px] font-semibold text-white hover:bg-[#6925dd]"
+                >
+                  Sign In
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       </div>
