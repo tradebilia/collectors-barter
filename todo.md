@@ -418,3 +418,5 @@
 - [x] Fix mail icon in top right corner to navigate to messages page
 - [x] Enable clicking item image to view details on category pages
 - [x] Remove redundant "View" buttons from category page item cards
+- [x] Fix item detail page to show full image without cutting it off
+- [x] Match item detail page background color to category page background for visual unity

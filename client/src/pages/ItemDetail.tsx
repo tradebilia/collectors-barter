@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { resolveTradebiliaListingImage } from "@/lib/listingImages";
 import { trpc } from "@/lib/trpc";
 import { getLoginUrl } from "@/const";
+import { getTradebiliaCategoryTheme } from "@/lib/tradebilia";
 import { Heart, Loader2, MessageCircleMore, Menu, Search, Star, UserRound } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link, useRoute } from "wouter";
@@ -129,8 +130,11 @@ export default function ItemDetail() {
     );
   }
 
+  const categoryTheme = listing ? getTradebiliaCategoryTheme(listing.category) : null;
+  const pageBackgroundClass = categoryTheme?.pageClassName ?? "bg-[radial-gradient(circle_at_top,#1c2468_0%,#0b0a22_65%)] text-white";
+
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,#1c2468_0%,#0b0a22_65%)] text-white">
+    <div className={`min-h-screen ${pageBackgroundClass}`}>
       <header className="border-b border-white/10 bg-black/40 backdrop-blur-md">
         <div className="px-4 py-4 lg:px-8">
           <div className="flex flex-wrap items-center gap-4">
@@ -179,8 +183,8 @@ export default function ItemDetail() {
           <div className="mx-auto grid max-w-6xl gap-8 xl:grid-cols-[1.02fr_0.98fr]">
             <div>
               <div className="overflow-hidden rounded-[2rem] border border-white/10 bg-black/20 shadow-[0_40px_90px_rgba(0,0,0,0.35)]">
-                <div className="aspect-[0.78] bg-black/30">
-                  <img src={activePhoto?.imageUrl ?? resolveTradebiliaListingImage({ title: listing.title, category: listing.category, primaryPhotoUrl: listing.primaryPhotoUrl })} alt={activePhoto?.altText ?? listing.title} className="h-full w-full object-cover" />
+                <div className="flex items-center justify-center bg-black/30 p-4" style={{ minHeight: "500px" }}>
+                  <img src={activePhoto?.imageUrl ?? resolveTradebiliaListingImage({ title: listing.title, category: listing.category, primaryPhotoUrl: listing.primaryPhotoUrl })} alt={activePhoto?.altText ?? listing.title} className="max-h-full max-w-full object-contain" />
                 </div>
               </div>
               <div className="mt-5">
