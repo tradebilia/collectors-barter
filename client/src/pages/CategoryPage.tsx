@@ -571,7 +571,7 @@ export default function CategoryPage() {
                 <div className="grid gap-3 grid-cols-6">
                   {listings.map(listing => (
                   <Card key={listing.id} className={`overflow-hidden border ${theme.cardClassName} ${isSportsCardsPage ? "rounded-md shadow-sm" : "rounded-[2rem]"}`}>
-                    <div className={`overflow-hidden border-b border-current/10 ${isSportsCardsPage ? "aspect-[7/9] bg-[linear-gradient(180deg,rgba(243,228,188,0.92)_0%,rgba(232,214,168,0.92)_100%)] p-1" : "aspect-[4/5] bg-black/10"}`}>
+                    <Link href={`/listings/${listing.id}`} className={`overflow-hidden border-b border-current/10 block cursor-pointer hover:opacity-90 transition ${isSportsCardsPage ? "aspect-[7/9] bg-[linear-gradient(180deg,rgba(243,228,188,0.92)_0%,rgba(232,214,168,0.92)_100%)] p-1" : "aspect-[4/5] bg-black/10"}`}>
                       <div className={isSportsCardsPage ? "h-full rounded-sm border border-[#0f4658]/10 bg-[#f7ecd2] p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)]" : "h-full"}>
                         <img
                           src={resolveTradebiliaListingImage({ title: listing.title, category: listing.category, primaryPhotoUrl: listing.primaryPhotoUrl })}
@@ -579,7 +579,7 @@ export default function CategoryPage() {
                           className={isSportsCardsPage ? "h-full w-full object-contain p-0.5" : "h-full w-full object-cover"}
                         />
                       </div>
-                    </div>
+                    </Link>
                     <CardContent className={`space-y-1 ${isSportsCardsPage ? "p-1.5 text-[#153746]" : "p-5"}`}>
                       <div className="flex items-start justify-between gap-1">
                         <div>
@@ -613,9 +613,6 @@ export default function CategoryPage() {
                         </div>
                       </div>
                       <div className="flex flex-wrap gap-0.5">
-                        <Button asChild className="rounded-full px-2 py-0 text-[0.6rem] h-auto bg-[#D4AF37] hover:bg-[#C9A227] text-black">
-                          <Link href={`/listings/${listing.id}`}>View</Link>
-                        </Button>
                         <Dialog open={proposalListingId === listing.id} onOpenChange={open => setProposalListingId(open ? listing.id : null)}>
                           <DialogTrigger asChild>
                             <Button variant="outline" className="rounded-full bg-transparent px-1 py-0 text-xs h-auto" disabled={!isAuthenticated}>
@@ -647,7 +644,7 @@ export default function CategoryPage() {
                         </Dialog>
                         <Button
                           variant="outline"
-                          className="rounded-full bg-transparent"
+                          className="rounded-full bg-transparent px-1 py-0 text-xs h-auto"
                           onClick={() => {
                             if (!isAuthenticated) {
                               window.location.href = getLoginUrl();

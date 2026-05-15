@@ -416,3 +416,5 @@
 - [x] Standardize item card sizes across all category pages to match Sports Cards page sizing
 - [x] Fix alert icon in top right corner to navigate to notifications/alerts page
 - [x] Fix mail icon in top right corner to navigate to messages page
+- [x] Enable clicking item image to view details on category pages
+- [x] Remove redundant "View" buttons from category page item cards
