@@ -428,3 +428,4 @@
 - [x] Add unread messages badge to Mail icon in top right bar
 - [x] Fetch unread notification count from backend
 - [x] Fetch unread messages count from backend
+- [x] Replace "MY TRADEBILIA" text in top bar with user profile avatar picture

@@ -84,8 +84,13 @@ export function PageHeader({
         <div className="flex items-center gap-3 md:gap-4">
           {isAuthenticated && (
             <>
-              <Link href="/profile" className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/90 transition hover:text-white">
-                My Tradebilia
+              <Link href="/profile" title="Your Profile" className="transition hover:opacity-80">
+                <Avatar className="h-6 w-6 border border-white/30 cursor-pointer hover:border-white/60 transition">
+                  <AvatarImage src={userAvatar ?? undefined} alt={userName} />
+                  <AvatarFallback className="bg-[#7f31ff] text-white text-[10px]">
+                    {userName.charAt(0).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
               </Link>
               <span className="text-white/45">|</span>
               <div className="flex items-center gap-1 text-[#d4e86d]">
