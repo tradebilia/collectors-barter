@@ -110,6 +110,9 @@ export default function AddInventory() {
   const utils = trpc.useUtils();
   const [draft, setDraft] = useState<InventoryDraft>(emptyDraft);
   const [photos, setPhotos] = useState<UploadedImage[]>([]);
+  
+  const dashboardQuery = trpc.market.dashboard.useQuery(undefined, { enabled: isAuthenticated });
+  const unreadCountsQuery = trpc.auth.unreadCounts.useQuery(undefined, { enabled: isAuthenticated });
 
   const createListingMutation = trpc.market.createListing.useMutation({
     onSuccess: async () => {
@@ -203,7 +206,16 @@ export default function AddInventory() {
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,#1c2468_0%,#0b0a22_65%)] text-white">
-      <PageHeader userAvatar={user?.name?.charAt(0).toUpperCase() || undefined} userName={user?.name || undefined} userId={user?.id} unreadNotifications={0} unreadMessages={0} />
+      <PageHeader 
+        showSearch={true}
+        showCategories={true}
+        categories={categoryLinks as any}
+        userAvatar={dashboardQuery.data?.profile?.avatarUrl ?? user?.name?.charAt(0).toUpperCase() ?? undefined}
+        userName={dashboardQuery.data?.profile?.displayName ?? user?.name ?? "User"}
+        userId={user?.id}
+        unreadNotifications={unreadCountsQuery.data?.unreadNotifications ?? 0}
+        unreadMessages={unreadCountsQuery.data?.unreadMessages ?? 0}
+      />
 
       <section className="border-b border-white/10 bg-[linear-gradient(180deg,rgba(7,7,48,0.18)_0%,rgba(7,7,48,0.55)_100%)] px-4 py-8 lg:px-8">
         <div className="mx-auto max-w-6xl">
