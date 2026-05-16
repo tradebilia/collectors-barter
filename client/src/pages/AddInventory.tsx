@@ -106,7 +106,7 @@ function mapGradeToCondition(grade: string) {
 }
 
 export default function AddInventory() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const utils = trpc.useUtils();
   const [draft, setDraft] = useState<InventoryDraft>(emptyDraft);
   const [photos, setPhotos] = useState<UploadedImage[]>([]);
@@ -200,8 +200,6 @@ export default function AddInventory() {
       </div>
     );
   }
-
-  const { user } = useAuth();
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,#1c2468_0%,#0b0a22_65%)] text-white">
