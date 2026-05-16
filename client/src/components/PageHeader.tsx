@@ -20,6 +20,7 @@ interface PageHeaderProps {
   userName?: string;
   unreadNotifications?: number;
   unreadMessages?: number;
+  userId?: number;
 }
 
 const categoryOptions: Array<{ value: string; label: string }> = [
@@ -50,6 +51,7 @@ export function PageHeader({
   userName = "User",
   unreadNotifications = 0,
   unreadMessages = 0,
+  userId,
 }: PageHeaderProps) {
   return (
     <header className="border-b border-black/70 bg-black text-white shadow-[0_8px_22px_rgba(0,0,0,0.25)]">
@@ -84,7 +86,7 @@ export function PageHeader({
         <div className="flex items-center gap-3 md:gap-4">
           {isAuthenticated && (
             <>
-              <Link href="/profile" title="Your Profile" className="transition hover:opacity-80">
+              <Link href={userId ? `/profile/${userId}` : "/profile"} title="Your Profile" className="transition hover:opacity-80">
                 <Avatar className="h-6 w-6 border border-white/30 cursor-pointer hover:border-white/60 transition">
                   <AvatarImage src={userAvatar ?? undefined} alt={userName} />
                   <AvatarFallback className="bg-[#7f31ff] text-white text-[10px]">

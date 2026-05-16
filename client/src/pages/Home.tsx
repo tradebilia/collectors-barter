@@ -441,6 +441,7 @@ export default function Home() {
         userName={dashboard?.profile?.displayName ?? user?.name ?? "User"}
         unreadNotifications={unreadCountsQuery.data?.unreadNotifications ?? 0}
         unreadMessages={unreadCountsQuery.data?.unreadMessages ?? 0}
+        userId={user?.id}
       />
 
       <main className="pb-24">

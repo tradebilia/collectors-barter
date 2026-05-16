@@ -429,3 +429,4 @@
 - [x] Fetch unread notification count from backend
 - [x] Fetch unread messages count from backend
 - [x] Replace "MY TRADEBILIA" text in top bar with user profile avatar picture
+- [x] Fix avatar click navigation to go to profile page instead of account settings
