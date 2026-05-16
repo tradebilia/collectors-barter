@@ -424,3 +424,7 @@
 - [x] Add user avatar icon in top right bar when logged in to show sign-in status
 - [x] Research major grading companies and their specialties
 - [x] Update category page dropdowns with category-specific grading services
+- [x] Add unread notification badge to Bell icon in top right bar
+- [x] Add unread messages badge to Mail icon in top right bar
+- [x] Fetch unread notification count from backend
+- [x] Fetch unread messages count from backend

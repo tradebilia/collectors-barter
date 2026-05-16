@@ -18,6 +18,8 @@ interface PageHeaderProps {
   onLogout?: () => void;
   userAvatar?: string | null;
   userName?: string;
+  unreadNotifications?: number;
+  unreadMessages?: number;
 }
 
 const categoryOptions: Array<{ value: string; label: string }> = [
@@ -46,6 +48,8 @@ export function PageHeader({
   onLogout,
   userAvatar,
   userName = "User",
+  unreadNotifications = 0,
+  unreadMessages = 0,
 }: PageHeaderProps) {
   return (
     <header className="border-b border-black/70 bg-black text-white shadow-[0_8px_22px_rgba(0,0,0,0.25)]">
@@ -85,14 +89,24 @@ export function PageHeader({
               </Link>
               <span className="text-white/45">|</span>
               <div className="flex items-center gap-1 text-[#d4e86d]">
-                <Link href="/notifications" className="transition hover:text-[#c4d85d]" title="Notifications">
+                <Link href="/notifications" className="relative transition hover:text-[#c4d85d]" title="Notifications">
                   <Bell className="h-4 w-4" />
+                  {unreadNotifications > 0 && (
+                    <span className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+                      {unreadNotifications > 99 ? "99+" : unreadNotifications}
+                    </span>
+                  )}
                 </Link>
                 <Link href="/account-settings" className="transition hover:text-[#c4d85d]">
                   <Cog className="h-4 w-4" />
                 </Link>
-                <Link href="/messages" className="transition hover:text-[#c4d85d]" title="Messages">
+                <Link href="/messages" className="relative transition hover:text-[#c4d85d]" title="Messages">
                   <Mail className="h-4 w-4" />
+                  {unreadMessages > 0 && (
+                    <span className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+                      {unreadMessages > 99 ? "99+" : unreadMessages}
+                    </span>
+                  )}
                 </Link>
               </div>
             </>

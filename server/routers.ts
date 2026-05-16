@@ -18,6 +18,8 @@ import {
   bulkUpdateListingStatus,
   bulkDeleteListings,
   restoreDeletedListings,
+  getUnreadNotificationCount,
+  getUnreadMessageCount,
 } from "./db";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -75,6 +77,14 @@ export const appRouter = router({
       return {
         success: true,
       } as const;
+    }),
+    unreadCounts: protectedProcedure.query(async ({ ctx }) => {
+      const unreadNotifications = await getUnreadNotificationCount(ctx.user.id);
+      const unreadMessages = await getUnreadMessageCount(ctx.user.id);
+      return {
+        unreadNotifications,
+        unreadMessages,
+      };
     }),
   }),
   members: router({

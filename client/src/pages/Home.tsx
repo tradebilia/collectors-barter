@@ -128,6 +128,11 @@ async function readFiles(files: FileList | null) {
 export default function Home() {
   const { user, loading, isAuthenticated, logout } = useAuth();
   const utils = trpc.useUtils();
+  
+  const unreadCountsQuery = trpc.auth.unreadCounts.useQuery(undefined, {
+    enabled: isAuthenticated,
+    refetchInterval: 30000, // Refetch every 30 seconds
+  });
 
   const [keyword, setKeyword] = useState("");
   const [category, setCategory] = useState<(typeof categoryOptions)[number]["value"] | "all">("all");
@@ -434,6 +439,8 @@ export default function Home() {
         onLogout={logout}
         userAvatar={dashboard?.profile?.avatarUrl ?? null}
         userName={dashboard?.profile?.displayName ?? user?.name ?? "User"}
+        unreadNotifications={unreadCountsQuery.data?.unreadNotifications ?? 0}
+        unreadMessages={unreadCountsQuery.data?.unreadMessages ?? 0}
       />
 
       <main className="pb-24">

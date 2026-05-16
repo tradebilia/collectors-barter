@@ -1547,3 +1547,37 @@ export async function searchMembers(filters?: { query?: string; region?: string;
     members,
   };
 }
+
+
+export async function getUnreadNotificationCount(userId: number): Promise<number> {
+  const db = await requireDb();
+  // Count unread trade proposals (incoming proposals)
+  const incomingProposals = await db
+    .select({ count: sql<number>`COUNT(*)` })
+    .from(tradeProposals)
+    .where(and(eq(tradeProposals.recipientId, userId), ne(tradeProposals.status, "declined")))
+    .then((rows: any[]) => rows[0]?.count ?? 0);
+  
+  return incomingProposals;
+}
+
+export async function getUnreadMessageCount(userId: number): Promise<number> {
+  const db = await requireDb();
+  // Count unread trade messages (messages from other users in active proposals)
+  const unreadMessages = await db
+    .select({ count: sql<number>`COUNT(*)` })
+    .from(tradeMessages)
+    .innerJoin(tradeProposals, eq(tradeMessages.proposalId, tradeProposals.id))
+    .where(
+      and(
+        or(
+          eq(tradeProposals.recipientId, userId),
+          eq(tradeProposals.requesterId, userId)
+        ),
+        ne(tradeMessages.senderId, userId)
+      )
+    )
+    .then((rows: any[]) => rows[0]?.count ?? 0);
+  
+  return unreadMessages;
+}
