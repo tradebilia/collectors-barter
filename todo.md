@@ -430,3 +430,12 @@
 - [x] Fetch unread messages count from backend
 - [x] Replace "MY TRADEBILIA" text in top bar with user profile avatar picture
 - [x] Fix avatar click navigation to go to profile page instead of account settings
+- [ ] FUTURE: Implement scrolling carousel for Recently Added section (right-to-left auto-scroll, 10-min refresh, clickable items, no View buttons)
+
+## Add to Inventory Page Layout Improvements
+- [x] Add PageHeader to AddInventory.tsx page for consistent top bar
+- [x] Check all pages for PageHeader consistency
+- [ ] Redesign Add to Inventory form layout for better organization
+- [ ] Improve visual hierarchy and spacing of form fields
+- [ ] Add form sections/steps for better user experience
+- [ ] Enhance photo upload interface

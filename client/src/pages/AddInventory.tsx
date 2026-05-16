@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { PageHeader } from "@/components/PageHeader";
 import { getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
 import { Loader2, Menu, Search, Upload } from "lucide-react";
@@ -200,41 +201,11 @@ export default function AddInventory() {
     );
   }
 
+  const { user } = useAuth();
+
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,#1c2468_0%,#0b0a22_65%)] text-white">
-      <header className="border-b border-white/10 bg-black/50 backdrop-blur-md">
-        <div className="px-4 py-3 lg:px-8">
-          <div className="mb-3 flex items-center gap-3">
-            <Link href="/" className="rounded-lg border border-white/30 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/20">
-              Home
-            </Link>
-          </div>
-        </div>
-        <div className="px-4 py-4 lg:px-8">
-          <div className="flex flex-wrap items-center gap-4">
-            <Link href="/" className="text-[2rem] font-semibold tracking-tight text-white">Search...</Link>
-            <div className="flex min-w-[18rem] flex-1 items-center rounded-[1rem] border border-white/10 bg-white/12 px-4 py-3">
-              <Search className="mr-3 h-4 w-4 text-white/60" />
-              <span className="text-white/55">Search...</span>
-            </div>
-            <div className="ml-auto flex items-center gap-5 text-sm text-white">
-              <span className="text-[1.1rem] font-medium">My TRADEBILIA</span>
-              <Menu className="h-9 w-9 text-[#efe56c]" />
-            </div>
-          </div>
-          <nav className="mt-4 grid overflow-hidden border border-slate-300 bg-white text-slate-950 md:grid-cols-5 xl:grid-cols-10">
-            {categoryLinks.map(categoryLink => (
-              <Link
-                key={categoryLink.value}
-                href={`/category/${categoryLink.value}`}
-                className={`border-b border-r border-slate-300 px-4 py-4 text-center text-sm font-semibold uppercase tracking-[0.12em] transition hover:bg-slate-100 ${draft.category === categoryLink.value ? "bg-slate-900 text-white" : "bg-white text-slate-950"}`}
-              >
-                {categoryLink.label}
-              </Link>
-            ))}
-          </nav>
-        </div>
-      </header>
+      <PageHeader userAvatar={user?.name?.charAt(0).toUpperCase() || undefined} userName={user?.name || undefined} userId={user?.id} unreadNotifications={0} unreadMessages={0} />
 
       <section className="border-b border-white/10 bg-[linear-gradient(180deg,rgba(7,7,48,0.18)_0%,rgba(7,7,48,0.55)_100%)] px-4 py-8 lg:px-8">
         <div className="mx-auto max-w-6xl">
