@@ -1,6 +1,9 @@
 import { TopRightIcons } from "@/components/TopRightIcons";
-import { Search } from "lucide-react";
+import { Search, LogOut } from "lucide-react";
 import { Link } from "wouter";
+import { useAuth } from "@/_core/hooks/useAuth";
+import { getLoginUrl } from "@/const";
+import { Button } from "@/components/ui/button";
 
 interface CategoryTopBarProps {
   logoUrl?: string;
@@ -13,6 +16,7 @@ export function CategoryTopBar({
   searchPlaceholder = "Search...",
   onSearchChange,
 }: CategoryTopBarProps) {
+  const { isAuthenticated, logout } = useAuth();
   return (
     <div className="border-b border-white/10 bg-black">
       <div className="flex items-center justify-between gap-4 pl-2 pr-4 py-3">
@@ -36,8 +40,29 @@ export function CategoryTopBar({
           </div>
         </div>
 
-        {/* Icons on right */}
-        <TopRightIcons className="flex items-center gap-3 md:gap-4 flex-shrink-0" iconColor="text-white/70" />
+        {/* Icons and Auth on right */}
+        <div className="flex items-center gap-3 md:gap-4 flex-shrink-0">
+          <TopRightIcons iconColor="text-white/70" />
+          {isAuthenticated ? (
+            <Button
+              onClick={logout}
+              variant="ghost"
+              size="sm"
+              className="text-white/70 hover:text-white hover:bg-white/10"
+            >
+              <LogOut className="h-4 w-4 mr-2" />
+              Log Out
+            </Button>
+          ) : (
+            <Button
+              onClick={() => (window.location.href = getLoginUrl())}
+              size="sm"
+              className="bg-white/20 text-white hover:bg-white/30"
+            >
+              Sign In
+            </Button>
+          )}
+        </div>
       </div>
     </div>
   );

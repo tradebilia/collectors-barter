@@ -483,3 +483,9 @@
 - [x] Create reusable CategoryTopBar component (CategoryTopBar.tsx created)
 - [x] Replace all PageHeader instances with CategoryTopBar (Home, AccountSettings, AddInventory, Notifications all updated)
 - [x] Test top bar consistency across all pages (verified on homepage - logo, search, and icons display correctly)
+
+
+## Top Bar Sign In / Log Out Button (COMPLETED)
+- [x] Add Sign In button to CategoryTopBar when user is not logged in (conditional rendering in CategoryTopBar)
+- [x] Add Log Out button to CategoryTopBar when user is logged in (conditional rendering in CategoryTopBar)
+- [x] Test Sign In / Log Out button on all pages with CategoryTopBar (verified on Homepage and Add to Inventory)
