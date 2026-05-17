@@ -1,0 +1,197 @@
+import { useEffect, useRef, useState } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Heart, Loader2 } from "lucide-react";
+import { Link } from "wouter";
+import { toast } from "sonner";
+import { getLoginUrl } from "@/const";
+
+interface CarouselItem {
+  id: number;
+  title: string;
+  price: string;
+  subtitle: string;
+  imageUrl: string;
+  href?: string;
+  tradeListingId: number | null;
+  savedToWatchlist: boolean;
+  ownerId: number | null;
+}
+
+interface RecentlyAddedCarouselProps {
+  items: CarouselItem[];
+  onBeginProposal: (listingId: number) => void;
+  user: any;
+  isAuthenticated?: boolean;
+  createProposalMutation?: any;
+  watchlistMutation?: any;
+  proposalDraft?: any;
+  setProposalDraft?: any;
+}
+
+export function RecentlyAddedCarousel({
+  items,
+  onBeginProposal,
+  user,
+  isAuthenticated = false,
+  createProposalMutation,
+  watchlistMutation,
+  proposalDraft,
+  setProposalDraft,
+}: RecentlyAddedCarouselProps) {
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [isPaused, setIsPaused] = useState(false);
+
+  // Auto-scroll carousel every 10 minutes
+  useEffect(() => {
+    if (!scrollContainerRef.current || isPaused) return;
+
+    const scrollInterval = setInterval(() => {
+      if (scrollContainerRef.current) {
+        const container = scrollContainerRef.current;
+        const scrollAmount = 300; // Scroll by 300px to the right
+        container.scrollBy({ left: scrollAmount, behavior: "smooth" });
+
+        // Reset to beginning when reaching the end
+        if (container.scrollLeft + container.clientWidth >= container.scrollWidth - 50) {
+          setTimeout(() => {
+            if (container) {
+              container.scrollLeft = 0;
+            }
+          }, 500);
+        }
+      }
+    }, 600000); // 10 minutes
+
+    return () => clearInterval(scrollInterval);
+  }, [isPaused]);
+
+  return (
+    <div
+      className="mt-1.5 overflow-hidden rounded-lg"
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
+    >
+      <div
+        ref={scrollContainerRef}
+        className="flex gap-2 overflow-x-auto scroll-smooth pb-2"
+        style={{ scrollBehavior: "smooth" }}
+      >
+        {items.map(item => (
+          <div key={item.id} className="flex-shrink-0 w-[calc(20%-0.4rem)]">
+            <Card className="overflow-hidden rounded-none border border-slate-300 bg-white shadow-none h-full">
+              <div className="aspect-[0.68] overflow-hidden bg-[#f0ebe5] cursor-pointer group">
+                {item.href ? (
+                  <Link href={item.href}>
+                    <img
+                      src={item.imageUrl}
+                      alt={item.title}
+                      className="h-full w-full object-cover group-hover:opacity-90 transition-opacity"
+                    />
+                  </Link>
+                ) : (
+                  <img
+                    src={item.imageUrl}
+                    alt={item.title}
+                    className="h-full w-full object-cover"
+                  />
+                )}
+              </div>
+              <CardContent className="space-y-0.5 px-1.5 py-1.5">
+                {item.href ? (
+                  <Link href={item.href} className="line-clamp-2 text-[10px] font-medium leading-3.5 text-slate-900 transition hover:text-primary">
+                    {item.title}
+                  </Link>
+                ) : (
+                  <p className="line-clamp-2 text-[10px] font-medium leading-3.5 text-slate-900">{item.title}</p>
+                )}
+                <p className="text-[10px] text-[#7a46ff]">{item.price}</p>
+                <p className="text-[8px] text-slate-500">{item.subtitle}</p>
+                <div className="flex flex-wrap gap-1 pt-0.5">
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button
+                        size="sm"
+                        className="h-5 rounded-full px-1.5 text-[9px]"
+                        onClick={() => onBeginProposal(item.tradeListingId ?? 0)}
+                        disabled={item.ownerId ? user?.id === item.ownerId : false}
+                      >
+                        Trade
+                      </Button>
+                    </DialogTrigger>
+                    {createProposalMutation && (
+                      <DialogContent className="max-w-2xl rounded-[2rem]">
+                        <DialogHeader>
+                          <DialogTitle className="text-3xl">Create a Trade Proposal</DialogTitle>
+                          <DialogDescription>
+                            Send an expression of interest for <span className="font-semibold text-foreground">{item.title}</span>
+                          </DialogDescription>
+                        </DialogHeader>
+                        {isAuthenticated ? (
+                          <form
+                            className="space-y-5"
+                            onSubmit={async (e) => {
+                              e.preventDefault();
+                              if (proposalDraft && setProposalDraft && createProposalMutation) {
+                                await createProposalMutation.mutateAsync(proposalDraft);
+                              }
+                            }}
+                          >
+                            <div className="rounded-[1.5rem] border border-border/70 bg-muted/30 p-4 text-sm leading-7 text-muted-foreground">
+                              Your Trade Proposal starts as an expression of interest.
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor={`proposal-note-${item.id}`}>Message</Label>
+                              <Textarea
+                                id={`proposal-note-${item.id}`}
+                                value={proposalDraft?.note ?? ""}
+                                onChange={(e) => setProposalDraft?.((current: any) => ({ ...current, note: e.target.value }))}
+                                placeholder="Introduce yourself..."
+                                rows={5}
+                              />
+                            </div>
+                            <Button type="submit" className="rounded-full" disabled={createProposalMutation?.isPending}>
+                              {createProposalMutation?.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                              Send Trade Proposal
+                            </Button>
+                          </form>
+                        ) : (
+                          <div className="space-y-4 rounded-[1.5rem] border border-border/70 bg-muted/40 p-6">
+                            <p className="text-sm leading-7 text-muted-foreground">
+                              You need a subscriber account to send Trade Proposals.
+                            </p>
+                            <Button className="rounded-full" onClick={() => (window.location.href = getLoginUrl())}>
+                              Subscriber Sign In
+                            </Button>
+                          </div>
+                        )}
+                      </DialogContent>
+                    )}
+                  </Dialog>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-5 rounded-full px-1.5 text-[9px]"
+                    disabled={!isAuthenticated || watchlistMutation?.isPending || !item.tradeListingId}
+                    onClick={() =>
+                      item.tradeListingId
+                        ? watchlistMutation?.mutate({ listingId: item.tradeListingId })
+                        : toast.info("Add live listings to use the Watchlist.")
+                    }
+                  >
+                    <Heart className={`mr-1 h-3 w-3 ${item.savedToWatchlist ? "fill-current" : ""}`} />
+                    Save
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}

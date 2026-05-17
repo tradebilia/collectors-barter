@@ -435,7 +435,7 @@
 ## Add to Inventory Page Layout Improvements
 - [x] Add PageHeader to AddInventory.tsx page for consistent top bar
 - [x] Check all pages for PageHeader consistency
-- [ ] Redesign Add to Inventory form layout for better organization
-- [ ] Improve visual hierarchy and spacing of form fields
-- [ ] Add form sections/steps for better user experience
-- [ ] Enhance photo upload interface
+- [ ] FUTURE: Redesign Add to Inventory form layout for better organization (organize into sections: Category, Grading, Details, Additional)
+- [ ] FUTURE: Improve visual hierarchy and spacing of form fields (add rounded containers with borders)
+- [ ] FUTURE: Add form sections/steps for better user experience
+- [ ] FUTURE: Enhance photo upload interface
