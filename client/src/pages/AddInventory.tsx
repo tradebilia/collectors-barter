@@ -3,7 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { PageHeader } from "@/components/PageHeader";
+import { CategoryTopBar } from "@/components/CategoryTopBar";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
@@ -205,18 +205,7 @@ export default function AddInventory() {
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,#1c2468_0%,#0b0a22_65%)] text-white">
-      <PageHeader 
-        showSearch={false}
-        showCategories={true}
-        categories={categoryLinks as any}
-        isAuthenticated={isAuthenticated}
-        userAvatar={user?.name?.charAt(0).toUpperCase()}
-        userName={user?.name ?? "User"}
-        userId={user?.id}
-        unreadNotifications={unreadCountsQuery.data?.unreadNotifications ?? 0}
-        unreadMessages={unreadCountsQuery.data?.unreadMessages ?? 0}
-        logoUrl={TRADEBILIA_LOGO_URL}
-      />
+      <CategoryTopBar logoUrl={TRADEBILIA_LOGO_URL} searchPlaceholder="Search..." />
 
       <section className="border-b border-white/10 bg-[linear-gradient(180deg,rgba(7,7,48,0.18)_0%,rgba(7,7,48,0.55)_100%)] px-4 py-8 lg:px-8">
         <div className="mx-auto max-w-6xl">

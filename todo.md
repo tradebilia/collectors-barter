@@ -476,3 +476,10 @@
 - [x] Add Tradebilia logo to top left corner of PageHeader (logo displays in top-left with proper sizing)
 - [x] Update all pages to use new PageHeader without search (Home, AccountSettings, AddInventory, Notifications all updated)
 - [x] Verify top bar consistency across all pages matches category pages design (logo + icons on right, no search bar)
+
+
+## Copy Category Page Top Bar to All Pages
+- [ ] Extract exact top bar design from CategoryPage component
+- [ ] Create reusable CategoryTopBar component
+- [ ] Replace all PageHeader instances with CategoryTopBar
+- [ ] Test top bar consistency across all pages

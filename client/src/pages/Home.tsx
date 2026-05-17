@@ -18,7 +18,7 @@ import { Heart, Loader2, MessageSquareText, Search, ShieldCheck, Sparkles, Star,
 import { ChangeEvent, FormEvent, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Link } from "wouter";
-import { PageHeader } from "@/components/PageHeader";
+import { CategoryTopBar } from "@/components/CategoryTopBar";
 
 type UploadedImage = {
   name: string;
@@ -30,7 +30,7 @@ type UploadedImage = {
 type ListingCategory = (typeof categoryOptions)[number]["value"];
 type ListingCondition = Exclude<(typeof conditionOptions)[number]["value"], "all">;
 
-const TRADEBILIA_LOGO_URL = "/manus-storage/tradebilia_final_darkest(1)_3e8b98df.svg";
+const TRADEBILIA_LOGO_URL = "/manus-storage/tradebilia-longform-no-navy-clean_d2f04453.png";
 
 const categoryOptions = [
   { value: "comics", label: "Comics" },
@@ -427,22 +427,10 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-[#f7f4ee] text-foreground">
-      <PageHeader
-        showSearch={true}
-        showCategories={true}
-        categories={[...categoryOptions] as any}
-        activeCategory={category === "all" ? undefined : category}
-        keyword={keyword}
-        onKeywordChange={setKeyword}
-        onSearch={() => marketplaceQuery.refetch()}
-        isAuthenticated={isAuthenticated}
-        onLogout={logout}
-        userAvatar={dashboard?.profile?.avatarUrl ?? null}
-        userName={dashboard?.profile?.displayName ?? user?.name ?? "User"}
-        unreadNotifications={unreadCountsQuery.data?.unreadNotifications ?? 0}
-        unreadMessages={unreadCountsQuery.data?.unreadMessages ?? 0}
-        userId={user?.id}
+      <CategoryTopBar
         logoUrl={TRADEBILIA_LOGO_URL}
+        searchPlaceholder="Search Tradebilia..."
+        onSearchChange={setKeyword}
       />
 
       <main className="pb-24">

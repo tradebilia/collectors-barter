@@ -15,7 +15,7 @@ import { Bell, Lock, Mail, Loader2, Save, Shield, Link as LinkIcon, Upload, Eye,
 import { FormEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Link } from "wouter";
-import { PageHeader } from "@/components/PageHeader";
+import { CategoryTopBar } from "@/components/CategoryTopBar";
 
 const TRADEBILIA_LOGO_URL = "/manus-storage/Tradebilialogo_886a61b7.webp";
 
@@ -218,15 +218,7 @@ export default function AccountSettings() {
 
   return (
     <div className="min-h-screen bg-[#f5f5f3] text-slate-950">
-      <PageHeader
-        showSearch={false}
-        showCategories={false}
-        isAuthenticated={isAuthenticated}
-        onLogout={logout}
-        userAvatar={dashboardQuery.data?.profile?.avatarUrl ?? null}
-        userName={dashboardQuery.data?.profile?.displayName ?? user?.name ?? "User"}
-        logoUrl={TRADEBILIA_LOGO_URL}
-      />
+      <CategoryTopBar logoUrl={TRADEBILIA_LOGO_URL} searchPlaceholder="Search..." />
 
       {/* Hero Section */}
       <section className="relative w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden bg-[#00143A] text-white">
