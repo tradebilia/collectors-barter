@@ -227,91 +227,107 @@ export default function AddInventory() {
         <form className="mx-auto max-w-6xl" onSubmit={submitListing}>
           <h1 className="text-5xl font-semibold tracking-tight text-white">ADD TO YOUR INVENTORY</h1>
           <div className="mt-10 grid gap-10 lg:grid-cols-[1.15fr_0.85fr]">
-            <div className="space-y-8">
-              <div>
-                <h2 className="text-3xl font-medium text-white">ITEM INFORMATION</h2>
-                <div className="mt-8 grid gap-6 md:grid-cols-2">
+            <div className="space-y-10">
+              {/* Category Section */}
+              <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-white/8 to-white/4 p-8 shadow-lg">
+                <h3 className="mb-6 text-xl font-semibold uppercase tracking-[0.1em] text-white/95">Select Category</h3>
+                <div className="space-y-3">
+                  <Label className="text-sm uppercase tracking-[0.08em] text-white/70">Category</Label>
+                  <Select value={draft.category} onValueChange={value => setDraft(current => ({ ...current, category: value as ListingCategory }))}>
+                    <SelectTrigger className="h-12 border-white/10 bg-white/8 text-white hover:bg-white/12">
+                      <SelectValue placeholder="Select category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categoryLinks.map(option => (
+                        <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Grading Information Section */}
+              <div className="rounded-2xl border border-blue-500/20 bg-gradient-to-br from-blue-500/10 to-blue-500/5 p-8 shadow-lg">
+                <h3 className="mb-6 text-xl font-semibold uppercase tracking-[0.1em] text-white/95">Grading Information</h3>
+                <div className="grid gap-6 md:grid-cols-2">
                   <div className="space-y-3 md:col-span-2">
-                    <Label className="text-xl uppercase tracking-[0.08em] text-white/90">Grader Company</Label>
+                    <Label className="text-sm uppercase tracking-[0.08em] text-white/70">Grader Company</Label>
                     <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
-                      <Input value={draft.graderCompany} onChange={event => setDraft(current => ({ ...current, graderCompany: event.target.value }))} className="h-14 border-white/8 bg-white/6 text-white placeholder:text-white/35" />
-                      <Button type="button" variant="outline" className="h-14 border-white/12 bg-white/6 px-6 text-white hover:bg-white/12 hover:text-white" onClick={fetchDetails}>
-                        FETCH DETAILS
+                      <Input value={draft.graderCompany} onChange={event => setDraft(current => ({ ...current, graderCompany: event.target.value }))} placeholder="e.g., CGC, PSA, BGS" className="h-12 border-white/10 bg-white/8 text-white placeholder:text-white/35" />
+                      <Button type="button" variant="outline" className="h-12 border-white/12 bg-white/8 px-6 text-sm text-white hover:bg-white/12 hover:text-white" onClick={fetchDetails}>
+                        FETCH
                       </Button>
                     </div>
                   </div>
 
                   <div className="space-y-3 md:col-span-2">
-                    <Label className="text-xl uppercase tracking-[0.08em] text-white/90">Certification Number</Label>
-                    <Input value={draft.certificationNumber} onChange={event => setDraft(current => ({ ...current, certificationNumber: event.target.value }))} className="h-14 border-white/8 bg-white/6 text-white placeholder:text-white/35" />
+                    <Label className="text-sm uppercase tracking-[0.08em] text-white/70">Certification Number</Label>
+                    <Input value={draft.certificationNumber} onChange={event => setDraft(current => ({ ...current, certificationNumber: event.target.value }))} placeholder="Enter certification number" className="h-12 border-white/10 bg-white/8 text-white placeholder:text-white/35" />
                   </div>
 
                   <div className="space-y-3">
-                    <Label className="text-xl uppercase tracking-[0.08em] text-white/90">Title</Label>
-                    <Input value={draft.title} onChange={event => setDraft(current => ({ ...current, title: event.target.value }))} className="h-14 border-white/8 bg-white/6 text-white placeholder:text-white/35" />
+                    <Label className="text-sm uppercase tracking-[0.08em] text-white/70">Grade</Label>
+                    <Input value={draft.grade} onChange={event => setDraft(current => ({ ...current, grade: event.target.value }))} placeholder="e.g., 9.0" className="h-12 border-white/10 bg-white/8 text-white placeholder:text-white/35" />
                   </div>
                   <div className="space-y-3">
-                    <Label className="text-xl uppercase tracking-[0.08em] text-white/90">Issue #</Label>
-                    <Input value={draft.issueNumber} onChange={event => setDraft(current => ({ ...current, issueNumber: event.target.value }))} className="h-14 border-white/8 bg-white/6 text-white placeholder:text-white/35" />
+                    <Label className="text-sm uppercase tracking-[0.08em] text-white/70">Graded Date</Label>
+                    <Input value={draft.gradedDate} onChange={event => setDraft(current => ({ ...current, gradedDate: event.target.value }))} placeholder="YYYY-MM-DD" className="h-12 border-white/10 bg-white/8 text-white placeholder:text-white/35" />
                   </div>
 
                   <div className="space-y-3">
-                    <Label className="text-xl uppercase tracking-[0.08em] text-white/90">Publisher</Label>
-                    <Input value={draft.publisher} onChange={event => setDraft(current => ({ ...current, publisher: event.target.value }))} className="h-14 border-white/8 bg-white/6 text-white placeholder:text-white/35" />
+                    <Label className="text-sm uppercase tracking-[0.08em] text-white/70">Page Quality</Label>
+                    <Input value={draft.pageQuality} onChange={event => setDraft(current => ({ ...current, pageQuality: event.target.value }))} placeholder="e.g., White, Off-white" className="h-12 border-white/10 bg-white/8 text-white placeholder:text-white/35" />
                   </div>
                   <div className="space-y-3">
-                    <Label className="text-xl uppercase tracking-[0.08em] text-white/90">Cover Date</Label>
-                    <Input value={draft.coverDate} onChange={event => setDraft(current => ({ ...current, coverDate: event.target.value }))} className="h-14 border-white/8 bg-white/6 text-white placeholder:text-white/35" />
-                  </div>
-
-                  <div className="space-y-3">
-                    <Label className="text-xl uppercase tracking-[0.08em] text-white/90">Grade</Label>
-                    <Input value={draft.grade} onChange={event => setDraft(current => ({ ...current, grade: event.target.value }))} className="h-14 border-white/8 bg-white/6 text-white placeholder:text-white/35" />
-                  </div>
-                  <div className="space-y-3">
-                    <Label className="text-xl uppercase tracking-[0.08em] text-white/90">Page Quality</Label>
-                    <Input value={draft.pageQuality} onChange={event => setDraft(current => ({ ...current, pageQuality: event.target.value }))} className="h-14 border-white/8 bg-white/6 text-white placeholder:text-white/35" />
-                  </div>
-
-                  <div className="space-y-3">
-                    <Label className="text-xl uppercase tracking-[0.08em] text-white/90">Grader Notes</Label>
-                    <Input value={draft.graderNotes} onChange={event => setDraft(current => ({ ...current, graderNotes: event.target.value }))} className="h-14 border-white/8 bg-white/6 text-white placeholder:text-white/35" />
-                  </div>
-                  <div className="space-y-3">
-                    <Label className="text-xl uppercase tracking-[0.08em] text-white/90">Graded Date</Label>
-                    <Input value={draft.gradedDate} onChange={event => setDraft(current => ({ ...current, gradedDate: event.target.value }))} className="h-14 border-white/8 bg-white/6 text-white placeholder:text-white/35" />
-                  </div>
-
-                  <div className="space-y-3">
-                    <Label className="text-xl uppercase tracking-[0.08em] text-white/90">Art Comments</Label>
-                    <Input value={draft.artComments} onChange={event => setDraft(current => ({ ...current, artComments: event.target.value }))} className="h-14 border-white/8 bg-white/6 text-white placeholder:text-white/35" />
-                  </div>
-                  <div className="space-y-3">
-                    <Label className="text-xl uppercase tracking-[0.08em] text-white/90">Category</Label>
-                    <Select value={draft.category} onValueChange={value => setDraft(current => ({ ...current, category: value as ListingCategory }))}>
-                      <SelectTrigger className="h-14 border-white/8 bg-white/6 text-white">
-                        <SelectValue placeholder="Select category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {categoryLinks.map(option => (
-                          <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-3 md:col-span-2">
-                    <Label className="text-xl uppercase tracking-[0.08em] text-white/90">Additional Notes</Label>
-                    <Textarea value={draft.additionalNotes} onChange={event => setDraft(current => ({ ...current, additionalNotes: event.target.value }))} rows={5} className="border-white/8 bg-white/6 text-white placeholder:text-white/35" />
+                    <Label className="text-sm uppercase tracking-[0.08em] text-white/70">Grader Notes</Label>
+                    <Input value={draft.graderNotes} onChange={event => setDraft(current => ({ ...current, graderNotes: event.target.value }))} placeholder="Any notes from grader" className="h-12 border-white/10 bg-white/8 text-white placeholder:text-white/35" />
                   </div>
                 </div>
               </div>
 
+              {/* Item Details Section */}
+              <div className="rounded-2xl border border-purple-500/20 bg-gradient-to-br from-purple-500/10 to-purple-500/5 p-8 shadow-lg">
+                <h3 className="mb-6 text-xl font-semibold uppercase tracking-[0.1em] text-white/95">Item Details</h3>
+                <div className="grid gap-6 md:grid-cols-2">
+                  <div className="space-y-3 md:col-span-2">
+                    <Label className="text-sm uppercase tracking-[0.08em] text-white/70">Title *</Label>
+                    <Input value={draft.title} onChange={event => setDraft(current => ({ ...current, title: event.target.value }))} placeholder="Enter item title" className="h-12 border-white/10 bg-white/8 text-white placeholder:text-white/35" />
+                  </div>
+
+                  <div className="space-y-3">
+                    <Label className="text-sm uppercase tracking-[0.08em] text-white/70">Issue #</Label>
+                    <Input value={draft.issueNumber} onChange={event => setDraft(current => ({ ...current, issueNumber: event.target.value }))} placeholder="e.g., #1, #100" className="h-12 border-white/10 bg-white/8 text-white placeholder:text-white/35" />
+                  </div>
+                  <div className="space-y-3">
+                    <Label className="text-sm uppercase tracking-[0.08em] text-white/70">Publisher</Label>
+                    <Input value={draft.publisher} onChange={event => setDraft(current => ({ ...current, publisher: event.target.value }))} placeholder="e.g., Marvel, DC" className="h-12 border-white/10 bg-white/8 text-white placeholder:text-white/35" />
+                  </div>
+
+                  <div className="space-y-3">
+                    <Label className="text-sm uppercase tracking-[0.08em] text-white/70">Cover Date</Label>
+                    <Input value={draft.coverDate} onChange={event => setDraft(current => ({ ...current, coverDate: event.target.value }))} placeholder="e.g., Jan 1962" className="h-12 border-white/10 bg-white/8 text-white placeholder:text-white/35" />
+                  </div>
+                  <div className="space-y-3">
+                    <Label className="text-sm uppercase tracking-[0.08em] text-white/70">Art Comments</Label>
+                    <Input value={draft.artComments} onChange={event => setDraft(current => ({ ...current, artComments: event.target.value }))} placeholder="Any art-related notes" className="h-12 border-white/10 bg-white/8 text-white placeholder:text-white/35" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Additional Information Section */}
+              <div className="rounded-2xl border border-green-500/20 bg-gradient-to-br from-green-500/10 to-green-500/5 p-8 shadow-lg">
+                <h3 className="mb-6 text-xl font-semibold uppercase tracking-[0.1em] text-white/95">Additional Information</h3>
+                <div className="space-y-3">
+                  <Label className="text-sm uppercase tracking-[0.08em] text-white/70">Additional Notes</Label>
+                  <Textarea value={draft.additionalNotes} onChange={event => setDraft(current => ({ ...current, additionalNotes: event.target.value }))} rows={5} placeholder="Any additional details about this item..." className="border-white/10 bg-white/8 text-white placeholder:text-white/35" />
+                </div>
+              </div>
+
               <div className="flex flex-wrap gap-4">
-                <Button type="button" variant="outline" className="min-w-[14rem] rounded-xl border-white/10 bg-white/5 px-8 py-6 text-xl text-white hover:bg-white/10 hover:text-white" onClick={saveDraft}>
+                <Button type="button" variant="outline" className="min-w-[14rem] rounded-xl border-white/10 bg-white/5 px-8 py-6 text-lg text-white hover:bg-white/10 hover:text-white" onClick={saveDraft}>
                   SAVE DRAFT
                 </Button>
-                <Button type="submit" className="min-w-[18rem] rounded-xl bg-[#0e5d73] px-8 py-6 text-xl text-white hover:bg-[#0a4d60]" disabled={createListingMutation.isPending}>
+                <Button type="submit" className="min-w-[18rem] rounded-xl bg-[#0e5d73] px-8 py-6 text-lg text-white hover:bg-[#0a4d60]" disabled={createListingMutation.isPending}>
                   {createListingMutation.isPending ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : null}
                   SUBMIT COLLECTIBLE
                 </Button>
