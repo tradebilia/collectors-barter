@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 
 import { trpc } from "@/lib/trpc";
 import { ChevronRight, Loader2, Upload } from "lucide-react";
+import { TopRightIcons } from "@/components/TopRightIcons";
 import { FormEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Link, useLocation } from "wouter";
@@ -286,9 +287,7 @@ export default function AccountSetup() {
           <Link href="/" className="font-['Oswald'] text-[2.2rem] font-semibold leading-none tracking-[-0.05em] text-white">
             HOME
           </Link>
-          <div className="ml-auto flex items-center gap-3 text-sm font-semibold">
-            <span>Account Setup</span>
-          </div>
+          <TopRightIcons className="ml-auto flex items-center gap-3 md:gap-4" iconColor="text-white" />
         </div>
       </header>
 

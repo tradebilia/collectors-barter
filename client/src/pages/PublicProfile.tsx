@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
 import { Heart, MessageSquare, Share2, Star, Loader2 } from "lucide-react";
+import { TopRightIcons } from "@/components/TopRightIcons";
+import { useAuth } from "@/_core/hooks/useAuth";
 import { useParams } from "wouter";
 import { Link } from "wouter";
 
@@ -84,9 +86,7 @@ export default function PublicProfile() {
           <Link href="/" className="font-['Oswald'] text-[2.2rem] font-semibold leading-none tracking-[-0.05em] text-white">
             HOME
           </Link>
-          <div className="ml-auto flex items-center gap-3 text-sm font-semibold">
-            <span>Member Profile</span>
-          </div>
+          <TopRightIcons className="ml-auto flex items-center gap-3 md:gap-4" iconColor="text-white" />
         </div>
         <nav className="grid border-t border-white/10 bg-white text-center text-sm font-semibold text-slate-950 sm:grid-cols-5 xl:grid-cols-10">
           {categoryLinks.map(category => (
