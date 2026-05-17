@@ -439,3 +439,21 @@
 - [ ] FUTURE: Improve visual hierarchy and spacing of form fields (add rounded containers with borders)
 - [ ] FUTURE: Add form sections/steps for better user experience
 - [ ] FUTURE: Enhance photo upload interface
+
+
+## CRITICAL: Consistent Top-Right Corner Icons (Current Task)
+- [ ] Add consistent top-right corner icons to CategoryPage (avatar, notifications, messages, settings)
+- [ ] Add consistent top-right corner icons to ItemDetail (avatar, notifications, messages, settings)
+- [ ] Add consistent top-right corner icons to Inventory (avatar, notifications, messages, settings)
+- [ ] Add consistent top-right corner icons to Messages (avatar, notifications, messages, settings)
+- [ ] Add consistent top-right corner icons to Profile (avatar, notifications, messages, settings)
+- [ ] Add consistent top-right corner icons to PublicProfile (avatar, notifications, messages, settings)
+- [ ] Add consistent top-right corner icons to MemberSearch (avatar, notifications, messages, settings)
+- [ ] Add consistent top-right corner icons to ReportUser (avatar, notifications, messages, settings)
+- [ ] Add consistent top-right corner icons to ReferralRequest (avatar, notifications, messages, settings)
+- [ ] Add consistent top-right corner icons to Watchlist (avatar, notifications, messages, settings)
+- [ ] Add consistent top-right corner icons to AddInventory (avatar, notifications, messages, settings)
+- [ ] Add consistent top-right corner icons to AccountSettings (avatar, notifications, messages, settings)
+- [ ] Add consistent top-right corner icons to Notifications (avatar, notifications, messages, settings)
+- [ ] Verify all icon styles match the homepage exactly
+- [ ] Ensure all icons have proper hover states and functionality

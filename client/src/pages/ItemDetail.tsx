@@ -11,6 +11,7 @@ import { trpc } from "@/lib/trpc";
 import { getLoginUrl } from "@/const";
 import { getTradebiliaCategoryTheme } from "@/lib/tradebilia";
 import { Heart, Loader2, MessageCircleMore, Menu, Search, Star, UserRound } from "lucide-react";
+import { TopRightIcons } from "@/components/TopRightIcons";
 import { useMemo, useState } from "react";
 import { Link, useRoute } from "wouter";
 import { toast } from "sonner";
@@ -143,20 +144,7 @@ export default function ItemDetail() {
               <Search className="mr-3 h-4 w-4 text-white/60" />
               <span className="text-white/60">Search collectibles, members, and categories</span>
             </div>
-            <div className="hidden rounded-full border border-white/10 px-5 py-3 text-sm uppercase tracking-[0.32em] text-white/70 lg:block">
-              My Tradebilia
-            </div>
-            <div className="flex items-center gap-3 rounded-full border border-white/10 px-4 py-2 text-sm">
-              <Avatar className="h-9 w-9 border border-white/15">
-                <AvatarImage alt={user?.name ?? "Tradebilia member"} />
-                <AvatarFallback className="bg-white/10 text-white">{initials(user?.name ?? "Tradebilia")}</AvatarFallback>
-              </Avatar>
-              <div className="hidden sm:block">
-                <p className="font-semibold text-white">{user?.name ?? "Guest collector"}</p>
-                <p className="text-xs text-white/60">Tradebilia Subscriber Exchange</p>
-              </div>
-              <Menu className="h-5 w-5 text-white/80" />
-            </div>
+            <TopRightIcons className="flex items-center gap-3 md:gap-4" iconColor="text-white/70" />
           </div>
           <nav className="mt-4 grid overflow-hidden rounded-[1.5rem] border border-white/10 bg-white/95 text-slate-900 md:grid-cols-5 xl:grid-cols-10">
             {categoryLinks.map(category => (
