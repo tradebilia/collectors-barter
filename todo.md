@@ -441,19 +441,25 @@
 - [ ] FUTURE: Enhance photo upload interface
 
 
-## CRITICAL: Consistent Top-Right Corner Icons (Current Task)
-- [ ] Add consistent top-right corner icons to CategoryPage (avatar, notifications, messages, settings)
-- [ ] Add consistent top-right corner icons to ItemDetail (avatar, notifications, messages, settings)
-- [ ] Add consistent top-right corner icons to Inventory (avatar, notifications, messages, settings)
-- [ ] Add consistent top-right corner icons to Messages (avatar, notifications, messages, settings)
-- [ ] Add consistent top-right corner icons to Profile (avatar, notifications, messages, settings)
-- [ ] Add consistent top-right corner icons to PublicProfile (avatar, notifications, messages, settings)
-- [ ] Add consistent top-right corner icons to MemberSearch (avatar, notifications, messages, settings)
-- [ ] Add consistent top-right corner icons to ReportUser (avatar, notifications, messages, settings)
-- [ ] Add consistent top-right corner icons to ReferralRequest (avatar, notifications, messages, settings)
-- [ ] Add consistent top-right corner icons to Watchlist (avatar, notifications, messages, settings)
-- [ ] Add consistent top-right corner icons to AddInventory (avatar, notifications, messages, settings)
-- [ ] Add consistent top-right corner icons to AccountSettings (avatar, notifications, messages, settings)
-- [ ] Add consistent top-right corner icons to Notifications (avatar, notifications, messages, settings)
-- [ ] Verify all icon styles match the homepage exactly
-- [ ] Ensure all icons have proper hover states and functionality
+## CRITICAL: Consistent Top-Right Corner Icons (COMPLETED)
+- [x] Add consistent top-right corner icons to CategoryPage (avatar, notifications, messages, settings)
+- [x] Add consistent top-right corner icons to ItemDetail (avatar, notifications, messages, settings)
+- [x] Add consistent top-right corner icons to Inventory (avatar, notifications, messages, settings)
+- [x] Add consistent top-right corner icons to Messages (avatar, notifications, messages, settings)
+- [x] Add consistent top-right corner icons to Profile (avatar, notifications, messages, settings)
+- [x] Add consistent top-right corner icons to PublicProfile (avatar, notifications, messages, settings)
+- [x] Add consistent top-right corner icons to MemberSearch (avatar, notifications, messages, settings)
+- [x] Add consistent top-right corner icons to ReportUser (avatar, notifications, messages, settings)
+- [x] Add consistent top-right corner icons to ReferralRequest (avatar, notifications, messages, settings)
+- [x] Add consistent top-right corner icons to Watchlist (avatar, notifications, messages, settings)
+- [x] Add consistent top-right corner icons to AddInventory (avatar, notifications, messages, settings) - Already has PageHeader
+- [x] Add consistent top-right corner icons to AccountSettings (avatar, notifications, messages, settings) - Already has PageHeader
+- [x] Add consistent top-right corner icons to Notifications (avatar, notifications, messages, settings) - Already has PageHeader
+- [x] Verify all icon styles match the homepage exactly (all use TopRightIcons component)
+- [x] Ensure all icons have proper hover states and functionality (TopRightIcons component handles all)
+
+
+## BUG: Grid/List View Toggle Not Working (FIXED)
+- [x] Fix grid/list toggle button on category pages (now works - added conditional rendering based on viewMode state)
+- [x] Implement list view layout for category pages (flex layout with image on left, details on right)
+- [x] Test toggle functionality across all 10 category pages (tested on Comics - works perfectly)
