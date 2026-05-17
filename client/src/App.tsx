@@ -5,51 +5,33 @@ import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
-import ItemDetail from "./pages/ItemDetail";
-import Inventory from "./pages/Inventory";
-import AddInventory from "./pages/AddInventory";
-import Profile from "./pages/Profile";
-import Messages from "./pages/Messages";
-import Notifications from "./pages/Notifications";
-import MemberSearch from "./pages/MemberSearch";
-import CategoryPage from "./pages/CategoryPage";
-import ReportUser from "./pages/ReportUser";
-import ReferralRequest from "./pages/ReferralRequest";
-import Watchlist from "./pages/Watchlist";
-import AccountSetup from "./pages/AccountSetup";
-import AccountSettings from "./pages/AccountSettings";
-import PublicProfile from "./pages/PublicProfile";
 
 function Router() {
+  // make sure to consider if you need authentication for certain routes
   return (
     <Switch>
-      <Route path="/" component={Home} />
-      <Route path="/inventory" component={Inventory} />
-      <Route path="/inventory/new" component={AddInventory} />
-      <Route path="/profile" component={Profile} />
-      <Route path="/account-setup" component={AccountSetup} />
-      <Route path="/account-settings" component={AccountSettings} />
-      <Route path="/profile/:userId" component={PublicProfile} />
-      <Route path="/messages" component={Messages} />
-      <Route path="/notifications" component={Notifications} />
-      <Route path="/members" component={MemberSearch} />
-      <Route path="/report-user" component={ReportUser} />
-      <Route path="/referral-request" component={ReferralRequest} />
-      <Route path="/watchlist" component={Watchlist} />
-      <Route path="/category/:slug" component={CategoryPage} />
-      <Route path="/listings/:listingId" component={ItemDetail} />
-      <Route path="/404" component={NotFound} />
+      <Route path={"/"} component={Home} />
+      <Route path={"/404"} component={NotFound} />
+      {/* Final fallback route */}
       <Route component={NotFound} />
     </Switch>
   );
 }
 
+// NOTE: About Theme
+// - First choose a default theme according to your design style (dark or light bg), than change color palette in index.css
+//   to keep consistent foreground/background color across components
+// - If you want to make theme switchable, pass `switchable` ThemeProvider and use `useTheme` hook
+
 function App() {
   return (
     <ErrorBoundary>
-      <ThemeProvider defaultTheme="light">
+      <ThemeProvider
+        defaultTheme="light"
+        // switchable
+      >
         <TooltipProvider>
-          <Toaster richColors position="top-right" />
+          <Toaster />
           <Router />
         </TooltipProvider>
       </ThemeProvider>

@@ -1,55 +1,5 @@
 {
   "version": "7",
   "dialect": "mysql",
-  "entries": [
-    {
-      "idx": 0,
-      "version": "5",
-      "when": 1776460355636,
-      "tag": "0000_skinny_stephen_strange",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "5",
-      "when": 1776461298064,
-      "tag": "0001_serious_ultimates",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "5",
-      "when": 1776465436132,
-      "tag": "0002_pretty_franklin_storm",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "5",
-      "when": 1778195559222,
-      "tag": "0003_nappy_quasar",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "5",
-      "when": 1778630735468,
-      "tag": "0004_cold_katie_power",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "5",
-      "when": 1778631588301,
-      "tag": "0005_clammy_saracen",
-      "breakpoints": true
-    },
-    {
-      "idx": 6,
-      "version": "5",
-      "when": 1778680433071,
-      "tag": "0006_polite_gravity",
-      "breakpoints": true
-    }
-  ]
+  "entries": []
 }

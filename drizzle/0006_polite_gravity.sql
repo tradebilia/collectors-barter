@@ -1,1 +1,0 @@
-ALTER TABLE `listings` ADD `isActive` boolean DEFAULT true NOT NULL;
