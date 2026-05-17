@@ -478,8 +478,8 @@
 - [x] Verify top bar consistency across all pages matches category pages design (logo + icons on right, no search bar)
 
 
-## Copy Category Page Top Bar to All Pages
-- [ ] Extract exact top bar design from CategoryPage component
-- [ ] Create reusable CategoryTopBar component
-- [ ] Replace all PageHeader instances with CategoryTopBar
-- [ ] Test top bar consistency across all pages
+## Copy Category Page Top Bar to All Pages (COMPLETED)
+- [x] Extract exact top bar design from CategoryPage component (extracted logo, search, and TopRightIcons)
+- [x] Create reusable CategoryTopBar component (CategoryTopBar.tsx created)
+- [x] Replace all PageHeader instances with CategoryTopBar (Home, AccountSettings, AddInventory, Notifications all updated)
+- [x] Test top bar consistency across all pages (verified on homepage - logo, search, and icons display correctly)
