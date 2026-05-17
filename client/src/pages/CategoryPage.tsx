@@ -585,36 +585,36 @@ export default function CategoryPage() {
                         />
                       </div>
                     </Link>
-                    <CardContent className={`space-y-1 ${isSportsCardsPage ? "p-1.5 text-[#153746]" : "p-5"}`}>
-                      <div className="flex items-start justify-between gap-1">
-                        <div>
-                          <p className="text-[0.5rem] font-semibold uppercase tracking-[0.12em] opacity-60">{listing.categoryLabel}</p>
-                          <Link href={`/listings/${listing.id}`} className="mt-0.5 block text-xs font-semibold leading-tight hover:opacity-75">
+                    <CardContent className={`${viewMode === "list" ? "flex-1 space-y-3 p-4" : `space-y-1 ${isSportsCardsPage ? "p-1.5 text-[#153746]" : "p-5"}`}`}>
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1">
+                          <p className={`font-semibold uppercase tracking-[0.12em] opacity-60 ${viewMode === "list" ? "text-xs" : "text-[0.5rem]"}`}>{listing.categoryLabel}</p>
+                          <Link href={`/listings/${listing.id}`} className={`mt-1 block font-semibold leading-tight hover:opacity-75 ${viewMode === "list" ? "text-lg" : "text-xs"}`}>
                             {listing.title}
                           </Link>
                         </div>
-                        {listing.featured ? <Badge className={`rounded-full px-1 py-0 text-[0.5rem] ${theme.chipClassName}`}>Featured</Badge> : null}
+                        {listing.featured ? <Badge className={`rounded-full px-2 py-1 ${viewMode === "list" ? "text-xs" : "text-[0.5rem] px-1 py-0"} ${theme.chipClassName}`}>Featured</Badge> : null}
                       </div>
-                      <p className="line-clamp-1 text-[0.65rem] leading-3 opacity-80">{listing.description}</p>
-                      <div className="grid grid-cols-2 gap-1 rounded-md border border-current/10 bg-black/5 p-1 text-[0.5rem]">
+                      <p className={`${viewMode === "list" ? "text-sm line-clamp-2" : "line-clamp-1 text-[0.65rem]"} leading-relaxed opacity-80`}>{listing.description}</p>
+                      <div className={`rounded-md border border-current/10 bg-black/5 p-3 ${viewMode === "list" ? "grid grid-cols-4 gap-4" : "grid grid-cols-2 gap-1 p-1 text-[0.5rem]"}`}>
                         <div>
-                          <p className="text-[0.45rem] uppercase tracking-[0.1em] opacity-60">Collector</p>
-                          <p className="mt-0 font-semibold truncate text-[0.55rem]">{listing.owner.displayName}</p>
+                          <p className={`uppercase tracking-[0.1em] opacity-60 ${viewMode === "list" ? "text-xs" : "text-[0.45rem]"}`}>Collector</p>
+                          <p className={`mt-1 font-semibold truncate ${viewMode === "list" ? "text-sm" : "mt-0 text-[0.55rem]"}`}>{listing.owner.displayName}</p>
                         </div>
                         <div>
-                          <p className="text-[0.45rem] uppercase tracking-[0.1em] opacity-60">Condition</p>
-                          <p className="mt-0 font-semibold truncate text-[0.55rem]">{listing.conditionLabel}</p>
+                          <p className={`uppercase tracking-[0.1em] opacity-60 ${viewMode === "list" ? "text-xs" : "text-[0.45rem]"}`}>Condition</p>
+                          <p className={`mt-1 font-semibold truncate ${viewMode === "list" ? "text-sm" : "mt-0 text-[0.55rem]"}`}>{listing.conditionLabel}</p>
                         </div>
                         <div>
-                          <p className="text-[0.45rem] uppercase tracking-[0.1em] opacity-60">Trust</p>
-                          <div className="mt-0 flex items-center gap-0.5 font-semibold">
-                            <Star className="h-2 w-2 fill-current" />
-                            <span className="truncate text-[0.55rem]">{listing.ownerRating.averageRating.toFixed(1)}</span>
+                          <p className={`uppercase tracking-[0.1em] opacity-60 ${viewMode === "list" ? "text-xs" : "text-[0.45rem]"}`}>Trust</p>
+                          <div className={`mt-1 flex items-center gap-1 font-semibold ${viewMode === "list" ? "" : "mt-0 gap-0.5"}`}>
+                            <Star className={`fill-current ${viewMode === "list" ? "h-4 w-4" : "h-2 w-2"}`} />
+                            <span className={`truncate ${viewMode === "list" ? "text-sm" : "text-[0.55rem]"}`}>{listing.ownerRating.averageRating.toFixed(1)}</span>
                           </div>
                         </div>
                         <div>
-                          <p className="text-[0.45rem] uppercase tracking-[0.1em] opacity-60">Status</p>
-                          <p className="mt-0 font-semibold capitalize truncate text-[0.55rem]">{listing.status}</p>
+                          <p className={`uppercase tracking-[0.1em] opacity-60 ${viewMode === "list" ? "text-xs" : "text-[0.45rem]"}`}>Status</p>
+                          <p className={`mt-1 font-semibold capitalize truncate ${viewMode === "list" ? "text-sm" : "mt-0 text-[0.55rem]"}`}>{listing.status}</p>
                         </div>
                       </div>
                       <div className="flex flex-wrap gap-0.5">

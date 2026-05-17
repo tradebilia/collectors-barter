@@ -463,3 +463,9 @@
 - [x] Fix grid/list toggle button on category pages (now works - added conditional rendering based on viewMode state)
 - [x] Implement list view layout for category pages (flex layout with image on left, details on right)
 - [x] Test toggle functionality across all 10 category pages (tested on Comics - works perfectly)
+
+
+## List View Layout Improvements (COMPLETED)
+- [x] Increase font sizes in list view for better readability (title: text-lg, labels: text-xs, values: text-sm)
+- [x] Expand content area to right of image to utilize negative space (4-column info grid layout)
+- [x] Improve spacing and layout of item details in list view (flex-1 content, better padding and gaps)
