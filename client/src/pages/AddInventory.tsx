@@ -1,10 +1,10 @@
-import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { PageHeader } from "@/components/PageHeader";
+import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
 import { Loader2, Menu, Search, Upload } from "lucide-react";
@@ -111,7 +111,6 @@ export default function AddInventory() {
   const [draft, setDraft] = useState<InventoryDraft>(emptyDraft);
   const [photos, setPhotos] = useState<UploadedImage[]>([]);
   
-  const dashboardQuery = trpc.market.dashboard.useQuery(undefined, { enabled: isAuthenticated });
   const unreadCountsQuery = trpc.auth.unreadCounts.useQuery(undefined, { enabled: isAuthenticated });
 
   const createListingMutation = trpc.market.createListing.useMutation({
@@ -210,8 +209,9 @@ export default function AddInventory() {
         showSearch={true}
         showCategories={true}
         categories={categoryLinks as any}
-        userAvatar={dashboardQuery.data?.profile?.avatarUrl ?? user?.name?.charAt(0).toUpperCase() ?? undefined}
-        userName={dashboardQuery.data?.profile?.displayName ?? user?.name ?? "User"}
+        isAuthenticated={isAuthenticated}
+        userAvatar={user?.name?.charAt(0).toUpperCase()}
+        userName={user?.name ?? "User"}
         userId={user?.id}
         unreadNotifications={unreadCountsQuery.data?.unreadNotifications ?? 0}
         unreadMessages={unreadCountsQuery.data?.unreadMessages ?? 0}
