@@ -469,3 +469,10 @@
 - [x] Increase font sizes in list view for better readability (title: text-lg, labels: text-xs, values: text-sm)
 - [x] Expand content area to right of image to utilize negative space (4-column info grid layout)
 - [x] Improve spacing and layout of item details in list view (flex-1 content, better padding and gaps)
+
+
+## Top Bar Redesign (COMPLETED)
+- [x] Remove search bar from PageHeader component (search bar removed, showSearch prop defaults to false)
+- [x] Add Tradebilia logo to top left corner of PageHeader (logo displays in top-left with proper sizing)
+- [x] Update all pages to use new PageHeader without search (Home, AccountSettings, AddInventory, Notifications all updated)
+- [x] Verify top bar consistency across all pages matches category pages design (logo + icons on right, no search bar)

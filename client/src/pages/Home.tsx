@@ -442,6 +442,7 @@ export default function Home() {
         unreadNotifications={unreadCountsQuery.data?.unreadNotifications ?? 0}
         unreadMessages={unreadCountsQuery.data?.unreadMessages ?? 0}
         userId={user?.id}
+        logoUrl={TRADEBILIA_LOGO_URL}
       />
 
       <main className="pb-24">

@@ -206,7 +206,7 @@ export default function AddInventory() {
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,#1c2468_0%,#0b0a22_65%)] text-white">
       <PageHeader 
-        showSearch={true}
+        showSearch={false}
         showCategories={true}
         categories={categoryLinks as any}
         isAuthenticated={isAuthenticated}
@@ -215,6 +215,7 @@ export default function AddInventory() {
         userId={user?.id}
         unreadNotifications={unreadCountsQuery.data?.unreadNotifications ?? 0}
         unreadMessages={unreadCountsQuery.data?.unreadMessages ?? 0}
+        logoUrl={TRADEBILIA_LOGO_URL}
       />
 
       <section className="border-b border-white/10 bg-[linear-gradient(180deg,rgba(7,7,48,0.18)_0%,rgba(7,7,48,0.55)_100%)] px-4 py-8 lg:px-8">

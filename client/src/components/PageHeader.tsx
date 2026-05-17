@@ -21,6 +21,7 @@ interface PageHeaderProps {
   unreadNotifications?: number;
   unreadMessages?: number;
   userId?: number;
+  logoUrl?: string;
 }
 
 const categoryOptions: Array<{ value: string; label: string }> = [
@@ -52,34 +53,20 @@ export function PageHeader({
   unreadNotifications = 0,
   unreadMessages = 0,
   userId,
+  logoUrl,
 }: PageHeaderProps) {
   return (
     <header className="border-b border-black/70 bg-black text-white shadow-[0_8px_22px_rgba(0,0,0,0.25)]">
       <div className="container flex min-h-7 items-center justify-between gap-3 py-0.5 text-[11px]">
         <div className="flex flex-1 items-center gap-3">
-          {/* Logo / Title */}
-          <Link href="/" className="font-['Oswald'] text-[2.15rem] font-semibold leading-none tracking-[-0.05em] text-white sm:text-[2.45rem]">
-            {showSearch ? "Search" : "HOME"}
+          {/* Tradebilia Logo */}
+          <Link href="/" className="flex items-center gap-2 transition hover:opacity-80">
+            {logoUrl ? (
+              <img src={logoUrl} alt="Tradebilia" className="h-8 w-auto" />
+            ) : (
+              <div className="font-['Oswald'] text-[1.5rem] font-semibold leading-none tracking-[-0.05em] text-white">TRADEBILIA</div>
+            )}
           </Link>
-
-          {/* Search Bar - Only on pages that need it */}
-          {showSearch && (
-            <div className="flex w-full max-w-sm overflow-hidden rounded-[0.35rem] border border-black/80 bg-white">
-              <Input
-                value={keyword}
-                onChange={event => onKeywordChange?.(event.target.value)}
-                placeholder="Search..."
-                className="h-7 rounded-none border-0 bg-white px-3 text-[9.5px] text-slate-900 placeholder:text-slate-500 focus-visible:ring-0"
-              />
-              <button
-                type="button"
-                className="inline-flex h-7 w-9 items-center justify-center bg-[#7f31ff] text-white transition hover:bg-[#6925dd]"
-                onClick={onSearch}
-              >
-                <Search className="h-3.5 w-3.5" />
-              </button>
-            </div>
-          )}
         </div>
 
         {/* Right side icons and buttons */}

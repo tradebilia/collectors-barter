@@ -225,6 +225,7 @@ export default function AccountSettings() {
         onLogout={logout}
         userAvatar={dashboardQuery.data?.profile?.avatarUrl ?? null}
         userName={dashboardQuery.data?.profile?.displayName ?? user?.name ?? "User"}
+        logoUrl={TRADEBILIA_LOGO_URL}
       />
 
       {/* Hero Section */}

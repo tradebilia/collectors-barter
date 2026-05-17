@@ -139,7 +139,7 @@ export default function Notifications() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100">
-      <PageHeader isAuthenticated={isAuthenticated} userName={user?.name ?? "User"} />
+      <PageHeader isAuthenticated={isAuthenticated} userName={user?.name ?? "User"} logoUrl={TRADEBILIA_LOGO_URL} />
 
       <div className="container mx-auto max-w-4xl px-4 py-8">
         <div className="mb-8 flex items-center justify-between">
