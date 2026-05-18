@@ -307,7 +307,7 @@ export default function AddInventory() {
           </div>
 
           {/* Main content grid with image on right */}
-          <div className="mt-10 grid gap-10 lg:grid-cols-[1fr_0.35fr] lg:auto-rows-max">
+          <div className="mt-10 grid gap-10 lg:grid-cols-[1fr_0.35fr] lg:grid-rows-[auto_auto_auto_auto_auto_auto] items-start">
             {/* Left side - Form fields */}
             <div className="space-y-6">
               {/* 1. Category Selection */}
@@ -478,7 +478,7 @@ export default function AddInventory() {
             </div>
 
             {/* Right side - Image Upload */}
-            <div className="flex flex-col gap-6 lg:row-span-5">
+            <div className="flex flex-col gap-6 lg:row-span-3">
               <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-white/8 to-white/4 p-6 shadow-lg flex flex-col h-full">
                 <h3 className="mb-6 text-lg font-semibold uppercase tracking-[0.1em] text-white/95">Upload Images</h3>
                 
