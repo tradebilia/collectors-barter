@@ -163,7 +163,9 @@ export default function Home() {
   const [activeProposalId, setActiveProposalId] = useState<number | null>(null);
 
   const marketplaceQuery = trpc.market.feed.useQuery({ category, condition, keyword });
-  const siteStatisticsQuery = trpc.market.siteStatistics.useQuery();
+  const siteStatisticsQuery = trpc.market.siteStatistics.useQuery(undefined, {
+    refetchInterval: 300000, // Refetch every 5 minutes
+  });
   const dashboardQuery = trpc.market.dashboard.useQuery(undefined, {
     enabled: isAuthenticated,
   });
@@ -465,9 +467,9 @@ export default function Home() {
               ["Total Value", siteStatisticsQuery.data?.totalValue ? `$${(siteStatisticsQuery.data.totalValue / 1000000).toFixed(1)}M` : "$0"],
               ["Total Trades", siteStatisticsQuery.data?.totalTrades ? `${(siteStatisticsQuery.data.totalTrades / 1000).toFixed(1)}k` : "0"],
             ].map(([label, value]) => (
-              <div key={label as string} className="space-y-0.5 px-2 py-1.5">
+              <div key={label as string} className="space-y-0.5 px-2 py-1.5 transition-all duration-500">
                 <p className="text-[10px] font-medium leading-none text-black/80">{label as string}</p>
-                <p className="text-[2.3rem] font-semibold leading-none sm:text-[2.7rem]">{value as string}</p>
+                <p className="text-[2.3rem] font-semibold leading-none sm:text-[2.7rem] transition-all duration-700 ease-out">{value as string}</p>
               </div>
             ))}
           </div>
