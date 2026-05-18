@@ -230,7 +230,12 @@ export default function Inventory() {
               isActive: false,
               categoryLabel: getTradebiliaCategoryLabel(savedDraft.category),
               conditionLabel: 'Draft',
+              condition: 'draft',
               primaryPhotoUrl: savedPhotos?.[0]?.previewUrl || null,
+              estimatedValue: savedDraft.estimatedValue || null,
+              grade: savedDraft.grade || 'ungraded',
+              certificationCompany: savedDraft.graderCompany || null,
+              description: savedDraft.title,
             });
           }
         } catch (e) {
