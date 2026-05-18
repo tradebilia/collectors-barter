@@ -208,9 +208,17 @@ export default function AddInventory() {
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,#1c2468_0%,#0b0a22_65%)] text-white">
       <TopBar logoUrl={TRADEBILIA_LOGO_URL} searchPlaceholder="Search..." />
 
-      <section className="border-b border-white/10 bg-[linear-gradient(180deg,rgba(7,7,48,0.18)_0%,rgba(7,7,48,0.55)_100%)] px-4 py-8 lg:px-8">
-        <div className="mx-auto max-w-6xl">
-          <img src={TRADEBILIA_LOGO_URL} alt="Tradebilia" className="w-full max-w-[42rem]" />
+      <section className="relative w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden bg-[#00143A] text-white">
+        <div className="absolute inset-0 opacity-20" style={{
+          backgroundImage: 'url(/manus-storage/hero-background-fullwidth_e851e7cd.png)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat'
+        }} />
+        <div className="container relative flex h-64 items-center justify-center py-0 sm:h-72 sm:py-0 lg:h-80 lg:py-0 px-4 lg:px-8">
+          <div className="flex w-full max-w-6xl items-center justify-center">
+            <img src={TRADEBILIA_LOGO_URL} alt="Tradebilia" className="h-auto w-full max-w-[42rem]" />
+          </div>
         </div>
       </section>
 

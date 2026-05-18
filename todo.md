@@ -531,3 +531,8 @@ These are separate and distinct sections. When making updates, treat them indepe
 - [x] Identify why Add Inventory page has different logo than other pages
 - [x] Update Add Inventory to use the same logo URL as Home and other pages
 - [x] Verify top bar logo consistency across all pages
+
+
+## Hero Background Consistency (COMPLETED)
+- [x] Update Add to Your Inventory page hero section to use the same background as main page
+- [x] Verify hero background matches across both pages
