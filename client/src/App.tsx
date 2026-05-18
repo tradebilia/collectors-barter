@@ -19,7 +19,8 @@ import Watchlist from "./pages/Watchlist";
 import AccountSetup from "./pages/AccountSetup";
 import AccountSettings from "./pages/AccountSettings";
 import PublicProfile from "./pages/PublicProfile";
-import { SignUp } from "./pages/SignUp";
+import SignUp from "./pages/SignUp";
+import Welcome from "./pages/Welcome";
 import { MemberOnly } from "./pages/MemberOnly";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 
@@ -84,6 +85,7 @@ function Router() {
         </ProtectedRoute>
       </Route>
       <Route path="/signup" component={SignUp} />
+      <Route path="/welcome" component={Welcome} />
       <Route path="/member-only" component={MemberOnly} />
       <Route path="/category/:slug" component={CategoryPage} />
       <Route path="/listings/:listingId" component={ItemDetail} />

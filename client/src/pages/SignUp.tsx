@@ -6,7 +6,7 @@ import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { useQueryClient } from "@tanstack/react-query";
 
-export function SignUp() {
+export default function SignUp() {
   const [formData, setFormData] = useState({
     username: "",
     password: "",
@@ -68,8 +68,8 @@ export function SignUp() {
       // Refresh auth state
       await queryClient.invalidateQueries({ queryKey: ["auth.me"] });
 
-      // Redirect to home
-      navigate("/");
+      // Redirect to welcome page for new accounts
+      navigate("/welcome?new=true");
     } catch (err: any) {
       setErrors({ submit: err.message || "Sign up failed" });
     } finally {
@@ -153,29 +153,27 @@ export function SignUp() {
             </div>
 
             {errors.submit && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-                {errors.submit}
-              </div>
+              <p className="text-red-600 text-sm">{errors.submit}</p>
             )}
 
             <Button
               type="submit"
-              className="w-full"
               disabled={isLoading}
+              className="w-full bg-blue-600 hover:bg-blue-700"
             >
               {isLoading ? "Creating Account..." : "Create Account"}
             </Button>
           </form>
 
-          <div className="mt-6 text-center text-sm">
+          <p className="text-center text-sm text-gray-600 mt-6">
             Already have an account?{" "}
             <button
               onClick={() => navigate("/")}
-              className="text-blue-600 hover:underline font-medium"
+              className="text-blue-600 hover:underline"
             >
               Sign In
             </button>
-          </div>
+          </p>
         </Card>
       </div>
     </div>
