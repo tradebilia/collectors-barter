@@ -666,3 +666,11 @@ This ensures users can fill in all category-specific details when adding items t
 - [x] Created vitest tests to verify grading companies mapping
 - [x] Verified all categories display correct grading companies in dropdown
 - [x] Tested category switching updates grading company list correctly
+
+
+## BUG FIX: Comics Category Grading Service Dropdown Empty (FIXED)
+- [x] Identified label case-sensitivity mismatch in Comics filter configuration
+- [x] Changed "Grading Service" (uppercase S) to "Grading service" (lowercase s) in categoryFilterPresets
+- [x] Verified Comics page now displays all grading companies in dropdown
+- [x] Confirmed Sports Cards and other categories with "Grading service" label work correctly
+- [x] Verified no other categories have similar label mismatches
