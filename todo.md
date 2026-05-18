@@ -606,11 +606,22 @@ This ensures users can fill in all category-specific details when adding items t
 - [x] Test draft filter functionality
 
 
-## PRE-LAUNCH: Draft Save Functionality (PRIORITY)
+## CURRENT: Draft Save Functionality (localStorage - Temporary)
+- [x] Implemented draft storage using localStorage (temporary measure)
+- [x] AddInventory saves drafts to localStorage under 'tradebilia-add-inventory-draft' key
+- [x] Inventory page reads drafts from localStorage when "Show Drafts" filter is enabled
+- [x] Draft filter displays drafts with proper category and keyword filtering
+- [x] Show "Draft" indicator (yellow badge) on draft items in My Inventory
+- [x] Show diagonal blue "DRAFT" overlay on draft item images
+- [x] Drafts persist within the same browser session
+- [x] Fixed localStorage key mismatch between AddInventory and Inventory pages
+- [x] Added proper category label mapping for draft items
+
+## PRE-LAUNCH: Database-Backed Draft Storage (PRIORITY)
 - [ ] Implement persistent draft storage in database (not localStorage)
 - [ ] Create saveDraft tRPC endpoint with proper validation
 - [ ] Update AddInventory page to call saveDraft endpoint
-- [ ] Add draft filter to My Inventory page to display saved drafts
-- [ ] Show "Draft" indicator/overlay on draft items in My Inventory
+- [ ] Add draft retrieval endpoint to fetch drafts from database
+- [ ] Update Inventory page to fetch drafts from database instead of localStorage
 - [ ] Test draft creation, retrieval, and display before launch
 - [ ] Ensure drafts persist across browser sessions and devices

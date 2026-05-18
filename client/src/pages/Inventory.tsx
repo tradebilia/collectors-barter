@@ -20,6 +20,7 @@ import { getLoginUrl } from "@/const";
 
 import { resolveTradebiliaListingImage } from "@/lib/listingImages";
 import { trpc } from "@/lib/trpc";
+import { getTradebiliaCategoryLabel } from "@/lib/tradebilia";
 import { Download, Loader2, Menu, MessageSquareText, Pencil, Plus, Search, Share2, Trash2, Eye, EyeOff } from "lucide-react";
 import { TopRightIcons } from "@/components/TopRightIcons";
 import { useMemo, useState, useCallback } from "react";
@@ -214,7 +215,29 @@ export default function Inventory() {
     
     // If showing drafts, return drafts from localStorage
     if (showDrafts) {
-      const drafts = JSON.parse(localStorage.getItem('tradebilia_drafts') || '[]');
+      const savedDraftData = localStorage.getItem('tradebilia-add-inventory-draft');
+      const drafts: any[] = [];
+      
+      if (savedDraftData) {
+        try {
+          const { draft: savedDraft, photos: savedPhotos } = JSON.parse(savedDraftData);
+          if (savedDraft && savedDraft.title) {
+            drafts.push({
+              id: 'draft-current',
+              ...savedDraft,
+              photos: savedPhotos || [],
+              status: 'draft',
+              isActive: false,
+              categoryLabel: getTradebiliaCategoryLabel(savedDraft.category),
+              conditionLabel: 'Draft',
+              primaryPhotoUrl: savedPhotos?.[0]?.previewUrl || null,
+            });
+          }
+        } catch (e) {
+          console.error('Failed to parse draft:', e);
+        }
+      }
+      
       const filteredDrafts = drafts.filter((draft: any) => {
         const matchesKeyword = normalizedKeyword.length === 0 || draft.title?.toLowerCase().includes(normalizedKeyword);
         const matchesCategory = category === 'all' || draft.category === category;
