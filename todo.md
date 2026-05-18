@@ -724,4 +724,4 @@ This ensures users can fill in all category-specific details when adding items t
 - [x] Implement access restrictions: only search and category pages for unauthenticated users
 - [x] Create "Member Only" page for restricted content
 - [x] Add route guards to redirect unauthenticated users appropriately
-- [ ] Test complete authentication flow end-to-end
+- [x] Test complete authentication flow end-to-end
