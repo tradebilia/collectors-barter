@@ -655,3 +655,14 @@ This ensures users can fill in all category-specific details when adding items t
 - [x] Pass estimatedValue to backend createListing endpoint
 - [x] Update server router to accept estimatedValue
 - [x] Update db.ts createListing function to handle estimatedValue
+
+
+## Grading Companies Update
+- [x] Received comprehensive grading companies list from ChatGPT
+- [x] Mapped grading companies to each category (Comics, Sports Cards, Vintage Toys, Video Games, Stamps, Coins, Pokemon, Movies, Autographs, Disney Pins)
+- [x] Updated AddInventory.tsx with category-specific grading companies
+- [x] Implemented automatic grading company selection when category changes
+- [x] Added "Raw" option for all categories
+- [x] Created vitest tests to verify grading companies mapping
+- [x] Verified all categories display correct grading companies in dropdown
+- [x] Tested category switching updates grading company list correctly
