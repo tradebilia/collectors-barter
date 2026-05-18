@@ -583,3 +583,12 @@ This ensures users can fill in all category-specific details when adding items t
 - [x] Add drag-and-drop functionality to image upload section
 - [x] Support both methods simultaneously
 - [x] Test file picker and drag-and-drop functionality
+
+
+## Bug: Duplicate Fields in Add to Your Inventory Form (FIXED)
+
+- [x] Remove duplicate Grade field (appears in both "Grading & Certification" and "Item Details" sections)
+- [x] Review all category field presets for other duplicate fields
+- [x] Consolidate form logic to eliminate redundancy
+- [x] Verify form structure is clean and logical across all categories
+- [x] Test form with all categories to ensure no duplicates (Comics and Sports Cards verified)
