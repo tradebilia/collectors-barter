@@ -265,7 +265,31 @@ export default function Inventory() {
       const listingValue = Number(listing.estimatedValue) || 0;
       const matchesMinValue = minValue === "" || listingValue >= Number(minValue);
       const matchesMaxValue = maxValue === "" || listingValue <= Number(maxValue);
-      const matchesDateRange = dateRange === "all" || true;
+      // Implement date range filtering
+      let matchesDateRange = true;
+      if (dateRange !== "all" && listing.createdAt) {
+        const listingDate = new Date(listing.createdAt);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        if (dateRange === "today") {
+          const listingDateOnly = new Date(listingDate);
+          listingDateOnly.setHours(0, 0, 0, 0);
+          matchesDateRange = listingDateOnly.getTime() === today.getTime();
+        } else if (dateRange === "week") {
+          const weekAgo = new Date(today);
+          weekAgo.setDate(weekAgo.getDate() - 7);
+          matchesDateRange = listingDate >= weekAgo && listingDate <= today;
+        } else if (dateRange === "month") {
+          const monthAgo = new Date(today);
+          monthAgo.setMonth(monthAgo.getMonth() - 1);
+          matchesDateRange = listingDate >= monthAgo && listingDate <= today;
+        } else if (dateRange === "year") {
+          const yearAgo = new Date(today);
+          yearAgo.setFullYear(yearAgo.getFullYear() - 1);
+          matchesDateRange = listingDate >= yearAgo && listingDate <= today;
+        }
+      }
 
       return matchesKeyword && matchesCategory && matchesTradeOnly && matchesGrader && matchesGradeRange && matchesCondition && matchesStatus && matchesMinValue && matchesMaxValue && matchesDateRange;
     });

@@ -628,3 +628,10 @@ This ensures users can fill in all category-specific details when adding items t
 - [ ] Update Inventory page to fetch drafts from database instead of localStorage
 - [ ] Test draft creation, retrieval, and display before launch
 - [ ] Ensure drafts persist across browser sessions and devices
+
+
+## Bug Fix: Date Added Filter Not Working (FIXED)
+- [x] Fixed date filter logic that was hardcoded to always return true
+- [x] Implemented proper date range filtering for "Today", "This Week", "This Month", "This Year"
+- [x] Filter now correctly compares listing createdAt with selected date range
+- [x] Tested date filter with various date ranges
