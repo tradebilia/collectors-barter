@@ -97,7 +97,7 @@ export function RecentlyAddedCarousel({
       >
         {/* Duplicate items for seamless infinite scroll */}
         {[...items, ...items].map((item, index) => (
-          <div key={`${item.id}-${index}`} className="flex-shrink-0 w-[calc(20%-0.4rem)]">
+          <div key={`${item.id}-${index}`} className="flex-shrink-0 w-[calc(15%-0.3rem)]">
             <Card className="overflow-hidden rounded-none border border-slate-300 bg-white shadow-none h-full cursor-pointer transition hover:shadow-md" onClick={() => item.href && (window.location.href = item.href)}>
               <div className="aspect-[0.68] overflow-hidden bg-[#f0ebe5] group">
                 <img
