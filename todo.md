@@ -536,3 +536,17 @@ These are separate and distinct sections. When making updates, treat them indepe
 ## Hero Background Consistency (COMPLETED)
 - [x] Update Add to Your Inventory page hero section to use the same background as main page
 - [x] Verify hero background matches across both pages
+
+
+## Add to Your Inventory Page Redesign (COMPLETED)
+
+- [x] Implement category selection dropdown as first step
+- [x] Create dynamic form that updates based on selected category
+- [x] Map category-specific fields from filter presets to form inputs
+- [x] Implement grading company dropdown with category-specific options
+- [x] Add manual data entry fields for all category-specific details
+- [x] Implement image upload functionality
+- [x] Create form submission logic to save listing
+- [x] Test form with all categories (Comics, Sports Cards, Pokemon verified)
+- [x] Verify form fields update correctly when category changes
+- [x] Test image upload and validation

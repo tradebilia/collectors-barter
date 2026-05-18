@@ -8,10 +8,10 @@ import { CategoryBar } from "@/components/CategoryBar";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
-import { Loader2, Menu, Search, Upload } from "lucide-react";
+import { Loader2, Upload } from "lucide-react";
 import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Link } from "wouter";
+import type { TradebiliaCategorySlug } from "@/lib/tradebilia";
 
 const TRADEBILIA_LOGO_URL = "/manus-storage/tradebilia-longform-no-navy-clean_d2f04453.png";
 const DRAFT_STORAGE_KEY = "tradebilia-add-inventory-draft";
@@ -38,35 +38,98 @@ type UploadedImage = {
 
 type ListingCategory = (typeof categoryLinks)[number]["value"];
 
+// Category-specific fields based on filter presets
+const categoryFieldPresets: Record<ListingCategory, Array<{ name: string; label: string; type: "text" | "select"; placeholder: string; selectOptions?: string[] }>> = {
+  comics: [
+    { name: "keyword", label: "Keyword", type: "text", placeholder: "Search by keyword" },
+    { name: "title", label: "Title", type: "text", placeholder: "Amazing Fantasy, X-Men" },
+    { name: "issueNumber", label: "Issue Number", type: "text", placeholder: "#1, #100, #50" },
+    { name: "grade", label: "Grade", type: "select", placeholder: "Select grade 0-10", selectOptions: Array.from({ length: 11 }, (_, i) => i.toString()) },
+    { name: "signed", label: "Signed", type: "select", placeholder: "Select option", selectOptions: ["Yes", "No"] },
+    { name: "facsimile", label: "Facsimile", type: "select", placeholder: "Select option", selectOptions: ["Yes", "No"] },
+  ],
+  sports_cards: [
+    { name: "manufacturer", label: "Manufacturer", type: "text", placeholder: "Topps, Fleer, Upper Deck" },
+    { name: "sport", label: "Sport", type: "select", placeholder: "Select a sport", selectOptions: ["Baseball", "Basketball", "Football", "Hockey", "Soccer", "Tennis", "Golf", "Boxing", "MMA", "Wrestling", "Track & Field", "Swimming", "Cycling", "Motorsports", "Other"] },
+    { name: "year", label: "Year / Era", type: "text", placeholder: "1950s, 1986, junk wax, ultra-modern" },
+    { name: "team", label: "Team", type: "text", placeholder: "Yankees, Bulls, Cowboys" },
+    { name: "set", label: "Set / Series", type: "text", placeholder: "Topps Chrome, Prizm, Fleer" },
+    { name: "grade", label: "Grade", type: "select", placeholder: "Select grade 0-10", selectOptions: Array.from({ length: 11 }, (_, i) => i.toString()) },
+    { name: "rookie", label: "Rookie", type: "select", placeholder: "Select option", selectOptions: ["Yes", "No"] },
+    { name: "autographed", label: "Autographed", type: "select", placeholder: "Select option", selectOptions: ["Yes", "No"] },
+  ],
+  vintage_toys: [
+    { name: "name", label: "Name", type: "text", placeholder: "Barbie, G.I. Joe, Star Wars" },
+    { name: "genre", label: "Genre", type: "select", placeholder: "Action figure, doll, vehicle", selectOptions: ["Action figure", "Doll", "Vehicle", "Playset", "Other"] },
+    { name: "franchise", label: "Franchise", type: "text", placeholder: "Star Wars, TMNT" },
+  ],
+  video_games: [
+    { name: "title", label: "Title", type: "text", placeholder: "Zelda, Donkey Kong, Sonic" },
+    { name: "system", label: "System", type: "select", placeholder: "NES, SNES, Sega", selectOptions: ["NES", "SNES", "Sega", "PlayStation", "Xbox", "Nintendo 64", "GameCube", "Wii", "Switch", "Other"] },
+    { name: "region", label: "Region", type: "select", placeholder: "United States, Japan", selectOptions: ["United States", "Japan", "Europe", "PAL", "NTSC", "Other"] },
+  ],
+  stamps: [
+    { name: "year", label: "Year", type: "text", placeholder: "1918" },
+    { name: "issuer", label: "Issuer", type: "text", placeholder: "Post office or monarchy" },
+    { name: "country", label: "Country", type: "select", placeholder: "United States, Bermuda", selectOptions: ["United States", "United Kingdom", "Canada", "France", "Germany", "Japan", "Other"] },
+  ],
+  coins: [
+    { name: "year", label: "Year", type: "text", placeholder: "1909, 1933, 1794" },
+    { name: "denomination", label: "Denomination", type: "select", placeholder: "Cent, dollar, eagle", selectOptions: ["Penny", "Nickel", "Dime", "Quarter", "Half Dollar", "Dollar", "Eagle", "Other"] },
+    { name: "mintMark", label: "Mint Mark", type: "text", placeholder: "S, D, CC" },
+  ],
+  pokemon: [
+    { name: "pokemon", label: "Pokémon", type: "text", placeholder: "Charizard, Pikachu, Mew" },
+    { name: "set", label: "Set", type: "text", placeholder: "Base Set, Neo, Evolving Skies" },
+    { name: "rarity", label: "Rarity", type: "select", placeholder: "Holo, Secret Rare", selectOptions: ["Common", "Uncommon", "Rare", "Holo Rare", "Secret Rare", "Ultra Rare", "Other"] },
+  ],
+  movies: [
+    { name: "title", label: "Title", type: "text", placeholder: "Star Wars, Batman, Jaws" },
+    { name: "format", label: "Format", type: "select", placeholder: "Poster, prop, lobby card", selectOptions: ["Poster", "Prop", "Lobby Card", "Still", "Promotional Material", "Other"] },
+    { name: "franchise", label: "Franchise", type: "text", placeholder: "Marvel, Disney, horror" },
+  ],
+  autographs: [
+    { name: "signer", label: "Signer", type: "text", placeholder: "Athlete, actor, creator" },
+    { name: "medium", label: "Medium", type: "select", placeholder: "Photo, comic, baseball", selectOptions: ["Photo", "Comic", "Baseball", "Jersey", "Helmet", "Bat", "Memorabilia", "Other"] },
+    { name: "franchise", label: "Franchise", type: "text", placeholder: "Marvel, MLB, Disney" },
+  ],
+  disney_pins: [
+    { name: "pinName", label: "Pin Name", type: "text", placeholder: "LE park release, character pin" },
+    { name: "parkOrEvent", label: "Park or Event", type: "text", placeholder: "D23, EPCOT, Disneyland" },
+    { name: "series", label: "Series", type: "select", placeholder: "Character, attraction", selectOptions: ["Character", "Attraction", "Movie", "Park", "Event", "Limited Edition", "Other"] },
+    { name: "edition", label: "Edition", type: "text", placeholder: "LE 300, LE 1000" },
+  ],
+};
+
+// Grading services by category
+const gradingServicesByCategory: Record<ListingCategory, string[]> = {
+  comics: ["CGC Cards", "PSA", "Beckett", "Raw"],
+  sports_cards: ["PSA", "BGS", "CGC Cards", "SGC", "Raw"],
+  pokemon: ["PSA", "BGS", "CGC Cards", "TAG", "Raw"],
+  vintage_toys: ["AFA", "CAS", "CGC", "Raw"],
+  video_games: ["VGA", "Wata", "CGC", "Raw"],
+  stamps: ["PSE", "PSAG", "Raw"],
+  coins: ["PCGS", "NGC", "Raw"],
+  autographs: ["PSA", "JSA", "BAS", "Raw"],
+  movies: ["CGC Home Video", "Beckett", "Raw"],
+  disney_pins: ["Raw"],
+};
+
 type InventoryDraft = {
   category: ListingCategory;
-  graderCompany: string;
-  certificationNumber: string;
   title: string;
-  issueNumber: string;
-  publisher: string;
-  coverDate: string;
+  graderCompany: string;
   grade: string;
-  pageQuality: string;
-  graderNotes: string;
-  gradedDate: string;
-  artComments: string;
+  categoryFields: Record<string, string>;
   additionalNotes: string;
 };
 
 const emptyDraft: InventoryDraft = {
   category: "comics",
-  graderCompany: "CGC",
-  certificationNumber: "",
   title: "",
-  issueNumber: "",
-  publisher: "",
-  coverDate: "",
+  graderCompany: "Raw",
   grade: "9.0",
-  pageQuality: "White",
-  graderNotes: "",
-  gradedDate: "",
-  artComments: "",
+  categoryFields: {},
   additionalNotes: "",
 };
 
@@ -107,12 +170,10 @@ function mapGradeToCondition(grade: string) {
 }
 
 export default function AddInventory() {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated } = useAuth();
   const utils = trpc.useUtils();
   const [draft, setDraft] = useState<InventoryDraft>(emptyDraft);
   const [photos, setPhotos] = useState<UploadedImage[]>([]);
-  
-  const unreadCountsQuery = trpc.auth.unreadCounts.useQuery(undefined, { enabled: isAuthenticated });
 
   const createListingMutation = trpc.market.createListing.useMutation({
     onSuccess: async () => {
@@ -140,6 +201,8 @@ export default function AddInventory() {
   }, []);
 
   const primaryPhoto = useMemo(() => photos[0] ?? null, [photos]);
+  const currentCategoryFields = categoryFieldPresets[draft.category] || [];
+  const currentGradingServices = gradingServicesByCategory[draft.category] || ["Raw"];
 
   const handlePhotos = async (event: ChangeEvent<HTMLInputElement>) => {
     const nextPhotos = await readFiles(event.target.files);
@@ -151,28 +214,20 @@ export default function AddInventory() {
     toast.success("Inventory draft saved.");
   };
 
-  const fetchDetails = () => {
-    if (!draft.certificationNumber.trim()) {
-      toast.error("Enter a certification number first.");
-      return;
-    }
-    toast.info("Certification lookup can be connected to a grading registry in the next refinement pass. For now, you can continue entering the item details manually.");
-  };
-
   const submitListing = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
+    if (!draft.title.trim()) {
+      toast.error("Please enter an item title.");
+      return;
+    }
+
     const descriptionSections = [
-      `Grader Company: ${draft.graderCompany}`,
-      `Certification Number: ${draft.certificationNumber}`,
-      draft.issueNumber ? `Issue #: ${draft.issueNumber}` : null,
-      draft.publisher ? `Publisher: ${draft.publisher}` : null,
-      draft.coverDate ? `Cover Date: ${draft.coverDate}` : null,
-      draft.grade ? `Grade: ${draft.grade}` : null,
-      draft.pageQuality ? `Page Quality: ${draft.pageQuality}` : null,
-      draft.graderNotes ? `Grader Notes: ${draft.graderNotes}` : null,
-      draft.gradedDate ? `Graded Date: ${draft.gradedDate}` : null,
-      draft.artComments ? `Art Comments: ${draft.artComments}` : null,
+      `Grading Company: ${draft.graderCompany}`,
+      `Grade: ${draft.grade}`,
+      ...Object.entries(draft.categoryFields)
+        .filter(([, value]) => value?.trim())
+        .map(([key, value]) => `${key}: ${value}`),
       draft.additionalNotes ? `Additional Notes: ${draft.additionalNotes}` : null,
     ]
       .filter(Boolean)
@@ -229,12 +284,19 @@ export default function AddInventory() {
           <h1 className="text-5xl font-semibold tracking-tight text-white">ADD TO YOUR INVENTORY</h1>
           <div className="mt-10 grid gap-10 lg:grid-cols-[1.15fr_0.85fr]">
             <div className="space-y-10">
-              {/* Category Section */}
+              {/* Category Selection */}
               <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-white/8 to-white/4 p-8 shadow-lg">
                 <h3 className="mb-6 text-xl font-semibold uppercase tracking-[0.1em] text-white/95">Select Category</h3>
                 <div className="space-y-3">
-                  <Label className="text-sm uppercase tracking-[0.08em] text-white/70">Category</Label>
-                  <Select value={draft.category} onValueChange={value => setDraft(current => ({ ...current, category: value as ListingCategory }))}>
+                  <Label className="text-sm uppercase tracking-[0.08em] text-white/70">Category *</Label>
+                  <Select value={draft.category} onValueChange={value => {
+                    setDraft(current => ({
+                      ...current,
+                      category: value as ListingCategory,
+                      categoryFields: {},
+                      graderCompany: gradingServicesByCategory[value as ListingCategory]?.[0] || "Raw",
+                    }));
+                  }}>
                     <SelectTrigger className="h-12 border-white/10 bg-white/8 text-white hover:bg-white/12">
                       <SelectValue placeholder="Select category" />
                     </SelectTrigger>
@@ -247,80 +309,110 @@ export default function AddInventory() {
                 </div>
               </div>
 
-              {/* Grading Information Section */}
+              {/* Grading Information */}
               <div className="rounded-2xl border border-blue-500/20 bg-gradient-to-br from-blue-500/10 to-blue-500/5 p-8 shadow-lg">
                 <h3 className="mb-6 text-xl font-semibold uppercase tracking-[0.1em] text-white/95">Grading Information</h3>
                 <div className="grid gap-6 md:grid-cols-2">
                   <div className="space-y-3 md:col-span-2">
-                    <Label className="text-sm uppercase tracking-[0.08em] text-white/70">Grader Company</Label>
-                    <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
-                      <Input value={draft.graderCompany} onChange={event => setDraft(current => ({ ...current, graderCompany: event.target.value }))} placeholder="e.g., CGC, PSA, BGS" className="h-12 border-white/10 bg-white/8 text-white placeholder:text-white/35" />
-                      <Button type="button" variant="outline" className="h-12 border-white/12 bg-white/8 px-6 text-sm text-white hover:bg-white/12 hover:text-white" onClick={fetchDetails}>
-                        FETCH
-                      </Button>
-                    </div>
-                  </div>
-
-                  <div className="space-y-3 md:col-span-2">
-                    <Label className="text-sm uppercase tracking-[0.08em] text-white/70">Certification Number</Label>
-                    <Input value={draft.certificationNumber} onChange={event => setDraft(current => ({ ...current, certificationNumber: event.target.value }))} placeholder="Enter certification number" className="h-12 border-white/10 bg-white/8 text-white placeholder:text-white/35" />
+                    <Label className="text-sm uppercase tracking-[0.08em] text-white/70">Grading Company</Label>
+                    <Select value={draft.graderCompany} onValueChange={value => setDraft(current => ({ ...current, graderCompany: value }))}>
+                      <SelectTrigger className="h-12 border-white/10 bg-white/8 text-white hover:bg-white/12">
+                        <SelectValue placeholder="Select grading company" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {currentGradingServices.map(service => (
+                          <SelectItem key={service} value={service}>{service}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   <div className="space-y-3">
                     <Label className="text-sm uppercase tracking-[0.08em] text-white/70">Grade</Label>
-                    <Input value={draft.grade} onChange={event => setDraft(current => ({ ...current, grade: event.target.value }))} placeholder="e.g., 9.0" className="h-12 border-white/10 bg-white/8 text-white placeholder:text-white/35" />
-                  </div>
-                  <div className="space-y-3">
-                    <Label className="text-sm uppercase tracking-[0.08em] text-white/70">Graded Date</Label>
-                    <Input value={draft.gradedDate} onChange={event => setDraft(current => ({ ...current, gradedDate: event.target.value }))} placeholder="YYYY-MM-DD" className="h-12 border-white/10 bg-white/8 text-white placeholder:text-white/35" />
-                  </div>
-
-                  <div className="space-y-3">
-                    <Label className="text-sm uppercase tracking-[0.08em] text-white/70">Page Quality</Label>
-                    <Input value={draft.pageQuality} onChange={event => setDraft(current => ({ ...current, pageQuality: event.target.value }))} placeholder="e.g., White, Off-white" className="h-12 border-white/10 bg-white/8 text-white placeholder:text-white/35" />
-                  </div>
-                  <div className="space-y-3">
-                    <Label className="text-sm uppercase tracking-[0.08em] text-white/70">Grader Notes</Label>
-                    <Input value={draft.graderNotes} onChange={event => setDraft(current => ({ ...current, graderNotes: event.target.value }))} placeholder="Any notes from grader" className="h-12 border-white/10 bg-white/8 text-white placeholder:text-white/35" />
+                    <Input
+                      value={draft.grade}
+                      onChange={event => setDraft(current => ({ ...current, grade: event.target.value }))}
+                      placeholder="e.g., 9.0"
+                      className="h-12 border-white/10 bg-white/8 text-white placeholder:text-white/35"
+                    />
                   </div>
                 </div>
               </div>
 
-              {/* Item Details Section */}
+              {/* Item Title */}
               <div className="rounded-2xl border border-purple-500/20 bg-gradient-to-br from-purple-500/10 to-purple-500/5 p-8 shadow-lg">
-                <h3 className="mb-6 text-xl font-semibold uppercase tracking-[0.1em] text-white/95">Item Details</h3>
-                <div className="grid gap-6 md:grid-cols-2">
-                  <div className="space-y-3 md:col-span-2">
-                    <Label className="text-sm uppercase tracking-[0.08em] text-white/70">Title *</Label>
-                    <Input value={draft.title} onChange={event => setDraft(current => ({ ...current, title: event.target.value }))} placeholder="Enter item title" className="h-12 border-white/10 bg-white/8 text-white placeholder:text-white/35" />
-                  </div>
-
-                  <div className="space-y-3">
-                    <Label className="text-sm uppercase tracking-[0.08em] text-white/70">Issue #</Label>
-                    <Input value={draft.issueNumber} onChange={event => setDraft(current => ({ ...current, issueNumber: event.target.value }))} placeholder="e.g., #1, #100" className="h-12 border-white/10 bg-white/8 text-white placeholder:text-white/35" />
-                  </div>
-                  <div className="space-y-3">
-                    <Label className="text-sm uppercase tracking-[0.08em] text-white/70">Publisher</Label>
-                    <Input value={draft.publisher} onChange={event => setDraft(current => ({ ...current, publisher: event.target.value }))} placeholder="e.g., Marvel, DC" className="h-12 border-white/10 bg-white/8 text-white placeholder:text-white/35" />
-                  </div>
-
-                  <div className="space-y-3">
-                    <Label className="text-sm uppercase tracking-[0.08em] text-white/70">Cover Date</Label>
-                    <Input value={draft.coverDate} onChange={event => setDraft(current => ({ ...current, coverDate: event.target.value }))} placeholder="e.g., Jan 1962" className="h-12 border-white/10 bg-white/8 text-white placeholder:text-white/35" />
-                  </div>
-                  <div className="space-y-3">
-                    <Label className="text-sm uppercase tracking-[0.08em] text-white/70">Art Comments</Label>
-                    <Input value={draft.artComments} onChange={event => setDraft(current => ({ ...current, artComments: event.target.value }))} placeholder="Any art-related notes" className="h-12 border-white/10 bg-white/8 text-white placeholder:text-white/35" />
-                  </div>
+                <h3 className="mb-6 text-xl font-semibold uppercase tracking-[0.1em] text-white/95">Item Title</h3>
+                <div className="space-y-3">
+                  <Label className="text-sm uppercase tracking-[0.08em] text-white/70">Title *</Label>
+                  <Input
+                    value={draft.title}
+                    onChange={event => setDraft(current => ({ ...current, title: event.target.value }))}
+                    placeholder="Enter item title"
+                    className="h-12 border-white/10 bg-white/8 text-white placeholder:text-white/35"
+                  />
                 </div>
               </div>
 
-              {/* Additional Information Section */}
+              {/* Category-Specific Fields */}
+              {currentCategoryFields.length > 0 && (
+                <div className="rounded-2xl border border-pink-500/20 bg-gradient-to-br from-pink-500/10 to-pink-500/5 p-8 shadow-lg">
+                  <h3 className="mb-6 text-xl font-semibold uppercase tracking-[0.1em] text-white/95">Item Details</h3>
+                  <div className="grid gap-6 md:grid-cols-2">
+                    {currentCategoryFields.map(field => (
+                      <div key={field.name} className={field.type === "select" ? "space-y-3" : "space-y-3"}>
+                        <Label className="text-sm uppercase tracking-[0.08em] text-white/70">{field.label}</Label>
+                        {field.type === "select" ? (
+                          <Select
+                            value={draft.categoryFields[field.name] || ""}
+                            onValueChange={value =>
+                              setDraft(current => ({
+                                ...current,
+                                categoryFields: { ...current.categoryFields, [field.name]: value },
+                              }))
+                            }
+                          >
+                            <SelectTrigger className="h-12 border-white/10 bg-white/8 text-white hover:bg-white/12">
+                              <SelectValue placeholder={field.placeholder} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {field.selectOptions?.map(option => (
+                                <SelectItem key={option} value={option}>
+                                  {option}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <Input
+                            value={draft.categoryFields[field.name] || ""}
+                            onChange={event =>
+                              setDraft(current => ({
+                                ...current,
+                                categoryFields: { ...current.categoryFields, [field.name]: event.target.value },
+                              }))
+                            }
+                            placeholder={field.placeholder}
+                            className="h-12 border-white/10 bg-white/8 text-white placeholder:text-white/35"
+                          />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Additional Information */}
               <div className="rounded-2xl border border-green-500/20 bg-gradient-to-br from-green-500/10 to-green-500/5 p-8 shadow-lg">
                 <h3 className="mb-6 text-xl font-semibold uppercase tracking-[0.1em] text-white/95">Additional Information</h3>
                 <div className="space-y-3">
                   <Label className="text-sm uppercase tracking-[0.08em] text-white/70">Additional Notes</Label>
-                  <Textarea value={draft.additionalNotes} onChange={event => setDraft(current => ({ ...current, additionalNotes: event.target.value }))} rows={5} placeholder="Any additional details about this item..." className="border-white/10 bg-white/8 text-white placeholder:text-white/35" />
+                  <Textarea
+                    value={draft.additionalNotes}
+                    onChange={event => setDraft(current => ({ ...current, additionalNotes: event.target.value }))}
+                    rows={5}
+                    placeholder="Any additional details about this item..."
+                    className="border-white/10 bg-white/8 text-white placeholder:text-white/35"
+                  />
                 </div>
               </div>
 
