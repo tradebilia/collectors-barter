@@ -420,19 +420,22 @@ export default function AddInventory() {
                 </div>
               </div>
 
-              {/* 3. Item Title and Value */}
+              {/* 3. Item Details - Combined Title, Value, and Category-Specific Fields */}
               <div className="rounded-2xl border border-purple-500/20 bg-gradient-to-br from-purple-500/10 to-purple-500/5 p-6 shadow-lg">
-                <h3 className="mb-4 text-lg font-semibold uppercase tracking-[0.1em] text-white/95">3. Item Title & Value</h3>
-                <div className="grid gap-4 md:grid-cols-2">
+                <h3 className="mb-4 text-lg font-semibold uppercase tracking-[0.1em] text-white/95">3. Item Details</h3>
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {/* Title Field */}
                   <div className="space-y-3">
                     <Label className="text-sm uppercase tracking-[0.08em] text-white/70">Title *</Label>
                     <Input
                       value={draft.title}
                       onChange={event => setDraft(current => ({ ...current, title: event.target.value }))}
                       placeholder="Enter item title"
-                      className="h-12 border-white/10 bg-white/8 text-white placeholder:text-white/35"
+                      className="h-10 border-white/10 bg-white/8 text-white placeholder:text-white/35 text-sm"
                     />
                   </div>
+                  
+                  {/* Estimated Value Field */}
                   <div className="space-y-3">
                     <Label className="text-sm uppercase tracking-[0.08em] text-white/70">Estimated Value</Label>
                     <Input
@@ -441,50 +444,44 @@ export default function AddInventory() {
                       value={draft.value}
                       onChange={event => setDraft(current => ({ ...current, value: event.target.value }))}
                       placeholder="Enter estimated value (e.g., 150.00)"
-                      className="h-12 border-white/10 bg-white/8 text-white placeholder:text-white/35"
+                      className="h-10 border-white/10 bg-white/8 text-white placeholder:text-white/35 text-sm"
                     />
                   </div>
+                  
+                  {/* Category-Specific Fields */}
+                  {currentCategoryFields.map(field => (
+                    <div key={field.name} className="space-y-3">
+                      <Label className="text-sm uppercase tracking-[0.08em] text-white/70">{field.label}</Label>
+                      {field.type === "text" ? (
+                        <Input
+                          value={draft.categoryFields[field.name] || ""}
+                          onChange={event => setDraft(current => ({
+                            ...current,
+                            categoryFields: { ...current.categoryFields, [field.name]: event.target.value }
+                          }))}
+                          placeholder={field.placeholder}
+                          className="h-10 border-white/10 bg-white/8 text-white placeholder:text-white/35 text-sm"
+                        />
+                      ) : (
+                        <Select value={draft.categoryFields[field.name] || ""} onValueChange={value => setDraft(current => ({
+                          ...current,
+                          categoryFields: { ...current.categoryFields, [field.name]: value }
+                        }))}
+                        >
+                          <SelectTrigger className="h-10 border-white/10 bg-white/8 text-white hover:bg-white/12 text-sm">
+                            <SelectValue placeholder={field.placeholder} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {field.selectOptions?.map(option => (
+                              <SelectItem key={option} value={option}>{option}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    </div>
+                  ))}
                 </div>
               </div>
-
-              {/* 4. Item Details - Category Specific Fields in Grid */}
-              {currentCategoryFields.length > 0 && (
-                <div className="rounded-2xl border border-cyan-500/20 bg-gradient-to-br from-cyan-500/10 to-cyan-500/5 p-6 shadow-lg">
-                  <h3 className="mb-4 text-lg font-semibold uppercase tracking-[0.1em] text-white/95">4. Item Details</h3>
-                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    {currentCategoryFields.map(field => (
-                      <div key={field.name} className="space-y-3">
-                        <Label className="text-sm uppercase tracking-[0.08em] text-white/70">{field.label}</Label>
-                        {field.type === "text" ? (
-                          <Input
-                            value={draft.categoryFields[field.name] || ""}
-                            onChange={event => setDraft(current => ({
-                              ...current,
-                              categoryFields: { ...current.categoryFields, [field.name]: event.target.value }
-                            }))}
-                            placeholder={field.placeholder}
-                            className="h-10 border-white/10 bg-white/8 text-white placeholder:text-white/35 text-sm"
-                          />
-                        ) : (
-                          <Select value={draft.categoryFields[field.name] || ""} onValueChange={value => setDraft(current => ({
-                            ...current,
-                            categoryFields: { ...current.categoryFields, [field.name]: value }
-                          }))}>
-                            <SelectTrigger className="h-10 border-white/10 bg-white/8 text-white hover:bg-white/12 text-sm">
-                              <SelectValue placeholder={field.placeholder} />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {field.selectOptions?.map(option => (
-                                <SelectItem key={option} value={option}>{option}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
 
               {/* 5. Additional Information */}
               <div className="rounded-2xl border border-indigo-500/20 bg-gradient-to-br from-indigo-500/10 to-indigo-500/5 p-6 shadow-lg">
