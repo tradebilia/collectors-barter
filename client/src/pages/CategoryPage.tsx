@@ -101,7 +101,6 @@ const categoryFilterPresets: Record<TradebiliaCategorySlug, Array<{ label: strin
 };
 
 const sortOptions = [
-  { value: "featured", label: "Featured" },
   { value: "newest", label: "Newest" },
   { value: "title", label: "Title" },
 ];
@@ -370,12 +369,7 @@ export default function CategoryPage() {
                         {filter.label === "Autographed" && autographedOptions.map(option => (
                           <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
                         ))}
-                        {!["Sport", "Grading service", "Grade", "Rookie", "Autographed"].includes(filter.label) && (
-                          <>
-                            <SelectItem value="featured">Featured</SelectItem>
-                            <SelectItem value="certified">Certified</SelectItem>
-                          </>
-                        )}
+
                       </SelectContent>
                     </Select>
                   ) : filter.label === "Value Range" ? (
