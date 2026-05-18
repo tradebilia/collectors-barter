@@ -391,8 +391,8 @@ export default function AddInventory() {
                   <div className="space-y-3">
                     <Label className="text-sm uppercase tracking-[0.08em] text-white/70">Estimated Value</Label>
                     <Input
-                      type="number"
-                      step="0.01"
+                      type="text"
+                      inputMode="decimal"
                       value={draft.value}
                       onChange={event => setDraft(current => ({ ...current, value: event.target.value }))}
                       placeholder="Enter estimated value (e.g., 150.00)"
@@ -482,9 +482,9 @@ export default function AddInventory() {
               <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-white/8 to-white/4 p-6 shadow-lg h-full flex flex-col">
                 <h3 className="mb-6 text-lg font-semibold uppercase tracking-[0.1em] text-white/95">Upload Images</h3>
                 
-                {/* Main upload area - taller */}
+                {/* Main upload area */}
                 <div
-                  className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-white/20 bg-white/5 p-8 cursor-pointer transition-all hover:border-white/40 hover:bg-white/10 flex-1 min-h-96"
+                  className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-white/20 bg-white/5 p-6 cursor-pointer transition-all hover:border-white/40 hover:bg-white/10 flex-1 min-h-48"
                   onDragOver={(e) => {
                     e.preventDefault();
                     e.currentTarget.classList.add('border-white/60', 'bg-white/20');
@@ -502,8 +502,8 @@ export default function AddInventory() {
                 >
                   {primaryPhoto ? (
                     <div className="w-full h-full flex flex-col items-center justify-center">
-                      <img src={primaryPhoto.previewUrl} alt="Preview" className="max-w-full max-h-80 rounded-lg object-contain" />
-                      <p className="text-xs text-white/50 mt-3">Main Image (will display on listing)</p>
+                      <img src={primaryPhoto.previewUrl} alt="Preview" className="max-w-full max-h-40 rounded-lg object-contain" />
+                      <p className="text-xs text-white/50 mt-2">Main Image</p>
                     </div>
                   ) : (
                     <div className="text-center">
