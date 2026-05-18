@@ -592,3 +592,8 @@ This ensures users can fill in all category-specific details when adding items t
 - [x] Consolidate form logic to eliminate redundancy
 - [x] Verify form structure is clean and logical across all categories
 - [x] Test form with all categories to ensure no duplicates (Comics and Sports Cards verified)
+
+
+## Add Required Field Note (COMPLETED)
+- [x] Add a note explaining that "*" indicates required fields (won't save if missing)
+- [x] Display the note prominently on the Add to Your Inventory page

@@ -268,6 +268,11 @@ export default function AddInventory() {
       <main className="px-4 py-10 lg:px-8">
         <form className="mx-auto max-w-7xl" onSubmit={submitListing}>
           <h1 className="text-5xl font-semibold tracking-tight text-white">ADD TO YOUR INVENTORY</h1>
+          
+          {/* Required Fields Note */}
+          <div className="mt-6 rounded-lg border border-blue-500/30 bg-blue-500/10 p-4 text-sm text-blue-100">
+            <p><span className="font-semibold text-blue-300">*</span> Required Field</p>
+          </div>
 
           {/* Main content grid with image on right */}
           <div className="mt-10 grid gap-10 lg:grid-cols-[1fr_0.35fr]">
