@@ -704,3 +704,8 @@ This ensures users can fill in all category-specific details when adding items t
 - [x] Update Autographs category page filter to use new grading companies
 - [x] Update Disney Pins category page filter to use new grading companies
 - [x] Test all category page filters display correct grading companies
+
+
+## UPDATE: Add to Your Inventory Page Hero SVG
+- [x] Replace hero section SVG with new "Add To Your Inventory" branded SVG
+- [x] Verify new SVG displays correctly on the page
