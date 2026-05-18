@@ -172,18 +172,21 @@ export default function AddInventory() {
   const [photos, setPhotos] = useState<UploadedImage[]>([]);
   const createListingMutation = trpc.market.createListing.useMutation();
 
-  useEffect(() => {
-    const saved = localStorage.getItem(DRAFT_STORAGE_KEY);
-    if (saved) {
-      try {
-        const { draft: savedDraft, photos: savedPhotos } = JSON.parse(saved);
-        setDraft(savedDraft);
-        setPhotos(savedPhotos);
-      } catch (e) {
-        console.error("Failed to load draft:", e);
-      }
-    }
-  }, []);
+  // Note: Draft auto-loading removed to prevent form data persistence on page refresh.
+  // This prevents accidental duplicate submissions or mistakes from previous entries.
+  // Users can manually save drafts using the "Save Draft" button if they want to continue later.
+  // useEffect(() => {
+  //   const saved = localStorage.getItem(DRAFT_STORAGE_KEY);
+  //   if (saved) {
+  //     try {
+  //       const { draft: savedDraft, photos: savedPhotos } = JSON.parse(saved);
+  //       setDraft(savedDraft);
+  //       setPhotos(savedPhotos);
+  //     } catch (e) {
+  //       console.error("Failed to load draft:", e);
+  //     }
+  //   }
+  // }, []);
 
   const primaryPhoto = useMemo(() => photos[0] ?? null, [photos]);
   const currentCategoryFields = categoryFieldPresets[draft.category] || [];
@@ -226,6 +229,23 @@ export default function AddInventory() {
       description: descriptionSections,
       photos: photos.map(({ previewUrl, ...photo }) => photo),
     });
+    
+    // Clear the draft after successful submission
+    localStorage.removeItem(DRAFT_STORAGE_KEY);
+    
+    // Reset form to initial state
+    setDraft({
+      category: "comics",
+      title: "",
+      graderCompany: "CGC Cards",
+      certificationNumber: "",
+      grade: "9.0",
+      categoryFields: {},
+      additionalNotes: "",
+    });
+    setPhotos([]);
+    
+    toast.success("Item added to your inventory!");
   };
 
   if (!isAuthenticated) {

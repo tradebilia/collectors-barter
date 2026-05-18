@@ -616,6 +616,9 @@ This ensures users can fill in all category-specific details when adding items t
 - [x] Drafts persist within the same browser session
 - [x] Fixed localStorage key mismatch between AddInventory and Inventory pages
 - [x] Added proper category label mapping for draft items
+- [x] Removed auto-loading of drafts on page refresh to prevent accidental duplicate submissions
+- [x] Form resets to initial state on successful item submission
+- [x] Draft is cleared from localStorage after successful submission
 
 ## PRE-LAUNCH: Database-Backed Draft Storage (PRIORITY)
 - [ ] Implement persistent draft storage in database (not localStorage)
