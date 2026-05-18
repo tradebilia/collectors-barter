@@ -479,12 +479,12 @@ export default function AddInventory() {
 
             {/* Right side - Image Upload */}
             <div className="flex flex-col gap-6">
-              <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-white/8 to-white/4 p-6 shadow-lg h-full flex flex-col">
+              <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-white/8 to-white/4 p-6 shadow-lg flex flex-col">
                 <h3 className="mb-6 text-lg font-semibold uppercase tracking-[0.1em] text-white/95">Upload Images</h3>
                 
                 {/* Main upload area */}
                 <div
-                  className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-white/20 bg-white/5 p-6 cursor-pointer transition-all hover:border-white/40 hover:bg-white/10 flex-1 min-h-48"
+                  className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-white/20 bg-white/5 p-6 cursor-pointer transition-all hover:border-white/40 hover:bg-white/10 h-48"
                   onDragOver={(e) => {
                     e.preventDefault();
                     e.currentTarget.classList.add('border-white/60', 'bg-white/20');
