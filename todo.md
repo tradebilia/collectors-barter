@@ -690,3 +690,17 @@ This ensures users can fill in all category-specific details when adding items t
 - [x] Update Disney Pins to show "Raw" option only (no professional grading)
 - [x] Test grading company selection across all categories
 - [x] Verify grading scales display correctly for each company
+
+
+## UPDATE: Category Page Filters (PRIORITY)
+- [x] Update Comics category page filter to use new grading companies
+- [x] Update Sports Cards category page filter to use new grading companies
+- [x] Update Vintage Toys category page filter to use new grading companies
+- [x] Update Video Games category page filter to use new grading companies
+- [x] Update Stamps category page filter to use new grading companies
+- [x] Update Coins category page filter to use new grading companies
+- [x] Update Pokemon category page filter to use new grading companies
+- [x] Update Movies category page filter to use new grading companies
+- [x] Update Autographs category page filter to use new grading companies
+- [x] Update Disney Pins category page filter to use new grading companies
+- [x] Test all category page filters display correct grading companies
