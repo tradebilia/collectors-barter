@@ -2,8 +2,9 @@ import { TopRightIcons } from "@/components/TopRightIcons";
 import { Search, LogOut } from "lucide-react";
 import { Link } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
-import { getLoginUrl } from "@/const";
 import { Button } from "@/components/ui/button";
+import { SignInModal } from "@/components/SignInModal";
+import { useState } from "react";
 
 interface TopBarProps {
   logoUrl?: string;
@@ -17,6 +18,7 @@ export function TopBar({
   onSearchChange,
 }: TopBarProps) {
   const { isAuthenticated, logout } = useAuth();
+  const [showSignInModal, setShowSignInModal] = useState(false);
 
   return (
     <div className="border-b border-white/10 bg-black">
@@ -55,13 +57,16 @@ export function TopBar({
               Log Out
             </Button>
           ) : (
-            <Button
-              onClick={() => (window.location.href = getLoginUrl())}
-              size="sm"
-              className="bg-white/20 text-white hover:bg-white/30"
-            >
-              Sign In
-            </Button>
+            <>
+              <Button
+                onClick={() => setShowSignInModal(true)}
+                size="sm"
+                className="bg-white/20 text-white hover:bg-white/30"
+              >
+                Sign In
+              </Button>
+              <SignInModal isOpen={showSignInModal} onClose={() => setShowSignInModal(false)} />
+            </>
           )}
         </div>
       </div>

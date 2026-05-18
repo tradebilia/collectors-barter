@@ -720,8 +720,8 @@ This ensures users can fill in all category-specific details when adding items t
 
 - [x] Implement Sign In modal in top right corner with username/password fields
 - [x] Add "Not a Member, Sign Up" link in Sign In modal
-- [ ] Create Sign Up page with account setup form
-- [ ] Implement access restrictions: only search and category pages for unauthenticated users
-- [ ] Create "Member Only" page for restricted content
-- [ ] Add route guards to redirect unauthenticated users appropriately
+- [x] Create Sign Up page with account setup form
+- [x] Implement access restrictions: only search and category pages for unauthenticated users
+- [x] Create "Member Only" page for restricted content
+- [x] Add route guards to redirect unauthenticated users appropriately
 - [ ] Test complete authentication flow end-to-end

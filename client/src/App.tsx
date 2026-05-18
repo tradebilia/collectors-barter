@@ -19,23 +19,72 @@ import Watchlist from "./pages/Watchlist";
 import AccountSetup from "./pages/AccountSetup";
 import AccountSettings from "./pages/AccountSettings";
 import PublicProfile from "./pages/PublicProfile";
+import { SignUp } from "./pages/SignUp";
+import { MemberOnly } from "./pages/MemberOnly";
+import { ProtectedRoute } from "./components/ProtectedRoute";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
-      <Route path="/inventory" component={Inventory} />
-      <Route path="/inventory/new" component={AddInventory} />
-      <Route path="/profile" component={Profile} />
-      <Route path="/account-setup" component={AccountSetup} />
-      <Route path="/account-settings" component={AccountSettings} />
+      <Route path="/inventory">
+        <ProtectedRoute>
+          <Inventory />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/inventory/new">
+        <ProtectedRoute>
+          <AddInventory />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/profile">
+        <ProtectedRoute>
+          <Profile />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/account-setup">
+        <ProtectedRoute>
+          <AccountSetup />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/account-settings">
+        <ProtectedRoute>
+          <AccountSettings />
+        </ProtectedRoute>
+      </Route>
       <Route path="/profile/:userId" component={PublicProfile} />
-      <Route path="/messages" component={Messages} />
-      <Route path="/notifications" component={Notifications} />
-      <Route path="/members" component={MemberSearch} />
-      <Route path="/report-user" component={ReportUser} />
-      <Route path="/referral-request" component={ReferralRequest} />
-      <Route path="/watchlist" component={Watchlist} />
+      <Route path="/messages">
+        <ProtectedRoute>
+          <Messages />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/notifications">
+        <ProtectedRoute>
+          <Notifications />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/members">
+        <ProtectedRoute>
+          <MemberSearch />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/report-user">
+        <ProtectedRoute>
+          <ReportUser />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/referral-request">
+        <ProtectedRoute>
+          <ReferralRequest />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/watchlist">
+        <ProtectedRoute>
+          <Watchlist />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/signup" component={SignUp} />
+      <Route path="/member-only" component={MemberOnly} />
       <Route path="/category/:slug" component={CategoryPage} />
       <Route path="/listings/:listingId" component={ItemDetail} />
       <Route path="/404" component={NotFound} />
