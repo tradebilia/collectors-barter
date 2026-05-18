@@ -44,12 +44,11 @@ export function RecentlyAddedCarousel({
   setProposalDraft,
 }: RecentlyAddedCarouselProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const [isPaused, setIsPaused] = useState(false);
   const autoScrollIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Auto-scroll carousel right-to-left continuously
   useEffect(() => {
-    if (!scrollContainerRef.current || isPaused) return;
+    if (!scrollContainerRef.current) return;
 
     const container = scrollContainerRef.current;
     const scrollSpeed = 1; // pixels per frame
@@ -74,7 +73,7 @@ export function RecentlyAddedCarousel({
         clearInterval(autoScrollIntervalRef.current);
       }
     };
-  }, [isPaused]);
+  }, []);
 
   // Refresh data every 10 minutes
   useEffect(() => {
@@ -90,8 +89,6 @@ export function RecentlyAddedCarousel({
   return (
     <div
       className="mt-1.5 overflow-hidden rounded-lg"
-      onMouseEnter={() => setIsPaused(true)}
-      onMouseLeave={() => setIsPaused(false)}
     >
       <div
         ref={scrollContainerRef}
