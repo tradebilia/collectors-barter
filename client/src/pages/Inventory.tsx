@@ -91,6 +91,9 @@ export default function Inventory() {
   const dashboardQuery = trpc.market.dashboard.useQuery(undefined, {
     enabled: isAuthenticated,
   });
+  const getDraftsQuery = trpc.market.getDrafts.useQuery(undefined, {
+    enabled: isAuthenticated && showDrafts,
+  });
 
   const handleToggleListingStatus = useCallback(
     async (listingId: number, e: React.MouseEvent) => {
@@ -213,35 +216,29 @@ export default function Inventory() {
   const filteredListings = useMemo(() => {
     const normalizedKeyword = keyword.trim().toLowerCase();
     
-    // If showing drafts, return drafts from localStorage
+    // If showing drafts, return drafts from database
     if (showDrafts) {
-      const savedDraftData = localStorage.getItem('tradebilia-add-inventory-draft');
-      const drafts: any[] = [];
-      
-      if (savedDraftData) {
-        try {
-          const { draft: savedDraft, photos: savedPhotos } = JSON.parse(savedDraftData);
-          if (savedDraft && savedDraft.title) {
-            drafts.push({
-              id: 'draft-current',
-              ...savedDraft,
-              photos: savedPhotos || [],
-              status: 'draft',
-              isActive: false,
-              categoryLabel: getTradebiliaCategoryLabel(savedDraft.category),
-              conditionLabel: 'Draft',
-              condition: 'draft',
-              primaryPhotoUrl: savedPhotos?.[0]?.previewUrl || null,
-              estimatedValue: savedDraft.estimatedValue || null,
-              grade: savedDraft.grade || 'ungraded',
-              certificationCompany: savedDraft.graderCompany || null,
-              description: savedDraft.title,
-            });
-          }
-        } catch (e) {
-          console.error('Failed to parse draft:', e);
-        }
-      }
+      const dbDrafts = getDraftsQuery.data || [];
+      const drafts: any[] = dbDrafts.map((draft: any) => ({
+        id: `draft-${draft.id}`,
+        title: draft.title,
+        category: draft.category,
+        grade: draft.grade,
+        graderCompany: draft.graderCompany,
+        certificationNumber: draft.certificationNumber,
+        estimatedValue: draft.estimatedValue,
+        categoryFields: draft.categoryFields,
+        additionalNotes: draft.additionalNotes,
+        photos: draft.photos || [],
+        status: 'draft',
+        isActive: false,
+        categoryLabel: getTradebiliaCategoryLabel(draft.category),
+        conditionLabel: 'Draft',
+        condition: 'draft',
+        primaryPhotoUrl: draft.photos?.[0]?.previewUrl || null,
+        certificationCompany: draft.graderCompany || null,
+        description: draft.title,
+      }));
       
       const filteredDrafts = drafts.filter((draft: any) => {
         const matchesKeyword = normalizedKeyword.length === 0 || draft.title?.toLowerCase().includes(normalizedKeyword);

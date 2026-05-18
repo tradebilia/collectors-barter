@@ -1,0 +1,9 @@
+{
+  "query": "ALTER TABLE `draftListings` ADD CONSTRAINT `draftListings_userId_users_id_fk` FOREIGN KEY (`userId`) REFERENCES `users`(`id`) ON DELETE no action ON UPDATE no action;\nCREATE INDEX `draftListings_user_idx` ON `draftListings` (`userId`);\nCREATE INDEX `draftListings_createdAt_idx` ON `draftListings` (`createdAt`);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4ZXfWh5QbDJhQ4C.root --database nAx6ATm2BH4G46yabuMZgM --execute ALTER TABLE `draftListings` ADD CONSTRAINT `draftListings_userId_users_id_fk` FOREIGN KEY (`userId`) REFERENCES `users`(`id`) ON DELETE no action ON UPDATE no action;\nCREATE INDEX `draftListings_user_idx` ON `draftListings` (`userId`);\nCREATE INDEX `draftListings_createdAt_idx` ON `draftListings` (`createdAt`);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1045
+}

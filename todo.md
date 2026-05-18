@@ -621,13 +621,13 @@ This ensures users can fill in all category-specific details when adding items t
 - [x] Draft is cleared from localStorage after successful submission
 
 ## PRE-LAUNCH: Database-Backed Draft Storage (PRIORITY)
-- [ ] Implement persistent draft storage in database (not localStorage)
-- [ ] Create saveDraft tRPC endpoint with proper validation
-- [ ] Update AddInventory page to call saveDraft endpoint
-- [ ] Add draft retrieval endpoint to fetch drafts from database
-- [ ] Update Inventory page to fetch drafts from database instead of localStorage
-- [ ] Test draft creation, retrieval, and display before launch
-- [ ] Ensure drafts persist across browser sessions and devices
+- [x] Implement persistent draft storage in database (not localStorage)
+- [x] Create saveDraft tRPC endpoint with proper validation
+- [x] Update AddInventory page to call saveDraft endpoint
+- [x] Add draft retrieval endpoint to fetch drafts from database
+- [x] Update Inventory page to fetch drafts from database instead of localStorage
+- [x] Test draft creation, retrieval, and display before launch
+- [x] Ensure drafts persist across browser sessions and devices
 
 
 ## Bug Fix: Date Added Filter Not Working (FIXED)

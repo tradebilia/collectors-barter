@@ -4,6 +4,7 @@ import { drizzle } from "drizzle-orm/mysql2";
 import type { InsertUser, User } from "../drizzle/schema";
 import {
   collectibleCategories,
+  draftListings,
   itemConditions,
   listingPhotos,
   listings,
@@ -1582,4 +1583,91 @@ export async function getUnreadMessageCount(userId: number): Promise<number> {
     .then((rows: any[]) => rows[0]?.count ?? 0);
   
   return unreadMessages;
+}
+
+
+export async function saveDraft(
+  userId: number,
+  data: {
+    title: string;
+    category: (typeof collectibleCategories)[number];
+    grade: string;
+    graderCompany: string;
+    certificationNumber: string;
+    estimatedValue: number;
+    categoryFields: Record<string, string>;
+    additionalNotes: string;
+    photos: Array<{ name: string; type: string; contentBase64: string }>;
+  }
+): Promise<number> {
+  const db = await requireDb();
+  
+  await db.insert(draftListings).values({
+    userId,
+    title: data.title,
+    category: data.category,
+    grade: data.grade as any,
+    graderCompany: data.graderCompany,
+    certificationNumber: data.certificationNumber,
+    estimatedValue: data.estimatedValue ? String(data.estimatedValue) as any : null,
+    categoryFields: JSON.stringify(data.categoryFields),
+    additionalNotes: data.additionalNotes,
+    photos: JSON.stringify(data.photos),
+  });
+  
+  // Get the inserted draft ID
+  const inserted = await db
+    .select({ id: draftListings.id })
+    .from(draftListings)
+    .where(eq(draftListings.userId, userId))
+    .orderBy(desc(draftListings.createdAt))
+    .limit(1);
+  
+  return inserted[0]?.id ?? 0;
+}
+
+export async function getDrafts(userId: number): Promise<Array<{
+  id: number;
+  title: string;
+  category: (typeof collectibleCategories)[number];
+  grade: string;
+  graderCompany: string;
+  certificationNumber: string;
+  estimatedValue: number | null;
+  categoryFields: Record<string, string>;
+  additionalNotes: string;
+  photos: Array<{ name: string; type: string; contentBase64: string }>;
+  createdAt: Date;
+  updatedAt: Date;
+}>> {
+  const db = await requireDb();
+  
+  const rows = await db
+    .select()
+    .from(draftListings)
+    .where(eq(draftListings.userId, userId))
+    .orderBy(desc(draftListings.updatedAt));
+  
+  return rows.map(row => ({
+    id: row.id,
+    title: row.title,
+    category: row.category,
+    grade: row.grade,
+    graderCompany: row.graderCompany || "",
+    certificationNumber: row.certificationNumber || "",
+    estimatedValue: row.estimatedValue ? parseFloat(String(row.estimatedValue)) : null,
+    categoryFields: row.categoryFields ? JSON.parse(row.categoryFields) : {},
+    additionalNotes: row.additionalNotes || "",
+    photos: row.photos ? JSON.parse(row.photos) : [],
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+  }));
+}
+
+export async function deleteDraft(draftId: number, userId: number): Promise<void> {
+  const db = await requireDb();
+  
+  await db
+    .delete(draftListings)
+    .where(and(eq(draftListings.id, draftId), eq(draftListings.userId, userId)));
 }

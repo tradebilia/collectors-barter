@@ -237,6 +237,29 @@ export const watchlistEntries = mysqlTable(
   }),
 );
 
+export const draftListings = mysqlTable(
+  "draftListings",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    userId: int("userId").notNull().references(() => users.id),
+    title: varchar("title", { length: 160 }).notNull(),
+    category: mysqlEnum("category", collectibleCategories).notNull(),
+    grade: mysqlEnum("grade", gradeValues).default("ungraded").notNull(),
+    graderCompany: varchar("graderCompany", { length: 100 }),
+    certificationNumber: varchar("certificationNumber", { length: 100 }),
+    estimatedValue: decimal("estimatedValue", { precision: 12, scale: 2 }),
+    categoryFields: text("categoryFields"), // JSON string of category-specific fields
+    additionalNotes: text("additionalNotes"),
+    photos: text("photos"), // JSON string of photo data
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  table => ({
+    userIdx: index("draftListings_user_idx").on(table.userId),
+    createdAtIdx: index("draftListings_createdAt_idx").on(table.createdAt),
+  }),
+);
+
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 export type UserProfile = typeof userProfiles.$inferSelect;
@@ -247,3 +270,4 @@ export type TradeProposalItem = typeof tradeProposalItems.$inferSelect;
 export type TradeMessage = typeof tradeMessages.$inferSelect;
 export type TradeReview = typeof tradeReviews.$inferSelect;
 export type WatchlistEntry = typeof watchlistEntries.$inferSelect;
+export type DraftListing = typeof draftListings.$inferSelect;

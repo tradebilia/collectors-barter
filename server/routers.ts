@@ -20,6 +20,9 @@ import {
   restoreDeletedListings,
   getUnreadNotificationCount,
   getUnreadMessageCount,
+  saveDraft,
+  getDrafts,
+  deleteDraft,
 } from "./db";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -344,6 +347,45 @@ export const appRouter = router({
             ? "Your referral request was sent for Tradebilia review."
             : "Your referral request could not be delivered right now. Please try again shortly.",
         };
+      }),
+    saveDraft: protectedProcedure
+      .input(
+        z.object({
+          title: z.string().min(1).max(160),
+          category: z.enum(collectibleCategories),
+          grade: z.string(),
+          graderCompany: z.string().max(100),
+          certificationNumber: z.string().max(100).optional(),
+          estimatedValue: z.number().nonnegative().optional(),
+          categoryFields: z.record(z.string(), z.string()),
+          additionalNotes: z.string().max(4000).optional(),
+          photos: z.array(uploadedImageSchema),
+        }),
+      )
+      .mutation(({ ctx, input }) => {
+        return saveDraft(ctx.user.id, {
+          title: input.title,
+          category: input.category,
+          grade: input.grade,
+          graderCompany: input.graderCompany,
+          certificationNumber: input.certificationNumber || "",
+          estimatedValue: input.estimatedValue || 0,
+          categoryFields: input.categoryFields,
+          additionalNotes: input.additionalNotes || "",
+          photos: input.photos,
+        });
+      }),
+    getDrafts: protectedProcedure.query(({ ctx }) => {
+      return getDrafts(ctx.user.id);
+    }),
+    deleteDraft: protectedProcedure
+      .input(
+        z.object({
+          draftId: z.number().int().positive(),
+        }),
+      )
+      .mutation(({ ctx, input }) => {
+        return deleteDraft(input.draftId, ctx.user.id);
       }),
   }),
 });

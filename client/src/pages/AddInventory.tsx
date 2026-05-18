@@ -277,6 +277,7 @@ export default function AddInventory() {
   const [photos, setPhotos] = useState<UploadedImage[]>([]);
   const [primaryPhotoIndex, setPrimaryPhotoIndex] = useState<number>(0);
   const createListingMutation = trpc.market.createListing.useMutation();
+  const saveDraftMutation = trpc.market.saveDraft.useMutation();
 
   // Note: Draft auto-loading removed to prevent form data persistence on page refresh.
   // This prevents accidental duplicate submissions or mistakes from previous entries.
@@ -303,9 +304,24 @@ export default function AddInventory() {
     setPhotos(nextPhotos);
   };
 
-  const saveDraft = () => {
-    localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify({ draft, photos }));
-    toast.success("Inventory draft saved.");
+  const handleSaveDraft = async () => {
+    try {
+      await saveDraftMutation.mutateAsync({
+        title: draft.title,
+        category: draft.category,
+        grade: draft.grade,
+        graderCompany: draft.graderCompany,
+        certificationNumber: draft.certificationNumber,
+        estimatedValue: draft.value ? parseFloat(draft.value) : 0,
+        categoryFields: draft.categoryFields,
+        additionalNotes: draft.additionalNotes,
+        photos: photos,
+      });
+      toast.success("Inventory draft saved.");
+    } catch (error) {
+      toast.error("Failed to save draft. Please try again.");
+      console.error("Error saving draft:", error);
+    }
   };
 
   const submitListing = async (event: FormEvent<HTMLFormElement>) => {
@@ -563,11 +579,12 @@ export default function AddInventory() {
               <div className="flex gap-4">
                 <Button
                   type="button"
-                  onClick={saveDraft}
+                  onClick={handleSaveDraft}
                   variant="outline"
                   className="flex-1 h-12 border-white/20 text-white hover:bg-white/10"
-                  disabled={createListingMutation.isPending}
+                  disabled={createListingMutation.isPending || saveDraftMutation.isPending}
                 >
+                  {saveDraftMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   SAVE DRAFT
                 </Button>
                 <Button
