@@ -1320,3 +1320,59 @@ export async function updateUserPassword(userId: string, passwordHash: string) {
   const db = requireDb();
   return db.update(users).set({ passwordHash }).where(eq(users.id, userId));
 }
+
+
+// OTP Verification Functions
+export async function createEmailOtp(email: string, otp: string, expiresAt: Date) {
+  const db = requireDb();
+  // Delete existing OTPs for this email
+  await db.delete(emailVerificationOtps).where(eq(emailVerificationOtps.email, email));
+  return db.insert(emailVerificationOtps).values({
+    email,
+    otp,
+    expiresAt,
+  });
+}
+
+export async function createPhoneOtp(phone: string, otp: string, expiresAt: Date) {
+  const db = requireDb();
+  // Delete existing OTPs for this phone
+  await db.delete(phoneVerificationOtps).where(eq(phoneVerificationOtps.phone, phone));
+  return db.insert(phoneVerificationOtps).values({
+    phone,
+    otp,
+    expiresAt,
+  });
+}
+
+export async function getEmailOtp(email: string) {
+  const db = requireDb();
+  const result = await db.select().from(emailVerificationOtps).where(eq(emailVerificationOtps.email, email)).limit(1);
+  return result[0] || null;
+}
+
+export async function getPhoneOtp(phone: string) {
+  const db = requireDb();
+  const result = await db.select().from(phoneVerificationOtps).where(eq(phoneVerificationOtps.phone, phone)).limit(1);
+  return result[0] || null;
+}
+
+export async function deleteEmailOtp(email: string) {
+  const db = requireDb();
+  return db.delete(emailVerificationOtps).where(eq(emailVerificationOtps.email, email));
+}
+
+export async function deletePhoneOtp(phone: string) {
+  const db = requireDb();
+  return db.delete(phoneVerificationOtps).where(eq(phoneVerificationOtps.phone, phone));
+}
+
+export async function incrementEmailOtpAttempts(email: string) {
+  const db = requireDb();
+  return db.update(emailVerificationOtps).set({ attempts: sql`attempts + 1` }).where(eq(emailVerificationOtps.email, email));
+}
+
+export async function incrementPhoneOtpAttempts(phone: string) {
+  const db = requireDb();
+  return db.update(phoneVerificationOtps).set({ attempts: sql`attempts + 1` }).where(eq(phoneVerificationOtps.phone, phone));
+}

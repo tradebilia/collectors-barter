@@ -23,6 +23,7 @@ import SignUp from "./pages/SignUp";
 import Welcome from "./pages/Welcome";
 import { MemberOnly } from "./pages/MemberOnly";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import { VerifyAccount } from "./pages/VerifyAccount";
 
 function Router() {
   return (
@@ -85,6 +86,7 @@ function Router() {
         </ProtectedRoute>
       </Route>
       <Route path="/signup" component={SignUp} />
+      <Route path="/verify" component={VerifyAccount} />
       <Route path="/welcome" component={Welcome} />
       <Route path="/member-only" component={MemberOnly} />
       <Route path="/category/:slug" component={CategoryPage} />

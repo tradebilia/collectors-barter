@@ -279,6 +279,38 @@ export const passwordResetTokens = mysqlTable(
   })
 );
 
+export const emailVerificationOtps = mysqlTable(
+  "emailVerificationOtps",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    email: varchar("email", { length: 320 }).notNull(),
+    otp: varchar("otp", { length: 6 }).notNull(),
+    attempts: int("attempts").default(0).notNull(),
+    expiresAt: timestamp("expiresAt").notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  table => ({
+    emailIdx: index("emailVerificationOtps_email_idx").on(table.email),
+    expiresAtIdx: index("emailVerificationOtps_expiresAt_idx").on(table.expiresAt),
+  })
+);
+
+export const phoneVerificationOtps = mysqlTable(
+  "phoneVerificationOtps",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    phone: varchar("phone", { length: 20 }).notNull(),
+    otp: varchar("otp", { length: 6 }).notNull(),
+    attempts: int("attempts").default(0).notNull(),
+    expiresAt: timestamp("expiresAt").notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  table => ({
+    phoneIdx: index("phoneVerificationOtps_phone_idx").on(table.phone),
+    expiresAtIdx: index("phoneVerificationOtps_expiresAt_idx").on(table.expiresAt),
+  })
+);
+
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 export type UserProfile = typeof userProfiles.$inferSelect;
