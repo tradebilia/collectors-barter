@@ -478,7 +478,7 @@ export default function AddInventory() {
             </div>
 
             {/* Right side - Image Upload */}
-            <div className="flex flex-col gap-6 w-full lg:w-auto lg:max-w-xs lg:h-96">
+            <div className="flex flex-col gap-6 w-full lg:w-auto lg:max-w-xs lg:h-[520px]">
               <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-white/8 to-white/4 p-6 shadow-lg flex flex-col">
                 <h3 className="mb-6 text-lg font-semibold uppercase tracking-[0.1em] text-white/95">Upload Images</h3>
                 
