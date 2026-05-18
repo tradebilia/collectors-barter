@@ -1293,3 +1293,30 @@ export async function createUser(input: {
   });
   return getInsertId(result);
 }
+
+
+// Password Recovery Functions
+export async function createPasswordResetToken(userId: string, token: string, expiresAt: Date) {
+  const db = requireDb();
+  return db.insert(passwordResetTokens).values({
+    userId,
+    token,
+    expiresAt,
+  });
+}
+
+export async function getPasswordResetToken(token: string) {
+  const db = requireDb();
+  const result = await db.select().from(passwordResetTokens).where(eq(passwordResetTokens.token, token)).limit(1);
+  return result[0] || null;
+}
+
+export async function deletePasswordResetToken(token: string) {
+  const db = requireDb();
+  return db.delete(passwordResetTokens).where(eq(passwordResetTokens.token, token));
+}
+
+export async function updateUserPassword(userId: string, passwordHash: string) {
+  const db = requireDb();
+  return db.update(users).set({ passwordHash }).where(eq(users.id, userId));
+}

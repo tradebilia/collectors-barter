@@ -730,7 +730,7 @@ This ensures users can fill in all category-specific details when adding items t
 ## CURRENT WORK: Enhanced Authentication Features
 
 - [x] Create post-signup welcome page with My Inventory and Home options (new accounts only)
-- [ ] Implement password recovery with email reset link
+- [x] Implement password recovery with email reset link
 - [ ] Add SMS verification to sign-up flow
 - [ ] Add email verification to sign-up flow
 - [ ] Integrate multi-factor verification (email + SMS) into sign-up process

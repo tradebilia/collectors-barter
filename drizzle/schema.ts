@@ -264,6 +264,21 @@ export const draftListings = mysqlTable(
   }),
 );
 
+export const passwordResetTokens = mysqlTable(
+  "passwordResetTokens",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    userId: int("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
+    token: varchar("token", { length: 255 }).unique().notNull(),
+    expiresAt: timestamp("expiresAt").notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  table => ({
+    userIdx: index("passwordResetTokens_user_idx").on(table.userId),
+    expiresAtIdx: index("passwordResetTokens_expiresAt_idx").on(table.expiresAt),
+  })
+);
+
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 export type UserProfile = typeof userProfiles.$inferSelect;
