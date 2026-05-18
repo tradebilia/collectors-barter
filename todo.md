@@ -712,3 +712,5 @@ This ensures users can fill in all category-specific details when adding items t
 - [x] Increase SVG size to reduce negative space in hero section (max-w-[42rem] → max-w-[55rem])
 - [x] Change SVG text to all CAPS ("ADD TO YOUR INVENTORY")
 - [x] Fix text cutoff by adjusting font size (92 → 80) and x position (640 → 620)
+- [x] Increase font size to 150 and split text into two lines to prevent cutoff
+- [x] Increase SVG viewBox width to 4000 to accommodate font size 150 on one line without cutoff
