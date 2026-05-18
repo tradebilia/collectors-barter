@@ -714,3 +714,14 @@ This ensures users can fill in all category-specific details when adding items t
 - [x] Fix text cutoff by adjusting font size (92 → 80) and x position (640 → 620)
 - [x] Increase font size to 150 and split text into two lines to prevent cutoff
 - [x] Increase SVG viewBox width to 4000 to accommodate font size 150 on one line without cutoff
+
+
+## CURRENT WORK: Authentication Flow Implementation
+
+- [ ] Implement Sign In modal in top right corner with username/password fields
+- [ ] Add "Not a Member, Sign Up" link in Sign In modal
+- [ ] Create Sign Up page with account setup form
+- [ ] Implement access restrictions: only search and category pages for unauthenticated users
+- [ ] Create "Member Only" page for restricted content
+- [ ] Add route guards to redirect unauthenticated users appropriately
+- [ ] Test complete authentication flow end-to-end

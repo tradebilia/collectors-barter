@@ -57,7 +57,7 @@ type AvatarUploadInput = {
 
 async function requireDb() {
   if (!_db) {
-    _db = drizzle(ENV.DATABASE_URL);
+    _db = drizzle(ENV.databaseUrl);
   }
   return _db;
 }
@@ -155,6 +155,10 @@ async function formatListings(listingRows: any[], viewerId: number | null) {
     isActive: row.isActive,
     createdAt: row.createdAt.getTime(),
     updatedAt: row.updatedAt.getTime(),
+    owner: {
+      displayName: profileMap.get(row.ownerId)?.displayName ?? `Collector ${row.ownerId}`,
+      avatarUrl: profileMap.get(row.ownerId)?.avatarUrl ?? null,
+    },
     ownerRating: ratingMap.get(row.ownerId) ?? { averageRating: 0, reviewCount: 0 },
     primaryPhotoUrl: row.primaryPhotoUrl ?? null,
     savedToWatchlist: savedListingIds.has(row.id),
@@ -1205,4 +1209,87 @@ export async function createListing(
   }
 
   return getDashboardData(user);
+}
+
+
+export async function upsertUser(input: {
+  openId: string;
+  name: string | null;
+  email: string | null;
+  loginMethod: string | null;
+  lastSignedIn: Date;
+}) {
+  const db = await requireDb();
+
+  // Check if user already exists
+  const existing = await db
+    .select({ id: users.id })
+    .from(users)
+    .where(eq(users.openId, input.openId))
+    .limit(1);
+
+  if (existing[0]) {
+    // Update existing user
+    await db
+      .update(users)
+      .set({
+        name: input.name,
+        email: input.email,
+        loginMethod: input.loginMethod,
+        lastSignedIn: input.lastSignedIn,
+      })
+      .where(eq(users.openId, input.openId));
+
+    return existing[0].id;
+  } else {
+    // Create new user
+    const result = await db.insert(users).values({
+      openId: input.openId,
+      name: input.name,
+      email: input.email,
+      loginMethod: input.loginMethod,
+      lastSignedIn: input.lastSignedIn,
+    });
+
+    return getInsertId(result);
+  }
+}
+
+
+export async function getUserByOpenId(openId: string) {
+  const db = await requireDb();
+  const result = await db
+    .select()
+    .from(users)
+    .where(eq(users.openId, openId))
+    .limit(1);
+  return result[0] || null;
+}
+
+
+export async function getUserByUsername(username: string) {
+  const db = await requireDb();
+  const result = await db
+    .select()
+    .from(users)
+    .where(eq(users.username, username))
+    .limit(1);
+  return result[0] || null;
+}
+
+export async function createUser(input: {
+  username: string;
+  passwordHash: string;
+  displayName: string;
+  email?: string;
+}) {
+  const db = await requireDb();
+  const result = await db.insert(users).values({
+    username: input.username,
+    passwordHash: input.passwordHash,
+    displayName: input.displayName,
+    email: input.email || null,
+    loginMethod: "custom",
+  });
+  return getInsertId(result);
 }

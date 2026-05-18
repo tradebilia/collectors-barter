@@ -99,6 +99,13 @@
       "when": 1779130224973,
       "tag": "0013_loud_raider",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "5",
+      "when": 1779144501166,
+      "tag": "0014_ordinary_vargas",
+      "breakpoints": true
     }
   ]
 }
