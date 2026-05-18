@@ -674,3 +674,19 @@ This ensures users can fill in all category-specific details when adding items t
 - [x] Verified Comics page now displays all grading companies in dropdown
 - [x] Confirmed Sports Cards and other categories with "Grading service" label work correctly
 - [x] Verified no other categories have similar label mismatches
+
+
+## UPDATE: Grading Companies and Scales (PRIORITY)
+- [x] Update grading scale system to support category-specific scales (0.5–10, 1–10, 1–70, 1–100, 0–100, Auth-only)
+- [x] Update Comics grading companies (CGC Comics, CBCS, PGX Comics) with 0.5–10 scale
+- [x] Update Sports Cards grading companies (25+ companies) with 1–10 scale
+- [x] Update Vintage Toys grading companies (AFA, CAS, UKG) with 0–100/1–100 scale
+- [x] Update Video Games grading companies (WATA, CGC Video Games, VGA, etc.) with appropriate scales
+- [x] Update Stamps grading companies (PSE, ASG, PSAG) with 1–100 scale
+- [x] Update Coins grading companies (PCGS, NGC, ANACS, ICG, SEGS, SGS) with Sheldon 1–70 scale
+- [x] Update Pokemon grading companies (28+ companies) with 1–10 scale
+- [x] Update Movies grading companies (CGC Home Video, VHS Grading, IGS) with 1–10 scale
+- [x] Update Autographs grading companies (PSA/DNA, JSA, Beckett Auth, GAI) with authentication + optional 1–10
+- [x] Update Disney Pins to show "Raw" option only (no professional grading)
+- [x] Test grading company selection across all categories
+- [x] Verify grading scales display correctly for each company
