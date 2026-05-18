@@ -513,6 +513,11 @@ export default function Home() {
                     watchlistMutation={watchlistMutation}
                     proposalDraft={proposalDraft}
                     setProposalDraft={setProposalDraft}
+                    onRefresh={() => {
+                      // Refetch the recently added items without stopping scroll
+                      // The query will automatically update displayItems in the carousel
+                      marketplaceQuery.refetch();
+                    }}
                   />
                 </div>
 

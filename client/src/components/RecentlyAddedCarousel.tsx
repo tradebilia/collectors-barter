@@ -31,6 +31,7 @@ interface RecentlyAddedCarouselProps {
   watchlistMutation?: any;
   proposalDraft?: any;
   setProposalDraft?: any;
+  onRefresh?: () => void;
 }
 
 export function RecentlyAddedCarousel({
@@ -42,16 +43,27 @@ export function RecentlyAddedCarousel({
   watchlistMutation,
   proposalDraft,
   setProposalDraft,
+  onRefresh,
 }: RecentlyAddedCarouselProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const autoScrollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const [displayItems, setDisplayItems] = useState<CarouselItem[]>([]);
+
+  // Initialize display items with multiple copies for seamless infinite scroll
+  useEffect(() => {
+    if (items.length === 0) return;
+    
+    // Create 3 copies of items for smooth infinite scrolling
+    // This ensures there's always content to scroll to
+    setDisplayItems([...items, ...items, ...items]);
+  }, [items]);
 
   // Auto-scroll carousel right-to-left continuously
   useEffect(() => {
-    if (!scrollContainerRef.current) return;
+    if (!scrollContainerRef.current || displayItems.length === 0) return;
 
     const container = scrollContainerRef.current;
-    const scrollSpeed = 1; // pixels per frame
+    const scrollSpeed = 0.5; // pixels per frame (slower for smoother feel with more items)
     const frameRate = 60; // frames per second
 
     const scroll = () => {
@@ -60,8 +72,11 @@ export function RecentlyAddedCarousel({
       // Scroll right (which moves content left - right-to-left effect)
       container.scrollLeft += scrollSpeed;
 
-      // If we've scrolled past the middle, reset to the beginning for infinite loop
-      if (container.scrollLeft >= container.scrollWidth / 2) {
+      // Calculate when to reset: when we've scrolled through one full set of items
+      const itemWidth = container.scrollWidth / 3; // Since we have 3 copies
+      
+      // If we've scrolled past the first set, reset to the beginning
+      if (container.scrollLeft >= itemWidth) {
         container.scrollLeft = 0;
       }
     };
@@ -73,30 +88,29 @@ export function RecentlyAddedCarousel({
         clearInterval(autoScrollIntervalRef.current);
       }
     };
-  }, []);
+  }, [displayItems]);
 
-  // Refresh data every 10 minutes
+  // Refresh data every 10 minutes to get newly added items
   useEffect(() => {
     const refreshInterval = setInterval(() => {
-      // Trigger a data refresh by reloading the page or invalidating the query
-      // This will be handled by the parent component
-      window.location.reload();
+      // Call the refresh callback to fetch new items
+      if (onRefresh) {
+        onRefresh();
+      }
     }, 600000); // 10 minutes
 
     return () => clearInterval(refreshInterval);
-  }, []);
+  }, [onRefresh]);
 
   return (
-    <div
-      className="mt-1.5 overflow-hidden rounded-lg"
-    >
+    <div className="mt-1.5 overflow-hidden rounded-lg">
       <div
         ref={scrollContainerRef}
         className="flex gap-2 overflow-x-auto scroll-smooth pb-2"
-        style={{ scrollBehavior: "smooth", WebkitOverflowScrolling: "touch" }}
+        style={{ scrollBehavior: "auto", WebkitOverflowScrolling: "touch" }}
       >
-        {/* Duplicate items for seamless infinite scroll */}
-        {[...items, ...items].map((item, index) => (
+        {/* Display items 3 times for seamless infinite scroll */}
+        {displayItems.map((item, index) => (
           <div key={`${item.id}-${index}`} className="flex-shrink-0 w-[calc(15%-0.3rem)]">
             <Card className="overflow-hidden rounded-none border border-slate-300 bg-white shadow-none h-full cursor-pointer transition hover:shadow-md" onClick={() => item.href && (window.location.href = item.href)}>
               <div className="aspect-[0.68] overflow-hidden bg-[#f0ebe5] group">
