@@ -710,3 +710,4 @@ This ensures users can fill in all category-specific details when adding items t
 - [x] Replace hero section SVG with new "Add To Your Inventory" branded SVG
 - [x] Verify new SVG displays correctly on the page
 - [x] Increase SVG size to reduce negative space in hero section (max-w-[42rem] → max-w-[55rem])
+- [x] Change SVG text to all CAPS ("ADD TO YOUR INVENTORY")
