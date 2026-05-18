@@ -15,7 +15,8 @@ import { Bell, Lock, Mail, Loader2, Save, Shield, Link as LinkIcon, Upload, Eye,
 import { FormEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Link } from "wouter";
-import { CategoryTopBar } from "@/components/CategoryTopBar";
+import { TopBar } from "@/components/TopBar";
+import { CategoryBar } from "@/components/CategoryBar";
 
 const TRADEBILIA_LOGO_URL = "/manus-storage/Tradebilialogo_886a61b7.webp";
 
@@ -218,7 +219,7 @@ export default function AccountSettings() {
 
   return (
     <div className="min-h-screen bg-[#f5f5f3] text-slate-950">
-      <CategoryTopBar logoUrl={TRADEBILIA_LOGO_URL} searchPlaceholder="Search..." />
+      <TopBar logoUrl={TRADEBILIA_LOGO_URL} searchPlaceholder="Search..." />
 
       {/* Hero Section */}
       <section className="relative w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden bg-[#00143A] text-white">
@@ -238,6 +239,8 @@ export default function AccountSettings() {
           </div>
         </div>
       </section>
+
+      <CategoryBar />
 
       <main className="px-4 py-10 lg:px-8">
         <div className="mx-auto max-w-4xl space-y-8">

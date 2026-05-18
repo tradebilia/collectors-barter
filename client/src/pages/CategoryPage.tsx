@@ -21,6 +21,8 @@ import {
 } from "@/lib/tradebilia";
 import { ArrowRight, Heart, Loader2, MessageSquareText, Search, ShieldCheck, Sparkles, Star, Trophy } from "lucide-react";
 import { TopRightIcons } from "@/components/TopRightIcons";
+import { TopBar } from "@/components/TopBar";
+import { CategoryBar } from "@/components/CategoryBar";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Link, useRoute } from "wouter";
@@ -242,20 +244,10 @@ export default function CategoryPage() {
 
   return (
     <div className={`min-h-screen ${theme.pageClassName}`}>
-      <div className="border-b border-white/10 bg-black">
-        <div className="flex items-center justify-between gap-4 pl-2 pr-4 py-3">
-          <div className="flex-shrink-0">
-            <img src={SPORTS_CARDS_LONG_LOGO_URL} alt="Tradebilia" className="h-14 w-auto object-contain" />
-          </div>
-          <div className="flex-1 flex justify-center">
-            <div className="flex items-center gap-2 bg-white/10 rounded-lg px-4 py-2 max-w-2xl w-full">
-              <Search className="h-4 w-4 text-white/70 flex-shrink-0" />
-              <input type="text" placeholder={`Search ${getTradebiliaCategoryLabel(slug ?? '')}...`} className="bg-transparent text-white text-sm placeholder-white/50 outline-none w-full" />
-            </div>
-          </div>
-          <TopRightIcons className="flex items-center gap-3 md:gap-4 flex-shrink-0" iconColor="text-white/70" />
-        </div>
-      </div>
+      <TopBar
+        logoUrl={SPORTS_CARDS_LONG_LOGO_URL}
+        searchPlaceholder={`Search ${getTradebiliaCategoryLabel(slug ?? '')}...`}
+      />
       <header className={`relative overflow-hidden border-b ${theme.borderClassName} ${theme.heroClassName}`} style={{ minHeight: '400px' }}>
         <div className={`relative overflow-hidden ${theme.textureClassName}`} style={{
           backgroundImage: isSportsCardsPage ? 'url(/manus-storage/Sportscardwallpaper_7d372f7d.webp)' : slug === 'video_games' ? 'url(https://d2xsxph8kpxj0f.cloudfront.net/310519663570115757/nAx6ATm2BH4G46yabuMZgM/video-games-background-kyx4vVUqTYCMC3kMbtokYU.webp)' : slug === 'coins' ? 'url(/manus-storage/Coins2_54d5f0d9.png)' : slug === 'stamps' ? 'url(/manus-storage/Stamps5_7feb0c7e.png)' : slug === 'vintage_toys' ? 'url(/manus-storage/Toys4_70f212d6.png)' : slug === 'autographs' ? 'url(/manus-storage/Auto2_41464c02.png)' : slug === 'movies' ? 'url(/manus-storage/VHS1_4fe4bb67.png)' : slug === 'comics' ? 'url(https://d2xsxph8kpxj0f.cloudfront.net/310519663570115757/nAx6ATm2BH4G46yabuMZgM/comics-background-YZiiH2cyV8YJx6GFQj4PKC.webp)' : slug === 'pokemon' ? 'url(https://d2xsxph8kpxj0f.cloudfront.net/310519663570115757/nAx6ATm2BH4G46yabuMZgM/pokemon-background-J6h7Mte6BSYA3GfQ4vtdFj.webp)' : slug === 'disney_pins' ? 'url(https://d2xsxph8kpxj0f.cloudfront.net/310519663570115757/nAx6ATm2BH4G46yabuMZgM/disney-pins-background-F6yUvFLVrhmnaWk6GsFMZ8.webp)' : undefined,
@@ -328,26 +320,7 @@ export default function CategoryPage() {
 
       </header>
 
-      <nav className="relative z-10 border-t border-black bg-black">
-        <div className="flex w-full overflow-x-auto">
-          <Link
-            href="/"
-            className="flex-1 border-b border-r border-white/10 px-4 py-4 text-center text-xs font-semibold uppercase tracking-[0.16em] transition hover:bg-white/10 lg:text-[11px] text-white whitespace-nowrap"
-          >
-            Home
-          </Link>
-          {tradebiliaCategories.map(category => (
-            <Link
-              key={category.value}
-              href={`/category/${category.value}`}
-              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-              className={`flex-1 border-b border-r border-white/10 px-4 py-4 text-center text-xs font-semibold uppercase tracking-[0.16em] transition hover:bg-white/10 lg:text-[11px] whitespace-nowrap ${category.value === slug ? "bg-white text-slate-950" : "text-white"}`}
-            >
-              {category.label}
-            </Link>
-          ))}
-        </div>
-      </nav>
+      <CategoryBar />
 
       <main className="flex">
         {/* Left sidebar filters */}

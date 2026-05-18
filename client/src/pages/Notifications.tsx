@@ -11,7 +11,7 @@ import { Bell, Loader2, Trash2, CheckCircle2, Clock, AlertCircle } from "lucide-
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Link } from "wouter";
-import { CategoryTopBar } from "@/components/CategoryTopBar";
+import { TopBar } from "@/components/TopBar";
 import { useAuth } from "@/_core/hooks/useAuth";
 
 const notificationTypes = [
@@ -139,7 +139,7 @@ export default function Notifications() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100">
-      <CategoryTopBar logoUrl={TRADEBILIA_LOGO_URL} searchPlaceholder="Search..." />
+      <TopBar logoUrl={TRADEBILIA_LOGO_URL} searchPlaceholder="Search..." />
 
       <div className="container mx-auto max-w-4xl px-4 py-8">
         <div className="mb-8 flex items-center justify-between">

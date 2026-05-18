@@ -494,3 +494,34 @@
 ## BUG: Missing Category Navigation Bar on Main Page (FIXED)
 - [x] Restore category navigation bar (Comics, Sports Cards, Vintage Toys, Video Games, Stamps, Coins, Pokemon, Movies, Autographs, Disney Pins) on main page
 - [x] Verify category bar appears below top bar on all pages
+
+
+## Important: TOP BAR vs CATEGORY BAR Separation
+
+**TOP BAR** (Row 1):
+- Left: Tradebilia logo
+- Center: Search bar
+- Right: User icons (avatar, notifications, settings, messages) + auth button (Sign In / Log Out)
+
+**CATEGORY BAR** (Row 2):
+- Navigation links: HOME + all 10 categories
+- Active category highlighted in white
+- Always black background
+
+These are separate and distinct sections. When making updates, treat them independently.
+
+
+## Component Restructuring: TOP BAR and CATEGORY BAR Separation (COMPLETED)
+
+- [x] Create TopBar component containing only logo, search, and user icons
+- [x] Create CategoryBar component for category navigation
+- [x] Update CategoryTopBar or replace with TopBar-only component
+- [x] Update Home page to render TopBar, then hero, then CategoryBar
+- [x] Update CategoryPage to render TopBar, then hero, then CategoryBar
+- [x] Update AddInventory page to render TopBar, then hero/content, then CategoryBar
+- [x] Update AccountSettings page to render TopBar, then hero, then CategoryBar
+- [x] Update Notifications page to use TopBar (no hero/category bar)
+- [x] Remove old hardcoded category navigation from CategoryPage
+- [x] Verify CategoryBar appears below hero section on all pages
+- [x] Test that CategoryBar active state highlighting works correctly on all pages
+- [x] Verify layout consistency and spacing across all pages

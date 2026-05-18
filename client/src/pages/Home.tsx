@@ -18,7 +18,8 @@ import { Heart, Loader2, MessageSquareText, Search, ShieldCheck, Sparkles, Star,
 import { ChangeEvent, FormEvent, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Link } from "wouter";
-import { CategoryTopBar } from "@/components/CategoryTopBar";
+import { TopBar } from "@/components/TopBar";
+import { CategoryBar } from "@/components/CategoryBar";
 
 type UploadedImage = {
   name: string;
@@ -427,7 +428,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-[#f7f4ee] text-foreground">
-      <CategoryTopBar
+      <TopBar
         logoUrl={TRADEBILIA_LOGO_URL}
         searchPlaceholder="Search Tradebilia..."
         onSearchChange={setKeyword}
@@ -451,6 +452,8 @@ export default function Home() {
             </div>
           </div>
         </section>
+
+        <CategoryBar />
 
         <section className="border-y border-black/25 bg-[linear-gradient(90deg,#8e9093_0%,#d7dde6_50%,#8e9093_100%)] py-1.5 text-black">
           <div className="grid gap-0 text-center sm:grid-cols-2 xl:grid-cols-4">
