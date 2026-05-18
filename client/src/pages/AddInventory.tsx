@@ -307,9 +307,9 @@ export default function AddInventory() {
           </div>
 
           {/* Main content grid with image on right */}
-          <div className="mt-10 flex gap-10 flex-col lg:flex-row">
+          <div className="mt-10 grid gap-10 grid-cols-1 lg:grid-cols-[1fr_320px] lg:auto-rows-max">
             {/* Left side - Form fields */}
-            <div className="space-y-6 flex-1">
+            <div className="space-y-6">
               {/* 1. Category Selection */}
               <div className="rounded-2xl border border-green-500/20 bg-gradient-to-br from-green-500/10 to-green-500/5 p-6 shadow-lg">
                 <h3 className="mb-4 text-lg font-semibold uppercase tracking-[0.1em] text-white/95">1. Select Category</h3>
@@ -478,7 +478,7 @@ export default function AddInventory() {
             </div>
 
             {/* Right side - Image Upload */}
-            <div className="flex flex-col gap-6 w-full lg:w-auto lg:max-w-xs lg:h-[520px]">
+            <div className="flex flex-col gap-6 w-full lg:w-auto lg:max-w-xs lg:row-span-3 lg:h-fit">
               <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-white/8 to-white/4 p-6 shadow-lg flex flex-col">
                 <h3 className="mb-6 text-lg font-semibold uppercase tracking-[0.1em] text-white/95">Upload Images</h3>
                 
