@@ -597,3 +597,20 @@ This ensures users can fill in all category-specific details when adding items t
 ## Add Required Field Note (COMPLETED)
 - [x] Add a note explaining that "*" indicates required fields (won't save if missing)
 - [x] Display the note prominently on the Add to Your Inventory page
+
+
+## Draft Filter for My Inventory Page
+- [x] Add draft filter toggle/button to My Inventory page
+- [x] Display draft items from localStorage when filter is active
+- [x] Show draft items with "Draft" indicator/overlay
+- [x] Test draft filter functionality
+
+
+## PRE-LAUNCH: Draft Save Functionality (PRIORITY)
+- [ ] Implement persistent draft storage in database (not localStorage)
+- [ ] Create saveDraft tRPC endpoint with proper validation
+- [ ] Update AddInventory page to call saveDraft endpoint
+- [ ] Add draft filter to My Inventory page to display saved drafts
+- [ ] Show "Draft" indicator/overlay on draft items in My Inventory
+- [ ] Test draft creation, retrieval, and display before launch
+- [ ] Ensure drafts persist across browser sessions and devices

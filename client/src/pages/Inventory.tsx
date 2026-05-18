@@ -66,6 +66,7 @@ export default function Inventory() {
   const [maxValue, setMaxValue] = useState("");
   const [status, setStatus] = useState("all");
   const [dateRange, setDateRange] = useState("all");
+  const [showDrafts, setShowDrafts] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [listingToDelete, setListingToDelete] = useState<number | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
@@ -82,7 +83,7 @@ export default function Inventory() {
     if (selectedIds.size === filteredListings.length) {
       setSelectedIds(new Set());
     } else {
-      setSelectedIds(new Set(filteredListings.map(l => l.id)));
+      setSelectedIds(new Set(filteredListings.map((l: any) => l.id)));
     }
   };
 
@@ -210,6 +211,17 @@ export default function Inventory() {
 
   const filteredListings = useMemo(() => {
     const normalizedKeyword = keyword.trim().toLowerCase();
+    
+    // If showing drafts, return drafts from localStorage
+    if (showDrafts) {
+      const drafts = JSON.parse(localStorage.getItem('tradebilia_drafts') || '[]');
+      const filteredDrafts = drafts.filter((draft: any) => {
+        const matchesKeyword = normalizedKeyword.length === 0 || draft.title?.toLowerCase().includes(normalizedKeyword);
+        const matchesCategory = category === 'all' || draft.category === category;
+        return matchesKeyword && matchesCategory;
+      });
+      return filteredDrafts;
+    }
 
     const filtered = listings.filter(listing => {
       const matchesKeyword =
@@ -241,10 +253,10 @@ export default function Inventory() {
       if (sortBy === "condition") return a.condition.localeCompare(b.condition);
       return b.id - a.id;
     });
-  }, [category, condition, dateRange, gradeRange, graderCompany, keyword, listings, maxValue, minValue, sortBy, status, tradeOnly]);
+  }, [category, condition, dateRange, gradeRange, graderCompany, keyword, listings, maxValue, minValue, sortBy, status, tradeOnly, showDrafts]);
 
   const exportInventory = () => {
-    const payload = filteredListings.map(listing => ({
+    const payload = filteredListings.map((listing: any) => ({
       title: listing.title,
       category: listing.categoryLabel,
       condition: listing.conditionLabel,
@@ -493,6 +505,14 @@ export default function Inventory() {
                   <Switch checked={tradeOnly} onCheckedChange={setTradeOnly} />
                 </div>
 
+                <div className="flex items-center justify-between rounded-xl border border-slate-300 bg-white px-3 py-2">
+                  <div>
+                    <p className="text-xs font-medium text-slate-900">Show Drafts</p>
+                    <p className="text-xs text-slate-600">Unsaved Items</p>
+                  </div>
+                  <Switch checked={showDrafts} onCheckedChange={setShowDrafts} />
+                </div>
+
                 <Button
                   onClick={() => {
                     setKeyword('');
@@ -525,7 +545,7 @@ export default function Inventory() {
                   </div>
                   <div className="bg-green-50 rounded-lg p-6 border border-green-200 min-w-48">
                     <p className="text-xs font-semibold text-green-600 uppercase">Total Value</p>
-                    <p className="text-2xl font-bold text-green-900 mt-1">${filteredListings.reduce((sum, l) => sum + (Number(l.estimatedValue) || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                    <p className="text-2xl font-bold text-green-900 mt-1">${filteredListings.reduce((sum: number, l: any) => sum + (Number(l.estimatedValue) || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                   </div>
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
@@ -572,7 +592,7 @@ export default function Inventory() {
 
               </div>
               <div className="grid gap-3 grid-cols-6">
-              {filteredListings.map(listing => (
+              {filteredListings.map((listing: any) => (
                 <Card key={listing.id} className="overflow-hidden border-slate-200 bg-white shadow-sm hover:shadow-lg transition-shadow rounded-lg">
                   <CardContent className="p-0">
                     <div className="flex items-center justify-between px-3 py-2 bg-slate-50 border-b border-slate-100">
@@ -591,41 +611,54 @@ export default function Inventory() {
                         }}
                         className="w-4 h-4 cursor-pointer"
                       />
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <button
-                              onClick={(e) => handleToggleListingStatus(listing.id, e)}
-                              disabled={togglingId === listing.id}
-                              className={`rounded-full text-xs font-semibold px-3 py-1 transition-all ${
-                                listing.isActive
-                                  ? "bg-green-100 text-green-700 hover:bg-green-200"
-                                  : "bg-red-100 text-red-700 hover:bg-red-200"
-                              } ${togglingId === listing.id ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
-                            >
-                              {togglingId === listing.id ? (
-                                <Loader2 className="h-3 w-3 animate-spin inline mr-1" />
-                              ) : listing.isActive ? (
-                                <Eye className="h-3 w-3 inline mr-1" />
-                              ) : (
-                                <EyeOff className="h-3 w-3 inline mr-1" />
-                              )}
-                              {listing.isActive ? "Active" : "Not Listed"}
-                            </button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>{listing.isActive ? "Click to hide this listing from search" : "Click to show this listing in search"}</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
+                      {showDrafts ? (
+                        <div className="rounded-full text-xs font-semibold px-3 py-1 bg-yellow-100 text-yellow-700">
+                          <span>Draft</span>
+                        </div>
+                      ) : (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <button
+                                onClick={(e) => handleToggleListingStatus(listing.id, e)}
+                                disabled={togglingId === listing.id}
+                                className={`rounded-full text-xs font-semibold px-3 py-1 transition-all ${
+                                  listing.isActive
+                                    ? "bg-green-100 text-green-700 hover:bg-green-200"
+                                    : "bg-red-100 text-red-700 hover:bg-red-200"
+                                } ${togglingId === listing.id ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+                              >
+                                {togglingId === listing.id ? (
+                                  <Loader2 className="h-3 w-3 animate-spin inline mr-1" />
+                                ) : listing.isActive ? (
+                                  <Eye className="h-3 w-3 inline mr-1" />
+                                ) : (
+                                  <EyeOff className="h-3 w-3 inline mr-1" />
+                                )}
+                                {listing.isActive ? "Active" : "Not Listed"}
+                              </button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>{listing.isActive ? "Click to hide this listing from search" : "Click to show this listing in search"}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      )}
                     </div>
-                    <Link href={`/listings/${listing.id}`} className="block">
+                    <Link href={`/listings/${listing.id}`} className="block relative">
                       <div className="flex aspect-square items-center justify-center overflow-hidden bg-gradient-to-br from-slate-100 to-slate-200">
                         <img
                           src={resolveTradebiliaListingImage({ title: listing.title, category: listing.category, primaryPhotoUrl: listing.primaryPhotoUrl })}
                           alt={listing.title}
                           className="h-full w-full object-contain"
                         />
+                        {showDrafts && (
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                            <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-blue-700 opacity-80 transform -rotate-45 flex items-center justify-center">
+                              <span className="text-white font-bold text-lg transform rotate-45">DRAFT</span>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </Link>
                     <div className="p-4 space-y-3">
