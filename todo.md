@@ -550,3 +550,28 @@ These are separate and distinct sections. When making updates, treat them indepe
 - [x] Test form with all categories (Comics, Sports Cards, Pokemon verified)
 - [x] Verify form fields update correctly when category changes
 - [x] Test image upload and validation
+
+
+## IMPORTANT: Add to Your Inventory Synchronization Process
+
+**When adding new filters to any category page, you MUST also add the corresponding field to the Add to Your Inventory page.**
+
+The categoryFieldPresets object in `/home/ubuntu/collectors-barter/client/src/pages/AddInventory.tsx` must be kept in sync with the filter presets in `/home/ubuntu/collectors-barter/client/src/lib/tradebilia.ts`.
+
+**Steps to follow when adding a new filter:**
+1. Add the new filter to the category's filterPresets in tradebilia.ts
+2. Add the corresponding field to the categoryFieldPresets object in AddInventory.tsx for that category
+3. Test the Add to Your Inventory form to verify the new field appears when that category is selected
+4. Mark the task as [x] in todo.md
+
+This ensures users can fill in all category-specific details when adding items to their inventory.
+
+
+## Add to Your Inventory Page Layout Redesign (COMPLETED)
+
+- [x] Reorganize form layout to use multi-column grid to reduce scrolling
+- [x] Place category selection prominently at the top
+- [x] Keep image upload on far right side
+- [x] Reorder form sections: Category → Grading Company → Certification Number → Other Fields
+- [x] Test layout on different screen sizes (mobile, tablet, desktop)
+- [x] Verify form fields are easily accessible without excessive scrolling

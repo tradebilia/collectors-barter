@@ -105,98 +105,85 @@ const categoryFieldPresets: Record<ListingCategory, Array<{ name: string; label:
 const gradingServicesByCategory: Record<ListingCategory, string[]> = {
   comics: ["CGC Cards", "PSA", "Beckett", "Raw"],
   sports_cards: ["PSA", "BGS", "CGC Cards", "SGC", "Raw"],
-  pokemon: ["PSA", "BGS", "CGC Cards", "TAG", "Raw"],
-  vintage_toys: ["AFA", "CAS", "CGC", "Raw"],
-  video_games: ["VGA", "Wata", "CGC", "Raw"],
-  stamps: ["PSE", "PSAG", "Raw"],
-  coins: ["PCGS", "NGC", "Raw"],
-  autographs: ["PSA", "JSA", "BAS", "Raw"],
-  movies: ["CGC Home Video", "Beckett", "Raw"],
+  vintage_toys: ["AFA", "NRFB", "Raw"],
+  video_games: ["WATA", "VGA", "Raw"],
+  stamps: ["PSE", "Raw"],
+  coins: ["PCGS", "NGC", "ANACS", "Raw"],
+  pokemon: ["PSA", "BGS", "CGC Cards", "Raw"],
+  movies: ["Raw"],
+  autographs: ["JSA", "PSA", "Beckett", "Raw"],
   disney_pins: ["Raw"],
 };
 
-type InventoryDraft = {
-  category: ListingCategory;
-  title: string;
-  graderCompany: string;
-  grade: string;
-  categoryFields: Record<string, string>;
-  additionalNotes: string;
+// Map grade to condition
+const mapGradeToCondition = (grade: string): "mint" | "near_mint" | "very_good" | "good" | "fair" | "poor" => {
+  const gradeNum = parseFloat(grade);
+  if (gradeNum >= 9) return "mint";
+  if (gradeNum >= 8) return "near_mint";
+  if (gradeNum >= 7) return "very_good";
+  if (gradeNum >= 5) return "good";
+  if (gradeNum >= 3) return "fair";
+  return "poor";
 };
 
-const emptyDraft: InventoryDraft = {
-  category: "comics",
-  title: "",
-  graderCompany: "Raw",
-  grade: "9.0",
-  categoryFields: {},
-  additionalNotes: "",
-};
-
-async function readFiles(files: FileList | null) {
-  if (!files) return [] as UploadedImage[];
-
-  const readers = Array.from(files).slice(0, 6).map(
-    file =>
-      new Promise<UploadedImage>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => {
-          const result = String(reader.result ?? "");
-          const [, contentBase64 = ""] = result.split(",");
-          resolve({
-            name: file.name,
-            type: file.type || "image/jpeg",
-            contentBase64,
-            previewUrl: result,
-          });
-        };
-        reader.onerror = () => reject(reader.error);
-        reader.readAsDataURL(file);
-      }),
+// Read files as base64
+const readFiles = async (fileList: FileList | null): Promise<UploadedImage[]> => {
+  if (!fileList) return [];
+  const files = Array.from(fileList);
+  return Promise.all(
+    files.map(
+      file =>
+        new Promise<UploadedImage>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            const base64 = reader.result as string;
+            resolve({
+              name: file.name,
+              type: file.type,
+              contentBase64: base64.split(",")[1],
+              previewUrl: base64,
+            });
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        })
+    )
   );
-
-  return Promise.all(readers);
-}
-
-function mapGradeToCondition(grade: string) {
-  const numericGrade = Number.parseFloat(grade);
-  if (!Number.isFinite(numericGrade)) return "near_mint" as const;
-  if (numericGrade >= 9.5) return "mint" as const;
-  if (numericGrade >= 8) return "near_mint" as const;
-  if (numericGrade >= 6) return "very_good" as const;
-  if (numericGrade >= 4) return "good" as const;
-  if (numericGrade >= 2) return "fair" as const;
-  return "poor" as const;
-}
+};
 
 export default function AddInventory() {
   const { isAuthenticated } = useAuth();
-  const utils = trpc.useUtils();
-  const [draft, setDraft] = useState<InventoryDraft>(emptyDraft);
-  const [photos, setPhotos] = useState<UploadedImage[]>([]);
-
-  const createListingMutation = trpc.market.createListing.useMutation({
-    onSuccess: async () => {
-      localStorage.removeItem(DRAFT_STORAGE_KEY);
-      setDraft(emptyDraft);
-      setPhotos([]);
-      toast.success("Collectible added to your inventory.");
-      await Promise.all([utils.market.dashboard.invalidate(), utils.market.feed.invalidate()]);
-      window.location.href = "/inventory";
-    },
-    onError: error => toast.error(error.message),
+  const [draft, setDraft] = useState<{
+    category: ListingCategory;
+    title: string;
+    graderCompany: string;
+    certificationNumber: string;
+    grade: string;
+    categoryFields: Record<string, string>;
+    additionalNotes: string;
+  }>({
+    category: "comics",
+    title: "",
+    graderCompany: "CGC Cards",
+    certificationNumber: "",
+    grade: "9.0",
+    categoryFields: {},
+    additionalNotes: "",
   });
 
-  useEffect(() => {
-    const savedDraft = localStorage.getItem(DRAFT_STORAGE_KEY);
-    if (!savedDraft) return;
+  const [photos, setPhotos] = useState<UploadedImage[]>([]);
+  const createListingMutation = trpc.market.createListing.useMutation();
 
-    try {
-      const parsed = JSON.parse(savedDraft) as { draft?: InventoryDraft; photos?: UploadedImage[] };
-      if (parsed.draft) setDraft(parsed.draft);
-      if (parsed.photos) setPhotos(parsed.photos);
-    } catch {
-      localStorage.removeItem(DRAFT_STORAGE_KEY);
+  useEffect(() => {
+    const saved = localStorage.getItem(DRAFT_STORAGE_KEY);
+    if (saved) {
+      try {
+        const { draft: savedDraft, photos: savedPhotos } = JSON.parse(saved);
+        setDraft(savedDraft);
+        setPhotos(savedPhotos);
+      } catch (e) {
+        console.error("Failed to load draft:", e);
+      }
     }
   }, []);
 
@@ -224,6 +211,7 @@ export default function AddInventory() {
 
     const descriptionSections = [
       `Grading Company: ${draft.graderCompany}`,
+      draft.certificationNumber ? `Certification Number: ${draft.certificationNumber}` : null,
       `Grade: ${draft.grade}`,
       ...Object.entries(draft.categoryFields)
         .filter(([, value]) => value?.trim())
@@ -280,13 +268,16 @@ export default function AddInventory() {
       <CategoryBar />
 
       <main className="px-4 py-10 lg:px-8">
-        <form className="mx-auto max-w-6xl" onSubmit={submitListing}>
+        <form className="mx-auto max-w-7xl" onSubmit={submitListing}>
           <h1 className="text-5xl font-semibold tracking-tight text-white">ADD TO YOUR INVENTORY</h1>
-          <div className="mt-10 grid gap-10 lg:grid-cols-[1.15fr_0.85fr]">
-            <div className="space-y-10">
-              {/* Category Selection */}
-              <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-white/8 to-white/4 p-8 shadow-lg">
-                <h3 className="mb-6 text-xl font-semibold uppercase tracking-[0.1em] text-white/95">Select Category</h3>
+
+          {/* Main content grid with image on right */}
+          <div className="mt-10 grid gap-10 lg:grid-cols-[1fr_0.35fr]">
+            {/* Left side - Form fields */}
+            <div className="space-y-6">
+              {/* 1. Category Selection */}
+              <div className="rounded-2xl border border-green-500/20 bg-gradient-to-br from-green-500/10 to-green-500/5 p-6 shadow-lg">
+                <h3 className="mb-4 text-lg font-semibold uppercase tracking-[0.1em] text-white/95">1. Select Category</h3>
                 <div className="space-y-3">
                   <Label className="text-sm uppercase tracking-[0.08em] text-white/70">Category *</Label>
                   <Select value={draft.category} onValueChange={value => {
@@ -309,11 +300,11 @@ export default function AddInventory() {
                 </div>
               </div>
 
-              {/* Grading Information */}
-              <div className="rounded-2xl border border-blue-500/20 bg-gradient-to-br from-blue-500/10 to-blue-500/5 p-8 shadow-lg">
-                <h3 className="mb-6 text-xl font-semibold uppercase tracking-[0.1em] text-white/95">Grading Information</h3>
-                <div className="grid gap-6 md:grid-cols-2">
-                  <div className="space-y-3 md:col-span-2">
+              {/* 2. Grading Company & Certification Number */}
+              <div className="rounded-2xl border border-blue-500/20 bg-gradient-to-br from-blue-500/10 to-blue-500/5 p-6 shadow-lg">
+                <h3 className="mb-4 text-lg font-semibold uppercase tracking-[0.1em] text-white/95">2. Grading & Certification</h3>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-3">
                     <Label className="text-sm uppercase tracking-[0.08em] text-white/70">Grading Company</Label>
                     <Select value={draft.graderCompany} onValueChange={value => setDraft(current => ({ ...current, graderCompany: value }))}>
                       <SelectTrigger className="h-12 border-white/10 bg-white/8 text-white hover:bg-white/12">
@@ -328,20 +319,30 @@ export default function AddInventory() {
                   </div>
 
                   <div className="space-y-3">
-                    <Label className="text-sm uppercase tracking-[0.08em] text-white/70">Grade</Label>
+                    <Label className="text-sm uppercase tracking-[0.08em] text-white/70">Certification Number</Label>
                     <Input
-                      value={draft.grade}
-                      onChange={event => setDraft(current => ({ ...current, grade: event.target.value }))}
-                      placeholder="e.g., 9.0"
+                      value={draft.certificationNumber}
+                      onChange={event => setDraft(current => ({ ...current, certificationNumber: event.target.value }))}
+                      placeholder="e.g., 123456789"
                       className="h-12 border-white/10 bg-white/8 text-white placeholder:text-white/35"
                     />
                   </div>
                 </div>
+
+                <div className="mt-4 space-y-3">
+                  <Label className="text-sm uppercase tracking-[0.08em] text-white/70">Grade</Label>
+                  <Input
+                    value={draft.grade}
+                    onChange={event => setDraft(current => ({ ...current, grade: event.target.value }))}
+                    placeholder="e.g., 9.0"
+                    className="h-12 border-white/10 bg-white/8 text-white placeholder:text-white/35"
+                  />
+                </div>
               </div>
 
-              {/* Item Title */}
-              <div className="rounded-2xl border border-purple-500/20 bg-gradient-to-br from-purple-500/10 to-purple-500/5 p-8 shadow-lg">
-                <h3 className="mb-6 text-xl font-semibold uppercase tracking-[0.1em] text-white/95">Item Title</h3>
+              {/* 3. Item Title */}
+              <div className="rounded-2xl border border-purple-500/20 bg-gradient-to-br from-purple-500/10 to-purple-500/5 p-6 shadow-lg">
+                <h3 className="mb-4 text-lg font-semibold uppercase tracking-[0.1em] text-white/95">3. Item Title</h3>
                 <div className="space-y-3">
                   <Label className="text-sm uppercase tracking-[0.08em] text-white/70">Title *</Label>
                   <Input
@@ -353,47 +354,38 @@ export default function AddInventory() {
                 </div>
               </div>
 
-              {/* Category-Specific Fields */}
+              {/* 4. Item Details - Category Specific Fields in Grid */}
               {currentCategoryFields.length > 0 && (
-                <div className="rounded-2xl border border-pink-500/20 bg-gradient-to-br from-pink-500/10 to-pink-500/5 p-8 shadow-lg">
-                  <h3 className="mb-6 text-xl font-semibold uppercase tracking-[0.1em] text-white/95">Item Details</h3>
-                  <div className="grid gap-6 md:grid-cols-2">
+                <div className="rounded-2xl border border-cyan-500/20 bg-gradient-to-br from-cyan-500/10 to-cyan-500/5 p-6 shadow-lg">
+                  <h3 className="mb-4 text-lg font-semibold uppercase tracking-[0.1em] text-white/95">4. Item Details</h3>
+                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                     {currentCategoryFields.map(field => (
-                      <div key={field.name} className={field.type === "select" ? "space-y-3" : "space-y-3"}>
+                      <div key={field.name} className="space-y-3">
                         <Label className="text-sm uppercase tracking-[0.08em] text-white/70">{field.label}</Label>
-                        {field.type === "select" ? (
-                          <Select
+                        {field.type === "text" ? (
+                          <Input
                             value={draft.categoryFields[field.name] || ""}
-                            onValueChange={value =>
-                              setDraft(current => ({
-                                ...current,
-                                categoryFields: { ...current.categoryFields, [field.name]: value },
-                              }))
-                            }
-                          >
-                            <SelectTrigger className="h-12 border-white/10 bg-white/8 text-white hover:bg-white/12">
+                            onChange={event => setDraft(current => ({
+                              ...current,
+                              categoryFields: { ...current.categoryFields, [field.name]: event.target.value }
+                            }))}
+                            placeholder={field.placeholder}
+                            className="h-10 border-white/10 bg-white/8 text-white placeholder:text-white/35 text-sm"
+                          />
+                        ) : (
+                          <Select value={draft.categoryFields[field.name] || ""} onValueChange={value => setDraft(current => ({
+                            ...current,
+                            categoryFields: { ...current.categoryFields, [field.name]: value }
+                          }))}>
+                            <SelectTrigger className="h-10 border-white/10 bg-white/8 text-white hover:bg-white/12 text-sm">
                               <SelectValue placeholder={field.placeholder} />
                             </SelectTrigger>
                             <SelectContent>
                               {field.selectOptions?.map(option => (
-                                <SelectItem key={option} value={option}>
-                                  {option}
-                                </SelectItem>
+                                <SelectItem key={option} value={option}>{option}</SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
-                        ) : (
-                          <Input
-                            value={draft.categoryFields[field.name] || ""}
-                            onChange={event =>
-                              setDraft(current => ({
-                                ...current,
-                                categoryFields: { ...current.categoryFields, [field.name]: event.target.value },
-                              }))
-                            }
-                            placeholder={field.placeholder}
-                            className="h-12 border-white/10 bg-white/8 text-white placeholder:text-white/35"
-                          />
                         )}
                       </div>
                     ))}
@@ -401,60 +393,70 @@ export default function AddInventory() {
                 </div>
               )}
 
-              {/* Additional Information */}
-              <div className="rounded-2xl border border-green-500/20 bg-gradient-to-br from-green-500/10 to-green-500/5 p-8 shadow-lg">
-                <h3 className="mb-6 text-xl font-semibold uppercase tracking-[0.1em] text-white/95">Additional Information</h3>
+              {/* 5. Additional Information */}
+              <div className="rounded-2xl border border-indigo-500/20 bg-gradient-to-br from-indigo-500/10 to-indigo-500/5 p-6 shadow-lg">
+                <h3 className="mb-4 text-lg font-semibold uppercase tracking-[0.1em] text-white/95">5. Additional Information</h3>
                 <div className="space-y-3">
                   <Label className="text-sm uppercase tracking-[0.08em] text-white/70">Additional Notes</Label>
                   <Textarea
                     value={draft.additionalNotes}
                     onChange={event => setDraft(current => ({ ...current, additionalNotes: event.target.value }))}
-                    rows={5}
                     placeholder="Any additional details about this item..."
-                    className="border-white/10 bg-white/8 text-white placeholder:text-white/35"
+                    className="min-h-24 border-white/10 bg-white/8 text-white placeholder:text-white/35"
                   />
                 </div>
               </div>
 
-              <div className="flex flex-wrap gap-4">
-                <Button type="button" variant="outline" className="min-w-[14rem] rounded-xl border-white/10 bg-white/5 px-8 py-6 text-lg text-white hover:bg-white/10 hover:text-white" onClick={saveDraft}>
+              {/* Action Buttons */}
+              <div className="flex gap-4">
+                <Button
+                  type="button"
+                  onClick={saveDraft}
+                  variant="outline"
+                  className="flex-1 h-12 border-white/20 text-white hover:bg-white/10"
+                  disabled={createListingMutation.isPending}
+                >
                   SAVE DRAFT
                 </Button>
-                <Button type="submit" className="min-w-[18rem] rounded-xl bg-[#0e5d73] px-8 py-6 text-lg text-white hover:bg-[#0a4d60]" disabled={createListingMutation.isPending}>
-                  {createListingMutation.isPending ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : null}
+                <Button
+                  type="submit"
+                  className="flex-1 h-12 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold"
+                  disabled={createListingMutation.isPending}
+                >
+                  {createListingMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   SUBMIT COLLECTIBLE
                 </Button>
               </div>
             </div>
 
-            <div>
-              <h2 className="text-3xl font-medium text-white">UPLOAD IMAGE</h2>
-              <div className="mt-8 rounded-[1.5rem] border border-white/10 bg-black/18 p-5 shadow-[0_30px_80px_rgba(0,0,0,0.28)]">
-                <div className="overflow-hidden rounded-[1.25rem] border border-white/10 bg-black/20">
+            {/* Right side - Image Upload */}
+            <div className="flex flex-col gap-6">
+              <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-white/8 to-white/4 p-6 shadow-lg">
+                <h3 className="mb-6 text-lg font-semibold uppercase tracking-[0.1em] text-white/95">Upload Image</h3>
+                <label className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-white/20 bg-white/5 p-8 cursor-pointer transition-all hover:border-white/40 hover:bg-white/10">
                   {primaryPhoto ? (
-                    <img src={primaryPhoto.previewUrl} alt={primaryPhoto.name} className="aspect-[0.7] w-full object-cover" />
+                    <img src={primaryPhoto.previewUrl} alt="Preview" className="w-full h-auto rounded-lg" />
                   ) : (
-                    <div className="flex aspect-[0.7] items-center justify-center text-center text-white/55">
-                      <div>
-                        <Upload className="mx-auto h-10 w-10" />
-                        <p className="mt-3 text-lg">Upload front + back images</p>
-                      </div>
+                    <div className="text-center">
+                      <Upload className="mx-auto h-12 w-12 text-white/50 mb-3" />
+                      <p className="text-sm text-white/70">Upload front + back images</p>
+                      <p className="text-xs text-white/50 mt-1">PNG, JPG up to 10MB</p>
                     </div>
                   )}
-                </div>
-                <Label htmlFor="inventory-photos" className="mt-5 block cursor-pointer text-center text-2xl uppercase tracking-[0.08em] text-white/90">
-                  Upload Front + Back...
-                </Label>
-                <Input id="inventory-photos" type="file" multiple accept="image/*" onChange={handlePhotos} className="mt-4 border-white/8 bg-white/6 text-white" />
-                {photos.length > 1 ? (
-                  <div className="mt-5 grid grid-cols-3 gap-3">
-                    {photos.slice(1).map(photo => (
-                      <div key={photo.name} className="overflow-hidden rounded-[1rem] border border-white/10">
-                        <img src={photo.previewUrl} alt={photo.name} className="aspect-[0.78] w-full object-cover" />
-                      </div>
-                    ))}
+                  <input
+                    id="inventory-photos"
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    onChange={handlePhotos}
+                    className="hidden"
+                  />
+                </label>
+                {photos.length > 0 && (
+                  <div className="mt-4 text-sm text-white/70">
+                    {photos.length} image{photos.length !== 1 ? 's' : ''} uploaded
                   </div>
-                ) : null}
+                )}
               </div>
             </div>
           </div>
