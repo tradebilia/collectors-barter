@@ -29,6 +29,10 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { notifyOwner } from "./_core/notification";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
+import { hashPassword, verifyPassword, isValidUsername, isValidPassword, isValidEmail } from "./_core/auth";
+import { getUserByUsername, createUser } from "./db";
+import { sdk } from "./_core/sdk";
+import { ONE_YEAR_MS } from "@shared/const";
 
 const uploadedImageSchema = z.object({
   name: z.string().min(1).max(200),
@@ -75,6 +79,76 @@ export const appRouter = router({
   system: systemRouter,
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
+    signup: publicProcedure
+      .input(
+        z.object({
+          username: z.string().min(3).max(32),
+          password: z.string().min(8),
+          displayName: z.string().min(1).max(255),
+          email: z.string().email().optional(),
+        }),
+      )
+      .mutation(async ({ input, ctx }) => {
+        if (!isValidUsername(input.username)) {
+          throw new Error("Username must be 3-32 characters, alphanumeric with underscores/hyphens");
+        }
+        if (!isValidPassword(input.password)) {
+          throw new Error("Password must be at least 8 characters with uppercase, lowercase, and number");
+        }
+        if (input.email && !isValidEmail(input.email)) {
+          throw new Error("Invalid email format");
+        }
+
+        const existing = await getUserByUsername(input.username);
+        if (existing) {
+          throw new Error("Username already taken");
+        }
+
+        const passwordHash = hashPassword(input.password);
+        const userId = await createUser({
+          username: input.username,
+          passwordHash,
+          displayName: input.displayName,
+          email: input.email,
+        });
+
+        const sessionToken = await sdk.createSessionToken(String(userId), {
+          name: input.displayName,
+          expiresInMs: ONE_YEAR_MS,
+        });
+
+        const cookieOptions = getSessionCookieOptions(ctx.req);
+        ctx.res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
+
+        return { success: true, userId };
+      }),
+    signin: publicProcedure
+      .input(
+        z.object({
+          username: z.string(),
+          password: z.string(),
+        }),
+      )
+      .mutation(async ({ input, ctx }) => {
+        const user = await getUserByUsername(input.username);
+        if (!user || !user.passwordHash) {
+          throw new Error("Invalid username or password");
+        }
+
+        if (!verifyPassword(input.password, user.passwordHash)) {
+          throw new Error("Invalid username or password");
+        }
+
+        const sessionToken = await sdk.createSessionToken(String(user.id), {
+          name: user.displayName || user.username || "",
+          expiresInMs: ONE_YEAR_MS,
+        });
+
+        const cookieOptions = getSessionCookieOptions(ctx.req);
+        ctx.res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
+
+        return { success: true, userId: user.id };
+      }),
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
