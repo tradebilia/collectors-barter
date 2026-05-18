@@ -23,6 +23,7 @@ import {
   saveDraft,
   getDrafts,
   deleteDraft,
+  getSiteStatistics,
 } from "./db";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -98,6 +99,9 @@ export const appRouter = router({
   market: router({
     feed: publicProcedure.input(listingFiltersSchema.optional()).query(({ ctx, input }) => {
       return getMarketplaceFeed(input ?? {}, ctx.user?.id ?? null);
+    }),
+    siteStatistics: publicProcedure.query(() => {
+      return getSiteStatistics();
     }),
     dashboard: protectedProcedure.query(({ ctx }) => {
       return getDashboardData({ id: ctx.user.id, name: ctx.user.name });

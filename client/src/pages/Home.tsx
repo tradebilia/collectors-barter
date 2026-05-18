@@ -163,6 +163,7 @@ export default function Home() {
   const [activeProposalId, setActiveProposalId] = useState<number | null>(null);
 
   const marketplaceQuery = trpc.market.feed.useQuery({ category, condition, keyword });
+  const siteStatisticsQuery = trpc.market.siteStatistics.useQuery();
   const dashboardQuery = trpc.market.dashboard.useQuery(undefined, {
     enabled: isAuthenticated,
   });
@@ -459,10 +460,10 @@ export default function Home() {
         <section className="border-y border-black/25 bg-[linear-gradient(90deg,#8e9093_0%,#d7dde6_50%,#8e9093_100%)] py-1.5 text-black">
           <div className="grid gap-0 text-center sm:grid-cols-2 xl:grid-cols-4">
             {[
-              ["Total Members", dashboard?.profile.tradeHistoryCount ? `${Math.max(dashboard.profile.tradeHistoryCount * 12, 40)}k` : "40k"],
-              ["Total Items", marketplaceQuery.data?.highlights.totalListings ? `${(marketplaceQuery.data.highlights.totalListings * 1250).toLocaleString()}` : "3,500,000"],
-              ["Total Value", marketplaceQuery.data?.highlights.totalListings ? `$${(marketplaceQuery.data.highlights.totalListings * 7500).toLocaleString()}` : "$20,500,000"],
-              ["Total Trades", marketplaceQuery.data?.highlights.completedTrades ? `${marketplaceQuery.data.highlights.completedTrades}k` : "10k"],
+              ["Total Members", siteStatisticsQuery.data?.totalMembers ? `${(siteStatisticsQuery.data.totalMembers / 1000).toFixed(0)}k` : "0k"],
+              ["Total Items", siteStatisticsQuery.data?.totalItems ? `${siteStatisticsQuery.data.totalItems.toLocaleString()}` : "0"],
+              ["Total Value", siteStatisticsQuery.data?.totalValue ? `$${(siteStatisticsQuery.data.totalValue / 1000000).toFixed(1)}M` : "$0"],
+              ["Total Trades", siteStatisticsQuery.data?.totalTrades ? `${(siteStatisticsQuery.data.totalTrades / 1000).toFixed(1)}k` : "0"],
             ].map(([label, value]) => (
               <div key={label as string} className="space-y-0.5 px-2 py-1.5">
                 <p className="text-[10px] font-medium leading-none text-black/80">{label as string}</p>
