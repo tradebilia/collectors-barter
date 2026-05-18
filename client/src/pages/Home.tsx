@@ -20,6 +20,7 @@ import { toast } from "sonner";
 import { Link } from "wouter";
 import { TopBar } from "@/components/TopBar";
 import { CategoryBar } from "@/components/CategoryBar";
+import { RecentlyAddedCarousel } from "@/components/RecentlyAddedCarousel";
 
 type UploadedImage = {
   name: string;
@@ -503,88 +504,16 @@ export default function Home() {
 
                 <div className="bg-white px-3 py-3 lg:px-6 lg:py-3">
                   <h2 className="text-center font-serif text-[2.45rem] font-medium tracking-[-0.035em] text-[#2d241e] sm:text-[2.8rem]">Recently Added</h2>
-                  <div className="mt-1.5 grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
-                    {recentShelfItems.map(item => (
-                      <Card key={item.id} className="overflow-hidden rounded-none border border-slate-300 bg-white shadow-none">
-                        <div className="aspect-[0.68] overflow-hidden bg-[#f0ebe5]">
-                          {item.imageUrl ? (
-                            <img src={item.imageUrl} alt={item.title} className="h-full w-full object-cover" />
-                          ) : (
-                            <img src={resolveTradebiliaListingImage({ title: item.title })} alt={item.title} className="h-full w-full object-cover" />
-                          )}
-                        </div>
-                        <CardContent className="space-y-0.5 px-1.5 py-1.5">
-                          {item.href ? (
-                            <Link href={item.href} className="line-clamp-2 text-[10px] font-medium leading-3.5 text-slate-900 transition hover:text-primary">
-                              {item.title}
-                            </Link>
-                          ) : (
-                            <p className="line-clamp-2 text-[10px] font-medium leading-3.5 text-slate-900">{item.title}</p>
-                          )}
-                          <p className="text-[10px] text-[#7a46ff]">{item.price}</p>
-                          <p className="text-[8px] text-slate-500">{item.subtitle}</p>
-                          <div className="flex flex-wrap gap-1 pt-0.5">
-                            {item.href ? (
-                              <Link href={item.href} className="inline-flex h-5 items-center rounded-full border border-slate-300 px-1.5 text-[9px] font-medium text-slate-700 transition hover:border-primary hover:text-primary">
-                                View
-                              </Link>
-                            ) : null}
-                            <Dialog>
-                              <DialogTrigger asChild>
-                                <Button size="sm" className="h-5 rounded-full px-1.5 text-[9px]" onClick={() => item.tradeListingId ? beginProposal(item.tradeListingId) : toast.info('Sign in and add live listings to begin trading.')} disabled={item.ownerId ? user?.id === item.ownerId : false}>
-                                  Trade
-                                </Button>
-                              </DialogTrigger>
-                              <DialogContent className="max-w-2xl rounded-[2rem]">
-                                <DialogHeader>
-                                  <DialogTitle className="text-3xl">Create a Trade Proposal</DialogTitle>
-                                  <DialogDescription>
-                                    Send an expression of interest for <span className="font-semibold text-foreground">{item.title}</span>. The item owner will then review your inventory and select any items they would like to request in return.
-                                  </DialogDescription>
-                                </DialogHeader>
-                                {isAuthenticated ? (
-                                  <form className="space-y-5" onSubmit={submitProposal}>
-                                    <div className="rounded-[1.5rem] border border-border/70 bg-muted/30 p-4 text-sm leading-7 text-muted-foreground">
-                                      Your Trade Proposal starts as an expression of interest. You do not select exchange items at this stage. Once the owner reviews your request, they can choose one or more items from your inventory or refuse if they do not see anything of interest.
-                                    </div>
-                                    <div className="space-y-2">
-                                      <Label htmlFor={`proposal-note-${item.id}`}>Message</Label>
-                                      <Textarea
-                                        id={`proposal-note-${item.id}`}
-                                        value={proposalDraft.note}
-                                        onChange={event => setProposalDraft(current => ({ ...current, requestedListingId: item.tradeListingId ?? current.requestedListingId, note: event.target.value }))}
-                                        placeholder="Introduce yourself, explain what interests you about this item, and invite the owner to review your inventory."
-                                        rows={5}
-                                      />
-                                    </div>
-                                    <Button type="submit" className="rounded-full" disabled={createProposalMutation.isPending}>
-                                      {createProposalMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                                      Send Trade Proposal
-                                    </Button>
-                                  </form>
-                                ) : (
-                                  <div className="space-y-4 rounded-[1.5rem] border border-border/70 bg-muted/40 p-6">
-                                    <p className="text-sm leading-7 text-muted-foreground">You need a subscriber account to send Trade Proposals, message other collectors, and maintain a Watchlist.</p>
-                                    <Button className="rounded-full" onClick={() => (window.location.href = getLoginUrl())}>Subscriber Sign In</Button>
-                                  </div>
-                                )}
-                              </DialogContent>
-                            </Dialog>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="h-5 rounded-full px-1.5 text-[9px]"
-                              disabled={!isAuthenticated || watchlistMutation.isPending || !item.tradeListingId}
-                              onClick={() => item.tradeListingId ? watchlistMutation.mutate({ listingId: item.tradeListingId }) : toast.info('Add live listings to use the Watchlist.')}
-                            >
-                              <Heart className={`mr-1 h-3 w-3 ${item.savedToWatchlist ? "fill-current" : ""}`} />
-                              Save
-                            </Button>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
+                  <RecentlyAddedCarousel
+                    items={recentShelfItems}
+                    onBeginProposal={beginProposal}
+                    user={user}
+                    isAuthenticated={isAuthenticated}
+                    createProposalMutation={createProposalMutation}
+                    watchlistMutation={watchlistMutation}
+                    proposalDraft={proposalDraft}
+                    setProposalDraft={setProposalDraft}
+                  />
                 </div>
 
                 <div className="grid gap-0 md:grid-cols-2 xl:grid-cols-4 lg:col-start-2">

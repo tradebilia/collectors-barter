@@ -45,30 +45,47 @@ export function RecentlyAddedCarousel({
 }: RecentlyAddedCarouselProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [isPaused, setIsPaused] = useState(false);
+  const autoScrollIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Auto-scroll carousel every 10 minutes
+  // Auto-scroll carousel right-to-left continuously
   useEffect(() => {
     if (!scrollContainerRef.current || isPaused) return;
 
-    const scrollInterval = setInterval(() => {
-      if (scrollContainerRef.current) {
-        const container = scrollContainerRef.current;
-        const scrollAmount = 300; // Scroll by 300px to the right
-        container.scrollBy({ left: scrollAmount, behavior: "smooth" });
+    const container = scrollContainerRef.current;
+    const scrollSpeed = 1; // pixels per frame
+    const frameRate = 60; // frames per second
 
-        // Reset to beginning when reaching the end
-        if (container.scrollLeft + container.clientWidth >= container.scrollWidth - 50) {
-          setTimeout(() => {
-            if (container) {
-              container.scrollLeft = 0;
-            }
-          }, 500);
-        }
+    const scroll = () => {
+      if (!container) return;
+
+      // Scroll right (which moves content left - right-to-left effect)
+      container.scrollLeft += scrollSpeed;
+
+      // If we've scrolled past the middle, reset to the beginning for infinite loop
+      if (container.scrollLeft >= container.scrollWidth / 2) {
+        container.scrollLeft = 0;
       }
+    };
+
+    autoScrollIntervalRef.current = setInterval(scroll, 1000 / frameRate);
+
+    return () => {
+      if (autoScrollIntervalRef.current) {
+        clearInterval(autoScrollIntervalRef.current);
+      }
+    };
+  }, [isPaused]);
+
+  // Refresh data every 10 minutes
+  useEffect(() => {
+    const refreshInterval = setInterval(() => {
+      // Trigger a data refresh by reloading the page or invalidating the query
+      // This will be handled by the parent component
+      window.location.reload();
     }, 600000); // 10 minutes
 
-    return () => clearInterval(scrollInterval);
-  }, [isPaused]);
+    return () => clearInterval(refreshInterval);
+  }, []);
 
   return (
     <div
@@ -79,36 +96,21 @@ export function RecentlyAddedCarousel({
       <div
         ref={scrollContainerRef}
         className="flex gap-2 overflow-x-auto scroll-smooth pb-2"
-        style={{ scrollBehavior: "smooth" }}
+        style={{ scrollBehavior: "smooth", WebkitOverflowScrolling: "touch" }}
       >
-        {items.map(item => (
-          <div key={item.id} className="flex-shrink-0 w-[calc(20%-0.4rem)]">
-            <Card className="overflow-hidden rounded-none border border-slate-300 bg-white shadow-none h-full">
-              <div className="aspect-[0.68] overflow-hidden bg-[#f0ebe5] cursor-pointer group">
-                {item.href ? (
-                  <Link href={item.href}>
-                    <img
-                      src={item.imageUrl}
-                      alt={item.title}
-                      className="h-full w-full object-cover group-hover:opacity-90 transition-opacity"
-                    />
-                  </Link>
-                ) : (
-                  <img
-                    src={item.imageUrl}
-                    alt={item.title}
-                    className="h-full w-full object-cover"
-                  />
-                )}
+        {/* Duplicate items for seamless infinite scroll */}
+        {[...items, ...items].map((item, index) => (
+          <div key={`${item.id}-${index}`} className="flex-shrink-0 w-[calc(20%-0.4rem)]">
+            <Card className="overflow-hidden rounded-none border border-slate-300 bg-white shadow-none h-full cursor-pointer transition hover:shadow-md" onClick={() => item.href && (window.location.href = item.href)}>
+              <div className="aspect-[0.68] overflow-hidden bg-[#f0ebe5] group">
+                <img
+                  src={item.imageUrl}
+                  alt={item.title}
+                  className="h-full w-full object-cover group-hover:opacity-90 transition-opacity"
+                />
               </div>
               <CardContent className="space-y-0.5 px-1.5 py-1.5">
-                {item.href ? (
-                  <Link href={item.href} className="line-clamp-2 text-[10px] font-medium leading-3.5 text-slate-900 transition hover:text-primary">
-                    {item.title}
-                  </Link>
-                ) : (
-                  <p className="line-clamp-2 text-[10px] font-medium leading-3.5 text-slate-900">{item.title}</p>
-                )}
+                <p className="line-clamp-2 text-[10px] font-medium leading-3.5 text-slate-900">{item.title}</p>
                 <p className="text-[10px] text-[#7a46ff]">{item.price}</p>
                 <p className="text-[8px] text-slate-500">{item.subtitle}</p>
                 <div className="flex flex-wrap gap-1 pt-0.5">
@@ -117,7 +119,10 @@ export function RecentlyAddedCarousel({
                       <Button
                         size="sm"
                         className="h-5 rounded-full px-1.5 text-[9px]"
-                        onClick={() => onBeginProposal(item.tradeListingId ?? 0)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onBeginProposal(item.tradeListingId ?? 0);
+                        }}
                         disabled={item.ownerId ? user?.id === item.ownerId : false}
                       >
                         Trade
@@ -177,11 +182,12 @@ export function RecentlyAddedCarousel({
                     variant="outline"
                     className="h-5 rounded-full px-1.5 text-[9px]"
                     disabled={!isAuthenticated || watchlistMutation?.isPending || !item.tradeListingId}
-                    onClick={() =>
+                    onClick={(e) => {
+                      e.stopPropagation();
                       item.tradeListingId
                         ? watchlistMutation?.mutate({ listingId: item.tradeListingId })
-                        : toast.info("Add live listings to use the Watchlist.")
-                    }
+                        : toast.info("Add live listings to use the Watchlist.");
+                    }}
                   >
                     <Heart className={`mr-1 h-3 w-3 ${item.savedToWatchlist ? "fill-current" : ""}`} />
                     Save

@@ -463,10 +463,14 @@ export default function AddInventory() {
                           className="h-10 border-white/10 bg-white/8 text-white placeholder:text-white/35 text-sm"
                         />
                       ) : (
-                        <Select value={draft.categoryFields[field.name] || ""} onValueChange={value => setDraft(current => ({
-                          ...current,
-                          categoryFields: { ...current.categoryFields, [field.name]: value }
-                        }))}
+                        <Select
+                          value={draft.categoryFields[field.name] || ""}
+                          onValueChange={value =>
+                            setDraft(current => ({
+                              ...current,
+                              categoryFields: { ...current.categoryFields, [field.name]: value }
+                            }))
+                          }
                         >
                           <SelectTrigger className="h-10 border-white/10 bg-white/8 text-white hover:bg-white/12 text-sm">
                             <SelectValue placeholder={field.placeholder} />
