@@ -525,3 +525,9 @@ These are separate and distinct sections. When making updates, treat them indepe
 - [x] Verify CategoryBar appears below hero section on all pages
 - [x] Test that CategoryBar active state highlighting works correctly on all pages
 - [x] Verify layout consistency and spacing across all pages
+
+
+## BUG: Inconsistent Top Bar Logo on Add Inventory Page (FIXED)
+- [x] Identify why Add Inventory page has different logo than other pages
+- [x] Update Add Inventory to use the same logo URL as Home and other pages
+- [x] Verify top bar logo consistency across all pages
