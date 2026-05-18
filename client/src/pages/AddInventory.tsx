@@ -44,6 +44,7 @@ const categoryFieldPresets: Record<ListingCategory, Array<{ name: string; label:
     { name: "keyword", label: "Keyword", type: "text", placeholder: "Search by keyword" },
     { name: "title", label: "Title", type: "text", placeholder: "Amazing Fantasy, X-Men" },
     { name: "issueNumber", label: "Issue Number", type: "text", placeholder: "#1, #100, #50" },
+    { name: "grade", label: "Grade", type: "select", placeholder: "Select grade 0-10", selectOptions: Array.from({ length: 11 }, (_, i) => i.toString()) },
     { name: "signed", label: "Signed", type: "select", placeholder: "Select option", selectOptions: ["Yes", "No"] },
     { name: "facsimile", label: "Facsimile", type: "select", placeholder: "Select option", selectOptions: ["Yes", "No"] },
   ],
@@ -53,6 +54,7 @@ const categoryFieldPresets: Record<ListingCategory, Array<{ name: string; label:
     { name: "year", label: "Year / Era", type: "text", placeholder: "1950s, 1986, junk wax, ultra-modern" },
     { name: "team", label: "Team", type: "text", placeholder: "Yankees, Bulls, Cowboys" },
     { name: "set", label: "Set / Series", type: "text", placeholder: "Topps Chrome, Prizm, Fleer" },
+    { name: "grade", label: "Grade", type: "select", placeholder: "Select grade 0-10", selectOptions: Array.from({ length: 11 }, (_, i) => i.toString()) },
     { name: "rookie", label: "Rookie", type: "select", placeholder: "Select option", selectOptions: ["Yes", "No"] },
     { name: "autographed", label: "Autographed", type: "select", placeholder: "Select option", selectOptions: ["Yes", "No"] },
   ],
@@ -268,11 +270,6 @@ export default function AddInventory() {
       <main className="px-4 py-10 lg:px-8">
         <form className="mx-auto max-w-7xl" onSubmit={submitListing}>
           <h1 className="text-5xl font-semibold tracking-tight text-white">ADD TO YOUR INVENTORY</h1>
-          
-          {/* Required Fields Note */}
-          <div className="mt-6 rounded-lg border border-blue-500/30 bg-blue-500/10 p-4 text-sm text-blue-100">
-            <p><span className="font-semibold text-blue-300">*</span> Required Field</p>
-          </div>
 
           {/* Main content grid with image on right */}
           <div className="mt-10 grid gap-10 lg:grid-cols-[1fr_0.35fr]">
@@ -436,42 +433,16 @@ export default function AddInventory() {
             <div className="flex flex-col gap-6">
               <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-white/8 to-white/4 p-6 shadow-lg">
                 <h3 className="mb-6 text-lg font-semibold uppercase tracking-[0.1em] text-white/95">Upload Image</h3>
-                <div
-                  className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-white/20 bg-white/5 p-8 cursor-pointer transition-all hover:border-white/40 hover:bg-white/10"
-                  onDragOver={(e) => {
-                    e.preventDefault();
-                    e.currentTarget.classList.add('border-white/60', 'bg-white/20');
-                  }}
-                  onDragLeave={(e) => {
-                    e.currentTarget.classList.remove('border-white/60', 'bg-white/20');
-                  }}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    e.currentTarget.classList.remove('border-white/60', 'bg-white/20');
-                    if (e.dataTransfer.files) {
-                      handlePhotos({ target: { files: e.dataTransfer.files } } as any);
-                    }
-                  }}
-                >
+                <label className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-white/20 bg-white/5 p-8 cursor-pointer transition-all hover:border-white/40 hover:bg-white/10">
                   {primaryPhoto ? (
                     <img src={primaryPhoto.previewUrl} alt="Preview" className="w-full h-auto rounded-lg" />
                   ) : (
                     <div className="text-center">
                       <Upload className="mx-auto h-12 w-12 text-white/50 mb-3" />
-                      <p className="text-sm text-white/70">Drag & drop or click to upload</p>
+                      <p className="text-sm text-white/70">Upload front + back images</p>
                       <p className="text-xs text-white/50 mt-1">PNG, JPG up to 10MB</p>
                     </div>
                   )}
-                </div>
-                <label className="mt-4 inline-block">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full border-white/20 text-white hover:bg-white/10"
-                    onClick={() => document.getElementById('inventory-photos')?.click()}
-                  >
-                    Browse Files
-                  </Button>
                   <input
                     id="inventory-photos"
                     type="file"
