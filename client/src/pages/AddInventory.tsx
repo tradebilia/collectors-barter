@@ -433,16 +433,42 @@ export default function AddInventory() {
             <div className="flex flex-col gap-6">
               <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-white/8 to-white/4 p-6 shadow-lg">
                 <h3 className="mb-6 text-lg font-semibold uppercase tracking-[0.1em] text-white/95">Upload Image</h3>
-                <label className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-white/20 bg-white/5 p-8 cursor-pointer transition-all hover:border-white/40 hover:bg-white/10">
+                <div
+                  className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-white/20 bg-white/5 p-8 cursor-pointer transition-all hover:border-white/40 hover:bg-white/10"
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    e.currentTarget.classList.add('border-white/60', 'bg-white/20');
+                  }}
+                  onDragLeave={(e) => {
+                    e.currentTarget.classList.remove('border-white/60', 'bg-white/20');
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    e.currentTarget.classList.remove('border-white/60', 'bg-white/20');
+                    if (e.dataTransfer.files) {
+                      handlePhotos({ target: { files: e.dataTransfer.files } } as any);
+                    }
+                  }}
+                >
                   {primaryPhoto ? (
                     <img src={primaryPhoto.previewUrl} alt="Preview" className="w-full h-auto rounded-lg" />
                   ) : (
                     <div className="text-center">
                       <Upload className="mx-auto h-12 w-12 text-white/50 mb-3" />
-                      <p className="text-sm text-white/70">Upload front + back images</p>
+                      <p className="text-sm text-white/70">Drag & drop or click to upload</p>
                       <p className="text-xs text-white/50 mt-1">PNG, JPG up to 10MB</p>
                     </div>
                   )}
+                </div>
+                <label className="mt-4 inline-block">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full border-white/20 text-white hover:bg-white/10"
+                    onClick={() => document.getElementById('inventory-photos')?.click()}
+                  >
+                    Browse Files
+                  </Button>
                   <input
                     id="inventory-photos"
                     type="file"

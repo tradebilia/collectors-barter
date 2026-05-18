@@ -575,3 +575,11 @@ This ensures users can fill in all category-specific details when adding items t
 - [x] Reorder form sections: Category → Grading Company → Certification Number → Other Fields
 - [x] Test layout on different screen sizes (mobile, tablet, desktop)
 - [x] Verify form fields are easily accessible without excessive scrolling
+
+
+## Image Upload Enhancement (COMPLETED)
+
+- [x] Add file picker option to image upload section
+- [x] Add drag-and-drop functionality to image upload section
+- [x] Support both methods simultaneously
+- [x] Test file picker and drag-and-drop functionality
