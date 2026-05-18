@@ -1,9 +1,10 @@
 import { TopRightIcons } from "@/components/TopRightIcons";
 import { Search, LogOut } from "lucide-react";
-import { Link } from "wouter";
+import { Link, useRoute } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
 import { Button } from "@/components/ui/button";
+import { tradebiliaCategories } from "@/lib/tradebilia";
 
 interface CategoryTopBarProps {
   logoUrl?: string;
@@ -17,8 +18,12 @@ export function CategoryTopBar({
   onSearchChange,
 }: CategoryTopBarProps) {
   const { isAuthenticated, logout } = useAuth();
+  const [, params] = useRoute("/category/:slug");
+  const currentSlug = params?.slug;
+
   return (
     <div className="border-b border-white/10 bg-black">
+      {/* Top row: Logo, Search, Icons */}
       <div className="flex items-center justify-between gap-4 pl-2 pr-4 py-3">
         {/* Logo on left */}
         <div className="flex-shrink-0">
@@ -64,6 +69,30 @@ export function CategoryTopBar({
           )}
         </div>
       </div>
+
+      {/* Category navigation row */}
+      <nav className="relative z-10 border-t border-black bg-black">
+        <div className="flex w-full overflow-x-auto">
+          <Link
+            href="/"
+            className="flex-1 border-b border-r border-white/10 px-4 py-4 text-center text-xs font-semibold uppercase tracking-[0.16em] transition hover:bg-white/10 lg:text-[11px] text-white whitespace-nowrap"
+          >
+            Home
+          </Link>
+          {tradebiliaCategories.map(category => (
+            <Link
+              key={category.value}
+              href={`/category/${category.value}`}
+              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+              className={`flex-1 border-b border-r border-white/10 px-4 py-4 text-center text-xs font-semibold uppercase tracking-[0.16em] transition hover:bg-white/10 lg:text-[11px] whitespace-nowrap ${
+                category.value === currentSlug ? "bg-white text-slate-950" : "text-white"
+              }`}
+            >
+              {category.label}
+            </Link>
+          ))}
+        </div>
+      </nav>
     </div>
   );
 }

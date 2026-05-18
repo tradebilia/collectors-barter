@@ -489,3 +489,8 @@
 - [x] Add Sign In button to CategoryTopBar when user is not logged in (conditional rendering in CategoryTopBar)
 - [x] Add Log Out button to CategoryTopBar when user is logged in (conditional rendering in CategoryTopBar)
 - [x] Test Sign In / Log Out button on all pages with CategoryTopBar (verified on Homepage and Add to Inventory)
+
+
+## BUG: Missing Category Navigation Bar on Main Page (FIXED)
+- [x] Restore category navigation bar (Comics, Sports Cards, Vintage Toys, Video Games, Stamps, Coins, Pokemon, Movies, Autographs, Disney Pins) on main page
+- [x] Verify category bar appears below top bar on all pages
