@@ -162,6 +162,7 @@ export const appRouter = router({
           category: z.enum(collectibleCategories),
           condition: z.enum(itemConditions),
           description: z.string().min(20).max(4000),
+          estimatedValue: z.number().nonnegative().optional(),
           photos: z.array(uploadedImageSchema).max(6),
         }),
       )
@@ -173,6 +174,7 @@ export const appRouter = router({
             category: input.category,
             condition: input.condition,
             description: input.description,
+            estimatedValue: input.estimatedValue,
             photos: input.photos,
           },
         );

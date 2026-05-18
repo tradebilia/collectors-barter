@@ -642,3 +642,16 @@ This ensures users can fill in all category-specific details when adding items t
 - [x] Created "No Image" placeholder graphic with camera icon
 - [x] Updated resolveTradebiliaListingImage to show placeholder instead of misleading images
 - [x] Items without photos now display clean "No Image" placeholder
+
+
+## Add to Your Inventory Page Enhancements (COMPLETED)
+- [x] Add Estimated Value input field to the form
+- [x] Remove Keyword input field from all categories
+- [x] Make image upload section taller (min-height-96)
+- [x] Add primary image selection UI with thumbnails
+- [x] Allow users to click thumbnails to set primary image
+- [x] Show "MAIN" badge on selected primary image
+- [x] Reorder photos so primary image is first when submitted
+- [x] Pass estimatedValue to backend createListing endpoint
+- [x] Update server router to accept estimatedValue
+- [x] Update db.ts createListing function to handle estimatedValue

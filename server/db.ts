@@ -958,6 +958,7 @@ export async function createListing(
     category: (typeof collectibleCategories)[number];
     condition: (typeof itemConditions)[number];
     description: string;
+    estimatedValue?: number;
     photos: PhotoUploadInput[];
   },
 ) {
@@ -970,6 +971,7 @@ export async function createListing(
     category: input.category,
     condition: input.condition,
     description: input.description.trim(),
+    estimatedValue: input.estimatedValue ? String(input.estimatedValue) : null,
     featured: false,
   });
   const listingId = getInsertId(insertResult);

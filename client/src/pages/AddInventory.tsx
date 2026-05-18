@@ -41,7 +41,6 @@ type ListingCategory = (typeof categoryLinks)[number]["value"];
 // Category-specific fields based on filter presets
 const categoryFieldPresets: Record<ListingCategory, Array<{ name: string; label: string; type: "text" | "select"; placeholder: string; selectOptions?: string[] }>> = {
   comics: [
-    { name: "keyword", label: "Keyword", type: "text", placeholder: "Search by keyword" },
     { name: "title", label: "Title", type: "text", placeholder: "Amazing Fantasy, X-Men" },
     { name: "issueNumber", label: "Issue Number", type: "text", placeholder: "#1, #100, #50" },
     { name: "signed", label: "Signed", type: "select", placeholder: "Select option", selectOptions: ["Yes", "No"] },
@@ -154,6 +153,7 @@ export default function AddInventory() {
   const [draft, setDraft] = useState<{
     category: ListingCategory;
     title: string;
+    value: string;
     graderCompany: string;
     certificationNumber: string;
     grade: string;
@@ -162,6 +162,7 @@ export default function AddInventory() {
   }>({
     category: "comics",
     title: "",
+    value: "",
     graderCompany: "CGC Cards",
     certificationNumber: "",
     grade: "9.0",
@@ -170,6 +171,7 @@ export default function AddInventory() {
   });
 
   const [photos, setPhotos] = useState<UploadedImage[]>([]);
+  const [primaryPhotoIndex, setPrimaryPhotoIndex] = useState<number>(0);
   const createListingMutation = trpc.market.createListing.useMutation();
 
   // Note: Draft auto-loading removed to prevent form data persistence on page refresh.
@@ -222,12 +224,20 @@ export default function AddInventory() {
       .filter(Boolean)
       .join("\n");
 
+    // Reorder photos so the selected primary image is first
+    const reorderedPhotos = photos.map(({ previewUrl, ...photo }) => photo);
+    if (reorderedPhotos.length > 0 && primaryPhotoIndex > 0) {
+      const [primaryPhoto] = reorderedPhotos.splice(primaryPhotoIndex, 1);
+      reorderedPhotos.unshift(primaryPhoto);
+    }
+
     await createListingMutation.mutateAsync({
       title: draft.title,
       category: draft.category,
       condition: mapGradeToCondition(draft.grade),
       description: descriptionSections,
-      photos: photos.map(({ previewUrl, ...photo }) => photo),
+      estimatedValue: draft.value ? parseFloat(draft.value) : 0,
+      photos: reorderedPhotos,
     });
     
     // Clear the draft after successful submission
@@ -237,6 +247,7 @@ export default function AddInventory() {
     setDraft({
       category: "comics",
       title: "",
+      value: "",
       graderCompany: "CGC Cards",
       certificationNumber: "",
       grade: "9.0",
@@ -244,6 +255,7 @@ export default function AddInventory() {
       additionalNotes: "",
     });
     setPhotos([]);
+    setPrimaryPhotoIndex(0);
     
     toast.success("Item added to your inventory!");
   };
@@ -363,17 +375,30 @@ export default function AddInventory() {
                 </div>
               </div>
 
-              {/* 3. Item Title */}
+              {/* 3. Item Title and Value */}
               <div className="rounded-2xl border border-purple-500/20 bg-gradient-to-br from-purple-500/10 to-purple-500/5 p-6 shadow-lg">
-                <h3 className="mb-4 text-lg font-semibold uppercase tracking-[0.1em] text-white/95">3. Item Title</h3>
-                <div className="space-y-3">
-                  <Label className="text-sm uppercase tracking-[0.08em] text-white/70">Title *</Label>
-                  <Input
-                    value={draft.title}
-                    onChange={event => setDraft(current => ({ ...current, title: event.target.value }))}
-                    placeholder="Enter item title"
-                    className="h-12 border-white/10 bg-white/8 text-white placeholder:text-white/35"
-                  />
+                <h3 className="mb-4 text-lg font-semibold uppercase tracking-[0.1em] text-white/95">3. Item Title & Value</h3>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-3">
+                    <Label className="text-sm uppercase tracking-[0.08em] text-white/70">Title *</Label>
+                    <Input
+                      value={draft.title}
+                      onChange={event => setDraft(current => ({ ...current, title: event.target.value }))}
+                      placeholder="Enter item title"
+                      className="h-12 border-white/10 bg-white/8 text-white placeholder:text-white/35"
+                    />
+                  </div>
+                  <div className="space-y-3">
+                    <Label className="text-sm uppercase tracking-[0.08em] text-white/70">Estimated Value</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={draft.value}
+                      onChange={event => setDraft(current => ({ ...current, value: event.target.value }))}
+                      placeholder="Enter estimated value (e.g., 150.00)"
+                      className="h-12 border-white/10 bg-white/8 text-white placeholder:text-white/35"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -454,10 +479,12 @@ export default function AddInventory() {
 
             {/* Right side - Image Upload */}
             <div className="flex flex-col gap-6">
-              <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-white/8 to-white/4 p-6 shadow-lg">
-                <h3 className="mb-6 text-lg font-semibold uppercase tracking-[0.1em] text-white/95">Upload Image</h3>
+              <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-white/8 to-white/4 p-6 shadow-lg h-full flex flex-col">
+                <h3 className="mb-6 text-lg font-semibold uppercase tracking-[0.1em] text-white/95">Upload Images</h3>
+                
+                {/* Main upload area - taller */}
                 <div
-                  className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-white/20 bg-white/5 p-8 cursor-pointer transition-all hover:border-white/40 hover:bg-white/10"
+                  className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-white/20 bg-white/5 p-8 cursor-pointer transition-all hover:border-white/40 hover:bg-white/10 flex-1 min-h-96"
                   onDragOver={(e) => {
                     e.preventDefault();
                     e.currentTarget.classList.add('border-white/60', 'bg-white/20');
@@ -474,7 +501,10 @@ export default function AddInventory() {
                   }}
                 >
                   {primaryPhoto ? (
-                    <img src={primaryPhoto.previewUrl} alt="Preview" className="w-full h-auto rounded-lg" />
+                    <div className="w-full h-full flex flex-col items-center justify-center">
+                      <img src={primaryPhoto.previewUrl} alt="Preview" className="max-w-full max-h-80 rounded-lg object-contain" />
+                      <p className="text-xs text-white/50 mt-3">Main Image (will display on listing)</p>
+                    </div>
                   ) : (
                     <div className="text-center">
                       <Upload className="mx-auto h-12 w-12 text-white/50 mb-3" />
@@ -483,7 +513,8 @@ export default function AddInventory() {
                     </div>
                   )}
                 </div>
-                <label className="mt-4 inline-block">
+                
+                <label className="mt-4 inline-block w-full">
                   <Button
                     type="button"
                     variant="outline"
@@ -501,9 +532,33 @@ export default function AddInventory() {
                     className="hidden"
                   />
                 </label>
+                
+                {/* Image thumbnails and primary selection */}
                 {photos.length > 0 && (
-                  <div className="mt-4 text-sm text-white/70">
-                    {photos.length} image{photos.length !== 1 ? 's' : ''} uploaded
+                  <div className="mt-6 space-y-3">
+                    <p className="text-sm font-semibold text-white/90">Images ({photos.length})</p>
+                    <div className="grid grid-cols-3 gap-2 max-h-32 overflow-y-auto">
+                      {photos.map((photo, index) => (
+                        <button
+                          key={index}
+                          type="button"
+                          onClick={() => setPrimaryPhotoIndex(index)}
+                          className={`relative rounded-lg overflow-hidden border-2 transition-all ${
+                            index === primaryPhotoIndex
+                              ? 'border-blue-500 ring-2 ring-blue-400'
+                              : 'border-white/20 hover:border-white/40'
+                          }`}
+                        >
+                          <img src={photo.previewUrl} alt={`Thumbnail ${index + 1}`} className="w-full h-20 object-cover" />
+                          {index === primaryPhotoIndex && (
+                            <div className="absolute inset-0 bg-blue-500/20 flex items-center justify-center">
+                              <span className="text-xs font-bold text-white bg-blue-600 px-2 py-1 rounded">MAIN</span>
+                            </div>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="text-xs text-white/50">Click an image to set it as the main image</p>
                   </div>
                 )}
               </div>
