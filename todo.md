@@ -740,5 +740,5 @@ This ensures users can fill in all category-specific details when adding items t
 ## NEXT: Additional Features
 
 - [x] Implement email/SMS verification UI with OTP screens during sign-up
-- [ ] Build "Forgot Password" page with reset email flow
-- [ ] Add user profile completion flow after sign-up (avatar, bio, location, payment methods)
+- [x] Build "Forgot Password" page with reset email flow
+- [x] Add user profile completion flow after sign-up (avatar, bio, location, payment methods)
