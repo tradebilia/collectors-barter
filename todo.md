@@ -635,3 +635,10 @@ This ensures users can fill in all category-specific details when adding items t
 - [x] Implemented proper date range filtering for "Today", "This Week", "This Month", "This Year"
 - [x] Filter now correctly compares listing createdAt with selected date range
 - [x] Tested date filter with various date ranges
+
+
+## Bug Fix: Show "No Image" Placeholder When No Photo Uploaded (FIXED)
+- [x] Removed automatic category/keyword-based image fallback
+- [x] Created "No Image" placeholder graphic with camera icon
+- [x] Updated resolveTradebiliaListingImage to show placeholder instead of misleading images
+- [x] Items without photos now display clean "No Image" placeholder

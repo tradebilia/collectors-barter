@@ -109,15 +109,10 @@ function normalizeListingImageUrl(url: string) {
 }
 
 export function resolveTradebiliaListingImage(input: TradebiliaListingImageInput) {
+  // Only use the user-uploaded image if available
   if (input.primaryPhotoUrl) return normalizeListingImageUrl(input.primaryPhotoUrl);
 
-  const title = input.title.toLowerCase();
-  const keywordMatch = keywordImageMap.find(entry => entry.keywords.some(keyword => title.includes(keyword)));
-  if (keywordMatch) return normalizeListingImageUrl(keywordMatch.imageUrl);
-
-  if (input.category && categoryImageMap[input.category]) {
-    return normalizeListingImageUrl(categoryImageMap[input.category]);
-  }
-
-  return normalizeListingImageUrl("/manus-storage/Comicpage2_6d086599.png");
+  // Return a "No Image" placeholder if no photo is uploaded
+  // This prevents showing misleading category/keyword-based images
+  return normalizeListingImageUrl("https://d2xsxph8kpxj0f.cloudfront.net/310519663570115757/nAx6ATm2BH4G46yabuMZgM/no-image-placeholder-HPQQaNUbyBPHRn2iPDGbTL.webp");
 }
