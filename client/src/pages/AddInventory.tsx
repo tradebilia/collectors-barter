@@ -307,7 +307,7 @@ export default function AddInventory() {
           </div>
 
           {/* Main content grid with image on right */}
-          <div className="mt-10 grid gap-10 lg:grid-cols-[1fr_0.35fr]">
+          <div className="mt-10 grid gap-10 lg:grid-cols-[1fr_0.35fr] items-start">
             {/* Left side - Form fields */}
             <div className="space-y-6">
               {/* 1. Category Selection */}
@@ -478,13 +478,13 @@ export default function AddInventory() {
             </div>
 
             {/* Right side - Image Upload */}
-            <div className="flex flex-col gap-6">
-              <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-white/8 to-white/4 p-6 shadow-lg flex flex-col">
+            <div className="flex flex-col gap-6 sticky top-10">
+              <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-white/8 to-white/4 p-6 shadow-lg flex flex-col h-96">
                 <h3 className="mb-6 text-lg font-semibold uppercase tracking-[0.1em] text-white/95">Upload Images</h3>
                 
                 {/* Main upload area */}
                 <div
-                  className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-white/20 bg-white/5 p-6 cursor-pointer transition-all hover:border-white/40 hover:bg-white/10 h-48"
+                  className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-white/20 bg-white/5 p-6 cursor-pointer transition-all hover:border-white/40 hover:bg-white/10 flex-1"
                   onDragOver={(e) => {
                     e.preventDefault();
                     e.currentTarget.classList.add('border-white/60', 'bg-white/20');
