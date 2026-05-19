@@ -742,3 +742,13 @@ This ensures users can fill in all category-specific details when adding items t
 - [x] Implement email/SMS verification UI with OTP screens during sign-up
 - [x] Build "Forgot Password" page with reset email flow
 - [x] Add user profile completion flow after sign-up (avatar, bio, location, payment methods)
+
+
+## CURRENT: Integration Implementation
+
+- [x] Wire up tRPC sign-up/sign-in procedures to forms (already implemented)
+- [x] Wire up tRPC OTP verification procedures (infrastructure ready)
+- [ ] Integrate SendGrid for email OTP delivery (requires API key)
+- [ ] Integrate Twilio for SMS OTP delivery (requires API key)
+- [x] Implement search functionality with real-time filtering
+- [ ] Test complete authentication and search flows

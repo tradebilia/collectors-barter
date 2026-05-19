@@ -26,6 +26,7 @@ import { ProtectedRoute } from "./components/ProtectedRoute";
 import { VerifyAccount } from "./pages/VerifyAccount";
 import { ForgotPassword } from "./pages/ForgotPassword";
 import { ProfileCompletion } from "./pages/ProfileCompletion";
+import { SearchResults } from "./pages/SearchResults";
 
 function Router() {
   return (
@@ -91,6 +92,7 @@ function Router() {
       <Route path="/verify" component={VerifyAccount} />
       <Route path="/forgot-password" component={ForgotPassword} />
       <Route path="/profile-completion" component={ProfileCompletion} />
+      <Route path="/search" component={SearchResults} />
       <Route path="/welcome" component={Welcome} />
       <Route path="/member-only" component={MemberOnly} />
       <Route path="/category/:slug" component={CategoryPage} />

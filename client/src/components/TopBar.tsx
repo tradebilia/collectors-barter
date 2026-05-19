@@ -1,10 +1,11 @@
 import { TopRightIcons } from "@/components/TopRightIcons";
 import { Search, LogOut } from "lucide-react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { SignInModal } from "@/components/SignInModal";
 import { useState } from "react";
+import { trpc } from "@/lib/trpc";
 
 interface TopBarProps {
   logoUrl?: string;
@@ -19,6 +20,24 @@ export function TopBar({
 }: TopBarProps) {
   const { isAuthenticated, logout } = useAuth();
   const [showSignInModal, setShowSignInModal] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [, setLocation] = useLocation();
+  const searchMutation = trpc.market.search.useMutation();
+
+  const handleSearch = async (value: string) => {
+    setSearchQuery(value);
+    onSearchChange?.(value);
+
+    if (value.trim().length > 0) {
+      try {
+        await searchMutation.mutateAsync({ query: value });
+        // Navigate to search results page or update results
+        setLocation(`/search?q=${encodeURIComponent(value)}`);
+      } catch (err) {
+        console.error("Search failed:", err);
+      }
+    }
+  };
 
   return (
     <div className="border-b border-white/10 bg-black">
@@ -37,7 +56,8 @@ export function TopBar({
             <input
               type="text"
               placeholder={searchPlaceholder}
-              onChange={(e) => onSearchChange?.(e.target.value)}
+              value={searchQuery}
+              onChange={(e) => handleSearch(e.target.value)}
               className="bg-transparent text-gray-900 text-sm placeholder-gray-500 outline-none w-full"
             />
           </div>

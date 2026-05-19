@@ -177,6 +177,24 @@ export const appRouter = router({
     siteStatistics: publicProcedure.query(() => {
       return getSiteStatistics();
     }),
+    search: publicProcedure
+      .input(
+        z.object({
+          query: z.string().max(100),
+          category: z.enum(["all", ...collectibleCategories]).optional(),
+          condition: z.enum(["all", ...itemConditions]).optional(),
+        }),
+      )
+      .query(({ ctx, input }) => {
+        return getMarketplaceFeed(
+          {
+            keyword: input.query,
+            category: input.category === "all" ? undefined : input.category,
+            condition: input.condition === "all" ? undefined : input.condition,
+          },
+          ctx.user?.id ?? null,
+        );
+      }),
     dashboard: protectedProcedure.query(({ ctx }) => {
       return getDashboardData({ id: ctx.user.id, name: ctx.user.name });
     }),
