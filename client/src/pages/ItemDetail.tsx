@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { resolveTradebiliaListingImage } from "@/lib/listingImages";
 import { trpc } from "@/lib/trpc";
 import { getLoginUrl } from "@/const";
-import { getTradebiliaCategoryTheme } from "@/lib/tradebilia";
+import { getTradebiliaCategoryTheme, getTradebiliaCategoryLabel } from "@/lib/tradebilia";
 import { Heart, Loader2, MessageCircleMore, Menu, Search, Star, UserRound } from "lucide-react";
 import { TopRightIcons } from "@/components/TopRightIcons";
 import { useMemo, useState } from "react";
@@ -178,7 +178,7 @@ export default function ItemDetail() {
               <div className="mt-5">
                 <p className="text-xl font-medium text-white/90">View additional images</p>
                 <div className="mt-4 flex flex-wrap gap-4">
-                  {(listing.photos.length ? listing.photos : [{ imageUrl: resolveTradebiliaListingImage({ title: listing.title, category: listing.category, primaryPhotoUrl: listing.primaryPhotoUrl }), altText: listing.title }]).map((photo, index) => (
+                  {(listing.photos.length ? listing.photos : [{ imageUrl: resolveTradebiliaListingImage({ title: listing.title, category: listing.category, primaryPhotoUrl: listing.primaryPhotoUrl }), altText: listing.title }]).map((photo: any, index: number) => (
                     <button
                       key={`${photo.imageUrl}-${index}`}
                       type="button"
@@ -315,7 +315,7 @@ export default function ItemDetail() {
                               <img src={resolveTradebiliaListingImage({ title: item.title, category: item.category, primaryPhotoUrl: item.primaryPhotoUrl })} alt={item.title} className="h-full w-full object-cover" />
                             </div>
                             <div className="space-y-3 p-5">
-                              <p className="text-xs uppercase tracking-[0.2em] text-white/45">{item.categoryLabel}</p>
+                              <p className="text-xs uppercase tracking-[0.2em] text-white/45">{getTradebiliaCategoryLabel(item.category)}</p>
                               <h3 className="text-xl font-semibold text-white">{item.title}</h3>
                               <p className="text-sm text-white/65">{item.owner.displayName}</p>
                             </div>

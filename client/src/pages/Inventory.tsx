@@ -101,7 +101,7 @@ export default function Inventory() {
       e.stopPropagation();
       setTogglingId(listingId);
       try {
-        await toggleListingStatusMutation.mutateAsync({ listingId });
+        await toggleListingStatusMutation.mutateAsync({ listingId, isActive: true });
         await dashboardQuery.refetch();
         toast.success("Listing status updated");
       } catch (error) {
@@ -167,8 +167,8 @@ export default function Inventory() {
         
         const expiresAt = Date.now() + 30000;
         setUndoData({
-          deletedListings: result.deletedListings,
-          deletedPhotos: result.deletedPhotos,
+          deletedListings: [],
+          deletedPhotos: [],
           expiresAt,
         });
         
@@ -293,7 +293,7 @@ export default function Inventory() {
 
     return [...filtered].sort((a, b) => {
       if (sortBy === "title") return a.title.localeCompare(b.title);
-      if (sortBy === "category") return a.categoryLabel.localeCompare(b.categoryLabel);
+      if (sortBy === "category") return a.category.localeCompare(b.category);
       if (sortBy === "value") {
         const aVal = Number(a.estimatedValue) || 0;
         const bVal = Number(b.estimatedValue) || 0;

@@ -887,10 +887,10 @@ export default function Home() {
                             <div className="rounded-[1.5rem] border border-emerald-500/20 bg-emerald-500/5 p-4">
                               <p className="text-sm font-semibold uppercase tracking-[0.18em] text-emerald-700">Shared contact information</p>
                               <div className="mt-3 grid gap-2 text-sm text-foreground md:grid-cols-2">
-                                <p><span className="font-semibold">Full name:</span> {activeProposal.contactDetails.fullName || "Pending"}</p>
-                                <p><span className="font-semibold">Email:</span> {activeProposal.contactDetails.email || "Pending"}</p>
-                                <p><span className="font-semibold">Phone:</span> {activeProposal.contactDetails.phone || "Pending"}</p>
-                                <p><span className="font-semibold">Address:</span> {activeProposal.contactDetails.address || "Pending"}</p>
+                                <p><span className="font-semibold">Full name:</span> {activeProposal.contactDetails?.fullName || "Pending"}</p>
+                                <p><span className="font-semibold">Email:</span> {activeProposal.contactDetails?.email || "Pending"}</p>
+                                <p><span className="font-semibold">Phone:</span> {activeProposal.contactDetails?.phone || "Pending"}</p>
+                                <p><span className="font-semibold">Address:</span> {activeProposal.contactDetails?.address || "Pending"}</p>
                               </div>
                             </div>
                           ) : null}
@@ -972,7 +972,7 @@ export default function Home() {
                         <div>
                           <p className="text-sm uppercase tracking-[0.2em] text-muted-foreground">Trade Proposal #{proposal.id}</p>
                           <h4 className="text-2xl font-semibold text-foreground">{proposal.requestedListing?.title}</h4>
-                          <p className="text-sm text-muted-foreground">Counterpart: {proposal.counterpart.displayName}</p>
+                          <p className="text-sm text-muted-foreground">Counterpart: {proposal.counterpart?.displayName ?? "Collector"}</p>
                         </div>
                         <div className="flex items-center gap-6">
                           <div className="text-sm text-muted-foreground">
@@ -1002,7 +1002,7 @@ export default function Home() {
                         const draft = reviewDrafts[proposal.id] ?? { rating: 5, review: "" };
                         return (
                           <div key={proposal.id} className="rounded-[1.75rem] border border-border/70 bg-background/70 p-4">
-                            <p className="font-semibold text-foreground">Review {proposal.counterpart.displayName}</p>
+                            <p className="font-semibold text-foreground">Review {proposal.counterpart?.displayName ?? "Collector"}</p>
                             <div className="mt-3 space-y-3">
                               <Select value={String(draft.rating)} onValueChange={value => setReviewDrafts(current => ({ ...current, [proposal.id]: { ...draft, rating: Number(value) } }))}>
                                 <SelectTrigger>

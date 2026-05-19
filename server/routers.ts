@@ -211,8 +211,9 @@ export const appRouter = router({
           listingId: z.number().int().positive(),
         }),
       )
-      .query(({ ctx, input }) => {
-        return getListingDetail(input.listingId, ctx.user?.id ?? null);
+      .query(async ({ ctx, input }) => {
+        const detail = await getListingDetail(input.listingId, ctx.user?.id ?? null);
+        return { listing: detail };
       }),
     saveProfile: protectedProcedure
       .input(
