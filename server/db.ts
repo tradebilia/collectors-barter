@@ -1013,6 +1013,8 @@ export async function getDashboardData(user: Pick<User, "id" | "name">) {
     db
       .select({
         displayName: userProfiles.displayName,
+        firstName: userProfiles.firstName,
+        lastName: userProfiles.lastName,
         avatarUrl: userProfiles.avatarUrl,
         bio: userProfiles.bio,
         contactFullName: userProfiles.contactFullName,

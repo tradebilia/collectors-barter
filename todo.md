@@ -839,3 +839,35 @@ This ensures users can fill in all category-specific details when adding items t
 - Missing properties on various data structures
 
 The application is fully functional with all core features working correctly.
+
+
+## FUTURE: Administrator Dashboard
+
+- [ ] Create admin-only dashboard page accessible only to users with admin role
+- [ ] Add admin navigation link in top bar (visible only to admins)
+- [ ] Display platform statistics:
+  - [ ] Total registered members
+  - [ ] Total completed trades
+  - [ ] Total active listings
+  - [ ] Platform traffic metrics
+  - [ ] Member activity trends
+- [ ] Implement user management interface:
+  - [ ] View all registered members
+  - [ ] Grant/revoke admin privileges
+  - [ ] View member profiles and trade history
+  - [ ] Suspend or ban users if needed
+- [ ] Add platform moderation tools:
+  - [ ] Review reported listings
+  - [ ] Review reported users
+  - [ ] Manage category settings
+  - [ ] View system logs and audit trail
+- [ ] Implement analytics dashboard:
+  - [ ] Trade completion rates
+  - [ ] Member engagement metrics
+  - [ ] Category popularity trends
+  - [ ] Revenue/transaction tracking (if applicable)
+- [ ] Add admin settings:
+  - [ ] Configure platform parameters
+  - [ ] Manage email templates
+  - [ ] Set trading fees or commissions
+  - [ ] Configure notification settings

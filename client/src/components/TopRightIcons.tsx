@@ -40,7 +40,7 @@ export function TopRightIcons({ className = "flex items-center gap-3 md:gap-4", 
         <Avatar className="h-6 w-6 border border-white/30 cursor-pointer hover:border-white/60 transition">
           <AvatarImage src={undefined} alt={user.name ?? "User"} />
           <AvatarFallback className="bg-[#7f31ff] text-white text-[10px] font-semibold">
-            {initials(user.name ?? "User")}
+            {initials((user as any).firstName && (user as any).lastName ? `${(user as any).firstName} ${(user as any).lastName}` : user.name ?? "User")}
           </AvatarFallback>
         </Avatar>
       </Link>

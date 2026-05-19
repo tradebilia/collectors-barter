@@ -89,6 +89,8 @@ export const userProfiles = mysqlTable(
     id: int("id").autoincrement().primaryKey(),
     userId: int("userId").notNull().references(() => users.id),
     displayName: varchar("displayName", { length: 120 }).notNull(),
+    firstName: varchar("firstName", { length: 100 }),
+    lastName: varchar("lastName", { length: 100 }),
     avatarUrl: text("avatarUrl"),
     avatarKey: varchar("avatarKey", { length: 255 }),
     bio: text("bio"),

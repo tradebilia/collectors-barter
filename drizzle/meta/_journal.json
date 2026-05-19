@@ -134,6 +134,13 @@
       "when": 1779195610297,
       "tag": "0018_sturdy_silver_sable",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "5",
+      "when": 1779199762118,
+      "tag": "0019_sweet_silver_sable",
+      "breakpoints": true
     }
   ]
 }

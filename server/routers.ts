@@ -81,7 +81,26 @@ const referralRequestSchema = z.object({
 export const appRouter = router({
   system: systemRouter,
   auth: router({
-    me: publicProcedure.query(opts => opts.ctx.user),
+    me: publicProcedure.query(async opts => {
+      const user = opts.ctx.user;
+      if (!user) return null;
+      
+      const db = await requireDb();
+      const profile = await db
+        .select({
+          firstName: userProfiles.firstName,
+          lastName: userProfiles.lastName,
+        })
+        .from(userProfiles)
+        .where(eq(userProfiles.userId, user.id))
+        .limit(1);
+      
+      return {
+        ...user,
+        firstName: profile[0]?.firstName ?? null,
+        lastName: profile[0]?.lastName ?? null,
+      };
+    }),
     signup: publicProcedure
       .input(
         z.object({
