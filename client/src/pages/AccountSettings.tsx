@@ -199,6 +199,45 @@ export default function AccountSettings() {
     );
   };
 
+  const handleFileUpload = async (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please upload an image file');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('File size must be less than 5MB');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const preview = e.target?.result as string;
+      setProfileForm(prev => ({ ...prev, avatarPreview: preview }));
+    };
+    reader.readAsDataURL(file);
+    toast.success('Photo preview updated. Save profile to upload.');
+  };
+
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleFileUpload(file);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      handleFileUpload(file);
+    }
+  };
+
   const handleSaveProfile = async () => {
     const toastId = toast.loading("Saving profile...");
     console.log("[AccountSettings] handleSaveProfile called");
@@ -366,11 +405,22 @@ export default function AccountSettings() {
                         <AvatarFallback className="text-2xl">{initials(identityInfo.firstName + " " + identityInfo.lastName)}</AvatarFallback>
                       </Avatar>
                       <label className="cursor-pointer">
-                        <Button type="button" variant="outline" className="rounded-lg">
-                          <Upload className="mr-2 h-4 w-4" />
-                          Upload Photo
-                        </Button>
-                        <input type="file" accept="image/*" className="hidden" />
+                        <div
+                          onDragOver={handleDragOver}
+                          onDrop={handleDrop}
+                          className="rounded-lg border-2 border-dashed border-slate-300 p-4 text-center hover:border-slate-400 transition-colors"
+                        >
+                          <Button type="button" variant="outline" className="rounded-lg w-full">
+                            <Upload className="mr-2 h-4 w-4" />
+                            Upload Photo or Drag & Drop
+                          </Button>
+                        </div>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={handleFileInputChange}
+                        />
                       </label>
                       <p className="text-xs text-slate-600 text-center">JPG, PNG or GIF. Max 5MB.</p>
                     </div>

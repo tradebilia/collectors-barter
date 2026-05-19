@@ -787,3 +787,13 @@ This ensures users can fill in all category-specific details when adding items t
 - [ ] Implement frontend handlers for Communications tab
 - [ ] Implement frontend handlers for Preferences tab
 - [ ] Test all save functions across all tabs
+
+## CURRENT: Profile Photo Upload
+
+- [x] Implement file upload button for profile photo
+- [x] Add drag-and-drop functionality for profile photo upload
+- [x] Add file validation (type and size)
+- [x] Add image preview update on file selection
+- [ ] Implement server-side photo upload to S3 storage
+- [ ] Update profile save to include photo upload
+- [ ] Test photo upload and persistence
