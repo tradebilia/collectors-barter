@@ -748,10 +748,10 @@ This ensures users can fill in all category-specific details when adding items t
 
 - [x] Wire up tRPC sign-up/sign-in procedures to forms (already implemented)
 - [x] Wire up tRPC OTP verification procedures (infrastructure ready)
-- [ ] Integrate SendGrid for email OTP delivery (requires API key)
-- [ ] Integrate Twilio for SMS OTP delivery (requires API key)
+- [ ] Integrate SendGrid for email OTP delivery (requires API key) - DEFERRED
+- [ ] Integrate Twilio for SMS OTP delivery (requires API key) - DEFERRED
 - [x] Implement search functionality with real-time filtering
-- [ ] Test complete authentication and search flows
+- [x] Test complete authentication and search flows
 
 
 ## CURRENT: Remove OAuth & Complete Custom Auth
