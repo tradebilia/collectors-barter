@@ -760,8 +760,11 @@ This ensures users can fill in all category-specific details when adding items t
 - [x] Implement custom JWT session token creation/verification
 - [x] Update context.ts to validate custom auth users
 - [x] Update sign-in/logout procedures to use custom auth
-- [ ] Remove Manus OAuth code from SDK (sdk.ts, oauth.ts)
-- [ ] Test custom authentication end-to-end
-- [ ] Verify session persistence works correctly
-- [ ] Test sign-in/sign-out flow
-- [ ] Test protected routes redirect properly
+- [x] Remove Manus OAuth code from SDK (sdk.ts, oauth.ts)
+- [x] Test custom authentication end-to-end
+- [x] Verify session persistence works correctly
+- [x] Test sign-in/sign-out flow
+- [x] Test protected routes redirect properly
+- [x] Fix JWT_SECRET environment variable configuration
+- [x] Add getUserById function to db.ts for session retrieval
+- [x] Verify all TypeScript imports are correct

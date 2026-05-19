@@ -1256,6 +1256,16 @@ export async function upsertUser(input: {
 }
 
 
+export async function getUserById(id: number) {
+  const db = await requireDb();
+  const result = await db
+    .select()
+    .from(users)
+    .where(eq(users.id, id))
+    .limit(1);
+  return result[0] || null;
+}
+
 export async function getUserByOpenId(openId: string) {
   const db = await requireDb();
   const result = await db
