@@ -30,7 +30,7 @@ import { systemRouter } from "./_core/systemRouter";
 import { notifyOwner } from "./_core/notification";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { hashPassword, verifyPassword, isValidUsername, isValidPassword, isValidEmail } from "./_core/auth";
-import { getUserByUsername, createUser } from "./db";
+import { getUserByUsername, createUser, requireDb } from "./db";
 import { sdk } from "./_core/sdk";
 import { users, userProfiles } from "../drizzle/schema";
 import { eq } from "drizzle-orm";
@@ -271,7 +271,8 @@ export const appRouter = router({
       )
       .mutation(async ({ ctx, input }) => {
         const answerHash = hashPassword(input.securityAnswer);
-        await database.update(users).set({
+        const db = await requireDb();
+        await db.update(users).set({
           securityQuestion: input.securityQuestion,
           securityAnswerHash: answerHash,
         }).where(eq(users.id, ctx.user.id));
@@ -296,7 +297,8 @@ export const appRouter = router({
           throw new TRPCError({ code: "UNAUTHORIZED", message: "Current password is incorrect" });
         }
         const newHash = hashPassword(input.newPassword);
-        await database.update(users).set({
+        const db = await requireDb();
+        await db.update(users).set({
           passwordHash: newHash,
         }).where(eq(users.id, ctx.user.id));
         return { success: true };
@@ -309,7 +311,8 @@ export const appRouter = router({
       )
       .mutation(async ({ ctx, input }) => {
         // Store integrations in userProfiles table
-        await database.update(userProfiles).set({
+        const db = await requireDb();
+        await db.update(userProfiles).set({
           connectedAccounts: JSON.stringify(input.connectedAccounts),
         }).where(eq(userProfiles.userId, ctx.user.id));
         return { success: true };
@@ -327,7 +330,8 @@ export const appRouter = router({
       )
       .mutation(async ({ ctx, input }) => {
         // Store communication preferences in userProfiles table
-        await database.update(userProfiles).set({
+        const db = await requireDb();
+        await db.update(userProfiles).set({
           notificationPreferences: JSON.stringify({
             emailFrequency: input.emailFrequency,
             tradeNotifications: input.tradeNotifications,
@@ -350,7 +354,8 @@ export const appRouter = router({
       )
       .mutation(async ({ ctx, input }) => {
         // Store preferences in userProfiles table
-        await database.update(userProfiles).set({
+        const db = await requireDb();
+        await db.update(userProfiles).set({
           preferredCategories: JSON.stringify(input.preferredCategories),
           showProfile: input.showProfile,
           hideInventoryValue: input.hideInventoryValue,

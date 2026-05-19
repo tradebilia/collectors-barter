@@ -225,7 +225,7 @@ export default function AccountSettings() {
     }
   };
 
-  const handleChangePassword = () => {
+  const handleChangePassword = async () => {
     if (securityForm.newPassword !== securityForm.confirmPassword) {
       toast.error("Passwords do not match");
       return;
@@ -234,15 +234,83 @@ export default function AccountSettings() {
       toast.error("Password must be at least 8 characters");
       return;
     }
-    toast.success("Password changed successfully!");
-    setSecurityForm({
-      currentPassword: "",
-      newPassword: "",
-      confirmPassword: "",
-      securityQuestion: "",
-      securityAnswer: "",
-    });
-    setShowPasswordFields(false);
+    const toastId = toast.loading("Changing password...");
+    try {
+      await changePasswordMutation.mutateAsync({
+        currentPassword: securityForm.currentPassword,
+        newPassword: securityForm.newPassword,
+      });
+      toast.dismiss(toastId);
+      toast.success("Password changed successfully!");
+      setSecurityForm({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+        securityQuestion: "",
+        securityAnswer: "",
+      });
+      setShowPasswordFields(false);
+    } catch (error: any) {
+      toast.dismiss(toastId);
+      toast.error(error.message || "Failed to change password");
+    }
+  };
+
+  const handleSaveSecurityQuestion = async () => {
+    if (!securityForm.securityQuestion || !securityForm.securityAnswer) {
+      toast.error("Please select a security question and provide an answer");
+      return;
+    }
+    const toastId = toast.loading("Saving security question...");
+    try {
+      await saveSecurityQuestionMutation.mutateAsync({
+        securityQuestion: securityForm.securityQuestion,
+        securityAnswer: securityForm.securityAnswer,
+      });
+      toast.dismiss(toastId);
+      toast.success("Security question saved successfully!");
+    } catch (error: any) {
+      toast.dismiss(toastId);
+      toast.error(error.message || "Failed to save security question");
+    }
+  };
+
+  const handleSaveIntegrations = async () => {
+    const toastId = toast.loading("Saving integrations...");
+    try {
+      await saveIntegrationsMutation.mutateAsync({
+        connectedAccounts: connectedAccounts,
+      });
+      toast.dismiss(toastId);
+      toast.success("Integrations saved successfully!");
+    } catch (error: any) {
+      toast.dismiss(toastId);
+      toast.error(error.message || "Failed to save integrations");
+    }
+  };
+
+  const handleSaveCommunications = async () => {
+    const toastId = toast.loading("Saving communication preferences...");
+    try {
+      await saveCommunicationsMutation.mutateAsync(communicationPrefs);
+      toast.dismiss(toastId);
+      toast.success("Communication preferences saved successfully!");
+    } catch (error: any) {
+      toast.dismiss(toastId);
+      toast.error(error.message || "Failed to save communication preferences");
+    }
+  };
+
+  const handleSavePreferences = async () => {
+    const toastId = toast.loading("Saving preferences...");
+    try {
+      await savePreferencesMutation.mutateAsync(preferences);
+      toast.dismiss(toastId);
+      toast.success("Preferences saved successfully!");
+    } catch (error: any) {
+      toast.dismiss(toastId);
+      toast.error(error.message || "Failed to save preferences");
+    }
   };
 
   return (

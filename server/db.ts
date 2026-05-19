@@ -55,7 +55,7 @@ type AvatarUploadInput = {
   contentBase64: string;
 };
 
-async function requireDb() {
+export async function requireDb() {
   if (!_db) {
     _db = drizzle(ENV.databaseUrl);
   }
