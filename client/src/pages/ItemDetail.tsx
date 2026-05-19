@@ -73,7 +73,7 @@ export default function ItemDetail() {
   });
 
   const listing = listingDetailQuery.data?.listing;
-  const similarListings = listingDetailQuery.data?.similarListings ?? [];
+  const similarListings = listing?.similarListings ?? [];
 
   const [activePhotoIndex, setActivePhotoIndex] = useState(0);
 
@@ -195,13 +195,13 @@ export default function ItemDetail() {
             <div className="pt-2">
               <div className="rounded-[2rem] border border-white/10 bg-black/20 p-8 shadow-[0_40px_90px_rgba(0,0,0,0.28)] backdrop-blur-sm">
                 <Badge className="rounded-full border border-cyan-300/30 bg-cyan-300/10 px-4 py-2 text-[0.7rem] uppercase tracking-[0.25em] text-cyan-100 hover:bg-cyan-300/10">
-                  {listing.categoryLabel}
+                  {getTradebiliaCategoryLabel(listing.category)}
                 </Badge>
                 <h1 className="mt-6 text-5xl font-semibold leading-[1.05] tracking-tight text-white">{listing.title}</h1>
                 <div className="mt-6 grid gap-4 text-lg text-white/85 sm:grid-cols-2">
                   <div>
                     <p className="text-sm uppercase tracking-[0.25em] text-white/45">Condition</p>
-                    <p className="mt-2 font-medium">{listing.conditionLabel}</p>
+                    <p className="mt-2 font-medium">{listing.condition}</p>
                   </div>
                   <div>
                     <p className="text-sm uppercase tracking-[0.25em] text-white/45">Listing status</p>
@@ -220,13 +220,13 @@ export default function ItemDetail() {
                 <Separator className="my-8 bg-white/10" />
 
                 <div className="flex flex-wrap items-center justify-between gap-5">
-                  <Link href={`/profile/${listing.owner.userId}`} className="flex items-center gap-4 hover:opacity-80 transition">
+                  <Link href={`/profile/${listing.ownerId}`} className="flex items-center gap-4 hover:opacity-80 transition">
                     <Avatar className="h-14 w-14 border border-white/15 cursor-pointer">
-                      <AvatarImage src={listing.owner.avatarUrl ?? undefined} alt={listing.owner.displayName} />
-                      <AvatarFallback className="bg-white/10 text-white">{initials(listing.owner.displayName)}</AvatarFallback>
+                      <AvatarImage src={listing.ownerProfile.avatarUrl ?? undefined} alt={listing.ownerProfile.displayName} />
+                      <AvatarFallback className="bg-white/10 text-white">{initials(listing.ownerProfile.displayName)}</AvatarFallback>
                     </Avatar>
                     <div>
-                      <p className="text-3xl font-medium text-white">{listing.owner.displayName}</p>
+                      <p className="text-3xl font-medium text-white">{listing.ownerProfile.displayName}</p>
                       <p className="mt-1 text-sm text-white/55">Collector profile</p>
                     </div>
                   </Link>
@@ -274,15 +274,15 @@ export default function ItemDetail() {
                     <div className="grid gap-4 md:grid-cols-3">
                       <div className="rounded-[1.5rem] border border-white/10 bg-white/5 p-5">
                         <p className="text-sm uppercase tracking-[0.2em] text-white/45">Category</p>
-                        <p className="mt-3 text-xl font-medium">{listing.categoryLabel}</p>
+                        <p className="mt-3 text-xl font-medium">{getTradebiliaCategoryLabel(listing.category)}</p>
                       </div>
                       <div className="rounded-[1.5rem] border border-white/10 bg-white/5 p-5">
                         <p className="text-sm uppercase tracking-[0.2em] text-white/45">Condition</p>
-                        <p className="mt-3 text-xl font-medium">{listing.conditionLabel}</p>
+                        <p className="mt-3 text-xl font-medium">{listing.condition}</p>
                       </div>
                       <div className="rounded-[1.5rem] border border-white/10 bg-white/5 p-5">
                         <p className="text-sm uppercase tracking-[0.2em] text-white/45">Collector</p>
-                        <p className="mt-3 text-xl font-medium">{listing.owner.displayName}</p>
+                        <p className="mt-3 text-xl font-medium">{listing.ownerProfile.displayName}</p>
                       </div>
                     </div>
                   </CardContent>
@@ -293,7 +293,7 @@ export default function ItemDetail() {
                 <Card className="rounded-[2rem] border-white/10 bg-black/20 text-white shadow-[0_30px_70px_rgba(0,0,0,0.28)]">
                   <CardContent className="p-8">
                     <p className="text-sm uppercase tracking-[0.3em] text-white/45">Owner's Notes</p>
-                    <p className="mt-5 max-w-4xl text-lg leading-8 text-white/82">{listing.ownerNotes}</p>
+                    <p className="mt-5 max-w-4xl text-lg leading-8 text-white/82">{listing.description}</p>
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -304,7 +304,7 @@ export default function ItemDetail() {
                     <div className="flex items-center justify-between gap-4">
                       <div>
                         <p className="text-sm uppercase tracking-[0.3em] text-white/45">Similar Items</p>
-                        <h2 className="mt-4 text-4xl font-semibold tracking-tight">More from {listing.categoryLabel}</h2>
+                        <h2 className="mt-4 text-4xl font-semibold tracking-tight">More from {getTradebiliaCategoryLabel(listing.category)}</h2>
                       </div>
                     </div>
                     <ScrollArea className="mt-8 w-full">

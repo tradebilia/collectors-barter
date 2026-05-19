@@ -469,6 +469,7 @@ export async function getListingDetail(listingId: number, viewerId: number | nul
       imageUrl: p.imageUrl,
       altText: p.altText,
     })),
+    primaryPhotoUrl: photoRows.length > 0 ? photoRows[0].imageUrl : null,
     similarListings: await formatListings(similarRows, viewerId),
     savedToWatchlist: isSaved,
   };
