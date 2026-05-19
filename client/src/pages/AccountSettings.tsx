@@ -197,9 +197,9 @@ export default function AccountSettings() {
   const handleCategoryToggle = (category: string) => {
     setPreferences(prev => ({
       ...prev,
-      preferredCategories: prev.preferredCategories.includes(category)
+      preferredCategories: prev.preferredCategories.includes(category as any)
         ? prev.preferredCategories.filter(c => c !== category)
-        : [...prev.preferredCategories, category],
+        : [...prev.preferredCategories, category as any],
     }));
   };
 
@@ -722,7 +722,7 @@ export default function AccountSettings() {
                     <Label>Email Frequency</Label>
                     <select
                       value={communicationPrefs.emailFrequency}
-                      onChange={(e) => setCommunicationPrefs(prev => ({ ...prev, emailFrequency: e.target.value }))}
+                      onChange={(e) => setCommunicationPrefs(prev => ({ ...prev, emailFrequency: e.target.value as any }))}
                       className="w-full rounded-lg border border-slate-200 px-3 py-2"
                     >
                       <option value="instant">Instant</option>

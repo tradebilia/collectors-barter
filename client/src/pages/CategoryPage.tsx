@@ -178,7 +178,7 @@ export default function CategoryPage() {
   const utils = trpc.useUtils();
 
   const [keyword, setKeyword] = useState("");
-  const [condition, setCondition] = useState<(typeof tradebiliaConditionOptions)[number]["value"]>("all");
+  const [condition, setCondition] = useState<(typeof tradebiliaConditionOptions)[number]["value"] | undefined>(undefined);
   const [sportsCardsConditionText, setSportsCardsConditionText] = useState("");
   const [sortBy, setSortBy] = useState("best_match");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
@@ -428,7 +428,7 @@ export default function CategoryPage() {
         <div className="flex-1 py-8 lg:py-10 px-6">
           <section className="space-y-6">
             {/* Filter summary bar */}
-            {(keyword || condition !== "all" || sportsCardsConditionText) && (
+            {(keyword || condition || sportsCardsConditionText) && (
               <div className="flex flex-wrap gap-2 items-center pb-3">
                 <span className="text-xs font-medium opacity-70">Active filters:</span>
                 {keyword && (
@@ -437,10 +437,10 @@ export default function CategoryPage() {
                     <button onClick={() => setKeyword("")} className="ml-1 hover:opacity-70">×</button>
                   </div>
                 )}
-                {condition !== "all" && (
+                {condition && (
                   <div className="inline-flex items-center gap-1 bg-blue-600/20 text-blue-600 px-2 py-1 rounded text-xs">
                     {condition}
-                    <button onClick={() => setCondition("all")} className="ml-1 hover:opacity-70">×</button>
+                    <button onClick={() => setCondition(undefined)} className="ml-1 hover:opacity-70">×</button>
                   </div>
                 )}
                 {sportsCardsConditionText && (
@@ -505,11 +505,11 @@ export default function CategoryPage() {
                   </Select>
                 </div>
                 {/* Clear filters button */}
-                {(keyword || condition !== "all" || sportsCardsConditionText) && (
+                {(keyword || condition || sportsCardsConditionText) && (
                   <button
                     onClick={() => {
                       setKeyword("");
-                      setCondition("all");
+                      setCondition(undefined);
                       setSportsCardsConditionText("");
                       setCurrentPage(1);
                     }}

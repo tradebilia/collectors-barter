@@ -1034,7 +1034,18 @@ export async function getDashboardData(user: Pick<User, "id" | "name">) {
       .select({ listingId: watchlistEntries.listingId })
       .from(watchlistEntries)
       .where(eq(watchlistEntries.userId, user.id)),
-    getProposalCards(user.id),
+    db
+      .select({
+        id: tradeReviews.id,
+        proposalId: tradeReviews.proposalId,
+        reviewerId: tradeReviews.reviewerId,
+        rating: tradeReviews.rating,
+        review: tradeReviews.review,
+        createdAt: tradeReviews.createdAt,
+      })
+      .from(tradeReviews)
+      .where(eq(tradeReviews.revieweeId, user.id))
+      .orderBy(desc(tradeReviews.createdAt)),
     getProposalCards(user.id),
     getRatingStatsMap([user.id]),
   ]);

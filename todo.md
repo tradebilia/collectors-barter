@@ -811,4 +811,9 @@ This ensures users can fill in all category-specific details when adding items t
 - [x] Fixed missing table imports (passwordResetTokens, emailVerificationOtps, phoneVerificationOtps)
 - [x] Fixed db.query.users pattern to use proper Drizzle ORM syntax
 - [x] Fixed missing await on requireDb() calls
-- [ ] Resolve remaining 127 TypeScript errors (mostly frontend type mismatches and missing properties)
+- [x] Fixed condition state initialization in Home.tsx and CategoryPage.tsx to use undefined instead of "all"
+- [x] Fixed tradebiliaConditionOptions to remove "all" value
+- [x] Fixed TopRightIcons notification count type checks
+- [x] Fixed AccountSettings setState type issues with category arrays and email frequency
+- [x] Added missing receivedReviews query to getDashboardData Promise.all
+- [ ] Resolve remaining 110 TypeScript errors (mostly frontend type mismatches and missing properties)

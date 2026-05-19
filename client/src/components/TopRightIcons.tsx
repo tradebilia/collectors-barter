@@ -19,8 +19,8 @@ export function TopRightIcons({ className = "flex items-center gap-3 md:gap-4", 
     return null;
   }
 
-  const unreadMessages = unreadQuery.data?.unreadMessages ?? 0;
-  const unreadNotifications = unreadQuery.data?.unreadNotifications ?? 0;
+  const unreadMessages = typeof unreadQuery.data?.unreadMessages === 'number' ? unreadQuery.data.unreadMessages : 0;
+  const unreadNotifications = typeof unreadQuery.data?.unreadNotifications === 'number' ? unreadQuery.data.unreadNotifications : 0;
 
   return (
     <div className={className}>

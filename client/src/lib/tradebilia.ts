@@ -21,7 +21,6 @@ export const tradebiliaCategoryOptions = [
 ] as const;
 
 export const tradebiliaConditionOptions = [
-  { value: "all", label: "All Conditions" },
   { value: "mint", label: "Mint" },
   { value: "near_mint", label: "Near Mint" },
   { value: "very_good", label: "Very Good" },
