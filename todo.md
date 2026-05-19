@@ -780,7 +780,9 @@ This ensures users can fill in all category-specific details when adding items t
 - [x] Add security question fields to database schema
 - [x] Apply database migration for security fields
 - [x] Add mutation hooks to frontend component
-- [ ] Fix database access in procedures (requireDb pattern)
+- [x] Fix database access in procedures (requireDb pattern)
+- [x] Fix selectTradeProposalItems and respondToTradeProposal function calls
+- [ ] Fix remaining TypeScript errors in routers.ts (connectedAccounts, showProfile, graderCompany fields)
 - [ ] Implement frontend handler for Save Security Question
 - [ ] Implement frontend handler for Change Password
 - [ ] Implement frontend handlers for Integrations tab

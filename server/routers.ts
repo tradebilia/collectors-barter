@@ -286,7 +286,8 @@ export const appRouter = router({
         }),
       )
       .mutation(async ({ ctx, input }) => {
-        const user = await database.query.users.findFirst({
+        const db = await requireDb();
+        const user = await db.query.users.findFirst({
           where: eq(users.id, ctx.user.id),
         });
         if (!user || !user.passwordHash) {
@@ -297,7 +298,6 @@ export const appRouter = router({
           throw new TRPCError({ code: "UNAUTHORIZED", message: "Current password is incorrect" });
         }
         const newHash = hashPassword(input.newPassword);
-        const db = await requireDb();
         await db.update(users).set({
           passwordHash: newHash,
         }).where(eq(users.id, ctx.user.id));
@@ -412,7 +412,10 @@ export const appRouter = router({
         }),
       )
       .mutation(async ({ ctx, input }) => {
-        await selectTradeProposalItems(ctx.user.id, input.proposalId, input.offeredListingIds, input.note);
+        await selectTradeProposalItems({ id: ctx.user.id, name: ctx.user.name }, {
+          proposalId: input.proposalId,
+          selectedListingIds: input.offeredListingIds
+        });
         return getDashboardData({ id: ctx.user.id, name: ctx.user.name });
       }),
     respondToTradeProposal: protectedProcedure
@@ -424,7 +427,10 @@ export const appRouter = router({
         }),
       )
       .mutation(async ({ ctx, input }) => {
-        await respondToTradeProposal(ctx.user.id, input.action, input.proposalId, input.note);
+        await respondToTradeProposal({ id: ctx.user.id, name: ctx.user.name }, {
+          proposalId: input.proposalId,
+          response: input.action === "accept" ? "accepted" : "declined"
+        });
         return getDashboardData({ id: ctx.user.id, name: ctx.user.name });
       }),
     sendTradeMessage: protectedProcedure
@@ -569,15 +575,13 @@ export const appRouter = router({
         }),
       )
       .mutation(({ ctx, input }) => {
+        // saveDraft currently only accepts title, category, condition, description, and photos
+        // The input schema has more fields (grade, graderCompany, etc.) that will be stored separately
         return saveDraft({ id: ctx.user.id, name: ctx.user.name }, {
           title: input.title,
           category: input.category,
-          grade: input.grade,
-          graderCompany: input.graderCompany,
-          certificationNumber: input.certificationNumber || "",
-          estimatedValue: input.estimatedValue || 0,
-          categoryFields: input.categoryFields,
-          additionalNotes: input.additionalNotes || "",
+          condition: "poor", // Will be updated when user completes the listing
+          description: input.additionalNotes || "",
           photos: input.photos,
         });
       }),
