@@ -435,7 +435,7 @@ export const appRouter = router({
         }),
       )
       .mutation(async ({ ctx, input }) => {
-        await sendTradeMessage(ctx.user.id, input.proposalId, input.message);
+        await sendTradeMessage({ id: ctx.user.id, name: ctx.user.name }, { proposalId: input.proposalId, message: input.message });
         return getDashboardData({ id: ctx.user.id, name: ctx.user.name });
       }),
     toggleWatchlist: protectedProcedure
@@ -445,16 +445,17 @@ export const appRouter = router({
         }),
       )
       .mutation(({ ctx, input }) => {
-        return toggleWatchlist(ctx.user.id, input.listingId);
+        return toggleWatchlist(ctx.user.id, input.listingId); // This one is correct - takes userId and listingId
       }),
     toggleListingStatus: protectedProcedure
       .input(
         z.object({
           listingId: z.number().int().positive(),
+          isActive: z.boolean(),
         }),
       )
       .mutation(({ ctx, input }) => {
-        return toggleListingStatus(ctx.user.id, input.listingId);
+        return toggleListingStatus({ id: ctx.user.id, name: ctx.user.name }, { listingId: input.listingId, isActive: input.isActive });
       }),
     bulkUpdateListingStatus: protectedProcedure
       .input(
@@ -464,7 +465,7 @@ export const appRouter = router({
         }),
       )
       .mutation(async ({ ctx, input }) => {
-        await bulkUpdateListingStatus(ctx.user.id, input.listingIds, input.newStatus);
+        await bulkUpdateListingStatus({ id: ctx.user.id, name: ctx.user.name }, { listingIds: input.listingIds, isActive: input.newStatus });
         return getDashboardData({ id: ctx.user.id, name: ctx.user.name });
       }),
     bulkDeleteListings: protectedProcedure
@@ -474,7 +475,7 @@ export const appRouter = router({
         }),
       )
       .mutation(async ({ ctx, input }) => {
-        const result = await bulkDeleteListings(ctx.user.id, input.listingIds);
+        const result = await bulkDeleteListings({ id: ctx.user.id, name: ctx.user.name }, { listingIds: input.listingIds });
         return {
           ...result,
           dashboard: await getDashboardData({ id: ctx.user.id, name: ctx.user.name }),
@@ -488,7 +489,7 @@ export const appRouter = router({
         }),
       )
       .mutation(async ({ ctx, input }) => {
-        await restoreDeletedListings(ctx.user.id, input.deletedListings, input.deletedPhotos);
+        await restoreDeletedListings({ id: ctx.user.id, name: ctx.user.name }, { listingIds: input.deletedListings });
         return getDashboardData({ id: ctx.user.id, name: ctx.user.name });
       }),
     leaveTradeReview: protectedProcedure
@@ -500,7 +501,7 @@ export const appRouter = router({
         }),
       )
       .mutation(async ({ ctx, input }) => {
-        await leaveTradeReview(ctx.user.id, input);
+        await leaveTradeReview({ id: ctx.user.id, name: ctx.user.name }, input);
         return getDashboardData({ id: ctx.user.id, name: ctx.user.name });
       }),
     reportUser: protectedProcedure
@@ -568,7 +569,7 @@ export const appRouter = router({
         }),
       )
       .mutation(({ ctx, input }) => {
-        return saveDraft(ctx.user.id, {
+        return saveDraft({ id: ctx.user.id, name: ctx.user.name }, {
           title: input.title,
           category: input.category,
           grade: input.grade,
@@ -581,7 +582,7 @@ export const appRouter = router({
         });
       }),
     getDrafts: protectedProcedure.query(({ ctx }) => {
-      return getDrafts(ctx.user.id);
+      return getDrafts({ id: ctx.user.id, name: ctx.user.name });
     }),
     deleteDraft: protectedProcedure
       .input(
