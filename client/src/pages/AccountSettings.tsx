@@ -259,20 +259,16 @@ export default function AccountSettings() {
     const toastId = toast.loading("Saving profile...");
     console.log("[AccountSettings] handleSaveProfile called");
     try {
-      console.log("[AccountSettings] Calling saveProfile mutation with:", {
+      const payload: any = {
         displayName: profileForm.displayName,
         bio: profileForm.bio,
         contactPhone: profileForm.phoneNumber,
-        firstName: identityInfo.firstName,
-        lastName: identityInfo.lastName,
-      });
-      await saveProfileMutation.mutateAsync({
-        displayName: profileForm.displayName,
-        bio: profileForm.bio,
-        contactPhone: profileForm.phoneNumber,
-        firstName: identityInfo.firstName,
-        lastName: identityInfo.lastName,
-      });
+      };
+      if (user?.role === 'admin') {
+        payload.firstName = identityInfo.firstName;
+        payload.lastName = identityInfo.lastName;
+      }
+      await saveProfileMutation.mutateAsync(payload);
       console.log("[AccountSettings] Profile saved successfully");
       toast.dismiss(toastId);
       toast.success("Profile updated successfully!");
@@ -451,10 +447,10 @@ export default function AccountSettings() {
                     </div>
                   </div>
 
-                  {/* Identity Info - Editable for Admin */}
+                  {/* Identity Info - Editable for Admin, Read-Only for Others */}
                   <div className="border-t border-slate-200 pt-4 space-y-4">
-                    <h3 className="font-semibold text-slate-900">Identity Information</h3>
-                    <p className="text-xs text-slate-600">Update your legal name information.</p>
+                    <h3 className="font-semibold text-slate-900">Identity Information {user?.role === 'admin' ? '' : '(Read-Only)'}</h3>
+                    <p className="text-xs text-slate-600">{user?.role === 'admin' ? 'Update your legal name information.' : 'These fields cannot be changed for security reasons. Contact support if you need to update them.'}</p>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="firstName">First Name</Label>
@@ -462,8 +458,9 @@ export default function AccountSettings() {
                           id="firstName"
                           name="firstName"
                           value={identityInfo.firstName} 
-                          onChange={(e) => setIdentityInfo(prev => ({ ...prev, firstName: e.target.value }))}
-                          className="rounded-lg border-slate-200" 
+                          onChange={(e) => user?.role === 'admin' && setIdentityInfo(prev => ({ ...prev, firstName: e.target.value }))}
+                          disabled={user?.role !== 'admin'}
+                          className={user?.role === 'admin' ? 'rounded-lg border-slate-200' : 'bg-slate-100 rounded-lg border-slate-200'} 
                         />
                       </div>
                       <div className="space-y-2">
@@ -472,8 +469,9 @@ export default function AccountSettings() {
                           id="lastName"
                           name="lastName"
                           value={identityInfo.lastName} 
-                          onChange={(e) => setIdentityInfo(prev => ({ ...prev, lastName: e.target.value }))}
-                          className="rounded-lg border-slate-200" 
+                          onChange={(e) => user?.role === 'admin' && setIdentityInfo(prev => ({ ...prev, lastName: e.target.value }))}
+                          disabled={user?.role !== 'admin'}
+                          className={user?.role === 'admin' ? 'rounded-lg border-slate-200' : 'bg-slate-100 rounded-lg border-slate-200'} 
                         />
                       </div>
                       <div className="space-y-2">
