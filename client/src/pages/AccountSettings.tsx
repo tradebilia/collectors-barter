@@ -263,11 +263,15 @@ export default function AccountSettings() {
         displayName: profileForm.displayName,
         bio: profileForm.bio,
         contactPhone: profileForm.phoneNumber,
+        firstName: identityInfo.firstName,
+        lastName: identityInfo.lastName,
       });
       await saveProfileMutation.mutateAsync({
         displayName: profileForm.displayName,
         bio: profileForm.bio,
         contactPhone: profileForm.phoneNumber,
+        firstName: identityInfo.firstName,
+        lastName: identityInfo.lastName,
       });
       console.log("[AccountSettings] Profile saved successfully");
       toast.dismiss(toastId);
@@ -447,18 +451,30 @@ export default function AccountSettings() {
                     </div>
                   </div>
 
-                  {/* Identity Info - Display Only */}
+                  {/* Identity Info - Editable for Admin */}
                   <div className="border-t border-slate-200 pt-4 space-y-4">
-                    <h3 className="font-semibold text-slate-900">Identity Information (Read-Only)</h3>
-                    <p className="text-xs text-slate-600">These fields cannot be changed for security reasons. Contact support if you need to update them.</p>
+                    <h3 className="font-semibold text-slate-900">Identity Information</h3>
+                    <p className="text-xs text-slate-600">Update your legal name information.</p>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label>First Name</Label>
-                        <Input disabled value={identityInfo.firstName} className="bg-slate-100" />
+                        <Label htmlFor="firstName">First Name</Label>
+                        <Input 
+                          id="firstName"
+                          name="firstName"
+                          value={identityInfo.firstName} 
+                          onChange={(e) => setIdentityInfo(prev => ({ ...prev, firstName: e.target.value }))}
+                          className="rounded-lg border-slate-200" 
+                        />
                       </div>
                       <div className="space-y-2">
-                        <Label>Last Name</Label>
-                        <Input disabled value={identityInfo.lastName} className="bg-slate-100" />
+                        <Label htmlFor="lastName">Last Name</Label>
+                        <Input 
+                          id="lastName"
+                          name="lastName"
+                          value={identityInfo.lastName} 
+                          onChange={(e) => setIdentityInfo(prev => ({ ...prev, lastName: e.target.value }))}
+                          className="rounded-lg border-slate-200" 
+                        />
                       </div>
                       <div className="space-y-2">
                         <Label>Email Address</Label>

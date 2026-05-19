@@ -1135,6 +1135,8 @@ export async function updateProfile(
     contactEmail?: string;
     contactPhone?: string;
     contactAddress?: string;
+    firstName?: string;
+    lastName?: string;
     avatar?: AvatarUploadInput | null;
     acceptedTerms?: boolean;
     isMerchant?: boolean;
@@ -1162,6 +1164,13 @@ export async function updateProfile(
     contactPhone: input.contactPhone?.trim() ? input.contactPhone.trim().slice(0, 40) : null,
     contactAddress: input.contactAddress?.trim() ? input.contactAddress.trim().slice(0, 320) : null,
   };
+
+  if (input.firstName !== undefined) {
+    updateSet.firstName = input.firstName?.trim() ? input.firstName.trim().slice(0, 100) : null;
+  }
+  if (input.lastName !== undefined) {
+    updateSet.lastName = input.lastName?.trim() ? input.lastName.trim().slice(0, 100) : null;
+  }
 
   if (input.avatar) {
     const uploaded = await uploadImage("avatars", user.id, input.avatar);
