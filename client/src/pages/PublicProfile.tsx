@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
+import { getAvatarInitials } from "@/lib/tradebilia";
 import { Heart, MessageSquare, Share2, Star, Loader2 } from "lucide-react";
 import { TopRightIcons } from "@/components/TopRightIcons";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -23,17 +24,6 @@ const categoryLinks = [
   { value: "autographs", label: "Autographs" },
   { value: "disney_pins", label: "Disney Pins" },
 ] as const;
-
-function initials(name: string) {
-  return (
-    name
-      .split(" ")
-      .filter(Boolean)
-      .slice(0, 2)
-      .map(part => part[0]?.toUpperCase() ?? "")
-      .join("") || "TB"
-  );
-}
 
 export default function PublicProfile() {
   const { userId } = useParams<{ userId: string }>();
@@ -109,8 +99,8 @@ export default function PublicProfile() {
               <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-start">
                 <Avatar className="h-24 w-24 border-4 border-slate-200">
                   <AvatarImage src={profile.avatarUrl ?? undefined} alt={profile.displayName} />
-                  <AvatarFallback className="bg-blue-100 text-2xl font-semibold text-blue-600">
-                    {initials(profile.displayName)}
+                  <AvatarFallback className="bg-[#7f31ff] text-2xl font-semibold text-white">
+                    {getAvatarInitials({ firstName: (profile as any).firstName, lastName: (profile as any).lastName, displayName: profile.displayName })}
                   </AvatarFallback>
                 </Avatar>
 

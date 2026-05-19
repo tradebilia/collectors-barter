@@ -3,6 +3,7 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { getAvatarInitials } from "@/lib/tradebilia";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -41,16 +42,7 @@ const accountSources = [
 
 type AccountSource = typeof accountSources[number]["value"];
 
-function initials(name: string) {
-  return (
-    name
-      .split(" ")
-      .filter(Boolean)
-      .slice(0, 2)
-      .map(part => part[0]?.toUpperCase() ?? "")
-      .join("") || "TB"
-  );
-}
+
 
 export default function AccountSettings() {
   const { user, isAuthenticated, logout } = useAuth();
@@ -423,7 +415,7 @@ export default function AccountSettings() {
                     <div className="flex flex-col items-center gap-4">
                       <Avatar className="h-32 w-32 border-4 border-slate-200">
                         <AvatarImage src={profileForm.avatarPreview} />
-                        <AvatarFallback className="text-2xl">{initials(identityInfo.firstName + " " + identityInfo.lastName)}</AvatarFallback>
+                        <AvatarFallback className="text-2xl bg-[#7f31ff] text-white">{getAvatarInitials({ firstName: identityInfo.firstName, lastName: identityInfo.lastName })}</AvatarFallback>
                       </Avatar>
                       <div className="cursor-pointer">
                         <div

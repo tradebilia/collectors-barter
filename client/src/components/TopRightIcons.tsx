@@ -3,17 +3,7 @@ import { Bell, Mail, Cog } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
-
-function initials(name: string) {
-  return (
-    name
-      .split(" ")
-      .filter(Boolean)
-      .slice(0, 2)
-      .map(part => part[0]?.toUpperCase() ?? "")
-      .join("") || "TB"
-  );
-}
+import { getAvatarInitials } from "@/lib/tradebilia";
 
 interface TopRightIconsProps {
   className?: string;
@@ -40,7 +30,7 @@ export function TopRightIcons({ className = "flex items-center gap-3 md:gap-4", 
         <Avatar className="h-6 w-6 border border-white/30 cursor-pointer hover:border-white/60 transition">
           <AvatarImage src={undefined} alt={user.name ?? "User"} />
           <AvatarFallback className="bg-[#7f31ff] text-white text-[10px] font-semibold">
-            {initials((user as any).firstName && (user as any).lastName ? `${(user as any).firstName} ${(user as any).lastName}` : user.name ?? "User")}
+            {getAvatarInitials({ firstName: (user as any).firstName, lastName: (user as any).lastName, displayName: user.name ?? "User" })}
           </AvatarFallback>
         </Avatar>
       </Link>
