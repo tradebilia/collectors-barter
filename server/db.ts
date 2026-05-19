@@ -130,7 +130,7 @@ async function getRatingStatsMap(userIds: number[]) {
 async function formatListings(listingRows: any[], viewerId: number | null) {
   if (listingRows.length === 0) return [];
 
-  const ownerIds = [...new Set(listingRows.map(r => r.ownerId))];
+  const ownerIds = Array.from(new Set(listingRows.map(r => r.ownerId)));
   const profileMap = await getProfileMap(ownerIds);
   const ratingMap = await getRatingStatsMap(ownerIds);
   const watchlistRows = viewerId
@@ -305,11 +305,9 @@ async function getProposalCards(userId: number) {
     .where(or(eq(tradeProposals.requesterId, userId), eq(tradeProposals.recipientId, userId)))
     .orderBy(desc(tradeProposals.createdAt));
 
-  const listingIds = [
-    ...new Set([
-      ...proposalRows.map(p => p.requestedListingId).filter(Boolean),
-    ]),
-  ] as number[];
+  const listingIds = Array.from(new Set(
+    proposalRows.map(p => p.requestedListingId).filter(Boolean),
+  )) as number[];
 
   const listingRows = listingIds.length
     ? await db
@@ -564,7 +562,7 @@ export async function selectTradeProposalItems(
 
     await db.insert(tradeProposalItems).values({
       proposalId: input.proposalId,
-      listingId,
+      offeredListingId: listingId,
     });
   }
 
@@ -615,7 +613,7 @@ export async function respondToTradeProposal(
       .from(tradeProposalItems)
       .where(eq(tradeProposalItems.proposalId, input.proposalId));
 
-    const listingIds = proposalItems.map(item => item.listingId);
+    const listingIds = proposalItems.map(item => item.offeredListingId);
     listingIds.push(proposal[0].requestedListingId);
 
     await db
@@ -910,8 +908,10 @@ export async function saveDraft(
     userId: user.id,
     title: input.title.trim(),
     category: input.category,
-    condition: input.condition,
-    description: input.description.trim(),
+    grade: input.grade || "ungraded",
+    graderCompany: input.graderCompany,
+    certificationNumber: input.certificationNumber,
+    estimatedValue: input.estimatedValue ? String(input.estimatedValue) : null,
   });
   const draftId = getInsertId(insertResult);
 
@@ -933,15 +933,14 @@ export async function saveDraft(
 export async function getDrafts(user: Pick<User, "id" | "name">) {
   const db = await requireDb();
 
-  const draftRows = await db
-    .select({
-      id: draftListings.id,
-      title: draftListings.title,
-      category: draftListings.category,
-      condition: draftListings.condition,
-      description: draftListings.description,
-      createdAt: draftListings.createdAt,
-    })
+    const draftRows = await db
+      .select({
+        id: draftListings.id,
+        title: draftListings.title,
+        category: draftListings.category,
+        grade: draftListings.grade,
+        createdAt: draftListings.createdAt,
+      })
     .from(draftListings)
     .where(eq(draftListings.userId, user.id))
     .orderBy(desc(draftListings.createdAt));
@@ -971,8 +970,7 @@ export async function getDrafts(user: Pick<User, "id" | "name">) {
     id: d.id,
     title: d.title,
     category: d.category,
-    condition: d.condition,
-    description: d.description,
+    grade: d.grade,
     photos: photoMap.get(d.id) ?? [],
     createdAt: d.createdAt.getTime(),
   }));
@@ -1338,7 +1336,7 @@ export async function createUser(input: {
 
 
 // Password Recovery Functions
-export async function createPasswordResetToken(userId: string, token: string, expiresAt: Date) {
+export async function createPasswordResetToken(userId: number, token: string, expiresAt: Date) {
   const db = await requireDb();
   return db.insert(passwordResetTokens).values({
     userId,
@@ -1358,7 +1356,7 @@ export async function deletePasswordResetToken(token: string) {
   return db.delete(passwordResetTokens).where(eq(passwordResetTokens.token, token));
 }
 
-export async function updateUserPassword(userId: string, passwordHash: string) {
+export async function updateUserPassword(userId: number, passwordHash: string) {
   const db = await requireDb();
   return db.update(users).set({ passwordHash }).where(eq(users.id, userId));
 }
