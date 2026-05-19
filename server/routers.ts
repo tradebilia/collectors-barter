@@ -32,6 +32,9 @@ import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { hashPassword, verifyPassword, isValidUsername, isValidPassword, isValidEmail } from "./_core/auth";
 import { getUserByUsername, createUser } from "./db";
 import { sdk } from "./_core/sdk";
+import { users, userProfiles } from "../drizzle/schema";
+import { eq } from "drizzle-orm";
+import { TRPCError } from "@trpc/server";
 import { ONE_YEAR_MS } from "@shared/const";
 
 const uploadedImageSchema = z.object({
@@ -237,6 +240,7 @@ export const appRouter = router({
         }),
       )
       .mutation(({ ctx, input }) => {
+        console.log("[saveProfile] Called with input:", input);
         return updateProfile(
           { id: ctx.user.id, name: ctx.user.name },
           {
@@ -257,6 +261,102 @@ export const appRouter = router({
             phoneVerified: input.phoneVerified,
           },
         );
+      }),
+    saveSecurityQuestion: protectedProcedure
+      .input(
+        z.object({
+          securityQuestion: z.string().max(255),
+          securityAnswer: z.string().max(255),
+        }),
+      )
+      .mutation(async ({ ctx, input }) => {
+        const answerHash = hashPassword(input.securityAnswer);
+        await database.update(users).set({
+          securityQuestion: input.securityQuestion,
+          securityAnswerHash: answerHash,
+        }).where(eq(users.id, ctx.user.id));
+        return { success: true };
+      }),
+    changePassword: protectedProcedure
+      .input(
+        z.object({
+          currentPassword: z.string(),
+          newPassword: z.string().min(8),
+        }),
+      )
+      .mutation(async ({ ctx, input }) => {
+        const user = await database.query.users.findFirst({
+          where: eq(users.id, ctx.user.id),
+        });
+        if (!user || !user.passwordHash) {
+          throw new TRPCError({ code: "UNAUTHORIZED" });
+        }
+        const isValid = verifyPassword(input.currentPassword, user.passwordHash);
+        if (!isValid) {
+          throw new TRPCError({ code: "UNAUTHORIZED", message: "Current password is incorrect" });
+        }
+        const newHash = hashPassword(input.newPassword);
+        await database.update(users).set({
+          passwordHash: newHash,
+        }).where(eq(users.id, ctx.user.id));
+        return { success: true };
+      }),
+    saveIntegrations: protectedProcedure
+      .input(
+        z.object({
+          connectedAccounts: z.array(z.enum(["ebay", "paypal", "facebook"])),
+        }),
+      )
+      .mutation(async ({ ctx, input }) => {
+        // Store integrations in userProfiles table
+        await database.update(userProfiles).set({
+          connectedAccounts: JSON.stringify(input.connectedAccounts),
+        }).where(eq(userProfiles.userId, ctx.user.id));
+        return { success: true };
+      }),
+    saveCommunications: protectedProcedure
+      .input(
+        z.object({
+          emailFrequency: z.enum(["daily", "weekly", "monthly", "never"]),
+          tradeNotifications: z.boolean(),
+          messageNotifications: z.boolean(),
+          feedbackNotifications: z.boolean(),
+          systemNotifications: z.boolean(),
+          marketingEmails: z.boolean(),
+        }),
+      )
+      .mutation(async ({ ctx, input }) => {
+        // Store communication preferences in userProfiles table
+        await database.update(userProfiles).set({
+          notificationPreferences: JSON.stringify({
+            emailFrequency: input.emailFrequency,
+            tradeNotifications: input.tradeNotifications,
+            messageNotifications: input.messageNotifications,
+            feedbackNotifications: input.feedbackNotifications,
+            systemNotifications: input.systemNotifications,
+            marketingEmails: input.marketingEmails,
+          }),
+        }).where(eq(userProfiles.userId, ctx.user.id));
+        return { success: true };
+      }),
+    savePreferences: protectedProcedure
+      .input(
+        z.object({
+          preferredCategories: z.array(z.enum(collectibleCategories)),
+          showProfile: z.boolean(),
+          hideInventoryValue: z.boolean(),
+          receiveContactRequests: z.boolean(),
+        }),
+      )
+      .mutation(async ({ ctx, input }) => {
+        // Store preferences in userProfiles table
+        await database.update(userProfiles).set({
+          preferredCategories: JSON.stringify(input.preferredCategories),
+          showProfile: input.showProfile,
+          hideInventoryValue: input.hideInventoryValue,
+          receiveContactRequests: input.receiveContactRequests,
+        }).where(eq(userProfiles.userId, ctx.user.id));
+        return { success: true };
       }),
     createListing: protectedProcedure
       .input(

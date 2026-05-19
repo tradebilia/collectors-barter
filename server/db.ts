@@ -1167,8 +1167,12 @@ export async function updateProfile(
     updateSet.phoneVerified = input.phoneVerified;
   }
 
+  console.log("[updateProfile] Updating database...");
   await db.update(userProfiles).set(updateSet).where(eq(userProfiles.userId, user.id));
-  return getDashboardData(user);
+  console.log("[updateProfile] Database updated, calling getDashboardData...");
+  const result = await getDashboardData(user);
+  console.log("[updateProfile] getDashboardData completed, returning result");
+  return result;
 }
 
 export async function createListing(

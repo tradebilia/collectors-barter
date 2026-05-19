@@ -22,6 +22,8 @@ export const users = mysqlTable("users", {
   avatarUrl: text("avatarUrl"),
   loginMethod: varchar("loginMethod", { length: 64 }),
   role: mysqlEnum("role", ["user", "admin"]).default("user").notNull(),
+  securityQuestion: varchar("securityQuestion", { length: 255 }),
+  securityAnswerHash: varchar("securityAnswerHash", { length: 255 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),

@@ -58,6 +58,12 @@ export default function AccountSettings() {
   const dashboardQuery = trpc.market.dashboard.useQuery(undefined, {
     enabled: isAuthenticated,
   });
+  const saveProfileMutation = trpc.market.saveProfile.useMutation();
+  const saveSecurityQuestionMutation = trpc.market.saveSecurityQuestion.useMutation();
+  const changePasswordMutation = trpc.market.changePassword.useMutation();
+  const saveIntegrationsMutation = trpc.market.saveIntegrations.useMutation();
+  const saveCommunicationsMutation = trpc.market.saveCommunications.useMutation();
+  const savePreferencesMutation = trpc.market.savePreferences.useMutation();
 
   const [activeTab, setActiveTab] = useState<"profile" | "security" | "integrations" | "communications" | "preferences">("profile");
   
@@ -193,8 +199,30 @@ export default function AccountSettings() {
     );
   };
 
-  const handleSaveProfile = () => {
-    toast.success("Profile updated successfully!");
+  const handleSaveProfile = async () => {
+    const toastId = toast.loading("Saving profile...");
+    console.log("[AccountSettings] handleSaveProfile called");
+    try {
+      console.log("[AccountSettings] Calling saveProfile mutation with:", {
+        displayName: profileForm.displayName,
+        bio: profileForm.bio,
+        contactPhone: profileForm.phoneNumber,
+      });
+      await saveProfileMutation.mutateAsync({
+        displayName: profileForm.displayName,
+        bio: profileForm.bio,
+        contactPhone: profileForm.phoneNumber,
+      });
+      console.log("[AccountSettings] Profile saved successfully");
+      toast.dismiss(toastId);
+      toast.success("Profile updated successfully!");
+      // Refresh the dashboard data
+      await utils.market.dashboard.refetch();
+    } catch (error: any) {
+      console.error("[AccountSettings] Error saving profile:", error);
+      toast.dismiss(toastId);
+      toast.error(error.message || "Failed to update profile");
+    }
   };
 
   const handleChangePassword = () => {
@@ -352,9 +380,22 @@ export default function AccountSettings() {
                     />
                   </div>
 
-                  <Button onClick={handleSaveProfile} className="w-full rounded-lg bg-blue-600 hover:bg-blue-700">
-                    <Save className="mr-2 h-4 w-4" />
-                    Save Profile Changes
+                  <Button 
+                    onClick={handleSaveProfile} 
+                    disabled={saveProfileMutation.isPending}
+                    className="w-full rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
+                  >
+                    {saveProfileMutation.isPending ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="mr-2 h-4 w-4" />
+                        Save Profile Changes
+                      </>
+                    )}
                   </Button>
                 </CardContent>
               </Card>

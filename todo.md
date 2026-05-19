@@ -769,3 +769,21 @@ This ensures users can fill in all category-specific details when adding items t
 - [x] Add getUserById function to db.ts for session retrieval
 - [x] Verify all TypeScript imports are correct
 - [x] Fix UI to update immediately after sign-in (no page refresh needed)
+
+## CURRENT: Implement Missing Account Settings Save Functions
+
+- [x] Create tRPC procedure for saving security question
+- [x] Create tRPC procedure for changing password
+- [x] Create tRPC procedure for saving integrations settings
+- [x] Create tRPC procedure for saving communications settings
+- [x] Create tRPC procedure for saving preferences settings
+- [x] Add security question fields to database schema
+- [x] Apply database migration for security fields
+- [x] Add mutation hooks to frontend component
+- [ ] Fix database access in procedures (requireDb pattern)
+- [ ] Implement frontend handler for Save Security Question
+- [ ] Implement frontend handler for Change Password
+- [ ] Implement frontend handlers for Integrations tab
+- [ ] Implement frontend handlers for Communications tab
+- [ ] Implement frontend handlers for Preferences tab
+- [ ] Test all save functions across all tabs
