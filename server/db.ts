@@ -345,6 +345,18 @@ async function getProposalCards(userId: number) {
     respondedAt: p.respondedAt?.getTime() ?? null,
     completedAt: p.completedAt?.getTime() ?? null,
     createdAt: p.createdAt.getTime(),
+    updatedAt: p.respondedAt?.getTime() ?? p.createdAt.getTime(),
+    direction: p.requesterId === userId ? 'outgoing' : 'incoming',
+    canReview: p.status === 'completed',
+    canRespond: p.status === 'pending' && p.recipientId === userId,
+    offeredListings: [],
+    counterpart: null,
+    requesterInventory: [],
+    canAcceptSelection: p.status === 'pending' && p.recipientId === userId,
+    contactDetails: null,
+    messages: [],
+    canCancel: p.status === 'pending',
+    canComplete: p.status === 'accepted',
   }));
 }
 
@@ -624,6 +636,8 @@ export async function toggleWatchlist(userId: number, listingId: number) {
     .where(and(eq(watchlistEntries.userId, userId), eq(watchlistEntries.listingId, listingId)))
     .limit(1);
 
+  const isSaved = !existing[0];
+  
   if (existing[0]) {
     await db
       .delete(watchlistEntries)
@@ -635,7 +649,7 @@ export async function toggleWatchlist(userId: number, listingId: number) {
     });
   }
 
-  return { success: true };
+  return { saved: isSaved };
 }
 
 export async function leaveTradeReview(

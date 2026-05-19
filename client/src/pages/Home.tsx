@@ -1,5 +1,6 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { resolveTradebiliaListingImage } from "@/lib/listingImages";
+import { getTradebiliaCategoryLabel } from "@/lib/tradebilia";
 import { trpc } from "@/lib/trpc";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -665,7 +666,7 @@ export default function Home() {
                                 <SelectValue placeholder="Select a condition" />
                               </SelectTrigger>
                               <SelectContent>
-                                {conditionOptions.filter(option => option.value !== "all").map(option => (
+                                {conditionOptions.map(option => (
                                   <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
                                 ))}
                               </SelectContent>
@@ -711,7 +712,7 @@ export default function Home() {
                           <h4 className="text-2xl font-semibold text-foreground">{listing.title}</h4>
                           <Badge variant="outline" className="rounded-full">{listing.status}</Badge>
                         </div>
-                        <p className="text-sm text-muted-foreground">{listing.categoryLabel} · {listing.conditionLabel}</p>
+                        <p className="text-sm text-muted-foreground">{getTradebiliaCategoryLabel(listing.category)} · {listing.condition}</p>
                         <p className="line-clamp-3 text-sm leading-7 text-muted-foreground">{listing.description}</p>
                       </CardContent>
                     </Card>
@@ -757,7 +758,7 @@ export default function Home() {
                         >
                           <div className="flex items-start justify-between gap-4">
                             <div>
-                              <p className="text-sm font-semibold text-foreground">{proposal.counterpart.displayName} {proposal.direction === "incoming" ? "sent you a trade request" : "received your trade request"}</p>
+                              <p className="text-sm font-semibold text-foreground">{proposal.counterpart?.displayName ?? "Collector"} {proposal.direction === "incoming" ? "sent you a trade request" : "received your trade request"}</p>
                               <p className="mt-1 text-xs uppercase tracking-[0.18em] text-muted-foreground">Trade Proposal #{proposal.id}</p>
                             </div>
                             <div className="text-right text-xs text-muted-foreground">
@@ -783,7 +784,7 @@ export default function Home() {
 
                   <Card className="surface-card overflow-hidden bg-card/90">
                     <CardHeader className="border-b border-border/60 pb-5">
-                      <CardTitle className="text-4xl">{activeProposal ? activeProposal.counterpart.displayName : "Trade detail"}</CardTitle>
+                      <CardTitle className="text-4xl">{activeProposal ? activeProposal.counterpart?.displayName ?? "Collector" : "Trade detail"}</CardTitle>
                       <CardDescription>{activeProposal ? "Review the active request, choose inventory, send responses, and keep the audit trail complete." : "Select a Trade Proposal to inspect its details."}</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6 p-5">
@@ -793,7 +794,7 @@ export default function Home() {
                             <div className="rounded-[1.5rem] border border-border/70 bg-background/70 p-4">
                               <p className="text-sm font-semibold uppercase tracking-[0.18em] text-muted-foreground">Requested listing</p>
                               <p className="mt-3 text-2xl font-semibold text-foreground">{activeProposal.requestedListing?.title}</p>
-                              <p className="mt-1 text-sm text-muted-foreground">{activeProposal.requestedListing?.categoryLabel} · {activeProposal.requestedListing?.conditionLabel}</p>
+                              <p className="mt-1 text-sm text-muted-foreground">{activeProposal.requestedListing ? getTradebiliaCategoryLabel(activeProposal.requestedListing.category) : ''} · {activeProposal.requestedListing?.condition}</p>
                             </div>
                             <div className="rounded-[1.5rem] border border-border/70 bg-background/70 p-4">
                               <div className="flex items-center justify-between gap-3">
@@ -809,14 +810,14 @@ export default function Home() {
                               <div className="flex items-center justify-between gap-3">
                                 <div>
                                   <p className="text-sm font-semibold uppercase tracking-[0.18em] text-muted-foreground">Requestor's items</p>
-                                  <p className="mt-1 text-sm text-muted-foreground">Browse {activeProposal.counterpart.displayName}'s inventory and select the items you want to include in your response.</p>
+                                  <p className="mt-1 text-sm text-muted-foreground">Browse {activeProposal.counterpart?.displayName ?? "the collector"}'s inventory and select the items you want to include in your response.</p>
                                 </div>
                                 <div className="flex items-center gap-2 text-xs text-emerald-600">
                                   <Clock3 className="h-4 w-4" /> Online now
                                 </div>
                               </div>
                               <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                                {activeProposal.requesterInventory.map(item => {
+                                {activeProposal.requesterInventory.map((item: any) => {
                                   const checked = (selectionDrafts[activeProposal.id]?.offeredListingIds ?? []).includes(item.id);
                                   return (
                                     <label key={item.id} className={`rounded-[1.25rem] border p-4 transition ${checked ? "border-primary bg-primary/8 shadow-[0_12px_30px_-24px_rgba(80,40,220,0.8)]" : "border-border/70 bg-card"}`}>
@@ -824,7 +825,7 @@ export default function Home() {
                                         <input type="checkbox" checked={checked} onChange={event => toggleSelectionItem(activeProposal.id, item.id, event.target.checked)} className="mt-1 h-4 w-4" />
                                         <div>
                                           <p className="font-semibold text-foreground">{item.title}</p>
-                                          <p className="mt-1 text-sm text-muted-foreground">{item.categoryLabel} · {item.conditionLabel}</p>
+                                          <p className="mt-1 text-sm text-muted-foreground">{getTradebiliaCategoryLabel(item.category)} · {item.condition}</p>
                                         </div>
                                       </div>
                                     </label>
@@ -868,7 +869,7 @@ export default function Home() {
                                 <div className="rounded-[1.25rem] border border-border/70 bg-card p-4">
                                   <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Their items</p>
                                   <div className="mt-2 space-y-2">
-                                    {activeProposal.offeredListings.map(item => (
+                                    {activeProposal.offeredListings.map((item: any) => (
                                       <p key={item.id} className="text-sm font-semibold text-foreground">{item.title}</p>
                                     ))}
                                   </div>
@@ -900,7 +901,7 @@ export default function Home() {
                             </div>
                             <ScrollArea className="mt-4 h-56 rounded-[1.5rem] border border-border/70 bg-card p-4">
                               <div className="space-y-3">
-                                {activeProposal.messages.map(message => (
+                                {activeProposal.messages.map((message: any) => (
                                   <div key={message.id} className="rounded-2xl bg-background/80 p-3">
                                     <div className="flex items-center justify-between gap-3 text-xs text-muted-foreground">
                                       <span className="font-semibold text-foreground">{message.senderDisplayName}</span>
@@ -950,7 +951,7 @@ export default function Home() {
                         </div>
                         <div className="space-y-3 p-5">
                           <h4 className="text-2xl font-semibold text-foreground">{listing.title}</h4>
-                          <p className="text-sm text-muted-foreground">{listing.categoryLabel} · {listing.conditionLabel}</p>
+                          <p className="text-sm text-muted-foreground">{getTradebiliaCategoryLabel(listing.category)} · {listing.condition}</p>
                           <Button variant="outline" className="rounded-full" onClick={() => watchlistMutation.mutate({ listingId: listing.id })}>Remove from Watchlist</Button>
                         </div>
                       </div>
