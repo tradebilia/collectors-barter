@@ -1097,6 +1097,8 @@ export async function getDashboardData(user: Pick<User, "id" | "name">) {
   return {
     profile: {
       displayName: profileRows[0]?.displayName ?? user.name ?? `Collector ${user.id}`,
+      firstName: profileRows[0]?.firstName ?? "",
+      lastName: profileRows[0]?.lastName ?? "",
       avatarUrl: profileRows[0]?.avatarUrl ?? null,
       bio: profileRows[0]?.bio ?? "Open to thoughtful, collector-to-collector trades.",
       contactFullName: profileRows[0]?.contactFullName ?? user.name ?? "",
