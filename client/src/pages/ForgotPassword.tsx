@@ -1,12 +1,12 @@
 import { useState } from "react";
-import { useNavigate } from "wouter";
+import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertCircle, CheckCircle2 } from "lucide-react";
 
 export function ForgotPassword() {
-  const navigate = useNavigate();
+  const [, setLocation] = useLocation();
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>();
@@ -21,7 +21,7 @@ export function ForgotPassword() {
       // Call tRPC to send password reset email
       // await trpc.auth.sendPasswordResetEmail.mutate({ email });
       setSuccess(true);
-      setTimeout(() => navigate("/"), 3000);
+      setTimeout(() => setLocation("/"), 3000);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to send reset email");
     } finally {
@@ -82,7 +82,7 @@ export function ForgotPassword() {
               <Button
                 type="button"
                 variant="link"
-                onClick={() => navigate("/signin")}
+                onClick={() => setLocation("/signin")}
                 className="w-full"
               >
                 Back to Sign In

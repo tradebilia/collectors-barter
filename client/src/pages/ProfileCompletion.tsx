@@ -1,12 +1,12 @@
 import { useState } from "react";
-import { useNavigate } from "wouter";
+import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertCircle, CheckCircle2 } from "lucide-react";
 
 export function ProfileCompletion() {
-  const navigate = useNavigate();
+  const [, setLocation] = useLocation();
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>();
@@ -37,7 +37,7 @@ export function ProfileCompletion() {
       // Call tRPC to update user profile
       // await trpc.user.updateProfile.mutate(formData);
       setStep(4);
-      setTimeout(() => navigate("/inventory"), 2000);
+      setTimeout(() => setLocation("/inventory"), 2000);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to complete profile");
     } finally {
@@ -160,7 +160,7 @@ export function ProfileCompletion() {
               <Button
                 type="button"
                 variant="link"
-                onClick={() => navigate("/inventory")}
+                onClick={() => setLocation("/inventory")}
                 className="w-full"
               >
                 Skip for now

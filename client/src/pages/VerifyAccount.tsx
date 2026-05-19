@@ -1,13 +1,12 @@
 import { useState } from "react";
-import { useLocation, useNavigate } from "wouter";
+import { useLocation } from "wouter";
 import { OtpVerification } from "@/components/OtpVerification";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertCircle } from "lucide-react";
 
 export function VerifyAccount() {
-  const [location] = useLocation();
-  const navigate = useNavigate();
+  const [location, setLocation] = useLocation();
   const [verificationStep, setVerificationStep] = useState<"email" | "phone" | "complete">("email");
   const [error, setError] = useState<string>();
   const [isLoading, setIsLoading] = useState(false);
@@ -39,7 +38,7 @@ export function VerifyAccount() {
       // await trpc.auth.verifyPhoneOtp.mutate({ phone, otp });
       setVerificationStep("complete");
       // Redirect to welcome page after 2 seconds
-      setTimeout(() => navigate("/welcome?new=true"), 2000);
+      setTimeout(() => setLocation("/welcome?new=true"), 2000);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Verification failed");
     } finally {
