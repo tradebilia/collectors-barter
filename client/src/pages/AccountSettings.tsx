@@ -127,12 +127,10 @@ export default function AccountSettings() {
   useEffect(() => {
     if (dashboardQuery.data?.profile) {
       const profile = dashboardQuery.data.profile;
-      const fullName = profile.contactFullName || user?.name || "";
-      const [first, last] = fullName.split(" ");
 
       setIdentityInfo({
-        firstName: first || "",
-        lastName: last || "",
+        firstName: (profile as any).firstName || "",
+        lastName: (profile as any).lastName || "",
         email: user?.email || "",
         street: profile.contactAddress || "",
         zipCode: "",
