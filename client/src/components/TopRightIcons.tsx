@@ -4,6 +4,17 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 
+function initials(name: string) {
+  return (
+    name
+      .split(" ")
+      .filter(Boolean)
+      .slice(0, 2)
+      .map(part => part[0]?.toUpperCase() ?? "")
+      .join("") || "TB"
+  );
+}
+
 interface TopRightIconsProps {
   className?: string;
   iconColor?: string;
@@ -28,8 +39,8 @@ export function TopRightIcons({ className = "flex items-center gap-3 md:gap-4", 
       <Link href={`/profile/${user.id}`} title="Your Profile" className="transition hover:opacity-80">
         <Avatar className="h-6 w-6 border border-white/30 cursor-pointer hover:border-white/60 transition">
           <AvatarImage src={undefined} alt={user.name ?? "User"} />
-          <AvatarFallback className="bg-[#7f31ff] text-white text-[10px]">
-            {(user.name ?? "U").charAt(0).toUpperCase()}
+          <AvatarFallback className="bg-[#7f31ff] text-white text-[10px] font-semibold">
+            {initials(user.name ?? "User")}
           </AvatarFallback>
         </Avatar>
       </Link>

@@ -236,6 +236,11 @@ export default function AccountSettings() {
     }
   };
 
+  const handleUploadClick = () => {
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fileInput?.click();
+  };
+
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
@@ -420,13 +425,13 @@ export default function AccountSettings() {
                         <AvatarImage src={profileForm.avatarPreview} />
                         <AvatarFallback className="text-2xl">{initials(identityInfo.firstName + " " + identityInfo.lastName)}</AvatarFallback>
                       </Avatar>
-                      <label className="cursor-pointer">
+                      <div className="cursor-pointer">
                         <div
                           onDragOver={handleDragOver}
                           onDrop={handleDrop}
                           className="rounded-lg border-2 border-dashed border-slate-300 p-4 text-center hover:border-slate-400 transition-colors"
                         >
-                          <Button type="button" variant="outline" className="rounded-lg w-full">
+                          <Button type="button" variant="outline" className="rounded-lg w-full" onClick={handleUploadClick}>
                             <Upload className="mr-2 h-4 w-4" />
                             Upload Photo or Drag & Drop
                           </Button>
@@ -437,7 +442,7 @@ export default function AccountSettings() {
                           className="hidden"
                           onChange={handleFileInputChange}
                         />
-                      </label>
+                      </div>
                       <p className="text-xs text-slate-600 text-center">JPG, PNG or GIF. Max 5MB.</p>
                     </div>
                   </div>
