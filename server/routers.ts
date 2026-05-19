@@ -44,8 +44,8 @@ const uploadedImageSchema = z.object({
 });
 
 const listingFiltersSchema = z.object({
-  category: z.enum(["all", ...collectibleCategories]).optional(),
-  condition: z.enum(["all", ...itemConditions]).optional(),
+  category: z.enum(collectibleCategories).optional(),
+  condition: z.enum(itemConditions).optional(),
   keyword: z.string().max(100).optional(),
 });
 
@@ -188,16 +188,16 @@ export const appRouter = router({
       .input(
         z.object({
           query: z.string().max(100),
-          category: z.enum(["all", ...collectibleCategories]).optional(),
-          condition: z.enum(["all", ...itemConditions]).optional(),
+          category: z.enum(collectibleCategories).optional(),
+          condition: z.enum(itemConditions).optional(),
         }),
       )
       .query(({ ctx, input }) => {
         return getMarketplaceFeed(
           {
             keyword: input.query,
-            category: input.category === "all" ? undefined : input.category,
-            condition: input.condition === "all" ? undefined : input.condition,
+            category: input.category,
+            condition: input.condition,
           },
           ctx.user?.id ?? null,
         );
@@ -287,9 +287,8 @@ export const appRouter = router({
       )
       .mutation(async ({ ctx, input }) => {
         const db = await requireDb();
-        const user = await db.query.users.findFirst({
-          where: eq(users.id, ctx.user.id),
-        });
+        const users_result = await db.select().from(users).where(eq(users.id, ctx.user.id)).limit(1);
+        const user = users_result[0];
         if (!user || !user.passwordHash) {
           throw new TRPCError({ code: "UNAUTHORIZED" });
         }
@@ -595,7 +594,7 @@ export const appRouter = router({
         }),
       )
       .mutation(({ ctx, input }) => {
-        return deleteDraft(input.draftId, ctx.user.id);
+        return deleteDraft({ id: ctx.user.id, name: ctx.user.name }, { draftId: input.draftId });
       }),
   }),
 });

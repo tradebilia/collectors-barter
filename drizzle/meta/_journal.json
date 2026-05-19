@@ -127,6 +127,13 @@
       "when": 1779192246433,
       "tag": "0017_lush_ink",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "5",
+      "when": 1779195610297,
+      "tag": "0018_sturdy_silver_sable",
+      "breakpoints": true
     }
   ]
 }

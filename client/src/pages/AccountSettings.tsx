@@ -89,7 +89,14 @@ export default function AccountSettings() {
   const [connectedAccounts, setConnectedAccounts] = useState<AccountSource[]>([]);
 
   // Communications State
-  const [communicationPrefs, setCommunicationPrefs] = useState({
+  const [communicationPrefs, setCommunicationPrefs] = useState<{
+    emailFrequency: "never" | "daily" | "weekly" | "monthly";
+    tradeNotifications: boolean;
+    messageNotifications: boolean;
+    feedbackNotifications: boolean;
+    systemNotifications: boolean;
+    marketingEmails: boolean;
+  }>({
     emailFrequency: "daily",
     tradeNotifications: true,
     messageNotifications: true,
@@ -99,8 +106,13 @@ export default function AccountSettings() {
   });
 
   // Preferences State
-  const [preferences, setPreferences] = useState({
-    preferredCategories: [] as string[],
+  const [preferences, setPreferences] = useState<{
+    preferredCategories: ("comics" | "sports_cards" | "vintage_toys" | "video_games" | "stamps" | "coins" | "pokemon" | "movies" | "autographs" | "disney_pins")[];
+    showProfile: boolean;
+    hideInventoryValue: boolean;
+    receiveContactRequests: boolean;
+  }>({
+    preferredCategories: [],
     showProfile: true,
     hideInventoryValue: false,
     receiveContactRequests: true,
@@ -343,7 +355,11 @@ export default function AccountSettings() {
   const handleSavePreferences = async () => {
     const toastId = toast.loading("Saving preferences...");
     try {
-      await savePreferencesMutation.mutateAsync(preferences);
+      const prefsToSave = {
+        ...preferences,
+        preferredCategories: preferences.preferredCategories,
+      };
+      await savePreferencesMutation.mutateAsync(prefsToSave);
       toast.dismiss(toastId);
       toast.success("Preferences saved successfully!");
     } catch (error: any) {

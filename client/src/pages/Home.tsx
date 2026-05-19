@@ -137,8 +137,8 @@ export default function Home() {
   });
 
   const [keyword, setKeyword] = useState("");
-  const [category, setCategory] = useState<(typeof categoryOptions)[number]["value"] | "all">("all");
-  const [condition, setCondition] = useState<(typeof conditionOptions)[number]["value"]>("all");
+  const [category, setCategory] = useState<(typeof categoryOptions)[number]["value"] | undefined>(undefined);
+  const [condition, setCondition] = useState<(typeof conditionOptions)[number]["value"] | undefined>(undefined);
   const [listingDraft, setListingDraft] = useState<{
     title: string;
     category: ListingCategory;

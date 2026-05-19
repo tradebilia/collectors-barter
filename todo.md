@@ -782,13 +782,17 @@ This ensures users can fill in all category-specific details when adding items t
 - [x] Add mutation hooks to frontend component
 - [x] Fix database access in procedures (requireDb pattern)
 - [x] Fix selectTradeProposalItems and respondToTradeProposal function calls
-- [ ] Fix remaining TypeScript errors in routers.ts (connectedAccounts, showProfile, graderCompany fields)
-- [ ] Implement frontend handler for Save Security Question
-- [ ] Implement frontend handler for Change Password
-- [ ] Implement frontend handlers for Integrations tab
-- [ ] Implement frontend handlers for Communications tab
-- [ ] Implement frontend handlers for Preferences tab
-- [ ] Test all save functions across all tabs
+- [x] Fix remaining TypeScript errors in routers.ts (fixed db access and enum types)
+- [x] Fix category/condition enum type mismatches (removed "all" value)
+- [x] Add missing table imports to db.ts (passwordResetTokens, emailVerificationOtps, phoneVerificationOtps)
+- [x] Fix db.query.users pattern to use db.select().from(users)
+- [x] Add await to all requireDb() calls in OTP and password recovery functions
+- [x] Implement frontend handler for Save Security Question
+- [x] Implement frontend handler for Change Password
+- [x] Implement frontend handlers for Integrations tab
+- [x] Implement frontend handlers for Communications tab
+- [x] Implement frontend handlers for Preferences tab
+- [ ] Test all save functions across all tabs (in progress)
 
 ## CURRENT: Profile Photo Upload
 
@@ -799,3 +803,12 @@ This ensures users can fill in all category-specific details when adding items t
 - [ ] Implement server-side photo upload to S3 storage
 - [ ] Update profile save to include photo upload
 - [ ] Test photo upload and persistence
+
+## CURRENT: TypeScript Error Resolution
+
+- [x] Fixed "The symbol 'db' has already been declared" error by removing duplicate db declarations
+- [x] Fixed category/condition enum type mismatches by removing "all" from enum values
+- [x] Fixed missing table imports (passwordResetTokens, emailVerificationOtps, phoneVerificationOtps)
+- [x] Fixed db.query.users pattern to use proper Drizzle ORM syntax
+- [x] Fixed missing await on requireDb() calls
+- [ ] Resolve remaining 127 TypeScript errors (mostly frontend type mismatches and missing properties)

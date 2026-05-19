@@ -5,9 +5,12 @@ import type { InsertUser, User } from "../drizzle/schema";
 import {
   collectibleCategories,
   draftListings,
+  emailVerificationOtps,
   itemConditions,
   listingPhotos,
   listings,
+  passwordResetTokens,
+  phoneVerificationOtps,
   tradeMessages,
   tradeProposalItems,
   tradeProposals,
@@ -55,7 +58,7 @@ type AvatarUploadInput = {
   contentBase64: string;
 };
 
-export async function requireDb() {
+export async function requireDb(): Promise<ReturnType<typeof drizzle>> {
   if (!_db) {
     _db = drizzle(ENV.databaseUrl);
   }
@@ -215,10 +218,10 @@ export async function getMarketplaceFeed(
   }
 
   const whereClauses = [eq(listings.status, "active")];
-  if (filters.category && filters.category !== "all") {
+  if (filters.category) {
     whereClauses.push(eq(listings.category, filters.category));
   }
-  if (filters.condition && filters.condition !== "all") {
+  if (filters.condition) {
     whereClauses.push(eq(listings.condition, filters.condition));
   }
   const keyword = filters.keyword?.trim();
@@ -1311,7 +1314,7 @@ export async function createUser(input: {
 
 // Password Recovery Functions
 export async function createPasswordResetToken(userId: string, token: string, expiresAt: Date) {
-  const db = requireDb();
+  const db = await requireDb();
   return db.insert(passwordResetTokens).values({
     userId,
     token,
@@ -1320,25 +1323,25 @@ export async function createPasswordResetToken(userId: string, token: string, ex
 }
 
 export async function getPasswordResetToken(token: string) {
-  const db = requireDb();
+  const db = await requireDb();
   const result = await db.select().from(passwordResetTokens).where(eq(passwordResetTokens.token, token)).limit(1);
   return result[0] || null;
 }
 
 export async function deletePasswordResetToken(token: string) {
-  const db = requireDb();
+  const db = await requireDb();
   return db.delete(passwordResetTokens).where(eq(passwordResetTokens.token, token));
 }
 
 export async function updateUserPassword(userId: string, passwordHash: string) {
-  const db = requireDb();
+  const db = await requireDb();
   return db.update(users).set({ passwordHash }).where(eq(users.id, userId));
 }
 
 
 // OTP Verification Functions
 export async function createEmailOtp(email: string, otp: string, expiresAt: Date) {
-  const db = requireDb();
+  const db = await requireDb();
   // Delete existing OTPs for this email
   await db.delete(emailVerificationOtps).where(eq(emailVerificationOtps.email, email));
   return db.insert(emailVerificationOtps).values({
@@ -1349,7 +1352,7 @@ export async function createEmailOtp(email: string, otp: string, expiresAt: Date
 }
 
 export async function createPhoneOtp(phone: string, otp: string, expiresAt: Date) {
-  const db = requireDb();
+  const db = await requireDb();
   // Delete existing OTPs for this phone
   await db.delete(phoneVerificationOtps).where(eq(phoneVerificationOtps.phone, phone));
   return db.insert(phoneVerificationOtps).values({
@@ -1360,33 +1363,33 @@ export async function createPhoneOtp(phone: string, otp: string, expiresAt: Date
 }
 
 export async function getEmailOtp(email: string) {
-  const db = requireDb();
+  const db = await requireDb();
   const result = await db.select().from(emailVerificationOtps).where(eq(emailVerificationOtps.email, email)).limit(1);
   return result[0] || null;
 }
 
 export async function getPhoneOtp(phone: string) {
-  const db = requireDb();
+  const db = await requireDb();
   const result = await db.select().from(phoneVerificationOtps).where(eq(phoneVerificationOtps.phone, phone)).limit(1);
   return result[0] || null;
 }
 
 export async function deleteEmailOtp(email: string) {
-  const db = requireDb();
+  const db = await requireDb();
   return db.delete(emailVerificationOtps).where(eq(emailVerificationOtps.email, email));
 }
 
 export async function deletePhoneOtp(phone: string) {
-  const db = requireDb();
+  const db = await requireDb();
   return db.delete(phoneVerificationOtps).where(eq(phoneVerificationOtps.phone, phone));
 }
 
 export async function incrementEmailOtpAttempts(email: string) {
-  const db = requireDb();
+  const db = await requireDb();
   return db.update(emailVerificationOtps).set({ attempts: sql`attempts + 1` }).where(eq(emailVerificationOtps.email, email));
 }
 
 export async function incrementPhoneOtpAttempts(phone: string) {
-  const db = requireDb();
+  const db = await requireDb();
   return db.update(phoneVerificationOtps).set({ attempts: sql`attempts + 1` }).where(eq(phoneVerificationOtps.phone, phone));
 }
