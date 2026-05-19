@@ -752,3 +752,16 @@ This ensures users can fill in all category-specific details when adding items t
 - [ ] Integrate Twilio for SMS OTP delivery (requires API key)
 - [x] Implement search functionality with real-time filtering
 - [ ] Test complete authentication and search flows
+
+
+## CURRENT: Remove OAuth & Complete Custom Auth
+
+- [x] Create custom authentication module (customAuth.ts) with JWT token management
+- [x] Implement custom JWT session token creation/verification
+- [x] Update context.ts to validate custom auth users
+- [x] Update sign-in/logout procedures to use custom auth
+- [ ] Remove Manus OAuth code from SDK (sdk.ts, oauth.ts)
+- [ ] Test custom authentication end-to-end
+- [ ] Verify session persistence works correctly
+- [ ] Test sign-in/sign-out flow
+- [ ] Test protected routes redirect properly

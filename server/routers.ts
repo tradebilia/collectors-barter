@@ -139,19 +139,22 @@ export const appRouter = router({
           throw new Error("Invalid username or password");
         }
 
-        const sessionToken = await sdk.createSessionToken(String(user.id), {
-          name: user.displayName || user.username || "",
-          expiresInMs: ONE_YEAR_MS,
-        });
+        const { customAuth } = await import("./_core/customAuth");
+        const sessionToken = await customAuth.createSessionToken(
+          user.id,
+          user.username || "",
+          user.role || "user",
+          { expiresInMs: ONE_YEAR_MS }
+        );
 
         const cookieOptions = getSessionCookieOptions(ctx.req);
-        ctx.res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
+        ctx.res.cookie("session", sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
 
         return { success: true, userId: user.id };
       }),
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
-      ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
+      ctx.res.clearCookie("session", { ...cookieOptions, maxAge: -1 });
       return {
         success: true,
       } as const;
