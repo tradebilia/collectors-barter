@@ -18,6 +18,7 @@ export function SignInModal({ isOpen, onClose }: SignInModalProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [, navigate] = useLocation();
   const queryClient = useQueryClient();
+  const utils = trpc.useUtils();
   const signinMutation = trpc.auth.signin.useMutation();
 
   const handleSignIn = async (e: React.FormEvent) => {
@@ -31,8 +32,8 @@ export function SignInModal({ isOpen, onClose }: SignInModalProps) {
         password,
       });
 
-      // Refresh auth state
-      await queryClient.invalidateQueries({ queryKey: ["auth.me"] });
+      // Refresh auth state immediately using tRPC utils
+      await utils.auth.me.refetch();
       
       setUsername("");
       setPassword("");

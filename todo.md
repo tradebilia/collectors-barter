@@ -768,3 +768,4 @@ This ensures users can fill in all category-specific details when adding items t
 - [x] Fix JWT_SECRET environment variable configuration
 - [x] Add getUserById function to db.ts for session retrieval
 - [x] Verify all TypeScript imports are correct
+- [x] Fix UI to update immediately after sign-in (no page refresh needed)

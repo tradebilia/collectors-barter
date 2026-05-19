@@ -135,7 +135,8 @@ export const appRouter = router({
           throw new Error("Invalid username or password");
         }
 
-        if (!verifyPassword(input.password, user.passwordHash)) {
+        const passwordMatch = verifyPassword(input.password, user.passwordHash);
+        if (!passwordMatch) {
           throw new Error("Invalid username or password");
         }
 
