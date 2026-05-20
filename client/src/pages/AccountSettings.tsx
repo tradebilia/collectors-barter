@@ -540,6 +540,18 @@ export default function AccountSettings() {
                       </>
                     )}
                   </Button>
+
+                  {/* Danger Zone */}
+                  <div className="border-t border-slate-200 pt-4">
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                      <h3 className="font-semibold text-red-900 mb-2">Danger Zone</h3>
+                      <Button variant="destructive" className="rounded-lg">
+                        Delete Account
+                      </Button>
+                      <p className="text-xs text-red-800 mt-2">This action cannot be undone. All your data will be permanently deleted.</p>
+                    </div>
+                  </div>
+
                 </CardContent>
               </Card>
             </TabsContent>
@@ -659,16 +671,7 @@ export default function AccountSettings() {
                     </Button>
                   </div>
 
-                  {/* Danger Zone */}
-                  <div className="border-t border-slate-200 pt-4">
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                      <h3 className="font-semibold text-red-900 mb-2">Danger Zone</h3>
-                      <Button variant="destructive" className="rounded-lg">
-                        Delete Account
-                      </Button>
-                      <p className="text-xs text-red-800 mt-2">This action cannot be undone. All your data will be permanently deleted.</p>
-                    </div>
-                  </div>
+
                 </CardContent>
               </Card>
             </TabsContent>
