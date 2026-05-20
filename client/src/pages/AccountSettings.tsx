@@ -519,71 +519,50 @@ export default function AccountSettings() {
                   </div>
 
                   <div>
-                    <Label htmlFor="street">Street Address</Label>
-                    <Input
-                      id="street"
-                      placeholder="Street address"
-                      value={identityInfo.street}
-                      onChange={(e) => setIdentityInfo(prev => ({ ...prev, street: e.target.value }))}
-                      disabled={user?.role !== 'admin'}
-                      className={`mt-2 ${user?.role !== 'admin' ? 'bg-slate-100 text-slate-500' : ''}`}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="town">Town or City</Label>
-                    <Input
-                      id="town"
-                      placeholder="Town or city"
-                      value={identityInfo.town}
-                      onChange={(e) => setIdentityInfo(prev => ({ ...prev, town: e.target.value }))}
-                      disabled={user?.role !== 'admin'}
-                      className={`mt-2 ${user?.role !== 'admin' ? 'bg-slate-100 text-slate-500' : ''}`}
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="state">State</Label>
+                    <Label>Address</Label>
+                    <div className="grid grid-cols-2 gap-4">
                       <Input
-                        id="state"
+                        placeholder="Street address"
+                        value={identityInfo.street}
+                        onChange={(e) => setIdentityInfo(prev => ({ ...prev, street: e.target.value }))}
+                        disabled={user?.role !== 'admin'}
+                        className={user?.role !== 'admin' ? 'bg-slate-100 text-slate-500' : ''}
+                      />
+                      <Input
+                        placeholder="Town or city"
+                        value={identityInfo.town}
+                        onChange={(e) => setIdentityInfo(prev => ({ ...prev, town: e.target.value }))}
+                        disabled={user?.role !== 'admin'}
+                        className={user?.role !== 'admin' ? 'bg-slate-100 text-slate-500' : ''}
+                      />
+                      <Input
                         placeholder="State"
                         value={identityInfo.state}
                         onChange={(e) => setIdentityInfo(prev => ({ ...prev, state: e.target.value }))}
                         disabled={user?.role !== 'admin'}
-                        className={`mt-2 ${user?.role !== 'admin' ? 'bg-slate-100 text-slate-500' : ''}`}
+                        className={user?.role !== 'admin' ? 'bg-slate-100 text-slate-500' : ''}
                       />
-                    </div>
-                    <div>
-                      <Label htmlFor="zipCode">Zip Code</Label>
                       <Input
-                        id="zipCode"
                         placeholder="Zip code"
                         value={identityInfo.zipCode}
                         onChange={(e) => setIdentityInfo(prev => ({ ...prev, zipCode: e.target.value }))}
                         disabled={user?.role !== 'admin'}
-                        className={`mt-2 ${user?.role !== 'admin' ? 'bg-slate-100 text-slate-500' : ''}`}
+                        className={user?.role !== 'admin' ? 'bg-slate-100 text-slate-500' : ''}
                       />
                     </div>
-                  </div>
-                  <div>
-                    <Label htmlFor="country">Country</Label>
                     <Input
-                      id="country"
                       placeholder="Country"
                       value={identityInfo.country}
                       onChange={(e) => setIdentityInfo(prev => ({ ...prev, country: e.target.value }))}
                       disabled={user?.role !== 'admin'}
-                      className={`mt-2 ${user?.role !== 'admin' ? 'bg-slate-100 text-slate-500' : ''}`}
+                      className={`mt-4 ${user?.role !== 'admin' ? 'bg-slate-100 text-slate-500' : ''}`}
                     />
-                  </div>
-                  <div>
-                    <Label htmlFor="phoneNumber">Phone Number</Label>
                     <Input
-                      id="phoneNumber"
                       placeholder="Phone number"
                       value={identityInfo.phoneNumber}
                       onChange={(e) => setIdentityInfo(prev => ({ ...prev, phoneNumber: e.target.value }))}
                       disabled={user?.role !== 'admin'}
-                      className={`mt-2 ${user?.role !== 'admin' ? 'bg-slate-100 text-slate-500' : ''}`}
+                      className={`mt-4 ${user?.role !== 'admin' ? 'bg-slate-100 text-slate-500' : ''}`}
                     />
                   </div>
                 </div>
