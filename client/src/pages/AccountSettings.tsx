@@ -116,9 +116,11 @@ export default function AccountSettings() {
     lastName: "",
     email: "",
     street: "",
+    town: "",
     zipCode: "",
     state: "",
     country: "",
+    phoneNumber: "",
     isMerchant: false,
     storeName: "",
   });
@@ -133,9 +135,11 @@ export default function AccountSettings() {
         lastName: (profile as any).lastName || "",
         email: user?.email || "",
         street: profile.contactAddress || "",
-        zipCode: "",
-        state: "",
-        country: "",
+        town: (profile as any).contactTown || "",
+        zipCode: (profile as any).contactZipCode || "",
+        state: (profile as any).contactState || "",
+        country: (profile as any).contactCountry || "",
+        phoneNumber: profile.contactPhone || "",
         isMerchant: false,
         storeName: "",
       });
@@ -259,9 +263,11 @@ export default function AccountSettings() {
         payload.lastName = identityInfo.lastName;
         payload.contactEmail = identityInfo.email;
         payload.contactAddress = identityInfo.street;
+        payload.contactTown = identityInfo.town;
         payload.contactZipCode = identityInfo.zipCode;
         payload.contactState = identityInfo.state;
         payload.contactCountry = identityInfo.country;
+        payload.contactPhone = identityInfo.phoneNumber;
       }
       await saveProfileMutation.mutateAsync(payload);
       console.log("[AccountSettings] Profile saved successfully");
@@ -498,12 +504,12 @@ export default function AccountSettings() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label>Zip Code</Label>
+                        <Label>Town/City</Label>
                         <Input 
-                          value={identityInfo.zipCode} 
-                          onChange={(e) => user?.role === 'admin' && setIdentityInfo(prev => ({ ...prev, zipCode: e.target.value }))}
+                          value={identityInfo.town} 
+                          onChange={(e) => user?.role === 'admin' && setIdentityInfo(prev => ({ ...prev, town: e.target.value }))}
                           disabled={user?.role !== 'admin'}
-                          placeholder="Zip code"
+                          placeholder="Town or city"
                           className={user?.role === 'admin' ? 'rounded-lg border-slate-200' : 'bg-slate-100 rounded-lg border-slate-200'} 
                         />
                       </div>
@@ -514,6 +520,26 @@ export default function AccountSettings() {
                           onChange={(e) => user?.role === 'admin' && setIdentityInfo(prev => ({ ...prev, state: e.target.value }))}
                           disabled={user?.role !== 'admin'}
                           placeholder="State"
+                          className={user?.role === 'admin' ? 'rounded-lg border-slate-200' : 'bg-slate-100 rounded-lg border-slate-200'} 
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Zip Code</Label>
+                        <Input 
+                          value={identityInfo.zipCode} 
+                          onChange={(e) => user?.role === 'admin' && setIdentityInfo(prev => ({ ...prev, zipCode: e.target.value }))}
+                          disabled={user?.role !== 'admin'}
+                          placeholder="Zip code"
+                          className={user?.role === 'admin' ? 'rounded-lg border-slate-200' : 'bg-slate-100 rounded-lg border-slate-200'} 
+                        />
+                      </div>
+                      <div className="col-span-2 space-y-2">
+                        <Label>Phone Number</Label>
+                        <Input 
+                          value={identityInfo.phoneNumber} 
+                          onChange={(e) => user?.role === 'admin' && setIdentityInfo(prev => ({ ...prev, phoneNumber: e.target.value }))}
+                          disabled={user?.role !== 'admin'}
+                          placeholder="Phone number"
                           className={user?.role === 'admin' ? 'rounded-lg border-slate-200' : 'bg-slate-100 rounded-lg border-slate-200'} 
                         />
                       </div>
