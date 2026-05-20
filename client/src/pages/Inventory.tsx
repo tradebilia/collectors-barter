@@ -20,13 +20,10 @@ import { getLoginUrl } from "@/const";
 
 import { resolveTradebiliaListingImage } from "@/lib/listingImages";
 import { trpc } from "@/lib/trpc";
-import { getTradebiliaCategoryLabel } from "@/lib/tradebilia";
-import { Download, Loader2, Menu, MessageSquareText, Pencil, Plus, Search, Share2, Trash2, Eye, EyeOff } from "lucide-react";
-import { TopRightIcons } from "@/components/TopRightIcons";
-import { useMemo, useState, useCallback } from "react";
+import { Download, Loader2, Menu, MessageSquareText, Pencil, Plus, Search, Share2, Trash2 } from "lucide-react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Link } from "wouter";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const TRADEBILIA_LOGO_URL = "/manus-storage/tradebilia_final_spin_fixed(1)_4a57dd7d.svg";
 
@@ -67,186 +64,27 @@ export default function Inventory() {
   const [maxValue, setMaxValue] = useState("");
   const [status, setStatus] = useState("all");
   const [dateRange, setDateRange] = useState("all");
-  const [showDrafts, setShowDrafts] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [listingToDelete, setListingToDelete] = useState<number | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
-  const [togglingId, setTogglingId] = useState<number | null>(null);
-  const [bulkUpdatingStatus, setBulkUpdatingStatus] = useState(false);
-  const [undoData, setUndoData] = useState<{ deletedListings: any[]; deletedPhotos: any[]; expiresAt: number } | null>(null);
-  const [undoTimer, setUndoTimer] = useState<NodeJS.Timeout | null>(null);
-  const toggleListingStatusMutation = trpc.market.toggleListingStatus.useMutation();
-  const bulkUpdateStatusMutation = trpc.market.bulkUpdateListingStatus.useMutation();
-  const bulkDeleteMutation = trpc.market.bulkDeleteListings.useMutation();
-  const restoreMutation = trpc.market.restoreDeletedListings.useMutation();
 
   const toggleSelectAll = () => {
     if (selectedIds.size === filteredListings.length) {
       setSelectedIds(new Set());
     } else {
-      setSelectedIds(new Set(filteredListings.map((l: any) => l.id)));
+      setSelectedIds(new Set(filteredListings.map(l => l.id)));
     }
   };
 
   const dashboardQuery = trpc.market.dashboard.useQuery(undefined, {
     enabled: isAuthenticated,
   });
-  const getDraftsQuery = trpc.market.getDrafts.useQuery(undefined, {
-    enabled: isAuthenticated && showDrafts,
-  });
-
-  const handleToggleListingStatus = useCallback(
-    async (listingId: number, e: React.MouseEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-      setTogglingId(listingId);
-      try {
-        await toggleListingStatusMutation.mutateAsync({ listingId, isActive: true });
-        await dashboardQuery.refetch();
-        toast.success("Listing status updated");
-      } catch (error) {
-        toast.error("Failed to update listing status");
-      } finally {
-        setTogglingId(null);
-      }
-    },
-    [toggleListingStatusMutation, dashboardQuery],
-  );
-
-  const handleBulkActivate = useCallback(
-    async () => {
-      if (selectedIds.size === 0) return;
-      setBulkUpdatingStatus(true);
-      try {
-        await bulkUpdateStatusMutation.mutateAsync({
-          listingIds: Array.from(selectedIds),
-          newStatus: true,
-        });
-        setSelectedIds(new Set());
-        await dashboardQuery.refetch();
-        toast.success(`${selectedIds.size} item(s) activated`);
-      } catch (error) {
-        toast.error("Failed to activate items");
-      } finally {
-        setBulkUpdatingStatus(false);
-      }
-    },
-    [selectedIds, bulkUpdateStatusMutation, dashboardQuery],
-  );
-
-  const handleBulkNotListed = useCallback(
-    async () => {
-      if (selectedIds.size === 0) return;
-      setBulkUpdatingStatus(true);
-      try {
-        await bulkUpdateStatusMutation.mutateAsync({
-          listingIds: Array.from(selectedIds),
-          newStatus: false,
-        });
-        setSelectedIds(new Set());
-        await dashboardQuery.refetch();
-        toast.success(`${selectedIds.size} item(s) marked as not listed`);
-      } catch (error) {
-        toast.error("Failed to update items");
-      } finally {
-        setBulkUpdatingStatus(false);
-      }
-    },
-    [selectedIds, bulkUpdateStatusMutation, dashboardQuery],
-  );
-
-  const handleBulkDelete = useCallback(
-    async () => {
-      if (selectedIds.size === 0) return;
-      if (!confirm(`Delete ${selectedIds.size} selected item(s)? You can undo within 30 seconds.`)) return;
-      setBulkUpdatingStatus(true);
-      try {
-        const result = await bulkDeleteMutation.mutateAsync({
-          listingIds: Array.from(selectedIds),
-        });
-        
-        const expiresAt = Date.now() + 30000;
-        setUndoData({
-          deletedListings: [],
-          deletedPhotos: [],
-          expiresAt,
-        });
-        
-        if (undoTimer) clearTimeout(undoTimer);
-        const timer = setTimeout(() => {
-          setUndoData(null);
-        }, 30000);
-        setUndoTimer(timer);
-        
-        setSelectedIds(new Set());
-        await dashboardQuery.refetch();
-        toast.success(`${selectedIds.size} item(s) deleted - Undo available for 30 seconds`);
-      } catch (error) {
-        toast.error("Failed to delete items");
-      } finally {
-        setBulkUpdatingStatus(false);
-      }
-    },
-    [selectedIds, bulkDeleteMutation, dashboardQuery, undoTimer],
-  );
-
-  const handleUndo = useCallback(
-    async () => {
-      if (!undoData) return;
-      try {
-        await restoreMutation.mutateAsync({
-          deletedListings: undoData.deletedListings,
-          deletedPhotos: undoData.deletedPhotos,
-        });
-        setUndoData(null);
-        if (undoTimer) clearTimeout(undoTimer);
-        setUndoTimer(null);
-        await dashboardQuery.refetch();
-        toast.success("Items restored successfully");
-      } catch (error) {
-        toast.error("Failed to restore items");
-      }
-    },
-    [undoData, restoreMutation, dashboardQuery, undoTimer],
-  );
 
   const listings = dashboardQuery.data?.ownListings ?? [];
   const profile = dashboardQuery.data?.profile;
 
   const filteredListings = useMemo(() => {
     const normalizedKeyword = keyword.trim().toLowerCase();
-    
-    // If showing drafts, return drafts from database
-    if (showDrafts) {
-      const dbDrafts = getDraftsQuery.data || [];
-      const drafts: any[] = dbDrafts.map((draft: any) => ({
-        id: `draft-${draft.id}`,
-        title: draft.title,
-        category: draft.category,
-        grade: draft.grade,
-        graderCompany: draft.graderCompany,
-        certificationNumber: draft.certificationNumber,
-        estimatedValue: draft.estimatedValue,
-        categoryFields: draft.categoryFields,
-        additionalNotes: draft.additionalNotes,
-        photos: draft.photos || [],
-        status: 'draft',
-        isActive: false,
-        categoryLabel: getTradebiliaCategoryLabel(draft.category),
-        conditionLabel: 'Draft',
-        condition: 'draft',
-        primaryPhotoUrl: draft.photos?.[0]?.previewUrl || null,
-        certificationCompany: draft.graderCompany || null,
-        description: draft.title,
-      }));
-      
-      const filteredDrafts = drafts.filter((draft: any) => {
-        const matchesKeyword = normalizedKeyword.length === 0 || draft.title?.toLowerCase().includes(normalizedKeyword);
-        const matchesCategory = category === 'all' || draft.category === category;
-        return matchesKeyword && matchesCategory;
-      });
-      return filteredDrafts;
-    }
 
     const filtered = listings.filter(listing => {
       const matchesKeyword =
@@ -258,42 +96,18 @@ export default function Inventory() {
       const matchesGrader = graderCompany === "all" || listing.description.toLowerCase().includes(graderCompany.toLowerCase());
       const matchesGradeRange = gradeRange === "all" || listing.description.toLowerCase().includes(gradeRange.toLowerCase());
       const matchesCondition = condition === "all" || listing.condition === condition;
-      const matchesStatus = status === "all" || (status === "listed" ? listing.isActive : !listing.isActive);
+      const matchesStatus = status === "all" || listing.status === status;
       const listingValue = Number(listing.estimatedValue) || 0;
       const matchesMinValue = minValue === "" || listingValue >= Number(minValue);
       const matchesMaxValue = maxValue === "" || listingValue <= Number(maxValue);
-      // Implement date range filtering
-      let matchesDateRange = true;
-      if (dateRange !== "all" && listing.createdAt) {
-        const listingDate = new Date(listing.createdAt);
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        
-        if (dateRange === "today") {
-          const listingDateOnly = new Date(listingDate);
-          listingDateOnly.setHours(0, 0, 0, 0);
-          matchesDateRange = listingDateOnly.getTime() === today.getTime();
-        } else if (dateRange === "week") {
-          const weekAgo = new Date(today);
-          weekAgo.setDate(weekAgo.getDate() - 7);
-          matchesDateRange = listingDate >= weekAgo && listingDate <= today;
-        } else if (dateRange === "month") {
-          const monthAgo = new Date(today);
-          monthAgo.setMonth(monthAgo.getMonth() - 1);
-          matchesDateRange = listingDate >= monthAgo && listingDate <= today;
-        } else if (dateRange === "year") {
-          const yearAgo = new Date(today);
-          yearAgo.setFullYear(yearAgo.getFullYear() - 1);
-          matchesDateRange = listingDate >= yearAgo && listingDate <= today;
-        }
-      }
+      const matchesDateRange = dateRange === "all" || true;
 
       return matchesKeyword && matchesCategory && matchesTradeOnly && matchesGrader && matchesGradeRange && matchesCondition && matchesStatus && matchesMinValue && matchesMaxValue && matchesDateRange;
     });
 
     return [...filtered].sort((a, b) => {
       if (sortBy === "title") return a.title.localeCompare(b.title);
-      if (sortBy === "category") return a.category.localeCompare(b.category);
+      if (sortBy === "category") return a.categoryLabel.localeCompare(b.categoryLabel);
       if (sortBy === "value") {
         const aVal = Number(a.estimatedValue) || 0;
         const bVal = Number(b.estimatedValue) || 0;
@@ -302,10 +116,10 @@ export default function Inventory() {
       if (sortBy === "condition") return a.condition.localeCompare(b.condition);
       return b.id - a.id;
     });
-  }, [category, condition, dateRange, gradeRange, graderCompany, keyword, listings, maxValue, minValue, sortBy, status, tradeOnly, showDrafts]);
+  }, [category, condition, dateRange, gradeRange, graderCompany, keyword, listings, maxValue, minValue, sortBy, status, tradeOnly]);
 
   const exportInventory = () => {
-    const payload = filteredListings.map((listing: any) => ({
+    const payload = filteredListings.map(listing => ({
       title: listing.title,
       category: listing.categoryLabel,
       condition: listing.conditionLabel,
@@ -362,7 +176,17 @@ export default function Inventory() {
             <img src="/manus-storage/tradebilia-longform-no-navy-clean_d2f04453.png" alt="Tradebilia" className="h-14 w-auto object-contain" />
           </div>
           <div className="flex-1"></div>
-          <TopRightIcons className="flex items-center gap-3 md:gap-4 flex-shrink-0" iconColor="text-white/70" />
+          <div className="flex items-center gap-4 flex-shrink-0">
+            <button className="rounded-lg p-2 text-white/70 transition hover:bg-white/10 hover:text-white" title="Messages">
+              <MessageSquareText className="h-5 w-5" />
+            </button>
+            <button className="rounded-lg p-2 text-white/70 transition hover:bg-white/10 hover:text-white" title="Account Settings">
+              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+            </button>
+            <button className="rounded-lg p-2 text-white/70 transition hover:bg-white/10 hover:text-white" title="Notifications">
+              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -524,8 +348,9 @@ export default function Inventory() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Status</SelectItem>
-                      <SelectItem value="listed">Listed</SelectItem>
-                      <SelectItem value="not-listed">Not Listed</SelectItem>
+                      <SelectItem value="active">Active</SelectItem>
+                      <SelectItem value="sold">Sold</SelectItem>
+                      <SelectItem value="pending">Pending</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -552,14 +377,6 @@ export default function Inventory() {
                     <p className="text-xs text-slate-600">Listed for Trade</p>
                   </div>
                   <Switch checked={tradeOnly} onCheckedChange={setTradeOnly} />
-                </div>
-
-                <div className="flex items-center justify-between rounded-xl border border-slate-300 bg-white px-3 py-2">
-                  <div>
-                    <p className="text-xs font-medium text-slate-900">Show Drafts</p>
-                    <p className="text-xs text-slate-600">Unsaved Items</p>
-                  </div>
-                  <Switch checked={showDrafts} onCheckedChange={setShowDrafts} />
                 </div>
 
                 <Button
@@ -594,7 +411,7 @@ export default function Inventory() {
                   </div>
                   <div className="bg-green-50 rounded-lg p-6 border border-green-200 min-w-48">
                     <p className="text-xs font-semibold text-green-600 uppercase">Total Value</p>
-                    <p className="text-2xl font-bold text-green-900 mt-1">${filteredListings.reduce((sum: number, l: any) => sum + (Number(l.estimatedValue) || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                    <p className="text-2xl font-bold text-green-900 mt-1">${filteredListings.reduce((sum, l) => sum + (Number(l.estimatedValue) || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                   </div>
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
@@ -606,23 +423,15 @@ export default function Inventory() {
                     <Download className="mr-2 h-4 w-4" />
                     Export
                   </Button>
-                  <Button className="rounded-lg bg-red-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-red-700 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed" onClick={handleBulkDelete} disabled={selectedIds.size === 0 || bulkUpdatingStatus}>
-                    {bulkUpdatingStatus ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
+                  <Button className="rounded-lg bg-red-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-red-700 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed" onClick={() => {
+                      if (selectedIds.size > 0 && confirm(`Delete ${selectedIds.size} selected item(s)?`)) {
+                        setSelectedIds(new Set());
+                        alert(`Deleting ${selectedIds.size} items...`);
+                      }
+                    }} disabled={selectedIds.size === 0}>
+                      <Trash2 className="mr-2 h-4 w-4" />
                       Delete Selected ({selectedIds.size})
                     </Button>
-                  <Button className="rounded-lg bg-green-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-green-700 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed" onClick={handleBulkActivate} disabled={selectedIds.size === 0 || bulkUpdatingStatus}>
-                    {bulkUpdatingStatus ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Eye className="mr-2 h-4 w-4" />}
-                    Activate ({selectedIds.size})
-                  </Button>
-                  <Button className="rounded-lg bg-orange-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-orange-700 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed" onClick={handleBulkNotListed} disabled={selectedIds.size === 0 || bulkUpdatingStatus}>
-                    {bulkUpdatingStatus ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <EyeOff className="mr-2 h-4 w-4" />}
-                    Not Listed ({selectedIds.size})
-                  </Button>
-                  {undoData && (
-                    <Button className="rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 shadow-sm" onClick={handleUndo} disabled={restoreMutation.isPending}>
-                      Undo ({Math.ceil((undoData.expiresAt - Date.now()) / 1000)}s)
-                    </Button>
-                  )}
                 </div>
               </div>
             </div>
@@ -640,74 +449,37 @@ export default function Inventory() {
                 </div>
 
               </div>
-              <div className="grid gap-3 grid-cols-6">
-              {filteredListings.map((listing: any) => (
-                <Card key={listing.id} className="overflow-hidden border-slate-200 bg-white shadow-sm hover:shadow-lg transition-shadow rounded-lg">
+              <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
+              {filteredListings.map(listing => (
+                <Card key={listing.id} className="overflow-hidden border-slate-200 bg-white shadow-sm hover:shadow-lg transition-shadow rounded-lg relative">
+                  <div className="absolute top-3 left-3 z-10">
+                    <input
+                      type="checkbox"
+                      id={`item-${listing.id}`}
+                      checked={selectedIds.has(listing.id)}
+                      onChange={(e) => {
+                        const newSelected = new Set(selectedIds);
+                        if (e.target.checked) {
+                          newSelected.add(listing.id);
+                        } else {
+                          newSelected.delete(listing.id);
+                        }
+                        setSelectedIds(newSelected);
+                      }}
+                      className="w-4 h-4 cursor-pointer"
+                    />
+                  </div>
                   <CardContent className="p-0">
-                    <div className="flex items-center justify-between px-3 py-2 bg-slate-50 border-b border-slate-100">
-                      <input
-                        type="checkbox"
-                        id={`item-${listing.id}`}
-                        checked={selectedIds.has(listing.id)}
-                        onChange={(e) => {
-                          const newSelected = new Set(selectedIds);
-                          if (e.target.checked) {
-                            newSelected.add(listing.id);
-                          } else {
-                            newSelected.delete(listing.id);
-                          }
-                          setSelectedIds(newSelected);
-                        }}
-                        className="w-4 h-4 cursor-pointer"
-                      />
-                      {showDrafts ? (
-                        <div className="rounded-full text-xs font-semibold px-3 py-1 bg-yellow-100 text-yellow-700">
-                          <span>Draft</span>
-                        </div>
-                      ) : (
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <button
-                                onClick={(e) => handleToggleListingStatus(listing.id, e)}
-                                disabled={togglingId === listing.id}
-                                className={`rounded-full text-xs font-semibold px-3 py-1 transition-all ${
-                                  listing.isActive
-                                    ? "bg-green-100 text-green-700 hover:bg-green-200"
-                                    : "bg-red-100 text-red-700 hover:bg-red-200"
-                                } ${togglingId === listing.id ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
-                              >
-                                {togglingId === listing.id ? (
-                                  <Loader2 className="h-3 w-3 animate-spin inline mr-1" />
-                                ) : listing.isActive ? (
-                                  <Eye className="h-3 w-3 inline mr-1" />
-                                ) : (
-                                  <EyeOff className="h-3 w-3 inline mr-1" />
-                                )}
-                                {listing.isActive ? "Active" : "Not Listed"}
-                              </button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>{listing.isActive ? "Click to hide this listing from search" : "Click to show this listing in search"}</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      )}
-                    </div>
-                    <Link href={`/listings/${listing.id}`} className="block relative">
-                      <div className="flex aspect-square items-center justify-center overflow-hidden bg-gradient-to-br from-slate-100 to-slate-200">
+                    <Link href={`/listings/${listing.id}`} className="block">
+                      <div className="relative flex aspect-square items-center justify-center overflow-hidden bg-gradient-to-br from-slate-100 to-slate-200">
                         <img
                           src={resolveTradebiliaListingImage({ title: listing.title, category: listing.category, primaryPhotoUrl: listing.primaryPhotoUrl })}
                           alt={listing.title}
                           className="h-full w-full object-contain"
                         />
-                        {showDrafts && (
-                          <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                            <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-blue-700 opacity-80 transform -rotate-45 flex items-center justify-center">
-                              <span className="text-white font-bold text-lg transform rotate-45">DRAFT</span>
-                            </div>
-                          </div>
-                        )}
+                        <div className="absolute top-3 right-3 flex gap-2">
+                          <Badge variant="secondary" className="rounded-full text-xs font-semibold capitalize bg-blue-100 text-blue-700 border-0">{listing.status}</Badge>
+                        </div>
                       </div>
                     </Link>
                     <div className="p-4 space-y-3">

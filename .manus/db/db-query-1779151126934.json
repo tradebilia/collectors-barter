@@ -1,9 +1,0 @@
-{
-  "query": "INSERT INTO users (username, passwordHash, displayName, email, role, createdAt, updatedAt) VALUES ('AdminTavani', 'e998976905d74c3bcf4a924dc61bccdf63b8991d90c7d14028de97613b17de30b0eb2c28acfcea4a36cf136025abb3e7ab037a82805249344c3656636e99f82b', 'Administrator', 'rtavani@verizon.net', 'admin', NOW(), NOW());",
-  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4ZXfWh5QbDJhQ4C.root --database nAx6ATm2BH4G46yabuMZgM --execute INSERT INTO users (username, passwordHash, displayName, email, role, createdAt, updatedAt) VALUES ('AdminTavani', 'e998976905d74c3bcf4a924dc61bccdf63b8991d90c7d14028de97613b17de30b0eb2c28acfcea4a36cf136025abb3e7ab037a82805249344c3656636e99f82b', 'Administrator', 'rtavani@verizon.net', 'admin', NOW(), NOW());",
-  "rows": [],
-  "messages": [],
-  "stdout": "",
-  "stderr": "",
-  "execution_time_ms": 377
-}

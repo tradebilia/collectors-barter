@@ -13,17 +13,11 @@ import {
 
 export const users = mysqlTable("users", {
   id: int("id").autoincrement().primaryKey(),
-  openId: varchar("openId", { length: 64 }).unique(),
-  username: varchar("username", { length: 64 }).unique(),
-  passwordHash: varchar("passwordHash", { length: 255 }),
+  openId: varchar("openId", { length: 64 }).notNull().unique(),
   name: text("name"),
   email: varchar("email", { length: 320 }),
-  displayName: varchar("displayName", { length: 255 }),
-  avatarUrl: text("avatarUrl"),
   loginMethod: varchar("loginMethod", { length: 64 }),
   role: mysqlEnum("role", ["user", "admin"]).default("user").notNull(),
-  securityQuestion: varchar("securityQuestion", { length: 255 }),
-  securityAnswerHash: varchar("securityAnswerHash", { length: 255 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
@@ -89,8 +83,6 @@ export const userProfiles = mysqlTable(
     id: int("id").autoincrement().primaryKey(),
     userId: int("userId").notNull().references(() => users.id),
     displayName: varchar("displayName", { length: 120 }).notNull(),
-    firstName: varchar("firstName", { length: 100 }),
-    lastName: varchar("lastName", { length: 100 }),
     avatarUrl: text("avatarUrl"),
     avatarKey: varchar("avatarKey", { length: 255 }),
     bio: text("bio"),
@@ -98,22 +90,6 @@ export const userProfiles = mysqlTable(
     contactEmail: varchar("contactEmail", { length: 320 }),
     contactPhone: varchar("contactPhone", { length: 40 }),
     contactAddress: text("contactAddress"),
-    contactTown: varchar("contactTown", { length: 100 }),
-    contactState: varchar("contactState", { length: 100 }),
-    contactZipCode: varchar("contactZipCode", { length: 20 }),
-    contactCountry: varchar("contactCountry", { length: 100 }),
-    acceptedTerms: boolean("acceptedTerms").default(false).notNull(),
-    isMerchant: boolean("isMerchant").default(false).notNull(),
-    securityQuestion: varchar("securityQuestion", { length: 255 }),
-    securityAnswer: varchar("securityAnswer", { length: 255 }),
-    preferredCategories: text("preferredCategories"),
-    notificationPreferences: text("notificationPreferences"),
-    connectedAccounts: text("connectedAccounts"),
-    showProfile: boolean("showProfile").default(true).notNull(),
-    hideInventoryValue: boolean("hideInventoryValue").default(false).notNull(),
-    receiveContactRequests: boolean("receiveContactRequests").default(true).notNull(),
-    emailVerified: boolean("emailVerified").default(false).notNull(),
-    phoneVerified: boolean("phoneVerified").default(false).notNull(),
     createdAt: timestamp("createdAt").defaultNow().notNull(),
     updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   },
@@ -135,7 +111,6 @@ export const listings = mysqlTable(
     estimatedValue: decimal("estimatedValue", { precision: 12, scale: 2 }),
     description: text("description").notNull(),
     status: mysqlEnum("status", listingStatuses).default("active").notNull(),
-    isActive: boolean("isActive").default(true).notNull(),
     featured: boolean("featured").default(false).notNull(),
     createdAt: timestamp("createdAt").defaultNow().notNull(),
     updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
@@ -253,76 +228,6 @@ export const watchlistEntries = mysqlTable(
   }),
 );
 
-export const draftListings = mysqlTable(
-  "draftListings",
-  {
-    id: int("id").autoincrement().primaryKey(),
-    userId: int("userId").notNull().references(() => users.id),
-    title: varchar("title", { length: 160 }).notNull(),
-    category: mysqlEnum("category", collectibleCategories).notNull(),
-    grade: mysqlEnum("grade", gradeValues).default("ungraded").notNull(),
-    graderCompany: varchar("graderCompany", { length: 100 }),
-    certificationNumber: varchar("certificationNumber", { length: 100 }),
-    estimatedValue: decimal("estimatedValue", { precision: 12, scale: 2 }),
-    categoryFields: text("categoryFields"), // JSON string of category-specific fields
-    additionalNotes: text("additionalNotes"),
-    photos: text("photos"), // JSON string of photo data
-    createdAt: timestamp("createdAt").defaultNow().notNull(),
-    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-  },
-  table => ({
-    userIdx: index("draftListings_user_idx").on(table.userId),
-    createdAtIdx: index("draftListings_createdAt_idx").on(table.createdAt),
-  }),
-);
-
-export const passwordResetTokens = mysqlTable(
-  "passwordResetTokens",
-  {
-    id: int("id").autoincrement().primaryKey(),
-    userId: int("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
-    token: varchar("token", { length: 255 }).unique().notNull(),
-    expiresAt: timestamp("expiresAt").notNull(),
-    createdAt: timestamp("createdAt").defaultNow().notNull(),
-  },
-  table => ({
-    userIdx: index("passwordResetTokens_user_idx").on(table.userId),
-    expiresAtIdx: index("passwordResetTokens_expiresAt_idx").on(table.expiresAt),
-  })
-);
-
-export const emailVerificationOtps = mysqlTable(
-  "emailVerificationOtps",
-  {
-    id: int("id").autoincrement().primaryKey(),
-    email: varchar("email", { length: 320 }).notNull(),
-    otp: varchar("otp", { length: 6 }).notNull(),
-    attempts: int("attempts").default(0).notNull(),
-    expiresAt: timestamp("expiresAt").notNull(),
-    createdAt: timestamp("createdAt").defaultNow().notNull(),
-  },
-  table => ({
-    emailIdx: index("emailVerificationOtps_email_idx").on(table.email),
-    expiresAtIdx: index("emailVerificationOtps_expiresAt_idx").on(table.expiresAt),
-  })
-);
-
-export const phoneVerificationOtps = mysqlTable(
-  "phoneVerificationOtps",
-  {
-    id: int("id").autoincrement().primaryKey(),
-    phone: varchar("phone", { length: 20 }).notNull(),
-    otp: varchar("otp", { length: 6 }).notNull(),
-    attempts: int("attempts").default(0).notNull(),
-    expiresAt: timestamp("expiresAt").notNull(),
-    createdAt: timestamp("createdAt").defaultNow().notNull(),
-  },
-  table => ({
-    phoneIdx: index("phoneVerificationOtps_phone_idx").on(table.phone),
-    expiresAtIdx: index("phoneVerificationOtps_expiresAt_idx").on(table.expiresAt),
-  })
-);
-
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 export type UserProfile = typeof userProfiles.$inferSelect;
@@ -333,4 +238,3 @@ export type TradeProposalItem = typeof tradeProposalItems.$inferSelect;
 export type TradeMessage = typeof tradeMessages.$inferSelect;
 export type TradeReview = typeof tradeReviews.$inferSelect;
 export type WatchlistEntry = typeof watchlistEntries.$inferSelect;
-export type DraftListing = typeof draftListings.$inferSelect;

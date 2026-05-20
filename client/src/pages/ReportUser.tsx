@@ -11,7 +11,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { AlertTriangle, Bell, Flag, Mail, Search, ShieldCheck } from "lucide-react";
-import { TopRightIcons } from "@/components/TopRightIcons";
 import { FormEvent, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Link } from "wouter";
@@ -117,7 +116,12 @@ export default function ReportUser() {
               <Input className="h-9 rounded-sm border-0 bg-white pl-10 pr-3 text-sm text-slate-950" placeholder="Search..." />
             </div>
           </div>
-          <TopRightIcons className="ml-auto flex items-center gap-3 md:gap-4" iconColor="text-white/85" />
+          <div className="ml-auto flex items-center gap-4 text-[11px] uppercase tracking-[0.32em] text-white/85">
+            <Link href="/profile" className="transition hover:text-white">My Tradebilia</Link>
+            <Bell className="h-4 w-4" />
+            <ShieldCheck className="h-4 w-4" />
+            <Mail className="h-4 w-4" />
+          </div>
         </div>
         <nav className="grid grid-cols-2 border-t border-white/10 bg-white text-center text-[11px] font-semibold text-black sm:grid-cols-5 lg:grid-cols-10">
           {categoryLinks.map(([label, slug]) => (

@@ -1,19 +1,17 @@
+import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { TopBar } from "@/components/TopBar";
-import { CategoryBar } from "@/components/CategoryBar";
-import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
-import { Loader2, Upload } from "lucide-react";
+import { Loader2, Menu, Search, Upload } from "lucide-react";
 import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import type { TradebiliaCategorySlug } from "@/lib/tradebilia";
+import { Link } from "wouter";
 
-const TRADEBILIA_LOGO_URL = "/manus-storage/tradebilia-longform-no-navy-clean_d2f04453.png";
+const TRADEBILIA_LOGO_URL = "/manus-storage/Tradebilialogo_886a61b7.webp";
 const DRAFT_STORAGE_KEY = "tradebilia-add-inventory-draft";
 
 const categoryLinks = [
@@ -38,273 +36,151 @@ type UploadedImage = {
 
 type ListingCategory = (typeof categoryLinks)[number]["value"];
 
-// Category-specific fields based on filter presets
-const categoryFieldPresets: Record<ListingCategory, Array<{ name: string; label: string; type: "text" | "select"; placeholder: string; selectOptions?: string[] }>> = {
-  comics: [
-    { name: "title", label: "Title", type: "text", placeholder: "Amazing Fantasy, X-Men" },
-    { name: "issueNumber", label: "Issue Number", type: "text", placeholder: "#1, #100, #50" },
-    { name: "signed", label: "Signed", type: "select", placeholder: "Select option", selectOptions: ["Yes", "No"] },
-    { name: "facsimile", label: "Facsimile", type: "select", placeholder: "Select option", selectOptions: ["Yes", "No"] },
-  ],
-  sports_cards: [
-    { name: "manufacturer", label: "Manufacturer", type: "text", placeholder: "Topps, Fleer, Upper Deck" },
-    { name: "sport", label: "Sport", type: "select", placeholder: "Select a sport", selectOptions: ["Baseball", "Basketball", "Football", "Hockey", "Soccer", "Tennis", "Golf", "Boxing", "MMA", "Wrestling", "Track & Field", "Swimming", "Cycling", "Motorsports", "Other"] },
-    { name: "year", label: "Year / Era", type: "text", placeholder: "1950s, 1986, junk wax, ultra-modern" },
-    { name: "team", label: "Team", type: "text", placeholder: "Yankees, Bulls, Cowboys" },
-    { name: "set", label: "Set / Series", type: "text", placeholder: "Topps Chrome, Prizm, Fleer" },
-    { name: "rookie", label: "Rookie", type: "select", placeholder: "Select option", selectOptions: ["Yes", "No"] },
-    { name: "autographed", label: "Autographed", type: "select", placeholder: "Select option", selectOptions: ["Yes", "No"] },
-  ],
-  vintage_toys: [
-    { name: "name", label: "Name", type: "text", placeholder: "Barbie, G.I. Joe, Star Wars" },
-    { name: "genre", label: "Genre", type: "select", placeholder: "Action figure, doll, vehicle", selectOptions: ["Action figure", "Doll", "Vehicle", "Playset", "Other"] },
-    { name: "franchise", label: "Franchise", type: "text", placeholder: "Star Wars, TMNT" },
-  ],
-  video_games: [
-    { name: "title", label: "Title", type: "text", placeholder: "Zelda, Donkey Kong, Sonic" },
-    { name: "system", label: "System", type: "select", placeholder: "NES, SNES, Sega", selectOptions: ["NES", "SNES", "Sega", "PlayStation", "Xbox", "Nintendo 64", "GameCube", "Wii", "Switch", "Other"] },
-    { name: "region", label: "Region", type: "select", placeholder: "United States, Japan", selectOptions: ["United States", "Japan", "Europe", "PAL", "NTSC", "Other"] },
-  ],
-  stamps: [
-    { name: "year", label: "Year", type: "text", placeholder: "1918" },
-    { name: "issuer", label: "Issuer", type: "text", placeholder: "Post office or monarchy" },
-    { name: "country", label: "Country", type: "select", placeholder: "United States, Bermuda", selectOptions: ["United States", "United Kingdom", "Canada", "France", "Germany", "Japan", "Other"] },
-  ],
-  coins: [
-    { name: "year", label: "Year", type: "text", placeholder: "1909, 1933, 1794" },
-    { name: "denomination", label: "Denomination", type: "select", placeholder: "Cent, dollar, eagle", selectOptions: ["Penny", "Nickel", "Dime", "Quarter", "Half Dollar", "Dollar", "Eagle", "Other"] },
-    { name: "mintMark", label: "Mint Mark", type: "text", placeholder: "S, D, CC" },
-  ],
-  pokemon: [
-    { name: "pokemon", label: "Pokémon", type: "text", placeholder: "Charizard, Pikachu, Mew" },
-    { name: "set", label: "Set", type: "text", placeholder: "Base Set, Neo, Evolving Skies" },
-    { name: "rarity", label: "Rarity", type: "select", placeholder: "Holo, Secret Rare", selectOptions: ["Common", "Uncommon", "Rare", "Holo Rare", "Secret Rare", "Ultra Rare", "Other"] },
-  ],
-  movies: [
-    { name: "title", label: "Title", type: "text", placeholder: "Star Wars, Batman, Jaws" },
-    { name: "format", label: "Format", type: "select", placeholder: "Poster, prop, lobby card", selectOptions: ["Poster", "Prop", "Lobby Card", "Still", "Promotional Material", "Other"] },
-    { name: "franchise", label: "Franchise", type: "text", placeholder: "Marvel, Disney, horror" },
-  ],
-  autographs: [
-    { name: "signer", label: "Signer", type: "text", placeholder: "Athlete, actor, creator" },
-    { name: "medium", label: "Medium", type: "select", placeholder: "Photo, comic, baseball", selectOptions: ["Photo", "Comic", "Baseball", "Jersey", "Helmet", "Bat", "Memorabilia", "Other"] },
-    { name: "franchise", label: "Franchise", type: "text", placeholder: "Marvel, MLB, Disney" },
-  ],
-  disney_pins: [
-    { name: "pinName", label: "Pin Name", type: "text", placeholder: "LE park release, character pin" },
-    { name: "parkOrEvent", label: "Park or Event", type: "text", placeholder: "D23, EPCOT, Disneyland" },
-    { name: "series", label: "Series", type: "select", placeholder: "Character, attraction", selectOptions: ["Character", "Attraction", "Movie", "Park", "Event", "Limited Edition", "Other"] },
-    { name: "edition", label: "Edition", type: "text", placeholder: "LE 300, LE 1000" },
-  ],
+type InventoryDraft = {
+  category: ListingCategory;
+  graderCompany: string;
+  certificationNumber: string;
+  title: string;
+  issueNumber: string;
+  publisher: string;
+  coverDate: string;
+  grade: string;
+  pageQuality: string;
+  graderNotes: string;
+  gradedDate: string;
+  artComments: string;
+  additionalNotes: string;
 };
 
-// Grading services by category
-// Get grading companies for each category using the new configuration
-const getGradingCompaniesForCategory = (category: ListingCategory): string[] => {
-  const categoryMap: Record<ListingCategory, "comics" | "sports_cards" | "vintage_toys" | "video_games" | "stamps" | "coins" | "pokemon" | "movies" | "autographs" | "disney_pins"> = {
-    comics: "comics",
-    sports_cards: "sports_cards",
-    vintage_toys: "vintage_toys",
-    video_games: "video_games",
-    stamps: "stamps",
-    coins: "coins",
-    pokemon: "pokemon",
-    movies: "movies",
-    autographs: "autographs",
-    disney_pins: "disney_pins",
-  };
-  
-  const companies: Record<"comics" | "sports_cards" | "vintage_toys" | "video_games" | "stamps" | "coins" | "pokemon" | "movies" | "autographs" | "disney_pins", string[]> = {
-    comics: ["CGC Comics", "CBCS", "PGX Comics", "Raw"],
-    sports_cards: ["PSA", "Beckett Grading Services (BGS)", "SGC", "TAG Grading", "HGA", "Arena Club Grading", "Degree Grading", "ISA Grading", "GMA Grading", "Rare Edition", "FCG (Forensic Card Grading)", "MNT Grading", "KSA Grading", "PGA Grading", "RCG", "OnlyGraded", "Diamond Service Grading", "CGA Card Grading", "TRCG", "AP Grading", "PRO", "GEM", "GAI", "WCG", "PCI", "Raw"],
-    vintage_toys: ["AFA", "CAS", "UKG", "Raw"],
-    video_games: ["WATA Games", "CGC Video Games", "VGA", "CGC Home Video", "IGS", "Raw"],
-    stamps: ["PSE", "ASG", "PSAG", "Raw"],
-    coins: ["PCGS", "NGC", "ANACS", "ICG", "SEGS", "SGS", "Raw"],
-    pokemon: ["PSA", "Beckett Grading Services (BGS)", "SGC", "CGC Cards", "TAG Grading", "HGA", "Arena Club Grading", "Degree Grading", "ACE Grading", "ISA Grading", "GMA Grading", "Rare Edition", "FCG (Forensic Card Grading)", "MNT Grading", "KSA Grading", "PGA Grading", "RCG", "OnlyGraded", "Diamond Service Grading", "CGA Card Grading", "TRCG", "Pokegrade", "Tree Frog Grading", "AP Grading", "PRO", "GEM", "GAI", "WCG", "Raw"],
-    movies: ["CGC Home Video", "VHS Grading", "IGS", "Raw"],
-    autographs: ["PSA/DNA", "JSA", "Beckett Authentication Services", "GAI", "PSA", "Raw"],
-    disney_pins: ["Raw"],
-  };
-  
-  return companies[categoryMap[category]] || ["Raw"];
+const emptyDraft: InventoryDraft = {
+  category: "comics",
+  graderCompany: "CGC",
+  certificationNumber: "",
+  title: "",
+  issueNumber: "",
+  publisher: "",
+  coverDate: "",
+  grade: "9.0",
+  pageQuality: "White",
+  graderNotes: "",
+  gradedDate: "",
+  artComments: "",
+  additionalNotes: "",
 };
 
-const gradingServicesByCategory: Record<ListingCategory, string[]> = {
-  comics: getGradingCompaniesForCategory("comics"),
-  sports_cards: getGradingCompaniesForCategory("sports_cards"),
-  vintage_toys: getGradingCompaniesForCategory("vintage_toys"),
-  video_games: getGradingCompaniesForCategory("video_games"),
-  stamps: getGradingCompaniesForCategory("stamps"),
-  coins: getGradingCompaniesForCategory("coins"),
-  pokemon: getGradingCompaniesForCategory("pokemon"),
-  movies: getGradingCompaniesForCategory("movies"),
-  autographs: getGradingCompaniesForCategory("autographs"),
-  disney_pins: getGradingCompaniesForCategory("disney_pins"),
-};
+async function readFiles(files: FileList | null) {
+  if (!files) return [] as UploadedImage[];
 
-// Map grade to condition
-const mapGradeToCondition = (grade: string): "mint" | "near_mint" | "very_good" | "good" | "fair" | "poor" => {
-  const gradeNum = parseFloat(grade);
-  if (gradeNum >= 9) return "mint";
-  if (gradeNum >= 8) return "near_mint";
-  if (gradeNum >= 7) return "very_good";
-  if (gradeNum >= 5) return "good";
-  if (gradeNum >= 3) return "fair";
-  return "poor";
-};
-
-// Read files as base64
-const readFiles = async (fileList: FileList | null): Promise<UploadedImage[]> => {
-  if (!fileList) return [];
-  const files = Array.from(fileList);
-  return Promise.all(
-    files.map(
-      file =>
-        new Promise<UploadedImage>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => {
-            const base64 = reader.result as string;
-            resolve({
-              name: file.name,
-              type: file.type,
-              contentBase64: base64.split(",")[1],
-              previewUrl: base64,
-            });
-          };
-          reader.onerror = reject;
-          reader.readAsDataURL(file);
-        })
-    )
+  const readers = Array.from(files).slice(0, 6).map(
+    file =>
+      new Promise<UploadedImage>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const result = String(reader.result ?? "");
+          const [, contentBase64 = ""] = result.split(",");
+          resolve({
+            name: file.name,
+            type: file.type || "image/jpeg",
+            contentBase64,
+            previewUrl: result,
+          });
+        };
+        reader.onerror = () => reject(reader.error);
+        reader.readAsDataURL(file);
+      }),
   );
-};
+
+  return Promise.all(readers);
+}
+
+function mapGradeToCondition(grade: string) {
+  const numericGrade = Number.parseFloat(grade);
+  if (!Number.isFinite(numericGrade)) return "near_mint" as const;
+  if (numericGrade >= 9.5) return "mint" as const;
+  if (numericGrade >= 8) return "near_mint" as const;
+  if (numericGrade >= 6) return "very_good" as const;
+  if (numericGrade >= 4) return "good" as const;
+  if (numericGrade >= 2) return "fair" as const;
+  return "poor" as const;
+}
 
 export default function AddInventory() {
   const { isAuthenticated } = useAuth();
-  const [draft, setDraft] = useState<{
-    category: ListingCategory;
-    title: string;
-    value: string;
-    graderCompany: string;
-    certificationNumber: string;
-    grade: string;
-    categoryFields: Record<string, string>;
-    additionalNotes: string;
-  }>({
-    category: "comics",
-    title: "",
-    value: "",
-    graderCompany: "CGC Cards",
-    certificationNumber: "",
-    grade: "9.0",
-    categoryFields: {},
-    additionalNotes: "",
+  const utils = trpc.useUtils();
+  const [draft, setDraft] = useState<InventoryDraft>(emptyDraft);
+  const [photos, setPhotos] = useState<UploadedImage[]>([]);
+
+  const createListingMutation = trpc.market.createListing.useMutation({
+    onSuccess: async () => {
+      localStorage.removeItem(DRAFT_STORAGE_KEY);
+      setDraft(emptyDraft);
+      setPhotos([]);
+      toast.success("Collectible added to your inventory.");
+      await Promise.all([utils.market.dashboard.invalidate(), utils.market.feed.invalidate()]);
+      window.location.href = "/inventory";
+    },
+    onError: error => toast.error(error.message),
   });
 
-  const [photos, setPhotos] = useState<UploadedImage[]>([]);
-  const [primaryPhotoIndex, setPrimaryPhotoIndex] = useState<number>(0);
-  const createListingMutation = trpc.market.createListing.useMutation();
-  const saveDraftMutation = trpc.market.saveDraft.useMutation();
+  useEffect(() => {
+    const savedDraft = localStorage.getItem(DRAFT_STORAGE_KEY);
+    if (!savedDraft) return;
 
-  // Note: Draft auto-loading removed to prevent form data persistence on page refresh.
-  // This prevents accidental duplicate submissions or mistakes from previous entries.
-  // Users can manually save drafts using the "Save Draft" button if they want to continue later.
-  // useEffect(() => {
-  //   const saved = localStorage.getItem(DRAFT_STORAGE_KEY);
-  //   if (saved) {
-  //     try {
-  //       const { draft: savedDraft, photos: savedPhotos } = JSON.parse(saved);
-  //       setDraft(savedDraft);
-  //       setPhotos(savedPhotos);
-  //     } catch (e) {
-  //       console.error("Failed to load draft:", e);
-  //     }
-  //   }
-  // }, []);
+    try {
+      const parsed = JSON.parse(savedDraft) as { draft?: InventoryDraft; photos?: UploadedImage[] };
+      if (parsed.draft) setDraft(parsed.draft);
+      if (parsed.photos) setPhotos(parsed.photos);
+    } catch {
+      localStorage.removeItem(DRAFT_STORAGE_KEY);
+    }
+  }, []);
 
   const primaryPhoto = useMemo(() => photos[0] ?? null, [photos]);
-  const currentCategoryFields = categoryFieldPresets[draft.category] || [];
-  const currentGradingServices = gradingServicesByCategory[draft.category] || ["Raw"];
 
   const handlePhotos = async (event: ChangeEvent<HTMLInputElement>) => {
     const nextPhotos = await readFiles(event.target.files);
     setPhotos(nextPhotos);
   };
 
-  const handleSaveDraft = async () => {
-    try {
-      await saveDraftMutation.mutateAsync({
-        title: draft.title,
-        category: draft.category,
-        grade: draft.grade,
-        graderCompany: draft.graderCompany,
-        certificationNumber: draft.certificationNumber,
-        estimatedValue: draft.value ? parseFloat(draft.value) : 0,
-        categoryFields: draft.categoryFields,
-        additionalNotes: draft.additionalNotes,
-        photos: photos,
-      });
-      toast.success("Inventory draft saved.");
-    } catch (error) {
-      toast.error("Failed to save draft. Please try again.");
-      console.error("Error saving draft:", error);
+  const saveDraft = () => {
+    localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify({ draft, photos }));
+    toast.success("Inventory draft saved.");
+  };
+
+  const fetchDetails = () => {
+    if (!draft.certificationNumber.trim()) {
+      toast.error("Enter a certification number first.");
+      return;
     }
+    toast.info("Certification lookup can be connected to a grading registry in the next refinement pass. For now, you can continue entering the item details manually.");
   };
 
   const submitListing = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (!draft.title.trim()) {
-      toast.error("Please enter an item title.");
-      return;
-    }
-
     const descriptionSections = [
-      `Grading Company: ${draft.graderCompany}`,
-      draft.certificationNumber ? `Certification Number: ${draft.certificationNumber}` : null,
-      `Grade: ${draft.grade}`,
-      ...Object.entries(draft.categoryFields)
-        .filter(([, value]) => value?.trim())
-        .map(([key, value]) => `${key}: ${value}`),
+      `Grader Company: ${draft.graderCompany}`,
+      `Certification Number: ${draft.certificationNumber}`,
+      draft.issueNumber ? `Issue #: ${draft.issueNumber}` : null,
+      draft.publisher ? `Publisher: ${draft.publisher}` : null,
+      draft.coverDate ? `Cover Date: ${draft.coverDate}` : null,
+      draft.grade ? `Grade: ${draft.grade}` : null,
+      draft.pageQuality ? `Page Quality: ${draft.pageQuality}` : null,
+      draft.graderNotes ? `Grader Notes: ${draft.graderNotes}` : null,
+      draft.gradedDate ? `Graded Date: ${draft.gradedDate}` : null,
+      draft.artComments ? `Art Comments: ${draft.artComments}` : null,
       draft.additionalNotes ? `Additional Notes: ${draft.additionalNotes}` : null,
     ]
       .filter(Boolean)
       .join("\n");
-
-    // Reorder photos so the selected primary image is first
-    const reorderedPhotos = photos.map(({ previewUrl, ...photo }) => photo);
-    if (reorderedPhotos.length > 0 && primaryPhotoIndex > 0) {
-      const [primaryPhoto] = reorderedPhotos.splice(primaryPhotoIndex, 1);
-      reorderedPhotos.unshift(primaryPhoto);
-    }
 
     await createListingMutation.mutateAsync({
       title: draft.title,
       category: draft.category,
       condition: mapGradeToCondition(draft.grade),
       description: descriptionSections,
-      estimatedValue: draft.value ? parseFloat(draft.value) : 0,
-      photos: reorderedPhotos,
+      photos: photos.map(({ previewUrl, ...photo }) => photo),
     });
-    
-    // Clear the draft after successful submission
-    localStorage.removeItem(DRAFT_STORAGE_KEY);
-    
-    // Reset form to initial state
-    setDraft({
-      category: "comics",
-      title: "",
-      value: "",
-      graderCompany: "CGC Cards",
-      certificationNumber: "",
-      grade: "9.0",
-      categoryFields: {},
-      additionalNotes: "",
-    });
-    setPhotos([]);
-    setPrimaryPhotoIndex(0);
-    
-    toast.success("Item added to your inventory!");
   };
 
   if (!isAuthenticated) {
@@ -326,288 +202,169 @@ export default function AddInventory() {
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,#1c2468_0%,#0b0a22_65%)] text-white">
-      <TopBar logoUrl={TRADEBILIA_LOGO_URL} searchPlaceholder="Search..." />
-
-      <section className="relative w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden bg-[#00143A] text-white">
-        <div className="absolute inset-0 opacity-20" style={{
-          backgroundImage: 'url(/manus-storage/hero-background-fullwidth_e851e7cd.png)',
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundRepeat: 'no-repeat'
-        }} />
-        <div className="container relative flex h-64 items-center justify-center py-0 sm:h-72 sm:py-0 lg:h-80 lg:py-0">
-          <div className="flex w-full max-w-6xl items-center justify-center -ml-32">
-            <img src="/manus-storage/HighestTradeValue_f34ed3ff.svg" alt="Add To Your Inventory" className="h-auto w-full" />
+      <header className="border-b border-white/10 bg-black/50 backdrop-blur-md">
+        <div className="px-4 py-3 lg:px-8">
+          <div className="mb-3 flex items-center gap-3">
+            <Link href="/" className="rounded-lg border border-white/30 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/20">
+              Home
+            </Link>
           </div>
+        </div>
+        <div className="px-4 py-4 lg:px-8">
+          <div className="flex flex-wrap items-center gap-4">
+            <Link href="/" className="text-[2rem] font-semibold tracking-tight text-white">Search...</Link>
+            <div className="flex min-w-[18rem] flex-1 items-center rounded-[1rem] border border-white/10 bg-white/12 px-4 py-3">
+              <Search className="mr-3 h-4 w-4 text-white/60" />
+              <span className="text-white/55">Search...</span>
+            </div>
+            <div className="ml-auto flex items-center gap-5 text-sm text-white">
+              <span className="text-[1.1rem] font-medium">My TRADEBILIA</span>
+              <Menu className="h-9 w-9 text-[#efe56c]" />
+            </div>
+          </div>
+          <nav className="mt-4 grid overflow-hidden border border-slate-300 bg-white text-slate-950 md:grid-cols-5 xl:grid-cols-10">
+            {categoryLinks.map(categoryLink => (
+              <Link
+                key={categoryLink.value}
+                href={`/category/${categoryLink.value}`}
+                className={`border-b border-r border-slate-300 px-4 py-4 text-center text-sm font-semibold uppercase tracking-[0.12em] transition hover:bg-slate-100 ${draft.category === categoryLink.value ? "bg-slate-900 text-white" : "bg-white text-slate-950"}`}
+              >
+                {categoryLink.label}
+              </Link>
+            ))}
+          </nav>
+        </div>
+      </header>
+
+      <section className="border-b border-white/10 bg-[linear-gradient(180deg,rgba(7,7,48,0.18)_0%,rgba(7,7,48,0.55)_100%)] px-4 py-8 lg:px-8">
+        <div className="mx-auto max-w-6xl">
+          <img src={TRADEBILIA_LOGO_URL} alt="Tradebilia" className="w-full max-w-[42rem]" />
         </div>
       </section>
 
-      <CategoryBar />
-
       <main className="px-4 py-10 lg:px-8">
-        <form className="mx-auto max-w-7xl" onSubmit={submitListing}>
-          {/* Required Fields Note */}
-          <div className="mt-6 rounded-lg border border-blue-500/30 bg-blue-500/10 p-4 text-sm text-blue-100">
-            <p><span className="font-semibold text-blue-300">*</span> Required Field</p>
-          </div>
+        <form className="mx-auto max-w-6xl" onSubmit={submitListing}>
+          <h1 className="text-5xl font-semibold tracking-tight text-white">ADD TO YOUR INVENTORY</h1>
+          <div className="mt-10 grid gap-10 lg:grid-cols-[1.15fr_0.85fr]">
+            <div className="space-y-8">
+              <div>
+                <h2 className="text-3xl font-medium text-white">ITEM INFORMATION</h2>
+                <div className="mt-8 grid gap-6 md:grid-cols-2">
+                  <div className="space-y-3 md:col-span-2">
+                    <Label className="text-xl uppercase tracking-[0.08em] text-white/90">Grader Company</Label>
+                    <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
+                      <Input value={draft.graderCompany} onChange={event => setDraft(current => ({ ...current, graderCompany: event.target.value }))} className="h-14 border-white/8 bg-white/6 text-white placeholder:text-white/35" />
+                      <Button type="button" variant="outline" className="h-14 border-white/12 bg-white/6 px-6 text-white hover:bg-white/12 hover:text-white" onClick={fetchDetails}>
+                        FETCH DETAILS
+                      </Button>
+                    </div>
+                  </div>
 
-          {/* Main content grid with image on right */}
-          <div className="mt-10 grid gap-10 grid-cols-1 lg:grid-cols-[1fr_320px] lg:auto-rows-max">
-            {/* Left side - Form fields */}
-            <div className="space-y-6">
-              {/* 1. Category Selection */}
-              <div className="rounded-2xl border border-green-500/20 bg-gradient-to-br from-green-500/10 to-green-500/5 p-6 shadow-lg">
-                <h3 className="mb-4 text-lg font-semibold uppercase tracking-[0.1em] text-white/95">1. Select Category</h3>
-                <div className="space-y-3">
-                  <Label className="text-sm uppercase tracking-[0.08em] text-white/70">Category *</Label>
-                  <Select value={draft.category} onValueChange={value => {
-                    setDraft(current => ({
-                      ...current,
-                      category: value as ListingCategory,
-                      categoryFields: {},
-                      graderCompany: gradingServicesByCategory[value as ListingCategory]?.[0] || "Raw",
-                    }));
-                  }}>
-                    <SelectTrigger className="h-12 border-white/10 bg-white/8 text-white hover:bg-white/12">
-                      <SelectValue placeholder="Select category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categoryLinks.map(option => (
-                        <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
+                  <div className="space-y-3 md:col-span-2">
+                    <Label className="text-xl uppercase tracking-[0.08em] text-white/90">Certification Number</Label>
+                    <Input value={draft.certificationNumber} onChange={event => setDraft(current => ({ ...current, certificationNumber: event.target.value }))} className="h-14 border-white/8 bg-white/6 text-white placeholder:text-white/35" />
+                  </div>
 
-              {/* 2. Grading Company & Certification Number */}
-              <div className="rounded-2xl border border-blue-500/20 bg-gradient-to-br from-blue-500/10 to-blue-500/5 p-6 shadow-lg">
-                <h3 className="mb-4 text-lg font-semibold uppercase tracking-[0.1em] text-white/95">2. Grading & Certification</h3>
-                <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-3">
-                    <Label className="text-sm uppercase tracking-[0.08em] text-white/70">Grading Company</Label>
-                    <Select value={draft.graderCompany} onValueChange={value => setDraft(current => ({ ...current, graderCompany: value }))}>
-                      <SelectTrigger className="h-12 border-white/10 bg-white/8 text-white hover:bg-white/12">
-                        <SelectValue placeholder="Select grading company" />
+                    <Label className="text-xl uppercase tracking-[0.08em] text-white/90">Title</Label>
+                    <Input value={draft.title} onChange={event => setDraft(current => ({ ...current, title: event.target.value }))} className="h-14 border-white/8 bg-white/6 text-white placeholder:text-white/35" />
+                  </div>
+                  <div className="space-y-3">
+                    <Label className="text-xl uppercase tracking-[0.08em] text-white/90">Issue #</Label>
+                    <Input value={draft.issueNumber} onChange={event => setDraft(current => ({ ...current, issueNumber: event.target.value }))} className="h-14 border-white/8 bg-white/6 text-white placeholder:text-white/35" />
+                  </div>
+
+                  <div className="space-y-3">
+                    <Label className="text-xl uppercase tracking-[0.08em] text-white/90">Publisher</Label>
+                    <Input value={draft.publisher} onChange={event => setDraft(current => ({ ...current, publisher: event.target.value }))} className="h-14 border-white/8 bg-white/6 text-white placeholder:text-white/35" />
+                  </div>
+                  <div className="space-y-3">
+                    <Label className="text-xl uppercase tracking-[0.08em] text-white/90">Cover Date</Label>
+                    <Input value={draft.coverDate} onChange={event => setDraft(current => ({ ...current, coverDate: event.target.value }))} className="h-14 border-white/8 bg-white/6 text-white placeholder:text-white/35" />
+                  </div>
+
+                  <div className="space-y-3">
+                    <Label className="text-xl uppercase tracking-[0.08em] text-white/90">Grade</Label>
+                    <Input value={draft.grade} onChange={event => setDraft(current => ({ ...current, grade: event.target.value }))} className="h-14 border-white/8 bg-white/6 text-white placeholder:text-white/35" />
+                  </div>
+                  <div className="space-y-3">
+                    <Label className="text-xl uppercase tracking-[0.08em] text-white/90">Page Quality</Label>
+                    <Input value={draft.pageQuality} onChange={event => setDraft(current => ({ ...current, pageQuality: event.target.value }))} className="h-14 border-white/8 bg-white/6 text-white placeholder:text-white/35" />
+                  </div>
+
+                  <div className="space-y-3">
+                    <Label className="text-xl uppercase tracking-[0.08em] text-white/90">Grader Notes</Label>
+                    <Input value={draft.graderNotes} onChange={event => setDraft(current => ({ ...current, graderNotes: event.target.value }))} className="h-14 border-white/8 bg-white/6 text-white placeholder:text-white/35" />
+                  </div>
+                  <div className="space-y-3">
+                    <Label className="text-xl uppercase tracking-[0.08em] text-white/90">Graded Date</Label>
+                    <Input value={draft.gradedDate} onChange={event => setDraft(current => ({ ...current, gradedDate: event.target.value }))} className="h-14 border-white/8 bg-white/6 text-white placeholder:text-white/35" />
+                  </div>
+
+                  <div className="space-y-3">
+                    <Label className="text-xl uppercase tracking-[0.08em] text-white/90">Art Comments</Label>
+                    <Input value={draft.artComments} onChange={event => setDraft(current => ({ ...current, artComments: event.target.value }))} className="h-14 border-white/8 bg-white/6 text-white placeholder:text-white/35" />
+                  </div>
+                  <div className="space-y-3">
+                    <Label className="text-xl uppercase tracking-[0.08em] text-white/90">Category</Label>
+                    <Select value={draft.category} onValueChange={value => setDraft(current => ({ ...current, category: value as ListingCategory }))}>
+                      <SelectTrigger className="h-14 border-white/8 bg-white/6 text-white">
+                        <SelectValue placeholder="Select category" />
                       </SelectTrigger>
                       <SelectContent>
-                        {currentGradingServices.map(service => (
-                          <SelectItem key={service} value={service}>{service}</SelectItem>
+                        {categoryLinks.map(option => (
+                          <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
 
-                  <div className="space-y-3">
-                    <Label className="text-sm uppercase tracking-[0.08em] text-white/70">Certification Number</Label>
-                    <Input
-                      value={draft.certificationNumber}
-                      onChange={event => setDraft(current => ({ ...current, certificationNumber: event.target.value }))}
-                      placeholder="e.g., 123456789"
-                      className="h-12 border-white/10 bg-white/8 text-white placeholder:text-white/35"
-                    />
+                  <div className="space-y-3 md:col-span-2">
+                    <Label className="text-xl uppercase tracking-[0.08em] text-white/90">Additional Notes</Label>
+                    <Textarea value={draft.additionalNotes} onChange={event => setDraft(current => ({ ...current, additionalNotes: event.target.value }))} rows={5} className="border-white/8 bg-white/6 text-white placeholder:text-white/35" />
                   </div>
-                </div>
-
-                <div className="mt-4 space-y-3">
-                  <Label className="text-sm uppercase tracking-[0.08em] text-white/70">Grade</Label>
-                  <Input
-                    value={draft.grade}
-                    onChange={event => setDraft(current => ({ ...current, grade: event.target.value }))}
-                    placeholder="e.g., 9.0"
-                    className="h-12 border-white/10 bg-white/8 text-white placeholder:text-white/35"
-                  />
                 </div>
               </div>
 
-              {/* 3. Item Details - Combined Title, Value, and Category-Specific Fields */}
-              <div className="rounded-2xl border border-purple-500/20 bg-gradient-to-br from-purple-500/10 to-purple-500/5 p-6 shadow-lg">
-                <h3 className="mb-4 text-lg font-semibold uppercase tracking-[0.1em] text-white/95">3. Item Details</h3>
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  {/* Title Field */}
-                  <div className="space-y-3">
-                    <Label className="text-sm uppercase tracking-[0.08em] text-white/70">Title *</Label>
-                    <Input
-                      value={draft.title}
-                      onChange={event => setDraft(current => ({ ...current, title: event.target.value }))}
-                      placeholder="Enter item title"
-                      className="h-10 border-white/10 bg-white/8 text-white placeholder:text-white/35 text-sm"
-                    />
-                  </div>
-                  
-                  {/* Estimated Value Field */}
-                  <div className="space-y-3">
-                    <Label className="text-sm uppercase tracking-[0.08em] text-white/70">Estimated Value</Label>
-                    <Input
-                      type="text"
-                      inputMode="decimal"
-                      value={draft.value}
-                      onChange={event => setDraft(current => ({ ...current, value: event.target.value }))}
-                      placeholder="Enter estimated value (e.g., 150.00)"
-                      className="h-10 border-white/10 bg-white/8 text-white placeholder:text-white/35 text-sm"
-                    />
-                  </div>
-                  
-                  {/* Category-Specific Fields */}
-                  {currentCategoryFields.map(field => (
-                    <div key={field.name} className="space-y-3">
-                      <Label className="text-sm uppercase tracking-[0.08em] text-white/70">{field.label}</Label>
-                      {field.type === "text" ? (
-                        <Input
-                          value={draft.categoryFields[field.name] || ""}
-                          onChange={event => setDraft(current => ({
-                            ...current,
-                            categoryFields: { ...current.categoryFields, [field.name]: event.target.value }
-                          }))}
-                          placeholder={field.placeholder}
-                          className="h-10 border-white/10 bg-white/8 text-white placeholder:text-white/35 text-sm"
-                        />
-                      ) : (
-                        <Select
-                          value={draft.categoryFields[field.name] || ""}
-                          onValueChange={value =>
-                            setDraft(current => ({
-                              ...current,
-                              categoryFields: { ...current.categoryFields, [field.name]: value }
-                            }))
-                          }
-                        >
-                          <SelectTrigger className="h-10 border-white/10 bg-white/8 text-white hover:bg-white/12 text-sm">
-                            <SelectValue placeholder={field.placeholder} />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {field.selectOptions?.map(option => (
-                              <SelectItem key={option} value={option}>{option}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* 5. Additional Information */}
-              <div className="rounded-2xl border border-indigo-500/20 bg-gradient-to-br from-indigo-500/10 to-indigo-500/5 p-6 shadow-lg">
-                <h3 className="mb-4 text-lg font-semibold uppercase tracking-[0.1em] text-white/95">5. Additional Information</h3>
-                <div className="space-y-3">
-                  <Label className="text-sm uppercase tracking-[0.08em] text-white/70">Additional Notes</Label>
-                  <Textarea
-                    value={draft.additionalNotes}
-                    onChange={event => setDraft(current => ({ ...current, additionalNotes: event.target.value }))}
-                    placeholder="Any additional details about this item..."
-                    className="min-h-24 border-white/10 bg-white/8 text-white placeholder:text-white/35"
-                  />
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex gap-4">
-                <Button
-                  type="button"
-                  onClick={handleSaveDraft}
-                  variant="outline"
-                  className="flex-1 h-12 border-white/20 text-white hover:bg-white/10"
-                  disabled={createListingMutation.isPending || saveDraftMutation.isPending}
-                >
-                  {saveDraftMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              <div className="flex flex-wrap gap-4">
+                <Button type="button" variant="outline" className="min-w-[14rem] rounded-xl border-white/10 bg-white/5 px-8 py-6 text-xl text-white hover:bg-white/10 hover:text-white" onClick={saveDraft}>
                   SAVE DRAFT
                 </Button>
-                <Button
-                  type="submit"
-                  className="flex-1 h-12 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold"
-                  disabled={createListingMutation.isPending}
-                >
-                  {createListingMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                <Button type="submit" className="min-w-[18rem] rounded-xl bg-[#0e5d73] px-8 py-6 text-xl text-white hover:bg-[#0a4d60]" disabled={createListingMutation.isPending}>
+                  {createListingMutation.isPending ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : null}
                   SUBMIT COLLECTIBLE
                 </Button>
               </div>
             </div>
 
-            {/* Right side - Image Upload */}
-            <div className="flex flex-col gap-6 w-full lg:w-auto lg:max-w-xs lg:row-span-2 lg:h-fit lg:justify-between">
-              <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-white/8 to-white/4 p-6 shadow-lg flex flex-col flex-1">
-                <h3 className="mb-6 text-lg font-semibold uppercase tracking-[0.1em] text-white/95">Upload Images</h3>
-                
-                {/* Main upload area */}
-                <div
-                  className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-white/20 bg-white/5 p-6 cursor-pointer transition-all hover:border-white/40 hover:bg-white/10 flex-1 min-h-48"
-                  onDragOver={(e) => {
-                    e.preventDefault();
-                    e.currentTarget.classList.add('border-white/60', 'bg-white/20');
-                  }}
-                  onDragLeave={(e) => {
-                    e.currentTarget.classList.remove('border-white/60', 'bg-white/20');
-                  }}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    e.currentTarget.classList.remove('border-white/60', 'bg-white/20');
-                    if (e.dataTransfer.files) {
-                      handlePhotos({ target: { files: e.dataTransfer.files } } as any);
-                    }
-                  }}
-                >
+            <div>
+              <h2 className="text-3xl font-medium text-white">UPLOAD IMAGE</h2>
+              <div className="mt-8 rounded-[1.5rem] border border-white/10 bg-black/18 p-5 shadow-[0_30px_80px_rgba(0,0,0,0.28)]">
+                <div className="overflow-hidden rounded-[1.25rem] border border-white/10 bg-black/20">
                   {primaryPhoto ? (
-                    <div className="w-full h-full flex flex-col items-center justify-center">
-                      <img src={primaryPhoto.previewUrl} alt="Preview" className="max-w-full max-h-40 rounded-lg object-contain" />
-                      <p className="text-xs text-white/50 mt-2">Main Image</p>
-                    </div>
+                    <img src={primaryPhoto.previewUrl} alt={primaryPhoto.name} className="aspect-[0.7] w-full object-cover" />
                   ) : (
-                    <div className="text-center">
-                      <Upload className="mx-auto h-12 w-12 text-white/50 mb-3" />
-                      <p className="text-sm text-white/70">Drag & drop or click to upload</p>
-                      <p className="text-xs text-white/50 mt-1">PNG, JPG up to 10MB</p>
+                    <div className="flex aspect-[0.7] items-center justify-center text-center text-white/55">
+                      <div>
+                        <Upload className="mx-auto h-10 w-10" />
+                        <p className="mt-3 text-lg">Upload front + back images</p>
+                      </div>
                     </div>
                   )}
                 </div>
-                
-                <label className="mt-4 inline-block w-full">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full border-white/20 text-white hover:bg-white/10"
-                    onClick={() => document.getElementById('inventory-photos')?.click()}
-                  >
-                    Browse Files
-                  </Button>
-                  <input
-                    id="inventory-photos"
-                    type="file"
-                    multiple
-                    accept="image/*"
-                    onChange={handlePhotos}
-                    className="hidden"
-                  />
-                </label>
-                
-                {/* Image thumbnails and primary selection */}
-                {photos.length > 0 && (
-                  <div className="mt-6 space-y-3">
-                    <p className="text-sm font-semibold text-white/90">Images ({photos.length})</p>
-                    <div className="grid grid-cols-3 gap-2 max-h-32 overflow-y-auto">
-                      {photos.map((photo, index) => (
-                        <button
-                          key={index}
-                          type="button"
-                          onClick={() => setPrimaryPhotoIndex(index)}
-                          className={`relative rounded-lg overflow-hidden border-2 transition-all ${
-                            index === primaryPhotoIndex
-                              ? 'border-blue-500 ring-2 ring-blue-400'
-                              : 'border-white/20 hover:border-white/40'
-                          }`}
-                        >
-                          <img src={photo.previewUrl} alt={`Thumbnail ${index + 1}`} className="w-full h-20 object-cover" />
-                          {index === primaryPhotoIndex && (
-                            <div className="absolute inset-0 bg-blue-500/20 flex items-center justify-center">
-                              <span className="text-xs font-bold text-white bg-blue-600 px-2 py-1 rounded">MAIN</span>
-                            </div>
-                          )}
-                        </button>
-                      ))}
-                    </div>
-                    <p className="text-xs text-white/50">Click an image to set it as the main image</p>
+                <Label htmlFor="inventory-photos" className="mt-5 block cursor-pointer text-center text-2xl uppercase tracking-[0.08em] text-white/90">
+                  Upload Front + Back...
+                </Label>
+                <Input id="inventory-photos" type="file" multiple accept="image/*" onChange={handlePhotos} className="mt-4 border-white/8 bg-white/6 text-white" />
+                {photos.length > 1 ? (
+                  <div className="mt-5 grid grid-cols-3 gap-3">
+                    {photos.slice(1).map(photo => (
+                      <div key={photo.name} className="overflow-hidden rounded-[1rem] border border-white/10">
+                        <img src={photo.previewUrl} alt={photo.name} className="aspect-[0.78] w-full object-cover" />
+                      </div>
+                    ))}
                   </div>
-                )}
+                ) : null}
               </div>
             </div>
           </div>

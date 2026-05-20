@@ -1,1 +1,0 @@
-ALTER TABLE `listings` ADD `isDraft` boolean DEFAULT false NOT NULL;

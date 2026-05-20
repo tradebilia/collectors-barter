@@ -1,6 +1,5 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { resolveTradebiliaListingImage } from "@/lib/listingImages";
-import { getTradebiliaCategoryLabel } from "@/lib/tradebilia";
 import { trpc } from "@/lib/trpc";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -15,13 +14,10 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { getLoginUrl } from "@/const";
-import { Heart, Loader2, MessageSquareText, Search, ShieldCheck, Sparkles, Star, ArrowRightLeft, Clock3, Plus } from "lucide-react";
+import { Heart, Loader2, MessageSquareText, Search, ShieldCheck, Sparkles, Star, ArrowRightLeft, Clock3, Plus, Bell, Mail, Settings2 } from "lucide-react";
 import { ChangeEvent, FormEvent, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Link } from "wouter";
-import { TopBar } from "@/components/TopBar";
-import { CategoryBar } from "@/components/CategoryBar";
-import { RecentlyAddedCarousel } from "@/components/RecentlyAddedCarousel";
 
 type UploadedImage = {
   name: string;
@@ -30,12 +26,13 @@ type UploadedImage = {
   previewUrl: string;
 };
 
-type ListingCategory = (typeof categoryOptions)[number]["value"];
+type ListingCategory = Exclude<(typeof categoryOptions)[number]["value"], "all">;
 type ListingCondition = Exclude<(typeof conditionOptions)[number]["value"], "all">;
 
-const TRADEBILIA_LOGO_URL = "/manus-storage/tradebilia-longform-no-navy-clean_d2f04453.png";
+const TRADEBILIA_LOGO_URL = "/manus-storage/tradebilia_final_darkest(1)_3e8b98df.svg";
 
 const categoryOptions = [
+  { value: "all", label: "All Categories" },
   { value: "comics", label: "Comics" },
   { value: "sports_cards", label: "Sports Cards" },
   { value: "vintage_toys", label: "Vintage Toys" },
@@ -49,6 +46,7 @@ const categoryOptions = [
 ] as const;
 
 const conditionOptions = [
+  { value: "all", label: "All Conditions" },
   { value: "mint", label: "Mint" },
   { value: "near_mint", label: "Near Mint" },
   { value: "very_good", label: "Very Good" },
@@ -130,15 +128,10 @@ async function readFiles(files: FileList | null) {
 export default function Home() {
   const { user, loading, isAuthenticated, logout } = useAuth();
   const utils = trpc.useUtils();
-  
-  const unreadCountsQuery = trpc.auth.unreadCounts.useQuery(undefined, {
-    enabled: isAuthenticated,
-    refetchInterval: 30000, // Refetch every 30 seconds
-  });
 
   const [keyword, setKeyword] = useState("");
-  const [category, setCategory] = useState<(typeof categoryOptions)[number]["value"] | undefined>(undefined);
-  const [condition, setCondition] = useState<(typeof conditionOptions)[number]["value"] | undefined>(undefined);
+  const [category, setCategory] = useState<(typeof categoryOptions)[number]["value"]>("all");
+  const [condition, setCondition] = useState<(typeof conditionOptions)[number]["value"]>("all");
   const [listingDraft, setListingDraft] = useState<{
     title: string;
     category: ListingCategory;
@@ -163,9 +156,6 @@ export default function Home() {
   const [activeProposalId, setActiveProposalId] = useState<number | null>(null);
 
   const marketplaceQuery = trpc.market.feed.useQuery({ category, condition, keyword });
-  const siteStatisticsQuery = trpc.market.siteStatistics.useQuery(undefined, {
-    refetchInterval: 300000, // Refetch every 5 minutes
-  });
   const dashboardQuery = trpc.market.dashboard.useQuery(undefined, {
     enabled: isAuthenticated,
   });
@@ -432,11 +422,50 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-[#f7f4ee] text-foreground">
-      <TopBar
-        logoUrl={TRADEBILIA_LOGO_URL}
-        searchPlaceholder="Search Tradebilia..."
-        onSearchChange={setKeyword}
-      />
+      <header className="border-b border-black/70 bg-black text-white shadow-[0_8px_22px_rgba(0,0,0,0.25)]">
+        <div className="container flex min-h-7 items-center justify-between gap-3 py-0.5 text-[11px]">
+          <div className="flex flex-1 items-center gap-3">
+            <span className="font-['Oswald'] text-[2.15rem] font-semibold leading-none tracking-[-0.05em] text-white sm:text-[2.45rem]">Search</span>
+            <div className="flex w-full max-w-sm overflow-hidden rounded-[0.35rem] border border-black/80 bg-white">
+              <Input
+                value={keyword}
+                onChange={event => setKeyword(event.target.value)}
+                placeholder="Search..."
+                className="h-7 rounded-none border-0 bg-white px-3 text-[9.5px] text-slate-900 placeholder:text-slate-500 focus-visible:ring-0"
+              />
+              <button
+                type="button"
+                className="inline-flex h-7 w-9 items-center justify-center bg-[#7f31ff] text-white transition hover:bg-[#6925dd]"
+                onClick={() => marketplaceQuery.refetch()}
+              >
+                <Search className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          </div>
+          <div className="hidden items-center gap-2 md:flex">
+            <Link href="/profile" className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/90 transition hover:text-white">
+              My Tradebilia
+            </Link>
+            <span className="text-white/45">|</span>
+            <div className="flex items-center gap-1 text-[#d4e86d]">
+              <Bell className="h-4 w-4" />
+              <Settings2 className="h-4 w-4" />
+              <Mail className="h-4 w-4" />
+            </div>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 overflow-hidden border-t border-white/15 bg-[#f7f7f5] text-slate-900 sm:grid-cols-5 xl:grid-cols-10">
+          {categoryOptions.filter(option => option.value !== "all").map(option => (
+            <Link
+              key={option.value}
+              href={`/category/${option.value}`}
+              className={`flex min-h-8 items-center justify-center border-b border-r border-slate-300 px-1.5 py-1 text-center font-['Oswald'] text-[12px] font-semibold tracking-[0.01em] transition hover:bg-slate-100 ${category === option.value ? "bg-[#3b3b3b] text-white" : "bg-[#f7f7f5] text-slate-900"}`}
+            >
+              {option.label}
+            </Link>
+          ))}
+        </div>
+      </header>
 
       <main className="pb-24">
         <section className="relative w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden bg-[#00143A] text-white">
@@ -457,19 +486,17 @@ export default function Home() {
           </div>
         </section>
 
-        <CategoryBar />
-
         <section className="border-y border-black/25 bg-[linear-gradient(90deg,#8e9093_0%,#d7dde6_50%,#8e9093_100%)] py-1.5 text-black">
           <div className="grid gap-0 text-center sm:grid-cols-2 xl:grid-cols-4">
             {[
-              ["Total Members", siteStatisticsQuery.data?.totalMembers ? `${(siteStatisticsQuery.data.totalMembers / 1000).toFixed(0)}k` : "0k"],
-              ["Total Items", siteStatisticsQuery.data?.totalItems ? `${siteStatisticsQuery.data.totalItems.toLocaleString()}` : "0"],
-              ["Total Value", siteStatisticsQuery.data?.totalValue ? `$${(siteStatisticsQuery.data.totalValue / 1000000).toFixed(1)}M` : "$0"],
-              ["Total Trades", siteStatisticsQuery.data?.totalTrades ? `${(siteStatisticsQuery.data.totalTrades / 1000).toFixed(1)}k` : "0"],
+              ["Total Members", dashboard?.profile.tradeHistoryCount ? `${Math.max(dashboard.profile.tradeHistoryCount * 12, 40)}k` : "40k"],
+              ["Total Items", marketplaceQuery.data?.highlights.totalListings ? `${(marketplaceQuery.data.highlights.totalListings * 1250).toLocaleString()}` : "3,500,000"],
+              ["Total Value", marketplaceQuery.data?.highlights.totalListings ? `$${(marketplaceQuery.data.highlights.totalListings * 7500).toLocaleString()}` : "$20,500,000"],
+              ["Total Trades", marketplaceQuery.data?.highlights.completedTrades ? `${marketplaceQuery.data.highlights.completedTrades}k` : "10k"],
             ].map(([label, value]) => (
-              <div key={label as string} className="space-y-0.5 px-2 py-1.5 transition-all duration-500">
+              <div key={label as string} className="space-y-0.5 px-2 py-1.5">
                 <p className="text-[10px] font-medium leading-none text-black/80">{label as string}</p>
-                <p className="text-[2.3rem] font-semibold leading-none sm:text-[2.7rem] transition-all duration-700 ease-out">{value as string}</p>
+                <p className="text-[2.3rem] font-semibold leading-none sm:text-[2.7rem]">{value as string}</p>
               </div>
             ))}
           </div>
@@ -507,21 +534,88 @@ export default function Home() {
 
                 <div className="bg-white px-3 py-3 lg:px-6 lg:py-3">
                   <h2 className="text-center font-serif text-[2.45rem] font-medium tracking-[-0.035em] text-[#2d241e] sm:text-[2.8rem]">Recently Added</h2>
-                  <RecentlyAddedCarousel
-                    items={recentShelfItems}
-                    onBeginProposal={beginProposal}
-                    user={user}
-                    isAuthenticated={isAuthenticated}
-                    createProposalMutation={createProposalMutation}
-                    watchlistMutation={watchlistMutation}
-                    proposalDraft={proposalDraft}
-                    setProposalDraft={setProposalDraft}
-                    onRefresh={() => {
-                      // Refetch the recently added items without stopping scroll
-                      // The query will automatically update displayItems in the carousel
-                      marketplaceQuery.refetch();
-                    }}
-                  />
+                  <div className="mt-1.5 grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
+                    {recentShelfItems.map(item => (
+                      <Card key={item.id} className="overflow-hidden rounded-none border border-slate-300 bg-white shadow-none">
+                        <div className="aspect-[0.68] overflow-hidden bg-[#f0ebe5]">
+                          {item.imageUrl ? (
+                            <img src={item.imageUrl} alt={item.title} className="h-full w-full object-cover" />
+                          ) : (
+                            <img src={resolveTradebiliaListingImage({ title: item.title })} alt={item.title} className="h-full w-full object-cover" />
+                          )}
+                        </div>
+                        <CardContent className="space-y-0.5 px-1.5 py-1.5">
+                          {item.href ? (
+                            <Link href={item.href} className="line-clamp-2 text-[10px] font-medium leading-3.5 text-slate-900 transition hover:text-primary">
+                              {item.title}
+                            </Link>
+                          ) : (
+                            <p className="line-clamp-2 text-[10px] font-medium leading-3.5 text-slate-900">{item.title}</p>
+                          )}
+                          <p className="text-[10px] text-[#7a46ff]">{item.price}</p>
+                          <p className="text-[8px] text-slate-500">{item.subtitle}</p>
+                          <div className="flex flex-wrap gap-1 pt-0.5">
+                            {item.href ? (
+                              <Link href={item.href} className="inline-flex h-5 items-center rounded-full border border-slate-300 px-1.5 text-[9px] font-medium text-slate-700 transition hover:border-primary hover:text-primary">
+                                View
+                              </Link>
+                            ) : null}
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button size="sm" className="h-5 rounded-full px-1.5 text-[9px]" onClick={() => item.tradeListingId ? beginProposal(item.tradeListingId) : toast.info('Sign in and add live listings to begin trading.')} disabled={item.ownerId ? user?.id === item.ownerId : false}>
+                                  Trade
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent className="max-w-2xl rounded-[2rem]">
+                                <DialogHeader>
+                                  <DialogTitle className="text-3xl">Create a Trade Proposal</DialogTitle>
+                                  <DialogDescription>
+                                    Send an expression of interest for <span className="font-semibold text-foreground">{item.title}</span>. The item owner will then review your inventory and select any items they would like to request in return.
+                                  </DialogDescription>
+                                </DialogHeader>
+                                {isAuthenticated ? (
+                                  <form className="space-y-5" onSubmit={submitProposal}>
+                                    <div className="rounded-[1.5rem] border border-border/70 bg-muted/30 p-4 text-sm leading-7 text-muted-foreground">
+                                      Your Trade Proposal starts as an expression of interest. You do not select exchange items at this stage. Once the owner reviews your request, they can choose one or more items from your inventory or refuse if they do not see anything of interest.
+                                    </div>
+                                    <div className="space-y-2">
+                                      <Label htmlFor={`proposal-note-${item.id}`}>Message</Label>
+                                      <Textarea
+                                        id={`proposal-note-${item.id}`}
+                                        value={proposalDraft.note}
+                                        onChange={event => setProposalDraft(current => ({ ...current, requestedListingId: item.tradeListingId ?? current.requestedListingId, note: event.target.value }))}
+                                        placeholder="Introduce yourself, explain what interests you about this item, and invite the owner to review your inventory."
+                                        rows={5}
+                                      />
+                                    </div>
+                                    <Button type="submit" className="rounded-full" disabled={createProposalMutation.isPending}>
+                                      {createProposalMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                                      Send Trade Proposal
+                                    </Button>
+                                  </form>
+                                ) : (
+                                  <div className="space-y-4 rounded-[1.5rem] border border-border/70 bg-muted/40 p-6">
+                                    <p className="text-sm leading-7 text-muted-foreground">You need a subscriber account to send Trade Proposals, message other collectors, and maintain a Watchlist.</p>
+                                    <Button className="rounded-full" onClick={() => (window.location.href = getLoginUrl())}>Subscriber Sign In</Button>
+                                  </div>
+                                )}
+                              </DialogContent>
+                            </Dialog>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-5 rounded-full px-1.5 text-[9px]"
+                              disabled={!isAuthenticated || watchlistMutation.isPending || !item.tradeListingId}
+                              onClick={() => item.tradeListingId ? watchlistMutation.mutate({ listingId: item.tradeListingId }) : toast.info('Add live listings to use the Watchlist.')}
+                            >
+                              <Heart className={`mr-1 h-3 w-3 ${item.savedToWatchlist ? "fill-current" : ""}`} />
+                              Save
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
                 </div>
 
                 <div className="grid gap-0 md:grid-cols-2 xl:grid-cols-4 lg:col-start-2">
@@ -653,7 +747,7 @@ export default function Home() {
                                 <SelectValue placeholder="Select a category" />
                               </SelectTrigger>
                               <SelectContent>
-                                {[...categoryOptions].map(option => (
+                                {categoryOptions.filter(option => option.value !== "all").map(option => (
                                   <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
                                 ))}
                               </SelectContent>
@@ -666,7 +760,7 @@ export default function Home() {
                                 <SelectValue placeholder="Select a condition" />
                               </SelectTrigger>
                               <SelectContent>
-                                {conditionOptions.map(option => (
+                                {conditionOptions.filter(option => option.value !== "all").map(option => (
                                   <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
                                 ))}
                               </SelectContent>
@@ -712,7 +806,7 @@ export default function Home() {
                           <h4 className="text-2xl font-semibold text-foreground">{listing.title}</h4>
                           <Badge variant="outline" className="rounded-full">{listing.status}</Badge>
                         </div>
-                        <p className="text-sm text-muted-foreground">{getTradebiliaCategoryLabel(listing.category)} · {listing.condition}</p>
+                        <p className="text-sm text-muted-foreground">{listing.categoryLabel} · {listing.conditionLabel}</p>
                         <p className="line-clamp-3 text-sm leading-7 text-muted-foreground">{listing.description}</p>
                       </CardContent>
                     </Card>
@@ -758,7 +852,7 @@ export default function Home() {
                         >
                           <div className="flex items-start justify-between gap-4">
                             <div>
-                              <p className="text-sm font-semibold text-foreground">{proposal.counterpart?.displayName ?? "Collector"} {proposal.direction === "incoming" ? "sent you a trade request" : "received your trade request"}</p>
+                              <p className="text-sm font-semibold text-foreground">{proposal.counterpart.displayName} {proposal.direction === "incoming" ? "sent you a trade request" : "received your trade request"}</p>
                               <p className="mt-1 text-xs uppercase tracking-[0.18em] text-muted-foreground">Trade Proposal #{proposal.id}</p>
                             </div>
                             <div className="text-right text-xs text-muted-foreground">
@@ -784,7 +878,7 @@ export default function Home() {
 
                   <Card className="surface-card overflow-hidden bg-card/90">
                     <CardHeader className="border-b border-border/60 pb-5">
-                      <CardTitle className="text-4xl">{activeProposal ? activeProposal.counterpart?.displayName ?? "Collector" : "Trade detail"}</CardTitle>
+                      <CardTitle className="text-4xl">{activeProposal ? activeProposal.counterpart.displayName : "Trade detail"}</CardTitle>
                       <CardDescription>{activeProposal ? "Review the active request, choose inventory, send responses, and keep the audit trail complete." : "Select a Trade Proposal to inspect its details."}</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6 p-5">
@@ -794,7 +888,7 @@ export default function Home() {
                             <div className="rounded-[1.5rem] border border-border/70 bg-background/70 p-4">
                               <p className="text-sm font-semibold uppercase tracking-[0.18em] text-muted-foreground">Requested listing</p>
                               <p className="mt-3 text-2xl font-semibold text-foreground">{activeProposal.requestedListing?.title}</p>
-                              <p className="mt-1 text-sm text-muted-foreground">{activeProposal.requestedListing ? getTradebiliaCategoryLabel(activeProposal.requestedListing.category) : ''} · {activeProposal.requestedListing?.condition}</p>
+                              <p className="mt-1 text-sm text-muted-foreground">{activeProposal.requestedListing?.categoryLabel} · {activeProposal.requestedListing?.conditionLabel}</p>
                             </div>
                             <div className="rounded-[1.5rem] border border-border/70 bg-background/70 p-4">
                               <div className="flex items-center justify-between gap-3">
@@ -810,14 +904,14 @@ export default function Home() {
                               <div className="flex items-center justify-between gap-3">
                                 <div>
                                   <p className="text-sm font-semibold uppercase tracking-[0.18em] text-muted-foreground">Requestor's items</p>
-                                  <p className="mt-1 text-sm text-muted-foreground">Browse {activeProposal.counterpart?.displayName ?? "the collector"}'s inventory and select the items you want to include in your response.</p>
+                                  <p className="mt-1 text-sm text-muted-foreground">Browse {activeProposal.counterpart.displayName}'s inventory and select the items you want to include in your response.</p>
                                 </div>
                                 <div className="flex items-center gap-2 text-xs text-emerald-600">
                                   <Clock3 className="h-4 w-4" /> Online now
                                 </div>
                               </div>
                               <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                                {activeProposal.requesterInventory.map((item: any) => {
+                                {activeProposal.requesterInventory.map(item => {
                                   const checked = (selectionDrafts[activeProposal.id]?.offeredListingIds ?? []).includes(item.id);
                                   return (
                                     <label key={item.id} className={`rounded-[1.25rem] border p-4 transition ${checked ? "border-primary bg-primary/8 shadow-[0_12px_30px_-24px_rgba(80,40,220,0.8)]" : "border-border/70 bg-card"}`}>
@@ -825,7 +919,7 @@ export default function Home() {
                                         <input type="checkbox" checked={checked} onChange={event => toggleSelectionItem(activeProposal.id, item.id, event.target.checked)} className="mt-1 h-4 w-4" />
                                         <div>
                                           <p className="font-semibold text-foreground">{item.title}</p>
-                                          <p className="mt-1 text-sm text-muted-foreground">{getTradebiliaCategoryLabel(item.category)} · {item.condition}</p>
+                                          <p className="mt-1 text-sm text-muted-foreground">{item.categoryLabel} · {item.conditionLabel}</p>
                                         </div>
                                       </div>
                                     </label>
@@ -869,7 +963,7 @@ export default function Home() {
                                 <div className="rounded-[1.25rem] border border-border/70 bg-card p-4">
                                   <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Their items</p>
                                   <div className="mt-2 space-y-2">
-                                    {activeProposal.offeredListings.map((item: any) => (
+                                    {activeProposal.offeredListings.map(item => (
                                       <p key={item.id} className="text-sm font-semibold text-foreground">{item.title}</p>
                                     ))}
                                   </div>
@@ -887,10 +981,10 @@ export default function Home() {
                             <div className="rounded-[1.5rem] border border-emerald-500/20 bg-emerald-500/5 p-4">
                               <p className="text-sm font-semibold uppercase tracking-[0.18em] text-emerald-700">Shared contact information</p>
                               <div className="mt-3 grid gap-2 text-sm text-foreground md:grid-cols-2">
-                                <p><span className="font-semibold">Full name:</span> {activeProposal.contactDetails?.fullName || "Pending"}</p>
-                                <p><span className="font-semibold">Email:</span> {activeProposal.contactDetails?.email || "Pending"}</p>
-                                <p><span className="font-semibold">Phone:</span> {activeProposal.contactDetails?.phone || "Pending"}</p>
-                                <p><span className="font-semibold">Address:</span> {activeProposal.contactDetails?.address || "Pending"}</p>
+                                <p><span className="font-semibold">Full name:</span> {activeProposal.contactDetails.fullName || "Pending"}</p>
+                                <p><span className="font-semibold">Email:</span> {activeProposal.contactDetails.email || "Pending"}</p>
+                                <p><span className="font-semibold">Phone:</span> {activeProposal.contactDetails.phone || "Pending"}</p>
+                                <p><span className="font-semibold">Address:</span> {activeProposal.contactDetails.address || "Pending"}</p>
                               </div>
                             </div>
                           ) : null}
@@ -901,7 +995,7 @@ export default function Home() {
                             </div>
                             <ScrollArea className="mt-4 h-56 rounded-[1.5rem] border border-border/70 bg-card p-4">
                               <div className="space-y-3">
-                                {activeProposal.messages.map((message: any) => (
+                                {activeProposal.messages.map(message => (
                                   <div key={message.id} className="rounded-2xl bg-background/80 p-3">
                                     <div className="flex items-center justify-between gap-3 text-xs text-muted-foreground">
                                       <span className="font-semibold text-foreground">{message.senderDisplayName}</span>
@@ -951,7 +1045,7 @@ export default function Home() {
                         </div>
                         <div className="space-y-3 p-5">
                           <h4 className="text-2xl font-semibold text-foreground">{listing.title}</h4>
-                          <p className="text-sm text-muted-foreground">{getTradebiliaCategoryLabel(listing.category)} · {listing.condition}</p>
+                          <p className="text-sm text-muted-foreground">{listing.categoryLabel} · {listing.conditionLabel}</p>
                           <Button variant="outline" className="rounded-full" onClick={() => watchlistMutation.mutate({ listingId: listing.id })}>Remove from Watchlist</Button>
                         </div>
                       </div>
@@ -972,7 +1066,7 @@ export default function Home() {
                         <div>
                           <p className="text-sm uppercase tracking-[0.2em] text-muted-foreground">Trade Proposal #{proposal.id}</p>
                           <h4 className="text-2xl font-semibold text-foreground">{proposal.requestedListing?.title}</h4>
-                          <p className="text-sm text-muted-foreground">Counterpart: {proposal.counterpart?.displayName ?? "Collector"}</p>
+                          <p className="text-sm text-muted-foreground">Counterpart: {proposal.counterpart.displayName}</p>
                         </div>
                         <div className="flex items-center gap-6">
                           <div className="text-sm text-muted-foreground">
@@ -1002,7 +1096,7 @@ export default function Home() {
                         const draft = reviewDrafts[proposal.id] ?? { rating: 5, review: "" };
                         return (
                           <div key={proposal.id} className="rounded-[1.75rem] border border-border/70 bg-background/70 p-4">
-                            <p className="font-semibold text-foreground">Review {proposal.counterpart?.displayName ?? "Collector"}</p>
+                            <p className="font-semibold text-foreground">Review {proposal.counterpart.displayName}</p>
                             <div className="mt-3 space-y-3">
                               <Select value={String(draft.rating)} onValueChange={value => setReviewDrafts(current => ({ ...current, [proposal.id]: { ...draft, rating: Number(value) } }))}>
                                 <SelectTrigger>
