@@ -1105,6 +1105,10 @@ export async function getDashboardData(user: Pick<User, "id" | "name">) {
       contactEmail: profileRows[0]?.contactEmail ?? "",
       contactPhone: profileRows[0]?.contactPhone ?? "",
       contactAddress: profileRows[0]?.contactAddress ?? "",
+      contactTown: profileRows[0]?.contactTown ?? "",
+      contactState: profileRows[0]?.contactState ?? "",
+      contactZipCode: profileRows[0]?.contactZipCode ?? "",
+      contactCountry: profileRows[0]?.contactCountry ?? "",
       rating,
       tradeHistoryCount: proposalCards.length,
     },
@@ -1139,6 +1143,10 @@ export async function updateProfile(
     contactEmail?: string;
     contactPhone?: string;
     contactAddress?: string;
+    contactTown?: string;
+    contactState?: string;
+    contactZipCode?: string;
+    contactCountry?: string;
     firstName?: string;
     lastName?: string;
     avatar?: AvatarUploadInput | null;
@@ -1167,6 +1175,10 @@ export async function updateProfile(
     contactEmail: input.contactEmail?.trim() ? input.contactEmail.trim().slice(0, 320) : null,
     contactPhone: input.contactPhone?.trim() ? input.contactPhone.trim().slice(0, 40) : null,
     contactAddress: input.contactAddress?.trim() ? input.contactAddress.trim().slice(0, 320) : null,
+    contactTown: input.contactTown?.trim() ? input.contactTown.trim().slice(0, 100) : null,
+    contactState: input.contactState?.trim() ? input.contactState.trim().slice(0, 100) : null,
+    contactZipCode: input.contactZipCode?.trim() ? input.contactZipCode.trim().slice(0, 20) : null,
+    contactCountry: input.contactCountry?.trim() ? input.contactCountry.trim().slice(0, 100) : null,
   };
 
   if (input.firstName !== undefined) {
