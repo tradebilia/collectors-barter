@@ -272,23 +272,22 @@ export default function AccountSettings() {
       await saveProfileMutation.mutateAsync(payload);
       console.log("[AccountSettings] Profile saved successfully");
       toast.dismiss(toastId);
-      toast.success("Profile updated successfully!");
+      alert("Profile updated successfully!");
       // Refresh the dashboard data
       await utils.market.dashboard.refetch();
     } catch (error: any) {
       console.error("[AccountSettings] Error saving profile:", error);
       toast.dismiss(toastId);
-      toast.error(error.message || "Failed to update profile");
+      alert("Error: " + (error.message || "Failed to update profile"));
     }
   };
 
   const handleChangePassword = async () => {
     if (securityForm.newPassword !== securityForm.confirmPassword) {
-      toast.error("Passwords do not match");
+      alert("Passwords do not match");
       return;
     }
-    if (securityForm.newPassword.length < 8) {
-      toast.error("Password must be at least 8 characters");
+    if (securityForm.newPassword.length < 8) {      alert("Passwords must be at least 8 characters");
       return;
     }
     const toastId = toast.loading("Changing password...");
@@ -325,10 +324,10 @@ export default function AccountSettings() {
         securityAnswer: securityForm.securityAnswer,
       });
       toast.dismiss(toastId);
-      toast.success("Security question saved successfully!");
+      alert("Security question saved successfully!");
     } catch (error: any) {
       toast.dismiss(toastId);
-      toast.error(error.message || "Failed to save security question");
+      alert("Error: " + (error.message || "Failed to save security question"));
     }
   };
 
@@ -339,10 +338,10 @@ export default function AccountSettings() {
         connectedAccounts: connectedAccounts,
       });
       toast.dismiss(toastId);
-      toast.success("Integrations saved successfully!");
+      alert("Integrations saved successfully!");
     } catch (error: any) {
       toast.dismiss(toastId);
-      toast.error(error.message || "Failed to save integrations");
+      alert("Error: " + (error.message || "Failed to save integrations"));
     }
   };
 
@@ -351,10 +350,10 @@ export default function AccountSettings() {
     try {
       await saveCommunicationsMutation.mutateAsync(communicationPrefs);
       toast.dismiss(toastId);
-      toast.success("Communication preferences saved successfully!");
+      alert("Communication preferences saved successfully!");
     } catch (error: any) {
       toast.dismiss(toastId);
-      toast.error(error.message || "Failed to save communication preferences");
+      alert("Error: " + (error.message || "Failed to save communication preferences"));
     }
   };
 
@@ -367,10 +366,10 @@ export default function AccountSettings() {
       };
       await savePreferencesMutation.mutateAsync(prefsToSave);
       toast.dismiss(toastId);
-      toast.success("Preferences saved successfully!");
+      alert("Preferences saved successfully!");
     } catch (error: any) {
       toast.dismiss(toastId);
-      toast.error(error.message || "Failed to save preferences");
+      alert("Error: " + (error.message || "Failed to save preferences"));
     }
   };
 
