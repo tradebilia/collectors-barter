@@ -803,6 +803,9 @@ This ensures users can fill in all category-specific details when adding items t
 - [x] Implement server-side photo upload to S3 storage (avatar conversion to base64 working)
 - [x] Update profile save to include photo upload (payload includes avatar object)
 - [x] Test photo upload and persistence (avatar uploads successfully, needs verification of DB persistence)
+- [x] Fix Account Settings page formatting - add missing labels for address fields
+- [x] Increase spacing between labels and inputs (mt-2 class added)
+- [x] Verify logo displays correctly on Account Settings page (logo is present and matches category pages)
 
 ## CURRENT: TypeScript Error Resolution
 
