@@ -576,20 +576,6 @@ export default function AccountSettings() {
                     </div>
                   </div>
 
-                  {/* Phone Number */}
-                  <div className="border-t border-slate-200 pt-4 space-y-2">
-                    <Label htmlFor="phoneNumber">Phone Number</Label>
-                    <Input
-                      id="phoneNumber"
-                      name="phoneNumber"
-                      type="tel"
-                      value={profileForm.phoneNumber}
-                      onChange={handleProfileChange}
-                      placeholder="Your phone number"
-                      className="rounded-lg border-slate-200"
-                    />
-                  </div>
-
                   <Button 
                     onClick={handleSaveProfile} 
                     disabled={saveProfileMutation.isPending}
