@@ -257,6 +257,11 @@ export default function AccountSettings() {
       if (user?.role === 'admin') {
         payload.firstName = identityInfo.firstName;
         payload.lastName = identityInfo.lastName;
+        payload.contactEmail = identityInfo.email;
+        payload.contactAddress = identityInfo.street;
+        payload.contactZipCode = identityInfo.zipCode;
+        payload.contactState = identityInfo.state;
+        payload.contactCountry = identityInfo.country;
       }
       await saveProfileMutation.mutateAsync(payload);
       console.log("[AccountSettings] Profile saved successfully");
@@ -466,15 +471,51 @@ export default function AccountSettings() {
                       </div>
                       <div className="space-y-2">
                         <Label>Email Address</Label>
-                        <Input disabled value={identityInfo.email} className="bg-slate-100" />
+                        <Input 
+                          value={identityInfo.email} 
+                          onChange={(e) => user?.role === 'admin' && setIdentityInfo(prev => ({ ...prev, email: e.target.value }))}
+                          disabled={user?.role !== 'admin'}
+                          className={user?.role === 'admin' ? 'rounded-lg border-slate-200' : 'bg-slate-100 rounded-lg border-slate-200'} 
+                        />
                       </div>
                       <div className="space-y-2">
                         <Label>Country</Label>
-                        <Input disabled value={identityInfo.country} className="bg-slate-100" />
+                        <Input 
+                          value={identityInfo.country} 
+                          onChange={(e) => user?.role === 'admin' && setIdentityInfo(prev => ({ ...prev, country: e.target.value }))}
+                          disabled={user?.role !== 'admin'}
+                          className={user?.role === 'admin' ? 'rounded-lg border-slate-200' : 'bg-slate-100 rounded-lg border-slate-200'} 
+                        />
                       </div>
                       <div className="col-span-2 space-y-2">
-                        <Label>Address</Label>
-                        <Input disabled value={`${identityInfo.street}, ${identityInfo.zipCode} ${identityInfo.state}`} className="bg-slate-100" />
+                        <Label>Street Address</Label>
+                        <Input 
+                          value={identityInfo.street} 
+                          onChange={(e) => user?.role === 'admin' && setIdentityInfo(prev => ({ ...prev, street: e.target.value }))}
+                          disabled={user?.role !== 'admin'}
+                          placeholder="Street address"
+                          className={user?.role === 'admin' ? 'rounded-lg border-slate-200' : 'bg-slate-100 rounded-lg border-slate-200'} 
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Zip Code</Label>
+                        <Input 
+                          value={identityInfo.zipCode} 
+                          onChange={(e) => user?.role === 'admin' && setIdentityInfo(prev => ({ ...prev, zipCode: e.target.value }))}
+                          disabled={user?.role !== 'admin'}
+                          placeholder="Zip code"
+                          className={user?.role === 'admin' ? 'rounded-lg border-slate-200' : 'bg-slate-100 rounded-lg border-slate-200'} 
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>State</Label>
+                        <Input 
+                          value={identityInfo.state} 
+                          onChange={(e) => user?.role === 'admin' && setIdentityInfo(prev => ({ ...prev, state: e.target.value }))}
+                          disabled={user?.role !== 'admin'}
+                          placeholder="State"
+                          className={user?.role === 'admin' ? 'rounded-lg border-slate-200' : 'bg-slate-100 rounded-lg border-slate-200'} 
+                        />
                       </div>
                     </div>
                   </div>
