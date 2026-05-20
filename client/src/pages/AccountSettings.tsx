@@ -35,9 +35,9 @@ const categoryOptions = [
 ] as const;
 
 const accountSources = [
-  { value: "ebay", label: "eBay", icon: "🏪" },
-  { value: "paypal", label: "PayPal", icon: "💳" },
-  { value: "facebook", label: "Facebook", icon: "f" },
+  { value: "ebay", label: "eBay", logo: "/manus-storage/ebay-logo_b3d303cb.png" },
+  { value: "paypal", label: "PayPal", logo: "/manus-storage/paypal-logo_62835ee7.png" },
+  { value: "facebook", label: "Facebook", logo: "/manus-storage/facebook-logo_1fd22cc7.png" },
 ] as const;
 
 type AccountSource = typeof accountSources[number]["value"];
@@ -695,7 +695,11 @@ export default function AccountSettings() {
                         className="flex items-center justify-between rounded-lg border border-slate-200 p-4"
                       >
                         <div className="flex items-center gap-3">
-                          <span className="text-2xl">{source.icon}</span>
+                          <img 
+                            src={source.logo} 
+                            alt={source.label}
+                            className="h-12 w-auto object-contain"
+                          />
                           <div>
                             <p className="font-medium text-slate-900">{source.label}</p>
                             <p className="text-xs text-slate-600">
