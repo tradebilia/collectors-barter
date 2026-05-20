@@ -20,16 +20,20 @@ import {
   type TradebiliaCategorySlug,
 } from "@/lib/tradebilia";
 import { ArrowRight, Heart, Loader2, MessageSquareText, Search, ShieldCheck, Sparkles, Star, Trophy } from "lucide-react";
+import { TopRightIcons } from "@/components/TopRightIcons";
+import { TopBar } from "@/components/TopBar";
+import { CategoryBar } from "@/components/CategoryBar";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Link, useRoute } from "wouter";
+import { getGradingCompanyNamesForCategory } from "@shared/gradingCompanies";
 
 const categoryFilterPresets: Record<TradebiliaCategorySlug, Array<{ label: string; placeholder: string; type?: "select" | "input" }>> = {
   comics: [
     { label: "Keyword", placeholder: "Search by keyword" },
     { label: "Title", placeholder: "Amazing Fantasy, X-Men" },
     { label: "Issue Number", placeholder: "#1, #100, #50" },
-    { label: "Grading Service", placeholder: "Select grading service", type: "select" },
+    { label: "Grading service", placeholder: "Select grading service", type: "select" },
     { label: "Grade", placeholder: "Select grade 0-10", type: "select" },
     { label: "Value Range", placeholder: "Min - Max", type: "input" },
     { label: "Signed", placeholder: "Select option", type: "select" },
@@ -98,7 +102,6 @@ const categoryFilterPresets: Record<TradebiliaCategorySlug, Array<{ label: strin
 };
 
 const sortOptions = [
-  { value: "featured", label: "Featured" },
   { value: "newest", label: "Newest" },
   { value: "title", label: "Title" },
 ];
@@ -139,15 +142,21 @@ const sportsList = [
   "Other",
 ];
 
-const gradingServicesList = [
-  "PSA",
-  "BGS",
-  "SGC",
-  "CGC",
-  "Beckett",
-  "Sportscard Guaranty",
-  "Raw",
-];
+// Get grading companies for each category from the shared configuration
+const gradingServicesByCategory: Record<TradebiliaCategorySlug, string[]> = {
+  comics: getGradingCompanyNamesForCategory("comics"),
+  sports_cards: getGradingCompanyNamesForCategory("sports_cards"),
+  vintage_toys: getGradingCompanyNamesForCategory("vintage_toys"),
+  video_games: getGradingCompanyNamesForCategory("video_games"),
+  stamps: getGradingCompanyNamesForCategory("stamps"),
+  coins: getGradingCompanyNamesForCategory("coins"),
+  pokemon: getGradingCompanyNamesForCategory("pokemon"),
+  movies: getGradingCompanyNamesForCategory("movies"),
+  autographs: getGradingCompanyNamesForCategory("autographs"),
+  disney_pins: getGradingCompanyNamesForCategory("disney_pins"),
+};
+
+const gradingServicesList = ["Raw"];
 
 const gradeOptions = Array.from({ length: 11 }, (_, i) => ({ value: i.toString(), label: i.toString() }));
 
@@ -169,7 +178,7 @@ export default function CategoryPage() {
   const utils = trpc.useUtils();
 
   const [keyword, setKeyword] = useState("");
-  const [condition, setCondition] = useState<(typeof tradebiliaConditionOptions)[number]["value"]>("all");
+  const [condition, setCondition] = useState<(typeof tradebiliaConditionOptions)[number]["value"] | undefined>(undefined);
   const [sportsCardsConditionText, setSportsCardsConditionText] = useState("");
   const [sortBy, setSortBy] = useState("best_match");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
@@ -236,30 +245,10 @@ export default function CategoryPage() {
 
   return (
     <div className={`min-h-screen ${theme.pageClassName}`}>
-      <div className="border-b border-white/10 bg-black">
-        <div className="flex items-center justify-between gap-4 pl-2 pr-4 py-3">
-          <div className="flex-shrink-0">
-            <img src={SPORTS_CARDS_LONG_LOGO_URL} alt="Tradebilia" className="h-14 w-auto object-contain" />
-          </div>
-          <div className="flex-1 flex justify-center">
-            <div className="flex items-center gap-2 bg-white/10 rounded-lg px-4 py-2 max-w-2xl w-full">
-              <Search className="h-4 w-4 text-white/70 flex-shrink-0" />
-              <input type="text" placeholder={`Search ${getTradebiliaCategoryLabel(slug ?? '')}...`} className="bg-transparent text-white text-sm placeholder-white/50 outline-none w-full" />
-            </div>
-          </div>
-          <div className="flex items-center gap-4 flex-shrink-0">
-          <button className="rounded-lg p-2 text-white/70 transition hover:bg-white/10 hover:text-white" title="Messages">
-            <MessageSquareText className="h-5 w-5" />
-          </button>
-          <button className="rounded-lg p-2 text-white/70 transition hover:bg-white/10 hover:text-white" title="Account Settings">
-            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-          </button>
-          <button className="rounded-lg p-2 text-white/70 transition hover:bg-white/10 hover:text-white" title="Notifications">
-            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
-          </button>
-          </div>
-        </div>
-      </div>
+      <TopBar
+        logoUrl={SPORTS_CARDS_LONG_LOGO_URL}
+        searchPlaceholder={`Search ${getTradebiliaCategoryLabel(slug ?? '')}...`}
+      />
       <header className={`relative overflow-hidden border-b ${theme.borderClassName} ${theme.heroClassName}`} style={{ minHeight: '400px' }}>
         <div className={`relative overflow-hidden ${theme.textureClassName}`} style={{
           backgroundImage: isSportsCardsPage ? 'url(/manus-storage/Sportscardwallpaper_7d372f7d.webp)' : slug === 'video_games' ? 'url(https://d2xsxph8kpxj0f.cloudfront.net/310519663570115757/nAx6ATm2BH4G46yabuMZgM/video-games-background-kyx4vVUqTYCMC3kMbtokYU.webp)' : slug === 'coins' ? 'url(/manus-storage/Coins2_54d5f0d9.png)' : slug === 'stamps' ? 'url(/manus-storage/Stamps5_7feb0c7e.png)' : slug === 'vintage_toys' ? 'url(/manus-storage/Toys4_70f212d6.png)' : slug === 'autographs' ? 'url(/manus-storage/Auto2_41464c02.png)' : slug === 'movies' ? 'url(/manus-storage/VHS1_4fe4bb67.png)' : slug === 'comics' ? 'url(https://d2xsxph8kpxj0f.cloudfront.net/310519663570115757/nAx6ATm2BH4G46yabuMZgM/comics-background-YZiiH2cyV8YJx6GFQj4PKC.webp)' : slug === 'pokemon' ? 'url(https://d2xsxph8kpxj0f.cloudfront.net/310519663570115757/nAx6ATm2BH4G46yabuMZgM/pokemon-background-J6h7Mte6BSYA3GfQ4vtdFj.webp)' : slug === 'disney_pins' ? 'url(https://d2xsxph8kpxj0f.cloudfront.net/310519663570115757/nAx6ATm2BH4G46yabuMZgM/disney-pins-background-F6yUvFLVrhmnaWk6GsFMZ8.webp)' : undefined,
@@ -332,26 +321,7 @@ export default function CategoryPage() {
 
       </header>
 
-      <nav className="relative z-10 border-t border-black bg-black">
-        <div className="flex w-full overflow-x-auto">
-          <Link
-            href="/"
-            className="flex-1 border-b border-r border-white/10 px-4 py-4 text-center text-xs font-semibold uppercase tracking-[0.16em] transition hover:bg-white/10 lg:text-[11px] text-white whitespace-nowrap"
-          >
-            Home
-          </Link>
-          {tradebiliaCategories.map(category => (
-            <Link
-              key={category.value}
-              href={`/category/${category.value}`}
-              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-              className={`flex-1 border-b border-r border-white/10 px-4 py-4 text-center text-xs font-semibold uppercase tracking-[0.16em] transition hover:bg-white/10 lg:text-[11px] whitespace-nowrap ${category.value === slug ? "bg-white text-slate-950" : "text-white"}`}
-            >
-              {category.label}
-            </Link>
-          ))}
-        </div>
-      </nav>
+      <CategoryBar />
 
       <main className="flex">
         {/* Left sidebar filters */}
@@ -380,7 +350,16 @@ export default function CategoryPage() {
                         {filter.label === "Sport" && sportsList.map(sport => (
                           <SelectItem key={sport} value={sport}>{sport}</SelectItem>
                         ))}
-                        {filter.label === "Grading service" && gradingServicesList.map(service => (
+                        {filter.label === "Grading service" && slug && gradingServicesByCategory[slug]?.map(service => (
+                          <SelectItem key={service} value={service}>{service}</SelectItem>
+                        ))}
+                        {filter.label === "Grading company" && slug && gradingServicesByCategory[slug]?.map(service => (
+                          <SelectItem key={service} value={service}>{service}</SelectItem>
+                        ))}
+                        {filter.label === "Certification" && slug && gradingServicesByCategory[slug]?.map(service => (
+                          <SelectItem key={service} value={service}>{service}</SelectItem>
+                        ))}
+                        {filter.label === "Authentication" && slug && gradingServicesByCategory[slug]?.map(service => (
                           <SelectItem key={service} value={service}>{service}</SelectItem>
                         ))}
                         {filter.label === "Grade" && gradeOptions.map(grade => (
@@ -392,12 +371,7 @@ export default function CategoryPage() {
                         {filter.label === "Autographed" && autographedOptions.map(option => (
                           <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
                         ))}
-                        {!["Sport", "Grading service", "Grade", "Rookie", "Autographed"].includes(filter.label) && (
-                          <>
-                            <SelectItem value="featured">Featured</SelectItem>
-                            <SelectItem value="certified">Certified</SelectItem>
-                          </>
-                        )}
+
                       </SelectContent>
                     </Select>
                   ) : filter.label === "Value Range" ? (
@@ -454,7 +428,7 @@ export default function CategoryPage() {
         <div className="flex-1 py-8 lg:py-10 px-6">
           <section className="space-y-6">
             {/* Filter summary bar */}
-            {(keyword || condition !== "all" || sportsCardsConditionText) && (
+            {(keyword || condition || sportsCardsConditionText) && (
               <div className="flex flex-wrap gap-2 items-center pb-3">
                 <span className="text-xs font-medium opacity-70">Active filters:</span>
                 {keyword && (
@@ -463,10 +437,10 @@ export default function CategoryPage() {
                     <button onClick={() => setKeyword("")} className="ml-1 hover:opacity-70">×</button>
                   </div>
                 )}
-                {condition !== "all" && (
+                {condition && (
                   <div className="inline-flex items-center gap-1 bg-blue-600/20 text-blue-600 px-2 py-1 rounded text-xs">
                     {condition}
-                    <button onClick={() => setCondition("all")} className="ml-1 hover:opacity-70">×</button>
+                    <button onClick={() => setCondition(undefined)} className="ml-1 hover:opacity-70">×</button>
                   </div>
                 )}
                 {sportsCardsConditionText && (
@@ -531,11 +505,11 @@ export default function CategoryPage() {
                   </Select>
                 </div>
                 {/* Clear filters button */}
-                {(keyword || condition !== "all" || sportsCardsConditionText) && (
+                {(keyword || condition || sportsCardsConditionText) && (
                   <button
                     onClick={() => {
                       setKeyword("");
-                      setCondition("all");
+                      setCondition(undefined);
                       setSportsCardsConditionText("");
                       setCurrentPage(1);
                     }}
@@ -568,10 +542,10 @@ export default function CategoryPage() {
               </div>
             ) : (
               <>
-                <div className={`grid gap-3 ${isSportsCardsPage ? "grid-cols-6" : "md:grid-cols-2 xl:grid-cols-3"}`}>
+                <div className={viewMode === "grid" ? "grid gap-3 grid-cols-6" : "space-y-3"}>
                   {listings.map(listing => (
-                  <Card key={listing.id} className={`overflow-hidden border ${theme.cardClassName} ${isSportsCardsPage ? "rounded-md shadow-sm" : "rounded-[2rem]"}`}>
-                    <div className={`overflow-hidden border-b border-current/10 ${isSportsCardsPage ? "aspect-[7/9] bg-[linear-gradient(180deg,rgba(243,228,188,0.92)_0%,rgba(232,214,168,0.92)_100%)] p-1" : "aspect-[4/5] bg-black/10"}`}>
+                  <Card key={listing.id} className={`overflow-hidden border ${theme.cardClassName} ${isSportsCardsPage ? "rounded-md shadow-sm" : "rounded-[2rem]"} ${viewMode === "list" ? "flex gap-4" : ""}`}>
+                    <Link href={`/listings/${listing.id}`} className={`overflow-hidden border-b border-current/10 block cursor-pointer hover:opacity-90 transition ${viewMode === "list" ? "w-32 flex-shrink-0" : ""} ${isSportsCardsPage ? "aspect-[7/9] bg-[linear-gradient(180deg,rgba(243,228,188,0.92)_0%,rgba(232,214,168,0.92)_100%)] p-1" : "aspect-[4/5] bg-black/10"}`}>
                       <div className={isSportsCardsPage ? "h-full rounded-sm border border-[#0f4658]/10 bg-[#f7ecd2] p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)]" : "h-full"}>
                         <img
                           src={resolveTradebiliaListingImage({ title: listing.title, category: listing.category, primaryPhotoUrl: listing.primaryPhotoUrl })}
@@ -579,43 +553,40 @@ export default function CategoryPage() {
                           className={isSportsCardsPage ? "h-full w-full object-contain p-0.5" : "h-full w-full object-cover"}
                         />
                       </div>
-                    </div>
-                    <CardContent className={`space-y-1 ${isSportsCardsPage ? "p-1.5 text-[#153746]" : "p-5"}`}>
-                      <div className="flex items-start justify-between gap-1">
-                        <div>
-                          <p className="text-[0.5rem] font-semibold uppercase tracking-[0.12em] opacity-60">{listing.categoryLabel}</p>
-                          <Link href={`/listings/${listing.id}`} className="mt-0.5 block text-xs font-semibold leading-tight hover:opacity-75">
+                    </Link>
+                    <CardContent className={`${viewMode === "list" ? "flex-1 space-y-3 p-4" : `space-y-1 ${isSportsCardsPage ? "p-1.5 text-[#153746]" : "p-5"}`}`}>
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1">
+                          <p className={`font-semibold uppercase tracking-[0.12em] opacity-60 ${viewMode === "list" ? "text-xs" : "text-[0.5rem]"}`}>{listing.categoryLabel}</p>
+                          <Link href={`/listings/${listing.id}`} className={`mt-1 block font-semibold leading-tight hover:opacity-75 ${viewMode === "list" ? "text-lg" : "text-xs"}`}>
                             {listing.title}
                           </Link>
                         </div>
-                        {listing.featured ? <Badge className={`rounded-full px-1 py-0 text-[0.5rem] ${theme.chipClassName}`}>Featured</Badge> : null}
+                        {listing.featured ? <Badge className={`rounded-full px-2 py-1 ${viewMode === "list" ? "text-xs" : "text-[0.5rem] px-1 py-0"} ${theme.chipClassName}`}>Featured</Badge> : null}
                       </div>
-                      <p className="line-clamp-1 text-[0.65rem] leading-3 opacity-80">{listing.description}</p>
-                      <div className="grid grid-cols-2 gap-1 rounded-md border border-current/10 bg-black/5 p-1 text-[0.5rem]">
+                      <p className={`${viewMode === "list" ? "text-sm line-clamp-2" : "line-clamp-1 text-[0.65rem]"} leading-relaxed opacity-80`}>{listing.description}</p>
+                      <div className={`rounded-md border border-current/10 bg-black/5 p-3 ${viewMode === "list" ? "grid grid-cols-4 gap-4" : "grid grid-cols-2 gap-1 p-1 text-[0.5rem]"}`}>
                         <div>
-                          <p className="text-[0.45rem] uppercase tracking-[0.1em] opacity-60">Collector</p>
-                          <p className="mt-0 font-semibold truncate text-[0.55rem]">{listing.owner.displayName}</p>
+                          <p className={`uppercase tracking-[0.1em] opacity-60 ${viewMode === "list" ? "text-xs" : "text-[0.45rem]"}`}>Collector</p>
+                          <p className={`mt-1 font-semibold truncate ${viewMode === "list" ? "text-sm" : "mt-0 text-[0.55rem]"}`}>{listing.owner.displayName}</p>
                         </div>
                         <div>
-                          <p className="text-[0.45rem] uppercase tracking-[0.1em] opacity-60">Condition</p>
-                          <p className="mt-0 font-semibold truncate text-[0.55rem]">{listing.conditionLabel}</p>
+                          <p className={`uppercase tracking-[0.1em] opacity-60 ${viewMode === "list" ? "text-xs" : "text-[0.45rem]"}`}>Condition</p>
+                          <p className={`mt-1 font-semibold truncate ${viewMode === "list" ? "text-sm" : "mt-0 text-[0.55rem]"}`}>{listing.conditionLabel}</p>
                         </div>
                         <div>
-                          <p className="text-[0.45rem] uppercase tracking-[0.1em] opacity-60">Trust</p>
-                          <div className="mt-0 flex items-center gap-0.5 font-semibold">
-                            <Star className="h-2 w-2 fill-current" />
-                            <span className="truncate text-[0.55rem]">{listing.ownerRating.averageRating.toFixed(1)}</span>
+                          <p className={`uppercase tracking-[0.1em] opacity-60 ${viewMode === "list" ? "text-xs" : "text-[0.45rem]"}`}>Trust</p>
+                          <div className={`mt-1 flex items-center gap-1 font-semibold ${viewMode === "list" ? "" : "mt-0 gap-0.5"}`}>
+                            <Star className={`fill-current ${viewMode === "list" ? "h-4 w-4" : "h-2 w-2"}`} />
+                            <span className={`truncate ${viewMode === "list" ? "text-sm" : "text-[0.55rem]"}`}>{listing.ownerRating.averageRating.toFixed(1)}</span>
                           </div>
                         </div>
                         <div>
-                          <p className="text-[0.45rem] uppercase tracking-[0.1em] opacity-60">Status</p>
-                          <p className="mt-0 font-semibold capitalize truncate text-[0.55rem]">{listing.status}</p>
+                          <p className={`uppercase tracking-[0.1em] opacity-60 ${viewMode === "list" ? "text-xs" : "text-[0.45rem]"}`}>Status</p>
+                          <p className={`mt-1 font-semibold capitalize truncate ${viewMode === "list" ? "text-sm" : "mt-0 text-[0.55rem]"}`}>{listing.status}</p>
                         </div>
                       </div>
                       <div className="flex flex-wrap gap-0.5">
-                        <Button asChild className="rounded-full px-2 py-0 text-[0.6rem] h-auto bg-[#D4AF37] hover:bg-[#C9A227] text-black">
-                          <Link href={`/listings/${listing.id}`}>View</Link>
-                        </Button>
                         <Dialog open={proposalListingId === listing.id} onOpenChange={open => setProposalListingId(open ? listing.id : null)}>
                           <DialogTrigger asChild>
                             <Button variant="outline" className="rounded-full bg-transparent px-1 py-0 text-xs h-auto" disabled={!isAuthenticated}>
@@ -647,7 +618,7 @@ export default function CategoryPage() {
                         </Dialog>
                         <Button
                           variant="outline"
-                          className="rounded-full bg-transparent"
+                          className="rounded-full bg-transparent px-1 py-0 text-xs h-auto"
                           onClick={() => {
                             if (!isAuthenticated) {
                               window.location.href = getLoginUrl();

@@ -21,7 +21,6 @@ export const tradebiliaCategoryOptions = [
 ] as const;
 
 export const tradebiliaConditionOptions = [
-  { value: "all", label: "All Conditions" },
   { value: "mint", label: "Mint" },
   { value: "near_mint", label: "Near Mint" },
   { value: "very_good", label: "Very Good" },
@@ -534,4 +533,39 @@ export function getTradebiliaCategoryBenchmark(slug: string) {
   return tradebiliaCategoryBenchmarks[slug as TradebiliaCategorySlug]
     ?? fallbackCategoryBenchmarks[slug as TradebiliaCategorySlug]
     ?? null;
+}
+
+
+/**
+ * Generate avatar initials from user profile data
+ * Prefers firstName and lastName if available, falls back to displayName
+ */
+export function getAvatarInitials(profile: {
+  firstName?: string | null;
+  lastName?: string | null;
+  displayName?: string;
+}): string {
+  const { firstName, lastName, displayName } = profile;
+  
+  // If both firstName and lastName are available, use them
+  if (firstName && lastName) {
+    return `${firstName[0]?.toUpperCase() ?? ""}${lastName[0]?.toUpperCase() ?? ""}` || "TB";
+  }
+  
+  // If only firstName is available
+  if (firstName) {
+    return firstName[0]?.toUpperCase() ?? "TB";
+  }
+  
+  // Fall back to displayName
+  if (displayName) {
+    return displayName
+      .split(" ")
+      .filter(Boolean)
+      .slice(0, 2)
+      .map(part => part[0]?.toUpperCase() ?? "")
+      .join("") || "TB";
+  }
+  
+  return "TB";
 }

@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Bell, Heart, Loader2, Mail, Search, ShieldCheck, Sparkles } from "lucide-react";
+import { TopRightIcons } from "@/components/TopRightIcons";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Link } from "wouter";
@@ -71,12 +72,7 @@ export default function Watchlist() {
               <Input value={keyword} onChange={event => setKeyword(event.target.value)} className="h-9 rounded-sm border-0 bg-white pl-10 pr-3 text-sm text-slate-950" placeholder="Search watchlist..." />
             </div>
           </div>
-          <div className="ml-auto flex items-center gap-4 text-[11px] uppercase tracking-[0.32em] text-white/85">
-            <Link href="/profile" className="transition hover:text-white">My Tradebilia</Link>
-            <Bell className="h-4 w-4" />
-            <ShieldCheck className="h-4 w-4" />
-            <Mail className="h-4 w-4" />
-          </div>
+          <TopRightIcons className="ml-auto flex items-center gap-3 md:gap-4" iconColor="text-white/85" />
         </div>
         <nav className="grid grid-cols-2 border-t border-white/10 bg-white text-center text-[11px] font-semibold text-black sm:grid-cols-5 lg:grid-cols-10">
           {categoryLinks.map(([label, slug]) => (

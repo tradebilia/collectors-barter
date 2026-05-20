@@ -10,6 +10,7 @@ import { listDirectThreads, loadPresenceMap, sendDirectMessage, subscribeToDirec
 import { trpc } from "@/lib/trpc";
 import { TRADEBILIA_LOGO_URL, tradebiliaCategories } from "@/lib/tradebilia";
 import { ArrowRightLeft, Loader2, MailOpen, MessageSquareText, Send, ShieldCheck, UsersRound } from "lucide-react";
+import { TopRightIcons } from "@/components/TopRightIcons";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Link } from "wouter";
@@ -79,21 +80,23 @@ export default function Messages() {
   }, [dashboardQuery.data?.tradeProposals]);
 
   const allThreads = useMemo(() => {
-    const tradeThreads = proposals.map(proposal => {
-      const latestMessage = proposal.messages.at(-1);
-      return {
-        key: `trade-${proposal.id}`,
-        kind: "trade" as const,
-        updatedAt: proposal.updatedAt,
-        unread: Boolean(latestMessage && latestMessage.senderId !== user?.id),
-        accepted: ["accepted", "completed"].includes(proposal.status),
-        counterpartId: proposal.counterpart.userId,
-        counterpartName: proposal.counterpart.displayName,
-        counterpartAvatarUrl: proposal.counterpart.avatarUrl ?? null,
-        summary: latestMessage?.message ?? proposal.note ?? "No message yet.",
-        proposal,
-      };
-    });
+    const tradeThreads = proposals
+      .filter(proposal => proposal.counterpart)
+      .map(proposal => {
+        const latestMessage = proposal.messages?.at(-1) as any;
+        return {
+          key: `trade-${proposal.id}`,
+          kind: "trade" as const,
+          updatedAt: proposal.updatedAt,
+          unread: Boolean(latestMessage && latestMessage?.senderId !== user?.id),
+          accepted: ["accepted", "completed"].includes(proposal.status),
+          counterpartId: proposal.counterpart!.userId,
+          counterpartName: proposal.counterpart!.displayName,
+          counterpartAvatarUrl: proposal.counterpart!.avatarUrl ?? null,
+          summary: latestMessage?.message ?? proposal.note ?? "No message yet.",
+          proposal,
+        };
+      });
 
     const direct = directThreads.map(thread => {
       const latestMessage = thread.messages.at(-1);
@@ -184,10 +187,11 @@ export default function Messages() {
     <div className="min-h-screen bg-[linear-gradient(180deg,#0a0d22_0%,#121c48_26%,#ede3d3_26%,#ede3d3_100%)] text-slate-950">
       <header className="border-b border-white/10 bg-[radial-gradient(circle_at_top,#1c2468_0%,#0b0a22_65%)] text-white">
         <div className="container py-3 lg:py-4">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center justify-between gap-3">
             <Link href="/" className="rounded-lg border border-white/30 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/20">
               Home
             </Link>
+            <TopRightIcons className="flex items-center gap-3 md:gap-4" iconColor="text-white/70" />
           </div>
         </div>
         <div className="container py-8 lg:py-10">
@@ -317,7 +321,7 @@ export default function Messages() {
                         <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-slate-600">
                           <Badge variant="outline" className="rounded-full capitalize">{activeThread.kind === "direct" ? "Direct conversation" : activeThread.proposal.status}</Badge>
                           {activeOnline ? <span className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-emerald-700"><span className="h-2 w-2 rounded-full bg-emerald-500" />Online now</span> : null}
-                          {activeThread.kind === "trade" ? <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1"><ShieldCheck className="h-4 w-4" />{activeThread.proposal.counterpartRating.averageRating.toFixed(1)} rating</span> : <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1"><UsersRound className="h-4 w-4" />Collector direct line</span>}
+                          {activeThread.kind === "trade" ? <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1"><ShieldCheck className="h-4 w-4" />{activeThread.proposal.ownerRating?.averageRating?.toFixed(1) ?? "N/A"} rating</span> : <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1"><UsersRound className="h-4 w-4" />Collector direct line</span>}
                         </div>
                       </div>
                     </div>
@@ -338,11 +342,11 @@ export default function Messages() {
                     <div className="mt-4 rounded-[1.5rem] border border-emerald-200 bg-emerald-50 p-4 text-sm leading-7 text-emerald-900">
                       <p className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-700">Accepted trade contact sharing</p>
                       <p className="mt-2">
-                        {activeThread.proposal.contactDetails.fullName ?? activeThread.counterpartName}
-                        {activeThread.proposal.contactDetails.email ? ` · ${activeThread.proposal.contactDetails.email}` : ""}
-                        {activeThread.proposal.contactDetails.phone ? ` · ${activeThread.proposal.contactDetails.phone}` : ""}
+                        {(activeThread.proposal.contactDetails as any).fullName ?? activeThread.counterpartName}
+                        {(activeThread.proposal.contactDetails as any).email ? ` · ${(activeThread.proposal.contactDetails as any).email}` : ""}
+                        {(activeThread.proposal.contactDetails as any).phone ? ` · ${(activeThread.proposal.contactDetails as any).phone}` : ""}
                       </p>
-                      {activeThread.proposal.contactDetails.address ? <p>{activeThread.proposal.contactDetails.address}</p> : null}
+                      {(activeThread.proposal.contactDetails as any).address ? <p>{(activeThread.proposal.contactDetails as any).address}</p> : null}
                     </div>
                   ) : null}
                 </div>

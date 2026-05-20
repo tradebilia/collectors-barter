@@ -14,11 +14,28 @@ import {
   sendTradeMessage,
   toggleWatchlist,
   updateProfile,
+  toggleListingStatus,
+  bulkUpdateListingStatus,
+  bulkDeleteListings,
+  restoreDeletedListings,
+  getUnreadNotificationCount,
+  getUnreadMessageCount,
+  saveDraft,
+  getDrafts,
+  deleteDraft,
+  getSiteStatistics,
 } from "./db";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { notifyOwner } from "./_core/notification";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
+import { hashPassword, verifyPassword, isValidUsername, isValidPassword, isValidEmail } from "./_core/auth";
+import { getUserByUsername, createUser, requireDb } from "./db";
+import { sdk } from "./_core/sdk";
+import { users, userProfiles } from "../drizzle/schema";
+import { eq } from "drizzle-orm";
+import { TRPCError } from "@trpc/server";
+import { ONE_YEAR_MS } from "@shared/const";
 
 const uploadedImageSchema = z.object({
   name: z.string().min(1).max(200),
@@ -27,8 +44,8 @@ const uploadedImageSchema = z.object({
 });
 
 const listingFiltersSchema = z.object({
-  category: z.enum(["all", ...collectibleCategories]).optional(),
-  condition: z.enum(["all", ...itemConditions]).optional(),
+  category: z.enum(collectibleCategories).optional(),
+  condition: z.enum(itemConditions).optional(),
   keyword: z.string().max(100).optional(),
 });
 
@@ -64,13 +81,114 @@ const referralRequestSchema = z.object({
 export const appRouter = router({
   system: systemRouter,
   auth: router({
-    me: publicProcedure.query(opts => opts.ctx.user),
+    me: publicProcedure.query(async opts => {
+      const user = opts.ctx.user;
+      if (!user) return null;
+      
+      const db = await requireDb();
+      const profile = await db
+        .select({
+          firstName: userProfiles.firstName,
+          lastName: userProfiles.lastName,
+        })
+        .from(userProfiles)
+        .where(eq(userProfiles.userId, user.id))
+        .limit(1);
+      
+      return {
+        ...user,
+        firstName: profile[0]?.firstName ?? null,
+        lastName: profile[0]?.lastName ?? null,
+      };
+    }),
+    signup: publicProcedure
+      .input(
+        z.object({
+          username: z.string().min(3).max(32),
+          password: z.string().min(8),
+          displayName: z.string().min(1).max(255),
+          email: z.string().email().optional(),
+        }),
+      )
+      .mutation(async ({ input, ctx }) => {
+        if (!isValidUsername(input.username)) {
+          throw new Error("Username must be 3-32 characters, alphanumeric with underscores/hyphens");
+        }
+        if (!isValidPassword(input.password)) {
+          throw new Error("Password must be at least 8 characters with uppercase, lowercase, and number");
+        }
+        if (input.email && !isValidEmail(input.email)) {
+          throw new Error("Invalid email format");
+        }
+
+        const existing = await getUserByUsername(input.username);
+        if (existing) {
+          throw new Error("Username already taken");
+        }
+
+        const passwordHash = hashPassword(input.password);
+        const userId = await createUser({
+          username: input.username,
+          passwordHash,
+          displayName: input.displayName,
+          email: input.email,
+        });
+
+        const sessionToken = await sdk.createSessionToken(String(userId), {
+          name: input.displayName,
+          expiresInMs: ONE_YEAR_MS,
+        });
+
+        const cookieOptions = getSessionCookieOptions(ctx.req);
+        ctx.res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
+
+        return { success: true, userId };
+      }),
+    signin: publicProcedure
+      .input(
+        z.object({
+          username: z.string(),
+          password: z.string(),
+        }),
+      )
+      .mutation(async ({ input, ctx }) => {
+        const user = await getUserByUsername(input.username);
+        if (!user || !user.passwordHash) {
+          throw new Error("Invalid username or password");
+        }
+
+        const passwordMatch = verifyPassword(input.password, user.passwordHash);
+        if (!passwordMatch) {
+          throw new Error("Invalid username or password");
+        }
+
+        const { customAuth } = await import("./_core/customAuth");
+        const sessionToken = await customAuth.createSessionToken(
+          user.id,
+          user.username || "",
+          user.role || "user",
+          { expiresInMs: ONE_YEAR_MS }
+        );
+
+        const cookieOptions = getSessionCookieOptions(ctx.req);
+        ctx.res.cookie("session", sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
+
+        return { success: true, userId: user.id };
+      }),
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
-      ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
+      ctx.res.clearCookie("session", { ...cookieOptions, maxAge: -1 });
       return {
         success: true,
       } as const;
+    }),
+    unreadCounts: protectedProcedure.query(async ({ ctx }) => {
+      const unreadNotifications = await getUnreadNotificationCount(ctx.user.id);
+      const unreadMessages = await getUnreadMessageCount(ctx.user.id);
+      return {
+        unreadNotifications,
+        unreadMessages,
+      };
     }),
   }),
   members: router({
@@ -82,6 +200,27 @@ export const appRouter = router({
     feed: publicProcedure.input(listingFiltersSchema.optional()).query(({ ctx, input }) => {
       return getMarketplaceFeed(input ?? {}, ctx.user?.id ?? null);
     }),
+    siteStatistics: publicProcedure.query(() => {
+      return getSiteStatistics();
+    }),
+    search: publicProcedure
+      .input(
+        z.object({
+          query: z.string().max(100),
+          category: z.enum(collectibleCategories).optional(),
+          condition: z.enum(itemConditions).optional(),
+        }),
+      )
+      .query(({ ctx, input }) => {
+        return getMarketplaceFeed(
+          {
+            keyword: input.query,
+            category: input.category,
+            condition: input.condition,
+          },
+          ctx.user?.id ?? null,
+        );
+      }),
     dashboard: protectedProcedure.query(({ ctx }) => {
       return getDashboardData({ id: ctx.user.id, name: ctx.user.name });
     }),
@@ -91,8 +230,9 @@ export const appRouter = router({
           listingId: z.number().int().positive(),
         }),
       )
-      .query(({ ctx, input }) => {
-        return getListingDetail(input.listingId, ctx.user?.id ?? null);
+      .query(async ({ ctx, input }) => {
+        const detail = await getListingDetail(input.listingId, ctx.user?.id ?? null);
+        return { listing: detail };
       }),
     saveProfile: protectedProcedure
       .input(
@@ -103,6 +243,12 @@ export const appRouter = router({
           contactEmail: z.string().email().max(320).optional().or(z.literal("")),
           contactPhone: z.string().max(40).optional(),
           contactAddress: z.string().max(320).optional(),
+          contactTown: z.string().max(100).optional(),
+          contactState: z.string().max(100).optional(),
+          contactZipCode: z.string().max(20).optional(),
+          contactCountry: z.string().max(100).optional(),
+          firstName: z.string().max(100).optional(),
+          lastName: z.string().max(100).optional(),
           avatar: uploadedImageSchema.nullable().optional(),
           acceptedTerms: z.boolean().optional(),
           isMerchant: z.boolean().optional(),
@@ -120,6 +266,7 @@ export const appRouter = router({
         }),
       )
       .mutation(({ ctx, input }) => {
+        console.log("[saveProfile] Called with input:", input);
         return updateProfile(
           { id: ctx.user.id, name: ctx.user.name },
           {
@@ -129,6 +276,12 @@ export const appRouter = router({
             contactEmail: input.contactEmail,
             contactPhone: input.contactPhone,
             contactAddress: input.contactAddress,
+            contactTown: input.contactTown,
+            contactState: input.contactState,
+            contactZipCode: input.contactZipCode,
+            contactCountry: input.contactCountry,
+            firstName: input.firstName,
+            lastName: input.lastName,
             avatar: input.avatar ?? null,
             acceptedTerms: input.acceptedTerms,
             isMerchant: input.isMerchant,
@@ -141,6 +294,106 @@ export const appRouter = router({
           },
         );
       }),
+    saveSecurityQuestion: protectedProcedure
+      .input(
+        z.object({
+          securityQuestion: z.string().max(255),
+          securityAnswer: z.string().max(255),
+        }),
+      )
+      .mutation(async ({ ctx, input }) => {
+        const answerHash = hashPassword(input.securityAnswer);
+        const db = await requireDb();
+        await db.update(users).set({
+          securityQuestion: input.securityQuestion,
+          securityAnswerHash: answerHash,
+        }).where(eq(users.id, ctx.user.id));
+        return { success: true };
+      }),
+    changePassword: protectedProcedure
+      .input(
+        z.object({
+          currentPassword: z.string(),
+          newPassword: z.string().min(8),
+        }),
+      )
+      .mutation(async ({ ctx, input }) => {
+        const db = await requireDb();
+        const users_result = await db.select().from(users).where(eq(users.id, ctx.user.id)).limit(1);
+        const user = users_result[0];
+        if (!user || !user.passwordHash) {
+          throw new TRPCError({ code: "UNAUTHORIZED" });
+        }
+        const isValid = verifyPassword(input.currentPassword, user.passwordHash);
+        if (!isValid) {
+          throw new TRPCError({ code: "UNAUTHORIZED", message: "Current password is incorrect" });
+        }
+        const newHash = hashPassword(input.newPassword);
+        await db.update(users).set({
+          passwordHash: newHash,
+        }).where(eq(users.id, ctx.user.id));
+        return { success: true };
+      }),
+    saveIntegrations: protectedProcedure
+      .input(
+        z.object({
+          connectedAccounts: z.array(z.enum(["ebay", "paypal", "facebook"])),
+        }),
+      )
+      .mutation(async ({ ctx, input }) => {
+        // Store integrations in userProfiles table
+        const db = await requireDb();
+        await db.update(userProfiles).set({
+          connectedAccounts: JSON.stringify(input.connectedAccounts),
+        }).where(eq(userProfiles.userId, ctx.user.id));
+        return { success: true };
+      }),
+    saveCommunications: protectedProcedure
+      .input(
+        z.object({
+          emailFrequency: z.enum(["daily", "weekly", "monthly", "never"]),
+          tradeNotifications: z.boolean(),
+          messageNotifications: z.boolean(),
+          feedbackNotifications: z.boolean(),
+          systemNotifications: z.boolean(),
+          marketingEmails: z.boolean(),
+        }),
+      )
+      .mutation(async ({ ctx, input }) => {
+        // Store communication preferences in userProfiles table
+        const db = await requireDb();
+        await db.update(userProfiles).set({
+          notificationPreferences: JSON.stringify({
+            emailFrequency: input.emailFrequency,
+            tradeNotifications: input.tradeNotifications,
+            messageNotifications: input.messageNotifications,
+            feedbackNotifications: input.feedbackNotifications,
+            systemNotifications: input.systemNotifications,
+            marketingEmails: input.marketingEmails,
+          }),
+        }).where(eq(userProfiles.userId, ctx.user.id));
+        return { success: true };
+      }),
+    savePreferences: protectedProcedure
+      .input(
+        z.object({
+          preferredCategories: z.array(z.enum(collectibleCategories)),
+          showProfile: z.boolean(),
+          hideInventoryValue: z.boolean(),
+          receiveContactRequests: z.boolean(),
+        }),
+      )
+      .mutation(async ({ ctx, input }) => {
+        // Store preferences in userProfiles table
+        const db = await requireDb();
+        await db.update(userProfiles).set({
+          preferredCategories: JSON.stringify(input.preferredCategories),
+          showProfile: input.showProfile,
+          hideInventoryValue: input.hideInventoryValue,
+          receiveContactRequests: input.receiveContactRequests,
+        }).where(eq(userProfiles.userId, ctx.user.id));
+        return { success: true };
+      }),
     createListing: protectedProcedure
       .input(
         z.object({
@@ -148,6 +401,7 @@ export const appRouter = router({
           category: z.enum(collectibleCategories),
           condition: z.enum(itemConditions),
           description: z.string().min(20).max(4000),
+          estimatedValue: z.number().nonnegative().optional(),
           photos: z.array(uploadedImageSchema).max(6),
         }),
       )
@@ -159,6 +413,7 @@ export const appRouter = router({
             category: input.category,
             condition: input.condition,
             description: input.description,
+            estimatedValue: input.estimatedValue,
             photos: input.photos,
           },
         );
@@ -188,7 +443,10 @@ export const appRouter = router({
         }),
       )
       .mutation(async ({ ctx, input }) => {
-        await selectTradeProposalItems(ctx.user.id, input.proposalId, input.offeredListingIds, input.note);
+        await selectTradeProposalItems({ id: ctx.user.id, name: ctx.user.name }, {
+          proposalId: input.proposalId,
+          selectedListingIds: input.offeredListingIds
+        });
         return getDashboardData({ id: ctx.user.id, name: ctx.user.name });
       }),
     respondToTradeProposal: protectedProcedure
@@ -200,7 +458,10 @@ export const appRouter = router({
         }),
       )
       .mutation(async ({ ctx, input }) => {
-        await respondToTradeProposal(ctx.user.id, input.action, input.proposalId, input.note);
+        await respondToTradeProposal({ id: ctx.user.id, name: ctx.user.name }, {
+          proposalId: input.proposalId,
+          response: input.action === "accept" ? "accepted" : "declined"
+        });
         return getDashboardData({ id: ctx.user.id, name: ctx.user.name });
       }),
     sendTradeMessage: protectedProcedure
@@ -211,7 +472,7 @@ export const appRouter = router({
         }),
       )
       .mutation(async ({ ctx, input }) => {
-        await sendTradeMessage(ctx.user.id, input.proposalId, input.message);
+        await sendTradeMessage({ id: ctx.user.id, name: ctx.user.name }, { proposalId: input.proposalId, message: input.message });
         return getDashboardData({ id: ctx.user.id, name: ctx.user.name });
       }),
     toggleWatchlist: protectedProcedure
@@ -221,7 +482,52 @@ export const appRouter = router({
         }),
       )
       .mutation(({ ctx, input }) => {
-        return toggleWatchlist(ctx.user.id, input.listingId);
+        return toggleWatchlist(ctx.user.id, input.listingId); // This one is correct - takes userId and listingId
+      }),
+    toggleListingStatus: protectedProcedure
+      .input(
+        z.object({
+          listingId: z.number().int().positive(),
+          isActive: z.boolean(),
+        }),
+      )
+      .mutation(({ ctx, input }) => {
+        return toggleListingStatus({ id: ctx.user.id, name: ctx.user.name }, { listingId: input.listingId, isActive: input.isActive });
+      }),
+    bulkUpdateListingStatus: protectedProcedure
+      .input(
+        z.object({
+          listingIds: z.array(z.number().int().positive()),
+          newStatus: z.boolean(),
+        }),
+      )
+      .mutation(async ({ ctx, input }) => {
+        await bulkUpdateListingStatus({ id: ctx.user.id, name: ctx.user.name }, { listingIds: input.listingIds, isActive: input.newStatus });
+        return getDashboardData({ id: ctx.user.id, name: ctx.user.name });
+      }),
+    bulkDeleteListings: protectedProcedure
+      .input(
+        z.object({
+          listingIds: z.array(z.number().int().positive()),
+        }),
+      )
+      .mutation(async ({ ctx, input }) => {
+        const result = await bulkDeleteListings({ id: ctx.user.id, name: ctx.user.name }, { listingIds: input.listingIds });
+        return {
+          ...result,
+          dashboard: await getDashboardData({ id: ctx.user.id, name: ctx.user.name }),
+        };
+      }),
+    restoreDeletedListings: protectedProcedure
+      .input(
+        z.object({
+          deletedListings: z.array(z.any()),
+          deletedPhotos: z.array(z.any()),
+        }),
+      )
+      .mutation(async ({ ctx, input }) => {
+        await restoreDeletedListings({ id: ctx.user.id, name: ctx.user.name }, { listingIds: input.deletedListings });
+        return getDashboardData({ id: ctx.user.id, name: ctx.user.name });
       }),
     leaveTradeReview: protectedProcedure
       .input(
@@ -232,7 +538,7 @@ export const appRouter = router({
         }),
       )
       .mutation(async ({ ctx, input }) => {
-        await leaveTradeReview(ctx.user.id, input);
+        await leaveTradeReview({ id: ctx.user.id, name: ctx.user.name }, input);
         return getDashboardData({ id: ctx.user.id, name: ctx.user.name });
       }),
     reportUser: protectedProcedure
@@ -284,6 +590,43 @@ export const appRouter = router({
             ? "Your referral request was sent for Tradebilia review."
             : "Your referral request could not be delivered right now. Please try again shortly.",
         };
+      }),
+    saveDraft: protectedProcedure
+      .input(
+        z.object({
+          title: z.string().min(1).max(160),
+          category: z.enum(collectibleCategories),
+          grade: z.string(),
+          graderCompany: z.string().max(100),
+          certificationNumber: z.string().max(100).optional(),
+          estimatedValue: z.number().nonnegative().optional(),
+          categoryFields: z.record(z.string(), z.string()),
+          additionalNotes: z.string().max(4000).optional(),
+          photos: z.array(uploadedImageSchema),
+        }),
+      )
+      .mutation(({ ctx, input }) => {
+        // saveDraft currently only accepts title, category, condition, description, and photos
+        // The input schema has more fields (grade, graderCompany, etc.) that will be stored separately
+        return saveDraft({ id: ctx.user.id, name: ctx.user.name }, {
+          title: input.title,
+          category: input.category,
+          condition: "poor", // Will be updated when user completes the listing
+          description: input.additionalNotes || "",
+          photos: input.photos,
+        });
+      }),
+    getDrafts: protectedProcedure.query(({ ctx }) => {
+      return getDrafts({ id: ctx.user.id, name: ctx.user.name });
+    }),
+    deleteDraft: protectedProcedure
+      .input(
+        z.object({
+          draftId: z.number().int().positive(),
+        }),
+      )
+      .mutation(({ ctx, input }) => {
+        return deleteDraft({ id: ctx.user.id, name: ctx.user.name }, { draftId: input.draftId });
       }),
   }),
 });

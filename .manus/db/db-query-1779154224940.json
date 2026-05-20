@@ -1,0 +1,17 @@
+{
+  "query": "SELECT id, openId, username, name, passwordHash FROM users WHERE username='AdminTavani' OR name LIKE '%AdminTavani%' OR name LIKE '%Tavani%' LIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4ZXfWh5QbDJhQ4C.root --database nAx6ATm2BH4G46yabuMZgM --execute SELECT id, openId, username, name, passwordHash FROM users WHERE username='AdminTavani' OR name LIKE '%AdminTavani%' OR name LIKE '%Tavani%' LIMIT 20;",
+  "rows": [
+    {
+      "id": "5400001",
+      "openId": "NULL",
+      "username": "AdminTavani",
+      "name": "NULL",
+      "passwordHash": "88b37f852061c42a781b999048d8c656:49289ce294e1c201c6fe4807bbf1acbc141832325125a173e54322c2aa7b70a98551a9ef48c5855960b90d98143313a6e76c6199cba0ff84473f16e055342421"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\topenId\tusername\tname\tpasswordHash\n5400001\tNULL\tAdminTavani\tNULL\t88b37f852061c42a781b999048d8c656:49289ce294e1c201c6fe4807bbf1acbc141832325125a173e54322c2aa7b70a98551a9ef48c5855960b90d98143313a6e76c6199cba0ff84473f16e055342421\n",
+  "stderr": "",
+  "execution_time_ms": 349
+}

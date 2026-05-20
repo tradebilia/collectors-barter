@@ -1,0 +1,9 @@
+{
+  "query": "UPDATE users SET passwordHash = 'e0f296ba61e8f19e575b92175c69f555:4bb1946703938cab14f9bac3481326dc4d49b1134b1d175e11377cfbb8846b99de7f08a6c39ca21583af3b6c43c1eef94a1eb782f9c06a0b3850ae4a08bd79b1' WHERE username = 'AdminTavani';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4ZXfWh5QbDJhQ4C.root --database nAx6ATm2BH4G46yabuMZgM --execute UPDATE users SET passwordHash = 'e0f296ba61e8f19e575b92175c69f555:4bb1946703938cab14f9bac3481326dc4d49b1134b1d175e11377cfbb8846b99de7f08a6c39ca21583af3b6c43c1eef94a1eb782f9c06a0b3850ae4a08bd79b1' WHERE username = 'AdminTavani';",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 264
+}

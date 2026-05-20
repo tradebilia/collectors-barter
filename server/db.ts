@@ -1,12 +1,16 @@
-import { Buffer } from "node:buffer";
+import { z } from "zod";
 import { and, asc, desc, eq, inArray, like, ne, or, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import type { InsertUser, User } from "../drizzle/schema";
 import {
   collectibleCategories,
+  draftListings,
+  emailVerificationOtps,
   itemConditions,
   listingPhotos,
   listings,
+  passwordResetTokens,
+  phoneVerificationOtps,
   tradeMessages,
   tradeProposalItems,
   tradeProposals,
@@ -48,325 +52,130 @@ type PhotoUploadInput = {
   contentBase64: string;
 };
 
-type AvatarUploadInput = PhotoUploadInput;
-
-export type ListingFilters = {
-  category?: (typeof collectibleCategories)[number] | "all";
-  condition?: (typeof itemConditions)[number] | "all";
-  keyword?: string;
+type AvatarUploadInput = {
+  name: string;
+  type: string;
+  contentBase64: string;
 };
 
-function getInsertId(result: unknown): number {
-  if (Array.isArray(result) && result[0] && typeof result[0] === "object" && "insertId" in result[0]) {
-    return Number((result[0] as { insertId: number }).insertId);
-  }
-  if (result && typeof result === "object" && "insertId" in result) {
-    return Number((result as { insertId: number }).insertId);
-  }
-  throw new Error("Unable to determine inserted row id.");
-}
-
-async function requireDb() {
-  const db = await getDb();
-  if (!db) {
-    throw new Error("Database not available.");
-  }
-  return db;
-}
-
-export async function getDb() {
-  if (!_db && process.env.DATABASE_URL) {
-    try {
-      _db = drizzle(process.env.DATABASE_URL);
-    } catch (error) {
-      console.warn("[Database] Failed to connect:", error);
-      _db = null;
-    }
+export async function requireDb(): Promise<ReturnType<typeof drizzle>> {
+  if (!_db) {
+    _db = drizzle(ENV.databaseUrl);
   }
   return _db;
 }
 
-export async function upsertUser(user: InsertUser): Promise<void> {
-  if (!user.openId) {
-    throw new Error("User openId is required for upsert");
-  }
-
-  const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot upsert user: database not available");
-    return;
-  }
-
-  try {
-    const values: InsertUser = {
-      openId: user.openId,
-    };
-    const updateSet: Record<string, unknown> = {};
-
-    const textFields = ["name", "email", "loginMethod"] as const;
-    type TextField = (typeof textFields)[number];
-
-    const assignNullable = (field: TextField) => {
-      const value = user[field];
-      if (value === undefined) return;
-      const normalized = value ?? null;
-      values[field] = normalized;
-      updateSet[field] = normalized;
-    };
-
-    textFields.forEach(assignNullable);
-
-    if (user.lastSignedIn !== undefined) {
-      values.lastSignedIn = user.lastSignedIn;
-      updateSet.lastSignedIn = user.lastSignedIn;
-    }
-    if (user.role !== undefined) {
-      values.role = user.role;
-      updateSet.role = user.role;
-    } else if (user.openId === ENV.ownerOpenId) {
-      values.role = "admin";
-      updateSet.role = "admin";
-    }
-
-    if (!values.lastSignedIn) {
-      values.lastSignedIn = new Date();
-    }
-
-    if (Object.keys(updateSet).length === 0) {
-      updateSet.lastSignedIn = new Date();
-    }
-
-    await db.insert(users).values(values).onDuplicateKeyUpdate({
-      set: updateSet,
-    });
-  } catch (error) {
-    console.error("[Database] Failed to upsert user:", error);
-    throw error;
-  }
-}
-
-export async function getUserByOpenId(openId: string) {
-  const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot get user: database not available");
-    return undefined;
-  }
-
-  const result = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
-
-  return result.length > 0 ? result[0] : undefined;
+function getInsertId(result: any) {
+  return Number(result.insertId ?? 0);
 }
 
 async function ensureUserProfileRecord(user: Pick<User, "id" | "name">) {
   const db = await requireDb();
-  const displayName = (user.name ?? `Collector ${user.id}`).slice(0, 120);
-
-  await db
-    .insert(userProfiles)
-    .values({
+  const existing = await db.select().from(userProfiles).where(eq(userProfiles.userId, user.id)).limit(1);
+  if (!existing[0]) {
+    await db.insert(userProfiles).values({
       userId: user.id,
-      displayName,
-      bio: "Open to thoughtful, collector-to-collector trades.",
-    })
-    .onDuplicateKeyUpdate({
-      set: {
-        displayName: sql`coalesce(${userProfiles.displayName}, ${displayName})`,
-      },
+      displayName: user.name ?? `Collector ${user.id}`,
     });
+  }
 }
 
-async function uploadImage(prefix: string, userId: number, file: PhotoUploadInput | AvatarUploadInput) {
-  const extension = file.name.includes(".") ? file.name.split(".").pop() : "jpg";
-  const cleanExtension = extension?.replace(/[^a-zA-Z0-9]/g, "") || "jpg";
-  const { key, url } = await storagePut(
-    `${prefix}/user-${userId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${cleanExtension}`,
-    Buffer.from(file.contentBase64, "base64"),
-    file.type || "image/jpeg",
-  );
-  return { key, url };
+async function uploadImage(folder: string, userId: number, input: PhotoUploadInput | AvatarUploadInput) {
+  const buffer = Buffer.from(input.contentBase64, "base64");
+  const timestamp = Date.now();
+  const randomId = Math.random().toString(36).substring(2, 8);
+  const fileKey = `${folder}/${userId}/${timestamp}-${randomId}-${input.name}`;
+  const { url } = await storagePut(fileKey, buffer, input.type);
+  return { key: fileKey, url };
 }
 
 async function getProfileMap(userIds: number[]) {
-  if (userIds.length === 0) return new Map<number, { userId: number; displayName: string; avatarUrl: string | null }>();
+  if (userIds.length === 0) return new Map();
   const db = await requireDb();
-
-  const rows = await db
+  const profiles = await db
     .select({
-      userId: users.id,
-      fallbackName: users.name,
+      userId: userProfiles.userId,
       displayName: userProfiles.displayName,
       avatarUrl: userProfiles.avatarUrl,
     })
-    .from(users)
-    .leftJoin(userProfiles, eq(userProfiles.userId, users.id))
-    .where(inArray(users.id, Array.from(new Set(userIds))));
-
-  return new Map(
-    rows.map(row => [
-      row.userId,
-      {
-        userId: row.userId,
-        displayName: row.displayName ?? row.fallbackName ?? `Collector ${row.userId}`,
-        avatarUrl: row.avatarUrl ?? null,
-      },
-    ]),
-  );
+    .from(userProfiles)
+    .where(inArray(userProfiles.userId, userIds));
+  return new Map(profiles.map(p => [p.userId, p]));
 }
 
 async function getRatingStatsMap(userIds: number[]) {
-  if (userIds.length === 0) return new Map<number, { averageRating: number; reviewCount: number }>();
+  if (userIds.length === 0) return new Map();
   const db = await requireDb();
-
-  const rows = await db
+  const stats = await db
     .select({
       revieweeId: tradeReviews.revieweeId,
-      averageRating: sql<number>`round(avg(${tradeReviews.rating}), 1)`,
+      averageRating: sql<number>`avg(${tradeReviews.rating})`,
       reviewCount: sql<number>`count(*)`,
     })
     .from(tradeReviews)
-    .where(inArray(tradeReviews.revieweeId, Array.from(new Set(userIds))))
+    .where(inArray(tradeReviews.revieweeId, userIds))
     .groupBy(tradeReviews.revieweeId);
 
   return new Map(
-    rows.map(row => [
-      row.revieweeId,
+    stats.map(s => [
+      s.revieweeId,
       {
-        averageRating: Number(row.averageRating ?? 0),
-        reviewCount: Number(row.reviewCount ?? 0),
+        averageRating: Number(s.averageRating ?? 0),
+        reviewCount: Number(s.reviewCount ?? 0),
       },
     ]),
   );
 }
 
-async function getContactMap(userIds: number[]) {
-  if (userIds.length === 0) {
-    return new Map<number, { fullName: string | null; email: string | null; phone: string | null; address: string | null }>();
-  }
-  const db = await requireDb();
-  const rows = await db
-    .select({
-      userId: users.id,
-      fallbackName: users.name,
-      fallbackEmail: users.email,
-      contactFullName: userProfiles.contactFullName,
-      contactEmail: userProfiles.contactEmail,
-      contactPhone: userProfiles.contactPhone,
-      contactAddress: userProfiles.contactAddress,
-    })
-    .from(users)
-    .leftJoin(userProfiles, eq(userProfiles.userId, users.id))
-    .where(inArray(users.id, Array.from(new Set(userIds))));
+async function formatListings(listingRows: any[], viewerId: number | null) {
+  if (listingRows.length === 0) return [];
 
-  return new Map(
-    rows.map(row => [
-      row.userId,
-      {
-        fullName: row.contactFullName ?? row.fallbackName ?? null,
-        email: row.contactEmail ?? row.fallbackEmail ?? null,
-        phone: row.contactPhone ?? null,
-        address: row.contactAddress ?? null,
-      },
-    ]),
-  );
+  const ownerIds = Array.from(new Set(listingRows.map(r => r.ownerId)));
+  const profileMap = await getProfileMap(ownerIds);
+  const ratingMap = await getRatingStatsMap(ownerIds);
+  const watchlistRows = viewerId
+    ? await (
+        await requireDb()
+      )
+        .select({ listingId: watchlistEntries.listingId })
+        .from(watchlistEntries)
+        .where(and(eq(watchlistEntries.userId, viewerId), inArray(watchlistEntries.listingId, listingRows.map(r => r.id))))
+    : [];
+  const savedListingIds = new Set(watchlistRows.map(r => r.listingId));
+
+  return listingRows.map(row => ({
+    id: row.id,
+    ownerId: row.ownerId,
+    title: row.title,
+    category: row.category,
+    condition: row.condition,
+    grade: row.grade ?? null,
+    certificationCompany: row.certificationCompany ?? null,
+    estimatedValue: row.estimatedValue ? Number(row.estimatedValue) : null,
+    description: row.description,
+    status: row.status,
+    featured: row.featured,
+    isActive: row.isActive,
+    createdAt: row.createdAt.getTime(),
+    updatedAt: row.updatedAt.getTime(),
+    owner: {
+      displayName: profileMap.get(row.ownerId)?.displayName ?? `Collector ${row.ownerId}`,
+      avatarUrl: profileMap.get(row.ownerId)?.avatarUrl ?? null,
+    },
+    ownerRating: ratingMap.get(row.ownerId) ?? { averageRating: 0, reviewCount: 0 },
+    primaryPhotoUrl: row.primaryPhotoUrl ?? null,
+    savedToWatchlist: savedListingIds.has(row.id),
+  }));
 }
 
-async function getListingPhotosMap(listingIds: number[]) {
-  if (listingIds.length === 0) return new Map<number, { imageUrl: string; altText: string | null }[]>();
-  const db = await requireDb();
-
-  const rows = await db
-    .select({
-      listingId: listingPhotos.listingId,
-      imageUrl: listingPhotos.imageUrl,
-      altText: listingPhotos.altText,
-      sortOrder: listingPhotos.sortOrder,
-    })
-    .from(listingPhotos)
-    .where(inArray(listingPhotos.listingId, Array.from(new Set(listingIds))))
-    .orderBy(asc(listingPhotos.sortOrder), asc(listingPhotos.id));
-
-  const map = new Map<number, { imageUrl: string; altText: string | null }[]>();
-  for (const row of rows) {
-    const group = map.get(row.listingId) ?? [];
-    group.push({ imageUrl: row.imageUrl, altText: row.altText ?? null });
-    map.set(row.listingId, group);
-  }
-  return map;
-}
-
-async function getSavedListingIdSet(userId?: number | null, listingIds?: number[]) {
-  if (!userId || !listingIds?.length) return new Set<number>();
-  const db = await requireDb();
-  const rows = await db
-    .select({ listingId: watchlistEntries.listingId })
-    .from(watchlistEntries)
-    .where(and(eq(watchlistEntries.userId, userId), inArray(watchlistEntries.listingId, Array.from(new Set(listingIds)))));
-
-  return new Set(rows.map(row => row.listingId));
-}
-
-async function formatListings(
-  listingRows: Array<{
-    id: number;
-    ownerId: number;
-    title: string;
-    category: (typeof collectibleCategories)[number];
-    condition: (typeof itemConditions)[number];
-    grade: string;
-    certificationCompany: string | null;
-    estimatedValue: any | null;
-    description: string;
-    status: "active" | "traded" | "archived";
-    featured: boolean;
-    createdAt: Date;
-    updatedAt: Date;
-  }>,
-  viewerId?: number | null,
+export async function getMarketplaceFeed(
+  filters: {
+    category?: (typeof collectibleCategories)[number];
+    condition?: (typeof itemConditions)[number];
+    keyword?: string;
+  },
+  viewerId: number | null,
 ) {
-  const listingIds = listingRows.map(row => row.id);
-  const ownerIds = listingRows.map(row => row.ownerId);
-  const [photosMap, profileMap, ratingMap, savedIdSet] = await Promise.all([
-    getListingPhotosMap(listingIds),
-    getProfileMap(ownerIds),
-    getRatingStatsMap(ownerIds),
-    getSavedListingIdSet(viewerId, listingIds),
-  ]);
-
-  return listingRows.map(listing => {
-    const photos = photosMap.get(listing.id) ?? [];
-    const owner = profileMap.get(listing.ownerId) ?? {
-      userId: listing.ownerId,
-      displayName: `Collector ${listing.ownerId}`,
-      avatarUrl: null,
-    };
-    const rating = ratingMap.get(listing.ownerId) ?? { averageRating: 0, reviewCount: 0 };
-
-    return {
-      id: listing.id,
-      ownerId: listing.ownerId,
-      title: listing.title,
-      category: listing.category,
-      categoryLabel: categoryLabels[listing.category],
-      condition: listing.condition,
-      conditionLabel: conditionLabels[listing.condition],
-      grade: listing.grade,
-      certificationCompany: listing.certificationCompany,
-      estimatedValue: listing.estimatedValue,
-      description: listing.description,
-      status: listing.status,
-      featured: listing.featured,
-      createdAt: listing.createdAt.getTime(),
-      updatedAt: listing.updatedAt.getTime(),
-      owner,
-      ownerRating: rating,
-      photos,
-      primaryPhotoUrl: photos[0]?.imageUrl ?? null,
-      savedToWatchlist: savedIdSet.has(listing.id),
-    };
-  });
-}
-
-export async function getListingDetail(listingId: number, viewerId?: number | null) {
   const db = await requireDb();
 
   const listingRows = await db
@@ -382,65 +191,18 @@ export async function getListingDetail(listingId: number, viewerId?: number | nu
       description: listings.description,
       status: listings.status,
       featured: listings.featured,
+      isActive: listings.isActive,
       createdAt: listings.createdAt,
       updatedAt: listings.updatedAt,
+      primaryPhotoUrl: sql<string | null>`(
+        select imageUrl from listingPhotos where listingId = listings.id order by sortOrder asc limit 1
+      )`,
     })
     .from(listings)
-    .where(eq(listings.id, listingId))
-    .limit(1);
+    .orderBy(desc(listings.createdAt))
+    .limit(100);
 
-  if (!listingRows[0]) {
-    throw new Error("Listing not found.");
-  }
-
-  const detailCard = (await formatListings(listingRows, viewerId))[0];
-  if (!detailCard) {
-    throw new Error("Listing not found.");
-  }
-
-  const ownerProfileRows = await db
-    .select({
-      bio: userProfiles.bio,
-      displayName: userProfiles.displayName,
-      avatarUrl: userProfiles.avatarUrl,
-    })
-    .from(userProfiles)
-    .where(eq(userProfiles.userId, detailCard.ownerId))
-    .limit(1);
-
-  const similarRows = await db
-    .select({
-      id: listings.id,
-      ownerId: listings.ownerId,
-      title: listings.title,
-      category: listings.category,
-      condition: listings.condition,
-      grade: listings.grade,
-      certificationCompany: listings.certificationCompany,
-      estimatedValue: listings.estimatedValue,
-      description: listings.description,
-      status: listings.status,
-      featured: listings.featured,
-      createdAt: listings.createdAt,
-      updatedAt: listings.updatedAt,
-    })
-    .from(listings)
-    .where(and(eq(listings.category, detailCard.category), eq(listings.status, "active"), ne(listings.id, listingId)))
-    .orderBy(desc(listings.featured), desc(listings.createdAt))
-    .limit(4);
-
-  return {
-    listing: {
-      ...detailCard,
-      ownerNotes: ownerProfileRows[0]?.bio ?? "This collector welcomes thoughtful offers and careful trading conversations.",
-    },
-    similarListings: await formatListings(similarRows, viewerId),
-  };
-}
-
-export async function getMarketplaceFeed(filters: ListingFilters, viewerId?: number | null) {
-  const db = await getDb();
-  if (!db) {
+  if (!listingRows.length) {
     return {
       filters: {
         categories: collectibleCategories.map(value => ({ value, label: categoryLabels[value] })),
@@ -456,42 +218,23 @@ export async function getMarketplaceFeed(filters: ListingFilters, viewerId?: num
   }
 
   const whereClauses = [eq(listings.status, "active")];
-  if (filters.category && filters.category !== "all") {
+  if (filters.category) {
     whereClauses.push(eq(listings.category, filters.category));
   }
-  if (filters.condition && filters.condition !== "all") {
+  if (filters.condition) {
     whereClauses.push(eq(listings.condition, filters.condition));
   }
   const keyword = filters.keyword?.trim();
   if (keyword) {
-    whereClauses.push(
-      or(like(listings.title, `%${keyword}%`), like(listings.description, `%${keyword}%`))!,
-    );
+    whereClauses.push(like(listings.title, `%${keyword}%`));
   }
 
-  const listingRows = await db
-    .select({
-      id: listings.id,
-      ownerId: listings.ownerId,
-      title: listings.title,
-      category: listings.category,
-      condition: listings.condition,
-      grade: listings.grade,
-      certificationCompany: listings.certificationCompany,
-      estimatedValue: listings.estimatedValue,
-      description: listings.description,
-      status: listings.status,
-      featured: listings.featured,
-      createdAt: listings.createdAt,
-      updatedAt: listings.updatedAt,
-    })
-    .from(listings)
-    .where(and(...whereClauses))
-    .orderBy(desc(listings.featured), desc(listings.createdAt));
-
   const statsRows = await Promise.all([
-    db.select({ value: sql<number>`count(*)` }).from(listings).where(eq(listings.status, "active")),
-    db.select({ value: sql<number>`count(*)` }).from(userProfiles),
+    db.select({ value: sql<number>`count(*)` }).from(listings).where(and(...whereClauses)),
+    db
+      .select({ value: sql<number>`count(distinct ${listings.ownerId})` })
+      .from(listings)
+      .where(and(...whereClauses)),
     db.select({ value: sql<number>`count(*)` }).from(tradeProposals).where(eq(tradeProposals.status, "completed")),
   ]);
 
@@ -509,6 +252,41 @@ export async function getMarketplaceFeed(filters: ListingFilters, viewerId?: num
   };
 }
 
+export async function getSiteStatistics() {
+  const db = await requireDb();
+
+  // Get total active listings
+  const totalListingsResult = await db
+    .select({ value: sql<number>`count(*)` })
+    .from(listings)
+    .where(eq(listings.status, "active"));
+
+  // Get total unique collectors (users with at least one active listing)
+  const totalCollectorsResult = await db
+    .select({ value: sql<number>`count(distinct ownerId)` })
+    .from(listings)
+    .where(eq(listings.status, "active"));
+
+  // Get total value of all active listings (sum of estimatedValue)
+  const totalValueResult = await db
+    .select({ value: sql<number>`coalesce(sum(cast(estimatedValue as decimal(12,2))), 0)` })
+    .from(listings)
+    .where(eq(listings.status, "active"));
+
+  // Get total completed trades
+  const totalTradesResult = await db
+    .select({ value: sql<number>`count(*)` })
+    .from(tradeProposals)
+    .where(eq(tradeProposals.status, "completed"));
+
+  return {
+    totalMembers: Number(totalCollectorsResult[0]?.value ?? 0),
+    totalItems: Number(totalListingsResult[0]?.value ?? 0),
+    totalValue: Number(totalValueResult[0]?.value ?? 0),
+    totalTrades: Number(totalTradesResult[0]?.value ?? 0),
+  };
+}
+
 async function getProposalCards(userId: number) {
   const db = await requireDb();
   const proposalRows = await db
@@ -522,247 +300,732 @@ async function getProposalCards(userId: number) {
       respondedAt: tradeProposals.respondedAt,
       completedAt: tradeProposals.completedAt,
       createdAt: tradeProposals.createdAt,
-      updatedAt: tradeProposals.updatedAt,
     })
     .from(tradeProposals)
-    .where(or(eq(tradeProposals.requesterId, userId), eq(tradeProposals.recipientId, userId))!)
-    .orderBy(desc(tradeProposals.updatedAt));
+    .where(or(eq(tradeProposals.requesterId, userId), eq(tradeProposals.recipientId, userId)))
+    .orderBy(desc(tradeProposals.createdAt));
 
-  if (proposalRows.length === 0) return [];
+  const listingIds = Array.from(new Set(
+    proposalRows.map(p => p.requestedListingId).filter(Boolean),
+  )) as number[];
 
-  const proposalIds = proposalRows.map(row => row.id);
-  const requestedListingIds = proposalRows.map(row => row.requestedListingId);
-  const participantIds = proposalRows.flatMap(row => [row.requesterId, row.recipientId]);
+  const listingRows = listingIds.length
+    ? await db
+        .select({
+          id: listings.id,
+          ownerId: listings.ownerId,
+          title: listings.title,
+          category: listings.category,
+          condition: listings.condition,
+          grade: listings.grade,
+          certificationCompany: listings.certificationCompany,
+          estimatedValue: listings.estimatedValue,
+          description: listings.description,
+          status: listings.status,
+          featured: listings.featured,
+          isActive: listings.isActive,
+          createdAt: listings.createdAt,
+          updatedAt: listings.updatedAt,
+        })
+        .from(listings)
+        .where(inArray(listings.id, listingIds))
+    : [];
 
-  const [requestedRows, offeredRows, requesterInventoryRows, messageRows, reviewRows, profileMap, ratingMap, contactMap] = await Promise.all([
-    db
-      .select({
-        id: listings.id,
-        ownerId: listings.ownerId,
-        title: listings.title,
-        category: listings.category,
-        condition: listings.condition,
-        grade: listings.grade,
-        certificationCompany: listings.certificationCompany,
-        estimatedValue: listings.estimatedValue,
-        description: listings.description,
-        status: listings.status,
-        featured: listings.featured,
-        createdAt: listings.createdAt,
-        updatedAt: listings.updatedAt,
-      })
-      .from(listings)
-      .where(inArray(listings.id, Array.from(new Set(requestedListingIds)))),
-    db
-      .select({
-        proposalId: tradeProposalItems.proposalId,
-        id: listings.id,
-        ownerId: listings.ownerId,
-        title: listings.title,
-        category: listings.category,
-        condition: listings.condition,
-        grade: listings.grade,
-        certificationCompany: listings.certificationCompany,
-        estimatedValue: listings.estimatedValue,
-        description: listings.description,
-        status: listings.status,
-        featured: listings.featured,
-        createdAt: listings.createdAt,
-        updatedAt: listings.updatedAt,
-      })
-      .from(tradeProposalItems)
-      .innerJoin(listings, eq(listings.id, tradeProposalItems.offeredListingId))
-      .where(inArray(tradeProposalItems.proposalId, proposalIds)),
-    db
-      .select({
-        proposalId: tradeProposals.id,
-        id: listings.id,
-        ownerId: listings.ownerId,
-        title: listings.title,
-        category: listings.category,
-        condition: listings.condition,
-        grade: listings.grade,
-        certificationCompany: listings.certificationCompany,
-        estimatedValue: listings.estimatedValue,
-        description: listings.description,
-        status: listings.status,
-        featured: listings.featured,
-        createdAt: listings.createdAt,
-        updatedAt: listings.updatedAt,
-      })
-      .from(tradeProposals)
-      .innerJoin(listings, eq(listings.ownerId, tradeProposals.requesterId))
-      .where(and(inArray(tradeProposals.id, proposalIds), eq(listings.status, "active"))),
-    db
-      .select({
-        id: tradeMessages.id,
-        proposalId: tradeMessages.proposalId,
-        senderId: tradeMessages.senderId,
-        message: tradeMessages.message,
-        createdAt: tradeMessages.createdAt,
-      })
-      .from(tradeMessages)
-      .where(inArray(tradeMessages.proposalId, proposalIds))
-      .orderBy(asc(tradeMessages.createdAt)),
-    db
-      .select({
-        id: tradeReviews.id,
-        proposalId: tradeReviews.proposalId,
-        reviewerId: tradeReviews.reviewerId,
-        revieweeId: tradeReviews.revieweeId,
-        rating: tradeReviews.rating,
-        review: tradeReviews.review,
-        createdAt: tradeReviews.createdAt,
-      })
-      .from(tradeReviews)
-      .where(inArray(tradeReviews.proposalId, proposalIds))
-      .orderBy(desc(tradeReviews.createdAt)),
-    getProfileMap(participantIds),
-    getRatingStatsMap(participantIds),
-    getContactMap(participantIds),
-  ]);
+  const listingMap = new Map(listingRows.map(l => [l.id, l]));
 
-  const requestedListingMap = new Map(requestedRows.map(row => [row.id, row]));
-  const offeredRowsByProposal = new Map<number, typeof offeredRows>();
-  for (const row of offeredRows) {
-    const group = offeredRowsByProposal.get(row.proposalId) ?? [];
-    group.push(row);
-    offeredRowsByProposal.set(row.proposalId, group);
+  return proposalRows.map(p => ({
+    id: p.id,
+    requesterId: p.requesterId,
+    recipientId: p.recipientId,
+    requestedListing: listingMap.get(p.requestedListingId) ?? null,
+    note: p.note,
+    status: p.status,
+    respondedAt: p.respondedAt?.getTime() ?? null,
+    completedAt: p.completedAt?.getTime() ?? null,
+    createdAt: p.createdAt.getTime(),
+    updatedAt: p.respondedAt?.getTime() ?? p.createdAt.getTime(),
+    direction: p.requesterId === userId ? 'outgoing' : 'incoming',
+    canReview: p.status === 'completed',
+    canRespond: p.status === 'pending' && p.recipientId === userId,
+    offeredListings: [],
+    counterpart: null,
+    requesterInventory: [],
+    canAcceptSelection: p.status === 'pending' && p.recipientId === userId,
+    contactDetails: null,
+    messages: [],
+    canCancel: p.status === 'pending',
+    canComplete: p.status === 'accepted',
+  }));
+}
+
+export async function getListingDetail(listingId: number, viewerId: number | null) {
+  const db = await requireDb();
+
+  const detailCard = await db
+    .select({
+      id: listings.id,
+      ownerId: listings.ownerId,
+      title: listings.title,
+      category: listings.category,
+      condition: listings.condition,
+      grade: listings.grade,
+      certificationCompany: listings.certificationCompany,
+      estimatedValue: listings.estimatedValue,
+      description: listings.description,
+      status: listings.status,
+      featured: listings.featured,
+      isActive: listings.isActive,
+      createdAt: listings.createdAt,
+      updatedAt: listings.updatedAt,
+    })
+    .from(listings)
+    .where(eq(listings.id, listingId))
+    .limit(1);
+
+  if (!detailCard[0]) {
+    throw new Error("Listing not found.");
   }
 
-  const messageSenderProfiles = await getProfileMap(messageRows.map(row => row.senderId));
-  const requestedCards = await formatListings(requestedRows, userId);
-  const requestedCardMap = new Map(requestedCards.map(row => [row.id, row]));
-  const allOfferedListings = await formatListings(
-    offeredRows.map(({ proposalId: _proposalId, ...listing }) => listing),
-    userId,
-  );
-  const offeredCardMap = new Map(allOfferedListings.map(row => [row.id, row]));
-  const requesterInventoryCards = await formatListings(
-    requesterInventoryRows.map(({ proposalId: _proposalId, ...listing }) => listing),
-    userId,
-  );
-  const requesterInventoryByProposal = new Map<number, typeof requesterInventoryCards>();
-  for (const row of requesterInventoryRows) {
-    const listing = requesterInventoryCards.find(card => card.id === row.id);
-    const group = requesterInventoryByProposal.get(row.proposalId) ?? [];
-    if (listing && !group.some(existing => existing.id === listing.id)) {
-      group.push(listing);
-    }
-    requesterInventoryByProposal.set(row.proposalId, group);
+  const ownerProfileRows = await db
+    .select({
+      bio: userProfiles.bio,
+      displayName: userProfiles.displayName,
+      avatarUrl: userProfiles.avatarUrl,
+    })
+    .from(userProfiles)
+    .where(eq(userProfiles.userId, detailCard[0].ownerId))
+    .limit(1);
+
+  const similarRows = await db
+    .select({
+      id: listings.id,
+      ownerId: listings.ownerId,
+      title: listings.title,
+      category: listings.category,
+      condition: listings.condition,
+      grade: listings.grade,
+      certificationCompany: listings.certificationCompany,
+      estimatedValue: listings.estimatedValue,
+      description: listings.description,
+      status: listings.status,
+      featured: listings.featured,
+      isActive: listings.isActive,
+      createdAt: listings.createdAt,
+      updatedAt: listings.updatedAt,
+      primaryPhotoUrl: sql<string | null>`(
+        select imageUrl from listingPhotos where listingId = listings.id order by sortOrder asc limit 1
+      )`,
+    })
+    .from(listings)
+    .where(and(eq(listings.category, detailCard[0].category), ne(listings.id, listingId), eq(listings.status, "active")))
+    .orderBy(desc(listings.createdAt))
+    .limit(6);
+
+  const photoRows = await db
+    .select({
+      imageUrl: listingPhotos.imageUrl,
+      altText: listingPhotos.altText,
+      sortOrder: listingPhotos.sortOrder,
+    })
+    .from(listingPhotos)
+    .where(eq(listingPhotos.listingId, listingId))
+    .orderBy(asc(listingPhotos.sortOrder));
+
+  const isSaved = viewerId
+    ? (
+        await db
+          .select()
+          .from(watchlistEntries)
+          .where(and(eq(watchlistEntries.userId, viewerId), eq(watchlistEntries.listingId, listingId)))
+          .limit(1)
+      ).length > 0
+    : false;
+
+  const ratingMap = await getRatingStatsMap([detailCard[0].ownerId]);
+  const ownerRating = ratingMap.get(detailCard[0].ownerId) ?? { averageRating: 0, reviewCount: 0 };
+
+  return {
+    id: detailCard[0].id,
+    ownerId: detailCard[0].ownerId,
+    title: detailCard[0].title,
+    category: detailCard[0].category,
+    condition: detailCard[0].condition,
+    grade: detailCard[0].grade,
+    certificationCompany: detailCard[0].certificationCompany,
+    estimatedValue: detailCard[0].estimatedValue ? Number(detailCard[0].estimatedValue) : null,
+    description: detailCard[0].description,
+    status: detailCard[0].status,
+    featured: detailCard[0].featured,
+    isActive: detailCard[0].isActive,
+    createdAt: detailCard[0].createdAt.getTime(),
+    updatedAt: detailCard[0].updatedAt.getTime(),
+    ownerProfile: {
+      displayName: ownerProfileRows[0]?.displayName ?? `Collector ${detailCard[0].ownerId}`,
+      bio: ownerProfileRows[0]?.bio ?? "Open to thoughtful, collector-to-collector trades.",
+      avatarUrl: ownerProfileRows[0]?.avatarUrl ?? null,
+    },
+    ownerRating,
+    photos: photoRows.map(p => ({
+      imageUrl: p.imageUrl,
+      altText: p.altText,
+    })),
+    primaryPhotoUrl: photoRows.length > 0 ? photoRows[0].imageUrl : null,
+    similarListings: await formatListings(similarRows, viewerId),
+    savedToWatchlist: isSaved,
+  };
+}
+
+export async function createTradeProposal(
+  user: Pick<User, "id" | "name">,
+  input: {
+    requestedListingId: number;
+    note?: string;
+  },
+) {
+  const db = await requireDb();
+  await ensureUserProfileRecord(user);
+
+  const requestedListing = await db
+    .select()
+    .from(listings)
+    .where(eq(listings.id, input.requestedListingId))
+    .limit(1);
+
+  if (!requestedListing[0]) {
+    throw new Error("The requested listing could not be found.");
+  }
+  if (requestedListing[0].ownerId === user.id) {
+    throw new Error("You cannot create a Trade Proposal for your own listing.");
+  }
+  if (requestedListing[0].status !== "active") {
+    throw new Error("The requested listing is no longer available for trade.");
   }
 
-  const messagesByProposal = new Map<number, Array<{
-    id: number;
-    proposalId: number;
-    senderId: number;
-    senderDisplayName: string;
-    senderAvatarUrl: string | null;
-    message: string;
-    createdAt: number;
-  }>>();
-  for (const row of messageRows) {
-    const sender = messageSenderProfiles.get(row.senderId) ?? {
-      userId: row.senderId,
-      displayName: `Collector ${row.senderId}`,
-      avatarUrl: null,
-    };
-    const group = messagesByProposal.get(row.proposalId) ?? [];
-    group.push({
-      id: row.id,
-      proposalId: row.proposalId,
-      senderId: row.senderId,
-      senderDisplayName: sender.displayName,
-      senderAvatarUrl: sender.avatarUrl,
-      message: row.message,
-      createdAt: row.createdAt.getTime(),
-    });
-    messagesByProposal.set(row.proposalId, group);
-  }
-
-  const reviewsByProposal = new Map<number, Array<{
-    id: number;
-    reviewerId: number;
-    revieweeId: number;
-    rating: number;
-    review: string | null;
-    createdAt: number;
-  }>>();
-  for (const row of reviewRows) {
-    const group = reviewsByProposal.get(row.proposalId) ?? [];
-    group.push({
-      id: row.id,
-      reviewerId: row.reviewerId,
-      revieweeId: row.revieweeId,
-      rating: row.rating,
-      review: row.review ?? null,
-      createdAt: row.createdAt.getTime(),
-    });
-    reviewsByProposal.set(row.proposalId, group);
-  }
-
-  return proposalRows.map(proposal => {
-    const counterpartId = proposal.requesterId === userId ? proposal.recipientId : proposal.requesterId;
-    const counterpart = profileMap.get(counterpartId) ?? {
-      userId: counterpartId,
-      displayName: `Collector ${counterpartId}`,
-      avatarUrl: null,
-    };
-    const counterpartRating = ratingMap.get(counterpartId) ?? { averageRating: 0, reviewCount: 0 };
-
-    return {
-      id: proposal.id,
-      direction: proposal.recipientId === userId ? "incoming" : "outgoing",
-      requesterId: proposal.requesterId,
-      recipientId: proposal.recipientId,
-      requestedListing: requestedCardMap.get(proposal.requestedListingId) ?? null,
-      offeredListings: (offeredRowsByProposal.get(proposal.id) ?? []).reduce<typeof allOfferedListings>((acc, row) => {
-        const listing = offeredCardMap.get(row.id);
-        if (listing) acc.push(listing);
-        return acc;
-      }, []),
-      note: proposal.note ?? "",
-      status: proposal.status,
-      createdAt: proposal.createdAt.getTime(),
-      updatedAt: proposal.updatedAt.getTime(),
-      respondedAt: proposal.respondedAt ? proposal.respondedAt.getTime() : null,
-      completedAt: proposal.completedAt ? proposal.completedAt.getTime() : null,
-      counterpart,
-      counterpartRating,
-      requesterInventory: requesterInventoryByProposal.get(proposal.id) ?? [],
-      contactDetails:
-        proposal.status === "accepted" || proposal.status === "completed"
-          ? contactMap.get(counterpartId) ?? { fullName: null, email: null, phone: null, address: null }
-          : null,
-      messages: messagesByProposal.get(proposal.id) ?? [],
-      reviews: reviewsByProposal.get(proposal.id) ?? [],
-      canRespond: proposal.recipientId === userId && proposal.status === "pending" && (offeredRowsByProposal.get(proposal.id) ?? []).length === 0,
-      canAcceptSelection: proposal.requesterId === userId && proposal.status === "pending" && (offeredRowsByProposal.get(proposal.id) ?? []).length > 0,
-      canCounter: proposal.requesterId === userId && proposal.status === "pending" && (offeredRowsByProposal.get(proposal.id) ?? []).length > 0,
-      canComplete: (proposal.requesterId === userId || proposal.recipientId === userId) && proposal.status === "accepted",
-      canCancel: proposal.requesterId === userId && proposal.status === "pending",
-      canReview:
-        proposal.status === "completed" &&
-        (proposal.requesterId === userId || proposal.recipientId === userId) &&
-        !(reviewsByProposal.get(proposal.id) ?? []).some(review => review.reviewerId === userId),
-    };
+  const proposalInsert = await db.insert(tradeProposals).values({
+    requesterId: user.id,
+    recipientId: requestedListing[0].ownerId,
+    requestedListingId: input.requestedListingId,
+    note: input.note?.trim() ? input.note.trim().slice(0, 1000) : null,
   });
+  const proposalId = getInsertId(proposalInsert);
+
+  return {
+    proposalId,
+    requestedListing: await getListingDetail(input.requestedListingId, user.id),
+  };
+}
+
+export async function selectTradeProposalItems(
+  user: Pick<User, "id" | "name">,
+  input: {
+    proposalId: number;
+    selectedListingIds: number[];
+  },
+) {
+  const db = await requireDb();
+
+  const proposal = await db
+    .select()
+    .from(tradeProposals)
+    .where(eq(tradeProposals.id, input.proposalId))
+    .limit(1);
+
+  if (!proposal[0]) {
+    throw new Error("Trade Proposal not found.");
+  }
+
+  if (proposal[0].requesterId !== user.id) {
+    throw new Error("You can only select items for your own proposals.");
+  }
+
+  if (proposal[0].status !== "pending") {
+    throw new Error("You can only select items for pending proposals.");
+  }
+
+  // Delete existing items
+  await db.delete(tradeProposalItems).where(eq(tradeProposalItems.proposalId, input.proposalId));
+
+  // Insert new items
+  for (const listingId of input.selectedListingIds) {
+    const listing = await db
+      .select()
+      .from(listings)
+      .where(eq(listings.id, listingId))
+      .limit(1);
+
+    if (!listing[0]) {
+      throw new Error(`Listing ${listingId} not found.`);
+    }
+
+    if (listing[0].ownerId !== user.id) {
+      throw new Error(`You don't own listing ${listingId}.`);
+    }
+
+    await db.insert(tradeProposalItems).values({
+      proposalId: input.proposalId,
+      offeredListingId: listingId,
+    });
+  }
+
+  return { success: true };
+}
+
+export async function respondToTradeProposal(
+  user: Pick<User, "id" | "name">,
+  input: {
+    proposalId: number;
+    response: "accepted" | "declined";
+  },
+) {
+  const db = await requireDb();
+
+  const proposal = await db
+    .select()
+    .from(tradeProposals)
+    .where(eq(tradeProposals.id, input.proposalId))
+    .limit(1);
+
+  if (!proposal[0]) {
+    throw new Error("Trade Proposal not found.");
+  }
+
+  if (proposal[0].recipientId !== user.id) {
+    throw new Error("You can only respond to proposals sent to you.");
+  }
+
+  if (proposal[0].status !== "pending") {
+    throw new Error("This proposal has already been responded to.");
+  }
+
+  const newStatus = input.response === "accepted" ? "accepted" : "declined";
+
+  await db
+    .update(tradeProposals)
+    .set({
+      status: newStatus,
+      respondedAt: new Date(),
+    })
+    .where(eq(tradeProposals.id, input.proposalId));
+
+  if (input.response === "accepted") {
+    // Mark both listings as traded
+    const proposalItems = await db
+      .select()
+      .from(tradeProposalItems)
+      .where(eq(tradeProposalItems.proposalId, input.proposalId));
+
+    const listingIds = proposalItems.map(item => item.offeredListingId);
+    listingIds.push(proposal[0].requestedListingId);
+
+    await db
+      .update(listings)
+      .set({ status: "traded" })
+      .where(inArray(listings.id, listingIds));
+  }
+
+  return { success: true };
+}
+
+export async function toggleWatchlist(userId: number, listingId: number) {
+  const db = await requireDb();
+
+  const existing = await db
+    .select()
+    .from(watchlistEntries)
+    .where(and(eq(watchlistEntries.userId, userId), eq(watchlistEntries.listingId, listingId)))
+    .limit(1);
+
+  const isSaved = !existing[0];
+  
+  if (existing[0]) {
+    await db
+      .delete(watchlistEntries)
+      .where(and(eq(watchlistEntries.userId, userId), eq(watchlistEntries.listingId, listingId)));
+  } else {
+    await db.insert(watchlistEntries).values({
+      userId,
+      listingId,
+    });
+  }
+
+  return { saved: isSaved };
+}
+
+export async function leaveTradeReview(
+  user: Pick<User, "id" | "name">,
+  input: {
+    proposalId: number;
+    rating: number;
+    review?: string;
+  },
+) {
+  const db = await requireDb();
+
+  const proposal = await db
+    .select()
+    .from(tradeProposals)
+    .where(eq(tradeProposals.id, input.proposalId))
+    .limit(1);
+
+  if (!proposal[0]) {
+    throw new Error("Trade Proposal not found.");
+  }
+
+  if (proposal[0].status !== "completed") {
+    throw new Error("You can only review completed trades.");
+  }
+
+  const revieweeId = proposal[0].requesterId === user.id ? proposal[0].recipientId : proposal[0].requesterId;
+
+  await db.insert(tradeReviews).values({
+    proposalId: input.proposalId,
+    reviewerId: user.id,
+    revieweeId,
+    rating: Math.max(1, Math.min(5, input.rating)),
+    review: input.review?.trim() ? input.review.trim().slice(0, 1000) : null,
+  });
+
+  return { success: true };
+}
+
+export async function sendTradeMessage(
+  user: Pick<User, "id" | "name">,
+  input: {
+    proposalId: number;
+    message: string;
+  },
+) {
+  const db = await requireDb();
+
+  const proposal = await db
+    .select()
+    .from(tradeProposals)
+    .where(eq(tradeProposals.id, input.proposalId))
+    .limit(1);
+
+  if (!proposal[0]) {
+    throw new Error("Trade Proposal not found.");
+  }
+
+  const isParticipant = proposal[0].requesterId === user.id || proposal[0].recipientId === user.id;
+  if (!isParticipant) {
+    throw new Error("You are not part of this trade proposal.");
+  }
+
+  await db.insert(tradeMessages).values({
+    proposalId: input.proposalId,
+    senderId: user.id,
+    message: input.message.trim().slice(0, 2000),
+  });
+
+  return { success: true };
+}
+
+export async function searchMembers(input: {
+  query?: string;
+  region?: string;
+  verification?: "all" | "verified" | "established" | "rising";
+}) {
+  const db = await requireDb();
+
+  const whereClauses: any[] = [];
+
+  if (input.query?.trim()) {
+    whereClauses.push(like(userProfiles.displayName, `%${input.query.trim()}%`));
+  }
+
+  if (input.region?.trim()) {
+    whereClauses.push(like(userProfiles.contactAddress, `%${input.region.trim()}%`));
+  }
+
+  const members = await db
+    .select({
+      userId: userProfiles.userId,
+      displayName: userProfiles.displayName,
+      avatarUrl: userProfiles.avatarUrl,
+      bio: userProfiles.bio,
+      contactAddress: userProfiles.contactAddress,
+    })
+    .from(userProfiles)
+    .where(whereClauses.length > 0 ? and(...whereClauses) : undefined)
+    .limit(50);
+
+  const ratingMap = await getRatingStatsMap(members.map(m => m.userId));
+
+  return members.map(m => ({
+    userId: m.userId,
+    displayName: m.displayName,
+    avatarUrl: m.avatarUrl,
+    bio: m.bio,
+    region: m.contactAddress,
+    rating: ratingMap.get(m.userId) ?? { averageRating: 0, reviewCount: 0 },
+  }));
+}
+
+export async function toggleListingStatus(
+  user: Pick<User, "id" | "name">,
+  input: {
+    listingId: number;
+    isActive: boolean;
+  },
+) {
+  const db = await requireDb();
+
+  const listing = await db
+    .select()
+    .from(listings)
+    .where(eq(listings.id, input.listingId))
+    .limit(1);
+
+  if (!listing[0]) {
+    throw new Error("Listing not found.");
+  }
+
+  if (listing[0].ownerId !== user.id) {
+    throw new Error("You can only toggle your own listings.");
+  }
+
+  await db
+    .update(listings)
+    .set({ isActive: input.isActive })
+    .where(eq(listings.id, input.listingId));
+
+  return getDashboardData(user);
+}
+
+export async function bulkUpdateListingStatus(
+  user: Pick<User, "id" | "name">,
+  input: {
+    listingIds: number[];
+    isActive: boolean;
+  },
+) {
+  const db = await requireDb();
+
+  const listings_to_update = await db
+    .select({ id: listings.id, ownerId: listings.ownerId })
+    .from(listings)
+    .where(inArray(listings.id, input.listingIds));
+
+  for (const listing of listings_to_update) {
+    if (listing.ownerId !== user.id) {
+      throw new Error("You can only update your own listings.");
+    }
+  }
+
+  await db
+    .update(listings)
+    .set({ isActive: input.isActive })
+    .where(inArray(listings.id, input.listingIds));
+
+  return getDashboardData(user);
+}
+
+export async function bulkDeleteListings(
+  user: Pick<User, "id" | "name">,
+  input: {
+    listingIds: number[];
+  },
+) {
+  const db = await requireDb();
+
+  const listings_to_delete = await db
+    .select({ id: listings.id, ownerId: listings.ownerId })
+    .from(listings)
+    .where(inArray(listings.id, input.listingIds));
+
+  for (const listing of listings_to_delete) {
+    if (listing.ownerId !== user.id) {
+      throw new Error("You can only delete your own listings.");
+    }
+  }
+
+  await db.delete(listings).where(inArray(listings.id, input.listingIds));
+
+  return getDashboardData(user);
+}
+
+export async function restoreDeletedListings(
+  user: Pick<User, "id" | "name">,
+  input: {
+    listingIds: number[];
+  },
+) {
+  const db = await requireDb();
+
+  const listings_to_restore = await db
+    .select({ id: listings.id, ownerId: listings.ownerId })
+    .from(listings)
+    .where(inArray(listings.id, input.listingIds));
+
+  for (const listing of listings_to_restore) {
+    if (listing.ownerId !== user.id) {
+      throw new Error("You can only restore your own listings.");
+    }
+  }
+
+  await db
+    .update(listings)
+    .set({ isActive: true })
+    .where(inArray(listings.id, input.listingIds));
+
+  return getDashboardData(user);
+}
+
+export async function getUnreadNotificationCount(userId: number) {
+  // Placeholder for notification system
+  return { count: 0 };
+}
+
+export async function getUnreadMessageCount(userId: number) {
+  const db = await requireDb();
+  const result = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(tradeMessages)
+    .where(
+      and(
+        eq(tradeMessages.senderId, userId),
+        sql`1=0`, // Placeholder: would need a read status column
+      ),
+    );
+
+  return { count: Number(result[0]?.count ?? 0) };
+}
+
+export async function saveDraft(
+  user: Pick<User, "id" | "name">,
+  input: {
+    title: string;
+    category: (typeof collectibleCategories)[number];
+    condition: (typeof itemConditions)[number];
+    description: string;
+    estimatedValue?: number;
+    photos: PhotoUploadInput[];
+  },
+) {
+  const db = await requireDb();
+  await ensureUserProfileRecord(user);
+
+  const insertResult = await db.insert(draftListings).values({
+    userId: user.id,
+    title: input.title.trim(),
+    category: input.category,
+    grade: input.grade || "ungraded",
+    graderCompany: input.graderCompany,
+    certificationNumber: input.certificationNumber,
+    estimatedValue: input.estimatedValue ? String(input.estimatedValue) : null,
+  });
+  const draftId = getInsertId(insertResult);
+
+  for (let index = 0; index < input.photos.length; index += 1) {
+    const photo = input.photos[index]!;
+    const uploaded = await uploadImage("drafts", user.id, photo);
+    await db.insert(listingPhotos).values({
+      listingId: draftId,
+      fileKey: uploaded.key,
+      imageUrl: uploaded.url,
+      altText: `${input.title.trim()} draft photo ${index + 1}`,
+      sortOrder: index,
+    });
+  }
+
+  return { draftId };
+}
+
+export async function getDrafts(user: Pick<User, "id" | "name">) {
+  const db = await requireDb();
+
+    const draftRows = await db
+      .select({
+        id: draftListings.id,
+        title: draftListings.title,
+        category: draftListings.category,
+        grade: draftListings.grade,
+        createdAt: draftListings.createdAt,
+      })
+    .from(draftListings)
+    .where(eq(draftListings.userId, user.id))
+    .orderBy(desc(draftListings.createdAt));
+
+  const photoRows = await db
+    .select({
+      draftId: sql<number>`listingId`,
+      imageUrl: listingPhotos.imageUrl,
+      altText: listingPhotos.altText,
+      sortOrder: listingPhotos.sortOrder,
+    })
+    .from(listingPhotos)
+    .where(inArray(listingPhotos.listingId, draftRows.map(d => d.id)));
+
+  const photoMap = new Map<number, any[]>();
+  for (const photo of photoRows) {
+    if (!photoMap.has(photo.draftId)) {
+      photoMap.set(photo.draftId, []);
+    }
+    photoMap.get(photo.draftId)!.push({
+      imageUrl: photo.imageUrl,
+      altText: photo.altText,
+    });
+  }
+
+  return draftRows.map(d => ({
+    id: d.id,
+    title: d.title,
+    category: d.category,
+    grade: d.grade,
+    photos: photoMap.get(d.id) ?? [],
+    createdAt: d.createdAt.getTime(),
+  }));
+}
+
+export async function deleteDraft(
+  user: Pick<User, "id" | "name">,
+  input: {
+    draftId: number;
+  },
+) {
+  const db = await requireDb();
+
+  const draft = await db
+    .select()
+    .from(draftListings)
+    .where(eq(draftListings.id, input.draftId))
+    .limit(1);
+
+  if (!draft[0]) {
+    throw new Error("Draft not found.");
+  }
+
+  if (draft[0].userId !== user.id) {
+    throw new Error("You can only delete your own drafts.");
+  }
+
+  await db.delete(draftListings).where(eq(draftListings.id, input.draftId));
+  await db.delete(listingPhotos).where(eq(listingPhotos.listingId, input.draftId));
+
+  return { success: true };
 }
 
 export async function getDashboardData(user: Pick<User, "id" | "name">) {
-  await ensureUserProfileRecord(user);
   const db = await requireDb();
+  await ensureUserProfileRecord(user);
 
-  const [profileRows, ownListingRows, watchlistRows, proposalCards, ratingMap, receivedReviews] = await Promise.all([
+  const [profileRows, ownListingRows, watchlistRows, receivedReviews, proposalCards, ratingMapData] = await Promise.all([
     db
       .select({
         displayName: userProfiles.displayName,
+        firstName: userProfiles.firstName,
+        lastName: userProfiles.lastName,
         avatarUrl: userProfiles.avatarUrl,
         bio: userProfiles.bio,
         contactFullName: userProfiles.contactFullName,
         contactEmail: userProfiles.contactEmail,
         contactPhone: userProfiles.contactPhone,
         contactAddress: userProfiles.contactAddress,
+        contactTown: userProfiles.contactTown,
+        contactState: userProfiles.contactState,
+        contactZipCode: userProfiles.contactZipCode,
+        contactCountry: userProfiles.contactCountry,
       })
       .from(userProfiles)
       .where(eq(userProfiles.userId, user.id))
@@ -780,6 +1043,7 @@ export async function getDashboardData(user: Pick<User, "id" | "name">) {
         description: listings.description,
         status: listings.status,
         featured: listings.featured,
+        isActive: listings.isActive,
         createdAt: listings.createdAt,
         updatedAt: listings.updatedAt,
       })
@@ -790,14 +1054,11 @@ export async function getDashboardData(user: Pick<User, "id" | "name">) {
       .select({ listingId: watchlistEntries.listingId })
       .from(watchlistEntries)
       .where(eq(watchlistEntries.userId, user.id)),
-    getProposalCards(user.id),
-    getRatingStatsMap([user.id]),
     db
       .select({
         id: tradeReviews.id,
-        reviewerId: tradeReviews.reviewerId,
-        revieweeId: tradeReviews.revieweeId,
         proposalId: tradeReviews.proposalId,
+        reviewerId: tradeReviews.reviewerId,
         rating: tradeReviews.rating,
         review: tradeReviews.review,
         createdAt: tradeReviews.createdAt,
@@ -805,6 +1066,8 @@ export async function getDashboardData(user: Pick<User, "id" | "name">) {
       .from(tradeReviews)
       .where(eq(tradeReviews.revieweeId, user.id))
       .orderBy(desc(tradeReviews.createdAt)),
+    getProposalCards(user.id),
+    getRatingStatsMap([user.id]),
   ]);
 
   const ownListings = await formatListings(ownListingRows, user.id);
@@ -823,6 +1086,7 @@ export async function getDashboardData(user: Pick<User, "id" | "name">) {
           description: listings.description,
           status: listings.status,
           featured: listings.featured,
+          isActive: listings.isActive,
           createdAt: listings.createdAt,
           updatedAt: listings.updatedAt,
         })
@@ -833,17 +1097,23 @@ export async function getDashboardData(user: Pick<User, "id" | "name">) {
 
   const reviewProfileMap = await getProfileMap(receivedReviews.map(row => row.reviewerId));
   const watchlist = await formatListings(savedListingRows, user.id);
-  const rating = ratingMap.get(user.id) ?? { averageRating: 0, reviewCount: 0 };
+  const rating = ratingMapData.get(user.id) ?? { averageRating: 0, reviewCount: 0 };
 
   return {
     profile: {
       displayName: profileRows[0]?.displayName ?? user.name ?? `Collector ${user.id}`,
+      firstName: profileRows[0]?.firstName ?? "",
+      lastName: profileRows[0]?.lastName ?? "",
       avatarUrl: profileRows[0]?.avatarUrl ?? null,
       bio: profileRows[0]?.bio ?? "Open to thoughtful, collector-to-collector trades.",
       contactFullName: profileRows[0]?.contactFullName ?? user.name ?? "",
       contactEmail: profileRows[0]?.contactEmail ?? "",
       contactPhone: profileRows[0]?.contactPhone ?? "",
       contactAddress: profileRows[0]?.contactAddress ?? "",
+      contactTown: profileRows[0]?.contactTown ?? "",
+      contactState: profileRows[0]?.contactState ?? "",
+      contactZipCode: profileRows[0]?.contactZipCode ?? "",
+      contactCountry: profileRows[0]?.contactCountry ?? "",
       rating,
       tradeHistoryCount: proposalCards.length,
     },
@@ -878,6 +1148,12 @@ export async function updateProfile(
     contactEmail?: string;
     contactPhone?: string;
     contactAddress?: string;
+    contactTown?: string;
+    contactState?: string;
+    contactZipCode?: string;
+    contactCountry?: string;
+    firstName?: string;
+    lastName?: string;
     avatar?: AvatarUploadInput | null;
     acceptedTerms?: boolean;
     isMerchant?: boolean;
@@ -904,7 +1180,18 @@ export async function updateProfile(
     contactEmail: input.contactEmail?.trim() ? input.contactEmail.trim().slice(0, 320) : null,
     contactPhone: input.contactPhone?.trim() ? input.contactPhone.trim().slice(0, 40) : null,
     contactAddress: input.contactAddress?.trim() ? input.contactAddress.trim().slice(0, 320) : null,
+    contactTown: input.contactTown?.trim() ? input.contactTown.trim().slice(0, 100) : null,
+    contactState: input.contactState?.trim() ? input.contactState.trim().slice(0, 100) : null,
+    contactZipCode: input.contactZipCode?.trim() ? input.contactZipCode.trim().slice(0, 20) : null,
+    contactCountry: input.contactCountry?.trim() ? input.contactCountry.trim().slice(0, 100) : null,
   };
+
+  if (input.firstName !== undefined) {
+    updateSet.firstName = input.firstName?.trim() ? input.firstName.trim().slice(0, 100) : null;
+  }
+  if (input.lastName !== undefined) {
+    updateSet.lastName = input.lastName?.trim() ? input.lastName.trim().slice(0, 100) : null;
+  }
 
   if (input.avatar) {
     const uploaded = await uploadImage("avatars", user.id, input.avatar);
@@ -937,8 +1224,12 @@ export async function updateProfile(
     updateSet.phoneVerified = input.phoneVerified;
   }
 
+  console.log("[updateProfile] Updating database...");
   await db.update(userProfiles).set(updateSet).where(eq(userProfiles.userId, user.id));
-  return getDashboardData(user);
+  console.log("[updateProfile] Database updated, calling getDashboardData...");
+  const result = await getDashboardData(user);
+  console.log("[updateProfile] getDashboardData completed, returning result");
+  return result;
 }
 
 export async function createListing(
@@ -948,6 +1239,7 @@ export async function createListing(
     category: (typeof collectibleCategories)[number];
     condition: (typeof itemConditions)[number];
     description: string;
+    estimatedValue?: number;
     photos: PhotoUploadInput[];
   },
 ) {
@@ -960,6 +1252,7 @@ export async function createListing(
     category: input.category,
     condition: input.condition,
     description: input.description.trim(),
+    estimatedValue: input.estimatedValue ? String(input.estimatedValue) : null,
     featured: false,
   });
   const listingId = getInsertId(insertResult);
@@ -979,460 +1272,178 @@ export async function createListing(
   return getDashboardData(user);
 }
 
-export async function createTradeProposal(
-  user: Pick<User, "id" | "name">,
-  input: {
-    requestedListingId: number;
-    note?: string;
-  },
-) {
+
+export async function upsertUser(input: {
+  openId: string;
+  name: string | null;
+  email: string | null;
+  loginMethod: string | null;
+  lastSignedIn: Date;
+}) {
   const db = await requireDb();
-  await ensureUserProfileRecord(user);
 
-  const requestedListing = await db
-    .select()
-    .from(listings)
-    .where(eq(listings.id, input.requestedListingId))
-    .limit(1);
-
-  if (!requestedListing[0]) {
-    throw new Error("The requested listing could not be found.");
-  }
-  if (requestedListing[0].ownerId === user.id) {
-    throw new Error("You cannot create a Trade Proposal for your own listing.");
-  }
-  if (requestedListing[0].status !== "active") {
-    throw new Error("The requested listing is no longer available for trade.");
-  }
-
-  const proposalInsert = await db.insert(tradeProposals).values({
-    requesterId: user.id,
-    recipientId: requestedListing[0].ownerId,
-    requestedListingId: input.requestedListingId,
-    note: input.note?.trim() ? input.note.trim() : null,
-  });
-  const proposalId = getInsertId(proposalInsert);
-
-  if (input.note?.trim()) {
-    await db.insert(tradeMessages).values({
-      proposalId,
-      senderId: user.id,
-      message: input.note.trim(),
-    });
-  }
-
-  return getDashboardData(user);
-}
-
-export async function selectTradeProposalItems(
-  userId: number,
-  proposalId: number,
-  offeredListingIds: number[],
-  note?: string,
-) {
-  const db = await requireDb();
-  const proposal = await db.select().from(tradeProposals).where(eq(tradeProposals.id, proposalId)).limit(1);
-  if (!proposal[0]) {
-    throw new Error("Trade Proposal not found.");
-  }
-
-  const current = proposal[0];
-  if (current.recipientId !== userId || current.status !== "pending") {
-    throw new Error("Only the item owner can select items for a pending Trade Proposal.");
-  }
-
-  const uniqueIds = Array.from(new Set(offeredListingIds));
-  const offeredListings = await db
-    .select()
-    .from(listings)
-    .where(and(eq(listings.ownerId, current.requesterId), inArray(listings.id, uniqueIds)));
-
-  if (offeredListings.length !== uniqueIds.length) {
-    throw new Error("The selected items must belong to the interested collector.");
-  }
-  if (offeredListings.some(item => item.status !== "active")) {
-    throw new Error("All selected items must still be active listings.");
-  }
-
-  await db.delete(tradeProposalItems).where(eq(tradeProposalItems.proposalId, proposalId));
-  for (const offeredListingId of uniqueIds) {
-    await db.insert(tradeProposalItems).values({ proposalId, offeredListingId });
-  }
-
-  if (note?.trim()) {
-    await db.insert(tradeMessages).values({
-      proposalId,
-      senderId: userId,
-      message: note.trim(),
-    });
-  }
-
-  return true;
-}
-
-export async function respondToTradeProposal(
-  userId: number,
-  action: "accept" | "refuse" | "counter" | "complete" | "cancel",
-  proposalId: number,
-  note?: string,
-) {
-  const db = await requireDb();
-  const proposal = await db.select().from(tradeProposals).where(eq(tradeProposals.id, proposalId)).limit(1);
-  if (!proposal[0]) {
-    throw new Error("Trade Proposal not found.");
-  }
-
-  const current = proposal[0];
-  const now = new Date();
-
-  if (action === "accept") {
-    const offeredItems = await db
-      .select({ offeredListingId: tradeProposalItems.offeredListingId })
-      .from(tradeProposalItems)
-      .where(eq(tradeProposalItems.proposalId, proposalId));
-    if (current.requesterId !== userId || current.status !== "pending" || offeredItems.length === 0) {
-      throw new Error("Only the interested collector can accept after the owner selects items.");
-    }
-    await db
-      .update(tradeProposals)
-      .set({ status: "accepted", respondedAt: now })
-      .where(eq(tradeProposals.id, proposalId));
-    if (note?.trim()) {
-      await db.insert(tradeMessages).values({ proposalId, senderId: userId, message: note.trim() });
-    }
-  }
-
-  if (action === "refuse") {
-    if (![current.requesterId, current.recipientId].includes(userId) || current.status !== "pending") {
-      throw new Error("Only Trade Proposal participants can refuse a pending Trade Proposal.");
-    }
-    await db
-      .update(tradeProposals)
-      .set({ status: "declined", respondedAt: now })
-      .where(eq(tradeProposals.id, proposalId));
-    if (note?.trim()) {
-      await db.insert(tradeMessages).values({ proposalId, senderId: userId, message: note.trim() });
-    }
-  }
-
-  if (action === "counter") {
-    if (current.requesterId !== userId || current.status !== "pending") {
-      throw new Error("Only the interested collector can counter a pending Trade Proposal.");
-    }
-    await db.delete(tradeProposalItems).where(eq(tradeProposalItems.proposalId, proposalId));
-    await db.insert(tradeMessages).values({
-      proposalId,
-      senderId: userId,
-      message: note?.trim() || "Counter sent. Please review my trade preferences again.",
-    });
-  }
-
-  if (action === "cancel") {
-    if (current.requesterId !== userId || current.status !== "pending") {
-      throw new Error("Only the requester can cancel a pending Trade Proposal.");
-    }
-    await db
-      .update(tradeProposals)
-      .set({ status: "cancelled", respondedAt: now })
-      .where(eq(tradeProposals.id, proposalId));
-  }
-
-  if (action === "complete") {
-    if (![current.requesterId, current.recipientId].includes(userId) || current.status !== "accepted") {
-      throw new Error("Only participants can complete an accepted Trade Proposal.");
-    }
-
-    const offeredItems = await db
-      .select({ offeredListingId: tradeProposalItems.offeredListingId })
-      .from(tradeProposalItems)
-      .where(eq(tradeProposalItems.proposalId, proposalId));
-
-    await db
-      .update(listings)
-      .set({ status: "traded" })
-      .where(inArray(listings.id, [current.requestedListingId, ...offeredItems.map(item => item.offeredListingId)]));
-
-    await db
-      .update(tradeProposals)
-      .set({ status: "completed", completedAt: now, respondedAt: current.respondedAt ?? now })
-      .where(eq(tradeProposals.id, proposalId));
-  }
-
-  return true;
-}
-
-export async function sendTradeMessage(userId: number, proposalId: number, message: string) {
-  const db = await requireDb();
-  const proposal = await db.select().from(tradeProposals).where(eq(tradeProposals.id, proposalId)).limit(1);
-  if (!proposal[0]) {
-    throw new Error("Trade Proposal not found.");
-  }
-  if (![proposal[0].requesterId, proposal[0].recipientId].includes(userId)) {
-    throw new Error("Only Trade Proposal participants can send messages.");
-  }
-
-  await db.insert(tradeMessages).values({
-    proposalId,
-    senderId: userId,
-    message: message.trim(),
-  });
-
-  return true;
-}
-
-export async function toggleWatchlist(userId: number, listingId: number) {
-  const db = await requireDb();
+  // Check if user already exists
   const existing = await db
-    .select({ id: watchlistEntries.id })
-    .from(watchlistEntries)
-    .where(and(eq(watchlistEntries.userId, userId), eq(watchlistEntries.listingId, listingId)))
-    .limit(1);
-
-  if (existing[0]) {
-    await db.delete(watchlistEntries).where(eq(watchlistEntries.id, existing[0].id));
-    return { saved: false };
-  }
-
-  await db.insert(watchlistEntries).values({ userId, listingId });
-  return { saved: true };
-}
-
-export async function leaveTradeReview(
-  userId: number,
-  input: { proposalId: number; rating: number; review?: string },
-) {
-  const db = await requireDb();
-  const proposal = await db.select().from(tradeProposals).where(eq(tradeProposals.id, input.proposalId)).limit(1);
-  if (!proposal[0]) {
-    throw new Error("Trade Proposal not found.");
-  }
-  if (proposal[0].status !== "completed") {
-    throw new Error("Ratings and Reviews are available only after a trade is completed.");
-  }
-  if (![proposal[0].requesterId, proposal[0].recipientId].includes(userId)) {
-    throw new Error("Only trade participants can leave Ratings and Reviews.");
-  }
-
-  const existing = await db
-    .select({ id: tradeReviews.id })
-    .from(tradeReviews)
-    .where(and(eq(tradeReviews.proposalId, input.proposalId), eq(tradeReviews.reviewerId, userId)))
-    .limit(1);
-
-  if (existing[0]) {
-    throw new Error("You have already submitted Ratings and Reviews for this trade.");
-  }
-
-  const revieweeId = proposal[0].requesterId === userId ? proposal[0].recipientId : proposal[0].requesterId;
-  await db.insert(tradeReviews).values({
-    proposalId: input.proposalId,
-    reviewerId: userId,
-    revieweeId,
-    rating: Math.max(1, Math.min(5, Math.round(input.rating))),
-    review: input.review?.trim() ? input.review.trim() : null,
-  });
-
-  return true;
-}
-
-function inferPublicRegion(contactAddress: string | null | undefined) {
-  if (!contactAddress) return "Undisclosed";
-  const segments = contactAddress
-    .split(",")
-    .map(segment => segment.trim())
-    .filter(Boolean);
-  return segments.at(-1) ?? segments[0] ?? "Undisclosed";
-}
-
-function getVerificationLevel(input: { listingCount: number; reviewCount: number; hasAvatar: boolean; hasBio: boolean; hasContactAddress: boolean }) {
-  if (input.hasContactAddress && input.reviewCount >= 3 && input.listingCount >= 3) return "verified" as const;
-  if ((input.hasAvatar || input.hasBio) && input.reviewCount >= 1) return "established" as const;
-  return "rising" as const;
-}
-
-export async function searchMembers(filters?: { query?: string; region?: string; verification?: "all" | "verified" | "established" | "rising" }) {
-  const db = await getDb();
-  if (!db) {
-    return {
-      regions: [] as string[],
-      rankings: {
-        topRated: [] as Array<{ userId: number; displayName: string; averageRating: number; reviewCount: number }>,
-        mostActive: [] as Array<{ userId: number; displayName: string; listingCount: number; completedTradeCount: number }>,
-      },
-      members: [] as Array<{
-        userId: number;
-        displayName: string;
-        avatarUrl: string | null;
-        bio: string;
-        regionLabel: string;
-        verificationLevel: "verified" | "established" | "rising";
-        online: boolean;
-        listingCount: number;
-        completedTradeCount: number;
-        averageRating: number;
-        reviewCount: number;
-        topCategories: string[];
-        featuredListingId: number | null;
-      }>,
-    };
-  }
-
-  const memberRows = await db
-    .select({
-      userId: users.id,
-      fallbackName: users.name,
-      avatarUrl: userProfiles.avatarUrl,
-      displayName: userProfiles.displayName,
-      bio: userProfiles.bio,
-      contactAddress: userProfiles.contactAddress,
-      createdAt: users.createdAt,
-      lastSignedIn: users.lastSignedIn,
-    })
+    .select({ id: users.id })
     .from(users)
-    .leftJoin(userProfiles, eq(userProfiles.userId, users.id))
-    .orderBy(desc(users.lastSignedIn), desc(users.createdAt));
+    .where(eq(users.openId, input.openId))
+    .limit(1);
 
-  const memberIds = memberRows.map(row => row.userId);
-  if (memberIds.length === 0) {
-    return {
-      regions: [] as string[],
-      rankings: {
-        topRated: [] as Array<{ userId: number; displayName: string; averageRating: number; reviewCount: number }>,
-        mostActive: [] as Array<{ userId: number; displayName: string; listingCount: number; completedTradeCount: number }>,
-      },
-      members: [] as Array<{
-        userId: number;
-        displayName: string;
-        avatarUrl: string | null;
-        bio: string;
-        regionLabel: string;
-        verificationLevel: "verified" | "established" | "rising";
-        online: boolean;
-        listingCount: number;
-        completedTradeCount: number;
-        averageRating: number;
-        reviewCount: number;
-        topCategories: string[];
-        featuredListingId: number | null;
-      }>,
-    };
-  }
-
-  const [listingRows, tradeCountRows, ratingRows] = await Promise.all([
-    db
-      .select({
-        id: listings.id,
-        ownerId: listings.ownerId,
-        category: listings.category,
-        status: listings.status,
+  if (existing[0]) {
+    // Update existing user
+    await db
+      .update(users)
+      .set({
+        name: input.name,
+        email: input.email,
+        loginMethod: input.loginMethod,
+        lastSignedIn: input.lastSignedIn,
       })
-      .from(listings)
-      .where(inArray(listings.ownerId, memberIds)),
-    db
-      .select({
-        userId: tradeProposals.requesterId,
-        value: sql<number>`count(*)`,
-      })
-      .from(tradeProposals)
-      .where(and(inArray(tradeProposals.requesterId, memberIds), eq(tradeProposals.status, "completed")))
-      .groupBy(tradeProposals.requesterId),
-    db
-      .select({
-        userId: tradeReviews.revieweeId,
-        averageRating: sql<number>`round(avg(${tradeReviews.rating}), 1)`,
-        reviewCount: sql<number>`count(*)`,
-      })
-      .from(tradeReviews)
-      .where(inArray(tradeReviews.revieweeId, memberIds))
-      .groupBy(tradeReviews.revieweeId),
-  ]);
+      .where(eq(users.openId, input.openId));
 
-  const listingMap = new Map<number, { listingCount: number; categories: Record<string, number>; featuredListingId: number | null }>();
-  for (const row of listingRows) {
-    const entry = listingMap.get(row.ownerId) ?? { listingCount: 0, categories: {}, featuredListingId: null };
-    if (row.status === "active") {
-      entry.listingCount += 1;
-      entry.featuredListingId ??= row.id;
-    }
-    entry.categories[row.category] = (entry.categories[row.category] ?? 0) + 1;
-    listingMap.set(row.ownerId, entry);
-  }
-
-  const tradeCountMap = new Map(tradeCountRows.map(row => [row.userId, Number(row.value ?? 0)]));
-  const ratingMap = new Map(ratingRows.map(row => [row.userId, { averageRating: Number(row.averageRating ?? 0), reviewCount: Number(row.reviewCount ?? 0) }]));
-  const now = Date.now();
-
-  const members = memberRows
-    .map(row => {
-      const listingStats = listingMap.get(row.userId) ?? { listingCount: 0, categories: {}, featuredListingId: null };
-      const ratingStats = ratingMap.get(row.userId) ?? { averageRating: 0, reviewCount: 0 };
-      const topCategories = Object.entries(listingStats.categories)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 3)
-        .map(([category]) => categoryLabels[category as keyof typeof categoryLabels]);
-      const verificationLevel = getVerificationLevel({
-        listingCount: listingStats.listingCount,
-        reviewCount: ratingStats.reviewCount,
-        hasAvatar: Boolean(row.avatarUrl),
-        hasBio: Boolean(row.bio?.trim()),
-        hasContactAddress: Boolean(row.contactAddress?.trim()),
-      });
-
-      return {
-        userId: row.userId,
-        displayName: row.displayName ?? row.fallbackName ?? `Collector ${row.userId}`,
-        avatarUrl: row.avatarUrl ?? null,
-        bio: row.bio?.trim() || "Tradebilia subscriber with an active collecting profile.",
-        regionLabel: inferPublicRegion(row.contactAddress),
-        verificationLevel,
-        online: row.lastSignedIn ? now - row.lastSignedIn.getTime() < 1000 * 60 * 15 : false,
-        listingCount: listingStats.listingCount,
-        completedTradeCount: tradeCountMap.get(row.userId) ?? 0,
-        averageRating: ratingStats.averageRating,
-        reviewCount: ratingStats.reviewCount,
-        topCategories,
-        featuredListingId: listingStats.featuredListingId,
-        memberSince: row.createdAt.getTime(),
-      };
-    })
-    .filter(member => {
-      const query = filters?.query?.trim().toLowerCase();
-      const region = filters?.region?.trim();
-      const verification = filters?.verification ?? "all";
-      const matchesQuery = !query || `${member.displayName} ${member.bio} ${member.userId}`.toLowerCase().includes(query);
-      const matchesRegion = !region || region === "all" || member.regionLabel === region;
-      const matchesVerification = verification === "all" || member.verificationLevel === verification;
-      return matchesQuery && matchesRegion && matchesVerification;
-    })
-    .sort((a, b) => {
-      const scoreA = a.averageRating * 10 + a.reviewCount * 2 + a.listingCount + a.completedTradeCount * 1.5;
-      const scoreB = b.averageRating * 10 + b.reviewCount * 2 + b.listingCount + b.completedTradeCount * 1.5;
-      return scoreB - scoreA;
+    return existing[0].id;
+  } else {
+    // Create new user
+    const result = await db.insert(users).values({
+      openId: input.openId,
+      name: input.name,
+      email: input.email,
+      loginMethod: input.loginMethod,
+      lastSignedIn: input.lastSignedIn,
     });
 
-  return {
-    regions: Array.from(new Set(memberRows.map(row => inferPublicRegion(row.contactAddress)).filter(region => region !== "Undisclosed"))).sort(),
-    rankings: {
-      topRated: [...members]
-        .filter(member => member.reviewCount > 0)
-        .sort((a, b) => b.averageRating - a.averageRating || b.reviewCount - a.reviewCount)
-        .slice(0, 5)
-        .map(member => ({
-          userId: member.userId,
-          displayName: member.displayName,
-          averageRating: member.averageRating,
-          reviewCount: member.reviewCount,
-        })),
-      mostActive: [...members]
-        .sort((a, b) => b.listingCount + b.completedTradeCount - (a.listingCount + a.completedTradeCount))
-        .slice(0, 5)
-        .map(member => ({
-          userId: member.userId,
-          displayName: member.displayName,
-          listingCount: member.listingCount,
-          completedTradeCount: member.completedTradeCount,
-        })),
-    },
-    members,
-  };
+    return getInsertId(result);
+  }
+}
+
+
+export async function getUserById(id: number) {
+  const db = await requireDb();
+  const result = await db
+    .select()
+    .from(users)
+    .where(eq(users.id, id))
+    .limit(1);
+  return result[0] || null;
+}
+
+export async function getUserByOpenId(openId: string) {
+  const db = await requireDb();
+  const result = await db
+    .select()
+    .from(users)
+    .where(eq(users.openId, openId))
+    .limit(1);
+  return result[0] || null;
+}
+
+
+export async function getUserByUsername(username: string) {
+  const db = await requireDb();
+  const result = await db
+    .select()
+    .from(users)
+    .where(eq(users.username, username))
+    .limit(1);
+  return result[0] || null;
+}
+
+export async function createUser(input: {
+  username: string;
+  passwordHash: string;
+  displayName: string;
+  email?: string;
+}) {
+  const db = await requireDb();
+  const result = await db.insert(users).values({
+    username: input.username,
+    passwordHash: input.passwordHash,
+    displayName: input.displayName,
+    email: input.email || null,
+    loginMethod: "custom",
+  });
+  return getInsertId(result);
+}
+
+
+// Password Recovery Functions
+export async function createPasswordResetToken(userId: number, token: string, expiresAt: Date) {
+  const db = await requireDb();
+  return db.insert(passwordResetTokens).values({
+    userId,
+    token,
+    expiresAt,
+  });
+}
+
+export async function getPasswordResetToken(token: string) {
+  const db = await requireDb();
+  const result = await db.select().from(passwordResetTokens).where(eq(passwordResetTokens.token, token)).limit(1);
+  return result[0] || null;
+}
+
+export async function deletePasswordResetToken(token: string) {
+  const db = await requireDb();
+  return db.delete(passwordResetTokens).where(eq(passwordResetTokens.token, token));
+}
+
+export async function updateUserPassword(userId: number, passwordHash: string) {
+  const db = await requireDb();
+  return db.update(users).set({ passwordHash }).where(eq(users.id, userId));
+}
+
+
+// OTP Verification Functions
+export async function createEmailOtp(email: string, otp: string, expiresAt: Date) {
+  const db = await requireDb();
+  // Delete existing OTPs for this email
+  await db.delete(emailVerificationOtps).where(eq(emailVerificationOtps.email, email));
+  return db.insert(emailVerificationOtps).values({
+    email,
+    otp,
+    expiresAt,
+  });
+}
+
+export async function createPhoneOtp(phone: string, otp: string, expiresAt: Date) {
+  const db = await requireDb();
+  // Delete existing OTPs for this phone
+  await db.delete(phoneVerificationOtps).where(eq(phoneVerificationOtps.phone, phone));
+  return db.insert(phoneVerificationOtps).values({
+    phone,
+    otp,
+    expiresAt,
+  });
+}
+
+export async function getEmailOtp(email: string) {
+  const db = await requireDb();
+  const result = await db.select().from(emailVerificationOtps).where(eq(emailVerificationOtps.email, email)).limit(1);
+  return result[0] || null;
+}
+
+export async function getPhoneOtp(phone: string) {
+  const db = await requireDb();
+  const result = await db.select().from(phoneVerificationOtps).where(eq(phoneVerificationOtps.phone, phone)).limit(1);
+  return result[0] || null;
+}
+
+export async function deleteEmailOtp(email: string) {
+  const db = await requireDb();
+  return db.delete(emailVerificationOtps).where(eq(emailVerificationOtps.email, email));
+}
+
+export async function deletePhoneOtp(phone: string) {
+  const db = await requireDb();
+  return db.delete(phoneVerificationOtps).where(eq(phoneVerificationOtps.phone, phone));
+}
+
+export async function incrementEmailOtpAttempts(email: string) {
+  const db = await requireDb();
+  return db.update(emailVerificationOtps).set({ attempts: sql`attempts + 1` }).where(eq(emailVerificationOtps.email, email));
+}
+
+export async function incrementPhoneOtpAttempts(phone: string) {
+  const db = await requireDb();
+  return db.update(phoneVerificationOtps).set({ attempts: sql`attempts + 1` }).where(eq(phoneVerificationOtps.phone, phone));
 }

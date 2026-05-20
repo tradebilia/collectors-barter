@@ -10,6 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
 import { Bell, CheckCircle2, CreditCard, Download, Loader2, Mail, Plus, Search, ShieldCheck, Trash2, UserRound } from "lucide-react";
+import { TopRightIcons } from "@/components/TopRightIcons";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Link } from "wouter";
@@ -213,16 +214,7 @@ export default function Profile() {
             <Search className="mr-3 h-4 w-4 text-slate-500" />
             <span className="text-sm text-slate-500">Search ...</span>
           </div>
-          <div className="ml-auto flex items-center gap-3 text-sm font-semibold">
-            <span>My</span>
-            <Avatar className="h-9 w-9 border border-white/15">
-              <AvatarImage src={profile.avatarUrl ?? undefined} alt={profile.displayName} />
-              <AvatarFallback className="bg-white/10 text-white">{initials(profile.displayName)}</AvatarFallback>
-            </Avatar>
-            <UserRound className="h-5 w-5 text-white" />
-            <Bell className="h-5 w-5 text-[#f4d84f]" />
-            <Mail className="h-5 w-5 text-[#f4d84f]" />
-          </div>
+          <TopRightIcons className="ml-auto flex items-center gap-3 md:gap-4" iconColor="text-white" />
         </div>
         <nav className="grid border-t border-white/10 bg-white text-center text-sm font-semibold text-slate-950 sm:grid-cols-5 xl:grid-cols-10">
           {categoryLinks.map(category => (
