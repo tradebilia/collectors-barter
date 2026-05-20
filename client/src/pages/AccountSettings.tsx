@@ -1,3 +1,4 @@
+"use client";
 
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
@@ -41,19 +42,7 @@ const accountSources = [
 
 type AccountSource = typeof accountSources[number]["value"];
 
-// Helper function to convert file to base64
-const fileToBase64 = (file: File): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const result = e.target?.result as string;
-      const base64String = result.split(',')[1] || '';
-      resolve(base64String);
-    };
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-};
+
 
 export default function AccountSettings() {
   const { user, isAuthenticated, logout } = useAuth();
@@ -76,7 +65,6 @@ export default function AccountSettings() {
     bio: "",
     phoneNumber: "",
     avatarPreview: "",
-    avatarFile: null as File | null,
   });
 
   // Security Form State
@@ -161,7 +149,6 @@ export default function AccountSettings() {
         bio: profile.bio || "",
         phoneNumber: profile.contactPhone || "",
         avatarPreview: profile.avatarUrl || "",
-        avatarFile: null,
       });
     }
   }, [dashboardQuery.data?.profile, user?.name, user?.email]);
@@ -230,7 +217,7 @@ export default function AccountSettings() {
     const reader = new FileReader();
     reader.onload = (e) => {
       const preview = e.target?.result as string;
-      setProfileForm(prev => ({ ...prev, avatarPreview: preview, avatarFile: file }));
+      setProfileForm(prev => ({ ...prev, avatarPreview: preview }));
     };
     reader.readAsDataURL(file);
     toast.success('Photo preview updated. Save profile to upload.');
@@ -271,17 +258,6 @@ export default function AccountSettings() {
         bio: profileForm.bio,
         contactPhone: profileForm.phoneNumber,
       };
-      
-      // Convert avatar file to base64 if present
-      if (profileForm.avatarFile) {
-        const base64 = await fileToBase64(profileForm.avatarFile);
-        payload.avatar = {
-          name: profileForm.avatarFile.name,
-          type: profileForm.avatarFile.type,
-          contentBase64: base64,
-        };
-      }
-      
       if (user?.role === 'admin') {
         payload.firstName = identityInfo.firstName;
         payload.lastName = identityInfo.lastName;
@@ -297,8 +273,6 @@ export default function AccountSettings() {
       console.log("[AccountSettings] Profile saved successfully");
       toast.dismiss(toastId);
       toast.success("Profile updated successfully!");
-      // Clear avatar file after successful upload
-      setProfileForm(prev => ({ ...prev, avatarFile: null }));
       // Refresh the dashboard data
       await utils.market.dashboard.refetch();
     } catch (error: any) {
@@ -375,14 +349,7 @@ export default function AccountSettings() {
   const handleSaveCommunications = async () => {
     const toastId = toast.loading("Saving communication preferences...");
     try {
-      await saveCommunicationsMutation.mutateAsync({
-        emailFrequency: communicationPrefs.emailFrequency,
-        tradeNotifications: communicationPrefs.tradeNotifications,
-        messageNotifications: communicationPrefs.messageNotifications,
-        feedbackNotifications: communicationPrefs.feedbackNotifications,
-        systemNotifications: communicationPrefs.systemNotifications,
-        marketingEmails: communicationPrefs.marketingEmails,
-      });
+      await saveCommunicationsMutation.mutateAsync(communicationPrefs);
       toast.dismiss(toastId);
       toast.success("Communication preferences saved successfully!");
     } catch (error: any) {
@@ -394,12 +361,11 @@ export default function AccountSettings() {
   const handleSavePreferences = async () => {
     const toastId = toast.loading("Saving preferences...");
     try {
-      await savePreferencesMutation.mutateAsync({
+      const prefsToSave = {
+        ...preferences,
         preferredCategories: preferences.preferredCategories,
-        showProfile: preferences.showProfile,
-        hideInventoryValue: preferences.hideInventoryValue,
-        receiveContactRequests: preferences.receiveContactRequests,
-      });
+      };
+      await savePreferencesMutation.mutateAsync(prefsToSave);
       toast.dismiss(toastId);
       toast.success("Preferences saved successfully!");
     } catch (error: any) {
@@ -409,527 +375,575 @@ export default function AccountSettings() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f5f5f3]">
-      <TopBar />
-      <CategoryBar />
-      
-      <div className="mx-auto max-w-6xl px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-slate-950">Account Settings</h1>
-          <p className="mt-2 text-slate-600">Manage your profile, security, and preferences</p>
+    <div className="min-h-screen bg-[#f5f5f3] text-slate-950">
+      <TopBar logoUrl={TRADEBILIA_LOGO_URL} searchPlaceholder="Search..." />
+
+      {/* Hero Section */}
+      <section className="relative w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden bg-[#00143A] text-white">
+        <div className="absolute inset-0 opacity-20" style={{
+          backgroundImage: 'url(/manus-storage/hero-background-fullwidth_e851e7cd.png)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat'
+        }} />
+        <div className="container relative flex h-64 items-center justify-center py-0 sm:h-72 sm:py-0 lg:h-80 lg:py-0">
+          <div className="flex w-full max-w-6xl items-center justify-center -ml-32">
+            <img
+              src="/manus-storage/AccountSetup_7b72a15a.svg"
+              alt="Settings"
+              className="h-auto w-full"
+            />
+          </div>
         </div>
+      </section>
 
-        <Tabs value={activeTab} onValueChange={(value: any) => setActiveTab(value)} className="w-full">
-          <TabsList className="grid w-full grid-cols-5 bg-white">
-            <TabsTrigger value="profile">Profile</TabsTrigger>
-            <TabsTrigger value="security">Security</TabsTrigger>
-            <TabsTrigger value="integrations">Integrations</TabsTrigger>
-            <TabsTrigger value="communications">Communications</TabsTrigger>
-            <TabsTrigger value="preferences">Preferences</TabsTrigger>
-          </TabsList>
+      <CategoryBar />
 
-          {/* Profile Tab */}
-          <TabsContent value="profile" className="space-y-6">
-            <Card className="bg-white">
-              <CardHeader>
-                <CardTitle>Profile Information</CardTitle>
-                <CardDescription>Update your public profile details</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Profile Picture */}
-                <div>
-                  <Label className="mb-4 block text-sm font-semibold">Profile Picture</Label>
-                  <div className="flex gap-6">
+      <main className="px-4 py-10 lg:px-8">
+        <div className="mx-auto max-w-4xl space-y-8">
+          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
+            <TabsList className="grid w-full grid-cols-5 rounded-lg bg-slate-200">
+              <TabsTrigger value="profile">Profile</TabsTrigger>
+              <TabsTrigger value="security">Security</TabsTrigger>
+              <TabsTrigger value="integrations">Integrations</TabsTrigger>
+              <TabsTrigger value="communications">Communications</TabsTrigger>
+              <TabsTrigger value="preferences">Preferences</TabsTrigger>
+            </TabsList>
+
+            {/* Profile Tab */}
+            <TabsContent value="profile" className="space-y-6">
+              <Card className="rounded-[1.5rem] border-slate-200 bg-white shadow-sm">
+                <CardHeader>
+                  <CardTitle>Profile Information</CardTitle>
+                  <CardDescription>Update your public profile details</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Avatar Section */}
+                  <div className="space-y-4">
+                    <h3 className="font-semibold text-slate-900">Profile Picture</h3>
                     <div className="flex flex-col items-center gap-4">
-                      <Avatar className="h-32 w-32">
+                      <Avatar className="h-32 w-32 border-4 border-slate-200">
                         <AvatarImage src={profileForm.avatarPreview} />
-                        <AvatarFallback className="bg-purple-600 text-2xl font-bold text-white">
-                          {getAvatarInitials(identityInfo.firstName, identityInfo.lastName)}
-                        </AvatarFallback>
+                        <AvatarFallback className="text-2xl bg-[#7f31ff] text-white">{getAvatarInitials({ firstName: identityInfo.firstName, lastName: identityInfo.lastName })}</AvatarFallback>
                       </Avatar>
-                    </div>
-                    <div className="flex-1">
-                      <div
-                        className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-slate-300 bg-slate-50 p-8 transition hover:bg-slate-100"
-                        onDragOver={handleDragOver}
-                        onDrop={handleDrop}
-                      >
-                        <Upload className="mb-2 h-8 w-8 text-slate-400" />
-                        <p className="text-sm font-medium text-slate-700">Upload Photo or Drag & Drop</p>
-                        <p className="text-xs text-slate-500">JPG, PNG or GIF. Max 5MB.</p>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="mt-4"
-                          onClick={handleUploadClick}
+                      <div className="cursor-pointer">
+                        <div
+                          onDragOver={handleDragOver}
+                          onDrop={handleDrop}
+                          className="rounded-lg border-2 border-dashed border-slate-300 p-4 text-center hover:border-slate-400 transition-colors"
                         >
-                          Choose File
-                        </Button>
+                          <Button type="button" variant="outline" className="rounded-lg w-full" onClick={handleUploadClick}>
+                            <Upload className="mr-2 h-4 w-4" />
+                            Upload Photo or Drag & Drop
+                          </Button>
+                        </div>
                         <input
                           type="file"
                           accept="image/*"
-                          onChange={handleFileInputChange}
                           className="hidden"
+                          onChange={handleFileInputChange}
+                        />
+                      </div>
+                      <p className="text-xs text-slate-600 text-center">JPG, PNG or GIF. Max 5MB.</p>
+                    </div>
+                  </div>
+
+                  {/* Identity Info - Editable for Admin, Read-Only for Others */}
+                  <div className="border-t border-slate-200 pt-4 space-y-4">
+                    <h3 className="font-semibold text-slate-900">Identity Information {user?.role === 'admin' ? '' : '(Read-Only)'}</h3>
+                    <p className="text-xs text-slate-600">{user?.role === 'admin' ? 'Update your legal name information.' : 'These fields cannot be changed for security reasons. Contact support if you need to update them.'}</p>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="firstName">First Name</Label>
+                        <Input 
+                          id="firstName"
+                          name="firstName"
+                          value={identityInfo.firstName} 
+                          onChange={(e) => user?.role === 'admin' && setIdentityInfo(prev => ({ ...prev, firstName: e.target.value }))}
+                          disabled={user?.role !== 'admin'}
+                          className={user?.role === 'admin' ? 'rounded-lg border-slate-200' : 'bg-slate-100 rounded-lg border-slate-200'} 
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="lastName">Last Name</Label>
+                        <Input 
+                          id="lastName"
+                          name="lastName"
+                          value={identityInfo.lastName} 
+                          onChange={(e) => user?.role === 'admin' && setIdentityInfo(prev => ({ ...prev, lastName: e.target.value }))}
+                          disabled={user?.role !== 'admin'}
+                          className={user?.role === 'admin' ? 'rounded-lg border-slate-200' : 'bg-slate-100 rounded-lg border-slate-200'} 
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Email Address</Label>
+                        <Input 
+                          value={identityInfo.email} 
+                          onChange={(e) => user?.role === 'admin' && setIdentityInfo(prev => ({ ...prev, email: e.target.value }))}
+                          disabled={user?.role !== 'admin'}
+                          className={user?.role === 'admin' ? 'rounded-lg border-slate-200' : 'bg-slate-100 rounded-lg border-slate-200'} 
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Country</Label>
+                        <Input 
+                          value={identityInfo.country} 
+                          onChange={(e) => user?.role === 'admin' && setIdentityInfo(prev => ({ ...prev, country: e.target.value }))}
+                          disabled={user?.role !== 'admin'}
+                          className={user?.role === 'admin' ? 'rounded-lg border-slate-200' : 'bg-slate-100 rounded-lg border-slate-200'} 
+                        />
+                      </div>
+                      <div className="col-span-2 space-y-2">
+                        <Label>Street Address</Label>
+                        <Input 
+                          value={identityInfo.street} 
+                          onChange={(e) => user?.role === 'admin' && setIdentityInfo(prev => ({ ...prev, street: e.target.value }))}
+                          disabled={user?.role !== 'admin'}
+                          placeholder="Street address"
+                          className={user?.role === 'admin' ? 'rounded-lg border-slate-200' : 'bg-slate-100 rounded-lg border-slate-200'} 
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Town/City</Label>
+                        <Input 
+                          value={identityInfo.town} 
+                          onChange={(e) => user?.role === 'admin' && setIdentityInfo(prev => ({ ...prev, town: e.target.value }))}
+                          disabled={user?.role !== 'admin'}
+                          placeholder="Town or city"
+                          className={user?.role === 'admin' ? 'rounded-lg border-slate-200' : 'bg-slate-100 rounded-lg border-slate-200'} 
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>State</Label>
+                        <Input 
+                          value={identityInfo.state} 
+                          onChange={(e) => user?.role === 'admin' && setIdentityInfo(prev => ({ ...prev, state: e.target.value }))}
+                          disabled={user?.role !== 'admin'}
+                          placeholder="State"
+                          className={user?.role === 'admin' ? 'rounded-lg border-slate-200' : 'bg-slate-100 rounded-lg border-slate-200'} 
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Zip Code</Label>
+                        <Input 
+                          value={identityInfo.zipCode} 
+                          onChange={(e) => user?.role === 'admin' && setIdentityInfo(prev => ({ ...prev, zipCode: e.target.value }))}
+                          disabled={user?.role !== 'admin'}
+                          placeholder="Zip code"
+                          className={user?.role === 'admin' ? 'rounded-lg border-slate-200' : 'bg-slate-100 rounded-lg border-slate-200'} 
+                        />
+                      </div>
+                      <div className="col-span-2 space-y-2">
+                        <Label>Phone Number</Label>
+                        <Input 
+                          value={identityInfo.phoneNumber} 
+                          onChange={(e) => user?.role === 'admin' && setIdentityInfo(prev => ({ ...prev, phoneNumber: e.target.value }))}
+                          disabled={user?.role !== 'admin'}
+                          placeholder="Phone number"
+                          className={user?.role === 'admin' ? 'rounded-lg border-slate-200' : 'bg-slate-100 rounded-lg border-slate-200'} 
                         />
                       </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Identity Information */}
-                <div className="space-y-4 border-t pt-6">
-                  <h3 className="font-semibold">Identity Information</h3>
-                  <p className="text-sm text-slate-600">
-                    {user?.role === 'admin' ? 'You can edit all fields' : 'These fields are read-only'}
-                  </p>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="firstName">First Name</Label>
+                  {/* Editable Profile Fields */}
+                  <div className="border-t border-slate-200 pt-4 space-y-4">
+                    <h3 className="font-semibold text-slate-900">Public Profile</h3>
+                    <div className="space-y-2">
+                      <Label htmlFor="displayName">Display Name</Label>
                       <Input
-                        id="firstName"
-                        value={identityInfo.firstName}
-                        onChange={(e) => setIdentityInfo(prev => ({ ...prev, firstName: e.target.value }))}
-                        disabled={user?.role !== 'admin'}
-                        className={user?.role !== 'admin' ? 'bg-slate-100 text-slate-500' : ''}
+                        id="displayName"
+                        name="displayName"
+                        value={profileForm.displayName}
+                        onChange={handleProfileChange}
+                        placeholder="How you'll appear to other collectors"
+                        className="rounded-lg border-slate-200"
                       />
                     </div>
-                    <div>
-                      <Label htmlFor="lastName">Last Name</Label>
-                      <Input
-                        id="lastName"
-                        value={identityInfo.lastName}
-                        onChange={(e) => setIdentityInfo(prev => ({ ...prev, lastName: e.target.value }))}
-                        disabled={user?.role !== 'admin'}
-                        className={user?.role !== 'admin' ? 'bg-slate-100 text-slate-500' : ''}
+                    <div className="space-y-2">
+                      <Label htmlFor="bio">About You (Bio)</Label>
+                      <Textarea
+                        id="bio"
+                        name="bio"
+                        value={profileForm.bio}
+                        onChange={handleProfileChange}
+                        placeholder="Tell other collectors about yourself (max 500 characters)"
+                        maxLength={500}
+                        className="rounded-lg border-slate-200"
+                        rows={4}
                       />
+                      <p className="text-xs text-slate-600">{profileForm.bio.length}/500 characters</p>
                     </div>
                   </div>
 
-                  <div>
-                    <Label htmlFor="email">Email Address</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      value={identityInfo.email}
-                      onChange={(e) => setIdentityInfo(prev => ({ ...prev, email: e.target.value }))}
-                      disabled={user?.role !== 'admin'}
-                      className={user?.role !== 'admin' ? 'bg-slate-100 text-slate-500' : ''}
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="street">Street Address</Label>
-                    <Input
-                      id="street"
-                      placeholder="Street address"
-                      value={identityInfo.street}
-                      onChange={(e) => setIdentityInfo(prev => ({ ...prev, street: e.target.value }))}
-                      disabled={user?.role !== 'admin'}
-                      className={`mt-2 ${user?.role !== 'admin' ? 'bg-slate-100 text-slate-500' : ''}`}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="town">Town or City</Label>
-                    <Input
-                      id="town"
-                      placeholder="Town or city"
-                      value={identityInfo.town}
-                      onChange={(e) => setIdentityInfo(prev => ({ ...prev, town: e.target.value }))}
-                      disabled={user?.role !== 'admin'}
-                      className={`mt-2 ${user?.role !== 'admin' ? 'bg-slate-100 text-slate-500' : ''}`}
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="state">State</Label>
-                      <Input
-                        id="state"
-                        placeholder="State"
-                        value={identityInfo.state}
-                        onChange={(e) => setIdentityInfo(prev => ({ ...prev, state: e.target.value }))}
-                        disabled={user?.role !== 'admin'}
-                        className={`mt-2 ${user?.role !== 'admin' ? 'bg-slate-100 text-slate-500' : ''}`}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="zipCode">Zip Code</Label>
-                      <Input
-                        id="zipCode"
-                        placeholder="Zip code"
-                        value={identityInfo.zipCode}
-                        onChange={(e) => setIdentityInfo(prev => ({ ...prev, zipCode: e.target.value }))}
-                        disabled={user?.role !== 'admin'}
-                        className={`mt-2 ${user?.role !== 'admin' ? 'bg-slate-100 text-slate-500' : ''}`}
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <Label htmlFor="country">Country</Label>
-                    <Input
-                      id="country"
-                      placeholder="Country"
-                      value={identityInfo.country}
-                      onChange={(e) => setIdentityInfo(prev => ({ ...prev, country: e.target.value }))}
-                      disabled={user?.role !== 'admin'}
-                      className={`mt-2 ${user?.role !== 'admin' ? 'bg-slate-100 text-slate-500' : ''}`}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="phoneNumber">Phone Number</Label>
-                    <Input
-                      id="phoneNumber"
-                      placeholder="Phone number"
-                      value={identityInfo.phoneNumber}
-                      onChange={(e) => setIdentityInfo(prev => ({ ...prev, phoneNumber: e.target.value }))}
-                      disabled={user?.role !== 'admin'}
-                      className={`mt-2 ${user?.role !== 'admin' ? 'bg-slate-100 text-slate-500' : ''}`}
-                    />
-                  </div>
-                </div>
-
-                {/* Public Profile */}
-                <div className="space-y-4 border-t pt-6">
-                  <h3 className="font-semibold">Public Profile</h3>
-                  
-                  <div>
-                    <Label htmlFor="displayName">Display Name</Label>
-                    <Input
-                      id="displayName"
-                      name="displayName"
-                      value={profileForm.displayName}
-                      onChange={handleProfileChange}
-                      placeholder="How you'll appear to other collectors"
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="bio">About You (Bio)</Label>
-                    <Textarea
-                      id="bio"
-                      name="bio"
-                      value={profileForm.bio}
-                      onChange={handleProfileChange}
-                      placeholder="Tell other collectors about yourself (max 500 characters)"
-                      maxLength={500}
-                      rows={4}
-                    />
-                  </div>
-                </div>
-
-                {/* Danger Zone */}
-                <div className="space-y-4 border-t pt-6">
-                  <h3 className="font-semibold text-red-600">Danger Zone</h3>
-                  <Button variant="destructive" className="w-full">
-                    Delete Account
-                  </Button>
-                </div>
-
-                <Button onClick={handleSaveProfile} className="w-full bg-blue-600 hover:bg-blue-700">
-                  <Save className="mr-2 h-4 w-4" />
-                  Save Profile Changes
-                </Button>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Security Tab */}
-          <TabsContent value="security" className="space-y-6">
-            <Card className="bg-white">
-              <CardHeader>
-                <CardTitle>Security Settings</CardTitle>
-                <CardDescription>Manage your password and security options</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Change Password */}
-                <div className="space-y-4">
-                  <h3 className="font-semibold">Change Password</h3>
-                  {!showPasswordFields ? (
-                    <Button
-                      variant="outline"
-                      onClick={() => setShowPasswordFields(true)}
-                      className="w-full"
-                    >
-                      <Lock className="mr-2 h-4 w-4" />
-                      Change Password
-                    </Button>
-                  ) : (
-                    <div className="space-y-4">
-                      <Input
-                        type="password"
-                        name="currentPassword"
-                        placeholder="Current password"
-                        value={securityForm.currentPassword}
-                        onChange={handleSecurityChange}
-                      />
-                      <Input
-                        type="password"
-                        name="newPassword"
-                        placeholder="New password"
-                        value={securityForm.newPassword}
-                        onChange={handleSecurityChange}
-                      />
-                      <Input
-                        type="password"
-                        name="confirmPassword"
-                        placeholder="Confirm new password"
-                        value={securityForm.confirmPassword}
-                        onChange={handleSecurityChange}
-                      />
-                      <div className="flex gap-2">
-                        <Button onClick={handleChangePassword} className="flex-1 bg-blue-600 hover:bg-blue-700">
-                          Save New Password
-                        </Button>
-                        <Button
-                          variant="outline"
-                          onClick={() => setShowPasswordFields(false)}
-                          className="flex-1"
-                        >
-                          Cancel
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Security Question */}
-                <div className="space-y-4 border-t pt-6">
-                  <h3 className="font-semibold">Security Question</h3>
-                  <div>
-                    <Label htmlFor="securityQuestion">Select a security question</Label>
-                    <select
-                      id="securityQuestion"
-                      value={securityForm.securityQuestion}
-                      onChange={(e) => setSecurityForm(prev => ({ ...prev, securityQuestion: e.target.value }))}
-                      className="mt-2 w-full rounded-md border border-slate-300 px-3 py-2"
-                    >
-                      <option value="">Choose a question...</option>
-                      <option value="What is your mother's maiden name?">What is your mother's maiden name?</option>
-                      <option value="What was the name of your first pet?">What was the name of your first pet?</option>
-                      <option value="In what city were you born?">In what city were you born?</option>
-                      <option value="What is your favorite book?">What is your favorite book?</option>
-                    </select>
-                  </div>
-                  <div>
-                    <Label htmlFor="securityAnswer">Your answer</Label>
-                    <Input
-                      id="securityAnswer"
-                      name="securityAnswer"
-                      value={securityForm.securityAnswer}
-                      onChange={handleSecurityChange}
-                      placeholder="Enter your answer"
-                    />
-                  </div>
-                  <Button onClick={handleSaveSecurityQuestion} className="w-full bg-blue-600 hover:bg-blue-700">
-                    <Shield className="mr-2 h-4 w-4" />
-                    Save Security Question
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Integrations Tab */}
-          <TabsContent value="integrations" className="space-y-6">
-            <Card className="bg-white">
-              <CardHeader>
-                <CardTitle>Connected Accounts</CardTitle>
-                <CardDescription>Link external accounts to verify your trading history and build trust</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
-                  <p className="text-sm text-blue-800">
-                    <span className="font-semibold">✓ Your credentials are secure</span>
-                    <br />
-                    You'll be redirected directly to each site to authorize the connection. We never store your login credentials.
-                  </p>
-                </div>
-
-                <div className="space-y-4">
-                  {accountSources.map(source => (
-                    <div key={source.value} className="flex items-center justify-between rounded-lg border border-slate-200 p-4">
-                      <div className="flex items-center gap-4">
-                        <img src={source.logo} alt={source.label} className="h-12 w-12" />
-                        <div>
-                          <p className="font-semibold">{source.label}</p>
-                          <p className="text-sm text-slate-600">
-                            {connectedAccounts.includes(source.value) ? 'Connected' : 'Not connected'}
-                          </p>
-                        </div>
-                      </div>
-                      <Button variant="outline">Connect</Button>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Communications Tab */}
-          <TabsContent value="communications" className="space-y-6">
-            <Card className="bg-white">
-              <CardHeader>
-                <CardTitle>Communication Preferences</CardTitle>
-                <CardDescription>Control how and when you receive notifications</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div>
-                  <Label htmlFor="emailFrequency">Email Frequency</Label>
-                  <select
-                    id="emailFrequency"
-                    value={communicationPrefs.emailFrequency}
-                    onChange={(e) => setCommunicationPrefs(prev => ({ ...prev, emailFrequency: e.target.value as any }))}
-                    className="mt-2 w-full rounded-md border border-slate-300 px-3 py-2"
+                  <Button 
+                    onClick={handleSaveProfile} 
+                    disabled={saveProfileMutation.isPending}
+                    className="w-full rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
                   >
-                    <option value="instant">Instant</option>
-                    <option value="daily">Daily Digest</option>
-                    <option value="weekly">Weekly Digest</option>
-                    <option value="never">Never</option>
-                  </select>
-                </div>
+                    {saveProfileMutation.isPending ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="mr-2 h-4 w-4" />
+                        Save Profile Changes
+                      </>
+                    )}
+                  </Button>
 
-                <div className="space-y-4 border-t pt-6">
-                  <h3 className="font-semibold">Notification Types</h3>
-                  
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">Trade Requests</p>
-                      <p className="text-sm text-slate-600">Get notified when someone wants to trade with you</p>
+                  {/* Danger Zone */}
+                  <div className="border-t border-slate-200 pt-4">
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                      <h3 className="font-semibold text-red-900 mb-2">Danger Zone</h3>
+                      <Button variant="destructive" className="rounded-lg">
+                        Delete Account
+                      </Button>
+                      <p className="text-xs text-red-800 mt-2">This action cannot be undone. All your data will be permanently deleted.</p>
                     </div>
-                    <Switch
-                      checked={communicationPrefs.tradeNotifications}
-                      onCheckedChange={(checked) => setCommunicationPrefs(prev => ({ ...prev, tradeNotifications: checked }))}
-                    />
                   </div>
 
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">Messages</p>
-                      <p className="text-sm text-slate-600">Get notified when you receive new messages</p>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Security Tab */}
+            <TabsContent value="security" className="space-y-6">
+              <Card className="rounded-[1.5rem] border-slate-200 bg-white shadow-sm">
+                <CardHeader>
+                  <CardTitle>Security Settings</CardTitle>
+                  <CardDescription>Manage your password and security questions</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Email Verification Status */}
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <div className="flex items-center gap-2">
+                      <Shield className="h-5 w-5 text-green-600" />
+                      <div>
+                        <p className="font-medium text-green-900">Email Verified</p>
+                        <p className="text-sm text-green-800">{identityInfo.email}</p>
+                      </div>
                     </div>
-                    <Switch
-                      checked={communicationPrefs.messageNotifications}
-                      onCheckedChange={(checked) => setCommunicationPrefs(prev => ({ ...prev, messageNotifications: checked }))}
-                    />
                   </div>
 
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">Feedback Received</p>
-                      <p className="text-sm text-slate-600">Get notified when you receive feedback</p>
+                  {/* Password Change Section */}
+                  <div className="border-t border-slate-200 pt-4 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-semibold text-slate-900">Change Password</h3>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowPasswordFields(!showPasswordFields)}
+                        className="rounded-lg"
+                      >
+                        {showPasswordFields ? "Cancel" : "Change Password"}
+                      </Button>
                     </div>
-                    <Switch
-                      checked={communicationPrefs.feedbackNotifications}
-                      onCheckedChange={(checked) => setCommunicationPrefs(prev => ({ ...prev, feedbackNotifications: checked }))}
-                    />
+
+                    {showPasswordFields && (
+                      <div className="space-y-3 bg-slate-50 p-4 rounded-lg">
+                        <div className="space-y-2">
+                          <Label htmlFor="currentPassword">Current Password</Label>
+                          <Input
+                            id="currentPassword"
+                            name="currentPassword"
+                            type="password"
+                            value={securityForm.currentPassword}
+                            onChange={handleSecurityChange}
+                            placeholder="Enter your current password"
+                            className="rounded-lg border-slate-200"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="newPassword">New Password</Label>
+                          <Input
+                            id="newPassword"
+                            name="newPassword"
+                            type="password"
+                            value={securityForm.newPassword}
+                            onChange={handleSecurityChange}
+                            placeholder="Create a strong password (min 8 characters)"
+                            className="rounded-lg border-slate-200"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                          <Input
+                            id="confirmPassword"
+                            name="confirmPassword"
+                            type="password"
+                            value={securityForm.confirmPassword}
+                            onChange={handleSecurityChange}
+                            placeholder="Confirm your new password"
+                            className="rounded-lg border-slate-200"
+                          />
+                        </div>
+                        <Button onClick={handleChangePassword} className="w-full rounded-lg bg-blue-600 hover:bg-blue-700">
+                          Update Password
+                        </Button>
+                      </div>
+                    )}
                   </div>
 
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">System Updates</p>
-                      <p className="text-sm text-slate-600">Get notified about important system updates</p>
+                  {/* Security Questions */}
+                  <div className="border-t border-slate-200 pt-4 space-y-4">
+                    <h3 className="font-semibold text-slate-900">Security Questions</h3>
+                    <p className="text-sm text-slate-600">These help you recover your account if you forget your password.</p>
+                    <div className="space-y-2">
+                      <Label htmlFor="securityQuestion">Security Question</Label>
+                      <select
+                        id="securityQuestion"
+                        value={securityForm.securityQuestion}
+                        onChange={(e) => setSecurityForm(prev => ({ ...prev, securityQuestion: e.target.value }))}
+                        className="w-full rounded-lg border border-slate-200 px-3 py-2"
+                      >
+                        <option value="">Select a security question</option>
+                        <option value="pet">What was the name of your first pet?</option>
+                        <option value="city">What city were you born in?</option>
+                        <option value="school">What was the name of your first school?</option>
+                        <option value="book">What is your favorite book?</option>
+                        <option value="movie">What is your favorite movie?</option>
+                      </select>
                     </div>
-                    <Switch
-                      checked={communicationPrefs.systemNotifications}
-                      onCheckedChange={(checked) => setCommunicationPrefs(prev => ({ ...prev, systemNotifications: checked }))}
-                    />
+                    <div className="space-y-2">
+                      <Label htmlFor="securityAnswer">Your Answer</Label>
+                      <Input
+                        id="securityAnswer"
+                        name="securityAnswer"
+                        value={securityForm.securityAnswer}
+                        onChange={handleSecurityChange}
+                        placeholder="Your answer to the security question"
+                        className="rounded-lg border-slate-200"
+                      />
+                    </div>
+                    <Button className="w-full rounded-lg bg-blue-600 hover:bg-blue-700">
+                      Save Security Question
+                    </Button>
                   </div>
 
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">Marketing Emails</p>
-                      <p className="text-sm text-slate-600">Receive promotional offers and news</p>
-                    </div>
-                    <Switch
-                      checked={communicationPrefs.marketingEmails}
-                      onCheckedChange={(checked) => setCommunicationPrefs(prev => ({ ...prev, marketingEmails: checked }))}
-                    />
+
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Integrations Tab */}
+            <TabsContent value="integrations" className="space-y-6">
+              <Card className="rounded-[1.5rem] border-slate-200 bg-white shadow-sm">
+                <CardHeader>
+                  <CardTitle>Connected Accounts</CardTitle>
+                  <CardDescription>Link external accounts to verify your trading history and build trust</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                    <p className="text-xs text-blue-900 font-medium">🔒 Your credentials are secure</p>
+                    <p className="text-xs text-blue-800 mt-1">
+                      You'll be redirected directly to each site to authorize the connection. We never store your login credentials.
+                    </p>
                   </div>
-                </div>
 
-                <Button onClick={handleSaveCommunications} className="w-full bg-blue-600 hover:bg-blue-700">
-                  <Mail className="mr-2 h-4 w-4" />
-                  Save Communication Preferences
-                </Button>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Preferences Tab */}
-          <TabsContent value="preferences" className="space-y-6">
-            <Card className="bg-white">
-              <CardHeader>
-                <CardTitle>Collecting Preferences</CardTitle>
-                <CardDescription>Customize your collecting interests and privacy settings</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div>
-                  <h3 className="mb-4 font-semibold">Preferred Collecting Categories</h3>
-                  <p className="mb-4 text-sm text-slate-600">Select the categories you're most interested in</p>
-                  <div className="grid grid-cols-2 gap-4">
-                    {categoryOptions.map(category => (
-                      <div key={category.value} className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          id={category.value}
-                          checked={preferences.preferredCategories.includes(category.value)}
-                          onChange={() => handleCategoryToggle(category.value)}
-                          className="rounded border-slate-300"
-                        />
-                        <Label htmlFor={category.value} className="font-normal cursor-pointer">
-                          {category.label}
-                        </Label>
+                  <div className="space-y-3">
+                    {accountSources.map((source) => (
+                      <div
+                        key={source.value}
+                        className="flex items-center justify-between rounded-lg border border-slate-200 p-4"
+                      >
+                        <div className="flex items-center gap-3">
+                          <img 
+                            src={source.logo} 
+                            alt={source.label}
+                            className="h-12 w-auto object-contain"
+                          />
+                          <div>
+                            <p className="font-medium text-slate-900">{source.label}</p>
+                            <p className="text-xs text-slate-600">
+                              {connectedAccounts.includes(source.value) ? "Connected" : "Not connected"}
+                            </p>
+                          </div>
+                        </div>
+                        <Button
+                          variant={connectedAccounts.includes(source.value) ? "destructive" : "outline"}
+                          size="sm"
+                          className="rounded-lg"
+                          onClick={() => handleAccountSourceToggle(source.value)}
+                        >
+                          {connectedAccounts.includes(source.value) ? "Disconnect" : "Connect"}
+                        </Button>
                       </div>
                     ))}
                   </div>
-                </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
 
-                <div className="space-y-4 border-t pt-6">
-                  <h3 className="font-semibold">Privacy Settings</h3>
-                  
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">Show Profile</p>
-                      <p className="text-sm text-slate-600">Allow others to view your public profile</p>
-                    </div>
-                    <Switch
-                      checked={preferences.showProfile}
-                      onCheckedChange={(checked) => setPreferences(prev => ({ ...prev, showProfile: checked }))}
-                    />
+            {/* Communications Tab */}
+            <TabsContent value="communications" className="space-y-6">
+              <Card className="rounded-[1.5rem] border-slate-200 bg-white shadow-sm">
+                <CardHeader>
+                  <CardTitle>Communication Preferences</CardTitle>
+                  <CardDescription>Control how and when you receive notifications</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Email Frequency */}
+                  <div className="space-y-3">
+                    <Label>Email Frequency</Label>
+                    <select
+                      value={communicationPrefs.emailFrequency}
+                      onChange={(e) => setCommunicationPrefs(prev => ({ ...prev, emailFrequency: e.target.value as any }))}
+                      className="w-full rounded-lg border border-slate-200 px-3 py-2"
+                    >
+                      <option value="instant">Instant</option>
+                      <option value="daily">Daily Digest</option>
+                      <option value="weekly">Weekly Digest</option>
+                      <option value="never">Never</option>
+                    </select>
                   </div>
 
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">Hide Inventory Value</p>
-                      <p className="text-sm text-slate-600">Don't show the total value of your collection</p>
+                  {/* Notification Preferences */}
+                  <div className="border-t border-slate-200 pt-4 space-y-4">
+                    <h3 className="font-semibold text-slate-900">Notification Types</h3>
+                    
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium text-slate-900">Trade Requests</p>
+                        <p className="text-xs text-slate-600">Get notified when someone wants to trade with you</p>
+                      </div>
+                      <Switch
+                        checked={communicationPrefs.tradeNotifications}
+                        onCheckedChange={(checked) => setCommunicationPrefs(prev => ({ ...prev, tradeNotifications: checked }))}
+                      />
                     </div>
-                    <Switch
-                      checked={preferences.hideInventoryValue}
-                      onCheckedChange={(checked) => setPreferences(prev => ({ ...prev, hideInventoryValue: checked }))}
-                    />
+
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium text-slate-900">Messages</p>
+                        <p className="text-xs text-slate-600">Get notified when you receive new messages</p>
+                      </div>
+                      <Switch
+                        checked={communicationPrefs.messageNotifications}
+                        onCheckedChange={(checked) => setCommunicationPrefs(prev => ({ ...prev, messageNotifications: checked }))}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium text-slate-900">Feedback Received</p>
+                        <p className="text-xs text-slate-600">Get notified when you receive feedback</p>
+                      </div>
+                      <Switch
+                        checked={communicationPrefs.feedbackNotifications}
+                        onCheckedChange={(checked) => setCommunicationPrefs(prev => ({ ...prev, feedbackNotifications: checked }))}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium text-slate-900">System Updates</p>
+                        <p className="text-xs text-slate-600">Get notified about important system updates</p>
+                      </div>
+                      <Switch
+                        checked={communicationPrefs.systemNotifications}
+                        onCheckedChange={(checked) => setCommunicationPrefs(prev => ({ ...prev, systemNotifications: checked }))}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium text-slate-900">Marketing Emails</p>
+                        <p className="text-xs text-slate-600">Receive promotional offers and news</p>
+                      </div>
+                      <Switch
+                        checked={communicationPrefs.marketingEmails}
+                        onCheckedChange={(checked) => setCommunicationPrefs(prev => ({ ...prev, marketingEmails: checked }))}
+                      />
+                    </div>
                   </div>
 
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">Receive Contact Requests</p>
-                      <p className="text-sm text-slate-600">Allow collectors to contact you about trades</p>
-                    </div>
-                    <Switch
-                      checked={preferences.receiveContactRequests}
-                      onCheckedChange={(checked) => setPreferences(prev => ({ ...prev, receiveContactRequests: checked }))}
-                    />
-                  </div>
-                </div>
+                  <Button className="w-full rounded-lg bg-blue-600 hover:bg-blue-700">
+                    <Save className="mr-2 h-4 w-4" />
+                    Save Communication Preferences
+                  </Button>
+                </CardContent>
+              </Card>
+            </TabsContent>
 
-                <Button onClick={handleSavePreferences} className="w-full bg-blue-600 hover:bg-blue-700">
-                  <Cog className="mr-2 h-4 w-4" />
-                  Save Preferences
-                </Button>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-      </div>
+            {/* Preferences Tab */}
+            <TabsContent value="preferences" className="space-y-6">
+              <Card className="rounded-[1.5rem] border-slate-200 bg-white shadow-sm">
+                <CardHeader>
+                  <CardTitle>Collecting Preferences</CardTitle>
+                  <CardDescription>Customize your collecting interests and privacy settings</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Preferred Categories */}
+                  <div className="space-y-3">
+                    <h3 className="font-semibold text-slate-900">Preferred Collecting Categories</h3>
+                    <p className="text-xs text-slate-600">Select the categories you're most interested in</p>
+                    <div className="grid grid-cols-2 gap-3">
+                      {categoryOptions.map((cat) => (
+                        <label key={cat.value} className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={preferences.preferredCategories.includes(cat.value)}
+                            onChange={() => handleCategoryToggle(cat.value)}
+                            className="h-4 w-4 rounded"
+                          />
+                          <span className="text-sm text-slate-700">{cat.label}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Privacy Settings */}
+                  <div className="border-t border-slate-200 pt-4 space-y-4">
+                    <h3 className="font-semibold text-slate-900">Privacy Settings</h3>
+
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium text-slate-900">Show Profile</p>
+                        <p className="text-xs text-slate-600">Allow others to view your public profile</p>
+                      </div>
+                      <Switch
+                        checked={preferences.showProfile}
+                        onCheckedChange={(checked) => setPreferences(prev => ({ ...prev, showProfile: checked }))}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium text-slate-900">Hide Inventory Value</p>
+                        <p className="text-xs text-slate-600">Don't show the total value of your collection</p>
+                      </div>
+                      <Switch
+                        checked={preferences.hideInventoryValue}
+                        onCheckedChange={(checked) => setPreferences(prev => ({ ...prev, hideInventoryValue: checked }))}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium text-slate-900">Receive Contact Requests</p>
+                        <p className="text-xs text-slate-600">Allow collectors to contact you about trades</p>
+                      </div>
+                      <Switch
+                        checked={preferences.receiveContactRequests}
+                        onCheckedChange={(checked) => setPreferences(prev => ({ ...prev, receiveContactRequests: checked }))}
+                      />
+                    </div>
+                  </div>
+
+                  <Button className="w-full rounded-lg bg-blue-600 hover:bg-blue-700">
+                    <Save className="mr-2 h-4 w-4" />
+                    Save Preferences
+                  </Button>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        </div>
+      </main>
     </div>
   );
 }

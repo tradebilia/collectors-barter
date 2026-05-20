@@ -792,7 +792,7 @@ This ensures users can fill in all category-specific details when adding items t
 - [x] Implement frontend handlers for Integrations tab
 - [x] Implement frontend handlers for Communications tab
 - [x] Implement frontend handlers for Preferences tab
-- [x] Test all save functions across all tabs (COMPLETE - all tabs save and persist correctly)
+- [ ] Test all save functions across all tabs (in progress)
 
 ## CURRENT: Profile Photo Upload
 
@@ -800,12 +800,9 @@ This ensures users can fill in all category-specific details when adding items t
 - [x] Add drag-and-drop functionality for profile photo upload
 - [x] Add file validation (type and size)
 - [x] Add image preview update on file selection
-- [x] Implement server-side photo upload to S3 storage (avatar conversion to base64 working)
-- [x] Update profile save to include photo upload (payload includes avatar object)
-- [x] Test photo upload and persistence (avatar uploads successfully, needs verification of DB persistence)
-- [x] Fix Account Settings page formatting - add missing labels for address fields
-- [x] Increase spacing between labels and inputs (mt-2 class added)
-- [x] Verify logo displays correctly on Account Settings page (logo is present and matches category pages)
+- [ ] Implement server-side photo upload to S3 storage
+- [ ] Update profile save to include photo upload
+- [ ] Test photo upload and persistence
 
 ## CURRENT: TypeScript Error Resolution
 
@@ -819,9 +816,7 @@ This ensures users can fill in all category-specific details when adding items t
 - [x] Fixed TopRightIcons notification count type checks
 - [x] Fixed AccountSettings setState type issues with category arrays and email frequency
 - [x] Added missing receivedReviews query to getDashboardData Promise.all
-- [x] Added missing contact fields to getDashboardData profile selection (contactTown, contactState, contactZipCode, contactCountry)
-- [x] Added estimatedValue to saveDraft input type
-- [ ] Resolve remaining 49 TypeScript errors (mostly frontend type mismatches and missing properties)
+- [ ] Resolve remaining 110 TypeScript errors (mostly frontend type mismatches and missing properties)
 
 
 ## PROGRESS SUMMARY - TypeScript Error Resolution

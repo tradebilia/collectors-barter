@@ -899,7 +899,6 @@ export async function saveDraft(
     category: (typeof collectibleCategories)[number];
     condition: (typeof itemConditions)[number];
     description: string;
-    estimatedValue?: number;
     photos: PhotoUploadInput[];
   },
 ) {
@@ -1022,10 +1021,6 @@ export async function getDashboardData(user: Pick<User, "id" | "name">) {
         contactEmail: userProfiles.contactEmail,
         contactPhone: userProfiles.contactPhone,
         contactAddress: userProfiles.contactAddress,
-        contactTown: userProfiles.contactTown,
-        contactState: userProfiles.contactState,
-        contactZipCode: userProfiles.contactZipCode,
-        contactCountry: userProfiles.contactCountry,
       })
       .from(userProfiles)
       .where(eq(userProfiles.userId, user.id))
