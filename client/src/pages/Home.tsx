@@ -442,15 +442,38 @@ export default function Home() {
               </button>
             </div>
           </div>
-          <div className="hidden items-center gap-2 md:flex">
-            <Link href="/profile" className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/90 transition hover:text-white">
-              My Tradebilia
-            </Link>
-            <span className="text-white/45">|</span>
-            <div className="flex items-center gap-1 text-[#d4e86d]">
-              <Bell className="h-4 w-4" />
-              <Settings2 className="h-4 w-4" />
-              <Mail className="h-4 w-4" />
+          <div className="flex items-center gap-3 md:gap-4">
+            {isAuthenticated && (
+              <>
+                <Link href="/profile" className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/90 transition hover:text-white">
+                  My Tradebilia
+                </Link>
+                <span className="text-white/45">|</span>
+                <div className="flex items-center gap-1 text-[#d4e86d]">
+                  <Bell className="h-4 w-4" />
+                  <Link href="/account-settings" className="transition hover:text-[#c4d85d]">
+                    <Settings2 className="h-4 w-4" />
+                  </Link>
+                  <Mail className="h-4 w-4" />
+                </div>
+              </>
+            )}
+            <div className="flex items-center gap-2">
+              {isAuthenticated ? (
+                <Button
+                  onClick={logout}
+                  className="h-7 rounded-md bg-white/20 px-3 text-[11px] font-semibold text-white hover:bg-white/30"
+                >
+                  Log Out
+                </Button>
+              ) : (
+                <Button
+                  onClick={() => (window.location.href = getLoginUrl())}
+                  className="h-7 rounded-md bg-[#7f31ff] px-3 text-[11px] font-semibold text-white hover:bg-[#6925dd]"
+                >
+                  Sign In
+                </Button>
+              )}
             </div>
           </div>
         </div>

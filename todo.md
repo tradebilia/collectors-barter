@@ -302,7 +302,90 @@
 **Placement:** Add as the first element in the header's top navigation div, before other header content.
 
 **Exception:** Home page (/) does not need a Home button since it IS the home page.
-- [ ] Create Account Setup page for first-time user account configuration
-- [ ] Create Account Settings page for managing and adjusting account details after setup
-- [ ] Create public Profile page for other users to view user information
-- [ ] Add routing and navigation for Account Setup, Account Settings, and Profile pages
+- [x] Create Account Setup page for first-time user account configuration
+- [x] Create Account Settings page for managing and adjusting account details after setup
+- [x] Create public Profile page for other users to view user information
+- [x] Add routing and navigation for Account Setup, Account Settings, and Profile pages
+- [x] Add Login/Sign Up button to home page header that changes to Log Out when user is signed in
+- [x] Refactor Account Setup Step 1 to include all basic information (Display Name, Full Name, Location, Email, Phone, Bio)
+- [x] Create Account Setup Step 2 for importing from other accounts (eBay, PayPal, Facebook, etc.) with skip option
+- [x] Create Account Setup Step 3 for avatar and profile customization
+- [x] Make phone number mandatory in Account Setup Step 1
+- [x] Add SMS verification flow for phone number validation
+- [x] Update Account Setup Step 1 to include: User Name, Full Home Address, Password, Phone Number (mandatory with verification)
+- [x] Make phone number mandatory in Account Setup Step 1
+- [x] Add SMS verification flow for phone number validation
+- [x] Split Full Name into First Name and Last Name fields
+- [x] Split Full Home Address into Street, Zip Code, State, Country fields
+- [x] Move password fields to come after User Name
+- [x] Remove Bio section from Step 1
+- [x] Move Welcome heading and subtitle below hero section
+- [x] Add Tradebilia logo to hero section
+- [x] Add development step navigation to Account Setup (jump to any step without form validation)
+- [x] Remove Google and Amazon account options from Step 2 import page
+- [x] Update Step 2 messaging to clarify OAuth flow and that only feedback ratings are imported
+- [x] Add merchant/store owner checkbox to Step 1
+- [x] Add conditional merchant store information fields (store name, business license, tax ID, etc.)
+- [x] Expand merchant fields in Step 1: Business Address, Business Phone, Business Email, EIN, Business Website, Years in Business, Business Type
+- [x] Remove Business Type, Years in Business, and Store Description from merchant fields in Step 1
+- [x] Add email verification flow to Step 1 (similar to phone verification)
+- [x] Add Terms & Conditions and Privacy Policy acceptance checkbox to Step 1
+- [x] Expand Step 3 with bio section, preferred collecting categories, and notification preferences preview
+- [x] Add security questions to Step 1 for account recovery
+- [x] Create Step 4: Account Review and Confirmation (review all entered information before final submission)
+
+## Account Setup Wizard Enhancement (May 2026)
+
+### Database Schema
+- [x] Extended userProfiles table with new columns for Account Setup
+  - acceptedTerms (boolean)
+  - isMerchant (boolean)
+  - securityQuestion (string)
+  - securityAnswer (string)
+  - preferredCategories (JSON)
+  - notificationPreferences (JSON)
+  - emailVerified (boolean)
+  - phoneVerified (boolean)
+
+### Backend (tRPC)
+- [x] Updated saveProfile procedure to accept new Account Setup fields
+- [x] Updated updateProfile function in db.ts to persist all new fields
+- [x] Added field validation and truncation for text fields
+
+### Frontend - Account Setup Wizard
+
+#### Step 1: Basic Information & Verification
+- [x] Added T&C validation before proceeding
+- [x] Added email verification modal with code entry
+- [x] Phone number verification (enhanced existing)
+- [x] Merchant checkbox with designation
+
+#### Step 3: Profile Customization & Preferences
+- [x] Expanded with bio textarea (500 char limit)
+- [x] Added preferred categories multi-select (10 categories)
+- [x] Added notification preferences (4 types)
+- [x] Avatar upload (existing)
+
+#### Step 4: Review & Confirmation (NEW)
+- [x] Review page showing all account information
+- [x] Merchant information section (conditional)
+- [x] Profile preferences summary
+- [x] Verification status display
+- [x] Complete Setup button with loading state
+
+### UI/UX Enhancements
+- [x] Updated progress indicator for 4 steps
+- [x] Updated dev navigation to support 4 steps
+- [x] Email verification modal UI
+- [x] Step 4 review card with organized sections
+- [x] Verification status display
+
+### Testing
+- [x] Created comprehensive vitest test suite (16 tests)
+- [x] All tests passing
+- [x] Coverage includes:
+  - Basic profile fields
+  - Account Setup specific fields
+  - Data validation
+  - Contact information
+  - Combined payload validation
