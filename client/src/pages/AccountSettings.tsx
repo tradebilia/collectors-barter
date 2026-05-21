@@ -142,6 +142,11 @@ export default function AccountSettings() {
     storeName: "",
   });
 
+  // Refetch dashboard data when page mounts
+  useEffect(() => {
+    dashboardQuery.refetch();
+  }, []);
+
   // Load profile data
   useEffect(() => {
     if (dashboardQuery.data?.profile) {
@@ -167,6 +172,12 @@ export default function AccountSettings() {
         phoneNumber: profile.contactPhone || "",
         avatarPreview: profile.avatarUrl || "",
       });
+
+      setSecurityForm(prev => ({
+        ...prev,
+        securityQuestion: (profile as any).securityQuestion || "",
+        securityAnswer: "", // Answer is hashed in DB, can't display it
+      }));
     }
   }, [dashboardQuery.data?.profile, user?.name, user?.email]);
 
@@ -760,9 +771,12 @@ export default function AccountSettings() {
                         name="securityAnswer"
                         value={securityForm.securityAnswer}
                         onChange={handleSecurityChange}
-                        placeholder="Your answer to the security question"
+                        placeholder="Enter your answer (or re-enter if updating)"
                         className="rounded-lg border-slate-200"
                       />
+                      {securityForm.securityQuestion && (
+                        <p className="text-xs text-slate-500 mt-1">Your answer is securely hashed and cannot be displayed for security reasons.</p>
+                      )}
                     </div>
                     <Button onClick={handleSaveSecurityQuestion} className="w-full rounded-lg bg-blue-600 hover:bg-blue-700">
                       Save Security Question
