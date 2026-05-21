@@ -15,6 +15,13 @@ import { trpc } from "@/lib/trpc";
 import { Bell, Lock, Mail, Loader2, Save, Shield, Link as LinkIcon, Upload, Eye, EyeOff, Cog } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Link } from "wouter";
 import { TopBar } from "@/components/TopBar";
 import { CategoryBar } from "@/components/CategoryBar";
@@ -60,6 +67,16 @@ export default function AccountSettings() {
   const [activeTab, setActiveTab] = useState<"profile" | "security" | "integrations" | "communications" | "preferences">("profile");
   
   // Profile Form State
+  const [confirmationDialog, setConfirmationDialog] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+  }>({
+    isOpen: false,
+    title: "",
+    message: "",
+  });
+
   const [profileForm, setProfileForm] = useState({
     displayName: "",
     bio: "",
@@ -250,7 +267,6 @@ export default function AccountSettings() {
   };
 
   const handleSaveProfile = async () => {
-    const toastId = toast.loading("Saving profile...");
     console.log("[AccountSettings] handleSaveProfile called");
     try {
       const payload: any = {
@@ -271,14 +287,20 @@ export default function AccountSettings() {
       }
       await saveProfileMutation.mutateAsync(payload);
       console.log("[AccountSettings] Profile saved successfully");
-      toast.dismiss(toastId);
-      alert("Profile updated successfully!");
+      setConfirmationDialog({
+        isOpen: true,
+        title: "Success",
+        message: "Profile updated successfully!",
+      });
       // Refresh the dashboard data
       await utils.market.dashboard.refetch();
     } catch (error: any) {
       console.error("[AccountSettings] Error saving profile:", error);
-      toast.dismiss(toastId);
-      alert("Error: " + (error.message || "Failed to update profile"));
+      setConfirmationDialog({
+        isOpen: true,
+        title: "Error",
+        message: error.message || "Failed to update profile",
+      });
     }
   };
 
@@ -314,62 +336,86 @@ export default function AccountSettings() {
 
   const handleSaveSecurityQuestion = async () => {
     if (!securityForm.securityQuestion || !securityForm.securityAnswer) {
-      toast.error("Please select a security question and provide an answer");
+      setConfirmationDialog({
+        isOpen: true,
+        title: "Missing Information",
+        message: "Please select a security question and provide an answer",
+      });
       return;
     }
-    const toastId = toast.loading("Saving security question...");
     try {
       await saveSecurityQuestionMutation.mutateAsync({
         securityQuestion: securityForm.securityQuestion,
         securityAnswer: securityForm.securityAnswer,
       });
-      toast.dismiss(toastId);
-      alert("Security question saved successfully!");
+      setConfirmationDialog({
+        isOpen: true,
+        title: "Success",
+        message: "Security question saved successfully!",
+      });
     } catch (error: any) {
-      toast.dismiss(toastId);
-      alert("Error: " + (error.message || "Failed to save security question"));
+      setConfirmationDialog({
+        isOpen: true,
+        title: "Error",
+        message: error.message || "Failed to save security question",
+      });
     }
   };
 
   const handleSaveIntegrations = async () => {
-    const toastId = toast.loading("Saving integrations...");
     try {
       await saveIntegrationsMutation.mutateAsync({
         connectedAccounts: connectedAccounts,
       });
-      toast.dismiss(toastId);
-      alert("Integrations saved successfully!");
+      setConfirmationDialog({
+        isOpen: true,
+        title: "Success",
+        message: "Integrations saved successfully!",
+      });
     } catch (error: any) {
-      toast.dismiss(toastId);
-      alert("Error: " + (error.message || "Failed to save integrations"));
+      setConfirmationDialog({
+        isOpen: true,
+        title: "Error",
+        message: error.message || "Failed to save integrations",
+      });
     }
   };
 
   const handleSaveCommunications = async () => {
-    const toastId = toast.loading("Saving communication preferences...");
     try {
       await saveCommunicationsMutation.mutateAsync(communicationPrefs);
-      toast.dismiss(toastId);
-      alert("Communication preferences saved successfully!");
+      setConfirmationDialog({
+        isOpen: true,
+        title: "Success",
+        message: "Communication preferences saved successfully!",
+      });
     } catch (error: any) {
-      toast.dismiss(toastId);
-      alert("Error: " + (error.message || "Failed to save communication preferences"));
+      setConfirmationDialog({
+        isOpen: true,
+        title: "Error",
+        message: error.message || "Failed to save communication preferences",
+      });
     }
   };
 
   const handleSavePreferences = async () => {
-    const toastId = toast.loading("Saving preferences...");
     try {
       const prefsToSave = {
         ...preferences,
         preferredCategories: preferences.preferredCategories,
       };
       await savePreferencesMutation.mutateAsync(prefsToSave);
-      toast.dismiss(toastId);
-      alert("Preferences saved successfully!");
+      setConfirmationDialog({
+        isOpen: true,
+        title: "Success",
+        message: "Preferences saved successfully!",
+      });
     } catch (error: any) {
-      toast.dismiss(toastId);
-      alert("Error: " + (error.message || "Failed to save preferences"));
+      setConfirmationDialog({
+        isOpen: true,
+        title: "Error",
+        message: error.message || "Failed to save preferences",
+      });
     }
   };
 
@@ -718,7 +764,7 @@ export default function AccountSettings() {
                         className="rounded-lg border-slate-200"
                       />
                     </div>
-                    <Button className="w-full rounded-lg bg-blue-600 hover:bg-blue-700">
+                    <Button onClick={handleSaveSecurityQuestion} className="w-full rounded-lg bg-blue-600 hover:bg-blue-700">
                       Save Security Question
                     </Button>
                   </div>
@@ -860,7 +906,7 @@ export default function AccountSettings() {
                     </div>
                   </div>
 
-                  <Button className="w-full rounded-lg bg-blue-600 hover:bg-blue-700">
+                  <Button onClick={handleSaveCommunications} className="w-full rounded-lg bg-blue-600 hover:bg-blue-700">
                     <Save className="mr-2 h-4 w-4" />
                     Save Communication Preferences
                   </Button>
@@ -933,7 +979,7 @@ export default function AccountSettings() {
                     </div>
                   </div>
 
-                  <Button className="w-full rounded-lg bg-blue-600 hover:bg-blue-700">
+                  <Button onClick={handleSavePreferences} className="w-full rounded-lg bg-blue-600 hover:bg-blue-700">
                     <Save className="mr-2 h-4 w-4" />
                     Save Preferences
                   </Button>
@@ -943,6 +989,15 @@ export default function AccountSettings() {
           </Tabs>
         </div>
       </main>
+
+      {/* Confirmation Dialog */}
+      <AlertDialog open={confirmationDialog.isOpen} onOpenChange={(open) => setConfirmationDialog(prev => ({ ...prev, isOpen: open }))}>
+        <AlertDialogContent>
+          <AlertDialogTitle>{confirmationDialog.title}</AlertDialogTitle>
+          <AlertDialogDescription>{confirmationDialog.message}</AlertDialogDescription>
+          <AlertDialogAction onClick={() => setConfirmationDialog(prev => ({ ...prev, isOpen: false }))}>OK</AlertDialogAction>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -794,12 +794,19 @@ This ensures users can fill in all category-specific details when adding items t
 - [x] Implement frontend handlers for Preferences tab
 - [ ] Test all save functions across all tabs (in progress)
 
-## CURRENT: Profile Photo Upload
+## CURRENT: Account Settings Save Button Confirmations
 
-- [x] Implement file upload button for profile photo
-- [x] Add drag-and-drop functionality for profile photo upload
-- [x] Add file validation (type and size)
-- [x] Add image preview update on file selection
+- [x] Implement alert() confirmation popups for all save buttons
+- [x] Profile tab: "Profile updated successfully!" confirmation
+- [x] Security tab: "Security question saved successfully!" confirmation
+- [x] Communications tab: "Communication preferences saved successfully!" confirmation
+- [x] Preferences tab: "Preferences saved successfully!" confirmation
+- [x] Test all save buttons show confirmation popups
+- [x] Verify SVG hero section displays correctly with "Account Settings" text
+- [x] Ensure no formatting changes were made to the page
+
+## FUTURE: Profile Photo Upload
+
 - [ ] Implement server-side photo upload to S3 storage
 - [ ] Update profile save to include photo upload
 - [ ] Test photo upload and persistence
