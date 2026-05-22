@@ -32,8 +32,8 @@ import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { hashPassword, verifyPassword, isValidUsername, isValidPassword, isValidEmail } from "./_core/auth";
 import { getUserByUsername, createUser, requireDb } from "./db";
 import { sdk } from "./_core/sdk";
-import { users, userProfiles, listings, deletedAccounts } from "../drizzle/schema";
-import { eq } from "drizzle-orm";
+import { users, userProfiles, listings, deletedAccounts, tradeProposals } from "../drizzle/schema";
+import { eq, sql } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { ONE_YEAR_MS } from "@shared/const";
 
