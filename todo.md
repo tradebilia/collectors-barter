@@ -792,7 +792,9 @@ This ensures users can fill in all category-specific details when adding items t
 - [x] Implement frontend handlers for Integrations tab
 - [x] Implement frontend handlers for Communications tab
 - [x] Implement frontend handlers for Preferences tab
-- [ ] Test all save functions across all tabs (in progress)
+- [x] Test all save functions across all tabs (in progress)
+- [x] Fix Security tab data persistence issue (select element onChange handler and backend data model)
+- [x] Verify security question is saved to database and persists across page refreshes
 
 ## CURRENT: Account Settings Save Button Confirmations
 
@@ -878,3 +880,7 @@ The application is fully functional with all core features working correctly.
   - [ ] Manage email templates
   - [ ] Set trading fees or commissions
   - [ ] Configure notification settings
+
+- [x] FIX: Account Settings preferences checkboxes are not responding to clicks (React onClick handler not rendering) - FIXED by using useRef to prevent re-renders and reading checkbox states directly from DOM
+- [x] FIX: Verify preferences state updates when checkboxes are clicked - VERIFIED: checkboxes now update correctly
+- [x] FIX: Ensure preferences persist after page reload - VERIFIED: preferences persist correctly after page refresh

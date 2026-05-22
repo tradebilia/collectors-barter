@@ -13,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { trpc } from "@/lib/trpc";
 import { Bell, Lock, Mail, Loader2, Save, Shield, Link as LinkIcon, Upload, Eye, EyeOff, Cog } from "lucide-react";
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useState, useRef } from "react";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -126,6 +126,9 @@ export default function AccountSettings() {
     hideInventoryValue: false,
     receiveContactRequests: true,
   });
+  
+  // Use ref to track if preferences have been initialized to prevent re-renders from resetting checkboxes
+  const preferencesInitializedRef = useRef(false);
 
   // Identity Info (Display-only)
   const [identityInfo, setIdentityInfo] = useState({
@@ -178,6 +181,46 @@ export default function AccountSettings() {
         securityQuestion: (profile as any).securityQuestion || "",
         securityAnswer: "", // Answer is hashed in DB, can't display it
       }));
+
+      // Load preferences from profile (only on first load)
+      if (!preferencesInitializedRef.current) {
+        const preferredCategoriesStr = (profile as any).preferredCategories;
+        let preferredCategoriesArray: any[] = [];
+        if (preferredCategoriesStr && preferredCategoriesStr !== "NULL") {
+          try {
+            preferredCategoriesArray = JSON.parse(preferredCategoriesStr);
+          } catch (e) {
+            console.error("Failed to parse preferred categories", e);
+            preferredCategoriesArray = [];
+          }
+        }
+        setPreferences({
+          preferredCategories: preferredCategoriesArray,
+          showProfile: (profile as any).showProfile ?? true,
+          hideInventoryValue: (profile as any).hideInventoryValue ?? false,
+          receiveContactRequests: (profile as any).receiveContactRequests ?? true,
+        });
+        preferencesInitializedRef.current = true;
+      }
+
+      // Load communications preferences from JSON
+      const notificationPrefsStr = (profile as any).notificationPreferences;
+      let notificationPrefs = {
+        emailFrequency: "daily" as const,
+        tradeNotifications: true,
+        messageNotifications: true,
+        feedbackNotifications: true,
+        systemNotifications: true,
+        marketingEmails: false,
+      };
+      if (notificationPrefsStr && notificationPrefsStr !== "NULL") {
+        try {
+          notificationPrefs = JSON.parse(notificationPrefsStr);
+        } catch (e) {
+          console.error("Failed to parse notification preferences", e);
+        }
+      }
+      setCommunicationPrefs(notificationPrefs);
     }
   }, [dashboardQuery.data?.profile, user?.name, user?.email]);
 
@@ -217,12 +260,18 @@ export default function AccountSettings() {
   };
 
   const handleCategoryToggle = (category: string) => {
-    setPreferences(prev => ({
-      ...prev,
-      preferredCategories: prev.preferredCategories.includes(category as any)
+    console.log('[handleCategoryToggle] Category:', category);
+    console.log('[handleCategoryToggle] Current preferences:', preferences.preferredCategories);
+    setPreferences(prev => {
+      const newCategories = prev.preferredCategories.includes(category as any)
         ? prev.preferredCategories.filter(c => c !== category)
-        : [...prev.preferredCategories, category as any],
-    }));
+        : [...prev.preferredCategories, category as any];
+      console.log('[handleCategoryToggle] New categories:', newCategories);
+      return {
+        ...prev,
+        preferredCategories: newCategories,
+      };
+    });
   };
 
   const handleAccountSourceToggle = (source: AccountSource) => {
@@ -411,10 +460,21 @@ export default function AccountSettings() {
 
   const handleSavePreferences = async () => {
     try {
+      // Read checkbox states directly from the DOM since onChange handlers aren't firing
+      const checkedCategories: string[] = [];
+      const categoryCheckboxes = document.querySelectorAll('input[id^="category-"]');
+      categoryCheckboxes.forEach((checkbox: any) => {
+        if (checkbox.checked) {
+          const categoryValue = checkbox.id.replace('category-', '');
+          checkedCategories.push(categoryValue);
+        }
+      });
+      
       const prefsToSave = {
         ...preferences,
-        preferredCategories: preferences.preferredCategories,
+        preferredCategories: checkedCategories,
       };
+      console.log('[handleSavePreferences] Categories from DOM:', checkedCategories);
       await savePreferencesMutation.mutateAsync(prefsToSave);
       setConfirmationDialog({
         isOpen: true,
@@ -942,17 +1002,24 @@ export default function AccountSettings() {
                     <h3 className="font-semibold text-slate-900">Preferred Collecting Categories</h3>
                     <p className="text-xs text-slate-600">Select the categories you're most interested in</p>
                     <div className="grid grid-cols-2 gap-3">
-                      {categoryOptions.map((cat) => (
-                        <label key={cat.value} className="flex items-center gap-2 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={preferences.preferredCategories.includes(cat.value)}
-                            onChange={() => handleCategoryToggle(cat.value)}
-                            className="h-4 w-4 rounded"
-                          />
-                          <span className="text-sm text-slate-700">{cat.label}</span>
-                        </label>
-                      ))}
+                      {categoryOptions.map((cat) => {
+                        const checkboxId = `category-${cat.value}`;
+                        // Only set defaultChecked on first render to initialize the checkbox
+                        const isChecked = !preferencesInitializedRef.current ? preferences.preferredCategories.includes(cat.value) : undefined;
+                        return (
+                          <div key={cat.value} className="flex items-center gap-2">
+                            <input
+                              id={checkboxId}
+                              type="checkbox"
+                              defaultChecked={isChecked}
+                              className="h-4 w-4 rounded cursor-pointer"
+                            />
+                            <label htmlFor={checkboxId} className="text-sm text-slate-700 cursor-pointer">
+                              {cat.label}
+                            </label>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
 

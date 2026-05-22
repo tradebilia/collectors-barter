@@ -1,0 +1,42 @@
+{
+  "query": "SELECT * FROM userProfiles WHERE userId = '1';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4ZXfWh5QbDJhQ4C.root --database nAx6ATm2BH4G46yabuMZgM --execute SELECT * FROM userProfiles WHERE userId = '1';",
+  "rows": [
+    {
+      "id": "1",
+      "userId": "1",
+      "displayName": "rtavani",
+      "avatarUrl": "NULL",
+      "avatarKey": "NULL",
+      "bio": "Open to thoughtful, collector-to-collector trades.",
+      "createdAt": "2026-04-17 21:28:36",
+      "updatedAt": "2026-04-17 21:28:36",
+      "contactFullName": "NULL",
+      "contactEmail": "NULL",
+      "contactPhone": "NULL",
+      "contactAddress": "NULL",
+      "acceptedTerms": "0",
+      "isMerchant": "0",
+      "securityQuestion": "NULL",
+      "securityAnswer": "NULL",
+      "preferredCategories": "NULL",
+      "notificationPreferences": "NULL",
+      "emailVerified": "0",
+      "phoneVerified": "0",
+      "connectedAccounts": "NULL",
+      "showProfile": "1",
+      "hideInventoryValue": "0",
+      "receiveContactRequests": "1",
+      "firstName": "NULL",
+      "lastName": "NULL",
+      "contactTown": "NULL",
+      "contactState": "NULL",
+      "contactZipCode": "NULL",
+      "contactCountry": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tuserId\tdisplayName\tavatarUrl\tavatarKey\tbio\tcreatedAt\tupdatedAt\tcontactFullName\tcontactEmail\tcontactPhone\tcontactAddress\tacceptedTerms\tisMerchant\tsecurityQuestion\tsecurityAnswer\tpreferredCategories\tnotificationPreferences\temailVerified\tphoneVerified\tconnectedAccounts\tshowProfile\thideInventoryValue\treceiveContactRequests\tfirstName\tlastName\tcontactTown\tcontactState\tcontactZipCode\tcontactCountry\n1\t1\trtavani\tNULL\tNULL\tOpen to thoughtful, collector-to-collector trades.\t2026-04-17 21:28:36\t2026-04-17 21:28:36\tNULL\tNULL\tNULL\tNULL\t0\t0\tNULL\tNULL\tNULL\tNULL\t0\t0\tNULL\t1\t0\t1\tNULL\tNULL\tNULL\tNULL\tNULL\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 277
+}

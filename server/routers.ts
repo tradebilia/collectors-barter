@@ -385,12 +385,15 @@ export const appRouter = router({
       .mutation(async ({ ctx, input }) => {
         // Store preferences in userProfiles table
         const db = await requireDb();
-        await db.update(userProfiles).set({
+        console.log('[savePreferences] Input:', input);
+        console.log('[savePreferences] User ID:', ctx.user.id);
+        const result = await db.update(userProfiles).set({
           preferredCategories: JSON.stringify(input.preferredCategories),
           showProfile: input.showProfile,
           hideInventoryValue: input.hideInventoryValue,
           receiveContactRequests: input.receiveContactRequests,
         }).where(eq(userProfiles.userId, ctx.user.id));
+        console.log('[savePreferences] Update result:', result);
         return { success: true };
       }),
     createListing: protectedProcedure

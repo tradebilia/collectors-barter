@@ -1021,6 +1021,11 @@ export async function getDashboardData(user: Pick<User, "id" | "name">): Promise
     contactZipCode: string;
     contactCountry: string;
     securityQuestion: string;
+    preferredCategories: string | null;
+    showProfile: boolean;
+    hideInventoryValue: boolean;
+    receiveContactRequests: boolean;
+    notificationPreferences: string | null;
     rating: { averageRating: number; reviewCount: number };
     tradeHistoryCount: number;
   };
@@ -1051,6 +1056,11 @@ export async function getDashboardData(user: Pick<User, "id" | "name">): Promise
         contactZipCode: userProfiles.contactZipCode,
         contactCountry: userProfiles.contactCountry,
         securityQuestion: userProfiles.securityQuestion,
+        preferredCategories: userProfiles.preferredCategories,
+        showProfile: userProfiles.showProfile,
+        hideInventoryValue: userProfiles.hideInventoryValue,
+        receiveContactRequests: userProfiles.receiveContactRequests,
+        notificationPreferences: userProfiles.notificationPreferences,
       })
       .from(userProfiles)
       .where(eq(userProfiles.userId, user.id))
@@ -1142,6 +1152,11 @@ export async function getDashboardData(user: Pick<User, "id" | "name">): Promise
       contactZipCode: profileData?.contactZipCode ?? "",
       contactCountry: profileData?.contactCountry ?? "",
       securityQuestion: profileData?.securityQuestion ?? "",
+      preferredCategories: profileData?.preferredCategories ?? null,
+      showProfile: profileData?.showProfile ?? true,
+      hideInventoryValue: profileData?.hideInventoryValue ?? false,
+      receiveContactRequests: profileData?.receiveContactRequests ?? true,
+      notificationPreferences: profileData?.notificationPreferences ?? null,
       rating,
       tradeHistoryCount: proposalCards.length,
     } as const,
