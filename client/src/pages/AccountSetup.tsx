@@ -215,8 +215,12 @@ export default function AccountSetup() {
         email: formData.email,
       });
       // Store the userId from the signup response
+      console.log("Signup result:", signupResult);
       if (signupResult?.userId) {
+        console.log("Setting userId to:", signupResult.userId);
         setUserId(String(signupResult.userId));
+      } else {
+        console.log("No userId in signup result");
       }
       window.history.replaceState({}, '', '/account-setup');
       setAccountCreated(true);
@@ -287,20 +291,38 @@ export default function AccountSetup() {
     }
   };
 
-  const handleVerifyPhone = () => {
+  const handleVerifyPhone = async () => {
     if (!verificationCode.trim()) {
       toast.error("Please enter the verification code");
       return;
     }
-    // Simulate verification (in production, this would validate against backend)
-    if (verificationCode.length >= 4) {
+    
+    if (verificationCode.length < 4) {
+      toast.error("Invalid verification code");
+      return;
+    }
+    
+    try {
+      // Call the signup mutation to create the account
+      const signupResult = await signupMutation.mutateAsync({
+        username: formData.userName,
+        password: formData.password,
+        displayName: formData.userName,
+        email: formData.email,
+      });
+      
+      // Store the userId from the signup response
+      if (signupResult?.userId) {
+        setUserId(String(signupResult.userId));
+      }
+      
       setIsPhoneVerified(true);
       setShowVerification(false);
       setVerificationCode("");
       toast.success("Phone number verified!");
       setCurrentStep(2);
-    } else {
-      toast.error("Invalid verification code");
+    } catch (err: any) {
+      toast.error(err.message || "Account creation failed");
     }
   };
 
@@ -323,15 +345,20 @@ export default function AccountSetup() {
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     console.log("Form submitted, currentStep:", currentStep);
+    console.log("Current userId state:", userId);
+    console.log("authQuery.data?.id:", authQuery.data?.id);
+    console.log("user?.id:", user?.id);
     if (currentStep !== 3) {
       console.log("Not on final step, skipping save");
       return;
     }
     const fullAddress = `${formData.street}, ${formData.zipCode}, ${formData.state}, ${formData.country}`;
     const fullName = `${formData.firstName} ${formData.lastName}`;
+    const finalUserId = userId || authQuery.data?.id || user?.id;
+    console.log("Final userId to send:", finalUserId);
     console.log("Saving profile with data:", { fullName, contactEmail: formData.email });
     saveProfileMutation.mutate({
-      userId: userId || authQuery.data?.id || user?.id,
+      userId: finalUserId,
       displayName: formData.userName,
       bio: formData.bio,
       contactFullName: fullName,

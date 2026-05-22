@@ -112,6 +112,7 @@ export const appRouter = router({
         }),
       )
       .mutation(async ({ input, ctx }) => {
+        console.log("[signup] Called with username:", input.username);
         if (!isValidUsername(input.username)) {
           throw new Error("Username must be 3-32 characters, alphanumeric with underscores/hyphens");
         }
@@ -238,7 +239,7 @@ export const appRouter = router({
     saveProfile: publicProcedure
       .input(
         z.object({
-          userId: z.string().optional(),
+          userId: z.union([z.string(), z.number()]).optional(),
           displayName: z.string().min(2).max(120),
           bio: z.string().max(500).optional(),
           contactFullName: z.string().max(160).optional(),
@@ -296,7 +297,7 @@ export const appRouter = router({
         }
         
         return updateProfile(
-          { id: userId, name: input.displayName },
+          { id: typeof userId === 'string' ? parseInt(userId, 10) : userId, name: input.displayName },
           {
             displayName: input.displayName,
             bio: input.bio,

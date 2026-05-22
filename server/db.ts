@@ -66,7 +66,17 @@ export async function requireDb(): Promise<ReturnType<typeof drizzle>> {
 }
 
 function getInsertId(result: any) {
-  return Number(result.insertId ?? 0);
+  // Drizzle ORM with MySQL returns an array with ResultSetHeader
+  // Extract insertId from the first element if it's an array
+  let id = 0;
+  if (Array.isArray(result) && result[0]?.insertId) {
+    id = result[0].insertId;
+  } else if (result?.insertId) {
+    id = result.insertId;
+  } else if (result?.lastInsertRowid) {
+    id = result.lastInsertRowid;
+  }
+  return Number(id);
 }
 
 async function ensureUserProfileRecord(user: Pick<User, "id" | "name">) {
