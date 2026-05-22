@@ -369,11 +369,11 @@ export default function AccountSettings() {
         message: "Profile updated successfully!",
       });
       // Refresh the dashboard data and auth context
-      await utils.market.dashboard.invalidate();
-      await utils.auth.me.invalidate();
-      // Also invalidate admin queries so they see updated profile data
-      await utils.admin.getAllUsers.invalidate();
-      await utils.admin.getPlatformStatistics.invalidate();
+      await utils.market.dashboard.refetch();
+      await utils.auth.me.refetch();
+      // Also refetch admin queries so they see updated profile data
+      await utils.admin.getAllUsers.refetch();
+      await utils.admin.getPlatformStatistics.refetch();
     } catch (error: any) {
       console.error("[AccountSettings] Error saving profile:", error);
       setConfirmationDialog({

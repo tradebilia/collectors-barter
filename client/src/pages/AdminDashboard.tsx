@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,15 +15,19 @@ export default function AdminDashboard() {
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const statsQuery = trpc.admin.getPlatformStatistics.useQuery(undefined, {
     enabled: user?.role === "admin",
+    refetchOnWindowFocus: true,
   });
   const usersQuery = trpc.admin.getAllUsers.useQuery(undefined, {
     enabled: user?.role === "admin",
+    refetchOnWindowFocus: true,
   });
   const listingsQuery = trpc.admin.getAllListings.useQuery(undefined, {
     enabled: user?.role === "admin",
+    refetchOnWindowFocus: true,
   });
   const deletedAccountsQuery = trpc.admin.getDeletedAccounts.useQuery(undefined, {
     enabled: user?.role === "admin",
+    refetchOnWindowFocus: true,
   });
   const deleteUserMutation = trpc.admin.deleteUser.useMutation();
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
