@@ -894,3 +894,11 @@ The application is fully functional with all core features working correctly.
 - [x] FEATURE: Admin Dashboard - Implement Listings management UI (table view with title, category, condition, status, owner)
 - [x] FEATURE: Admin Dashboard - Core functionality complete (Statistics, Users, Listings tabs with real data)
 - [ ] FEATURE: Admin Dashboard - Implement Settings tab for platform configuration (future enhancement)
+
+## Duplicate Account Prevention
+
+- [ ] FEATURE: Duplicate Account Prevention - Check for duplicate email during registration
+- [ ] FEATURE: Duplicate Account Prevention - Check for duplicate phone number during registration
+- [ ] FEATURE: Duplicate Account Prevention - Check for duplicate full name + address combination
+- [ ] FEATURE: Duplicate Account Prevention - Show error message if duplicate info detected
+- [ ] FEATURE: Duplicate Account Prevention - Prevent registration if user already exists with same info

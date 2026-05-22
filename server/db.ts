@@ -1510,3 +1510,77 @@ export async function incrementPhoneOtpAttempts(phone: string) {
   const db = await requireDb();
   return db.update(phoneVerificationOtps).set({ attempts: sql`attempts + 1` }).where(eq(phoneVerificationOtps.phone, phone));
 }
+
+
+export async function checkDuplicateAccountInfo(
+  userId: number,
+  email?: string,
+  phone?: string,
+  fullName?: string,
+  address?: string
+) {
+  const db = await requireDb();
+  
+  // Check for duplicate email
+  if (email && email.trim()) {
+    const existingEmail = await db
+      .select({ userId: userProfiles.userId })
+      .from(userProfiles)
+      .where(and(
+        eq(userProfiles.contactEmail, email),
+        ne(userProfiles.userId, userId)
+      ))
+      .limit(1);
+    
+    if (existingEmail.length > 0) {
+      return {
+        isDuplicate: true,
+        field: 'email',
+        message: 'An account with this email address already exists. Users are not allowed to have multiple accounts.',
+      };
+    }
+  }
+  
+  // Check for duplicate phone number
+  if (phone && phone.trim()) {
+    const existingPhone = await db
+      .select({ userId: userProfiles.userId })
+      .from(userProfiles)
+      .where(and(
+        eq(userProfiles.contactPhone, phone),
+        ne(userProfiles.userId, userId)
+      ))
+      .limit(1);
+    
+    if (existingPhone.length > 0) {
+      return {
+        isDuplicate: true,
+        field: 'phone',
+        message: 'An account with this phone number already exists. Users are not allowed to have multiple accounts.',
+      };
+    }
+  }
+  
+  // Check for duplicate full name + address combination
+  if (fullName && address && fullName.trim() && address.trim()) {
+    const existingNameAddress = await db
+      .select({ userId: userProfiles.userId, contactAddress: userProfiles.contactAddress })
+      .from(userProfiles)
+      .where(and(
+        eq(userProfiles.contactFullName, fullName),
+        eq(userProfiles.contactAddress, address),
+        ne(userProfiles.userId, userId)
+      ))
+      .limit(1);
+    
+    if (existingNameAddress.length > 0) {
+      return {
+        isDuplicate: true,
+        field: 'nameAddress',
+        message: 'An account with this name and address already exists. Users are not allowed to have multiple accounts.',
+      };
+    }
+  }
+  
+  return { isDuplicate: false };
+}

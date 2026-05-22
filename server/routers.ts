@@ -24,6 +24,7 @@ import {
   getDrafts,
   deleteDraft,
   getSiteStatistics,
+  checkDuplicateAccountInfo,
 } from "./db";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -265,8 +266,25 @@ export const appRouter = router({
           phoneVerified: z.boolean().optional(),
         }),
       )
-      .mutation(({ ctx, input }) => {
+      .mutation(async ({ ctx, input }) => {
         console.log("[saveProfile] Called with input:", input);
+        
+        // Check for duplicate account information
+        const duplicateCheck = await checkDuplicateAccountInfo(
+          ctx.user.id,
+          input.contactEmail,
+          input.contactPhone,
+          input.contactFullName,
+          input.contactAddress
+        );
+        
+        if (duplicateCheck.isDuplicate) {
+          throw new TRPCError({
+            code: 'CONFLICT',
+            message: duplicateCheck.message,
+          });
+        }
+        
         return updateProfile(
           { id: ctx.user.id, name: ctx.user.name },
           {
