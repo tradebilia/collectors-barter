@@ -128,9 +128,9 @@ export default function AdminDashboard() {
                 icon={<Package className="h-4 w-4" />}
               />
               <StatCard
-                title="Completed Trades"
-                value={statsQuery.data?.completedTrades.toString() ?? "Loading..."}
-                description="Successful transactions"
+                title="Total Trades"
+                value={statsQuery.data?.totalTrades.toString() ?? "Loading..."}
+                description="Trade proposals"
                 icon={<BarChart3 className="h-4 w-4" />}
               />
               <StatCard
