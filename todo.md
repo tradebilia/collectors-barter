@@ -888,8 +888,8 @@ The application is fully functional with all core features working correctly.
 - [x] FEATURE: Admin Dashboard - Create basic UI with tabs (Statistics, Users, Listings, Settings)
 - [x] FEATURE: Admin Dashboard - Add admin icon to TopBar (only visible for admin users)
 - [x] FEATURE: Admin Dashboard - Add /admin route with admin-only access control
-- [ ] FEATURE: Admin Dashboard - Create backend procedures for admin operations
-- [ ] FEATURE: Admin Dashboard - Implement Statistics tab with real data
-- [ ] FEATURE: Admin Dashboard - Implement User management (view, edit, delete users)
-- [ ] FEATURE: Admin Dashboard - Implement Listings management (view, moderate, delete)
+- [x] FEATURE: Admin Dashboard - Create backend procedures (getPlatformStatistics, getAllListings, getAllUsers, deleteUser, updateUserRole)
+- [x] FEATURE: Admin Dashboard - Implement Statistics tab with real data (calls getPlatformStatistics)
+- [ ] FEATURE: Admin Dashboard - Implement User management UI (view, edit, delete users)
+- [ ] FEATURE: Admin Dashboard - Implement Listings management UI (view, moderate, delete)
 - [ ] FEATURE: Admin Dashboard - Implement Settings tab for platform configuration

@@ -1,14 +1,18 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BarChart3, Users, Package, Settings } from "lucide-react";
 import { getLoginUrl } from "@/const";
+import { trpc } from "@/lib/trpc";
 
 export default function AdminDashboard() {
   const { user, loading } = useAuth();
   const [activeTab, setActiveTab] = useState("statistics");
+  const statsQuery = trpc.admin.getPlatformStatistics.useQuery(undefined, {
+    enabled: user?.role === "admin",
+  });
 
   if (loading) {
     return (
@@ -84,25 +88,25 @@ export default function AdminDashboard() {
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
               <StatCard
                 title="Total Members"
-                value="1"
+                value={statsQuery.data?.totalMembers.toString() ?? "Loading..."}
                 description="Active registered users"
                 icon={<Users className="h-4 w-4" />}
               />
               <StatCard
                 title="Total Listings"
-                value="30"
+                value={statsQuery.data?.totalListings.toString() ?? "Loading..."}
                 description="Active collectible items"
                 icon={<Package className="h-4 w-4" />}
               />
               <StatCard
                 title="Completed Trades"
-                value="0"
+                value={statsQuery.data?.completedTrades.toString() ?? "Loading..."}
                 description="Successful transactions"
                 icon={<BarChart3 className="h-4 w-4" />}
               />
               <StatCard
                 title="Platform Value"
-                value="$0"
+                value={statsQuery.data ? `$${statsQuery.data.totalValue.toLocaleString()}` : "Loading..."}
                 description="Total inventory value"
                 icon={<BarChart3 className="h-4 w-4" />}
               />
