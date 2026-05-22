@@ -639,10 +639,22 @@ export const appRouter = router({
       const allUsers = await db.select({
         id: users.id,
         username: users.username,
-        displayName: users.displayName,
+        displayName: userProfiles.displayName,
+        firstName: userProfiles.firstName,
+        lastName: userProfiles.lastName,
         email: users.email,
         role: users.role,
-      }).from(users);
+        createdAt: users.createdAt,
+        contactFullName: userProfiles.contactFullName,
+        contactEmail: userProfiles.contactEmail,
+        contactPhone: userProfiles.contactPhone,
+        contactAddress: userProfiles.contactAddress,
+        contactTown: userProfiles.contactTown,
+        contactState: userProfiles.contactState,
+        contactZipCode: userProfiles.contactZipCode,
+        contactCountry: userProfiles.contactCountry,
+      }).from(users)
+        .leftJoin(userProfiles, eq(users.id, userProfiles.userId));
       return allUsers;
     }),
     deleteUser: protectedProcedure
