@@ -505,7 +505,7 @@ export default function AccountSetup() {
 
               {/* Progress Indicator */}
               <div className="flex justify-center gap-2">
-                {[1, 2, 3, 4].map((step) => (
+                {[1, 2, 3].map((step) => (
                   <div
                     key={step}
                     className={`h-2 w-8 rounded-full transition ${
@@ -516,12 +516,12 @@ export default function AccountSetup() {
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Step 1: Basic Information */}
+                {/* Step 1: Account & Basic Information */}
                 {currentStep === 1 && (
               <Card className="rounded-[1.5rem] border-slate-200 bg-white shadow-sm">
                 <CardHeader>
-                  <CardTitle>Basic Information</CardTitle>
-                  <CardDescription>Step 2 of 5: Tell us about yourself</CardDescription>
+                  <CardTitle>Create Your Account</CardTitle>
+                  <CardDescription>Step 1 of 4: Account credentials and basic information</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
@@ -797,7 +797,7 @@ export default function AccountSetup() {
                 <CardHeader>
                   <CardTitle>Import Account Information</CardTitle>
                   <CardDescription>
-                    Step 3 of 5: Optionally import your information from other accounts to build your Tradebilia profile
+                    Step 2 of 4: Optionally import your information from other accounts to build your Tradebilia profile
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -840,7 +840,7 @@ export default function AccountSetup() {
               <Card className="rounded-[1.5rem] border-slate-200 bg-white shadow-sm">
                 <CardHeader>
                   <CardTitle>Profile Picture & Preferences</CardTitle>
-                  <CardDescription>Step 4 of 5: Customize your profile and set your preferences</CardDescription>
+                  <CardDescription>Step 3 of 4: Customize your profile and set your preferences</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   {/* Avatar Section */}
@@ -927,7 +927,7 @@ export default function AccountSetup() {
               <Card className="rounded-[1.5rem] border-slate-200 bg-white shadow-sm">
                 <CardHeader>
                   <CardTitle>Review Your Information</CardTitle>
-                  <CardDescription>Step 5 of 5: Please review your account details before completing setup</CardDescription>
+                  <CardDescription>Step 4 of 4: Please review your account details before completing setup</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   {/* Basic Information Summary */}
