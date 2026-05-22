@@ -12,6 +12,7 @@ import { TopRightIcons } from "@/components/TopRightIcons";
 import { FormEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Link, useLocation } from "wouter";
+import { useQueryClient } from "@tanstack/react-query";
 
 const TRADEBILIA_LOGO_URL = "/manus-storage/Tradebilialogo_886a61b7.webp";
 
@@ -86,11 +87,13 @@ export default function AccountSetup() {
     enabled: isAuthenticated,
   });
 
+  const signupMutation = trpc.auth.signup.useMutation();
+
   const saveProfileMutation = trpc.market.saveProfile.useMutation({
     onSuccess: async () => {
       await utils.market.dashboard.invalidate();
       toast.success("Account setup completed!");
-      navigate("/inventory");
+      navigate("/welcome?new=true");
     },
     onError: (error) => {
       toast.error(error.message);
@@ -118,7 +121,11 @@ export default function AccountSetup() {
     }
   }, [dashboardQuery.data?.profile, user?.name, user?.email]);
 
-  if (!isAuthenticated) {
+  // Check if this is a new signup (from SignUp page)
+  const isNewSignup = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('new') === 'true';
+  const showAccountCreation = isNewSignup && !isAuthenticated;
+
+  if (!isAuthenticated && !showAccountCreation) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[radial-gradient(circle_at_top,#1c2468_0%,#0b0a22_65%)] px-6 text-white">
         <div className="w-full max-w-3xl rounded-[2rem] border border-white/10 bg-black/25 p-8 text-center backdrop-blur-md">
@@ -135,7 +142,7 @@ export default function AccountSetup() {
     );
   }
 
-  if (dashboardQuery.isLoading) {
+  if (!showAccountCreation && dashboardQuery.isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#f5f5f3] text-slate-950">
         <Loader2 className="h-10 w-10 animate-spin" />
@@ -169,6 +176,34 @@ export default function AccountSetup() {
     setSelectedSources((prev) =>
       prev.includes(source) ? prev.filter((s) => s !== source) : [...prev, source]
     );
+  };
+
+  const handleCreateAccount = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.userName.trim() || !formData.password.trim() || !formData.confirmPassword.trim()) {
+      toast.error("Username and password are required");
+      return;
+    }
+    if (formData.password !== formData.confirmPassword) {
+      toast.error("Passwords do not match");
+      return;
+    }
+    if (formData.password.length < 8) {
+      toast.error("Password must be at least 8 characters");
+      return;
+    }
+    try {
+      await signupMutation.mutateAsync({
+        username: formData.userName,
+        password: formData.password,
+        displayName: formData.userName,
+        email: formData.email || undefined,
+      });
+      await utils.auth.me.invalidate();
+      setCurrentStep(1);
+    } catch (err: any) {
+      toast.error(err.message || "Account creation failed");
+    }
   };
 
   const handleNextStep = () => {
@@ -356,27 +391,101 @@ export default function AccountSetup() {
 
       <main className="px-4 py-10 lg:px-8">
         <div className="mx-auto max-w-2xl space-y-8">
-          {/* Welcome Heading */}
-          <div className="text-center">
-            <h1 className="text-6xl font-bold tracking-tight sm:text-7xl">Welcome to Tradebilia</h1>
-            <p className="mt-4 text-lg text-slate-600">Let's set up your account in just a few steps</p>
-          </div>
+          {/* Account Creation Form (for new signups) */}
+          {showAccountCreation ? (
+            <form onSubmit={handleCreateAccount} className="space-y-6">
+              <div className="text-center">
+                <h1 className="text-6xl font-bold tracking-tight sm:text-7xl">Create Your Account</h1>
+                <p className="mt-4 text-lg text-slate-600">Step 1 of 2: Create your login credentials</p>
+              </div>
 
-          {/* Progress Indicator */}
-          <div className="flex justify-center gap-2">
-            {[1, 2, 3, 4].map((step) => (
-              <div
-                key={step}
-                className={`h-2 w-8 rounded-full transition ${
-                  step <= currentStep ? "bg-blue-600" : "bg-slate-300"
-                }`}
-              />
-            ))}
-          </div>
+              <Card className="rounded-[1.5rem] border-slate-200 bg-white shadow-sm">
+                <CardHeader>
+                  <CardTitle>Account Credentials</CardTitle>
+                  <CardDescription>Choose your username and password</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-username">Username *</Label>
+                    <Input
+                      id="signup-username"
+                      value={formData.userName}
+                      onChange={(e) => setFormData({ ...formData, userName: e.target.value })}
+                      placeholder="Choose a username (3-32 characters)"
+                      required
+                      className="rounded-lg border-slate-200"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-email">Email (optional)</Label>
+                    <Input
+                      id="signup-email"
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      placeholder="your@email.com"
+                      className="rounded-lg border-slate-200"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-password">Password *</Label>
+                    <Input
+                      id="signup-password"
+                      type="password"
+                      value={formData.password}
+                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                      placeholder="Create a strong password (min 8 characters)"
+                      required
+                      className="rounded-lg border-slate-200"
+                    />
+                    <p className="text-xs text-slate-600">Must include uppercase, lowercase, and numbers</p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-confirm-password">Confirm Password *</Label>
+                    <Input
+                      id="signup-confirm-password"
+                      type="password"
+                      value={formData.confirmPassword}
+                      onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                      placeholder="Confirm your password"
+                      required
+                      className="rounded-lg border-slate-200"
+                    />
+                  </div>
+                </CardContent>
+              </Card>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Step 1: Basic Information */}
-            {currentStep === 1 && (
+              <Button
+                type="submit"
+                className="w-full rounded-full py-3 text-lg font-semibold"
+                disabled={signupMutation.isPending}
+              >
+                {signupMutation.isPending ? "Creating Account..." : "Create Account & Continue"}
+              </Button>
+            </form>
+          ) : (
+            <>
+              {/* Welcome Heading */}
+              <div className="text-center">
+                <h1 className="text-6xl font-bold tracking-tight sm:text-7xl">Welcome to Tradebilia</h1>
+                <p className="mt-4 text-lg text-slate-600">Let's set up your account in just a few steps</p>
+              </div>
+
+              {/* Progress Indicator */}
+              <div className="flex justify-center gap-2">
+                {[1, 2, 3, 4].map((step) => (
+                  <div
+                    key={step}
+                    className={`h-2 w-8 rounded-full transition ${
+                      step <= currentStep ? "bg-blue-600" : "bg-slate-300"
+                    }`}
+                  />
+                ))}
+              </div>
+
+              <form onSubmit={handleSubmit} className="space-y-6">
+                {/* Step 1: Basic Information */}
+                {currentStep === 1 && (
               <Card className="rounded-[1.5rem] border-slate-200 bg-white shadow-sm">
                 <CardHeader>
                   <CardTitle>Basic Information</CardTitle>
@@ -986,10 +1095,10 @@ export default function AccountSetup() {
             </div>
           )}
 
-          {/* Phone Verification Modal */}
-          {showVerification && (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-              <Card className="w-full max-w-md rounded-[1.5rem] border-slate-200 bg-white shadow-lg">
+              {/* Phone Verification Modal */}
+              {showVerification && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                  <Card className="w-full max-w-md rounded-[1.5rem] border-slate-200 bg-white shadow-lg">
                 <CardHeader>
                   <CardTitle>Verify Your Phone Number</CardTitle>
                   <CardDescription>
@@ -1040,6 +1149,8 @@ export default function AccountSetup() {
                 </div>
               </Card>
             </div>
+          )}
+          </>
           )}
         </div>
       </main>

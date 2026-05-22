@@ -1154,7 +1154,7 @@ export async function getDashboardData(user: Pick<User, "id" | "name">): Promise
     hideInventoryValue?: boolean;
     receiveContactRequests?: boolean;
     notificationPreferences?: string | null;
-  }
+  } | undefined
 
   return {
     profile: {

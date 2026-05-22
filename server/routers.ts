@@ -696,7 +696,24 @@ export const appRouter = router({
         contactZipCode: userProfiles.contactZipCode,
         contactCountry: userProfiles.contactCountry,
       }).from(users)
-        .leftJoin(userProfiles, eq(users.id, userProfiles.userId));
+        .leftJoin(userProfiles, eq(users.id, userProfiles.userId)) as Array<{
+        id: number;
+        username: string | null;
+        displayName: string | null;
+        firstName: string | null;
+        lastName: string | null;
+        email: string | null;
+        role: string;
+        createdAt: Date;
+        contactFullName: string | null;
+        contactEmail: string | null;
+        contactPhone: string | null;
+        contactAddress: string | null;
+        contactTown: string | null;
+        contactState: string | null;
+        contactZipCode: string | null;
+        contactCountry: string | null;
+      }>;
       return allUsers;
     }),
     deleteUser: protectedProcedure
