@@ -759,58 +759,57 @@ export default function AccountSetup() {
                   <div className="space-y-4">
                     <h3 className="font-semibold text-slate-900">Profile Picture</h3>
                     <div className="flex flex-col items-center gap-4">
-                      <div
-                        className="h-32 w-32 mx-auto rounded-full border-4 border-dashed border-slate-300 flex items-center justify-center bg-slate-50 hover:bg-slate-100 transition cursor-pointer"
-                        onDragOver={(e) => {
-                          e.preventDefault();
-                          e.currentTarget.classList.add('border-blue-400', 'bg-blue-50');
-                        }}
-                        onDragLeave={(e) => {
-                          e.currentTarget.classList.remove('border-blue-400', 'bg-blue-50');
-                        }}
-                        onDrop={(e) => {
-                          e.preventDefault();
-                          e.currentTarget.classList.remove('border-blue-400', 'bg-blue-50');
-                          const file = e.dataTransfer.files?.[0];
-                          if (file && file.type.startsWith('image/')) {
-                            const reader = new FileReader();
-                            reader.onload = (event) => {
-                              setFormData((prev) => ({
-                                ...prev,
-                                avatarPreview: event.target?.result as string,
-                              }));
-                            };
-                            reader.readAsDataURL(file);
-                          } else {
-                            toast.error('Please drop an image file');
-                          }
-                        }}
-                        onClick={() => avatarInputRef.current?.click()}
-                      >
-                        {formData.avatarPreview ? (
-                          <img
-                            src={formData.avatarPreview}
-                            alt="Avatar preview"
-                            className="h-32 w-32 rounded-full object-cover"
-                          />
-                        ) : (
-                          <span className="text-4xl">👤</span>
-                        )}
-                      </div>
-                      <input
-                        ref={avatarInputRef}
-                        type="file"
-                        accept="image/*"
-                        onChange={handleAvatarChange}
-                        className="hidden"
-                      />
-                      <Button type="button" variant="outline" className="rounded-lg" onClick={(e) => {
-                        e.preventDefault();
-                        avatarInputRef.current?.click();
-                      }}>
-                        <Upload className="mr-2 h-4 w-4" />
-                        Upload Photo
-                      </Button>
+                      <label className="flex flex-col items-center gap-4 cursor-pointer">
+                        <div
+                          className="h-32 w-32 rounded-full border-4 border-dashed border-slate-300 flex items-center justify-center bg-slate-50 hover:bg-slate-100 transition"
+                          onDragOver={(e) => {
+                            e.preventDefault();
+                            e.currentTarget.classList.add('border-blue-400', 'bg-blue-50');
+                          }}
+                          onDragLeave={(e) => {
+                            e.currentTarget.classList.remove('border-blue-400', 'bg-blue-50');
+                          }}
+                          onDrop={(e) => {
+                            e.preventDefault();
+                            e.currentTarget.classList.remove('border-blue-400', 'bg-blue-50');
+                            const file = e.dataTransfer.files?.[0];
+                            if (file && file.type.startsWith('image/')) {
+                              const reader = new FileReader();
+                              reader.onload = (event) => {
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  avatarPreview: event.target?.result as string,
+                                }));
+                              };
+                              reader.readAsDataURL(file);
+                            } else {
+                              toast.error('Please drop an image file');
+                            }
+                          }}
+                        >
+                          {formData.avatarPreview ? (
+                            <img
+                              src={formData.avatarPreview}
+                              alt="Avatar preview"
+                              className="h-32 w-32 rounded-full object-cover"
+                            />
+                          ) : (
+                            <span className="text-4xl">👤</span>
+                          )}
+                        </div>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleAvatarChange}
+                          className="hidden"
+                        />
+                        <Button type="button" variant="outline" className="rounded-lg" asChild>
+                          <span>
+                          <Upload className="mr-2 h-4 w-4" />
+                          Upload Photo
+                        </span>
+                        </Button>
+                      </label>
                       <p className="text-xs text-slate-600 text-center">
                         Drag and drop or click to upload. JPG, PNG or GIF. Max 5MB.
                       </p>
