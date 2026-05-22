@@ -912,3 +912,10 @@ The application is fully functional with all core features working correctly.
 - [x] BUG: Admin Dashboard not updating when user profile changes - FIXED: Added admin query invalidation when profile is saved
 
 - [x] FEATURE: Admin Dashboard - Add Trades tab to audit all trades between users (shows ID, Requester, Recipient, Item, Status, Created, Completed dates)
+
+
+## FIXED: SignUp Flow Navigation (May 22, 2026)
+
+- [x] FIX: SignInModal now navigates directly to `/account-setup?new=true` instead of `/signup`
+- [x] VERIFIED: Users clicking "Sign Up" in the SignInModal are now taken to the correct account setup page with account creation form (Step 0)
+- [x] VERIFIED: Multi-step account setup flow works correctly from start to finish
