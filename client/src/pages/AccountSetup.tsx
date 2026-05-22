@@ -31,6 +31,7 @@ export default function AccountSetup() {
 
   const [currentStep, setCurrentStep] = useState(1);
   const [showDevNav, setShowDevNav] = useState(true); // Development navigation
+  const [accountCreated, setAccountCreated] = useState(false); // Track if account creation is complete
   const [isPhoneVerified, setIsPhoneVerified] = useState(false);
   const [verificationCode, setVerificationCode] = useState("");
   const [showVerification, setShowVerification] = useState(false);
@@ -123,7 +124,7 @@ export default function AccountSetup() {
 
   // Check if this is a new signup (from SignUp page)
   const isNewSignup = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('new') === 'true';
-  const showAccountCreation = isNewSignup && !isAuthenticated;
+  const showAccountCreation = isNewSignup && !accountCreated && !isAuthenticated;
 
   if (!isAuthenticated && !showAccountCreation) {
     return (
@@ -209,6 +210,7 @@ export default function AccountSetup() {
       });
       await utils.auth.me.invalidate();
       window.history.replaceState({}, '', '/account-setup');
+      setAccountCreated(true);
       setCurrentStep(1);
     } catch (err: any) {
       toast.error(err.message || "Account creation failed");
