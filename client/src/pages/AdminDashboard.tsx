@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { BarChart3, Users, Package, Settings } from "lucide-react";
+import { BarChart3, Users, Package, Settings, Trash2 } from "lucide-react";
 import { getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
 import { TopBar } from "@/components/TopBar";
@@ -25,6 +25,22 @@ export default function AdminDashboard() {
   const deletedAccountsQuery = trpc.admin.getDeletedAccounts.useQuery(undefined, {
     enabled: user?.role === "admin",
   });
+  const deleteUserMutation = trpc.admin.deleteUser.useMutation();
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<any>(null);
+
+  const handleDeleteUser = async () => {
+    if (!userToDelete) return;
+    try {
+      await deleteUserMutation.mutateAsync({ userId: userToDelete.id });
+      setDeleteConfirmOpen(false);
+      setUserToDelete(null);
+      usersQuery.refetch();
+      deletedAccountsQuery.refetch();
+    } catch (error) {
+      console.error("Failed to delete user", error);
+    }
+  };
 
   if (loading) {
     return (
@@ -198,7 +214,18 @@ export default function AdminDashboard() {
                             </td>
                             <td className="py-2 px-4 text-xs space-x-2">
                               <Button size="sm" variant="outline">Edit</Button>
-                              {u.id !== user?.id && <Button size="sm" variant="destructive">Delete</Button>}
+                              {u.id !== user?.id && (
+                                <Button 
+                                  size="sm" 
+                                  variant="destructive"
+                                  onClick={() => {
+                                    setUserToDelete(u);
+                                    setDeleteConfirmOpen(true);
+                                  }}
+                                >
+                                  Delete
+                                </Button>
+                              )}
                             </td>
                           </tr>
                         ))}
@@ -443,6 +470,45 @@ export default function AdminDashboard() {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete User Account</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this user account? This action will:
+              <ul className="list-disc list-inside mt-2 space-y-1">
+                <li>Delete the user profile</li>
+                <li>Delete all listings owned by this user</li>
+                <li>Log the deletion for audit purposes</li>
+              </ul>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="bg-destructive/10 border border-destructive/20 rounded p-3 my-4">
+            <p className="text-sm font-semibold">User: {userToDelete?.username}</p>
+            <p className="text-sm text-muted-foreground">Email: {userToDelete?.email}</p>
+          </div>
+          <div className="flex gap-3 justify-end">
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setDeleteConfirmOpen(false);
+                setUserToDelete(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={handleDeleteUser}
+              disabled={deleteUserMutation.isPending}
+            >
+              {deleteUserMutation.isPending ? "Deleting..." : "Delete Account"}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

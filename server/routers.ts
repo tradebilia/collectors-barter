@@ -632,6 +632,30 @@ export const appRouter = router({
       }),
   }),
   admin: router({
+    // Platform statistics
+    getPlatformStatistics: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      const db = await requireDb();
+      
+      // Get total members
+      const memberCount = await db.select({ count: sql`count(*)` }).from(users);
+      
+      // Get total listings
+      const listingCount = await db.select({ count: sql`count(*)` }).from(listings);
+      
+      // Get total trades
+      const tradeCount = await db.select({ count: sql`count(*)` }).from(tradeProposals);
+      
+      // Get total value (sum of estimated values)
+      const totalValue = await db.select({ total: sql`sum(${listings.estimatedValue})` }).from(listings);
+      
+      return {
+        totalMembers: Number(memberCount[0]?.count || 0),
+        totalListings: Number(listingCount[0]?.count || 0),
+        totalTrades: Number(tradeCount[0]?.count || 0),
+        totalValue: Number(totalValue[0]?.total || 0),
+      };
+    }),
     // User management
     getAllUsers: protectedProcedure.query(async ({ ctx }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
