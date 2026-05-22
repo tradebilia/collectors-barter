@@ -34,7 +34,7 @@ import { hashPassword, verifyPassword, isValidUsername, isValidPassword, isValid
 import { getUserByUsername, createUser, requireDb } from "./db";
 import { sdk } from "./_core/sdk";
 import { users, userProfiles, listings, deletedAccounts, tradeProposals } from "../drizzle/schema";
-import { eq, sql } from "drizzle-orm";
+import { eq, sql, desc } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { ONE_YEAR_MS } from "@shared/const";
 
@@ -757,6 +757,27 @@ export const appRouter = router({
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
       // This will be implemented with proper queries
       return [];
+    }),
+    getAllTrades: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      const db = await requireDb();
+      const allTrades = await db.select({
+        id: tradeProposals.id,
+        requesterId: tradeProposals.requesterId,
+        requesterUsername: users.username,
+        recipientId: tradeProposals.recipientId,
+        requestedListingId: tradeProposals.requestedListingId,
+        listingTitle: listings.title,
+        listingCategory: listings.category,
+        status: tradeProposals.status,
+        createdAt: tradeProposals.createdAt,
+        respondedAt: tradeProposals.respondedAt,
+        completedAt: tradeProposals.completedAt,
+      }).from(tradeProposals)
+        .leftJoin(users, eq(tradeProposals.requesterId, users.id))
+        .leftJoin(listings, eq(tradeProposals.requestedListingId, listings.id))
+        .orderBy(desc(tradeProposals.createdAt));
+      return allTrades;
     }),
   }),
 });

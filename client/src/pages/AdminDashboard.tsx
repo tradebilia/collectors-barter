@@ -93,7 +93,7 @@ export default function AdminDashboard() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="statistics" className="flex items-center gap-2">
               <BarChart3 className="h-4 w-4 hidden sm:inline" />
               <span className="hidden sm:inline">Statistics</span>
@@ -105,6 +105,10 @@ export default function AdminDashboard() {
             <TabsTrigger value="listings" className="flex items-center gap-2">
               <Package className="h-4 w-4 hidden sm:inline" />
               <span className="hidden sm:inline">Listings</span>
+            </TabsTrigger>
+            <TabsTrigger value="trades" className="flex items-center gap-2">
+              <Package className="h-4 w-4 hidden sm:inline" />
+              <span className="hidden sm:inline">Trades</span>
             </TabsTrigger>
             <TabsTrigger value="settings" className="flex items-center gap-2">
               <Settings className="h-4 w-4 hidden sm:inline" />
@@ -299,6 +303,67 @@ export default function AdminDashboard() {
                   </div>
                 ) : (
                   <div className="text-sm text-muted-foreground">No listings found</div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Trades Tab */}
+          <TabsContent value="trades" className="space-y-4 mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>All Trades</CardTitle>
+                <CardDescription>
+                  Audit all trades between users
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {tradesQuery.isLoading ? (
+                  <div className="text-sm text-muted-foreground">Loading trades...</div>
+                ) : tradesQuery.data && tradesQuery.data.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead className="border-b border-border">
+                        <tr>
+                          <th className="text-left py-2 px-4">ID</th>
+                          <th className="text-left py-2 px-4">Requester</th>
+                          <th className="text-left py-2 px-4">Recipient</th>
+                          <th className="text-left py-2 px-4">Item</th>
+                          <th className="text-left py-2 px-4">Status</th>
+                          <th className="text-left py-2 px-4">Created</th>
+                          <th className="text-left py-2 px-4">Completed</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {tradesQuery.data.map((trade) => (
+                          <tr key={trade.id} className="border-b border-border hover:bg-accent/50">
+                            <td className="py-2 px-4 font-mono text-xs">{trade.id}</td>
+                            <td className="py-2 px-4">{trade.requesterUsername || "-"}</td>
+                            <td className="py-2 px-4">{trade.recipientUsername || "-"}</td>
+                            <td className="py-2 px-4">{trade.listingTitle || "-"}</td>
+                            <td className="py-2 px-4">
+                              <span className={`px-2 py-1 rounded text-xs font-medium ${
+                                trade.status === 'completed' ? 'bg-green-100 text-green-800' :
+                                trade.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                                trade.status === 'rejected' ? 'bg-red-100 text-red-800' :
+                                'bg-gray-100 text-gray-800'
+                              }`}>
+                                {trade.status}
+                              </span>
+                            </td>
+                            <td className="py-2 px-4 text-xs">
+                              {trade.createdAt ? new Date(trade.createdAt).toLocaleDateString() : "-"}
+                            </td>
+                            <td className="py-2 px-4 text-xs">
+                              {trade.completedAt ? new Date(trade.completedAt).toLocaleDateString() : "-"}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div className="text-sm text-muted-foreground">No trades found</div>
                 )}
               </CardContent>
             </Card>

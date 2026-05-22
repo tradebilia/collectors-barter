@@ -909,3 +909,5 @@ The application is fully functional with all core features working correctly.
 - [x] BUG: Profile updates not persisting - Email address reverts after save and refresh on Account Settings page (FIXED: Enabled all identity fields for editing and updated handleSaveProfile to send all fields)
 
 - [x] BUG: Admin Dashboard not updating when user profile changes - FIXED: Added admin query invalidation when profile is saved
+
+- [x] FEATURE: Admin Dashboard - Add Trades tab to audit all trades between users (shows ID, Requester, Recipient, Item, Status, Created, Completed dates)
