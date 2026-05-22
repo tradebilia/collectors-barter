@@ -1,0 +1,15 @@
+{
+  "query": "SELECT userId, securityQuestion, securityAnswer FROM userProfiles WHERE userId = 1 LIMIT 1;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4ZXfWh5QbDJhQ4C.root --database nAx6ATm2BH4G46yabuMZgM --execute SELECT userId, securityQuestion, securityAnswer FROM userProfiles WHERE userId = 1 LIMIT 1;",
+  "rows": [
+    {
+      "userId": "1",
+      "securityQuestion": "NULL",
+      "securityAnswer": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "userId\tsecurityQuestion\tsecurityAnswer\n1\tNULL\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 350
+}

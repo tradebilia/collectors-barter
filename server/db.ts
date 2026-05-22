@@ -1005,11 +1005,36 @@ export async function deleteDraft(
   return { success: true };
 }
 
-export async function getDashboardData(user: Pick<User, "id" | "name">) {
+export async function getDashboardData(user: Pick<User, "id" | "name">): Promise<{
+  profile: {
+    displayName: string;
+    firstName: string;
+    lastName: string;
+    avatarUrl: string | null;
+    bio: string;
+    contactFullName: string;
+    contactEmail: string;
+    contactPhone: string;
+    contactAddress: string;
+    contactTown: string;
+    contactState: string;
+    contactZipCode: string;
+    contactCountry: string;
+    securityQuestion: string;
+    rating: { averageRating: number; reviewCount: number };
+    tradeHistoryCount: number;
+  };
+  ownListings: any[];
+  watchlist: any[];
+  tradeProposals: any[];
+  tradeHistory: any[];
+  ratingsAndReviews: any[];
+}> {
   const db = await requireDb();
   await ensureUserProfileRecord(user);
 
   const [profileRows, ownListingRows, watchlistRows, receivedReviews, proposalCards, ratingMapData] = await Promise.all([
+    // Profile query with explicit type annotation
     db
       .select({
         displayName: userProfiles.displayName,
@@ -1021,6 +1046,11 @@ export async function getDashboardData(user: Pick<User, "id" | "name">) {
         contactEmail: userProfiles.contactEmail,
         contactPhone: userProfiles.contactPhone,
         contactAddress: userProfiles.contactAddress,
+        contactTown: userProfiles.contactTown,
+        contactState: userProfiles.contactState,
+        contactZipCode: userProfiles.contactZipCode,
+        contactCountry: userProfiles.contactCountry,
+        securityQuestion: userProfiles.securityQuestion,
       })
       .from(userProfiles)
       .where(eq(userProfiles.userId, user.id))
@@ -1094,24 +1124,27 @@ export async function getDashboardData(user: Pick<User, "id" | "name">) {
   const watchlist = await formatListings(savedListingRows, user.id);
   const rating = ratingMapData.get(user.id) ?? { averageRating: 0, reviewCount: 0 };
 
+  const profileData = profileRows[0] as any;
+
   return {
     profile: {
-      displayName: profileRows[0]?.displayName ?? user.name ?? `Collector ${user.id}`,
-      firstName: profileRows[0]?.firstName ?? "",
-      lastName: profileRows[0]?.lastName ?? "",
-      avatarUrl: profileRows[0]?.avatarUrl ?? null,
-      bio: profileRows[0]?.bio ?? "Open to thoughtful, collector-to-collector trades.",
-      contactFullName: profileRows[0]?.contactFullName ?? user.name ?? "",
-      contactEmail: profileRows[0]?.contactEmail ?? "",
-      contactPhone: profileRows[0]?.contactPhone ?? "",
-      contactAddress: profileRows[0]?.contactAddress ?? "",
-      contactTown: profileRows[0]?.contactTown ?? "",
-      contactState: profileRows[0]?.contactState ?? "",
-      contactZipCode: profileRows[0]?.contactZipCode ?? "",
-      contactCountry: profileRows[0]?.contactCountry ?? "",
+      displayName: profileData?.displayName ?? user.name ?? `Collector ${user.id}`,
+      firstName: profileData?.firstName ?? "",
+      lastName: profileData?.lastName ?? "",
+      avatarUrl: profileData?.avatarUrl ?? null,
+      bio: profileData?.bio ?? "Open to thoughtful, collector-to-collector trades.",
+      contactFullName: profileData?.contactFullName ?? user.name ?? "",
+      contactEmail: profileData?.contactEmail ?? "",
+      contactPhone: profileData?.contactPhone ?? "",
+      contactAddress: profileData?.contactAddress ?? "",
+      contactTown: profileData?.contactTown ?? "",
+      contactState: profileData?.contactState ?? "",
+      contactZipCode: profileData?.contactZipCode ?? "",
+      contactCountry: profileData?.contactCountry ?? "",
+      securityQuestion: profileData?.securityQuestion ?? "",
       rating,
       tradeHistoryCount: proposalCards.length,
-    },
+    } as const,
     ownListings,
     watchlist,
     tradeProposals: proposalCards,

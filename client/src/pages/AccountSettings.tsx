@@ -211,7 +211,7 @@ export default function AccountSettings() {
     setProfileForm(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSecurityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSecurityChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setSecurityForm(prev => ({ ...prev, [name]: value }));
   };
@@ -752,9 +752,10 @@ export default function AccountSettings() {
                       <Label htmlFor="securityQuestion">Security Question</Label>
                       <select
                         id="securityQuestion"
+                        name="securityQuestion"
                         value={securityForm.securityQuestion}
-                        onChange={(e) => setSecurityForm(prev => ({ ...prev, securityQuestion: e.target.value }))}
-                        className="w-full rounded-lg border border-slate-200 px-3 py-2"
+                        onChange={handleSecurityChange}
+                        className="rounded-lg border-slate-200 border px-3 py-2 w-full"
                       >
                         <option value="">Select a security question</option>
                         <option value="pet">What was the name of your first pet?</option>

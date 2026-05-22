@@ -302,12 +302,11 @@ export const appRouter = router({
         }),
       )
       .mutation(async ({ ctx, input }) => {
-        const answerHash = hashPassword(input.securityAnswer);
         const db = await requireDb();
-        await db.update(users).set({
+        await db.update(userProfiles).set({
           securityQuestion: input.securityQuestion,
-          securityAnswerHash: answerHash,
-        }).where(eq(users.id, ctx.user.id));
+          securityAnswer: input.securityAnswer,
+        }).where(eq(userProfiles.userId, ctx.user.id));
         return { success: true };
       }),
     changePassword: protectedProcedure
