@@ -886,7 +886,7 @@ The application is fully functional with all core features working correctly.
 - [x] FIX: Ensure preferences persist after page reload - VERIFIED: preferences persist correctly after page refresh
 
 - [x] FEATURE: Admin Dashboard - Create basic UI with tabs (Statistics, Users, Listings, Settings)
-- [x] FEATURE: Admin Dashboard - Add admin icon to TopBar (only visible for admin users)
+- [x] FEATURE: Admin Dashboard - Add admin icon to TopBar (only visible for admin users) - Changed from Settings to Shield icon for better distinction
 - [x] FEATURE: Admin Dashboard - Add /admin route with admin-only access control
 - [x] FEATURE: Admin Dashboard - Create backend procedures (getPlatformStatistics, getAllListings, getAllUsers, deleteUser, updateUserRole)
 - [x] FEATURE: Admin Dashboard - Implement Statistics tab with real data (calls getPlatformStatistics)
