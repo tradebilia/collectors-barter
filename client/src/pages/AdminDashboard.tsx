@@ -176,6 +176,7 @@ export default function AdminDashboard() {
                     <table className="w-full text-sm">
                       <thead className="border-b border-border">
                         <tr>
+                          <th className="text-left py-2 px-4">User ID</th>
                           <th className="text-left py-2 px-4">First Name</th>
                           <th className="text-left py-2 px-4">Last Name</th>
                           <th className="text-left py-2 px-4">Username</th>
@@ -188,6 +189,7 @@ export default function AdminDashboard() {
                       <tbody>
                         {usersQuery.data.map((u) => (
                           <tr key={u.id} className="border-b border-border hover:bg-accent/50">
+                            <td className="py-2 px-4 font-mono text-xs">{u.id}</td>
                             <td className="py-2 px-4">
                               <button
                                 onClick={() => setSelectedUser(u)}
