@@ -68,8 +68,8 @@ export default function SignUp() {
       // Refresh auth state
       await queryClient.invalidateQueries({ queryKey: ["auth.me"] });
 
-      // Redirect to welcome page for new accounts
-      navigate("/welcome?new=true");
+      // Redirect to account setup for new accounts
+      navigate("/account-setup?new=true");
     } catch (err: any) {
       setErrors({ submit: err.message || "Sign up failed" });
     } finally {
