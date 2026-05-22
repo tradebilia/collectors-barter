@@ -371,6 +371,9 @@ export default function AccountSettings() {
       // Refresh the dashboard data and auth context
       await utils.market.dashboard.invalidate();
       await utils.auth.me.invalidate();
+      // Also invalidate admin queries so they see updated profile data
+      await utils.admin.getAllUsers.invalidate();
+      await utils.admin.getPlatformStatistics.invalidate();
     } catch (error: any) {
       console.error("[AccountSettings] Error saving profile:", error);
       setConfirmationDialog({
