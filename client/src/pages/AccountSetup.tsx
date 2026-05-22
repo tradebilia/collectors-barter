@@ -214,10 +214,9 @@ export default function AccountSetup() {
         displayName: formData.userName,
         email: formData.email,
       });
-      // Get the user ID from auth.me query
-      const authData = await utils.auth.me.fetch();
-      if (authData?.id) {
-        setUserId(authData.id);
+      // Store the userId from the signup response
+      if (signupResult?.userId) {
+        setUserId(String(signupResult.userId));
       }
       window.history.replaceState({}, '', '/account-setup');
       setAccountCreated(true);
