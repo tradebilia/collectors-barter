@@ -180,13 +180,13 @@ export const appRouter = router({
         );
 
         const cookieOptions = getSessionCookieOptions(ctx.req);
-        ctx.res.cookie("session", sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
+        ctx.res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
 
         return { success: true, userId: user.id };
       }),
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
-      ctx.res.clearCookie("session", { ...cookieOptions, maxAge: -1 });
+      ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
       return {
         success: true,
       } as const;
@@ -737,6 +737,7 @@ export const appRouter = router({
     deleteUser: protectedProcedure
       .input(z.object({ userId: z.number().int().positive() }))
       .mutation(async ({ ctx, input }) => {
+        console.log(`[deleteUser] Starting deletion for userId: ${input.userId}`);
         if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
         if (input.userId === ctx.user.id) throw new TRPCError({ code: 'BAD_REQUEST', message: 'Cannot delete yourself' });
         const db = await requireDb();
@@ -749,9 +750,11 @@ export const appRouter = router({
         
         const user = userToDelete[0];
         const profile = userProfile[0];
+        console.log(`[deleteUser] Found user: ${user.username}, profile exists: ${!!profile}`);
         
         // Delete all listings owned by the user
-        await db.delete(listings).where(eq(listings.ownerId, input.userId));
+        const listingsDeleted = await db.delete(listings).where(eq(listings.ownerId, input.userId));
+        console.log(`[deleteUser] Deleted listings, result:`, listingsDeleted);
         
         // Log the deletion
         await db.insert(deletedAccounts).values({
@@ -765,10 +768,12 @@ export const appRouter = router({
         } as any);
         
         // Delete user profile
-        await db.delete(userProfiles).where(eq(userProfiles.userId, input.userId));
+        const profileDeleted = await db.delete(userProfiles).where(eq(userProfiles.userId, input.userId));
+        console.log(`[deleteUser] Deleted profile, result:`, profileDeleted);
         
         // Delete user
-        await db.delete(users).where(eq(users.id, input.userId));
+        const deleteResult = await db.delete(users).where(eq(users.id, input.userId));
+        console.log(`[deleteUser] Deleted user ${input.userId}, result:`, deleteResult);
         
         return { success: true };
       }),

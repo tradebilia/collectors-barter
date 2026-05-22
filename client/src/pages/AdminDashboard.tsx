@@ -29,20 +29,32 @@ export default function AdminDashboard() {
     enabled: user?.role === "admin",
     refetchOnWindowFocus: true,
   });
+  const tradesQuery = trpc.admin.getAllTrades.useQuery(undefined, {
+    enabled: user?.role === "admin",
+    refetchOnWindowFocus: true,
+  });
   const deleteUserMutation = trpc.admin.deleteUser.useMutation();
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<any>(null);
 
   const handleDeleteUser = async () => {
-    if (!userToDelete) return;
+    console.log('[handleDeleteUser] Starting delete, userToDelete:', userToDelete);
+    if (!userToDelete) {
+      console.log('[handleDeleteUser] No user to delete, returning');
+      return;
+    }
     try {
-      await deleteUserMutation.mutateAsync({ userId: userToDelete.id });
+      const userId = parseInt(userToDelete.id, 10);
+      console.log('[handleDeleteUser] Calling mutation with userId:', userId);
+      const result = await deleteUserMutation.mutateAsync({ userId });
+      console.log('[handleDeleteUser] Mutation result:', result);
       setDeleteConfirmOpen(false);
       setUserToDelete(null);
+      console.log('[handleDeleteUser] Refetching users and deleted accounts');
       usersQuery.refetch();
       deletedAccountsQuery.refetch();
     } catch (error) {
-      console.error("Failed to delete user", error);
+      console.error('[handleDeleteUser] Failed to delete user', error);
     }
   };
 

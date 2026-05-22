@@ -926,3 +926,19 @@ The application is fully functional with all core features working correctly.
   - Import Account Information: "Step 3 of 5"
   - Profile Picture & Preferences: "Step 4 of 5"
   - Review Your Information: "Step 5 of 5"
+
+
+## Bug Fixes & Testing (May 22, 2026)
+
+- [x] Fix logout functionality - cookie name mismatch (signin/logout using hardcoded "session" instead of COOKIE_NAME)
+- [x] Fix admin dashboard - missing tradesQuery variable definition
+- [x] Fix admin dashboard - userId conversion from string to number in delete mutation
+- [ ] **BUG: Admin user delete button returns 500 error** - Server error when attempting to delete user from admin dashboard. Mutation is called but fails with 500 response. Root cause: Unknown - requires server error log analysis
+- [ ] Add comprehensive error handling and user feedback to admin delete operations
+- [ ] Write vitest tests for admin.deleteUser mutation
+- [ ] Write vitest tests for admin.getAllUsers query
+- [ ] Write vitest tests for admin.getDeletedAccounts query
+- [ ] Test admin role-based access control for all admin procedures
+- [ ] Test user authentication flow end-to-end (signup → account setup → auto-login)
+- [ ] Test logout functionality after fixing cookie issue
+- [ ] Test signin functionality after fixing cookie issue
