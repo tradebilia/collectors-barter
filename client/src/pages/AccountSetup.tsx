@@ -758,22 +758,44 @@ export default function AccountSetup() {
                   <div className="space-y-4">
                     <h3 className="font-semibold text-slate-900">Profile Picture</h3>
                     <div className="flex flex-col items-center gap-4">
-                      {formData.avatarPreview ? (
-                        <img
-                          src={formData.avatarPreview}
-                          alt="Avatar preview"
-                          className="h-32 w-32 rounded-full border-4 border-slate-200 object-cover"
-                        />
-                      ) : (
-                        <div className="h-32 w-32 rounded-full border-4 border-dashed border-slate-300 flex items-center justify-center bg-slate-50">
-                          <span className="text-4xl">👤</span>
+                      <label className="cursor-pointer w-full">
+                        <div
+                          className="h-32 w-32 mx-auto rounded-full border-4 border-dashed border-slate-300 flex items-center justify-center bg-slate-50 hover:bg-slate-100 transition"
+                          onDragOver={(e) => {
+                            e.preventDefault();
+                            e.currentTarget.classList.add('border-blue-400', 'bg-blue-50');
+                          }}
+                          onDragLeave={(e) => {
+                            e.currentTarget.classList.remove('border-blue-400', 'bg-blue-50');
+                          }}
+                          onDrop={(e) => {
+                            e.preventDefault();
+                            e.currentTarget.classList.remove('border-blue-400', 'bg-blue-50');
+                            const file = e.dataTransfer.files?.[0];
+                            if (file && file.type.startsWith('image/')) {
+                              const reader = new FileReader();
+                              reader.onload = (event) => {
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  avatarPreview: event.target?.result as string,
+                                }));
+                              };
+                              reader.readAsDataURL(file);
+                            } else {
+                              toast.error('Please drop an image file');
+                            }
+                          }}
+                        >
+                          {formData.avatarPreview ? (
+                            <img
+                              src={formData.avatarPreview}
+                              alt="Avatar preview"
+                              className="h-32 w-32 rounded-full object-cover"
+                            />
+                          ) : (
+                            <span className="text-4xl">👤</span>
+                          )}
                         </div>
-                      )}
-                      <label className="cursor-pointer">
-                        <Button type="button" variant="outline" className="rounded-lg">
-                          <Upload className="mr-2 h-4 w-4" />
-                          Upload Photo
-                        </Button>
                         <input
                           type="file"
                           accept="image/*"
@@ -781,8 +803,16 @@ export default function AccountSetup() {
                           className="hidden"
                         />
                       </label>
+                      <Button type="button" variant="outline" className="rounded-lg" onClick={(e) => {
+                        e.preventDefault();
+                        const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+                        input?.click();
+                      }}>
+                        <Upload className="mr-2 h-4 w-4" />
+                        Upload Photo
+                      </Button>
                       <p className="text-xs text-slate-600 text-center">
-                        JPG, PNG or GIF. Max 5MB.
+                        Drag and drop or click to upload. JPG, PNG or GIF. Max 5MB.
                       </p>
                     </div>
                   </div>
