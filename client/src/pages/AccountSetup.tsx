@@ -98,8 +98,13 @@ export default function AccountSetup() {
   const saveProfileMutation = trpc.market.saveProfile.useMutation({
     onSuccess: async () => {
       await utils.market.dashboard.invalidate();
+      // Refetch auth to ensure user is logged in
+      const authResult = await utils.auth.me.refetch();
       toast.success("Account setup completed!");
-      navigate("/");
+      // Do a full page reload to ensure auth is properly initialized
+      setTimeout(() => {
+        window.location.href = "/";
+      }, 500);
     },
     onError: (error) => {
       console.error("Profile save error:", error);

@@ -33,6 +33,7 @@ import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { hashPassword, verifyPassword, isValidUsername, isValidPassword, isValidEmail } from "./_core/auth";
 import { getUserByUsername, createUser, requireDb } from "./db";
 import { sdk } from "./_core/sdk";
+import { customAuth } from "./_core/customAuth";
 import { users, userProfiles, listings, deletedAccounts, tradeProposals } from "../drizzle/schema";
 import { eq, sql, desc } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
@@ -83,8 +84,12 @@ export const appRouter = router({
   system: systemRouter,
   auth: router({
     me: publicProcedure.query(async opts => {
+      console.log('[auth.me] Called, user:', opts.ctx.user?.username);
       const user = opts.ctx.user;
-      if (!user) return null;
+      if (!user) {
+        console.log('[auth.me] No user found, returning null');
+        return null;
+      }
       
       const db = await requireDb();
       const profile = await db
@@ -136,10 +141,12 @@ export const appRouter = router({
           email: input.email,
         });
 
-        const sessionToken = await sdk.createSessionToken(String(userId), {
-          name: input.displayName,
-          expiresInMs: ONE_YEAR_MS,
-        });
+        const sessionToken = await customAuth.createSessionToken(
+          userId,
+          input.username,
+          'user',
+          { expiresInMs: ONE_YEAR_MS }
+        );
 
         const cookieOptions = getSessionCookieOptions(ctx.req);
         ctx.res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });

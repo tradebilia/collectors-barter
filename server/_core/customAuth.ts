@@ -2,8 +2,7 @@ import { SignJWT, jwtVerify } from "jose";
 import { ENV } from "./env";
 import type { User } from "../../drizzle/schema";
 import * as db from "../db";
-
-const COOKIE_NAME = "session";
+import { COOKIE_NAME } from "@shared/const";
 const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000;
 
 export type SessionPayload = {
@@ -103,7 +102,7 @@ export class CustomAuthService {
    */
   createSessionCookie(token: string, expiresInMs: number = ONE_YEAR_MS): string {
     const expiresAt = new Date(Date.now() + expiresInMs);
-    return `${COOKIE_NAME}=${token}; Path=/; HttpOnly; Secure; SameSite=Strict; Expires=${expiresAt.toUTCString()}`;
+    return `${COOKIE_NAME}=${token}; Path=/; HttpOnly; Secure; SameSite=None; Expires=${expiresAt.toUTCString()}`;
   }
 }
 
