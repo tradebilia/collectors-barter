@@ -100,7 +100,8 @@ export default function AccountSetup() {
       navigate("/welcome?new=true");
     },
     onError: (error) => {
-      toast.error(error.message);
+      console.error("Profile save error:", error);
+      toast.error(`Failed to save profile: ${error.message}`);
     },
   });
 
@@ -316,9 +317,16 @@ export default function AccountSetup() {
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    console.log("Form submitted, currentStep:", currentStep);
+    if (currentStep !== 3) {
+      console.log("Not on final step, skipping save");
+      return;
+    }
     const fullAddress = `${formData.street}, ${formData.zipCode}, ${formData.state}, ${formData.country}`;
     const fullName = `${formData.firstName} ${formData.lastName}`;
+    console.log("Saving profile with data:", { fullName, contactEmail: formData.email });
     saveProfileMutation.mutate({
+      userId: user?.id,
       displayName: formData.userName,
       bio: formData.bio,
       contactFullName: fullName,
@@ -969,7 +977,7 @@ export default function AccountSetup() {
                   Skip
                 </Button>
               )}
-              {currentStep < 4 && (
+              {currentStep < 3 && (
                 <Button
                   type="button"
                   onClick={handleNextStep}
@@ -979,7 +987,7 @@ export default function AccountSetup() {
                   <ChevronRight className="ml-2 h-4 w-4" />
                 </Button>
               )}
-              {currentStep === 4 && (
+              {currentStep === 3 && (
                 <Button
                   type="submit"
                   disabled={saveProfileMutation.isPending}

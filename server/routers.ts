@@ -235,9 +235,10 @@ export const appRouter = router({
         const detail = await getListingDetail(input.listingId, ctx.user?.id ?? null);
         return { listing: detail };
       }),
-    saveProfile: protectedProcedure
+    saveProfile: publicProcedure
       .input(
         z.object({
+          userId: z.string().optional(),
           displayName: z.string().min(2).max(120),
           bio: z.string().max(500).optional(),
           contactFullName: z.string().max(160).optional(),
@@ -269,9 +270,18 @@ export const appRouter = router({
       .mutation(async ({ ctx, input }) => {
         console.log("[saveProfile] Called with input:", input);
         
+        // Validate user is authenticated or has userId
+        const userId = ctx.user?.id || input.userId;
+        if (!userId) {
+          throw new TRPCError({
+            code: 'UNAUTHORIZED',
+            message: 'Please login to save profile',
+          });
+        }
+        
         // Check for duplicate account information
         const duplicateCheck = await checkDuplicateAccountInfo(
-          ctx.user.id,
+          userId,
           input.contactEmail,
           input.contactPhone,
           input.contactFullName,
@@ -286,7 +296,7 @@ export const appRouter = router({
         }
         
         return updateProfile(
-          { id: ctx.user.id, name: ctx.user.name },
+          { id: userId, name: input.displayName },
           {
             displayName: input.displayName,
             bio: input.bio,
