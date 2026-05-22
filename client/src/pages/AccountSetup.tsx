@@ -548,14 +548,17 @@ export default function AccountSetup() {
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label>Email Address</Label>
+                    <Label htmlFor="email">Email Address *</Label>
                     <Input
-                      disabled
+                      id="email"
+                      name="email"
+                      type="email"
                       value={formData.email}
-                      placeholder="Your email"
-                      className="rounded-lg border-slate-200 bg-slate-100"
+                      onChange={handleInputChange}
+                      placeholder="your@email.com"
+                      required
+                      className="rounded-lg border-slate-200"
                     />
-                    <p className="text-xs text-slate-600">Your email is verified and cannot be changed during setup.</p>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="phoneNumber">Phone Number *</Label>
