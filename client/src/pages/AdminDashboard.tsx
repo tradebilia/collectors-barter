@@ -13,6 +13,12 @@ export default function AdminDashboard() {
   const statsQuery = trpc.admin.getPlatformStatistics.useQuery(undefined, {
     enabled: user?.role === "admin",
   });
+  const usersQuery = trpc.admin.getAllUsers.useQuery(undefined, {
+    enabled: user?.role === "admin",
+  });
+  const listingsQuery = trpc.admin.getAllListings.useQuery(undefined, {
+    enabled: user?.role === "admin",
+  });
 
   if (loading) {
     return (
@@ -136,15 +142,45 @@ export default function AdminDashboard() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="text-sm text-muted-foreground">
-                  <p>User management interface coming soon. You'll be able to:</p>
-                  <ul className="list-disc list-inside mt-2 space-y-1">
-                    <li>View all registered members</li>
-                    <li>Grant/revoke admin privileges</li>
-                    <li>View member profiles and trade history</li>
-                    <li>Suspend or ban users if needed</li>
-                  </ul>
-                </div>
+                {usersQuery.isLoading ? (
+                  <div className="text-sm text-muted-foreground">Loading users...</div>
+                ) : usersQuery.data && usersQuery.data.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead className="border-b border-border">
+                        <tr>
+                          <th className="text-left py-2 px-4">Username</th>
+                          <th className="text-left py-2 px-4">Display Name</th>
+                          <th className="text-left py-2 px-4">Email</th>
+                          <th className="text-left py-2 px-4">Role</th>
+                          <th className="text-left py-2 px-4">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {usersQuery.data.map((user) => (
+                          <tr key={user.id} className="border-b border-border hover:bg-accent/50">
+                            <td className="py-2 px-4">{user.username}</td>
+                            <td className="py-2 px-4">{user.displayName}</td>
+                            <td className="py-2 px-4">{user.email || "-"}</td>
+                            <td className="py-2 px-4">
+                              <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                                user.role === 'admin' ? 'bg-red-500/20 text-red-700' : 'bg-blue-500/20 text-blue-700'
+                              }`}>
+                                {user.role}
+                              </span>
+                            </td>
+                            <td className="py-2 px-4 text-xs space-x-2">
+                              <Button size="sm" variant="outline">Edit</Button>
+                              {user.id !== user.id && <Button size="sm" variant="destructive">Delete</Button>}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div className="text-sm text-muted-foreground">No users found</div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -159,15 +195,47 @@ export default function AdminDashboard() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="text-sm text-muted-foreground">
-                  <p>Listings management interface coming soon. You'll be able to:</p>
-                  <ul className="list-disc list-inside mt-2 space-y-1">
-                    <li>View all active listings</li>
-                    <li>Review reported listings</li>
-                    <li>Delete inappropriate content</li>
-                    <li>Feature or highlight listings</li>
-                  </ul>
-                </div>
+                {listingsQuery.isLoading ? (
+                  <div className="text-sm text-muted-foreground">Loading listings...</div>
+                ) : listingsQuery.data && listingsQuery.data.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead className="border-b border-border">
+                        <tr>
+                          <th className="text-left py-2 px-4">Title</th>
+                          <th className="text-left py-2 px-4">Category</th>
+                          <th className="text-left py-2 px-4">Condition</th>
+                          <th className="text-left py-2 px-4">Status</th>
+                          <th className="text-left py-2 px-4">Owner ID</th>
+                          <th className="text-left py-2 px-4">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {listingsQuery.data.map((listing) => (
+                          <tr key={listing.id} className="border-b border-border hover:bg-accent/50">
+                            <td className="py-2 px-4 truncate max-w-xs">{listing.title}</td>
+                            <td className="py-2 px-4">{listing.category}</td>
+                            <td className="py-2 px-4">{listing.condition}</td>
+                            <td className="py-2 px-4">
+                              <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                                listing.status === 'active' ? 'bg-green-500/20 text-green-700' : 'bg-gray-500/20 text-gray-700'
+                              }`}>
+                                {listing.status}
+                              </span>
+                            </td>
+                            <td className="py-2 px-4">{listing.ownerId}</td>
+                            <td className="py-2 px-4 text-xs space-x-2">
+                              <Button size="sm" variant="outline">View</Button>
+                              <Button size="sm" variant="destructive">Delete</Button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div className="text-sm text-muted-foreground">No listings found</div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
