@@ -417,13 +417,14 @@ export default function AccountSetup() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="signup-email">Email (optional)</Label>
+                    <Label htmlFor="signup-email">Email *</Label>
                     <Input
                       id="signup-email"
                       type="email"
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                       placeholder="your@email.com"
+                      required
                       className="rounded-lg border-slate-200"
                     />
                   </div>
