@@ -396,7 +396,7 @@ export default function AccountSetup() {
             <form onSubmit={handleCreateAccount} className="space-y-6">
               <div className="text-center">
                 <h1 className="text-6xl font-bold tracking-tight sm:text-7xl">Create Your Account</h1>
-                <p className="mt-4 text-lg text-slate-600">Step 1 of 2: Create your login credentials</p>
+                <p className="mt-4 text-lg text-slate-600">Step 1 of 5: Create your login credentials</p>
               </div>
 
               <Card className="rounded-[1.5rem] border-slate-200 bg-white shadow-sm">
@@ -489,7 +489,7 @@ export default function AccountSetup() {
               <Card className="rounded-[1.5rem] border-slate-200 bg-white shadow-sm">
                 <CardHeader>
                   <CardTitle>Basic Information</CardTitle>
-                  <CardDescription>Tell us about yourself</CardDescription>
+                  <CardDescription>Step 2 of 5: Tell us about yourself</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
@@ -765,7 +765,7 @@ export default function AccountSetup() {
                 <CardHeader>
                   <CardTitle>Import Account Information</CardTitle>
                   <CardDescription>
-                    Optionally import your information from other accounts to build your Tradebilia profile
+                    Step 3 of 5: Optionally import your information from other accounts to build your Tradebilia profile
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -808,7 +808,7 @@ export default function AccountSetup() {
               <Card className="rounded-[1.5rem] border-slate-200 bg-white shadow-sm">
                 <CardHeader>
                   <CardTitle>Profile Picture & Preferences</CardTitle>
-                  <CardDescription>Customize your profile and set your preferences</CardDescription>
+                  <CardDescription>Step 4 of 5: Customize your profile and set your preferences</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   {/* Avatar Section */}
@@ -895,7 +895,7 @@ export default function AccountSetup() {
               <Card className="rounded-[1.5rem] border-slate-200 bg-white shadow-sm">
                 <CardHeader>
                   <CardTitle>Review Your Information</CardTitle>
-                  <CardDescription>Please review your account details before completing setup</CardDescription>
+                  <CardDescription>Step 5 of 5: Please review your account details before completing setup</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   {/* Basic Information Summary */}

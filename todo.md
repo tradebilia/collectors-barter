@@ -919,3 +919,10 @@ The application is fully functional with all core features working correctly.
 - [x] FIX: SignInModal now navigates directly to `/account-setup?new=true` instead of `/signup`
 - [x] VERIFIED: Users clicking "Sign Up" in the SignInModal are now taken to the correct account setup page with account creation form (Step 0)
 - [x] VERIFIED: Multi-step account setup flow works correctly from start to finish
+
+- [x] FIX: Updated step numbering in AccountSetup to show "Step X of 5" for all steps
+  - Account creation: "Step 1 of 5"
+  - Basic Information: "Step 2 of 5"
+  - Import Account Information: "Step 3 of 5"
+  - Profile Picture & Preferences: "Step 4 of 5"
+  - Review Your Information: "Step 5 of 5"
