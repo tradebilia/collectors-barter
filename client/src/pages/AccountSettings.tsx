@@ -158,7 +158,7 @@ export default function AccountSettings() {
       setIdentityInfo({
         firstName: (profile as any).firstName || "",
         lastName: (profile as any).lastName || "",
-        email: user?.email || "",
+        email: profile.contactEmail || "",
         street: profile.contactAddress || "",
         town: (profile as any).contactTown || "",
         zipCode: (profile as any).contactZipCode || "",
@@ -368,8 +368,9 @@ export default function AccountSettings() {
         title: "Success",
         message: "Profile updated successfully!",
       });
-      // Refresh the dashboard data
-      await utils.market.dashboard.refetch();
+      // Refresh the dashboard data and auth context
+      await utils.market.dashboard.invalidate();
+      await utils.auth.me.invalidate();
     } catch (error: any) {
       console.error("[AccountSettings] Error saving profile:", error);
       setConfirmationDialog({
