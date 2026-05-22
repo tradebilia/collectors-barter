@@ -26,7 +26,7 @@ import { Link } from "wouter";
 import { TopBar } from "@/components/TopBar";
 import { CategoryBar } from "@/components/CategoryBar";
 
-const TRADEBILIA_LOGO_URL = "/manus-storage/Tradebilialogo_886a61b7.webp";
+const TRADEBILIA_LOGO_URL = "/manus-storage/tradebilia-longform-no-navy-clean_d2f04453.png";
 
 const categoryOptions = [
   { value: "comics", label: "Comics" },
@@ -223,6 +223,25 @@ export default function AccountSettings() {
       setCommunicationPrefs(notificationPrefs);
     }
   }, [dashboardQuery.data?.profile, user?.name, user?.email]);
+
+  // Attach click listeners to labels to toggle checkboxes (workaround for Manus click interception)
+  useEffect(() => {
+    const labels = document.querySelectorAll('label[for^="category-"]');
+    labels.forEach(label => {
+      const handler = (e: Event) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const forAttr = label.getAttribute('for');
+        if (forAttr) {
+          const checkbox = document.getElementById(forAttr) as HTMLInputElement;
+          if (checkbox) {
+            checkbox.checked = !checkbox.checked;
+          }
+        }
+      };
+      label.addEventListener('click', handler, true);
+    });
+  }, []);
 
   if (!isAuthenticated) {
     return (
@@ -1007,14 +1026,20 @@ export default function AccountSettings() {
                         // Only set defaultChecked on first render to initialize the checkbox
                         const isChecked = !preferencesInitializedRef.current ? preferences.preferredCategories.includes(cat.value) : undefined;
                         return (
-                          <div key={cat.value} className="flex items-center gap-2">
+                          <div key={cat.value} className="flex items-center gap-2 px-3 py-2 rounded-lg border-2 border-slate-200 cursor-pointer hover:border-blue-400 transition-colors">
                             <input
                               id={checkboxId}
                               type="checkbox"
                               defaultChecked={isChecked}
-                              className="h-4 w-4 rounded cursor-pointer"
+                              className="h-4 w-4 rounded accent-blue-600 cursor-pointer"
+                              style={{ pointerEvents: 'auto', cursor: 'pointer' }}
                             />
-                            <label htmlFor={checkboxId} className="text-sm text-slate-700 cursor-pointer">
+                            <label 
+                              htmlFor={checkboxId}
+                              className="text-sm text-slate-700 cursor-pointer flex-1"
+                              style={{ pointerEvents: 'auto', cursor: 'pointer' }}
+                              data-manus-no-intercept="true"
+                            >
                               {cat.label}
                             </label>
                           </div>
@@ -1083,3 +1108,4 @@ export default function AccountSettings() {
     </div>
   );
 }
+

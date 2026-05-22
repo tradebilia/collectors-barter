@@ -27,6 +27,7 @@ import { VerifyAccount } from "./pages/VerifyAccount";
 import { ForgotPassword } from "./pages/ForgotPassword";
 import { ProfileCompletion } from "./pages/ProfileCompletion";
 import { SearchResults } from "./pages/SearchResults";
+import AdminDashboard from "./pages/AdminDashboard";
 
 function Router() {
   return (
@@ -95,6 +96,11 @@ function Router() {
       <Route path="/search" component={SearchResults} />
       <Route path="/welcome" component={Welcome} />
       <Route path="/member-only" component={MemberOnly} />
+      <Route path="/admin">
+        <ProtectedRoute>
+          <AdminDashboard />
+        </ProtectedRoute>
+      </Route>
       <Route path="/category/:slug" component={CategoryPage} />
       <Route path="/listings/:listingId" component={ItemDetail} />
       <Route path="/404" component={NotFound} />

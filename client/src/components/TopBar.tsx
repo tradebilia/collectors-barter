@@ -1,5 +1,5 @@
 import { TopRightIcons } from "@/components/TopRightIcons";
-import { Search, LogOut } from "lucide-react";
+import { Search, LogOut, Settings } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -18,7 +18,7 @@ export function TopBar({
   searchPlaceholder = "Search...",
   onSearchChange,
 }: TopBarProps) {
-  const { isAuthenticated, logout } = useAuth();
+  const { isAuthenticated, logout, user } = useAuth();
   const [showSignInModal, setShowSignInModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [, setLocation] = useLocation();
@@ -44,9 +44,9 @@ export function TopBar({
       <div className="flex items-center justify-between gap-4 pl-2 pr-4 py-3">
         {/* Logo on left */}
         <div className="flex-shrink-0">
-          <Link href="/" className="flex items-center hover:opacity-80 transition">
+          <a href="/" className="flex items-center hover:opacity-80 transition">
             <img src={logoUrl} alt="Tradebilia" className="h-14 w-auto object-contain" />
-          </Link>
+          </a>
         </div>
 
         {/* Search in center */}
@@ -66,6 +66,11 @@ export function TopBar({
         {/* Icons and Auth on right */}
         <div className="flex items-center gap-3 md:gap-4 flex-shrink-0">
           <TopRightIcons iconColor="text-white/70" />
+          {isAuthenticated && user?.role === "admin" && (
+            <a href="/admin" className="text-white/70 hover:text-white transition">
+              <Settings className="h-5 w-5" title="Admin Dashboard" />
+            </a>
+          )}
           {isAuthenticated ? (
             <Button
               onClick={logout}

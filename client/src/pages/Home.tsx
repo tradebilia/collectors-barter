@@ -462,10 +462,10 @@ export default function Home() {
         <section className="border-y border-black/25 bg-[linear-gradient(90deg,#8e9093_0%,#d7dde6_50%,#8e9093_100%)] py-1.5 text-black">
           <div className="grid gap-0 text-center sm:grid-cols-2 xl:grid-cols-4">
             {[
-              ["Total Members", siteStatisticsQuery.data?.totalMembers ? `${(siteStatisticsQuery.data.totalMembers / 1000).toFixed(0)}k` : "0k"],
+              ["Total Members", siteStatisticsQuery.data?.totalMembers ? `${siteStatisticsQuery.data.totalMembers}` : "0"],
               ["Total Items", siteStatisticsQuery.data?.totalItems ? `${siteStatisticsQuery.data.totalItems.toLocaleString()}` : "0"],
               ["Total Value", siteStatisticsQuery.data?.totalValue ? `$${(siteStatisticsQuery.data.totalValue / 1000000).toFixed(1)}M` : "$0"],
-              ["Total Trades", siteStatisticsQuery.data?.totalTrades ? `${(siteStatisticsQuery.data.totalTrades / 1000).toFixed(1)}k` : "0"],
+              ["Total Trades", siteStatisticsQuery.data?.totalTrades ? `${siteStatisticsQuery.data.totalTrades}` : "0"],
             ].map(([label, value]) => (
               <div key={label as string} className="space-y-0.5 px-2 py-1.5 transition-all duration-500">
                 <p className="text-[10px] font-medium leading-none text-black/80">{label as string}</p>

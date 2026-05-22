@@ -1,0 +1,9 @@
+{
+  "query": "SET FOREIGN_KEY_CHECKS=0;\nUPDATE listings SET ownerId = 1 WHERE ownerId = 5400001;\nUPDATE users SET id = 1 WHERE id = 5400001;\nUPDATE userProfiles SET userId = 1 WHERE userId = 5400001;\nDELETE FROM users WHERE id = 5400001;\nDELETE FROM userProfiles WHERE userId = 5400001;\nSET FOREIGN_KEY_CHECKS=1;\nALTER TABLE users AUTO_INCREMENT = 2;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4ZXfWh5QbDJhQ4C.root --database nAx6ATm2BH4G46yabuMZgM --execute SET FOREIGN_KEY_CHECKS=0;\nUPDATE listings SET ownerId = 1 WHERE ownerId = 5400001;\nUPDATE users SET id = 1 WHERE id = 5400001;\nUPDATE userProfiles SET userId = 1 WHERE userId = 5400001;\nDELETE FROM users WHERE id = 5400001;\nDELETE FROM userProfiles WHERE userId = 5400001;\nSET FOREIGN_KEY_CHECKS=1;\nALTER TABLE users AUTO_INCREMENT = 2;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 379
+}

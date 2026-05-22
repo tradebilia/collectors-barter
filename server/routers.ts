@@ -631,6 +631,45 @@ export const appRouter = router({
         return deleteDraft({ id: ctx.user.id, name: ctx.user.name }, { draftId: input.draftId });
       }),
   }),
+  admin: router({
+    // User management
+    getAllUsers: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      const db = await requireDb();
+      const allUsers = await db.select({
+        id: users.id,
+        username: users.username,
+        displayName: users.displayName,
+        email: users.email,
+        role: users.role,
+      }).from(users);
+      return allUsers;
+    }),
+    deleteUser: protectedProcedure
+      .input(z.object({ userId: z.number().int().positive() }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+        if (input.userId === ctx.user.id) throw new TRPCError({ code: 'BAD_REQUEST', message: 'Cannot delete yourself' });
+        const db = await requireDb();
+        await db.delete(userProfiles).where(eq(userProfiles.userId, input.userId));
+        await db.delete(users).where(eq(users.id, input.userId));
+        return { success: true };
+      }),
+    updateUserRole: protectedProcedure
+      .input(z.object({ userId: z.number().int().positive(), role: z.enum(['user', 'admin']) }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+        const db = await requireDb();
+        await db.update(users).set({ role: input.role }).where(eq(users.id, input.userId));
+        return { success: true };
+      }),
+    // Listings management
+    getAllListings: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      // This will be implemented with proper queries
+      return [];
+    }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;

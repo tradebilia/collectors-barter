@@ -1,0 +1,9 @@
+{
+  "query": "SET FOREIGN_KEY_CHECKS=0;\nDELETE FROM userProfiles WHERE userId = 5370001;\nDELETE FROM listings WHERE ownerId = 5370001;\nDELETE FROM users WHERE id = 5370001;\nSET FOREIGN_KEY_CHECKS=1;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4ZXfWh5QbDJhQ4C.root --database nAx6ATm2BH4G46yabuMZgM --execute SET FOREIGN_KEY_CHECKS=0;\nDELETE FROM userProfiles WHERE userId = 5370001;\nDELETE FROM listings WHERE ownerId = 5370001;\nDELETE FROM users WHERE id = 5370001;\nSET FOREIGN_KEY_CHECKS=1;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 277
+}

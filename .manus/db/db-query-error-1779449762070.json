@@ -1,0 +1,8 @@
+{
+  "query": "UPDATE users SET id = 1 WHERE id = 5400001;\nUPDATE userProfiles SET userId = 1 WHERE userId = 5400001;\nUPDATE listings SET ownerId = 1 WHERE ownerId = 5400001;\nALTER TABLE users AUTO_INCREMENT = 2;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4ZXfWh5QbDJhQ4C.root --database nAx6ATm2BH4G46yabuMZgM --execute UPDATE users SET id = 1 WHERE id = 5400001;\nUPDATE userProfiles SET userId = 1 WHERE userId = 5400001;\nUPDATE listings SET ownerId = 1 WHERE ownerId = 5400001;\nALTER TABLE users AUTO_INCREMENT = 2;",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1062 (23000) at line 1: Duplicate entry '?' for key 'users.PRIMARY'"
+  ]
+}

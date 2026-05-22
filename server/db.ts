@@ -261,11 +261,10 @@ export async function getSiteStatistics() {
     .from(listings)
     .where(eq(listings.status, "active"));
 
-  // Get total unique collectors (users with at least one active listing)
+  // Get total registered members (all users with accounts)
   const totalCollectorsResult = await db
-    .select({ value: sql<number>`count(distinct ownerId)` })
-    .from(listings)
-    .where(eq(listings.status, "active"));
+    .select({ value: sql<number>`count(*)` })
+    .from(userProfiles);
 
   // Get total value of all active listings (sum of estimatedValue)
   const totalValueResult = await db
@@ -1039,6 +1038,7 @@ export async function getDashboardData(user: Pick<User, "id" | "name">): Promise
   await ensureUserProfileRecord(user);
 
   const [profileRows, ownListingRows, watchlistRows, receivedReviews, proposalCards, ratingMapData] = await Promise.all([
+    // Profile query
     // Profile query with explicit type annotation
     db
       .select({
@@ -1134,7 +1134,27 @@ export async function getDashboardData(user: Pick<User, "id" | "name">): Promise
   const watchlist = await formatListings(savedListingRows, user.id);
   const rating = ratingMapData.get(user.id) ?? { averageRating: 0, reviewCount: 0 };
 
-  const profileData = profileRows[0] as any;
+  const profileData = profileRows[0] as {
+    displayName?: string;
+    firstName?: string | null;
+    lastName?: string | null;
+    avatarUrl?: string | null;
+    bio?: string | null;
+    contactFullName?: string | null;
+    contactEmail?: string | null;
+    contactPhone?: string | null;
+    contactAddress?: string | null;
+    contactTown?: string | null;
+    contactState?: string | null;
+    contactZipCode?: string | null;
+    contactCountry?: string | null;
+    securityQuestion?: string | null;
+    preferredCategories?: string | null;
+    showProfile?: boolean;
+    hideInventoryValue?: boolean;
+    receiveContactRequests?: boolean;
+    notificationPreferences?: string | null;
+  }
 
   return {
     profile: {

@@ -884,3 +884,12 @@ The application is fully functional with all core features working correctly.
 - [x] FIX: Account Settings preferences checkboxes are not responding to clicks (React onClick handler not rendering) - FIXED by using useRef to prevent re-renders and reading checkbox states directly from DOM
 - [x] FIX: Verify preferences state updates when checkboxes are clicked - VERIFIED: checkboxes now update correctly
 - [x] FIX: Ensure preferences persist after page reload - VERIFIED: preferences persist correctly after page refresh
+
+- [x] FEATURE: Admin Dashboard - Create basic UI with tabs (Statistics, Users, Listings, Settings)
+- [x] FEATURE: Admin Dashboard - Add admin icon to TopBar (only visible for admin users)
+- [x] FEATURE: Admin Dashboard - Add /admin route with admin-only access control
+- [ ] FEATURE: Admin Dashboard - Create backend procedures for admin operations
+- [ ] FEATURE: Admin Dashboard - Implement Statistics tab with real data
+- [ ] FEATURE: Admin Dashboard - Implement User management (view, edit, delete users)
+- [ ] FEATURE: Admin Dashboard - Implement Listings management (view, moderate, delete)
+- [ ] FEATURE: Admin Dashboard - Implement Settings tab for platform configuration
