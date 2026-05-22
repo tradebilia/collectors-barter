@@ -22,6 +22,9 @@ export default function AdminDashboard() {
   const listingsQuery = trpc.admin.getAllListings.useQuery(undefined, {
     enabled: user?.role === "admin",
   });
+  const deletedAccountsQuery = trpc.admin.getDeletedAccounts.useQuery(undefined, {
+    enabled: user?.role === "admin",
+  });
 
   if (loading) {
     return (
@@ -70,7 +73,7 @@ export default function AdminDashboard() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="statistics" className="flex items-center gap-2">
               <BarChart3 className="h-4 w-4 hidden sm:inline" />
               <span className="hidden sm:inline">Statistics</span>
@@ -86,6 +89,10 @@ export default function AdminDashboard() {
             <TabsTrigger value="settings" className="flex items-center gap-2">
               <Settings className="h-4 w-4 hidden sm:inline" />
               <span className="hidden sm:inline">Settings</span>
+            </TabsTrigger>
+            <TabsTrigger value="deleted" className="flex items-center gap-2">
+              <Users className="h-4 w-4 hidden sm:inline" />
+              <span className="hidden sm:inline">Deleted</span>
             </TabsTrigger>
           </TabsList>
 
@@ -255,6 +262,54 @@ export default function AdminDashboard() {
                   </div>
                 ) : (
                   <div className="text-sm text-muted-foreground">No listings found</div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Deleted Accounts Tab */}
+          <TabsContent value="deleted" className="space-y-4 mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Deleted Accounts</CardTitle>
+                <CardDescription>
+                  Track deleted user accounts to prevent re-registration
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {deletedAccountsQuery.isLoading ? (
+                  <div className="text-sm text-muted-foreground">Loading deleted accounts...</div>
+                ) : deletedAccountsQuery.data && deletedAccountsQuery.data.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead className="border-b border-border">
+                        <tr>
+                          <th className="text-left py-2 px-4">Username</th>
+                          <th className="text-left py-2 px-4">First Name</th>
+                          <th className="text-left py-2 px-4">Last Name</th>
+                          <th className="text-left py-2 px-4">Email</th>
+                          <th className="text-left py-2 px-4">Deleted By</th>
+                          <th className="text-left py-2 px-4">Deleted At</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {deletedAccountsQuery.data.map((account) => (
+                          <tr key={account.id} className="border-b border-border hover:bg-accent/50">
+                            <td className="py-2 px-4 font-mono text-xs">{account.username}</td>
+                            <td className="py-2 px-4">{account.firstName || "-"}</td>
+                            <td className="py-2 px-4">{account.lastName || "-"}</td>
+                            <td className="py-2 px-4">{account.email || "-"}</td>
+                            <td className="py-2 px-4 text-xs">{account.deletedBy}</td>
+                            <td className="py-2 px-4 text-xs">
+                              {account.deletedAt ? new Date(account.deletedAt).toLocaleDateString() : "-"}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div className="text-sm text-muted-foreground">No deleted accounts found</div>
                 )}
               </CardContent>
             </Card>

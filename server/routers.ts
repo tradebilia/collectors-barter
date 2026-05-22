@@ -32,7 +32,7 @@ import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { hashPassword, verifyPassword, isValidUsername, isValidPassword, isValidEmail } from "./_core/auth";
 import { getUserByUsername, createUser, requireDb } from "./db";
 import { sdk } from "./_core/sdk";
-import { users, userProfiles } from "../drizzle/schema";
+import { users, userProfiles, listings, deletedAccounts } from "../drizzle/schema";
 import { eq } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { ONE_YEAR_MS } from "@shared/const";
@@ -663,8 +663,36 @@ export const appRouter = router({
         if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
         if (input.userId === ctx.user.id) throw new TRPCError({ code: 'BAD_REQUEST', message: 'Cannot delete yourself' });
         const db = await requireDb();
+        
+        // Get user info before deletion
+        const userToDelete = await db.select().from(users).where(eq(users.id, input.userId)).limit(1);
+        const userProfile = await db.select().from(userProfiles).where(eq(userProfiles.userId, input.userId)).limit(1);
+        
+        if (!userToDelete.length) throw new TRPCError({ code: 'NOT_FOUND', message: 'User not found' });
+        
+        const user = userToDelete[0];
+        const profile = userProfile[0];
+        
+        // Delete all listings owned by the user
+        await db.delete(listings).where(eq(listings.ownerId, input.userId));
+        
+        // Log the deletion
+        await db.insert(deletedAccounts).values({
+          username: user.username,
+          email: user.email || null,
+          displayName: profile?.displayName || user.displayName || null,
+          firstName: profile?.firstName || null,
+          lastName: profile?.lastName || null,
+          deletedBy: ctx.user.id,
+          reason: 'Admin deletion',
+        } as any);
+        
+        // Delete user profile
         await db.delete(userProfiles).where(eq(userProfiles.userId, input.userId));
+        
+        // Delete user
         await db.delete(users).where(eq(users.id, input.userId));
+        
         return { success: true };
       }),
     updateUserRole: protectedProcedure
@@ -675,6 +703,13 @@ export const appRouter = router({
         await db.update(users).set({ role: input.role }).where(eq(users.id, input.userId));
         return { success: true };
       }),
+    // Deleted accounts management
+    getDeletedAccounts: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      const db = await requireDb();
+      const deleted = await db.select().from(deletedAccounts).orderBy((t) => t.deletedAt);
+      return deleted;
+    }),
     // Listings management
     getAllListings: protectedProcedure.query(async ({ ctx }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });

@@ -334,3 +334,27 @@ export type TradeMessage = typeof tradeMessages.$inferSelect;
 export type TradeReview = typeof tradeReviews.$inferSelect;
 export type WatchlistEntry = typeof watchlistEntries.$inferSelect;
 export type DraftListing = typeof draftListings.$inferSelect;
+
+export const deletedAccounts = mysqlTable(
+  "deletedAccounts",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    userId: int("userId").notNull(),
+    username: varchar("username", { length: 64 }).notNull(),
+    email: varchar("email", { length: 320 }),
+    displayName: varchar("displayName", { length: 255 }),
+    firstName: varchar("firstName", { length: 100 }),
+    lastName: varchar("lastName", { length: 100 }),
+    deletedBy: int("deletedBy").notNull().references(() => users.id),
+    reason: text("reason"),
+    deletedAt: timestamp("deletedAt").defaultNow().notNull(),
+  },
+  table => ({
+    userIdIdx: index("deletedAccounts_userId_idx").on(table.userId),
+    usernameIdx: index("deletedAccounts_username_idx").on(table.username),
+    emailIdx: index("deletedAccounts_email_idx").on(table.email),
+    deletedAtIdx: index("deletedAccounts_deletedAt_idx").on(table.deletedAt),
+  })
+);
+
+export type DeletedAccount = typeof deletedAccounts.$inferSelect;
