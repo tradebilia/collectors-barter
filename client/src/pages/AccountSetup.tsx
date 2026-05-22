@@ -32,6 +32,7 @@ export default function AccountSetup() {
   const [currentStep, setCurrentStep] = useState(1);
   const [showDevNav, setShowDevNav] = useState(true); // Development navigation
   const [accountCreated, setAccountCreated] = useState(false); // Track if account creation is complete
+  const [userId, setUserId] = useState<string | null>(null); // Store user ID after signup
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isPhoneVerified, setIsPhoneVerified] = useState(false);
@@ -207,13 +208,17 @@ export default function AccountSetup() {
       return;
     }
     try {
-      await signupMutation.mutateAsync({
+      const signupResult = await signupMutation.mutateAsync({
         username: formData.userName,
         password: formData.password,
         displayName: formData.userName,
         email: formData.email,
       });
-      await utils.auth.me.invalidate();
+      // Get the user ID from auth.me query
+      const authData = await utils.auth.me.fetch();
+      if (authData?.id) {
+        setUserId(authData.id);
+      }
       window.history.replaceState({}, '', '/account-setup');
       setAccountCreated(true);
       setCurrentStep(1);
@@ -327,7 +332,7 @@ export default function AccountSetup() {
     const fullName = `${formData.firstName} ${formData.lastName}`;
     console.log("Saving profile with data:", { fullName, contactEmail: formData.email });
     saveProfileMutation.mutate({
-      userId: authQuery.data?.id || user?.id,
+      userId: userId || authQuery.data?.id || user?.id,
       displayName: formData.userName,
       bio: formData.bio,
       contactFullName: fullName,
