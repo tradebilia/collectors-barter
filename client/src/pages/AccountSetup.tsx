@@ -97,7 +97,7 @@ export default function AccountSetup() {
     onSuccess: async () => {
       await utils.market.dashboard.invalidate();
       toast.success("Account setup completed!");
-      navigate("/welcome?new=true");
+      navigate("/");
     },
     onError: (error) => {
       console.error("Profile save error:", error);
