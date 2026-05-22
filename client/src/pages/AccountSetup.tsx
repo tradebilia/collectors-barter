@@ -184,6 +184,14 @@ export default function AccountSetup() {
       toast.error("Username and password are required");
       return;
     }
+    if (!formData.email.trim()) {
+      toast.error("Email is required");
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      toast.error("Please enter a valid email address");
+      return;
+    }
     if (formData.password !== formData.confirmPassword) {
       toast.error("Passwords do not match");
       return;
@@ -197,9 +205,10 @@ export default function AccountSetup() {
         username: formData.userName,
         password: formData.password,
         displayName: formData.userName,
-        email: formData.email || undefined,
+        email: formData.email,
       });
       await utils.auth.me.invalidate();
+      window.history.replaceState({}, '', '/account-setup');
       setCurrentStep(1);
     } catch (err: any) {
       toast.error(err.message || "Account creation failed");
