@@ -48,11 +48,7 @@ function Router() {
           <Profile />
         </ProtectedRoute>
       </Route>
-      <Route path="/account-setup">
-        <ProtectedRoute>
-          <AccountSetup />
-        </ProtectedRoute>
-      </Route>
+      <Route path="/account-setup" component={AccountSetup} />
       <Route path="/account-settings">
         <ProtectedRoute>
           <AccountSettings />
