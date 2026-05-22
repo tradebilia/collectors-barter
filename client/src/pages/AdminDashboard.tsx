@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -220,18 +220,16 @@ export default function AdminDashboard() {
                               >
                                 Edit
                               </Button>
-                              {u.id !== user?.id && (
-                                <Button 
-                                  size="sm" 
-                                  variant="destructive"
-                                  onClick={() => {
-                                    setUserToDelete(u);
-                                    setDeleteConfirmOpen(true);
-                                  }}
-                                >
-                                  Delete
-                                </Button>
-                              )}
+                              <Button 
+                                size="sm" 
+                                variant="destructive"
+                                onClick={() => {
+                                  setUserToDelete(u);
+                                  setDeleteConfirmOpen(true);
+                                }}
+                              >
+                                Delete
+                              </Button>
                             </td>
                           </tr>
                         ))}
