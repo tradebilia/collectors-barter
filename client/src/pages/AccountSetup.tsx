@@ -87,6 +87,7 @@ export default function AccountSetup() {
     }));
   };
 
+  const authQuery = trpc.auth.me.useQuery();
   const dashboardQuery = trpc.market.dashboard.useQuery(undefined, {
     enabled: isAuthenticated,
   });
@@ -326,7 +327,7 @@ export default function AccountSetup() {
     const fullName = `${formData.firstName} ${formData.lastName}`;
     console.log("Saving profile with data:", { fullName, contactEmail: formData.email });
     saveProfileMutation.mutate({
-      userId: user?.id,
+      userId: authQuery.data?.id || user?.id,
       displayName: formData.userName,
       bio: formData.bio,
       contactFullName: fullName,
