@@ -34,8 +34,8 @@ import { hashPassword, verifyPassword, isValidUsername, isValidPassword, isValid
 import { getUserByUsername, createUser, requireDb } from "./db";
 import { sdk } from "./_core/sdk";
 import { customAuth } from "./_core/customAuth";
-import { users, userProfiles, listings, deletedAccounts, tradeProposals } from "../drizzle/schema";
-import { eq, sql, desc } from "drizzle-orm";
+import { users, userProfiles, listings, deletedAccounts, tradeProposals, tradeMessages, tradeReviews, watchlistEntries, draftListings, passwordResetTokens } from "../drizzle/schema";
+import { eq, sql, desc, or } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { ONE_YEAR_MS } from "@shared/const";
 
@@ -752,12 +752,47 @@ export const appRouter = router({
         const profile = userProfile[0];
         console.log(`[deleteUser] Found user: ${user.username}, profile exists: ${!!profile}`);
         
+        // Delete all dependent records in the correct order (respecting foreign key constraints)
+        
+        // Delete trade messages where user is the sender
+        console.log(`[deleteUser] Deleting trade messages...`);
+        await db.delete(tradeMessages).where(eq(tradeMessages.senderId, input.userId));
+        
+        // Delete trade reviews where user is the reviewer or reviewee
+        console.log(`[deleteUser] Deleting trade reviews...`);
+        await db.delete(tradeReviews).where(or(
+          eq(tradeReviews.reviewerId, input.userId),
+          eq(tradeReviews.revieweeId, input.userId)
+        ));
+        
+        // Delete trade proposals where user is the requester or recipient
+        console.log(`[deleteUser] Deleting trade proposals...`);
+        await db.delete(tradeProposals).where(or(
+          eq(tradeProposals.requesterId, input.userId),
+          eq(tradeProposals.recipientId, input.userId)
+        ));
+        
+        // Delete watchlist entries
+        console.log(`[deleteUser] Deleting watchlist entries...`);
+        await db.delete(watchlistEntries).where(eq(watchlistEntries.userId, input.userId));
+        
+        // Delete draft listings
+        console.log(`[deleteUser] Deleting draft listings...`);
+        await db.delete(draftListings).where(eq(draftListings.userId, input.userId));
+        
+        // Delete password reset tokens (has cascade delete but we'll delete explicitly)
+        console.log(`[deleteUser] Deleting password reset tokens...`);
+        await db.delete(passwordResetTokens).where(eq(passwordResetTokens.userId, input.userId));
+        
         // Delete all listings owned by the user
+        console.log(`[deleteUser] Deleting listings...`);
         const listingsDeleted = await db.delete(listings).where(eq(listings.ownerId, input.userId));
         console.log(`[deleteUser] Deleted listings, result:`, listingsDeleted);
         
         // Log the deletion
+        console.log(`[deleteUser] Inserting into deletedAccounts...`);
         await db.insert(deletedAccounts).values({
+          userId: input.userId,
           username: user.username,
           email: user.email || null,
           displayName: profile?.displayName || user.displayName || null,
@@ -768,10 +803,12 @@ export const appRouter = router({
         } as any);
         
         // Delete user profile
+        console.log(`[deleteUser] Deleting profile...`);
         const profileDeleted = await db.delete(userProfiles).where(eq(userProfiles.userId, input.userId));
         console.log(`[deleteUser] Deleted profile, result:`, profileDeleted);
         
         // Delete user
+        console.log(`[deleteUser] Deleting user...`);
         const deleteResult = await db.delete(users).where(eq(users.id, input.userId));
         console.log(`[deleteUser] Deleted user ${input.userId}, result:`, deleteResult);
         
