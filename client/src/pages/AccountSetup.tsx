@@ -429,7 +429,7 @@ export default function AccountSetup() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="signup-password">Password *</Label>
+                    <Label htmlFor="signup-password">Password * (Minimum 8 characters)</Label>
                     <Input
                       id="signup-password"
                       type="password"
