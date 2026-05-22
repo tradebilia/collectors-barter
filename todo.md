@@ -897,8 +897,13 @@ The application is fully functional with all core features working correctly.
 
 ## Duplicate Account Prevention
 
-- [ ] FEATURE: Duplicate Account Prevention - Check for duplicate email during registration
-- [ ] FEATURE: Duplicate Account Prevention - Check for duplicate phone number during registration
-- [ ] FEATURE: Duplicate Account Prevention - Check for duplicate full name + address combination
-- [ ] FEATURE: Duplicate Account Prevention - Show error message if duplicate info detected
-- [ ] FEATURE: Duplicate Account Prevention - Prevent registration if user already exists with same info
+- [x] FEATURE: Duplicate Account Prevention - Check for duplicate email during registration
+- [x] FEATURE: Duplicate Account Prevention - Check for duplicate phone number during registration
+- [x] FEATURE: Duplicate Account Prevention - Check for duplicate full name + address combination
+- [x] FEATURE: Duplicate Account Prevention - Show error message if duplicate info detected
+- [x] FEATURE: Duplicate Account Prevention - Prevent registration if user already exists with same info
+
+
+## CRITICAL BUG
+
+- [x] BUG: Profile updates not persisting - Email address reverts after save and refresh on Account Settings page (FIXED: Enabled all identity fields for editing and updated handleSaveProfile to send all fields)

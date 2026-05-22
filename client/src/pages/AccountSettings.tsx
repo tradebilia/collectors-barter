@@ -352,18 +352,15 @@ export default function AccountSettings() {
         displayName: profileForm.displayName,
         bio: profileForm.bio,
         contactPhone: profileForm.phoneNumber,
+        contactEmail: identityInfo.email,
+        firstName: identityInfo.firstName,
+        lastName: identityInfo.lastName,
+        contactAddress: identityInfo.street,
+        contactTown: identityInfo.town,
+        contactZipCode: identityInfo.zipCode,
+        contactState: identityInfo.state,
+        contactCountry: identityInfo.country,
       };
-      if (user?.role === 'admin') {
-        payload.firstName = identityInfo.firstName;
-        payload.lastName = identityInfo.lastName;
-        payload.contactEmail = identityInfo.email;
-        payload.contactAddress = identityInfo.street;
-        payload.contactTown = identityInfo.town;
-        payload.contactZipCode = identityInfo.zipCode;
-        payload.contactState = identityInfo.state;
-        payload.contactCountry = identityInfo.country;
-        payload.contactPhone = identityInfo.phoneNumber;
-      }
       await saveProfileMutation.mutateAsync(payload);
       console.log("[AccountSettings] Profile saved successfully");
       setConfirmationDialog({
@@ -594,9 +591,8 @@ export default function AccountSettings() {
                           id="firstName"
                           name="firstName"
                           value={identityInfo.firstName} 
-                          onChange={(e) => user?.role === 'admin' && setIdentityInfo(prev => ({ ...prev, firstName: e.target.value }))}
-                          disabled={user?.role !== 'admin'}
-                          className={user?.role === 'admin' ? 'rounded-lg border-slate-200' : 'bg-slate-100 rounded-lg border-slate-200'} 
+                          onChange={(e) => setIdentityInfo(prev => ({ ...prev, firstName: e.target.value }))}
+                          className='rounded-lg border-slate-200' 
                         />
                       </div>
                       <div className="space-y-2">
@@ -605,77 +601,69 @@ export default function AccountSettings() {
                           id="lastName"
                           name="lastName"
                           value={identityInfo.lastName} 
-                          onChange={(e) => user?.role === 'admin' && setIdentityInfo(prev => ({ ...prev, lastName: e.target.value }))}
-                          disabled={user?.role !== 'admin'}
-                          className={user?.role === 'admin' ? 'rounded-lg border-slate-200' : 'bg-slate-100 rounded-lg border-slate-200'} 
+                          onChange={(e) => setIdentityInfo(prev => ({ ...prev, lastName: e.target.value }))}
+                          className='rounded-lg border-slate-200' 
                         />
                       </div>
                       <div className="space-y-2">
                         <Label>Email Address</Label>
                         <Input 
                           value={identityInfo.email} 
-                          onChange={(e) => user?.role === 'admin' && setIdentityInfo(prev => ({ ...prev, email: e.target.value }))}
-                          disabled={user?.role !== 'admin'}
-                          className={user?.role === 'admin' ? 'rounded-lg border-slate-200' : 'bg-slate-100 rounded-lg border-slate-200'} 
+                          onChange={(e) => setIdentityInfo(prev => ({ ...prev, email: e.target.value }))}
+                          className='rounded-lg border-slate-200' 
                         />
                       </div>
                       <div className="space-y-2">
                         <Label>Country</Label>
                         <Input 
                           value={identityInfo.country} 
-                          onChange={(e) => user?.role === 'admin' && setIdentityInfo(prev => ({ ...prev, country: e.target.value }))}
-                          disabled={user?.role !== 'admin'}
-                          className={user?.role === 'admin' ? 'rounded-lg border-slate-200' : 'bg-slate-100 rounded-lg border-slate-200'} 
+                          onChange={(e) => setIdentityInfo(prev => ({ ...prev, country: e.target.value }))}
+                          className='rounded-lg border-slate-200' 
                         />
                       </div>
                       <div className="col-span-2 space-y-2">
                         <Label>Street Address</Label>
                         <Input 
                           value={identityInfo.street} 
-                          onChange={(e) => user?.role === 'admin' && setIdentityInfo(prev => ({ ...prev, street: e.target.value }))}
-                          disabled={user?.role !== 'admin'}
+                          onChange={(e) => setIdentityInfo(prev => ({ ...prev, street: e.target.value }))}
                           placeholder="Street address"
-                          className={user?.role === 'admin' ? 'rounded-lg border-slate-200' : 'bg-slate-100 rounded-lg border-slate-200'} 
+                          className='rounded-lg border-slate-200' 
                         />
                       </div>
                       <div className="space-y-2">
                         <Label>Town/City</Label>
                         <Input 
                           value={identityInfo.town} 
-                          onChange={(e) => user?.role === 'admin' && setIdentityInfo(prev => ({ ...prev, town: e.target.value }))}
-                          disabled={user?.role !== 'admin'}
+                          onChange={(e) => setIdentityInfo(prev => ({ ...prev, town: e.target.value }))}
                           placeholder="Town or city"
-                          className={user?.role === 'admin' ? 'rounded-lg border-slate-200' : 'bg-slate-100 rounded-lg border-slate-200'} 
+                          className='rounded-lg border-slate-200' 
                         />
                       </div>
                       <div className="space-y-2">
                         <Label>State</Label>
                         <Input 
                           value={identityInfo.state} 
-                          onChange={(e) => user?.role === 'admin' && setIdentityInfo(prev => ({ ...prev, state: e.target.value }))}
-                          disabled={user?.role !== 'admin'}
+                          onChange={(e) => setIdentityInfo(prev => ({ ...prev, state: e.target.value }))}
                           placeholder="State"
-                          className={user?.role === 'admin' ? 'rounded-lg border-slate-200' : 'bg-slate-100 rounded-lg border-slate-200'} 
+                          className='rounded-lg border-slate-200' 
                         />
                       </div>
                       <div className="space-y-2">
                         <Label>Zip Code</Label>
                         <Input 
                           value={identityInfo.zipCode} 
-                          onChange={(e) => user?.role === 'admin' && setIdentityInfo(prev => ({ ...prev, zipCode: e.target.value }))}
-                          disabled={user?.role !== 'admin'}
+                          onChange={(e) => setIdentityInfo(prev => ({ ...prev, zipCode: e.target.value }))}
                           placeholder="Zip code"
-                          className={user?.role === 'admin' ? 'rounded-lg border-slate-200' : 'bg-slate-100 rounded-lg border-slate-200'} 
+                          className='rounded-lg border-slate-200' 
                         />
                       </div>
                       <div className="col-span-2 space-y-2">
                         <Label>Phone Number</Label>
                         <Input 
                           value={identityInfo.phoneNumber} 
-                          onChange={(e) => user?.role === 'admin' && setIdentityInfo(prev => ({ ...prev, phoneNumber: e.target.value }))}
-                          disabled={user?.role !== 'admin'}
+                          onChange={(e) => setIdentityInfo(prev => ({ ...prev, phoneNumber: e.target.value }))}
                           placeholder="Phone number"
-                          className={user?.role === 'admin' ? 'rounded-lg border-slate-200' : 'bg-slate-100 rounded-lg border-slate-200'} 
+                          className='rounded-lg border-slate-200' 
                         />
                       </div>
                     </div>
