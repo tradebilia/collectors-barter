@@ -126,7 +126,7 @@ export default function AccountSetup() {
   const isNewSignup = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('new') === 'true';
   const showAccountCreation = isNewSignup && !accountCreated && !isAuthenticated;
 
-  if (!isAuthenticated && !showAccountCreation) {
+  if (!isAuthenticated && !showAccountCreation && !accountCreated) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[radial-gradient(circle_at_top,#1c2468_0%,#0b0a22_65%)] px-6 text-white">
         <div className="w-full max-w-3xl rounded-[2rem] border border-white/10 bg-black/25 p-8 text-center backdrop-blur-md">
