@@ -404,124 +404,32 @@ export default function AccountSetup() {
 
       <main className="px-4 py-10 lg:px-8">
         <div className="mx-auto max-w-2xl space-y-8">
-          {/* Account Creation Form (for new signups) */}
-          {showAccountCreation ? (
-            <form onSubmit={handleCreateAccount} className="space-y-6">
-              <div className="text-center">
-                <h1 className="text-6xl font-bold tracking-tight sm:text-7xl">Create Your Account</h1>
-                <p className="mt-4 text-lg text-slate-600">Step 1 of 5: Create your login credentials</p>
-              </div>
-
-              <Card className="rounded-[1.5rem] border-slate-200 bg-white shadow-sm">
-                <CardHeader>
-                  <CardTitle>Account Credentials</CardTitle>
-                  <CardDescription>Choose your username and password</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-username">Username *</Label>
-                    <Input
-                      id="signup-username"
-                      value={formData.userName}
-                      onChange={(e) => setFormData({ ...formData, userName: e.target.value })}
-                      placeholder="Choose a username (3-32 characters)"
-                      required
-                      className="rounded-lg border-slate-200"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-email">Email *</Label>
-                    <Input
-                      id="signup-email"
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      placeholder="your@email.com"
-                      required
-                      className="rounded-lg border-slate-200"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-password">Password * (Minimum 8 characters)</Label>
-                    <div className="relative">
-                      <Input
-                        id="signup-password"
-                        type={showPassword ? "text" : "password"}
-                        value={formData.password}
-                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                        placeholder="Create a strong password (min 8 characters)"
-                        required
-                        className="rounded-lg border-slate-200 pr-10"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700"
-                      >
-                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </button>
-                    </div>
-                    <p className="text-xs text-slate-600">Must include uppercase, lowercase, and numbers</p>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-confirm-password">Confirm Password *</Label>
-                    <div className="relative">
-                      <Input
-                        id="signup-confirm-password"
-                        type={showConfirmPassword ? "text" : "password"}
-                        value={formData.confirmPassword}
-                        onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                        placeholder="Confirm your password"
-                        required
-                        className="rounded-lg border-slate-200 pr-10"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700"
-                      >
-                        {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Button
-                type="submit"
-                className="w-full rounded-full py-3 text-lg font-semibold"
-                disabled={signupMutation.isPending}
-              >
-                {signupMutation.isPending ? "Creating Account..." : "Create Account & Continue"}
-              </Button>
-            </form>
-          ) : (
-            <>
+          <>
               {/* Welcome Heading */}
               <div className="text-center">
                 <h1 className="text-6xl font-bold tracking-tight sm:text-7xl">Welcome to Tradebilia</h1>
                 <p className="mt-4 text-lg text-slate-600">Let's set up your account in just a few steps</p>
               </div>
 
-              {/* Progress Indicator */}
-              <div className="flex justify-center gap-2">
-                {[1, 2, 3, 4].map((step) => (
-                  <div
-                    key={step}
-                    className={`h-2 w-8 rounded-full transition ${
-                      step <= currentStep ? "bg-blue-600" : "bg-slate-300"
-                    }`}
-                  />
-                ))}
-              </div>
+          {/* Progress Indicator */}
+          <div className="flex justify-center gap-2">
+            {[1, 2, 3].map((step) => (
+              <div
+                key={step}
+                className={`h-2 w-8 rounded-full transition ${
+                  step <= currentStep ? "bg-blue-600" : "bg-slate-300"
+                }`}
+              />
+            ))}
+          </div>
 
-              <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Step 1: Basic Information */}
-                {currentStep === 1 && (
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Step 1: Basic Information */}
+            {currentStep === 1 && (
               <Card className="rounded-[1.5rem] border-slate-200 bg-white shadow-sm">
                 <CardHeader>
                   <CardTitle>Basic Information</CardTitle>
-                  <CardDescription>Step 2 of 5: Tell us about yourself</CardDescription>
+                  <CardDescription>Step 1 of 3: Tell us about yourself</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
@@ -797,7 +705,7 @@ export default function AccountSetup() {
                 <CardHeader>
                   <CardTitle>Import Account Information</CardTitle>
                   <CardDescription>
-                    Step 3 of 5: Optionally import your information from other accounts to build your Tradebilia profile
+                    Step 2 of 3: Optionally import your information from other accounts to build your Tradebilia profile
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -840,7 +748,7 @@ export default function AccountSetup() {
               <Card className="rounded-[1.5rem] border-slate-200 bg-white shadow-sm">
                 <CardHeader>
                   <CardTitle>Profile Picture & Preferences</CardTitle>
-                  <CardDescription>Step 4 of 5: Customize your profile and set your preferences</CardDescription>
+                  <CardDescription>Step 3 of 3: Customize your profile and set your preferences</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   {/* Avatar Section */}
@@ -1183,7 +1091,6 @@ export default function AccountSetup() {
             </div>
           )}
           </>
-          )}
         </div>
       </main>
     </div>
