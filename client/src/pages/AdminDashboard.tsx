@@ -3,6 +3,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { BarChart3, Users, Package, Settings } from "lucide-react";
 import { getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
@@ -10,6 +11,7 @@ import { trpc } from "@/lib/trpc";
 export default function AdminDashboard() {
   const { user, loading } = useAuth();
   const [activeTab, setActiveTab] = useState("statistics");
+  const [selectedUser, setSelectedUser] = useState<any>(null);
   const statsQuery = trpc.admin.getPlatformStatistics.useQuery(undefined, {
     enabled: user?.role === "admin",
   });
@@ -48,7 +50,7 @@ export default function AdminDashboard() {
             size="lg"
             className="w-full"
           >
-            Return to Home
+            Back to Home
           </Button>
         </div>
       </div>
@@ -57,34 +59,30 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="border-b border-border bg-card">
-        <div className="container mx-auto px-4 py-6">
+      <div className="max-w-7xl mx-auto p-6">
+        <div className="mb-8">
           <h1 className="text-3xl font-bold tracking-tight">Admin Dashboard</h1>
           <p className="text-muted-foreground mt-2">
-            Manage platform statistics, users, listings, and settings
+            Manage platform users, listings, and settings
           </p>
         </div>
-      </div>
 
-      {/* Content */}
-      <div className="container mx-auto px-4 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full max-w-md grid-cols-4">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="statistics" className="flex items-center gap-2">
-              <BarChart3 className="h-4 w-4" />
+              <BarChart3 className="h-4 w-4 hidden sm:inline" />
               <span className="hidden sm:inline">Statistics</span>
             </TabsTrigger>
             <TabsTrigger value="users" className="flex items-center gap-2">
-              <Users className="h-4 w-4" />
+              <Users className="h-4 w-4 hidden sm:inline" />
               <span className="hidden sm:inline">Users</span>
             </TabsTrigger>
             <TabsTrigger value="listings" className="flex items-center gap-2">
-              <Package className="h-4 w-4" />
+              <Package className="h-4 w-4 hidden sm:inline" />
               <span className="hidden sm:inline">Listings</span>
             </TabsTrigger>
             <TabsTrigger value="settings" className="flex items-center gap-2">
-              <Settings className="h-4 w-4" />
+              <Settings className="h-4 w-4 hidden sm:inline" />
               <span className="hidden sm:inline">Settings</span>
             </TabsTrigger>
           </TabsList>
@@ -121,12 +119,12 @@ export default function AdminDashboard() {
               <CardHeader>
                 <CardTitle>Platform Overview</CardTitle>
                 <CardDescription>
-                  Key metrics and trends
+                  Key metrics and statistics about the Tradebilia platform
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="text-sm text-muted-foreground">
-                  <p>Statistics dashboard coming soon. Real-time metrics will be displayed here.</p>
+                  Platform overview data will be displayed here with charts and detailed analytics.
                 </div>
               </CardContent>
             </Card>
@@ -138,7 +136,7 @@ export default function AdminDashboard() {
               <CardHeader>
                 <CardTitle>User Management</CardTitle>
                 <CardDescription>
-                  View, edit, and manage user accounts
+                  View and manage user accounts. Click on a name to see full profile details.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -149,29 +147,49 @@ export default function AdminDashboard() {
                     <table className="w-full text-sm">
                       <thead className="border-b border-border">
                         <tr>
+                          <th className="text-left py-2 px-4">First Name</th>
+                          <th className="text-left py-2 px-4">Last Name</th>
                           <th className="text-left py-2 px-4">Username</th>
-                          <th className="text-left py-2 px-4">Display Name</th>
                           <th className="text-left py-2 px-4">Email</th>
+                          <th className="text-left py-2 px-4">Joined</th>
                           <th className="text-left py-2 px-4">Role</th>
                           <th className="text-left py-2 px-4">Actions</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {usersQuery.data.map((user) => (
-                          <tr key={user.id} className="border-b border-border hover:bg-accent/50">
-                            <td className="py-2 px-4">{user.username}</td>
-                            <td className="py-2 px-4">{user.displayName}</td>
-                            <td className="py-2 px-4">{user.email || "-"}</td>
+                        {usersQuery.data.map((u) => (
+                          <tr key={u.id} className="border-b border-border hover:bg-accent/50">
+                            <td className="py-2 px-4">
+                              <button
+                                onClick={() => setSelectedUser(u)}
+                                className="text-blue-600 hover:underline cursor-pointer"
+                              >
+                                {u.firstName || "-"}
+                              </button>
+                            </td>
+                            <td className="py-2 px-4">
+                              <button
+                                onClick={() => setSelectedUser(u)}
+                                className="text-blue-600 hover:underline cursor-pointer"
+                              >
+                                {u.lastName || "-"}
+                              </button>
+                            </td>
+                            <td className="py-2 px-4">{u.username}</td>
+                            <td className="py-2 px-4">{u.email || "-"}</td>
+                            <td className="py-2 px-4 text-xs">
+                              {u.createdAt ? new Date(u.createdAt).toLocaleDateString() : "-"}
+                            </td>
                             <td className="py-2 px-4">
                               <span className={`px-2 py-1 rounded text-xs font-semibold ${
-                                user.role === 'admin' ? 'bg-red-500/20 text-red-700' : 'bg-blue-500/20 text-blue-700'
+                                u.role === 'admin' ? 'bg-red-500/20 text-red-700' : 'bg-blue-500/20 text-blue-700'
                               }`}>
-                                {user.role}
+                                {u.role}
                               </span>
                             </td>
                             <td className="py-2 px-4 text-xs space-x-2">
                               <Button size="sm" variant="outline">Edit</Button>
-                              {user.id !== user.id && <Button size="sm" variant="destructive">Delete</Button>}
+                              {u.id !== user?.id && <Button size="sm" variant="destructive">Delete</Button>}
                             </td>
                           </tr>
                         ))}
@@ -264,6 +282,112 @@ export default function AdminDashboard() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* User Profile Modal */}
+      <Dialog open={!!selectedUser} onOpenChange={(open) => !open && setSelectedUser(null)}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {selectedUser?.firstName} {selectedUser?.lastName}
+            </DialogTitle>
+            <DialogDescription>
+              User Profile Details
+            </DialogDescription>
+          </DialogHeader>
+          {selectedUser && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm font-semibold text-muted-foreground">Username</p>
+                  <p className="text-base">{selectedUser.username}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-muted-foreground">Email</p>
+                  <p className="text-base">{selectedUser.email || "-"}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-muted-foreground">First Name</p>
+                  <p className="text-base">{selectedUser.firstName || "-"}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-muted-foreground">Last Name</p>
+                  <p className="text-base">{selectedUser.lastName || "-"}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-muted-foreground">Display Name</p>
+                  <p className="text-base">{selectedUser.displayName || "-"}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-muted-foreground">Role</p>
+                  <p className="text-base capitalize">{selectedUser.role}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-muted-foreground">Joined</p>
+                  <p className="text-base">
+                    {selectedUser.createdAt ? new Date(selectedUser.createdAt).toLocaleDateString() : "-"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-muted-foreground">User ID</p>
+                  <p className="text-base text-xs font-mono">{selectedUser.id}</p>
+                </div>
+              </div>
+
+              <div className="border-t border-border pt-4">
+                <h3 className="font-semibold mb-3">Contact Information</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm font-semibold text-muted-foreground">Full Name</p>
+                    <p className="text-base">{selectedUser.contactFullName || "-"}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-muted-foreground">Phone</p>
+                    <p className="text-base">{selectedUser.contactPhone || "-"}</p>
+                  </div>
+                  <div className="col-span-2">
+                    <p className="text-sm font-semibold text-muted-foreground">Address</p>
+                    <p className="text-base">{selectedUser.contactAddress || "-"}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-muted-foreground">City</p>
+                    <p className="text-base">{selectedUser.contactTown || "-"}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-muted-foreground">State</p>
+                    <p className="text-base">{selectedUser.contactState || "-"}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-muted-foreground">Zip Code</p>
+                    <p className="text-base">{selectedUser.contactZipCode || "-"}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-muted-foreground">Country</p>
+                    <p className="text-base">{selectedUser.contactCountry || "-"}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t border-border pt-4">
+                <h3 className="font-semibold mb-3">Account Statistics</h3>
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="bg-accent/50 p-3 rounded">
+                    <p className="text-xs text-muted-foreground">Total Items</p>
+                    <p className="text-lg font-semibold">0</p>
+                  </div>
+                  <div className="bg-accent/50 p-3 rounded">
+                    <p className="text-xs text-muted-foreground">Completed Trades</p>
+                    <p className="text-lg font-semibold">0</p>
+                  </div>
+                  <div className="bg-accent/50 p-3 rounded">
+                    <p className="text-xs text-muted-foreground">Rating</p>
+                    <p className="text-lg font-semibold">-</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
