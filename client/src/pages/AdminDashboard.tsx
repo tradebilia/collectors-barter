@@ -212,8 +212,14 @@ export default function AdminDashboard() {
                                 {u.role}
                               </span>
                             </td>
-                            <td className="py-2 px-4 text-xs space-x-2">
-                              <Button size="sm" variant="outline">Edit</Button>
+                            <td className="py-2 px-4 text-xs flex gap-2">
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                onClick={() => setSelectedUser(u)}
+                              >
+                                Edit
+                              </Button>
                               {u.id !== user?.id && (
                                 <Button 
                                   size="sm" 
