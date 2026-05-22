@@ -273,7 +273,7 @@ export default function AccountSetup() {
       toast.success("Verification code sent to your phone");
       return;
     }
-    if (currentStep < 3) {
+    if (currentStep < 4) {
       setCurrentStep(currentStep + 1);
     }
   };
