@@ -205,7 +205,7 @@ export default function AdminDashboard() {
                               </button>
                             </td>
                             <td className="py-2 px-4">{u.username}</td>
-                            <td className="py-2 px-4">{u.email || "-"}</td>
+                            <td className="py-2 px-4">{u.contactEmail || "-"}</td>
                             <td className="py-2 px-4 text-xs">
                               {u.createdAt ? new Date(u.createdAt).toLocaleDateString() : "-"}
                             </td>
@@ -395,7 +395,7 @@ export default function AdminDashboard() {
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-muted-foreground">Email</p>
-                  <p className="text-base">{selectedUser.email || "-"}</p>
+                  <p className="text-base">{selectedUser.contactEmail || "-"}</p>
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-muted-foreground">First Name</p>
@@ -497,7 +497,7 @@ export default function AdminDashboard() {
           </DialogHeader>
           <div className="bg-destructive/10 border border-destructive/20 rounded p-3 my-4">
             <p className="text-sm font-semibold">User: {userToDelete?.username}</p>
-            <p className="text-sm text-muted-foreground">Email: {userToDelete?.email}</p>
+            <p className="text-sm text-muted-foreground">Email: {userToDelete?.contactEmail}</p>
           </div>
           <div className="flex gap-3 justify-end">
             <Button 
