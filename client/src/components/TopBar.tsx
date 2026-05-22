@@ -14,7 +14,7 @@ interface TopBarProps {
 }
 
 export function TopBar({
-  logoUrl = "/manus-storage/tradebilia_final_darkest(1)_3e8b98df.svg",
+  logoUrl = "/manus-storage/tradebilia-longform-no-navy-clean_d2f04453.png",
   searchPlaceholder = "Search...",
   onSearchChange,
 }: TopBarProps) {

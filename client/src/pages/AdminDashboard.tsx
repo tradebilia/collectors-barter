@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { BarChart3, Users, Package, Settings } from "lucide-react";
 import { getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
+import { TopBar } from "@/components/TopBar";
 
 export default function AdminDashboard() {
   const { user, loading } = useAuth();
@@ -59,6 +60,7 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-background">
+      <TopBar />
       <div className="max-w-7xl mx-auto p-6">
         <div className="mb-8">
           <h1 className="text-3xl font-bold tracking-tight">Admin Dashboard</h1>
