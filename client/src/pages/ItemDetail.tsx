@@ -21,6 +21,33 @@ import { ArrowLeft } from "lucide-react";
 const TRADEBILIA_LOGO_URL = "/manus-storage/tradebilia_final_transparent_443f029c.svg";
 const HERO_BACKGROUND_URL = "/manus-storage/hero-background-fullwidth_e851e7cd.png";
 
+const getCategoryWallpaperUrl = (category: string): string => {
+  switch(category) {
+    case 'sports_cards':
+      return '/manus-storage/Sportscardwallpaper_7d372f7d.webp';
+    case 'video_games':
+      return 'https://d2xsxph8kpxj0f.cloudfront.net/310519663570115757/nAx6ATm2BH4G46yabuMZgM/video-games-background-kyx4vVUqTYCMC3kMbtokYU.webp';
+    case 'coins':
+      return '/manus-storage/Coins2_54d5f0d9.png';
+    case 'stamps':
+      return '/manus-storage/Stamps5_7feb0c7e.png';
+    case 'vintage_toys':
+      return '/manus-storage/Toys4_70f212d6.png';
+    case 'autographs':
+      return '/manus-storage/Auto2_41464c02.png';
+    case 'movies':
+      return '/manus-storage/VHS1_4fe4bb67.png';
+    case 'comics':
+      return 'https://d2xsxph8kpxj0f.cloudfront.net/310519663570115757/nAx6ATm2BH4G46yabuMZgM/comics-background-YZiiH2cyV8YJx6GFQj4PKC.webp';
+    case 'pokemon':
+      return 'https://d2xsxph8kpxj0f.cloudfront.net/310519663570115757/nAx6ATm2BH4G46yabuMZgM/pokemon-background-J6h7Mte6BSYA3GfQ4vtdFj.webp';
+    case 'disney_pins':
+      return 'https://d2xsxph8kpxj0f.cloudfront.net/310519663570115757/nAx6ATm2BH4G46yabuMZgM/disney-pins-background-F6yUvFLVrhmnaWk6GsFMZ8.webp';
+    default:
+      return '';
+  }
+};
+
 
 
 function initials(name: string) {
@@ -145,7 +172,14 @@ export default function ItemDetail() {
       <CategoryBar />
 
       <main className="pb-16">
-        <section className="relative w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden bg-[#00143A] text-white">
+        <section className="relative w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden bg-[#00143A] text-white" style={{
+          backgroundImage: `url(${getCategoryWallpaperUrl(listing.category)})`,
+          backgroundSize: 'cover',
+          backgroundPosition: listing.category === 'movies' ? 'center top' : 'center',
+          backgroundAttachment: 'scroll',
+          backgroundRepeat: ['movies', 'comics', 'pokemon', 'video_games', 'disney_pins'].includes(listing.category) ? 'no-repeat' : 'repeat',
+          filter: ['video_games', 'coins', 'stamps', 'vintage_toys', 'autographs', 'movies', 'comics', 'pokemon', 'disney_pins'].includes(listing.category) ? 'contrast(1.2) saturate(1.1)' : 'none'
+        }}>
           <div className="absolute inset-0 opacity-20" style={{
             backgroundImage: `url(${HERO_BACKGROUND_URL})`,
             backgroundSize: 'cover',
