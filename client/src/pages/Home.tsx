@@ -476,7 +476,7 @@ export default function Home() {
                 trending: <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>,
               };
               return (
-                <div key={label as string} className="flex items-center gap-3 px-3 py-2 border-r border-white/20 last:border-r-0 transition-all duration-500">
+                <div key={label as string} className="flex items-center justify-center gap-3 px-3 py-2 border-r border-white/20 last:border-r-0 transition-all duration-500">
                   <div className="flex-shrink-0 text-white">{iconMap[iconType as string]}</div>
                   <div className="flex flex-col text-left">
                     <p className="text-xs leading-tight text-white/80">{label as string}</p>
