@@ -483,11 +483,11 @@ export default function Home() {
           ) : (
             <div className="space-y-0">
               <div className="grid gap-0 grid-cols-[200px_minmax(0,1fr)] grid-rows-[auto_1fr]">
-                <aside className="bg-[radial-gradient(circle_at_28%_22%,rgba(255,255,255,0.9),rgba(255,255,255,0.14)_28%,transparent_44%),linear-gradient(180deg,#1c47f3_0%,#4d2bf2_54%,#7b1cf7_100%)] px-2 py-4 text-white shadow-[0_18px_35px_rgba(64,39,183,0.35)] col-start-1 row-span-2 flex flex-col justify-between">
-                  <div className="space-y-3 pt-0.5 font-serif text-[11px] italic leading-4 text-white/95">
-                    <div className="pb-2 text-[9px] uppercase tracking-[0.2em] not-italic text-white/65">
-                      Subscriber tools
-                      <p className="mt-2 normal-case tracking-normal text-[9px] leading-3 text-white/52">Browsing is public. Watchlist, Trade Proposals, inventory, and messaging require sign-in.</p>
+                <aside className="bg-gradient-to-b from-blue-900 via-purple-900 to-indigo-900 px-4 py-6 text-white shadow-lg col-start-1 row-span-2 flex flex-col justify-between">
+                  <div className="space-y-4">
+                    <div className="pb-4 border-b border-white/20">
+                      <h3 className="text-sm font-bold uppercase tracking-wider text-white">Subscriber Tools</h3>
+                      <p className="mt-2 text-xs leading-relaxed text-white/80">Sign in to access your inventory, watchlist, and more.</p>
                     </div>
                     <button onClick={() => {
                       if (!isAuthenticated) {
@@ -495,36 +495,38 @@ export default function Home() {
                       } else {
                         window.location.href = '/inventory';
                       }
-                    }} className="block transition hover:text-white/75 text-left w-full">My Inventory</button>
-                    <div className="space-y-1 text-white/72">
-                      <p>Upcoming Conventions</p>
-                      <p className="text-[9px] uppercase tracking-[0.18em] not-italic text-white/48">Awaiting source links</p>
-                    </div>
-                    <div className="space-y-1 text-white/72">
-                      <p>Shipping Supplies</p>
-                      <p className="text-[9px] uppercase tracking-[0.18em] not-italic text-white/48">Planned next</p>
-                    </div>
+                    }} className="w-full px-3 py-2 rounded bg-white/10 hover:bg-white/20 transition text-white text-sm font-medium text-left">📦 My Inventory</button>
                     <button onClick={() => {
                       if (!isAuthenticated) {
                         toast.error('Members only - Please sign in to report a user');
                       } else {
                         window.location.href = '/report-user';
                       }
-                    }} className="block transition hover:text-white/75 text-left w-full">Report a User</button>
+                    }} className="w-full px-3 py-2 rounded bg-white/10 hover:bg-white/20 transition text-white text-sm font-medium text-left">⚠️ Report a User</button>
                     <button onClick={() => {
                       if (!isAuthenticated) {
                         toast.error('Members only - Please sign in to submit a referral request');
                       } else {
                         window.location.href = '/referral-request';
                       }
-                    }} className="block transition hover:text-white/75 text-left w-full">Referral Request</button>
+                    }} className="w-full px-3 py-2 rounded bg-white/10 hover:bg-white/20 transition text-white text-sm font-medium text-left">🤝 Referral Request</button>
                     <button onClick={() => {
                       if (!isAuthenticated) {
                         toast.error('Members only - Please sign in to access your watchlist');
                       } else {
                         window.location.href = '/watchlist';
                       }
-                    }} className="block transition hover:text-white/75 text-left w-full">Watchlist</button>
+                    }} className="w-full px-3 py-2 rounded bg-white/10 hover:bg-white/20 transition text-white text-sm font-medium text-left">❤️ Watchlist</button>
+                    <div className="pt-4 border-t border-white/20 space-y-3">
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-wider text-white/90">📅 Upcoming Conventions</p>
+                        <p className="text-xs text-white/60 mt-1">Coming soon</p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-wider text-white/90">📦 Shipping Supplies</p>
+                        <p className="text-xs text-white/60 mt-1">Coming soon</p>
+                      </div>
+                    </div>
                   </div>
                   <div className="mt-4 hidden min-h-[225px] rounded-none bg-[radial-gradient(circle_at_top,rgba(84,190,255,0.4),transparent_42%),linear-gradient(180deg,#0a2958_0%,#153e78_48%,#3d4aa8_100%)] lg:block" />
                 </aside>
