@@ -959,5 +959,6 @@ The application is fully functional with all core features working correctly.
 
 - [ ] **Issue 1: Profile picture not displaying** - User uploaded profile picture during signup but it's not showing in account settings
 - [ ] **Issue 2: Identity fields should be read-only** - First name, last name, street address, town/city, state, zip code, email, phone should be read-only for non-admin users (verified during signup, prevent fraud)
-- [ ] **Issue 3: Add security question to signup** - Security question should be added during account setup, not just in account settings
-- [ ] **Issue 4: Preferred categories not persisting** - Categories selected during account setup are not showing as selected in account settings
+- [x] **Issue 3: Add security question to signup** - Security question should be added during account setup, not just in account settings
+- [x] **Issue 4: Preferred categories not persisting** - Categories selected during account setup are not showing as selected in account settings
+- [x] **Issue 5: Add Town/City field to account setup** - Town/City field was missing from Step 1 of account setup form

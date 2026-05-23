@@ -372,18 +372,32 @@ export default function AccountSetup() {
     // Convert avatar file to base64 if present
     let avatarData = null;
     if (avatarFile) {
-      const reader = new FileReader();
-      avatarData = await new Promise((resolve) => {
+      avatarData = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
         reader.onload = (event) => {
-          const base64String = (event.target?.result as string).split(',')[1];
-          resolve({
-            name: avatarFile.name,
-            type: avatarFile.type,
-            contentBase64: base64String,
-          });
+          try {
+            const result = event.target?.result as string;
+            const base64String = result.split(',')[1];
+            const data = {
+              name: avatarFile.name,
+              type: avatarFile.type,
+              contentBase64: base64String,
+            };
+            console.log('Avatar data prepared:', { name: data.name, type: data.type, base64Length: data.contentBase64.length });
+            resolve(data);
+          } catch (error) {
+            console.error('Error preparing avatar:', error);
+            reject(error);
+          }
+        };
+        reader.onerror = () => {
+          console.error('FileReader error');
+          reject(new Error('Failed to read file'));
         };
         reader.readAsDataURL(avatarFile);
       });
+    } else {
+      console.log('No avatar file to upload');
     }
     
     saveProfileMutation.mutate({

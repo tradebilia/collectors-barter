@@ -159,19 +159,27 @@ describe("Account Setup - updateProfile", () => {
   });
 
   describe("Contact information", () => {
-    it("should accept all contact fields", () => {
+    it("should accept all contact fields including town/city", () => {
       const input = {
         displayName: "Test",
         contactFullName: "John Doe",
         contactEmail: "john@example.com",
         contactPhone: "+1-555-0123",
-        contactAddress: "123 Main St, City, State 12345",
+        contactAddress: "123 Main St",
+        contactTown: "Springfield",
+        contactState: "IL",
+        contactZipCode: "62701",
+        contactCountry: "USA",
       };
 
       expect(input.contactFullName).toBe("John Doe");
       expect(input.contactEmail).toBe("john@example.com");
       expect(input.contactPhone).toBe("+1-555-0123");
-      expect(input.contactAddress).toBe("123 Main St, City, State 12345");
+      expect(input.contactAddress).toBe("123 Main St");
+      expect(input.contactTown).toBe("Springfield");
+      expect(input.contactState).toBe("IL");
+      expect(input.contactZipCode).toBe("62701");
+      expect(input.contactCountry).toBe("USA");
     });
 
     it("should truncate contact fields to appropriate lengths", () => {
