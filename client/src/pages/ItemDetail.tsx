@@ -21,6 +21,33 @@ import { ArrowLeft } from "lucide-react";
 const TRADEBILIA_LOGO_URL = "/manus-storage/tradebilia_final_transparent_443f029c.svg";
 const HERO_BACKGROUND_URL = "/manus-storage/hero-background-fullwidth_e851e7cd.png";
 
+const getCategoryWallpaperUrl = (category: string): string => {
+  switch(category) {
+    case 'sports_cards':
+      return '/manus-storage/Sportscardwallpaper_7d372f7d.webp';
+    case 'video_games':
+      return 'https://d2xsxph8kpxj0f.cloudfront.net/310519663570115757/nAx6ATm2BH4G46yabuMZgM/video-games-background-kyx4vVUqTYCMC3kMbtokYU.webp';
+    case 'coins':
+      return '/manus-storage/Coins2_54d5f0d9.png';
+    case 'stamps':
+      return '/manus-storage/Stamps5_7feb0c7e.png';
+    case 'vintage_toys':
+      return '/manus-storage/Toys4_70f212d6.png';
+    case 'autographs':
+      return '/manus-storage/Auto2_41464c02.png';
+    case 'movies':
+      return '/manus-storage/VHS1_4fe4bb67.png';
+    case 'comics':
+      return 'https://d2xsxph8kpxj0f.cloudfront.net/310519663570115757/nAx6ATm2BH4G46yabuMZgM/comics-background-YZiiH2cyV8YJx6GFQj4PKC.webp';
+    case 'pokemon':
+      return 'https://d2xsxph8kpxj0f.cloudfront.net/310519663570115757/nAx6ATm2BH4G46yabuMZgM/pokemon-background-J6h7Mte6BSYA3GfQ4vtdFj.webp';
+    case 'disney_pins':
+      return 'https://d2xsxph8kpxj0f.cloudfront.net/310519663570115757/nAx6ATm2BH4G46yabuMZgM/disney-pins-background-F6yUvFLVrhmnaWk6GsFMZ8.webp';
+    default:
+      return '';
+  }
+};
+
 
 
 function initials(name: string) {
@@ -163,8 +190,16 @@ export default function ItemDetail() {
           </div>
         </section>
 
-        <section className="px-4 py-10 lg:px-8 border-t border-white/10">
-          <div className="mx-auto max-w-6xl mb-8">
+        <section className="relative px-4 py-10 lg:px-8 border-t border-white/10" style={{
+          backgroundImage: `url(${getCategoryWallpaperUrl(listing.category)})`,
+          backgroundSize: 'cover',
+          backgroundPosition: listing.category === 'movies' ? 'center top' : 'center',
+          backgroundAttachment: 'scroll',
+          backgroundRepeat: ['movies', 'comics', 'pokemon', 'video_games', 'disney_pins'].includes(listing.category) ? 'no-repeat' : 'repeat',
+          filter: ['video_games', 'coins', 'stamps', 'vintage_toys', 'autographs', 'movies', 'comics', 'pokemon', 'disney_pins'].includes(listing.category) ? 'contrast(1.2) saturate(1.1)' : 'none'
+        }}>
+          <div className="absolute inset-0 bg-black/30"></div>
+          <div className="relative z-10 mx-auto max-w-6xl mb-8">
             <button
               onClick={() => window.location.href = `/category/${listing.category}`}
               className="flex items-center gap-3 px-6 py-3 rounded-lg bg-white border border-white text-black hover:bg-gray-100 hover:border-gray-100 transition text-base font-semibold"
@@ -174,7 +209,7 @@ export default function ItemDetail() {
               <span>Back to {getTradebiliaCategoryLabel(listing.category)}</span>
             </button>
           </div>
-          <div className="mx-auto grid max-w-6xl gap-8 xl:grid-cols-[1.02fr_0.98fr]">
+          <div className="relative z-10 mx-auto grid max-w-6xl gap-8 xl:grid-cols-[1.02fr_0.98fr]">
             <div>
               <div className="overflow-hidden rounded-[2rem] border border-white/10 bg-black/20 shadow-[0_40px_90px_rgba(0,0,0,0.35)]">
                 <div className="flex items-center justify-center bg-black/30 p-4" style={{ minHeight: "500px" }}>
