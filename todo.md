@@ -933,12 +933,23 @@ The application is fully functional with all core features working correctly.
 - [x] Fix logout functionality - cookie name mismatch (signin/logout using hardcoded "session" instead of COOKIE_NAME)
 - [x] Fix admin dashboard - missing tradesQuery variable definition
 - [x] Fix admin dashboard - userId conversion from string to number in delete mutation
-- [ ] **BUG: Admin user delete button returns 500 error** - Server error when attempting to delete user from admin dashboard. Mutation is called but fails with 500 response. Root cause: Unknown - requires server error log analysis
+- [x] **BUG: Admin user delete button returns 500 error** - FIXED: Added userId field to deletedAccounts insert and fixed foreign key constraint handling
 - [ ] Add comprehensive error handling and user feedback to admin delete operations
 - [ ] Write vitest tests for admin.deleteUser mutation
 - [ ] Write vitest tests for admin.getAllUsers query
 - [ ] Write vitest tests for admin.getDeletedAccounts query
 - [ ] Test admin role-based access control for all admin procedures
 - [ ] Test user authentication flow end-to-end (signup → account setup → auto-login)
-- [ ] Test logout functionality after fixing cookie issue
-- [ ] Test signin functionality after fixing cookie issue
+- [x] Test logout functionality after fixing cookie issue
+- [x] Test signin functionality after fixing cookie issue
+
+
+## Account Settings Form Fix (In Progress)
+
+- [ ] Update userProfiles schema to add separate address fields (street, city, state, zipCode, country)
+- [ ] Create and apply database migration for new address fields
+- [ ] Update AccountSettings form to use separate address fields
+- [ ] Update database queries to handle new address fields
+- [ ] Update mutations to save separate address fields
+- [ ] Test profile picture upload functionality
+- [ ] Test form with rtavani account to verify all fields display correctly

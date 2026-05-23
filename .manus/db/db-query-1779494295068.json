@@ -1,0 +1,21 @@
+{
+  "query": "SELECT id, userId, firstName, lastName, contactTown, contactState, contactZipCode, contactCountry, contactAddress FROM userProfiles WHERE userId = (SELECT id FROM users WHERE username = 'rtavani') LIMIT 1;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4ZXfWh5QbDJhQ4C.root --database nAx6ATm2BH4G46yabuMZgM --execute SELECT id, userId, firstName, lastName, contactTown, contactState, contactZipCode, contactCountry, contactAddress FROM userProfiles WHERE userId = (SELECT id FROM users WHERE username = 'rtavani') LIMIT 1;",
+  "rows": [
+    {
+      "id": "5160002",
+      "userId": "5790002",
+      "firstName": "Tavani",
+      "lastName": "Frog",
+      "contactTown": "New York",
+      "contactState": "NY",
+      "contactZipCode": "11743",
+      "contactCountry": "NULL",
+      "contactAddress": "444 Beachtree Lane, 11743, New York, USA"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tuserId\tfirstName\tlastName\tcontactTown\tcontactState\tcontactZipCode\tcontactCountry\tcontactAddress\n5160002\t5790002\tTavani\tFrog\tNew York\tNY\t11743\tNULL\t444 Beachtree Lane, 11743, New York, USA\n",
+  "stderr": "",
+  "execution_time_ms": 268
+}

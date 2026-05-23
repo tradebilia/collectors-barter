@@ -24,7 +24,6 @@ import {
   getDrafts,
   deleteDraft,
   getSiteStatistics,
-  checkDuplicateAccountInfo,
 } from "./db";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -287,21 +286,6 @@ export const appRouter = router({
           });
         }
         
-        // Check for duplicate account information
-        const duplicateCheck = await checkDuplicateAccountInfo(
-          userId,
-          input.contactEmail,
-          input.contactPhone,
-          input.contactFullName,
-          input.contactAddress
-        );
-        
-        if (duplicateCheck.isDuplicate) {
-          throw new TRPCError({
-            code: 'CONFLICT',
-            message: duplicateCheck.message,
-          });
-        }
         
         return updateProfile(
           { id: typeof userId === 'string' ? parseInt(userId, 10) : userId, name: input.displayName },

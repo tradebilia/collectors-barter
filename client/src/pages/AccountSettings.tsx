@@ -155,11 +155,15 @@ export default function AccountSettings() {
     if (dashboardQuery.data?.profile) {
       const profile = dashboardQuery.data.profile;
 
+      // Parse the combined address to extract street (everything before first comma)
+      const fullAddress = profile.contactAddress || "";
+      const streetOnly = fullAddress.split(",")[0].trim();
+      
       setIdentityInfo({
         firstName: (profile as any).firstName || "",
         lastName: (profile as any).lastName || "",
         email: profile.contactEmail || "",
-        street: profile.contactAddress || "",
+        street: streetOnly,
         town: (profile as any).contactTown || "",
         zipCode: (profile as any).contactZipCode || "",
         state: (profile as any).contactState || "",
