@@ -13,6 +13,7 @@ import { getTradebiliaCategoryTheme, getTradebiliaCategoryLabel } from "@/lib/tr
 import { Heart, Loader2, MessageCircleMore, Menu, Search, Star, UserRound } from "lucide-react";
 import { TopRightIcons } from "@/components/TopRightIcons";
 import { CategoryBar } from "@/components/CategoryBar";
+import { HeroSection } from "@/components/HeroSection";
 import { useMemo, useState } from "react";
 import { Link, useRoute, useLocation } from "wouter";
 import { toast } from "sonner";
@@ -127,30 +128,12 @@ export default function ItemDetail() {
 
   return (
     <div className={`min-h-screen ${pageBackgroundClass}`}>
-      <header className="border-b border-white/10 bg-black/40 backdrop-blur-md">
-        <div className="px-4 py-4 lg:px-8">
-          <div className="flex items-center justify-between gap-4">
-            <Link
-              href={`/category/${listing.category}`}
-              className="flex items-center gap-2 rounded-lg border border-white/30 bg-white/10 px-3 py-2 text-sm font-semibold text-white transition hover:bg-white/20"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Back
-            </Link>
-            <TopRightIcons className="flex items-center gap-3 md:gap-4" iconColor="text-white/70" />
-          </div>
-        </div>
-      </header>
+      <HeroSection />
       <CategoryBar />
 
       <main className="pb-16">
-        <section className="border-b border-white/10 bg-[linear-gradient(180deg,rgba(7,7,48,0.18)_0%,rgba(7,7,48,0.55)_100%)] px-4 py-10 lg:px-8">
-          <div className="mx-auto max-w-6xl">
-            <img src={TRADEBILIA_LOGO_URL} alt="Tradebilia" className="h-auto w-full max-w-[44rem]" />
-          </div>
-        </section>
 
-        <section className="px-4 py-10 lg:px-8">
+        <section className="px-4 py-10 lg:px-8 border-t border-white/10">
           <div className="mx-auto grid max-w-6xl gap-8 xl:grid-cols-[1.02fr_0.98fr]">
             <div>
               <div className="overflow-hidden rounded-[2rem] border border-white/10 bg-black/20 shadow-[0_40px_90px_rgba(0,0,0,0.35)]">
