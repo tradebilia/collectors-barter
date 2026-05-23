@@ -480,7 +480,7 @@ export default function Home() {
                   <div className="flex-shrink-0 text-white flex items-center justify-center">{iconMap[iconType as string]}</div>
                   <div className="flex flex-col text-center justify-center">
                     <p className="text-xs leading-none text-white/80">{label as string}</p>
-                    <p className="text-sm font-semibold leading-none">{value as string}</p>
+                    <p className="text-xl font-semibold leading-none text-white">{value as string}</p>
                   </div>
                 </div>
               );
