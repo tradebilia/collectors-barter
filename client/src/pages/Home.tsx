@@ -459,7 +459,7 @@ export default function Home() {
 
         <CategoryBar />
 
-        <section className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 py-6 text-white border-y border-blue-700">
+        <section className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 py-3 text-white border-y border-blue-700">
           <div className="grid gap-0 text-center grid-cols-2 sm:grid-cols-5">
             {[
               ["👥", "Total Members", siteStatisticsQuery.data?.totalMembers ? `${siteStatisticsQuery.data.totalMembers}` : "0"],
@@ -468,10 +468,10 @@ export default function Home() {
               ["🤝", "Successful Trades", siteStatisticsQuery.data?.totalTrades ? `${siteStatisticsQuery.data.totalTrades}` : "0"],
               ["📈", "Member Growth", "+15%"],
             ].map(([icon, label, value]) => (
-              <div key={label as string} className="space-y-1 px-2 py-3 border-r border-white/20 last:border-r-0 transition-all duration-500">
-                <p className="text-2xl">{icon as string}</p>
-                <p className="text-sm font-semibold leading-tight">{value as string}</p>
-                <p className="text-xs leading-tight text-white/90">{label as string}</p>
+              <div key={label as string} className="flex flex-col items-center justify-center px-2 py-2 border-r border-white/20 last:border-r-0 transition-all duration-500">
+                <p className="text-xl">{icon as string}</p>
+                <p className="text-xs font-semibold leading-tight mt-0.5">{value as string}</p>
+                <p className="text-[10px] leading-tight text-white/80 mt-0.5">{label as string}</p>
               </div>
             ))}
           </div>
