@@ -528,7 +528,7 @@ export default function Home() {
                       </div>
                     </div>
                   </div>
-                  <div className="mt-4 hidden min-h-[225px] rounded-none bg-[radial-gradient(circle_at_top,rgba(84,190,255,0.4),transparent_42%),linear-gradient(180deg,#0a2958_0%,#153e78_48%,#3d4aa8_100%)] lg:block" />
+
                 </aside>
 
                 <div className="bg-white px-3 py-3 lg:px-6 lg:py-3 col-start-2 row-start-1">
