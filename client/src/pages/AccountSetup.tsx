@@ -43,6 +43,7 @@ export default function AccountSetup() {
     firstName: "",
     lastName: "",
     street: "",
+    town: "",
     zipCode: "",
     state: "",
     country: "",
@@ -72,6 +73,7 @@ export default function AccountSetup() {
   const [securityAnswer, setSecurityAnswer] = useState("");
   const [preferredCategories, setPreferredCategories] = useState<string[]>([]);
   const [bioText, setBioText] = useState("");
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [notificationPreferences, setNotificationPreferences] = useState({
     tradeRequests: true,
     messages: true,
@@ -173,6 +175,7 @@ export default function AccountSetup() {
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setAvatarFile(file);
       const reader = new FileReader();
       reader.onload = (event) => {
         setFormData((prev) => ({
@@ -252,6 +255,10 @@ export default function AccountSetup() {
       }
       if (!formData.street.trim()) {
         toast.error("Street Address is required");
+        return;
+      }
+      if (!formData.town.trim()) {
+        toast.error("Town/City is required");
         return;
       }
       if (!formData.zipCode.trim()) {
@@ -347,7 +354,7 @@ export default function AccountSetup() {
     }
   };
 
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     console.log("Form submitted, currentStep:", currentStep);
     console.log("Current userId state:", userId);
@@ -357,11 +364,28 @@ export default function AccountSetup() {
       console.log("Not on final step, skipping save");
       return;
     }
-    const fullAddress = `${formData.street}, ${formData.zipCode}, ${formData.state}, ${formData.country}`;
     const fullName = `${formData.firstName} ${formData.lastName}`;
     const finalUserId = userId || authQuery.data?.id || user?.id;
     console.log("Final userId to send:", finalUserId);
     console.log("Saving profile with data:", { fullName, contactEmail: formData.email });
+    
+    // Convert avatar file to base64 if present
+    let avatarData = null;
+    if (avatarFile) {
+      const reader = new FileReader();
+      avatarData = await new Promise((resolve) => {
+        reader.onload = (event) => {
+          const base64String = (event.target?.result as string).split(',')[1];
+          resolve({
+            name: avatarFile.name,
+            type: avatarFile.type,
+            contentBase64: base64String,
+          });
+        };
+        reader.readAsDataURL(avatarFile);
+      });
+    }
+    
     saveProfileMutation.mutate({
       userId: finalUserId,
       displayName: formData.userName,
@@ -369,8 +393,17 @@ export default function AccountSetup() {
       contactFullName: fullName,
       contactEmail: formData.email,
       contactPhone: formData.phoneNumber,
-      contactAddress: fullAddress,
-      avatar: null,
+      contactAddress: formData.street,
+      contactTown: formData.town,
+      contactState: formData.state,
+      contactZipCode: formData.zipCode,
+      contactCountry: formData.country,
+      firstName: formData.firstName,
+      lastName: formData.lastName,
+      securityQuestion: securityQuestion,
+      securityAnswer: securityAnswer,
+      preferredCategories: preferredCategories.length > 0 ? (preferredCategories as any) : undefined,
+      avatar: avatarData as any,
     });
   };
 
@@ -551,6 +584,18 @@ export default function AccountSetup() {
                       value={formData.street}
                       onChange={handleInputChange}
                       placeholder="Street address"
+                      required
+                      className="rounded-lg border-slate-200"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="town">Town/City *</Label>
+                    <Input
+                      id="town"
+                      name="town"
+                      value={formData.town}
+                      onChange={handleInputChange}
+                      placeholder="Town or city"
                       required
                       className="rounded-lg border-slate-200"
                     />
@@ -788,6 +833,43 @@ export default function AccountSetup() {
                   <p className="text-xs text-slate-500 mt-4">
                     You can skip this step and add accounts later from your account settings.
                   </p>
+
+                  {/* Security Question Section */}
+                  <div className="border-t border-slate-200 pt-6 mt-6">
+                    <h3 className="font-semibold text-slate-900 mb-4">Security Question</h3>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="securityQuestion">Security Question *</Label>
+                        <select
+                          id="securityQuestion"
+                          value={securityQuestion}
+                          onChange={(e) => setSecurityQuestion(e.target.value)}
+                          className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          required
+                        >
+                          <option value="">Select a security question</option>
+                          <option value="What is your mother's maiden name?">What is your mother's maiden name?</option>
+                          <option value="What was the name of your first pet?">What was the name of your first pet?</option>
+                          <option value="What city were you born in?">What city were you born in?</option>
+                          <option value="What is your favorite book?">What is your favorite book?</option>
+                          <option value="What was your first car?">What was your first car?</option>
+                          <option value="What is the name of your best friend from childhood?">What is the name of your best friend from childhood?</option>
+                        </select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="securityAnswer">Your Answer *</Label>
+                        <Input
+                          id="securityAnswer"
+                          value={securityAnswer}
+                          onChange={(e) => setSecurityAnswer(e.target.value)}
+                          placeholder="Enter your answer"
+                          required
+                          className="rounded-lg border-slate-200"
+                        />
+                        <p className="text-xs text-slate-600">This will help you recover your account if needed.</p>
+                      </div>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             )}
@@ -819,6 +901,7 @@ export default function AccountSetup() {
                             e.currentTarget.classList.remove('border-blue-400', 'bg-blue-50');
                             const file = e.dataTransfer.files?.[0];
                             if (file && file.type.startsWith('image/')) {
+                              setAvatarFile(file);
                               const reader = new FileReader();
                               reader.onload = (event) => {
                                 setFormData((prev) => ({

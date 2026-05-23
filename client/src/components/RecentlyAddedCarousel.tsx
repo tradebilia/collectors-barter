@@ -125,6 +125,7 @@ export function RecentlyAddedCarousel({
                 <p className="text-[10px] text-[#7a46ff]">{item.price}</p>
                 <p className="text-[8px] text-slate-500">{item.subtitle}</p>
                 <div className="flex flex-wrap gap-1 pt-0.5">
+                  {isAuthenticated && (
                   <Dialog>
                     <DialogTrigger asChild>
                       <Button
@@ -188,11 +189,13 @@ export function RecentlyAddedCarousel({
                       </DialogContent>
                     )}
                   </Dialog>
+                  )}
+                  {isAuthenticated && (
                   <Button
                     size="sm"
                     variant="outline"
                     className="h-5 rounded-full px-1.5 text-[9px]"
-                    disabled={!isAuthenticated || watchlistMutation?.isPending || !item.tradeListingId}
+                    disabled={watchlistMutation?.isPending || !item.tradeListingId}
                     onClick={(e) => {
                       e.stopPropagation();
                       item.tradeListingId
@@ -203,6 +206,7 @@ export function RecentlyAddedCarousel({
                     <Heart className={`mr-1 h-3 w-3 ${item.savedToWatchlist ? "fill-current" : ""}`} />
                     Save
                   </Button>
+                  )}
                 </div>
               </CardContent>
             </Card>

@@ -600,6 +600,7 @@ export default function AccountSettings() {
                           name="firstName"
                           value={identityInfo.firstName} 
                           onChange={(e) => setIdentityInfo(prev => ({ ...prev, firstName: e.target.value }))}
+                          disabled={user?.role !== 'admin'}
                           className='rounded-lg border-slate-200' 
                         />
                       </div>
@@ -610,6 +611,7 @@ export default function AccountSettings() {
                           name="lastName"
                           value={identityInfo.lastName} 
                           onChange={(e) => setIdentityInfo(prev => ({ ...prev, lastName: e.target.value }))}
+                          disabled={user?.role !== 'admin'}
                           className='rounded-lg border-slate-200' 
                         />
                       </div>
@@ -618,6 +620,7 @@ export default function AccountSettings() {
                         <Input 
                           value={identityInfo.email} 
                           onChange={(e) => setIdentityInfo(prev => ({ ...prev, email: e.target.value }))}
+                          disabled={user?.role !== 'admin'}
                           className='rounded-lg border-slate-200' 
                         />
                       </div>
@@ -626,6 +629,7 @@ export default function AccountSettings() {
                         <Input 
                           value={identityInfo.country} 
                           onChange={(e) => setIdentityInfo(prev => ({ ...prev, country: e.target.value }))}
+                          disabled={user?.role !== 'admin'}
                           className='rounded-lg border-slate-200' 
                         />
                       </div>
@@ -635,6 +639,7 @@ export default function AccountSettings() {
                           value={identityInfo.street} 
                           onChange={(e) => setIdentityInfo(prev => ({ ...prev, street: e.target.value }))}
                           placeholder="Street address"
+                          disabled={user?.role !== 'admin'}
                           className='rounded-lg border-slate-200' 
                         />
                       </div>
@@ -644,6 +649,7 @@ export default function AccountSettings() {
                           value={identityInfo.town} 
                           onChange={(e) => setIdentityInfo(prev => ({ ...prev, town: e.target.value }))}
                           placeholder="Town or city"
+                          disabled={user?.role !== 'admin'}
                           className='rounded-lg border-slate-200' 
                         />
                       </div>
@@ -653,6 +659,7 @@ export default function AccountSettings() {
                           value={identityInfo.state} 
                           onChange={(e) => setIdentityInfo(prev => ({ ...prev, state: e.target.value }))}
                           placeholder="State"
+                          disabled={user?.role !== 'admin'}
                           className='rounded-lg border-slate-200' 
                         />
                       </div>
@@ -662,6 +669,7 @@ export default function AccountSettings() {
                           value={identityInfo.zipCode} 
                           onChange={(e) => setIdentityInfo(prev => ({ ...prev, zipCode: e.target.value }))}
                           placeholder="Zip code"
+                          disabled={user?.role !== 'admin'}
                           className='rounded-lg border-slate-200' 
                         />
                       </div>
@@ -671,6 +679,7 @@ export default function AccountSettings() {
                           value={identityInfo.phoneNumber} 
                           onChange={(e) => setIdentityInfo(prev => ({ ...prev, phoneNumber: e.target.value }))}
                           placeholder="Phone number"
+                          disabled={user?.role !== 'admin'}
                           className='rounded-lg border-slate-200' 
                         />
                       </div>

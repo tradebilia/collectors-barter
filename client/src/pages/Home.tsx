@@ -483,7 +483,7 @@ export default function Home() {
           ) : (
             <div className="space-y-0">
               <div className="grid gap-0 lg:grid-cols-[122px_minmax(0,1fr)] lg:grid-rows-[auto_1fr]">
-                <aside className="bg-[radial-gradient(circle_at_28%_22%,rgba(255,255,255,0.9),rgba(255,255,255,0.14)_28%,transparent_44%),linear-gradient(180deg,#1c47f3_0%,#4d2bf2_54%,#7b1cf7_100%)] px-2 py-4 text-white shadow-[0_18px_35px_rgba(64,39,183,0.35)] lg:row-span-2 lg:flex lg:flex-col lg:justify-between">
+                {isAuthenticated ? (<aside className="bg-[radial-gradient(circle_at_28%_22%,rgba(255,255,255,0.9),rgba(255,255,255,0.14)_28%,transparent_44%),linear-gradient(180deg,#1c47f3_0%,#4d2bf2_54%,#7b1cf7_100%)] px-2 py-4 text-white shadow-[0_18px_35px_rgba(64,39,183,0.35)] lg:row-span-2 lg:flex lg:flex-col lg:justify-between">
                   <div className="space-y-3 pt-0.5 font-serif text-[11px] italic leading-4 text-white/95">
                     <div className="pb-2 text-[9px] uppercase tracking-[0.2em] not-italic text-white/65">
                       Subscriber tools
@@ -503,7 +503,7 @@ export default function Home() {
                     <Link href="/watchlist" className="block transition hover:text-white/75">Watchlist</Link>
                   </div>
                   <div className="mt-4 hidden min-h-[225px] rounded-none bg-[radial-gradient(circle_at_top,rgba(84,190,255,0.4),transparent_42%),linear-gradient(180deg,#0a2958_0%,#153e78_48%,#3d4aa8_100%)] lg:block" />
-                </aside>
+                </aside>) : null}
 
                 <div className="bg-white px-3 py-3 lg:px-6 lg:py-3">
                   <h2 className="text-center font-serif text-[2.45rem] font-medium tracking-[-0.035em] text-[#2d241e] sm:text-[2.8rem]">Recently Added</h2>

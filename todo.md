@@ -944,12 +944,20 @@ The application is fully functional with all core features working correctly.
 - [x] Test signin functionality after fixing cookie issue
 
 
-## Account Settings Form Fix (In Progress)
+## Account Settings Form Fix (COMPLETED)
 
-- [ ] Update userProfiles schema to add separate address fields (street, city, state, zipCode, country)
-- [ ] Create and apply database migration for new address fields
-- [ ] Update AccountSettings form to use separate address fields
-- [ ] Update database queries to handle new address fields
-- [ ] Update mutations to save separate address fields
+- [x] Schema already has separate address fields (contactTown, contactState, contactZipCode, contactCountry)
+- [x] Database queries already return separate address fields
+- [x] Mutations already save separate address fields
+- [x] Fixed AccountSettings form to parse combined address strings and display only street portion
+- [x] Test form with rtavani account - all fields now display correctly
 - [ ] Test profile picture upload functionality
-- [ ] Test form with rtavani account to verify all fields display correctly
+- [ ] Fix profile picture upload to persist correctly
+
+
+## Account Settings Issues (New)
+
+- [ ] **Issue 1: Profile picture not displaying** - User uploaded profile picture during signup but it's not showing in account settings
+- [ ] **Issue 2: Identity fields should be read-only** - First name, last name, street address, town/city, state, zip code, email, phone should be read-only for non-admin users (verified during signup, prevent fraud)
+- [ ] **Issue 3: Add security question to signup** - Security question should be added during account setup, not just in account settings
+- [ ] **Issue 4: Preferred categories not persisting** - Categories selected during account setup are not showing as selected in account settings
