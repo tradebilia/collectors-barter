@@ -460,20 +460,31 @@ export default function Home() {
         <CategoryBar />
 
         <section className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 py-3 text-white border-y border-blue-700">
-          <div className="grid gap-0 text-center grid-cols-2 sm:grid-cols-5">
+          <div className="grid gap-0 grid-cols-2 sm:grid-cols-5">
             {[
-              ["👥", "Total Members", siteStatisticsQuery.data?.totalMembers ? `${siteStatisticsQuery.data.totalMembers}` : "0"],
-              ["📋", "Active Listings", siteStatisticsQuery.data?.totalItems ? `${siteStatisticsQuery.data.totalItems.toLocaleString()}` : "0"],
-              ["💰", "Total Items Value", siteStatisticsQuery.data?.totalValue ? `$${(siteStatisticsQuery.data.totalValue / 1000000).toFixed(1)}M` : "$0"],
-              ["🤝", "Successful Trades", siteStatisticsQuery.data?.totalTrades ? `${siteStatisticsQuery.data.totalTrades}` : "0"],
-              ["📈", "Member Growth", "+15%"],
-            ].map(([icon, label, value]) => (
-              <div key={label as string} className="flex flex-col items-center justify-center px-2 py-2 border-r border-white/20 last:border-r-0 transition-all duration-500">
-                <p className="text-xl">{icon as string}</p>
-                <p className="text-xs font-semibold leading-tight mt-0.5">{value as string}</p>
-                <p className="text-[10px] leading-tight text-white/80 mt-0.5">{label as string}</p>
-              </div>
-            ))}
+              ["users", "Total Members", siteStatisticsQuery.data?.totalMembers ? `${siteStatisticsQuery.data.totalMembers}` : "0"],
+              ["list", "Active Listings", siteStatisticsQuery.data?.totalItems ? `${siteStatisticsQuery.data.totalItems.toLocaleString()}` : "0"],
+              ["dollar", "Total Items Value", siteStatisticsQuery.data?.totalValue ? `$${(siteStatisticsQuery.data.totalValue / 1000000).toFixed(1)}M` : "$0"],
+              ["handshake", "Successful Trades", siteStatisticsQuery.data?.totalTrades ? `${siteStatisticsQuery.data.totalTrades}` : "0"],
+              ["trending", "Member Growth", "+15%"],
+            ].map(([iconType, label, value]) => {
+              const iconMap: Record<string, React.ReactNode> = {
+                users: <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-2a6 6 0 0112 0v2zm0 0h6v-2a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>,
+                list: <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>,
+                dollar: <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
+                handshake: <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1m2-1v2.5M9 7l-2 1M7 7l2-1m-2 1v2.5" /></svg>,
+                trending: <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>,
+              };
+              return (
+                <div key={label as string} className="flex items-center gap-3 px-3 py-2 border-r border-white/20 last:border-r-0 transition-all duration-500">
+                  <div className="flex-shrink-0 text-white">{iconMap[iconType as string]}</div>
+                  <div className="flex flex-col text-left">
+                    <p className="text-xs leading-tight text-white/80">{label as string}</p>
+                    <p className="text-sm font-semibold leading-tight">{value as string}</p>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </section>
 
