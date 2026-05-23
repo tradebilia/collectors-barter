@@ -12,24 +12,15 @@ import { getLoginUrl } from "@/const";
 import { getTradebiliaCategoryTheme, getTradebiliaCategoryLabel } from "@/lib/tradebilia";
 import { Heart, Loader2, MessageCircleMore, Menu, Search, Star, UserRound } from "lucide-react";
 import { TopRightIcons } from "@/components/TopRightIcons";
+import { CategoryBar } from "@/components/CategoryBar";
 import { useMemo, useState } from "react";
-import { Link, useRoute } from "wouter";
+import { Link, useRoute, useLocation } from "wouter";
 import { toast } from "sonner";
+import { ArrowLeft } from "lucide-react";
 
 const TRADEBILIA_LOGO_URL = "/manus-storage/Tradebilialogo_886a61b7.webp";
 
-const categoryLinks = [
-  { value: "comics", label: "Comics" },
-  { value: "sports_cards", label: "Sports Cards" },
-  { value: "vintage_toys", label: "Vintage Toys" },
-  { value: "video_games", label: "Video Games" },
-  { value: "stamps", label: "Stamps" },
-  { value: "coins", label: "Coins" },
-  { value: "pokemon", label: "Pokemon" },
-  { value: "movies", label: "Movies" },
-  { value: "autographs", label: "Autographs" },
-  { value: "disney_pins", label: "Disney Pins" },
-] as const;
+
 
 function initials(name: string) {
   return (
@@ -138,27 +129,19 @@ export default function ItemDetail() {
     <div className={`min-h-screen ${pageBackgroundClass}`}>
       <header className="border-b border-white/10 bg-black/40 backdrop-blur-md">
         <div className="px-4 py-4 lg:px-8">
-          <div className="flex flex-wrap items-center gap-4">
-            <Link href="/" className="text-2xl font-semibold tracking-tight text-white">Search</Link>
-            <div className="flex min-w-[18rem] flex-1 items-center rounded-[1.25rem] border border-white/10 bg-white/8 px-4 py-3">
-              <Search className="mr-3 h-4 w-4 text-white/60" />
-              <span className="text-white/60">Search collectibles, members, and categories</span>
-            </div>
+          <div className="flex items-center justify-between gap-4">
+            <Link
+              href={`/category/${listing.category}`}
+              className="flex items-center gap-2 rounded-lg border border-white/30 bg-white/10 px-3 py-2 text-sm font-semibold text-white transition hover:bg-white/20"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back
+            </Link>
             <TopRightIcons className="flex items-center gap-3 md:gap-4" iconColor="text-white/70" />
           </div>
-          <nav className="mt-4 grid overflow-hidden rounded-[1.5rem] border border-white/10 bg-white/95 text-slate-900 md:grid-cols-5 xl:grid-cols-10">
-            {categoryLinks.map(category => (
-              <Link
-                key={category.value}
-                href={`/category/${category.value}`}
-                className={`border-b border-r border-slate-200/80 px-4 py-4 text-center text-sm font-semibold uppercase tracking-[0.14em] transition hover:bg-slate-100 ${listing.category === category.value ? "bg-slate-900 text-white" : ""}`}
-              >
-                {category.label}
-              </Link>
-            ))}
-          </nav>
         </div>
       </header>
+      <CategoryBar />
 
       <main className="pb-16">
         <section className="border-b border-white/10 bg-[linear-gradient(180deg,rgba(7,7,48,0.18)_0%,rgba(7,7,48,0.55)_100%)] px-4 py-10 lg:px-8">

@@ -963,3 +963,14 @@ The application is fully functional with all core features working correctly.
 - [x] **Issue 3: Add security question to signup** - Security question should be added during account setup, not just in account settings
 - [x] **Issue 4: Preferred categories not persisting** - Categories selected during account setup are not showing as selected in account settings
 - [x] **Issue 5: Add Town/City field to account setup** - Town/City field was missing from Step 1 of account setup form
+
+
+## ItemDetail Page Navigation Improvements (May 23, 2026)
+
+- [x] Remove search bar from ItemDetail page header
+- [x] Replace custom category navigation with reusable CategoryBar component
+- [x] Add Home button to ItemDetail page via CategoryBar
+- [x] Add Back button to ItemDetail page that navigates to category page
+- [x] Test navigation: Back button correctly returns to item's category page
+- [x] Test navigation: Home button navigates to homepage
+- [x] Test navigation: All 10 categories are accessible from ItemDetail page
