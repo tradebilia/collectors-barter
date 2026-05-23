@@ -15,6 +15,9 @@ export function TopRightIcons({ className = "flex items-center gap-3 md:gap-4", 
   const unreadQuery = trpc.auth.unreadCounts.useQuery(undefined, {
     enabled: !!user,
   });
+  const dashboardQuery = trpc.market.dashboard.useQuery(undefined, {
+    enabled: !!user,
+  });
 
   if (!user) {
     return null;
@@ -22,13 +25,14 @@ export function TopRightIcons({ className = "flex items-center gap-3 md:gap-4", 
 
   const unreadMessages = typeof unreadQuery.data?.unreadMessages === 'number' ? unreadQuery.data.unreadMessages : 0;
   const unreadNotifications = typeof unreadQuery.data?.unreadNotifications === 'number' ? unreadQuery.data.unreadNotifications : 0;
+  const userAvatarUrl = dashboardQuery.data?.profile?.avatarUrl || undefined;
 
   return (
     <div className={className}>
       {/* Avatar */}
       <Link href={`/profile/${user.id}`} title="Your Profile" className="transition hover:opacity-80">
         <Avatar className="h-6 w-6 border border-white/30 cursor-pointer hover:border-white/60 transition">
-          <AvatarImage src={undefined} alt={user.name ?? "User"} />
+          <AvatarImage src={userAvatarUrl} alt={user.name ?? "User"} />
           <AvatarFallback className="bg-[#7f31ff] text-white text-[10px] font-semibold">
             {getAvatarInitials({ firstName: (user as any).firstName, lastName: (user as any).lastName, displayName: user.name ?? "User" })}
           </AvatarFallback>
