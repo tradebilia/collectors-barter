@@ -13,13 +13,14 @@ import { getTradebiliaCategoryTheme, getTradebiliaCategoryLabel } from "@/lib/tr
 import { Heart, Loader2, MessageCircleMore, Menu, Search, Star, UserRound } from "lucide-react";
 import { TopRightIcons } from "@/components/TopRightIcons";
 import { CategoryBar } from "@/components/CategoryBar";
+import { TopBar } from "@/components/TopBar";
 import { useMemo, useState } from "react";
 import { Link, useRoute, useLocation } from "wouter";
 import { toast } from "sonner";
 import { ArrowLeft } from "lucide-react";
 
-const TRADEBILIA_LOGO_URL = "/manus-storage/tradebilia_final_transparent_443f029c.svg";
-const HERO_BACKGROUND_URL = "/manus-storage/hero-background-fullwidth_e851e7cd.png";
+const TRADEBILIA_LOGO_URL = "/manus-storage/tradebilia-longform-no-navy-clean_d2f04453.png";
+
 
 const getCategoryWallpaperUrl = (category: string): string => {
   switch(category) {
@@ -154,15 +155,11 @@ export default function ItemDetail() {
   const pageBackgroundClass = categoryTheme?.pageClassName ?? "bg-[radial-gradient(circle_at_top,#1c2468_0%,#0b0a22_65%)] text-white";
 
   return (
-    <div className={`min-h-screen ${pageBackgroundClass}`}>
-      <header className="border-b border-white/10 bg-black/40 backdrop-blur-md">
-        <div className="px-4 py-4 lg:px-8">
-          <div className="flex items-center justify-end gap-4">
-            <TopRightIcons className="flex items-center gap-3 md:gap-4" iconColor="text-white/70" />
-          </div>
-        </div>
-      </header>
-      <CategoryBar />
+    <div className="min-h-screen bg-[#f7f4ee] text-foreground">
+      <TopBar
+        logoUrl={TRADEBILIA_LOGO_URL}
+        searchPlaceholder="Search Tradebilia..."
+      />
 
       <main className="pb-16">
         <section className="relative w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden bg-[#00143A] text-white" style={{
@@ -184,6 +181,8 @@ export default function ItemDetail() {
             </div>
           </div>
         </section>
+
+        <CategoryBar />
 
         <section className="px-4 py-10 lg:px-8 border-t border-white/10">
           <div className="mx-auto max-w-6xl mb-8">
