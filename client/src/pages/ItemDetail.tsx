@@ -171,12 +171,12 @@ export default function ItemDetail() {
           filter: ['video_games', 'coins', 'stamps', 'vintage_toys', 'autographs', 'movies', 'comics', 'pokemon', 'disney_pins'].includes(listing.category) ? 'contrast(1.2) saturate(1.1)' : 'none'
         }}>
           <div className="absolute inset-0 bg-black/60"></div>
-          <div className="container relative flex h-48 items-center justify-center py-0 sm:h-56 sm:py-0 lg:h-64 lg:py-0">
-            <div className="flex w-full max-w-4xl items-center justify-center">
+          <div className="container relative flex h-64 items-center justify-center py-0 sm:h-72 sm:py-0 lg:h-80 lg:py-0">
+            <div className="flex w-full max-w-5xl items-center justify-center px-4">
               <img
                 src={TRADEBILIA_LOGO_URL}
                 alt="Tradebilia"
-                className="h-auto w-4/5 max-w-sm"
+                className="h-auto w-full max-h-64 sm:max-h-72 lg:max-h-80"
               />
             </div>
           </div>
