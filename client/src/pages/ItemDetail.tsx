@@ -157,14 +157,7 @@ export default function ItemDetail() {
     <div className={`min-h-screen ${pageBackgroundClass}`}>
       <header className="border-b border-white/10 bg-black/40 backdrop-blur-md">
         <div className="px-4 py-4 lg:px-8">
-          <div className="flex items-center justify-between gap-4">
-            <Link
-              href={`/category/${listing.category}`}
-              className="flex items-center gap-2 rounded-lg border border-white/30 bg-white/10 px-3 py-2 text-sm font-semibold text-white transition hover:bg-white/20"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Back
-            </Link>
+          <div className="flex items-center justify-end gap-4">
             <TopRightIcons className="flex items-center gap-3 md:gap-4" iconColor="text-white/70" />
           </div>
         </div>
