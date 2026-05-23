@@ -951,8 +951,9 @@ The application is fully functional with all core features working correctly.
 - [x] Mutations already save separate address fields
 - [x] Fixed AccountSettings form to parse combined address strings and display only street portion
 - [x] Test form with rtavani account - all fields now display correctly
-- [ ] Test profile picture upload functionality
-- [ ] Fix profile picture upload to persist correctly
+- [x] Test profile picture upload functionality
+- [x] Fix profile picture upload to persist correctly
+- [x] Display user avatar in top bar from profile picture
 
 
 ## Account Settings Issues (New)
