@@ -18,7 +18,8 @@ import { Link, useRoute, useLocation } from "wouter";
 import { toast } from "sonner";
 import { ArrowLeft } from "lucide-react";
 
-const TRADEBILIA_LOGO_URL = "/manus-storage/Tradebilialogo_886a61b7.webp";
+const TRADEBILIA_LOGO_URL = "/manus-storage/tradebilia_final_transparent_443f029c.svg";
+const HERO_BACKGROUND_URL = "/manus-storage/hero-background-fullwidth_e851e7cd.png";
 
 
 
@@ -144,9 +145,21 @@ export default function ItemDetail() {
       <CategoryBar />
 
       <main className="pb-16">
-        <section className="border-b border-white/10 bg-[linear-gradient(180deg,rgba(7,7,48,0.18)_0%,rgba(7,7,48,0.55)_100%)] px-4 py-10 lg:px-8">
-          <div className="mx-auto max-w-6xl">
-            <img src={TRADEBILIA_LOGO_URL} alt="Tradebilia" className="h-auto w-full max-w-[44rem]" />
+        <section className="relative w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden bg-[#00143A] text-white">
+          <div className="absolute inset-0 opacity-20" style={{
+            backgroundImage: `url(${HERO_BACKGROUND_URL})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat'
+          }} />
+          <div className="container relative flex h-64 items-center justify-center py-0 sm:h-72 sm:py-0 lg:h-80 lg:py-0">
+            <div className="flex w-full max-w-6xl items-center justify-center -ml-32">
+              <img
+                src={TRADEBILIA_LOGO_URL}
+                alt="Tradebilia"
+                className="h-auto w-full"
+              />
+            </div>
           </div>
         </section>
 
