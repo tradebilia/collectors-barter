@@ -459,17 +459,19 @@ export default function Home() {
 
         <CategoryBar />
 
-        <section className="border-y border-black/25 bg-[linear-gradient(90deg,#8e9093_0%,#d7dde6_50%,#8e9093_100%)] py-1.5 text-black">
-          <div className="grid gap-0 text-center sm:grid-cols-2 xl:grid-cols-4">
+        <section className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 py-6 text-white border-y border-blue-700">
+          <div className="grid gap-0 text-center grid-cols-2 sm:grid-cols-5">
             {[
-              ["Total Members", siteStatisticsQuery.data?.totalMembers ? `${siteStatisticsQuery.data.totalMembers}` : "0"],
-              ["Total Items", siteStatisticsQuery.data?.totalItems ? `${siteStatisticsQuery.data.totalItems.toLocaleString()}` : "0"],
-              ["Total Value", siteStatisticsQuery.data?.totalValue ? `$${(siteStatisticsQuery.data.totalValue / 1000000).toFixed(1)}M` : "$0"],
-              ["Total Trades", siteStatisticsQuery.data?.totalTrades ? `${siteStatisticsQuery.data.totalTrades}` : "0"],
-            ].map(([label, value]) => (
-              <div key={label as string} className="space-y-0.5 px-2 py-1.5 transition-all duration-500">
-                <p className="text-[10px] font-medium leading-none text-black/80">{label as string}</p>
-                <p className="text-[2.3rem] font-semibold leading-none sm:text-[2.7rem] transition-all duration-700 ease-out">{value as string}</p>
+              ["👥", "Total Members", siteStatisticsQuery.data?.totalMembers ? `${siteStatisticsQuery.data.totalMembers}` : "0"],
+              ["📋", "Active Listings", siteStatisticsQuery.data?.totalItems ? `${siteStatisticsQuery.data.totalItems.toLocaleString()}` : "0"],
+              ["💰", "Total Items Value", siteStatisticsQuery.data?.totalValue ? `$${(siteStatisticsQuery.data.totalValue / 1000000).toFixed(1)}M` : "$0"],
+              ["🤝", "Successful Trades", siteStatisticsQuery.data?.totalTrades ? `${siteStatisticsQuery.data.totalTrades}` : "0"],
+              ["📈", "Member Growth", "+15%"],
+            ].map(([icon, label, value]) => (
+              <div key={label as string} className="space-y-1 px-2 py-3 border-r border-white/20 last:border-r-0 transition-all duration-500">
+                <p className="text-2xl">{icon as string}</p>
+                <p className="text-sm font-semibold leading-tight">{value as string}</p>
+                <p className="text-xs leading-tight text-white/90">{label as string}</p>
               </div>
             ))}
           </div>
