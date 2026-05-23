@@ -150,7 +150,17 @@ export default function ItemDetail() {
           </div>
         </section>
 
-        <section className="px-4 py-10 lg:px-8">
+        <section className="px-4 py-10 lg:px-8 border-t border-white/10">
+          <div className="mx-auto max-w-6xl mb-8">
+            <button
+              onClick={() => window.location.href = `/category/${listing.category}`}
+              className="flex items-center gap-3 px-6 py-3 rounded-lg bg-white border border-white text-black hover:bg-gray-100 hover:border-gray-100 transition text-base font-semibold"
+              title="Back to category"
+            >
+              <ArrowLeft className="w-6 h-6" />
+              <span>Back to {getTradebiliaCategoryLabel(listing.category)}</span>
+            </button>
+          </div>
           <div className="mx-auto grid max-w-6xl gap-8 xl:grid-cols-[1.02fr_0.98fr]">
             <div>
               <div className="overflow-hidden rounded-[2rem] border border-white/10 bg-black/20 shadow-[0_40px_90px_rgba(0,0,0,0.35)]">
