@@ -323,7 +323,7 @@ export default function CategoryPage() {
 
       <CategoryBar />
 
-      <main className="flex">
+      <main className="flex bg-transparent">
         {/* Left sidebar filters */}
         <aside className={`w-80 border-r border-current/10 bg-current/5 p-4 ${theme.panelClassName}`}>
           <div className="flex items-center gap-2">
