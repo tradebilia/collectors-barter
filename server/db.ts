@@ -188,6 +188,19 @@ export async function getMarketplaceFeed(
 ) {
   const db = await requireDb();
 
+  // Build where clauses for filtering
+  const whereClauses = [eq(listings.status, "active")];
+  if (filters.category) {
+    whereClauses.push(eq(listings.category, filters.category));
+  }
+  if (filters.condition) {
+    whereClauses.push(eq(listings.condition, filters.condition));
+  }
+  const keyword = filters.keyword?.trim();
+  if (keyword) {
+    whereClauses.push(like(listings.title, `%${keyword}%`));
+  }
+
   const listingRows = await db
     .select({
       id: listings.id,
@@ -209,6 +222,7 @@ export async function getMarketplaceFeed(
       )`,
     })
     .from(listings)
+    .where(and(...whereClauses))
     .orderBy(desc(listings.createdAt))
     .limit(100);
 
@@ -225,18 +239,6 @@ export async function getMarketplaceFeed(
       },
       listings: [],
     };
-  }
-
-  const whereClauses = [eq(listings.status, "active")];
-  if (filters.category) {
-    whereClauses.push(eq(listings.category, filters.category));
-  }
-  if (filters.condition) {
-    whereClauses.push(eq(listings.condition, filters.condition));
-  }
-  const keyword = filters.keyword?.trim();
-  if (keyword) {
-    whereClauses.push(like(listings.title, `%${keyword}%`));
   }
 
   const statsRows = await Promise.all([
