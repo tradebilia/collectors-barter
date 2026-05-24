@@ -155,7 +155,7 @@ export default function ItemDetail() {
   const pageBackgroundClass = categoryTheme?.pageClassName ?? "bg-[radial-gradient(circle_at_top,#1c2468_0%,#0b0a22_65%)] text-white";
 
   return (
-    <div className="min-h-screen bg-[#f7f4ee] text-foreground">
+    <div className={`min-h-screen text-foreground ${pageBackgroundClass}`}>
       <TopBar
         logoUrl={TRADEBILIA_LOGO_URL}
         searchPlaceholder="Search Tradebilia..."
