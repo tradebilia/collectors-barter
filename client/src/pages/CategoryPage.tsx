@@ -262,7 +262,7 @@ export default function CategoryPage() {
           <div className={`absolute inset-0 ${slug === 'movies' ? 'bg-black/10' : 'bg-black/30'}`}></div>
           <div className="container relative py-6 lg:py-8 z-10">
             <div className="max-w-4xl mx-auto text-center">
-              <p className="mt-5 text-xs font-semibold uppercase tracking-[0.36em] opacity-80">{theme.eyebrow}</p>
+              <p className="mt-2 text-xs font-semibold uppercase tracking-[0.36em] opacity-80">{theme.eyebrow}</p>
               <div className="mt-3 leading-none">
                 <h1 className="max-w-full mx-auto text-6xl sm:text-7xl lg:text-8xl" style={{
                   fontFamily: getCategoryFont(slug),
@@ -279,13 +279,12 @@ export default function CategoryPage() {
                   justifyContent: "center"
                 }}>
                   {slug === "disney_pins" ? (
-                    <>
-                      <span style={{ fontFamily: "Waltograph, cursive", marginRight: "0.2em" }}>DISNEY</span>
-                      <span>PINS</span>
-                    </>
+                    <img src="/manus-storage/DisneyPins_b2a9e148.png" alt="Disney Pins" style={{ maxHeight: "450px", width: "auto", objectFit: "contain", marginTop: "20px" }} />
+                  ) : slug === "pokemon" ? (
+                    <img src="/manus-storage/Pokemon_bf82cd71.png" alt="Pokemon" style={{ maxHeight: "300px", width: "auto", objectFit: "contain", marginTop: "20px" }} />
                   ) : slug === "sports_cards" ? "SPORTS CARD" : categoryLabel.toUpperCase()}
                 </h1>
-                <div className="mt-4 h-px bg-white/50 mx-auto" style={{ maxWidth: "100%", width: "100%" }}></div>
+                <div className="mt-1 h-px bg-white/50 mx-auto" style={{ maxWidth: "100%", width: "100%" }}></div>
                 <p className="mt-2 text-3xl sm:text-4xl lg:text-5xl font-black uppercase tracking-[0.1em]" style={{
                   fontFamily: getCategoryFont(slug),
                   fontStyle: "italic",

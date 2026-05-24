@@ -995,3 +995,8 @@ The application is fully functional with all core features working correctly.
 - [x] Increase wallpaper transparency in ItemDetail hero for better text readability
 - [x] Fix category filtering bug - category pages now only show items from their category
 - [x] Apply category-specific background colors to entire ItemDetail page
+- [x] Fix homepage carousel auto-scroll speed to be visually noticeable (increased from 0.5 to 2 pixels per frame)
+- [x] Increase category bar font size for better readability
+- [x] Replace Disney Pins category page title with custom logo image at 450px height
+- [x] Move Disney Pins logo closer to horizontal divider line
+- [x] Add Pokemon category page title with official Pokemon logo at 300px height
