@@ -748,6 +748,7 @@ This ensures users can fill in all category-specific details when adding items t
 
 - [x] Wire up tRPC sign-up/sign-in procedures to forms (already implemented)
 - [x] Wire up tRPC OTP verification procedures (infrastructure ready)
+- [x] Fix homepage carousel auto-scroll speed to be visually noticeable (increased from 0.5 to 2 pixels per frame)
 - [ ] Integrate SendGrid for email OTP delivery (requires API key) - DEFERRED
 - [ ] Integrate Twilio for SMS OTP delivery (requires API key) - DEFERRED
 - [x] Implement search functionality with real-time filtering
@@ -974,3 +975,23 @@ The application is fully functional with all core features working correctly.
 - [x] Test navigation: Back button correctly returns to item's category page
 - [x] Test navigation: Home button navigates to homepage
 - [x] Test navigation: All 10 categories are accessible from ItemDetail page
+
+
+## ItemDetail Page Improvements (Session 2)
+
+- [x] Add Home button to CategoryBar on ItemDetail pages
+- [x] Add Back button to ItemDetail pages for category navigation
+- [x] Remove search bar from ItemDetail page header
+- [x] Update ItemDetail hero section to match homepage hero (with Tradebilia logo and collectibles background)
+- [x] Move CategoryBar below hero section on ItemDetail pages
+- [x] Add TopBar component to ItemDetail pages for consistent navigation
+- [x] Reduce Tradebilia logo size in ItemDetail hero to prevent clipping
+- [x] Remove duplicate back button from ItemDetail page header
+- [x] Remove tabbed interface from ItemDetail pages
+- [x] Display all item information (description, owner's notes, similar items) in single continuous view
+- [x] Remove Card containers around ItemDetail sections for cleaner layout
+- [x] Update ItemDetail hero section to use category-specific wallpaper backgrounds
+- [x] Remove old generic collectibles collage overlay from ItemDetail hero
+- [x] Increase wallpaper transparency in ItemDetail hero for better text readability
+- [x] Fix category filtering bug - category pages now only show items from their category
+- [x] Apply category-specific background colors to entire ItemDetail page

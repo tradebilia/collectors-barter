@@ -63,7 +63,7 @@ export function RecentlyAddedCarousel({
     if (!scrollContainerRef.current || displayItems.length === 0) return;
 
     const container = scrollContainerRef.current;
-    const scrollSpeed = 0.5; // pixels per frame (slower for smoother feel with more items)
+    const scrollSpeed = 2; // pixels per frame (increased for more visible scrolling)
     const frameRate = 60; // frames per second
 
     const scroll = () => {
