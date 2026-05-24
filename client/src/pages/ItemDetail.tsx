@@ -2,7 +2,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 
@@ -282,67 +282,61 @@ export default function ItemDetail() {
         </section>
 
         <section className="px-4 lg:px-8">
-          <div className="mx-auto max-w-6xl space-y-8">
+          <div className="mx-auto max-w-6xl space-y-8 text-white">
             {/* Description Section */}
-            <Card className="rounded-[2rem] border-white/10 bg-black/20 text-white shadow-[0_30px_70px_rgba(0,0,0,0.28)]">
-              <CardContent className="space-y-6 p-8">
-                <div>
-                  <p className="text-sm uppercase tracking-[0.3em] text-white/45">Description</p>
-                  <h2 className="mt-4 text-4xl font-semibold tracking-tight">{listing.title}</h2>
+            <div className="space-y-6">
+              <div>
+                <p className="text-sm uppercase tracking-[0.3em] text-white/45">Description</p>
+                <h2 className="mt-4 text-4xl font-semibold tracking-tight">{listing.title}</h2>
+              </div>
+              <p className="max-w-4xl text-lg leading-8 text-white/82">{listing.description}</p>
+              <div className="grid gap-4 md:grid-cols-3">
+                <div className="rounded-[1.5rem] border border-white/10 bg-white/5 p-5">
+                  <p className="text-sm uppercase tracking-[0.2em] text-white/45">Category</p>
+                  <p className="mt-3 text-xl font-medium">{getTradebiliaCategoryLabel(listing.category)}</p>
                 </div>
-                <p className="max-w-4xl text-lg leading-8 text-white/82">{listing.description}</p>
-                <div className="grid gap-4 md:grid-cols-3">
-                  <div className="rounded-[1.5rem] border border-white/10 bg-white/5 p-5">
-                    <p className="text-sm uppercase tracking-[0.2em] text-white/45">Category</p>
-                    <p className="mt-3 text-xl font-medium">{getTradebiliaCategoryLabel(listing.category)}</p>
-                  </div>
-                  <div className="rounded-[1.5rem] border border-white/10 bg-white/5 p-5">
-                    <p className="text-sm uppercase tracking-[0.2em] text-white/45">Condition</p>
-                    <p className="mt-3 text-xl font-medium">{listing.condition}</p>
-                  </div>
-                  <div className="rounded-[1.5rem] border border-white/10 bg-white/5 p-5">
-                    <p className="text-sm uppercase tracking-[0.2em] text-white/45">Collector</p>
-                    <p className="mt-3 text-xl font-medium">{listing.ownerProfile.displayName}</p>
-                  </div>
+                <div className="rounded-[1.5rem] border border-white/10 bg-white/5 p-5">
+                  <p className="text-sm uppercase tracking-[0.2em] text-white/45">Condition</p>
+                  <p className="mt-3 text-xl font-medium">{listing.condition}</p>
                 </div>
-              </CardContent>
-            </Card>
+                <div className="rounded-[1.5rem] border border-white/10 bg-white/5 p-5">
+                  <p className="text-sm uppercase tracking-[0.2em] text-white/45">Collector</p>
+                  <p className="mt-3 text-xl font-medium">{listing.ownerProfile.displayName}</p>
+                </div>
+              </div>
+            </div>
 
             {/* Owner's Notes Section */}
-            <Card className="rounded-[2rem] border-white/10 bg-black/20 text-white shadow-[0_30px_70px_rgba(0,0,0,0.28)]">
-              <CardContent className="p-8">
-                <p className="text-sm uppercase tracking-[0.3em] text-white/45">Owner's Notes</p>
-                <p className="mt-5 max-w-4xl text-lg leading-8 text-white/82">{listing.description}</p>
-              </CardContent>
-            </Card>
+            <div>
+              <p className="text-sm uppercase tracking-[0.3em] text-white/45">Owner's Notes</p>
+              <p className="mt-5 max-w-4xl text-lg leading-8 text-white/82">{listing.description}</p>
+            </div>
 
             {/* Similar Items Section */}
-            <Card className="rounded-[2rem] border-white/10 bg-black/20 text-white shadow-[0_30px_70px_rgba(0,0,0,0.28)]">
-              <CardContent className="p-8">
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <p className="text-sm uppercase tracking-[0.3em] text-white/45">Similar Items</p>
-                    <h2 className="mt-4 text-4xl font-semibold tracking-tight">More from {getTradebiliaCategoryLabel(listing.category)}</h2>
-                  </div>
+            <div>
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-sm uppercase tracking-[0.3em] text-white/45">Similar Items</p>
+                  <h2 className="mt-4 text-4xl font-semibold tracking-tight">More from {getTradebiliaCategoryLabel(listing.category)}</h2>
                 </div>
-                <ScrollArea className="mt-8 w-full">
-                  <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-                    {similarListings.map(item => (
-                      <Link key={item.id} href={`/listings/${item.id}`} className="block overflow-hidden rounded-[1.5rem] border border-white/10 bg-white/5 transition hover:-translate-y-1 hover:bg-white/10">
-                        <div className="aspect-[0.82] bg-black/20">
-                          <img src={resolveTradebiliaListingImage({ title: item.title, category: item.category, primaryPhotoUrl: item.primaryPhotoUrl })} alt={item.title} className="h-full w-full object-cover" />
-                        </div>
-                        <div className="space-y-3 p-5">
-                          <p className="text-xs uppercase tracking-[0.2em] text-white/45">{getTradebiliaCategoryLabel(item.category)}</p>
-                          <h3 className="text-xl font-semibold text-white">{item.title}</h3>
-                          <p className="text-sm text-white/65">{item.owner.displayName}</p>
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
-                </ScrollArea>
-              </CardContent>
-            </Card>
+              </div>
+              <ScrollArea className="mt-8 w-full">
+                <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+                  {similarListings.map(item => (
+                    <Link key={item.id} href={`/listings/${item.id}`} className="block overflow-hidden rounded-[1.5rem] border border-white/10 bg-white/5 transition hover:-translate-y-1 hover:bg-white/10">
+                      <div className="aspect-[0.82] bg-black/20">
+                        <img src={resolveTradebiliaListingImage({ title: item.title, category: item.category, primaryPhotoUrl: item.primaryPhotoUrl })} alt={item.title} className="h-full w-full object-cover" />
+                      </div>
+                      <div className="space-y-3 p-5">
+                        <p className="text-xs uppercase tracking-[0.2em] text-white/45">{getTradebiliaCategoryLabel(item.category)}</p>
+                        <h3 className="text-xl font-semibold text-white">{item.title}</h3>
+                        <p className="text-sm text-white/65">{item.owner.displayName}</p>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </ScrollArea>
+            </div>
           </div>
         </section>
       </main>
