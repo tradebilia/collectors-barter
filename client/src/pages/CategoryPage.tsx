@@ -273,9 +273,9 @@ export default function CategoryPage() {
                   height: "80px",
                   whiteSpace: "nowrap",
                   display: "flex",
-                  alignItems: slug === "pokemon" || slug === "disney_pins" ? "center" : slug === "stamps" ? "center" : "flex-start",
+                  alignItems: slug === "pokemon" || slug === "disney_pins" ? "center" : slug === "stamps" ? "center" : slug === "comics" ? "center" : "flex-start",
                   justifyContent: "center",
-                  paddingTop: slug === "pokemon" || slug === "disney_pins" ? "0" : "20px",
+                  paddingTop: slug === "pokemon" || slug === "disney_pins" ? "0" : slug === "comics" ? "-10px" : "20px",
                   position: "relative",
                   zIndex: 50
                 }}>
