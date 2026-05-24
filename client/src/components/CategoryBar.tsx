@@ -9,7 +9,7 @@ export function CategoryBar() {
   const isHomePage = useRoute("/")[0];
 
   return (
-    <nav className="relative z-10 border-b border-white/10 bg-black">
+    <nav className="relative z-0 border-b border-white/10 bg-black">
       <div className="flex w-full overflow-x-auto">
         <Link
           href="/"

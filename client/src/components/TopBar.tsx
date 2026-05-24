@@ -40,7 +40,7 @@ export function TopBar({
   };
 
   return (
-    <div className="border-b border-white/10 bg-black">
+    <div className="border-b border-white/10 bg-black relative z-0">
       <div className="flex items-center justify-between gap-4 pl-2 pr-4 py-3">
         {/* Logo on left */}
         <div className="flex-shrink-0">
