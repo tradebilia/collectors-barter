@@ -16,7 +16,7 @@ import { FormEvent, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Link } from "wouter";
 
-const TRADEBILIA_LOGO_URL = "/manus-storage/Tradebilialogo_886a61b7.webp";
+const TRADEBILIA_LOGO_URL = "/manus-storage/ReportaUser_2c43c30e.svg";
 
 const categoryLinks = [
   ["Comics", "comics"],
@@ -104,19 +104,7 @@ export default function ReportUser() {
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,rgba(73,125,255,0.14),transparent_30%),linear-gradient(180deg,#050814_0%,#0b1220_32%,#111827_100%)] text-white">
       <header className="border-b border-white/10 bg-black">
-        <div className="flex flex-wrap items-center gap-2 px-4 py-2 sm:px-6">
-          <Link href="/" className="rounded-lg border border-white/30 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-white/20">
-            Home
-          </Link>
-        </div>
         <div className="flex flex-wrap items-center gap-4 px-4 py-2 sm:px-6">
-          <div className="flex items-center gap-3">
-            <span className="font-['Oswald'] text-[2.15rem] font-semibold leading-none tracking-[-0.05em] text-white sm:text-[2.45rem]">Search</span>
-            <div className="relative hidden min-w-[260px] sm:block">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
-              <Input className="h-9 rounded-sm border-0 bg-white pl-10 pr-3 text-sm text-slate-950" placeholder="Search..." />
-            </div>
-          </div>
           <TopRightIcons className="ml-auto flex items-center gap-3 md:gap-4" iconColor="text-white/85" />
         </div>
         <nav className="grid grid-cols-2 border-t border-white/10 bg-white text-center text-[11px] font-semibold text-black sm:grid-cols-5 lg:grid-cols-10">
