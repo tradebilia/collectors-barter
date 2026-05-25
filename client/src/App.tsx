@@ -28,6 +28,7 @@ import { ForgotPassword } from "./pages/ForgotPassword";
 import { ProfileCompletion } from "./pages/ProfileCompletion";
 import { SearchResults } from "./pages/SearchResults";
 import AdminDashboard from "./pages/AdminDashboard";
+import { AnimatedDemo } from "./pages/AnimatedDemo";
 
 function Router() {
   return (
@@ -98,6 +99,7 @@ function Router() {
         </ProtectedRoute>
       </Route>
       <Route path="/category/:slug" component={CategoryPage} />
+      <Route path="/animated-demo" component={AnimatedDemo} />
       <Route path="/listings/:listingId" component={ItemDetail} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
