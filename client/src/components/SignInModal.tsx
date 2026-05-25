@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -20,6 +21,14 @@ export function SignInModal({ isOpen, onClose }: SignInModalProps) {
   const queryClient = useQueryClient();
   const utils = trpc.useUtils();
   const signinMutation = trpc.auth.signin.useMutation();
+  const formRef = useRef<HTMLDivElement>(null);
+
+  // Reset scroll position when modal opens to ensure heading is visible
+  useEffect(() => {
+    if (isOpen && formRef.current) {
+      formRef.current.scrollTop = 0;
+    }
+  }, [isOpen]);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,7 +56,7 @@ export function SignInModal({ isOpen, onClose }: SignInModalProps) {
 
   if (!isOpen) return null;
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[9999] flex items-center justify-center">
       {/* Backdrop */}
       <div
@@ -57,10 +66,10 @@ export function SignInModal({ isOpen, onClose }: SignInModalProps) {
 
       {/* Modal */}
       <Card className="relative z-[10000] w-full max-w-sm bg-white shadow-lg rounded-lg">
-        <div className="p-6 flex flex-col max-h-[90vh]">
+        <div ref={formRef} className="p-6 flex flex-col max-h-[90vh] overflow-y-auto">
           <h2 className="text-2xl font-bold mb-6 flex-shrink-0">Sign In</h2>
 
-          <form onSubmit={handleSignIn} className="space-y-4 overflow-y-auto flex-1">
+          <form onSubmit={handleSignIn} className="space-y-4 flex-1">
             <div>
               <label className="block text-sm font-medium mb-1">Username</label>
               <Input
@@ -110,6 +119,7 @@ export function SignInModal({ isOpen, onClose }: SignInModalProps) {
           </div>
         </div>
       </Card>
-    </div>
+    </div>,
+    document.body
   );
 }
