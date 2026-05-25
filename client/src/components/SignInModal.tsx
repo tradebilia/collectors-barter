@@ -56,11 +56,11 @@ export function SignInModal({ isOpen, onClose }: SignInModalProps) {
       />
 
       {/* Modal */}
-      <Card className="relative z-[10000] w-full max-w-sm bg-white shadow-lg rounded-lg max-h-[90vh] overflow-y-auto">
-        <div className="p-6">
-          <h2 className="text-xl font-bold mb-4">Sign In</h2>
+      <Card className="relative z-[10000] w-full max-w-sm bg-white shadow-lg rounded-lg">
+        <div className="p-6 flex flex-col max-h-[90vh]">
+          <h2 className="text-xl font-bold mb-4 flex-shrink-0">Sign In</h2>
 
-          <form onSubmit={handleSignIn} className="space-y-4">
+          <form onSubmit={handleSignIn} className="space-y-4 overflow-y-auto flex-1">
             <div>
               <label className="block text-sm font-medium mb-1">Username</label>
               <Input
