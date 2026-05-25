@@ -94,10 +94,13 @@ const fallbackTradeValues = [
 ];
 
 // Hook to update user activity status
-function useUpdateActivity() {
+function useUpdateActivity(isAuthenticated: boolean) {
   const updateActivityMutation = trpc.onlineStatus.updateActivity.useMutation();
   
   useEffect(() => {
+    // Only update activity if user is authenticated
+    if (!isAuthenticated) return;
+    
     // Update activity on component mount
     updateActivityMutation.mutate();
     
@@ -107,7 +110,7 @@ function useUpdateActivity() {
     }, 2 * 60 * 1000); // 2 minutes
     
     return () => clearInterval(interval);
-  }, [updateActivityMutation]);
+  }, [updateActivityMutation, isAuthenticated]);
 }
 
 function initials(name: string) {
@@ -149,7 +152,7 @@ export default function Home() {
   const utils = trpc.useUtils();
   
   // Update user activity status while on the page
-  useUpdateActivity();
+  useUpdateActivity(isAuthenticated);
   
   const unreadCountsQuery = trpc.auth.unreadCounts.useQuery(undefined, {
     enabled: isAuthenticated,
