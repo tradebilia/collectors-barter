@@ -108,8 +108,14 @@ export default function ReportUser() {
       <TopBar />
 
       <section className="border-b border-white/10 bg-[linear-gradient(90deg,#0d0d57_0%,#12124f_50%,#0d0d57_100%)]">
-        <div className="mx-auto flex max-w-7xl items-center justify-center px-6 py-4 sm:py-5 lg:py-6">
-          <img src={TRADEBILIA_LOGO_URL} alt="Tradebilia" className="block h-[120px] w-auto object-contain sm:h-[140px] lg:h-[160px]" />
+        <div className="container relative flex h-64 items-center justify-center py-0 sm:h-72 sm:py-0 lg:h-80 lg:py-0">
+          <div className="flex w-full max-w-6xl items-center justify-center -ml-32">
+            <img
+              src={TRADEBILIA_LOGO_URL}
+              alt="Tradebilia"
+              className="h-auto w-full"
+            />
+          </div>
         </div>
       </section>
 
