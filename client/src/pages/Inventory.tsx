@@ -404,9 +404,9 @@ export default function Inventory() {
 
       <main className="flex flex-col relative">
         <div className="flex flex-1 relative">
-          <aside className="absolute left-0 top-0 w-64 h-full border-r border-slate-200 bg-slate-50 p-6 overflow-y-auto z-10">
+          <aside className="w-64 border-r border-slate-200 bg-slate-50 p-6 overflow-y-auto z-10 flex-shrink-0">
             <Card className="border-0 bg-transparent shadow-none">
-              <CardContent className="space-y-3 p-4 pt-0">
+              <CardContent className="space-y-2 p-3 pt-0">
                 <div className="pb-2 border-b border-slate-200">
                   <h3 className="text-sm font-semibold text-slate-900">Filters</h3>
                 </div>
