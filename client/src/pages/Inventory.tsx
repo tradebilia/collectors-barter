@@ -584,8 +584,8 @@ export default function Inventory() {
             </Card>
           </aside>
 
-          <div className="flex-1 py-8 px-4 ml-64">
-            <div className="px-4 py-4 lg:px-8 border-b border-slate-200 -mx-4 -mt-8 -mb-8 px-4 mb-4">
+          <div className="flex-1 py-4 px-4">
+            <div className="px-4 py-2 lg:px-8 border-b border-slate-200 -mx-4 mb-2">
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div className="flex gap-4">
                   <div className="bg-blue-50 rounded-lg p-6 border border-blue-200 min-w-48">
