@@ -56,7 +56,7 @@ export function SignInModal({ isOpen, onClose }: SignInModalProps) {
       />
 
       {/* Modal */}
-      <Card className="relative z-[10000] w-full max-w-sm bg-white shadow-lg rounded-lg">
+      <Card className="relative z-[10000] w-full max-w-sm bg-white shadow-lg rounded-lg max-h-[90vh] overflow-y-auto">
         <div className="p-6">
           <h2 className="text-xl font-bold mb-4">Sign In</h2>
 
