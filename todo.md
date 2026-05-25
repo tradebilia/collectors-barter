@@ -606,6 +606,11 @@ This ensures users can fill in all category-specific details when adding items t
 - [x] Test draft filter functionality
 
 
+## FIXED: My Inventory Navigation Issue
+- [x] Fixed My Inventory button navigation using React Router's useLocation hook instead of window.location.href
+- [x] Updated all subscriber tool buttons (My Inventory, Report a User, Referral Request, Watchlist) to use setLocation
+- [x] Verified navigation works properly with React Router
+
 ## CURRENT: Draft Save Functionality (localStorage - Temporary)
 - [x] Implemented draft storage using localStorage (temporary measure)
 - [x] AddInventory saves drafts to localStorage under 'tradebilia-add-inventory-draft' key

@@ -18,7 +18,7 @@ import { getLoginUrl } from "@/const";
 import { Heart, Loader2, MessageSquareText, Search, ShieldCheck, Sparkles, Star, ArrowRightLeft, Clock3, Plus, Users, ListTodo, DollarSign, Handshake, TrendingUp } from "lucide-react";
 import { ChangeEvent, FormEvent, useMemo, useState, useEffect } from "react";
 import { toast } from "sonner";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { TopBar } from "@/components/TopBar";
 import { CategoryBar } from "@/components/CategoryBar";
 import { RecentlyAddedCarousel } from "@/components/RecentlyAddedCarousel";
@@ -149,6 +149,7 @@ async function readFiles(files: FileList | null) {
 
 export default function Home() {
   const { user, loading, isAuthenticated, logout } = useAuth();
+  const [, setLocation] = useLocation();
   const utils = trpc.useUtils();
   
   // Update user activity status while on the page
@@ -529,28 +530,28 @@ export default function Home() {
                       if (!isAuthenticated) {
                         toast.error('Members only - Please sign in to access your inventory');
                       } else {
-                        window.location.href = '/inventory';
+                        setLocation('/inventory');
                       }
                     }} className="w-full px-3 py-2 rounded bg-white/10 hover:bg-white/20 transition text-white text-sm font-medium text-left">📦 My Inventory</button>
                     <button onClick={() => {
                       if (!isAuthenticated) {
                         toast.error('Members only - Please sign in to report a user');
                       } else {
-                        window.location.href = '/report-user';
+                        setLocation('/report-user');
                       }
                     }} className="w-full px-3 py-2 rounded bg-white/10 hover:bg-white/20 transition text-white text-sm font-medium text-left">⚠️ Report a User</button>
                     <button onClick={() => {
                       if (!isAuthenticated) {
                         toast.error('Members only - Please sign in to submit a referral request');
                       } else {
-                        window.location.href = '/referral-request';
+                        setLocation('/referral-request');
                       }
                     }} className="w-full px-3 py-2 rounded bg-white/10 hover:bg-white/20 transition text-white text-sm font-medium text-left">🤝 Referral Request</button>
                     <button onClick={() => {
                       if (!isAuthenticated) {
                         toast.error('Members only - Please sign in to access your watchlist');
                       } else {
-                        window.location.href = '/watchlist';
+                        setLocation('/watchlist');
                       }
                     }} className="w-full px-3 py-2 rounded bg-white/10 hover:bg-white/20 transition text-white text-sm font-medium text-left">❤️ Watchlist</button>
                     <div className="pt-4 border-t border-white/20 space-y-3">
