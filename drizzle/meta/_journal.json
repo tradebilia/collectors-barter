@@ -176,6 +176,13 @@
       "when": 1779455359024,
       "tag": "0024_watery_aaron_stack",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "5",
+      "when": 1779717415034,
+      "tag": "0025_perpetual_calypso",
+      "breakpoints": true
     }
   ]
 }

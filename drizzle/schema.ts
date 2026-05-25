@@ -27,7 +27,11 @@ export const users = mysqlTable("users", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
+  lastActivityAt: timestamp("lastActivityAt").defaultNow().notNull(),
 });
+
+// Online status is considered active if lastActivityAt is within the last 5 minutes
+export const ONLINE_STATUS_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
 
 export const collectibleCategories = [
   "comics",

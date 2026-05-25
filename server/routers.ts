@@ -841,6 +841,27 @@ export const appRouter = router({
       return allTrades;
     }),
   }),
+  // Online status procedures
+  onlineStatus: router({
+    updateActivity: protectedProcedure.mutation(async ({ ctx }) => {
+      const db = await requireDb();
+      await db.update(users).set({ lastActivityAt: new Date() }).where(eq(users.id, ctx.user.id));
+      return { success: true };
+    }),
+    getSellerOnlineStatus: publicProcedure
+      .input(z.object({ sellerId: z.number().int().positive() }))
+      .query(async ({ input }) => {
+        const db = await requireDb();
+        const seller = await db.select({ lastActivityAt: users.lastActivityAt }).from(users).where(eq(users.id, input.sellerId)).limit(1);
+        if (!seller.length) return { isOnline: false };
+        const lastActivity = seller[0].lastActivityAt;
+        const now = new Date();
+        const timeSinceActivity = now.getTime() - lastActivity.getTime();
+        const ONLINE_STATUS_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
+        const isOnline = timeSinceActivity < ONLINE_STATUS_TIMEOUT_MS;
+        return { isOnline, lastActivityAt: lastActivity };
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;

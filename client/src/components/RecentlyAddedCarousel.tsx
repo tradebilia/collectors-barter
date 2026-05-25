@@ -9,6 +9,7 @@ import { Heart, Loader2 } from "lucide-react";
 import { Link } from "wouter";
 import { toast } from "sonner";
 import { getLoginUrl } from "@/const";
+import { OnlineIndicator } from "./OnlineIndicator";
 
 interface CarouselItem {
   id: number;
@@ -121,7 +122,10 @@ export function RecentlyAddedCarousel({
                 />
               </div>
               <CardContent className="space-y-0.5 px-1.5 py-1.5">
-                <p className="line-clamp-2 text-[10px] font-medium leading-3.5 text-slate-900">{item.title}</p>
+                <div className="flex items-start justify-between gap-1">
+                  <p className="line-clamp-2 text-[10px] font-medium leading-3.5 text-slate-900 flex-1">{item.title}</p>
+                  {item.ownerId && <OnlineIndicator sellerId={item.ownerId} />}
+                </div>
                 <p className="text-[10px] text-[#7a46ff]">{item.price}</p>
                 <p className="text-[8px] text-slate-500">{item.subtitle}</p>
                 <div className="flex flex-wrap gap-1 pt-0.5">

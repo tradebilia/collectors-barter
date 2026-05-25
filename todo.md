@@ -1000,3 +1000,15 @@ The application is fully functional with all core features working correctly.
 - [x] Replace Disney Pins category page title with custom logo image at 450px height
 - [x] Move Disney Pins logo closer to horizontal divider line
 - [x] Add Pokemon category page title with official Pokemon logo at 300px height
+
+
+## Online Status Indicator Feature
+
+- [ ] Add online_status field to users table to track last activity timestamp
+- [ ] Create tRPC procedure to update user online status on page activity
+- [ ] Create tRPC procedure to fetch online status for item sellers
+- [ ] Update ItemCard component to display green online indicator dot
+- [ ] Add tooltip/comment text explaining online status means faster responses
+- [ ] Test online indicator on home page Recently Added items
+- [ ] Test online indicator on category pages
+- [ ] Test online indicator on item detail pages

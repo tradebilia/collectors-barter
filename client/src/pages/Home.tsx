@@ -16,7 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { getLoginUrl } from "@/const";
 import { Heart, Loader2, MessageSquareText, Search, ShieldCheck, Sparkles, Star, ArrowRightLeft, Clock3, Plus, Users, ListTodo, DollarSign, Handshake, TrendingUp } from "lucide-react";
-import { ChangeEvent, FormEvent, useMemo, useState } from "react";
+import { ChangeEvent, FormEvent, useMemo, useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Link } from "wouter";
 import { TopBar } from "@/components/TopBar";
@@ -93,6 +93,23 @@ const fallbackTradeValues = [
   "1975 Star Wars Luke Skywalker figure ($5,000)",
 ];
 
+// Hook to update user activity status
+function useUpdateActivity() {
+  const updateActivityMutation = trpc.onlineStatus.updateActivity.useMutation();
+  
+  useEffect(() => {
+    // Update activity on component mount
+    updateActivityMutation.mutate();
+    
+    // Update activity every 2 minutes while user is on the page
+    const interval = setInterval(() => {
+      updateActivityMutation.mutate();
+    }, 2 * 60 * 1000); // 2 minutes
+    
+    return () => clearInterval(interval);
+  }, [updateActivityMutation]);
+}
+
 function initials(name: string) {
   return name
     .split(" ")
@@ -130,6 +147,9 @@ async function readFiles(files: FileList | null) {
 export default function Home() {
   const { user, loading, isAuthenticated, logout } = useAuth();
   const utils = trpc.useUtils();
+  
+  // Update user activity status while on the page
+  useUpdateActivity();
   
   const unreadCountsQuery = trpc.auth.unreadCounts.useQuery(undefined, {
     enabled: isAuthenticated,
