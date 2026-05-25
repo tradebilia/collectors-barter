@@ -106,13 +106,14 @@ export default function ReportUser() {
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,rgba(73,125,255,0.14),transparent_30%),linear-gradient(180deg,#050814_0%,#0b1220_32%,#111827_100%)] text-white">
       <TopBar />
-      <CategoryBar />
 
       <section className="border-b border-white/10 bg-[linear-gradient(90deg,#0d0d57_0%,#12124f_50%,#0d0d57_100%)]">
         <div className="mx-auto flex max-w-7xl items-center justify-center px-6 py-4 sm:py-5 lg:py-6">
           <img src={TRADEBILIA_LOGO_URL} alt="Tradebilia" className="block h-[120px] w-auto object-contain sm:h-[140px] lg:h-[160px]" />
         </div>
       </section>
+
+      <CategoryBar />
 
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
