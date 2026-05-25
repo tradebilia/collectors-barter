@@ -48,7 +48,7 @@ export function SignInModal({ isOpen, onClose }: SignInModalProps) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center">
       {/* Backdrop */}
       <div
         className="fixed inset-0 bg-black/20"
@@ -56,7 +56,7 @@ export function SignInModal({ isOpen, onClose }: SignInModalProps) {
       />
 
       {/* Modal */}
-      <Card className="relative z-50 w-full max-w-sm bg-white shadow-lg">
+      <Card className="relative z-[10000] w-full max-w-sm bg-white shadow-lg rounded-lg">
         <div className="p-6">
           <h2 className="text-xl font-bold mb-4">Sign In</h2>
 
