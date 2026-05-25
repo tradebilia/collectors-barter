@@ -462,7 +462,7 @@ export default function Home() {
       />
 
       <main className="pb-24">
-        <section className="relative w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden bg-[#00143A] text-white">
+        <section className="relative z-0 w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden bg-[#00143A] text-white">
           <div className="absolute inset-0 opacity-20" style={{
             backgroundImage: 'url(/manus-storage/hero-background-fullwidth_e851e7cd.png)',
             backgroundSize: 'cover',
