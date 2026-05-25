@@ -117,8 +117,8 @@ export default function ReportUser() {
       </header>
 
       <section className="border-b border-white/10 bg-[linear-gradient(90deg,#0d0d57_0%,#12124f_50%,#0d0d57_100%)]">
-        <div className="mx-auto flex max-w-7xl items-center justify-center px-6 py-12 sm:py-16 lg:py-20">
-          <img src={TRADEBILIA_LOGO_URL} alt="Tradebilia" className="block h-[250px] w-auto object-contain sm:h-[300px] lg:h-[350px]" />
+        <div className="mx-auto flex max-w-7xl items-center justify-center px-6 py-4 sm:py-5 lg:py-6">
+          <img src={TRADEBILIA_LOGO_URL} alt="Tradebilia" className="block h-[120px] w-auto object-contain sm:h-[140px] lg:h-[160px]" />
         </div>
       </section>
 
