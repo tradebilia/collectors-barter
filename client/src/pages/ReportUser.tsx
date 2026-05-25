@@ -1,4 +1,3 @@
-import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -12,9 +11,12 @@ import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { AlertTriangle, Bell, Flag, Mail, Search, ShieldCheck } from "lucide-react";
 import { TopRightIcons } from "@/components/TopRightIcons";
+import { TopBar } from "@/components/TopBar";
+import { CategoryBar } from "@/components/CategoryBar";
 import { FormEvent, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Link } from "wouter";
+import { useAuth } from "@/_core/hooks/useAuth";
 
 const TRADEBILIA_LOGO_URL = "/manus-storage/ReportaUser_2c43c30e.svg";
 
@@ -103,18 +105,8 @@ export default function ReportUser() {
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,rgba(73,125,255,0.14),transparent_30%),linear-gradient(180deg,#050814_0%,#0b1220_32%,#111827_100%)] text-white">
-      <header className="border-b border-white/10 bg-black">
-        <div className="flex flex-wrap items-center gap-4 px-4 py-2 sm:px-6">
-          <TopRightIcons className="ml-auto flex items-center gap-3 md:gap-4" iconColor="text-white/85" />
-        </div>
-        <nav className="grid grid-cols-2 border-t border-white/10 bg-white text-center text-[11px] font-semibold text-black sm:grid-cols-5 lg:grid-cols-10">
-          {categoryLinks.map(([label, slug]) => (
-            <Link key={slug} href={`/category/${slug}`} className="border-r border-black/10 px-2 py-3 transition hover:bg-black hover:text-white last:border-r-0">
-              {label}
-            </Link>
-          ))}
-        </nav>
-      </header>
+      <TopBar />
+      <CategoryBar />
 
       <section className="border-b border-white/10 bg-[linear-gradient(90deg,#0d0d57_0%,#12124f_50%,#0d0d57_100%)]">
         <div className="mx-auto flex max-w-7xl items-center justify-center px-6 py-4 sm:py-5 lg:py-6">
