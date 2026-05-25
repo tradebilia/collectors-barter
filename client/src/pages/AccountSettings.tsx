@@ -365,6 +365,19 @@ export default function AccountSettings() {
         contactState: identityInfo.state,
         contactCountry: identityInfo.country,
       };
+      
+      // Handle avatar upload if a new preview was set
+      if (profileForm.avatarPreview && profileForm.avatarPreview.startsWith('data:')) {
+        console.log("[AccountSettings] Avatar preview detected, converting to upload format");
+        const base64Data = profileForm.avatarPreview.split(',')[1];
+        const mimeType = profileForm.avatarPreview.split(':')[1].split(';')[0];
+        payload.avatar = {
+          name: 'profile-avatar',
+          type: mimeType,
+          contentBase64: base64Data,
+        };
+      }
+      
       await saveProfileMutation.mutateAsync(payload);
       console.log("[AccountSettings] Profile saved successfully");
       setConfirmationDialog({
