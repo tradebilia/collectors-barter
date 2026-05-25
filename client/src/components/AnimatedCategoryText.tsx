@@ -2,14 +2,14 @@ import { useState, useEffect } from 'react';
 
 const categories = [
   { name: 'BILIA', color: 'text-white', duration: 10000 }, // 10 seconds for BILIA
-  { name: 'COMICS', color: 'text-rose-200', duration: 3000 },
-  { name: 'SPORTS CARDS', color: 'text-[#fff4e0]', duration: 3000 },
-  { name: 'POKEMON', color: 'text-[#fff6cf]', duration: 3000 },
-  { name: 'COINS', color: 'text-[#f7edce]', duration: 3000 },
-  { name: 'STAMPS', color: 'text-[#f3e6ff]', duration: 3000 },
-  { name: 'VIDEO GAMES', color: 'text-[#d7ffb7]', duration: 3000 },
-  { name: 'AUTOGRAPHS', color: 'text-[#f5e8d1]', duration: 3000 },
-  { name: 'TOYS', color: 'text-[#f9efc8]', duration: 3000 }
+  { name: 'COMICS', color: 'text-rose-300 font-bold', duration: 3000 },
+  { name: 'SPORTS CARDS', color: 'text-[#ffd700] font-bold', duration: 3000 },
+  { name: 'POKEMON', color: 'text-[#ffff00] font-bold', duration: 3000 },
+  { name: 'COINS', color: 'text-[#ffd700] font-bold', duration: 3000 },
+  { name: 'STAMPS', color: 'text-[#e0b0ff] font-bold', duration: 3000 },
+  { name: 'VIDEO GAMES', color: 'text-[#00ff00] font-bold', duration: 3000 },
+  { name: 'AUTOGRAPHS', color: 'text-[#f5deb3] font-bold', duration: 3000 },
+  { name: 'TOYS', color: 'text-[#ffe4b5] font-bold', duration: 3000 }
 ];
 
 const subtitleWords = ['Collectors', 'Trading', 'Exchange'];
@@ -114,7 +114,7 @@ export function AnimatedCategoryText() {
             {/* Subtitle Container - Fixed height to prevent shifting */}
             <div className="h-8 mt-4">
               {isBilia && showSubtitle && (
-                <div className="text-lg sm:text-xl lg:text-2xl font-light tracking-wide text-white/70">
+                <div className="text-lg sm:text-xl lg:text-2xl font-light tracking-wide text-white">
                   <div className="flex gap-2">
                     {/* Collectors */}
                     <span
