@@ -131,7 +131,13 @@ export default function ReportUser() {
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,rgba(73,125,255,0.14),transparent_30%),linear-gradient(180deg,#050814_0%,#0b1220_32%,#111827_100%)] text-white">
       <TopBar />
 
-      <section className="border-b border-white/10 bg-[linear-gradient(90deg,#0d0d57_0%,#12124f_50%,#0d0d57_100%)]">
+      <section className="relative z-0 w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden bg-[#00143A] text-white border-b border-white/10">
+        <div className="absolute inset-0 opacity-20" style={{
+          backgroundImage: 'url(/manus-storage/hero-background-fullwidth_e851e7cd.png)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat'
+        }} />
         <div className="container relative flex h-64 items-center justify-center py-0 sm:h-72 sm:py-0 lg:h-80 lg:py-0">
           <div className="flex w-full max-w-6xl items-center justify-center -ml-32">
             <img
