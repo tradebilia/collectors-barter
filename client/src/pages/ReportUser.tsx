@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
-import { AlertTriangle, Bell, Flag, Mail, Search, ShieldCheck } from "lucide-react";
+import { AlertTriangle, Bell, Flag, Mail, Search, ShieldCheck, Upload, X } from "lucide-react";
 import { TopRightIcons } from "@/components/TopRightIcons";
 import { TopBar } from "@/components/TopBar";
 import { CategoryBar } from "@/components/CategoryBar";
@@ -58,6 +58,7 @@ export default function ReportUser() {
   const [details, setDetails] = useState("");
   const [contactEmail, setContactEmail] = useState(user?.email ?? "");
   const [supportingNotes, setSupportingNotes] = useState("");
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
 
   const memberName = useMemo(() => user?.name || user?.email || "Subscriber", [user?.email, user?.name]);
 
@@ -69,11 +70,29 @@ export default function ReportUser() {
       setConcernType("");
       setDetails("");
       setSupportingNotes("");
+      setUploadedFiles([]);
     },
     onError: error => {
       toast.error(error.message);
     },
   });
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || []);
+    const validFiles = files.filter(file => {
+      const maxSize = 10 * 1024 * 1024; // 10MB
+      if (file.size > maxSize) {
+        toast.error(`${file.name} is too large (max 10MB)`);
+        return false;
+      }
+      return true;
+    });
+    setUploadedFiles(prev => [...prev, ...validFiles]);
+  };
+
+  const removeFile = (index: number) => {
+    setUploadedFiles(prev => prev.filter((_, i) => i !== index));
+  };
 
   const submitReport = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -189,6 +208,50 @@ export default function ReportUser() {
                 <div className="space-y-2">
                   <Label htmlFor="supporting-notes" className="text-white/80">Evidence notes</Label>
                   <Textarea id="supporting-notes" value={supportingNotes} onChange={event => setSupportingNotes(event.target.value)} className="min-h-[120px] rounded-[1.25rem] border-white/10 bg-white/5 text-white" placeholder="Reference screenshots, message excerpts, tracking details, or condition discrepancies." />
+                </div>
+
+                <div className="space-y-3">
+                  <Label className="text-white/80">Upload evidence files or images</Label>
+                  <div className="rounded-[1.25rem] border-2 border-dashed border-white/20 bg-white/5 p-6 text-center hover:border-white/40 hover:bg-white/10 transition-colors">
+                    <input
+                      type="file"
+                      multiple
+                      onChange={handleFileUpload}
+                      className="hidden"
+                      id="file-upload"
+                      accept="image/*,.pdf,.doc,.docx,.txt"
+                    />
+                    <label htmlFor="file-upload" className="cursor-pointer">
+                      <div className="flex flex-col items-center gap-2">
+                        <Upload className="h-6 w-6 text-white/60" />
+                        <div className="text-sm">
+                          <span className="font-medium text-white">Click to upload</span>
+                          <span className="text-white/60"> or drag and drop</span>
+                        </div>
+                        <p className="text-xs text-white/50">PNG, JPG, PDF, DOC up to 10MB</p>
+                      </div>
+                    </label>
+                  </div>
+
+                  {uploadedFiles.length > 0 && (
+                    <div className="space-y-2">
+                      <p className="text-sm text-white/80">Uploaded files ({uploadedFiles.length}):</p>
+                      <div className="space-y-2">
+                        {uploadedFiles.map((file, index) => (
+                          <div key={index} className="flex items-center justify-between rounded-lg bg-white/10 p-3">
+                            <span className="text-sm text-white truncate">{file.name}</span>
+                            <button
+                              type="button"
+                              onClick={() => removeFile(index)}
+                              className="text-white/60 hover:text-white transition-colors"
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="rounded-[1.5rem] border border-white/10 bg-white/5 p-5 text-sm leading-7 text-white/70">
