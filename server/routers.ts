@@ -28,6 +28,12 @@ import {
   getUserReports,
   getUserReportDetails,
   updateReportStatus,
+  updateUserEbayInfo,
+  getUserEbayInfo,
+  storeEbayFeedback,
+  getUserEbayFeedback,
+  flagLowFeedback,
+  getLowFeedbackFlags,
 } from "./db";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -35,6 +41,7 @@ import { notifyOwner } from "./_core/notification";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { hashPassword, verifyPassword, isValidUsername, isValidPassword, isValidEmail } from "./_core/auth";
 import { getUserByUsername, createUser, requireDb } from "./db";
+import { getEbayAuthUrl, exchangeCodeForToken, getUserInfo, getUserFeedback, refreshAccessToken } from "./_core/ebay";
 import { sdk } from "./_core/sdk";
 import { customAuth } from "./_core/customAuth";
 import { users, userProfiles, listings, deletedAccounts, tradeProposals, tradeMessages, tradeReviews, watchlistEntries, draftListings, passwordResetTokens } from "../drizzle/schema";
@@ -675,6 +682,92 @@ export const appRouter = router({
           evidence: input.evidence,
         });
       }),
+  }),
+  ebay: router({
+    getAuthUrl: protectedProcedure
+      .input(z.object({ state: z.string() }))
+      .query(({ input }) => {
+        return getEbayAuthUrl(input.state);
+      }),
+
+    connectAccount: protectedProcedure
+      .input(z.object({ code: z.string() }))
+      .mutation(async ({ ctx, input }) => {
+        try {
+          const tokenData = await exchangeCodeForToken(input.code);
+          const userInfo = await getUserInfo(tokenData.access_token);
+          const feedback = await getUserFeedback(tokenData.access_token, userInfo.userId);
+          const isLowFeedback = userInfo.feedbackPercentage < 95;
+
+          await updateUserEbayInfo({
+            userId: ctx.user.id,
+            ebayUsername: userInfo.username,
+            ebayUserId: userInfo.userId,
+            ebayFeedbackScore: userInfo.feedbackScore,
+            ebayFeedbackPercentage: userInfo.feedbackPercentage,
+            ebayMemberSince: userInfo.memberSince,
+            ebayAccessToken: tokenData.access_token,
+            ebayRefreshToken: tokenData.refresh_token,
+            ebayTokenExpiresAt: new Date(Date.now() + tokenData.expires_in * 1000),
+          });
+
+          for (const fb of feedback) {
+            await storeEbayFeedback({
+              userId: ctx.user.id,
+              ...fb,
+            });
+          }
+
+          if (isLowFeedback) {
+            await flagLowFeedback({
+              userId: ctx.user.id,
+              feedbackScore: userInfo.feedbackScore,
+              feedbackPercentage: userInfo.feedbackPercentage,
+              flaggedReason: `Low eBay feedback: ${userInfo.feedbackPercentage}%`,
+            });
+          }
+
+          return {
+            success: true,
+            username: userInfo.username,
+            feedbackScore: userInfo.feedbackScore,
+            feedbackPercentage: userInfo.feedbackPercentage,
+          };
+        } catch (error) {
+          console.error('eBay connection error:', error);
+          throw new TRPCError({
+            code: 'INTERNAL_SERVER_ERROR',
+            message: 'Failed to connect eBay account',
+          });
+        }
+      }),
+
+    getInfo: protectedProcedure.query(async ({ ctx }) => {
+      return await getUserEbayInfo(ctx.user.id);
+    }),
+
+    getFeedback: protectedProcedure.query(async ({ ctx }) => {
+      return await getUserEbayFeedback(ctx.user.id);
+    }),
+
+    disconnect: protectedProcedure.mutation(async ({ ctx }) => {
+      const db = await requireDb();
+      await db
+        .update(users)
+        .set({
+          ebayUsername: null,
+          ebayUserId: null,
+          ebayFeedbackScore: null,
+          ebayFeedbackPercentage: null,
+          ebayMemberSince: null,
+          ebayConnectedAt: null,
+          ebayAccessToken: null,
+          ebayRefreshToken: null,
+          ebayTokenExpiresAt: null,
+        })
+        .where(eq(users.id, ctx.user.id));
+      return { success: true };
+    }),
   }),
   admin: router({
     // Platform statistics

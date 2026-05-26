@@ -5,10 +5,12 @@ import type { InsertUser, User } from "../drizzle/schema";
 import {
   collectibleCategories,
   draftListings,
+  ebayFeedbackHistory,
   emailVerificationOtps,
   itemConditions,
   listingPhotos,
   listings,
+  lowFeedbackFlags,
   passwordResetTokens,
   phoneVerificationOtps,
   tradeMessages,
@@ -1766,4 +1768,134 @@ export async function updateReportStatus(input: {
       reviewedBy: input.reviewedBy,
     })
     .where(eq(userReports.reportId, input.reportId));
+}
+
+
+// eBay Feedback Functions
+export async function updateUserEbayInfo(input: {
+  userId: number;
+  ebayUsername: string;
+  ebayUserId: string;
+  ebayFeedbackScore: number;
+  ebayFeedbackPercentage: number;
+  ebayMemberSince: Date;
+  ebayAccessToken: string;
+  ebayRefreshToken: string;
+  ebayTokenExpiresAt: Date;
+}): Promise<void> {
+  const db = await requireDb();
+  await db
+    .update(users)
+    .set({
+      ebayUsername: input.ebayUsername,
+      ebayUserId: input.ebayUserId,
+      ebayFeedbackScore: input.ebayFeedbackScore,
+      ebayFeedbackPercentage: input.ebayFeedbackPercentage,
+      ebayMemberSince: input.ebayMemberSince,
+      ebayConnectedAt: new Date(),
+      ebayAccessToken: input.ebayAccessToken,
+      ebayRefreshToken: input.ebayRefreshToken,
+      ebayTokenExpiresAt: input.ebayTokenExpiresAt,
+    })
+    .where(eq(users.id, input.userId));
+}
+
+export async function getUserEbayInfo(userId: number): Promise<{
+  ebayUsername?: string | null;
+  ebayUserId?: string | null;
+  ebayFeedbackScore?: number | null;
+  ebayFeedbackPercentage?: number | null;
+  ebayMemberSince?: Date | null;
+  ebayConnectedAt?: Date | null;
+} | null> {
+  const db = await requireDb();
+  const user = await db
+    .select({
+      ebayUsername: users.ebayUsername,
+      ebayUserId: users.ebayUserId,
+      ebayFeedbackScore: users.ebayFeedbackScore,
+      ebayFeedbackPercentage: users.ebayFeedbackPercentage,
+      ebayMemberSince: users.ebayMemberSince,
+      ebayConnectedAt: users.ebayConnectedAt,
+    })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+  return user[0] || null;
+}
+
+export async function storeEbayFeedback(input: {
+  userId: number;
+  feedbackId: string;
+  rating: 'positive' | 'neutral' | 'negative';
+  comment?: string;
+  from: string;
+  itemId?: string;
+  itemTitle?: string;
+  feedbackDate: Date;
+}): Promise<void> {
+  const db = await requireDb();
+  await db.insert(ebayFeedbackHistory).values(input);
+}
+
+export async function getUserEbayFeedback(userId: number): Promise<Array<{
+  id: number;
+  feedbackId: string;
+  rating: string;
+  comment?: string;
+  from: string;
+  itemTitle?: string;
+  feedbackDate: Date;
+}>> {
+  const db = await requireDb();
+  const feedback = await db
+    .select()
+    .from(ebayFeedbackHistory)
+    .where(eq(ebayFeedbackHistory.userId, userId))
+    .orderBy(desc(ebayFeedbackHistory.feedbackDate));
+  return feedback as any;
+}
+
+export async function flagLowFeedback(input: {
+  userId: number;
+  feedbackScore: number;
+  feedbackPercentage: number;
+  flaggedReason?: string;
+}): Promise<void> {
+  const db = await requireDb();
+  // Check if already flagged
+  const existing = await db
+    .select()
+    .from(lowFeedbackFlags)
+    .where(and(
+      eq(lowFeedbackFlags.userId, input.userId),
+      eq(lowFeedbackFlags.status, 'pending')
+    ))
+    .limit(1);
+  
+  if (!existing[0]) {
+    await db.insert(lowFeedbackFlags).values({
+      userId: input.userId,
+      feedbackScore: input.feedbackScore,
+      feedbackPercentage: input.feedbackPercentage,
+      flaggedReason: input.flaggedReason,
+    });
+  }
+}
+
+export async function getLowFeedbackFlags(): Promise<Array<{
+  id: number;
+  userId: number;
+  feedbackScore: number;
+  feedbackPercentage: string;
+  status: string;
+  flaggedAt: Date;
+}>> {
+  const db = await requireDb();
+  const flags = await db
+    .select()
+    .from(lowFeedbackFlags)
+    .where(eq(lowFeedbackFlags.status, 'pending'))
+    .orderBy(desc(lowFeedbackFlags.flaggedAt));
+  return flags as any;
 }

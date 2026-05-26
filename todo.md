@@ -1029,3 +1029,37 @@ The application is fully functional with all core features working correctly.
 - [ ] Write tests for the report submission and retrieval procedures
 - [ ] Add user lookup functionality to find user ID from username
 - [ ] Add email notifications when reports are submitted
+
+
+## eBay Feedback Integration Feature
+- [ ] Add eBay fields to users table (ebayUsername, ebayUserId, ebayFeedbackScore, ebayFeedbackPercentage, ebayMemberSince, ebayConnectedAt)
+- [ ] Create ebayFeedbackHistory table to store 3 years of feedback records
+- [ ] Implement eBay OAuth connection flow in Account Settings
+- [ ] Create tRPC procedure to pull eBay feedback data via eBay API
+- [ ] Create tRPC procedure to store and update feedback history
+- [ ] Add "Connect eBay Account" button to Account Settings page
+- [ ] Display eBay verification badge on user profiles
+- [ ] Display eBay username on user profiles
+- [ ] Display eBay feedback score and percentage on profiles
+- [ ] Display eBay feedback comments (last 3 years) on profiles
+- [ ] Show "Member since" date from eBay
+- [ ] Implement admin flag system for low feedback scores
+- [ ] Create admin dashboard view for flagged low-feedback users
+- [ ] Add ability to manually refresh eBay feedback data
+- [ ] Show "Last verified" timestamp on profiles
+- [ ] Write tests for eBay integration procedures
+
+## eBay Feedback Integration (IN PROGRESS)
+- [x] Add eBay fields to users table
+- [x] Create ebayFeedbackHistory table
+- [x] Create lowFeedbackFlags table for admin flagging
+- [x] Create eBay API helper module
+- [x] Add database helper functions
+- [x] Create tRPC ebay router with OAuth procedures
+- [x] Write and pass eBay OAuth tests
+- [ ] Create OAuth callback endpoint
+- [ ] Add Connect eBay button to Account Settings
+- [ ] Add Connect eBay option to Sign Up page
+- [ ] Display eBay verification on profiles
+- [ ] Display feedback score and comments on profiles
+- [ ] Admin dashboard for low feedback flags

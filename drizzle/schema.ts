@@ -28,6 +28,15 @@ export const users = mysqlTable("users", {
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
   lastActivityAt: timestamp("lastActivityAt").defaultNow().notNull(),
+  ebayUsername: varchar("ebayUsername", { length: 64 }),
+  ebayUserId: varchar("ebayUserId", { length: 64 }),
+  ebayFeedbackScore: int("ebayFeedbackScore"),
+  ebayFeedbackPercentage: decimal("ebayFeedbackPercentage", { precision: 5, scale: 2 }),
+  ebayMemberSince: timestamp("ebayMemberSince"),
+  ebayConnectedAt: timestamp("ebayConnectedAt"),
+  ebayAccessToken: text("ebayAccessToken"),
+  ebayRefreshToken: text("ebayRefreshToken"),
+  ebayTokenExpiresAt: timestamp("ebayTokenExpiresAt"),
 });
 
 // Online status is considered active if lastActivityAt is within the last 5 minutes
@@ -391,3 +400,49 @@ export const userReports = mysqlTable(
 
 export type UserReport = typeof userReports.$inferSelect;
 export type UserReportInsert = typeof userReports.$inferInsert;
+
+export const ebayFeedbackHistory = mysqlTable(
+  "ebayFeedbackHistory",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    userId: int("userId").notNull().references(() => users.id),
+    feedbackId: varchar("feedbackId", { length: 64 }).notNull(),
+    rating: mysqlEnum("rating", ["positive", "neutral", "negative"]).notNull(),
+    comment: text("comment"),
+    from: varchar("from", { length: 64 }).notNull(),
+    itemId: varchar("itemId", { length: 64 }),
+    itemTitle: varchar("itemTitle", { length: 255 }),
+    feedbackDate: timestamp("feedbackDate").notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  table => ({
+    userIdIdx: index("ebayFeedbackHistory_userId_idx").on(table.userId),
+    feedbackIdIdx: index("ebayFeedbackHistory_feedbackId_idx").on(table.feedbackId),
+    feedbackDateIdx: index("ebayFeedbackHistory_feedbackDate_idx").on(table.feedbackDate),
+  })
+);
+export type EbayFeedbackHistory = typeof ebayFeedbackHistory.$inferSelect;
+export type EbayFeedbackHistoryInsert = typeof ebayFeedbackHistory.$inferInsert;
+
+export const lowFeedbackFlags = mysqlTable(
+  "lowFeedbackFlags",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    userId: int("userId").notNull().references(() => users.id),
+    feedbackScore: int("feedbackScore").notNull(),
+    feedbackPercentage: decimal("feedbackPercentage", { precision: 5, scale: 2 }).notNull(),
+    flaggedReason: text("flaggedReason"),
+    status: mysqlEnum("status", ["pending", "reviewed", "dismissed", "action_taken"]).default("pending").notNull(),
+    adminNotes: text("adminNotes"),
+    flaggedAt: timestamp("flaggedAt").defaultNow().notNull(),
+    reviewedAt: timestamp("reviewedAt"),
+    reviewedBy: int("reviewedBy").references(() => users.id),
+  },
+  table => ({
+    userIdIdx: index("lowFeedbackFlags_userId_idx").on(table.userId),
+    statusIdx: index("lowFeedbackFlags_status_idx").on(table.status),
+    flaggedAtIdx: index("lowFeedbackFlags_flaggedAt_idx").on(table.flaggedAt),
+  })
+);
+export type LowFeedbackFlag = typeof lowFeedbackFlags.$inferSelect;
+export type LowFeedbackFlagInsert = typeof lowFeedbackFlags.$inferInsert;

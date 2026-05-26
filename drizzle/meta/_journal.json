@@ -190,6 +190,13 @@
       "when": 1779754588167,
       "tag": "0026_military_vargas",
       "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "5",
+      "when": 1779812777615,
+      "tag": "0027_condemned_penance",
+      "breakpoints": true
     }
   ]
 }
