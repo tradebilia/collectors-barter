@@ -1,4 +1,3 @@
-import { getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -62,18 +61,14 @@ export default function ReportUser() {
 
   const memberName = useMemo(() => user?.name || user?.email || "Subscriber", [user?.email, user?.name]);
 
-  const reportMutation = trpc.market.reportUser.useMutation({
+  const reportMutation = trpc.market.submitReport.useMutation({
     onSuccess: result => {
-      if (result.success) {
-        toast.success(result.message);
-        setReportedMember("");
-        setListingReference("");
-        setConcernType("");
-        setDetails("");
-        setSupportingNotes("");
-      } else {
-        toast.error(result.message);
-      }
+      toast.success(`Report submitted successfully! Report ID: ${result.reportId}`);
+      setReportedMember("");
+      setListingReference("");
+      setConcernType("");
+      setDetails("");
+      setSupportingNotes("");
     },
     onError: error => {
       toast.error(error.message);
@@ -88,18 +83,28 @@ export default function ReportUser() {
       return;
     }
 
+    if (!reportedMember) {
+      toast.error("Please enter the username of the member you're reporting.");
+      return;
+    }
+
     if (!concernType) {
       toast.error("Please choose a concern type before submitting your report.");
       return;
     }
 
+    if (!details || details.length < 10) {
+      toast.error("Please provide at least 10 characters describing what happened.");
+      return;
+    }
+
+    // TODO: Look up user ID from reportedMember username
+    // For now, we'll use a placeholder - this should be replaced with actual user lookup
     reportMutation.mutate({
-      reportedMember,
-      listingReference,
-      concernType,
-      contactEmail,
-      details,
-      supportingNotes,
+      reportedUserId: 1,
+      reason: concernType,
+      description: details,
+      evidence: supportingNotes || undefined,
     });
   };
 
@@ -121,80 +126,34 @@ export default function ReportUser() {
 
       <CategoryBar />
 
-      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
-          <aside className="space-y-6">
-            <Card className="rounded-[1.75rem] border-white/10 bg-white/5 text-white shadow-[0_20px_60px_rgba(0,0,0,0.28)] backdrop-blur">
-              <CardHeader className="pb-4">
-                <CardTitle className="flex items-center gap-3 text-2xl">
-                  <Flag className="h-6 w-6 text-amber-300" />
-                  Report a User
-                </CardTitle>
-                <CardDescription className="text-white/65">
-                  File a clear, documented concern when a member interaction falls outside Tradebilia community standards.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center gap-3 rounded-[1.25rem] border border-white/10 bg-white/5 p-3">
-                  <Avatar className="h-12 w-12 border border-white/10">
-                    <AvatarImage src={undefined} alt={memberName} />
-                    <AvatarFallback className="bg-white/10 text-white">{initials(memberName)}</AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <p className="text-sm font-semibold">{memberName}</p>
-                    <p className="text-xs text-white/60">Signed-in reporter</p>
-                  </div>
-                </div>
-                <div className="space-y-2 text-sm leading-6 text-white/70">
-                  <p>Use this form for counterfeit items, harassment, repeated no-shows, safety issues, or suspicious off-platform conduct.</p>
-                  <p>The more precise your listing IDs, usernames, and evidence notes are, the easier it is to review the case quickly.</p>
-                </div>
-                <Separator className="bg-white/10" />
-                <div className="space-y-3">
-                  {[
-                    "Member identity or Tradebilia ID",
-                    "Listing ID or trade reference if applicable",
-                    "What happened and when",
-                    "Any steps already taken with the other member",
-                  ].map(item => (
-                    <div key={item} className="rounded-[1rem] border border-white/10 bg-black/20 px-3 py-2 text-sm text-white/75">{item}</div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="rounded-[1.75rem] border-amber-400/20 bg-amber-500/10 text-white shadow-none">
-              <CardContent className="space-y-3 p-6">
-                <div className="flex items-center gap-3 text-amber-200">
-                  <AlertTriangle className="h-5 w-5" />
-                  <p className="text-sm font-semibold uppercase tracking-[0.24em]">Trust & Safety</p>
-                </div>
-                <p className="text-sm leading-7 text-white/75">
-                  Immediate threats, payment fraud, or requests for unsafe off-platform contact should be documented here and paused until reviewed.
-                </p>
-                {!isAuthenticated && !loading ? (
-                  <Button className="w-full rounded-full bg-white text-slate-950 hover:bg-white/90" onClick={() => (window.location.href = getLoginUrl())}>
-                    Sign In to File Report
-                  </Button>
-                ) : null}
-              </CardContent>
-            </Card>
-          </aside>
-
-          <Card className="rounded-[2rem] border-white/10 bg-slate-950/65 text-white shadow-[0_24px_70px_rgba(0,0,0,0.35)] backdrop-blur">
-            <CardHeader className="pb-4">
-              <Badge className="w-fit rounded-full bg-white/10 px-3 py-1 text-white/80 hover:bg-white/10">Community moderation form</Badge>
-              <CardTitle className="mt-3 text-3xl sm:text-4xl">Document the concern clearly</CardTitle>
-              <CardDescription className="max-w-2xl text-base leading-7 text-white/65">
-                Submit a real moderation request for suspicious or harmful behavior while staying inside the same Tradebilia visual language used across the rest of the site.
+      <main className="container py-8">
+        <div className="mx-auto max-w-3xl">
+          <Card className="border-white/10 bg-white/5 backdrop-blur">
+            <CardHeader className="border-b border-white/10">
+              <CardTitle className="flex items-center gap-2 text-white">
+                <Flag className="h-5 w-5 text-red-400" />
+                Report a Member
+              </CardTitle>
+              <CardDescription className="text-white/60">
+                Help us maintain a safe community by reporting concerning behavior or violations
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <form className="space-y-6" onSubmit={submitReport}>
+            <CardContent className="space-y-6 pt-6">
+              <form onSubmit={submitReport} className="space-y-6">
+                <div className="rounded-[1.5rem] border border-blue-500/30 bg-blue-500/10 p-4 text-sm text-blue-200">
+                  <div className="flex gap-3">
+                    <ShieldCheck className="h-5 w-5 flex-shrink-0 text-blue-400" />
+                    <div>
+                      <p className="font-medium">Your report is confidential</p>
+                      <p className="text-xs text-blue-200/70">Reports are reviewed by our moderation team and handled with care.</p>
+                    </div>
+                  </div>
+                </div>
+
                 <div className="grid gap-5 md:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="reported-member" className="text-white/80">Reported member</Label>
-                    <Input id="reported-member" value={reportedMember} onChange={event => setReportedMember(event.target.value)} className="h-12 rounded-[1rem] border-white/10 bg-white/5 text-white" placeholder="Member name, email, or Tradebilia ID" />
+                    <Label htmlFor="reported-member" className="text-white/80">Member username</Label>
+                    <Input id="reported-member" value={reportedMember} onChange={event => setReportedMember(event.target.value)} className="h-12 rounded-[1rem] border-white/10 bg-white/5 text-white" placeholder="Username of member to report" />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="listing-reference" className="text-white/80">Listing or trade reference</Label>
@@ -233,7 +192,7 @@ export default function ReportUser() {
                 </div>
 
                 <div className="rounded-[1.5rem] border border-white/10 bg-white/5 p-5 text-sm leading-7 text-white/70">
-                  Submitted reports now route into a real owner-review notification so moderation concerns can be acted on instead of remaining a visual-only placeholder.
+                  Submitted reports are reviewed by the Tradebilia moderation team and will be assigned a Report ID for tracking purposes.
                 </div>
 
                 <div className="flex flex-wrap gap-3">

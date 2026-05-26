@@ -17,6 +17,7 @@ import {
   tradeReviews,
   userProfiles,
   users,
+  userReports,
   watchlistEntries,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
@@ -1579,4 +1580,190 @@ export async function checkDuplicateAccountInfo(
   }
   
   return { isDuplicate: false };
+}
+
+
+// Generate a unique Report ID
+export async function generateReportId(): Promise<string> {
+  const db = await requireDb();
+  const lastReport = await db
+    .select()
+    .from(userReports)
+    .orderBy(desc(userReports.id))
+    .limit(1);
+  
+  const nextNumber = (lastReport[0]?.id ?? 0) + 1;
+  return `RPT-${String(nextNumber).padStart(6, '0')}`;
+}
+
+// Submit a user report
+export async function submitUserReport(input: {
+  reportedUserId: number;
+  reporterUserId: number;
+  reason: string;
+  description: string;
+  evidence?: string;
+}): Promise<{ reportId: string }> {
+  const db = await requireDb();
+  
+  const reportId = await generateReportId();
+  
+  await db.insert(userReports).values({
+    reportId,
+    reportedUserId: input.reportedUserId,
+    reporterUserId: input.reporterUserId,
+    reason: input.reason,
+    description: input.description,
+    evidence: input.evidence,
+    status: 'pending',
+  });
+  
+  return { reportId };
+}
+
+// Get all user reports for admin (with pagination)
+export async function getUserReports(options: {
+  status?: string;
+  limit?: number;
+  offset?: number;
+} = {}): Promise<Array<{
+  id: number;
+  reportId: string;
+  reportedUserId: number;
+  reportedUserName: string;
+  reportedUserDisplayName: string;
+  reporterUserId: number;
+  reporterUserName: string;
+  reason: string;
+  status: string;
+  createdAt: Date;
+}>> {
+  const db = await requireDb();
+  
+  const limit = options.limit ?? 50;
+  const offset = options.offset ?? 0;
+  
+  let query = db
+    .select({
+      id: userReports.id,
+      reportId: userReports.reportId,
+      reportedUserId: userReports.reportedUserId,
+      reportedUserName: users.username,
+      reportedUserDisplayName: users.displayName,
+      reporterUserId: userReports.reporterUserId,
+      reporterUserName: sql<string>`(SELECT username FROM users WHERE id = ${userReports.reporterUserId})`,
+      reason: userReports.reason,
+      status: userReports.status,
+      createdAt: userReports.createdAt,
+    })
+    .from(userReports)
+    .innerJoin(users, eq(userReports.reportedUserId, users.id));
+  
+  if (options.status) {
+    query = query.where(eq(userReports.status, options.status as any));
+  }
+  
+  const results = await query
+    .orderBy(desc(userReports.createdAt))
+    .limit(limit)
+    .offset(offset);
+  
+  return results as any;
+}
+
+// Get a specific user report with full details
+export async function getUserReportDetails(reportId: string): Promise<{
+  id: number;
+  reportId: string;
+  reportedUserId: number;
+  reportedUserName: string;
+  reportedUserDisplayName: string;
+  reportedUserEmail: string;
+  reporterUserId: number;
+  reporterUserName: string;
+  reporterUserDisplayName: string;
+  reason: string;
+  description: string;
+  evidence?: string;
+  status: string;
+  adminNotes?: string;
+  createdAt: Date;
+  updatedAt: Date;
+  reviewedAt?: Date;
+  reviewedBy?: number;
+  reviewedByName?: string;
+} | null> {
+  const db = await requireDb();
+  
+  const report = await db
+    .select()
+    .from(userReports)
+    .where(eq(userReports.reportId, reportId))
+    .limit(1);
+  
+  if (!report[0]) return null;
+  
+  const reportedUser = await db
+    .select()
+    .from(users)
+    .where(eq(users.id, report[0].reportedUserId))
+    .limit(1);
+  
+  const reporterUser = await db
+    .select()
+    .from(users)
+    .where(eq(users.id, report[0].reporterUserId))
+    .limit(1);
+  
+  let reviewedByUser = null;
+  if (report[0].reviewedBy) {
+    const result = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, report[0].reviewedBy))
+      .limit(1);
+    reviewedByUser = result[0];
+  }
+  
+  return {
+    id: report[0].id,
+    reportId: report[0].reportId,
+    reportedUserId: report[0].reportedUserId,
+    reportedUserName: reportedUser[0]?.username ?? '',
+    reportedUserDisplayName: reportedUser[0]?.displayName ?? '',
+    reportedUserEmail: reportedUser[0]?.email ?? '',
+    reporterUserId: report[0].reporterUserId,
+    reporterUserName: reporterUser[0]?.username ?? '',
+    reporterUserDisplayName: reporterUser[0]?.displayName ?? '',
+    reason: report[0].reason,
+    description: report[0].description,
+    evidence: report[0].evidence ?? undefined,
+    status: report[0].status,
+    adminNotes: report[0].adminNotes ?? undefined,
+    createdAt: report[0].createdAt,
+    updatedAt: report[0].updatedAt,
+    reviewedAt: report[0].reviewedAt ?? undefined,
+    reviewedBy: report[0].reviewedBy ?? undefined,
+    reviewedByName: reviewedByUser?.username ?? undefined,
+  };
+}
+
+// Update report status (admin only)
+export async function updateReportStatus(input: {
+  reportId: string;
+  status: 'pending' | 'reviewed' | 'dismissed' | 'action_taken';
+  adminNotes?: string;
+  reviewedBy: number;
+}): Promise<void> {
+  const db = await requireDb();
+  
+  await db
+    .update(userReports)
+    .set({
+      status: input.status,
+      adminNotes: input.adminNotes,
+      reviewedAt: new Date(),
+      reviewedBy: input.reviewedBy,
+    })
+    .where(eq(userReports.reportId, input.reportId));
 }

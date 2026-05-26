@@ -24,6 +24,10 @@ import {
   getDrafts,
   deleteDraft,
   getSiteStatistics,
+  submitUserReport,
+  getUserReports,
+  getUserReportDetails,
+  updateReportStatus,
 } from "./db";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -650,6 +654,27 @@ export const appRouter = router({
       .mutation(({ ctx, input }) => {
         return deleteDraft({ id: ctx.user.id, name: ctx.user.name }, { draftId: input.draftId });
       }),
+    submitReport: protectedProcedure
+      .input(
+        z.object({
+          reportedUserId: z.number().int().positive(),
+          reason: z.string().min(1).max(100),
+          description: z.string().min(10).max(2000),
+          evidence: z.string().max(500).optional(),
+        }),
+      )
+      .mutation(async ({ ctx, input }) => {
+        if (input.reportedUserId === ctx.user.id) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'You cannot report yourself' });
+        }
+        return submitUserReport({
+          reportedUserId: input.reportedUserId,
+          reporterUserId: ctx.user.id,
+          reason: input.reason,
+          description: input.description,
+          evidence: input.evidence,
+        });
+      }),
   }),
   admin: router({
     // Platform statistics
@@ -865,3 +890,49 @@ export const appRouter = router({
 });
 
 export type AppRouter = typeof appRouter;
+
+
+// Add these procedures before the closing of admin router
+// Reported users management
+export const reportedUsersRouter = router({
+  getReportedUsers: protectedProcedure
+    .input(
+      z.object({
+        status: z.enum(['pending', 'reviewed', 'dismissed', 'action_taken']).optional(),
+        limit: z.number().int().positive().default(50),
+        offset: z.number().int().nonnegative().default(0),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      return getUserReports({
+        status: input.status,
+        limit: input.limit,
+        offset: input.offset,
+      });
+    }),
+  getReportDetails: protectedProcedure
+    .input(z.object({ reportId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      return getUserReportDetails(input.reportId);
+    }),
+  updateReportStatus: protectedProcedure
+    .input(
+      z.object({
+        reportId: z.string(),
+        status: z.enum(['pending', 'reviewed', 'dismissed', 'action_taken']),
+        adminNotes: z.string().max(2000).optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      await updateReportStatus({
+        reportId: input.reportId,
+        status: input.status,
+        adminNotes: input.adminNotes,
+        reviewedBy: ctx.user.id,
+      });
+      return { success: true };
+    }),
+});

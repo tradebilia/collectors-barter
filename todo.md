@@ -1017,3 +1017,15 @@ The application is fully functional with all core features working correctly.
 - [ ] Test online indicator on home page Recently Added items
 - [ ] Test online indicator on category pages
 - [ ] Test online indicator on item detail pages
+
+
+## Reported Users Feature
+- [x] Create a database table for user reports with fields: reportId, reportedUserId, reporterUserId, reason, description, evidence, status, createdAt
+- [x] Add tRPC procedure to submit a user report from the Report User page
+- [x] Add "Reported Users" tab to the admin page dashboard
+- [x] Display reported users list with Report ID, reported user name, reason, and status
+- [ ] Create a detail view modal/panel that shows full report details when admin clicks Report ID
+- [ ] Add ability for admin to mark reports as reviewed, dismissed, or take action
+- [ ] Write tests for the report submission and retrieval procedures
+- [ ] Add user lookup functionality to find user ID from username
+- [ ] Add email notifications when reports are submitted

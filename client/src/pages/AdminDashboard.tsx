@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { BarChart3, Users, Package, Settings, Trash2 } from "lucide-react";
+import { BarChart3, Users, Package, Settings, Trash2, Flag } from "lucide-react";
 import { getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
 import { TopBar } from "@/components/TopBar";
@@ -33,6 +33,13 @@ export default function AdminDashboard() {
     enabled: user?.role === "admin",
     refetchOnWindowFocus: true,
   });
+  const reportsQuery = trpc.admin.getReportedUsers.useQuery(
+    { status: undefined, limit: 50, offset: 0 },
+    {
+      enabled: user?.role === "admin",
+      refetchOnWindowFocus: true,
+    }
+  );
   const deleteUserMutation = trpc.admin.deleteUser.useMutation();
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<any>(null);
@@ -105,7 +112,7 @@ export default function AdminDashboard() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-7">
             <TabsTrigger value="statistics" className="flex items-center gap-2">
               <BarChart3 className="h-4 w-4 hidden sm:inline" />
               <span className="hidden sm:inline">Statistics</span>
@@ -129,6 +136,10 @@ export default function AdminDashboard() {
             <TabsTrigger value="deleted" className="flex items-center gap-2">
               <Users className="h-4 w-4 hidden sm:inline" />
               <span className="hidden sm:inline">Deleted</span>
+            </TabsTrigger>
+            <TabsTrigger value="reports" className="flex items-center gap-2">
+              <Flag className="h-4 w-4 hidden sm:inline" />
+              <span className="hidden sm:inline">Reports</span>
             </TabsTrigger>
           </TabsList>
 
@@ -448,6 +459,74 @@ export default function AdminDashboard() {
                     <li>Configure notification settings</li>
                   </ul>
                 </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Reported Users Tab */}
+          <TabsContent value="reports" className="space-y-4 mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Flag className="h-5 w-5 text-red-500" />
+                  Reported Users
+                </CardTitle>
+                <CardDescription>
+                  Review and manage user reports submitted by the community
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {reportsQuery.isLoading ? (
+                  <div className="text-sm text-muted-foreground">Loading reports...</div>
+                ) : reportsQuery.data && reportsQuery.data.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead className="border-b border-border">
+                        <tr>
+                          <th className="text-left py-2 px-4">Report ID</th>
+                          <th className="text-left py-2 px-4">Reported User</th>
+                          <th className="text-left py-2 px-4">Reason</th>
+                          <th className="text-left py-2 px-4">Status</th>
+                          <th className="text-left py-2 px-4">Submitted</th>
+                          <th className="text-left py-2 px-4">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {reportsQuery.data.map((report) => (
+                          <tr key={report.id} className="border-b border-border hover:bg-accent/50">
+                            <td className="py-2 px-4 font-mono text-xs font-semibold text-blue-500">{report.reportId}</td>
+                            <td className="py-2 px-4">{report.reportedUserName}</td>
+                            <td className="py-2 px-4 text-xs">{report.reason}</td>
+                            <td className="py-2 px-4">
+                              <span className={`inline-block px-2 py-1 rounded text-xs font-medium ${
+                                report.status === 'pending' ? 'bg-yellow-500/20 text-yellow-700' :
+                                report.status === 'reviewed' ? 'bg-blue-500/20 text-blue-700' :
+                                report.status === 'dismissed' ? 'bg-gray-500/20 text-gray-700' :
+                                'bg-red-500/20 text-red-700'
+                              }`}>
+                                {report.status.replace('_', ' ')}
+                              </span>
+                            </td>
+                            <td className="py-2 px-4 text-xs">
+                              {new Date(report.createdAt).toLocaleDateString()}
+                            </td>
+                            <td className="py-2 px-4">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setSelectedUser(report)}
+                              >
+                                View
+                              </Button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div className="text-sm text-muted-foreground">No reports found</div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>

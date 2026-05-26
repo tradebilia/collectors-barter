@@ -362,3 +362,32 @@ export const deletedAccounts = mysqlTable(
 );
 
 export type DeletedAccount = typeof deletedAccounts.$inferSelect;
+
+
+export const userReports = mysqlTable(
+  "userReports",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    reportId: varchar("reportId", { length: 20 }).unique().notNull(), // e.g., "RPT-001", "RPT-002"
+    reportedUserId: int("reportedUserId").notNull().references(() => users.id),
+    reporterUserId: int("reporterUserId").notNull().references(() => users.id),
+    reason: varchar("reason", { length: 100 }).notNull(), // e.g., "Fraud", "Harassment", "Inappropriate Content"
+    description: text("description").notNull(),
+    evidence: text("evidence"), // Optional: URL or description of evidence
+    status: mysqlEnum("status", ["pending", "reviewed", "dismissed", "action_taken"]).default("pending").notNull(),
+    adminNotes: text("adminNotes"), // Notes added by admin when reviewing
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+    reviewedAt: timestamp("reviewedAt"),
+    reviewedBy: int("reviewedBy").references(() => users.id),
+  },
+  table => ({
+    reportedUserIdIdx: index("userReports_reportedUserId_idx").on(table.reportedUserId),
+    reporterUserIdIdx: index("userReports_reporterUserId_idx").on(table.reporterUserId),
+    statusIdx: index("userReports_status_idx").on(table.status),
+    createdAtIdx: index("userReports_createdAt_idx").on(table.createdAt),
+  })
+);
+
+export type UserReport = typeof userReports.$inferSelect;
+export type UserReportInsert = typeof userReports.$inferInsert;

@@ -183,6 +183,13 @@
       "when": 1779717415034,
       "tag": "0025_perpetual_calypso",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "5",
+      "when": 1779754588167,
+      "tag": "0026_military_vargas",
+      "breakpoints": true
     }
   ]
 }
