@@ -1790,7 +1790,7 @@ export async function updateUserEbayInfo(input: {
       ebayUsername: input.ebayUsername,
       ebayUserId: input.ebayUserId,
       ebayFeedbackScore: input.ebayFeedbackScore,
-      ebayFeedbackPercentage: input.ebayFeedbackPercentage,
+      ebayFeedbackPercentage: input.ebayFeedbackPercentage.toString(),
       ebayMemberSince: input.ebayMemberSince,
       ebayConnectedAt: new Date(),
       ebayAccessToken: input.ebayAccessToken,
@@ -1821,7 +1821,13 @@ export async function getUserEbayInfo(userId: number): Promise<{
     .from(users)
     .where(eq(users.id, userId))
     .limit(1);
-  return user[0] || null;
+  
+  if (!user[0]) return null;
+  
+  return {
+    ...user[0],
+    ebayFeedbackPercentage: user[0].ebayFeedbackPercentage ? parseFloat(user[0].ebayFeedbackPercentage) : null,
+  };
 }
 
 export async function storeEbayFeedback(input: {
@@ -1877,7 +1883,7 @@ export async function flagLowFeedback(input: {
     await db.insert(lowFeedbackFlags).values({
       userId: input.userId,
       feedbackScore: input.feedbackScore,
-      feedbackPercentage: input.feedbackPercentage,
+      feedbackPercentage: input.feedbackPercentage.toString(),
       flaggedReason: input.flaggedReason,
     });
   }

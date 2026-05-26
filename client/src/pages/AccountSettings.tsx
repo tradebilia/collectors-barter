@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { EbayConnection } from "@/components/EbayConnection";
 import { trpc } from "@/lib/trpc";
 import { Bell, Lock, Mail, Loader2, Save, Shield, Link as LinkIcon, Upload, Eye, EyeOff, Cog } from "lucide-react";
 import { FormEvent, useEffect, useState, useRef } from "react";
@@ -900,6 +901,8 @@ export default function AccountSettings() {
                       You'll be redirected directly to each site to authorize the connection. We never store your login credentials.
                     </p>
                   </div>
+
+                  <EbayConnection />
 
                   <div className="space-y-3">
                     {accountSources.map((source) => (
