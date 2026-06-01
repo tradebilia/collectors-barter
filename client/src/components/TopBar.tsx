@@ -14,7 +14,7 @@ interface TopBarProps {
 }
 
 export function TopBar({
-  logoUrl = "/manus-storage/tradebilia-longform-no-navy-clean_d2f04453.png",
+  logoUrl = "/images/tradebilia-logo.svg",
   searchPlaceholder = "Search...",
   onSearchChange,
 }: TopBarProps) {
@@ -67,9 +67,9 @@ export function TopBar({
         <div className="flex items-center gap-3 md:gap-4 flex-shrink-0">
           <TopRightIcons iconColor="text-white/70" />
           {isAuthenticated && user?.role === "admin" && (
-            <a href="/admin" className="p-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 transition" title="Admin Dashboard">
+            <Link href="/admin" className="p-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 transition" title="Admin Dashboard">
               <Shield className="h-5 w-5 text-white" />
-            </a>
+            </Link>
           )}
           {isAuthenticated ? (
             <Button

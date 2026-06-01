@@ -10,7 +10,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { useParams } from "wouter";
 import { Link } from "wouter";
 
-const TRADEBILIA_LOGO_URL = "/manus-storage/Tradebilialogo_886a61b7.webp";
+const TRADEBILIA_LOGO_URL = "/images/tradebilia-logo.svg";
 
 const categoryLinks = [
   { value: "comics", label: "Comics" },

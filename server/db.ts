@@ -63,7 +63,27 @@ type AvatarUploadInput = {
 
 export async function requireDb(): Promise<ReturnType<typeof drizzle>> {
   if (!_db) {
-    _db = drizzle(ENV.databaseUrl);
+    const url = new URL(ENV.databaseUrl);
+    const sslParam = url.searchParams.get("ssl");
+    
+    if (sslParam) {
+      try {
+        // mysql2 expects an object for SSL, not a string
+        const sslConfig = JSON.parse(sslParam);
+        url.searchParams.delete("ssl");
+        _db = drizzle({
+          connection: {
+            uri: url.toString(),
+            ssl: sslConfig
+          }
+        });
+      } catch (e) {
+        console.error("[requireDb] Failed to parse SSL config, falling back to default:", e);
+        _db = drizzle(ENV.databaseUrl);
+      }
+    } else {
+      _db = drizzle(ENV.databaseUrl);
+    }
   }
   return _db;
 }
@@ -1256,9 +1276,13 @@ export async function updateProfile(
   }
 
   if (input.avatar) {
-    const uploaded = await uploadImage("avatars", user.id, input.avatar);
-    updateSet.avatarKey = uploaded.key;
-    updateSet.avatarUrl = uploaded.url;
+    try {
+      const uploaded = await uploadImage("avatars", user.id, input.avatar);
+      updateSet.avatarKey = uploaded.key;
+      updateSet.avatarUrl = uploaded.url;
+    } catch (error) {
+      console.error("[updateProfile] Upload failed, skipping avatar update:", error);
+    }
   }
 
   if (input.acceptedTerms !== undefined) {

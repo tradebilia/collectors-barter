@@ -8,7 +8,7 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ children, fallback }: ProtectedRouteProps) {
-  const { user, isLoading } = useAuth();
+  const { user, loading: isLoading } = useAuth();
   const [, setLocation] = useLocation();
 
   if (isLoading) {

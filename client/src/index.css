@@ -250,19 +250,29 @@
 }
 
 
-@keyframes scroll {
+@keyframes scroll-marquee {
   0% {
     transform: translateX(0);
   }
   100% {
-    transform: translateX(-100%);
+    transform: translateX(calc(-236px * 15));
   }
 }
 
 .animate-scroll {
-  animation: scroll 30s linear infinite;
+  animation: scroll-marquee 40s linear infinite;
+  display: flex;
+  width: max-content;
 }
 
-.animate-scroll:hover {
-  animation-play-state: paused;
+/* Removed pause on hover as per user request */
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
 }

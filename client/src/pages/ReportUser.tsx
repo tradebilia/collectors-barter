@@ -17,7 +17,7 @@ import { toast } from "sonner";
 import { Link } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
 
-const TRADEBILIA_LOGO_URL = "/manus-storage/ReportaUser_001357ab.svg";
+const TRADEBILIA_LOGO_URL = "/images/ReportaUser_001357ab.svg";
 
 const categoryLinks = [
   ["Comics", "comics"],
@@ -133,7 +133,7 @@ export default function ReportUser() {
 
       <section className="relative z-0 w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden bg-[#00143A] text-white border-b border-white/10">
         <div className="absolute inset-0 opacity-20" style={{
-          backgroundImage: 'url(/manus-storage/hero-background-fullwidth_e851e7cd.png)',
+          backgroundImage: 'url(/images/Sportscardwallpaper_7d372f7d.webp)',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat'

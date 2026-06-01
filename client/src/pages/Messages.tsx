@@ -197,9 +197,9 @@ export default function Messages() {
         <div className="container py-8 lg:py-10">
           <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-4xl">
-              <img src={TRADEBILIA_LOGO_URL} alt="Tradebilia" className="h-auto w-full max-w-[34rem]" />
-              <p className="mt-6 text-xs font-semibold uppercase tracking-[0.34em] text-white/70">Trade communications</p>
-              <h1 className="mt-3 text-5xl font-semibold leading-tight text-white sm:text-6xl">A dedicated inbox for direct collector messages, proposal threads, and accepted-trade handoff.</h1>
+              <img src="/images/Inbox.svg" alt="Inbox" className="h-auto w-full max-w-[34rem]" />
+              
+              
             </div>
             <div className="grid gap-3 sm:grid-cols-3 lg:w-[24rem]">
               {[

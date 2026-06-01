@@ -106,6 +106,7 @@ export const appRouter = router({
         .select({
           firstName: userProfiles.firstName,
           lastName: userProfiles.lastName,
+          avatarUrl: userProfiles.avatarUrl,
         })
         .from(userProfiles)
         .where(eq(userProfiles.userId, user.id))
@@ -115,6 +116,7 @@ export const appRouter = router({
         ...user,
         firstName: profile[0]?.firstName ?? null,
         lastName: profile[0]?.lastName ?? null,
+        avatarUrl: profile[0]?.avatarUrl ?? null,
       };
     }),
     signup: publicProcedure

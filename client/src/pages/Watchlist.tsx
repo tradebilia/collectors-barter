@@ -13,7 +13,7 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Link } from "wouter";
 
-const TRADEBILIA_LOGO_URL = "/manus-storage/Tradebilialogo_886a61b7.webp";
+const TRADEBILIA_LOGO_URL = "/images/tradebilia-logo.svg";
 
 const categoryLinks = [
   ["Comics", "comics"],

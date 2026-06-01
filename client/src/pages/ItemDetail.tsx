@@ -19,25 +19,25 @@ import { Link, useRoute, useLocation } from "wouter";
 import { toast } from "sonner";
 import { ArrowLeft } from "lucide-react";
 
-const TRADEBILIA_LOGO_URL = "/manus-storage/tradebilia-longform-no-navy-clean_d2f04453.png";
+const TRADEBILIA_LOGO_URL = "/images/tradebilia-logo.svg";
 
 
 const getCategoryWallpaperUrl = (category: string): string => {
   switch(category) {
     case 'sports_cards':
-      return '/manus-storage/Sportscardwallpaper_7d372f7d.webp';
+      return '/images/Sportscardwallpaper_7d372f7d.webp';
     case 'video_games':
       return 'https://d2xsxph8kpxj0f.cloudfront.net/310519663570115757/nAx6ATm2BH4G46yabuMZgM/video-games-background-kyx4vVUqTYCMC3kMbtokYU.webp';
     case 'coins':
-      return '/manus-storage/Coins2_54d5f0d9.png';
+      return '/images/Coins2_54d5f0d9.png';
     case 'stamps':
-      return '/manus-storage/Stamps5_7feb0c7e.png';
+      return '/images/Stamps5_7feb0c7e.png';
     case 'vintage_toys':
-      return '/manus-storage/Toys4_70f212d6.png';
+      return '/images/Toys4_70f212d6.png';
     case 'autographs':
-      return '/manus-storage/Auto2_41464c02.png';
+      return '/images/Auto2_41464c02.png';
     case 'movies':
-      return '/manus-storage/VHS1_4fe4bb67.png';
+      return '/images/VHS1_4fe4bb67.png';
     case 'comics':
       return 'https://d2xsxph8kpxj0f.cloudfront.net/310519663570115757/nAx6ATm2BH4G46yabuMZgM/comics-background-YZiiH2cyV8YJx6GFQj4PKC.webp';
     case 'pokemon':

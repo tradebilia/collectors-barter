@@ -27,7 +27,7 @@ import { Link } from "wouter";
 import { TopBar } from "@/components/TopBar";
 import { CategoryBar } from "@/components/CategoryBar";
 
-const TRADEBILIA_LOGO_URL = "/manus-storage/tradebilia-longform-no-navy-clean_d2f04453.png";
+const TRADEBILIA_LOGO_URL = "/images/tradebilia-logo.svg";
 
 const categoryOptions = [
   { value: "comics", label: "Comics" },
@@ -43,9 +43,8 @@ const categoryOptions = [
 ] as const;
 
 const accountSources = [
-  { value: "ebay", label: "eBay", logo: "/manus-storage/ebay-logo_b3d303cb.png" },
-  { value: "paypal", label: "PayPal", logo: "/manus-storage/paypal-logo_62835ee7.png" },
-  { value: "facebook", label: "Facebook", logo: "/manus-storage/facebook-logo_1fd22cc7.png" },
+  { value: "paypal", label: "PayPal", logo: "/images/paypal-logo_62835ee7.png" },
+  { value: "facebook", label: "Facebook", logo: "/images/facebook-logo_1fd22cc7.png" },
 ] as const;
 
 type AccountSource = typeof accountSources[number]["value"];
@@ -336,14 +335,24 @@ export default function AccountSettings() {
     fileInput?.click();
   };
 
+  const [isDragging, setIsDragging] = useState(false);
+
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
   };
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
+    setIsDragging(false);
     const file = e.dataTransfer.files?.[0];
     if (file) {
       handleFileUpload(file);
@@ -388,7 +397,11 @@ export default function AccountSettings() {
       });
       // Refresh the dashboard data and auth context
       await utils.market.dashboard.refetch();
-      await utils.auth.me.refetch();
+      const updatedAuth = await utils.auth.me.fetch();
+      // Manually update the auth context to trigger immediate UI refresh
+      utils.auth.me.setData(undefined, updatedAuth);
+      // Ensure local state is updated
+      setProfileForm(prev => ({ ...prev, avatarPreview: updatedAuth?.avatarUrl || prev.avatarPreview }));
       // Also refetch admin queries so they see updated profile data
       await utils.admin.getAllUsers.refetch();
       await utils.admin.getPlatformStatistics.refetch();
@@ -535,7 +548,7 @@ export default function AccountSettings() {
       {/* Hero Section */}
       <section className="relative w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden bg-[#00143A] text-white">
         <div className="absolute inset-0 opacity-20" style={{
-          backgroundImage: 'url(/manus-storage/hero-background-fullwidth_e851e7cd.png)',
+          backgroundImage: 'url(/images/Sportscardwallpaper_7d372f7d.webp)',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat'
@@ -543,7 +556,7 @@ export default function AccountSettings() {
         <div className="container relative flex h-64 items-center justify-center py-0 sm:h-72 sm:py-0 lg:h-80 lg:py-0">
           <div className="flex w-full max-w-6xl items-center justify-center -ml-32">
             <img
-              src="/manus-storage/AccountSetup_7b72a15a.svg"
+              src="/images/AccountSettings.svg"
               alt="Settings"
               className="h-auto w-full"
             />
@@ -583,8 +596,13 @@ export default function AccountSettings() {
                       <div className="cursor-pointer">
                         <div
                           onDragOver={handleDragOver}
+                          onDragLeave={handleDragLeave}
                           onDrop={handleDrop}
-                          className="rounded-lg border-2 border-dashed border-slate-300 p-4 text-center hover:border-slate-400 transition-colors"
+                          className={`rounded-lg border-2 border-dashed p-4 text-center transition-colors ${
+                            isDragging 
+                              ? 'border-amber-500 bg-amber-50/50' 
+                              : 'border-slate-300 hover:border-slate-400'
+                          }`}
                         >
                           <Button type="button" variant="outline" className="rounded-lg w-full" onClick={handleUploadClick}>
                             <Upload className="mr-2 h-4 w-4" />
@@ -895,16 +913,15 @@ export default function AccountSettings() {
                   <CardDescription>Link external accounts to verify your trading history and build trust</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
                     <p className="text-xs text-blue-900 font-medium">🔒 Your credentials are secure</p>
                     <p className="text-xs text-blue-800 mt-1">
                       You'll be redirected directly to each site to authorize the connection. We never store your login credentials.
                     </p>
                   </div>
 
-                  <EbayConnection />
-
                   <div className="space-y-3">
+                    <EbayConnection />
                     {accountSources.map((source) => (
                       <div
                         key={source.value}

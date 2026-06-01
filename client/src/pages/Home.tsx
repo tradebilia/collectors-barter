@@ -33,7 +33,7 @@ type UploadedImage = {
 type ListingCategory = (typeof categoryOptions)[number]["value"];
 type ListingCondition = Exclude<(typeof conditionOptions)[number]["value"], "all">;
 
-const TRADEBILIA_LOGO_URL = "/manus-storage/tradebilia-longform-no-navy-clean_d2f04453.png";
+const TRADEBILIA_LOGO_URL = "/images/tradebilia-logo.svg";
 
 const categoryOptions = [
   { value: "comics", label: "Comics" },
@@ -58,11 +58,11 @@ const conditionOptions = [
 ] as const;
 
 const fallbackRecentItems = [
-  { id: -1, title: "Baseball Legends Card Pack", price: "$100.00", subtitle: "4.7 ★ · 67 reviews", imageUrl: "/manus-storage/sportscards2_50e2e734.png" },
-  { id: -2, title: "Transformers Action Figures Set", price: "$120.00", subtitle: "4.8 ★ · 51 reviews", imageUrl: "/manus-storage/Vintagetoys2_b56d7fdc.png" },
-  { id: -3, title: "Action Comics Collection", price: "$150.00", subtitle: "4.9 ★ · 41 reviews", imageUrl: "/manus-storage/Comicpage2_6d086599.png" },
-  { id: -4, title: "Classic Barbie Doll", price: "$80.00", subtitle: "4.6 ★ · 38 reviews", imageUrl: "/manus-storage/Vintagetoys2_b56d7fdc.png" },
-  { id: -5, title: "Comic Book Mystery Bundle", price: "$80.00", subtitle: "4.4 ★ · 29 reviews", imageUrl: "/manus-storage/Comicpage2_6d086599.png" },
+  { id: -1, title: "Baseball Legends Card Pack", price: "$100.00", subtitle: "4.7 ★ · 67 reviews", imageUrl: "/images/sportscards2_50e2e734.png" },
+  { id: -2, title: "Transformers Action Figures Set", price: "$120.00", subtitle: "4.8 ★ · 51 reviews", imageUrl: "/images/Vintagetoys2_b56d7fdc.png" },
+  { id: -3, title: "Action Comics Collection", price: "$150.00", subtitle: "4.9 ★ · 41 reviews", imageUrl: "/images/Comicpage2_6d086599.png" },
+  { id: -4, title: "Classic Barbie Doll", price: "$80.00", subtitle: "4.6 ★ · 38 reviews", imageUrl: "/images/Vintagetoys2_b56d7fdc.png" },
+  { id: -5, title: "Comic Book Mystery Bundle", price: "$80.00", subtitle: "4.4 ★ · 29 reviews", imageUrl: "/images/Comicpage2_6d086599.png" },
 ] as const;
 
 const fallbackMostViewed = [
@@ -315,7 +315,7 @@ export default function Home() {
   ];
 
   const recentShelfItems = (marketplaceQuery.data?.listings ?? []).length
-    ? (marketplaceQuery.data?.listings ?? []).slice(0, 5).map(listing => ({
+    ? (marketplaceQuery.data?.listings ?? []).slice(0, 15).map(listing => ({
         id: listing.id,
         title: listing.title,
         price: "$100.00",
@@ -464,8 +464,8 @@ export default function Home() {
 
       <main className="pb-24">
         <section className="relative z-0 w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden bg-[#00143A] text-white">
-          <div className="absolute inset-0 opacity-20" style={{
-            backgroundImage: 'url(/manus-storage/hero-background-fullwidth_e851e7cd.png)',
+          <div className="absolute inset-0 opacity-40" style={{
+            backgroundImage: 'url(/images/hero-wallpaper.png)',
             backgroundSize: 'cover',
             backgroundPosition: 'center',
             backgroundRepeat: 'no-repeat'
@@ -473,7 +473,7 @@ export default function Home() {
           <div className="container relative flex h-64 items-center justify-center py-0 sm:h-72 sm:py-0 lg:h-80 lg:py-0">
             <div className="flex w-full max-w-6xl items-center justify-center -ml-32">
               <img
-                src="/manus-storage/tradebilia_final_transparent_443f029c.svg"
+                src="/images/tradebilia-logo.svg"
                 alt="Tradebilia"
                 className="h-auto w-full"
               />

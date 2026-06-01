@@ -17,6 +17,8 @@ export function TopRightIcons({ className = "flex items-center gap-3 md:gap-4", 
   });
   const dashboardQuery = trpc.market.dashboard.useQuery(undefined, {
     enabled: !!user,
+    refetchOnMount: true,
+    staleTime: 0,
   });
 
   if (!user) {
@@ -25,7 +27,7 @@ export function TopRightIcons({ className = "flex items-center gap-3 md:gap-4", 
 
   const unreadMessages = typeof unreadQuery.data?.unreadMessages === 'number' ? unreadQuery.data.unreadMessages : 0;
   const unreadNotifications = typeof unreadQuery.data?.unreadNotifications === 'number' ? unreadQuery.data.unreadNotifications : 0;
-  const userAvatarUrl = dashboardQuery.data?.profile?.avatarUrl || undefined;
+  const userAvatarUrl = user?.avatarUrl || dashboardQuery.data?.profile?.avatarUrl || undefined;
 
   return (
     <div className={className}>

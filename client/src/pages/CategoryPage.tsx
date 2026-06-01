@@ -241,7 +241,7 @@ export default function CategoryPage() {
     ...card,
     imageUrl: resolveTradebiliaListingImage({ title: card.title, category: slug }),
   }));
-  const SPORTS_CARDS_LONG_LOGO_URL = "/manus-storage/tradebilia-longform-no-navy-clean_d2f04453.png";
+  const SPORTS_CARDS_LONG_LOGO_URL = "/images/tradebilia-logo.svg";
 
   return (
     <div className={`min-h-screen ${theme.pageClassName}`}>
@@ -251,7 +251,7 @@ export default function CategoryPage() {
       />
       <header className={`relative overflow-hidden border-b ${theme.borderClassName} ${theme.heroClassName}`} style={{ minHeight: '400px' }}>
         <div className={`relative overflow-hidden ${theme.textureClassName}`} style={{
-          backgroundImage: isSportsCardsPage ? 'url(/manus-storage/Sportscardwallpaper_7d372f7d.webp)' : slug === 'video_games' ? 'url(https://d2xsxph8kpxj0f.cloudfront.net/310519663570115757/nAx6ATm2BH4G46yabuMZgM/video-games-background-kyx4vVUqTYCMC3kMbtokYU.webp)' : slug === 'coins' ? 'url(/manus-storage/Coins2_54d5f0d9.png)' : slug === 'stamps' ? 'url(/manus-storage/Stamps5_7feb0c7e.png)' : slug === 'vintage_toys' ? 'url(/manus-storage/Toys4_70f212d6.png)' : slug === 'autographs' ? 'url(/manus-storage/Auto2_41464c02.png)' : slug === 'movies' ? 'url(/manus-storage/VHS1_4fe4bb67.png)' : slug === 'comics' ? 'url(https://d2xsxph8kpxj0f.cloudfront.net/310519663570115757/nAx6ATm2BH4G46yabuMZgM/comics-background-YZiiH2cyV8YJx6GFQj4PKC.webp)' : slug === 'pokemon' ? 'url(https://d2xsxph8kpxj0f.cloudfront.net/310519663570115757/nAx6ATm2BH4G46yabuMZgM/pokemon-background-J6h7Mte6BSYA3GfQ4vtdFj.webp)' : slug === 'disney_pins' ? 'url(https://d2xsxph8kpxj0f.cloudfront.net/310519663570115757/nAx6ATm2BH4G46yabuMZgM/disney-pins-background-F6yUvFLVrhmnaWk6GsFMZ8.webp)' : undefined,
+          backgroundImage: isSportsCardsPage ? 'url(/images/Sportscardwallpaper_7d372f7d.webp)' : slug === 'video_games' ? 'url(https://d2xsxph8kpxj0f.cloudfront.net/310519663570115757/nAx6ATm2BH4G46yabuMZgM/video-games-background-kyx4vVUqTYCMC3kMbtokYU.webp)' : slug === 'coins' ? 'url(/images/Coins2_54d5f0d9.png)' : slug === 'stamps' ? 'url(/images/Stamps5_7feb0c7e.png)' : slug === 'vintage_toys' ? 'url(/images/Toys4_70f212d6.png)' : slug === 'autographs' ? 'url(/images/Auto2_41464c02.png)' : slug === 'movies' ? 'url(/images/VHS1_4fe4bb67.png)' : slug === 'comics' ? 'url(https://d2xsxph8kpxj0f.cloudfront.net/310519663570115757/nAx6ATm2BH4G46yabuMZgM/comics-background-YZiiH2cyV8YJx6GFQj4PKC.webp)' : slug === 'pokemon' ? 'url(https://d2xsxph8kpxj0f.cloudfront.net/310519663570115757/nAx6ATm2BH4G46yabuMZgM/pokemon-background-J6h7Mte6BSYA3GfQ4vtdFj.webp)' : slug === 'disney_pins' ? 'url(https://d2xsxph8kpxj0f.cloudfront.net/310519663570115757/nAx6ATm2BH4G46yabuMZgM/disney-pins-background-F6yUvFLVrhmnaWk6GsFMZ8.webp)' : undefined,
           backgroundSize: 'cover',
           backgroundPosition: slug === 'movies' ? 'center top' : 'center',
           backgroundAttachment: 'scroll',
@@ -280,9 +280,9 @@ export default function CategoryPage() {
                   zIndex: 50
                 }}>
                   {slug === "disney_pins" ? (
-                    <img src="/manus-storage/DisneyPins_b2a9e148.png" alt="Disney Pins" style={{ maxHeight: "450px", width: "auto", objectFit: "contain", marginTop: "70px" }} />
+                    <img src="/images/Disney_e4ae94b5.png" alt="Disney Pins" style={{ maxHeight: "450px", width: "auto", objectFit: "contain", marginTop: "70px" }} />
                   ) : slug === "pokemon" ? (
-                    <img src="/manus-storage/Pokemon_bf82cd71.png" alt="Pokemon" style={{ maxHeight: "400px", maxWidth: "90%", width: "auto", objectFit: "contain", marginTop: "0px", position: "relative", zIndex: 50 }} />
+                    <img src="/images/Pokemon_095946ab.png" alt="Pokemon" style={{ maxHeight: "400px", maxWidth: "90%", width: "auto", objectFit: "contain", marginTop: "0px", position: "relative", zIndex: 50 }} />
                   ) : slug === "sports_cards" ? "SPORTS CARD" : categoryLabel.toUpperCase()}
                 </h1>
                 <div className="mt-8 h-px bg-white/50 mx-auto" style={{ maxWidth: "100%", width: "100%" }}></div>

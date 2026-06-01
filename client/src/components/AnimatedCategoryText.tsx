@@ -14,7 +14,7 @@ const categories = [
 
 const subtitleWords = ['Collectors', 'Trading', 'Exchange'];
 
-const WHEEL_ICON_URL = "/manus-storage/arrows_transparent_25a2bc2f.png";
+const WHEEL_ICON_URL = "/images/arrows_transparent_25a2bc2f.png";
 
 export function AnimatedCategoryText() {
   const [currentIndex, setCurrentIndex] = useState(0);
