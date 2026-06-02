@@ -3,15 +3,15 @@
 // Downloads return /manus-storage/{key} paths served via 307 redirect.
 
 import { ENV } from "./_core/env";
-import fs from "fs";
-import path from "path";
 
 function getForgeConfig() {
   const forgeUrl = ENV.forgeApiUrl;
   const forgeKey = ENV.forgeApiKey;
 
   if (!forgeUrl || !forgeKey) {
-    return null;
+    throw new Error(
+      "Storage config missing: set BUILT_IN_FORGE_API_URL and BUILT_IN_FORGE_API_KEY",
+    );
   }
 
   return { forgeUrl: forgeUrl.replace(/\/+$/, ""), forgeKey };
@@ -33,27 +33,8 @@ export async function storagePut(
   data: Buffer | Uint8Array | string,
   contentType = "application/octet-stream",
 ): Promise<{ key: string; url: string }> {
-  const config = getForgeConfig();
+  const { forgeUrl, forgeKey } = getForgeConfig();
   const key = appendHashSuffix(normalizeKey(relKey));
-
-  // Local storage fallback if Forge is not configured
-  if (!config) {
-    console.log(`[Storage] Forge not configured, using local storage for ${key}`);
-    const publicDir = path.join(process.cwd(), "client", "public");
-    const uploadDir = path.join(publicDir, "uploads");
-    const fullPath = path.join(uploadDir, key);
-    
-    // Ensure directory exists
-    fs.mkdirSync(path.dirname(fullPath), { recursive: true });
-    
-    // Write file
-    const buffer = Buffer.isBuffer(data) ? data : Buffer.from(data as any);
-    fs.writeFileSync(fullPath, buffer);
-    
-    return { key, url: `/uploads/${key}` };
-  }
-
-  const { forgeUrl, forgeKey } = config;
 
   // 1. Get presigned PUT URL from Forge
   const presignUrl = new URL("v1/storage/presign/put", forgeUrl + "/");
