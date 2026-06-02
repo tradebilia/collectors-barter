@@ -262,8 +262,8 @@ export default function CategoryPage() {
           <div className={`absolute inset-0 ${slug === 'movies' ? 'bg-black/10' : 'bg-black/30'}`}></div>
           <div className="container relative py-6 lg:py-8 z-10">
             <div className="max-w-4xl mx-auto text-center">
-              <p className="mt-2 text-xs font-semibold uppercase tracking-[0.36em] opacity-80" style={{ visibility: slug === "pokemon" ? "hidden" : "visible" }}>{theme.eyebrow}</p>
-              <div className="mt-3 leading-none">
+              <p className="mt-2 text-xs font-semibold uppercase tracking-[0.36em] opacity-80" style={{ visibility: slug === "pokemon" ? "hidden" : "visible", position: "relative", top: "-24px" }}>{theme.eyebrow}</p>
+              <div className="mt-3 leading-none" style={{ marginTop: "24px" }}>
                 <h1 className="max-w-full mx-auto text-6xl sm:text-7xl lg:text-8xl" style={{
                   fontFamily: getCategoryFont(slug),
                   fontWeight: 700,
@@ -283,9 +283,15 @@ export default function CategoryPage() {
                     <img src="/images/Disney_e4ae94b5.png" alt="Disney Pins" style={{ maxHeight: "450px", width: "auto", objectFit: "contain", marginTop: "70px" }} />
                   ) : slug === "pokemon" ? (
                     <img src="/images/Pokemon_095946ab.png" alt="Pokemon" style={{ maxHeight: "400px", maxWidth: "90%", width: "auto", objectFit: "contain", marginTop: "0px", position: "relative", zIndex: 50 }} />
-                  ) : slug === "sports_cards" ? "SPORTS CARD" : categoryLabel.toUpperCase()}
+                  ) : slug === "comics" ? (
+                    <img src="/manus-storage/Comics4_ef989684.png" alt="Comics" style={{ maxHeight: "320px", width: "auto", objectFit: "contain", marginTop: "0px", position: "relative", zIndex: 50, top: "16px" }} />
+                  ) : slug === "sports_cards" ? (
+                    <img src="/manus-storage/SportsCards1_ff8b8611.png" alt="Sports Cards" style={{ maxHeight: "320px", width: "auto", objectFit: "contain", marginTop: "0px", position: "relative", zIndex: 50, top: "-120px" }} />
+                  ) : slug === "vintage_toys" ? (
+                    <img src="/manus-storage/VintageToys_dcc69e1c.png" alt="Vintage Toys" style={{ maxHeight: "500px", width: "auto", objectFit: "contain", marginTop: "0px", position: "relative", zIndex: 50, top: "-160px" }} />
+                  ) : categoryLabel.toUpperCase()}
                 </h1>
-                <div className="mt-8 h-px bg-white/50 mx-auto" style={{ maxWidth: "100%", width: "100%" }}></div>
+                <div className="mt-8 h-px bg-white/50 mx-auto" style={{ maxWidth: "100%", width: "100%", marginTop: "64px" }}></div>
                 <p className="mt-8 text-3xl sm:text-4xl lg:text-5xl font-black uppercase tracking-[0.1em]" style={{
                   fontFamily: getCategoryFont(slug),
                   fontStyle: "italic",
@@ -295,7 +301,10 @@ export default function CategoryPage() {
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  lineHeight: "1"
+                  lineHeight: "1",
+                  marginTop: "48px",
+                  position: "relative",
+                  top: "-16px"
                 }}>
                   EXCHANGE
                 </p>
@@ -303,7 +312,7 @@ export default function CategoryPage() {
 
             </div>
             {/* Horizontal Stats Section */}
-            <div className="flex justify-center gap-6 flex-wrap mt-10 pt-8">
+            <div className="flex justify-center gap-6 flex-wrap mt-10 pt-8" style={{ position: "relative", top: "-60px" }}>
               {[
                 ["Listings", String(listings.length)],
                 ["Collectors", String(feedQuery.data?.highlights.activeCollectors ?? 0)],
