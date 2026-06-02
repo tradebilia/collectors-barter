@@ -18,7 +18,8 @@ const redirectToLoginIfUnauthorized = (error: unknown) => {
 
   if (!isUnauthorized) return;
 
-  window.location.href = getLoginUrl();
+  // Redirect to home page which will show sign-in modal
+  window.location.href = '/';
 };
 
 queryClient.getQueryCache().subscribe(event => {

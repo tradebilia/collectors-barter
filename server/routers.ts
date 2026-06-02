@@ -173,13 +173,23 @@ export const appRouter = router({
         }),
       )
       .mutation(async ({ input, ctx }) => {
+        console.log('[signin] Called with username:', input.username);
         const user = await getUserByUsername(input.username);
+        console.log('[signin] User found:', user ? `ID ${user.id}` : 'null');
         if (!user || !user.passwordHash) {
+          console.log('[signin] User not found or no password hash');
           throw new Error("Invalid username or password");
         }
 
+        console.log('[signin] User password hash type:', typeof user.passwordHash);
+        console.log('[signin] User password hash length:', user.passwordHash?.length);
+        console.log('[signin] User password hash starts with:', user.passwordHash?.substring(0, 10));
+        console.log('[signin] Input password length:', input.password.length);
+        
         const passwordMatch = verifyPassword(input.password, user.passwordHash);
+        console.log('[signin] Password match:', passwordMatch);
         if (!passwordMatch) {
+          console.log('[signin] Password mismatch');
           throw new Error("Invalid username or password");
         }
 

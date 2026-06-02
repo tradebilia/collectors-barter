@@ -465,7 +465,7 @@ export default function Home() {
       <main className="pb-24">
         <section className="relative z-0 w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden bg-[#00143A] text-white">
           <div className="absolute inset-0 opacity-40" style={{
-            backgroundImage: 'url(/images/hero-wallpaper.png)',
+            backgroundImage: 'url(/manus-storage/sportscards2_50e2e734.png)',
             backgroundSize: 'cover',
             backgroundPosition: 'center',
             backgroundRepeat: 'no-repeat'

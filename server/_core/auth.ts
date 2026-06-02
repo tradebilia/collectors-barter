@@ -1,24 +1,20 @@
-import { scryptSync, randomBytes, timingSafeEqual } from "crypto";
+import bcrypt from 'bcrypt';
 
 /**
- * Hash a password using scrypt
+ * Hash a password using bcrypt
  */
 export function hashPassword(password: string): string {
-  const salt = randomBytes(16);
-  const hash = scryptSync(password, salt, 64);
-  return `${salt.toString("hex")}:${hash.toString("hex")}`;
+  // Note: In production, this should be async. For now, use sync version.
+  // bcryptSync is used here because the signup flow needs synchronous hashing.
+  return bcrypt.hashSync(password, 10);
 }
 
 /**
- * Verify a password against a hash
+ * Verify a password against a bcrypt hash
  */
 export function verifyPassword(password: string, hash: string): boolean {
   try {
-    const [saltHex, hashHex] = hash.split(":");
-    const salt = Buffer.from(saltHex, "hex");
-    const storedHash = Buffer.from(hashHex, "hex");
-    const computedHash = scryptSync(password, salt, 64);
-    return timingSafeEqual(computedHash, storedHash);
+    return bcrypt.compareSync(password, hash);
   } catch (error) {
     return false;
   }
