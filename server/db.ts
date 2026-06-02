@@ -790,7 +790,7 @@ export async function searchMembers(input: {
 
   const ratingMap = await getRatingStatsMap(members.map(m => m.userId));
 
-  return members.map(m => ({
+  const formattedMembers = members.map(m => ({
     userId: m.userId,
     displayName: m.displayName,
     avatarUrl: m.avatarUrl,
@@ -798,6 +798,17 @@ export async function searchMembers(input: {
     region: m.contactAddress,
     rating: ratingMap.get(m.userId) ?? { averageRating: 0, reviewCount: 0 },
   }));
+
+  // Return object with members and rankings for MemberSearch component
+  const topRated = formattedMembers.sort((a, b) => (b.rating?.averageRating ?? 0) - (a.rating?.averageRating ?? 0)).slice(0, 10);
+  const uniqueRegions = Array.from(new Set(formattedMembers.map(m => m.region).filter(Boolean)));
+  
+  return {
+    members: formattedMembers,
+    rankings: topRated,
+    topRated: topRated,
+    regions: uniqueRegions,
+  };
 }
 
 export async function toggleListingStatus(
