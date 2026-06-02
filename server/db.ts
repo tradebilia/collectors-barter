@@ -4,12 +4,14 @@ import { drizzle } from "drizzle-orm/mysql2";
 import type { InsertUser, User } from "../drizzle/schema";
 import {
   collectibleCategories,
-  draftListings,
+  itemConditions,
+  gradeValues,
+  users,
   ebayFeedbackHistory,
   emailVerificationOtps,
-  itemConditions,
   listingPhotos,
   listings,
+  draftListings,
   lowFeedbackFlags,
   passwordResetTokens,
   phoneVerificationOtps,
@@ -18,7 +20,6 @@ import {
   tradeProposals,
   tradeReviews,
   userProfiles,
-  users,
   userReports,
   watchlistEntries,
 } from "../drizzle/schema";
@@ -933,6 +934,10 @@ export async function saveDraft(
     category: (typeof collectibleCategories)[number];
     condition: (typeof itemConditions)[number];
     description: string;
+    grade?: (typeof gradeValues)[number];
+    graderCompany?: string;
+    certificationNumber?: string;
+    estimatedValue?: number;
     photos: PhotoUploadInput[];
   },
 ) {
@@ -943,9 +948,9 @@ export async function saveDraft(
     userId: user.id,
     title: input.title.trim(),
     category: input.category,
-    grade: input.grade || "ungraded",
-    graderCompany: input.graderCompany,
-    certificationNumber: input.certificationNumber,
+    grade: (input.grade as (typeof gradeValues)[number]) || "ungraded",
+    graderCompany: input.graderCompany || null,
+    certificationNumber: input.certificationNumber || null,
     estimatedValue: input.estimatedValue ? String(input.estimatedValue) : null,
   });
   const draftId = getInsertId(insertResult);

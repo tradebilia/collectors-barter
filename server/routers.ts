@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { COOKIE_NAME } from "@shared/const";
-import { collectibleCategories, itemConditions } from "../drizzle/schema";
+import { collectibleCategories, itemConditions, gradeValues } from "../drizzle/schema";
 import {
   createListing,
   createTradeProposal,
@@ -641,7 +641,7 @@ export const appRouter = router({
         z.object({
           title: z.string().min(1).max(160),
           category: z.enum(collectibleCategories),
-          grade: z.string(),
+          grade: z.enum(gradeValues),
           graderCompany: z.string().max(100),
           certificationNumber: z.string().max(100).optional(),
           estimatedValue: z.number().nonnegative().optional(),
@@ -651,13 +651,15 @@ export const appRouter = router({
         }),
       )
       .mutation(({ ctx, input }) => {
-        // saveDraft currently only accepts title, category, condition, description, and photos
-        // The input schema has more fields (grade, graderCompany, etc.) that will be stored separately
         return saveDraft({ id: ctx.user.id, name: ctx.user.name }, {
           title: input.title,
           category: input.category,
           condition: "poor", // Will be updated when user completes the listing
           description: input.additionalNotes || "",
+          grade: input.grade,
+          graderCompany: input.graderCompany,
+          certificationNumber: input.certificationNumber,
+          estimatedValue: input.estimatedValue,
           photos: input.photos,
         });
       }),
