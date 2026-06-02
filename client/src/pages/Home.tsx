@@ -463,13 +463,12 @@ export default function Home() {
       />
 
       <main className="pb-24">
-        <section className="relative z-0 w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden bg-[#00143A] text-white">
-          <div className="absolute inset-0 opacity-40" style={{
-            backgroundImage: 'url(https://d2xsxph8kpxj0f.cloudfront.net/310519663570115757/nAx6ATm2BH4G46yabuMZgM/pokemon-background-J6h7Mte6BSYA3GfQ4vtdFj.webp)',
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            backgroundRepeat: 'no-repeat'
-          }} />
+        <section className="relative z-0 w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden text-white" style={{
+          backgroundImage: 'url(/images/Mainpage.jpg)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat'
+        }}>
           <div className="container relative flex h-64 items-center justify-center py-0 sm:h-72 sm:py-0 lg:h-80 lg:py-0">
             <div className="flex w-full max-w-6xl items-center justify-center -ml-32">
               <img
