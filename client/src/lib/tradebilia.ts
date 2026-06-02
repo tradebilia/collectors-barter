@@ -541,9 +541,9 @@ export function getTradebiliaCategoryBenchmark(slug: string) {
  * Prefers firstName and lastName if available, falls back to displayName
  */
 export function getAvatarInitials(profile: {
-  firstName?: string | null;
-  lastName?: string | null;
-  displayName?: string;
+  firstName?: string | null | undefined;
+  lastName?: string | null | undefined;
+  displayName?: string | null | undefined;
 }): string {
   const { firstName, lastName, displayName } = profile;
   

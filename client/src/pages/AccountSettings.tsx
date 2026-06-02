@@ -523,7 +523,7 @@ export default function AccountSettings() {
       
       const prefsToSave = {
         ...preferences,
-        preferredCategories: checkedCategories,
+        preferredCategories: checkedCategories as ("comics" | "sports_cards" | "vintage_toys" | "video_games" | "stamps" | "coins" | "pokemon" | "movies" | "autographs" | "disney_pins")[],
       };
       console.log('[handleSavePreferences] Categories from DOM:', checkedCategories);
       await savePreferencesMutation.mutateAsync(prefsToSave);

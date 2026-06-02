@@ -236,7 +236,7 @@ export default function AddInventory() {
       await saveDraftMutation.mutateAsync({
         title: draft.title,
         category: draft.category,
-        grade: draft.grade,
+        grade: draft.grade as "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" | "ungraded" | "1.5" | "2.5" | "3.5" | "4.5" | "5.5" | "6.5" | "7.5" | "8.5" | "9.5" | "10",
         graderCompany: draft.graderCompany,
         certificationNumber: draft.certificationNumber,
         estimatedValue: draft.value ? parseFloat(draft.value) : 0,
@@ -411,12 +411,33 @@ export default function AddInventory() {
 
                 <div className="mt-4 space-y-3">
                   <Label className="text-sm uppercase tracking-[0.08em] text-white/70">Grade</Label>
-                  <Input
-                    value={draft.grade}
-                    onChange={event => setDraft(current => ({ ...current, grade: event.target.value }))}
-                    placeholder="e.g., 9.0"
-                    className="h-12 border-white/10 bg-white/8 text-white placeholder:text-white/35"
-                  />
+                  <Select value={draft.grade} onValueChange={value => setDraft(current => ({ ...current, grade: value }))}>
+                    <SelectTrigger className="h-12 border-white/10 bg-white/8 text-white">
+                      <SelectValue placeholder="Select a grade" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ungraded">Ungraded</SelectItem>
+                      <SelectItem value="1">1</SelectItem>
+                      <SelectItem value="1.5">1.5</SelectItem>
+                      <SelectItem value="2">2</SelectItem>
+                      <SelectItem value="2.5">2.5</SelectItem>
+                      <SelectItem value="3">3</SelectItem>
+                      <SelectItem value="3.5">3.5</SelectItem>
+                      <SelectItem value="4">4</SelectItem>
+                      <SelectItem value="4.5">4.5</SelectItem>
+                      <SelectItem value="5">5</SelectItem>
+                      <SelectItem value="5.5">5.5</SelectItem>
+                      <SelectItem value="6">6</SelectItem>
+                      <SelectItem value="6.5">6.5</SelectItem>
+                      <SelectItem value="7">7</SelectItem>
+                      <SelectItem value="7.5">7.5</SelectItem>
+                      <SelectItem value="8">8</SelectItem>
+                      <SelectItem value="8.5">8.5</SelectItem>
+                      <SelectItem value="9">9</SelectItem>
+                      <SelectItem value="9.5">9.5</SelectItem>
+                      <SelectItem value="10">10</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 

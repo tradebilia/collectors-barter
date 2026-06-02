@@ -34,9 +34,9 @@ export interface EbayFeedback {
  */
 export function getEbayAuthUrl(state: string): string {
   const params = new URLSearchParams({
-    client_id: ENV.EBAY_CLIENT_ID,
+    client_id: ENV.ebayClientId,
     response_type: "code",
-    redirect_uri: ENV.EBAY_REDIRECT_URI,
+    redirect_uri: ENV.ebayRedirectUri,
     scope: "https://api.ebay.com/oauth/api_scope https://api.ebay.com/oauth/api_scope/sell.account.readonly",
     state,
   });
@@ -51,14 +51,14 @@ export async function exchangeCodeForToken(code: string): Promise<EbayTokenRespo
   const params = new URLSearchParams({
     grant_type: "authorization_code",
     code,
-    redirect_uri: ENV.EBAY_REDIRECT_URI,
+    redirect_uri: ENV.ebayRedirectUri,
   });
 
   const response = await fetch(EBAY_TOKEN_URL, {
     method: "POST",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",
-      Authorization: `Basic ${Buffer.from(`${ENV.EBAY_CLIENT_ID}:${ENV.EBAY_CLIENT_SECRET}`).toString("base64")}`,
+      Authorization: `Basic ${Buffer.from(`${ENV.ebayClientId}:${ENV.ebayClientSecret}`).toString("base64")}`,
     },
     body: params.toString(),
   });
@@ -83,7 +83,7 @@ export async function refreshAccessToken(refreshToken: string): Promise<EbayToke
     method: "POST",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",
-      Authorization: `Basic ${Buffer.from(`${ENV.EBAY_CLIENT_ID}:${ENV.EBAY_CLIENT_SECRET}`).toString("base64")}`,
+      Authorization: `Basic ${Buffer.from(`${ENV.ebayClientId}:${ENV.ebayClientSecret}`).toString("base64")}`,
     },
     body: params.toString(),
   });

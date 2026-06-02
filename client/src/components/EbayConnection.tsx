@@ -21,10 +21,12 @@ export function EbayConnection() {
       const state = Math.random().toString(36).substring(7);
       sessionStorage.setItem("ebayOAuthState", state);
 
-      const authUrlResponse = await trpc.ebay.getAuthUrl.query({ state });
+      const { data: authUrlResponse } = await trpc.ebay.getAuthUrl.useQuery({ state });
       
       // Redirect to eBay OAuth
-      window.location.href = authUrlResponse;
+      if (authUrlResponse) {
+        window.location.href = authUrlResponse;
+      }
     } catch (err) {
       setError("Failed to start eBay connection. Please try again.");
       setIsConnecting(false);

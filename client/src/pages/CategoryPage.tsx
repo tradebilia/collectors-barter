@@ -405,7 +405,7 @@ export default function CategoryPage() {
               <Button 
                 onClick={() => {
                   setKeyword("");
-                  setCondition("all");
+                  setCondition(undefined);
                   setSportsCardsConditionText("");
                 }}
                 size="sm"

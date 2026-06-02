@@ -198,6 +198,9 @@ async function formatListings(listingRows: any[], viewerId: number | null) {
     },
     ownerRating: ratingMap.get(row.ownerId) ?? { averageRating: 0, reviewCount: 0 },
     primaryPhotoUrl: row.primaryPhotoUrl ?? null,
+    photos: row.primaryPhotoUrl ? [row.primaryPhotoUrl] : [],
+    categoryLabel: categoryLabels[row.category as keyof typeof categoryLabels] ?? row.category,
+    conditionLabel: conditionLabels[row.condition as keyof typeof conditionLabels] ?? row.condition,
     savedToWatchlist: savedListingIds.has(row.id),
   }));
 }
@@ -1366,10 +1369,10 @@ export async function createListing(
 
 export async function upsertUser(input: {
   openId: string;
-  name: string | null;
-  email: string | null;
-  loginMethod: string | null;
-  lastSignedIn: Date;
+  name?: string | null;
+  email?: string | null;
+  loginMethod?: string | null;
+  lastSignedIn?: Date;
 }) {
   const db = await requireDb();
 
@@ -1674,7 +1677,12 @@ export async function getUserReports(options: {
   const limit = options.limit ?? 50;
   const offset = options.offset ?? 0;
   
-  let query = db
+  const whereClauses = [];
+  if (options.status) {
+    whereClauses.push(eq(userReports.status, options.status as any));
+  }
+  
+  const results = await db
     .select({
       id: userReports.id,
       reportId: userReports.reportId,
@@ -1688,16 +1696,11 @@ export async function getUserReports(options: {
       createdAt: userReports.createdAt,
     })
     .from(userReports)
-    .innerJoin(users, eq(userReports.reportedUserId, users.id));
-  
-  if (options.status) {
-    query = query.where(eq(userReports.status, options.status as any));
-  }
-  
-  const results = await query
+    .innerJoin(users, eq(userReports.reportedUserId, users.id))
+    .where(whereClauses.length > 0 ? and(...whereClauses) : undefined)
     .orderBy(desc(userReports.createdAt))
     .limit(limit)
-    .offset(offset);
+    .offset(offset)
   
   return results as any;
 }

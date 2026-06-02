@@ -22,20 +22,15 @@ export function TopBar({
   const [showSignInModal, setShowSignInModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [, setLocation] = useLocation();
-  const searchMutation = trpc.market.search.useMutation();
+  // Note: market.search is a query, not a mutation
 
-  const handleSearch = async (value: string) => {
+  const handleSearch = (value: string) => {
     setSearchQuery(value);
     onSearchChange?.(value);
 
     if (value.trim().length > 0) {
-      try {
-        await searchMutation.mutateAsync({ query: value });
-        // Navigate to search results page or update results
-        setLocation(`/search?q=${encodeURIComponent(value)}`);
-      } catch (err) {
-        console.error("Search failed:", err);
-      }
+      // Navigate to search results page
+      setLocation(`/search?q=${encodeURIComponent(value)}`);
     }
   };
 
