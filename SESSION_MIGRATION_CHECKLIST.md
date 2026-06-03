@@ -89,6 +89,7 @@ When starting a new session:
 | Stamps | `/manus-storage/StampsBackground_381d3e98.png` | `https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/StampsBackground.png` | StampsBackground.png |
 | Vintage Toys | `/manus-storage/VintageToysBackground_8ab6860f.png` | `https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/VintageToysBackground.png` | VintageToysBackground.png |
 | Autographs | `/manus-storage/AutoBackground_d025a571.png` | `https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/AutoBackground.png` | AutoBackground.png |
+| **Autographs Title** | **`/manus-storage/AutographsTitle_85ad05d3.png`** | **`https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/AutographsTitle.png`** | **AutographsTitle.png** |
 | Movies | `/manus-storage/VHSBackground_99756671.png` | `https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/VHSBackground.png` | VHSBackground.png |
 | Comics | `/manus-storage/comics-background-YZiiH2cyV8YJx6GFQj4PKC_2cc313bb.webp` | `https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/comics-background-YZiiH2cyV8YJx6GFQj4PKC.webp` | comics-background-YZiiH2cyV8YJx6GFQj4PKC.webp |
 | Pokemon | `/manus-storage/pokemon-background-J6h7Mte6BSYA3GfQ4vtdFj_d1df88b6.webp` | `https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/pokemon-background-J6h7Mte6BSYA3GfQ4vtdFj.webp` | pokemon-background-J6h7Mte6BSYA3GfQ4vtdFj.webp |
@@ -100,7 +101,7 @@ When starting a new session:
 |-------|------------------|-------------------|----------|
 | Tradebilia Logo | `/manus-storage/tradebilia-logo_c676d640.svg` | `https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/tradebilia-logo.svg` | tradebilia-logo.svg |
 
-**Title Images - S3 to GitHub Mapping:**
+**Title Images - S3 to GitHub Mapping (10 total):**
 
 | Category | S3 URL (Current) | GitHub URL (Target) | File Name |
 |----------|------------------|-------------------|----------|
@@ -113,6 +114,7 @@ When starting a new session:
 | Stamps | `/manus-storage/StampsTitle_cc0e76c3.webp` | `https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/StampsTitle.webp` | StampsTitle.webp |
 | Video Games | `/manus-storage/VideoGamesTitle_af9bf208.webp` | `https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/VideoGamesTitle.webp` | VideoGamesTitle.webp |
 | Movies | `/manus-storage/MoviesTitle_0e6931a4.png` | `https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/MoviesTitle.png` | MoviesTitle.png |
+| Autographs | `/manus-storage/AutographsTitle_85ad05d3.png` | `https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/AutographsTitle.png` | AutographsTitle.png |
 
 ### Quick Reference
 
@@ -166,13 +168,14 @@ Should return: `HTTP/2 200`
 6. ✅ Inventory.tsx - Logo (2x) + background + SVG
 7. ✅ ReportUser.tsx - Background
 
-### Total S3 Images: 26
+### Total S3 Images: 27
 
 - 10 background images (home + 9 categories)
-- 9 title images (all categories)
+- 10 title images (all categories including Autographs)
 - 1 Tradebilia logo
 - 5 SVG icons (AccountSettings, AccountSetup, Add_To_Your_Inventory, Myinventory, Inbox)
 - 1 Sportscardwallpaper (used in 5 pages)
+- 1 AutographsTitle (new - replaces GitHub URL)
 
 ### Before Session End - Complete Migration
 
