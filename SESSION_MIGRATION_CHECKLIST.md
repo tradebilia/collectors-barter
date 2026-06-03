@@ -94,6 +94,12 @@ When starting a new session:
 | Pokemon | `/manus-storage/pokemon-background-J6h7Mte6BSYA3GfQ4vtdFj_d1df88b6.webp` | `https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/pokemon-background-J6h7Mte6BSYA3GfQ4vtdFj.webp` | pokemon-background-J6h7Mte6BSYA3GfQ4vtdFj.webp |
 | Disney Pins | `/manus-storage/disney-pins-background-F6yUvFLVrhmnaWk6GsFMZ8_172dee25.webp` | `https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/disney-pins-background-F6yUvFLVrhmnaWk6GsFMZ8.webp` | disney-pins-background-F6yUvFLVrhmnaWk6GsFMZ8.webp |
 
+**Logo - S3 to GitHub Mapping:**
+
+| Asset | S3 URL (Current) | GitHub URL (Target) | File Name |
+|-------|------------------|-------------------|----------|
+| Tradebilia Logo | `/manus-storage/tradebilia-logo_c676d640.svg` | `https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/tradebilia-logo.svg` | tradebilia-logo.svg |
+
 **Title Images - S3 to GitHub Mapping:**
 
 | Category | S3 URL (Current) | GitHub URL (Target) | File Name |
