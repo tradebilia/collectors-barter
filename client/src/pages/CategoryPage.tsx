@@ -298,7 +298,7 @@ export default function CategoryPage() {
                   ) : slug === "movies" ? (
                     <img src="/manus-storage/MoviesTitle_0e6931a4.png" alt="Movies" style={{ maxHeight: "300px", width: "auto", objectFit: "contain" }} />
                   ) : slug === "autographs" ? (
-                    <img src="https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/AutographsTitle.png" alt="Autographs" style={{ maxHeight: "300px", width: "auto", objectFit: "contain" }} />
+                    <img src="/manus-storage/AutographsTitle_85ad05d3.png" alt="Autographs" style={{ maxHeight: "300px", width: "auto", objectFit: "contain" }} />
                   ) : categoryLabel.toUpperCase()}
                 </h1>
                 <div className="mt-8 h-px bg-white/50 mx-auto" style={{ maxWidth: "100%", width: "100%", marginTop: "64px" }}></div>
