@@ -251,7 +251,7 @@ export default function CategoryPage() {
       />
       <header className={`relative overflow-hidden border-b ${theme.borderClassName} ${theme.heroClassName}`} style={{ minHeight: '400px' }}>
         <div className={`relative overflow-hidden ${theme.textureClassName}`} style={{
-          backgroundImage: isSportsCardsPage ? 'url(https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/Sportscardwallpaper.webp)' : slug === 'video_games' ? 'url(https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/video-games-background-kyx4vVUqTYCMC3kMbtokYU.webp)' : slug === 'coins' ? 'url(https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/CoinsBackground.png)' : slug === 'stamps' ? 'url(https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/StampsBackground.png)' : slug === 'vintage_toys' ? 'url(https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/VintageToysBackground.png)' : slug === 'autographs' ? 'url(https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/AutoBackground.png)' : slug === 'movies' ? 'url(https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/VHSBackground.png)' : slug === 'comics' ? 'url(https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/comics-background-YZiiH2cyV8YJx6GFQj4PKC.webp)' : slug === 'pokemon' ? 'url(https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/pokemon-background-J6h7Mte6BSYA3GfQ4vtdFj.webp)' : slug === 'disney_pins' ? 'url(https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/disney-pins-background-F6yUvFLVrhmnaWk6GsFMZ8.webp)' : undefined,
+          backgroundImage: isSportsCardsPage ? 'url(https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/Sportscardwallpaper.webp)' : slug === 'video_games' ? 'url(https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/video-games-background-kyx4vVUqTYCMC3kMbtokYU.webp)' : slug === 'coins' ? 'url(/manus-storage/CoinsBackground_ef9aac41.png)' : slug === 'stamps' ? 'url(/manus-storage/StampsBackground_381d3e98.png)' : slug === 'vintage_toys' ? 'url(/manus-storage/VintageToysBackground_8ab6860f.png)' : slug === 'autographs' ? 'url(/manus-storage/AutoBackground_d025a571.png)' : slug === 'movies' ? 'url(/manus-storage/VHSBackground_99756671.png)' : slug === 'comics' ? 'url(https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/comics-background-YZiiH2cyV8YJx6GFQj4PKC.webp)' : slug === 'pokemon' ? 'url(https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/pokemon-background-J6h7Mte6BSYA3GfQ4vtdFj.webp)' : slug === 'disney_pins' ? 'url(https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/disney-pins-background-F6yUvFLVrhmnaWk6GsFMZ8.webp)' : undefined,
           backgroundSize: 'cover',
           backgroundPosition: slug === 'movies' ? 'center top' : 'center',
           backgroundAttachment: 'scroll',
@@ -280,23 +280,23 @@ export default function CategoryPage() {
                   zIndex: 50
                 }}>
                   {slug === "disney_pins" ? (
-                    <img src="https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/DisneyPinsTitle.png" alt="Disney Pins" style={{ maxHeight: "300px", width: "auto", objectFit: "contain" }} />
+                    <img src="/manus-storage/DisneyPinsTitle_dc12f61b.png" alt="Disney Pins" style={{ maxHeight: "300px", width: "auto", objectFit: "contain" }} />
                   ) : slug === "pokemon" ? (
-                    <img src="https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/PokemonTitle.png" alt="Pokemon" style={{ maxHeight: "300px", maxWidth: "90%", width: "auto", objectFit: "contain" }} />
+                    <img src="/manus-storage/PokemonTitle_eaf0db72.png" alt="Pokemon" style={{ maxHeight: "300px", maxWidth: "90%", width: "auto", objectFit: "contain" }} />
                   ) : slug === "comics" ? (
-                    <img src="https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/ComicsTitle.png" alt="Comics" style={{ maxHeight: "300px", width: "auto", objectFit: "contain" }} />
+                    <img src="/manus-storage/ComicsTitle_b915b61d.png" alt="Comics" style={{ maxHeight: "300px", width: "auto", objectFit: "contain" }} />
                   ) : slug === "sports_cards" ? (
-                    <img src="https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/SportsCardsTitle.png" alt="Sports Cards" style={{ maxHeight: "300px", width: "auto", objectFit: "contain" }} />
+                    <img src="/manus-storage/SportsCardsTitle_db2535b2.png" alt="Sports Cards" style={{ maxHeight: "300px", width: "auto", objectFit: "contain" }} />
                   ) : slug === "vintage_toys" ? (
-                    <img src="https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/VintageToysTitle.png" alt="Vintage Toys" style={{ maxHeight: "300px", width: "auto", objectFit: "contain" }} />
+                    <img src="/manus-storage/VintageToysTitle_11b8cdd9.png" alt="Vintage Toys" style={{ maxHeight: "300px", width: "auto", objectFit: "contain" }} />
                   ) : slug === "coins" ? (
-                    <img src="https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/CoinsTitle.webp" alt="Coins" style={{ maxHeight: "300px", width: "auto", objectFit: "contain" }} />
+                    <img src="/manus-storage/CoinsTitle_92aa1326.webp" alt="Coins" style={{ maxHeight: "300px", width: "auto", objectFit: "contain" }} />
                   ) : slug === "stamps" ? (
-                    <img src="https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/StampsTitle.webp" alt="Stamps" style={{ maxHeight: "300px", width: "auto", objectFit: "contain" }} />
+                    <img src="/manus-storage/StampsTitle_cc0e76c3.webp" alt="Stamps" style={{ maxHeight: "300px", width: "auto", objectFit: "contain" }} />
                   ) : slug === "video_games" ? (
-                    <img src="https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/VideoGamesTitle.webp" alt="Video Games" style={{ maxHeight: "300px", width: "auto", objectFit: "contain" }} />
+                    <img src="/manus-storage/VideoGamesTitle_af9bf208.webp" alt="Video Games" style={{ maxHeight: "300px", width: "auto", objectFit: "contain" }} />
                   ) : slug === "movies" ? (
-                    <img src="https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/MoviesTitle.png" alt="Movies" style={{ maxHeight: "300px", width: "auto", objectFit: "contain" }} />
+                    <img src="/manus-storage/MoviesTitle_0e6931a4.png" alt="Movies" style={{ maxHeight: "300px", width: "auto", objectFit: "contain" }} />
                   ) : slug === "autographs" ? (
                     <img src="https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/AutographsTitle.png" alt="Autographs" style={{ maxHeight: "300px", width: "auto", objectFit: "contain" }} />
                   ) : categoryLabel.toUpperCase()}

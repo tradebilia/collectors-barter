@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { Card } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
+import { type TradebiliaCategorySlug } from "@/lib/tradebilia";
 
 export function SearchResults() {
   const [location] = useLocation();
@@ -22,7 +23,7 @@ export function SearchResults() {
     searchQuery_trimmed.length > 0
       ? {
           query: searchQuery_trimmed,
-          category: category !== "all" ? (category as any) : undefined,
+          category: category !== "all" ? (category as TradebiliaCategorySlug) : undefined,
           condition: condition !== "all" ? (condition as any) : undefined,
         }
       : undefined,

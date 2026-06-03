@@ -1063,3 +1063,19 @@ The application is fully functional with all core features working correctly.
 - [x] Display feedback score and comments on profiles
 - [x] Admin dashboard for low feedback flags
 - [x] Fix TypeScript type mismatches for feedbackPercentage
+
+
+## Current Session - Image Integration & TypeScript Fixes (June 3, 2026)
+
+- [x] Verify all 5 category background images (Coins, Stamps, Vintage Toys, Autographs, Movies) display correctly
+- [x] Verify all 9 category title images display correctly
+- [x] Confirm Sports Cards title is positioned above the divider (as requested)
+- [x] Verify all images are loading from GitHub URLs (permanent storage)
+- [x] Create SESSION_MIGRATION_CHECKLIST.md for S3 to GitHub URL migration documentation
+- [x] Confirm GitHub images are HTTP 200 (all verified)
+- [ ] Fix TypeScript errors in SearchResults.tsx (query parameter type handling)
+- [ ] Fix TypeScript errors in MemberSearch.tsx (missing user properties)
+- [ ] Fix TypeScript errors in Messages.tsx (implicit any types)
+- [ ] Fix TypeScript errors in server/_core/sdk.ts (null type issue)
+- [ ] Fix transparency on CoinsTitle.webp image
+- [ ] Resolve all 40 TypeScript errors before next session
