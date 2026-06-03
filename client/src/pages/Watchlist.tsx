@@ -83,7 +83,12 @@ export default function Watchlist() {
         </nav>
       </header>
 
-      <section className="border-b border-white/10 bg-[linear-gradient(90deg,#0d0d57_0%,#12124f_50%,#0d0d57_100%)]">
+      <section className="border-b border-white/10 bg-[#00143A]" style={{
+        backgroundImage: 'url(/manus-storage/Mainpage_9b45311d.jpg)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat'
+      }}>
         <div className="mx-auto flex max-w-7xl items-center justify-center px-6 py-8 sm:py-10">
           <img src={TRADEBILIA_LOGO_URL} alt="Tradebilia" className="block h-[150px] w-auto object-contain sm:h-[180px] lg:h-[205px]" />
         </div>
