@@ -185,8 +185,14 @@ export default function Messages() {
 
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,#0a0d22_0%,#121c48_26%,#ede3d3_26%,#ede3d3_100%)] text-slate-950">
-      <header className="border-b border-white/10 bg-[radial-gradient(circle_at_top,#1c2468_0%,#0b0a22_65%)] text-white">
-        <div className="container py-3 lg:py-4">
+      <header className="border-b border-white/10 bg-[#00143A] text-white" style={{
+        backgroundImage: 'url(/manus-storage/Mainpage_9b45311d.jpg)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat'
+      }}>
+        <div className="absolute inset-0 pointer-events-none" />
+        <div className="container relative py-3 lg:py-4">
           <div className="flex items-center justify-between gap-3">
             <Link href="/" className="rounded-lg border border-white/30 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/20">
               Home
