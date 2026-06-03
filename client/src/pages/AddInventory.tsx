@@ -13,7 +13,7 @@ import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import type { TradebiliaCategorySlug } from "@/lib/tradebilia";
 
-const TRADEBILIA_LOGO_URL = "/images/tradebilia-logo.svg";
+const TRADEBILIA_LOGO_URL = "/manus-storage/tradebilia-logo_c676d640.svg";
 const DRAFT_STORAGE_KEY = "tradebilia-add-inventory-draft";
 
 const categoryLinks = [
@@ -330,14 +330,14 @@ export default function AddInventory() {
 
       <section className="relative w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden bg-[#00143A] text-white">
         <div className="absolute inset-0 opacity-20" style={{
-          backgroundImage: 'url(/images/Sportscardwallpaper_7d372f7d.webp)',
+          backgroundImage: 'url(/manus-storage/Sportscardwallpaper_a86b605b.webp)',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat'
         }} />
         <div className="container relative flex h-64 items-center justify-center py-0 sm:h-72 sm:py-0 lg:h-80 lg:py-0">
           <div className="flex w-full max-w-6xl items-center justify-center -ml-32">
-            <img src="/images/Add_To_Your_Inventory.svg" alt="Add To Your Inventory" className="h-auto w-full" />
+            <img src="/manus-storage/Add_To_Your_Inventory_e01ed84b.svg" alt="Add To Your Inventory" className="h-auto w-full" />
           </div>
         </div>
       </section>
