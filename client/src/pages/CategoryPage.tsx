@@ -280,15 +280,25 @@ export default function CategoryPage() {
                   zIndex: 50
                 }}>
                   {slug === "disney_pins" ? (
-                    <img src="/images/Disney_e4ae94b5.png" alt="Disney Pins" style={{ maxHeight: "450px", width: "auto", objectFit: "contain", marginTop: "70px" }} />
+                    <img src="https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/DisneyPins.png" alt="Disney Pins" style={{ maxHeight: "300px", width: "auto", objectFit: "contain" }} />
                   ) : slug === "pokemon" ? (
-                    <img src="/images/Pokemon_095946ab.png" alt="Pokemon" style={{ maxHeight: "400px", maxWidth: "90%", width: "auto", objectFit: "contain", marginTop: "0px", position: "relative", zIndex: 50 }} />
+                    <img src="https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/Pokemon.png" alt="Pokemon" style={{ maxHeight: "300px", maxWidth: "90%", width: "auto", objectFit: "contain" }} />
                   ) : slug === "comics" ? (
-                    <img src="https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/Comics4_ef989684.png" alt="Comics" style={{ maxHeight: "320px", width: "auto", objectFit: "contain", marginTop: "0px", position: "relative", zIndex: 50, top: "16px" }} />
+                    <img src="https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/Comics.png" alt="Comics" style={{ maxHeight: "300px", width: "auto", objectFit: "contain" }} />
                   ) : slug === "sports_cards" ? (
-                    <img src="https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/SportsCards1_ff8b8611.png" alt="Sports Cards" style={{ maxHeight: "320px", width: "auto", objectFit: "contain", marginTop: "0px", position: "relative", zIndex: 50, top: "-120px" }} />
+                    <img src="https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/SportsCards.png" alt="Sports Cards" style={{ maxHeight: "300px", width: "auto", objectFit: "contain" }} />
                   ) : slug === "vintage_toys" ? (
-                    <img src="https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/VintageToys_dcc69e1c.png" alt="Vintage Toys" style={{ maxHeight: "500px", width: "auto", objectFit: "contain", marginTop: "0px", position: "relative", zIndex: 50, top: "-160px" }} />
+                    <img src="https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/VintageToys.png" alt="Vintage Toys" style={{ maxHeight: "300px", width: "auto", objectFit: "contain" }} />
+                  ) : slug === "coins" ? (
+                    <img src="https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/Coins.webp" alt="Coins" style={{ maxHeight: "300px", width: "auto", objectFit: "contain" }} />
+                  ) : slug === "stamps" ? (
+                    <img src="https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/Stamps.webp" alt="Stamps" style={{ maxHeight: "300px", width: "auto", objectFit: "contain" }} />
+                  ) : slug === "video_games" ? (
+                    <img src="https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/VideoGames.webp" alt="Video Games" style={{ maxHeight: "300px", width: "auto", objectFit: "contain" }} />
+                  ) : slug === "movies" ? (
+                    <img src="https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/Movies.png" alt="Movies" style={{ maxHeight: "300px", width: "auto", objectFit: "contain" }} />
+                  ) : slug === "autographs" ? (
+                    <span style={{ fontSize: "72px" }}>Autographs</span>
                   ) : categoryLabel.toUpperCase()}
                 </h1>
                 <div className="mt-8 h-px bg-white/50 mx-auto" style={{ maxWidth: "100%", width: "100%", marginTop: "64px" }}></div>
