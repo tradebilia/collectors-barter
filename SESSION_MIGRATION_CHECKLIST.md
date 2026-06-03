@@ -112,7 +112,7 @@ When starting a new session:
 | Vintage Toys | `/manus-storage/VintageToysTitle_11b8cdd9.png` | `https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/VintageToysTitle.png` | VintageToysTitle.png |
 | Coins | `/manus-storage/CoinsTitle_40d49d1d.webp` | `https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/CoinsTitle.webp` | CoinsTitle.webp (updated with improved transparent background) |
 | Stamps | `/manus-storage/StampsTitle_cc0e76c3.webp` | `https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/StampsTitle.webp` | StampsTitle.webp |
-| Video Games | `/manus-storage/VideoGamesTitle_af9bf208.webp` | `https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/VideoGamesTitle.webp` | VideoGamesTitle.webp |
+| Video Games | `/manus-storage/VideoGamesTitle_e5b075b7.webp` | `https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/VideoGamesTitle.webp` | VideoGamesTitle.webp (updated with improved transparent background) |
 | Movies | `/manus-storage/MoviesTitle_0e6931a4.png` | `https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/MoviesTitle.png` | MoviesTitle.png |
 | Autographs | `/manus-storage/AutographsTitle_85ad05d3.png` | `https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/AutographsTitle.png` | AutographsTitle.png |
 
