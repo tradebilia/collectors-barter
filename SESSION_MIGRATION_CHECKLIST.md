@@ -82,11 +82,17 @@ When starting a new session:
 
 | Category | S3 URL (Current) | GitHub URL (Target) | File Name |
 |----------|------------------|-------------------|----------|
+| Home Page | `/manus-storage/Mainpage_9b45311d.jpg` | `https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/Mainpage.jpg` | Mainpage.jpg |
+| Sports Cards | `/manus-storage/Sportscardwallpaper_bc1c7d7a.webp` | `https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/Sportscardwallpaper.webp` | Sportscardwallpaper.webp |
+| Video Games | `/manus-storage/video-games-background-kyx4vVUqTYCMC3kMbtokYU_c9f7dffa.webp` | `https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/video-games-background-kyx4vVUqTYCMC3kMbtokYU.webp` | video-games-background-kyx4vVUqTYCMC3kMbtokYU.webp |
 | Coins | `/manus-storage/CoinsBackground_ef9aac41.png` | `https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/CoinsBackground.png` | CoinsBackground.png |
 | Stamps | `/manus-storage/StampsBackground_381d3e98.png` | `https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/StampsBackground.png` | StampsBackground.png |
 | Vintage Toys | `/manus-storage/VintageToysBackground_8ab6860f.png` | `https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/VintageToysBackground.png` | VintageToysBackground.png |
 | Autographs | `/manus-storage/AutoBackground_d025a571.png` | `https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/AutoBackground.png` | AutoBackground.png |
 | Movies | `/manus-storage/VHSBackground_99756671.png` | `https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/VHSBackground.png` | VHSBackground.png |
+| Comics | `/manus-storage/comics-background-YZiiH2cyV8YJx6GFQj4PKC_2cc313bb.webp` | `https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/comics-background-YZiiH2cyV8YJx6GFQj4PKC.webp` | comics-background-YZiiH2cyV8YJx6GFQj4PKC.webp |
+| Pokemon | `/manus-storage/pokemon-background-J6h7Mte6BSYA3GfQ4vtdFj_d1df88b6.webp` | `https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/pokemon-background-J6h7Mte6BSYA3GfQ4vtdFj.webp` | pokemon-background-J6h7Mte6BSYA3GfQ4vtdFj.webp |
+| Disney Pins | `/manus-storage/disney-pins-background-F6yUvFLVrhmnaWk6GsFMZ8_172dee25.webp` | `https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/disney-pins-background-F6yUvFLVrhmnaWk6GsFMZ8.webp` | disney-pins-background-F6yUvFLVrhmnaWk6GsFMZ8.webp |
 
 **Title Images - S3 to GitHub Mapping:**
 
