@@ -464,7 +464,7 @@ export default function Home() {
 
       <main className="pb-24">
         <section className="relative z-0 w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden text-white" style={{
-          backgroundImage: 'url(/images/Mainpage.jpg)',
+          backgroundImage: 'url(/manus-storage/Mainpage_9b45311d.jpg)',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat'

@@ -71,9 +71,36 @@ When starting a new session:
 
 ### Current Session Status
 
-**Current URL Type:** S3 (temporary)
-**Target URL Type:** GitHub (permanent)
-**Status:** ⏳ PENDING - Execute steps above before session end
+**Current URL Type:** S3 (temporary) ✅ ACTIVE
+**Target URL Type:** GitHub (permanent) ⏳ PENDING
+**Status:** S3 URLs currently in use - Ready to switch to GitHub before session end
+**Checkpoint Saved:** Version 745fa979 (with S3 URLs)
+
+### S3 ↔ GitHub URL Mapping (CRITICAL FOR SESSION SWITCH)
+
+**Background Images - S3 to GitHub Mapping:**
+
+| Category | S3 URL (Current) | GitHub URL (Target) | File Name |
+|----------|------------------|-------------------|----------|
+| Coins | `/manus-storage/CoinsBackground_ef9aac41.png` | `https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/CoinsBackground.png` | CoinsBackground.png |
+| Stamps | `/manus-storage/StampsBackground_381d3e98.png` | `https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/StampsBackground.png` | StampsBackground.png |
+| Vintage Toys | `/manus-storage/VintageToysBackground_8ab6860f.png` | `https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/VintageToysBackground.png` | VintageToysBackground.png |
+| Autographs | `/manus-storage/AutoBackground_d025a571.png` | `https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/AutoBackground.png` | AutoBackground.png |
+| Movies | `/manus-storage/VHSBackground_99756671.png` | `https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/VHSBackground.png` | VHSBackground.png |
+
+**Title Images - S3 to GitHub Mapping:**
+
+| Category | S3 URL (Current) | GitHub URL (Target) | File Name |
+|----------|------------------|-------------------|----------|
+| Comics | `/manus-storage/ComicsTitle_b915b61d.png` | `https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/ComicsTitle.png` | ComicsTitle.png |
+| Disney Pins | `/manus-storage/DisneyPinsTitle_dc12f61b.png` | `https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/DisneyPinsTitle.png` | DisneyPinsTitle.png |
+| Pokemon | `/manus-storage/PokemonTitle_eaf0db72.png` | `https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/PokemonTitle.png` | PokemonTitle.png |
+| Sports Cards | `/manus-storage/SportsCardsTitle_db2535b2.png` | `https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/SportsCardsTitle.png` | SportsCardsTitle.png |
+| Vintage Toys | `/manus-storage/VintageToysTitle_11b8cdd9.png` | `https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/VintageToysTitle.png` | VintageToysTitle.png |
+| Coins | `/manus-storage/CoinsTitle_40d49d1d.webp` | `https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/CoinsTitle.webp` | CoinsTitle.webp (updated with improved transparent background) |
+| Stamps | `/manus-storage/StampsTitle_cc0e76c3.webp` | `https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/StampsTitle.webp` | StampsTitle.webp |
+| Video Games | `/manus-storage/VideoGamesTitle_af9bf208.webp` | `https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/VideoGamesTitle.webp` | VideoGamesTitle.webp |
+| Movies | `/manus-storage/MoviesTitle_0e6931a4.png` | `https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/MoviesTitle.png` | MoviesTitle.png |
 
 ### Quick Reference
 
