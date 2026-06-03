@@ -294,7 +294,7 @@ export default function CategoryPage() {
                   ) : slug === "stamps" ? (
                     <img src="/manus-storage/StampsTitle_cc0e76c3.webp" alt="Stamps" style={{ maxHeight: "300px", width: "auto", objectFit: "contain" }} />
                   ) : slug === "video_games" ? (
-                    <img src="/manus-storage/VideoGamesTitle_af9bf208.webp" alt="Video Games" style={{ maxHeight: "300px", width: "auto", objectFit: "contain" }} />
+                    <img src="/manus-storage/VideoGamesTitle_e5b075b7.webp" alt="Video Games" style={{ maxHeight: "300px", width: "auto", objectFit: "contain" }} />
                   ) : slug === "movies" ? (
                     <img src="/manus-storage/MoviesTitle_0e6931a4.png" alt="Movies" style={{ maxHeight: "300px", width: "auto", objectFit: "contain" }} />
                   ) : slug === "autographs" ? (
