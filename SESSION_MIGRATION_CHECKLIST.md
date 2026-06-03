@@ -138,3 +138,52 @@ curl -I "https://raw.githubusercontent.com/tradebilia/collectors-barter/main/ass
 ```
 
 Should return: `HTTP/2 200`
+
+
+### SVG Icons - S3 to GitHub Mapping (5 total)
+
+| Icon | S3 URL (Current) | GitHub URL (Target) | File Name | Used In |
+|------|------------------|-------------------|----------|---------|
+| Account Settings | `/manus-storage/AccountSettings_4d29437b.svg` | `https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/AccountSettings.svg` | AccountSettings.svg | AccountSettings.tsx |
+| Account Setup | `/manus-storage/AccountSetup_ffa83564_1d0f2320.svg` | `https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/AccountSetup_ffa83564.svg` | AccountSetup_ffa83564.svg | AccountSetup.tsx |
+| Add To Inventory | `/manus-storage/Add_To_Your_Inventory_e01ed84b.svg` | `https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/Add_To_Your_Inventory.svg` | Add_To_Your_Inventory.svg | AddInventory.tsx |
+| My Inventory | `/manus-storage/Myinventory_467a8c30_67884c88.svg` | `https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/Myinventory_467a8c30.svg` | Myinventory_467a8c30.svg | Inventory.tsx |
+| Inbox | `/manus-storage/Inbox_0291e5fa.svg` | `https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/Inbox.svg` | Inbox.svg | Messages.tsx (if needed) |
+
+### Shared Background Image (used in 5 pages)
+
+| Asset | S3 URL (Current) | GitHub URL (Target) | File Name | Used In |
+|-------|------------------|-------------------|----------|---------|
+| Sports Card Wallpaper | `/manus-storage/Sportscardwallpaper_a86b605b.webp` | `https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/Sportscardwallpaper.webp` | Sportscardwallpaper.webp | AccountSettings.tsx, AccountSetup.tsx, AddInventory.tsx, Inventory.tsx, ReportUser.tsx |
+
+### Files Updated to Use S3 URLs
+
+1. ✅ CategoryPage.tsx - 10 backgrounds + 9 titles + logo
+2. ✅ Home.tsx - 1 background + logo
+3. ✅ AccountSettings.tsx - Logo + background + SVG
+4. ✅ AccountSetup.tsx - Logo + background + SVG
+5. ✅ AddInventory.tsx - Logo + background + SVG
+6. ✅ Inventory.tsx - Logo (2x) + background + SVG
+7. ✅ ReportUser.tsx - Background
+
+### Total S3 Images: 26
+
+- 10 background images (home + 9 categories)
+- 9 title images (all categories)
+- 1 Tradebilia logo
+- 5 SVG icons (AccountSettings, AccountSetup, Add_To_Your_Inventory, Myinventory, Inbox)
+- 1 Sportscardwallpaper (used in 5 pages)
+
+### Before Session End - Complete Migration
+
+**Step 1:** Replace all S3 URLs with GitHub URLs in all 7 files listed above
+**Step 2:** Verify all pages load correctly with GitHub URLs
+**Step 3:** Commit and push changes to GitHub
+**Step 4:** Save final checkpoint with GitHub URLs
+**Step 5:** End session - S3 images no longer needed
+
+### Checkpoint History
+
+- Version 745fa979: All 20 images on S3 (backgrounds + titles + logo)
+- Version 0e213087: All 20 images on S3 (backgrounds + titles + logo)
+- ⏳ PENDING: Final checkpoint with all 26 images on S3 + GitHub URLs in code
