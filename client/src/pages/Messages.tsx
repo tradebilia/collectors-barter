@@ -365,7 +365,7 @@ export default function Messages() {
                         <p className="mt-2">{activeThread.proposal.note}</p>
                       </div>
                     ) : null}
-                    {(activeThread.kind === "direct" ? activeThread.thread.messages : activeThread.proposal.messages).length ? (activeThread.kind === "direct" ? activeThread.thread.messages : activeThread.proposal.messages).map(message => {
+                    {(activeThread.kind === "direct" ? activeThread.thread.messages : activeThread.proposal.messages).length ? (activeThread.kind === "direct" ? activeThread.thread.messages : activeThread.proposal.messages).map((message: any) => {
                       const ownMessage = message.senderId === user?.id;
                       return (
                         <div key={message.id} className={`flex ${ownMessage ? "justify-end" : "justify-start"}`}>

@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
 import { type TradebiliaCategorySlug } from "@/lib/tradebilia";
 
+
 export function SearchResults() {
   const [location] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
@@ -19,16 +20,17 @@ export function SearchResults() {
   }, [location]);
 
   const searchQuery_trimmed = searchQuery.trim();
+  const queryInput = searchQuery_trimmed.length > 0
+    ? {
+        query: searchQuery_trimmed,
+        category: category !== "all" ? (category as TradebiliaCategorySlug) : undefined,
+        condition: condition !== "all" ? (condition as any) : undefined,
+      }
+    : null;
   const { data: results, isLoading, error } = trpc.market.search.useQuery(
-    searchQuery_trimmed.length > 0
-      ? {
-          query: searchQuery_trimmed,
-          category: category !== "all" ? (category as TradebiliaCategorySlug) : undefined,
-          condition: condition !== "all" ? (condition as any) : undefined,
-        }
-      : undefined,
+    queryInput as any,
     {
-      enabled: searchQuery_trimmed.length > 0,
+      enabled: queryInput !== null,
     },
   );
 

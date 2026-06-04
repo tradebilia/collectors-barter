@@ -328,7 +328,7 @@ export default function MemberSearch() {
                   <h2 className="text-2xl font-semibold text-slate-900">Top Member Rankings</h2>
                 </div>
                 <div className="mt-5 space-y-3">
-                  {(membersQuery.data?.rankings.topRated ?? []).map((member, index) => (
+                  {(membersQuery.data?.rankings.topRated ?? []).map((member: any, index: number) => (
                     <div key={member.userId} className="rounded-[1.25rem] border border-slate-200 bg-slate-50 p-4">
                       <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Rank #{index + 1}</p>
                       <p className="mt-2 text-lg font-semibold text-slate-900">{member.displayName}</p>
@@ -346,7 +346,7 @@ export default function MemberSearch() {
                   <h2 className="text-2xl font-semibold text-slate-900">Most Active</h2>
                 </div>
                 <div className="mt-5 space-y-3">
-                  {(membersQuery.data?.rankings.mostActive ?? []).map(member => (
+                  {(membersQuery.data?.rankings.mostActive ?? []).map((member: any) => (
                     <div key={member.userId} className="rounded-[1.25rem] border border-slate-200 bg-slate-50 p-4">
                       <p className="text-lg font-semibold text-slate-900">{member.displayName}</p>
                       <p className="mt-1 text-sm text-slate-600">{member.listingCount} active listings · {member.completedTradeCount} completed trades</p>
