@@ -262,7 +262,7 @@ export default function CategoryPage() {
           <div className={`absolute inset-0 ${slug === 'movies' ? 'bg-black/10' : 'bg-black/30'}`}></div>
           <div className="container relative py-6 lg:py-8 z-10">
             <div className="max-w-4xl mx-auto text-center">
-              <p className="mt-2 text-xs font-semibold uppercase tracking-[0.36em] opacity-80 text-white" style={{ visibility: slug === "pokemon" ? "hidden" : "visible", position: "relative", top: "-24px" }}>{theme.eyebrow}</p>
+              <p className="mt-2 text-xs font-semibold uppercase tracking-[0.36em] text-white" style={{ visibility: slug === "pokemon" ? "hidden" : "visible", position: "relative", top: "-24px", color: "#ffffff", opacity: 1 }}>{theme.eyebrow}</p>
               <div className="mt-3 leading-none" style={{ marginTop: "24px" }}>
                 <h1 className="max-w-full mx-auto text-6xl sm:text-7xl lg:text-8xl" style={{
                   fontFamily: getCategoryFont(slug),

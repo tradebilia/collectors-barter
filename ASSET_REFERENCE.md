@@ -146,3 +146,80 @@ For future sessions, consider:
 - `client/src/pages/Home.tsx` - Homepage with hero background
 - `client/src/pages/CategoryPage.tsx` - Category pages with category-specific backgrounds
 - `backgrounds/` - Local directory with additional background files (not currently used)
+
+
+## Category Title Images (S3 Storage)
+
+All category title images are stored in S3 via `/manus-storage/` proxy and are referenced in `client/src/pages/CategoryPage.tsx`.
+
+### Title Images Reference
+
+| Category | S3 URL | File ID | Used in |
+|----------|--------|---------|---------|
+| Sports Cards | `/manus-storage/SportsCardsTitle_db2535b2.png` | db2535b2 | CategoryPage.tsx:289 |
+| Vintage Toys | `/manus-storage/VintageToysTitle_11b8cdd9.png` | 11b8cdd9 | CategoryPage.tsx:291 |
+| Video Games | `/manus-storage/VideoGamesTitle_e5b075b7.webp` | e5b075b7 | CategoryPage.tsx:297 |
+| Stamps | `/manus-storage/StampsTitle_cc0e76c3.webp` | cc0e76c3 | CategoryPage.tsx:295 |
+| Coins | `/manus-storage/CoinsTitle_40d49d1d.webp` | 40d49d1d | CategoryPage.tsx:293 |
+| Comics | `/manus-storage/ComicsTitle_b915b61d.png` | b915b61d | CategoryPage.tsx:287 |
+| Pokemon | `/manus-storage/PokemonTitle_eaf0db72.png` | eaf0db72 | CategoryPage.tsx:285 |
+| Movies | `/manus-storage/MoviesTitle_0e6931a4.png` | 0e6931a4 | CategoryPage.tsx:299 |
+| Autographs | `/manus-storage/AutographsTitle_85ad05d3.png` | 85ad05d3 | CategoryPage.tsx:301 |
+| Disney Pins | `/manus-storage/DisneyPinsTitle_dc12f61b.png` | dc12f61b | CategoryPage.tsx:283 |
+
+### Category Background Images (S3 Storage)
+
+| Category | S3 URL | File ID | Used in |
+|----------|--------|---------|---------|
+| Sports Cards | `/manus-storage/Sportscardwallpaper_bc1c7d7a.webp` | bc1c7d7a | CategoryPage.tsx:254 |
+| Comics | `/manus-storage/comics-background-YZiiH2cyV8YJx6GFQj4PKC_2cc313bb.webp` | 2cc313bb | CategoryPage.tsx:254 |
+| Pokemon | `/manus-storage/pokemon-background-J6h7Mte6BSYA3GfQ4vtdFj_d1df88b6.webp` | d1df88b6 | CategoryPage.tsx:254 |
+| Video Games | `/manus-storage/video-games-background-kyx4vVUqTYCMC3kMbtokYU_c9f7dffa.webp` | c9f7dffa | CategoryPage.tsx:254 |
+| Disney Pins | `/manus-storage/disney-pins-background-F6yUvFLVrhmnaWk6GsFMZ8_172dee25.webp` | 172dee25 | CategoryPage.tsx:254 |
+| Coins | `/manus-storage/CoinsBackground_ef9aac41.png` | ef9aac41 | CategoryPage.tsx:254 |
+| Stamps | `/manus-storage/StampsBackground_381d3e98.png` | 381d3e98 | CategoryPage.tsx:254 |
+| Vintage Toys | `/manus-storage/VintageToysBackground_8ab6860f.png` | 8ab6860f | CategoryPage.tsx:254 |
+| Autographs | `/manus-storage/AutoBackground_d025a571.png` | d025a571 | CategoryPage.tsx:254 |
+| Movies | `/manus-storage/VHSBackground_99756671.png` | 99756671 | CategoryPage.tsx:254 |
+
+## GitHub Repository
+
+**Repository:** `tradebilia/collectors-barter`
+**GitHub URL:** https://github.com/tradebilia/collectors-barter
+**Branch:** main
+**Latest Commits:**
+- Restore Disney Pins title size to 475px with proper positioning
+- Update category titles: Pokemon, Coins, Movies, Autographs
+- Checkpoint: Adjusted category title sizes and positioning
+
+## Recent Changes (Current Session)
+
+### Eyebrow Text Styling
+- **File:** `client/src/pages/CategoryPage.tsx` (line 265)
+- **Change:** Made all eyebrow text bright white across all 10 category pages
+- **Details:**
+  - Removed `opacity-80` class (was 80% opacity)
+  - Added `opacity: 1` inline style (100% opacity)
+  - Added `color: "#ffffff"` inline style (bright white)
+  - Applied to: Comics, Sports Cards, Vintage Toys, Video Games, Stamps, Coins, Pokemon (hidden), Movies, Autographs, Disney Pins
+
+### Disney Pins Title Positioning
+- **File:** `client/src/pages/CategoryPage.tsx` (line 283)
+- **Original:** `marginTop: 65px`
+- **Current:** `marginTop: 130px`
+- **Change:** Moved title down 65px total (50px from original, then 15px more)
+- **Other properties:** `maxHeight: 475px`, `marginBottom: 30px`
+
+## S3 Storage Access
+
+All S3 assets are accessed via the `/manus-storage/` proxy path, which automatically redirects to the CloudFront CDN:
+- **Base URL:** `/manus-storage/{filename_with_id}`
+- **CDN Base:** `https://d2xsxph8kpxj0f.cloudfront.net/310519663570115757/nAx6ATm2BH4G46yabuMZgM/`
+- **Full CDN URL Example:** `https://d2xsxph8kpxj0f.cloudfront.net/310519663570115757/nAx6ATm2BH4G46yabuMZgM/DisneyPinsTitle_dc12f61b.png`
+
+## Notes
+
+- All S3 URLs use the `/manus-storage/` proxy for reliability and automatic redirects
+- File IDs (e.g., `dc12f61b`) are unique identifiers for each asset version
+- The proxy handles CDN routing and caching automatically
+- No manual URL management needed - use `/manus-storage/{filename}` format in code
