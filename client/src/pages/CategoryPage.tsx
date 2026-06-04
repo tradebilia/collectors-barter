@@ -286,7 +286,7 @@ export default function CategoryPage() {
                   ) : slug === "comics" ? (
                     <img src="/manus-storage/ComicsTitle_b915b61d.png" alt="Comics" style={{ maxHeight: "300px", width: "auto", objectFit: "contain", marginBottom: "-40px" }} />
                   ) : slug === "sports_cards" ? (
-                    <img src="/manus-storage/SportsCardsTitle_db2535b2.png" alt="Sports Cards" style={{ maxHeight: "300px", width: "auto", objectFit: "contain", marginBottom: "-40px" }} />
+                    <img src="/manus-storage/SportsCardsTitle_db2535b2.png" alt="Sports Cards" style={{ maxHeight: "300px", width: "auto", objectFit: "contain", marginBottom: "-30px", transform: "translateY(-35px)" }} />
                   ) : slug === "vintage_toys" ? (
                     <img src="/manus-storage/VintageToysTitle_11b8cdd9.png" alt="Vintage Toys" style={{ maxHeight: "300px", width: "auto", objectFit: "contain", marginBottom: "-30px", transform: "translateY(-35px)" }} />
                   ) : slug === "coins" ? (
