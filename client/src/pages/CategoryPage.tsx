@@ -280,7 +280,7 @@ export default function CategoryPage() {
                   zIndex: 50
                 }}>
                   {slug === "disney_pins" ? (
-                    <img src="/manus-storage/DisneyPinsTitle_dc12f61b.png" alt="Disney Pins" style={{ maxHeight: "300px", width: "auto", objectFit: "contain", marginBottom: "-35px" }} />
+                    <img src="/manus-storage/DisneyPinsTitle_dc12f61b.png" alt="Disney Pins" style={{ maxHeight: "475px", width: "auto", objectFit: "contain", marginBottom: "30px", marginTop: "130px" }} />
                   ) : slug === "pokemon" ? (
                     <img src="/manus-storage/PokemonTitle_eaf0db72.png" alt="Pokemon" style={{ maxHeight: "380px", maxWidth: "90%", width: "auto", objectFit: "contain", marginBottom: "30px", transform: "translateY(15px)" }} />
                   ) : slug === "comics" ? (
@@ -290,7 +290,7 @@ export default function CategoryPage() {
                   ) : slug === "vintage_toys" ? (
                     <img src="/manus-storage/VintageToysTitle_11b8cdd9.png" alt="Vintage Toys" style={{ maxHeight: "550px", width: "auto", objectFit: "contain", marginBottom: "30px", transform: "translateY(-200px)" }} />
                   ) : slug === "coins" ? (
-                    <img src="/manus-storage/CoinsTitle_40d49d1d.webp" alt="Coins" style={{ maxHeight: "300px", width: "auto", objectFit: "contain", marginBottom: "30px", transform: "translateY(-100px)", marginLeft: "-15px" }} />
+                    <img src="/manus-storage/CoinsTitle_40d49d1d.webp" alt="Coins" style={{ maxHeight: "225px", width: "auto", objectFit: "contain", marginBottom: "30px", transform: "translateY(-75px)", marginLeft: "-15px" }} />
                   ) : slug === "stamps" ? (
                     <img src="/manus-storage/StampsTitle_cc0e76c3.webp" alt="Stamps" style={{ maxHeight: "200px", width: "auto", objectFit: "contain", marginBottom: "30px", transform: "translateY(10px)" }} />
                   ) : slug === "video_games" ? (
