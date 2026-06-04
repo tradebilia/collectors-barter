@@ -43,8 +43,8 @@ const categoryOptions = [
 ] as const;
 
 const accountSources = [
-  { value: "paypal", label: "PayPal", logo: "/images/paypal-logo_62835ee7.png" },
-  { value: "facebook", label: "Facebook", logo: "/images/facebook-logo_1fd22cc7.png" },
+  { value: "paypal", label: "PayPal", logo: "/manus-storage/Paypal_450afefe.png" },
+  { value: "facebook", label: "Facebook", logo: "/manus-storage/Facebooklogo_708276db.png" },
 ] as const;
 
 type AccountSource = typeof accountSources[number]["value"];
