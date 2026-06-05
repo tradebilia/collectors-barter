@@ -1298,3 +1298,20 @@ The application is fully functional with all core features working correctly.
 - [x] Verified list view on Comics category page matches eBay format
 - [x] Verified list view on Sports Cards category page matches eBay format
 - [x] List view layout now matches eBay format across all category pages
+
+## eBay List View Layout - Grid Implementation (June 5, 2026)
+
+- [x] Restructured Card to use grid layout (grid grid-cols-[auto_1fr] gap-4)
+- [x] Image in first column (auto width) - stays fixed on left
+- [x] Content in second column (flex-1) - takes remaining space
+- [x] Content no longer wraps below image - stays on same horizontal line
+- [x] Title prominently displayed at top
+- [x] Condition, Seller, Trust, Status displayed on same horizontal line
+- [x] Description text displayed below details
+- [x] Watchlist heart button positioned on far right
+- [x] Took BEFORE screenshot showing content wrapping below image
+- [x] Took AFTER screenshot showing content on same horizontal line
+- [x] Visually compared BEFORE and AFTER to verify grid layout works
+- [x] Verified list view on Comics category page - content stays beside image
+- [x] Verified list view on Sports Cards category page - content stays beside image
+- [x] List view layout now perfectly matches eBay format across all category pages

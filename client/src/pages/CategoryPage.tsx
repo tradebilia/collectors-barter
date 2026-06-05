@@ -570,7 +570,7 @@ export default function CategoryPage() {
                         <OnlineIndicator sellerId={listing.ownerId} />
                       </div>
                     )}
-                    <Card key={listing.id} className={`overflow-hidden border bg-white border-gray-200 text-black ${isSportsCardsPage ? "rounded-md shadow-sm" : "rounded-[2rem]"} ${viewMode === "list" ? "flex gap-4 items-start flex-nowrap" : ""}`}>
+                    <Card key={listing.id} className={`${viewMode === "list" ? "grid grid-cols-[auto_1fr] gap-4" : ""} ${viewMode === "list" ? "" : "overflow-hidden"} border bg-white border-gray-200 text-black ${isSportsCardsPage ? "rounded-md shadow-sm" : "rounded-[2rem]"}`}>
                       {listing.ownerId && viewMode === "grid" && (
                         <div className="px-3 py-0.5">
                           <OnlineIndicator sellerId={listing.ownerId} />
@@ -585,24 +585,30 @@ export default function CategoryPage() {
                         />
                       </div>
                     </Link>
-                    <CardContent className={`${viewMode === "list" ? "flex-1 flex items-start justify-between gap-4 p-3 min-w-0" : `space-y-1 ${isSportsCardsPage ? "p-1.5 text-[#153746]" : "p-5"}`}`}>
+                    <CardContent className={`${viewMode === "list" ? "p-3 min-w-0 flex flex-col" : `space-y-1 ${isSportsCardsPage ? "p-1.5 text-[#153746]" : "p-5"}`}`}>
                       {viewMode === "list" ? (
                         <>
-                          <div className="flex-1 min-w-0">
-                            <Link href={`/listings/${listing.id}`} className="block font-bold leading-tight hover:opacity-75 text-base">
+                          <div className="flex-1 min-w-0 flex flex-col">
+                            <Link href={`/listings/${listing.id}`} className="block font-bold leading-tight hover:opacity-75 text-base truncate">
                               {listing.title}
                             </Link>
-                            <p className="text-xs leading-relaxed opacity-80 mt-1">{listing.conditionLabel}</p>
-                            <p className="text-xs leading-relaxed opacity-80 mt-1 line-clamp-2">{listing.description}</p>
-                            <div className="mt-3 space-y-1 text-xs">
-                              <p><span className="font-semibold">Seller:</span> {listing.owner.displayName}</p>
+                            <div className="flex items-center gap-3 text-xs mt-1 flex-nowrap overflow-x-auto">
+                              <div>
+                                <span className="font-semibold">Condition:</span> {listing.conditionLabel}
+                              </div>
+                              <div>
+                                <span className="font-semibold">Seller:</span> {listing.owner.displayName}
+                              </div>
                               <div className="flex items-center gap-1">
                                 <span className="font-semibold">Trust:</span>
                                 <Star className="fill-current h-3 w-3" />
                                 <span>{listing.ownerRating.averageRating.toFixed(1)}</span>
                               </div>
-                              <p><span className="font-semibold">Status:</span> {listing.status}</p>
+                              <div>
+                                <span className="font-semibold">Status:</span> {listing.status}
+                              </div>
                             </div>
+                            <p className="text-xs leading-relaxed opacity-80 mt-1 line-clamp-1">{listing.description}</p>
                           </div>
                           <div className="flex flex-col items-end gap-2 flex-shrink-0">
                             <button className="text-red-500 hover:text-red-600">
