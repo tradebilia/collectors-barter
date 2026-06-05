@@ -1232,7 +1232,9 @@ The application is fully functional with all core features working correctly.
 - [x] Changed OnlineIndicator to use absolute positioning with z-10
 - [x] Verified Member Online indicator is visible on Comics category page
 - [x] Verified Member Online indicator is visible on Sports Cards category page
-- [x] Fixed image padding issue - removed p-1 and p-0.5 padding from image containers
+- [x] Fixed image padding issue - removed border, background, and rounded corners from inner div
+- [x] Changed image from object-contain to object-cover to fill entire card space
 - [x] Images now extend edge-to-edge without white padding on sides
-- [x] Verified padding fix on Comics category page
-- [x] Verified padding fix on Sports Cards category page
+- [x] Verified padding fix on Comics category page (Amazing Spider-Man)
+- [x] Verified padding fix on Sports Cards category page (Mark McGwire)
+- [x] Took before and after screenshots to visually verify the fix
