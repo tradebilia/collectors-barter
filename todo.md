@@ -1408,3 +1408,5 @@ The application is fully functional with all core features working correctly.
 - [x] Add relative positioning to Card for absolute positioned OnlineIndicator
 - [x] Verify Member Online indicator is visible in grid view
 - [x] Center Member Online indicator on cards
+- [x] Fix OnlineIndicator positioning to show at top-center (not middle) of cards
+- [x] Verify Member Online indicator visible on all category pages
