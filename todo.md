@@ -1131,3 +1131,12 @@ The application is fully functional with all core features working correctly.
 - [x] Update AdminDashboard UI to display new columns
 - [x] Test new columns with real user data
 - [x] Admin Dashboard columns feature complete and tested
+
+
+## Online Status Indicator Placement (June 5, 2026)
+
+- [x] Move online status indicator above image in carousel (RecentlyAddedCarousel)
+- [x] Add online status indicator to category page listings
+- [x] Add online status indicator to individual item detail page
+- [x] Ensure consistent styling across all pages
+- [x] Online status indicator placement complete

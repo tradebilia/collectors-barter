@@ -60,18 +60,18 @@ export function RecentlyAddedCarousel({
               className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer h-full"
               onClick={() => item.href && (window.location.href = item.href)}
             >
+              {item.ownerId && (
+                <div className="px-3 pt-2 pb-1">
+                  <OnlineIndicator sellerId={item.ownerId} />
+                </div>
+              )}
               <div className="aspect-[0.75] overflow-hidden bg-slate-100 relative group/img">
                 <img
                   src={item.imageUrl}
                   alt={item.title}
-                  className="h-full w-full object-cover transition-transform duration-500 group-hover/img:scale-110"
+                  className="h-full w-full object-contain transition-transform duration-500 group-hover/img:scale-110"
                 />
                 <div className="absolute inset-0 bg-black/0 group-hover/img:bg-black/5 transition-colors" />
-                {item.ownerId && (
-                  <div className="absolute top-2 right-2">
-                    <OnlineIndicator sellerId={item.ownerId} />
-                  </div>
-                )}
               </div>
               
               <CardContent className="p-3 space-y-2">

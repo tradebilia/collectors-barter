@@ -14,6 +14,7 @@ import { Heart, Loader2, MessageCircleMore, Menu, Search, Star, UserRound } from
 import { TopRightIcons } from "@/components/TopRightIcons";
 import { CategoryBar } from "@/components/CategoryBar";
 import { TopBar } from "@/components/TopBar";
+import { OnlineIndicator } from "@/components/OnlineIndicator";
 import { useMemo, useState } from "react";
 import { Link, useRoute, useLocation } from "wouter";
 import { toast } from "sonner";
@@ -248,10 +249,15 @@ export default function ItemDetail() {
 
                 <div className="flex flex-wrap items-center justify-between gap-5">
                   <Link href={`/profile/${listing.ownerId}`} className="flex items-center gap-4 hover:opacity-80 transition">
-                    <Avatar className="h-14 w-14 border border-white/15 cursor-pointer">
-                      <AvatarImage src={listing.ownerProfile.avatarUrl ?? undefined} alt={listing.ownerProfile.displayName} />
-                      <AvatarFallback className="bg-white/10 text-white">{initials(listing.ownerProfile.displayName)}</AvatarFallback>
-                    </Avatar>
+                    <div className="relative">
+                      <Avatar className="h-14 w-14 border border-white/15 cursor-pointer">
+                        <AvatarImage src={listing.ownerProfile.avatarUrl ?? undefined} alt={listing.ownerProfile.displayName} />
+                        <AvatarFallback className="bg-white/10 text-white">{initials(listing.ownerProfile.displayName)}</AvatarFallback>
+                      </Avatar>
+                      <div className="absolute -top-1 -right-1">
+                        <OnlineIndicator sellerId={listing.ownerId} />
+                      </div>
+                    </div>
                     <div>
                       <p className="text-3xl font-medium text-white">{listing.ownerProfile.displayName}</p>
                       <p className="mt-1 text-sm text-white/55">Collector profile</p>

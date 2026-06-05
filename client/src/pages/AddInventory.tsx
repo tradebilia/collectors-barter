@@ -264,7 +264,7 @@ export default function AddInventory() {
       setDraft({
         category: listing.category as ListingCategory,
         title: listing.title,
-        value: listing.estimatedValue || '',
+        value: listing.estimatedValue ? String(listing.estimatedValue) : '',
         graderCompany,
         certificationNumber,
         grade,

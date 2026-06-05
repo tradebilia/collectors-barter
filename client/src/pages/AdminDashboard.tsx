@@ -314,7 +314,7 @@ export default function AdminDashboard() {
                         </tr>
                       </thead>
                       <tbody>
-                        {listingsQuery.data.map((listing) => (
+                        {(listingsQuery.data as any[])?.map((listing: any) => (
                           <tr key={listing.id} className="border-b border-border hover:bg-accent/50">
                             <td className="py-2 px-4 truncate max-w-xs">{listing.title}</td>
                             <td className="py-2 px-4">{listing.category}</td>
@@ -326,7 +326,7 @@ export default function AdminDashboard() {
                                 {listing.status}
                               </span>
                             </td>
-                            <td className="py-2 px-4">{listing.ownerId}</td>
+                            <td className="py-2 px-4">{(listing as any).ownerId}</td>
                             <td className="py-2 px-4 text-xs space-x-2">
                               <Button size="sm" variant="outline">View</Button>
                               <Button size="sm" variant="destructive">Delete</Button>
@@ -370,17 +370,17 @@ export default function AdminDashboard() {
                         </tr>
                       </thead>
                       <tbody>
-                        {tradesQuery.data.map((trade) => (
+                        {(tradesQuery.data as any[])?.map((trade: any) => (
                           <tr key={trade.id} className="border-b border-border hover:bg-accent/50">
                             <td className="py-2 px-4 font-mono text-xs">{trade.id}</td>
                             <td className="py-2 px-4">{trade.requesterUsername || "-"}</td>
-                            <td className="py-2 px-4">{trade.recipientUsername || "-"}</td>
+                            <td className="py-2 px-4">{(trade as any).recipientUsername || "-"}</td>
                             <td className="py-2 px-4">{trade.listingTitle || "-"}</td>
                             <td className="py-2 px-4">
                               <span className={`px-2 py-1 rounded text-xs font-medium ${
                                 trade.status === 'completed' ? 'bg-green-100 text-green-800' :
                                 trade.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                                trade.status === 'rejected' ? 'bg-red-100 text-red-800' :
+                                trade.status === 'declined' ? 'bg-red-100 text-red-800' :
                                 'bg-gray-100 text-gray-800'
                               }`}>
                                 {trade.status}
@@ -490,21 +490,21 @@ export default function AdminDashboard() {
               <CardContent>
                 {reportsQuery.isLoading ? (
                   <div className="text-sm text-muted-foreground">Loading reports...</div>
-                ) : reportsQuery.data && reportsQuery.data.length > 0 ? (
+                ) : reportsQuery.data && (reportsQuery.data as any[]).length > 0 ? (
                   <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead className="border-b border-border">
-                        <tr>
-                          <th className="text-left py-2 px-4">Report ID</th>
-                          <th className="text-left py-2 px-4">Reported User</th>
-                          <th className="text-left py-2 px-4">Reason</th>
-                          <th className="text-left py-2 px-4">Status</th>
-                          <th className="text-left py-2 px-4">Submitted</th>
-                          <th className="text-left py-2 px-4">Action</th>
+                    <table className="w-full text-left">
+                      <thead>
+                        <tr className="border-b border-border bg-muted/50">
+                          <th className="py-2 px-4 font-semibold text-xs">Report ID</th>
+                          <th className="py-2 px-4 font-semibold text-xs">Reported User</th>
+                          <th className="py-2 px-4 font-semibold text-xs">Reason</th>
+                          <th className="py-2 px-4 font-semibold text-xs">Status</th>
+                          <th className="py-2 px-4 font-semibold text-xs">Date</th>
+                          <th className="py-2 px-4 font-semibold text-xs">Actions</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {reportsQuery.data.map((report) => (
+                        {(reportsQuery.data as any[]).map((report: any) => (
                           <tr key={report.id} className="border-b border-border hover:bg-accent/50">
                             <td className="py-2 px-4 font-mono text-xs font-semibold text-blue-500">{report.reportId}</td>
                             <td className="py-2 px-4">{report.reportedUserName}</td>

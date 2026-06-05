@@ -1029,6 +1029,20 @@ export const appRouter = router({
         .orderBy(desc(tradeProposals.createdAt));
       return allTrades;
     }),
+    // Reported users management
+    getReportedUsers: protectedProcedure
+      .input(
+        z.object({
+          status: z.enum(['pending', 'reviewed', 'dismissed', 'action_taken']).optional(),
+          limit: z.number().int().positive().default(50),
+          offset: z.number().int().nonnegative().default(0),
+        }),
+      )
+      .query(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+        // Return empty array for now - reports table not yet implemented
+        return [];
+      }),
   }),
   // Online status procedures
   onlineStatus: router({

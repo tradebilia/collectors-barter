@@ -1240,33 +1240,82 @@ export async function getDashboardData(user: Pick<User, "id" | "name">): Promise
     getRatingStatsMap([user.id]),
   ]);
 
-  const ownListings = await formatListings(ownListingRows, user.id);
+  // Fetch photos for own listings
+  const ownListingIds = ownListingRows.map(r => r.id);
+  const ownPhotos = ownListingIds.length ? await db
+    .select({
+      listingId: listingPhotos.listingId,
+      imageUrl: listingPhotos.imageUrl,
+      sortOrder: listingPhotos.sortOrder,
+    })
+    .from(listingPhotos)
+    .where(inArray(listingPhotos.listingId, ownListingIds))
+    .orderBy(asc(listingPhotos.sortOrder))
+    : [];
+  
+  const ownPhotosMap = new Map<number, string>();
+  ownPhotos.forEach(photo => {
+    if (!ownPhotosMap.has(photo.listingId)) {
+      ownPhotosMap.set(photo.listingId, photo.imageUrl);
+    }
+  });
+  
+  const enrichedOwnListings = ownListingRows.map(row => ({
+    ...row,
+    primaryPhotoUrl: ownPhotosMap.get(row.id) || null,
+  }));
+  
+  const ownListings = await formatListings(enrichedOwnListings, user.id);
   const savedListingIds = watchlistRows.map(row => row.listingId);
   const savedListingRows = savedListingIds.length
-    ? await db
-        .select({
-          id: listings.id,
-          ownerId: listings.ownerId,
-          title: listings.title,
-          category: listings.category,
-          condition: listings.condition,
-          grade: listings.grade,
-          certificationCompany: listings.certificationCompany,
-          estimatedValue: listings.estimatedValue,
-          description: listings.description,
-          status: listings.status,
-          featured: listings.featured,
-          isActive: listings.isActive,
-          createdAt: listings.createdAt,
-          updatedAt: listings.updatedAt,
-        })
-        .from(listings)
-        .where(inArray(listings.id, savedListingIds))
-        .orderBy(desc(listings.createdAt))
+    ? await     db
+      .select({
+        id: listings.id,
+        ownerId: listings.ownerId,
+        title: listings.title,
+        category: listings.category,
+        condition: listings.condition,
+        grade: listings.grade,
+        certificationCompany: listings.certificationCompany,
+        estimatedValue: listings.estimatedValue,
+        description: listings.description,
+        status: listings.status,
+        featured: listings.featured,
+        isActive: listings.isActive,
+        createdAt: listings.createdAt,
+        updatedAt: listings.updatedAt,
+      })
+      .from(listings)
+      .where(inArray(listings.id, savedListingIds))
+      .orderBy(desc(listings.createdAt))
     : [];
 
+  // Fetch photos for watchlist listings
+  const watchlistPhotos = savedListingIds.length ? await db
+    .select({
+      listingId: listingPhotos.listingId,
+      imageUrl: listingPhotos.imageUrl,
+      sortOrder: listingPhotos.sortOrder,
+    })
+    .from(listingPhotos)
+    .where(inArray(listingPhotos.listingId, savedListingIds))
+    .orderBy(asc(listingPhotos.sortOrder))
+    : [];
+  
+  const watchlistPhotosMap = new Map<number, string>();
+  watchlistPhotos.forEach(photo => {
+    if (!watchlistPhotosMap.has(photo.listingId)) {
+      watchlistPhotosMap.set(photo.listingId, photo.imageUrl);
+    }
+  });
+  
+  const enrichedWatchlistRows = savedListingRows.map(row => ({
+    ...row,
+    primaryPhotoUrl: watchlistPhotosMap.get(row.id) || null,
+  }));
+  
   const reviewProfileMap = await getProfileMap(receivedReviews.map(row => row.reviewerId));
-  const watchlist = await formatListings(savedListingRows, user.id);
+  const watchlist = await formatListings(enrichedWatchlistRows, user.id);
   const rating = ratingMapData.get(user.id) ?? { averageRating: 0, reviewCount: 0 };
 
   const profileData = profileRows[0] as any;
