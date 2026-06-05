@@ -14,6 +14,8 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState("statistics");
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [selectedReport, setSelectedReport] = useState<any>(null);
+  const [editMode, setEditMode] = useState(false);
+  const [editFormData, setEditFormData] = useState<any>(null);
   const statsQuery = trpc.admin.getPlatformStatistics.useQuery(undefined, {
     enabled: user?.role === "admin",
     refetchOnWindowFocus: true,
@@ -43,6 +45,7 @@ export default function AdminDashboard() {
   );
   const deleteUserMutation = trpc.admin.deleteUser.useMutation();
   const updateReportStatusMutation = trpc.admin.updateReportStatus.useMutation();
+  const updateUserMutation = trpc.admin.updateUser.useMutation();
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<any>(null);
 
@@ -64,6 +67,26 @@ export default function AdminDashboard() {
       deletedAccountsQuery.refetch();
     } catch (error) {
       console.error('[handleDeleteUser] Failed to delete user', error);
+    }
+  };
+
+  const handleEditUser = () => {
+    setEditMode(true);
+    setEditFormData({ ...selectedUser });
+  };
+
+  const handleSaveUser = async () => {
+    try {
+      await updateUserMutation.mutateAsync({
+        userId: selectedUser.id,
+        ...editFormData,
+      });
+      setEditMode(false);
+      setEditFormData(null);
+      usersQuery.refetch();
+      setSelectedUser(null);
+    } catch (error) {
+      console.error('[handleSaveUser] Failed to update user', error);
     }
   };
 
@@ -569,6 +592,16 @@ export default function AdminDashboard() {
             </DialogTitle>
             <DialogDescription>
               User Profile Details
+              {!editMode && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleEditUser}
+                  className="ml-2"
+                >
+                  Edit
+                </Button>
+              )}
             </DialogDescription>
           </DialogHeader>
           {selectedUser && (
@@ -580,19 +613,55 @@ export default function AdminDashboard() {
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-muted-foreground">Email</p>
-                  <p className="text-base">{selectedUser.contactEmail || "-"}</p>
+                  {editMode ? (
+                    <input
+                      type="email"
+                      value={editFormData?.contactEmail || ""}
+                      onChange={(e) => setEditFormData({ ...editFormData, contactEmail: e.target.value })}
+                      className="w-full px-2 py-1 border border-border rounded text-sm"
+                    />
+                  ) : (
+                    <p className="text-base">{selectedUser.contactEmail || "-"}</p>
+                  )}
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-muted-foreground">First Name</p>
-                  <p className="text-base">{selectedUser.firstName || "-"}</p>
+                  {editMode ? (
+                    <input
+                      type="text"
+                      value={editFormData?.firstName || ""}
+                      onChange={(e) => setEditFormData({ ...editFormData, firstName: e.target.value })}
+                      className="w-full px-2 py-1 border border-border rounded text-sm"
+                    />
+                  ) : (
+                    <p className="text-base">{selectedUser.firstName || "-"}</p>
+                  )}
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-muted-foreground">Last Name</p>
-                  <p className="text-base">{selectedUser.lastName || "-"}</p>
+                  {editMode ? (
+                    <input
+                      type="text"
+                      value={editFormData?.lastName || ""}
+                      onChange={(e) => setEditFormData({ ...editFormData, lastName: e.target.value })}
+                      className="w-full px-2 py-1 border border-border rounded text-sm"
+                    />
+                  ) : (
+                    <p className="text-base">{selectedUser.lastName || "-"}</p>
+                  )}
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-muted-foreground">Display Name</p>
-                  <p className="text-base">{selectedUser.displayName || "-"}</p>
+                  {editMode ? (
+                    <input
+                      type="text"
+                      value={editFormData?.displayName || ""}
+                      onChange={(e) => setEditFormData({ ...editFormData, displayName: e.target.value })}
+                      className="w-full px-2 py-1 border border-border rounded text-sm"
+                    />
+                  ) : (
+                    <p className="text-base">{selectedUser.displayName || "-"}</p>
+                  )}
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-muted-foreground">Role</p>
@@ -615,34 +684,117 @@ export default function AdminDashboard() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <p className="text-sm font-semibold text-muted-foreground">Full Name</p>
-                    <p className="text-base">{selectedUser.contactFullName || "-"}</p>
+                    {editMode ? (
+                      <input
+                        type="text"
+                        value={editFormData?.contactFullName || ""}
+                        onChange={(e) => setEditFormData({ ...editFormData, contactFullName: e.target.value })}
+                        className="w-full px-2 py-1 border border-border rounded text-sm"
+                      />
+                    ) : (
+                      <p className="text-base">{selectedUser.contactFullName || "-"}</p>
+                    )}
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-muted-foreground">Phone</p>
-                    <p className="text-base">{selectedUser.contactPhone || "-"}</p>
+                    {editMode ? (
+                      <input
+                        type="tel"
+                        value={editFormData?.contactPhone || ""}
+                        onChange={(e) => setEditFormData({ ...editFormData, contactPhone: e.target.value })}
+                        className="w-full px-2 py-1 border border-border rounded text-sm"
+                      />
+                    ) : (
+                      <p className="text-base">{selectedUser.contactPhone || "-"}</p>
+                    )}
                   </div>
                   <div className="col-span-2">
                     <p className="text-sm font-semibold text-muted-foreground">Address</p>
-                    <p className="text-base">{selectedUser.contactAddress || "-"}</p>
+                    {editMode ? (
+                      <input
+                        type="text"
+                        value={editFormData?.contactAddress || ""}
+                        onChange={(e) => setEditFormData({ ...editFormData, contactAddress: e.target.value })}
+                        className="w-full px-2 py-1 border border-border rounded text-sm"
+                      />
+                    ) : (
+                      <p className="text-base">{selectedUser.contactAddress || "-"}</p>
+                    )}
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-muted-foreground">City</p>
-                    <p className="text-base">{selectedUser.contactTown || "-"}</p>
+                    {editMode ? (
+                      <input
+                        type="text"
+                        value={editFormData?.contactTown || ""}
+                        onChange={(e) => setEditFormData({ ...editFormData, contactTown: e.target.value })}
+                        className="w-full px-2 py-1 border border-border rounded text-sm"
+                      />
+                    ) : (
+                      <p className="text-base">{selectedUser.contactTown || "-"}</p>
+                    )}
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-muted-foreground">State</p>
-                    <p className="text-base">{selectedUser.contactState || "-"}</p>
+                    {editMode ? (
+                      <input
+                        type="text"
+                        value={editFormData?.contactState || ""}
+                        onChange={(e) => setEditFormData({ ...editFormData, contactState: e.target.value })}
+                        className="w-full px-2 py-1 border border-border rounded text-sm"
+                      />
+                    ) : (
+                      <p className="text-base">{selectedUser.contactState || "-"}</p>
+                    )}
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-muted-foreground">Zip Code</p>
-                    <p className="text-base">{selectedUser.contactZipCode || "-"}</p>
+                    {editMode ? (
+                      <input
+                        type="text"
+                        value={editFormData?.contactZipCode || ""}
+                        onChange={(e) => setEditFormData({ ...editFormData, contactZipCode: e.target.value })}
+                        className="w-full px-2 py-1 border border-border rounded text-sm"
+                      />
+                    ) : (
+                      <p className="text-base">{selectedUser.contactZipCode || "-"}</p>
+                    )}
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-muted-foreground">Country</p>
-                    <p className="text-base">{selectedUser.contactCountry || "-"}</p>
+                    {editMode ? (
+                      <input
+                        type="text"
+                        value={editFormData?.contactCountry || ""}
+                        onChange={(e) => setEditFormData({ ...editFormData, contactCountry: e.target.value })}
+                        className="w-full px-2 py-1 border border-border rounded text-sm"
+                      />
+                    ) : (
+                      <p className="text-base">{selectedUser.contactCountry || "-"}</p>
+                    )}
                   </div>
                 </div>
               </div>
+
+              {editMode && (
+                <div className="border-t border-border pt-4 flex gap-2 justify-end">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setEditMode(false);
+                      setEditFormData(null);
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleSaveUser}
+                    disabled={updateUserMutation.isPending}
+                  >
+                    Save Changes
+                  </Button>
+                </div>
+              )}
 
               <div className="border-t border-border pt-4">
                 <h3 className="font-semibold mb-3">Account Statistics</h3>

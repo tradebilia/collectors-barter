@@ -1033,6 +1033,37 @@ export const appRouter = router({
         await db.update(users).set({ role: input.role }).where(eq(users.id, input.userId));
         return { success: true };
       }),
+    updateUser: protectedProcedure
+      .input(z.object({
+        userId: z.number().int().positive(),
+        firstName: z.string().max(100).optional(),
+        lastName: z.string().max(100).optional(),
+        displayName: z.string().max(100).optional(),
+        contactFullName: z.string().max(200).optional(),
+        contactPhone: z.string().max(20).optional(),
+        contactEmail: z.string().email().optional(),
+        contactAddress: z.string().max(255).optional(),
+        contactTown: z.string().max(100).optional(),
+        contactState: z.string().max(100).optional(),
+        contactZipCode: z.string().max(20).optional(),
+        contactCountry: z.string().max(100).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+        const db = await requireDb();
+        const { userId, ...updateData } = input;
+        const updateFields: any = {};
+        Object.entries(updateData).forEach(([key, value]) => {
+          if (value !== undefined && value !== null && value !== '') {
+            updateFields[key] = value;
+          }
+        });
+        if (Object.keys(updateFields).length === 0) {
+          return { success: true };
+        }
+        await db.update(users).set(updateFields).where(eq(users.id, userId));
+        return { success: true };
+      }),
     // Deleted accounts management
     getDeletedAccounts: protectedProcedure.query(async ({ ctx }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
