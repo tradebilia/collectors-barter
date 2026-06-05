@@ -290,3 +290,15 @@ All S3 assets are accessed via the `/manus-storage/` proxy path, which automatic
   - Maintained Inbox hero section with image and stats
   - Ensures visual consistency with other pages (Home, Contact, Category pages)
 - **Result:** Messages page now matches the visual style and navigation of the rest of the site
+
+
+## Messages Page Hero Image Centering (June 5, 2026)
+
+### Hero Image Styling Update
+- **Commit:** 4d97c2b
+- **File Modified:** `client/src/pages/Messages.tsx`
+- **Changes:**
+  - Centered Inbox hero image in Messages page
+  - Matched responsive sizing to main page (h-64/sm:h-72/lg:h-80)
+  - Used same layout pattern as main page for visual consistency
+- **Result:** Messages page hero now matches main page styling and sizing
