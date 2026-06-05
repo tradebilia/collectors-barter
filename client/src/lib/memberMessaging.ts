@@ -195,3 +195,28 @@ export function subscribeToPresence(callback: () => void) {
     channel?.close();
   };
 }
+
+
+// Clear presence for current user when logging out
+export function clearPresence(userId: number) {
+  if (typeof window === "undefined") return;
+  const current = loadPresenceMap();
+  delete current[userId];
+  window.localStorage.setItem(PRESENCE_KEY, JSON.stringify(current));
+  const channel = getBrowserChannel();
+  channel?.postMessage({ type: "presence" });
+  channel?.close();
+}
+
+// Check if a user's presence is still active (within 5 minutes)
+const PRESENCE_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
+
+export function isPresenceActive(userId: number): boolean {
+  if (typeof window === "undefined") return false;
+  const presenceMap = loadPresenceMap();
+  const presence = presenceMap[userId];
+  if (!presence) return false;
+  const now = Date.now();
+  const isActive = now - presence.updatedAt < PRESENCE_TIMEOUT_MS;
+  return isActive;
+}

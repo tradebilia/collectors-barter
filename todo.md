@@ -1367,3 +1367,10 @@ The application is fully functional with all core features working correctly.
 - [x] Match hero sizing to main page (h-64/sm:h-72/lg:h-80)
 - [x] Use responsive layout matching main page pattern
 - [x] Verified centered and properly sized appearance
+
+
+## Online Presence Bug Fix
+- [x] Identified bug: Member Online indicator shows incorrectly for logged-out users
+- [x] Updated logout procedure to clear lastActivityAt timestamp
+- [x] Enhanced OnlineIndicator component with cache invalidation and faster refetch
+- [ ] Verify fix works after AdminTavani logs out again

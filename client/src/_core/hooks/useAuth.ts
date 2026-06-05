@@ -1,5 +1,6 @@
 import { getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
+import { clearPresence } from "@/lib/memberMessaging";
 import { TRPCClientError } from "@trpc/client";
 import { useCallback, useEffect, useMemo } from "react";
 
@@ -26,6 +27,10 @@ export function useAuth(options?: UseAuthOptions) {
 
   const logout = useCallback(async () => {
     try {
+      // Clear presence before logging out
+      if (meQuery.data?.id) {
+        clearPresence(meQuery.data.id);
+      }
       await logoutMutation.mutateAsync();
     } catch (error: unknown) {
       if (
@@ -41,7 +46,7 @@ export function useAuth(options?: UseAuthOptions) {
       // Redirect to home page after logout
       window.location.href = "/";
     }
-  }, [logoutMutation, utils]);
+  }, [logoutMutation, utils, meQuery.data?.id]);
 
   const state = useMemo(() => {
     localStorage.setItem(

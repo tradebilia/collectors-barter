@@ -213,7 +213,11 @@ export const appRouter = router({
 
         return { success: true, userId: user.id };
       }),
-    logout: publicProcedure.mutation(({ ctx }) => {
+    logout: protectedProcedure.mutation(async ({ ctx }) => {
+      const db = await requireDb();
+      // Clear lastActivityAt to mark user as offline
+      await db.update(users).set({ lastActivityAt: new Date(0) }).where(eq(users.id, ctx.user.id));
+      
       const cookieOptions = getSessionCookieOptions(ctx.req);
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
       return {

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { trpc } from '@/lib/trpc';
+import { useCallback } from 'react';
 
 interface OnlineIndicatorProps {
   sellerId: number;
@@ -9,15 +10,24 @@ interface OnlineIndicatorProps {
 export function OnlineIndicator({ sellerId, className = '' }: OnlineIndicatorProps) {
   const [isOnline, setIsOnline] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const utils = trpc.useUtils();
 
   // Fetch online status
   const onlineStatusQuery = trpc.onlineStatus.getSellerOnlineStatus.useQuery(
     { sellerId },
     {
       enabled: !!sellerId,
-      refetchInterval: 30000, // Refetch every 30 seconds to keep status current
+      refetchInterval: 10000, // Refetch every 10 seconds to keep status current
+      staleTime: 5000, // Consider data stale after 5 seconds
     }
   );
+
+  // Invalidate cache on mount to ensure fresh data
+  useEffect(() => {
+    if (sellerId) {
+      utils.onlineStatus.getSellerOnlineStatus.invalidate({ sellerId });
+    }
+  }, [sellerId, utils]);
 
   useEffect(() => {
     if (onlineStatusQuery.data) {
