@@ -250,96 +250,114 @@ export default function CategoryPage() {
         logoUrl={SPORTS_CARDS_LONG_LOGO_URL}
         searchPlaceholder={`Search ${getTradebiliaCategoryLabel(slug ?? '')}...`}
       />
-      <header className={`relative overflow-hidden border-b ${theme.borderClassName} ${theme.heroClassName}`} style={{ minHeight: '400px' }}>
-        <div className={`relative overflow-hidden ${theme.textureClassName}`} style={{
+      <header className={`relative overflow-hidden border-b ${theme.borderClassName} ${theme.heroClassName}`} style={{ minHeight: '500px', position: 'relative' }}>
+        <div className={`absolute inset-0 overflow-hidden ${theme.textureClassName}`} style={{
           backgroundImage: isSportsCardsPage ? 'url(/manus-storage/Sportscardwallpaper_bc1c7d7a.webp)' : slug === 'video_games' ? 'url(/manus-storage/video-games-background-kyx4vVUqTYCMC3kMbtokYU_c9f7dffa.webp)' : slug === 'coins' ? 'url(/manus-storage/CoinsBackground_ef9aac41.png)' : slug === 'stamps' ? 'url(/manus-storage/StampsBackground_381d3e98.png)' : slug === 'vintage_toys' ? 'url(/manus-storage/VintageToysBackground_8ab6860f.png)' : slug === 'autographs' ? 'url(/manus-storage/AutoBackground_d025a571.png)' : slug === 'movies' ? 'url(/manus-storage/VHSBackground_99756671.png)' : slug === 'comics' ? 'url(/manus-storage/comics-background-YZiiH2cyV8YJx6GFQj4PKC_2cc313bb.webp)' : slug === 'pokemon' ? 'url(/manus-storage/pokemon-background-J6h7Mte6BSYA3GfQ4vtdFj_d1df88b6.webp)' : slug === 'disney_pins' ? 'url(/manus-storage/disney-pins-background-F6yUvFLVrhmnaWk6GsFMZ8_172dee25.webp)' : undefined,
           backgroundSize: 'cover',
           backgroundPosition: slug === 'movies' ? 'center top' : 'center',
           backgroundAttachment: 'scroll',
           backgroundRepeat: (slug === 'movies' || slug === 'comics' || slug === 'pokemon' || slug === 'video_games' || slug === 'disney_pins') ? 'no-repeat' : 'repeat',
-          height: '400px',
           filter: (slug === 'video_games' || slug === 'coins' || slug === 'stamps' || slug === 'vintage_toys' || slug === 'autographs' || slug === 'movies' || slug === 'comics' || slug === 'pokemon' || slug === 'disney_pins') ? 'contrast(1.2) saturate(1.1)' : 'none'
         }}>
           <div className={`absolute inset-0 ${slug === 'movies' ? 'bg-black/10' : 'bg-black/30'}`}></div>
-          <div className="container relative py-6 lg:py-8 z-10">
-            <div className="max-w-4xl mx-auto text-center">
-              <p className="mt-2 text-xs font-semibold uppercase tracking-[0.36em] text-white" style={{ visibility: slug === "pokemon" ? "hidden" : "visible", position: "relative", top: "-24px", color: "#ffffff", opacity: 1 }}>{theme.eyebrow}</p>
-              <div className="mt-3 leading-none" style={{ marginTop: "24px" }}>
-                <h1 className="max-w-full mx-auto text-6xl sm:text-7xl lg:text-8xl" style={{
-                  fontFamily: getCategoryFont(slug),
-                  fontWeight: 700,
-                  color: "white",
-                  textShadow: "2px 2px 4px rgba(0,0,0,0.5)",
-                  lineHeight: "1",
-                  height: "80px",
-                  whiteSpace: "nowrap",
-                  display: "flex",
-                  alignItems: slug === "pokemon" || slug === "disney_pins" ? "center" : slug === "stamps" ? "center" : slug === "comics" ? "center" : "flex-start",
-                  justifyContent: "center",
-                  paddingTop: slug === "pokemon" || slug === "disney_pins" ? "0" : slug === "comics" ? "-10px" : "20px",
-                  position: "relative",
-                  zIndex: 50
-                }}>
-                  {slug === "disney_pins" ? (
-                    <img src="/manus-storage/DisneyPinsTitle_dc12f61b.png" alt="Disney Pins" style={{ maxHeight: "475px", width: "auto", objectFit: "contain", marginBottom: "30px", marginTop: "130px" }} />
-                  ) : slug === "pokemon" ? (
-                    <img src="/manus-storage/PokemonTitle_eaf0db72.png" alt="Pokemon" style={{ maxHeight: "380px", maxWidth: "90%", width: "auto", objectFit: "contain", marginBottom: "30px", transform: "translateY(15px)" }} />
-                  ) : slug === "comics" ? (
-                    <img src="/manus-storage/ComicsTitle_b915b61d.png" alt="Comics" style={{ maxHeight: "300px", width: "auto", objectFit: "contain", marginBottom: "-40px" }} />
-                  ) : slug === "sports_cards" ? (
-                    <img src="/manus-storage/SportsCardsTitle_db2535b2.png" alt="Sports Cards" style={{ maxHeight: "300px", width: "auto", objectFit: "contain", marginBottom: "30px", transform: "translateY(-100px)", marginLeft: "-15px" }} />
-                  ) : slug === "vintage_toys" ? (
-                    <img src="/manus-storage/VintageToysTitle_11b8cdd9.png" alt="Vintage Toys" style={{ maxHeight: "550px", width: "auto", objectFit: "contain", marginBottom: "30px", transform: "translateY(-200px)" }} />
-                  ) : slug === "coins" ? (
-                    <img src="/manus-storage/CoinsTitle_40d49d1d.webp" alt="Coins" style={{ maxHeight: "225px", width: "auto", objectFit: "contain", marginBottom: "30px", transform: "translateY(-75px)", marginLeft: "-15px" }} />
-                  ) : slug === "stamps" ? (
-                    <img src="/manus-storage/StampsTitle_cc0e76c3.webp" alt="Stamps" style={{ maxHeight: "200px", width: "auto", objectFit: "contain", marginBottom: "30px", transform: "translateY(10px)" }} />
-                  ) : slug === "video_games" ? (
-                    <img src="/manus-storage/VideoGamesTitle_e5b075b7.webp" alt="Video Games" style={{ maxHeight: "550px", width: "auto", objectFit: "contain", marginBottom: "30px", transform: "translateY(-200px)" }} />
-                  ) : slug === "movies" ? (
-                    <img src="/manus-storage/Movies4_fa883aec.png" alt="Movies" style={{ maxHeight: "250px", width: "auto", objectFit: "contain", marginBottom: "30px", transform: "translateY(-95px)" }} />
-                  ) : slug === "autographs" ? (
-                    <img src="/manus-storage/AutographsTitle_85ad05d3.png" alt="Autographs" style={{ maxHeight: "300px", width: "auto", objectFit: "contain", marginBottom: "30px", transform: "translateY(-100px)", marginLeft: "-25px" }} />
-                  ) : categoryLabel.toUpperCase()}
-                </h1>
-                <div className="mt-8 h-px bg-white/50 mx-auto" style={{ maxWidth: "100%", width: "100%", marginTop: "64px" }}></div>
-                <p className="mt-8 text-3xl sm:text-4xl lg:text-5xl font-black uppercase tracking-[0.1em]" style={{
-                  fontFamily: getCategoryFont(slug),
-                  fontStyle: "italic",
-                  color: "#F4D03F",
-                  textShadow: "2px 2px 4px rgba(0,0,0,0.5)",
-                  height: "40px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  lineHeight: "1",
-                  marginTop: "48px",
-                  position: "relative",
-                  top: "-16px"
-                }}>
-                  EXCHANGE
-                </p>
-              </div>
-
+        </div>
+        
+        {/* Eyebrow text - absolute positioned */}
+        <p className="absolute text-xs font-semibold uppercase tracking-[0.36em] text-white" style={{ 
+          visibility: slug === "pokemon" ? "hidden" : "visible",
+          top: '20px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          color: "#ffffff", 
+          opacity: 1,
+          zIndex: 10
+        }}>{theme.eyebrow}</p>
+        
+        {/* Title image - absolute positioned */}
+        <div className="absolute" style={{
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          zIndex: 10
+        }}>
+          {slug === "disney_pins" ? (
+            <img src="/manus-storage/DisneyPinsTitle_dc12f61b.png" alt="Disney Pins" style={{ maxHeight: "280px", width: "auto", objectFit: "contain" }} />
+          ) : slug === "pokemon" ? (
+            <img src="/manus-storage/PokemonTitle_eaf0db72.png" alt="Pokemon" style={{ maxHeight: "280px", maxWidth: "90%", width: "auto", objectFit: "contain" }} />
+          ) : slug === "comics" ? (
+            <img src="/manus-storage/ComicsTitle_b915b61d.png" alt="Comics" style={{ maxHeight: "280px", width: "auto", objectFit: "contain" }} />
+          ) : slug === "sports_cards" ? (
+            <img src="/manus-storage/SportsCardsTitle_db2535b2.png" alt="Sports Cards" style={{ maxHeight: "280px", width: "auto", objectFit: "contain" }} />
+          ) : slug === "vintage_toys" ? (
+            <img src="/manus-storage/VintageToysTitle_11b8cdd9.png" alt="Vintage Toys" style={{ maxHeight: "280px", width: "auto", objectFit: "contain" }} />
+          ) : slug === "coins" ? (
+            <img src="/manus-storage/CoinsTitle_40d49d1d.webp" alt="Coins" style={{ maxHeight: "280px", width: "auto", objectFit: "contain" }} />
+          ) : slug === "stamps" ? (
+            <img src="/manus-storage/StampsTitle_cc0e76c3.webp" alt="Stamps" style={{ maxHeight: "280px", width: "auto", objectFit: "contain" }} />
+          ) : slug === "video_games" ? (
+            <img src="/manus-storage/VideoGamesTitle_e5b075b7.webp" alt="Video Games" style={{ maxHeight: "280px", width: "auto", objectFit: "contain" }} />
+          ) : slug === "movies" ? (
+            <img src="/manus-storage/Movies4_fa883aec.png" alt="Movies" style={{ maxHeight: "280px", width: "auto", objectFit: "contain" }} />
+          ) : slug === "autographs" ? (
+            <img src="/manus-storage/AutographsTitle_85ad05d3.png" alt="Autographs" style={{ maxHeight: "280px", width: "auto", objectFit: "contain" }} />
+          ) : (
+            <h1 className="text-6xl sm:text-7xl lg:text-8xl font-bold text-white" style={{
+              fontFamily: getCategoryFont(slug),
+              textShadow: "2px 2px 4px rgba(0,0,0,0.5)",
+            }}>{categoryLabel.toUpperCase()}</h1>
+          )}
+        </div>
+        
+        {/* Divider line - absolute positioned */}
+        <div className="absolute h-px bg-white/50" style={{ 
+          top: '340px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          width: '80%',
+          maxWidth: '600px',
+          zIndex: 10
+        }}></div>
+        
+        {/* Exchange text - absolute positioned */}
+        <p className="absolute text-3xl sm:text-4xl lg:text-5xl font-black uppercase tracking-[0.1em]" style={{
+          fontFamily: getCategoryFont(slug),
+          fontStyle: "italic",
+          color: "#F4D03F",
+          textShadow: "2px 2px 4px rgba(0,0,0,0.5)",
+          top: '380px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          zIndex: 10,
+          whiteSpace: 'nowrap'
+        }}>
+          EXCHANGE
+        </p>
+        
+        {/* Statistics bubbles - absolute positioned */}
+        <div className="absolute flex justify-center gap-6 flex-wrap" style={{ 
+          bottom: '20px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          width: '90%',
+          maxWidth: '800px',
+          zIndex: 10
+        }}>
+          {[
+            ["Listings", String(listings.length)],
+            ["Collectors", String(feedQuery.data?.highlights.activeCollectors ?? 0)],
+            ["Completed Trades", String(feedQuery.data?.highlights.completedTrades ?? 0)],
+            ["Total Market Value", "$0"],
+          ].map(([label, value]) => (
+            <div key={label} className="rounded-[1rem] border border-white/15 bg-black/15 px-3 py-2 text-center backdrop-blur-sm">
+              <p className="text-[0.65rem] uppercase tracking-[0.3em]" style={{ color: '#ffffff', fontWeight: 600 }}>{label}</p>
+              <p className="mt-1 text-sm font-bold" style={{ color: '#ffffff' }}>{value}</p>
             </div>
-            {/* Horizontal Stats Section */}
-            <div className="flex justify-center gap-6 flex-wrap mt-10 pt-8" style={{ position: "relative", top: "-60px" }}>
-              {[
-                ["Listings", String(listings.length)],
-                ["Collectors", String(feedQuery.data?.highlights.activeCollectors ?? 0)],
-                ["Completed Trades", String(feedQuery.data?.highlights.completedTrades ?? 0)],
-                ["Total Market Value", "$0"],
-              ].map(([label, value]) => (
-                <div key={label} className="rounded-[1rem] border border-white/15 bg-black/15 px-3 py-2 text-center backdrop-blur-sm">
-                  <p className="text-[0.65rem] uppercase tracking-[0.3em]" style={{ color: '#ffffff', fontWeight: 600 }}>{label}</p>
-                  <p className="mt-1 text-sm font-bold" style={{ color: '#ffffff' }}>{value}</p>
-                </div>
-              ))}
-            </div>
-          </div>
+          ))}
         </div>
 
       </header>
+      {/* Padding to account for absolute positioned header content */}
+      <div style={{ height: '60px' }}></div>
 
       <CategoryBar />
 
