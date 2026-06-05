@@ -575,7 +575,7 @@ export default function CategoryPage() {
                         <img
                           src={resolveTradebiliaListingImage({ title: listing.title, category: listing.category, primaryPhotoUrl: listing.primaryPhotoUrl })}
                           alt={listing.title}
-                          className={isSportsCardsPage ? "h-full w-full object-contain p-0.5" : "h-full w-full object-contain"}
+                          className={isSportsCardsPage ? "h-full w-full object-contain p-0.5" : "h-full w-full object-contain px-1"}
                         />
                       </div>
                     </Link>
