@@ -564,18 +564,18 @@ export default function CategoryPage() {
               <>
                 <div className={viewMode === "grid" ? "grid gap-3 grid-cols-6" : "space-y-3"}>
                   {listings.map(listing => (
-                  <Card key={listing.id} className={`relative overflow-visible border ${isSportsCardsPage ? theme.cardClassName : "bg-white border-gray-200 text-black"} ${isSportsCardsPage ? "rounded-md shadow-sm" : "rounded-[2rem]"} ${viewMode === "list" ? "flex gap-4" : ""}`}>
+                  <Card key={listing.id} className={`overflow-hidden border ${isSportsCardsPage ? theme.cardClassName : "bg-white border-gray-200 text-black"} ${isSportsCardsPage ? "rounded-md shadow-sm" : "rounded-[2rem]"} ${viewMode === "list" ? "flex gap-4" : ""}`}>
                     {listing.ownerId && (
-                      <div className="absolute top-0 left-3 z-10 px-3 py-0">
+                      <div className="px-3 py-0.5">
                         <OnlineIndicator sellerId={listing.ownerId} />
                       </div>
                     )}
-                    <Link href={`/listings/${listing.id}`} className={`overflow-hidden border-b border-current/10 block cursor-pointer hover:opacity-90 transition ${viewMode === "list" ? "w-32 flex-shrink-0" : ""} ${isSportsCardsPage ? "aspect-[7/9] bg-[linear-gradient(180deg,rgba(243,228,188,0.92)_0%,rgba(232,214,168,0.92)_100%)] p-0 -m-6" : "aspect-[4/5] bg-white p-0 -m-6"}`}>
-                      <div className={isSportsCardsPage ? "h-full rounded-sm border border-[#0f4658]/10 bg-[#f7ecd2] p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)]" : "h-full bg-white"}>
+                    <Link href={`/listings/${listing.id}`} className={`overflow-hidden border-b border-current/10 block cursor-pointer hover:opacity-90 transition ${viewMode === "list" ? "w-32 flex-shrink-0" : ""} ${isSportsCardsPage ? "aspect-[7/9] bg-[linear-gradient(180deg,rgba(243,228,188,0.92)_0%,rgba(232,214,168,0.92)_100%)] p-0" : "aspect-[4/5] bg-white p-0"}`}>
+                      <div className={isSportsCardsPage ? "h-full rounded-sm border border-[#0f4658]/10 bg-[#f7ecd2] shadow-[inset_0_1px_0_rgba(255,255,255,0.55)]" : "h-full bg-white"}>
                         <img
                           src={resolveTradebiliaListingImage({ title: listing.title, category: listing.category, primaryPhotoUrl: listing.primaryPhotoUrl })}
                           alt={listing.title}
-                          className={isSportsCardsPage ? "h-full w-full object-contain p-0.5" : "h-full w-full object-contain"}
+                          className="h-full w-full object-contain"
                         />
                       </div>
                     </Link>
