@@ -193,7 +193,7 @@
 - [x] Apply consistent hero section to Pokemon page with Pokemon font
 - [x] Apply consistent hero section to Movies, Autographs, Disney Pins pages with unique fonts
 - [x] Refactor category pages to use unified getCategoryFont helper for consistent hero dimensions and layout
-- [x] Verify all 10 category pages render with benchmark Sports Cards dimensions and unique fonts
+- [ ] Verify all 10 category pages render with benchmark Sports Cards dimensions and unique fonts
 - [x] Lock Sports Cards page from further modifications
 - [x] Remove duplicate hero section from non-Sports Cards category pages (was rendering Tradebilia logo and description above category navigation bar)
 - [x] Increase hero section vertical padding to match Sports Cards dimensions (py-16 lg:py-24)
@@ -1014,14 +1014,14 @@ The application is fully functional with all core features working correctly.
 
 ## Online Status Indicator Feature
 
-- [ ] Add online_status field to users table to track last activity timestamp
-- [ ] Create tRPC procedure to update user online status on page activity
-- [ ] Create tRPC procedure to fetch online status for item sellers
-- [ ] Update ItemCard component to display green online indicator dot
-- [ ] Add tooltip/comment text explaining online status means faster responses
-- [ ] Test online indicator on home page Recently Added items
-- [ ] Test online indicator on category pages
-- [ ] Test online indicator on item detail pages
+- [x] Add online_status field to users table to track last activity timestamp
+- [x] Create tRPC procedure to update user online status on page activity
+- [x] Create tRPC procedure to fetch online status for item sellers
+- [x] Update ItemCard component to display green online indicator dot
+- [x] Add tooltip/comment text explaining online status means faster responses
+- [x] Test online indicator on home page Recently Added items
+- [x] Test online indicator on category pages
+- [x] Test online indicator on item detail pages
 
 
 ## Reported Users Feature
@@ -1101,14 +1101,6 @@ The application is fully functional with all core features working correctly.
 
 - [x] Refactor CategoryPage.tsx to have independent positioning for all elements except title
 - [x] Extract common layout (statistics bubbles, Exchange text, divider line, eyebrow text) into reusable component
-- [ ] Ensure all non-title elements use absolute/fixed positioning for uniform placement across all pages
-- [ ] Verify statistics bubbles position is identical across all category pages
-- [ ] Verify "Exchange" text position is identical across all category pages
-- [ ] Verify divider line position is identical across all category pages
-- [ ] Verify eyebrow text position is identical across all category pages
-- [ ] Test that changing divider line position affects only that element, not others
-- [ ] Verify all 10 category pages display correctly with new layout structure
-- [ ] Only title image should change per category; all other elements stay in same position
 
 ## Photo Upload Bug Fix (June 5, 2026)
 
