@@ -42,7 +42,7 @@ export default function Contact() {
       // Copy to clipboard for user to send
       await navigator.clipboard.writeText(fullMessage);
       
-      toast.success("Message prepared! Please send to: rich@tradebilia.com");
+      toast.success("Message prepared! Please send to: admin@tradebilia.com");
       
       // Reset form
       setName("");
@@ -168,10 +168,10 @@ export default function Contact() {
                   You can also reach us directly at:
                 </p>
                 <a
-                  href="mailto:rich@tradebilia.com"
+                  href="mailto:admin@tradebilia.com"
                   className="inline-block px-4 py-2 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-medium transition"
                 >
-                  rich@tradebilia.com
+                  admin@tradebilia.com
                 </a>
               </CardContent>
             </Card>
