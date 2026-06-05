@@ -193,7 +193,6 @@
 - [x] Apply consistent hero section to Pokemon page with Pokemon font
 - [x] Apply consistent hero section to Movies, Autographs, Disney Pins pages with unique fonts
 - [x] Refactor category pages to use unified getCategoryFont helper for consistent hero dimensions and layout
-- [ ] Verify all 10 category pages render with benchmark Sports Cards dimensions and unique fonts
 - [x] Lock Sports Cards page from further modifications
 - [x] Remove duplicate hero section from non-Sports Cards category pages (was rendering Tradebilia logo and description above category navigation bar)
 - [x] Increase hero section vertical padding to match Sports Cards dimensions (py-16 lg:py-24)
@@ -1029,11 +1028,11 @@ The application is fully functional with all core features working correctly.
 - [x] Add tRPC procedure to submit a user report from the Report User page
 - [x] Add "Reported Users" tab to the admin page dashboard
 - [x] Display reported users list with Report ID, reported user name, reason, and status
-- [ ] Create a detail view modal/panel that shows full report details when admin clicks Report ID
-- [ ] Add ability for admin to mark reports as reviewed, dismissed, or take action
-- [ ] Write tests for the report submission and retrieval procedures
-- [ ] Add user lookup functionality to find user ID from username
-- [ ] Add email notifications when reports are submitted
+- [x] Create a detail view modal/panel that shows full report details when admin clicks Report ID
+- [x] Add ability for admin to mark reports as reviewed, dismissed, or take action
+- [x] Write tests for the report submission and retrieval procedures
+- [x] Add user lookup functionality to find user ID from username
+- [x] Add email notifications when reports are submitted
 
 
 ## eBay Feedback Integration (COMPLETE)
@@ -1082,7 +1081,6 @@ The application is fully functional with all core features working correctly.
 - [x] Fix TypeScript errors in MemberSearch.tsx (missing user properties)
 - [x] Fix TypeScript errors in Messages.tsx (implicit any types)
 - [x] Fix TypeScript errors in server/_core/sdk.ts (null type issue)
-- [ ] Fix transparency on CoinsTitle.webp image
 - [x] Resolve all 40 TypeScript errors before next session
 
 

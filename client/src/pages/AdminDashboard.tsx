@@ -13,6 +13,7 @@ export default function AdminDashboard() {
   const { user, loading } = useAuth();
   const [activeTab, setActiveTab] = useState("statistics");
   const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [selectedReport, setSelectedReport] = useState<any>(null);
   const statsQuery = trpc.admin.getPlatformStatistics.useQuery(undefined, {
     enabled: user?.role === "admin",
     refetchOnWindowFocus: true,
@@ -41,6 +42,7 @@ export default function AdminDashboard() {
     }
   );
   const deleteUserMutation = trpc.admin.deleteUser.useMutation();
+  const updateReportStatusMutation = trpc.admin.updateReportStatus.useMutation();
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<any>(null);
 
@@ -62,6 +64,19 @@ export default function AdminDashboard() {
       deletedAccountsQuery.refetch();
     } catch (error) {
       console.error('[handleDeleteUser] Failed to delete user', error);
+    }
+  };
+
+  const handleUpdateReportStatus = async (reportId: string, status: string) => {
+    try {
+      await updateReportStatusMutation.mutateAsync({
+        reportId,
+        status: status as 'pending' | 'reviewed' | 'dismissed' | 'action_taken',
+      });
+      setSelectedReport(null);
+      reportsQuery.refetch();
+    } catch (error) {
+      console.error('[handleUpdateReportStatus] Failed to update report status', error);
     }
   };
 
@@ -526,7 +541,7 @@ export default function AdminDashboard() {
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => setSelectedUser(report)}
+                                onClick={() => setSelectedReport(report)}
                               >
                                 View
                               </Button>
@@ -644,6 +659,71 @@ export default function AdminDashboard() {
                     <p className="text-xs text-muted-foreground">Rating</p>
                     <p className="text-lg font-semibold">-</p>
                   </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Report Detail Modal */}
+      <Dialog open={!!selectedReport} onOpenChange={(open) => !open && setSelectedReport(null)}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Report Details</DialogTitle>
+            <DialogDescription>
+              Review and manage this user report
+            </DialogDescription>
+          </DialogHeader>
+          {selectedReport && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm font-semibold text-muted-foreground">Report ID</p>
+                  <p className="text-base font-mono text-blue-500">{selectedReport.reportId}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-muted-foreground">Status</p>
+                  <p className="text-base capitalize">{selectedReport.status.replace('_', ' ')}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-muted-foreground">Reported User</p>
+                  <p className="text-base">{selectedReport.reportedUserName}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-muted-foreground">Reason</p>
+                  <p className="text-base">{selectedReport.reason}</p>
+                </div>
+                <div className="col-span-2">
+                  <p className="text-sm font-semibold text-muted-foreground">Description</p>
+                  <p className="text-base whitespace-pre-wrap">{selectedReport.description}</p>
+                </div>
+                {selectedReport.evidence && (
+                  <div className="col-span-2">
+                    <p className="text-sm font-semibold text-muted-foreground">Evidence</p>
+                    <p className="text-base whitespace-pre-wrap">{selectedReport.evidence}</p>
+                  </div>
+                )}
+                <div>
+                  <p className="text-sm font-semibold text-muted-foreground">Submitted</p>
+                  <p className="text-base">{new Date(selectedReport.createdAt).toLocaleDateString()}</p>
+                </div>
+              </div>
+
+              <div className="border-t border-border pt-4">
+                <h3 className="font-semibold mb-3">Update Status</h3>
+                <div className="flex flex-wrap gap-2">
+                  {['reviewed', 'dismissed', 'action_taken'].map((status) => (
+                    <Button
+                      key={status}
+                      variant={selectedReport.status === status ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => handleUpdateReportStatus(selectedReport.reportId, status)}
+                      disabled={updateReportStatusMutation.isPending}
+                    >
+                      Mark as {status.replace('_', ' ')}
+                    </Button>
+                  ))}
                 </div>
               </div>
             </div>

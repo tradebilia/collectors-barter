@@ -1107,14 +1107,7 @@ export const appRouter = router({
         return { isOnline, lastActivityAt: lastActivity };
       }),
   }),
-});
-
-export type AppRouter = typeof appRouter;
-
-
-// Add these procedures before the closing of admin router
-// Reported users management
-export const reportedUsersRouter = router({
+  // Reported users management
   getReportedUsers: protectedProcedure
     .input(
       z.object({
@@ -1156,3 +1149,5 @@ export const reportedUsersRouter = router({
       return { success: true };
     }),
 });
+
+export type AppRouter = typeof appRouter;
