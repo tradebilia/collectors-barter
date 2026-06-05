@@ -1,6 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { trpc } from '@/lib/trpc';
-import { useCallback } from 'react';
 import { X } from 'lucide-react';
 
 interface OnlineIndicatorProps {
@@ -9,8 +8,6 @@ interface OnlineIndicatorProps {
 }
 
 export function OnlineIndicator({ sellerId, className = '' }: OnlineIndicatorProps) {
-  const [isOnline, setIsOnline] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
   const utils = trpc.useUtils();
 
   // Fetch online status
@@ -30,16 +27,19 @@ export function OnlineIndicator({ sellerId, className = '' }: OnlineIndicatorPro
     }
   }, [sellerId, utils]);
 
-  useEffect(() => {
-    if (onlineStatusQuery.data) {
-      setIsOnline(onlineStatusQuery.data.isOnline);
-      setIsLoading(false);
-    }
-  }, [onlineStatusQuery.data]);
 
-  if (isLoading) {
+
+  // Show nothing while loading
+  if (onlineStatusQuery.isLoading) {
     return null;
   }
+
+  // Show nothing if there's an error
+  if (onlineStatusQuery.isError || !onlineStatusQuery.data) {
+    return null;
+  }
+
+  const isOnline = onlineStatusQuery.data.isOnline;
 
   if (isOnline) {
     return (

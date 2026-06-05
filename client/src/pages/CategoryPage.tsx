@@ -473,7 +473,7 @@ export default function CategoryPage() {
             )}
 
             {/* Sorting bar - always visible */}
-            <div className="space-y-4 pb-4 border-b border-current/10">
+            <div className="pb-4 border-b border-current/10">
               <div className="flex items-center justify-between">
                 <p className="text-sm font-medium opacity-70">Showing {listings.length} results</p>
                 <div className="flex items-center gap-4">
@@ -507,25 +507,25 @@ export default function CategoryPage() {
                       <SelectItem value="location">Location: Nearest First</SelectItem>
                     </SelectContent>
                   </Select>
+                  {/* Per page dropdown - moved next to sort */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-medium opacity-70">Per page:</span>
+                    <Select value={String(resultsPerPage)} onValueChange={(val) => { setResultsPerPage(Number(val)); setCurrentPage(1); }}>
+                      <SelectTrigger className="w-20 h-9 bg-white/80 text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="12">12</SelectItem>
+                        <SelectItem value="24">24</SelectItem>
+                        <SelectItem value="48">48</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               </div>
-              {/* Results per page and active filters */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <span className="text-xs font-medium opacity-70">Per page:</span>
-                  <Select value={String(resultsPerPage)} onValueChange={(val) => { setResultsPerPage(Number(val)); setCurrentPage(1); }}>
-                    <SelectTrigger className="w-20 h-8 bg-white/80 text-sm">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="12">12</SelectItem>
-                      <SelectItem value="24">24</SelectItem>
-                      <SelectItem value="48">48</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                {/* Clear filters button */}
-                {(keyword || condition || sportsCardsConditionText) && (
+              {/* Clear filters button */}
+              {(keyword || condition || sportsCardsConditionText) && (
+                <div className="flex items-center justify-end mt-3">
                   <button
                     onClick={() => {
                       setKeyword("");
@@ -537,8 +537,8 @@ export default function CategoryPage() {
                   >
                     Clear all filters
                   </button>
-                )}
-              </div>
+                </div>
+              )}
             </div>
 
 

@@ -1380,3 +1380,22 @@ The application is fully functional with all core features working correctly.
 - [x] Updated OnlineIndicator component to show Member Offline with red X icon
 - [ ] Debug why Member Offline indicator not displaying for offline users (still shows Member Online)
 - [ ] Verify server is returning correct isOnline status for offline users
+
+
+## Member Offline Indicator - Debugging
+- [x] Updated OnlineIndicator component to show Member Offline with red X icon
+- [x] Fixed OnlineIndicator to properly handle loading and error states
+- [x] Updated logout procedure to set lastActivityAt to epoch (1970-01-01)
+- [x] Enhanced OnlineIndicator with cache invalidation and 10-second refetch
+- [x] Added debug logging to server getSellerOnlineStatus (removed after debugging)
+- [ ] **ISSUE**: Member Offline indicator still not displaying - shows Member Online for all users
+- [ ] **INVESTIGATION**: Database shows lastActivityAt is being updated correctly
+- [ ] **INVESTIGATION**: Server logs show correct isOnline calculation (offline = true when > 5 min)
+- [ ] **INVESTIGATION**: Issue may be with tRPC cache or component rendering logic
+- [ ] Need to investigate why isOnline is always true even when database shows old timestamp
+
+
+## Category Page Layout Improvement
+- [x] Move Per page dropdown next to Best Match dropdown
+- [x] Remove extra spacing to allow items to move higher
+- [x] Fix bottom cutoff issue on category pages
