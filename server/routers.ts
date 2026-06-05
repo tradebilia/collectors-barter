@@ -3,6 +3,7 @@ import { COOKIE_NAME } from "@shared/const";
 import { collectibleCategories, itemConditions, gradeValues } from "../drizzle/schema";
 import {
   createListing,
+  updateListing,
   createTradeProposal,
   getDashboardData,
   getListingDetail,
@@ -454,6 +455,32 @@ export const appRouter = router({
         return createListing(
           { id: ctx.user.id, name: ctx.user.name },
           {
+            title: input.title,
+            category: input.category,
+            condition: input.condition,
+            description: input.description,
+            estimatedValue: input.estimatedValue,
+            photos: input.photos,
+          },
+        );
+      }),
+    updateListing: protectedProcedure
+      .input(
+        z.object({
+          listingId: z.number().int().positive(),
+          title: z.string().min(3).max(160),
+          category: z.enum(collectibleCategories),
+          condition: z.enum(itemConditions),
+          description: z.string().min(20).max(4000),
+          estimatedValue: z.number().nonnegative().optional(),
+          photos: z.array(uploadedImageSchema).max(6),
+        }),
+      )
+      .mutation(({ ctx, input }) => {
+        return updateListing(
+          { id: ctx.user.id, name: ctx.user.name },
+          {
+            listingId: input.listingId,
             title: input.title,
             category: input.category,
             condition: input.condition,

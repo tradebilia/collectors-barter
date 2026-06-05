@@ -11,6 +11,7 @@ import { trpc } from "@/lib/trpc";
 import { Loader2, Upload } from "lucide-react";
 import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { useParams, useLocation } from "wouter";
 import type { TradebiliaCategorySlug } from "@/lib/tradebilia";
 
 const TRADEBILIA_LOGO_URL = "/manus-storage/tradebilia-logo_c676d640.svg";
@@ -203,8 +204,17 @@ export default function AddInventory() {
 
   const [photos, setPhotos] = useState<UploadedImage[]>([]);
   const [primaryPhotoIndex, setPrimaryPhotoIndex] = useState<number>(0);
+  const params = useParams<{ listingId?: string }>();
+  const [, navigate] = useLocation();
+  const isEditMode = !!params.listingId;
+  
   const createListingMutation = trpc.market.createListing.useMutation();
   const saveDraftMutation = trpc.market.saveDraft.useMutation();
+  const getListingDetailQuery = trpc.market.getListingDetail.useQuery(
+    { listingId: params.listingId ? parseInt(params.listingId) : 0 },
+    { enabled: isEditMode }
+  );
+  const updateListingMutation = trpc.market.updateListing.useMutation();
 
   // Note: Draft auto-loading removed to prevent form data persistence on page refresh.
   // This prevents accidental duplicate submissions or mistakes from previous entries.
@@ -278,14 +288,29 @@ export default function AddInventory() {
       reorderedPhotos.unshift(primaryPhoto);
     }
 
-    await createListingMutation.mutateAsync({
-      title: draft.title,
-      category: draft.category,
-      condition: mapGradeToCondition(draft.grade),
-      description: descriptionSections,
-      estimatedValue: draft.value ? parseFloat(draft.value) : 0,
-      photos: reorderedPhotos,
-    });
+    if (isEditMode && params.listingId) {
+      await updateListingMutation.mutateAsync({
+        listingId: parseInt(params.listingId),
+        title: draft.title,
+        category: draft.category,
+        condition: mapGradeToCondition(draft.grade),
+        description: descriptionSections,
+        estimatedValue: draft.value ? parseFloat(draft.value) : 0,
+        photos: reorderedPhotos,
+      });
+      toast.success("Listing updated successfully!");
+      navigate("/inventory");
+    } else {
+      await createListingMutation.mutateAsync({
+        title: draft.title,
+        category: draft.category,
+        condition: mapGradeToCondition(draft.grade),
+        description: descriptionSections,
+        estimatedValue: draft.value ? parseFloat(draft.value) : 0,
+        photos: reorderedPhotos,
+      });
+      toast.success("Listing created successfully!");
+    }
     
     // Clear the draft after successful submission
     localStorage.removeItem(DRAFT_STORAGE_KEY);

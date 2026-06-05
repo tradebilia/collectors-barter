@@ -1458,6 +1458,62 @@ export async function createListing(
   return getDashboardData(user);
 }
 
+export async function updateListing(
+  user: Pick<User, "id" | "name">,
+  input: {
+    listingId: number;
+    title: string;
+    category: (typeof collectibleCategories)[number];
+    condition: (typeof itemConditions)[number];
+    description: string;
+    estimatedValue?: number;
+    photos: PhotoUploadInput[];
+  },
+) {
+  const db = await requireDb();
+  await ensureUserProfileRecord(user);
+
+  // Verify ownership
+  const listing = await db
+    .select({ ownerId: listings.ownerId })
+    .from(listings)
+    .where(eq(listings.id, input.listingId))
+    .limit(1);
+
+  if (!listing[0] || listing[0].ownerId !== user.id) {
+    throw new Error("Unauthorized: You can only edit your own listings");
+  }
+
+  // Update listing
+  await db
+    .update(listings)
+    .set({
+      title: input.title.trim(),
+      category: input.category,
+      condition: input.condition,
+      description: input.description.trim(),
+      estimatedValue: input.estimatedValue ? String(input.estimatedValue) : null,
+    })
+    .where(eq(listings.id, input.listingId));
+
+  // Delete existing photos
+  await db.delete(listingPhotos).where(eq(listingPhotos.listingId, input.listingId));
+
+  // Upload new photos
+  for (let index = 0; index < input.photos.length; index += 1) {
+    const photo = input.photos[index]!;
+    const uploaded = await uploadImage("listings", user.id, photo);
+    await db.insert(listingPhotos).values({
+      listingId: input.listingId,
+      fileKey: uploaded.key,
+      imageUrl: uploaded.url,
+      altText: `${input.title.trim()} photo ${index + 1}`,
+      sortOrder: index,
+    });
+  }
+
+  return getDashboardData(user);
+}
 
 export async function upsertUser(input: {
   openId: string;

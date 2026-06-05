@@ -44,6 +44,11 @@ function Router() {
           <AddInventory />
         </ProtectedRoute>
       </Route>
+      <Route path="/inventory/edit/:listingId">
+        <ProtectedRoute>
+          <AddInventory />
+        </ProtectedRoute>
+      </Route>
       <Route path="/profile">
         <ProtectedRoute>
           <Profile />
