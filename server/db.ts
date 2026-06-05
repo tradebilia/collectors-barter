@@ -790,23 +790,77 @@ export async function searchMembers(input: {
 
   const ratingMap = await getRatingStatsMap(members.map(m => m.userId));
 
-  const formattedMembers = members.map(m => ({
-    userId: m.userId,
-    displayName: m.displayName,
-    avatarUrl: m.avatarUrl,
-    bio: m.bio,
-    region: m.contactAddress,
-    rating: ratingMap.get(m.userId) ?? { averageRating: 0, reviewCount: 0 },
-  }));
+  // Get listing counts for each member
+  const listingCountsResult = await db
+    .select({
+      ownerId: listings.ownerId,
+      count: sql<number>`count(*)`,
+    })
+    .from(listings)
+    .where(eq(listings.status, "active"))
+    .groupBy(listings.ownerId);
+  const listingCountMap = new Map(listingCountsResult.map(r => [r.ownerId, Number(r.count)]));
 
-  // Return object with members and rankings for MemberSearch component
+  // Get completed trade counts
+  const completedTradesResult = await db
+    .select({
+      revieweeId: tradeReviews.revieweeId,
+      count: sql<number>`count(*)`,
+    })
+    .from(tradeReviews)
+    .groupBy(tradeReviews.revieweeId);
+  const completedTradesMap = new Map(completedTradesResult.map(r => [r.revieweeId, Number(r.count)]));
+
+  // Get top categories
+  const topCategoriesResult = await db
+    .select({
+      ownerId: listings.ownerId,
+      category: listings.category,
+      count: sql<number>`count(*)`,
+    })
+    .from(listings)
+    .where(eq(listings.status, "active"))
+    .groupBy(listings.ownerId, listings.category)
+    .orderBy(desc(sql<number>`count(*)`));
+  
+  const topCategoriesMap = new Map<number, string[]>();
+  for (const result of topCategoriesResult) {
+    if (!topCategoriesMap.has(result.ownerId)) {
+      topCategoriesMap.set(result.ownerId, []);
+    }
+    topCategoriesMap.get(result.ownerId)!.push(result.category);
+  }
+
+  const formattedMembers = members.map(m => {
+    const rating = ratingMap.get(m.userId) ?? { averageRating: 0, reviewCount: 0 };
+    return {
+      userId: m.userId,
+      displayName: m.displayName,
+      avatarUrl: m.avatarUrl,
+      bio: m.bio,
+      region: m.contactAddress,
+      regionLabel: m.contactAddress ?? "Unknown",
+      rating,
+      averageRating: rating.averageRating,
+      reviewCount: rating.reviewCount,
+      listingCount: listingCountMap.get(m.userId) ?? 0,
+      completedTradeCount: completedTradesMap.get(m.userId) ?? 0,
+      topCategories: topCategoriesMap.get(m.userId) ?? [],
+      verificationLevel: "Verified",
+      online: false,
+    };
+  });
+
+  // Return object with members and rankings
   const topRated = formattedMembers.sort((a, b) => (b.rating?.averageRating ?? 0) - (a.rating?.averageRating ?? 0)).slice(0, 10);
+  const mostActive = formattedMembers.sort((a, b) => (b.listingCount + b.completedTradeCount) - (a.listingCount + a.completedTradeCount)).slice(0, 10);
   const uniqueRegions = Array.from(new Set(formattedMembers.map(m => m.region).filter(Boolean)));
   
   return {
     members: formattedMembers,
-    rankings: topRated,
+    rankings: { topRated, mostActive },
     topRated: topRated,
+    mostActive: mostActive,
     regions: uniqueRegions,
   };
 }

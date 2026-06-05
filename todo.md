@@ -815,9 +815,9 @@ This ensures users can fill in all category-specific details when adding items t
 
 ## FUTURE: Profile Photo Upload
 
-- [ ] Implement server-side photo upload to S3 storage
-- [ ] Update profile save to include photo upload
-- [ ] Test photo upload and persistence
+- [x] Implement server-side photo upload to S3 storage
+- [x] Update profile save to include photo upload
+- [x] Test photo upload and persistence
 
 ## CURRENT: TypeScript Error Resolution
 

@@ -84,16 +84,18 @@ export default function MemberSearch() {
     window.location.href = `/messages?direct=${member.userId}`;
   };
 
-  const openTradeEntry = (member: { displayName: string; featuredListingId: number | null }) => {
+  const openTradeEntry = (member: any) => {
     if (!isAuthenticated) {
       window.location.href = getLoginUrl();
       return;
     }
-    if (!member.featuredListingId) {
+    // Get the first active listing from this member
+    const firstListing = member.listings?.[0];
+    if (!firstListing) {
       toast.info(`${member.displayName} does not currently have a public active listing to start from.`);
       return;
     }
-    window.location.href = `/listings/${member.featuredListingId}`;
+    window.location.href = `/listings/${firstListing.id}`;
   };
 
   return (
@@ -166,7 +168,7 @@ export default function MemberSearch() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All regions</SelectItem>
-                    {membersQuery.data?.regions.map(item => (
+                    {membersQuery.data?.regions.filter((item): item is string => item !== null).map(item => (
                       <SelectItem key={item} value={item}>{item}</SelectItem>
                     ))}
                   </SelectContent>
