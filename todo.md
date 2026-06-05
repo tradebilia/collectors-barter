@@ -1233,8 +1233,8 @@ The application is fully functional with all core features working correctly.
 - [x] Verified Member Online indicator is visible on Comics category page
 - [x] Verified Member Online indicator is visible on Sports Cards category page
 - [x] Fixed image padding issue - removed border, background, and rounded corners from inner div
-- [x] Changed image from object-contain to object-cover to fill entire card space
-- [x] Images now extend edge-to-edge without white padding on sides
-- [x] Verified padding fix on Comics category page (Amazing Spider-Man)
-- [x] Verified padding fix on Sports Cards category page (Mark McGwire)
+- [x] Kept object-contain to display entire item without cropping
+- [x] Images now fill card space efficiently with minimal white padding
+- [x] Verified entire item is visible on Comics category page (Amazing Spider-Man)
+- [x] Verified entire item is visible on Sports Cards category page (Mark McGwire)
 - [x] Took before and after screenshots to visually verify the fix
