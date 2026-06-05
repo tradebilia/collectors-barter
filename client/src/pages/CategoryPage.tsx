@@ -570,13 +570,13 @@ export default function CategoryPage() {
                         <OnlineIndicator sellerId={listing.ownerId} />
                       </div>
                     )}
-                    <Card key={listing.id} className={`overflow-hidden border bg-white border-gray-200 text-black ${isSportsCardsPage ? "rounded-md shadow-sm" : "rounded-[2rem]"} ${viewMode === "list" ? "flex gap-4" : ""}`}>
+                    <Card key={listing.id} className={`overflow-hidden border bg-white border-gray-200 text-black ${isSportsCardsPage ? "rounded-md shadow-sm" : "rounded-[2rem]"} ${viewMode === "list" ? "flex gap-4 items-start flex-nowrap" : ""}`}>
                       {listing.ownerId && viewMode === "grid" && (
                         <div className="px-3 py-0.5">
                           <OnlineIndicator sellerId={listing.ownerId} />
                         </div>
                       )}
-                    <Link href={`/listings/${listing.id}`} className={`overflow-hidden border-b border-current/10 block cursor-pointer hover:opacity-90 transition ${viewMode === "list" ? "w-32 flex-shrink-0" : ""} ${isSportsCardsPage ? "aspect-[7/9]" : "aspect-[4/5]"} bg-white p-0`}>
+                    <Link href={`/listings/${listing.id}`} className={`overflow-hidden border-b border-current/10 ${viewMode === "list" ? "" : "block"} cursor-pointer hover:opacity-90 transition ${viewMode === "list" ? "w-32 flex-shrink-0" : ""} ${isSportsCardsPage ? "aspect-[7/9]" : "aspect-[4/5]"} bg-white p-0`}>
                       <div className="h-full">
                         <img
                           src={resolveTradebiliaListingImage({ title: listing.title, category: listing.category, primaryPhotoUrl: listing.primaryPhotoUrl })}
@@ -585,38 +585,73 @@ export default function CategoryPage() {
                         />
                       </div>
                     </Link>
-                    <CardContent className={`${viewMode === "list" ? "flex-1 space-y-3 p-4" : `space-y-1 ${isSportsCardsPage ? "p-1.5 text-[#153746]" : "p-5"}`}`}>
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex-1">
-                          <p className={`font-semibold uppercase tracking-[0.12em] opacity-60 ${viewMode === "list" ? "text-xs" : "text-[0.5rem]"}`}>{listing.categoryLabel}</p>
-                          <Link href={`/listings/${listing.id}`} className={`mt-1 block font-semibold leading-tight hover:opacity-75 ${viewMode === "list" ? "text-lg" : "text-xs"}`}>
-                            {listing.title}
-                          </Link>
-                        </div>
-                        {listing.featured ? <Badge className={`rounded-full px-2 py-1 ${viewMode === "list" ? "text-xs" : "text-[0.5rem] px-1 py-0"} ${theme.chipClassName}`}>Featured</Badge> : null}
-                      </div>
-                      <p className={`${viewMode === "list" ? "text-sm line-clamp-2" : "line-clamp-1 text-[0.65rem]"} leading-relaxed opacity-80`}>{listing.description}</p>
-                      <div className={`rounded-md border border-current/10 bg-black/5 p-3 ${viewMode === "list" ? "grid grid-cols-4 gap-4" : "grid grid-cols-2 gap-1 p-1 text-[0.5rem]"}`}>
-                        <div>
-                          <p className={`uppercase tracking-[0.1em] opacity-60 ${viewMode === "list" ? "text-xs" : "text-[0.45rem]"}`}>Collector</p>
-                          <p className={`mt-1 font-semibold truncate ${viewMode === "list" ? "text-sm" : "mt-0 text-[0.55rem]"}`}>{listing.owner.displayName}</p>
-                        </div>
-                        <div>
-                          <p className={`uppercase tracking-[0.1em] opacity-60 ${viewMode === "list" ? "text-xs" : "text-[0.45rem]"}`}>Condition</p>
-                          <p className={`mt-1 font-semibold truncate ${viewMode === "list" ? "text-sm" : "mt-0 text-[0.55rem]"}`}>{listing.conditionLabel}</p>
-                        </div>
-                        <div>
-                          <p className={`uppercase tracking-[0.1em] opacity-60 ${viewMode === "list" ? "text-xs" : "text-[0.45rem]"}`}>Trust</p>
-                          <div className={`mt-1 flex items-center gap-1 font-semibold ${viewMode === "list" ? "" : "mt-0 gap-0.5"}`}>
-                            <Star className={`fill-current ${viewMode === "list" ? "h-4 w-4" : "h-2 w-2"}`} />
-                            <span className={`truncate ${viewMode === "list" ? "text-sm" : "text-[0.55rem]"}`}>{listing.ownerRating.averageRating.toFixed(1)}</span>
+                    <CardContent className={`${viewMode === "list" ? "flex-1 flex flex-col justify-between p-3 min-w-0" : `space-y-1 ${isSportsCardsPage ? "p-1.5 text-[#153746]" : "p-5"}`}`}>
+                      {viewMode === "list" ? (
+                        <>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold uppercase tracking-[0.12em] opacity-60 text-xs">{listing.categoryLabel}</p>
+                            <Link href={`/listings/${listing.id}`} className="mt-1 block font-semibold leading-tight hover:opacity-75 text-sm truncate">
+                              {listing.title}
+                            </Link>
+                            <p className="text-xs leading-relaxed opacity-80 mt-1 line-clamp-1">{listing.description}</p>
                           </div>
-                        </div>
-                        <div>
-                          <p className={`uppercase tracking-[0.1em] opacity-60 ${viewMode === "list" ? "text-xs" : "text-[0.45rem]"}`}>Status</p>
-                          <p className={`mt-1 font-semibold capitalize truncate ${viewMode === "list" ? "text-sm" : "mt-0 text-[0.55rem]"}`}>{listing.status}</p>
-                        </div>
-                      </div>
+                          <div className="grid grid-cols-4 gap-2 text-xs mt-2">
+                            <div>
+                              <p className="uppercase tracking-[0.1em] opacity-60 text-[0.7rem]">Condition</p>
+                              <p className="font-semibold truncate">{listing.conditionLabel}</p>
+                            </div>
+                            <div>
+                              <p className="uppercase tracking-[0.1em] opacity-60 text-[0.7rem]">Seller</p>
+                              <p className="font-semibold truncate">{listing.owner.displayName}</p>
+                            </div>
+                            <div>
+                              <p className="uppercase tracking-[0.1em] opacity-60 text-[0.7rem]">Trust</p>
+                              <div className="flex items-center gap-0.5 font-semibold">
+                                <Star className="fill-current h-3 w-3" />
+                                <span className="truncate text-xs">{listing.ownerRating.averageRating.toFixed(1)}</span>
+                              </div>
+                            </div>
+                            <div>
+                              <p className="uppercase tracking-[0.1em] opacity-60 text-[0.7rem]">Status</p>
+                              <p className="font-semibold capitalize truncate">{listing.status}</p>
+                            </div>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex-1">
+                              <p className="font-semibold uppercase tracking-[0.12em] opacity-60 text-[0.5rem]">{listing.categoryLabel}</p>
+                              <Link href={`/listings/${listing.id}`} className="mt-1 block font-semibold leading-tight hover:opacity-75 text-xs">
+                                {listing.title}
+                              </Link>
+                            </div>
+                            {listing.featured ? <Badge className={`rounded-full text-[0.5rem] px-1 py-0 ${theme.chipClassName}`}>Featured</Badge> : null}
+                          </div>
+                          <p className="line-clamp-1 text-[0.65rem] leading-relaxed opacity-80">{listing.description}</p>
+                          <div className="rounded-md border border-current/10 bg-black/5 p-3 grid grid-cols-2 gap-1 p-1 text-[0.5rem]">
+                            <div>
+                              <p className="uppercase tracking-[0.1em] opacity-60 text-[0.45rem]">Collector</p>
+                              <p className="mt-1 font-semibold truncate mt-0 text-[0.55rem]">{listing.owner.displayName}</p>
+                            </div>
+                            <div>
+                              <p className="uppercase tracking-[0.1em] opacity-60 text-[0.45rem]">Condition</p>
+                              <p className="mt-1 font-semibold truncate mt-0 text-[0.55rem]">{listing.conditionLabel}</p>
+                            </div>
+                            <div>
+                              <p className="uppercase tracking-[0.1em] opacity-60 text-[0.45rem]">Trust</p>
+                              <div className="mt-1 flex items-center gap-0.5 font-semibold mt-0 gap-0.5">
+                                <Star className="fill-current h-2 w-2" />
+                                <span className="truncate text-[0.55rem]">{listing.ownerRating.averageRating.toFixed(1)}</span>
+                              </div>
+                            </div>
+                            <div>
+                              <p className="uppercase tracking-[0.1em] opacity-60 text-[0.45rem]">Status</p>
+                              <p className="mt-1 font-semibold capitalize truncate mt-0 text-[0.55rem]">{listing.status}</p>
+                            </div>
+                          </div>
+                        </>
+                      )}
                       <div className="flex flex-wrap gap-0.5">
                         <Dialog open={proposalListingId === listing.id} onOpenChange={open => setProposalListingId(open ? listing.id : null)}>
                           <DialogTrigger asChild>

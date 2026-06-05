@@ -1268,3 +1268,15 @@ The application is fully functional with all core features working correctly.
 - [x] Verified list view layout on Comics category page
 - [x] Verified list view layout on Sports Cards category page
 - [x] Took before and after screenshots to visually verify the fix
+
+## Category Page List View Layout Fix (June 5, 2026)
+
+- [x] Restructured CardContent to match eBay list view layout
+- [x] Image now on left with fixed width (w-32)
+- [x] All item details now on right side of image
+- [x] Removed details from appearing below the image
+- [x] Created compact 4-column grid for Condition, Seller, Trust, Status
+- [x] Title and description display above the details grid
+- [x] Verified list view on Comics category page (BEFORE/AFTER screenshots)
+- [x] Verified list view on Sports Cards category page (BEFORE/AFTER screenshots)
+- [x] List view layout now consistent across all category pages
