@@ -585,36 +585,29 @@ export default function CategoryPage() {
                         />
                       </div>
                     </Link>
-                    <CardContent className={`${viewMode === "list" ? "flex-1 flex items-center justify-between gap-4 p-3 min-w-0" : `space-y-1 ${isSportsCardsPage ? "p-1.5 text-[#153746]" : "p-5"}`}`}>
+                    <CardContent className={`${viewMode === "list" ? "flex-1 flex items-start justify-between gap-4 p-3 min-w-0" : `space-y-1 ${isSportsCardsPage ? "p-1.5 text-[#153746]" : "p-5"}`}`}>
                       {viewMode === "list" ? (
                         <>
                           <div className="flex-1 min-w-0">
-                            <p className="font-semibold uppercase tracking-[0.12em] opacity-60 text-xs">{listing.categoryLabel}</p>
-                            <Link href={`/listings/${listing.id}`} className="mt-1 block font-semibold leading-tight hover:opacity-75 text-sm truncate">
+                            <Link href={`/listings/${listing.id}`} className="block font-bold leading-tight hover:opacity-75 text-base">
                               {listing.title}
                             </Link>
-                            <p className="text-xs leading-relaxed opacity-80 mt-1 line-clamp-1">{listing.description}</p>
-                          </div>
-                          <div className="flex items-center gap-4 text-xs flex-shrink-0">
-                            <div>
-                              <p className="uppercase tracking-[0.1em] opacity-60 text-[0.7rem]">Condition</p>
-                              <p className="font-semibold truncate">{listing.conditionLabel}</p>
-                            </div>
-                            <div>
-                              <p className="uppercase tracking-[0.1em] opacity-60 text-[0.7rem]">Seller</p>
-                              <p className="font-semibold truncate">{listing.owner.displayName}</p>
-                            </div>
-                            <div>
-                              <p className="uppercase tracking-[0.1em] opacity-60 text-[0.7rem]">Trust</p>
-                              <div className="flex items-center gap-0.5 font-semibold">
+                            <p className="text-xs leading-relaxed opacity-80 mt-1">{listing.conditionLabel}</p>
+                            <p className="text-xs leading-relaxed opacity-80 mt-1 line-clamp-2">{listing.description}</p>
+                            <div className="mt-3 space-y-1 text-xs">
+                              <p><span className="font-semibold">Seller:</span> {listing.owner.displayName}</p>
+                              <div className="flex items-center gap-1">
+                                <span className="font-semibold">Trust:</span>
                                 <Star className="fill-current h-3 w-3" />
-                                <span className="truncate text-xs">{listing.ownerRating.averageRating.toFixed(1)}</span>
+                                <span>{listing.ownerRating.averageRating.toFixed(1)}</span>
                               </div>
+                              <p><span className="font-semibold">Status:</span> {listing.status}</p>
                             </div>
-                            <div>
-                              <p className="uppercase tracking-[0.1em] opacity-60 text-[0.7rem]">Status</p>
-                              <p className="font-semibold capitalize truncate">{listing.status}</p>
-                            </div>
+                          </div>
+                          <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                            <button className="text-red-500 hover:text-red-600">
+                              <Heart className="h-5 w-5" />
+                            </button>
                           </div>
                         </>
                       ) : (
