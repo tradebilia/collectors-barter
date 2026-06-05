@@ -319,22 +319,51 @@ export const appRouter = router({
           });
         }
         
+        // SECURITY: Identity fields can only be modified by admins
+        // These fields are verified during signup and should not be changed by regular users
+        const isAdmin = ctx.user?.role === 'admin';
+        
+        // Check if any identity field is being modified by a non-admin user
+        if (!isAdmin) {
+          const identityFieldsAttempted = [];
+          if (input.firstName !== undefined && input.firstName) identityFieldsAttempted.push('firstName');
+          if (input.lastName !== undefined && input.lastName) identityFieldsAttempted.push('lastName');
+          if (input.contactEmail !== undefined && input.contactEmail) identityFieldsAttempted.push('contactEmail');
+          if (input.contactAddress !== undefined && input.contactAddress) identityFieldsAttempted.push('contactAddress');
+          if (input.contactTown !== undefined && input.contactTown) identityFieldsAttempted.push('contactTown');
+          if (input.contactState !== undefined && input.contactState) identityFieldsAttempted.push('contactState');
+          if (input.contactZipCode !== undefined && input.contactZipCode) identityFieldsAttempted.push('contactZipCode');
+          if (input.contactCountry !== undefined && input.contactCountry) identityFieldsAttempted.push('contactCountry');
+          if (input.contactPhone !== undefined && input.contactPhone) identityFieldsAttempted.push('contactPhone');
+          if (input.contactFullName !== undefined && input.contactFullName) identityFieldsAttempted.push('contactFullName');
+          
+          if (identityFieldsAttempted.length > 0) {
+            console.warn(
+              `[saveProfile] Non-admin user ${userId} attempted to modify identity fields:`,
+              identityFieldsAttempted
+            );
+            throw new TRPCError({
+              code: 'FORBIDDEN',
+              message: 'Identity fields cannot be modified. These fields were verified during account setup and can only be changed by administrators. Contact support if you need to update them.',
+            });
+          }
+        }
         
         return updateProfile(
           { id: typeof userId === 'string' ? parseInt(userId, 10) : userId, name: input.displayName },
           {
             displayName: input.displayName,
             bio: input.bio,
-            contactFullName: input.contactFullName,
-            contactEmail: input.contactEmail,
-            contactPhone: input.contactPhone,
-            contactAddress: input.contactAddress,
-            contactTown: input.contactTown,
-            contactState: input.contactState,
-            contactZipCode: input.contactZipCode,
-            contactCountry: input.contactCountry,
-            firstName: input.firstName,
-            lastName: input.lastName,
+            contactFullName: isAdmin ? input.contactFullName : undefined,
+            contactEmail: isAdmin ? input.contactEmail : undefined,
+            contactPhone: isAdmin ? input.contactPhone : undefined,
+            contactAddress: isAdmin ? input.contactAddress : undefined,
+            contactTown: isAdmin ? input.contactTown : undefined,
+            contactState: isAdmin ? input.contactState : undefined,
+            contactZipCode: isAdmin ? input.contactZipCode : undefined,
+            contactCountry: isAdmin ? input.contactCountry : undefined,
+            firstName: isAdmin ? input.firstName : undefined,
+            lastName: isAdmin ? input.lastName : undefined,
             avatar: input.avatar ?? null,
             acceptedTerms: input.acceptedTerms,
             isMerchant: input.isMerchant,

@@ -965,7 +965,12 @@ The application is fully functional with all core features working correctly.
 ## Account Settings Issues (New)
 
 - [x] **Issue 1: Profile picture upload fixed** - Avatar file conversion and upload logic improved with proper error handling
-- [ ] **Issue 2: Identity fields should be read-only** - First name, last name, street address, town/city, state, zip code, email, phone should be read-only for non-admin users (verified during signup, prevent fraud)
+- [x] **Issue 2: Identity fields should be read-only** - First name, last name, street address, town/city, state, zip code, email, phone should be read-only for non-admin users (verified during signup, prevent fraud)
+  - [x] Frontend: Identity fields disabled for non-admin users in AccountSettings.tsx
+  - [x] Backend: Added validation in saveProfile mutation to reject identity field modifications from non-admin users
+  - [x] Backend: Only admins can modify identity fields (firstName, lastName, contactEmail, contactPhone, contactAddress, contactTown, contactState, contactZipCode, contactCountry, contactFullName)
+  - [x] Security: Non-admin users get FORBIDDEN error if they attempt to modify identity fields
+  - [x] Tests: Created 11 unit tests verifying identity field protection logic - all passing
 - [x] **Issue 3: Add security question to signup** - Security question should be added during account setup, not just in account settings
 - [x] **Issue 4: Preferred categories not persisting** - Categories selected during account setup are not showing as selected in account settings
 - [x] **Issue 5: Add Town/City field to account setup** - Town/City field was missing from Step 1 of account setup form
