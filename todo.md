@@ -1351,3 +1351,11 @@ The application is fully functional with all core features working correctly.
 - [x] Maintain Inbox hero section with image and stats
 - [x] Ensure visual consistency with other pages
 - [x] Verified TopBar and CategoryBar display correctly
+
+
+## Messages Page Hero Cleanup (June 5, 2026)
+
+- [x] Remove statistic boxes from Messages page hero
+- [x] Keep Inbox image as the only hero element
+- [x] Simplify hero section layout
+- [x] Verified cleaner appearance

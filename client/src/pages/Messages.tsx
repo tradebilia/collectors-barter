@@ -196,22 +196,8 @@ export default function Messages() {
       }}>
         <div className="absolute inset-0 pointer-events-none" />
         <div className="container py-8 lg:py-10">
-          <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
-            <div className="max-w-4xl">
-              <img src="/images/Inbox.svg" alt="Inbox" className="h-auto w-full max-w-[34rem]" />
-            </div>
-            <div className="grid gap-3 sm:grid-cols-3 lg:w-[24rem]">
-              {[
-                ["Threads", String(allThreads.length)],
-                ["Unread", String(allThreads.filter(thread => thread.unread).length)],
-                ["Direct", String(allThreads.filter(thread => thread.kind === "direct").length)],
-              ].map(([label, value]) => (
-                <div key={label} className="rounded-[1.5rem] border border-white/10 bg-white/8 p-4 text-center backdrop-blur-sm">
-                  <p className="text-xs uppercase tracking-[0.24em] text-white/60">{label}</p>
-                  <p className="mt-3 text-3xl font-semibold text-white">{value}</p>
-                </div>
-              ))}
-            </div>
+          <div className="max-w-4xl">
+            <img src="/images/Inbox.svg" alt="Inbox" className="h-auto w-full max-w-[34rem]" />
           </div>
         </div>
       </header>
