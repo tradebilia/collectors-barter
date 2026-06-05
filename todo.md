@@ -1218,3 +1218,12 @@ The application is fully functional with all core features working correctly.
 - [x] Verified full comic book image is visible on Comics category page
 - [x] Removed Member Online indicator from category page listings
 - [x] Verified indicator no longer appears on Comics and other category pages
+
+## Category Page Image Width Optimization (June 5, 2026)
+
+- [x] Applied aggressive image width optimization (negative margin -m-6) to non-sports card pages
+- [x] Images now extend to card edges on Comics, Pokemon, Video Games, and other non-sports categories
+- [x] Removed conditional logic so all category pages use the same image styling
+- [x] Applied negative margin styling to sports cards pages as well
+- [x] Verified Sports Cards category page now has extended image layout
+- [x] All category pages now have consistent image sizing treatment
