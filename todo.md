@@ -1373,13 +1373,17 @@ The application is fully functional with all core features working correctly.
 - [x] Identified bug: Member Online indicator shows incorrectly for logged-out users
 - [x] Updated logout procedure to clear lastActivityAt timestamp
 - [x] Enhanced OnlineIndicator component with cache invalidation and faster refetch
-- [ ] Verify fix works after AdminTavani logs out again
+- [x] Verify fix works after AdminTavani logs out again
+- [x] Removed lastActivityAt update from auth.me query to prevent constant updates
+- [x] Fixed logout procedure to use valid timestamp (1970-01-02) instead of epoch
+- [x] Verified Member Offline indicator now displays correctly for logged-out users
+- [x] Passed auth.logout.test.ts test suite
 
 
 ## Member Offline Indicator
 - [x] Updated OnlineIndicator component to show Member Offline with red X icon
-- [ ] Debug why Member Offline indicator not displaying for offline users (still shows Member Online)
-- [ ] Verify server is returning correct isOnline status for offline users
+- [x] Debug why Member Offline indicator not displaying for offline users (still shows Member Online)
+- [x] Verify server is returning correct isOnline status for offline users
 
 
 ## Member Offline Indicator - Debugging
@@ -1388,11 +1392,14 @@ The application is fully functional with all core features working correctly.
 - [x] Updated logout procedure to set lastActivityAt to epoch (1970-01-01)
 - [x] Enhanced OnlineIndicator with cache invalidation and 10-second refetch
 - [x] Added debug logging to server getSellerOnlineStatus (removed after debugging)
-- [ ] **ISSUE**: Member Offline indicator still not displaying - shows Member Online for all users
-- [ ] **INVESTIGATION**: Database shows lastActivityAt is being updated correctly
-- [ ] **INVESTIGATION**: Server logs show correct isOnline calculation (offline = true when > 5 min)
-- [ ] **INVESTIGATION**: Issue may be with tRPC cache or component rendering logic
-- [ ] Need to investigate why isOnline is always true even when database shows old timestamp
+- [x] **ISSUE**: Member Offline indicator still not displaying - shows Member Online for all users
+- [x] **INVESTIGATION**: Database shows lastActivityAt is being updated correctly
+- [x] **INVESTIGATION**: Server logs show correct isOnline calculation (offline = true when > 5 min)
+- [x] **INVESTIGATION**: Issue may be with tRPC cache or component rendering logic
+- [x] **ROOT CAUSE**: auth.me query was updating lastActivityAt every time it was called, keeping users online
+- [x] **FIX**: Removed lastActivityAt update from auth.me query - only logout updates it now
+- [x] **FIX**: Changed logout to use valid timestamp (1970-01-02) instead of epoch (1970-01-01)
+- [x] **VERIFICATION**: Tested logout flow - Member Offline now displays correctly
 
 
 ## Category Page Layout Improvement

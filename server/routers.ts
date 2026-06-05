@@ -104,11 +104,6 @@ export const appRouter = router({
       
       const db = await requireDb();
       
-      // Update lastActivityAt to now for online status tracking
-      await db.update(users).set({
-        lastActivityAt: new Date(),
-      }).where(eq(users.id, user.id));
-      
       const profile = await db
         .select({
           firstName: userProfiles.firstName,
@@ -215,8 +210,12 @@ export const appRouter = router({
       }),
     logout: protectedProcedure.mutation(async ({ ctx }) => {
       const db = await requireDb();
-      // Clear lastActivityAt to mark user as offline
-      await db.update(users).set({ lastActivityAt: new Date(0) }).where(eq(users.id, ctx.user.id));
+      // Clear lastActivityAt to mark user as offline (set to a very old date)
+      if (ctx.user?.id) {
+        // Use a date far in the past (year 1970) to ensure user is marked as offline
+        const offlineTime = new Date('1970-01-02T00:00:00Z');
+        await db.update(users).set({ lastActivityAt: offlineTime }).where(eq(users.id, ctx.user.id));
+      }
       
       const cookieOptions = getSessionCookieOptions(ctx.req);
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
@@ -1058,20 +1057,24 @@ export const appRouter = router({
   onlineStatus: router({
     updateActivity: protectedProcedure.mutation(async ({ ctx }) => {
       const db = await requireDb();
-      await db.update(users).set({ lastActivityAt: new Date() }).where(eq(users.id, ctx.user.id));
+      // Only update lastActivityAt if user is authenticated
+      if (ctx.user?.id) {
+        await db.update(users).set({ lastActivityAt: new Date() }).where(eq(users.id, ctx.user.id));
+      }
       return { success: true };
     }),
     getSellerOnlineStatus: publicProcedure
       .input(z.object({ sellerId: z.number().int().positive() }))
       .query(async ({ input }) => {
         const db = await requireDb();
-        const seller = await db.select({ lastActivityAt: users.lastActivityAt }).from(users).where(eq(users.id, input.sellerId)).limit(1);
+        const seller = await db.select({ lastActivityAt: users.lastActivityAt, id: users.id, name: users.name }).from(users).where(eq(users.id, input.sellerId)).limit(1);
         if (!seller.length) return { isOnline: false };
         const lastActivity = seller[0].lastActivityAt;
         const now = new Date();
         const timeSinceActivity = now.getTime() - lastActivity.getTime();
         const ONLINE_STATUS_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
         const isOnline = timeSinceActivity < ONLINE_STATUS_TIMEOUT_MS;
+        console.log(`[getSellerOnlineStatus] User: ${seller[0].name} (ID: ${seller[0].id}), lastActivityAt: ${lastActivity}, now: ${now}, timeSinceActivity: ${timeSinceActivity}ms, isOnline: ${isOnline}`);
         return { isOnline, lastActivityAt: lastActivity };
       }),
   }),
