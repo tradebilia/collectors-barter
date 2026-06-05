@@ -1405,3 +1405,5 @@ The application is fully functional with all core features working correctly.
 - [x] Move OnlineIndicator outside image container to prevent cutoff
 - [x] Position OnlineIndicator absolutely on top of image
 - [x] Verify full card images display without cutoff
+- [x] Add relative positioning to Card for absolute positioned OnlineIndicator
+- [x] Verify Member Online indicator is visible in grid view
