@@ -362,7 +362,7 @@ export default function CategoryPage() {
                   <Label className="text-[0.65rem] font-semibold uppercase tracking-[0.16em]">{filter.label}</Label>
                   {filter.type === "select" ? (
                     <Select defaultValue="all">
-                      <SelectTrigger className="h-8 bg-white/80 text-xs">
+                      <SelectTrigger className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs`}>
                         <SelectValue placeholder={filter.placeholder} />
                       </SelectTrigger>
                       <SelectContent>
@@ -396,11 +396,11 @@ export default function CategoryPage() {
                     </Select>
                   ) : filter.label === "Value Range" ? (
                     <div className="flex gap-2">
-                      <Input placeholder="Min" className="h-8 bg-white/80 text-xs flex-1" type="number" />
-                      <Input placeholder="Max" className="h-8 bg-white/80 text-xs flex-1" type="number" />
+                      <Input placeholder="Min" className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs flex-1`} type="number" />
+                      <Input placeholder="Max" className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs flex-1`} type="number" />
                     </div>
                   ) : (
-                    <Input placeholder={filter.placeholder} className="h-8 bg-white/80 text-xs" />
+                    <Input placeholder={filter.placeholder} className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs`} />
                   )}
                 </div>
               );
@@ -409,7 +409,7 @@ export default function CategoryPage() {
               <div className="space-y-0.5">
                 <Label className="text-[0.65rem] font-semibold uppercase tracking-[0.16em]">Condition</Label>
                 <Select value={condition} onValueChange={value => setCondition(value as typeof condition)}>
-                  <SelectTrigger className="h-8 bg-white/80 text-xs">
+                  <SelectTrigger className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs`}>
                     <SelectValue placeholder="All Conditions" />
                   </SelectTrigger>
                   <SelectContent>

@@ -1197,3 +1197,7 @@ The application is fully functional with all core features working correctly.
 - [x] Tested on Comics category page with newly added comic
 - [x] Changed image bubble background from bg-black/10 to white
 - [x] Verified white background displays correctly on category pages
+- [x] Updated card backgrounds to white for non-sports card pages
+- [x] Updated filter input bubbles to be fully opaque white for non-sports card pages
+- [x] Applied to all filter select dropdowns and text inputs
+- [x] Verified filter inputs are now clearly visible with white backgrounds
