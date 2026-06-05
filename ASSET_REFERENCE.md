@@ -223,3 +223,44 @@ All S3 assets are accessed via the `/manus-storage/` proxy path, which automatic
 - File IDs (e.g., `dc12f61b`) are unique identifiers for each asset version
 - The proxy handles CDN routing and caching automatically
 - No manual URL management needed - use `/manus-storage/{filename}` format in code
+
+
+## Contact Page Assets (S3 Storage)
+
+### Contact Us Hero SVG
+- **Filename:** `Contact_Us.svg`
+- **S3 URL:** `/manus-storage/Contact_Us_8b246a6c.svg`
+- **File ID:** 8b246a6c
+- **Description:** Colorful arrows in a circle design for Contact page hero section
+- **Used in:** `client/src/pages/Contact.tsx` (line 14)
+- **Git Commit:** 58efe26 - feat: Contact page refinements
+- **Upload Date:** June 5, 2026
+- **Design:** Multicolor arrows (blue, purple, red, orange, green, pink) arranged in a circle
+
+## Recent Session Changes (June 5, 2026)
+
+### Contact Page Refinements
+- **Commit:** 58efe26
+- **Changes:**
+  - Added hero section to Contact page with Contact_Us.svg
+  - Updated email from rich@tradebilia.com to admin@tradebilia.com
+  - Changed button colors from purple-pink gradient to blue (bg-blue-600, hover:bg-blue-700)
+  - Fixed Watchlist button in category page list view (heart icon only, red outline/fill)
+  - Repositioned Member Online indicator above image without overlapping
+  - Removed redundant red heart button from list view
+- **Files Modified:**
+  - `client/src/pages/Contact.tsx`
+  - `client/src/pages/CategoryPage.tsx`
+- **S3 Assets Added:**
+  - Contact_Us_8b246a6c.svg
+
+### Category Page Watchlist Button Refinements
+- **Commit:** 58efe26
+- **Changes:**
+  - Removed redundant red heart icon button
+  - Modified Watchlist button to show only heart icon (no text)
+  - Heart displays with red outline by default (text-red-500)
+  - Heart fills with red when saved (fill-red-500 text-red-500)
+  - Repositioned Member Online indicator inside card without overlapping image
+- **Files Modified:**
+  - `client/src/pages/CategoryPage.tsx`
