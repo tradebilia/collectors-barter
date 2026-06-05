@@ -277,3 +277,16 @@ All S3 assets are accessed via the `/manus-storage/` proxy path, which automatic
   - Search bar centered with `max-w-2xl w-full` constraint
   - Icons/Auth now uses `absolute right-4` positioning
   - Improves visual hierarchy with search bar as focal point
+
+
+## Messages Page Navigation Update (June 5, 2026)
+
+### TopBar and CategoryBar Integration
+- **Commit:** 728c7df
+- **File Modified:** `client/src/pages/Messages.tsx`
+- **Changes:**
+  - Replaced custom header with TopBar component
+  - Added CategoryBar component for consistent navigation
+  - Maintained Inbox hero section with image and stats
+  - Ensures visual consistency with other pages (Home, Contact, Category pages)
+- **Result:** Messages page now matches the visual style and navigation of the rest of the site
