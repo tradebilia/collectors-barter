@@ -1227,3 +1227,8 @@ The application is fully functional with all core features working correctly.
 - [x] Applied negative margin styling to sports cards pages as well
 - [x] Verified Sports Cards category page now has extended image layout
 - [x] All category pages now have consistent image sizing treatment
+- [x] Fixed Member Online indicator visibility after image width optimization
+- [x] Changed Card to use relative positioning and overflow-visible
+- [x] Changed OnlineIndicator to use absolute positioning with z-10
+- [x] Verified Member Online indicator is visible on Comics category page
+- [x] Verified Member Online indicator is visible on Sports Cards category page

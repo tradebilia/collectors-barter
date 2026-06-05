@@ -564,9 +564,9 @@ export default function CategoryPage() {
               <>
                 <div className={viewMode === "grid" ? "grid gap-3 grid-cols-6" : "space-y-3"}>
                   {listings.map(listing => (
-                  <Card key={listing.id} className={`overflow-hidden border ${isSportsCardsPage ? theme.cardClassName : "bg-white border-gray-200 text-black"} ${isSportsCardsPage ? "rounded-md shadow-sm" : "rounded-[2rem]"} ${viewMode === "list" ? "flex gap-4" : ""}`}>
+                  <Card key={listing.id} className={`relative overflow-visible border ${isSportsCardsPage ? theme.cardClassName : "bg-white border-gray-200 text-black"} ${isSportsCardsPage ? "rounded-md shadow-sm" : "rounded-[2rem]"} ${viewMode === "list" ? "flex gap-4" : ""}`}>
                     {listing.ownerId && (
-                      <div className="px-3 py-0">
+                      <div className="absolute top-0 left-3 z-10 px-3 py-0">
                         <OnlineIndicator sellerId={listing.ownerId} />
                       </div>
                     )}
