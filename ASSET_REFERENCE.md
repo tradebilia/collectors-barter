@@ -302,3 +302,10 @@ All S3 assets are accessed via the `/manus-storage/` proxy path, which automatic
   - Matched responsive sizing to main page (h-64/sm:h-72/lg:h-80)
   - Used same layout pattern as main page for visual consistency
 - **Result:** Messages page hero now matches main page styling and sizing
+
+
+## Online Presence Bug Fix (Commit 742c3c5)
+- Updated logout procedure to clear `lastActivityAt` timestamp when user logs out
+- Enhanced OnlineIndicator component to invalidate cache on mount and refetch every 10 seconds
+- Manually cleared AdminTavani's `lastActivityAt` in database to fix existing false positive
+- Prevents Member Online indicator from showing for logged-out users
