@@ -61,7 +61,7 @@ export function RecentlyAddedCarousel({
               onClick={() => item.href && (window.location.href = item.href)}
             >
               {item.ownerId && (
-                <div className="px-3 pt-2 pb-1">
+                <div className="px-3 pt-1 pb-0.5">
                   <OnlineIndicator sellerId={item.ownerId} />
                 </div>
               )}

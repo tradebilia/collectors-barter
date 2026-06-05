@@ -1140,3 +1140,9 @@ The application is fully functional with all core features working correctly.
 - [x] Add online status indicator to individual item detail page
 - [x] Ensure consistent styling across all pages
 - [x] Online status indicator placement complete
+
+## Statistics Display Format (June 5, 2026)
+
+- [x] Fix Total Items Value display to show full number with commas (e.g., $1,500.00) instead of abbreviated format ($1.5K)
+- [x] Updated Home.tsx to use toLocaleString() for proper number formatting
+- [x] Verified statistics bar displays correctly with new format
