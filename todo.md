@@ -1399,3 +1399,9 @@ The application is fully functional with all core features working correctly.
 - [x] Move Per page dropdown next to Best Match dropdown
 - [x] Remove extra spacing to allow items to move higher
 - [x] Fix bottom cutoff issue on category pages
+
+
+## Grid View Image Cutoff Fix
+- [x] Move OnlineIndicator outside image container to prevent cutoff
+- [x] Position OnlineIndicator absolutely on top of image
+- [x] Verify full card images display without cutoff
