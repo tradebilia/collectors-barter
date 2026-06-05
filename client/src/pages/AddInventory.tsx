@@ -291,7 +291,13 @@ export default function AddInventory() {
 
   const handlePhotos = async (event: ChangeEvent<HTMLInputElement>) => {
     const nextPhotos = await readFiles(event.target.files);
-    setPhotos(nextPhotos);
+    // In edit mode, merge new photos with existing ones
+    // In create mode, replace all photos
+    if (isEditMode) {
+      setPhotos([...photos, ...nextPhotos]);
+    } else {
+      setPhotos(nextPhotos);
+    }
   };
 
   const handleSaveDraft = async () => {

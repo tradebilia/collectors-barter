@@ -1498,19 +1498,24 @@ export async function updateListing(
 
   // Only update photos if new ones are provided
   if (input.photos.length > 0) {
-    // Delete existing photos
-    await db.delete(listingPhotos).where(eq(listingPhotos.listingId, input.listingId));
+    // Get existing photos to preserve them
+    const existingPhotos = await db
+      .select()
+      .from(listingPhotos)
+      .where(eq(listingPhotos.listingId, input.listingId))
+      .orderBy(asc(listingPhotos.sortOrder));
 
-    // Upload new photos
+    // Upload new photos and add them after existing ones
     for (let index = 0; index < input.photos.length; index += 1) {
       const photo = input.photos[index]!;
       const uploaded = await uploadImage("listings", user.id, photo);
+      const newSortOrder = existingPhotos.length + index;
       await db.insert(listingPhotos).values({
         listingId: input.listingId,
         fileKey: uploaded.key,
         imageUrl: uploaded.url,
-        altText: `${input.title.trim()} photo ${index + 1}`,
-        sortOrder: index,
+        altText: `${input.title.trim()} photo ${newSortOrder + 1}`,
+        sortOrder: newSortOrder,
       });
     }
   }

@@ -1104,3 +1104,12 @@ The application is fully functional with all core features working correctly.
 - [ ] Test that changing divider line position affects only that element, not others
 - [ ] Verify all 10 category pages display correctly with new layout structure
 - [ ] Only title image should change per category; all other elements stay in same position
+
+## Photo Upload Bug Fix (June 5, 2026)
+
+- [x] Fix backend updateListing to preserve existing photos instead of deleting them
+- [x] Fix frontend AddInventory to merge new photos with existing photos
+- [x] Ensure users can add additional images without losing existing ones
+- [x] Test photo upload in edit mode with multiple images
+- [x] Verify all photos display correctly after edit
+- [x] Photo upload bug completely fixed and tested
