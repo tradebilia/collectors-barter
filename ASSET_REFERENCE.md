@@ -264,3 +264,16 @@ All S3 assets are accessed via the `/manus-storage/` proxy path, which automatic
   - Repositioned Member Online indicator inside card without overlapping image
 - **Files Modified:**
   - `client/src/pages/CategoryPage.tsx`
+
+
+## TopBar Layout Refinement (June 5, 2026)
+
+### Search Bar Centering
+- **Commit:** 5affd8b
+- **File Modified:** `client/src/components/TopBar.tsx`
+- **Changes:**
+  - Changed main container from `flex items-center justify-between` to `flex items-center justify-center relative`
+  - Logo now uses `absolute left-2` positioning
+  - Search bar centered with `max-w-2xl w-full` constraint
+  - Icons/Auth now uses `absolute right-4` positioning
+  - Improves visual hierarchy with search bar as focal point
