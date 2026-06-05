@@ -1209,3 +1209,10 @@ The application is fully functional with all core features working correctly.
 - [x] Online status is determined by lastActivityAt being within last 5 minutes
 - [x] Verified Member Online indicator now displays on Comics category page
 - [x] Indicator shows green dot with "Member Online" text above listing images
+
+## Category Page Image Display Fix (June 5, 2026)
+
+- [x] Changed image from object-cover to object-contain on non-sports card pages
+- [x] Images now display fully without being cropped
+- [x] Bubble size remains the same
+- [x] Verified full comic book image is visible on Comics category page
