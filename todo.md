@@ -1195,3 +1195,5 @@ The application is fully functional with all core features working correctly.
 - [x] Further reduced to py-0 (zero vertical padding)
 - [x] Verified images now display fully without being cut off
 - [x] Tested on Comics category page with newly added comic
+- [x] Changed image bubble background from bg-black/10 to white
+- [x] Verified white background displays correctly on category pages

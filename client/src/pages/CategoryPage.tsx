@@ -570,7 +570,7 @@ export default function CategoryPage() {
                         <OnlineIndicator sellerId={listing.ownerId} />
                       </div>
                     )}
-                    <Link href={`/listings/${listing.id}`} className={`overflow-hidden border-b border-current/10 block cursor-pointer hover:opacity-90 transition ${viewMode === "list" ? "w-32 flex-shrink-0" : ""} ${isSportsCardsPage ? "aspect-[7/9] bg-[linear-gradient(180deg,rgba(243,228,188,0.92)_0%,rgba(232,214,168,0.92)_100%)] p-1" : "aspect-[4/5] bg-black/10"}`}>
+                    <Link href={`/listings/${listing.id}`} className={`overflow-hidden border-b border-current/10 block cursor-pointer hover:opacity-90 transition ${viewMode === "list" ? "w-32 flex-shrink-0" : ""} ${isSportsCardsPage ? "aspect-[7/9] bg-[linear-gradient(180deg,rgba(243,228,188,0.92)_0%,rgba(232,214,168,0.92)_100%)] p-1" : "aspect-[4/5] bg-white"}`}>
                       <div className={isSportsCardsPage ? "h-full rounded-sm border border-[#0f4658]/10 bg-[#f7ecd2] p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)]" : "h-full"}>
                         <img
                           src={resolveTradebiliaListingImage({ title: listing.title, category: listing.category, primaryPhotoUrl: listing.primaryPhotoUrl })}
