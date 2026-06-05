@@ -1146,3 +1146,10 @@ The application is fully functional with all core features working correctly.
 - [x] Fix Total Items Value display to show full number with commas (e.g., $1,500.00) instead of abbreviated format ($1.5K)
 - [x] Updated Home.tsx to use toLocaleString() for proper number formatting
 - [x] Verified statistics bar displays correctly with new format
+- [x] Updated format to show whole dollars without cents (e.g., $1,500)
+
+## Carousel Member Online Spacing (June 5, 2026)
+
+- [x] Reduce padding around Member Online indicator in carousel
+- [x] Changed from pt-1 pb-0.5 to pt-0 pb-0 to eliminate wasted space
+- [x] Verified carousel cards are now more compact with larger images
