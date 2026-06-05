@@ -1192,5 +1192,6 @@ The application is fully functional with all core features working correctly.
 
 - [x] Reduce spacing around Member Online indicator in category page item cards
 - [x] Changed padding from pt-2 pb-1 to py-0.5 (1px above and below)
+- [x] Further reduced to py-0 (zero vertical padding)
 - [x] Verified images now display fully without being cut off
 - [x] Tested on Comics category page with newly added comic
