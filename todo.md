@@ -1359,3 +1359,11 @@ The application is fully functional with all core features working correctly.
 - [x] Keep Inbox image as the only hero element
 - [x] Simplify hero section layout
 - [x] Verified cleaner appearance
+
+
+## Messages Hero Image Centering (June 5, 2026)
+
+- [x] Center Inbox hero image in Messages page
+- [x] Match hero sizing to main page (h-64/sm:h-72/lg:h-80)
+- [x] Use responsive layout matching main page pattern
+- [x] Verified centered and properly sized appearance
