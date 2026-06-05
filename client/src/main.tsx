@@ -43,6 +43,7 @@ const trpcClient = trpc.createClient({
     httpBatchLink({
       url: "/api/trpc",
       transformer: superjson,
+      maxURLLength: 2000, // Prevent 414 errors by using POST for large batches
       fetch(input, init) {
         return globalThis.fetch(input, {
           ...(init ?? {}),

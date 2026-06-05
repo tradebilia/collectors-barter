@@ -1248,3 +1248,12 @@ The application is fully functional with all core features working correctly.
 - [x] Sports Cards no longer has beige background above/below image
 - [x] Verified pure white background on Sports Cards page (AFTER screenshot)
 - [x] Verified pure white background on Comics page (AFTER screenshot)
+
+## API Error Fixes (June 5, 2026)
+
+- [x] Fixed 414 Request-URI Too Large error on page refresh
+- [x] Root cause: httpBatchLink batching 356+ updateActivity mutations into single URL
+- [x] Solution: Added maxURLLength: 2000 to httpBatchLink configuration
+- [x] Now uses POST for large batches instead of GET (which has URL length limits)
+- [x] Verified page loads without "Unexpected token '<'" error
+- [x] Verified Recently Added carousel displays correctly
