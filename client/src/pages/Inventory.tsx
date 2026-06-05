@@ -730,7 +730,7 @@ export default function Inventory() {
                         <div><span className="text-slate-600"><strong>Value:</strong> {listing.estimatedValue ? `$${Number(listing.estimatedValue).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : 'Not specified'}</span></div>
                       </div>
                       <div className="flex gap-2 mt-3">
-                        <Link href={`/inventory/${listing.id}/edit`} className="flex-1">
+                        <Link href={`/inventory/edit/${listing.id}`} className="flex-1">
                           <Button variant="outline" className="w-full text-slate-700 border-slate-300 hover:bg-slate-50">
                             <Pencil className="h-4 w-4 mr-2" />
                             Edit

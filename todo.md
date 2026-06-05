@@ -1081,6 +1081,17 @@ The application is fully functional with all core features working correctly.
 - [ ] Resolve all 40 TypeScript errors before next session
 
 
+## Edit Listing Functionality (June 5, 2026)
+
+- [x] Fix edit button path in Inventory.tsx from `/inventory/{id}/edit` to `/inventory/edit/{id}`
+- [x] Verify edit page loads with correct route `/inventory/edit/:listingId`
+- [x] Verify form populates with existing listing data in edit mode
+- [x] Test editing a listing and saving changes
+- [x] Verify success message displays after save
+- [x] Verify user is redirected to inventory page after save
+- [x] Write and pass 8 vitest tests for edit functionality
+- [x] Edit Listing functionality complete and tested end-to-end
+
 ## Category Page Layout Refactoring - Independent Element Positioning
 
 - [x] Refactor CategoryPage.tsx to have independent positioning for all elements except title
