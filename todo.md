@@ -1216,3 +1216,5 @@ The application is fully functional with all core features working correctly.
 - [x] Images now display fully without being cropped
 - [x] Bubble size remains the same
 - [x] Verified full comic book image is visible on Comics category page
+- [x] Removed Member Online indicator from category page listings
+- [x] Verified indicator no longer appears on Comics and other category pages
