@@ -103,6 +103,12 @@ export const appRouter = router({
       }
       
       const db = await requireDb();
+      
+      // Update lastActivityAt to now for online status tracking
+      await db.update(users).set({
+        lastActivityAt: new Date(),
+      }).where(eq(users.id, user.id));
+      
       const profile = await db
         .select({
           firstName: userProfiles.firstName,

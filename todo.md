@@ -1201,3 +1201,11 @@ The application is fully functional with all core features working correctly.
 - [x] Updated filter input bubbles to be fully opaque white for non-sports card pages
 - [x] Applied to all filter select dropdowns and text inputs
 - [x] Verified filter inputs are now clearly visible with white backgrounds
+
+## Member Online Indicator Fix (June 5, 2026)
+
+- [x] Fixed Member Online indicator not appearing on category page listings
+- [x] Updated auth.me procedure to set lastActivityAt when user logs in
+- [x] Online status is determined by lastActivityAt being within last 5 minutes
+- [x] Verified Member Online indicator now displays on Comics category page
+- [x] Indicator shows green dot with "Member Online" text above listing images
