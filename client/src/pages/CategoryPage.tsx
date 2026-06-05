@@ -564,12 +564,18 @@ export default function CategoryPage() {
               <>
                 <div className={viewMode === "grid" ? "grid gap-3 grid-cols-6" : "space-y-3"}>
                   {listings.map(listing => (
-                  <Card key={listing.id} className={`overflow-hidden border bg-white border-gray-200 text-black ${isSportsCardsPage ? "rounded-md shadow-sm" : "rounded-[2rem]"} ${viewMode === "list" ? "flex gap-4" : ""}`}>
-                    {listing.ownerId && (
+                  <>
+                    {listing.ownerId && viewMode === "list" && (
                       <div className="px-3 py-0.5">
                         <OnlineIndicator sellerId={listing.ownerId} />
                       </div>
                     )}
+                    <Card key={listing.id} className={`overflow-hidden border bg-white border-gray-200 text-black ${isSportsCardsPage ? "rounded-md shadow-sm" : "rounded-[2rem]"} ${viewMode === "list" ? "flex gap-4" : ""}`}>
+                      {listing.ownerId && viewMode === "grid" && (
+                        <div className="px-3 py-0.5">
+                          <OnlineIndicator sellerId={listing.ownerId} />
+                        </div>
+                      )}
                     <Link href={`/listings/${listing.id}`} className={`overflow-hidden border-b border-current/10 block cursor-pointer hover:opacity-90 transition ${viewMode === "list" ? "w-32 flex-shrink-0" : ""} ${isSportsCardsPage ? "aspect-[7/9]" : "aspect-[4/5]"} bg-white p-0`}>
                       <div className="h-full">
                         <img
@@ -658,6 +664,7 @@ export default function CategoryPage() {
                       </div>
                     </CardContent>
                    </Card>
+                  </>
                 ))}
               </div>
               {/* Pagination controls */}

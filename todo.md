@@ -1257,3 +1257,14 @@ The application is fully functional with all core features working correctly.
 - [x] Now uses POST for large batches instead of GET (which has URL length limits)
 - [x] Verified page loads without "Unexpected token '<'" error
 - [x] Verified Recently Added carousel displays correctly
+
+## Category Page List View Layout (June 5, 2026)
+
+- [x] Fixed list view layout to show item details to the right of image
+- [x] Moved OnlineIndicator outside Card for list view
+- [x] OnlineIndicator now appears above the flex container in list view
+- [x] Image positioned on left with fixed width (w-32)
+- [x] Item details positioned to the right of image (flex-1)
+- [x] Verified list view layout on Comics category page
+- [x] Verified list view layout on Sports Cards category page
+- [x] Took before and after screenshots to visually verify the fix
