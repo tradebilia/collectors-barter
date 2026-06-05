@@ -29,6 +29,7 @@ import { ProfileCompletion } from "./pages/ProfileCompletion";
 import { SearchResults } from "./pages/SearchResults";
 import AdminDashboard from "./pages/AdminDashboard";
 import { AnimatedDemo } from "./pages/AnimatedDemo";
+import Contact from "./pages/Contact";
 
 function Router() {
   return (
@@ -103,6 +104,7 @@ function Router() {
           <AdminDashboard />
         </ProtectedRoute>
       </Route>
+      <Route path="/contact" component={Contact} />
       <Route path="/category/:slug" component={CategoryPage} />
       <Route path="/animated-demo" component={AnimatedDemo} />
       <Route path="/listings/:listingId" component={ItemDetail} />

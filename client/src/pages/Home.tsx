@@ -555,6 +555,9 @@ export default function Home() {
                         setLocation('/watchlist');
                       }
                     }} className="w-full px-3 py-2 rounded bg-white/10 hover:bg-white/20 transition text-white text-sm font-medium text-left">❤️ Watchlist</button>
+                    <button onClick={() => {
+                      setLocation('/contact');
+                    }} className="w-full px-3 py-2 rounded bg-white/10 hover:bg-white/20 transition text-white text-sm font-medium text-left">💬 Suggestions / Contact Us</button>
                     <div className="pt-4 border-t border-white/20 space-y-3">
                       <div>
                         <p className="text-xs font-semibold uppercase tracking-wider text-white/90">📅 Upcoming Conventions</p>

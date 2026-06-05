@@ -1164,3 +1164,15 @@ The application is fully functional with all core features working correctly.
 - [x] Moved Admin icon logic from TopBar to TopRightIcons component
 - [x] Removed duplicate Admin icon from TopBar
 - [x] Verified Admin icon now appears on all pages including Referral Request, Inventory, Messages, etc.
+
+## Contact Us Page (June 5, 2026)
+
+- [x] Add "Suggestions / Contact Us" link to home page sidebar above Upcoming Conventions
+- [x] Create new Contact.tsx page component with contact form
+- [x] Add form fields: Name, Email, Subject dropdown, Message
+- [x] Add subject options: Suggestion, Question, Feedback, Bug Report, Other
+- [x] Display direct email link (rich@tradebilia.com)
+- [x] Add info cards explaining what types of feedback are welcome
+- [x] Add response time expectation (24-48 hours)
+- [x] Add Contact route to App.tsx
+- [x] Verified Contact page loads correctly when clicking the sidebar link
