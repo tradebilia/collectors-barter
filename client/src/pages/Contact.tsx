@@ -11,7 +11,7 @@ import { TopBar } from "@/components/TopBar";
 import { CategoryBar } from "@/components/CategoryBar";
 import { Mail } from "lucide-react";
 
-const CONTACT_HERO_URL = "/manus-storage/Contact_Us_e40dae65.svg";
+const CONTACT_HERO_URL = "/manus-storage/Contact_Us_6574da5f.svg";
 
 export default function Contact() {
   const [name, setName] = useState("");
