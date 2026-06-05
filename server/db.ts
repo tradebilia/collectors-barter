@@ -115,12 +115,35 @@ async function ensureUserProfileRecord(user: Pick<User, "id" | "name">) {
 }
 
 async function uploadImage(folder: string, userId: number, input: PhotoUploadInput | AvatarUploadInput) {
-  const buffer = Buffer.from(input.contentBase64, "base64");
-  const timestamp = Date.now();
-  const randomId = Math.random().toString(36).substring(2, 8);
-  const fileKey = `${folder}/${userId}/${timestamp}-${randomId}-${input.name}`;
-  const { url } = await storagePut(fileKey, buffer, input.type);
-  return { key: fileKey, url };
+  try {
+    const buffer = Buffer.from(input.contentBase64, "base64");
+    console.log(`[uploadImage] Starting upload: name=${input.name}, size=${buffer.length} bytes, type=${input.type}`);
+    const timestamp = Date.now();
+    const randomId = Math.random().toString(36).substring(2, 8);
+    const fileKey = `${folder}-${userId}-${timestamp}-${randomId}-${input.name}`;
+    console.log(`[uploadImage] File key: ${fileKey}`);
+    
+    // Save to local filesystem instead of S3 to work around CloudFront issues
+    const fs = await import("fs/promises");
+    const path = await import("path");
+    const publicDir = path.resolve(process.cwd(), "client/public/images");
+    
+    // Ensure directory exists
+    await fs.mkdir(publicDir, { recursive: true });
+    
+    // Save file locally
+    const filePath = path.join(publicDir, fileKey);
+    await fs.writeFile(filePath, buffer);
+    console.log(`[uploadImage] File saved locally to: ${filePath}`);
+    
+    // Return URL pointing to local file
+    const url = `/images/${fileKey}`;
+    console.log(`[uploadImage] Upload successful, URL: ${url}`);
+    return { key: fileKey, url };
+  } catch (error) {
+    console.error(`[uploadImage] Upload failed:`, error);
+    throw error;
+  }
 }
 
 async function getProfileMap(userIds: number[]) {
@@ -943,6 +966,10 @@ export async function bulkDeleteListings(
     }
   }
 
+  // Delete associated photos first (foreign key constraint)
+  await db.delete(listingPhotos).where(inArray(listingPhotos.listingId, input.listingIds));
+
+  // Then delete the listings
   await db.delete(listings).where(inArray(listings.id, input.listingIds));
 
   return getDashboardData(user);

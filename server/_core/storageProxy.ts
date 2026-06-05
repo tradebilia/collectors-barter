@@ -38,8 +38,24 @@ export function registerStorageProxy(app: Express) {
         return;
       }
 
-      res.set("Cache-Control", "no-store");
-      res.redirect(307, url);
+      // Fetch the image from CloudFront and proxy it directly
+      const imageResp = await fetch(url);
+      if (!imageResp.ok) {
+        console.error(`[StorageProxy] CloudFront error: ${imageResp.status}`);
+        res.status(502).send("Failed to fetch image from storage");
+        return;
+      }
+
+      const contentType = imageResp.headers.get("content-type");
+      const contentLength = imageResp.headers.get("content-length");
+      if (contentType) res.set("Content-Type", contentType);
+      if (contentLength) res.set("Content-Length", contentLength);
+
+      res.set("Cache-Control", "public, max-age=31536000");
+      res.set("Vary", "Accept-Encoding");
+
+      const buffer = await imageResp.arrayBuffer();
+      res.send(Buffer.from(buffer));
     } catch (err) {
       console.error("[StorageProxy] failed:", err);
       res.status(502).send("Storage proxy error");

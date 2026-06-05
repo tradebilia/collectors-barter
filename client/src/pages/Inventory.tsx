@@ -773,11 +773,19 @@ export default function Inventory() {
             <div className="flex gap-3">
               <AlertDialogCancel>Cancel</AlertDialogCancel>
               <AlertDialogAction
-                onClick={() => {
+                onClick={async () => {
                   if (listingToDelete) {
-                    toast.info("Delete functionality will be implemented with backend integration.");
-                    setDeleteDialogOpen(false);
-                    setListingToDelete(null);
+                    try {
+                      await bulkDeleteMutation.mutateAsync({
+                        listingIds: [listingToDelete],
+                      });
+                      setDeleteDialogOpen(false);
+                      setListingToDelete(null);
+                      toast.success("Item deleted successfully");
+                      await dashboardQuery.refetch();
+                    } catch (error) {
+                      toast.error("Failed to delete item");
+                    }
                   }
                 }}
                 className="bg-red-600 hover:bg-red-700"
