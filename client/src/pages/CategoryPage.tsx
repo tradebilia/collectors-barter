@@ -565,14 +565,15 @@ export default function CategoryPage() {
                 <div className={viewMode === "grid" ? "grid gap-3 grid-cols-6" : "space-y-3"}>
                   {listings.map(listing => (
                   <>
-                    <Card key={listing.id} className={`${viewMode === "list" ? "relative grid grid-cols-[auto_1fr] gap-4" : ""} ${viewMode === "list" ? "" : "overflow-hidden"} border bg-white border-gray-200 text-black ${isSportsCardsPage ? "rounded-md shadow-sm" : "rounded-[2rem]"}`}>
+                    <Card key={listing.id} className={`${viewMode === "list" ? "flex flex-col" : ""} ${viewMode === "list" ? "" : "overflow-hidden"} border bg-white border-gray-200 text-black ${isSportsCardsPage ? "rounded-md shadow-sm" : "rounded-[2rem]"}`}>
+                      {listing.ownerId && viewMode === "list" && (
+                        <div className="px-3 py-0.5">
+                          <OnlineIndicator sellerId={listing.ownerId} />
+                        </div>
+                      )}
+                      <div className={`${viewMode === "list" ? "grid grid-cols-[auto_1fr] gap-4" : ""}`}>
                     <Link href={`/listings/${listing.id}`} className={`overflow-hidden border-b border-current/10 ${viewMode === "list" ? "" : "block"} cursor-pointer hover:opacity-90 transition ${viewMode === "list" ? "w-32 flex-shrink-0" : ""} ${isSportsCardsPage ? "aspect-[7/9]" : "aspect-[4/5]"} bg-white p-0`}>
-                      <div className="h-full relative">
-                        {listing.ownerId && viewMode === "list" && (
-                          <div className="absolute top-0 left-0 px-3 py-0.5 z-10">
-                            <OnlineIndicator sellerId={listing.ownerId} />
-                          </div>
-                        )}
+                      <div className="h-full">
                         {listing.ownerId && viewMode === "grid" && (
                           <div className="px-3 py-0.5">
                             <OnlineIndicator sellerId={listing.ownerId} />
@@ -585,7 +586,7 @@ export default function CategoryPage() {
                         />
                       </div>
                     </Link>
-                    <CardContent className={`${viewMode === "list" ? "p-3 min-w-0 flex flex-col" : `space-y-1 ${isSportsCardsPage ? "p-1.5 text-[#153746]" : "p-5"}`}`}>
+                      <CardContent className={`${viewMode === "list" ? "p-3 min-w-0 flex flex-col" : `space-y-1 ${isSportsCardsPage ? "p-1.5 text-[#153746]" : "p-5"}`}`}>
                       {viewMode === "list" ? (
                         <>
                           <div className="flex-1 min-w-0 flex flex-col">
@@ -691,8 +692,9 @@ export default function CategoryPage() {
                           <Heart className={`h-5 w-5 ${listing.savedToWatchlist ? "fill-red-500 text-red-500" : "text-red-500"}`} />
                         </Button>
                       </div>
-                    </CardContent>
-                   </Card>
+                      </CardContent>
+                      </div>
+                    </Card>
                   </>
                 ))}
               </div>
