@@ -1113,3 +1113,10 @@ The application is fully functional with all core features working correctly.
 - [x] Test photo upload in edit mode with multiple images
 - [x] Verify all photos display correctly after edit
 - [x] Photo upload bug completely fixed and tested
+
+## Carousel Caching Bug (June 5, 2026)
+
+- [x] Fix Recently Added carousel to not show deleted items
+- [x] Verify carousel invalidates cache when items are deleted
+- [x] Test that deleted items disappear from carousel immediately
+- [x] Added utils.market.feed.invalidate() after bulk delete and restore operations

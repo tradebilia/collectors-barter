@@ -79,6 +79,7 @@ export default function Inventory() {
   const bulkUpdateStatusMutation = trpc.market.bulkUpdateListingStatus.useMutation();
   const bulkDeleteMutation = trpc.market.bulkDeleteListings.useMutation();
   const restoreMutation = trpc.market.restoreDeletedListings.useMutation();
+  const utils = trpc.useUtils();
 
   const toggleSelectAll = () => {
     if (selectedIds.size === filteredListings.length) {
@@ -180,6 +181,8 @@ export default function Inventory() {
         
         setSelectedIds(new Set());
         await dashboardQuery.refetch();
+        // Invalidate market.feed cache so carousel updates
+        await utils.market.feed.invalidate();
         toast.success(`${selectedIds.size} item(s) deleted - Undo available for 30 seconds`);
       } catch (error) {
         toast.error("Failed to delete items");
@@ -202,6 +205,8 @@ export default function Inventory() {
         if (undoTimer) clearTimeout(undoTimer);
         setUndoTimer(null);
         await dashboardQuery.refetch();
+        // Invalidate market.feed cache so carousel updates
+        await utils.market.feed.invalidate();
         toast.success("Items restored successfully");
       } catch (error) {
         toast.error("Failed to restore items");
