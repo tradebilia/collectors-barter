@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { trpc } from '@/lib/trpc';
 import { useCallback } from 'react';
+import { X } from 'lucide-react';
 
 interface OnlineIndicatorProps {
   sellerId: number;
@@ -40,19 +41,27 @@ export function OnlineIndicator({ sellerId, className = '' }: OnlineIndicatorPro
     return null;
   }
 
-  if (!isOnline) {
-    return null;
+  if (isOnline) {
+    return (
+      <div className={`flex items-center gap-1.5 ${className}`}>
+        {/* Green dot indicator */}
+        <div className="relative flex h-2.5 w-2.5">
+          <span className="absolute inline-flex h-full w-full rounded-full bg-green-500 animate-pulse"></span>
+          <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
+        </div>
+        {/* "Member Online" text */}
+        <span className="text-[9px] font-medium text-green-600">Member Online</span>
+      </div>
+    );
   }
 
+  // Offline state
   return (
     <div className={`flex items-center gap-1.5 ${className}`}>
-      {/* Green dot indicator */}
-      <div className="relative flex h-2.5 w-2.5">
-        <span className="absolute inline-flex h-full w-full rounded-full bg-green-500 animate-pulse"></span>
-        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
-      </div>
-      {/* "Member Online" text */}
-      <span className="text-[9px] font-medium text-green-600">Member Online</span>
+      {/* Red X indicator */}
+      <X className="h-2.5 w-2.5 text-red-500" strokeWidth={3} />
+      {/* "Member Offline" text */}
+      <span className="text-[9px] font-medium text-red-500">Member Offline</span>
     </div>
   );
 }

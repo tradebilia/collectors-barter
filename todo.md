@@ -1374,3 +1374,9 @@ The application is fully functional with all core features working correctly.
 - [x] Updated logout procedure to clear lastActivityAt timestamp
 - [x] Enhanced OnlineIndicator component with cache invalidation and faster refetch
 - [ ] Verify fix works after AdminTavani logs out again
+
+
+## Member Offline Indicator
+- [x] Updated OnlineIndicator component to show Member Offline with red X icon
+- [ ] Debug why Member Offline indicator not displaying for offline users (still shows Member Online)
+- [ ] Verify server is returning correct isOnline status for offline users
