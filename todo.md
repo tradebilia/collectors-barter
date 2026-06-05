@@ -1120,3 +1120,14 @@ The application is fully functional with all core features working correctly.
 - [x] Verify carousel invalidates cache when items are deleted
 - [x] Test that deleted items disappear from carousel immediately
 - [x] Added utils.market.feed.invalidate() after bulk delete and restore operations
+
+
+## Admin Dashboard - New User Columns (June 5, 2026)
+
+- [x] Add "Items Listed" column to show count of active listings per user
+- [x] Add "Online Status" column to show if user is currently logged in
+- [x] Implement backend query to count active listings per user
+- [x] Implement backend query to track user online status
+- [x] Update AdminDashboard UI to display new columns
+- [x] Test new columns with real user data
+- [x] Admin Dashboard columns feature complete and tested

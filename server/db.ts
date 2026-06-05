@@ -326,7 +326,7 @@ export async function getSiteStatistics() {
   // Get total registered members (all users with accounts)
   const totalCollectorsResult = await db
     .select({ value: sql<number>`count(*)` })
-    .from(userProfiles);
+    .from(users);
 
   // Get total value of all active listings (sum of estimatedValue)
   const totalValueResult = await db

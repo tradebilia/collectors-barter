@@ -839,6 +839,8 @@ export const appRouter = router({
     getAllUsers: protectedProcedure.query(async ({ ctx }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
       const db = await requireDb();
+      
+      // Get all users with their profile info
       const allUsers = await db.select({
         id: users.id,
         username: users.username,
@@ -848,6 +850,7 @@ export const appRouter = router({
         email: users.email,
         role: users.role,
         createdAt: users.createdAt,
+        lastActivityAt: users.lastActivityAt,
         contactFullName: userProfiles.contactFullName,
         contactEmail: userProfiles.contactEmail,
         contactPhone: userProfiles.contactPhone,
@@ -866,6 +869,7 @@ export const appRouter = router({
         email: string | null;
         role: string;
         createdAt: Date;
+        lastActivityAt: Date;
         contactFullName: string | null;
         contactEmail: string | null;
         contactPhone: string | null;
@@ -875,7 +879,28 @@ export const appRouter = router({
         contactZipCode: string | null;
         contactCountry: string | null;
       }>;
-      return allUsers;
+      
+      // Get active listings count for each user
+      const listingCounts = await db.select({
+        userId: listings.ownerId,
+        count: sql<number>`COUNT(*)`
+      }).from(listings)
+        .where(eq(listings.status, 'active'))
+        .groupBy(listings.ownerId);
+      
+      // Create a map for quick lookup
+      const countMap = new Map(listingCounts.map(lc => [lc.userId, lc.count]));
+      
+      // Add items count and online status to each user
+      const ONLINE_TIMEOUT = 5 * 60 * 1000; // 5 minutes
+      const now = Date.now();
+      
+      return allUsers.map(user => ({
+        ...user,
+        itemsListed: countMap.get(user.id) || 0,
+        isOnline: (now - user.lastActivityAt.getTime()) < ONLINE_TIMEOUT,
+      }));
+      
     }),
     deleteUser: protectedProcedure
       .input(z.object({ userId: z.number().int().positive() }))
@@ -934,16 +959,21 @@ export const appRouter = router({
         
         // Log the deletion
         console.log(`[deleteUser] Inserting into deletedAccounts...`);
-        await db.insert(deletedAccounts).values({
-          userId: input.userId,
-          username: user.username,
-          email: user.email || null,
-          displayName: profile?.displayName || user.displayName || null,
-          firstName: profile?.firstName || null,
-          lastName: profile?.lastName || null,
-          deletedBy: ctx.user.id,
-          reason: 'Admin deletion',
-        } as any);
+        try {
+          await db.insert(deletedAccounts).values({
+            userId: input.userId,
+            username: user.username || `user_${input.userId}`,
+            email: user.email || null,
+            displayName: profile?.displayName || user.displayName || null,
+            firstName: profile?.firstName || null,
+            lastName: profile?.lastName || null,
+            deletedBy: ctx.user.id,
+            reason: 'Admin deletion',
+          } as any);
+        } catch (err) {
+          console.log(`[deleteUser] Error inserting into deletedAccounts:`, err);
+          throw err;
+        }
         
         // Delete user profile
         console.log(`[deleteUser] Deleting profile...`);

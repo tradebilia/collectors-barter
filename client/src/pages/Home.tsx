@@ -186,7 +186,9 @@ export default function Home() {
   const [reviewDrafts, setReviewDrafts] = useState<Record<number, { rating: number; review: string }>>({});
   const [activeProposalId, setActiveProposalId] = useState<number | null>(null);
 
-  const marketplaceQuery = trpc.market.feed.useQuery({ category, condition, keyword });
+  const marketplaceQuery = trpc.market.feed.useQuery({ category, condition, keyword }, {
+    refetchOnWindowFocus: true,
+  });
   const siteStatisticsQuery = trpc.market.siteStatistics.useQuery(undefined, {
     refetchInterval: 300000, // Refetch every 5 minutes
   });

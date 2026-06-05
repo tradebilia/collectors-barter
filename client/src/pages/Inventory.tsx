@@ -182,7 +182,10 @@ export default function Inventory() {
         setSelectedIds(new Set());
         await dashboardQuery.refetch();
         // Invalidate market.feed cache so carousel updates
+        // Invalidate all market.feed queries regardless of parameters
         await utils.market.feed.invalidate();
+        // Also try to refetch with common default parameters
+        await utils.market.feed.refetch({ category: undefined, condition: undefined, keyword: "" }).catch(() => {});
         toast.success(`${selectedIds.size} item(s) deleted - Undo available for 30 seconds`);
       } catch (error) {
         toast.error("Failed to delete items");
@@ -207,6 +210,8 @@ export default function Inventory() {
         await dashboardQuery.refetch();
         // Invalidate market.feed cache so carousel updates
         await utils.market.feed.invalidate();
+        // Also try to refetch with common default parameters
+        await utils.market.feed.refetch({ category: undefined, condition: undefined, keyword: "" }).catch(() => {});
         toast.success("Items restored successfully");
       } catch (error) {
         toast.error("Failed to restore items");

@@ -209,12 +209,14 @@ export default function AdminDashboard() {
                           <th className="text-left py-2 px-4">Username</th>
                           <th className="text-left py-2 px-4">Email</th>
                           <th className="text-left py-2 px-4">Joined</th>
+                          <th className="text-left py-2 px-4">Items Listed</th>
+                          <th className="text-left py-2 px-4">Online Status</th>
                           <th className="text-left py-2 px-4">Role</th>
                           <th className="text-left py-2 px-4">Actions</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {usersQuery.data.map((u) => (
+                        {usersQuery.data.map((u: any) => (
                           <tr key={u.id} className="border-b border-border hover:bg-accent/50">
                             <td className="py-2 px-4 font-mono text-xs">{u.id}</td>
                             <td className="py-2 px-4">
@@ -237,6 +239,16 @@ export default function AdminDashboard() {
                             <td className="py-2 px-4">{u.contactEmail || "-"}</td>
                             <td className="py-2 px-4 text-xs">
                               {u.createdAt ? new Date(u.createdAt).toLocaleDateString() : "-"}
+                            </td>
+                            <td className="py-2 px-4 text-center font-semibold">
+                              {u.itemsListed || 0}
+                            </td>
+                            <td className="py-2 px-4">
+                              <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                                u.isOnline ? 'bg-green-500/20 text-green-700' : 'bg-gray-500/20 text-gray-700'
+                              }`}>
+                                {u.isOnline ? 'Online' : 'Offline'}
+                              </span>
                             </td>
                             <td className="py-2 px-4">
                               <span className={`px-2 py-1 rounded text-xs font-semibold ${
