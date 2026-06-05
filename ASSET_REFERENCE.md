@@ -329,3 +329,10 @@ All S3 assets are accessed via the `/manus-storage/` proxy path, which automatic
 - **Date**: 2026-06-05
 - **Changes**: Moved OnlineIndicator outside image container, positioned absolutely to prevent image cutoff
 - **Files Modified**: client/src/pages/CategoryPage.tsx, todo.md
+
+
+## Member Online Indicator Visibility Fix
+- **Commit**: 1870d4b
+- **Date**: 2026-06-05
+- **Changes**: Added relative positioning to Card component for absolute positioned OnlineIndicator
+- **Files Modified**: client/src/pages/CategoryPage.tsx, todo.md

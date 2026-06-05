@@ -574,7 +574,7 @@ export default function CategoryPage() {
                       <div className={`${viewMode === "list" ? "grid grid-cols-[auto_1fr] gap-4" : ""}`}>
                     {/* OnlineIndicator for grid view - positioned absolutely on top */}
                     {listing.ownerId && viewMode === "grid" && (
-                      <div className="absolute top-0 left-0 px-3 py-0.5 z-10">
+                      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10">
                         <OnlineIndicator sellerId={listing.ownerId} />
                       </div>
                     )}
