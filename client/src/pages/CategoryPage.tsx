@@ -565,19 +565,19 @@ export default function CategoryPage() {
                 <div className={viewMode === "grid" ? "grid gap-3 grid-cols-6" : "space-y-3"}>
                   {listings.map(listing => (
                   <>
-                    {listing.ownerId && viewMode === "list" && (
-                      <div className="px-3 py-0.5">
-                        <OnlineIndicator sellerId={listing.ownerId} />
-                      </div>
-                    )}
-                    <Card key={listing.id} className={`${viewMode === "list" ? "grid grid-cols-[auto_1fr] gap-4" : ""} ${viewMode === "list" ? "" : "overflow-hidden"} border bg-white border-gray-200 text-black ${isSportsCardsPage ? "rounded-md shadow-sm" : "rounded-[2rem]"}`}>
-                      {listing.ownerId && viewMode === "grid" && (
-                        <div className="px-3 py-0.5">
-                          <OnlineIndicator sellerId={listing.ownerId} />
-                        </div>
-                      )}
+                    <Card key={listing.id} className={`${viewMode === "list" ? "relative grid grid-cols-[auto_1fr] gap-4" : ""} ${viewMode === "list" ? "" : "overflow-hidden"} border bg-white border-gray-200 text-black ${isSportsCardsPage ? "rounded-md shadow-sm" : "rounded-[2rem]"}`}>
                     <Link href={`/listings/${listing.id}`} className={`overflow-hidden border-b border-current/10 ${viewMode === "list" ? "" : "block"} cursor-pointer hover:opacity-90 transition ${viewMode === "list" ? "w-32 flex-shrink-0" : ""} ${isSportsCardsPage ? "aspect-[7/9]" : "aspect-[4/5]"} bg-white p-0`}>
-                      <div className="h-full">
+                      <div className="h-full relative">
+                        {listing.ownerId && viewMode === "list" && (
+                          <div className="absolute top-0 left-0 px-3 py-0.5 z-10">
+                            <OnlineIndicator sellerId={listing.ownerId} />
+                          </div>
+                        )}
+                        {listing.ownerId && viewMode === "grid" && (
+                          <div className="px-3 py-0.5">
+                            <OnlineIndicator sellerId={listing.ownerId} />
+                          </div>
+                        )}
                         <img
                           src={resolveTradebiliaListingImage({ title: listing.title, category: listing.category, primaryPhotoUrl: listing.primaryPhotoUrl })}
                           alt={listing.title}
@@ -610,11 +610,7 @@ export default function CategoryPage() {
                             </div>
                             <p className="text-xs leading-relaxed opacity-80 mt-1 line-clamp-1">{listing.description}</p>
                           </div>
-                          <div className="flex flex-col items-end gap-2 flex-shrink-0">
-                            <button className="text-red-500 hover:text-red-600">
-                              <Heart className="h-5 w-5" />
-                            </button>
-                          </div>
+
                         </>
                       ) : (
                         <>
@@ -692,8 +688,7 @@ export default function CategoryPage() {
                             watchlistMutation.mutate({ listingId: listing.id });
                           }}
                         >
-                          <Heart className={`mr-2 h-4 w-4 ${listing.savedToWatchlist ? "fill-current" : ""}`} />
-                          {listing.savedToWatchlist ? "Saved" : "Watchlist"}
+                          <Heart className={`h-5 w-5 ${listing.savedToWatchlist ? "fill-red-500 text-red-500" : "text-red-500"}`} />
                         </Button>
                       </div>
                     </CardContent>
