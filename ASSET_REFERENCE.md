@@ -309,3 +309,9 @@ All S3 assets are accessed via the `/manus-storage/` proxy path, which automatic
 - Enhanced OnlineIndicator component to invalidate cache on mount and refetch every 10 seconds
 - Manually cleared AdminTavani's `lastActivityAt` in database to fix existing false positive
 - Prevents Member Online indicator from showing for logged-out users
+
+
+## Member Offline Indicator (Commit e0ff464)
+- Updated OnlineIndicator component to show "Member Offline" in red with red X icon when user is offline
+- Component logic updated but indicator not displaying correctly yet - server may not be returning correct isOnline status
+- Requires debugging to verify server-side online status detection is working properly
