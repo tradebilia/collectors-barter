@@ -1315,3 +1315,21 @@ The application is fully functional with all core features working correctly.
 - [x] Verified list view on Comics category page - content stays beside image
 - [x] Verified list view on Sports Cards category page - content stays beside image
 - [x] List view layout now perfectly matches eBay format across all category pages
+
+
+## Contact Page Refinements (June 5, 2026)
+
+- [x] Remove redundant red heart button from category page list view
+- [x] Modify Watchlist button to show only heart icon (red outline by default)
+- [x] Make Watchlist heart fill with red when saved (not just outline)
+- [x] Reposition Member Online indicator inside card without overlapping image
+- [x] Add hero section to Contact page similar to main page
+- [x] Use Contact_Us.svg as hero title image
+- [x] Update Contact page email from rich@tradebilia.com to admin@tradebilia.com
+- [x] Fix SVG display issue (original had CDN authentication error)
+- [x] Create new Contact_Us.svg with colorful arrows design
+- [x] Upload Contact_Us.svg to S3 webdev storage
+- [x] Change Contact page button colors from purple-pink gradient to blue
+- [x] Applied blue color to "Send Message" button
+- [x] Applied blue color to "admin@tradebilia.com" email link
+- [x] Verified Contact page displays correctly with new SVG and blue buttons
