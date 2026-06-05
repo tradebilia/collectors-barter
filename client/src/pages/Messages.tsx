@@ -11,6 +11,8 @@ import { trpc } from "@/lib/trpc";
 import { TRADEBILIA_LOGO_URL, tradebiliaCategories } from "@/lib/tradebilia";
 import { ArrowRightLeft, Loader2, MailOpen, MessageSquareText, Send, ShieldCheck, UsersRound } from "lucide-react";
 import { TopRightIcons } from "@/components/TopRightIcons";
+import { TopBar } from "@/components/TopBar";
+import { CategoryBar } from "@/components/CategoryBar";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Link } from "wouter";
@@ -185,6 +187,7 @@ export default function Messages() {
 
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,#0a0d22_0%,#121c48_26%,#ede3d3_26%,#ede3d3_100%)] text-slate-950">
+      <TopBar />
       <header className="border-b border-white/10 bg-[#00143A] text-white" style={{
         backgroundImage: 'url(/manus-storage/Mainpage_9b45311d.jpg)',
         backgroundSize: 'cover',
@@ -192,20 +195,10 @@ export default function Messages() {
         backgroundRepeat: 'no-repeat'
       }}>
         <div className="absolute inset-0 pointer-events-none" />
-        <div className="container relative py-3 lg:py-4">
-          <div className="flex items-center justify-between gap-3">
-            <Link href="/" className="rounded-lg border border-white/30 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/20">
-              Home
-            </Link>
-            <TopRightIcons className="flex items-center gap-3 md:gap-4" iconColor="text-white/70" />
-          </div>
-        </div>
         <div className="container py-8 lg:py-10">
           <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-4xl">
               <img src="/images/Inbox.svg" alt="Inbox" className="h-auto w-full max-w-[34rem]" />
-              
-              
             </div>
             <div className="grid gap-3 sm:grid-cols-3 lg:w-[24rem]">
               {[
@@ -221,20 +214,8 @@ export default function Messages() {
             </div>
           </div>
         </div>
-        <nav className="border-t border-white/10 bg-black/35 backdrop-blur-sm">
-          <div className="container grid overflow-hidden md:grid-cols-5 xl:grid-cols-10">
-            {tradebiliaCategories.map(category => (
-              <Link
-                key={category.value}
-                href={`/category/${category.value}`}
-                className="border-b border-r border-white/10 px-4 py-4 text-center text-xs font-semibold uppercase tracking-[0.16em] text-white transition hover:bg-white/10 lg:text-[11px]"
-              >
-                {category.label}
-              </Link>
-            ))}
-          </div>
-        </nav>
       </header>
+      <CategoryBar />
 
       <main className="container py-8 lg:py-10">
         <div className="grid gap-6 xl:grid-cols-[240px_340px_minmax(0,1fr)]">
