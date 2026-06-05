@@ -1153,3 +1153,5 @@ The application is fully functional with all core features working correctly.
 - [x] Reduce padding around Member Online indicator in carousel
 - [x] Changed from pt-1 pb-0.5 to pt-0 pb-0 to eliminate wasted space
 - [x] Verified carousel cards are now more compact with larger images
+- [x] Further reduced vertical spacing above/below "Member Online" text to py-0.5
+- [x] Added negative margin to image container (-mt-1) to close gap between indicator and image
