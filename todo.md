@@ -1333,3 +1333,12 @@ The application is fully functional with all core features working correctly.
 - [x] Applied blue color to "Send Message" button
 - [x] Applied blue color to "admin@tradebilia.com" email link
 - [x] Verified Contact page displays correctly with new SVG and blue buttons
+
+
+## TopBar Search Bar Centering (June 5, 2026)
+
+- [x] Center the search bar in the TopBar
+- [x] Position logo absolutely on the left
+- [x] Position icons/auth absolutely on the right
+- [x] Search bar now takes center stage with max-w-2xl constraint
+- [x] Verified centered layout on homepage
