@@ -1,5 +1,5 @@
 import { TopRightIcons } from "@/components/TopRightIcons";
-import { Search, LogOut, Shield } from "lucide-react";
+import { Search, LogOut } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -61,11 +61,6 @@ export function TopBar({
         {/* Icons and Auth on right */}
         <div className="flex items-center gap-3 md:gap-4 flex-shrink-0">
           <TopRightIcons iconColor="text-white/70" />
-          {isAuthenticated && user?.role === "admin" && (
-            <Link href="/admin" className="p-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 transition" title="Admin Dashboard">
-              <Shield className="h-5 w-5 text-white" />
-            </Link>
-          )}
           {isAuthenticated ? (
             <Button
               onClick={logout}

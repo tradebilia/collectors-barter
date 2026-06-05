@@ -1155,3 +1155,12 @@ The application is fully functional with all core features working correctly.
 - [x] Verified carousel cards are now more compact with larger images
 - [x] Further reduced vertical spacing above/below "Member Online" text to py-0.5
 - [x] Added negative margin to image container (-mt-1) to close gap between indicator and image
+- [x] Aggressively reduced spacing with py-0 and -mb-2 negative margin
+
+## Admin Icon Consistency (June 5, 2026)
+
+- [x] Verify Admin icon appears on all pages for admin users
+- [x] Found Admin icon was only in TopBar, missing from pages with custom headers
+- [x] Moved Admin icon logic from TopBar to TopRightIcons component
+- [x] Removed duplicate Admin icon from TopBar
+- [x] Verified Admin icon now appears on all pages including Referral Request, Inventory, Messages, etc.

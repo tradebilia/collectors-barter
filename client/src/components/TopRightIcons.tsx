@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { Bell, Mail, Cog } from "lucide-react";
+import { Bell, Mail, Cog, Shield } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
@@ -45,6 +45,13 @@ export function TopRightIcons({ className = "flex items-center gap-3 md:gap-4", 
 
       {/* Icons */}
       <div className={`flex items-center gap-1 ${iconColor}`}>
+        {/* Admin Shield */}
+        {user?.role === "admin" && (
+          <Link href="/admin" className="p-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 transition" title="Admin Dashboard">
+            <Shield className="h-4 w-4 text-white" />
+          </Link>
+        )}
+
         {/* Notifications Bell */}
         <Link href="/notifications" className="relative transition hover:opacity-80" title="Notifications">
           <Bell className="h-4 w-4" />
