@@ -1275,8 +1275,11 @@ The application is fully functional with all core features working correctly.
 - [x] Image now on left with fixed width (w-32)
 - [x] All item details now on right side of image
 - [x] Removed details from appearing below the image
-- [x] Created compact 4-column grid for Condition, Seller, Trust, Status
-- [x] Title and description display above the details grid
+- [x] Changed details grid to horizontal flex layout
+- [x] Title and description display to right of image
+- [x] Details (Condition, Seller, Trust, Status) in single horizontal row
+- [x] Action buttons (message, watchlist) on far right
+- [x] All content stays on single horizontal line
 - [x] Verified list view on Comics category page (BEFORE/AFTER screenshots)
 - [x] Verified list view on Sports Cards category page (BEFORE/AFTER screenshots)
-- [x] List view layout now consistent across all category pages
+- [x] List view layout now matches eBay format across all category pages

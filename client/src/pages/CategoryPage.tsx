@@ -585,7 +585,7 @@ export default function CategoryPage() {
                         />
                       </div>
                     </Link>
-                    <CardContent className={`${viewMode === "list" ? "flex-1 flex flex-col justify-between p-3 min-w-0" : `space-y-1 ${isSportsCardsPage ? "p-1.5 text-[#153746]" : "p-5"}`}`}>
+                    <CardContent className={`${viewMode === "list" ? "flex-1 flex items-center justify-between gap-4 p-3 min-w-0" : `space-y-1 ${isSportsCardsPage ? "p-1.5 text-[#153746]" : "p-5"}`}`}>
                       {viewMode === "list" ? (
                         <>
                           <div className="flex-1 min-w-0">
@@ -595,7 +595,7 @@ export default function CategoryPage() {
                             </Link>
                             <p className="text-xs leading-relaxed opacity-80 mt-1 line-clamp-1">{listing.description}</p>
                           </div>
-                          <div className="grid grid-cols-4 gap-2 text-xs mt-2">
+                          <div className="flex items-center gap-4 text-xs flex-shrink-0">
                             <div>
                               <p className="uppercase tracking-[0.1em] opacity-60 text-[0.7rem]">Condition</p>
                               <p className="font-semibold truncate">{listing.conditionLabel}</p>
