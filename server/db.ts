@@ -1496,21 +1496,25 @@ export async function updateListing(
     })
     .where(eq(listings.id, input.listingId));
 
-  // Delete existing photos
-  await db.delete(listingPhotos).where(eq(listingPhotos.listingId, input.listingId));
+  // Only update photos if new ones are provided
+  if (input.photos.length > 0) {
+    // Delete existing photos
+    await db.delete(listingPhotos).where(eq(listingPhotos.listingId, input.listingId));
 
-  // Upload new photos
-  for (let index = 0; index < input.photos.length; index += 1) {
-    const photo = input.photos[index]!;
-    const uploaded = await uploadImage("listings", user.id, photo);
-    await db.insert(listingPhotos).values({
-      listingId: input.listingId,
-      fileKey: uploaded.key,
-      imageUrl: uploaded.url,
-      altText: `${input.title.trim()} photo ${index + 1}`,
-      sortOrder: index,
-    });
+    // Upload new photos
+    for (let index = 0; index < input.photos.length; index += 1) {
+      const photo = input.photos[index]!;
+      const uploaded = await uploadImage("listings", user.id, photo);
+      await db.insert(listingPhotos).values({
+        listingId: input.listingId,
+        fileKey: uploaded.key,
+        imageUrl: uploaded.url,
+        altText: `${input.title.trim()} photo ${index + 1}`,
+        sortOrder: index,
+      });
+    }
   }
+  // If no new photos provided, keep existing photos
 
   return getDashboardData(user);
 }

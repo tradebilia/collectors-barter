@@ -210,7 +210,7 @@ export default function AddInventory() {
   
   const createListingMutation = trpc.market.createListing.useMutation();
   const saveDraftMutation = trpc.market.saveDraft.useMutation();
-  const getListingDetailQuery = trpc.market.getListingDetail.useQuery(
+  const getListingDetailQuery = trpc.market.listingDetail.useQuery(
     { listingId: params.listingId ? parseInt(params.listingId) : 0 },
     { enabled: isEditMode }
   );
@@ -231,6 +231,59 @@ export default function AddInventory() {
   //     }
   //   }
   // }, []);
+
+  // Load existing listing data when in edit mode
+  useEffect(() => {
+    if (isEditMode && getListingDetailQuery.data?.listing) {
+      const listing = getListingDetailQuery.data.listing;
+      
+      // Parse description to extract grading info
+      const descriptionLines = listing.description.split('\n');
+      const gradingInfo: Record<string, string> = {};
+      let graderCompany = 'Raw';
+      let certificationNumber = '';
+      let grade = '9.0';
+      let additionalNotes = '';
+      
+      descriptionLines.forEach(line => {
+        if (line.startsWith('Grading Company: ')) {
+          graderCompany = line.replace('Grading Company: ', '');
+        } else if (line.startsWith('Certification Number: ')) {
+          certificationNumber = line.replace('Certification Number: ', '');
+        } else if (line.startsWith('Grade: ')) {
+          grade = line.replace('Grade: ', '');
+        } else if (line.startsWith('Additional Notes: ')) {
+          additionalNotes = line.replace('Additional Notes: ', '');
+        } else if (line.includes(': ')) {
+          const [key, value] = line.split(': ', 2);
+          gradingInfo[key] = value;
+        }
+      });
+      
+      // Populate form with listing data
+      setDraft({
+        category: listing.category as ListingCategory,
+        title: listing.title,
+        value: listing.estimatedValue || '',
+        graderCompany,
+        certificationNumber,
+        grade,
+        categoryFields: gradingInfo,
+        additionalNotes,
+      });
+      
+      // Load existing photos
+      if (listing.photos && listing.photos.length > 0) {
+        const existingPhotos: UploadedImage[] = listing.photos.map(photo => ({
+          name: photo.altText || 'photo',
+          type: 'image/jpeg',
+          contentBase64: '', // Empty for existing photos
+          previewUrl: photo.imageUrl,
+        }));
+        setPhotos(existingPhotos);
+      }
+    }
+  }, [isEditMode, getListingDetailQuery.data]);
 
   const primaryPhoto = useMemo(() => photos[0] ?? null, [photos]);
   const currentCategoryFields = categoryFieldPresets[draft.category] || [];
@@ -289,6 +342,8 @@ export default function AddInventory() {
     }
 
     if (isEditMode && params.listingId) {
+      // In edit mode, only send newly uploaded photos (those with contentBase64)
+      const newPhotos = reorderedPhotos.filter(p => p.contentBase64);
       await updateListingMutation.mutateAsync({
         listingId: parseInt(params.listingId),
         title: draft.title,
@@ -296,7 +351,7 @@ export default function AddInventory() {
         condition: mapGradeToCondition(draft.grade),
         description: descriptionSections,
         estimatedValue: draft.value ? parseFloat(draft.value) : 0,
-        photos: reorderedPhotos,
+        photos: newPhotos,
       });
       toast.success("Listing updated successfully!");
       navigate("/inventory");
