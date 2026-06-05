@@ -41,8 +41,8 @@ export function OnlineIndicator({ sellerId, className = '' }: OnlineIndicatorPro
         <span className="absolute inline-flex h-full w-full rounded-full bg-green-500 animate-pulse"></span>
         <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
       </div>
-      {/* "Online" text */}
-      <span className="text-[9px] font-medium text-green-600">Online</span>
+      {/* "Member Online" text */}
+      <span className="text-[9px] font-medium text-green-600">Member Online</span>
     </div>
   );
 }
