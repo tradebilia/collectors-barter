@@ -1101,14 +1101,14 @@ The application is fully functional with all core features working correctly.
 
 - [x] Refactor CategoryPage.tsx to have independent positioning for all elements except title
 - [x] Extract common layout (statistics bubbles, Exchange text, divider line, eyebrow text) into reusable component
-- [x] Ensure all non-title elements use absolute/fixed positioning for uniform placement across all pages
-- [x] Verify statistics bubbles position is identical across all category pages
-- [x] Verify "Exchange" text position is identical across all category pages
-- [x] Verify divider line position is identical across all category pages
-- [x] Verify eyebrow text position is identical across all category pages
-- [x] Test that changing divider line position affects only that element, not others
-- [x] Verify all 10 category pages display correctly with new layout structure
-- [x] Only title image should change per category; all other elements stay in same position
+- [ ] Ensure all non-title elements use absolute/fixed positioning for uniform placement across all pages
+- [ ] Verify statistics bubbles position is identical across all category pages
+- [ ] Verify "Exchange" text position is identical across all category pages
+- [ ] Verify divider line position is identical across all category pages
+- [ ] Verify eyebrow text position is identical across all category pages
+- [ ] Test that changing divider line position affects only that element, not others
+- [ ] Verify all 10 category pages display correctly with new layout structure
+- [ ] Only title image should change per category; all other elements stay in same position
 
 ## Photo Upload Bug Fix (June 5, 2026)
 
