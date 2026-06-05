@@ -1243,3 +1243,8 @@ The application is fully functional with all core features working correctly.
 - [x] Sports Cards no longer has beige gradient background
 - [x] Verified consistent white background on Sports Cards page
 - [x] Verified consistent white background on Comics page
+- [x] Removed conditional Card background styling (theme.cardClassName)
+- [x] All categories now use bg-white consistently
+- [x] Sports Cards no longer has beige background above/below image
+- [x] Verified pure white background on Sports Cards page (AFTER screenshot)
+- [x] Verified pure white background on Comics page (AFTER screenshot)
