@@ -1238,3 +1238,8 @@ The application is fully functional with all core features working correctly.
 - [x] Verified entire item is visible on Comics category page (Amazing Spider-Man)
 - [x] Verified entire item is visible on Sports Cards category page (Mark McGwire)
 - [x] Took before and after screenshots to visually verify the fix
+- [x] Removed conditional background styling from Link element
+- [x] All categories now use white background instead of category-specific backgrounds
+- [x] Sports Cards no longer has beige gradient background
+- [x] Verified consistent white background on Sports Cards page
+- [x] Verified consistent white background on Comics page
