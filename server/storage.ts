@@ -68,7 +68,28 @@ export async function storagePut(
     throw new Error(`Storage upload to S3 failed (${uploadResp.status})`);
   }
 
-  return { key, url: `/manus-storage/${key}` };
+  // Get signed GET URL directly from Forge to avoid proxy issues
+  const getUrl = new URL("v1/storage/presign/get", forgeUrl + "/");
+  getUrl.searchParams.set("path", key);
+
+  const getResp = await fetch(getUrl, {
+    headers: { Authorization: `Bearer ${forgeKey}` },
+  });
+
+  if (!getResp.ok) {
+    const msg = await getResp.text().catch(() => getResp.statusText);
+    console.error(`[storagePut] Failed to get signed URL: ${getResp.status} ${msg}`);
+    // Fallback to proxy URL if signed URL fails
+    return { key, url: `/manus-storage/${key}` };
+  }
+
+  const { url: signedUrl } = (await getResp.json()) as { url: string };
+  if (!signedUrl) {
+    console.error(`[storagePut] Empty signed URL from Forge`);
+    return { key, url: `/manus-storage/${key}` };
+  }
+
+  return { key, url: signedUrl };
 }
 
 export async function storageGet(relKey: string): Promise<{ key: string; url: string }> {
