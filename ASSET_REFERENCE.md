@@ -336,3 +336,10 @@ All S3 assets are accessed via the `/manus-storage/` proxy path, which automatic
 - **Date**: 2026-06-05
 - **Changes**: Added relative positioning to Card component for absolute positioned OnlineIndicator
 - **Files Modified**: client/src/pages/CategoryPage.tsx, todo.md
+
+
+## Centered Member Online Indicator
+- **Commit**: ca67d5f
+- **Date**: 2026-06-05
+- **Changes**: Centered Member Online indicator on grid view cards using absolute positioning with transform
+- **Files Modified**: client/src/pages/CategoryPage.tsx, todo.md
