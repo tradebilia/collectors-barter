@@ -1187,3 +1187,10 @@ The application is fully functional with all core features working correctly.
 - [x] Updated Movies category Listing Title placeholder
 - [x] Updated Item Title placeholder to show examples
 - [x] Verified form displays clear distinction between Item Title and Listing Title
+
+## Category Page Image Cutoff Fix (June 5, 2026)
+
+- [x] Reduce spacing around Member Online indicator in category page item cards
+- [x] Changed padding from pt-2 pb-1 to py-0.5 (1px above and below)
+- [x] Verified images now display fully without being cut off
+- [x] Tested on Comics category page with newly added comic

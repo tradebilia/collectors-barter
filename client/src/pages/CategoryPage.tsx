@@ -566,7 +566,7 @@ export default function CategoryPage() {
                   {listings.map(listing => (
                   <Card key={listing.id} className={`overflow-hidden border ${theme.cardClassName} ${isSportsCardsPage ? "rounded-md shadow-sm" : "rounded-[2rem]"} ${viewMode === "list" ? "flex gap-4" : ""}`}>
                     {listing.ownerId && (
-                      <div className="px-3 pt-2 pb-1">
+                      <div className="px-3 py-0.5">
                         <OnlineIndicator sellerId={listing.ownerId} />
                       </div>
                     )}
