@@ -1176,3 +1176,14 @@ The application is fully functional with all core features working correctly.
 - [x] Add response time expectation (24-48 hours)
 - [x] Add Contact route to App.tsx
 - [x] Verified Contact page loads correctly when clicking the sidebar link
+- [x] Verified Contact page is accessible to non-members
+
+## Add Inventory Form Title Field Clarification (June 5, 2026)
+
+- [x] Rename first Title field to Item Title (base item name)
+- [x] Rename category-specific title fields to Listing Title (full listing with details)
+- [x] Updated Comics category Listing Title placeholder
+- [x] Updated Video Games category Listing Title placeholder
+- [x] Updated Movies category Listing Title placeholder
+- [x] Updated Item Title placeholder to show examples
+- [x] Verified form displays clear distinction between Item Title and Listing Title
