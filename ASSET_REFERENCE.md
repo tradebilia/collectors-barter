@@ -322,3 +322,10 @@ All S3 assets are accessed via the `/manus-storage/` proxy path, which automatic
 - **Date**: 2026-06-05
 - **Changes**: Moved Per page dropdown next to Best Match dropdown, removed extra spacing to prevent bottom cutoff
 - **Files Modified**: client/src/pages/CategoryPage.tsx, todo.md
+
+
+## Grid View Image Cutoff Fix
+- **Commit**: 4746e9f
+- **Date**: 2026-06-05
+- **Changes**: Moved OnlineIndicator outside image container, positioned absolutely to prevent image cutoff
+- **Files Modified**: client/src/pages/CategoryPage.tsx, todo.md
