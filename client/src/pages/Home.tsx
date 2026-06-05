@@ -489,7 +489,7 @@ export default function Home() {
             {[
               ["users", "Total Members", siteStatisticsQuery.data?.totalMembers ? `${siteStatisticsQuery.data.totalMembers}` : "0"],
               ["list", "Active Listings", siteStatisticsQuery.data?.totalItems ? `${siteStatisticsQuery.data.totalItems.toLocaleString()}` : "0"],
-              ["dollar", "Total Items Value", siteStatisticsQuery.data?.totalValue ? `$${siteStatisticsQuery.data.totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "$0"],
+              ["dollar", "Total Items Value", siteStatisticsQuery.data?.totalValue ? `$${Math.floor(siteStatisticsQuery.data.totalValue).toLocaleString('en-US')}` : "$0"],
               ["handshake", "Successful Trades", siteStatisticsQuery.data?.totalTrades ? `${siteStatisticsQuery.data.totalTrades}` : "0"],
               ["trending", "Member Growth", "+15%"],
             ].map(([iconType, label, value]) => {
