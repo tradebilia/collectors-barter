@@ -61,11 +61,11 @@ export function RecentlyAddedCarousel({
               onClick={() => item.href && (window.location.href = item.href)}
             >
               {item.ownerId && (
-                <div className="px-3 py-0.5">
+                <div className="px-3 py-0 -mb-2">
                   <OnlineIndicator sellerId={item.ownerId} />
                 </div>
               )}
-              <div className="aspect-[0.75] overflow-hidden bg-slate-100 relative group/img -mt-1">
+              <div className="aspect-[0.75] overflow-hidden bg-slate-100 relative group/img">
                 <img
                   src={item.imageUrl}
                   alt={item.title}
