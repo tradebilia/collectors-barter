@@ -11,7 +11,7 @@ import { TopBar } from "@/components/TopBar";
 import { CategoryBar } from "@/components/CategoryBar";
 import { Mail } from "lucide-react";
 
-const CONTACT_HERO_URL = "/manus-storage/Contact_Us_6574da5f.svg";
+const CONTACT_HERO_URL = "/manus-storage/Contact_Us_8b246a6c.svg";
 
 export default function Contact() {
   const [name, setName] = useState("");
@@ -146,7 +146,7 @@ export default function Contact() {
                 <Button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+                  className="w-full bg-blue-600 hover:bg-blue-700"
                 >
                   {isSubmitting ? "Preparing..." : "Send Message"}
                 </Button>
@@ -169,7 +169,7 @@ export default function Contact() {
                 </p>
                 <a
                   href="mailto:admin@tradebilia.com"
-                  className="inline-block px-4 py-2 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-medium transition"
+                  className="inline-block px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium transition"
                 >
                   admin@tradebilia.com
                 </a>
