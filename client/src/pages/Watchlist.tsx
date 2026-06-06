@@ -131,7 +131,7 @@ export default function Watchlist() {
 
           <Card className="rounded-[2rem] border-white/10 bg-slate-950/65 text-white shadow-[0_24px_70px_rgba(0,0,0,0.35)] backdrop-blur">
             <CardHeader className="pb-4">
-              <CardTitle className="text-3xl sm:text-4xl">Watchlist management</CardTitle>
+              <CardTitle className="font-serif text-[2.45rem] font-medium tracking-[-0.035em] sm:text-[2.8rem] text-white">Watchlist management</CardTitle>
               <CardDescription className="max-w-2xl text-base leading-7 text-white/65">
                 This page turns the Watchlist from an embedded dashboard section into a full page that feels aligned with the rest of the collector workspace.
               </CardDescription>
