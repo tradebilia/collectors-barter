@@ -23,6 +23,7 @@ import {
   userReports,
   watchlistEntries,
   itemInquiries,
+  inquiryReplies,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 import { storagePut } from "./storage";
@@ -2243,10 +2244,7 @@ export async function getInquiriesByUser(userId: number, limit: number = 50, off
     .from(itemInquiries)
     .innerJoin(users, eq(itemInquiries.senderId, users.id))
     .where(
-      or(
-        eq(itemInquiries.senderId, userId),
-        eq(itemInquiries.recipientId, userId)
-      )
+      eq(itemInquiries.recipientId, userId)
     )
     .orderBy(desc(itemInquiries.createdAt))
     .limit(limit)
@@ -2275,4 +2273,58 @@ export async function markInquiryAsRead(inquiryId: number, userId: number) {
     .where(eq(itemInquiries.id, inquiryId));
   
   return { success: true };
+}
+
+export async function sendInquiryReply(inquiryId: number, senderId: number, message: string) {
+  const db = await requireDb();
+  
+  // Verify the inquiry exists and the sender is the recipient
+  const inquiry = await db
+    .select({ recipientId: itemInquiries.recipientId })
+    .from(itemInquiries)
+    .where(eq(itemInquiries.id, inquiryId))
+    .limit(1);
+  
+  if (!inquiry[0] || inquiry[0].recipientId !== senderId) {
+    throw new Error("Unauthorized: You can only reply to inquiries sent to you");
+  }
+  
+  await db
+    .insert(inquiryReplies)
+    .values({
+      inquiryId,
+      senderId,
+      message,
+    });
+  
+  // Fetch the newly created reply to get the ID
+  const newReply = await db
+    .select()
+    .from(inquiryReplies)
+    .where(and(eq(inquiryReplies.inquiryId, inquiryId), eq(inquiryReplies.senderId, senderId)))
+    .orderBy(desc(inquiryReplies.createdAt))
+    .limit(1);
+  
+  return newReply[0] || { id: 0, inquiryId, senderId, message, createdAt: new Date(), updatedAt: new Date() };
+}
+
+export async function getRepliesByInquiry(inquiryId: number) {
+  const db = await requireDb();
+  
+  const replies = await db
+    .select({
+      id: inquiryReplies.id,
+      inquiryId: inquiryReplies.inquiryId,
+      senderId: inquiryReplies.senderId,
+      senderName: users.displayName,
+      senderAvatarUrl: users.avatarUrl,
+      message: inquiryReplies.message,
+      createdAt: inquiryReplies.createdAt,
+    })
+    .from(inquiryReplies)
+    .innerJoin(users, eq(inquiryReplies.senderId, users.id))
+    .where(eq(inquiryReplies.inquiryId, inquiryId))
+    .orderBy(asc(inquiryReplies.createdAt));
+  
+  return replies;
 }

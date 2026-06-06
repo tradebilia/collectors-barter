@@ -39,6 +39,8 @@ import {
   getUnreadInquiries,
   getInquiriesByUser,
   markInquiryAsRead,
+  sendInquiryReply,
+  getRepliesByInquiry,
 } from "./db";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -228,11 +230,11 @@ export const appRouter = router({
       } as const;
     }),
     unreadCounts: protectedProcedure.query(async ({ ctx }) => {
-      const unreadNotifications = await getUnreadNotificationCount(ctx.user.id);
-      const unreadMessages = await getUnreadMessageCount(ctx.user.id);
+      const unreadNotificationsResult = await getUnreadNotificationCount(ctx.user.id);
+      const unreadMessagesResult = await getUnreadMessageCount(ctx.user.id);
       return {
-        unreadNotifications,
-        unreadMessages,
+        unreadNotifications: unreadNotificationsResult?.count ?? 0,
+        unreadMessages: unreadMessagesResult?.count ?? 0,
       };
     }),
   }),
@@ -794,6 +796,16 @@ export const appRouter = router({
       .input(z.object({ inquiryId: z.number().int().positive() }))
       .mutation(async ({ ctx, input }) => {
         return markInquiryAsRead(input.inquiryId, ctx.user.id);
+      }),
+    sendReply: protectedProcedure
+      .input(z.object({ inquiryId: z.number().int().positive(), message: z.string().min(1).max(5000) }))
+      .mutation(async ({ ctx, input }) => {
+        return sendInquiryReply(input.inquiryId, ctx.user.id, input.message);
+      }),
+    getReplies: protectedProcedure
+      .input(z.object({ inquiryId: z.number().int().positive() }))
+      .query(async ({ input }) => {
+        return getRepliesByInquiry(input.inquiryId);
       }),
   }),
   ebay: router({

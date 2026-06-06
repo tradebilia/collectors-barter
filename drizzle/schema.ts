@@ -471,3 +471,22 @@ export const itemInquiries = mysqlTable(
 
 export type ItemInquiry = typeof itemInquiries.$inferSelect;
 export type InsertItemInquiry = typeof itemInquiries.$inferInsert;
+
+export const inquiryReplies = mysqlTable(
+  "inquiryReplies",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    inquiryId: int("inquiryId").notNull().references(() => itemInquiries.id),
+    senderId: int("senderId").notNull().references(() => users.id),
+    message: text("message").notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  table => ({
+    inquiryIdx: index("inquiryReplies_inquiry_idx").on(table.inquiryId),
+    senderIdx: index("inquiryReplies_sender_idx").on(table.senderId),
+  }),
+);
+
+export type InquiryReply = typeof inquiryReplies.$inferSelect;
+export type InsertInquiryReply = typeof inquiryReplies.$inferInsert;

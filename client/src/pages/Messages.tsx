@@ -61,6 +61,15 @@ export default function Messages() {
     onError: error => toast.error(error.message),
   });
 
+  const sendReplyMutation = trpc.market.sendReply.useMutation({
+    onSuccess: async () => {
+      setMessageDraft("");
+      await utils.market.getReplies.invalidate();
+    },
+    onError: error => toast.error(error.message),
+  });
+
+
   useEffect(() => {
     if (!user?.id) return;
     const loadThreads = () => setDirectThreads(listDirectThreads(user.id));
@@ -155,18 +164,44 @@ export default function Messages() {
       setActiveThreadKey(`direct-${directParam}`);
       return;
     }
-    if (!filteredThreads.length) {
+    if (!filteredThreads.length && !filteredInquiries.length) {
       setActiveThreadKey(null);
       return;
     }
-    if (!activeThreadKey || !filteredThreads.some(item => item.key === activeThreadKey)) {
-      setActiveThreadKey(filteredThreads[0].key);
+    if (!activeThreadKey) {
+      if (filteredInquiries.length) {
+        setActiveThreadKey(`inquiry-${filteredInquiries[0].id}`);
+      } else if (filteredThreads.length) {
+        setActiveThreadKey(filteredThreads[0].key);
+      }
     }
-  }, [activeThreadKey, filteredThreads]);
+  }, [activeThreadKey, filteredThreads, filteredInquiries]);
+
 
   const activeThread = filteredThreads.find(thread => thread.key === activeThreadKey) ?? null;
+  const activeInquiry = activeThreadKey?.startsWith('inquiry-') ? filteredInquiries.find(i => `inquiry-${i.id}` === activeThreadKey) : null;
   const activePresence = activeThread ? presenceMap[activeThread.counterpartId] : null;
   const activeOnline = activePresence ? Date.now() - activePresence.updatedAt < 15000 : false;
+
+  const repliesQuery = trpc.market.getReplies.useQuery(
+    { inquiryId: activeInquiry?.id ?? 0 },
+    { enabled: isAuthenticated && !!activeInquiry }
+  );
+
+
+  const markInquiryAsReadMutation = trpc.market.markInquiryAsRead.useMutation({
+    onSuccess: async () => {
+      await utils.market.getInquiries.invalidate();
+    },
+    onError: error => toast.error(error.message),
+  });
+
+  useEffect(() => {
+    if (activeInquiry && !activeInquiry.isRead) {
+      markInquiryAsReadMutation.mutate({ inquiryId: activeInquiry.id });
+    }
+  }, [activeInquiry?.id]);
+
 
   if (!isAuthenticated) {
     return (
@@ -326,7 +361,78 @@ export default function Messages() {
           </section>
 
           <section className="rounded-[2rem] border border-slate-300/70 bg-white/86 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-sm">
-            {activeThread ? (
+            {activeInquiry ? (
+              <div className="flex h-[70vh] flex-col">
+                <div className="border-b border-slate-200 px-6 py-5">
+                  <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                    <div className="flex items-center gap-4">
+                      <Avatar className="h-14 w-14 border border-slate-200">
+                        <AvatarImage src={activeInquiry.senderAvatarUrl ?? undefined} alt={activeInquiry.senderName || "Collector"} />
+                        <AvatarFallback>{initials(activeInquiry.senderName || "Collector")}</AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <h2 className="text-3xl font-semibold text-slate-900">{activeInquiry.senderName || `Collector ${activeInquiry.senderId}`}</h2>
+                        <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-slate-600">
+                          <Badge variant="outline" className="rounded-full capitalize">Item Inquiry</Badge>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <ScrollArea className="flex-1 px-6 py-5">
+                  <div className="space-y-4">
+                    <div className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4 text-sm leading-7 text-slate-600">
+                      <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Subject</p>
+                      <p className="mt-2 font-semibold text-slate-900">{activeInquiry.subject}</p>
+                    </div>
+                    <div className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4 text-sm leading-7 text-slate-600">
+                      <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Message</p>
+                      <p className="mt-2 whitespace-pre-wrap text-slate-900">{activeInquiry.message}</p>
+                    </div>
+                    <div className="text-xs uppercase tracking-[0.18em] text-slate-500">
+                      {new Date(activeInquiry.createdAt).toLocaleString()}
+                    </div>
+
+                    {repliesQuery.data && repliesQuery.data.length > 0 && (
+                      <div className="mt-6 space-y-3 border-t border-slate-200 pt-4">
+                        <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Replies</p>
+                        {repliesQuery.data.map(reply => (
+                          <div key={reply.id} className="rounded-[1.5rem] border border-slate-200 bg-blue-50 p-4">
+                            <div className="flex items-center gap-2">
+                              <Avatar className="h-8 w-8 border border-slate-200">
+                                <AvatarImage src={reply.senderAvatarUrl ?? undefined} alt={reply.senderName || "Collector"} />
+                                <AvatarFallback>{initials(reply.senderName || "Collector")}</AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <p className="text-sm font-semibold text-slate-900">{reply.senderName || `Collector ${reply.senderId}`}</p>
+                                <p className="text-xs text-slate-500">{new Date(reply.createdAt).toLocaleString()}</p>
+                              </div>
+                            </div>
+                            <p className="mt-2 whitespace-pre-wrap text-sm text-slate-900">{reply.message}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </ScrollArea>
+
+                <div className="border-t border-slate-200 px-6 py-5">
+                  <div className="grid gap-3 lg:grid-cols-[1fr_auto]">
+                    <Input value={messageDraft} onChange={event => setMessageDraft(event.target.value)} placeholder="Reply to this inquiry..." className="h-12 bg-white" />
+                    <Button className="h-12 rounded-full px-6" disabled={!messageDraft.trim() || sendReplyMutation.isPending} onClick={() => {
+                      if (!activeInquiry || !user?.id) return;
+                      const trimmed = messageDraft.trim();
+                      if (!trimmed) return;
+                      sendReplyMutation.mutate({ inquiryId: activeInquiry.id, message: trimmed });
+                    }}>
+                      <Send className="mr-2 h-4 w-4" />
+                      Reply
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ) : activeThread ? (
               <div className="flex h-[70vh] flex-col">
                 <div className="border-b border-slate-200 px-6 py-5">
                   <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
