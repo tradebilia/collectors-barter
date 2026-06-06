@@ -69,15 +69,11 @@ export function TopRightIcons({ className = "flex items-center gap-3 md:gap-4", 
 
         {/* Messages Mail */}
         <Link href="/messages" className="relative transition hover:opacity-80" title="Messages">
-          {unreadMessages > 0 ? (
-            <div className="flex items-center gap-1">
-              <Mail className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-              <span className="text-[10px] font-bold text-yellow-400">
-                {unreadMessages > 99 ? "99+" : unreadMessages}
-              </span>
-            </div>
-          ) : (
-            <Mail className="h-4 w-4" />
+          <Mail className="h-4 w-4" />
+          {unreadMessages > 0 && (
+            <span className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+              {unreadMessages > 99 ? "99+" : unreadMessages}
+            </span>
           )}
         </Link>
       </div>

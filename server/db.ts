@@ -22,7 +22,6 @@ import {
   userProfiles,
   userReports,
   watchlistEntries,
-  itemInquiries,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 import { storagePut } from "./storage";
@@ -1010,22 +1009,7 @@ export async function getUnreadNotificationCount(userId: number) {
 
 export async function getUnreadMessageCount(userId: number) {
   const db = await requireDb();
-  
-  // Count unread item inquiries
-  const inquiryResult = await db
-    .select({ count: sql<number>`count(*)` })
-    .from(itemInquiries)
-    .where(
-      and(
-        eq(itemInquiries.recipientId, userId),
-        eq(itemInquiries.isRead, false),
-      ),
-    );
-
-  const inquiryCount = Number(inquiryResult[0]?.count ?? 0);
-  
-  // Count unread trade messages (placeholder for now)
-  const tradeResult = await db
+  const result = await db
     .select({ count: sql<number>`count(*)` })
     .from(tradeMessages)
     .where(
@@ -1034,10 +1018,8 @@ export async function getUnreadMessageCount(userId: number) {
         sql`1=0`, // Placeholder: would need a read status column
       ),
     );
-  
-  const tradeCount = Number(tradeResult[0]?.count ?? 0);
 
-  return { count: inquiryCount + tradeCount };
+  return { count: Number(result[0]?.count ?? 0) };
 }
 
 export async function saveDraft(
@@ -2160,51 +2142,4 @@ export async function getLowFeedbackFlags(): Promise<Array<{
     .where(eq(lowFeedbackFlags.status, 'pending'))
     .orderBy(desc(lowFeedbackFlags.flaggedAt));
   return flags as any;
-}
-
-
-export async function sendItemInquiry(senderId: number, recipientId: number, listingId: number, subject: string, message: string) {
-  const db = await requireDb();
-  
-  const result = await db.insert(itemInquiries).values({
-    senderId,
-    recipientId,
-    listingId,
-    subject,
-    message,
-    isRead: false,
-  });
-  
-  const id = getInsertId(result);
-  return { id, senderId, recipientId, listingId, subject, message, isRead: false };
-}
-
-export async function getUnreadInquiries(userId: number) {
-  const db = await requireDb();
-  
-  return await db
-    .select()
-    .from(itemInquiries)
-    .where(and(eq(itemInquiries.recipientId, userId), eq(itemInquiries.isRead, false)))
-    .orderBy(desc(itemInquiries.createdAt));
-}
-
-export async function getInquiriesByUser(userId: number, limit = 50, offset = 0) {
-  const db = await requireDb();
-  
-  return await db
-    .select()
-    .from(itemInquiries)
-    .where(or(eq(itemInquiries.senderId, userId), eq(itemInquiries.recipientId, userId)))
-    .orderBy(desc(itemInquiries.createdAt))
-    .limit(limit)
-    .offset(offset);
-}
-
-export async function markInquiryAsRead(inquiryId: number) {
-  const db = await requireDb();
-  
-  await db.update(itemInquiries)
-    .set({ isRead: true, updatedAt: new Date() })
-    .where(eq(itemInquiries.id, inquiryId));
 }

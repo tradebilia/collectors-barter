@@ -19,7 +19,6 @@ import { useMemo, useState } from "react";
 import { Link, useRoute, useLocation } from "wouter";
 import { toast } from "sonner";
 import { ArrowLeft } from "lucide-react";
-import { EmailInquiryModal } from "@/components/EmailInquiryModal";
 
 const TRADEBILIA_LOGO_URL = "/images/tradebilia-logo.svg";
 
@@ -98,12 +97,6 @@ export default function ItemDetail() {
   const similarListings = listing?.similarListings ?? [];
 
   const [activePhotoIndex, setActivePhotoIndex] = useState(0);
-  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
-
-  const getSellerOnlineStatusQuery = trpc.onlineStatus.getSellerOnlineStatus.useQuery(
-    { sellerId: listing?.ownerId ?? 0 },
-    { enabled: !!listing?.ownerId, refetchInterval: 30000 },
-  );
 
   const activePhoto = useMemo(() => {
     if (!listing) return null;
@@ -135,17 +128,6 @@ export default function ItemDetail() {
       return;
     }
     watchlistMutation.mutate({ listingId: listing.id });
-  };
-
-  const handleMessageOwner = () => {
-    if (!listing) return;
-    if (!isAuthenticated) {
-      window.location.href = getLoginUrl();
-      return;
-    }
-    // TODO: Check online status and show appropriate UI
-    // For now, open email modal directly
-    setIsEmailModalOpen(true);
   };
 
   if (listingDetailQuery.isLoading) {
@@ -295,7 +277,7 @@ export default function ItemDetail() {
                     <MessageCircleMore className="mr-0.5 h-4 w-4" />
                     Trade Proposal
                   </Button>
-                  <Button onClick={handleMessageOwner} className="h-12 rounded-[1rem] bg-blue-600 text-sm font-semibold text-white hover:bg-blue-700">
+                  <Button onClick={() => location.href = `/messages?userId=${listing.ownerId}`} className="h-12 rounded-[1rem] bg-blue-600 text-sm font-semibold text-white hover:bg-blue-700">
                     <MessageCircleMore className="mr-0.5 h-4 w-4" />
                     Message Owner
                   </Button>
@@ -374,18 +356,6 @@ export default function ItemDetail() {
           </div>
         </section>
       </main>
-
-      {/* Email Inquiry Modal */}
-      {listing && (
-        <EmailInquiryModal
-          isOpen={isEmailModalOpen}
-          onClose={() => setIsEmailModalOpen(false)}
-          recipientId={listing.ownerId}
-          listingId={listing.id}
-          listingTitle={listing.title}
-          listingImage={activePhoto?.imageUrl}
-        />
-      )}
     </div>
   );
 }
