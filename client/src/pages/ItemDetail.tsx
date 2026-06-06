@@ -272,10 +272,14 @@ export default function ItemDetail() {
                   <OnlineIndicator sellerId={listing.ownerId} size="large" />
                 </div>
 
-                <div className="mt-8 grid gap-4 sm:grid-cols-2">
+                <div className="mt-8 grid gap-4 sm:grid-cols-3">
                   <Button onClick={startTradeProposal} className="h-14 rounded-[1rem] bg-teal-600 text-lg font-semibold text-white hover:bg-teal-700">
                     <MessageCircleMore className="mr-2 h-5 w-5" />
                     Trade Proposal
+                  </Button>
+                  <Button onClick={() => location.href = `/messages?userId=${listing.ownerId}`} className="h-14 rounded-[1rem] bg-blue-600 text-lg font-semibold text-white hover:bg-blue-700">
+                    <MessageCircleMore className="mr-2 h-5 w-5" />
+                    Contact Owner
                   </Button>
                   <Button onClick={toggleWatchlist} variant="secondary" className="h-14 rounded-[1rem] bg-gray-200 text-lg font-semibold text-gray-900 hover:bg-gray-300">
                     <Heart className={`mr-2 h-5 w-5 ${listing.savedToWatchlist ? "fill-current text-pink-500" : ""}`} />
