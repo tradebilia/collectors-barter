@@ -531,9 +531,9 @@ export default function AddInventory() {
               <div className="rounded-2xl border border-purple-500/20 bg-gradient-to-br from-purple-500/10 to-purple-500/5 p-6 shadow-lg">
                 <h3 className="mb-4 text-lg font-semibold uppercase tracking-[0.1em] text-white/95">3. Item Details</h3>
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  {/* Title Field */}
+                  {/* Listing Title Field */}
                   <div className="space-y-3">
-                    <Label className="text-sm uppercase tracking-[0.08em] text-white/70">Item Title *</Label>
+                    <Label className="text-sm uppercase tracking-[0.08em] text-white/70">Listing Title *</Label>
                     <Input
                       value={draft.title}
                       onChange={event => setDraft(current => ({ ...current, title: event.target.value }))}
