@@ -221,64 +221,64 @@ export default function ItemDetail() {
             </div>
 
             <div className="pt-2">
-              <div className="rounded-[2rem] border border-white/10 bg-black/20 p-8 shadow-[0_40px_90px_rgba(0,0,0,0.28)] backdrop-blur-sm">
-                <Badge className="rounded-full border border-cyan-300/30 bg-cyan-300/10 px-4 py-2 text-[0.7rem] uppercase tracking-[0.25em] text-cyan-100 hover:bg-cyan-300/10">
+              <div className="rounded-[2rem] border border-white/10 bg-white p-8 shadow-[0_40px_90px_rgba(0,0,0,0.28)] backdrop-blur-sm">
+                <Badge className="rounded-full border border-cyan-300/30 bg-cyan-300/10 px-4 py-2 text-[0.7rem] uppercase tracking-[0.25em] text-cyan-600 hover:bg-cyan-300/10">
                   {getTradebiliaCategoryLabel(listing.category)}
                 </Badge>
-                <h1 className="mt-6 text-5xl font-semibold leading-[1.05] tracking-tight text-white">{listing.title}</h1>
-                <div className="mt-6 grid gap-4 text-lg text-white/85 sm:grid-cols-2">
+                <h1 className="mt-6 text-5xl font-semibold leading-[1.05] tracking-tight text-gray-900">{listing.title}</h1>
+                <div className="mt-6 grid gap-4 text-lg text-gray-700 sm:grid-cols-2">
                   <div>
-                    <p className="text-sm uppercase tracking-[0.25em] text-white/45">Condition</p>
-                    <p className="mt-2 font-medium">{listing.condition}</p>
+                    <p className="text-sm uppercase tracking-[0.25em] text-gray-500">Condition</p>
+                    <p className="mt-2 font-medium text-gray-900">{listing.condition}</p>
                   </div>
                   <div>
-                    <p className="text-sm uppercase tracking-[0.25em] text-white/45">Listing status</p>
-                    <p className="mt-2 font-medium capitalize">{listing.status}</p>
+                    <p className="text-sm uppercase tracking-[0.25em] text-gray-500">Listing status</p>
+                    <p className="mt-2 font-medium capitalize text-gray-900">{listing.status}</p>
                   </div>
                   <div>
-                    <p className="text-sm uppercase tracking-[0.25em] text-white/45">Saved by you</p>
-                    <p className="mt-2 font-medium">{listing.savedToWatchlist ? "On your Watchlist" : "Not yet saved"}</p>
+                    <p className="text-sm uppercase tracking-[0.25em] text-gray-500">Saved by you</p>
+                    <p className="mt-2 font-medium text-gray-900">{listing.savedToWatchlist ? "On your Watchlist" : "Not yet saved"}</p>
                   </div>
                   <div>
-                    <p className="text-sm uppercase tracking-[0.25em] text-white/45">Listed</p>
-                    <p className="mt-2 font-medium">{new Date(listing.createdAt).toLocaleDateString()}</p>
+                    <p className="text-sm uppercase tracking-[0.25em] text-gray-500">Listed</p>
+                    <p className="mt-2 font-medium text-gray-900">{new Date(listing.createdAt).toLocaleDateString()}</p>
                   </div>
                 </div>
 
-                <Separator className="my-8 bg-white/10" />
+                <Separator className="my-8 bg-gray-200" />
 
                 <div className="flex flex-wrap items-center justify-between gap-5">
                   <Link href={`/profile/${listing.ownerId}`} className="flex items-center gap-4 hover:opacity-80 transition">
-                    <Avatar className="h-14 w-14 border border-white/15 cursor-pointer">
+                    <Avatar className="h-14 w-14 border border-gray-300 cursor-pointer">
                       <AvatarImage src={listing.ownerProfile.avatarUrl ?? undefined} alt={listing.ownerProfile.displayName} />
-                      <AvatarFallback className="bg-white/10 text-white">{initials(listing.ownerProfile.displayName)}</AvatarFallback>
+                      <AvatarFallback className="bg-gray-200 text-gray-900">{initials(listing.ownerProfile.displayName)}</AvatarFallback>
                     </Avatar>
                     <div>
-                      <p className="text-3xl font-medium text-white">{listing.ownerProfile.displayName}</p>
-                      <p className="mt-1 text-sm text-white/55">Collector profile</p>
+                      <p className="text-3xl font-medium text-gray-900">{listing.ownerProfile.displayName}</p>
+                      <p className="mt-1 text-sm text-gray-500">Collector profile</p>
                     </div>
                   </Link>
                   <div className="text-right">
-                    <div className="flex items-center justify-end gap-2 text-emerald-300">
+                    <div className="flex items-center justify-end gap-2 text-emerald-600">
                       <Star className="h-5 w-5 fill-current" />
                       <span className="text-2xl font-semibold">{listing.ownerRating.averageRating.toFixed(1)}</span>
                     </div>
-                    <p className="text-sm text-white/55">{listing.ownerRating.reviewCount} Ratings and Reviews</p>
+                    <p className="text-sm text-gray-500">{listing.ownerRating.reviewCount} Ratings and Reviews</p>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-3 mt-4">
-                  <span className="text-lg font-medium text-white/55">Member Status:</span>
+                  <span className="text-lg font-medium text-gray-700">Member Status:</span>
                   <OnlineIndicator sellerId={listing.ownerId} size="large" />
                 </div>
 
                 <div className="mt-8 grid gap-4 sm:grid-cols-2">
-                  <Button onClick={startTradeProposal} className="h-14 rounded-[1rem] bg-teal-700 text-lg font-semibold text-white hover:bg-teal-600">
+                  <Button onClick={startTradeProposal} className="h-14 rounded-[1rem] bg-teal-600 text-lg font-semibold text-white hover:bg-teal-700">
                     <MessageCircleMore className="mr-2 h-5 w-5" />
                     Trade Proposal
                   </Button>
-                  <Button onClick={toggleWatchlist} variant="secondary" className="h-14 rounded-[1rem] bg-white/8 text-lg font-semibold text-white hover:bg-white/14">
-                    <Heart className={`mr-2 h-5 w-5 ${listing.savedToWatchlist ? "fill-current text-pink-300" : ""}`} />
+                  <Button onClick={toggleWatchlist} variant="secondary" className="h-14 rounded-[1rem] bg-gray-200 text-lg font-semibold text-gray-900 hover:bg-gray-300">
+                    <Heart className={`mr-2 h-5 w-5 ${listing.savedToWatchlist ? "fill-current text-pink-500" : ""}`} />
                     {listing.savedToWatchlist ? "Saved to Watchlist" : "Add to Watchlist"}
                   </Button>
                 </div>
