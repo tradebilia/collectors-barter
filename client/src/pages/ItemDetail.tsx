@@ -268,7 +268,7 @@ export default function ItemDetail() {
                 </div>
 
                 <div className="flex items-center gap-3 mt-4">
-                  <span className="text-sm text-white/55">Member Status:</span>
+                  <span className="text-lg font-medium text-white/55">Member Status:</span>
                   <OnlineIndicator sellerId={listing.ownerId} />
                 </div>
 
