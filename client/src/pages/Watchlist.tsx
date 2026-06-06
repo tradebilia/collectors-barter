@@ -46,7 +46,7 @@ export default function Watchlist() {
   }, [dashboardQuery.data?.watchlist, keyword]);
 
   return (
-    <div className="min-h-screen bg-[#f7f4ee] text-foreground">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top,rgba(73,125,255,0.14),transparent_28%),linear-gradient(180deg,#050814_0%,#0b1220_34%,#101827_100%)] text-white">
       <TopBar
         logoUrl={TRADEBILIA_LOGO_URL}
         searchPlaceholder="Search Tradebilia..."
@@ -67,7 +67,7 @@ export default function Watchlist() {
         </div>
       </section>
 
-      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 bg-[#f7f4ee]">
+      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="grid gap-6 lg:grid-cols-[300px_minmax(0,1fr)]">
           <aside className="space-y-6">
             <Card className="rounded-[1.75rem] border-white/10 bg-white/5 text-white shadow-[0_20px_60px_rgba(0,0,0,0.28)] backdrop-blur">
