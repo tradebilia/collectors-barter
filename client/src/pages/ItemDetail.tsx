@@ -288,61 +288,61 @@ export default function ItemDetail() {
         </section>
 
         <section className="px-4 lg:px-8">
-          <div className="mx-auto max-w-6xl space-y-8 text-white">
+          <div className="mx-auto max-w-6xl space-y-8 text-gray-900">
             {/* Description Section */}
-            <div className="space-y-6">
+            <div className="space-y-6 rounded-[2rem] border border-gray-200 bg-white p-8 shadow-[0_40px_90px_rgba(0,0,0,0.08)]">
               <div>
-                <p className="text-sm uppercase tracking-[0.3em] text-white/45">Description</p>
-                <h2 className="mt-4 text-4xl font-semibold tracking-tight">{listing.title}</h2>
+                <p className="text-sm uppercase tracking-[0.3em] text-gray-500">Description</p>
+                <h2 className="mt-4 text-4xl font-semibold tracking-tight text-gray-900">{listing.title}</h2>
               </div>
-              <p className="max-w-4xl text-lg leading-8 text-white/82">{listing.description}</p>
+              <p className="max-w-4xl text-lg leading-8 text-gray-700">{listing.description}</p>
               <div className="grid gap-4 md:grid-cols-3">
-                <div className="rounded-[1.5rem] border border-white/10 bg-white/5 p-5">
-                  <p className="text-sm uppercase tracking-[0.2em] text-white/45">Category</p>
-                  <p className="mt-3 text-xl font-medium">{getTradebiliaCategoryLabel(listing.category)}</p>
+                <div className="rounded-[1.5rem] border border-gray-200 bg-gray-50 p-5">
+                  <p className="text-sm uppercase tracking-[0.2em] text-gray-500">Category</p>
+                  <p className="mt-3 text-xl font-medium text-gray-900">{getTradebiliaCategoryLabel(listing.category)}</p>
                 </div>
-                <div className="rounded-[1.5rem] border border-white/10 bg-white/5 p-5">
-                  <p className="text-sm uppercase tracking-[0.2em] text-white/45">Condition</p>
-                  <p className="mt-3 text-xl font-medium">{listing.condition}</p>
+                <div className="rounded-[1.5rem] border border-gray-200 bg-gray-50 p-5">
+                  <p className="text-sm uppercase tracking-[0.2em] text-gray-500">Condition</p>
+                  <p className="mt-3 text-xl font-medium text-gray-900">{listing.condition}</p>
                 </div>
-                <div className="rounded-[1.5rem] border border-white/10 bg-white/5 p-5">
-                  <p className="text-sm uppercase tracking-[0.2em] text-white/45">Collector</p>
-                  <p className="mt-3 text-xl font-medium">{listing.ownerProfile.displayName}</p>
+                <div className="rounded-[1.5rem] border border-gray-200 bg-gray-50 p-5">
+                  <p className="text-sm uppercase tracking-[0.2em] text-gray-500">Collector</p>
+                  <p className="mt-3 text-xl font-medium text-gray-900">{listing.ownerProfile.displayName}</p>
                 </div>
               </div>
               {listing.estimatedValue && (
-                <div className="rounded-[1.5rem] border border-white/10 bg-white/5 p-5 mt-4">
-                  <p className="text-sm uppercase tracking-[0.2em] text-white/45">Estimated Value</p>
-                  <p className="mt-3 text-3xl font-bold text-emerald-300">${listing.estimatedValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                <div className="rounded-[1.5rem] border border-gray-200 bg-gray-50 p-5 mt-4">
+                  <p className="text-sm uppercase tracking-[0.2em] text-gray-500">Estimated Value</p>
+                  <p className="mt-3 text-3xl font-bold text-emerald-600">${listing.estimatedValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                 </div>
               )}
             </div>
 
             {/* Owner's Notes Section */}
-            <div>
-              <p className="text-sm uppercase tracking-[0.3em] text-white/45">Owner's Notes</p>
-              <p className="mt-5 max-w-4xl text-lg leading-8 text-white/82">{listing.description}</p>
+            <div className="rounded-[2rem] border border-gray-200 bg-white p-8 shadow-[0_40px_90px_rgba(0,0,0,0.08)]">
+              <p className="text-sm uppercase tracking-[0.3em] text-gray-500">Owner's Notes</p>
+              <p className="mt-5 max-w-4xl text-lg leading-8 text-gray-700">{listing.description}</p>
             </div>
 
             {/* Similar Items Section */}
-            <div>
-              <div className="flex items-center justify-between gap-4">
+            <div className="rounded-[2rem] border border-gray-200 bg-white p-8 shadow-[0_40px_90px_rgba(0,0,0,0.08)]">
+              <div className="flex items-center justify-between gap-4 mb-8">
                 <div>
-                  <p className="text-sm uppercase tracking-[0.3em] text-white/45">Similar Items</p>
-                  <h2 className="mt-4 text-4xl font-semibold tracking-tight">More from {getTradebiliaCategoryLabel(listing.category)}</h2>
+                  <p className="text-sm uppercase tracking-[0.3em] text-gray-500">Similar Items</p>
+                  <h2 className="mt-4 text-4xl font-semibold tracking-tight text-gray-900">More from {getTradebiliaCategoryLabel(listing.category)}</h2>
                 </div>
               </div>
-              <ScrollArea className="mt-8 w-full">
+              <ScrollArea className="w-full">
                 <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
                   {similarListings.map(item => (
-                    <Link key={item.id} href={`/listings/${item.id}`} className="block overflow-hidden rounded-[1.5rem] border border-white/10 bg-white/5 transition hover:-translate-y-1 hover:bg-white/10">
-                      <div className="aspect-[0.82] bg-black/20">
+                    <Link key={item.id} href={`/listings/${item.id}`} className="block overflow-hidden rounded-[1.5rem] border border-gray-200 bg-gray-50 transition hover:-translate-y-1 hover:bg-gray-100">
+                      <div className="aspect-[0.82] bg-gray-100">
                         <img src={resolveTradebiliaListingImage({ title: item.title, category: item.category, primaryPhotoUrl: item.primaryPhotoUrl })} alt={item.title} className="h-full w-full object-cover" />
                       </div>
                       <div className="space-y-3 p-5">
-                        <p className="text-xs uppercase tracking-[0.2em] text-white/45">{getTradebiliaCategoryLabel(item.category)}</p>
-                        <h3 className="text-xl font-semibold text-white">{item.title}</h3>
-                        <p className="text-sm text-white/65">{item.owner.displayName}</p>
+                        <p className="text-xs uppercase tracking-[0.2em] text-gray-500">{getTradebiliaCategoryLabel(item.category)}</p>
+                        <h3 className="text-xl font-semibold text-gray-900">{item.title}</h3>
+                        <p className="text-sm text-gray-600">{item.owner.displayName}</p>
                       </div>
                     </Link>
                   ))}
