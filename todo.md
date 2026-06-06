@@ -1412,3 +1412,12 @@ The application is fully functional with all core features working correctly.
 - [x] Center Member Online indicator on cards
 - [x] Fix OnlineIndicator positioning to show at top-center (not middle) of cards
 - [x] Verify Member Online indicator visible on all category pages
+
+
+## NEW FEATURE REQUEST: Display Item Values
+
+- [ ] Display estimated value on home page Recently Added carousel
+- [ ] Display estimated value on category pages (grid and list views)
+- [ ] Display estimated value on item detail page
+- [ ] Format value as currency (e.g., $1,234.56)
+- [ ] Handle null/missing values gracefully

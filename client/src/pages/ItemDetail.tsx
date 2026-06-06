@@ -310,6 +310,12 @@ export default function ItemDetail() {
                   <p className="mt-3 text-xl font-medium">{listing.ownerProfile.displayName}</p>
                 </div>
               </div>
+              {listing.estimatedValue && (
+                <div className="rounded-[1.5rem] border border-white/10 bg-white/5 p-5 mt-4">
+                  <p className="text-sm uppercase tracking-[0.2em] text-white/45">Estimated Value</p>
+                  <p className="mt-3 text-3xl font-bold text-emerald-300">${listing.estimatedValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                </div>
+              )}
             </div>
 
             {/* Owner's Notes Section */}

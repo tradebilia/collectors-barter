@@ -646,6 +646,12 @@ export default function CategoryPage() {
                               <p className="uppercase tracking-[0.1em] opacity-60 text-[0.45rem]">Status</p>
                               <p className="mt-1 font-semibold capitalize truncate mt-0 text-[0.55rem]">{listing.status}</p>
                             </div>
+                            {listing.estimatedValue && (
+                              <div>
+                                <p className="uppercase tracking-[0.1em] opacity-60 text-[0.45rem]">Value</p>
+                                <p className="mt-1 font-semibold truncate mt-0 text-[0.55rem]">${listing.estimatedValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                              </div>
+                            )}
                           </div>
                         </>
                       )}

@@ -18,6 +18,7 @@ interface CarouselItem {
   tradeListingId: number | null;
   savedToWatchlist: boolean;
   ownerId: number | null;
+  estimatedValue?: number | null;
 }
 
 interface RecentlyAddedCarouselProps {
@@ -85,6 +86,12 @@ export function RecentlyAddedCarousel({
                   <p className="text-sm font-black text-[#7a46ff]">{item.price}</p>
                   <p className="text-[10px] font-medium text-slate-400">{item.subtitle}</p>
                 </div>
+
+                {item.estimatedValue && (
+                  <div className="text-xs font-semibold text-slate-600">
+                    Value: ${item.estimatedValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </div>
+                )}
 
                 <div className="flex gap-2 pt-1">
                   {isAuthenticated && (
