@@ -70,7 +70,7 @@ export function RecentlyAddedCarousel({
                 <img
                   src={item.imageUrl}
                   alt={item.title}
-                  className="h-full w-full object-contain transition-transform duration-500 group-hover/img:scale-110"
+                  className="h-full w-full object-contain"
                 />
                 <div className="absolute inset-0 bg-black/0 group-hover/img:bg-black/5 transition-colors" />
               </div>
