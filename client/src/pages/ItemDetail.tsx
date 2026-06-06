@@ -273,16 +273,16 @@ export default function ItemDetail() {
                 </div>
 
                 <div className="mt-8 grid gap-4 sm:grid-cols-3">
-                  <Button onClick={startTradeProposal} className="h-14 rounded-[1rem] bg-teal-600 text-base font-semibold text-white hover:bg-teal-700">
-                    <MessageCircleMore className="mr-2 h-5 w-5" />
+                  <Button onClick={startTradeProposal} className="h-12 rounded-[1rem] bg-teal-600 text-sm font-semibold text-white hover:bg-teal-700">
+                    <MessageCircleMore className="mr-2 h-4 w-4" />
                     Trade Proposal
                   </Button>
-                  <Button onClick={() => location.href = `/messages?userId=${listing.ownerId}`} className="h-14 rounded-[1rem] bg-blue-600 text-base font-semibold text-white hover:bg-blue-700">
-                    <MessageCircleMore className="mr-2 h-5 w-5" />
+                  <Button onClick={() => location.href = `/messages?userId=${listing.ownerId}`} className="h-12 rounded-[1rem] bg-blue-600 text-sm font-semibold text-white hover:bg-blue-700">
+                    <MessageCircleMore className="mr-2 h-4 w-4" />
                     Contact Owner
                   </Button>
-                  <Button onClick={toggleWatchlist} variant="secondary" className="h-14 rounded-[1rem] bg-gray-200 text-base font-semibold text-gray-900 hover:bg-gray-300">
-                    <Heart className={`mr-2 h-5 w-5 ${listing.savedToWatchlist ? "fill-current text-pink-500" : ""}`} />
+                  <Button onClick={toggleWatchlist} variant="secondary" className="h-12 rounded-[1rem] bg-gray-200 text-sm font-semibold text-gray-900 hover:bg-gray-300">
+                    <Heart className={`mr-2 h-4 w-4 ${listing.savedToWatchlist ? "fill-current text-pink-500" : ""}`} />
                     {listing.savedToWatchlist ? "Saved to Watchlist" : "Add to Watchlist"}
                   </Button>
                 </div>
