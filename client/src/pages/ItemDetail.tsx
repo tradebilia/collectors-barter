@@ -274,15 +274,15 @@ export default function ItemDetail() {
 
                 <div className="mt-8 grid gap-4 sm:grid-cols-3">
                   <Button onClick={startTradeProposal} className="h-12 rounded-[1rem] bg-teal-600 text-sm font-semibold text-white hover:bg-teal-700">
-                    <MessageCircleMore className="mr-1 h-4 w-4" />
+                    <MessageCircleMore className="mr-0.5 h-4 w-4" />
                     Trade Proposal
                   </Button>
                   <Button onClick={() => location.href = `/messages?userId=${listing.ownerId}`} className="h-12 rounded-[1rem] bg-blue-600 text-sm font-semibold text-white hover:bg-blue-700">
-                    <MessageCircleMore className="mr-1 h-4 w-4" />
+                    <MessageCircleMore className="mr-0.5 h-4 w-4" />
                     Message Owner
                   </Button>
                   <Button onClick={toggleWatchlist} variant="secondary" className="h-12 rounded-[1rem] bg-gray-200 text-xs font-semibold text-gray-900 hover:bg-gray-300 whitespace-nowrap">
-                    <Heart className={`mr-1 h-4 w-4 ${listing.savedToWatchlist ? "fill-current text-pink-500" : ""}`} />
+                    <Heart className={`mr-0.5 h-4 w-4 ${listing.savedToWatchlist ? "fill-current text-pink-500" : ""}`} />
                     {listing.savedToWatchlist ? "Saved" : "Add to Watchlist"}
                   </Button>
                 </div>
