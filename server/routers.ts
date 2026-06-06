@@ -1052,16 +1052,35 @@ export const appRouter = router({
         if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
         const db = await requireDb();
         const { userId, ...updateData } = input;
-        const updateFields: any = {};
-        Object.entries(updateData).forEach(([key, value]) => {
+        
+        // Separate fields for users table vs userProfiles table
+        const usersTableFields: any = {};
+        const userProfilesTableFields: any = {};
+        
+        // Fields that belong to users table
+        if (updateData.displayName !== undefined && updateData.displayName !== null && updateData.displayName !== '') {
+          usersTableFields.displayName = updateData.displayName;
+        }
+        
+        // Fields that belong to userProfiles table
+        const profileFields = ['firstName', 'lastName', 'contactFullName', 'contactPhone', 'contactEmail', 'contactAddress', 'contactTown', 'contactState', 'contactZipCode', 'contactCountry'];
+        profileFields.forEach(field => {
+          const value = updateData[field as keyof typeof updateData];
           if (value !== undefined && value !== null && value !== '') {
-            updateFields[key] = value;
+            userProfilesTableFields[field] = value;
           }
         });
-        if (Object.keys(updateFields).length === 0) {
-          return { success: true };
+        
+        // Update users table if there are fields to update
+        if (Object.keys(usersTableFields).length > 0) {
+          await db.update(users).set(usersTableFields).where(eq(users.id, userId));
         }
-        await db.update(users).set(updateFields).where(eq(users.id, userId));
+        
+        // Update userProfiles table if there are fields to update
+        if (Object.keys(userProfilesTableFields).length > 0) {
+          await db.update(userProfiles).set(userProfilesTableFields).where(eq(userProfiles.userId, userId));
+        }
+        
         return { success: true };
       }),
     // Deleted accounts management
