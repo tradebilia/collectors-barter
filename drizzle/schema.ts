@@ -446,3 +446,28 @@ export const lowFeedbackFlags = mysqlTable(
 );
 export type LowFeedbackFlag = typeof lowFeedbackFlags.$inferSelect;
 export type LowFeedbackFlagInsert = typeof lowFeedbackFlags.$inferInsert;
+
+
+export const itemInquiries = mysqlTable(
+  "itemInquiries",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    senderId: int("senderId").notNull().references(() => users.id),
+    recipientId: int("recipientId").notNull().references(() => users.id),
+    listingId: int("listingId").notNull().references(() => listings.id),
+    subject: varchar("subject", { length: 255 }).notNull(),
+    message: text("message").notNull(),
+    isRead: boolean("isRead").default(false).notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  table => ({
+    senderIdx: index("itemInquiries_sender_idx").on(table.senderId),
+    recipientIdx: index("itemInquiries_recipient_idx").on(table.recipientId),
+    listingIdx: index("itemInquiries_listing_idx").on(table.listingId),
+    recipientUnreadIdx: index("itemInquiries_recipient_unread_idx").on(table.recipientId, table.isRead),
+  }),
+);
+
+export type ItemInquiry = typeof itemInquiries.$inferSelect;
+export type InsertItemInquiry = typeof itemInquiries.$inferInsert;

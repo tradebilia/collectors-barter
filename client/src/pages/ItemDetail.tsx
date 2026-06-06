@@ -15,6 +15,7 @@ import { TopRightIcons } from "@/components/TopRightIcons";
 import { CategoryBar } from "@/components/CategoryBar";
 import { TopBar } from "@/components/TopBar";
 import { OnlineIndicator } from "@/components/OnlineIndicator";
+import { EmailInquiryModal } from "@/components/EmailInquiryModal";
 import { useMemo, useState } from "react";
 import { Link, useRoute, useLocation } from "wouter";
 import { toast } from "sonner";
@@ -97,6 +98,7 @@ export default function ItemDetail() {
   const similarListings = listing?.similarListings ?? [];
 
   const [activePhotoIndex, setActivePhotoIndex] = useState(0);
+  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
 
   const activePhoto = useMemo(() => {
     if (!listing) return null;
@@ -277,7 +279,7 @@ export default function ItemDetail() {
                     <MessageCircleMore className="mr-0.5 h-4 w-4" />
                     Trade Proposal
                   </Button>
-                  <Button onClick={() => location.href = `/messages?userId=${listing.ownerId}`} className="h-12 rounded-[1rem] bg-blue-600 text-sm font-semibold text-white hover:bg-blue-700">
+                  <Button onClick={() => setIsEmailModalOpen(true)} className="h-12 rounded-[1rem] bg-blue-600 text-sm font-semibold text-white hover:bg-blue-700">
                     <MessageCircleMore className="mr-0.5 h-4 w-4" />
                     Message Owner
                   </Button>
@@ -356,6 +358,18 @@ export default function ItemDetail() {
           </div>
         </section>
       </main>
+      {listing && (
+        <EmailInquiryModal
+          isOpen={isEmailModalOpen}
+          onClose={() => setIsEmailModalOpen(false)}
+          listing={{
+            id: listing.id,
+            title: listing.title,
+            imageUrl: activePhoto?.imageUrl,
+          }}
+          recipientId={listing.ownerId}
+        />
+      )}
     </div>
   );
 }

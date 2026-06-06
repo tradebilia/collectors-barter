@@ -1450,3 +1450,14 @@ The application is fully functional with all core features working correctly.
 - [x] All TypeScript errors resolved - dev server compiling without errors
 
 - [x] Changed "Contact Owner" button text to "Message Owner" on Item Detail page for clarity
+
+
+## Email Messaging System (Completed)
+- [x] Created itemInquiries database table with proper schema
+- [x] Added inquiry helper functions to db.ts
+- [x] Added inquiry procedures to market router (sendInquiry, getUnreadInquiries, getInquiries, markInquiryAsRead)
+- [x] Created EmailInquiryModal component with item context header and pre-filled subject
+- [x] Integrated EmailInquiryModal into ItemDetail page with Message Owner button
+- [x] Updated email icon in TopRightIcons to turn solid yellow with unread count
+- [x] Allows users to email themselves for testing purposes
+- [x] Created and ran inquiry system validation tests

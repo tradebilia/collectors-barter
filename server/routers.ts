@@ -35,6 +35,10 @@ import {
   getUserEbayFeedback,
   flagLowFeedback,
   getLowFeedbackFlags,
+  sendItemInquiry,
+  getUnreadInquiries,
+  getInquiriesByUser,
+  markInquiryAsRead,
 } from "./db";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -760,6 +764,36 @@ export const appRouter = router({
           description: input.description,
           evidence: input.evidence,
         });
+      }),
+    sendInquiry: protectedProcedure
+      .input(
+        z.object({
+          listingId: z.number().int().positive(),
+          recipientId: z.number().int().positive(),
+          subject: z.string().min(1).max(255),
+          message: z.string().min(1).max(5000),
+        }),
+      )
+      .mutation(async ({ ctx, input }) => {
+        return sendItemInquiry({ id: ctx.user.id, name: ctx.user.name }, input);
+      }),
+    getUnreadInquiries: protectedProcedure.query(async ({ ctx }) => {
+      return getUnreadInquiries(ctx.user.id);
+    }),
+    getInquiries: protectedProcedure
+      .input(
+        z.object({
+          limit: z.number().int().positive().default(50),
+          offset: z.number().int().nonnegative().default(0),
+        }),
+      )
+      .query(async ({ ctx, input }) => {
+        return getInquiriesByUser(ctx.user.id, input.limit, input.offset);
+      }),
+    markInquiryAsRead: protectedProcedure
+      .input(z.object({ inquiryId: z.number().int().positive() }))
+      .mutation(async ({ ctx, input }) => {
+        return markInquiryAsRead(input.inquiryId, ctx.user.id);
       }),
   }),
   ebay: router({

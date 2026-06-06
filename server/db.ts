@@ -22,6 +22,7 @@ import {
   userProfiles,
   userReports,
   watchlistEntries,
+  itemInquiries,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 import { storagePut } from "./storage";
@@ -2142,4 +2143,119 @@ export async function getLowFeedbackFlags(): Promise<Array<{
     .where(eq(lowFeedbackFlags.status, 'pending'))
     .orderBy(desc(lowFeedbackFlags.flaggedAt));
   return flags as any;
+}
+
+
+// Item Inquiry Functions
+export async function sendItemInquiry(
+  user: Pick<User, "id" | "name">,
+  input: {
+    listingId: number;
+    recipientId: number;
+    subject: string;
+    message: string;
+  }
+) {
+  const db = await requireDb();
+  
+  // Validate inputs
+  if (!input.subject.trim() || input.subject.length > 255) {
+    throw new Error("Subject must be between 1 and 255 characters");
+  }
+  if (!input.message.trim() || input.message.length > 5000) {
+    throw new Error("Message must be between 1 and 5000 characters");
+  }
+  
+  // Verify listing exists
+  const listing = await db
+    .select({ id: listings.id })
+    .from(listings)
+    .where(eq(listings.id, input.listingId))
+    .limit(1);
+  
+  if (!listing[0]) {
+    throw new Error("Listing not found");
+  }
+  
+  // Verify recipient exists
+  const recipient = await db
+    .select({ id: users.id })
+    .from(users)
+    .where(eq(users.id, input.recipientId))
+    .limit(1);
+  
+  if (!recipient[0]) {
+    throw new Error("Recipient not found");
+  }
+  
+  // Insert inquiry
+  const result = await db.insert(itemInquiries).values({
+    listingId: input.listingId,
+    senderId: user.id,
+    recipientId: input.recipientId,
+    subject: input.subject.trim(),
+    message: input.message.trim(),
+    isRead: false,
+    createdAt: new Date(),
+  });
+  
+  return { id: getInsertId(result), success: true };
+}
+
+export async function getUnreadInquiries(userId: number) {
+  const db = await requireDb();
+  
+  const inquiries = await db
+    .select()
+    .from(itemInquiries)
+    .where(
+      and(
+        eq(itemInquiries.recipientId, userId),
+        eq(itemInquiries.isRead, false)
+      )
+    )
+    .orderBy(desc(itemInquiries.createdAt));
+  
+  return inquiries;
+}
+
+export async function getInquiriesByUser(userId: number, limit: number = 50, offset: number = 0) {
+  const db = await requireDb();
+  
+  const inquiries = await db
+    .select()
+    .from(itemInquiries)
+    .where(
+      or(
+        eq(itemInquiries.senderId, userId),
+        eq(itemInquiries.recipientId, userId)
+      )
+    )
+    .orderBy(desc(itemInquiries.createdAt))
+    .limit(limit)
+    .offset(offset);
+  
+  return inquiries;
+}
+
+export async function markInquiryAsRead(inquiryId: number, userId: number) {
+  const db = await requireDb();
+  
+  // Verify the user is the recipient
+  const inquiry = await db
+    .select({ recipientId: itemInquiries.recipientId })
+    .from(itemInquiries)
+    .where(eq(itemInquiries.id, inquiryId))
+    .limit(1);
+  
+  if (!inquiry[0] || inquiry[0].recipientId !== userId) {
+    throw new Error("Unauthorized: You can only mark your own inquiries as read");
+  }
+  
+  await db
+    .update(itemInquiries)
+    .set({ isRead: true })
+    .where(eq(itemInquiries.id, inquiryId));
+  
+  return { success: true };
 }
