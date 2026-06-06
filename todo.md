@@ -1448,3 +1448,5 @@ The application is fully functional with all core features working correctly.
 - [x] Updated admin router to properly handle report status updates
 - [x] Verified AdminDashboard.tsx can now call trpc.admin.updateReportStatus.useMutation()
 - [x] All TypeScript errors resolved - dev server compiling without errors
+
+- [x] Changed "Contact Owner" button text to "Message Owner" on Item Detail page for clarity

@@ -279,7 +279,7 @@ export default function ItemDetail() {
                   </Button>
                   <Button onClick={() => location.href = `/messages?userId=${listing.ownerId}`} className="h-12 rounded-[1rem] bg-blue-600 text-sm font-semibold text-white hover:bg-blue-700">
                     <MessageCircleMore className="mr-2 h-4 w-4" />
-                    Contact Owner
+                    Message Owner
                   </Button>
                   <Button onClick={toggleWatchlist} variant="secondary" className="h-12 rounded-[1rem] bg-gray-200 text-xs font-semibold text-gray-900 hover:bg-gray-300 whitespace-nowrap">
                     <Heart className={`mr-2 h-4 w-4 ${listing.savedToWatchlist ? "fill-current text-pink-500" : ""}`} />
