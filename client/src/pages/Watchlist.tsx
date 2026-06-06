@@ -89,8 +89,10 @@ export default function Watchlist() {
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat'
       }}>
-        <div className="mx-auto flex max-w-7xl items-center justify-center px-6 py-8 sm:py-10">
-          <img src="/manus-storage/Watchlist_d3646db6.svg" alt="Watchlist" className="h-auto w-full" />
+        <div className="container relative flex h-64 items-center justify-center py-0 sm:h-72 sm:py-0 lg:h-80 lg:py-0">
+          <div className="flex w-full max-w-6xl items-center justify-center -ml-32">
+            <img src="/manus-storage/Watchlist_d3646db6.svg" alt="Watchlist" className="h-auto w-full" />
+          </div>
         </div>
       </section>
 
