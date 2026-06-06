@@ -5,9 +5,10 @@ import { X } from 'lucide-react';
 interface OnlineIndicatorProps {
   sellerId: number;
   className?: string;
+  size?: 'small' | 'large';
 }
 
-export function OnlineIndicator({ sellerId, className = '' }: OnlineIndicatorProps) {
+export function OnlineIndicator({ sellerId, className = '', size = 'small' }: OnlineIndicatorProps) {
   const utils = trpc.useUtils();
 
   // Fetch online status
@@ -40,28 +41,32 @@ export function OnlineIndicator({ sellerId, className = '' }: OnlineIndicatorPro
   }
 
   const isOnline = onlineStatusQuery.data.isOnline;
+  const isLarge = size === 'large';
+  const dotSize = isLarge ? 'h-4 w-4' : 'h-2.5 w-2.5';
+  const textSize = isLarge ? 'text-lg font-semibold' : 'text-[9px] font-medium';
+  const gap = isLarge ? 'gap-3' : 'gap-1.5';
 
   if (isOnline) {
     return (
-      <div className={`flex items-center gap-1.5 ${className}`}>
+      <div className={`flex items-center ${gap} ${className}`}>
         {/* Green dot indicator */}
-        <div className="relative flex h-2.5 w-2.5">
+        <div className={`relative flex ${dotSize}`}>
           <span className="absolute inline-flex h-full w-full rounded-full bg-green-500 animate-pulse"></span>
-          <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
+          <span className={`relative inline-flex rounded-full ${dotSize} bg-green-500`}></span>
         </div>
         {/* "Member Online" text */}
-        <span className="text-[9px] font-medium text-green-600">Member Online</span>
+        <span className={`${textSize} text-green-600`}>Member Online</span>
       </div>
     );
   }
 
   // Offline state
   return (
-    <div className={`flex items-center gap-1.5 ${className}`}>
+    <div className={`flex items-center ${gap} ${className}`}>
       {/* Red X indicator */}
-      <X className="h-2.5 w-2.5 text-red-500" strokeWidth={3} />
+      <X className={`${dotSize} text-red-500`} strokeWidth={3} />
       {/* "Member Offline" text */}
-      <span className="text-[9px] font-medium text-red-500">Member Offline</span>
+      <span className={`${textSize} text-red-500`}>Member Offline</span>
     </div>
   );
 }
