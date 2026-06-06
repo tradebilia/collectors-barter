@@ -148,11 +148,11 @@ export default function Watchlist() {
                 <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                   {filteredWatchlist.map(listing => (
                     <Card key={listing.id} className="overflow-hidden rounded-[1.5rem] border-white/10 bg-white/5 text-white shadow-none">
-                      <div className="aspect-[0.82] overflow-hidden bg-[linear-gradient(135deg,#f6efe3_0%,#ece5d7_100%)]">
+                      <div className="aspect-[4/5] overflow-hidden bg-[linear-gradient(135deg,#f6efe3_0%,#ece5d7_100%)] bg-white p-2">
                         <img
                           src={resolveTradebiliaListingImage({ title: listing.title, category: listing.category, primaryPhotoUrl: listing.primaryPhotoUrl })}
                           alt={listing.title}
-                          className="h-full w-full object-cover"
+                          className="h-full w-full object-contain"
                         />
                       </div>
                       <CardContent className="space-y-3 p-5">
