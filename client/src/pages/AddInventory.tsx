@@ -42,7 +42,6 @@ type ListingCategory = (typeof categoryLinks)[number]["value"];
 // Category-specific fields based on filter presets
 const categoryFieldPresets: Record<ListingCategory, Array<{ name: string; label: string; type: "text" | "select"; placeholder: string; selectOptions?: string[] }>> = {
   comics: [
-    { name: "title", label: "Listing Title", type: "text", placeholder: "Amazing Spider-Man #129 CGC 9.8" },
     { name: "issueNumber", label: "Issue Number", type: "text", placeholder: "#1, #100, #50" },
     { name: "signed", label: "Signed", type: "select", placeholder: "Select option", selectOptions: ["Yes", "No"] },
     { name: "facsimile", label: "Facsimile", type: "select", placeholder: "Select option", selectOptions: ["Yes", "No"] },
@@ -62,7 +61,6 @@ const categoryFieldPresets: Record<ListingCategory, Array<{ name: string; label:
     { name: "franchise", label: "Franchise", type: "text", placeholder: "Star Wars, TMNT" },
   ],
   video_games: [
-    { name: "title", label: "Listing Title", type: "text", placeholder: "The Legend of Zelda: Ocarina of Time (Cartridge Only)" },
     { name: "system", label: "System", type: "select", placeholder: "NES, SNES, Sega", selectOptions: ["NES", "SNES", "Sega", "PlayStation", "Xbox", "Nintendo 64", "GameCube", "Wii", "Switch", "Other"] },
     { name: "region", label: "Region", type: "select", placeholder: "United States, Japan", selectOptions: ["United States", "Japan", "Europe", "PAL", "NTSC", "Other"] },
   ],
@@ -82,7 +80,6 @@ const categoryFieldPresets: Record<ListingCategory, Array<{ name: string; label:
     { name: "rarity", label: "Rarity", type: "select", placeholder: "Holo, Secret Rare", selectOptions: ["Common", "Uncommon", "Rare", "Holo Rare", "Secret Rare", "Ultra Rare", "Other"] },
   ],
   movies: [
-    { name: "title", label: "Listing Title", type: "text", placeholder: "Star Wars Original Trilogy Poster Set 1977" },
     { name: "format", label: "Format", type: "select", placeholder: "Poster, prop, lobby card", selectOptions: ["Poster", "Prop", "Lobby Card", "Still", "Promotional Material", "Other"] },
     { name: "franchise", label: "Franchise", type: "text", placeholder: "Marvel, Disney, horror" },
   ],
