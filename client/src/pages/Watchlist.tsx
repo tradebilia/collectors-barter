@@ -52,8 +52,6 @@ export default function Watchlist() {
         searchPlaceholder="Search Tradebilia..."
       />
 
-      <CategoryBar />
-
       <section className="border-b border-white/10 bg-[#00143A]" style={{
         backgroundImage: 'url(/manus-storage/Mainpage_9b45311d.jpg)',
         backgroundSize: 'cover',
@@ -66,6 +64,8 @@ export default function Watchlist() {
           </div>
         </div>
       </section>
+
+      <CategoryBar />
 
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="grid gap-6 lg:grid-cols-[300px_minmax(0,1fr)]">
