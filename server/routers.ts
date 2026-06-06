@@ -35,6 +35,10 @@ import {
   getUserEbayFeedback,
   flagLowFeedback,
   getLowFeedbackFlags,
+  sendItemInquiry,
+  getUnreadInquiries,
+  getInquiriesByUser,
+  markInquiryAsRead,
 } from "./db";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -1182,6 +1186,49 @@ export const appRouter = router({
         const isOnline = timeSinceActivity < ONLINE_STATUS_TIMEOUT_MS;
         console.log(`[getSellerOnlineStatus] User: ${seller[0].name} (ID: ${seller[0].id}), lastActivityAt: ${lastActivity}, now: ${now}, timeSinceActivity: ${timeSinceActivity}ms, isOnline: ${isOnline}`);
         return { isOnline, lastActivityAt: lastActivity };
+      }),
+  }),
+  inquiry: router({
+    send: protectedProcedure
+      .input(
+        z.object({
+          recipientId: z.number().int().positive(),
+          listingId: z.number().int().positive(),
+          subject: z.string().min(1).max(255),
+          message: z.string().min(1).max(5000),
+        }),
+      )
+      .mutation(async ({ ctx, input }) => {
+        if (input.recipientId === ctx.user.id) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'You cannot send an inquiry to yourself' });
+        }
+        const result = await sendItemInquiry(
+          ctx.user.id,
+          input.recipientId,
+          input.listingId,
+          input.subject,
+          input.message,
+        );
+        return result;
+      }),
+    getUnread: protectedProcedure.query(async ({ ctx }) => {
+      return await getUnreadInquiries(ctx.user.id);
+    }),
+    getAll: protectedProcedure
+      .input(
+        z.object({
+          limit: z.number().int().positive().default(50),
+          offset: z.number().int().nonnegative().default(0),
+        }),
+      )
+      .query(async ({ ctx, input }) => {
+        return await getInquiriesByUser(ctx.user.id, input.limit, input.offset);
+      }),
+    markAsRead: protectedProcedure
+      .input(z.object({ inquiryId: z.number().int().positive() }))
+      .mutation(async ({ input }) => {
+        await markInquiryAsRead(input.inquiryId);
+        return { success: true };
       }),
   }),
 });
