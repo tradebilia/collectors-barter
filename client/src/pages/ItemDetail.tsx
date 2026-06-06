@@ -249,15 +249,10 @@ export default function ItemDetail() {
 
                 <div className="flex flex-wrap items-center justify-between gap-5">
                   <Link href={`/profile/${listing.ownerId}`} className="flex items-center gap-4 hover:opacity-80 transition">
-                    <div className="relative">
-                      <Avatar className="h-14 w-14 border border-white/15 cursor-pointer">
-                        <AvatarImage src={listing.ownerProfile.avatarUrl ?? undefined} alt={listing.ownerProfile.displayName} />
-                        <AvatarFallback className="bg-white/10 text-white">{initials(listing.ownerProfile.displayName)}</AvatarFallback>
-                      </Avatar>
-                      <div className="absolute -top-1 -right-1">
-                        <OnlineIndicator sellerId={listing.ownerId} />
-                      </div>
-                    </div>
+                    <Avatar className="h-14 w-14 border border-white/15 cursor-pointer">
+                      <AvatarImage src={listing.ownerProfile.avatarUrl ?? undefined} alt={listing.ownerProfile.displayName} />
+                      <AvatarFallback className="bg-white/10 text-white">{initials(listing.ownerProfile.displayName)}</AvatarFallback>
+                    </Avatar>
                     <div>
                       <p className="text-3xl font-medium text-white">{listing.ownerProfile.displayName}</p>
                       <p className="mt-1 text-sm text-white/55">Collector profile</p>
@@ -270,6 +265,11 @@ export default function ItemDetail() {
                     </div>
                     <p className="text-sm text-white/55">{listing.ownerRating.reviewCount} Ratings and Reviews</p>
                   </div>
+                </div>
+
+                <div className="flex items-center gap-3 mt-4">
+                  <span className="text-sm text-white/55">Member Status:</span>
+                  <OnlineIndicator sellerId={listing.ownerId} />
                 </div>
 
                 <div className="mt-8 grid gap-4 sm:grid-cols-2">
