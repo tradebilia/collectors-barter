@@ -1128,8 +1128,35 @@ export const appRouter = router({
       )
       .query(async ({ ctx, input }) => {
         if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
-        // Return empty array for now - reports table not yet implemented
-        return [];
+        return getUserReports({
+          status: input.status,
+          limit: input.limit,
+          offset: input.offset,
+        });
+      }),
+    getReportDetails: protectedProcedure
+      .input(z.object({ reportId: z.string() }))
+      .query(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+        return getUserReportDetails(input.reportId);
+      }),
+    updateReportStatus: protectedProcedure
+      .input(
+        z.object({
+          reportId: z.string(),
+          status: z.enum(['pending', 'reviewed', 'dismissed', 'action_taken']),
+          adminNotes: z.string().max(2000).optional(),
+        }),
+      )
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+        await updateReportStatus({
+          reportId: input.reportId,
+          status: input.status,
+          adminNotes: input.adminNotes,
+          reviewedBy: ctx.user.id,
+        });
+        return { success: true };
       }),
   }),
   // Online status procedures
@@ -1157,47 +1184,6 @@ export const appRouter = router({
         return { isOnline, lastActivityAt: lastActivity };
       }),
   }),
-  // Reported users management
-  getReportedUsers: protectedProcedure
-    .input(
-      z.object({
-        status: z.enum(['pending', 'reviewed', 'dismissed', 'action_taken']).optional(),
-        limit: z.number().int().positive().default(50),
-        offset: z.number().int().nonnegative().default(0),
-      }),
-    )
-    .query(async ({ ctx, input }) => {
-      if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
-      return getUserReports({
-        status: input.status,
-        limit: input.limit,
-        offset: input.offset,
-      });
-    }),
-  getReportDetails: protectedProcedure
-    .input(z.object({ reportId: z.string() }))
-    .query(async ({ ctx, input }) => {
-      if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
-      return getUserReportDetails(input.reportId);
-    }),
-  updateReportStatus: protectedProcedure
-    .input(
-      z.object({
-        reportId: z.string(),
-        status: z.enum(['pending', 'reviewed', 'dismissed', 'action_taken']),
-        adminNotes: z.string().max(2000).optional(),
-      }),
-    )
-    .mutation(async ({ ctx, input }) => {
-      if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
-      await updateReportStatus({
-        reportId: input.reportId,
-        status: input.status,
-        adminNotes: input.adminNotes,
-        reviewedBy: ctx.user.id,
-      });
-      return { success: true };
-    }),
 });
 
 export type AppRouter = typeof appRouter;

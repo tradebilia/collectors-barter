@@ -281,9 +281,9 @@ export default function ItemDetail() {
                     <MessageCircleMore className="mr-2 h-4 w-4" />
                     Contact Owner
                   </Button>
-                  <Button onClick={toggleWatchlist} variant="secondary" className="h-12 rounded-[1rem] bg-gray-200 text-sm font-semibold text-gray-900 hover:bg-gray-300">
+                  <Button onClick={toggleWatchlist} variant="secondary" className="h-12 rounded-[1rem] bg-gray-200 text-xs font-semibold text-gray-900 hover:bg-gray-300 whitespace-nowrap">
                     <Heart className={`mr-2 h-4 w-4 ${listing.savedToWatchlist ? "fill-current text-pink-500" : ""}`} />
-                    {listing.savedToWatchlist ? "Saved to Watchlist" : "Add to Watchlist"}
+                    {listing.savedToWatchlist ? "Saved" : "Add to Watchlist"}
                   </Button>
                 </div>
               </div>

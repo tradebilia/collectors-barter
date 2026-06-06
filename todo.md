@@ -1431,3 +1431,20 @@ The application is fully functional with all core features working correctly.
 - [ ] Update ItemCard component to display listing title
 - [ ] Update RecentlyAddedCarousel to display listing title
 - [ ] Update CategoryPage to display listing title
+
+
+## Item Detail Button Overflow Fix (June 6, 2026)
+
+- [x] Fix "Saved to Watchlist" button text overflow on Item Detail page
+- [x] Reduced font size from text-sm to text-xs for better fit
+- [x] Shortened "Saved to Watchlist" text to "Saved" when item is in watchlist
+- [x] Added whitespace-nowrap to prevent text wrapping
+- [x] Verified button text fits properly within container on all states
+
+## Admin Dashboard TypeScript Error Fix (June 6, 2026)
+
+- [x] Resolve TypeScript error: Property 'updateReportStatus' does not exist on type 'admin' router
+- [x] Moved report management procedures into admin router (getReportedUsers, getReportDetails, updateReportStatus)
+- [x] Updated admin router to properly handle report status updates
+- [x] Verified AdminDashboard.tsx can now call trpc.admin.updateReportStatus.useMutation()
+- [x] All TypeScript errors resolved - dev server compiling without errors
