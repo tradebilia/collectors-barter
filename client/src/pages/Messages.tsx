@@ -19,6 +19,7 @@ import { Link } from "wouter";
 
 const folders = [
   { value: "all", label: "All Messages" },
+  { value: "inquiries", label: "Item Inquiries" },
   { value: "direct", label: "Direct Messages" },
   { value: "trade", label: "Trade-related" },
   { value: "unread", label: "Unread" },
@@ -46,6 +47,11 @@ export default function Messages() {
   const dashboardQuery = trpc.market.dashboard.useQuery(undefined, {
     enabled: isAuthenticated,
   });
+
+  const inquiriesQuery = trpc.market.getInquiries.useQuery(
+    { limit: 50, offset: 0 },
+    { enabled: isAuthenticated }
+  );
 
   const sendTradeMessageMutation = trpc.market.sendTradeMessage.useMutation({
     onSuccess: async () => {
@@ -80,6 +86,11 @@ export default function Messages() {
     const rows = dashboardQuery.data?.tradeProposals ?? [];
     return [...rows].sort((a, b) => b.updatedAt - a.updatedAt);
   }, [dashboardQuery.data?.tradeProposals]);
+
+  const inquiries = useMemo(() => {
+    const rows = inquiriesQuery.data ?? [];
+    return [...rows].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }, [inquiriesQuery.data]);
 
   const allThreads = useMemo(() => {
     const tradeThreads = proposals
@@ -120,6 +131,7 @@ export default function Messages() {
   }, [directThreads, proposals, user?.id]);
 
   const filteredThreads = useMemo(() => {
+    if (folder === "inquiries") return [];
     return allThreads.filter(thread => {
       if (folder === "direct") return thread.kind === "direct";
       if (folder === "trade") return thread.kind === "trade";
@@ -128,6 +140,13 @@ export default function Messages() {
       return true;
     });
   }, [allThreads, folder]);
+
+  const filteredInquiries = useMemo(() => {
+    if (folder === "inquiries") return inquiries;
+    if (folder === "unread") return inquiries.filter(i => !i.isRead);
+    if (folder === "all") return inquiries;
+    return [];
+  }, [inquiries, folder]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -210,14 +229,16 @@ export default function Messages() {
             <div className="mt-5 space-y-2">
               {folders.map(item => {
                 const count = item.value === "all"
-                  ? allThreads.length
-                  : item.value === "direct"
-                    ? allThreads.filter(thread => thread.kind === "direct").length
-                    : item.value === "trade"
-                      ? allThreads.filter(thread => thread.kind === "trade").length
-                      : item.value === "unread"
-                        ? allThreads.filter(thread => thread.unread).length
-                        : allThreads.filter(thread => thread.kind === "trade" && thread.accepted).length;
+                  ? allThreads.length + inquiries.length
+                  : item.value === "inquiries"
+                    ? inquiries.length
+                    : item.value === "direct"
+                      ? allThreads.filter(thread => thread.kind === "direct").length
+                      : item.value === "trade"
+                        ? allThreads.filter(thread => thread.kind === "trade").length
+                        : item.value === "unread"
+                          ? allThreads.filter(thread => thread.unread).length + inquiries.filter(i => !i.isRead).length
+                          : allThreads.filter(thread => thread.kind === "trade" && thread.accepted).length;
                 return (
                   <button
                     key={item.value}
@@ -241,12 +262,37 @@ export default function Messages() {
               <h2 className="text-2xl font-semibold text-slate-900">Message List</h2>
             </div>
             <ScrollArea className="h-[70vh] px-3 py-3">
-              {dashboardQuery.isLoading ? (
+              {dashboardQuery.isLoading || inquiriesQuery.isLoading ? (
                 <div className="flex min-h-[18rem] items-center justify-center">
                   <Loader2 className="h-8 w-8 animate-spin text-slate-500" />
                 </div>
-              ) : filteredThreads.length ? (
+              ) : (filteredThreads.length || filteredInquiries.length) ? (
                 <div className="space-y-3">
+                  {filteredInquiries.map(inquiry => (
+                    <button
+                      key={`inquiry-${inquiry.id}`}
+                      type="button"
+                      onClick={() => setActiveThreadKey(`inquiry-${inquiry.id}`)}
+                      className={`w-full rounded-[1.5rem] border p-4 text-left transition ${activeThreadKey === `inquiry-${inquiry.id}` ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-slate-50 text-slate-900 hover:bg-slate-100"}`}
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-lg font-semibold">{inquiry.senderName || `Collector ${inquiry.senderId}`}</p>
+                          <p className={`mt-1 text-xs uppercase tracking-[0.18em] ${activeThreadKey === `inquiry-${inquiry.id}` ? "text-white/65" : "text-slate-500"}`}>
+                            Item Inquiry
+                          </p>
+                        </div>
+                        <Badge variant={activeThreadKey === `inquiry-${inquiry.id}` ? "secondary" : "outline"} className="rounded-full capitalize">
+                          {inquiry.isRead ? "seen" : "unread"}
+                        </Badge>
+                      </div>
+                      <p className={`mt-3 line-clamp-2 text-sm leading-6 ${activeThreadKey === `inquiry-${inquiry.id}` ? "text-white/75" : "text-slate-600"}`}>{inquiry.subject}</p>
+                      <div className="mt-4 flex items-center justify-between text-xs uppercase tracking-[0.18em]">
+                        <span>{new Date(inquiry.createdAt).toLocaleString()}</span>
+                        {!inquiry.isRead ? <span className="inline-flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-emerald-400" />Unread</span> : <span>Seen</span>}
+                      </div>
+                    </button>
+                  ))}
                   {filteredThreads.map(thread => (
                     <button
                       key={thread.key}

@@ -1010,17 +1010,21 @@ export async function getUnreadNotificationCount(userId: number) {
 
 export async function getUnreadMessageCount(userId: number) {
   const db = await requireDb();
-  const result = await db
+  
+  // Count unread inquiries (received by this user)
+  const inquiryResult = await db
     .select({ count: sql<number>`count(*)` })
-    .from(tradeMessages)
+    .from(itemInquiries)
     .where(
       and(
-        eq(tradeMessages.senderId, userId),
-        sql`1=0`, // Placeholder: would need a read status column
+        eq(itemInquiries.recipientId, userId),
+        eq(itemInquiries.isRead, false),
       ),
     );
 
-  return { count: Number(result[0]?.count ?? 0) };
+  const inquiryCount = Number(inquiryResult[0]?.count ?? 0);
+  
+  return { count: inquiryCount };
 }
 
 export async function saveDraft(
@@ -2223,8 +2227,21 @@ export async function getInquiriesByUser(userId: number, limit: number = 50, off
   const db = await requireDb();
   
   const inquiries = await db
-    .select()
+    .select({
+      id: itemInquiries.id,
+      senderId: itemInquiries.senderId,
+      senderName: users.displayName,
+      senderAvatarUrl: users.avatarUrl,
+      recipientId: itemInquiries.recipientId,
+      listingId: itemInquiries.listingId,
+      subject: itemInquiries.subject,
+      message: itemInquiries.message,
+      isRead: itemInquiries.isRead,
+      createdAt: itemInquiries.createdAt,
+      updatedAt: itemInquiries.updatedAt,
+    })
     .from(itemInquiries)
+    .innerJoin(users, eq(itemInquiries.senderId, users.id))
     .where(
       or(
         eq(itemInquiries.senderId, userId),
