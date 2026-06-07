@@ -10,6 +10,41 @@ import { resolveTradebiliaListingImage } from "@/lib/listingImages";
 import { trpc } from "@/lib/trpc";
 import { getLoginUrl } from "@/const";
 import { getTradebiliaCategoryTheme, getTradebiliaCategoryLabel } from "@/lib/tradebilia";
+
+const getItemDetailPageClassName = (category: string): string => {
+  // For item detail pages, remove the teal portion (0-14%) and start with the content color
+  if (category === 'sports_cards') {
+    return 'bg-[#ead6ac] text-[#1a1814]';
+  }
+  if (category === 'comics') {
+    return 'bg-[linear-gradient(180deg,#281013_0%,#121116_100%)] text-white';
+  }
+  if (category === 'video_games') {
+    return 'bg-[linear-gradient(180deg,#0a3a1a_0%,#051a0d_100%)] text-[#d8ffbc]';
+  }
+  if (category === 'vintage_toys') {
+    return 'bg-[linear-gradient(180deg,#3d3d3d_0%,#2a2a2a_100%)] text-[#f8efc8]';
+  }
+  if (category === 'coins') {
+    return 'bg-[linear-gradient(180deg,#1a1a1a_0%,#0f0f0f_100%)] text-white';
+  }
+  if (category === 'stamps') {
+    return 'bg-[linear-gradient(180deg,#1a1a1a_0%,#0f0f0f_100%)] text-white';
+  }
+  if (category === 'pokemon') {
+    return 'bg-[linear-gradient(180deg,#0a3a1a_0%,#051a0d_100%)] text-[#d8ffbc]';
+  }
+  if (category === 'movies') {
+    return 'bg-[linear-gradient(180deg,#1a1a1a_0%,#0f0f0f_100%)] text-white';
+  }
+  if (category === 'autographs') {
+    return 'bg-[linear-gradient(180deg,#1a1a1a_0%,#0f0f0f_100%)] text-white';
+  }
+  if (category === 'disney_pins') {
+    return 'bg-[linear-gradient(180deg,#1a1a1a_0%,#0f0f0f_100%)] text-white';
+  }
+  return 'bg-[radial-gradient(circle_at_top,#1c2468_0%,#0b0a22_65%)] text-white';
+};
 import { Heart, Loader2, MessageCircleMore, Menu, Search, Star, UserRound } from "lucide-react";
 import { TopRightIcons } from "@/components/TopRightIcons";
 import { CategoryBar } from "@/components/CategoryBar";
@@ -155,10 +190,10 @@ export default function ItemDetail() {
   }
 
   const categoryTheme = listing ? getTradebiliaCategoryTheme(listing.category) : null;
-  const pageBackgroundClass = categoryTheme?.pageClassName ?? "bg-[radial-gradient(circle_at_top,#1c2468_0%,#0b0a22_65%)] text-white";
+  const pageBackgroundClass = listing ? getItemDetailPageClassName(listing.category) : "bg-[radial-gradient(circle_at_top,#1c2468_0%,#0b0a22_65%)] text-white";
 
   return (
-    <div className={`min-h-screen text-foreground ${pageBackgroundClass}`}>
+    <div className={`min-h-screen ${pageBackgroundClass}`}>
       <TopBar
         logoUrl={TRADEBILIA_LOGO_URL}
         searchPlaceholder="Search Tradebilia..."
