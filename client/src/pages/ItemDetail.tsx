@@ -165,7 +165,7 @@ export default function ItemDetail() {
       />
 
       <main className="pb-16">
-        <section className="relative w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden bg-[#00143A] text-white" style={{
+        <section className={`relative w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden text-white ${categoryTheme?.heroClassName ?? 'bg-[#00143A]'}`} style={{
           backgroundImage: `url(${getCategoryWallpaperUrl(listing.category)})`,
           backgroundSize: 'cover',
           backgroundPosition: listing.category === 'movies' ? 'center top' : 'center',
