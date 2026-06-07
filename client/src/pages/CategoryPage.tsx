@@ -399,6 +399,13 @@ export default function CategoryPage() {
                       <Input placeholder="Min" className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black flex-1`} type="number" />
                       <Input placeholder="Max" className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black flex-1`} type="number" />
                     </div>
+                  ) : filter.label === "Title" ? (
+                    <Input 
+                      placeholder={filter.placeholder} 
+                      value={keyword}
+                      onChange={(e) => setKeyword(e.target.value)}
+                      className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black`} 
+                    />
                   ) : (
                     <Input placeholder={filter.placeholder} className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black`} />
                   )
