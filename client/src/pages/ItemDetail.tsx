@@ -333,10 +333,10 @@ export default function ItemDetail() {
                     <p className="mt-3 text-xl font-medium text-gray-900">{listing.condition}</p>
                   </div>
                   
-                  {/* Section 3: Estimated Value */}
+                  {/* Section 4: Estimated Value */}
                   {listing.estimatedValue && (
                     <div className="rounded-[1.5rem] border border-gray-200 bg-gray-50 p-5">
-                      <p className="text-sm uppercase tracking-[0.2em] text-gray-500">3. Estimated Value</p>
+                      <p className="text-sm uppercase tracking-[0.2em] text-gray-500">4. Estimated Value</p>
                       <p className="mt-3 text-2xl font-bold text-emerald-600">${listing.estimatedValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                     </div>
                   )}
@@ -344,9 +344,9 @@ export default function ItemDetail() {
               </div>
             </div>
 
-            {/* Section 5: Additional Information */}
+            {/* Section 4: Additional Information */}
             <div className="rounded-[2rem] border border-gray-200 bg-white p-8 shadow-[0_40px_90px_rgba(0,0,0,0.08)]">
-              <p className="text-sm uppercase tracking-[0.3em] text-gray-500">5. Additional Information</p>
+              <p className="text-sm uppercase tracking-[0.3em] text-gray-500">4. Additional Information</p>
               <p className="mt-5 max-w-4xl text-lg leading-8 text-gray-700">{listing.description}</p>
             </div>
 

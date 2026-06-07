@@ -1673,6 +1673,9 @@ The filter system is implemented in `client/src/pages/CategoryPage.tsx` and uses
 - [x] Verify all sections are properly numbered: 1, 2, 3, 4, 5
 - [x] Confirm item detail page remains unchanged
 - [x] Test relabeling on Add to Inventory page
+- [x] Update Item Detail page section numbering: Change "3. Estimated Value" to "4. Estimated Value"
+- [x] Update Item Detail page section numbering: Change "5. Additional Information" to "4. Additional Information"
+- [x] Verify Item Detail page displays correct numbering (1, 2, 3, 4 for Details Panel and Additional Information)
 
 ### Summary
 Successfully restructured the item detail page and add to inventory form to properly organize information into numbered sections:
@@ -1681,9 +1684,23 @@ Successfully restructured the item detail page and add to inventory form to prop
 1. SELECT CATEGORY
 2. GRADING & CERTIFICATION
 3. ITEM DETAILS
-4. UPLOAD IMAGES (newly added number)
-5. ADDITIONAL INFORMATION
+4. ADDITIONAL INFORMATION
+5. UPLOAD IMAGES
 
 **Item Detail Page:**
-- Details Panel now displays sections 1, 2, and 3 information
-- Section 5 (Additional Information) properly labeled and displays item details
+- Details Panel displays sections 1, 2, 3, and 4 information:
+  - 1. Category
+  - 2. Grade
+  - 3. Condition
+  - 4. Estimated Value
+- Section 4 (Additional Information) properly labeled and displays item details
+
+
+## KNOWN ISSUE: Clear Button Visual Feedback (June 7, 2026)
+
+- [ ] Fix Clear button to visually clear input fields when clicked
+- [ ] Current state: Clear button resets filter state correctly, but input fields don't visually clear
+- [ ] Root cause: Some filter inputs are not controlled (missing value/onChange props)
+- [ ] Solution: Ensure all filter inputs are controlled components with proper state binding
+- [ ] Test: Verify all filter inputs clear visually when Clear button is clicked
+- [ ] Verify: Filters work correctly after clearing (state is properly reset)
