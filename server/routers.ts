@@ -41,6 +41,9 @@ import {
   markInquiryAsRead,
   sendInquiryReply,
   getRepliesByInquiry,
+  deleteInquiry,
+  getDeletedInquiries,
+  emptyDeletedInquiries,
 } from "./db";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -806,6 +809,21 @@ export const appRouter = router({
       .input(z.object({ inquiryId: z.number().int().positive() }))
       .query(async ({ input }) => {
         return getRepliesByInquiry(input.inquiryId);
+      }),
+    deleteInquiry: protectedProcedure
+      .input(z.object({ inquiryId: z.number().int().positive() }))
+      .mutation(async ({ input, ctx }) => {
+        await deleteInquiry(input.inquiryId, ctx.user.id);
+        return { success: true };
+      }),
+    getDeleted: protectedProcedure
+      .query(async ({ ctx }) => {
+        return getDeletedInquiries(ctx.user.id);
+      }),
+    emptyDeleted: protectedProcedure
+      .mutation(async ({ ctx }) => {
+        await emptyDeletedInquiries(ctx.user.id);
+        return { success: true };
       }),
   }),
   ebay: router({

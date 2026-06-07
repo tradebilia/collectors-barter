@@ -1,0 +1,1 @@
+ALTER TABLE `itemInquiries` ADD `deletedAt` timestamp;

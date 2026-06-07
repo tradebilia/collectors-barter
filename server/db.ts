@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { and, asc, desc, eq, inArray, like, ne, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNotNull, like, ne, or, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import type { InsertUser, User } from "../drizzle/schema";
 import {
@@ -2337,4 +2337,56 @@ export async function getRepliesByInquiry(inquiryId: number) {
     .orderBy(asc(inquiryReplies.createdAt));
   
   return replies;
+}
+
+export async function deleteInquiry(inquiryId: number, userId: number) {
+  const db = await requireDb();
+  
+  // Verify the user is the recipient of the inquiry
+  const inquiry = await db
+    .select({ recipientId: itemInquiries.recipientId })
+    .from(itemInquiries)
+    .where(eq(itemInquiries.id, inquiryId))
+    .limit(1);
+  
+  if (!inquiry[0] || inquiry[0].recipientId !== userId) {
+    throw new Error("Unauthorized: You can only delete your own inquiries");
+  }
+  
+  await db
+    .update(itemInquiries)
+    .set({ deletedAt: new Date() })
+    .where(eq(itemInquiries.id, inquiryId));
+}
+
+export async function getDeletedInquiries(userId: number) {
+  const db = await requireDb();
+  
+  const inquiries = await db
+    .select({
+      id: itemInquiries.id,
+      senderId: itemInquiries.senderId,
+      senderName: users.displayName,
+      senderAvatarUrl: users.avatarUrl,
+      subject: itemInquiries.subject,
+      message: itemInquiries.message,
+      isRead: itemInquiries.isRead,
+      createdAt: itemInquiries.createdAt,
+      deletedAt: itemInquiries.deletedAt,
+    })
+    .from(itemInquiries)
+    .innerJoin(users, eq(itemInquiries.senderId, users.id))
+    .where(and(eq(itemInquiries.recipientId, userId), isNotNull(itemInquiries.deletedAt)))
+    .orderBy(desc(itemInquiries.deletedAt));
+  
+  return inquiries;
+}
+
+export async function emptyDeletedInquiries(userId: number) {
+  const db = await requireDb();
+  
+  // Delete all deleted inquiries for this user
+  await db
+    .delete(itemInquiries)
+    .where(and(eq(itemInquiries.recipientId, userId), isNotNull(itemInquiries.deletedAt)));
 }

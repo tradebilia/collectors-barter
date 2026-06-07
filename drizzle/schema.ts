@@ -458,6 +458,7 @@ export const itemInquiries = mysqlTable(
     subject: varchar("subject", { length: 255 }).notNull(),
     message: text("message").notNull(),
     isRead: boolean("isRead").default(false).notNull(),
+    deletedAt: timestamp("deletedAt"),
     createdAt: timestamp("createdAt").defaultNow().notNull(),
     updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   },

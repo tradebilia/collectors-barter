@@ -24,6 +24,7 @@ const folders = [
   { value: "trade", label: "Trade-related" },
   { value: "unread", label: "Unread" },
   { value: "accepted", label: "Accepted Trades" },
+  { value: "deleted", label: "Deleted" },
 ] as const;
 
 function initials(name: string) {
@@ -66,6 +67,29 @@ export default function Messages() {
       setMessageDraft("");
       await utils.market.getReplies.invalidate();
       await utils.market.getInquiries.invalidate();
+    },
+    onError: error => toast.error(error.message),
+  });
+
+  const deletedInquiriesQuery = trpc.market.getDeleted.useQuery(
+    undefined,
+    { enabled: isAuthenticated }
+  );
+
+  const deleteInquiryMutation = trpc.market.deleteInquiry.useMutation({
+    onSuccess: async () => {
+      await utils.market.getInquiries.invalidate();
+      await utils.market.getDeleted.invalidate();
+      setActiveThreadKey(null);
+    },
+    onError: error => toast.error(error.message),
+  });
+
+  const emptyDeletedMutation = trpc.market.emptyDeleted.useMutation({
+    onSuccess: async () => {
+      await utils.market.getDeleted.invalidate();
+      setActiveThreadKey(null);
+      toast.success("Deleted folder emptied");
     },
     onError: error => toast.error(error.message),
   });
@@ -152,11 +176,12 @@ export default function Messages() {
   }, [allThreads, folder]);
 
   const filteredInquiries = useMemo(() => {
+    if (folder === "deleted") return deletedInquiriesQuery.data ?? [];
     if (folder === "inquiries") return inquiries;
     if (folder === "unread") return inquiries.filter(i => !i.isRead);
     if (folder === "all") return inquiries;
     return [];
-  }, [inquiries, folder]);
+  }, [inquiries, folder, deletedInquiriesQuery.data]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -274,7 +299,9 @@ export default function Messages() {
                         ? allThreads.filter(thread => thread.kind === "trade").length
                         : item.value === "unread"
                           ? allThreads.filter(thread => thread.unread).length + inquiries.filter(i => !i.isRead).length
-                          : allThreads.filter(thread => thread.kind === "trade" && thread.accepted).length;
+                          : item.value === "deleted"
+                            ? (deletedInquiriesQuery.data ?? []).length
+                            : allThreads.filter(thread => thread.kind === "trade" && thread.accepted).length;
                 return (
                   <button
                     key={item.value}
@@ -378,18 +405,28 @@ export default function Messages() {
                         </div>
                       </div>
                     </div>
+                    {folder !== "deleted" && (
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => deleteInquiryMutation.mutate({ inquiryId: activeInquiry.id })}
+                        disabled={deleteInquiryMutation.isPending}
+                      >
+                        Delete
+                      </Button>
+                    )}
                   </div>
                 </div>
 
-                <ScrollArea className="flex-1 px-6 py-5">
-                  <div className="space-y-4">
-                    <div className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4 text-sm leading-7 text-slate-600">
+                <ScrollArea className="flex-1 px-6 py-5 overflow-hidden">
+                  <div className="space-y-4 w-full">
+                    <div className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4 text-sm leading-7 text-slate-600 break-words">
                       <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Subject</p>
-                      <p className="mt-2 font-semibold text-slate-900">{activeInquiry.subject}</p>
+                      <p className="mt-2 font-semibold text-slate-900 break-words">{activeInquiry.subject}</p>
                     </div>
-                    <div className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4 text-sm leading-7 text-slate-600">
+                    <div className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4 text-sm leading-7 text-slate-600 break-words">
                       <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Message</p>
-                      <p className="mt-2 whitespace-pre-wrap text-slate-900">{activeInquiry.message}</p>
+                      <p className="mt-2 whitespace-pre-wrap text-slate-900 break-words">{activeInquiry.message}</p>
                     </div>
                     <div className="text-xs uppercase tracking-[0.18em] text-slate-500">
                       {new Date(activeInquiry.createdAt).toLocaleString()}
@@ -399,7 +436,7 @@ export default function Messages() {
                       <div className="mt-6 space-y-3 border-t border-slate-200 pt-4">
                         <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Replies</p>
                         {repliesQuery.data.map(reply => (
-                          <div key={reply.id} className="rounded-[1.5rem] border border-slate-200 bg-blue-50 p-4">
+                          <div key={reply.id} className="rounded-[1.5rem] border border-slate-200 bg-blue-50 p-4 break-words">
                             <div className="flex items-center gap-2">
                               <Avatar className="h-8 w-8 border border-slate-200">
                                 <AvatarImage src={reply.senderAvatarUrl ?? undefined} alt={reply.senderName || "Collector"} />
@@ -419,18 +456,29 @@ export default function Messages() {
                 </ScrollArea>
 
                 <div className="border-t border-slate-200 px-6 py-5">
-                  <div className="grid gap-3 lg:grid-cols-[1fr_auto]">
-                    <Input value={messageDraft} onChange={event => setMessageDraft(event.target.value)} placeholder="Reply to this inquiry..." className="h-12 bg-white" />
-                    <Button className="h-12 rounded-full px-6" disabled={!messageDraft.trim() || sendReplyMutation.isPending} onClick={() => {
-                      if (!activeInquiry || !user?.id) return;
-                      const trimmed = messageDraft.trim();
-                      if (!trimmed) return;
-                      sendReplyMutation.mutate({ inquiryId: activeInquiry.id, message: trimmed });
-                    }}>
-                      <Send className="mr-2 h-4 w-4" />
-                      Reply
+                  {folder === "deleted" ? (
+                    <Button
+                      variant="destructive"
+                      className="w-full"
+                      onClick={() => emptyDeletedMutation.mutate()}
+                      disabled={emptyDeletedMutation.isPending}
+                    >
+                      Empty Deleted Folder
                     </Button>
-                  </div>
+                  ) : (
+                    <div className="grid gap-3 lg:grid-cols-[1fr_auto]">
+                      <Input value={messageDraft} onChange={event => setMessageDraft(event.target.value)} placeholder="Reply to this inquiry..." className="h-12 bg-white" />
+                      <Button className="h-12 rounded-full px-6" disabled={!messageDraft.trim() || sendReplyMutation.isPending} onClick={() => {
+                        if (!activeInquiry || !user?.id) return;
+                        const trimmed = messageDraft.trim();
+                        if (!trimmed) return;
+                        sendReplyMutation.mutate({ inquiryId: activeInquiry.id, message: trimmed });
+                      }}>
+                        <Send className="mr-2 h-4 w-4" />
+                        Reply
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </div>
             ) : activeThread ? (
