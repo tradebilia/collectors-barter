@@ -250,17 +250,15 @@ export async function getMarketplaceFeed(
   }
   const keyword = filters.keyword?.trim();
   if (keyword) {
-    // Search across all searchable fields: title, description, certificationCompany, category, condition, grade
+    // Search across multiple fields
     const searchCondition = or(
       like(listings.title, `%${keyword}%`),
       like(listings.description, `%${keyword}%`),
-      like(listings.certificationCompany, `%${keyword}%`),
-      like(listings.category, `%${keyword}%`),
-      like(listings.condition, `%${keyword}%`),
-      like(listings.grade, `%${keyword}%`)
+      like(listings.certificationCompany, `%${keyword}%`)
     );
-    if (searchCondition) {
-      whereClauses.push(searchCondition);
+    // Only add the condition if it's not undefined
+    if (searchCondition !== undefined) {
+      whereClauses.push(searchCondition as any);
     }
   }
 

@@ -74,7 +74,7 @@ export function SearchResults() {
             <option value="all">All Conditions</option>
             <option value="mint">Mint</option>
             <option value="near_mint">Near Mint</option>
-            <option value="excellent">Excellent</option>
+            <option value="very_good">Very Good</option>
             <option value="good">Good</option>
             <option value="fair">Fair</option>
             <option value="poor">Poor</option>
@@ -88,7 +88,8 @@ export function SearchResults() {
           </div>
         ) : error ? (
           <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-            <p className="text-red-800">Error loading results. Please try again.</p>
+            <p className="text-red-800">Error loading results:</p>
+            <p className="text-red-700 text-sm mt-2">{error.message}</p>
           </div>
         ) : results?.listings && results.listings.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
