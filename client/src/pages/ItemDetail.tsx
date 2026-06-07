@@ -222,7 +222,9 @@ export default function ItemDetail() {
 
         <CategoryBar />
 
-        <section className="px-4 py-10 lg:px-8">
+        <section className={`px-4 py-10 lg:px-8 ${pageBackgroundClass} relative`}>
+          <div className={`absolute inset-0 ${categoryTheme?.textureClassName ?? ''}`}></div>
+          <div className="relative">
           <div className="mx-auto max-w-6xl mb-8">
             <button
               onClick={() => window.location.href = `/category/${listing.category}`}
@@ -347,6 +349,7 @@ export default function ItemDetail() {
                 </div>
               </div>
             </div>
+          </div>
           </div>
         </section>
 
