@@ -510,6 +510,7 @@ export const appRouter = router({
           description: z.string().min(20).max(4000),
           estimatedValue: z.number().nonnegative().optional(),
           photos: z.array(uploadedImageSchema).max(6),
+          itemDetails: z.record(z.string(), z.string()).optional(),
         }),
       )
       .mutation(({ ctx, input }) => {
@@ -522,6 +523,7 @@ export const appRouter = router({
             description: input.description,
             estimatedValue: input.estimatedValue,
             photos: input.photos,
+            itemDetails: input.itemDetails as Record<string, string> | undefined,
           },
         );
       }),
@@ -535,6 +537,7 @@ export const appRouter = router({
           description: z.string().min(20).max(4000),
           estimatedValue: z.number().nonnegative().optional(),
           photos: z.array(uploadedImageSchema).max(6),
+          itemDetails: z.record(z.string(), z.string()).optional(),
         }),
       )
       .mutation(({ ctx, input }) => {
@@ -548,6 +551,7 @@ export const appRouter = router({
             description: input.description,
             estimatedValue: input.estimatedValue,
             photos: input.photos,
+            itemDetails: input.itemDetails as Record<string, string> | undefined,
           },
         );
       }),

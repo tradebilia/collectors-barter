@@ -501,6 +501,7 @@ export async function getListingDetail(listingId: number, viewerId: number | nul
       certificationCompany: listings.certificationCompany,
       estimatedValue: listings.estimatedValue,
       description: listings.description,
+      itemDetails: listings.itemDetails,
       status: listings.status,
       featured: listings.featured,
       isActive: listings.isActive,
@@ -583,6 +584,7 @@ export async function getListingDetail(listingId: number, viewerId: number | nul
     certificationCompany: detailCard[0].certificationCompany,
     estimatedValue: detailCard[0].estimatedValue ? Number(detailCard[0].estimatedValue) : null,
     description: detailCard[0].description,
+    itemDetails: detailCard[0].itemDetails ? JSON.parse(detailCard[0].itemDetails) : null,
     status: detailCard[0].status,
     featured: detailCard[0].featured,
     isActive: detailCard[0].isActive,
@@ -1552,6 +1554,7 @@ export async function createListing(
     description: string;
     estimatedValue?: number;
     photos: PhotoUploadInput[];
+    itemDetails?: Record<string, string>;
   },
 ) {
   const db = await requireDb();
@@ -1564,6 +1567,7 @@ export async function createListing(
     condition: input.condition,
     description: input.description.trim(),
     estimatedValue: input.estimatedValue ? String(input.estimatedValue) : null,
+    itemDetails: input.itemDetails ? JSON.stringify(input.itemDetails) : null,
     featured: false,
   });
   const listingId = getInsertId(insertResult);
@@ -1593,6 +1597,7 @@ export async function updateListing(
     description: string;
     estimatedValue?: number;
     photos: PhotoUploadInput[];
+    itemDetails?: Record<string, string>;
   },
 ) {
   const db = await requireDb();
@@ -1618,6 +1623,7 @@ export async function updateListing(
       condition: input.condition,
       description: input.description.trim(),
       estimatedValue: input.estimatedValue ? String(input.estimatedValue) : null,
+      itemDetails: input.itemDetails ? JSON.stringify(input.itemDetails) : null,
     })
     .where(eq(listings.id, input.listingId));
 

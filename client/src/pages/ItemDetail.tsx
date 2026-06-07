@@ -340,6 +340,14 @@ export default function ItemDetail() {
                       <p className="mt-3 text-2xl font-bold text-emerald-600">${listing.estimatedValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                     </div>
                   )}
+                  
+                  {/* Category-specific fields from itemDetails */}
+                  {listing.itemDetails && Object.entries(listing.itemDetails).map(([key, value]) => (
+                    <div key={key} className="rounded-[1.5rem] border border-gray-200 bg-gray-50 p-5">
+                      <p className="text-sm uppercase tracking-[0.2em] text-gray-500">{key}</p>
+                      <p className="mt-3 text-xl font-medium text-gray-900">{String(value)}</p>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>

@@ -355,6 +355,7 @@ export default function AddInventory() {
         description: descriptionSections,
         estimatedValue: draft.value ? parseFloat(draft.value) : 0,
         photos: newPhotos,
+        itemDetails: draft.categoryFields,
       });
       toast.success("Listing updated successfully!");
       navigate("/inventory");
@@ -366,6 +367,7 @@ export default function AddInventory() {
         description: descriptionSections,
         estimatedValue: draft.value ? parseFloat(draft.value) : 0,
         photos: reorderedPhotos,
+        itemDetails: draft.categoryFields,
       });
       toast.success("Listing created successfully!");
     }

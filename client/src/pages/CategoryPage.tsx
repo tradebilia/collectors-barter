@@ -619,6 +619,55 @@ export default function CategoryPage() {
                       onChange={(e) => setSeries(e.target.value)}
                       className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black`} 
                     />
+                  ) : filter.label === "Name" ? (
+                    <Input 
+                      placeholder={filter.placeholder}
+                      value={keyword}
+                      onChange={(e) => setKeyword(e.target.value)}
+                      className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black`}
+                    />
+                  ) : filter.label === "Franchise" ? (
+                    <Input 
+                      placeholder={filter.placeholder}
+                      value={series}
+                      onChange={(e) => setSeries(e.target.value)}
+                      className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black`}
+                    />
+                  ) : filter.label === "Issuer" ? (
+                    <Input 
+                      placeholder={filter.placeholder}
+                      value={manufacturer}
+                      onChange={(e) => setManufacturer(e.target.value)}
+                      className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black`}
+                    />
+                  ) : filter.label === "Mint mark" ? (
+                    <Input 
+                      placeholder={filter.placeholder}
+                      value={team}
+                      onChange={(e) => setTeam(e.target.value)}
+                      className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black`}
+                    />
+                  ) : filter.label === "Pokémon" ? (
+                    <Input 
+                      placeholder={filter.placeholder}
+                      value={keyword}
+                      onChange={(e) => setKeyword(e.target.value)}
+                      className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black`}
+                    />
+                  ) : filter.label === "Signer" ? (
+                    <Input 
+                      placeholder={filter.placeholder}
+                      value={keyword}
+                      onChange={(e) => setKeyword(e.target.value)}
+                      className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black`}
+                    />
+                  ) : filter.label === "Pin name" ? (
+                    <Input 
+                      placeholder={filter.placeholder}
+                      value={keyword}
+                      onChange={(e) => setKeyword(e.target.value)}
+                      className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black`}
+                    />
                   ) : (
                     <Input placeholder={filter.placeholder} className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black`} />
                   )

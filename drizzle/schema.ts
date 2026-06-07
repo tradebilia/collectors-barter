@@ -147,6 +147,7 @@ export const listings = mysqlTable(
     certificationCompany: varchar("certificationCompany", { length: 50 }),
     estimatedValue: decimal("estimatedValue", { precision: 12, scale: 2 }),
     description: text("description").notNull(),
+    itemDetails: text("itemDetails"), // JSON string storing category-specific fields
     status: mysqlEnum("status", listingStatuses).default("active").notNull(),
     isActive: boolean("isActive").default(true).notNull(),
     featured: boolean("featured").default(false).notNull(),
