@@ -1567,7 +1567,8 @@ The application is fully functional with all core features working correctly.
 - [x] Verify Autographed dropdown filter works correctly
 - [x] Verify value range filters (Min/Max) work correctly
 - [x] Test combining multiple filters together
-- [x] Add key props to input fields to improve React rendering
+- [x] Remove dynamic key props from input fields to fix focus loss issue
+- [x] Fix input field focus loss when typing (was caused by dynamic key props)
 - [ ] Fix Clear button UI to properly reflect cleared state (cosmetic issue - state IS cleared)
 
 ### Filter System Architecture & Extensibility

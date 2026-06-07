@@ -593,7 +593,6 @@ export default function CategoryPage() {
                     />
                   ) : filter.label === "Manufacturer" ? (
                     <Input 
-                      key={`manufacturer-${manufacturer}`}
                       placeholder={filter.placeholder} 
                       value={manufacturer}
                       onChange={(e) => setManufacturer(e.target.value)}
@@ -601,7 +600,6 @@ export default function CategoryPage() {
                     />
                   ) : filter.label === "Year / era" ? (
                     <Input 
-                      key={`year-${year}`}
                       placeholder={filter.placeholder} 
                       value={year}
                       onChange={(e) => setYear(e.target.value)}
@@ -609,7 +607,6 @@ export default function CategoryPage() {
                     />
                   ) : filter.label === "Team" ? (
                     <Input 
-                      key={`team-${team}`}
                       placeholder={filter.placeholder} 
                       value={team}
                       onChange={(e) => setTeam(e.target.value)}
@@ -617,7 +614,6 @@ export default function CategoryPage() {
                     />
                   ) : filter.label === "Set / series" ? (
                     <Input 
-                      key={`series-${series}`}
                       placeholder={filter.placeholder} 
                       value={series}
                       onChange={(e) => setSeries(e.target.value)}
