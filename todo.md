@@ -1548,3 +1548,112 @@ The application is fully functional with all core features working correctly.
 - [ ] Test filters work across all 10 category pages
 - [ ] Ensure filters automatically trigger query when state changes
 - [ ] Add Clear button functionality to reset all filters
+
+
+## Filter System Improvements (Current Sprint)
+
+### Current Status
+- [x] Fix filter query refetching when Search button is clicked (useMemo wrapper added)
+- [x] Verify manufacturer filter works correctly
+- [ ] Test all existing filters to ensure they work correctly
+- [ ] Fix Clear button to properly reset all filter fields
+- [ ] Verify Sport dropdown filter works correctly
+- [ ] Verify Condition dropdown filter works correctly
+- [ ] Verify Grade dropdown filter works correctly
+- [ ] Verify Rookie dropdown filter works correctly
+- [ ] Verify Autographed dropdown filter works correctly
+- [ ] Verify value range filters (Min/Max) work correctly
+- [ ] Test combining multiple filters together
+
+### Filter System Architecture & Extensibility
+
+The filter system is implemented in `client/src/pages/CategoryPage.tsx` and uses the following pattern:
+
+**Frontend State Management:**
+- Individual state variables for each filter (e.g., `manufacturer`, `year`, `team`)
+- `submittedFilters` state object that gets sent to the backend when Search is clicked
+- `queryInput` is memoized to trigger refetch when `submittedFilters` changes
+
+**Backend Processing:**
+- `server/routers.ts`: `market.feed` procedure accepts `listingFiltersSchema` input
+- `server/db.ts`: `getMarketplaceFeed()` function applies filters using Drizzle ORM
+
+**How to Add a New Filter:**
+
+1. **Add to Zod Schema** (`server/routers.ts` line ~68):
+   ```typescript
+   const listingFiltersSchema = z.object({
+     // ... existing fields ...
+     newFilterName: z.string().max(100).optional(),
+   });
+   ```
+
+2. **Add State Variable** (CategoryPage.tsx line ~200):
+   ```typescript
+   const [newFilterName, setNewFilterName] = useState<string>("");
+   ```
+
+3. **Add to queryInput** (CategoryPage.tsx line ~228):
+   ```typescript
+   const queryInput = useMemo(() => 
+     slug ? { 
+       // ... existing fields ...
+       newFilterName: submittedFilters.newFilterName,
+     } : undefined,
+     [slug, submittedFilters]
+   );
+   ```
+
+4. **Add to handleSubmitFilters** (CategoryPage.tsx line ~257):
+   ```typescript
+   const handleSubmitFilters = () => {
+     const newFilters = {
+       // ... existing fields ...
+       newFilterName: newFilterName || undefined,
+     };
+     setSubmittedFilters(newFilters);
+   };
+   ```
+
+5. **Add to handleClearFilters** (CategoryPage.tsx line ~281):
+   ```typescript
+   const handleClearFilters = () => {
+     // ... existing resets ...
+     setNewFilterName("");
+     setSubmittedFilters({
+       // ... existing fields ...
+       newFilterName: undefined,
+     });
+   };
+   ```
+
+6. **Add UI Input Field** (CategoryPage.tsx line ~500+):
+   ```typescript
+   <input
+     type="text"
+     placeholder="Filter placeholder"
+     value={newFilterName}
+     onChange={(e) => setNewFilterName(e.target.value)}
+   />
+   ```
+
+7. **Add Backend Filter Logic** (`server/db.ts` line ~280):
+   ```typescript
+   if (filters.newFilterName?.trim()) {
+     whereClauses.push(like(listings.description, `%newFilterName: ${filters.newFilterName}%`));
+   }
+   ```
+
+### Known Issues & Fixes Applied
+- ✅ Fixed: Query not refetching when filters change (added useMemo wrapper to queryInput)
+- ⚠️ Potential Issue: Clear button UI might not be updating properly (needs testing)
+- ⚠️ Note: Filters are applied by searching description field for specific text patterns (e.g., "manufacturer: Topps")
+
+### Future Improvements
+- [ ] Refactor filter state management to use useReducer for cleaner code
+- [ ] Create a reusable FilterInput component to reduce code duplication
+- [ ] Add filter validation to prevent invalid inputs
+- [ ] Add filter presets (e.g., "Recently Added", "High Value")
+- [ ] Implement filter persistence (save user's last used filters)
+- [ ] Add filter suggestions based on available data
+- [ ] Optimize filter queries for better performance

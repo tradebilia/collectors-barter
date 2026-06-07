@@ -275,8 +275,37 @@ export async function getMarketplaceFeed(
       whereClauses.push(searchCondition as any);
     }
   }
-  // Note: Category-specific fields (issueNumber, manufacturer, year, team, series, sport, rookie, autographed, signed, facsimile)
-  // are stored in the description field, so they're searched via the keyword search above
+  // Add filter conditions for category-specific fields stored in description
+  if (filters.issueNumber?.trim()) {
+    whereClauses.push(like(listings.description, `%Issue Number: ${filters.issueNumber}%`));
+  }
+  if (filters.manufacturer?.trim()) {
+    whereClauses.push(like(listings.description, `%manufacturer: ${filters.manufacturer}%`));
+  }
+  if (filters.year?.trim()) {
+    whereClauses.push(like(listings.description, `%year: ${filters.year}%`));
+  }
+  if (filters.team?.trim()) {
+    whereClauses.push(like(listings.description, `%team: ${filters.team}%`));
+  }
+  if (filters.series?.trim()) {
+    whereClauses.push(like(listings.description, `%set: ${filters.series}%`));
+  }
+  if (filters.sport?.trim()) {
+    whereClauses.push(like(listings.description, `%sport: ${filters.sport}%`));
+  }
+  if (filters.rookie?.trim() && filters.rookie !== "All") {
+    whereClauses.push(like(listings.description, `%rookie: ${filters.rookie}%`));
+  }
+  if (filters.autographed?.trim() && filters.autographed !== "All") {
+    whereClauses.push(like(listings.description, `%autographed: ${filters.autographed}%`));
+  }
+  if (filters.signed?.trim() && filters.signed !== "All") {
+    whereClauses.push(like(listings.description, `%signed: ${filters.signed}%`));
+  }
+  if (filters.facsimile?.trim() && filters.facsimile !== "All") {
+    whereClauses.push(like(listings.description, `%facsimile: ${filters.facsimile}%`));
+  }
   if (filters.gradingService) {
     whereClauses.push(like(listings.certificationCompany, `%${filters.gradingService}%`));
   }

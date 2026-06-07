@@ -224,7 +224,8 @@ export default function CategoryPage() {
     facsimile: undefined as string | undefined,
   });
 
-  const feedQuery = trpc.market.feed.useQuery(
+  // Memoize the query input to ensure proper refetch detection
+  const queryInput = useMemo(() => 
     slug ? { 
       category: slug, 
       condition: submittedFilters.condition, 
@@ -244,12 +245,17 @@ export default function CategoryPage() {
       signed: submittedFilters.signed,
       facsimile: submittedFilters.facsimile,
     } : undefined,
+    [slug, submittedFilters]
+  );
+
+  const feedQuery = trpc.market.feed.useQuery(
+    queryInput,
     { enabled: Boolean(slug) },
   );
 
   // Handler to submit filters
   const handleSubmitFilters = () => {
-    setSubmittedFilters({
+    const newFilters = {
       keyword,
       condition,
       issueNumber: issueNumber || undefined,
@@ -260,13 +266,15 @@ export default function CategoryPage() {
       sport: sport || undefined,
       gradingService: gradingService || undefined,
       grade: grade || undefined,
-      valueMin: valueMin || undefined,
-      valueMax: valueMax || undefined,
+      valueMin: valueMin ?? undefined,
+      valueMax: valueMax ?? undefined,
       rookie: rookie || undefined,
       autographed: autographed || undefined,
       signed: signed || undefined,
       facsimile: facsimile || undefined,
-    });
+    };
+
+    setSubmittedFilters(newFilters);
   };
 
   // Handler to clear all filters
