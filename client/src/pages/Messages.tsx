@@ -352,7 +352,6 @@ export default function Messages() {
                       <p className={`mt-3 line-clamp-2 text-sm leading-6 ${activeThreadKey === `inquiry-${inquiry.id}` ? "text-white/75" : "text-slate-600"}`}>{inquiry.subject}</p>
                       <div className="mt-4 flex items-center justify-between text-xs uppercase tracking-[0.18em]">
                         <span>{new Date(inquiry.createdAt).toLocaleString()}</span>
-                        {!inquiry.isRead ? <span className="inline-flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-emerald-400" />Unread</span> : <span>Seen</span>}
                       </div>
                     </button>
                   ))}
