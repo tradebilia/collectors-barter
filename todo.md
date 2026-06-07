@@ -1461,3 +1461,10 @@ The application is fully functional with all core features working correctly.
 - [x] Updated email icon in TopRightIcons to turn solid yellow with unread count
 - [x] Allows users to email themselves for testing purposes
 - [x] Created and ran inquiry system validation tests
+
+
+## BUG: Search bar navigates on every keystroke
+
+- [x] Fix search bar to only navigate when user presses Enter
+- [x] Currently navigates to search page on every character typed
+- [x] Should require explicit submission (Enter key) before searching

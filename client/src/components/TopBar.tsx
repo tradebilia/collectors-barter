@@ -24,14 +24,20 @@ export function TopBar({
   const [, setLocation] = useLocation();
   // Note: market.search is a query, not a mutation
 
-  const handleSearch = (value: string) => {
-    setSearchQuery(value);
-    onSearchChange?.(value);
+  const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      const value = (e.target as HTMLInputElement).value;
+      onSearchChange?.(value);
 
-    if (value.trim().length > 0) {
-      // Navigate to search results page
-      setLocation(`/search?q=${encodeURIComponent(value)}`);
+      if (value.trim().length > 0) {
+        // Navigate to search results page
+        setLocation(`/search?q=${encodeURIComponent(value)}`);
+      }
     }
+  };
+
+  const handleInputChange = (value: string) => {
+    setSearchQuery(value);
   };
 
   return (
@@ -51,7 +57,8 @@ export function TopBar({
             type="text"
             placeholder={searchPlaceholder}
             value={searchQuery}
-            onChange={(e) => handleSearch(e.target.value)}
+            onChange={(e) => handleInputChange(e.target.value)}
+            onKeyDown={handleSearch}
             className="bg-transparent text-gray-900 text-sm placeholder-gray-500 outline-none w-full"
           />
         </div>
