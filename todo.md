@@ -1555,8 +1555,10 @@ The application is fully functional with all core features working correctly.
 ### Current Status
 - [x] Fix filter query refetching when Search button is clicked (useMemo wrapper added)
 - [x] Verify manufacturer filter works correctly
+- [x] Verify Year / era filter works correctly
+- [x] Verify Clear button is properly wired to handleClearFilters
 - [ ] Test all existing filters to ensure they work correctly
-- [ ] Fix Clear button to properly reset all filter fields
+- [ ] Fix Clear button UI to properly reflect cleared state (input fields not visually clearing)
 - [ ] Verify Sport dropdown filter works correctly
 - [ ] Verify Condition dropdown filter works correctly
 - [ ] Verify Grade dropdown filter works correctly

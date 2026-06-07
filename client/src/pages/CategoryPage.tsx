@@ -279,23 +279,30 @@ export default function CategoryPage() {
 
   // Handler to clear all filters
   const handleClearFilters = () => {
+    // Reset all text input filters
     setKeyword("");
-    setCondition(undefined);
-    setSportsCardsConditionText("");
     setIssueNumber("");
     setManufacturer("");
     setYear("");
     setTeam("");
     setSeries("");
+    setSportsCardsConditionText("");
+    
+    // Reset all dropdown filters to undefined (which displays as "All")
+    setCondition(undefined);
     setSport(undefined);
     setGradingService(undefined);
     setGrade(undefined);
-    setValueMin(undefined);
-    setValueMax(undefined);
     setRookie(undefined);
     setAutographed(undefined);
     setSigned(undefined);
     setFacsimile(undefined);
+    
+    // Reset numeric range filters
+    setValueMin(undefined);
+    setValueMax(undefined);
+    
+    // Reset submitted filters to trigger query reset
     setSubmittedFilters({
       keyword: "",
       condition: undefined,
