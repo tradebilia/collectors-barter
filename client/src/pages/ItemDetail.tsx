@@ -187,11 +187,33 @@ export default function ItemDetail() {
 
         <CategoryBar />
 
-        <section className="px-4 py-10 lg:px-8 border-t border-white/10">
+        <section className="px-4 py-10 lg:px-8">
           <div className="mx-auto max-w-6xl mb-8">
             <button
               onClick={() => window.location.href = `/category/${listing.category}`}
-              className="flex items-center gap-3 px-6 py-3 rounded-lg bg-white border border-white text-black hover:bg-gray-100 hover:border-gray-100 transition text-base font-semibold"
+              className={`flex items-center gap-3 px-6 py-3 rounded-lg border transition text-base font-semibold ${
+                listing.category === 'sports_cards'
+                  ? 'bg-white border-white text-black hover:bg-gray-100 hover:border-gray-100'
+                  : listing.category === 'comics'
+                  ? 'bg-white/10 border-white/30 text-white hover:bg-white/20'
+                  : listing.category === 'video_games'
+                  ? 'bg-[#68dc43]/20 border-[#68dc43]/40 text-[#d8ffbc] hover:bg-[#68dc43]/30'
+                  : listing.category === 'vintage_toys'
+                  ? 'bg-white/15 border-[#5f6762]/30 text-[#f8efc8] hover:bg-white/25'
+                  : listing.category === 'coins'
+                  ? 'bg-white/10 border-white/30 text-white hover:bg-white/20'
+                  : listing.category === 'stamps'
+                  ? 'bg-white/10 border-white/30 text-white hover:bg-white/20'
+                  : listing.category === 'pokemon'
+                  ? 'bg-[#68dc43]/20 border-[#68dc43]/40 text-[#d8ffbc] hover:bg-[#68dc43]/30'
+                  : listing.category === 'movies'
+                  ? 'bg-white/10 border-white/30 text-white hover:bg-white/20'
+                  : listing.category === 'autographs'
+                  ? 'bg-white/10 border-white/30 text-white hover:bg-white/20'
+                  : listing.category === 'disney_pins'
+                  ? 'bg-white/10 border-white/30 text-white hover:bg-white/20'
+                  : 'bg-white border-white text-black hover:bg-gray-100'
+              }`}
               title="Back to category"
             >
               <ArrowLeft className="w-6 h-6" />

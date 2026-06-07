@@ -1731,3 +1731,15 @@ Status: COSMETIC ISSUE - NOT CRITICAL
 - [ ] Note: This is a cosmetic issue - the functionality works, just the visual feedback is missing
 - [ ] Priority: Low - users can still use the filters, just need to manually clear the inputs
 - [ ] Workaround: Users can manually clear input fields or use Clear all filters link if available
+
+
+## ItemDetail Page Background Color Fix (June 7, 2026)
+
+- [x] Fix ItemDetail page to apply category-specific background colors below the category bar
+  - [x] Comics: Dark maroon/brown background
+  - [x] Sports Cards: Teal to cream gradient background
+  - [x] Video Games: Dark green with neon accents
+  - [x] Vintage Toys: Muted silver/olive/gold
+  - [x] Coins, Stamps, Autographs, Movies, Disney Pins: Dark backgrounds with category-specific accents
+  - [x] "Back to [Category]" button now uses category-specific colors
+  - [x] Verified on Comics and Sports Cards pages - colors now display correctly
