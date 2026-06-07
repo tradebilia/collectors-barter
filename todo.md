@@ -1723,6 +1723,16 @@ Now the Details Panel displays:
 - Estimated Value
 - All category-specific fields (manufacturer, sport, year, team, set, etc.)
 
+## Item Detail Page - Thumbnail Layout (June 7, 2026)
+
+Status: COMPLETED
+
+- [x] Move thumbnail images to the left side of the main image
+- [x] Arrange thumbnails vertically in a column
+- [x] Update grid layout to accommodate left thumbnail column
+- [x] Verify thumbnails are clickable and switch main image
+- [x] Test layout on item detail pages
+
 ## KNOWN ISSUE: Clear Button Visual Feedback (June 7, 2026)
 
 Status: COSMETIC ISSUE - NOT CRITICAL
