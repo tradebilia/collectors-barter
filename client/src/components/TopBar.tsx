@@ -40,6 +40,13 @@ export function TopBar({
     setSearchQuery(value);
   };
 
+  const handleSearchClick = () => {
+    if (searchQuery.trim().length > 0) {
+      onSearchChange?.(searchQuery);
+      setLocation(`/search?q=${encodeURIComponent(searchQuery)}`);
+    }
+  };
+
   return (
     <div className="border-b border-white/10 bg-black relative z-0">
       <div className="flex items-center justify-center gap-4 pl-2 pr-4 py-3 relative">
@@ -51,7 +58,7 @@ export function TopBar({
         </div>
 
         {/* Search in center */}
-        <div className="flex items-center gap-2 bg-white rounded-lg px-4 py-2 max-w-2xl w-full">
+        <div className="flex items-center gap-0 bg-white rounded-lg px-4 py-2 max-w-2xl w-full">
           <Search className="h-4 w-4 text-gray-400 flex-shrink-0" />
           <input
             type="text"
@@ -59,8 +66,16 @@ export function TopBar({
             value={searchQuery}
             onChange={(e) => handleInputChange(e.target.value)}
             onKeyDown={handleSearch}
-            className="bg-transparent text-gray-900 text-sm placeholder-gray-500 outline-none w-full"
+            className="bg-transparent text-gray-900 text-sm placeholder-gray-500 outline-none flex-1 ml-2"
           />
+          <button
+            onClick={handleSearchClick}
+            disabled={searchQuery.trim().length === 0}
+            className="flex-shrink-0 ml-2 px-3 py-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-xs font-semibold rounded transition"
+            aria-label="Search"
+          >
+            Search
+          </button>
         </div>
 
         {/* Icons and Auth on right */}

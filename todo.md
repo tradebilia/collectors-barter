@@ -1468,3 +1468,11 @@ The application is fully functional with all core features working correctly.
 - [x] Fix search bar to only navigate when user presses Enter
 - [x] Currently navigates to search page on every character typed
 - [x] Should require explicit submission (Enter key) before searching
+
+
+## NEW FEATURE: Add Search Button to Search Bar
+
+- [x] Add search button to the right of the search input field
+- [x] Button should trigger search submission
+- [x] Button should be styled consistently with the search bar
+- [x] Button should be disabled when search query is empty
