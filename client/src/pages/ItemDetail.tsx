@@ -187,7 +187,7 @@ export default function ItemDetail() {
 
         <CategoryBar />
 
-        <section className="px-4 py-10 lg:px-8 border-t border-white/10">
+        <section className="px-4 py-10 lg:px-8 border-t border-white/10 bg-black">
           <div className="mx-auto max-w-6xl mb-8">
             <button
               onClick={() => window.location.href = `/category/${listing.category}`}
