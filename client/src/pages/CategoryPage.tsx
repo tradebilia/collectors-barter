@@ -476,7 +476,43 @@ export default function CategoryPage() {
                 <div key={filter.label} className="space-y-0.5">
                   <Label className="text-[0.65rem] font-semibold uppercase tracking-[0.16em]">{filter.label}</Label>
                   {filter.type === "select" ? (
-                    <Select defaultValue="all">
+                    <Select 
+                      value={filter.label === "Sport" ? sport || "all" : 
+                             filter.label === "Grading service" ? gradingService || "all" :
+                             filter.label === "Grading company" ? gradingService || "all" :
+                             filter.label === "Certification" ? gradingService || "all" :
+                             filter.label === "Authentication" ? gradingService || "all" :
+                             filter.label === "Grade" ? grade || "all" :
+                             filter.label === "Rookie" ? rookie || "all" :
+                             filter.label === "Autographed" ? autographed || "all" :
+                             filter.label === "Signed" ? signed || "all" :
+                             filter.label === "Facsimile" ? facsimile || "all" : "all"}
+                      onValueChange={(value) => {
+                        if (value === "all") {
+                          if (filter.label === "Sport") setSport(undefined);
+                          else if (filter.label === "Grading service") setGradingService(undefined);
+                          else if (filter.label === "Grading company") setGradingService(undefined);
+                          else if (filter.label === "Certification") setGradingService(undefined);
+                          else if (filter.label === "Authentication") setGradingService(undefined);
+                          else if (filter.label === "Grade") setGrade(undefined);
+                          else if (filter.label === "Rookie") setRookie(undefined);
+                          else if (filter.label === "Autographed") setAutographed(undefined);
+                          else if (filter.label === "Signed") setSigned(undefined);
+                          else if (filter.label === "Facsimile") setFacsimile(undefined);
+                        } else {
+                          if (filter.label === "Sport") setSport(value);
+                          else if (filter.label === "Grading service") setGradingService(value);
+                          else if (filter.label === "Grading company") setGradingService(value);
+                          else if (filter.label === "Certification") setGradingService(value);
+                          else if (filter.label === "Authentication") setGradingService(value);
+                          else if (filter.label === "Grade") setGrade(value);
+                          else if (filter.label === "Rookie") setRookie(value);
+                          else if (filter.label === "Autographed") setAutographed(value);
+                          else if (filter.label === "Signed") setSigned(value);
+                          else if (filter.label === "Facsimile") setFacsimile(value);
+                        }
+                      }}
+                    >
                       <SelectTrigger className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black`}>
                         <SelectValue placeholder={filter.placeholder} />
                       </SelectTrigger>
@@ -511,14 +547,61 @@ export default function CategoryPage() {
                     </Select>
                   ) : filter.label === "Value Range" ? (
                     <div className="flex gap-2">
-                      <Input placeholder="Min" className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black flex-1`} type="number" />
-                      <Input placeholder="Max" className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black flex-1`} type="number" />
+                      <Input 
+                        placeholder="Min" 
+                        value={valueMin || ""}
+                        onChange={(e) => setValueMin(e.target.value ? parseFloat(e.target.value) : undefined)}
+                        className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black flex-1`} 
+                        type="number" 
+                      />
+                      <Input 
+                        placeholder="Max" 
+                        value={valueMax || ""}
+                        onChange={(e) => setValueMax(e.target.value ? parseFloat(e.target.value) : undefined)}
+                        className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black flex-1`} 
+                        type="number" 
+                      />
                     </div>
                   ) : filter.label === "Title" ? (
                     <Input 
                       placeholder={filter.placeholder} 
                       value={keyword}
                       onChange={(e) => setKeyword(e.target.value)}
+                      className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black`} 
+                    />
+                  ) : filter.label === "Issue Number" ? (
+                    <Input 
+                      placeholder={filter.placeholder} 
+                      value={issueNumber}
+                      onChange={(e) => setIssueNumber(e.target.value)}
+                      className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black`} 
+                    />
+                  ) : filter.label === "Manufacturer" ? (
+                    <Input 
+                      placeholder={filter.placeholder} 
+                      value={manufacturer}
+                      onChange={(e) => setManufacturer(e.target.value)}
+                      className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black`} 
+                    />
+                  ) : filter.label === "Year / era" ? (
+                    <Input 
+                      placeholder={filter.placeholder} 
+                      value={year}
+                      onChange={(e) => setYear(e.target.value)}
+                      className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black`} 
+                    />
+                  ) : filter.label === "Team" ? (
+                    <Input 
+                      placeholder={filter.placeholder} 
+                      value={team}
+                      onChange={(e) => setTeam(e.target.value)}
+                      className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black`} 
+                    />
+                  ) : filter.label === "Set / series" ? (
+                    <Input 
+                      placeholder={filter.placeholder} 
+                      value={series}
+                      onChange={(e) => setSeries(e.target.value)}
                       className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black`} 
                     />
                   ) : (
