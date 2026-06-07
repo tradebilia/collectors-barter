@@ -87,12 +87,6 @@ export function RecentlyAddedCarousel({
                   <p className="text-[10px] font-medium text-slate-400">{item.subtitle}</p>
                 </div>
 
-                {item.estimatedValue && (
-                  <div className="text-xs font-semibold text-slate-600">
-                    Value: ${item.estimatedValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </div>
-                )}
-
                 <div className="flex gap-2 pt-1">
                   {isAuthenticated && (
                     <Dialog>
