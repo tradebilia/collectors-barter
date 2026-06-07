@@ -320,7 +320,7 @@ export default function Home() {
     ? (marketplaceQuery.data?.listings ?? []).slice(0, 15).map(listing => ({
         id: listing.id,
         title: listing.title,
-        price: "$100.00",
+        price: listing.estimatedValue ? `$${listing.estimatedValue.toFixed(2)}` : "$0.00",
         subtitle: `${listing.ownerRating.averageRating.toFixed(1)} ★ · ${listing.ownerRating.reviewCount} reviews`,
         imageUrl: resolveTradebiliaListingImage({ title: listing.title, category: listing.category, primaryPhotoUrl: listing.primaryPhotoUrl }),
         href: `/listings/${listing.id}`,
