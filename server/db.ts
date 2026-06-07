@@ -264,47 +264,48 @@ export async function getMarketplaceFeed(
   }
   const keyword = filters.keyword?.trim();
   if (keyword) {
-    // Search across multiple fields
+    // Search across multiple fields including itemDetails JSON
     const searchCondition = or(
       like(listings.title, `%${keyword}%`),
       like(listings.description, `%${keyword}%`),
-      like(listings.certificationCompany, `%${keyword}%`)
+      like(listings.certificationCompany, `%${keyword}%`),
+      sql`${listings.itemDetails} LIKE ${`%${keyword}%`}`
     );
     // Only add the condition if it's not undefined
     if (searchCondition !== undefined) {
       whereClauses.push(searchCondition as any);
     }
   }
-  // Add filter conditions for category-specific fields stored in description
+  // Add filter conditions for category-specific fields stored in itemDetails JSON
   if (filters.issueNumber?.trim()) {
-    whereClauses.push(like(listings.description, `%Issue Number: ${filters.issueNumber}%`));
+    whereClauses.push(sql`JSON_CONTAINS(${listings.itemDetails}, JSON_OBJECT('issueNumber', ${filters.issueNumber}))`);
   }
   if (filters.manufacturer?.trim()) {
-    whereClauses.push(like(listings.description, `%manufacturer: ${filters.manufacturer}%`));
+    whereClauses.push(sql`JSON_CONTAINS(${listings.itemDetails}, JSON_OBJECT('manufacturer', ${filters.manufacturer}))`);
   }
   if (filters.year?.trim()) {
-    whereClauses.push(like(listings.description, `%year: ${filters.year}%`));
+    whereClauses.push(sql`JSON_CONTAINS(${listings.itemDetails}, JSON_OBJECT('year', ${filters.year}))`);
   }
   if (filters.team?.trim()) {
-    whereClauses.push(like(listings.description, `%team: ${filters.team}%`));
+    whereClauses.push(sql`JSON_CONTAINS(${listings.itemDetails}, JSON_OBJECT('team', ${filters.team}))`);
   }
   if (filters.series?.trim()) {
-    whereClauses.push(like(listings.description, `%set: ${filters.series}%`));
+    whereClauses.push(sql`JSON_CONTAINS(${listings.itemDetails}, JSON_OBJECT('set', ${filters.series}))`);
   }
   if (filters.sport?.trim()) {
-    whereClauses.push(like(listings.description, `%sport: ${filters.sport}%`));
+    whereClauses.push(sql`JSON_CONTAINS(${listings.itemDetails}, JSON_OBJECT('sport', ${filters.sport}))`);
   }
   if (filters.rookie?.trim() && filters.rookie !== "All") {
-    whereClauses.push(like(listings.description, `%rookie: ${filters.rookie}%`));
+    whereClauses.push(sql`JSON_CONTAINS(${listings.itemDetails}, JSON_OBJECT('rookie', ${filters.rookie}))`);
   }
   if (filters.autographed?.trim() && filters.autographed !== "All") {
-    whereClauses.push(like(listings.description, `%autographed: ${filters.autographed}%`));
+    whereClauses.push(sql`JSON_CONTAINS(${listings.itemDetails}, JSON_OBJECT('autographed', ${filters.autographed}))`);
   }
   if (filters.signed?.trim() && filters.signed !== "All") {
-    whereClauses.push(like(listings.description, `%signed: ${filters.signed}%`));
+    whereClauses.push(sql`JSON_CONTAINS(${listings.itemDetails}, JSON_OBJECT('signed', ${filters.signed}))`);
   }
   if (filters.facsimile?.trim() && filters.facsimile !== "All") {
-    whereClauses.push(like(listings.description, `%facsimile: ${filters.facsimile}%`));
+    whereClauses.push(sql`JSON_CONTAINS(${listings.itemDetails}, JSON_OBJECT('facsimile', ${filters.facsimile}))`);
   }
   if (filters.gradingService) {
     whereClauses.push(like(listings.certificationCompany, `%${filters.gradingService}%`));
