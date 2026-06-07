@@ -332,7 +332,7 @@ export default function ItemDetail() {
                       <div className="p-4">
                         <p className="text-xs uppercase tracking-[0.2em] text-gray-400">{getTradebiliaCategoryLabel(item.category)}</p>
                         <h3 className="mt-2 font-semibold text-white group-hover:text-cyan-300 transition line-clamp-2">{item.title}</h3>
-                        <p className="mt-2 text-sm text-gray-400">{item.ownerProfile?.displayName ?? 'Unknown'}</p>
+                        <p className="mt-2 text-sm text-gray-400">{item.ownerProfile.displayName}</p>
                       </div>
                     </div>
                   </Link>
