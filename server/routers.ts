@@ -621,8 +621,19 @@ export const appRouter = router({
         }),
       )
       .mutation(async ({ ctx, input }) => {
-        await bulkUpdateListingStatus({ id: ctx.user.id, name: ctx.user.name }, { listingIds: input.listingIds, isActive: input.newStatus });
-        return getDashboardData({ id: ctx.user.id, name: ctx.user.name });
+        try {
+          await bulkUpdateListingStatus({ id: ctx.user.id, name: ctx.user.name }, { listingIds: input.listingIds, isActive: input.newStatus });
+          return getDashboardData({ id: ctx.user.id, name: ctx.user.name });
+        } catch (error) {
+          console.error('[bulkUpdateListingStatus mutation] Error:', error);
+          if (error instanceof Error) {
+            throw new TRPCError({
+              code: 'INTERNAL_SERVER_ERROR',
+              message: error.message,
+            });
+          }
+          throw error;
+        }
       }),
     bulkDeleteListings: protectedProcedure
       .input(

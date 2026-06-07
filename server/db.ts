@@ -241,7 +241,7 @@ export async function getMarketplaceFeed(
   const db = await requireDb();
 
   // Build where clauses for filtering
-  const whereClauses = [eq(listings.status, "active")];
+  const whereClauses = [eq(listings.status, "active"), eq(listings.isActive, true)];
   if (filters.category) {
     whereClauses.push(eq(listings.category, filters.category));
   }
@@ -929,14 +929,18 @@ export async function bulkUpdateListingStatus(
   },
 ) {
   const db = await requireDb();
+  console.log('[bulkUpdateListingStatus] user.id:', user.id, 'listingIds:', input.listingIds, 'isActive:', input.isActive);
 
   const listings_to_update = await db
     .select({ id: listings.id, ownerId: listings.ownerId })
     .from(listings)
     .where(inArray(listings.id, input.listingIds));
 
+  console.log('[bulkUpdateListingStatus] listings_to_update:', listings_to_update);
+
   for (const listing of listings_to_update) {
     if (listing.ownerId !== user.id) {
+      console.error('[bulkUpdateListingStatus] Authorization failed: listing.ownerId:', listing.ownerId, 'user.id:', user.id);
       throw new Error("You can only update your own listings.");
     }
   }

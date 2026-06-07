@@ -102,7 +102,9 @@ export default function Inventory() {
       e.stopPropagation();
       setTogglingId(listingId);
       try {
-        await toggleListingStatusMutation.mutateAsync({ listingId, isActive: true });
+        const listing = listings.find((l: any) => l.id === listingId);
+        const newStatus = !listing?.isActive;
+        await toggleListingStatusMutation.mutateAsync({ listingId, isActive: newStatus });
         await dashboardQuery.refetch();
         toast.success("Listing status updated");
       } catch (error) {
@@ -116,7 +118,11 @@ export default function Inventory() {
 
   const handleBulkActivate = useCallback(
     async () => {
-      if (selectedIds.size === 0) return;
+      console.log('[handleBulkActivate] Button clicked! selectedIds:', selectedIds);
+      if (selectedIds.size === 0) {
+        console.log('[handleBulkActivate] No items selected, returning');
+        return;
+      }
       setBulkUpdatingStatus(true);
       const count = selectedIds.size;
       try {
@@ -124,6 +130,7 @@ export default function Inventory() {
         const firstItem = listings.find((l: any) => l.id === firstSelectedId);
         const currentStatus = firstItem?.isActive ?? false;
         const newStatus = !currentStatus;
+        console.log('[handleBulkActivate] selectedIds:', selectedIds, 'firstItem:', firstItem, 'currentStatus:', currentStatus, 'newStatus:', newStatus);
         
         await bulkUpdateStatusMutation.mutateAsync({
           listingIds: Array.from(selectedIds),
