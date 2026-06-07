@@ -202,13 +202,56 @@ export default function CategoryPage() {
   const [rookie, setRookie] = useState<string | undefined>(undefined);
   const [autographed, setAutographed] = useState<string | undefined>(undefined);
   const [signed, setSigned] = useState<string | undefined>(undefined);
-  const [facsimile, setFacsimile] = useState<string | undefined>(undefined);
+    const [facsimile, setFacsimile] = useState<string | undefined>(undefined);
+
+  // Submitted filters state (only updates when user submits search)
+  const [submittedFilters, setSubmittedFilters] = useState({
+    keyword: "",
+    condition: undefined as any,
+    issueNumber: undefined as string | undefined,
+    manufacturer: undefined as string | undefined,
+    year: undefined as string | undefined,
+    team: undefined as string | undefined,
+    series: undefined as string | undefined,
+    sport: undefined as string | undefined,
+    gradingService: undefined as string | undefined,
+    grade: undefined as string | undefined,
+    valueMin: undefined as number | undefined,
+    valueMax: undefined as number | undefined,
+    rookie: undefined as string | undefined,
+    autographed: undefined as string | undefined,
+    signed: undefined as string | undefined,
+    facsimile: undefined as string | undefined,
+  });
 
   const feedQuery = trpc.market.feed.useQuery(
     slug ? { 
       category: slug, 
-      condition, 
+      condition: submittedFilters.condition, 
+      keyword: submittedFilters.keyword,
+      issueNumber: submittedFilters.issueNumber,
+      manufacturer: submittedFilters.manufacturer,
+      year: submittedFilters.year,
+      team: submittedFilters.team,
+      series: submittedFilters.series,
+      sport: submittedFilters.sport,
+      gradingService: submittedFilters.gradingService,
+      grade: submittedFilters.grade,
+      valueMin: submittedFilters.valueMin,
+      valueMax: submittedFilters.valueMax,
+      rookie: submittedFilters.rookie,
+      autographed: submittedFilters.autographed,
+      signed: submittedFilters.signed,
+      facsimile: submittedFilters.facsimile,
+    } : undefined,
+    { enabled: Boolean(slug) },
+  );
+
+  // Handler to submit filters
+  const handleSubmitFilters = () => {
+    setSubmittedFilters({
       keyword,
+      condition,
       issueNumber: issueNumber || undefined,
       manufacturer: manufacturer || undefined,
       year: year || undefined,
@@ -223,9 +266,47 @@ export default function CategoryPage() {
       autographed: autographed || undefined,
       signed: signed || undefined,
       facsimile: facsimile || undefined,
-    } : undefined,
-    { enabled: Boolean(slug) },
-  );
+    });
+  };
+
+  // Handler to clear all filters
+  const handleClearFilters = () => {
+    setKeyword("");
+    setCondition(undefined);
+    setSportsCardsConditionText("");
+    setIssueNumber("");
+    setManufacturer("");
+    setYear("");
+    setTeam("");
+    setSeries("");
+    setSport(undefined);
+    setGradingService(undefined);
+    setGrade(undefined);
+    setValueMin(undefined);
+    setValueMax(undefined);
+    setRookie(undefined);
+    setAutographed(undefined);
+    setSigned(undefined);
+    setFacsimile(undefined);
+    setSubmittedFilters({
+      keyword: "",
+      condition: undefined,
+      issueNumber: undefined,
+      manufacturer: undefined,
+      year: undefined,
+      team: undefined,
+      series: undefined,
+      sport: undefined,
+      gradingService: undefined,
+      grade: undefined,
+      valueMin: undefined,
+      valueMax: undefined,
+      rookie: undefined,
+      autographed: undefined,
+      signed: undefined,
+      facsimile: undefined,
+    });
+  };
 
   const createProposalMutation = trpc.market.createTradeProposal.useMutation({
     onSuccess: async () => {
@@ -465,18 +546,14 @@ export default function CategoryPage() {
             {/* Clear and Search buttons */}
             <div className="flex gap-2 mt-4 pt-2 border-t border-gray-300">
               <Button 
-                onClick={() => {
-                  setKeyword("");
-                  setCondition(undefined);
-                  setSportsCardsConditionText("");
-                }}
+                onClick={handleClearFilters}
                 size="sm"
                 className="flex-1 h-8 text-xs bg-red-500 hover:bg-red-600 text-white"
               >
                 Clear
               </Button>
               <Button 
-                onClick={() => feedQuery.refetch()}
+                onClick={handleSubmitFilters}
                 size="sm"
                 className="flex-1 h-8 text-xs bg-blue-600 hover:bg-blue-700"
               >
