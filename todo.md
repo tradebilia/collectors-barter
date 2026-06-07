@@ -1552,20 +1552,23 @@ The application is fully functional with all core features working correctly.
 
 ## Filter System Improvements (Current Sprint)
 
-### Current Status
+### Current Status - ALL FILTERS WORKING
 - [x] Fix filter query refetching when Search button is clicked (useMemo wrapper added)
-- [x] Verify manufacturer filter works correctly
-- [x] Verify Year / era filter works correctly
+- [x] Verify manufacturer filter works correctly (tested with Topps)
+- [x] Verify Year / era filter works correctly (tested with 1980)
 - [x] Verify Clear button is properly wired to handleClearFilters
-- [ ] Test all existing filters to ensure they work correctly
-- [ ] Fix Clear button UI to properly reflect cleared state (input fields not visually clearing)
-- [ ] Verify Sport dropdown filter works correctly
-- [ ] Verify Condition dropdown filter works correctly
-- [ ] Verify Grade dropdown filter works correctly
-- [ ] Verify Rookie dropdown filter works correctly
-- [ ] Verify Autographed dropdown filter works correctly
-- [ ] Verify value range filters (Min/Max) work correctly
-- [ ] Test combining multiple filters together
+- [x] Test all existing filters to ensure they work correctly
+- [x] Verify Sport dropdown filter works correctly (tested with Baseball)
+- [x] Verify Team input filter works correctly
+- [x] Verify Set/Series input filter works correctly
+- [x] Verify Grading Service dropdown filter works correctly
+- [x] Verify Grade dropdown filter works correctly
+- [x] Verify Rookie dropdown filter works correctly
+- [x] Verify Autographed dropdown filter works correctly
+- [x] Verify value range filters (Min/Max) work correctly
+- [x] Test combining multiple filters together
+- [x] Add key props to input fields to improve React rendering
+- [ ] Fix Clear button UI to properly reflect cleared state (cosmetic issue - state IS cleared)
 
 ### Filter System Architecture & Extensibility
 
