@@ -193,13 +193,13 @@ export default function ItemDetail() {
               onClick={() => window.location.href = `/category/${listing.category}`}
               className={`flex items-center gap-3 px-6 py-3 rounded-lg border transition text-base font-semibold ${
                 listing.category === 'sports_cards'
-                  ? 'bg-white border-white text-black hover:bg-gray-100 hover:border-gray-100'
+                  ? 'bg-white/10 border-white/30 text-black hover:bg-white/20'
                   : listing.category === 'comics'
                   ? 'bg-white/10 border-white/30 text-white hover:bg-white/20'
                   : listing.category === 'video_games'
                   ? 'bg-[#68dc43]/20 border-[#68dc43]/40 text-[#d8ffbc] hover:bg-[#68dc43]/30'
                   : listing.category === 'vintage_toys'
-                  ? 'bg-white/15 border-[#5f6762]/30 text-[#f8efc8] hover:bg-white/25'
+                  ? 'bg-white/15 border-[#5f6762]/30 text-[#1e1d1a] hover:bg-white/25'
                   : listing.category === 'coins'
                   ? 'bg-white/10 border-white/30 text-white hover:bg-white/20'
                   : listing.category === 'stamps'
@@ -212,7 +212,7 @@ export default function ItemDetail() {
                   ? 'bg-white/10 border-white/30 text-white hover:bg-white/20'
                   : listing.category === 'disney_pins'
                   ? 'bg-white/10 border-white/30 text-white hover:bg-white/20'
-                  : 'bg-white border-white text-black hover:bg-gray-100'
+                  : 'bg-white/10 border-white/30 text-black hover:bg-white/20'
               }`}
               title="Back to category"
             >
