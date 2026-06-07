@@ -314,24 +314,10 @@ export default function ItemDetail() {
                   {/* Section 2: Grading Company */}
                   {listing.certificationCompany && (
                     <div className="rounded-[1.5rem] border border-gray-200 bg-gray-50 p-5">
-                      <p className="text-sm uppercase tracking-[0.2em] text-gray-500">2. Grading Company</p>
+                      <p className="text-sm uppercase tracking-[0.2em] text-gray-500">Grading Company</p>
                       <p className="mt-3 text-xl font-medium text-gray-900">{listing.certificationCompany}</p>
                     </div>
                   )}
-                  
-                  {/* Section 2: Grade */}
-                  {listing.grade && (
-                    <div className="rounded-[1.5rem] border border-gray-200 bg-gray-50 p-5">
-                      <p className="text-sm uppercase tracking-[0.2em] text-gray-500">2. Grade</p>
-                      <p className="mt-3 text-xl font-medium text-gray-900">{listing.grade}</p>
-                    </div>
-                  )}
-                  
-                  {/* Section 3: Condition */}
-                  <div className="rounded-[1.5rem] border border-gray-200 bg-gray-50 p-5">
-                    <p className="text-sm uppercase tracking-[0.2em] text-gray-500">3. Condition</p>
-                    <p className="mt-3 text-xl font-medium text-gray-900">{listing.condition}</p>
-                  </div>
                   
                   {/* Section 4: Estimated Value */}
                   {listing.estimatedValue && (
@@ -342,7 +328,9 @@ export default function ItemDetail() {
                   )}
                   
                   {/* Category-specific fields from itemDetails */}
-                  {listing.itemDetails && Object.entries(listing.itemDetails).map(([key, value]) => (
+                  {listing.itemDetails && Object.entries(listing.itemDetails)
+                    .filter(([key]) => key !== 'additional_notes') // Filter out additional_notes
+                    .map(([key, value]) => (
                     <div key={key} className="rounded-[1.5rem] border border-gray-200 bg-gray-50 p-5">
                       <p className="text-sm uppercase tracking-[0.2em] text-gray-500">{key}</p>
                       <p className="mt-3 text-xl font-medium text-gray-900">{String(value)}</p>

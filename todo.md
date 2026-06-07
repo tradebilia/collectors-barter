@@ -1711,6 +1711,9 @@ Status: COMPLETED & VERIFIED
 - [x] Run migration to populate 6 existing listings with itemDetails
 - [x] Verify Details Panel displays all category-specific fields
 - [x] Update Additional Information section to show ONLY Step 4 notes (additional_notes field)
+- [x] Remove hardcoded Grade and Condition fields from Details Panel to avoid duplication
+- [x] Filter out additional_notes from itemDetails display in Details Panel
+- [x] Verify Details Panel shows only category-specific fields without duplication
 
 Now the Details Panel displays:
 - Category
