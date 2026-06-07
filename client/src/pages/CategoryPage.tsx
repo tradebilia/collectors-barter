@@ -477,7 +477,7 @@ export default function CategoryPage() {
                   <Label className="text-[0.65rem] font-semibold uppercase tracking-[0.16em]">{filter.label}</Label>
                   {filter.type === "select" ? (
                     <Select defaultValue="all">
-                      <SelectTrigger className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs`}>
+                      <SelectTrigger className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black`}>
                         <SelectValue placeholder={filter.placeholder} />
                       </SelectTrigger>
                       <SelectContent>
@@ -532,7 +532,7 @@ export default function CategoryPage() {
               <div className="space-y-0.5">
                 <Label className="text-[0.65rem] font-semibold uppercase tracking-[0.16em]">Condition</Label>
                 <Select value={condition} onValueChange={value => setCondition(value as typeof condition)}>
-                  <SelectTrigger className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs`}>
+                  <SelectTrigger className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black`}>
                     <SelectValue placeholder="All Conditions" />
                   </SelectTrigger>
                   <SelectContent>
