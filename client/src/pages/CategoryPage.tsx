@@ -396,12 +396,13 @@ export default function CategoryPage() {
                     </Select>
                   ) : filter.label === "Value Range" ? (
                     <div className="flex gap-2">
-                      <Input placeholder="Min" className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs flex-1`} type="number" />
-                      <Input placeholder="Max" className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs flex-1`} type="number" />
+                      <Input placeholder="Min" className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black flex-1`} type="number" />
+                      <Input placeholder="Max" className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black flex-1`} type="number" />
                     </div>
                   ) : (
-                    <Input placeholder={filter.placeholder} className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs`} />
-                  )}
+                    <Input placeholder={filter.placeholder} className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black`} />
+                  )
+                }
                 </div>
               );
             })}
