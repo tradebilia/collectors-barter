@@ -14,7 +14,7 @@ import { getTradebiliaCategoryTheme, getTradebiliaCategoryLabel } from "@/lib/tr
 const getItemDetailPageClassName = (category: string): string => {
   // For item detail pages, remove the teal portion (0-14%) and start with the content color
   if (category === 'sports_cards') {
-    return 'bg-[#ead6ac] text-[#1a1814]';
+    return 'bg-[#f6e5bf] text-[#1a1814]';
   }
   if (category === 'comics') {
     return 'bg-[linear-gradient(180deg,#281013_0%,#121116_100%)] text-white';
