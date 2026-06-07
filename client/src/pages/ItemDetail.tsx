@@ -175,11 +175,11 @@ export default function ItemDetail() {
         }}>
           <div className="absolute inset-0 bg-black/60"></div>
           <div className="container relative flex h-64 items-center justify-center py-0 sm:h-72 sm:py-0 lg:h-80 lg:py-0">
-            <div className="flex w-full max-w-6xl items-center justify-center -ml-32">
+            <div className="flex w-full max-w-5xl items-center justify-center px-4">
               <img
                 src={TRADEBILIA_LOGO_URL}
                 alt="Tradebilia"
-                className="h-auto w-full"
+                className="h-auto w-full max-h-64 sm:max-h-72 lg:max-h-80"
               />
             </div>
           </div>
@@ -187,7 +187,7 @@ export default function ItemDetail() {
 
         <CategoryBar />
 
-        <section className="px-4 py-10 lg:px-8 border-t border-white/10 bg-black">
+        <section className="px-4 py-10 lg:px-8 border-t border-white/10">
           <div className="mx-auto max-w-6xl mb-8">
             <button
               onClick={() => window.location.href = `/category/${listing.category}`}

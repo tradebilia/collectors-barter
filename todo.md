@@ -1723,29 +1723,6 @@ Now the Details Panel displays:
 - Estimated Value
 - All category-specific fields (manufacturer, sport, year, team, set, etc.)
 
-## Item Detail Page - Thumbnail Layout (June 7, 2026)
-
-Status: REVERTED - User preferred original layout with hero section
-
-- [x] Move thumbnail images to the left side of the main image (REVERTED)
-- [x] Arrange thumbnails vertically in a column (REVERTED)
-- [x] Update grid layout to accommodate left thumbnail column (REVERTED)
-- [x] Verify thumbnails are clickable and switch main image (REVERTED)
-- [x] Test layout on item detail pages (REVERTED)
-- [x] Restore original layout with hero section and main image on left (COMPLETED)
-
-## Hero Section Logo Sizing (June 7, 2026)
-
-Status: COMPLETED
-
-- [x] Increase TRADEBILIA logo size in ItemDetail hero section
-- [x] Match homepage hero section logo sizing
-- [x] Update max-w-5xl to max-w-6xl container
-- [x] Remove height constraints (max-h-64 sm:max-h-72 lg:max-h-80)
-- [x] Adjust positioning with -ml-32
-- [x] Verify logo displays at full width
-- [x] Test on item detail pages
-
 ## KNOWN ISSUE: Clear Button Visual Feedback (June 7, 2026)
 
 Status: COSMETIC ISSUE - NOT CRITICAL
