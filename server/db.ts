@@ -2240,6 +2240,7 @@ export async function getInquiriesByUser(userId: number, limit: number = 50, off
       isRead: itemInquiries.isRead,
       createdAt: itemInquiries.createdAt,
       updatedAt: itemInquiries.updatedAt,
+      deletedAt: itemInquiries.deletedAt,
     })
     .from(itemInquiries)
     .innerJoin(users, eq(itemInquiries.senderId, users.id))

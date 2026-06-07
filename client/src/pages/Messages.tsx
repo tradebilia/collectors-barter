@@ -179,7 +179,7 @@ export default function Messages() {
     if (folder === "deleted") return deletedInquiriesQuery.data ?? [];
     if (folder === "inquiries") return inquiries;
     if (folder === "unread") return inquiries.filter(i => !i.isRead);
-    if (folder === "all") return inquiries;
+    if (folder === "all") return inquiries.filter(i => !i.deletedAt);
     return [];
   }, [inquiries, folder, deletedInquiriesQuery.data]);
 
