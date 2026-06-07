@@ -1725,13 +1725,14 @@ Now the Details Panel displays:
 
 ## Item Detail Page - Thumbnail Layout (June 7, 2026)
 
-Status: COMPLETED
+Status: REVERTED - User preferred original layout with hero section
 
-- [x] Move thumbnail images to the left side of the main image
-- [x] Arrange thumbnails vertically in a column
-- [x] Update grid layout to accommodate left thumbnail column
-- [x] Verify thumbnails are clickable and switch main image
-- [x] Test layout on item detail pages
+- [x] Move thumbnail images to the left side of the main image (REVERTED)
+- [x] Arrange thumbnails vertically in a column (REVERTED)
+- [x] Update grid layout to accommodate left thumbnail column (REVERTED)
+- [x] Verify thumbnails are clickable and switch main image (REVERTED)
+- [x] Test layout on item detail pages (REVERTED)
+- [x] Restore original layout with hero section and main image on left (COMPLETED)
 
 ## KNOWN ISSUE: Clear Button Visual Feedback (June 7, 2026)
 
