@@ -158,6 +158,7 @@ export const listings = mysqlTable(
     categoryIdx: index("listings_category_idx").on(table.category),
     conditionIdx: index("listings_condition_idx").on(table.condition),
     statusIdx: index("listings_status_idx").on(table.status),
+    fullTextIdx: index("listings_fulltext_idx").on(table.title, table.description, table.certificationCompany),
   }),
 );
 

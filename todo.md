@@ -1484,3 +1484,12 @@ The application is fully functional with all core features working correctly.
 - [x] Currently only searches the listing title field
 - [x] Need to improve search to find items by partial title matches
 - [x] Example: "Star" should find "Star Wars #1"
+
+
+## ENHANCEMENT: Implement Comprehensive Full-Text Search
+
+- [x] Add FULLTEXT index to listings table (title, description, certificationCompany)
+- [x] Update search query to search across all searchable fields
+- [x] Search now includes: title, description, certificationCompany, category, condition, grade
+- [x] When new fields are added, update search query to include them
+- [x] Improved search to look across all item fields entered by users

@@ -250,10 +250,14 @@ export async function getMarketplaceFeed(
   }
   const keyword = filters.keyword?.trim();
   if (keyword) {
-    // Search across title and description fields
+    // Search across all searchable fields: title, description, certificationCompany, category, condition, grade
     const searchCondition = or(
       like(listings.title, `%${keyword}%`),
-      like(listings.description, `%${keyword}%`)
+      like(listings.description, `%${keyword}%`),
+      like(listings.certificationCompany, `%${keyword}%`),
+      like(listings.category, `%${keyword}%`),
+      like(listings.condition, `%${keyword}%`),
+      like(listings.grade, `%${keyword}%`)
     );
     if (searchCondition) {
       whereClauses.push(searchCondition);

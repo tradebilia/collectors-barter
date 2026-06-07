@@ -1,0 +1,1 @@
+CREATE INDEX `listings_fulltext_idx` ON `listings` (`title`,`description`,`certificationCompany`);
