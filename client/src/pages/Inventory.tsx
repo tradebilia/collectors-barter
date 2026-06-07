@@ -118,6 +118,7 @@ export default function Inventory() {
     async () => {
       if (selectedIds.size === 0) return;
       setBulkUpdatingStatus(true);
+      const count = selectedIds.size;
       try {
         await bulkUpdateStatusMutation.mutateAsync({
           listingIds: Array.from(selectedIds),
@@ -125,14 +126,16 @@ export default function Inventory() {
         });
         setSelectedIds(new Set());
         await dashboardQuery.refetch();
-        toast.success(`${selectedIds.size} item(s) activated`);
+        await utils.market.feed.invalidate();
+        await utils.market.feed.refetch({ category: undefined, condition: undefined, keyword: "" }).catch(() => {});
+        toast.success(`${count} item(s) activated`);
       } catch (error) {
         toast.error("Failed to activate items");
       } finally {
         setBulkUpdatingStatus(false);
       }
     },
-    [selectedIds, bulkUpdateStatusMutation, dashboardQuery],
+    [selectedIds, bulkUpdateStatusMutation, dashboardQuery, utils],
   );
 
   const handleBulkNotListed = useCallback(
