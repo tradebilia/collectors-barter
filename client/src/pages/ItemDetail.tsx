@@ -353,10 +353,12 @@ export default function ItemDetail() {
             </div>
 
             {/* Section 4: Additional Information */}
-            <div className="rounded-[2rem] border border-gray-200 bg-white p-8 shadow-[0_40px_90px_rgba(0,0,0,0.08)]">
-              <p className="text-sm uppercase tracking-[0.3em] text-gray-500">4. Additional Information</p>
-              <p className="mt-5 max-w-4xl text-lg leading-8 text-gray-700">{listing.description}</p>
-            </div>
+            {listing.itemDetails?.additional_notes && (
+              <div className="rounded-[2rem] border border-gray-200 bg-white p-8 shadow-[0_40px_90px_rgba(0,0,0,0.08)]">
+                <p className="text-sm uppercase tracking-[0.3em] text-gray-500">4. Additional Information</p>
+                <p className="mt-5 max-w-4xl text-lg leading-8 text-gray-700">{listing.itemDetails.additional_notes}</p>
+              </div>
+            )}
 
             {/* Similar Items Section */}
             <div className="rounded-[2rem] border border-gray-200 bg-white p-8 shadow-[0_40px_90px_rgba(0,0,0,0.08)]">

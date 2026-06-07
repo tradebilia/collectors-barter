@@ -1710,6 +1710,7 @@ Status: COMPLETED & VERIFIED
 - [x] Create migration script to populate itemDetails for existing listings
 - [x] Run migration to populate 6 existing listings with itemDetails
 - [x] Verify Details Panel displays all category-specific fields
+- [x] Update Additional Information section to show ONLY Step 4 notes (additional_notes field)
 
 Now the Details Panel displays:
 - Category
