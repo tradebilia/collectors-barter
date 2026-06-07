@@ -250,7 +250,14 @@ export async function getMarketplaceFeed(
   }
   const keyword = filters.keyword?.trim();
   if (keyword) {
-    whereClauses.push(like(listings.title, `%${keyword}%`));
+    // Search across title and description fields
+    const searchCondition = or(
+      like(listings.title, `%${keyword}%`),
+      like(listings.description, `%${keyword}%`)
+    );
+    if (searchCondition) {
+      whereClauses.push(searchCondition);
+    }
   }
 
   const listingRows = await db

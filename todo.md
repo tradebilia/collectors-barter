@@ -1476,3 +1476,11 @@ The application is fully functional with all core features working correctly.
 - [x] Button should trigger search submission
 - [x] Button should be styled consistently with the search bar
 - [x] Button should be disabled when search query is empty
+
+
+## BUG: Search only looks at title field, not item details
+
+- [x] Search should look across multiple fields (title, description, category)
+- [x] Currently only searches the listing title field
+- [x] Need to improve search to find items by partial title matches
+- [x] Example: "Star" should find "Star Wars #1"
