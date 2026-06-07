@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { and, asc, desc, eq, inArray, isNotNull, like, ne, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, isNotNull, like, lte, ne, or, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import type { InsertUser, User } from "../drizzle/schema";
 import {
@@ -235,6 +235,20 @@ export async function getMarketplaceFeed(
     category?: (typeof collectibleCategories)[number];
     condition?: (typeof itemConditions)[number];
     keyword?: string;
+    issueNumber?: string;
+    manufacturer?: string;
+    year?: string;
+    team?: string;
+    series?: string;
+    sport?: string;
+    gradingService?: string;
+    grade?: string;
+    valueMin?: number;
+    valueMax?: number;
+    rookie?: string;
+    autographed?: string;
+    signed?: string;
+    facsimile?: string;
   },
   viewerId: number | null,
 ) {
@@ -260,6 +274,20 @@ export async function getMarketplaceFeed(
     if (searchCondition !== undefined) {
       whereClauses.push(searchCondition as any);
     }
+  }
+  // Note: Category-specific fields (issueNumber, manufacturer, year, team, series, sport, rookie, autographed, signed, facsimile)
+  // are stored in the description field, so they're searched via the keyword search above
+  if (filters.gradingService) {
+    whereClauses.push(like(listings.certificationCompany, `%${filters.gradingService}%`));
+  }
+  if (filters.grade && filters.grade !== "All") {
+    whereClauses.push(eq(listings.grade, filters.grade as any));
+  }
+  if (filters.valueMin !== undefined) {
+    whereClauses.push(sql`CAST(${listings.estimatedValue} AS DECIMAL(12,2)) >= ${filters.valueMin}`);
+  }
+  if (filters.valueMax !== undefined) {
+    whereClauses.push(sql`CAST(${listings.estimatedValue} AS DECIMAL(12,2)) <= ${filters.valueMax}`);
   }
 
   const listingRows = await db

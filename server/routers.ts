@@ -69,6 +69,20 @@ const listingFiltersSchema = z.object({
   category: z.enum(collectibleCategories).optional(),
   condition: z.enum(itemConditions).optional(),
   keyword: z.string().max(100).optional(),
+  issueNumber: z.string().max(50).optional(),
+  manufacturer: z.string().max(100).optional(),
+  year: z.string().max(50).optional(),
+  team: z.string().max(100).optional(),
+  series: z.string().max(100).optional(),
+  sport: z.string().max(50).optional(),
+  gradingService: z.string().max(100).optional(),
+  grade: z.string().max(10).optional(),
+  valueMin: z.number().optional(),
+  valueMax: z.number().optional(),
+  rookie: z.string().max(10).optional(),
+  autographed: z.string().max(10).optional(),
+  signed: z.string().max(10).optional(),
+  facsimile: z.string().max(10).optional(),
 });
 
 const memberSearchSchema = z.object({

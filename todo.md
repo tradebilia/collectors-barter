@@ -1534,3 +1534,17 @@ The application is fully functional with all core features working correctly.
 - [x] Need to implement actual filter logic to send filter values to backend
 - [x] Backend needs to accept and apply filter parameters to the search query
 - [x] Fixed by connecting Title input to keyword state variable
+
+
+## ENHANCEMENT: Connect all filter inputs to state variables
+
+- [x] Add state variables for all filter types (manufacturer, year, team, set, sport, grading, grade, value range, rookie, autographed, signed, facsimile, condition)
+- [x] Connect text input filters to state (Title filter working on Comics category)
+- [x] Update backend market.feed query to accept all filter parameters
+- [x] Update backend getMarketplaceFeed to handle all filter parameters
+- [ ] Connect all remaining text input filters to state across all categories
+- [ ] Connect select dropdown filters to state (Sport, Grading Service, Grade, Rookie, Autographed, Signed, Facsimile, Condition)
+- [ ] Connect range filters to state (Value Range Min/Max)
+- [ ] Test filters work across all 10 category pages
+- [ ] Ensure filters automatically trigger query when state changes
+- [ ] Add Clear button functionality to reset all filters

@@ -187,9 +187,43 @@ export default function CategoryPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [proposalListingId, setProposalListingId] = useState<number | null>(null);
   const [proposalNote, setProposalNote] = useState("");
+  
+  // Additional filter state variables
+  const [issueNumber, setIssueNumber] = useState("");
+  const [manufacturer, setManufacturer] = useState("");
+  const [year, setYear] = useState("");
+  const [team, setTeam] = useState("");
+  const [series, setSeries] = useState("");
+  const [sport, setSport] = useState<string | undefined>(undefined);
+  const [gradingService, setGradingService] = useState<string | undefined>(undefined);
+  const [grade, setGrade] = useState<string | undefined>(undefined);
+  const [valueMin, setValueMin] = useState<number | undefined>(undefined);
+  const [valueMax, setValueMax] = useState<number | undefined>(undefined);
+  const [rookie, setRookie] = useState<string | undefined>(undefined);
+  const [autographed, setAutographed] = useState<string | undefined>(undefined);
+  const [signed, setSigned] = useState<string | undefined>(undefined);
+  const [facsimile, setFacsimile] = useState<string | undefined>(undefined);
 
   const feedQuery = trpc.market.feed.useQuery(
-    slug ? { category: slug, condition, keyword } : undefined,
+    slug ? { 
+      category: slug, 
+      condition, 
+      keyword,
+      issueNumber: issueNumber || undefined,
+      manufacturer: manufacturer || undefined,
+      year: year || undefined,
+      team: team || undefined,
+      series: series || undefined,
+      sport: sport || undefined,
+      gradingService: gradingService || undefined,
+      grade: grade || undefined,
+      valueMin: valueMin || undefined,
+      valueMax: valueMax || undefined,
+      rookie: rookie || undefined,
+      autographed: autographed || undefined,
+      signed: signed || undefined,
+      facsimile: facsimile || undefined,
+    } : undefined,
     { enabled: Boolean(slug) },
   );
 
