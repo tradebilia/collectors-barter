@@ -283,7 +283,7 @@ export default function Messages() {
             <div className="mt-5 space-y-2">
               {folders.map(item => {
                 const count = item.value === "all"
-                  ? allThreads.length + inquiries.length
+                  ? allThreads.length + inquiries.filter(i => !i.deletedAt).length
                   : item.value === "inquiries"
                     ? inquiries.length
                     : item.value === "direct"
