@@ -591,9 +591,9 @@ export default function AddInventory() {
                 </div>
               </div>
 
-              {/* 5. Additional Information */}
+              {/* 4. Additional Information */}
               <div className="rounded-2xl border border-indigo-500/20 bg-gradient-to-br from-indigo-500/10 to-indigo-500/5 p-6 shadow-lg">
-                <h3 className="mb-4 text-lg font-semibold uppercase tracking-[0.1em] text-white/95">5. Additional Information</h3>
+                <h3 className="mb-4 text-lg font-semibold uppercase tracking-[0.1em] text-white/95">4. Additional Information</h3>
                 <div className="space-y-3">
                   <Label className="text-sm uppercase tracking-[0.08em] text-white/70">Additional Notes</Label>
                   <Textarea
@@ -631,7 +631,7 @@ export default function AddInventory() {
             {/* Right side - Image Upload */}
             <div className="flex flex-col gap-6 w-full lg:w-auto lg:max-w-xs lg:row-span-2 lg:h-fit lg:justify-between">
               <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-white/8 to-white/4 p-6 shadow-lg flex flex-col flex-1">
-                <h3 className="mb-6 text-lg font-semibold uppercase tracking-[0.1em] text-white/95"><span className="text-white/60">4. </span>Upload Images</h3>
+                <h3 className="mb-6 text-lg font-semibold uppercase tracking-[0.1em] text-white/95"><span className="text-white/60">5. </span>Upload Images</h3>
                 
                 {/* Main upload area */}
                 <div

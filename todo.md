@@ -1667,13 +1667,12 @@ The filter system is implemented in `client/src/pages/CategoryPage.tsx` and uses
 
 ## Item Detail Page Restructuring (Current Sprint - Completed)
 
-### Current Status - SECTIONS PROPERLY ORGANIZED
-- [x] Add #4 label to "Upload Images" section in Add to Inventory page
-- [x] Update item detail page Details Panel to display sections 1, 2, 3 information
-- [x] Rename "Owner's Notes" section to "5. Additional Information"
-- [x] Verify Details Panel displays: 1. Category, 2. Grade, 3. Condition, 3. Estimated Value
-- [x] Verify Section 5 displays additional information from listing description
-- [x] Test on multiple item detail pages to confirm changes work correctly
+### Current Status - SECTIONS PROPERLY RELABELED
+- [x] Relabel section 4 to "Additional Information" in Add to Inventory page
+- [x] Relabel section 5 to "Upload Images" in Add to Inventory page
+- [x] Verify all sections are properly numbered: 1, 2, 3, 4, 5
+- [x] Confirm item detail page remains unchanged
+- [x] Test relabeling on Add to Inventory page
 
 ### Summary
 Successfully restructured the item detail page and add to inventory form to properly organize information into numbered sections:
