@@ -338,7 +338,14 @@ export default function Messages() {
                             Item Inquiry
                           </p>
                         </div>
-                        <Badge variant={activeThreadKey === `inquiry-${inquiry.id}` ? "secondary" : "outline"} className="rounded-full capitalize">
+                        <Badge 
+                          variant={activeThreadKey === `inquiry-${inquiry.id}` ? "secondary" : "outline"} 
+                          className={`rounded-full capitalize ${
+                            inquiry.isRead 
+                              ? "bg-slate-200 text-slate-700 hover:bg-slate-300" 
+                              : "bg-yellow-400 text-slate-900 hover:bg-yellow-500"
+                          }`}
+                        >
                           {inquiry.isRead ? "seen" : "unread"}
                         </Badge>
                       </div>
