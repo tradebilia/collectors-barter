@@ -1697,7 +1697,7 @@ Successfully restructured the item detail page and add to inventory form to prop
 
 ## Details Panel Expansion - Display All Item Information (June 7, 2026)
 
-Status: COMPLETED
+Status: COMPLETED & VERIFIED
 
 - [x] Add itemDetails column to listings table to store category-specific fields
 - [x] Update database schema migration
@@ -1707,6 +1707,9 @@ Status: COMPLETED
 - [x] Update AddInventory page to send categoryFields as itemDetails
 - [x] Update Item Detail page to display itemDetails in Details Panel
 - [x] Fix TypeScript errors and compile successfully
+- [x] Create migration script to populate itemDetails for existing listings
+- [x] Run migration to populate 6 existing listings with itemDetails
+- [x] Verify Details Panel displays all category-specific fields
 
 Now the Details Panel displays:
 - Category
