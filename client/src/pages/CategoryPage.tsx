@@ -609,6 +609,11 @@ export default function CategoryPage() {
                               <div>
                                 <span className="font-semibold">Status:</span> {listing.status}
                               </div>
+                              {listing.estimatedValue && (
+                                <div>
+                                  <span className="font-semibold">Value:</span> ${listing.estimatedValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                </div>
+                              )}
                             </div>
                             <p className="text-xs leading-relaxed opacity-80 mt-1 line-clamp-1">{listing.description}</p>
                           </div>

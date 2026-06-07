@@ -327,6 +327,7 @@ export default function Home() {
         tradeListingId: listing.id,
         savedToWatchlist: listing.savedToWatchlist,
         ownerId: listing.ownerId,
+        estimatedValue: listing.estimatedValue,
       }))
     : fallbackRecentItems.map(item => ({
         ...item,

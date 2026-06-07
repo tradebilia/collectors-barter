@@ -1416,21 +1416,21 @@ The application is fully functional with all core features working correctly.
 
 ## NEW FEATURE REQUEST: Display Item Values
 
-- [ ] Display estimated value on home page Recently Added carousel
-- [ ] Display estimated value on category pages (grid and list views)
-- [ ] Display estimated value on item detail page
-- [ ] Format value as currency (e.g., $1,234.56)
-- [ ] Handle null/missing values gracefully
+- [x] Display estimated value on home page Recently Added carousel
+- [x] Display estimated value on category pages (grid and list views)
+- [x] Display estimated value on item detail page
+- [x] Format value as currency (e.g., $1,234.56)
+- [x] Handle null/missing values gracefully
 
 
 ## NEW FEATURE REQUEST: Add Listing Title Field
 
-- [ ] Add "Listing Title" as the first field in the Items Detail section of Add to Inventory page
-- [ ] Listing Title should be displayed underneath item images in carousel and category pages
-- [ ] Update database schema if needed to store listing title
-- [ ] Update ItemCard component to display listing title
-- [ ] Update RecentlyAddedCarousel to display listing title
-- [ ] Update CategoryPage to display listing title
+- [x] Add "Listing Title" as the first field in the Items Detail section of Add to Inventory page
+- [x] Listing Title should be displayed underneath item images in carousel and category pages
+- [x] Update database schema if needed to store listing title
+- [x] Update ItemCard component to display listing title
+- [x] Update RecentlyAddedCarousel to display listing title
+- [x] Update CategoryPage to display listing title
 
 
 ## Item Detail Button Overflow Fix (June 6, 2026)
