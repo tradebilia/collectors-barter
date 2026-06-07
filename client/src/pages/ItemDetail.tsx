@@ -27,25 +27,25 @@ const TRADEBILIA_LOGO_URL = "/images/tradebilia-logo.svg";
 const getCategoryWallpaperUrl = (category: string): string => {
   switch(category) {
     case 'sports_cards':
-      return '/images/Sportscardwallpaper_7d372f7d.webp';
+      return '/manus-storage/Sportscardwallpaper_bc1c7d7a.webp';
     case 'video_games':
-      return 'https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/video-games-background-kyx4vVUqTYCMC3kMbtokYU.webp';
+      return '/manus-storage/video-games-background-kyx4vVUqTYCMC3kMbtokYU_c9f7dffa.webp';
     case 'coins':
-      return '/images/Coins2_54d5f0d9.png';
+      return '/manus-storage/CoinsBackground_ef9aac41.png';
     case 'stamps':
-      return '/images/Stamps5_7feb0c7e.png';
+      return '/manus-storage/StampsBackground_381d3e98.png';
     case 'vintage_toys':
-      return '/images/Toys4_70f212d6.png';
+      return '/manus-storage/VintageToysBackground_8ab6860f.png';
     case 'autographs':
-      return '/images/Auto2_41464c02.png';
+      return '/manus-storage/AutoBackground_d025a571.png';
     case 'movies':
-      return '/images/VHS1_4fe4bb67.png';
+      return '/manus-storage/VHSBackground_99756671.png';
     case 'comics':
-      return 'https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/comics-background-YZiiH2cyV8YJx6GFQj4PKC.webp';
+      return '/manus-storage/comics-background-YZiiH2cyV8YJx6GFQj4PKC_2cc313bb.webp';
     case 'pokemon':
-      return 'https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/pokemon-background-J6h7Mte6BSYA3GfQ4vtdFj.webp';
+      return '/manus-storage/pokemon-background-J6h7Mte6BSYA3GfQ4vtdFj_d1df88b6.webp';
     case 'disney_pins':
-      return 'https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/disney-pins-background-F6yUvFLVrhmnaWk6GsFMZ8.webp';
+      return '/manus-storage/disney-pins-background-F6yUvFLVrhmnaWk6GsFMZ8_172dee25.webp';
     default:
       return '';
   }
