@@ -66,7 +66,7 @@ export function TopBar({
             value={searchQuery}
             onChange={(e) => handleInputChange(e.target.value)}
             onKeyDown={handleSearch}
-            className="bg-transparent text-gray-900 text-sm placeholder-gray-500 outline-none flex-1 ml-2"
+            className="bg-transparent text-black text-sm placeholder-gray-700 outline-none flex-1 ml-2"
           />
           <button
             onClick={handleSearchClick}
