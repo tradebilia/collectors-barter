@@ -2280,7 +2280,7 @@ export async function sendInquiryReply(inquiryId: number, senderId: number, mess
   
   // Verify the inquiry exists and the sender is the recipient
   const inquiry = await db
-    .select({ recipientId: itemInquiries.recipientId })
+    .select({ recipientId: itemInquiries.recipientId, senderId: itemInquiries.senderId })
     .from(itemInquiries)
     .where(eq(itemInquiries.id, inquiryId))
     .limit(1);
@@ -2289,13 +2289,23 @@ export async function sendInquiryReply(inquiryId: number, senderId: number, mess
     throw new Error("Unauthorized: You can only reply to inquiries sent to you");
   }
   
+  // The recipient of the reply is the original sender of the inquiry
+  const replyRecipient = inquiry[0].senderId;
+  
   await db
     .insert(inquiryReplies)
     .values({
       inquiryId,
       senderId,
+      recipientId: replyRecipient,
       message,
     });
+  
+  // Mark the original inquiry as unread so it shows up in the recipient's inbox
+  await db
+    .update(itemInquiries)
+    .set({ isRead: false })
+    .where(eq(itemInquiries.id, inquiryId));
   
   // Fetch the newly created reply to get the ID
   const newReply = await db

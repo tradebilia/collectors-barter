@@ -65,6 +65,7 @@ export default function Messages() {
     onSuccess: async () => {
       setMessageDraft("");
       await utils.market.getReplies.invalidate();
+      await utils.market.getInquiries.invalidate();
     },
     onError: error => toast.error(error.message),
   });

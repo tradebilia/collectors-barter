@@ -478,13 +478,17 @@ export const inquiryReplies = mysqlTable(
     id: int("id").autoincrement().primaryKey(),
     inquiryId: int("inquiryId").notNull().references(() => itemInquiries.id),
     senderId: int("senderId").notNull().references(() => users.id),
+    recipientId: int("recipientId").notNull().references(() => users.id),
     message: text("message").notNull(),
+    isRead: boolean("isRead").default(false).notNull(),
     createdAt: timestamp("createdAt").defaultNow().notNull(),
     updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   },
   table => ({
     inquiryIdx: index("inquiryReplies_inquiry_idx").on(table.inquiryId),
     senderIdx: index("inquiryReplies_sender_idx").on(table.senderId),
+    recipientIdx: index("inquiryReplies_recipient_idx").on(table.recipientId),
+    recipientUnreadIdx: index("inquiryReplies_recipient_unread_idx").on(table.recipientId, table.isRead),
   }),
 );
 
