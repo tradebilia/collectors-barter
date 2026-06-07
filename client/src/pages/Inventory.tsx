@@ -120,15 +120,21 @@ export default function Inventory() {
       setBulkUpdatingStatus(true);
       const count = selectedIds.size;
       try {
+        const firstSelectedId = Array.from(selectedIds)[0];
+        const firstItem = listings.find((l: any) => l.id === firstSelectedId);
+        const currentStatus = firstItem?.isActive ?? false;
+        const newStatus = !currentStatus;
+        
         await bulkUpdateStatusMutation.mutateAsync({
           listingIds: Array.from(selectedIds),
-          newStatus: true,
+          newStatus: newStatus,
         });
         setSelectedIds(new Set());
         await dashboardQuery.refetch();
         await utils.market.feed.invalidate();
         await utils.market.feed.refetch({ category: undefined, condition: undefined, keyword: "" }).catch(() => {});
-        toast.success(`${count} item(s) activated`);
+        const action = newStatus ? 'activated' : 'hidden';
+        toast.success(`${count} item(s) ${action}`);
       } catch (error) {
         toast.error("Failed to activate items");
       } finally {
