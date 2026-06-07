@@ -194,14 +194,7 @@ export default function Messages() {
       setActiveThreadKey(null);
       return;
     }
-    if (!activeThreadKey) {
-      if (filteredInquiries.length) {
-        setActiveThreadKey(`inquiry-${filteredInquiries[0].id}`);
-      } else if (filteredThreads.length) {
-        setActiveThreadKey(filteredThreads[0].key);
-      }
-    }
-  }, [activeThreadKey, filteredThreads, filteredInquiries]);
+  }, [filteredThreads, filteredInquiries]);
 
 
   const activeThread = filteredThreads.find(thread => thread.key === activeThreadKey) ?? null;
