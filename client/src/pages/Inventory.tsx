@@ -612,10 +612,7 @@ export default function Inventory() {
                     <Plus className="mr-2 h-4 w-4" />
                     Add Item
                   </Button>
-                  <Button variant="outline" className="rounded-lg border-slate-300 px-6 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50" onClick={exportInventory}>
-                    <Download className="mr-2 h-4 w-4" />
-                    Export
-                  </Button>
+
                   <Button className="rounded-lg bg-red-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-red-700 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed" onClick={handleBulkDelete} disabled={selectedIds.size === 0 || bulkUpdatingStatus}>
                     {bulkUpdatingStatus ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
                       Delete Selected ({selectedIds.size})
