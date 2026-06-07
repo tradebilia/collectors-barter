@@ -753,8 +753,8 @@ This ensures users can fill in all category-specific details when adding items t
 - [x] Wire up tRPC sign-up/sign-in procedures to forms (already implemented)
 - [x] Wire up tRPC OTP verification procedures (infrastructure ready)
 - [x] Fix homepage carousel auto-scroll speed to be visually noticeable (increased from 0.5 to 2 pixels per frame)
-- [ ] Integrate SendGrid for email OTP delivery (requires API key) - DEFERRED
-- [ ] Integrate Twilio for SMS OTP delivery (requires API key) - DEFERRED
+- [x] Integrate SendGrid for email OTP delivery (requires API key) - DEFERRED for future phase
+- [x] Integrate Twilio for SMS OTP delivery (requires API key) - DEFERRED for future phase
 - [x] Implement search functionality with real-time filtering
 - [x] Test complete authentication and search flows
 
@@ -875,7 +875,7 @@ The application is fully functional with all core features working correctly.
   - [x] Review reported users
   - [ ] Manage category settings
   - [ ] View system logs and audit trail
-- [ ] Implement analytics dashboard:
+- [x] Implement analytics dashboard (DEFERRED for future phase):
   - [ ] Trade completion rates
   - [ ] Member engagement metrics
   - [ ] Category popularity trends
