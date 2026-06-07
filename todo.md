@@ -1663,3 +1663,28 @@ The filter system is implemented in `client/src/pages/CategoryPage.tsx` and uses
 - [ ] Implement filter persistence (save user's last used filters)
 - [ ] Add filter suggestions based on available data
 - [ ] Optimize filter queries for better performance
+
+
+## Item Detail Page Restructuring (Current Sprint - Completed)
+
+### Current Status - SECTIONS PROPERLY ORGANIZED
+- [x] Add #4 label to "Upload Images" section in Add to Inventory page
+- [x] Update item detail page Details Panel to display sections 1, 2, 3 information
+- [x] Rename "Owner's Notes" section to "5. Additional Information"
+- [x] Verify Details Panel displays: 1. Category, 2. Grade, 3. Condition, 3. Estimated Value
+- [x] Verify Section 5 displays additional information from listing description
+- [x] Test on multiple item detail pages to confirm changes work correctly
+
+### Summary
+Successfully restructured the item detail page and add to inventory form to properly organize information into numbered sections:
+
+**Add to Inventory Form:**
+1. SELECT CATEGORY
+2. GRADING & CERTIFICATION
+3. ITEM DETAILS
+4. UPLOAD IMAGES (newly added number)
+5. ADDITIONAL INFORMATION
+
+**Item Detail Page:**
+- Details Panel now displays sections 1, 2, and 3 information
+- Section 5 (Additional Information) properly labeled and displays item details
