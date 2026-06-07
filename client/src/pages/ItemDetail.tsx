@@ -98,92 +98,126 @@ export default function ItemDetail() {
   const similarListings = listing?.similarListings ?? [];
 
   const [activePhotoIndex, setActivePhotoIndex] = useState(0);
-  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
 
   const activePhoto = useMemo(() => {
-    if (!listing?.photos?.length) return null;
-    return listing.photos[activePhotoIndex];
-  }, [listing?.photos, activePhotoIndex]);
+    if (!listing) return null;
+    if (!listing.photos?.length) {
+      return {
+        imageUrl: resolveTradebiliaListingImage({ title: listing.title, category: listing.category, primaryPhotoUrl: listing.primaryPhotoUrl }),
+        altText: listing.title,
+      };
+    }
+    return listing.photos[Math.min(activePhotoIndex, listing.photos.length - 1)] ?? null;
+  }, [activePhotoIndex, listing]);
+
+  const startTradeProposal = () => {
+    if (!listing) return;
+    if (!isAuthenticated) {
+      window.location.href = getLoginUrl();
+      return;
+    }
+    createProposalMutation.mutate({
+      requestedListingId: listing.id,
+      note: `I am interested in your ${listing.title} and would like to review a possible trade.`,
+    });
+  };
+
+  const toggleWatchlist = () => {
+    if (!listing) return;
+    if (!isAuthenticated) {
+      window.location.href = getLoginUrl();
+      return;
+    }
+    watchlistMutation.mutate({ listingId: listing.id });
+  };
 
   if (listingDetailQuery.isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800 flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-cyan-400" />
+      <div className="flex min-h-screen items-center justify-center bg-[radial-gradient(circle_at_top,#1c2468_0%,#0b0a22_65%)] text-white">
+        <Loader2 className="h-10 w-10 animate-spin" />
       </div>
     );
   }
 
   if (!listing) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800 flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-white mb-4">Item not found</h1>
-          <Link href="/" className="text-cyan-400 hover:text-cyan-300">
-            Return to home
+      <div className="min-h-screen bg-[radial-gradient(circle_at_top,#1c2468_0%,#0b0a22_65%)] px-6 py-10 text-white">
+        <div className="mx-auto max-w-6xl rounded-[2rem] border border-white/10 bg-black/25 p-8 text-center backdrop-blur-md">
+          <p className="text-sm uppercase tracking-[0.3em] text-white/60">Tradebilia</p>
+          <h1 className="mt-4 text-4xl font-semibold">This collectible could not be found.</h1>
+          <Link href="/" className="mt-6 inline-flex rounded-full border border-white/15 px-6 py-3 text-sm font-semibold text-white">
+            Return to the marketplace
           </Link>
         </div>
       </div>
     );
   }
 
-  const wallpaperUrl = getCategoryWallpaperUrl(listing.category);
-
-  const startTradeProposal = () => {
-    if (!isAuthenticated) {
-      window.location.href = getLoginUrl();
-      return;
-    }
-    if (user?.id === listing.ownerId) {
-      toast.error("You cannot trade with yourself");
-      return;
-    }
-    setShowEmailModal(true);
-  };
+  const categoryTheme = listing ? getTradebiliaCategoryTheme(listing.category) : null;
+  const pageBackgroundClass = categoryTheme?.pageClassName ?? "bg-[radial-gradient(circle_at_top,#1c2468_0%,#0b0a22_65%)] text-white";
 
   return (
-    <div
-      className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800"
-      style={{
-        backgroundImage: wallpaperUrl ? `url('${wallpaperUrl}')` : undefined,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        backgroundAttachment: "fixed",
-      }}
-    >
-      <div className="absolute inset-0 bg-gradient-to-b from-gray-900/95 via-gray-900/90 to-gray-900/95 pointer-events-none" />
+    <div className={`min-h-screen text-foreground ${pageBackgroundClass}`}>
+      <TopBar
+        logoUrl={TRADEBILIA_LOGO_URL}
+        searchPlaceholder="Search Tradebilia..."
+      />
 
-      <TopBar />
-      <CategoryBar />
-
-      <div className="relative z-10">
-        <div className="mx-auto max-w-6xl px-4 py-8">
-          <Link href={`/category/${listing.category}`} className="inline-flex items-center gap-2 text-white/70 hover:text-white transition mb-6">
-            <ArrowLeft className="h-4 w-4" />
-            Back to {getTradebiliaCategoryLabel(listing.category)}
-          </Link>
-        </div>
-
-        <div className="relative z-10 mx-auto max-w-6xl px-4 pb-16">
-          <div className="mx-auto grid max-w-6xl gap-8 xl:grid-cols-[80px_1fr_0.98fr]">
-            {/* Thumbnails on the left */}
-            <div className="flex flex-col gap-3 justify-start">
-              {(listing.photos.length ? listing.photos : [{ imageUrl: resolveTradebiliaListingImage({ title: listing.title, category: listing.category, primaryPhotoUrl: listing.primaryPhotoUrl }), altText: listing.title }]).map((photo: any, index: number) => (
-                <button
-                  key={`${photo.imageUrl}-${index}`}
-                  type="button"
-                  onClick={() => setActivePhotoIndex(index)}
-                  className={`overflow-hidden rounded-[1rem] border transition ${index === activePhotoIndex ? "border-cyan-300 shadow-[0_0_0_3px_rgba(103,232,249,0.15)]" : "border-white/12"}`}
-                >
-                  <img src={photo.imageUrl} alt={photo.altText ?? `${listing.title} ${index + 1}`} className="h-20 w-20 object-cover" />
-                </button>
-              ))}
+      <main className="pb-16">
+        <section className="relative w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden bg-[#00143A] text-white" style={{
+          backgroundImage: `url(${getCategoryWallpaperUrl(listing.category)})`,
+          backgroundSize: 'cover',
+          backgroundPosition: listing.category === 'movies' ? 'center top' : 'center',
+          backgroundAttachment: 'scroll',
+          backgroundRepeat: ['movies', 'comics', 'pokemon', 'video_games', 'disney_pins'].includes(listing.category) ? 'no-repeat' : 'repeat',
+          filter: ['video_games', 'coins', 'stamps', 'vintage_toys', 'autographs', 'movies', 'comics', 'pokemon', 'disney_pins'].includes(listing.category) ? 'contrast(1.2) saturate(1.1)' : 'none'
+        }}>
+          <div className="absolute inset-0 bg-black/60"></div>
+          <div className="container relative flex h-64 items-center justify-center py-0 sm:h-72 sm:py-0 lg:h-80 lg:py-0">
+            <div className="flex w-full max-w-5xl items-center justify-center px-4">
+              <img
+                src={TRADEBILIA_LOGO_URL}
+                alt="Tradebilia"
+                className="h-auto w-full max-h-64 sm:max-h-72 lg:max-h-80"
+              />
             </div>
+          </div>
+        </section>
 
-            {/* Main image in the center */}
+        <CategoryBar />
+
+        <section className="px-4 py-10 lg:px-8 border-t border-white/10">
+          <div className="mx-auto max-w-6xl mb-8">
+            <button
+              onClick={() => window.location.href = `/category/${listing.category}`}
+              className="flex items-center gap-3 px-6 py-3 rounded-lg bg-white border border-white text-black hover:bg-gray-100 hover:border-gray-100 transition text-base font-semibold"
+              title="Back to category"
+            >
+              <ArrowLeft className="w-6 h-6" />
+              <span>Back to {getTradebiliaCategoryLabel(listing.category)}</span>
+            </button>
+          </div>
+          <div className="mx-auto grid max-w-6xl gap-8 xl:grid-cols-[1.02fr_0.98fr]">
             <div>
               <div className="overflow-hidden rounded-[2rem] border border-white/10 bg-black/20 shadow-[0_40px_90px_rgba(0,0,0,0.35)]">
                 <div className="flex items-center justify-center bg-black/30 p-4" style={{ minHeight: "500px" }}>
                   <img src={activePhoto?.imageUrl ?? resolveTradebiliaListingImage({ title: listing.title, category: listing.category, primaryPhotoUrl: listing.primaryPhotoUrl })} alt={activePhoto?.altText ?? listing.title} className="max-h-full max-w-full object-contain" />
+                </div>
+              </div>
+              <div className="mt-5">
+                <p className="text-xl font-medium text-white/90">View additional images</p>
+                <div className="mt-4 flex flex-wrap gap-4">
+                  {(listing.photos.length ? listing.photos : [{ imageUrl: resolveTradebiliaListingImage({ title: listing.title, category: listing.category, primaryPhotoUrl: listing.primaryPhotoUrl }), altText: listing.title }]).map((photo: any, index: number) => (
+                    <button
+                      key={`${photo.imageUrl}-${index}`}
+                      type="button"
+                      onClick={() => setActivePhotoIndex(index)}
+                      className={`overflow-hidden rounded-[1.25rem] border transition ${index === activePhotoIndex ? "border-cyan-300 shadow-[0_0_0_3px_rgba(103,232,249,0.15)]" : "border-white/12"}`}
+                    >
+                      <img src={photo.imageUrl} alt={photo.altText ?? `${listing.title} ${index + 1}`} className="h-28 w-24 object-cover" />
+                    </button>
+                  ))}
                 </div>
               </div>
             </div>
@@ -245,112 +279,115 @@ export default function ItemDetail() {
                     <MessageCircleMore className="mr-0.5 h-4 w-4" />
                     Trade Proposal
                   </Button>
-                  <Button className="h-12 rounded-[1rem] bg-blue-600 text-sm font-semibold text-white hover:bg-blue-700">
+                  <Button onClick={() => setIsEmailModalOpen(true)} className="h-12 rounded-[1rem] bg-blue-600 text-sm font-semibold text-white hover:bg-blue-700">
                     <MessageCircleMore className="mr-0.5 h-4 w-4" />
                     Message Owner
                   </Button>
-                  <Button
-                    onClick={() => watchlistMutation.mutate({ listingId })}
-                    disabled={watchlistMutation.isPending}
-                    className="h-12 rounded-[1rem] bg-gray-200 text-sm font-semibold text-gray-900 hover:bg-gray-300"
-                  >
-                    <Heart className={`mr-0.5 h-4 w-4 ${listing.savedToWatchlist ? "fill-current text-red-500" : ""}`} />
-                    Add to Watchlist
+                  <Button onClick={toggleWatchlist} variant="secondary" className="h-12 rounded-[1rem] bg-gray-200 text-xs font-semibold text-gray-900 hover:bg-gray-300 whitespace-nowrap">
+                    <Heart className={`mr-0.5 h-4 w-4 ${listing.savedToWatchlist ? "fill-current text-pink-500" : ""}`} />
+                    {listing.savedToWatchlist ? "Saved" : "Add to Watchlist"}
                   </Button>
                 </div>
               </div>
             </div>
           </div>
+        </section>
 
-          <div className="mx-auto mt-16 max-w-6xl">
-            <div className="rounded-[2rem] border border-gray-200 bg-white p-8 shadow-[0_40px_90px_rgba(0,0,0,0.08)]">
-              <p className="text-sm uppercase tracking-[0.3em] text-gray-500">Description</p>
-              <h2 className="mt-4 text-4xl font-semibold tracking-tight text-gray-900">{listing.title}</h2>
-            </div>
-            {/* Details Panel - Sections 1, 2, 3 */}
-            <div className="rounded-[2rem] border border-gray-200 bg-white p-8 shadow-[0_40px_90px_rgba(0,0,0,0.08)] mt-8">
-              <p className="text-sm uppercase tracking-[0.3em] text-gray-500">Details</p>
-              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mt-6">
-                {/* Section 1: Category */}
-                <div className="rounded-[1.5rem] border border-gray-200 bg-gray-50 p-5">
-                  <p className="text-sm uppercase tracking-[0.2em] text-gray-500">1. Category</p>
-                  <p className="mt-3 text-xl font-medium text-gray-900">{getTradebiliaCategoryLabel(listing.category)}</p>
+        <section className="px-4 lg:px-8">
+          <div className="mx-auto max-w-6xl space-y-8 text-gray-900">
+            {/* Description Section */}
+            <div className="space-y-6 rounded-[2rem] border border-gray-200 bg-white p-8 shadow-[0_40px_90px_rgba(0,0,0,0.08)]">
+              <div>
+                <p className="text-sm uppercase tracking-[0.3em] text-gray-500">Description</p>
+                <h2 className="mt-4 text-4xl font-semibold tracking-tight text-gray-900">{listing.title}</h2>
+              </div>
+              {/* Details Panel - Sections 1, 2, 3 */}
+              <div className="rounded-[2rem] border border-gray-200 bg-white p-8 shadow-[0_40px_90px_rgba(0,0,0,0.08)]">
+                <p className="text-sm uppercase tracking-[0.3em] text-gray-500">Details</p>
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mt-6">
+                  {/* Section 1: Category */}
+                  <div className="rounded-[1.5rem] border border-gray-200 bg-gray-50 p-5">
+                    <p className="text-sm uppercase tracking-[0.2em] text-gray-500">1. Category</p>
+                    <p className="mt-3 text-xl font-medium text-gray-900">{getTradebiliaCategoryLabel(listing.category)}</p>
+                  </div>
+                  
+                  {/* Section 2: Grading Company */}
+                  {listing.certificationCompany && (
+                    <div className="rounded-[1.5rem] border border-gray-200 bg-gray-50 p-5">
+                      <p className="text-sm uppercase tracking-[0.2em] text-gray-500">Grading Company</p>
+                      <p className="mt-3 text-xl font-medium text-gray-900">{listing.certificationCompany}</p>
+                    </div>
+                  )}
+                  
+                  {/* Section 4: Estimated Value */}
+                  {listing.estimatedValue && (
+                    <div className="rounded-[1.5rem] border border-gray-200 bg-gray-50 p-5">
+                      <p className="text-sm uppercase tracking-[0.2em] text-gray-500">4. Estimated Value</p>
+                      <p className="mt-3 text-2xl font-bold text-emerald-600">${listing.estimatedValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                    </div>
+                  )}
+                  
+                  {/* Category-specific fields from itemDetails */}
+                  {listing.itemDetails && Object.entries(listing.itemDetails)
+                    .filter(([key]) => key !== 'additional_notes') // Filter out additional_notes
+                    .map(([key, value]) => (
+                    <div key={key} className="rounded-[1.5rem] border border-gray-200 bg-gray-50 p-5">
+                      <p className="text-sm uppercase tracking-[0.2em] text-gray-500">{key}</p>
+                      <p className="mt-3 text-xl font-medium text-gray-900">{String(value)}</p>
+                    </div>
+                  ))}
                 </div>
-                
-                {/* Section 2: Grading Company */}
-                {listing.certificationCompany && (
-                  <div className="rounded-[1.5rem] border border-gray-200 bg-gray-50 p-5">
-                    <p className="text-sm uppercase tracking-[0.2em] text-gray-500">Grading Company</p>
-                    <p className="mt-3 text-xl font-medium text-gray-900">{listing.certificationCompany}</p>
-                  </div>
-                )}
-                
-                {/* Section 4: Estimated Value */}
-                {listing.estimatedValue && (
-                  <div className="rounded-[1.5rem] border border-gray-200 bg-gray-50 p-5">
-                    <p className="text-sm uppercase tracking-[0.2em] text-gray-500">4. Estimated Value</p>
-                    <p className="mt-3 text-2xl font-bold text-emerald-600">${listing.estimatedValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                  </div>
-                )}
-                
-                {/* Category-specific fields from itemDetails */}
-                {listing.itemDetails && Object.entries(listing.itemDetails)
-                  .filter(([key]) => key !== 'additional_notes') // Filter out additional_notes
-                  .map(([key, value]) => (
-                  <div key={key} className="rounded-[1.5rem] border border-gray-200 bg-gray-50 p-5">
-                    <p className="text-sm uppercase tracking-[0.2em] text-gray-500">{key}</p>
-                    <p className="mt-3 text-xl font-medium text-gray-900">{String(value)}</p>
-                  </div>
-                ))}
               </div>
             </div>
 
             {/* Section 4: Additional Information */}
             {listing.itemDetails?.additional_notes && (
-              <div className="rounded-[2rem] border border-gray-200 bg-white p-8 shadow-[0_40px_90px_rgba(0,0,0,0.08)] mt-8">
+              <div className="rounded-[2rem] border border-gray-200 bg-white p-8 shadow-[0_40px_90px_rgba(0,0,0,0.08)]">
                 <p className="text-sm uppercase tracking-[0.3em] text-gray-500">4. Additional Information</p>
-                <p className="mt-4 text-lg text-gray-700">{listing.itemDetails.additional_notes}</p>
+                <p className="mt-5 max-w-4xl text-lg leading-8 text-gray-700">{listing.itemDetails.additional_notes}</p>
               </div>
             )}
-          </div>
 
-          {/* Similar Items */}
-          {similarListings.length > 0 && (
-            <div className="mx-auto mt-16 max-w-6xl">
-              <h2 className="text-3xl font-semibold text-white mb-8">Similar Items</h2>
-              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {similarListings.map((item: any) => (
-                  <Link key={item.id} href={`/listings/${item.id}`} className="group">
-                    <div className="overflow-hidden rounded-[1.5rem] border border-white/10 bg-black/20 transition hover:border-cyan-300/50">
-                      <div className="relative overflow-hidden bg-black/30 pt-[100%]">
-                        <img
-                          src={resolveTradebiliaListingImage({ title: item.title, category: item.category, primaryPhotoUrl: item.primaryPhotoUrl })}
-                          alt={item.title}
-                          className="absolute inset-0 h-full w-full object-cover transition group-hover:scale-105"
-                        />
-                      </div>
-                      <div className="p-4">
-                        <p className="text-xs uppercase tracking-[0.2em] text-gray-400">{getTradebiliaCategoryLabel(item.category)}</p>
-                        <h3 className="mt-2 font-semibold text-white group-hover:text-cyan-300 transition line-clamp-2">{item.title}</h3>
-                        <p className="mt-2 text-sm text-gray-400">{item.ownerProfile?.displayName ?? 'Unknown'}</p>
-                      </div>
-                    </div>
-                  </Link>
-                ))}
+            {/* Similar Items Section */}
+            <div className="rounded-[2rem] border border-gray-200 bg-white p-8 shadow-[0_40px_90px_rgba(0,0,0,0.08)]">
+              <div className="flex items-center justify-between gap-4 mb-8">
+                <div>
+                  <p className="text-sm uppercase tracking-[0.3em] text-gray-500">Similar Items</p>
+                  <h2 className="mt-4 text-4xl font-semibold tracking-tight text-gray-900">More from {getTradebiliaCategoryLabel(listing.category)}</h2>
+                </div>
               </div>
+              <ScrollArea className="w-full">
+                <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+                  {similarListings.map(item => (
+                    <Link key={item.id} href={`/listings/${item.id}`} className="block overflow-hidden rounded-[1.5rem] border border-gray-200 bg-gray-50 transition hover:-translate-y-1 hover:bg-gray-100">
+                      <div className="aspect-[0.82] bg-gray-100">
+                        <img src={resolveTradebiliaListingImage({ title: item.title, category: item.category, primaryPhotoUrl: item.primaryPhotoUrl })} alt={item.title} className="h-full w-full object-cover" />
+                      </div>
+                      <div className="space-y-3 p-5">
+                        <p className="text-xs uppercase tracking-[0.2em] text-gray-500">{getTradebiliaCategoryLabel(item.category)}</p>
+                        <h3 className="text-xl font-semibold text-gray-900">{item.title}</h3>
+                        <p className="text-sm text-gray-600">{item.owner.displayName}</p>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </ScrollArea>
             </div>
-          )}
-        </div>
-      </div>
-
-      <EmailInquiryModal
-        isOpen={showEmailModal}
-        onClose={() => setShowEmailModal(false)}
-        recipientId={listing.ownerId}
-        listing={listing}
-      />
-
-      <TopRightIcons />
+          </div>
+        </section>
+      </main>
+      {listing && (
+        <EmailInquiryModal
+          isOpen={isEmailModalOpen}
+          onClose={() => setIsEmailModalOpen(false)}
+          listing={{
+            id: listing.id,
+            title: listing.title,
+            imageUrl: activePhoto?.imageUrl,
+          }}
+          recipientId={listing.ownerId}
+        />
+      )}
     </div>
   );
 }
