@@ -210,11 +210,11 @@ export default function ItemDetail() {
         }}>
           <div className={`absolute inset-0 ${listing.category === 'movies' ? 'bg-black/10' : 'bg-black/30'}`}></div>
           <div className="container relative flex h-64 items-center justify-center py-0 sm:h-72 sm:py-0 lg:h-80 lg:py-0 z-10">
-            <div className="flex w-full max-w-5xl items-center justify-center px-4">
+            <div className="flex w-full max-w-6xl items-center justify-center -ml-32">
               <img
                 src={TRADEBILIA_LOGO_URL}
                 alt="Tradebilia"
-                className="h-auto w-full max-h-64 sm:max-h-72 lg:max-h-80"
+                className="h-auto w-full"
               />
             </div>
           </div>
