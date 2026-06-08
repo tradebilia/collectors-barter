@@ -283,7 +283,7 @@ export default function ItemDetail() {
 
             <div className="pt-2">
               <div className="rounded-[2rem] border border-white/10 bg-white p-8 shadow-[0_40px_90px_rgba(0,0,0,0.28)] backdrop-blur-sm">
-                <Badge className="rounded-full border border-cyan-300/30 bg-cyan-300/10 px-4 py-2 text-[0.7rem] uppercase tracking-[0.25em] text-cyan-600 hover:bg-cyan-300/10">
+                <Badge className="rounded-full border border-gray-300 bg-white px-4 py-2 text-[0.7rem] uppercase tracking-[0.25em] text-gray-700 hover:bg-gray-50">
                   {getTradebiliaCategoryLabel(listing.category)}
                 </Badge>
                 <h1 className="mt-6 text-5xl font-semibold leading-[1.05] tracking-tight text-gray-900">{listing.title}</h1>
