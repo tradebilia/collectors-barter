@@ -228,29 +228,7 @@ export default function ItemDetail() {
           <div className="mx-auto max-w-6xl mb-8">
             <button
               onClick={() => window.location.href = `/category/${listing.category}`}
-              className={`flex items-center gap-3 px-6 py-3 rounded-lg border transition text-base font-semibold ${
-                listing.category === 'sports_cards'
-                  ? 'bg-white/10 border-white/30 text-black hover:bg-white/20'
-                  : listing.category === 'comics'
-                  ? 'bg-white/10 border-white/30 text-white hover:bg-white/20'
-                  : listing.category === 'video_games'
-                  ? 'bg-[#68dc43]/20 border-[#68dc43]/40 text-[#d8ffbc] hover:bg-[#68dc43]/30'
-                  : listing.category === 'vintage_toys'
-                  ? 'bg-white/15 border-[#5f6762]/30 text-[#1e1d1a] hover:bg-white/25'
-                  : listing.category === 'coins'
-                  ? 'bg-white/10 border-white/30 text-white hover:bg-white/20'
-                  : listing.category === 'stamps'
-                  ? 'bg-white/10 border-white/30 text-white hover:bg-white/20'
-                  : listing.category === 'pokemon'
-                  ? 'bg-[#68dc43]/20 border-[#68dc43]/40 text-[#d8ffbc] hover:bg-[#68dc43]/30'
-                  : listing.category === 'movies'
-                  ? 'bg-white/10 border-white/30 text-white hover:bg-white/20'
-                  : listing.category === 'autographs'
-                  ? 'bg-white/10 border-white/30 text-white hover:bg-white/20'
-                  : listing.category === 'disney_pins'
-                  ? 'bg-white/10 border-white/30 text-white hover:bg-white/20'
-                  : 'bg-white/10 border-white/30 text-black hover:bg-white/20'
-              }`}
+              className={`flex items-center gap-3 px-6 py-3 rounded-lg border transition text-base font-semibold bg-white border-gray-300 text-black hover:bg-gray-50`}
               title="Back to category"
             >
               <ArrowLeft className="w-6 h-6" />
