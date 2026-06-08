@@ -12,7 +12,7 @@ import { getLoginUrl } from "@/const";
 import { getTradebiliaCategoryTheme, getTradebiliaCategoryLabel } from "@/lib/tradebilia";
 
 const getItemDetailPageClassName = (category: string): string => {
-  // For item detail pages, remove the teal portion (0-14%) and start with the content color
+  // For item detail pages, use the content portion of the category page gradient
   if (category === 'sports_cards') {
     return 'bg-[#f6e5bf] text-[#1a1814]';
   }
@@ -20,28 +20,28 @@ const getItemDetailPageClassName = (category: string): string => {
     return 'bg-[linear-gradient(180deg,#281013_0%,#121116_100%)] text-white';
   }
   if (category === 'video_games') {
-    return 'bg-[linear-gradient(180deg,#0a3a1a_0%,#051a0d_100%)] text-[#d8ffbc]';
+    return 'bg-[#0a2615] text-[#efffe2]';
   }
   if (category === 'vintage_toys') {
-    return 'bg-[linear-gradient(180deg,#3d3d3d_0%,#2a2a2a_100%)] text-[#f8efc8]';
+    return 'bg-[linear-gradient(180deg,#454342_0%,#c8c8c2_100%)] text-[#1e1d1a]';
   }
   if (category === 'coins') {
-    return 'bg-[linear-gradient(180deg,#1a1a1a_0%,#0f0f0f_100%)] text-white';
+    return 'bg-[#e9decb] text-[#1d1712]';
   }
   if (category === 'stamps') {
-    return 'bg-[linear-gradient(180deg,#1a1a1a_0%,#0f0f0f_100%)] text-white';
+    return 'bg-[#d9cadf] text-[#1e1725]';
   }
   if (category === 'pokemon') {
-    return 'bg-[linear-gradient(180deg,#0a3a1a_0%,#051a0d_100%)] text-[#d8ffbc]';
+    return 'bg-[#f5d84a] text-[#1f2240]';
   }
   if (category === 'movies') {
-    return 'bg-[linear-gradient(180deg,#1a1a1a_0%,#0f0f0f_100%)] text-white';
+    return 'bg-[#ead7bf] text-[#24150f]';
   }
   if (category === 'autographs') {
-    return 'bg-[linear-gradient(180deg,#1a1a1a_0%,#0f0f0f_100%)] text-white';
+    return 'bg-[#f5e9dc] text-[#1a1410]';
   }
   if (category === 'disney_pins') {
-    return 'bg-[linear-gradient(180deg,#1a1a1a_0%,#0f0f0f_100%)] text-white';
+    return 'bg-[#f5e9dc] text-[#1a1410]';
   }
   return 'bg-[radial-gradient(circle_at_top,#1c2468_0%,#0b0a22_65%)] text-white';
 };
