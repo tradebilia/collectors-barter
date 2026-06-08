@@ -236,25 +236,27 @@ export default function ItemDetail() {
             </button>
           </div>
           <div className="mx-auto grid max-w-6xl gap-8 xl:grid-cols-[1.02fr_0.98fr]">
-            <div>
-              <div className="overflow-hidden rounded-[2rem] border border-white/10 bg-black/20 shadow-[0_40px_90px_rgba(0,0,0,0.35)]">
-                <div className="flex items-center justify-center bg-black/30 p-4" style={{ minHeight: "500px" }}>
-                  <img src={activePhoto?.imageUrl ?? resolveTradebiliaListingImage({ title: listing.title, category: listing.category, primaryPhotoUrl: listing.primaryPhotoUrl })} alt={activePhoto?.altText ?? listing.title} className="max-h-full max-w-full object-contain" />
-                </div>
+            <div className="flex gap-4">
+              {/* Thumbnails on the left */}
+              <div className="flex flex-col gap-3">
+                {(listing.photos.length ? listing.photos : [{ imageUrl: resolveTradebiliaListingImage({ title: listing.title, category: listing.category, primaryPhotoUrl: listing.primaryPhotoUrl }), altText: listing.title }]).map((photo: any, index: number) => (
+                  <button
+                    key={`${photo.imageUrl}-${index}`}
+                    type="button"
+                    onClick={() => setActivePhotoIndex(index)}
+                    className={`overflow-hidden rounded-[1.25rem] border transition ${index === activePhotoIndex ? "border-cyan-300 shadow-[0_0_0_3px_rgba(103,232,249,0.15)]" : "border-white/12"}`}
+                  >
+                    <img src={photo.imageUrl} alt={photo.altText ?? `${listing.title} ${index + 1}`} className="h-24 w-20 object-cover" />
+                  </button>
+                ))}
               </div>
-              <div className="mt-5">
-                <p className="text-xl font-medium text-white/90">View additional images</p>
-                <div className="mt-4 flex flex-wrap gap-4">
-                  {(listing.photos.length ? listing.photos : [{ imageUrl: resolveTradebiliaListingImage({ title: listing.title, category: listing.category, primaryPhotoUrl: listing.primaryPhotoUrl }), altText: listing.title }]).map((photo: any, index: number) => (
-                    <button
-                      key={`${photo.imageUrl}-${index}`}
-                      type="button"
-                      onClick={() => setActivePhotoIndex(index)}
-                      className={`overflow-hidden rounded-[1.25rem] border transition ${index === activePhotoIndex ? "border-cyan-300 shadow-[0_0_0_3px_rgba(103,232,249,0.15)]" : "border-white/12"}`}
-                    >
-                      <img src={photo.imageUrl} alt={photo.altText ?? `${listing.title} ${index + 1}`} className="h-28 w-24 object-cover" />
-                    </button>
-                  ))}
+              
+              {/* Main image on the right */}
+              <div className="flex-1">
+                <div className="overflow-hidden rounded-[2rem] border border-white/10 bg-black/20 shadow-[0_40px_90px_rgba(0,0,0,0.35)]">
+                  <div className="flex items-center justify-center bg-black/30 p-4" style={{ minHeight: "500px" }}>
+                    <img src={activePhoto?.imageUrl ?? resolveTradebiliaListingImage({ title: listing.title, category: listing.category, primaryPhotoUrl: listing.primaryPhotoUrl })} alt={activePhoto?.altText ?? listing.title} className="max-h-full max-w-full object-contain" />
+                  </div>
                 </div>
               </div>
             </div>
