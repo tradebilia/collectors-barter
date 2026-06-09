@@ -1743,3 +1743,10 @@ Status: COSMETIC ISSUE - NOT CRITICAL
   - [x] Coins, Stamps, Autographs, Movies, Disney Pins: Dark backgrounds with category-specific accents
   - [x] "Back to [Category]" button now uses category-specific colors
   - [x] Verified on Comics and Sports Cards pages - colors now display correctly
+
+## Filter & Search Improvements (June 2026)
+
+- [ ] Fix: Clear button should only clear filters for current category, not all categories
+- [ ] Verify Enter key triggers search on all category page filter inputs
+- [ ] Verify Search button works correctly on all category pages
+- [ ] Verify filter state isolation works across all 10 category pages
