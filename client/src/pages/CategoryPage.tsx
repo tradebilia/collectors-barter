@@ -644,12 +644,24 @@ export default function CategoryPage() {
             </div>
             {/* Horizontal Stats Section */}
             <div className="flex justify-center gap-6 flex-wrap mt-10 pt-8" style={{ position: "relative", top: "-60px" }}>
-              {[
-                ["Listings", String(listings.length)],
-                ["Collectors", String(feedQuery.data?.highlights.activeCollectors ?? 0)],
-                ["Completed Trades", String(feedQuery.data?.highlights.completedTrades ?? 0)],
-                ["Total Market Value", "$0"],
-              ].map(([label, value]) => (
+              {(() => {
+                const totalMarketValue = listings.reduce((sum, listing) => {
+                  const value = parseFloat(listing.estimatedValue?.toString() || "0");
+                  return sum + (isNaN(value) ? 0 : value);
+                }, 0);
+                const formattedValue = new Intl.NumberFormat('en-US', {
+                  style: 'currency',
+                  currency: 'USD',
+                  minimumFractionDigits: 0,
+                  maximumFractionDigits: 0,
+                }).format(totalMarketValue);
+                return [
+                  ["Listings", String(listings.length)],
+                  ["Collectors", String(feedQuery.data?.highlights.activeCollectors ?? 0)],
+                  ["Completed Trades", String(feedQuery.data?.highlights.completedTrades ?? 0)],
+                  ["Total Market Value", formattedValue],
+                ];
+              })().map(([label, value]) => (
                 <div key={label} className="rounded-[1rem] border border-white/15 bg-black/15 px-3 py-2 text-center backdrop-blur-sm">
                   <p className="text-[0.65rem] uppercase tracking-[0.3em]" style={{ color: '#ffffff', fontWeight: 600 }}>{label}</p>
                   <p className="mt-1 text-sm font-bold" style={{ color: '#ffffff' }}>{value}</p>

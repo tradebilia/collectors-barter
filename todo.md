@@ -1746,7 +1746,8 @@ Status: COSMETIC ISSUE - NOT CRITICAL
 
 ## Filter & Search Improvements (June 2026)
 
-- [ ] Fix: Clear button should only clear filters for current category, not all categories
-- [ ] Verify Enter key triggers search on all category page filter inputs
-- [ ] Verify Search button works correctly on all category pages
-- [ ] Verify filter state isolation works across all 10 category pages
+- [x] Fix: Clear button should only clear filters for current category, not all categories
+- [x] Verify Enter key triggers search on all category page filter inputs
+- [x] Verify Search button works correctly on all category pages
+- [x] Verify filter state isolation works across all 10 category pages
+- [x] Fix Total Market Value statistic bubble on category pages - now dynamically calculates from listings
