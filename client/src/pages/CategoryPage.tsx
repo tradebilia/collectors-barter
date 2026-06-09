@@ -24,7 +24,7 @@ import { TopRightIcons } from "@/components/TopRightIcons";
 import { TopBar } from "@/components/TopBar";
 import { CategoryBar } from "@/components/CategoryBar";
 import { OnlineIndicator } from "@/components/OnlineIndicator";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Link, useRoute } from "wouter";
 import { getGradingCompanyNamesForCategory, getValidGradesForCompany, getGradingCompanyByName } from "@shared/gradingCompanyConfig";
@@ -350,6 +350,57 @@ export default function CategoryPage() {
     facsimile: undefined as string | undefined,
     rarity: undefined as string | undefined,
   });
+
+  // Reset filters when category slug changes
+  useEffect(() => {
+    // Reset all text input filters
+    setKeyword("");
+    setIssueNumber("");
+    setManufacturer("");
+    setYear("");
+    setTeam("");
+    setSeries("");
+    setSportsCardsConditionText("");
+    
+    // Reset all dropdown filters to undefined (which displays as "All")
+    setCondition(undefined);
+    setSport(undefined);
+    setGradingService(undefined);
+    setGrade(undefined);
+    setRookie(undefined);
+    setAutographed(undefined);
+    setSigned(undefined);
+    setFacsimile(undefined);
+    setRarity(undefined);
+    
+    // Reset numeric range filters
+    setValueMin(undefined);
+    setValueMax(undefined);
+    
+    // Reset submitted filters
+    setSubmittedFilters({
+      keyword: "",
+      condition: undefined,
+      issueNumber: undefined,
+      manufacturer: undefined,
+      year: undefined,
+      team: undefined,
+      series: undefined,
+      sport: undefined,
+      gradingService: undefined,
+      grade: undefined,
+      valueMin: undefined,
+      valueMax: undefined,
+      rookie: undefined,
+      autographed: undefined,
+      signed: undefined,
+      facsimile: undefined,
+      rarity: undefined,
+    });
+    
+    // Reset pagination
+    setCurrentPage(1);
+  }, [slug]);
 
   // Memoize the query input to ensure proper refetch detection
   const queryInput = useMemo(() => 
@@ -757,6 +808,7 @@ export default function CategoryPage() {
                       placeholder={filter.placeholder} 
                       value={keyword}
                       onChange={(e) => setKeyword(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && handleSubmitFilters()}
                       className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black`} 
                     />
                   ) : filter.label === "Issue Number" ? (
@@ -764,6 +816,7 @@ export default function CategoryPage() {
                       placeholder={filter.placeholder} 
                       value={issueNumber}
                       onChange={(e) => setIssueNumber(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && handleSubmitFilters()}
                       className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black`} 
                     />
                   ) : filter.label === "Manufacturer" ? (
@@ -771,6 +824,7 @@ export default function CategoryPage() {
                       placeholder={filter.placeholder} 
                       value={manufacturer}
                       onChange={(e) => setManufacturer(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && handleSubmitFilters()}
                       className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black`} 
                     />
                   ) : filter.label === "Year / era" ? (
@@ -778,6 +832,7 @@ export default function CategoryPage() {
                       placeholder={filter.placeholder} 
                       value={year}
                       onChange={(e) => setYear(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && handleSubmitFilters()}
                       className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black`} 
                     />
                   ) : filter.label === "Team" ? (
@@ -785,6 +840,7 @@ export default function CategoryPage() {
                       placeholder={filter.placeholder} 
                       value={team}
                       onChange={(e) => setTeam(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && handleSubmitFilters()}
                       className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black`} 
                     />
                   ) : filter.label === "Set / series" ? (
@@ -792,6 +848,7 @@ export default function CategoryPage() {
                       placeholder={filter.placeholder} 
                       value={series}
                       onChange={(e) => setSeries(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && handleSubmitFilters()}
                       className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black`} 
                     />
                   ) : filter.label === "Name" ? (
@@ -799,6 +856,7 @@ export default function CategoryPage() {
                       placeholder={filter.placeholder}
                       value={keyword}
                       onChange={(e) => setKeyword(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && handleSubmitFilters()}
                       className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black`}
                     />
                   ) : filter.label === "Franchise" ? (
@@ -806,6 +864,7 @@ export default function CategoryPage() {
                       placeholder={filter.placeholder}
                       value={series}
                       onChange={(e) => setSeries(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && handleSubmitFilters()}
                       className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black`}
                     />
                   ) : filter.label === "Issuer" ? (
@@ -813,6 +872,7 @@ export default function CategoryPage() {
                       placeholder={filter.placeholder}
                       value={manufacturer}
                       onChange={(e) => setManufacturer(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && handleSubmitFilters()}
                       className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black`}
                     />
                   ) : filter.label === "Mint mark" ? (
@@ -820,6 +880,7 @@ export default function CategoryPage() {
                       placeholder={filter.placeholder}
                       value={team}
                       onChange={(e) => setTeam(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && handleSubmitFilters()}
                       className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black`}
                     />
                   ) : filter.label === "Pokémon" ? (
@@ -827,6 +888,7 @@ export default function CategoryPage() {
                       placeholder={filter.placeholder}
                       value={keyword}
                       onChange={(e) => setKeyword(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && handleSubmitFilters()}
                       className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black`}
                     />
                   ) : filter.label === "Signer" ? (
@@ -834,6 +896,7 @@ export default function CategoryPage() {
                       placeholder={filter.placeholder}
                       value={keyword}
                       onChange={(e) => setKeyword(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && handleSubmitFilters()}
                       className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black`}
                     />
                   ) : filter.label === "Pin name" ? (
@@ -841,6 +904,7 @@ export default function CategoryPage() {
                       placeholder={filter.placeholder}
                       value={keyword}
                       onChange={(e) => setKeyword(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && handleSubmitFilters()}
                       className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black`}
                     />
                   ) : (
