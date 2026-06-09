@@ -836,7 +836,7 @@ export const appRouter = router({
           category: input.category,
           condition: "poor", // Will be updated when user completes the listing
           description: input.additionalNotes || "",
-          grade: input.grade,
+          grade: input.grade as any,
           graderCompany: input.graderCompany,
           certificationNumber: input.certificationNumber,
           estimatedValue: input.estimatedValue,
