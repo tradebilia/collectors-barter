@@ -171,6 +171,16 @@ const autographedOptions = [
   { value: "no", label: "No" },
 ];
 
+const signedOptions = [
+  { value: "yes", label: "Yes" },
+  { value: "no", label: "No" },
+];
+
+const facsimileOptions = [
+  { value: "yes", label: "Yes" },
+  { value: "no", label: "No" },
+];
+
 export default function CategoryPage() {
   const [, params] = useRoute("/category/:slug");
   const slug = params?.slug as TradebiliaCategorySlug | undefined;
@@ -555,6 +565,12 @@ export default function CategoryPage() {
                           <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
                         ))}
                         {filter.label === "Autographed" && autographedOptions.map(option => (
+                          <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                        ))}
+                        {filter.label === "Signed" && signedOptions.map(option => (
+                          <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                        ))}
+                        {filter.label === "Facsimile" && facsimileOptions.map(option => (
                           <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
                         ))}
 
