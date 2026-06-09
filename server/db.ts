@@ -2353,7 +2353,10 @@ export async function getInquiriesByUser(userId: number, limit: number = 50, off
     .from(itemInquiries)
     .innerJoin(users, eq(itemInquiries.senderId, users.id))
     .where(
-      eq(itemInquiries.recipientId, userId)
+      or(
+        eq(itemInquiries.recipientId, userId),
+        eq(itemInquiries.senderId, userId)
+      )
     )
     .orderBy(desc(itemInquiries.createdAt))
     .limit(limit)
