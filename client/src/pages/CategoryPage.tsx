@@ -181,6 +181,20 @@ const facsimileOptions = [
   { value: "no", label: "No" },
 ];
 
+const rarityOptions = [
+  { value: "common", label: "Common" },
+  { value: "uncommon", label: "Uncommon" },
+  { value: "rare", label: "Rare" },
+  { value: "holo_rare", label: "Holo Rare" },
+  { value: "secret_rare", label: "Secret Rare" },
+  { value: "full_art", label: "Full Art" },
+  { value: "ex", label: "EX" },
+  { value: "gx", label: "GX" },
+  { value: "v", label: "V" },
+  { value: "vmax", label: "VMAX" },
+  { value: "vstar", label: "VSTAR" },
+];
+
 export default function CategoryPage() {
   const [, params] = useRoute("/category/:slug");
   const slug = params?.slug as TradebiliaCategorySlug | undefined;
@@ -212,7 +226,8 @@ export default function CategoryPage() {
   const [rookie, setRookie] = useState<string | undefined>(undefined);
   const [autographed, setAutographed] = useState<string | undefined>(undefined);
   const [signed, setSigned] = useState<string | undefined>(undefined);
-    const [facsimile, setFacsimile] = useState<string | undefined>(undefined);
+  const [facsimile, setFacsimile] = useState<string | undefined>(undefined);
+  const [rarity, setRarity] = useState<string | undefined>(undefined);
 
   // Submitted filters state (only updates when user submits search)
   const [submittedFilters, setSubmittedFilters] = useState({
@@ -232,6 +247,7 @@ export default function CategoryPage() {
     autographed: undefined as string | undefined,
     signed: undefined as string | undefined,
     facsimile: undefined as string | undefined,
+    rarity: undefined as string | undefined,
   });
 
   // Memoize the query input to ensure proper refetch detection
@@ -282,6 +298,7 @@ export default function CategoryPage() {
       autographed: autographed || undefined,
       signed: signed || undefined,
       facsimile: facsimile || undefined,
+      rarity: rarity || undefined,
     };
 
     setSubmittedFilters(newFilters);
@@ -307,6 +324,7 @@ export default function CategoryPage() {
     setAutographed(undefined);
     setSigned(undefined);
     setFacsimile(undefined);
+    setRarity(undefined);
     
     // Reset numeric range filters
     setValueMin(undefined);
@@ -330,6 +348,7 @@ export default function CategoryPage() {
       autographed: undefined,
       signed: undefined,
       facsimile: undefined,
+      rarity: undefined,
     });
   };
 
@@ -511,7 +530,8 @@ export default function CategoryPage() {
                              filter.label === "Rookie" ? rookie || "all" :
                              filter.label === "Autographed" ? autographed || "all" :
                              filter.label === "Signed" ? signed || "all" :
-                             filter.label === "Facsimile" ? facsimile || "all" : "all"}
+                              filter.label === "Facsimile" ? facsimile || "all" :
+                              filter.label === "Rarity" ? rarity || "all" : "all"}
                       onValueChange={(value) => {
                         if (value === "all") {
                           if (filter.label === "Sport") setSport(undefined);
@@ -523,7 +543,8 @@ export default function CategoryPage() {
                           else if (filter.label === "Rookie") setRookie(undefined);
                           else if (filter.label === "Autographed") setAutographed(undefined);
                           else if (filter.label === "Signed") setSigned(undefined);
-                          else if (filter.label === "Facsimile") setFacsimile(undefined);
+                           else if (filter.label === "Facsimile") setFacsimile(undefined);
+                           else if (filter.label === "Rarity") setRarity(undefined);
                         } else {
                           if (filter.label === "Sport") setSport(value);
                           else if (filter.label === "Grading service") setGradingService(value);
@@ -534,7 +555,8 @@ export default function CategoryPage() {
                           else if (filter.label === "Rookie") setRookie(value);
                           else if (filter.label === "Autographed") setAutographed(value);
                           else if (filter.label === "Signed") setSigned(value);
-                          else if (filter.label === "Facsimile") setFacsimile(value);
+                           else if (filter.label === "Facsimile") setFacsimile(value);
+                           else if (filter.label === "Rarity") setRarity(value);
                         }
                       }}
                     >
@@ -571,6 +593,9 @@ export default function CategoryPage() {
                           <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
                         ))}
                         {filter.label === "Facsimile" && facsimileOptions.map(option => (
+                          <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                        ))}
+                        {filter.label === "Rarity" && rarityOptions.map(option => (
                           <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
                         ))}
 
