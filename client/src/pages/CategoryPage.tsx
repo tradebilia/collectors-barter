@@ -27,7 +27,7 @@ import { OnlineIndicator } from "@/components/OnlineIndicator";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Link, useRoute } from "wouter";
-import { getGradingCompanyNamesForCategory } from "@shared/gradingCompanies";
+import { getGradingCompanyNamesForCategory, getValidGradesForCompany, getGradingCompanyByName } from "@shared/gradingCompanyConfig";
 
 const categoryFilterPresets: Record<TradebiliaCategorySlug, Array<{ label: string; placeholder: string; type?: "select" | "input" }>> = {
   comics: [
@@ -159,7 +159,9 @@ const gradingServicesByCategory: Record<TradebiliaCategorySlug, string[]> = {
 
 const gradingServicesList = ["Raw"];
 
-const gradeOptions = Array.from({ length: 11 }, (_, i) => ({ value: i.toString(), label: i.toString() }));
+// Grade options will be dynamically determined based on selected grading company
+// This is a fallback for when no company is selected
+const defaultGradeOptions = Array.from({ length: 11 }, (_, i) => ({ value: i.toString(), label: i.toString() }));
 
 const rookieOptions = [
   { value: "yes", label: "Yes" },
@@ -193,6 +195,105 @@ const rarityOptions = [
   { value: "v", label: "V" },
   { value: "vmax", label: "VMAX" },
   { value: "vstar", label: "VSTAR" },
+];
+
+const videoGameSystemOptions = [
+  { value: "nes", label: "NES" },
+  { value: "snes", label: "SNES" },
+  { value: "n64", label: "Nintendo 64" },
+  { value: "gamecube", label: "GameCube" },
+  { value: "wii", label: "Wii" },
+  { value: "wiiu", label: "Wii U" },
+  { value: "switch", label: "Nintendo Switch" },
+  { value: "gameboy", label: "Game Boy" },
+  { value: "gba", label: "Game Boy Advance" },
+  { value: "ds", label: "Nintendo DS" },
+  { value: "3ds", label: "Nintendo 3DS" },
+  { value: "genesis", label: "Sega Genesis" },
+  { value: "saturn", label: "Sega Saturn" },
+  { value: "dreamcast", label: "Dreamcast" },
+  { value: "gamegear", label: "Game Gear" },
+  { value: "ps1", label: "PlayStation" },
+  { value: "ps2", label: "PlayStation 2" },
+  { value: "ps3", label: "PlayStation 3" },
+  { value: "ps4", label: "PlayStation 4" },
+  { value: "ps5", label: "PlayStation 5" },
+  { value: "psp", label: "PSP" },
+  { value: "vita", label: "PS Vita" },
+  { value: "xbox", label: "Xbox" },
+  { value: "xbox360", label: "Xbox 360" },
+  { value: "xboxone", label: "Xbox One" },
+  { value: "xseries", label: "Xbox Series X/S" },
+  { value: "pc", label: "PC" },
+  { value: "arcade", label: "Arcade" },
+  { value: "atari", label: "Atari" },
+  { value: "other", label: "Other" },
+];
+
+const videoGameRegionOptions = [
+  { value: "ntsc", label: "NTSC (North America)" },
+  { value: "pal", label: "PAL (Europe)" },
+  { value: "japan", label: "Japan" },
+  { value: "other", label: "Other" },
+];
+
+const vintageToysGenreOptions = [
+  { value: "action_figure", label: "Action figure" },
+  { value: "doll", label: "Doll" },
+  { value: "vehicle", label: "Vehicle" },
+  { value: "playset", label: "Playset" },
+  { value: "other", label: "Other" },
+];
+
+const stampsCountryOptions = [
+  { value: "united_states", label: "United States" },
+  { value: "united_kingdom", label: "United Kingdom" },
+  { value: "canada", label: "Canada" },
+  { value: "france", label: "France" },
+  { value: "germany", label: "Germany" },
+  { value: "japan", label: "Japan" },
+  { value: "other", label: "Other" },
+];
+
+const coinsDenominationOptions = [
+  { value: "penny", label: "Penny" },
+  { value: "nickel", label: "Nickel" },
+  { value: "dime", label: "Dime" },
+  { value: "quarter", label: "Quarter" },
+  { value: "half_dollar", label: "Half Dollar" },
+  { value: "dollar", label: "Dollar" },
+  { value: "eagle", label: "Eagle" },
+  { value: "other", label: "Other" },
+];
+
+const moviesFormatOptions = [
+  { value: "poster", label: "Poster" },
+  { value: "prop", label: "Prop" },
+  { value: "lobby_card", label: "Lobby Card" },
+  { value: "still", label: "Still" },
+  { value: "promotional_material", label: "Promotional Material" },
+  { value: "other", label: "Other" },
+];
+
+const autographsMediumOptions = [
+  { value: "photo", label: "Photo" },
+  { value: "comic", label: "Comic" },
+  { value: "baseball", label: "Baseball" },
+  { value: "jersey", label: "Jersey" },
+  { value: "helmet", label: "Helmet" },
+  { value: "bat", label: "Bat" },
+  { value: "memorabilia", label: "Memorabilia" },
+  { value: "other", label: "Other" },
+];
+
+const disneyPinsSeriesOptions = [
+  { value: "character", label: "Character" },
+  { value: "attraction", label: "Attraction" },
+  { value: "movie", label: "Movie" },
+  { value: "park", label: "Park" },
+  { value: "event", label: "Event" },
+  { value: "limited_edition", label: "Limited Edition" },
+  { value: "other", label: "Other" },
 ];
 
 export default function CategoryPage() {
@@ -369,6 +470,15 @@ export default function CategoryPage() {
     },
     onError: error => toast.error(error.message),
   });
+
+  // Get valid grades for currently selected grading company
+  const validGradesForSelectedCompany = useMemo(() => {
+    if (!gradingService || gradingService === "all") {
+      return defaultGradeOptions;
+    }
+    const validGrades = getValidGradesForCompany(gradingService);
+    return validGrades.map(grade => ({ value: grade, label: grade }));
+  }, [gradingService]);
 
   const listings = useMemo(() => {
     const rows = [...(feedQuery.data?.listings ?? [])];
@@ -580,7 +690,7 @@ export default function CategoryPage() {
                         {filter.label === "Authentication" && slug && gradingServicesByCategory[slug]?.map(service => (
                           <SelectItem key={service} value={service}>{service}</SelectItem>
                         ))}
-                        {filter.label === "Grade" && gradeOptions.map(grade => (
+                        {filter.label === "Grade" && validGradesForSelectedCompany.map(grade => (
                           <SelectItem key={grade.value} value={grade.value}>{grade.label}</SelectItem>
                         ))}
                         {filter.label === "Rookie" && rookieOptions.map(option => (
@@ -596,6 +706,30 @@ export default function CategoryPage() {
                           <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
                         ))}
                         {filter.label === "Rarity" && rarityOptions.map(option => (
+                          <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                        ))}
+                        {filter.label === "System" && videoGameSystemOptions.map(option => (
+                          <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                        ))}
+                        {filter.label === "Region" && videoGameRegionOptions.map(option => (
+                          <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                        ))}
+                        {filter.label === "Genre" && vintageToysGenreOptions.map(option => (
+                          <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                        ))}
+                        {filter.label === "Country" && stampsCountryOptions.map(option => (
+                          <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                        ))}
+                        {filter.label === "Denomination" && coinsDenominationOptions.map(option => (
+                          <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                        ))}
+                        {filter.label === "Format" && moviesFormatOptions.map(option => (
+                          <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                        ))}
+                        {filter.label === "Medium" && autographsMediumOptions.map(option => (
+                          <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                        ))}
+                        {filter.label === "Series" && disneyPinsSeriesOptions.map(option => (
                           <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
                         ))}
 

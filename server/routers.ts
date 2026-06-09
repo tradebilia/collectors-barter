@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { COOKIE_NAME } from "@shared/const";
 import { collectibleCategories, itemConditions, gradeValues } from "../drizzle/schema";
+import { isValidGradeForCompany, getGradingCompanyByName } from "@shared/gradingCompanyConfig";
 import {
   createListing,
   updateListing,
@@ -514,6 +515,36 @@ export const appRouter = router({
         }),
       )
       .mutation(({ ctx, input }) => {
+        // Validate grading company and grade from description if present
+        const descriptionLines = input.description.split('\n');
+        let graderCompany = '';
+        let grade = '';
+        
+        descriptionLines.forEach(line => {
+          if (line.startsWith('Grading Company: ')) {
+            graderCompany = line.replace('Grading Company: ', '');
+          } else if (line.startsWith('Grade: ')) {
+            grade = line.replace('Grade: ', '');
+          }
+        });
+        
+        if (graderCompany) {
+          const company = getGradingCompanyByName(graderCompany);
+          if (company && !company.categories.includes(input.category as any)) {
+            throw new TRPCError({
+              code: 'BAD_REQUEST',
+              message: `${graderCompany} does not grade ${input.category} items.`,
+            });
+          }
+          
+          if (company && grade && grade !== "ungraded" && grade !== "raw" && !isValidGradeForCompany(graderCompany, grade)) {
+            throw new TRPCError({
+              code: 'BAD_REQUEST',
+              message: `Grade ${grade} is not valid for ${graderCompany}. Valid grades: ${company.validGrades.join(", ")}.`,
+            });
+          }
+        }
+        
         return createListing(
           { id: ctx.user.id, name: ctx.user.name },
           {
@@ -541,6 +572,36 @@ export const appRouter = router({
         }),
       )
       .mutation(({ ctx, input }) => {
+        // Validate grading company and grade from description if present
+        const descriptionLines = input.description.split('\n');
+        let graderCompany = '';
+        let grade = '';
+        
+        descriptionLines.forEach(line => {
+          if (line.startsWith('Grading Company: ')) {
+            graderCompany = line.replace('Grading Company: ', '');
+          } else if (line.startsWith('Grade: ')) {
+            grade = line.replace('Grade: ', '');
+          }
+        });
+        
+        if (graderCompany) {
+          const company = getGradingCompanyByName(graderCompany);
+          if (company && !company.categories.includes(input.category as any)) {
+            throw new TRPCError({
+              code: 'BAD_REQUEST',
+              message: `${graderCompany} does not grade ${input.category} items.`,
+            });
+          }
+          
+          if (company && grade && grade !== "ungraded" && grade !== "raw" && !isValidGradeForCompany(graderCompany, grade)) {
+            throw new TRPCError({
+              code: 'BAD_REQUEST',
+              message: `Grade ${grade} is not valid for ${graderCompany}. Valid grades: ${company.validGrades.join(", ")}.`,
+            });
+          }
+        }
+        
         return updateListing(
           { id: ctx.user.id, name: ctx.user.name },
           {
@@ -744,7 +805,7 @@ export const appRouter = router({
         z.object({
           title: z.string().min(1).max(160),
           category: z.enum(collectibleCategories),
-          grade: z.enum(gradeValues),
+          grade: z.string().max(10),
           graderCompany: z.string().max(100),
           certificationNumber: z.string().max(100).optional(),
           estimatedValue: z.number().nonnegative().optional(),
@@ -754,6 +815,22 @@ export const appRouter = router({
         }),
       )
       .mutation(({ ctx, input }) => {
+        // Validate grading company and grade compatibility
+        const company = getGradingCompanyByName(input.graderCompany);
+        if (company && !company.categories.includes(input.category as any)) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: `${input.graderCompany} does not grade ${input.category} items.`,
+          });
+        }
+        
+        if (company && input.grade !== "ungraded" && input.grade !== "raw" && !isValidGradeForCompany(input.graderCompany, input.grade)) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: `Grade ${input.grade} is not valid for ${input.graderCompany}. Valid grades: ${company.validGrades.join(", ")}.`,
+          });
+        }
+        
         return saveDraft({ id: ctx.user.id, name: ctx.user.name }, {
           title: input.title,
           category: input.category,

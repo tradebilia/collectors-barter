@@ -13,6 +13,7 @@ import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useParams, useLocation } from "wouter";
 import type { TradebiliaCategorySlug } from "@/lib/tradebilia";
+import { getGradingCompaniesForCategory, getValidGradesForCompany } from "@/../../shared/gradingCompanyConfig";
 
 const TRADEBILIA_LOGO_URL = "/manus-storage/tradebilia-logo_c676d640.svg";
 const DRAFT_STORAGE_KEY = "tradebilia-add-inventory-draft";
@@ -96,49 +97,9 @@ const categoryFieldPresets: Record<ListingCategory, Array<{ name: string; label:
   ],
 };
 
-// Grading services by category
-// Get grading companies for each category using the new configuration
-const getGradingCompaniesForCategory = (category: ListingCategory): string[] => {
-  const categoryMap: Record<ListingCategory, "comics" | "sports_cards" | "vintage_toys" | "video_games" | "stamps" | "coins" | "pokemon" | "movies" | "autographs" | "disney_pins"> = {
-    comics: "comics",
-    sports_cards: "sports_cards",
-    vintage_toys: "vintage_toys",
-    video_games: "video_games",
-    stamps: "stamps",
-    coins: "coins",
-    pokemon: "pokemon",
-    movies: "movies",
-    autographs: "autographs",
-    disney_pins: "disney_pins",
-  };
-  
-  const companies: Record<"comics" | "sports_cards" | "vintage_toys" | "video_games" | "stamps" | "coins" | "pokemon" | "movies" | "autographs" | "disney_pins", string[]> = {
-    comics: ["CGC Comics", "CBCS", "PGX Comics", "Raw"],
-    sports_cards: ["PSA", "Beckett Grading Services (BGS)", "SGC", "TAG Grading", "HGA", "Arena Club Grading", "Degree Grading", "ISA Grading", "GMA Grading", "Rare Edition", "FCG (Forensic Card Grading)", "MNT Grading", "KSA Grading", "PGA Grading", "RCG", "OnlyGraded", "Diamond Service Grading", "CGA Card Grading", "TRCG", "AP Grading", "PRO", "GEM", "GAI", "WCG", "PCI", "Raw"],
-    vintage_toys: ["AFA", "CAS", "UKG", "Raw"],
-    video_games: ["WATA Games", "CGC Video Games", "VGA", "CGC Home Video", "IGS", "Raw"],
-    stamps: ["PSE", "ASG", "PSAG", "Raw"],
-    coins: ["PCGS", "NGC", "ANACS", "ICG", "SEGS", "SGS", "Raw"],
-    pokemon: ["PSA", "Beckett Grading Services (BGS)", "SGC", "CGC Cards", "TAG Grading", "HGA", "Arena Club Grading", "Degree Grading", "ACE Grading", "ISA Grading", "GMA Grading", "Rare Edition", "FCG (Forensic Card Grading)", "MNT Grading", "KSA Grading", "PGA Grading", "RCG", "OnlyGraded", "Diamond Service Grading", "CGA Card Grading", "TRCG", "Pokegrade", "Tree Frog Grading", "AP Grading", "PRO", "GEM", "GAI", "WCG", "Raw"],
-    movies: ["CGC Home Video", "VHS Grading", "IGS", "Raw"],
-    autographs: ["PSA/DNA", "JSA", "Beckett Authentication Services", "GAI", "PSA", "Raw"],
-    disney_pins: ["Raw"],
-  };
-  
-  return companies[categoryMap[category]] || ["Raw"];
-};
-
-const gradingServicesByCategory: Record<ListingCategory, string[]> = {
-  comics: getGradingCompaniesForCategory("comics"),
-  sports_cards: getGradingCompaniesForCategory("sports_cards"),
-  vintage_toys: getGradingCompaniesForCategory("vintage_toys"),
-  video_games: getGradingCompaniesForCategory("video_games"),
-  stamps: getGradingCompaniesForCategory("stamps"),
-  coins: getGradingCompaniesForCategory("coins"),
-  pokemon: getGradingCompaniesForCategory("pokemon"),
-  movies: getGradingCompaniesForCategory("movies"),
-  autographs: getGradingCompaniesForCategory("autographs"),
-  disney_pins: getGradingCompaniesForCategory("disney_pins"),
+// Map ListingCategory to CollectibleCategory for grading company lookup
+const mapCategoryToGradingCategory = (category: ListingCategory): "comics" | "sports_cards" | "vintage_toys" | "video_games" | "stamps" | "coins" | "pokemon" | "movies" | "autographs" | "disney_pins" => {
+  return category as "comics" | "sports_cards" | "vintage_toys" | "video_games" | "stamps" | "coins" | "pokemon" | "movies" | "autographs" | "disney_pins";
 };
 
 // Map grade to condition
@@ -284,7 +245,18 @@ export default function AddInventory() {
 
   const primaryPhoto = useMemo(() => photos[0] ?? null, [photos]);
   const currentCategoryFields = categoryFieldPresets[draft.category] || [];
-  const currentGradingServices = gradingServicesByCategory[draft.category] || ["Raw"];
+  
+  // Get grading companies for current category
+  const currentGradingCompanies = useMemo(() => {
+    const gradingCategory = mapCategoryToGradingCategory(draft.category);
+    const companies = getGradingCompaniesForCategory(gradingCategory);
+    return companies.map(c => c.name);
+  }, [draft.category]);
+  
+  // Get valid grades for currently selected grading company
+  const currentValidGrades = useMemo(() => {
+    return getValidGradesForCompany(draft.graderCompany);
+  }, [draft.graderCompany]);
 
   const handlePhotos = async (event: ChangeEvent<HTMLInputElement>) => {
     const nextPhotos = await readFiles(event.target.files);
@@ -446,11 +418,15 @@ export default function AddInventory() {
                 <div className="space-y-3">
                   <Label className="text-sm uppercase tracking-[0.08em] text-white/70">Category *</Label>
                   <Select value={draft.category} onValueChange={value => {
+                    const gradingCategory = mapCategoryToGradingCategory(value as ListingCategory);
+                    const companiesForCategory = getGradingCompaniesForCategory(gradingCategory);
+                    const firstCompany = companiesForCategory.length > 0 ? companiesForCategory[0].name : "Raw";
                     setDraft(current => ({
                       ...current,
                       category: value as ListingCategory,
                       categoryFields: {},
-                      graderCompany: gradingServicesByCategory[value as ListingCategory]?.[0] || "Raw",
+                      graderCompany: firstCompany,
+                      grade: "",
                     }));
                   }}>
                     <SelectTrigger className="h-12 border-white/10 bg-white/8 text-white hover:bg-white/12">
@@ -471,12 +447,12 @@ export default function AddInventory() {
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-3">
                     <Label className="text-sm uppercase tracking-[0.08em] text-white/70">Grading Company</Label>
-                    <Select value={draft.graderCompany} onValueChange={value => setDraft(current => ({ ...current, graderCompany: value }))}>
+                    <Select value={draft.graderCompany} onValueChange={value => setDraft(current => ({ ...current, graderCompany: value, grade: "" }))}>
                       <SelectTrigger className="h-12 border-white/10 bg-white/8 text-white hover:bg-white/12">
                         <SelectValue placeholder="Select grading company" />
                       </SelectTrigger>
                       <SelectContent>
-                        {currentGradingServices.map(service => (
+                        {currentGradingCompanies.map(service => (
                           <SelectItem key={service} value={service}>{service}</SelectItem>
                         ))}
                       </SelectContent>
@@ -501,26 +477,9 @@ export default function AddInventory() {
                       <SelectValue placeholder="Select a grade" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="ungraded">Ungraded</SelectItem>
-                      <SelectItem value="1">1</SelectItem>
-                      <SelectItem value="1.5">1.5</SelectItem>
-                      <SelectItem value="2">2</SelectItem>
-                      <SelectItem value="2.5">2.5</SelectItem>
-                      <SelectItem value="3">3</SelectItem>
-                      <SelectItem value="3.5">3.5</SelectItem>
-                      <SelectItem value="4">4</SelectItem>
-                      <SelectItem value="4.5">4.5</SelectItem>
-                      <SelectItem value="5">5</SelectItem>
-                      <SelectItem value="5.5">5.5</SelectItem>
-                      <SelectItem value="6">6</SelectItem>
-                      <SelectItem value="6.5">6.5</SelectItem>
-                      <SelectItem value="7">7</SelectItem>
-                      <SelectItem value="7.5">7.5</SelectItem>
-                      <SelectItem value="8">8</SelectItem>
-                      <SelectItem value="8.5">8.5</SelectItem>
-                      <SelectItem value="9">9</SelectItem>
-                      <SelectItem value="9.5">9.5</SelectItem>
-                      <SelectItem value="10">10</SelectItem>
+                      {currentValidGrades.map(grade => (
+                        <SelectItem key={grade} value={grade}>{grade}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
