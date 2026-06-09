@@ -463,6 +463,31 @@ async function getProposalCards(userId: number) {
 
   const listingMap = new Map(listingRows.map(l => [l.id, l]));
 
+  // Fetch all messages for all proposals
+  const proposalIds = proposalRows.map(p => p.id);
+  const messageRows = proposalIds.length
+    ? await db
+        .select({
+          id: tradeMessages.id,
+          proposalId: tradeMessages.proposalId,
+          senderId: tradeMessages.senderId,
+          message: tradeMessages.message,
+          createdAt: tradeMessages.createdAt,
+        })
+        .from(tradeMessages)
+        .where(inArray(tradeMessages.proposalId, proposalIds))
+        .orderBy(asc(tradeMessages.createdAt))
+    : [];
+
+  // Group messages by proposalId
+  const messagesMap = new Map<number, typeof messageRows>();
+  messageRows.forEach(msg => {
+    if (!messagesMap.has(msg.proposalId)) {
+      messagesMap.set(msg.proposalId, []);
+    }
+    messagesMap.get(msg.proposalId)!.push(msg);
+  });
+
   return proposalRows.map(p => ({
     id: p.id,
     requesterId: p.requesterId,
@@ -482,7 +507,13 @@ async function getProposalCards(userId: number) {
     requesterInventory: [],
     canAcceptSelection: p.status === 'pending' && p.recipientId === userId,
     contactDetails: null,
-    messages: [],
+    messages: (messagesMap.get(p.id) ?? []).map(msg => ({
+      id: msg.id,
+      proposalId: msg.proposalId,
+      senderId: msg.senderId,
+      message: msg.message,
+      createdAt: msg.createdAt.getTime(),
+    })),
     canCancel: p.status === 'pending',
     canComplete: p.status === 'accepted',
   }));

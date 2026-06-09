@@ -1751,3 +1751,11 @@ Status: COSMETIC ISSUE - NOT CRITICAL
 - [x] Verify Search button works correctly on all category pages
 - [x] Verify filter state isolation works across all 10 category pages
 - [x] Fix Total Market Value statistic bubble on category pages - now dynamically calculates from listings
+
+
+## Messaging System Bug (June 9, 2026)
+
+- [x] Fix bidirectional messaging - replies not being received by original sender
+  - Root cause: getProposalCards() was returning empty messages array
+  - Fix: Query tradeMessages table and include messages in proposal object
+  - Result: Replies now properly displayed for both sender and recipient
