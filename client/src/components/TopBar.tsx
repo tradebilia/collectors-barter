@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { SignInModal } from "@/components/SignInModal";
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
+import AnimatedLogoSmall70 from "@/components/AnimatedLogoSmall70";
 
 interface TopBarProps {
   logoUrl?: string;
@@ -49,11 +50,13 @@ export function TopBar({
 
   return (
     <div className="border-b border-white/10 bg-black relative z-0">
-      <div className="flex items-center justify-center gap-4 pl-2 pr-4 py-3 relative">
-        {/* Logo on left */}
-        <div className="absolute left-2 flex-shrink-0">
-          <a href="/" className="flex items-center hover:opacity-80 transition">
-            <img src={logoUrl} alt="Tradebilia" className="h-14 w-auto object-contain" />
+      <div className="flex items-center justify-center gap-4 pl-2 pr-4 py-2 relative">
+        {/* Animated Logo on left */}
+        <div className="absolute left-2 h-16 flex items-center" style={{ width: '650px', top: '-10px' }}>
+          <a href="/" className="flex items-center hover:opacity-80 transition h-full w-full">
+            <div className="h-16 w-full flex items-center">
+              <AnimatedLogoSmall70 />
+            </div>
           </a>
         </div>
 
