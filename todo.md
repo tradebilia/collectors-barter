@@ -1937,3 +1937,10 @@ Completed Features:
 - [x] Update frontend AddInventory to pass grading fields to backend
 - [x] Update getTopHighestValueItems to properly display grading information
 - [x] Remove debug logging from getTopHighestValueItems
+
+
+## Grading Information Migration (Jun 13, 2026)
+- [x] Extract grading company and grade from itemDetails JSON field
+- [x] Migrate grading information to certificationCompany and grade columns for all active listings
+- [x] Fix malformed grading company data for items without proper grading companies
+- [x] Verify all top 10 highest value items now display correct grading information
