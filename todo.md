@@ -1898,3 +1898,13 @@ Completed Features:
   - [x] Changed logo sizing from fixed `h-[150px] sm:h-[180px] lg:h-[205px]` to responsive `h-auto w-full`
   - [x] Aligned section structure to match Home page hero section exactly
   - [x] Verified responsive behavior across all breakpoints
+
+
+## Highest Trade Value Items Ranking Section (June 13, 2026)
+
+- [x] Implement top 10 highest value items ranking
+  - [x] Created getTopHighestValueItems backend function to fetch top 10 items sorted by estimated value
+  - [x] Added topHighestValueItems tRPC procedure to market router
+  - [x] Updated Home page to query top highest value items
+  - [x] Updated UI to display rank (1-10), thumbnail image, and item title
+  - [x] Verified all TypeScript errors resolved

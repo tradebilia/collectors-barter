@@ -2616,3 +2616,38 @@ export async function getReferralsByIds(ids: number[]) {
     .where(inArray(referralRequests.id, ids));
   return requests;
 }
+
+
+export async function getTopHighestValueItems(viewerId: number | null = null) {
+  const db = await requireDb();
+
+  // Fetch top 10 items sorted by estimated value (highest first)
+  const listingRows = await db
+    .select({
+      id: listings.id,
+      ownerId: listings.ownerId,
+      title: listings.title,
+      category: listings.category,
+      condition: listings.condition,
+      grade: listings.grade,
+      certificationCompany: listings.certificationCompany,
+      estimatedValue: listings.estimatedValue,
+      description: listings.description,
+      status: listings.status,
+      featured: listings.featured,
+      isActive: listings.isActive,
+      createdAt: listings.createdAt,
+      updatedAt: listings.updatedAt,
+      primaryPhotoUrl: listingPhotos.imageUrl,
+    })
+    .from(listings)
+    .leftJoin(listingPhotos, and(
+      eq(listings.id, listingPhotos.listingId),
+      eq(listingPhotos.sortOrder, 0)
+    ))
+    .where(eq(listings.status, "active"))
+    .orderBy(desc(listings.estimatedValue))
+    .limit(10);
+
+  return formatListings(listingRows, viewerId);
+}

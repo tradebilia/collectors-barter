@@ -28,6 +28,7 @@ import {
   getSiteStatistics,
   submitUserReport,
   getUserReports,
+  getTopHighestValueItems,
   getUserReportDetails,
   updateReportStatus,
   updateUserEbayInfo,
@@ -277,6 +278,9 @@ export const appRouter = router({
     }),
     siteStatistics: publicProcedure.query(() => {
       return getSiteStatistics();
+    }),
+    topHighestValueItems: publicProcedure.query(({ ctx }) => {
+      return getTopHighestValueItems(ctx.user?.id ?? null);
     }),
     search: publicProcedure
       .input(

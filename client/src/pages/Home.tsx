@@ -84,14 +84,8 @@ const fallbackMostRequested = [
 
 const fallbackTopTraders = ["BillyBob123", "DarthVader99", "JoeFalco22", "MarioLemieux66", "LeoCap00", "TheDude44"];
 
-const fallbackTradeValues = [
-  "Hulk #181 CGC 9.8 ($60,000)",
-  "1986 Fleer Michael Jordan Rookie PSA 9 ($25,000)",
-  "1989 Upper Deck Ken Griffey Jr Rookie PSA 10 ($11,000)",
-  "Amazing Spider-Man #300 CGC 9.8 ($10,000)",
-  "1776 US Quarter CGC 7.0 ($7,000)",
-  "1975 Star Wars Luke Skywalker figure ($5,000)",
-];
+// Fallback data for highest trade value items (no longer used, data comes from backend)
+const fallbackTradeValues: any[] = [];
 
 // Hook to update user activity status
 function useUpdateActivity(isAuthenticated: boolean) {
@@ -190,6 +184,9 @@ export default function Home() {
     refetchOnWindowFocus: true,
   });
   const siteStatisticsQuery = trpc.market.siteStatistics.useQuery(undefined, {
+    refetchInterval: 300000, // Refetch every 5 minutes
+  });
+  const topHighestValueItemsQuery = trpc.market.topHighestValueItems.useQuery(undefined, {
     refetchInterval: 300000, // Refetch every 5 minutes
   });
   const dashboardQuery = trpc.market.dashboard.useQuery(undefined, {
@@ -349,9 +346,9 @@ export default function Home() {
     ? (marketplaceQuery.data?.listings ?? []).slice(0, 6).map(listing => listing.owner.displayName)
     : fallbackTopTraders;
 
-  const highestTradeValueItems = spotlightStats.some(stat => Number(stat.value) > 0)
-    ? spotlightStats.map(stat => `${stat.label}: ${stat.value}`)
-    : fallbackTradeValues;
+  const highestTradeValueItems = (topHighestValueItemsQuery.data ?? []).length > 0
+    ? topHighestValueItemsQuery.data
+    : [];
 
   const beginProposal = (listingId: number) => {
     if (!isAuthenticated) {
@@ -630,11 +627,17 @@ export default function Home() {
                   <CardHeader className="pb-2 pt-4">
                     <CardTitle className="font-['Oswald'] text-[0.86rem] uppercase tracking-[0.22em] text-white/78">Highest Trade Value</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-1 pb-4 text-[8.5px] leading-4 text-white/85">
-                      {highestTradeValueItems.map((entry, index) => (
-                        <p key={`${entry}-${index}`}>{index + 1}. {entry}</p>
-                      ))}
-
+                  <CardContent className="space-y-2 pb-4">
+                      {(highestTradeValueItems ?? []).map((item, index) => {
+                        const imageUrl = resolveTradebiliaListingImage({ title: item.title, category: item.category, primaryPhotoUrl: item.primaryPhotoUrl });
+                        return (
+                          <div key={item.id} className="flex items-center gap-2">
+                            <span className="text-[9px] font-semibold text-white/90 min-w-[20px]">{index + 1}</span>
+                            <img src={imageUrl} alt={item.title} className="h-8 w-8 object-cover rounded" />
+                            <span className="text-[8px] text-white/85 truncate flex-1">{item.title}</span>
+                          </div>
+                        );
+                      })}
                   </CardContent>
                 </Card>
                 </div>
