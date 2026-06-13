@@ -140,8 +140,8 @@ function HighestTradeValueItem({ item, index, imageUrl }: { item: any; index: nu
   };
   
   return (
-    <div className="flex items-center gap-2" ref={containerRef} onMouseMove={handleMouseMove}>
-      <span className="text-[9px] font-semibold text-white/90 min-w-[20px]">{index + 1}</span>
+    <div className="flex items-center gap-3" ref={containerRef} onMouseMove={handleMouseMove}>
+      <span className="text-[11px] font-semibold text-white/90 min-w-[24px]">{index + 1}</span>
       <div
         onMouseEnter={() => setShowPreview(true)}
         className="relative"
@@ -151,7 +151,7 @@ function HighestTradeValueItem({ item, index, imageUrl }: { item: any; index: nu
             onClick={handleImageClick}
             className="cursor-pointer"
           >
-            <img src={imageUrl} alt={item.title} className="h-8 w-8 object-contain rounded hover:opacity-80 transition-opacity" />
+            <img src={imageUrl} alt={item.title} className="h-12 w-12 object-contain rounded hover:opacity-80 transition-opacity" />
           </div>
           <DialogContent className="max-w-md">
           <DialogHeader>
@@ -172,7 +172,7 @@ function HighestTradeValueItem({ item, index, imageUrl }: { item: any; index: nu
       <div className="flex-1 min-w-0">
         <p 
           onClick={handleImageClick}
-          className="text-[7px] text-white/85 truncate cursor-pointer hover:text-white/100 transition-colors"
+          className="text-[8.5px] text-white/85 truncate cursor-pointer hover:text-white/100 transition-colors"
         >
           {item.title} {item.certificationCompany && item.grade ? `• ${item.certificationCompany} ${item.grade}` : item.grade ? `• ${item.grade}` : ''} • ${item.estimatedValue?.toFixed(0) ?? 'N/A'}
         </p>
