@@ -633,8 +633,8 @@ export default function Home() {
                         return (
                           <div key={item.id} className="flex items-center gap-2 group">
                             <span className="text-[9px] font-semibold text-white/90 min-w-[20px]">{index + 1}</span>
-                            <div className="relative">
-                              <img src={imageUrl} alt={item.title} className="h-8 w-8 object-cover rounded transition-transform duration-200 group-hover:scale-150 group-hover:z-10" />
+                            <div className="relative z-0 group-hover:z-50">
+                              <img src={imageUrl} alt={item.title} className="h-8 w-8 object-contain rounded transition-all duration-200 group-hover:h-32 group-hover:w-32 group-hover:fixed group-hover:left-1/2 group-hover:top-1/2 group-hover:-translate-x-1/2 group-hover:-translate-y-1/2" />
                             </div>
                             <span className="text-[8px] text-white/85 truncate flex-1">{item.title}</span>
                           </div>
