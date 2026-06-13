@@ -2533,6 +2533,7 @@ export async function getAllReferralRequests() {
       collectorName: referralRequests.collectorName,
       collectorEmail: referralRequests.collectorEmail,
       collectorFocus: referralRequests.collectorFocus,
+      isMerchant: referralRequests.isMerchant,
       message: referralRequests.message,
       status: referralRequests.status,
       adminNotes: referralRequests.adminNotes,

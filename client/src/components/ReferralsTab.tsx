@@ -96,6 +96,7 @@ export function ReferralsTab() {
                     <th className="py-2 px-2 font-semibold text-xs">Collector</th>
                     <th className="py-2 px-2 font-semibold text-xs">Email</th>
                     <th className="py-2 px-2 font-semibold text-xs">Focus</th>
+                    <th className="py-2 px-2 font-semibold text-xs">Type</th>
                     <th className="py-2 px-2 font-semibold text-xs">Status</th>
                     <th className="py-2 px-2 font-semibold text-xs">Emailed</th>
                     <th className="py-2 px-2 font-semibold text-xs">Joined</th>
@@ -117,6 +118,13 @@ export function ReferralsTab() {
                       <td className="py-2 px-2">{referral.collectorName}</td>
                       <td className="py-2 px-2 text-xs">{referral.collectorEmail}</td>
                       <td className="py-2 px-2 text-xs">{referral.collectorFocus}</td>
+                      <td className="py-2 px-2">
+                        <span className={`inline-block px-2 py-1 rounded text-xs font-medium ${
+                          referral.isMerchant ? 'bg-purple-500/20 text-purple-700' : 'bg-blue-500/20 text-blue-700'
+                        }`}>
+                          {referral.isMerchant ? 'Merchant' : 'Collector'}
+                        </span>
+                      </td>
                       <td className="py-2 px-2">
                         <span className={`inline-block px-2 py-1 rounded text-xs font-medium ${
                           referral.status === 'pending' ? 'bg-yellow-500/20 text-yellow-700' :
@@ -193,6 +201,16 @@ export function ReferralsTab() {
               <div>
                 <label className="text-sm font-medium">What They Collect</label>
                 <p className="text-sm text-muted-foreground">{selectedReferral.collectorFocus}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium">Collector Type</label>
+                <p className="text-sm text-muted-foreground">
+                  <span className={`inline-block px-2 py-1 rounded text-xs font-medium ${
+                    selectedReferral.isMerchant ? 'bg-purple-500/20 text-purple-700' : 'bg-blue-500/20 text-blue-700'
+                  }`}>
+                    {selectedReferral.isMerchant ? 'Merchant' : 'Collector'}
+                  </span>
+                </p>
               </div>
               <div>
                 <label className="text-sm font-medium">Message</label>

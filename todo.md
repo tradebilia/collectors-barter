@@ -1874,3 +1874,9 @@ Completed Features:
   - [x] Updated createReferralRequest function to accept isMerchant
   - [x] Updated referralRequest mutation to pass isMerchant to backend
   - [x] All TypeScript errors resolved
+- [x] Update Admin Dashboard Referrals Tab to display merchant information
+  - [x] Added isMerchant field to getAllReferralRequests backend query
+  - [x] Added Type column to referrals table (shows Merchant or Collector badge)
+  - [x] Added collector type display in referral details dialog
+  - [x] Color-coded badges: Purple for Merchant, Blue for Collector
+  - [x] All changes compiled successfully
