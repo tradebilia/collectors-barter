@@ -11,6 +11,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
 import { Bell, CheckCircle2, CreditCard, Download, Loader2, Mail, Plus, Search, ShieldCheck, Trash2, UserRound } from "lucide-react";
 import { TopRightIcons } from "@/components/TopRightIcons";
+import { TopBar } from "@/components/TopBar";
+import { CategoryBar } from "@/components/CategoryBar";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Link } from "wouter";
@@ -205,38 +207,10 @@ export default function Profile() {
 
   return (
     <div className="min-h-screen bg-[#f5f5f3] text-slate-950">
-      <header className="border-b border-black/10 bg-[#161616] text-white">
-        <div className="flex flex-wrap items-center gap-4 px-4 py-3 lg:px-8">
-          <Link href="/" className="font-['Oswald'] text-[2.2rem] font-semibold leading-none tracking-[-0.05em] text-white">
-            Search
-          </Link>
-          <div className="flex min-w-[18rem] flex-1 items-center rounded-md bg-white px-4 py-2.5 text-slate-900 shadow-sm">
-            <Search className="mr-3 h-4 w-4 text-slate-500" />
-            <span className="text-sm text-slate-500">Search ...</span>
-          </div>
-          <TopRightIcons className="ml-auto flex items-center gap-3 md:gap-4" iconColor="text-white" />
-        </div>
-        <nav className="grid border-t border-white/10 bg-white text-center text-sm font-semibold text-slate-950 sm:grid-cols-5 xl:grid-cols-10">
-          {categoryLinks.map(category => (
-            <Link
-              key={category.value}
-              href={`/category/${category.value}`}
-              className="border-r border-slate-200 px-3 py-3 transition hover:bg-slate-100 last:border-r-0"
-            >
-              {category.label}
-            </Link>
-          ))}
-        </nav>
-      </header>
+      <TopBar />
+      <CategoryBar />
 
-      <section className="border-b border-slate-200 bg-[linear-gradient(90deg,#202566_0%,#202566_100%)] px-4 py-8 lg:px-8">
-        <div className="mx-auto flex max-w-6xl items-center gap-6">
-          <img src={TRADEBILIA_LOGO_URL} alt="Tradebilia" className="w-full max-w-[34rem]" />
-          <div className="hidden text-white lg:block">
-            <p className="text-4xl font-light tracking-wide">Account &amp; Settings, Preferences</p>
-          </div>
-        </div>
-      </section>
+
 
       <main className="px-4 py-10 lg:px-8">
         <div className="mx-auto max-w-6xl space-y-8">
