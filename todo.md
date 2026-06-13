@@ -1951,3 +1951,4 @@ Completed Features:
 - [x] Create HighestTradeValueItem component to manage dialog state properly
 - [x] Display larger image in dialog with grading info and estimated value
 - [x] Add cursor pointer to thumbnail to indicate clickability
+- [x] Update HighestTradeValueItem to show preview on hover and navigate to detail page on click

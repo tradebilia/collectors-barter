@@ -117,14 +117,25 @@ function initials(name: string) {
 }
 
 function HighestTradeValueItem({ item, index, imageUrl }: { item: any; index: number; imageUrl: string }) {
+  const [, setLocation] = useLocation();
   const [showPreview, setShowPreview] = useState(false);
+  
+  const handleImageClick = () => {
+    setLocation(`/item/${item.id}`);
+  };
+  
   return (
     <div className="flex items-center gap-2">
       <span className="text-[9px] font-semibold text-white/90 min-w-[20px]">{index + 1}</span>
       <Dialog open={showPreview} onOpenChange={setShowPreview}>
-        <DialogTrigger asChild>
-          <img src={imageUrl} alt={item.title} className="h-8 w-8 object-contain rounded cursor-pointer hover:opacity-80 transition-opacity" />
-        </DialogTrigger>
+        <div
+          onMouseEnter={() => setShowPreview(true)}
+          onMouseLeave={() => setShowPreview(false)}
+          onClick={handleImageClick}
+          className="cursor-pointer"
+        >
+          <img src={imageUrl} alt={item.title} className="h-8 w-8 object-contain rounded hover:opacity-80 transition-opacity" />
+        </div>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>{item.title}</DialogTitle>
