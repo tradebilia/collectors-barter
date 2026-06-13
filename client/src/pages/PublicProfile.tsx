@@ -6,24 +6,15 @@ import { trpc } from "@/lib/trpc";
 import { getAvatarInitials } from "@/lib/tradebilia";
 import { Heart, MessageSquare, Share2, Star, Loader2 } from "lucide-react";
 import { TopRightIcons } from "@/components/TopRightIcons";
+import { TopBar } from "@/components/TopBar";
+import { CategoryBar } from "@/components/CategoryBar";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { useParams } from "wouter";
 import { Link } from "wouter";
 
 const TRADEBILIA_LOGO_URL = "/images/tradebilia-logo.svg";
 
-const categoryLinks = [
-  { value: "comics", label: "Comics" },
-  { value: "sports_cards", label: "Sports Cards" },
-  { value: "vintage_toys", label: "Vintage Toys" },
-  { value: "video_games", label: "Video Games" },
-  { value: "stamps", label: "Stamps" },
-  { value: "coins", label: "Coins" },
-  { value: "pokemon", label: "Pokemon" },
-  { value: "movies", label: "Movies" },
-  { value: "autographs", label: "Autographs" },
-  { value: "disney_pins", label: "Disney Pins" },
-] as const;
+
 
 export default function PublicProfile() {
   const { userId } = useParams<{ userId: string }>();
@@ -71,27 +62,10 @@ export default function PublicProfile() {
 
   return (
     <div className="min-h-screen bg-[#f5f5f3] text-slate-950">
-      <header className="border-b border-black/10 bg-[#161616] text-white">
-        <div className="flex flex-wrap items-center gap-4 px-4 py-3 lg:px-8">
-          <Link href="/" className="font-['Oswald'] text-[2.2rem] font-semibold leading-none tracking-[-0.05em] text-white">
-            HOME
-          </Link>
-          <TopRightIcons className="ml-auto flex items-center gap-3 md:gap-4" iconColor="text-white" />
-        </div>
-        <nav className="grid border-t border-white/10 bg-white text-center text-sm font-semibold text-slate-950 sm:grid-cols-5 xl:grid-cols-10">
-          {categoryLinks.map(category => (
-            <Link
-              key={category.value}
-              href={`/category/${category.value}`}
-              className="border-r border-slate-200 px-3 py-3 transition hover:bg-slate-100 last:border-r-0"
-            >
-              {category.label}
-            </Link>
-          ))}
-        </nav>
-      </header>
+      <TopBar />
+      <CategoryBar />
 
-      <main className="px-4 py-10 lg:px-8">
+      <main className="px-4 py-8 lg:px-8">
         <div className="mx-auto max-w-4xl space-y-8">
           {/* Profile Header */}
           <Card className="rounded-[1.5rem] border-slate-200 bg-white shadow-sm">
