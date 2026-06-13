@@ -179,7 +179,7 @@ function HighestTradeValueItem({ item, index, imageUrl }: { item: any; index: nu
       <div className="flex-1 min-w-0">
         <p 
           onClick={handleImageClick}
-          className="text-[8.5px] text-white/85 truncate cursor-pointer hover:text-white/100 transition-colors"
+          className="text-[9.5px] text-white/85 truncate cursor-pointer hover:text-white/100 transition-colors"
         >
           {item.title} {item.certificationCompany && item.grade ? `• ${item.certificationCompany} ${item.grade}` : item.grade ? `• ${item.grade}` : ''} • <span className="font-semibold text-yellow-300">${item.estimatedValue?.toFixed(0) ?? 'N/A'}</span>
         </p>
