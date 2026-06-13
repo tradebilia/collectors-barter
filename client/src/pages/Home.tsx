@@ -116,6 +116,39 @@ function initials(name: string) {
     .join("") || "CE";
 }
 
+function HighestTradeValueItem({ item, index, imageUrl }: { item: any; index: number; imageUrl: string }) {
+  const [showPreview, setShowPreview] = useState(false);
+  return (
+    <div className="flex items-center gap-2">
+      <span className="text-[9px] font-semibold text-white/90 min-w-[20px]">{index + 1}</span>
+      <Dialog open={showPreview} onOpenChange={setShowPreview}>
+        <DialogTrigger asChild>
+          <img src={imageUrl} alt={item.title} className="h-8 w-8 object-contain rounded cursor-pointer hover:opacity-80 transition-opacity" />
+        </DialogTrigger>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{item.title}</DialogTitle>
+            <DialogDescription>
+              {item.certificationCompany && item.grade ? `${item.certificationCompany} ${item.grade}` : item.grade ? `Grade: ${item.grade}` : 'Ungraded'}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-center">
+            <img src={imageUrl} alt={item.title} className="max-h-96 w-auto object-contain" />
+          </div>
+          <div className="text-center text-sm font-semibold">
+            Estimated Value: ${item.estimatedValue?.toFixed(0) ?? 'N/A'}
+          </div>
+        </DialogContent>
+      </Dialog>
+      <div className="flex-1 min-w-0">
+        <p className="text-[7px] text-white/85 truncate">
+          {item.title} {item.certificationCompany && item.grade ? `• ${item.certificationCompany} ${item.grade}` : item.grade ? `• ${item.grade}` : ''} • ${item.estimatedValue?.toFixed(0) ?? 'N/A'}
+        </p>
+      </div>
+    </div>
+  );
+}
+
 async function readFiles(files: FileList | null) {
   if (!files) return [] as UploadedImage[];
 
@@ -631,17 +664,7 @@ export default function Home() {
                       {(highestTradeValueItems ?? []).map((item, index) => {
                         const imageUrl = resolveTradebiliaListingImage({ title: item.title, category: item.category, primaryPhotoUrl: item.primaryPhotoUrl });
                         return (
-                          <div key={item.id} className="flex items-center gap-2 group">
-                            <span className="text-[9px] font-semibold text-white/90 min-w-[20px]">{index + 1}</span>
-                            <div className="relative z-0 group-hover:z-50">
-                              <img src={imageUrl} alt={item.title} className="h-8 w-8 object-contain rounded transition-all duration-200 group-hover:h-32 group-hover:w-32 group-hover:absolute group-hover:bottom-full group-hover:left-0 group-hover:mb-2" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-[7px] text-white/85 truncate">
-                                {item.title} {item.certificationCompany && item.grade ? `• ${item.certificationCompany} ${item.grade}` : item.grade ? `• ${item.grade}` : ''} • ${item.estimatedValue?.toFixed(0) ?? 'N/A'}
-                              </p>
-                            </div>
-                          </div>
+                          <HighestTradeValueItem key={item.id} item={item} index={index} imageUrl={imageUrl} />
                         );
                       })}
                   </CardContent>

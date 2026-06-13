@@ -1944,3 +1944,10 @@ Completed Features:
 - [x] Migrate grading information to certificationCompany and grade columns for all active listings
 - [x] Fix malformed grading company data for items without proper grading companies
 - [x] Verify all top 10 highest value items now display correct grading information
+
+
+## Highest Trade Value Popup Dialog (Jun 13, 2026)
+- [x] Replace hover zoom effect with popup dialog
+- [x] Create HighestTradeValueItem component to manage dialog state properly
+- [x] Display larger image in dialog with grading info and estimated value
+- [x] Add cursor pointer to thumbnail to indicate clickability
