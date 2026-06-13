@@ -132,7 +132,7 @@ function HighestTradeValueItem({ item, index, imageUrl }: { item: any; index: nu
       e.clientX >= rect.left - 10 &&
       e.clientX <= rect.right + 10 &&
       e.clientY >= rect.top - 10 &&
-      e.clientY <= rect.bottom + 200;
+      e.clientY <= rect.bottom + 10;
     
     if (!isInside && showPreview) {
       setShowPreview(false);
