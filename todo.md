@@ -1925,3 +1925,8 @@ Completed Features:
   - [x] Combined title, grading company, grade, and value on one line
   - [x] Used bullet separators for clarity
   - [x] Maintained proper truncation for long text
+- [x] Remove Grade and Condition from ItemDetail page details section
+  - [x] Removed Grade section (was section 2)
+  - [x] Removed Condition section (was section 3)
+  - [x] Updated section numbering for Estimated Value
+  - [x] Details now match the Add to Inventory form fields
