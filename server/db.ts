@@ -1588,6 +1588,8 @@ export async function createListing(
     estimatedValue?: number;
     photos: PhotoUploadInput[];
     itemDetails?: Record<string, string>;
+    certificationCompany?: string;
+    grade?: string;
   },
 ) {
   const db = await requireDb();
@@ -1601,6 +1603,8 @@ export async function createListing(
     description: input.description.trim(),
     estimatedValue: input.estimatedValue ? String(input.estimatedValue) : null,
     itemDetails: input.itemDetails ? JSON.stringify(input.itemDetails) : null,
+    certificationCompany: input.certificationCompany || undefined,
+    grade: (input.grade || undefined) as any,
     featured: false,
   });
   const listingId = getInsertId(insertResult);

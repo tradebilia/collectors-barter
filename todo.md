@@ -1930,3 +1930,10 @@ Completed Features:
   - [x] Removed Condition section (was section 3)
   - [x] Updated section numbering for Estimated Value
   - [x] Details now match the Add to Inventory form fields
+
+
+## Grading Information Fix (Jun 13, 2026)
+- [x] Update backend to accept certificationCompany and grade fields in createListing mutation
+- [x] Update frontend AddInventory to pass grading fields to backend
+- [x] Update getTopHighestValueItems to properly display grading information
+- [x] Remove debug logging from getTopHighestValueItems

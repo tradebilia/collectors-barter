@@ -340,6 +340,8 @@ export default function AddInventory() {
         estimatedValue: draft.value ? parseFloat(draft.value) : 0,
         photos: reorderedPhotos,
         itemDetails: draft.categoryFields,
+        certificationCompany: draft.graderCompany !== 'Raw' ? draft.graderCompany : undefined,
+        grade: draft.grade !== 'ungraded' ? draft.grade : undefined,
       });
       toast.success("Listing created successfully!");
     }
