@@ -8,26 +8,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
-import { Bell, Coins, Gift, Mail, Search, Send, ShieldCheck, Sparkles, Users } from "lucide-react";
-import { TopRightIcons } from "@/components/TopRightIcons";
+import { Send, Sparkles, Users, Gift, Coins } from "lucide-react";
 import { FormEvent, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Link } from "wouter";
+import { TopBar } from "@/components/TopBar";
+import { CategoryBar } from "@/components/CategoryBar";
 
-const TRADEBILIA_LOGO_URL = "/images/tradebilia-logo.svg";
-
-const categoryLinks = [
-  ["Comics", "comics"],
-  ["Sports Cards", "sports-cards"],
-  ["Vintage Toys", "vintage-toys"],
-  ["Video Games", "video-games"],
-  ["Stamps", "stamps"],
-  ["Coins", "coins"],
-  ["Pokemon", "pokemon"],
-  ["Movies", "movies"],
-  ["Autographs", "autographs"],
-  ["Disney Pins", "disney-pins"],
-] as const;
+const TRADEBILIA_LOGO_URL = "/manus-storage/tradebilia-logo_c676d640.svg";
 
 function firstName(name?: string | null) {
   return name?.split(" ").filter(Boolean)[0] || "Collector";
@@ -76,31 +63,8 @@ export default function ReferralRequest() {
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,rgba(90,132,255,0.16),transparent_28%),linear-gradient(180deg,#050814_0%,#0b1220_35%,#101827_100%)] text-white">
-      <header className="border-b border-white/10 bg-black">
-        <div className="flex flex-wrap items-center gap-2 px-4 py-2 sm:px-6">
-          <Link href="/" className="rounded-lg border border-white/30 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-white/20">
-            Home
-          </Link>
-        </div>
-        <div className="flex flex-wrap items-center gap-4 px-4 py-2 sm:px-6">
-          <div className="flex items-center gap-3">
-            <span className="font-['Oswald'] text-[2.15rem] font-semibold leading-none tracking-[-0.05em] text-white sm:text-[2.45rem]">Search</span>
-            <div className="relative hidden min-w-[260px] sm:block">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
-              <Input className="h-9 rounded-sm border-0 bg-white pl-10 pr-3 text-sm text-slate-950" placeholder="Search..." />
-            </div>
-          </div>
-          <TopRightIcons className="ml-auto flex items-center gap-3 md:gap-4" iconColor="text-white/85" />
-        </div>
-        <nav className="grid grid-cols-2 border-t border-white/10 bg-white text-center text-[11px] font-semibold text-black sm:grid-cols-5 lg:grid-cols-10">
-          {categoryLinks.map(([label, slug]) => (
-            <Link key={slug} href={`/category/${slug}`} className="border-r border-black/10 px-2 py-3 transition hover:bg-black hover:text-white last:border-r-0">
-              {label}
-            </Link>
-          ))}
-        </nav>
-      </header>
-
+      <TopBar />
+      
       <section className="border-b border-white/10 bg-[#00143A]" style={{
         backgroundImage: 'url(/manus-storage/Mainpage_9b45311d.jpg)',
         backgroundSize: 'cover',
@@ -112,7 +76,9 @@ export default function ReferralRequest() {
         </div>
       </section>
 
-      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <CategoryBar />
+
+      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 bg-[radial-gradient(circle_at_top,rgba(90,132,255,0.16),transparent_28%),linear-gradient(180deg,#050814_0%,#0b1220_35%,#101827_100%)]">
         <div className="grid gap-6 lg:grid-cols-[330px_minmax(0,1fr)]">
           <aside className="space-y-6">
             <Card className="rounded-[1.75rem] border-white/10 bg-white/5 text-white shadow-[0_20px_60px_rgba(0,0,0,0.28)] backdrop-blur">
