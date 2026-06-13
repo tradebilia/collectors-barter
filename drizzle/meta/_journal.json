@@ -50,6 +50,13 @@
       "when": 1781365530650,
       "tag": "0006_sour_lockjaw",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "5",
+      "when": 1781369643076,
+      "tag": "0007_freezing_eternals",
+      "breakpoints": true
     }
   ]
 }

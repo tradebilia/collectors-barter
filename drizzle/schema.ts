@@ -509,6 +509,7 @@ export const referralRequests = mysqlTable(
     collectorName: varchar("collectorName", { length: 255 }).notNull(),
     collectorEmail: varchar("collectorEmail", { length: 320 }).notNull(),
     collectorFocus: varchar("collectorFocus", { length: 255 }).notNull(),
+    isMerchant: boolean("isMerchant").default(false).notNull(),
     message: text("message").notNull(),
     status: mysqlEnum("status", ["pending", "reviewed", "approved", "rejected"]).default("pending").notNull(),
     adminNotes: text("adminNotes"),

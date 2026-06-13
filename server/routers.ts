@@ -120,6 +120,7 @@ const referralRequestSchema = z.object({
   friendName: z.string().min(2).max(160),
   friendEmail: z.string().email().max(320),
   collectorFocus: z.string().min(2).max(200),
+  isMerchant: z.boolean().default(false),
   message: z.string().min(20).max(2000),
 });
 
@@ -806,6 +807,7 @@ export const appRouter = router({
             collectorName: input.friendName.trim(),
             collectorEmail: input.friendEmail.trim(),
             collectorFocus: input.collectorFocus.trim(),
+            isMerchant: input.isMerchant,
             message: input.message.trim(),
           });
         } catch (error) {

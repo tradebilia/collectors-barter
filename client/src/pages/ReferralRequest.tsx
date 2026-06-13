@@ -25,6 +25,7 @@ export default function ReferralRequest() {
   const [friendName, setFriendName] = useState("");
   const [friendEmail, setFriendEmail] = useState("");
   const [collectorFocus, setCollectorFocus] = useState("");
+  const [isMerchant, setIsMerchant] = useState(false);
   const [message, setMessage] = useState("I think you would fit right in on Tradebilia. Join me to trade rare collectibles with a collector-first community.");
 
   const referrerInfo = useMemo(() => ({
@@ -61,6 +62,7 @@ export default function ReferralRequest() {
       friendName,
       friendEmail,
       collectorFocus,
+      isMerchant,
       message,
     });
   };
@@ -172,6 +174,34 @@ export default function ReferralRequest() {
                 </div>
 
                 <div className="space-y-2">
+                  <Label className="text-white/80">Collector type</Label>
+                  <div className="flex gap-4">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="collector-type"
+                        value="collector"
+                        checked={!isMerchant}
+                        onChange={() => setIsMerchant(false)}
+                        className="w-4 h-4 cursor-pointer"
+                      />
+                      <span className="text-white/80">Collector</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="collector-type"
+                        value="merchant"
+                        checked={isMerchant}
+                        onChange={() => setIsMerchant(true)}
+                        className="w-4 h-4 cursor-pointer"
+                      />
+                      <span className="text-white/80">Merchant</span>
+                    </label>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
                   <Label htmlFor="invite-message" className="text-white/80">Personal invite message</Label>
                   <Textarea id="invite-message" value={message} onChange={event => setMessage(event.target.value)} className="min-h-[180px] rounded-[1.25rem] border-white/10 bg-white/5 text-white" placeholder="Explain why they are a strong fit for the community." />
                 </div>
@@ -193,9 +223,6 @@ export default function ReferralRequest() {
                   <Button type="submit" className="rounded-full bg-white text-slate-950 hover:bg-white/90" disabled={referralMutation.isPending}>
                     <Send className="mr-2 h-4 w-4" />
                     {referralMutation.isPending ? "Sending referral..." : "Send referral request"}
-                  </Button>
-                  <Button type="button" variant="outline" className="rounded-full border-white/15 bg-transparent text-white hover:bg-white/10" onClick={() => toast.info(`${firstName(referrerInfo.firstName)} can customize incentive rules later.`)}>
-                    Preview referral program
                   </Button>
                 </div>
               </form>

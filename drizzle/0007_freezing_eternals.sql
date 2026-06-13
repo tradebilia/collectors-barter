@@ -1,0 +1,1 @@
+ALTER TABLE `referralRequests` ADD `isMerchant` boolean DEFAULT false NOT NULL;

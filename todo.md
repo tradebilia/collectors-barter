@@ -1860,3 +1860,17 @@ Completed Features:
 - [x] Update Messages page hero section to display Messages.svg image
 - [x] Verify SVG displays correctly with spinning wheel animation
 - [x] Test Messages page loads without errors
+
+
+## Referral Request Page Updates (June 13, 2026)
+
+- [x] Remove 'Preview referral program' button from Referral Request page
+- [x] Add merchant/non-merchant identifier field to Referral Request form
+  - [x] Added isMerchant state variable to track collector type
+  - [x] Added radio button selection (Collector vs Merchant)
+  - [x] Updated database schema with isMerchant boolean field
+  - [x] Applied database migration for new field
+  - [x] Updated referralRequestSchema to include isMerchant
+  - [x] Updated createReferralRequest function to accept isMerchant
+  - [x] Updated referralRequest mutation to pass isMerchant to backend
+  - [x] All TypeScript errors resolved

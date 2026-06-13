@@ -2514,6 +2514,7 @@ export async function createReferralRequest(data: {
   collectorName: string;
   collectorEmail: string;
   collectorFocus: string;
+  isMerchant: boolean;
   message: string;
 }) {
   const db = await requireDb();
