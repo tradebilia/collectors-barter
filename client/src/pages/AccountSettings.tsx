@@ -151,6 +151,9 @@ export default function AccountSettings() {
     storeName: "",
   });
 
+  // Drag and drop state
+  const [isDragging, setIsDragging] = useState(false);
+
   // Refetch dashboard data when page mounts
   useEffect(() => {
     dashboardQuery.refetch();
@@ -354,8 +357,6 @@ export default function AccountSettings() {
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
     fileInput?.click();
   };
-
-  const [isDragging, setIsDragging] = useState(false);
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
