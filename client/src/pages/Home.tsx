@@ -631,9 +631,11 @@ export default function Home() {
                       {(highestTradeValueItems ?? []).map((item, index) => {
                         const imageUrl = resolveTradebiliaListingImage({ title: item.title, category: item.category, primaryPhotoUrl: item.primaryPhotoUrl });
                         return (
-                          <div key={item.id} className="flex items-center gap-2">
+                          <div key={item.id} className="flex items-center gap-2 group">
                             <span className="text-[9px] font-semibold text-white/90 min-w-[20px]">{index + 1}</span>
-                            <img src={imageUrl} alt={item.title} className="h-8 w-8 object-cover rounded" />
+                            <div className="relative">
+                              <img src={imageUrl} alt={item.title} className="h-8 w-8 object-cover rounded transition-transform duration-200 group-hover:scale-150 group-hover:z-10" />
+                            </div>
                             <span className="text-[8px] text-white/85 truncate flex-1">{item.title}</span>
                           </div>
                         );
