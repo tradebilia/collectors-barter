@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Mail } from "lucide-react";
+import { Mail, Eye } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 
 export function ReferralsTab() {
@@ -11,6 +11,8 @@ export function ReferralsTab() {
   const [bulkEmailDialogOpen, setBulkEmailDialogOpen] = useState(false);
   const [bulkEmailSubject, setBulkEmailSubject] = useState("");
   const [bulkEmailMessage, setBulkEmailMessage] = useState("");
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  const [selectedReferral, setSelectedReferral] = useState<any>(null);
   const sendBulkEmailMutation = trpc.admin.sendBulkEmailToReferrals.useMutation();
   const deleteReferralMutation = trpc.admin.deleteReferral.useMutation();
 
@@ -128,7 +130,19 @@ export function ReferralsTab() {
                       <td className="py-2 px-2 text-xs">{referral.emailSent ? '✓' : '-'}</td>
                       <td className="py-2 px-2 text-xs">{referral.hasJoined ? '✓' : '-'}</td>
                       <td className="py-2 px-2 text-xs">{new Date(referral.createdAt).toLocaleDateString()}</td>
-                      <td className="py-2 px-2 space-x-1">
+                      <td className="py-2 px-2 space-x-1 flex gap-1">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedReferral(referral);
+                            setDetailsDialogOpen(true);
+                          }}
+                          className="flex items-center gap-1"
+                        >
+                          <Eye className="h-3 w-3" />
+                          View
+                        </Button>
                         {referral.hasJoined && (
                           <Button
                             variant="outline"
@@ -149,6 +163,63 @@ export function ReferralsTab() {
           )}
         </CardContent>
       </Card>
+
+      {/* Referral Details Dialog */}
+      <Dialog open={detailsDialogOpen} onOpenChange={setDetailsDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Referral Details</DialogTitle>
+            <DialogDescription>
+              Information about this referral submission
+            </DialogDescription>
+          </DialogHeader>
+          {selectedReferral && (
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium">Referrer</label>
+                <p className="text-sm text-muted-foreground">
+                  {selectedReferral.referrerFirstName} {selectedReferral.referrerLastName}
+                </p>
+                <p className="text-sm text-muted-foreground">{selectedReferral.referrerEmail}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium">Collector Name</label>
+                <p className="text-sm text-muted-foreground">{selectedReferral.collectorName}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium">Collector Email</label>
+                <p className="text-sm text-muted-foreground">{selectedReferral.collectorEmail}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium">What They Collect</label>
+                <p className="text-sm text-muted-foreground">{selectedReferral.collectorFocus}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium">Message</label>
+                <p className="text-sm text-muted-foreground whitespace-pre-wrap">{selectedReferral.message}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium">Status</label>
+                <p className="text-sm text-muted-foreground">{selectedReferral.status}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium">Submitted</label>
+                <p className="text-sm text-muted-foreground">
+                  {new Date(selectedReferral.createdAt).toLocaleString()}
+                </p>
+              </div>
+            </div>
+          )}
+          <div className="flex justify-end">
+            <Button
+              variant="outline"
+              onClick={() => setDetailsDialogOpen(false)}
+            >
+              Close
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Bulk Email Dialog */}
       <Dialog open={bulkEmailDialogOpen} onOpenChange={setBulkEmailDialogOpen}>

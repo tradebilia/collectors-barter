@@ -1814,3 +1814,40 @@ Completed Features:
 - Status tracking with timestamps and admin notes
 - Proper access control (admin-only procedures)
 - Comprehensive test coverage (7 tests passing)
+
+
+## Bulk Email Referrals Management (June 13, 2026)
+
+- [x] Add email tracking fields to referralRequests table
+  - [x] emailSent (boolean, default false)
+  - [x] emailSentAt (timestamp)
+  - [x] hasJoined (boolean, default false)
+  - [x] joinedAt (timestamp)
+  - [x] joinedUserId (foreign key to users.id)
+- [x] Create database migration for email tracking fields
+- [x] Create backend procedures for bulk email operations
+  - [x] sendBulkEmailToReferrals - send emails to selected referrals
+  - [x] removeReferralByEmail - mark referral as joined when user joins
+  - [x] deleteReferral - remove referral from list
+  - [x] getReferralsByIds - fetch specific referrals for bulk operations
+  - [x] getUnsentReferrals - get all referrals that haven't been emailed
+  - [x] markReferralsAsEmailed - update email sent status
+- [x] Create ReferralsTab component for admin dashboard
+  - [x] Checkbox selection for bulk operations
+  - [x] Select all/deselect all functionality
+  - [x] Bulk email dialog with subject and message input
+  - [x] Email status tracking (✓ for sent, - for not sent)
+  - [x] Joined status tracking (✓ for joined, - for not joined)
+  - [x] Remove button for referrals who have already joined
+- [x] Integrate ReferralsTab into AdminDashboard
+- [x] Write comprehensive tests for bulk email functionality
+  - [x] Test authorization (non-admin rejection)
+  - [x] Test error handling (empty/invalid referral IDs)
+  - [x] All 5 tests passing
+
+Completed Features:
+- Bulk email selection and sending to multiple referrals
+- Email sent tracking with timestamps
+- Joined user detection and removal from list
+- Admin-only access control
+- Comprehensive test coverage (5 tests passing)
