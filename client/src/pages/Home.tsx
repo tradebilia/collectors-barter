@@ -16,7 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { getLoginUrl } from "@/const";
 import { Heart, Loader2, MessageSquareText, Search, ShieldCheck, Sparkles, Star, ArrowRightLeft, Clock3, Plus, Users, ListTodo, DollarSign, Handshake, TrendingUp } from "lucide-react";
-import { ChangeEvent, FormEvent, useMemo, useState, useEffect } from "react";
+import { ChangeEvent, FormEvent, useMemo, useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { Link, useLocation } from "wouter";
 import { TopBar } from "@/components/TopBar";
@@ -119,17 +119,31 @@ function initials(name: string) {
 function HighestTradeValueItem({ item, index, imageUrl }: { item: any; index: number; imageUrl: string }) {
   const [, setLocation] = useLocation();
   const [showPreview, setShowPreview] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
   
   const handleImageClick = () => {
     setLocation(`/item/${item.id}`);
   };
   
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const isInside = 
+      e.clientX >= rect.left - 10 &&
+      e.clientX <= rect.right + 10 &&
+      e.clientY >= rect.top - 10 &&
+      e.clientY <= rect.bottom + 200;
+    
+    if (!isInside && showPreview) {
+      setShowPreview(false);
+    }
+  };
+  
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-2" ref={containerRef} onMouseMove={handleMouseMove}>
       <span className="text-[9px] font-semibold text-white/90 min-w-[20px]">{index + 1}</span>
       <div
         onMouseEnter={() => setShowPreview(true)}
-        onMouseLeave={() => setShowPreview(false)}
         className="relative"
       >
         <Dialog open={showPreview} onOpenChange={setShowPreview}>
@@ -139,7 +153,7 @@ function HighestTradeValueItem({ item, index, imageUrl }: { item: any; index: nu
           >
             <img src={imageUrl} alt={item.title} className="h-8 w-8 object-contain rounded hover:opacity-80 transition-opacity" />
           </div>
-          <DialogContent className="max-w-md" onMouseLeave={() => setShowPreview(false)}>
+          <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>{item.title}</DialogTitle>
             <DialogDescription>
