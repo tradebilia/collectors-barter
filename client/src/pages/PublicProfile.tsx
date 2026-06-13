@@ -76,7 +76,7 @@ export default function PublicProfile() {
             <img
               src="/manus-storage/Profile_60641144.svg"
               alt="Profile"
-              className="h-32 w-32 sm:h-40 sm:w-40 lg:h-48 lg:w-48"
+              className="h-auto w-full"
             />
           </div>
         </div>
