@@ -1541,12 +1541,12 @@ The application is fully functional with all core features working correctly.
 - [x] Connect text input filters to state (Title filter working on Comics category)
 - [x] Update backend market.feed query to accept all filter parameters
 - [x] Update backend getMarketplaceFeed to handle all filter parameters
-- [ ] Connect all remaining text input filters to state across all categories
-- [ ] Connect select dropdown filters to state (Sport, Grading Service, Grade, Rookie, Autographed, Signed, Facsimile, Condition)
-- [ ] Connect range filters to state (Value Range Min/Max)
-- [ ] Test filters work across all 10 category pages
-- [ ] Ensure filters automatically trigger query when state changes
-- [ ] Add Clear button functionality to reset all filters
+- [x] Connect all remaining text input filters to state across all categories
+- [x] Connect select dropdown filters to state (Sport, Grading Service, Grade, Rookie, Autographed, Signed, Facsimile, Condition)
+- [x] Connect range filters to state (Value Range Min/Max)
+- [x] Test filters work across all 10 category pages
+- [x] Ensure filters automatically trigger query when state changes
+- [x] Add Clear button functionality to reset all filters
 
 
 ## Filter System Improvements (Current Sprint)
@@ -1568,7 +1568,7 @@ The application is fully functional with all core features working correctly.
 - [x] Test combining multiple filters together
 - [x] Remove dynamic key props from input fields to fix focus loss issue
 - [x] Fix input field focus loss when typing (was caused by dynamic key props)
-- [ ] Fix Clear button UI to properly reflect cleared state (cosmetic issue - state IS cleared)
+- [x] Fix Clear button UI to properly reflect cleared state (cosmetic issue - state IS cleared)
 
 ### Filter System Architecture & Extensibility
 
@@ -1851,3 +1851,12 @@ Completed Features:
 - Joined user detection and removal from list
 - Admin-only access control
 - Comprehensive test coverage (5 tests passing)
+
+
+## Messages Page SVG Update (June 13, 2026)
+
+- [x] Create new Messages.svg file based on Inbox.svg template
+- [x] Replace "Inbox" text with "Messages" text in SVG
+- [x] Update Messages page hero section to display Messages.svg image
+- [x] Verify SVG displays correctly with spinning wheel animation
+- [x] Test Messages page loads without errors
