@@ -548,7 +548,7 @@ export default function Home() {
                       } else {
                         setLocation('/referral-request');
                       }
-                    }} className="w-full px-3 py-2 rounded bg-white/10 hover:bg-white/20 transition text-white text-sm font-medium text-left">🤝 Referral Request</button>
+                    }} className="w-full px-3 py-2 rounded bg-white/10 hover:bg-white/20 transition text-white text-sm font-medium text-left">🤝 Refer a Collector</button>
                     <button onClick={() => {
                       if (!isAuthenticated) {
                         toast.error('Members only - Please sign in to access your watchlist');
