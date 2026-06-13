@@ -139,7 +139,7 @@ function HighestTradeValueItem({ item, index, imageUrl }: { item: any; index: nu
           >
             <img src={imageUrl} alt={item.title} className="h-8 w-8 object-contain rounded hover:opacity-80 transition-opacity" />
           </div>
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-md" onMouseLeave={() => setShowPreview(false)}>
           <DialogHeader>
             <DialogTitle>{item.title}</DialogTitle>
             <DialogDescription>
