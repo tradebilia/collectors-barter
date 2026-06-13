@@ -661,7 +661,7 @@ export default function Home() {
                   />
                 </div>
 
-                <div className="grid gap-0 md:grid-cols-2 xl:grid-cols-4 lg:col-start-2">
+                <div className="grid gap-0 md:grid-cols-2 xl:grid-cols-4 lg:col-start-2 divide-x divide-white/10">
                 <Card className="overflow-hidden rounded-none border-0 bg-[radial-gradient(circle_at_top,rgba(48,149,255,0.5),transparent_40%),linear-gradient(135deg,#05204f_0%,#0d2d68_100%)] text-white shadow-none">
                   <CardHeader className="pb-2 pt-4">
                     <CardTitle className="font-['Oswald'] text-[0.86rem] uppercase tracking-[0.22em] text-white/78">Most Viewed</CardTitle>
@@ -673,7 +673,7 @@ export default function Home() {
 
                   </CardContent>
                 </Card>
-                <Card className="overflow-hidden rounded-none border-0 bg-[linear-gradient(135deg,#090b10_0%,#262937_100%)] text-white shadow-none">
+                <Card className="overflow-hidden rounded-none border-0 bg-[linear-gradient(135deg,#090b10_0%,#262937_100%)] text-white shadow-none border-l border-white/10">
                   <CardHeader className="pb-2 pt-4">
                     <CardTitle className="font-['Oswald'] text-[0.86rem] uppercase tracking-[0.22em] text-white/78">Most Requested</CardTitle>
                   </CardHeader>
@@ -684,7 +684,7 @@ export default function Home() {
 
                   </CardContent>
                 </Card>
-                <Card className="overflow-hidden rounded-none border-0 bg-[linear-gradient(135deg,#d7bba9_0%,#f3e8de_100%)] text-slate-900 shadow-none">
+                <Card className="overflow-hidden rounded-none border-0 bg-[linear-gradient(135deg,#d7bba9_0%,#f3e8de_100%)] text-slate-900 shadow-none border-l border-white/10">
                   <CardHeader className="pb-2 pt-4">
                      <CardTitle className="font-['Oswald'] text-[0.86rem] uppercase tracking-[0.22em] text-white/78">Top Rated Traders</CardTitle>
                   </CardHeader>
@@ -695,7 +695,7 @@ export default function Home() {
 
                   </CardContent>
                 </Card>
-                <Card className="overflow-hidden rounded-none border-0 bg-[radial-gradient(circle_at_top,rgba(18,222,255,0.35),transparent_35%),linear-gradient(135deg,#00477b_0%,#0a86b4_100%)] text-white shadow-none">
+                <Card className="overflow-hidden rounded-none border-0 bg-[radial-gradient(circle_at_top,rgba(18,222,255,0.35),transparent_35%),linear-gradient(135deg,#00477b_0%,#0a86b4_100%)] text-white shadow-none border-l border-white/10">
                   <CardHeader className="pb-3 pt-4">
                     <CardTitle className="font-['Oswald'] text-[1.1rem] uppercase tracking-[0.22em] text-white/90">🏆 Top 10 Highest Trade Values</CardTitle>
                   </CardHeader>
