@@ -122,7 +122,7 @@ function HighestTradeValueItem({ item, index, imageUrl }: { item: any; index: nu
   const containerRef = useRef<HTMLDivElement>(null);
   
   const handleImageClick = () => {
-    setLocation(`/item/${item.id}`);
+    setLocation(`/listings/${item.id}`);
   };
   
   const handleMouseMove = (e: React.MouseEvent) => {
