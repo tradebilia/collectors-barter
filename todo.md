@@ -1880,3 +1880,12 @@ Completed Features:
   - [x] Added collector type display in referral details dialog
   - [x] Color-coded badges: Purple for Merchant, Blue for Collector
   - [x] All changes compiled successfully
+
+
+## Admin User Email Fix (June 13, 2026)
+
+- [x] Fixed admin user email address in database
+  - [x] Identified that admin@tradebilia.local was stored in database instead of admin@tradebilia.net
+  - [x] Updated AdminTavani user email to admin@tradebilia.net
+  - [x] Removed debug logging from auth.me procedure
+  - [x] Verified fix is working correctly

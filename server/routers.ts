@@ -134,6 +134,7 @@ export const appRouter = router({
         console.log('[auth.me] No user found, returning null');
         return null;
       }
+
       
       const db = await requireDb();
       
