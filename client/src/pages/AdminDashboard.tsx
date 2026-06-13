@@ -159,39 +159,39 @@ export default function AdminDashboard() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-7">
-            <TabsTrigger value="statistics" className="flex items-center gap-2">
-              <BarChart3 className="h-4 w-4 hidden sm:inline" />
-              <span className="hidden sm:inline">Statistics</span>
+          <TabsList className="grid w-full grid-cols-8 gap-1">
+            <TabsTrigger value="statistics" className="flex items-center gap-1 text-xs px-2 py-1">
+              <BarChart3 className="h-4 w-4" />
+              <span className="hidden sm:inline">Stats</span>
             </TabsTrigger>
-            <TabsTrigger value="users" className="flex items-center gap-2">
-              <Users className="h-4 w-4 hidden sm:inline" />
+            <TabsTrigger value="users" className="flex items-center gap-1 text-xs px-2 py-1">
+              <Users className="h-4 w-4" />
               <span className="hidden sm:inline">Users</span>
             </TabsTrigger>
-            <TabsTrigger value="listings" className="flex items-center gap-2">
-              <Package className="h-4 w-4 hidden sm:inline" />
+            <TabsTrigger value="listings" className="flex items-center gap-1 text-xs px-2 py-1">
+              <Package className="h-4 w-4" />
               <span className="hidden sm:inline">Listings</span>
             </TabsTrigger>
-            <TabsTrigger value="trades" className="flex items-center gap-2">
-              <Package className="h-4 w-4 hidden sm:inline" />
+            <TabsTrigger value="trades" className="flex items-center gap-1 text-xs px-2 py-1">
+              <Package className="h-4 w-4" />
               <span className="hidden sm:inline">Trades</span>
             </TabsTrigger>
-            <TabsTrigger value="settings" className="flex items-center gap-2">
-              <Settings className="h-4 w-4 hidden sm:inline" />
+            <TabsTrigger value="settings" className="flex items-center gap-1 text-xs px-2 py-1">
+              <Settings className="h-4 w-4" />
               <span className="hidden sm:inline">Settings</span>
             </TabsTrigger>
-            <TabsTrigger value="deleted" className="flex items-center gap-2">
-              <Users className="h-4 w-4 hidden sm:inline" />
+            <TabsTrigger value="deleted" className="flex items-center gap-1 text-xs px-2 py-1">
+              <Users className="h-4 w-4" />
               <span className="hidden sm:inline">Deleted</span>
             </TabsTrigger>
-          <TabsTrigger value="reports" className="flex items-center gap-2">
-            <Flag className="h-4 w-4 hidden sm:inline" />
-            <span className="hidden sm:inline">Reports</span>
-          </TabsTrigger>
-          <TabsTrigger value="referrals" className="flex items-center gap-2">
-            <Mail className="h-4 w-4 hidden sm:inline" />
-            <span className="hidden sm:inline">Referrals</span>
-          </TabsTrigger>
+            <TabsTrigger value="reports" className="flex items-center gap-1 text-xs px-2 py-1">
+              <Flag className="h-4 w-4" />
+              <span className="hidden sm:inline">Reports</span>
+            </TabsTrigger>
+            <TabsTrigger value="referrals" className="flex items-center gap-1 text-xs px-2 py-1">
+              <Mail className="h-4 w-4" />
+              <span className="hidden sm:inline">Referrals</span>
+            </TabsTrigger>
         </TabsList>
 
           {/* Statistics Tab */}
