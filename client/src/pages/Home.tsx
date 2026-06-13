@@ -139,9 +139,16 @@ function HighestTradeValueItem({ item, index, imageUrl }: { item: any; index: nu
     }
   };
   
+  const getRankColor = (rank: number) => {
+    if (rank === 0) return 'bg-yellow-500/20 text-yellow-300';
+    if (rank === 1) return 'bg-gray-400/20 text-gray-200';
+    if (rank === 2) return 'bg-orange-600/20 text-orange-300';
+    return 'bg-white/5 text-white/70';
+  };
+
   return (
-    <div className="flex items-center gap-3" ref={containerRef} onMouseMove={handleMouseMove}>
-      <span className="text-[11px] font-semibold text-white/90 min-w-[24px]">{index + 1}</span>
+    <div className="flex items-center gap-3 rounded-md px-2 py-2 transition-colors hover:bg-white/5" ref={containerRef} onMouseMove={handleMouseMove}>
+      <span className={`text-[11px] font-bold min-w-[32px] text-center rounded px-2 py-1 ${getRankColor(index)}`}>{index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : index + 1}</span>
       <div
         onMouseEnter={() => setShowPreview(true)}
         className="relative"
@@ -174,7 +181,7 @@ function HighestTradeValueItem({ item, index, imageUrl }: { item: any; index: nu
           onClick={handleImageClick}
           className="text-[8.5px] text-white/85 truncate cursor-pointer hover:text-white/100 transition-colors"
         >
-          {item.title} {item.certificationCompany && item.grade ? `• ${item.certificationCompany} ${item.grade}` : item.grade ? `• ${item.grade}` : ''} • ${item.estimatedValue?.toFixed(0) ?? 'N/A'}
+          {item.title} {item.certificationCompany && item.grade ? `• ${item.certificationCompany} ${item.grade}` : item.grade ? `• ${item.grade}` : ''} • <span className="font-semibold text-yellow-300">${item.estimatedValue?.toFixed(0) ?? 'N/A'}</span>
         </p>
       </div>
     </div>
@@ -689,14 +696,19 @@ export default function Home() {
                   </CardContent>
                 </Card>
                 <Card className="overflow-hidden rounded-none border-0 bg-[radial-gradient(circle_at_top,rgba(18,222,255,0.35),transparent_35%),linear-gradient(135deg,#00477b_0%,#0a86b4_100%)] text-white shadow-none">
-                  <CardHeader className="pb-2 pt-4">
-                    <CardTitle className="font-['Oswald'] text-[0.86rem] uppercase tracking-[0.22em] text-white/78">Highest Trade Value</CardTitle>
+                  <CardHeader className="pb-3 pt-4">
+                    <CardTitle className="font-['Oswald'] text-[1.1rem] uppercase tracking-[0.22em] text-white/90">🏆 Top 10 Highest Trade Values</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-2 pb-4">
+                  <CardContent className="space-y-0 pb-4">
                       {(highestTradeValueItems ?? []).map((item, index) => {
                         const imageUrl = resolveTradebiliaListingImage({ title: item.title, category: item.category, primaryPhotoUrl: item.primaryPhotoUrl });
                         return (
-                          <HighestTradeValueItem key={item.id} item={item} index={index} imageUrl={imageUrl} />
+                          <div key={item.id}>
+                            <HighestTradeValueItem item={item} index={index} imageUrl={imageUrl} />
+                            {index < (highestTradeValueItems ?? []).length - 1 && (
+                              <div className="my-2 border-t border-white/10"></div>
+                            )}
+                          </div>
                         );
                       })}
                   </CardContent>
