@@ -99,20 +99,26 @@ export default function AccountSettings() {
 
   // Communications State
   const [communicationPrefs, setCommunicationPrefs] = useState<{
-    emailFrequency: "never" | "daily" | "weekly" | "monthly";
-    tradeNotifications: boolean;
-    messageNotifications: boolean;
-    feedbackNotifications: boolean;
-    systemNotifications: boolean;
-    marketingEmails: boolean;
+    tradeInitiated: { email: boolean; text: boolean };
+    counterProposal: { email: boolean; text: boolean };
+    proposalAccepted: { email: boolean; text: boolean };
+    proposalRejected: { email: boolean; text: boolean };
+    itemsShipped: { email: boolean; text: boolean };
+    itemsReceived: { email: boolean; text: boolean };
+    feedbackReceived: { email: boolean; text: boolean };
+    systemUpdates: { email: boolean; text: boolean };
+    marketingEmails: { email: boolean; text: boolean };
   }>({
-    emailFrequency: "daily",
-    tradeNotifications: true,
-    messageNotifications: true,
-    feedbackNotifications: true,
-    systemNotifications: true,
-    marketingEmails: false,
-  });
+    tradeInitiated: { email: true, text: true },
+    counterProposal: { email: true, text: true },
+    proposalAccepted: { email: true, text: true },
+    proposalRejected: { email: true, text: false },
+    itemsShipped: { email: true, text: true },
+    itemsReceived: { email: true, text: true },
+    feedbackReceived: { email: true, text: false },
+    systemUpdates: { email: true, text: false },
+    marketingEmails: { email: false, text: false },
+  })
 
   // Preferences State
   const [preferences, setPreferences] = useState<{
@@ -210,16 +216,30 @@ export default function AccountSettings() {
       // Load communications preferences from JSON
       const notificationPrefsStr = (profile as any).notificationPreferences;
       let notificationPrefs = {
-        emailFrequency: "daily" as const,
-        tradeNotifications: true,
-        messageNotifications: true,
-        feedbackNotifications: true,
-        systemNotifications: true,
-        marketingEmails: false,
+        tradeInitiated: { email: true, text: true },
+        counterProposal: { email: true, text: true },
+        proposalAccepted: { email: true, text: true },
+        proposalRejected: { email: true, text: false },
+        itemsShipped: { email: true, text: true },
+        itemsReceived: { email: true, text: true },
+        feedbackReceived: { email: true, text: false },
+        systemUpdates: { email: true, text: false },
+        marketingEmails: { email: false, text: false },
       };
       if (notificationPrefsStr && notificationPrefsStr !== "NULL") {
         try {
-          notificationPrefs = JSON.parse(notificationPrefsStr);
+          const parsed = JSON.parse(notificationPrefsStr);
+          notificationPrefs = {
+            tradeInitiated: parsed.tradeInitiated || { email: true, text: true },
+            counterProposal: parsed.counterProposal || { email: true, text: true },
+            proposalAccepted: parsed.proposalAccepted || { email: true, text: true },
+            proposalRejected: parsed.proposalRejected || { email: true, text: false },
+            itemsShipped: parsed.itemsShipped || { email: true, text: true },
+            itemsReceived: parsed.itemsReceived || { email: true, text: true },
+            feedbackReceived: parsed.feedbackReceived || { email: true, text: false },
+            systemUpdates: parsed.systemUpdates || { email: true, text: false },
+            marketingEmails: parsed.marketingEmails || { email: false, text: false },
+          };
         } catch (e) {
           console.error("Failed to parse notification preferences", e);
         }
@@ -963,78 +983,225 @@ export default function AccountSettings() {
                   <CardDescription>Control how and when you receive notifications</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  {/* Email Frequency */}
-                  <div className="space-y-3">
-                    <Label>Email Frequency</Label>
-                    <select
-                      value={communicationPrefs.emailFrequency}
-                      onChange={(e) => setCommunicationPrefs(prev => ({ ...prev, emailFrequency: e.target.value as any }))}
-                      className="w-full rounded-lg border border-slate-200 px-3 py-2"
-                    >
-                      <option value="instant">Instant</option>
-                      <option value="daily">Daily Digest</option>
-                      <option value="weekly">Weekly Digest</option>
-                      <option value="never">Never</option>
-                    </select>
-                  </div>
+                  {/* Notification Types with Email/Text Toggles */}
+                  <div className="space-y-6">
+                    <h3 className="font-semibold text-slate-900">Notification Preferences</h3>
+                    <p className="text-sm text-slate-600">Choose how you want to receive notifications for each type of event</p>
 
-                  {/* Notification Preferences */}
-                  <div className="border-t border-slate-200 pt-4 space-y-4">
-                    <h3 className="font-semibold text-slate-900">Notification Types</h3>
-                    
-                    <div className="flex items-center justify-between">
+                    {/* Trade Initiated */}
+                    <div className="border border-slate-200 rounded-lg p-4 space-y-3">
                       <div>
-                        <p className="font-medium text-slate-900">Trade Requests</p>
-                        <p className="text-xs text-slate-600">Get notified when someone wants to trade with you</p>
+                        <p className="font-medium text-slate-900">Trade Initiated</p>
+                        <p className="text-xs text-slate-600">When someone initiates a trade with you</p>
                       </div>
-                      <Switch
-                        checked={communicationPrefs.tradeNotifications}
-                        onCheckedChange={(checked) => setCommunicationPrefs(prev => ({ ...prev, tradeNotifications: checked }))}
-                      />
+                      <div className="flex gap-4">
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            checked={communicationPrefs.tradeInitiated.email}
+                            onCheckedChange={(checked) => setCommunicationPrefs(prev => ({ ...prev, tradeInitiated: { ...prev.tradeInitiated, email: checked } }))}
+                          />
+                          <span className="text-sm text-slate-700">Email</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            checked={communicationPrefs.tradeInitiated.text}
+                            onCheckedChange={(checked) => setCommunicationPrefs(prev => ({ ...prev, tradeInitiated: { ...prev.tradeInitiated, text: checked } }))}
+                          />
+                          <span className="text-sm text-slate-700">Text</span>
+                        </div>
+                      </div>
                     </div>
 
-                    <div className="flex items-center justify-between">
+                    {/* Counter Proposal */}
+                    <div className="border border-slate-200 rounded-lg p-4 space-y-3">
                       <div>
-                        <p className="font-medium text-slate-900">Messages</p>
-                        <p className="text-xs text-slate-600">Get notified when you receive new messages</p>
+                        <p className="font-medium text-slate-900">Counter Proposal</p>
+                        <p className="text-xs text-slate-600">When someone sends a counter proposal</p>
                       </div>
-                      <Switch
-                        checked={communicationPrefs.messageNotifications}
-                        onCheckedChange={(checked) => setCommunicationPrefs(prev => ({ ...prev, messageNotifications: checked }))}
-                      />
+                      <div className="flex gap-4">
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            checked={communicationPrefs.counterProposal.email}
+                            onCheckedChange={(checked) => setCommunicationPrefs(prev => ({ ...prev, counterProposal: { ...prev.counterProposal, email: checked } }))}
+                          />
+                          <span className="text-sm text-slate-700">Email</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            checked={communicationPrefs.counterProposal.text}
+                            onCheckedChange={(checked) => setCommunicationPrefs(prev => ({ ...prev, counterProposal: { ...prev.counterProposal, text: checked } }))}
+                          />
+                          <span className="text-sm text-slate-700">Text</span>
+                        </div>
+                      </div>
                     </div>
 
-                    <div className="flex items-center justify-between">
+                    {/* Proposal Accepted */}
+                    <div className="border border-slate-200 rounded-lg p-4 space-y-3">
+                      <div>
+                        <p className="font-medium text-slate-900">Proposal Accepted</p>
+                        <p className="text-xs text-slate-600">When your proposal is accepted</p>
+                      </div>
+                      <div className="flex gap-4">
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            checked={communicationPrefs.proposalAccepted.email}
+                            onCheckedChange={(checked) => setCommunicationPrefs(prev => ({ ...prev, proposalAccepted: { ...prev.proposalAccepted, email: checked } }))}
+                          />
+                          <span className="text-sm text-slate-700">Email</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            checked={communicationPrefs.proposalAccepted.text}
+                            onCheckedChange={(checked) => setCommunicationPrefs(prev => ({ ...prev, proposalAccepted: { ...prev.proposalAccepted, text: checked } }))}
+                          />
+                          <span className="text-sm text-slate-700">Text</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Proposal Rejected */}
+                    <div className="border border-slate-200 rounded-lg p-4 space-y-3">
+                      <div>
+                        <p className="font-medium text-slate-900">Proposal Rejected</p>
+                        <p className="text-xs text-slate-600">When your proposal is rejected</p>
+                      </div>
+                      <div className="flex gap-4">
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            checked={communicationPrefs.proposalRejected.email}
+                            onCheckedChange={(checked) => setCommunicationPrefs(prev => ({ ...prev, proposalRejected: { ...prev.proposalRejected, email: checked } }))}
+                          />
+                          <span className="text-sm text-slate-700">Email</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            checked={communicationPrefs.proposalRejected.text}
+                            onCheckedChange={(checked) => setCommunicationPrefs(prev => ({ ...prev, proposalRejected: { ...prev.proposalRejected, text: checked } }))}
+                          />
+                          <span className="text-sm text-slate-700">Text</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Items Shipped */}
+                    <div className="border border-slate-200 rounded-lg p-4 space-y-3">
+                      <div>
+                        <p className="font-medium text-slate-900">Items Shipped</p>
+                        <p className="text-xs text-slate-600">When items are shipped in a trade</p>
+                      </div>
+                      <div className="flex gap-4">
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            checked={communicationPrefs.itemsShipped.email}
+                            onCheckedChange={(checked) => setCommunicationPrefs(prev => ({ ...prev, itemsShipped: { ...prev.itemsShipped, email: checked } }))}
+                          />
+                          <span className="text-sm text-slate-700">Email</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            checked={communicationPrefs.itemsShipped.text}
+                            onCheckedChange={(checked) => setCommunicationPrefs(prev => ({ ...prev, itemsShipped: { ...prev.itemsShipped, text: checked } }))}
+                          />
+                          <span className="text-sm text-slate-700">Text</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Items Received */}
+                    <div className="border border-slate-200 rounded-lg p-4 space-y-3">
+                      <div>
+                        <p className="font-medium text-slate-900">Items Received</p>
+                        <p className="text-xs text-slate-600">When items are received in a trade</p>
+                      </div>
+                      <div className="flex gap-4">
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            checked={communicationPrefs.itemsReceived.email}
+                            onCheckedChange={(checked) => setCommunicationPrefs(prev => ({ ...prev, itemsReceived: { ...prev.itemsReceived, email: checked } }))}
+                          />
+                          <span className="text-sm text-slate-700">Email</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            checked={communicationPrefs.itemsReceived.text}
+                            onCheckedChange={(checked) => setCommunicationPrefs(prev => ({ ...prev, itemsReceived: { ...prev.itemsReceived, text: checked } }))}
+                          />
+                          <span className="text-sm text-slate-700">Text</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Feedback Received */}
+                    <div className="border border-slate-200 rounded-lg p-4 space-y-3">
                       <div>
                         <p className="font-medium text-slate-900">Feedback Received</p>
-                        <p className="text-xs text-slate-600">Get notified when you receive feedback</p>
+                        <p className="text-xs text-slate-600">When you receive feedback from a trade</p>
                       </div>
-                      <Switch
-                        checked={communicationPrefs.feedbackNotifications}
-                        onCheckedChange={(checked) => setCommunicationPrefs(prev => ({ ...prev, feedbackNotifications: checked }))}
-                      />
+                      <div className="flex gap-4">
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            checked={communicationPrefs.feedbackReceived.email}
+                            onCheckedChange={(checked) => setCommunicationPrefs(prev => ({ ...prev, feedbackReceived: { ...prev.feedbackReceived, email: checked } }))}
+                          />
+                          <span className="text-sm text-slate-700">Email</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            checked={communicationPrefs.feedbackReceived.text}
+                            onCheckedChange={(checked) => setCommunicationPrefs(prev => ({ ...prev, feedbackReceived: { ...prev.feedbackReceived, text: checked } }))}
+                          />
+                          <span className="text-sm text-slate-700">Text</span>
+                        </div>
+                      </div>
                     </div>
 
-                    <div className="flex items-center justify-between">
+                    {/* System Updates */}
+                    <div className="border border-slate-200 rounded-lg p-4 space-y-3">
                       <div>
                         <p className="font-medium text-slate-900">System Updates</p>
-                        <p className="text-xs text-slate-600">Get notified about important system updates</p>
+                        <p className="text-xs text-slate-600">Important system and platform updates</p>
                       </div>
-                      <Switch
-                        checked={communicationPrefs.systemNotifications}
-                        onCheckedChange={(checked) => setCommunicationPrefs(prev => ({ ...prev, systemNotifications: checked }))}
-                      />
+                      <div className="flex gap-4">
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            checked={communicationPrefs.systemUpdates.email}
+                            onCheckedChange={(checked) => setCommunicationPrefs(prev => ({ ...prev, systemUpdates: { ...prev.systemUpdates, email: checked } }))}
+                          />
+                          <span className="text-sm text-slate-700">Email</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            checked={communicationPrefs.systemUpdates.text}
+                            onCheckedChange={(checked) => setCommunicationPrefs(prev => ({ ...prev, systemUpdates: { ...prev.systemUpdates, text: checked } }))}
+                          />
+                          <span className="text-sm text-slate-700">Text</span>
+                        </div>
+                      </div>
                     </div>
 
-                    <div className="flex items-center justify-between">
+                    {/* Marketing Emails */}
+                    <div className="border border-slate-200 rounded-lg p-4 space-y-3">
                       <div>
                         <p className="font-medium text-slate-900">Marketing Emails</p>
-                        <p className="text-xs text-slate-600">Receive promotional offers and news</p>
+                        <p className="text-xs text-slate-600">Promotional offers and news</p>
                       </div>
-                      <Switch
-                        checked={communicationPrefs.marketingEmails}
-                        onCheckedChange={(checked) => setCommunicationPrefs(prev => ({ ...prev, marketingEmails: checked }))}
-                      />
+                      <div className="flex gap-4">
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            checked={communicationPrefs.marketingEmails.email}
+                            onCheckedChange={(checked) => setCommunicationPrefs(prev => ({ ...prev, marketingEmails: { ...prev.marketingEmails, email: checked } }))}
+                          />
+                          <span className="text-sm text-slate-700">Email</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            checked={communicationPrefs.marketingEmails.text}
+                            onCheckedChange={(checked) => setCommunicationPrefs(prev => ({ ...prev, marketingEmails: { ...prev.marketingEmails, text: checked } }))}
+                          />
+                          <span className="text-sm text-slate-700">Text</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
 

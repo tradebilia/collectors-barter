@@ -1759,3 +1759,23 @@ Status: COSMETIC ISSUE - NOT CRITICAL
   - Root cause: getProposalCards() was returning empty messages array
   - Fix: Query tradeMessages table and include messages in proposal object
   - Result: Replies now properly displayed for both sender and recipient
+
+
+## Notification Preferences - Communications Tab (June 13, 2026)
+
+- [x] Add notification preference toggles to Account Settings - Communications tab
+  - [x] For each notification type (Trade Initiated, Counter-Proposal, Items Received, etc.)
+  - [x] Add Email toggle (on/off)
+  - [x] Add Text toggle (on/off)
+  - [x] Create database schema for notification preferences (uses existing notificationPreferences JSON column)
+  - [x] Create backend API to save/retrieve notification preferences (updated saveCommunications mutation)
+  - [x] Update Communications tab UI to display toggles for each notification type
+  - [x] Implement preference persistence across sessions
+  - [ ] Integrate preferences into notification sending logic (pending trade flow implementation after 6/17)
+
+Completed Features:
+- 9 notification types with Email/Text toggles: Trade Initiated, Counter Proposal, Proposal Accepted, Proposal Rejected, Items Shipped, Items Received, Feedback Received, System Updates, Marketing Emails
+- Backend validation using Zod schema
+- Frontend state management with proper defaults
+- Comprehensive test coverage (5 tests passing)
+- Persistent storage in userProfiles.notificationPreferences JSON column

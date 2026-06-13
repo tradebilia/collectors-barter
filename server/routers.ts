@@ -456,12 +456,15 @@ export const appRouter = router({
     saveCommunications: protectedProcedure
       .input(
         z.object({
-          emailFrequency: z.enum(["daily", "weekly", "monthly", "never"]),
-          tradeNotifications: z.boolean(),
-          messageNotifications: z.boolean(),
-          feedbackNotifications: z.boolean(),
-          systemNotifications: z.boolean(),
-          marketingEmails: z.boolean(),
+          tradeInitiated: z.object({ email: z.boolean(), text: z.boolean() }),
+          counterProposal: z.object({ email: z.boolean(), text: z.boolean() }),
+          proposalAccepted: z.object({ email: z.boolean(), text: z.boolean() }),
+          proposalRejected: z.object({ email: z.boolean(), text: z.boolean() }),
+          itemsShipped: z.object({ email: z.boolean(), text: z.boolean() }),
+          itemsReceived: z.object({ email: z.boolean(), text: z.boolean() }),
+          feedbackReceived: z.object({ email: z.boolean(), text: z.boolean() }),
+          systemUpdates: z.object({ email: z.boolean(), text: z.boolean() }),
+          marketingEmails: z.object({ email: z.boolean(), text: z.boolean() }),
         }),
       )
       .mutation(async ({ ctx, input }) => {
@@ -469,11 +472,14 @@ export const appRouter = router({
         const db = await requireDb();
         await db.update(userProfiles).set({
           notificationPreferences: JSON.stringify({
-            emailFrequency: input.emailFrequency,
-            tradeNotifications: input.tradeNotifications,
-            messageNotifications: input.messageNotifications,
-            feedbackNotifications: input.feedbackNotifications,
-            systemNotifications: input.systemNotifications,
+            tradeInitiated: input.tradeInitiated,
+            counterProposal: input.counterProposal,
+            proposalAccepted: input.proposalAccepted,
+            proposalRejected: input.proposalRejected,
+            itemsShipped: input.itemsShipped,
+            itemsReceived: input.itemsReceived,
+            feedbackReceived: input.feedbackReceived,
+            systemUpdates: input.systemUpdates,
             marketingEmails: input.marketingEmails,
           }),
         }).where(eq(userProfiles.userId, ctx.user.id));
