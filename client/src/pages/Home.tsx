@@ -664,7 +664,7 @@ export default function Home() {
                 <div className="grid gap-0 md:grid-cols-2 xl:grid-cols-4 lg:col-start-2 divide-x divide-white/10">
                 <Card className="overflow-hidden rounded-none border-0 bg-[radial-gradient(circle_at_top,rgba(48,149,255,0.5),transparent_40%),linear-gradient(135deg,#05204f_0%,#0d2d68_100%)] text-white shadow-none">
                   <CardHeader className="pb-2 pt-4">
-                    <CardTitle className="font-['Oswald'] text-[0.86rem] uppercase tracking-[0.22em] text-white/78">🔥 Most Popular</CardTitle>
+                    <CardTitle className="font-['Oswald'] text-[1.1rem] uppercase tracking-[0.22em] text-white/90">🔥 Most Popular</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-1 pb-4 text-[8.5px] leading-4 text-white/85">
                       {mostViewedItems.map((entry, index) => (
@@ -675,7 +675,7 @@ export default function Home() {
                 </Card>
                 <Card className="overflow-hidden rounded-none border-0 bg-[linear-gradient(135deg,#090b10_0%,#262937_100%)] text-white shadow-none border-l border-white/10">
                   <CardHeader className="pb-2 pt-4">
-                    <CardTitle className="font-['Oswald'] text-[0.86rem] uppercase tracking-[0.22em] text-white/78">⭐ Most Wanted</CardTitle>
+                    <CardTitle className="font-['Oswald'] text-[1.1rem] uppercase tracking-[0.22em] text-white/90">⭐ Most Wanted</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-1 pb-4 text-[8.5px] leading-4 text-white/85">
                       {mostRequestedItems.map((entry, index) => (
@@ -686,7 +686,7 @@ export default function Home() {
                 </Card>
                 <Card className="overflow-hidden rounded-none border-0 bg-[linear-gradient(135deg,#d7bba9_0%,#f3e8de_100%)] text-slate-900 shadow-none border-l border-white/10">
                   <CardHeader className="pb-2 pt-4">
-                     <CardTitle className="font-['Oswald'] text-[0.86rem] uppercase tracking-[0.22em] text-white/78">👑 Top Rated Traders</CardTitle>
+                     <CardTitle className="font-['Oswald'] text-[1.1rem] uppercase tracking-[0.22em] text-white/90">👑 Top Rated Traders</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-1 pb-4 text-[9.5px] leading-4 text-slate-700">
                       {topTraderItems.map((entry, index) => (
