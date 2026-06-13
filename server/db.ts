@@ -2556,3 +2556,61 @@ export async function updateReferralRequestStatus(id: number, status: string, ad
     })
     .where(eq(referralRequests.id, id));
 }
+
+
+export async function getUnsentReferrals() {
+  const db = await requireDb();
+  const requests = await db
+    .select()
+    .from(referralRequests)
+    .where(and(eq(referralRequests.emailSent, false), eq(referralRequests.hasJoined, false)))
+    .orderBy(asc(referralRequests.createdAt));
+  return requests;
+}
+
+export async function markReferralsAsEmailed(ids: number[]) {
+  const db = await requireDb();
+  if (ids.length === 0) return;
+  await db
+    .update(referralRequests)
+    .set({
+      emailSent: true,
+      emailSentAt: new Date(),
+    })
+    .where(inArray(referralRequests.id, ids));
+}
+
+export async function markReferralAsJoined(id: number, userId: number) {
+  const db = await requireDb();
+  await db
+    .update(referralRequests)
+    .set({
+      hasJoined: true,
+      joinedAt: new Date(),
+      joinedUserId: userId,
+    })
+    .where(eq(referralRequests.id, id));
+}
+
+export async function removeReferral(id: number) {
+  const db = await requireDb();
+  await db.delete(referralRequests).where(eq(referralRequests.id, id));
+}
+
+export async function getReferralsByIds(ids: number[]) {
+  const db = await requireDb();
+  if (ids.length === 0) return [];
+  const requests = await db
+    .select({
+      id: referralRequests.id,
+      collectorName: referralRequests.collectorName,
+      collectorEmail: referralRequests.collectorEmail,
+      collectorFocus: referralRequests.collectorFocus,
+      message: referralRequests.message,
+      emailSent: referralRequests.emailSent,
+      hasJoined: referralRequests.hasJoined,
+    })
+    .from(referralRequests)
+    .where(inArray(referralRequests.id, ids));
+  return requests;
+}

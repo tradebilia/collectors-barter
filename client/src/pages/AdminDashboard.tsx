@@ -8,6 +8,7 @@ import { BarChart3, Users, Package, Settings, Trash2, Flag, Mail } from "lucide-
 import { getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
 import { TopBar } from "@/components/TopBar";
+import { ReferralsTab } from "@/components/ReferralsTab";
 
 export default function AdminDashboard() {
   const { user, loading } = useAuth();
@@ -596,77 +597,7 @@ export default function AdminDashboard() {
 
           {/* Referrals Tab */}
           <TabsContent value="referrals" className="space-y-4 mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Mail className="h-5 w-5 text-blue-500" />
-                  Referral Requests
-                </CardTitle>
-                <CardDescription>
-                  Review and manage collector referrals submitted by members
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {referralsQuery.isLoading ? (
-                  <div className="text-sm text-muted-foreground">Loading referrals...</div>
-                ) : referralsQuery.data && (referralsQuery.data as any[]).length > 0 ? (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left">
-                      <thead>
-                        <tr className="border-b border-border bg-muted/50">
-                          <th className="py-2 px-4 font-semibold text-xs">Referrer</th>
-                          <th className="py-2 px-4 font-semibold text-xs">Collector Name</th>
-                          <th className="py-2 px-4 font-semibold text-xs">Collector Email</th>
-                          <th className="py-2 px-4 font-semibold text-xs">Focus</th>
-                          <th className="py-2 px-4 font-semibold text-xs">Status</th>
-                          <th className="py-2 px-4 font-semibold text-xs">Date</th>
-                          <th className="py-2 px-4 font-semibold text-xs">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {(referralsQuery.data as any[]).map((referral: any) => (
-                          <tr key={referral.id} className="border-b border-border hover:bg-accent/50">
-                            <td className="py-2 px-4 font-semibold text-sm">{referral.referrerName}</td>
-                            <td className="py-2 px-4 text-sm">{referral.collectorName}</td>
-                            <td className="py-2 px-4 text-sm">{referral.collectorEmail}</td>
-                            <td className="py-2 px-4 text-xs">{referral.collectorFocus}</td>
-                            <td className="py-2 px-4">
-                              <span className={`inline-block px-2 py-1 rounded text-xs font-medium ${
-                                referral.status === 'pending' ? 'bg-yellow-500/20 text-yellow-700' :
-                                referral.status === 'reviewed' ? 'bg-blue-500/20 text-blue-700' :
-                                referral.status === 'approved' ? 'bg-green-500/20 text-green-700' :
-                                'bg-red-500/20 text-red-700'
-                              }`}>
-                                {referral.status}
-                              </span>
-                            </td>
-                            <td className="py-2 px-4 text-xs">
-                              {new Date(referral.createdAt).toLocaleDateString()}
-                            </td>
-                            <td className="py-2 px-4">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => {
-                                  setSelectedReferral(referral);
-                                  setReferralStatus(referral.status);
-                                  setReferralNotes(referral.adminNotes || "");
-                                  setReferralStatusDialogOpen(true);
-                                }}
-                              >
-                                Review
-                              </Button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                ) : (
-                  <div className="text-sm text-muted-foreground">No referrals found</div>
-                )}
-              </CardContent>
-            </Card>
+            <ReferralsTab />
           </TabsContent>
         </Tabs>
       </div>

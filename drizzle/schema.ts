@@ -512,6 +512,11 @@ export const referralRequests = mysqlTable(
     message: text("message").notNull(),
     status: mysqlEnum("status", ["pending", "reviewed", "approved", "rejected"]).default("pending").notNull(),
     adminNotes: text("adminNotes"),
+    emailSent: boolean("emailSent").default(false).notNull(),
+    emailSentAt: timestamp("emailSentAt"),
+    hasJoined: boolean("hasJoined").default(false).notNull(),
+    joinedAt: timestamp("joinedAt"),
+    joinedUserId: int("joinedUserId").references(() => users.id),
     createdAt: timestamp("createdAt").defaultNow().notNull(),
     reviewedAt: timestamp("reviewedAt"),
     reviewedBy: int("reviewedBy").references(() => users.id),
@@ -520,6 +525,8 @@ export const referralRequests = mysqlTable(
     referrerIdx: index("referralRequests_referrer_idx").on(table.referrerId),
     statusIdx: index("referralRequests_status_idx").on(table.status),
     createdAtIdx: index("referralRequests_createdAt_idx").on(table.createdAt),
+    emailSentIdx: index("referralRequests_emailSent_idx").on(table.emailSent),
+    hasJoinedIdx: index("referralRequests_hasJoined_idx").on(table.hasJoined),
   })
 );
 export type ReferralRequest = typeof referralRequests.$inferSelect;

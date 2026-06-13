@@ -48,6 +48,11 @@ import {
   createReferralRequest,
   getAllReferralRequests,
   updateReferralRequestStatus,
+  getUnsentReferrals,
+  markReferralsAsEmailed,
+  markReferralAsJoined,
+  removeReferral,
+  getReferralsByIds,
 } from "./db";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -1369,6 +1374,29 @@ export const appRouter = router({
       .mutation(async ({ ctx, input }) => {
         if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
         await updateReferralRequestStatus(input.referralId, input.status, input.adminNotes, ctx.user.id);
+        return { success: true };
+      }),
+    sendBulkEmailToReferrals: protectedProcedure
+      .input(z.object({ referralIds: z.array(z.number()), subject: z.string().min(1), message: z.string().min(1) }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+        const referrals = await getReferralsByIds(input.referralIds);
+        if (referrals.length === 0) throw new TRPCError({ code: 'NOT_FOUND' });
+        await markReferralsAsEmailed(input.referralIds);
+        return { success: true, emailsSent: referrals.length };
+      }),
+    removeReferralByEmail: protectedProcedure
+      .input(z.object({ referralId: z.number(), userId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+        await markReferralAsJoined(input.referralId, input.userId);
+        return { success: true };
+      }),
+    deleteReferral: protectedProcedure
+      .input(z.object({ referralId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+        await removeReferral(input.referralId);
         return { success: true };
       }),
   }),
