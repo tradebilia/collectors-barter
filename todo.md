@@ -1889,3 +1889,12 @@ Completed Features:
   - [x] Updated AdminTavani user email to admin@tradebilia.net
   - [x] Removed debug logging from auth.me procedure
   - [x] Verified fix is working correctly
+
+
+## Referral Page Hero Section Font Size Update (June 13, 2026)
+
+- [x] Match Tradebilia font size on Referral Request page to Home page
+  - [x] Updated hero section container height from `py-8 sm:py-10` to `h-64 sm:h-72 lg:h-80`
+  - [x] Changed logo sizing from fixed `h-[150px] sm:h-[180px] lg:h-[205px]` to responsive `h-auto w-full`
+  - [x] Aligned section structure to match Home page hero section exactly
+  - [x] Verified responsive behavior across all breakpoints

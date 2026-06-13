@@ -71,14 +71,16 @@ export default function ReferralRequest() {
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,rgba(90,132,255,0.16),transparent_28%),linear-gradient(180deg,#050814_0%,#0b1220_35%,#101827_100%)] text-white">
       <TopBar />
       
-      <section className="border-b border-white/10 bg-[#00143A]" style={{
+      <section className="relative z-0 w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden text-white" style={{
         backgroundImage: 'url(/manus-storage/Mainpage_9b45311d.jpg)',
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat'
       }}>
-        <div className="mx-auto flex max-w-7xl items-center justify-center px-6 py-8 sm:py-10">
-          <img src={TRADEBILIA_LOGO_URL} alt="Tradebilia" className="block h-[150px] w-auto object-contain sm:h-[180px] lg:h-[205px]" />
+        <div className="container relative flex h-64 items-center justify-center py-0 sm:h-72 sm:py-0 lg:h-80 lg:py-0">
+          <div className="flex w-full max-w-6xl items-center justify-center -ml-32">
+            <img src={TRADEBILIA_LOGO_URL} alt="Tradebilia" className="h-auto w-full" />
+          </div>
         </div>
       </section>
 
