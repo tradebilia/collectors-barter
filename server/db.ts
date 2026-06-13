@@ -24,6 +24,7 @@ import {
   watchlistEntries,
   itemInquiries,
   inquiryReplies,
+  referralRequests,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 import { storagePut } from "./storage";
@@ -2501,4 +2502,57 @@ export async function emptyDeletedInquiries(userId: number) {
   await db
     .delete(itemInquiries)
     .where(and(eq(itemInquiries.recipientId, userId), isNotNull(itemInquiries.deletedAt)));
+}
+
+
+// Referral Requests
+export async function createReferralRequest(data: {
+  referrerId: number;
+  referrerEmail: string;
+  referrerFirstName: string;
+  referrerLastName: string;
+  collectorName: string;
+  collectorEmail: string;
+  collectorFocus: string;
+  message: string;
+}) {
+  const db = await requireDb();
+  const result = await db.insert(referralRequests).values(data);
+  return result;
+}
+
+export async function getAllReferralRequests() {
+  const db = await requireDb();
+  const requests = await db
+    .select({
+      id: referralRequests.id,
+      referrerId: referralRequests.referrerId,
+      referrerName: sql<string>`CONCAT(${referralRequests.referrerFirstName}, ' ', ${referralRequests.referrerLastName})`,
+      referrerEmail: referralRequests.referrerEmail,
+      collectorName: referralRequests.collectorName,
+      collectorEmail: referralRequests.collectorEmail,
+      collectorFocus: referralRequests.collectorFocus,
+      message: referralRequests.message,
+      status: referralRequests.status,
+      adminNotes: referralRequests.adminNotes,
+      createdAt: referralRequests.createdAt,
+      reviewedAt: referralRequests.reviewedAt,
+      reviewedBy: referralRequests.reviewedBy,
+    })
+    .from(referralRequests)
+    .orderBy(desc(referralRequests.createdAt));
+  return requests;
+}
+
+export async function updateReferralRequestStatus(id: number, status: string, adminNotes?: string, reviewedBy?: number) {
+  const db = await requireDb();
+  await db
+    .update(referralRequests)
+    .set({
+      status: status as any,
+      adminNotes,
+      reviewedBy,
+      reviewedAt: new Date(),
+    })
+    .where(eq(referralRequests.id, id));
 }

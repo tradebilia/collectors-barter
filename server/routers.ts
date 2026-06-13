@@ -45,6 +45,9 @@ import {
   deleteInquiry,
   getDeletedInquiries,
   emptyDeletedInquiries,
+  createReferralRequest,
+  getAllReferralRequests,
+  updateReferralRequestStatus,
 } from "./db";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -786,6 +789,24 @@ export const appRouter = router({
       .input(referralRequestSchema)
       .mutation(async ({ ctx, input }) => {
         const referrerName = ctx.user.name?.trim() || `Collector ${ctx.user.id}`;
+        const referrerFirstName = (ctx.user as any)?.firstName || "";
+        const referrerLastName = (ctx.user as any)?.lastName || "";
+        
+        try {
+          await createReferralRequest({
+            referrerId: ctx.user.id,
+            referrerEmail: ctx.user.email ?? "",
+            referrerFirstName,
+            referrerLastName,
+            collectorName: input.friendName.trim(),
+            collectorEmail: input.friendEmail.trim(),
+            collectorFocus: input.collectorFocus.trim(),
+            message: input.message.trim(),
+          });
+        } catch (error) {
+          console.error('[referralRequest] Failed to save to database:', error);
+        }
+        
         const delivered = await notifyOwner({
           title: `Tradebilia referral request: ${input.friendName.trim()}`,
           content: [
@@ -1332,6 +1353,22 @@ export const appRouter = router({
           adminNotes: input.adminNotes,
           reviewedBy: ctx.user.id,
         });
+        return { success: true };
+      }),
+    // Referral management
+    getAllReferrals: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      return await getAllReferralRequests();
+    }),
+    updateReferralStatus: protectedProcedure
+      .input(z.object({
+        referralId: z.number(),
+        status: z.enum(['pending', 'reviewed', 'approved', 'rejected']),
+        adminNotes: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+        await updateReferralRequestStatus(input.referralId, input.status, input.adminNotes, ctx.user.id);
         return { success: true };
       }),
   }),

@@ -27,7 +27,11 @@ export default function ReferralRequest() {
   const [collectorFocus, setCollectorFocus] = useState("");
   const [message, setMessage] = useState("I think you would fit right in on Tradebilia. Join me to trade rare collectibles with a collector-first community.");
 
-  const referrer = useMemo(() => user?.name || user?.email || "Tradebilia member", [user?.email, user?.name]);
+  const referrerInfo = useMemo(() => ({
+    firstName: (user as any)?.firstName || "",
+    lastName: (user as any)?.lastName || "",
+    email: user?.email || "",
+  }), [user?.email, (user as any)?.firstName, (user as any)?.lastName]);
 
   const referralMutation = trpc.market.referralRequest.useMutation({
     onSuccess: result => {
@@ -144,8 +148,11 @@ export default function ReferralRequest() {
               <form className="space-y-6" onSubmit={submitReferral}>
                 <div className="rounded-[1.5rem] border border-white/10 bg-white/5 p-5">
                   <p className="text-sm uppercase tracking-[0.26em] text-white/55">Referring member</p>
-                  <p className="mt-2 text-xl font-semibold text-white">{referrer}</p>
-                  <p className="mt-1 text-sm text-white/65">Invite someone who fits Tradebilia’s collector-first culture and trading standards.</p>
+                  <div className="mt-2 space-y-1">
+                    <p className="text-lg font-semibold text-white">{referrerInfo.firstName} {referrerInfo.lastName}</p>
+                    <p className="text-sm text-white/75">{referrerInfo.email}</p>
+                  </div>
+                  <p className="mt-3 text-sm text-white/65">Invite someone who fits Tradebilia's collector-first culture and trading standards.</p>
                 </div>
 
                 <div className="grid gap-5 md:grid-cols-2">
@@ -187,7 +194,7 @@ export default function ReferralRequest() {
                     <Send className="mr-2 h-4 w-4" />
                     {referralMutation.isPending ? "Sending referral..." : "Send referral request"}
                   </Button>
-                  <Button type="button" variant="outline" className="rounded-full border-white/15 bg-transparent text-white hover:bg-white/10" onClick={() => toast.info(`${firstName(referrer)} can customize incentive rules later.`)}>
+                  <Button type="button" variant="outline" className="rounded-full border-white/15 bg-transparent text-white hover:bg-white/10" onClick={() => toast.info(`${firstName(referrerInfo.firstName)} can customize incentive rules later.`)}>
                     Preview referral program
                   </Button>
                 </div>

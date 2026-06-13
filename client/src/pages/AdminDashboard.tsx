@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { BarChart3, Users, Package, Settings, Trash2, Flag } from "lucide-react";
+import { BarChart3, Users, Package, Settings, Trash2, Flag, Mail } from "lucide-react";
 import { getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
 import { TopBar } from "@/components/TopBar";
@@ -43,11 +43,20 @@ export default function AdminDashboard() {
       refetchOnWindowFocus: true,
     }
   );
+  const referralsQuery = trpc.admin.getAllReferrals.useQuery(undefined, {
+    enabled: user?.role === "admin",
+    refetchOnWindowFocus: true,
+  });
   const deleteUserMutation = trpc.admin.deleteUser.useMutation();
   const updateReportStatusMutation = trpc.admin.updateReportStatus.useMutation();
   const updateUserMutation = trpc.admin.updateUser.useMutation();
+  const updateReferralStatusMutation = trpc.admin.updateReferralStatus.useMutation();
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<any>(null);
+  const [selectedReferral, setSelectedReferral] = useState<any>(null);
+  const [referralStatusDialogOpen, setReferralStatusDialogOpen] = useState(false);
+  const [referralStatus, setReferralStatus] = useState<string>("pending");
+  const [referralNotes, setReferralNotes] = useState<string>("");
 
   const handleDeleteUser = async () => {
     console.log('[handleDeleteUser] Starting delete, userToDelete:', userToDelete);
@@ -175,11 +184,15 @@ export default function AdminDashboard() {
               <Users className="h-4 w-4 hidden sm:inline" />
               <span className="hidden sm:inline">Deleted</span>
             </TabsTrigger>
-            <TabsTrigger value="reports" className="flex items-center gap-2">
-              <Flag className="h-4 w-4 hidden sm:inline" />
-              <span className="hidden sm:inline">Reports</span>
-            </TabsTrigger>
-          </TabsList>
+          <TabsTrigger value="reports" className="flex items-center gap-2">
+            <Flag className="h-4 w-4 hidden sm:inline" />
+            <span className="hidden sm:inline">Reports</span>
+          </TabsTrigger>
+          <TabsTrigger value="referrals" className="flex items-center gap-2">
+            <Mail className="h-4 w-4 hidden sm:inline" />
+            <span className="hidden sm:inline">Referrals</span>
+          </TabsTrigger>
+        </TabsList>
 
           {/* Statistics Tab */}
           <TabsContent value="statistics" className="space-y-4 mt-6">
@@ -580,6 +593,81 @@ export default function AdminDashboard() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {/* Referrals Tab */}
+          <TabsContent value="referrals" className="space-y-4 mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Mail className="h-5 w-5 text-blue-500" />
+                  Referral Requests
+                </CardTitle>
+                <CardDescription>
+                  Review and manage collector referrals submitted by members
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {referralsQuery.isLoading ? (
+                  <div className="text-sm text-muted-foreground">Loading referrals...</div>
+                ) : referralsQuery.data && (referralsQuery.data as any[]).length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left">
+                      <thead>
+                        <tr className="border-b border-border bg-muted/50">
+                          <th className="py-2 px-4 font-semibold text-xs">Referrer</th>
+                          <th className="py-2 px-4 font-semibold text-xs">Collector Name</th>
+                          <th className="py-2 px-4 font-semibold text-xs">Collector Email</th>
+                          <th className="py-2 px-4 font-semibold text-xs">Focus</th>
+                          <th className="py-2 px-4 font-semibold text-xs">Status</th>
+                          <th className="py-2 px-4 font-semibold text-xs">Date</th>
+                          <th className="py-2 px-4 font-semibold text-xs">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(referralsQuery.data as any[]).map((referral: any) => (
+                          <tr key={referral.id} className="border-b border-border hover:bg-accent/50">
+                            <td className="py-2 px-4 font-semibold text-sm">{referral.referrerName}</td>
+                            <td className="py-2 px-4 text-sm">{referral.collectorName}</td>
+                            <td className="py-2 px-4 text-sm">{referral.collectorEmail}</td>
+                            <td className="py-2 px-4 text-xs">{referral.collectorFocus}</td>
+                            <td className="py-2 px-4">
+                              <span className={`inline-block px-2 py-1 rounded text-xs font-medium ${
+                                referral.status === 'pending' ? 'bg-yellow-500/20 text-yellow-700' :
+                                referral.status === 'reviewed' ? 'bg-blue-500/20 text-blue-700' :
+                                referral.status === 'approved' ? 'bg-green-500/20 text-green-700' :
+                                'bg-red-500/20 text-red-700'
+                              }`}>
+                                {referral.status}
+                              </span>
+                            </td>
+                            <td className="py-2 px-4 text-xs">
+                              {new Date(referral.createdAt).toLocaleDateString()}
+                            </td>
+                            <td className="py-2 px-4">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  setSelectedReferral(referral);
+                                  setReferralStatus(referral.status);
+                                  setReferralNotes(referral.adminNotes || "");
+                                  setReferralStatusDialogOpen(true);
+                                }}
+                              >
+                                Review
+                              </Button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div className="text-sm text-muted-foreground">No referrals found</div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs>
       </div>
 
@@ -919,6 +1007,92 @@ export default function AdminDashboard() {
               {deleteUserMutation.isPending ? "Deleting..." : "Delete Account"}
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Referral Status Dialog */}
+      <Dialog open={referralStatusDialogOpen} onOpenChange={setReferralStatusDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Review Referral Request</DialogTitle>
+            <DialogDescription>
+              Collector: {selectedReferral?.collectorName} ({selectedReferral?.collectorEmail})
+            </DialogDescription>
+          </DialogHeader>
+          {selectedReferral && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4 bg-muted/50 p-3 rounded">
+                <div>
+                  <p className="text-xs font-semibold text-muted-foreground">Referrer</p>
+                  <p className="text-sm">{selectedReferral.referrerName}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-muted-foreground">Email</p>
+                  <p className="text-sm">{selectedReferral.referrerEmail}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-muted-foreground">Collector Focus</p>
+                  <p className="text-sm">{selectedReferral.collectorFocus}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-muted-foreground">Date</p>
+                  <p className="text-sm">{new Date(selectedReferral.createdAt).toLocaleDateString()}</p>
+                </div>
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground mb-2">Message</p>
+                <p className="text-sm bg-muted/50 p-3 rounded max-h-32 overflow-y-auto">{selectedReferral.message}</p>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground">Status</label>
+                <select
+                  value={referralStatus}
+                  onChange={(e) => setReferralStatus(e.target.value)}
+                  className="w-full mt-1 px-3 py-2 border border-border rounded text-sm"
+                >
+                  <option value="pending">Pending</option>
+                  <option value="reviewed">Reviewed</option>
+                  <option value="approved">Approved</option>
+                  <option value="rejected">Rejected</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground">Admin Notes</label>
+                <textarea
+                  value={referralNotes}
+                  onChange={(e) => setReferralNotes(e.target.value)}
+                  placeholder="Add notes about this referral..."
+                  className="w-full mt-1 px-3 py-2 border border-border rounded text-sm h-24"
+                />
+              </div>
+              <div className="flex gap-3 justify-end">
+                <Button
+                  variant="outline"
+                  onClick={() => setReferralStatusDialogOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={async () => {
+                    try {
+                      await updateReferralStatusMutation.mutateAsync({
+                        referralId: selectedReferral.id,
+                        status: referralStatus as any,
+                        adminNotes: referralNotes,
+                      });
+                      setReferralStatusDialogOpen(false);
+                      referralsQuery.refetch();
+                    } catch (error) {
+                      console.error('Failed to update referral status:', error);
+                    }
+                  }}
+                  disabled={updateReferralStatusMutation.isPending}
+                >
+                  {updateReferralStatusMutation.isPending ? "Saving..." : "Save Status"}
+                </Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>

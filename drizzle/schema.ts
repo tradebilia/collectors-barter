@@ -497,3 +497,30 @@ export const inquiryReplies = mysqlTable(
 
 export type InquiryReply = typeof inquiryReplies.$inferSelect;
 export type InsertInquiryReply = typeof inquiryReplies.$inferInsert;
+
+export const referralRequests = mysqlTable(
+  "referralRequests",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    referrerId: int("referrerId").notNull().references(() => users.id),
+    referrerEmail: varchar("referrerEmail", { length: 320 }).notNull(),
+    referrerFirstName: varchar("referrerFirstName", { length: 255 }).notNull(),
+    referrerLastName: varchar("referrerLastName", { length: 255 }).notNull(),
+    collectorName: varchar("collectorName", { length: 255 }).notNull(),
+    collectorEmail: varchar("collectorEmail", { length: 320 }).notNull(),
+    collectorFocus: varchar("collectorFocus", { length: 255 }).notNull(),
+    message: text("message").notNull(),
+    status: mysqlEnum("status", ["pending", "reviewed", "approved", "rejected"]).default("pending").notNull(),
+    adminNotes: text("adminNotes"),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    reviewedAt: timestamp("reviewedAt"),
+    reviewedBy: int("reviewedBy").references(() => users.id),
+  },
+  table => ({
+    referrerIdx: index("referralRequests_referrer_idx").on(table.referrerId),
+    statusIdx: index("referralRequests_status_idx").on(table.status),
+    createdAtIdx: index("referralRequests_createdAt_idx").on(table.createdAt),
+  })
+);
+export type ReferralRequest = typeof referralRequests.$inferSelect;
+export type ReferralRequestInsert = typeof referralRequests.$inferInsert;

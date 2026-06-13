@@ -1779,3 +1779,38 @@ Completed Features:
 - Frontend state management with proper defaults
 - Comprehensive test coverage (5 tests passing)
 - Persistent storage in userProfiles.notificationPreferences JSON column
+
+
+## Referral Request System (June 13, 2026)
+
+- [x] Update Referral Request page to use standard TopBar and CategoryBar components
+- [x] Create referralRequests database table with proper schema
+  - [x] Fields: referrerId, referrerEmail, referrerFirstName, referrerLastName, collectorName, collectorEmail, collectorFocus, message, status, adminNotes, createdAt, reviewedAt, reviewedBy
+  - [x] Indexes on referrerId, status, and createdAt for efficient queries
+  - [x] Foreign keys to users table for referrerId and reviewedBy
+- [x] Update referral request form to display user's first name, last name, and email
+- [x] Update backend referral request mutation to save to database
+- [x] Create admin procedures for referral management
+  - [x] getAllReferrals - fetch all submitted referrals
+  - [x] updateReferralStatus - update referral status and add admin notes
+- [x] Add Referrals tab to AdminDashboard
+  - [x] Display table of all referral requests with: Referrer, Collector Name, Email, Focus, Status, Date, Actions
+  - [x] Status badges with color coding (pending=yellow, reviewed=blue, approved=green, rejected=red)
+  - [x] Review button to open referral details dialog
+- [x] Add referral status dialog in AdminDashboard
+  - [x] Display referral details: referrer info, collector focus, message
+  - [x] Allow admin to change status (pending, reviewed, approved, rejected)
+  - [x] Allow admin to add/edit notes
+  - [x] Save status changes with admin ID and timestamp
+- [x] Write comprehensive tests for referral request functionality
+  - [x] Test valid referral submission
+  - [x] Test validation errors (invalid email, short name, short message)
+  - [x] Test admin access controls (non-admin cannot fetch/update referrals)
+  - [x] All 7 tests passing
+
+Completed Features:
+- Referral requests now saved to database for permanent record
+- Admin dashboard provides full referral management interface
+- Status tracking with timestamps and admin notes
+- Proper access control (admin-only procedures)
+- Comprehensive test coverage (7 tests passing)
