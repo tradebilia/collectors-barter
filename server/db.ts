@@ -25,6 +25,7 @@ import {
   itemInquiries,
   inquiryReplies,
   referralRequests,
+  favorites,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 import { storagePut } from "./storage";
@@ -2654,4 +2655,137 @@ export async function getTopHighestValueItems(viewerId: number | null = null) {
     .limit(10);
 
   return formatListings(listingRows, viewerId);
+}
+
+
+// Track item view
+export async function trackListingView(listingId: number) {
+  const db = await requireDb();
+  await db.update(listings).set({
+    viewCount: sql`${listings.viewCount} + 1`,
+  }).where(eq(listings.id, listingId));
+}
+
+// Add item to favorites
+export async function addToFavorites(userId: number, listingId: number) {
+  const db = await requireDb();
+  try {
+    await db.insert(favorites).values({
+      userId,
+      listingId,
+    });
+    return true;
+  } catch (error) {
+    return false;
+  }
+}
+
+// Remove item from favorites
+export async function removeFromFavorites(userId: number, listingId: number) {
+  const db = await requireDb();
+  const result = await db.delete(favorites).where(
+    and(eq(favorites.userId, userId), eq(favorites.listingId, listingId))
+  );
+  // Drizzle returns an array with result info
+  return Array.isArray(result) && result.length > 0;
+}
+
+// Check if item is favorited by user
+export async function isFavorited(userId: number, listingId: number) {
+  const db = await requireDb();
+  const result = await db.select().from(favorites).where(
+    and(eq(favorites.userId, userId), eq(favorites.listingId, listingId))
+  ).limit(1);
+  return result.length > 0;
+}
+
+// Get top 10 most favorited items
+export async function getTopMostFavoritedItems(viewerId?: number | null) {
+  const db = await requireDb();
+  
+  const listingRows = await db.select({
+    id: listings.id,
+    ownerId: listings.ownerId,
+    title: listings.title,
+    category: listings.category,
+    condition: listings.condition,
+    grade: listings.grade,
+    certificationCompany: listings.certificationCompany,
+    estimatedValue: listings.estimatedValue,
+    description: listings.description,
+    itemDetails: listings.itemDetails,
+    status: listings.status,
+    isActive: listings.isActive,
+    featured: listings.featured,
+    viewCount: listings.viewCount,
+    createdAt: listings.createdAt,
+    updatedAt: listings.updatedAt,
+    primaryPhotoUrl: listingPhotos.imageUrl,
+    favoriteCount: sql<number>`COUNT(${favorites.id})`.as('favoriteCount'),
+  })
+  .from(listings)
+  .leftJoin(listingPhotos, and(
+    eq(listings.id, listingPhotos.listingId),
+    eq(listingPhotos.sortOrder, 0)
+  ))
+  .leftJoin(favorites, eq(listings.id, favorites.listingId))
+  .where(eq(listings.status, "active"))
+  .groupBy(
+    listings.id,
+    listings.ownerId,
+    listings.title,
+    listings.category,
+    listings.condition,
+    listings.grade,
+    listings.certificationCompany,
+    listings.estimatedValue,
+    listings.description,
+    listings.itemDetails,
+    listings.status,
+    listings.isActive,
+    listings.featured,
+    listings.viewCount,
+    listings.createdAt,
+    listings.updatedAt,
+    listingPhotos.imageUrl
+  )
+  .orderBy(desc(sql`COUNT(${favorites.id})`))
+  .limit(10);
+
+  return formatListings(listingRows, viewerId ?? null);
+}
+
+// Get top 10 most viewed items
+export async function getTopMostViewedItems(viewerId?: number | null) {
+  const db = await requireDb();
+  
+  const listingRows = await db.select({
+    id: listings.id,
+    ownerId: listings.ownerId,
+    title: listings.title,
+    category: listings.category,
+    condition: listings.condition,
+    grade: listings.grade,
+    certificationCompany: listings.certificationCompany,
+    estimatedValue: listings.estimatedValue,
+    description: listings.description,
+    itemDetails: listings.itemDetails,
+    status: listings.status,
+    isActive: listings.isActive,
+    featured: listings.featured,
+    viewCount: listings.viewCount,
+    createdAt: listings.createdAt,
+    updatedAt: listings.updatedAt,
+    primaryPhotoUrl: listingPhotos.imageUrl,
+  })
+  .from(listings)
+  .leftJoin(listingPhotos, and(
+    eq(listings.id, listingPhotos.listingId),
+    eq(listingPhotos.sortOrder, 0)
+  ))
+  .where(eq(listings.status, "active"))
+  .orderBy(desc(listings.viewCount))
+  .limit(10);
+
+  return formatListings(listingRows, viewerId ?? null);
 }

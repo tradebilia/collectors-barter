@@ -151,6 +151,7 @@ export const listings = mysqlTable(
     status: mysqlEnum("status", listingStatuses).default("active").notNull(),
     isActive: boolean("isActive").default(true).notNull(),
     featured: boolean("featured").default(false).notNull(),
+    viewCount: int("viewCount").default(0).notNull(),
     createdAt: timestamp("createdAt").defaultNow().notNull(),
     updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   },
@@ -532,3 +533,21 @@ export const referralRequests = mysqlTable(
 );
 export type ReferralRequest = typeof referralRequests.$inferSelect;
 export type ReferralRequestInsert = typeof referralRequests.$inferInsert;
+
+
+export const favorites = mysqlTable(
+  "favorites",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    userId: int("userId").notNull().references(() => users.id),
+    listingId: int("listingId").notNull().references(() => listings.id),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  table => ({
+    userIdIdx: index("favorites_userId_idx").on(table.userId),
+    listingIdIdx: index("favorites_listingId_idx").on(table.listingId),
+    userListingUnique: uniqueIndex("favorites_userId_listingId_unique").on(table.userId, table.listingId),
+  })
+);
+export type Favorite = typeof favorites.$inferSelect;
+export type FavoriteInsert = typeof favorites.$inferInsert;

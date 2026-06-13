@@ -1,4 +1,13 @@
 import { useAuth } from "@/_core/hooks/useAuth";
+
+function useTrackView(listingId: number) {
+  const trackViewMutation = trpc.favorites.trackView.useMutation();
+  useEffect(() => {
+    if (listingId > 0) {
+      trackViewMutation.mutate({ listingId });
+    }
+  }, [listingId, trackViewMutation]);
+}
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -51,7 +60,7 @@ import { CategoryBar } from "@/components/CategoryBar";
 import { TopBar } from "@/components/TopBar";
 import { OnlineIndicator } from "@/components/OnlineIndicator";
 import { EmailInquiryModal } from "@/components/EmailInquiryModal";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Link, useRoute, useLocation } from "wouter";
 import { toast } from "sonner";
 import { ArrowLeft } from "lucide-react";
@@ -104,6 +113,9 @@ export default function ItemDetail() {
   const listingId = Number(params?.listingId ?? 0);
   const { user, isAuthenticated } = useAuth();
   const utils = trpc.useUtils();
+  
+  // Track view when page loads
+  useTrackView(listingId);
 
   const listingDetailQuery = trpc.market.listingDetail.useQuery(
     { listingId },

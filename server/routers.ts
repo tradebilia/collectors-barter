@@ -54,6 +54,12 @@ import {
   markReferralAsJoined,
   removeReferral,
   getReferralsByIds,
+  trackListingView,
+  addToFavorites,
+  removeFromFavorites,
+  isFavorited,
+  getTopMostFavoritedItems,
+  getTopMostViewedItems,
 } from "./db";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -1412,6 +1418,40 @@ export const appRouter = router({
       }),
   }),
   // Online status procedures
+  favorites: router({
+    trackView: publicProcedure
+      .input(z.object({ listingId: z.number().int().positive() }))
+      .mutation(async ({ input }) => {
+        await trackListingView(input.listingId);
+        return { success: true };
+      }),
+    addToFavorites: protectedProcedure
+      .input(z.object({ listingId: z.number().int().positive() }))
+      .mutation(async ({ ctx, input }) => {
+        const success = await addToFavorites(ctx.user.id, input.listingId);
+        return { success };
+      }),
+    removeFromFavorites: protectedProcedure
+      .input(z.object({ listingId: z.number().int().positive() }))
+      .mutation(async ({ ctx, input }) => {
+        const success = await removeFromFavorites(ctx.user.id, input.listingId);
+        return { success };
+      }),
+    isFavorited: protectedProcedure
+      .input(z.object({ listingId: z.number().int().positive() }))
+      .query(async ({ ctx, input }) => {
+        const favorited = await isFavorited(ctx.user.id, input.listingId);
+        return { favorited };
+      }),
+    getTopMostFavorited: publicProcedure.query(async ({ ctx }) => {
+      const items = await getTopMostFavoritedItems(ctx.user?.id ?? null);
+      return { items };
+    }),
+    getTopMostViewed: publicProcedure.query(async ({ ctx }) => {
+      const items = await getTopMostViewedItems(ctx.user?.id ?? null);
+      return { items };
+    }),
+  }),
   onlineStatus: router({
     updateActivity: protectedProcedure.mutation(async ({ ctx }) => {
       const db = await requireDb();
