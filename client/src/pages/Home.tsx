@@ -636,7 +636,11 @@ export default function Home() {
                             <div className="relative z-0 group-hover:z-50">
                               <img src={imageUrl} alt={item.title} className="h-8 w-8 object-contain rounded transition-all duration-200 group-hover:h-32 group-hover:w-32 group-hover:absolute group-hover:bottom-full group-hover:left-0 group-hover:mb-2" />
                             </div>
-                            <span className="text-[8px] text-white/85 truncate flex-1">{item.title}</span>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-[7px] text-white/85 truncate">
+                                {item.title} {item.certificationCompany && item.grade ? `• ${item.certificationCompany} ${item.grade}` : item.grade ? `• ${item.grade}` : ''} • ${item.estimatedValue?.toFixed(0) ?? 'N/A'}
+                              </p>
+                            </div>
                           </div>
                         );
                       })}

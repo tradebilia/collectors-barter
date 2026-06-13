@@ -1921,3 +1921,7 @@ Completed Features:
   - [x] Changed from fixed positioning to absolute positioning
   - [x] Image now appears above thumbnail instead of moving to center
   - [x] Positioned with bottom-full and left-0 for consistent placement
+- [x] Condense highest trade value card to single line display
+  - [x] Combined title, grading company, grade, and value on one line
+  - [x] Used bullet separators for clarity
+  - [x] Maintained proper truncation for long text
