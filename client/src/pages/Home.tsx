@@ -148,7 +148,7 @@ function HighestTradeValueItem({ item, index, imageUrl }: { item: any; index: nu
 
   return (
     <div className="flex items-center gap-3 rounded-md px-2 py-2 transition-colors hover:bg-white/5" ref={containerRef} onMouseMove={handleMouseMove}>
-      <span className={`text-[11px] font-bold min-w-[32px] text-center rounded px-2 py-1 ${getRankColor(index)}`}>{index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : index + 1}</span>
+      <span className="text-[20px] min-w-[28px] text-center">{index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : <span className="text-[12px] font-semibold text-white/70">{index + 1}</span>}</span>
       <div
         onMouseEnter={() => setShowPreview(true)}
         className="relative"
