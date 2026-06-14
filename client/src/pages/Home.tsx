@@ -141,11 +141,11 @@ function RankingListingItem({ item, index, imageUrl }: { item: any; index: numbe
 
   return (
     <div className="flex items-center gap-3 rounded-md px-2 py-2 transition-colors hover:bg-white/5 cursor-pointer" ref={containerRef} onMouseMove={handleMouseMove}>
-      <span className="min-w-[20px] text-center font-semibold text-[12px]">{index + 1}.</span>
+      <span className="min-w-[24px] text-center font-bold text-[13px] text-white/80">{index + 1}.</span>
       <div onMouseEnter={() => setShowPreview(true)} className="relative">
         <Dialog open={showPreview} onOpenChange={setShowPreview}>
           <div onClick={handleImageClick} className="cursor-pointer">
-            <img src={imageUrl} alt={item.title} className="h-20 w-20 object-contain rounded flex-shrink-0 hover:opacity-80 transition-opacity" />
+            <img src={imageUrl} alt={item.title} className="h-16 w-16 object-contain rounded flex-shrink-0 hover:opacity-80 transition-opacity" />
           </div>
           <DialogContent className="max-w-md">
             <DialogHeader>
@@ -163,7 +163,7 @@ function RankingListingItem({ item, index, imageUrl }: { item: any; index: numbe
           </DialogContent>
         </Dialog>
       </div>
-      <span onClick={handleImageClick} className="truncate hover:text-white/100 transition-colors text-[8.5px] flex-1">{item.title}</span>
+      <span onClick={handleImageClick} className="truncate hover:text-white/100 transition-colors text-[10px] flex-1">{item.title}</span>
     </div>
   );
 }
@@ -210,7 +210,7 @@ function HighestTradeValueItem({ item, index, imageUrl }: { item: any; index: nu
             onClick={handleImageClick}
             className="cursor-pointer"
           >
-            <img src={imageUrl} alt={item.title} className="h-20 w-20 object-contain rounded hover:opacity-80 transition-opacity" />
+            <img src={imageUrl} alt={item.title} className="h-16 w-16 object-contain rounded hover:opacity-80 transition-opacity" />
           </div>
           <DialogContent className="max-w-md">
           <DialogHeader>
@@ -760,7 +760,7 @@ export default function Home() {
                         return (
                           <div key={`${index}`} className="flex items-center gap-2 rounded-md px-2 py-1 transition-colors hover:bg-slate-700/20">
                             <span className="min-w-[20px] text-center font-semibold">{index + 1}.</span>
-                            <img src={avatarUrl} alt={owner.displayName} className="h-20 w-20 object-cover rounded-full flex-shrink-0 hover:opacity-80 transition-opacity" />
+                            <img src={avatarUrl} alt={owner.displayName} className="h-16 w-16 object-cover rounded-full flex-shrink-0 hover:opacity-80 transition-opacity" />
                             <span className="truncate hover:text-slate-900 transition-colors">{owner.displayName}</span>
                           </div>
                         );
@@ -792,7 +792,7 @@ export default function Home() {
                                 <div className="my-2 border-t border-white/10"></div>
                                 <div className="flex items-center gap-2 py-2">
                                   <span className="text-[11px] font-bold text-white/60 min-w-[20px]">{placeholderIndex + 1}</span>
-                                  <div className="h-20 w-20 rounded bg-white/5 flex items-center justify-center">
+                                  <div className="h-16 w-16 rounded bg-white/5 flex items-center justify-center">
                                     <span className="text-[9px] text-white/30">—</span>
                                   </div>
                                   <span className="text-[8.5px] text-white/40">Coming soon...</span>
