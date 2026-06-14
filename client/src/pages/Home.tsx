@@ -774,7 +774,9 @@ export default function Home() {
                       {mostViewedItemsData.map((item, index) => {
                         const imageUrl = resolveTradebiliaListingImage({ title: item.title, category: item.category, primaryPhotoUrl: item.primaryPhotoUrl });
                         return (
-                          <RankingListingItem key={`${item.id}-${index}`} item={item} index={index} imageUrl={imageUrl} metricsType="views" metrics={item.viewCount} />
+                          <div key={`${item.id}-${index}`}>
+                            <RankingListingItem item={item} index={index} imageUrl={imageUrl} metricsType="views" metrics={item.viewCount} />
+                          </div>
                         );
                       })}
                   </CardContent>
@@ -787,7 +789,9 @@ export default function Home() {
                       {mostRequestedItemsData.map((item, index) => {
                         const imageUrl = resolveTradebiliaListingImage({ title: item.title, category: item.category, primaryPhotoUrl: item.primaryPhotoUrl });
                         return (
-                          <RankingListingItem key={`${item.id}-${index}`} item={item} index={index} imageUrl={imageUrl} metricsType="favorites" metrics={item.favoriteCount} />
+                          <div key={`${item.id}-${index}`}>
+                            <RankingListingItem item={item} index={index} imageUrl={imageUrl} metricsType="favorites" metrics={item.favoriteCount} />
+                          </div>
                         );
                       })}
                   </CardContent>
