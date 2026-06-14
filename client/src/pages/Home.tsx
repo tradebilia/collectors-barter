@@ -278,7 +278,6 @@ function HighestTradeValueItem({ item, index, imageUrl }: { item: any; index: nu
         </div>
         <span className="text-white/40 text-[16px]">&gt;</span>
       </div>
-      {index < 9 && <div className="h-px bg-white/5 mx-2"></div>}
     </>
   );
 }
