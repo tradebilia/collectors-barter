@@ -801,7 +801,7 @@ export default function Home() {
                   </CardHeader>
                   <CardContent className="space-y-2 pb-4 text-[8.5px] leading-4 text-white/85">
                       {topTraderItemsData.map((owner, index) => {
-                        const avatarUrl = owner.avatarUrl || '/images/placeholder.png';
+                        const avatarUrl = owner.avatarUrl || 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + encodeURIComponent(owner.displayName);
                         const getRankingBadge = () => {
                           if (index === 0) return { bg: '', text: 'text-yellow-400 font-bold', label: '🥇' };
                           if (index === 1) return { bg: '', text: 'text-gray-300 font-bold', label: '🥈' };
