@@ -116,6 +116,58 @@ function initials(name: string) {
     .join("") || "CE";
 }
 
+function RankingListingItem({ item, index, imageUrl }: { item: any; index: number; imageUrl: string }) {
+  const [, setLocation] = useLocation();
+  const [showPreview, setShowPreview] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  
+  const handleImageClick = () => {
+    setLocation(`/listings/${item.id}`);
+  };
+  
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const isInside = 
+      e.clientX >= rect.left - 10 &&
+      e.clientX <= rect.right + 10 &&
+      e.clientY >= rect.top - 10 &&
+      e.clientY <= rect.bottom + 10;
+    
+    if (!isInside && showPreview) {
+      setShowPreview(false);
+    }
+  };
+
+  return (
+    <div className="flex items-center gap-2 rounded-md px-2 py-1 transition-colors hover:bg-white/10 cursor-pointer" ref={containerRef} onMouseMove={handleMouseMove}>
+      <span className="min-w-[20px] text-center font-semibold">{index + 1}.</span>
+      <div onMouseEnter={() => setShowPreview(true)} className="relative">
+        <Dialog open={showPreview} onOpenChange={setShowPreview}>
+          <div onClick={handleImageClick} className="cursor-pointer">
+            <img src={imageUrl} alt={item.title} className="h-8 w-8 object-cover rounded flex-shrink-0 hover:opacity-80 transition-opacity" />
+          </div>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>{item.title}</DialogTitle>
+              <DialogDescription>
+                {item.certificationCompany && item.grade ? `${item.certificationCompany} ${item.grade}` : item.grade ? `Grade: ${item.grade}` : 'Ungraded'}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex justify-center">
+              <img src={imageUrl} alt={item.title} className="max-h-96 w-auto object-contain" />
+            </div>
+            <div className="text-center text-sm font-semibold">
+              Estimated Value: ${item.estimatedValue?.toFixed(0) ?? 'N/A'}
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+      <span onClick={handleImageClick} className="truncate hover:text-white/100 transition-colors text-[8.5px]">{item.title}</span>
+    </div>
+  );
+}
+
 function HighestTradeValueItem({ item, index, imageUrl }: { item: any; index: number; imageUrl: string }) {
   const [, setLocation] = useLocation();
   const [showPreview, setShowPreview] = useState(false);
@@ -680,11 +732,7 @@ export default function Home() {
                       {mostViewedItemsData.map((item, index) => {
                         const imageUrl = item.photos?.[0]?.url ? resolveTradebiliaListingImage(item.photos[0].url) : '/images/placeholder.png';
                         return (
-                          <div key={`${item.id}-${index}`} className="flex items-center gap-2">
-                            <span className="min-w-[20px] text-center font-semibold">{index + 1}.</span>
-                            <img src={imageUrl} alt={item.title} className="h-8 w-8 object-cover rounded flex-shrink-0" />
-                            <span className="truncate">{item.title}</span>
-                          </div>
+                          <RankingListingItem key={`${item.id}-${index}`} item={item} index={index} imageUrl={imageUrl} />
                         );
                       })}
                   </CardContent>
@@ -697,11 +745,7 @@ export default function Home() {
                       {mostRequestedItemsData.map((item, index) => {
                         const imageUrl = item.photos?.[0]?.url ? resolveTradebiliaListingImage(item.photos[0].url) : '/images/placeholder.png';
                         return (
-                          <div key={`${item.id}-${index}`} className="flex items-center gap-2">
-                            <span className="min-w-[20px] text-center font-semibold">{index + 1}.</span>
-                            <img src={imageUrl} alt={item.title} className="h-8 w-8 object-cover rounded flex-shrink-0" />
-                            <span className="truncate">{item.title}</span>
-                          </div>
+                          <RankingListingItem key={`${item.id}-${index}`} item={item} index={index} imageUrl={imageUrl} />
                         );
                       })}
                   </CardContent>
@@ -714,10 +758,10 @@ export default function Home() {
                       {topTraderItemsData.map((owner, index) => {
                         const avatarUrl = owner.avatarUrl || '/images/placeholder.png';
                         return (
-                          <div key={`${index}`} className="flex items-center gap-2">
+                          <div key={`${index}`} className="flex items-center gap-2 rounded-md px-2 py-1 transition-colors hover:bg-slate-700/20">
                             <span className="min-w-[20px] text-center font-semibold">{index + 1}.</span>
-                            <img src={avatarUrl} alt={owner.displayName} className="h-8 w-8 object-cover rounded-full flex-shrink-0" />
-                            <span className="truncate">{owner.displayName}</span>
+                            <img src={avatarUrl} alt={owner.displayName} className="h-8 w-8 object-cover rounded-full flex-shrink-0 hover:opacity-80 transition-opacity" />
+                            <span className="truncate hover:text-slate-900 transition-colors">{owner.displayName}</span>
                           </div>
                         );
                       })}

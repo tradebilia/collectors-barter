@@ -1996,3 +1996,11 @@ Completed Features:
 - [x] Add member avatar thumbnails to Top Rated Traders section
 - [x] Update ranking data structures to include image URLs
 - [x] Create reusable ranking item component with thumbnail and title
+
+
+## Ranking Section Interactions (Jun 14, 2026)
+- [x] Add hover preview dialog to Most Viewed ranking section
+- [x] Add hover preview dialog to Most Favorited ranking section
+- [x] Add hover preview dialog to Top Rated Traders section (hover effect only, no dialog for traders)
+- [x] Make ranking items clickable to navigate to detail pages
+- [x] Create RankingListingItem component for consistent styling
