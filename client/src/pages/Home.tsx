@@ -795,7 +795,7 @@ export default function Home() {
                       })}
                   </CardContent>
                 </Card>
-                <Card className="overflow-hidden rounded-none border-0 bg-[linear-gradient(135deg,#d7bba9_0%,#f3e8de_100%)] text-slate-900 shadow-none border-l border-white/10">
+                <Card className="overflow-hidden rounded-none border-0 bg-[linear-gradient(135deg,#1a2847_0%,#2d3e5f_100%)] text-white shadow-none border-l border-white/10">
                   <CardHeader className="pb-2 pt-4">
                      <CardTitle className="font-['Oswald'] text-[1.1rem] uppercase tracking-[0.22em] text-white/90">👑 Top Rated Traders</CardTitle>
                   </CardHeader>
