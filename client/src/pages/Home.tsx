@@ -766,7 +766,7 @@ export default function Home() {
 
                 <div className="grid gap-0 md:grid-cols-2 xl:grid-cols-4 lg:col-start-2 divide-x divide-white/10">
                 <Card className="overflow-hidden rounded-none border-0 bg-[radial-gradient(circle_at_top,rgba(48,149,255,0.5),transparent_40%),linear-gradient(135deg,#05204f_0%,#0d2d68_100%)] text-white shadow-none">
-                  <CardHeader className="pb-2 pt-4">
+                  <CardHeader className="pb-2 pt-4 text-center">
                     <CardTitle className="font-['Oswald'] text-[1.1rem] uppercase tracking-[0.22em] text-white/90">👀 Most Viewed</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-2 pb-4 text-[8.5px] leading-4 text-white/85">
@@ -781,7 +781,7 @@ export default function Home() {
                   </CardContent>
                 </Card>
                 <Card className="overflow-hidden rounded-none border-0 bg-[linear-gradient(135deg,#090b10_0%,#262937_100%)] text-white shadow-none border-l border-white/10">
-                  <CardHeader className="pb-2 pt-4">
+                  <CardHeader className="pb-2 pt-4 text-center">
                     <CardTitle className="font-['Oswald'] text-[1.1rem] uppercase tracking-[0.22em] text-white/90">❤️ Most Favorited</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-2 pb-4 text-[8.5px] leading-4 text-white/85">
@@ -796,7 +796,7 @@ export default function Home() {
                   </CardContent>
                 </Card>
                 <Card className="overflow-hidden rounded-none border-0 bg-[linear-gradient(135deg,#1a2847_0%,#2d3e5f_100%)] text-white shadow-none border-l border-white/10">
-                  <CardHeader className="pb-2 pt-4">
+                  <CardHeader className="pb-2 pt-4 text-center">
                      <CardTitle className="font-['Oswald'] text-[1.1rem] uppercase tracking-[0.22em] text-white/90">👑 Top Rated Traders</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-2 pb-4 text-[8.5px] leading-4 text-white/85">
