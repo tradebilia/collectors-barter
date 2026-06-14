@@ -151,7 +151,7 @@ function RankingListingItem({ item, index, imageUrl, metricsType, metrics }: { i
   return (
     <>
       <div className={`flex items-center gap-3 rounded-md px-3 py-3 transition-all hover:bg-white/10 cursor-pointer border border-white/5 hover:border-white/10`} ref={containerRef} onMouseMove={handleMouseMove}>
-        <div className={`min-w-[40px] h-10 flex items-center justify-center rounded-full font-bold text-[18px] ${badge.text}`}>
+        <div className={`min-w-[48px] h-12 flex items-center justify-center rounded-full font-bold text-[22px] ${badge.text}`}>
           {badge.label}
         </div>
         <div onMouseEnter={() => setShowPreview(true)} className="relative">
@@ -234,7 +234,7 @@ function HighestTradeValueItem({ item, index, imageUrl }: { item: any; index: nu
   return (
     <>
       <div className={`flex items-center gap-3 rounded-md px-3 py-3 transition-all hover:bg-white/10 cursor-pointer border border-white/5 hover:border-white/10`} ref={containerRef} onMouseMove={handleMouseMove}>
-        <div className={`min-w-[40px] h-10 flex items-center justify-center rounded-full font-bold text-[18px] ${badge.text}`}>
+        <div className={`min-w-[48px] h-12 flex items-center justify-center rounded-full font-bold text-[22px] ${badge.text}`}>
           {badge.label}
         </div>
       <div
