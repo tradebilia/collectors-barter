@@ -229,6 +229,8 @@ async function formatListings(listingRows: any[], viewerId: number | null) {
     categoryLabel: categoryLabels[row.category as keyof typeof categoryLabels] ?? row.category,
     conditionLabel: conditionLabels[row.condition as keyof typeof conditionLabels] ?? row.condition,
     savedToWatchlist: savedListingIds.has(row.id),
+    viewCount: row.viewCount ?? 0,
+    favoriteCount: row.favoriteCount ?? 0,
   }));
 }
 
@@ -2777,13 +2779,34 @@ export async function getTopMostViewedItems(viewerId?: number | null) {
     createdAt: listings.createdAt,
     updatedAt: listings.updatedAt,
     primaryPhotoUrl: listingPhotos.imageUrl,
+    favoriteCount: sql<number>`COUNT(${favorites.id})`.as('favoriteCount'),
   })
   .from(listings)
   .leftJoin(listingPhotos, and(
     eq(listings.id, listingPhotos.listingId),
     eq(listingPhotos.sortOrder, 0)
   ))
+  .leftJoin(favorites, eq(listings.id, favorites.listingId))
   .where(eq(listings.status, "active"))
+  .groupBy(
+    listings.id,
+    listings.ownerId,
+    listings.title,
+    listings.category,
+    listings.condition,
+    listings.grade,
+    listings.certificationCompany,
+    listings.estimatedValue,
+    listings.description,
+    listings.itemDetails,
+    listings.status,
+    listings.isActive,
+    listings.featured,
+    listings.viewCount,
+    listings.createdAt,
+    listings.updatedAt,
+    listingPhotos.imageUrl
+  )
   .orderBy(desc(listings.viewCount))
   .limit(10);
 

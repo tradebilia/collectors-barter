@@ -116,7 +116,7 @@ function initials(name: string) {
     .join("") || "CE";
 }
 
-function RankingListingItem({ item, index, imageUrl }: { item: any; index: number; imageUrl: string }) {
+function RankingListingItem({ item, index, imageUrl, metricsType, metrics }: { item: any; index: number; imageUrl: string; metricsType?: 'views' | 'favorites'; metrics?: number | string }) {
   const [, setLocation] = useLocation();
   const [showPreview, setShowPreview] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -139,9 +139,21 @@ function RankingListingItem({ item, index, imageUrl }: { item: any; index: numbe
     }
   };
 
+  const getRankingBadge = () => {
+    if (index === 0) return { bg: 'bg-yellow-500/20', text: 'text-yellow-400', label: '🥇' };
+    if (index === 1) return { bg: 'bg-gray-400/20', text: 'text-gray-300', label: '🥈' };
+    if (index === 2) return { bg: 'bg-orange-600/20', text: 'text-orange-400', label: '🥉' };
+    return { bg: 'bg-slate-700/30', text: 'text-white/60', label: `${index + 1}` };
+  };
+
+  const badge = getRankingBadge();
+
   return (
-    <div className="flex items-center gap-3 rounded-md px-2 py-2 transition-colors hover:bg-white/5 cursor-pointer" ref={containerRef} onMouseMove={handleMouseMove}>
-      <span className="min-w-[24px] text-center font-bold text-[13px] text-white/80">{index + 1}.</span>
+    <>
+      <div className={`flex items-center gap-3 rounded-md px-3 py-3 transition-all hover:bg-white/10 cursor-pointer border border-white/5 hover:border-white/10 ${badge.bg}`} ref={containerRef} onMouseMove={handleMouseMove}>
+        <div className={`min-w-[32px] h-8 flex items-center justify-center rounded-full font-bold text-[14px] ${badge.text} bg-white/5`}>
+          {badge.label}
+        </div>
       <div onMouseEnter={() => setShowPreview(true)} className="relative">
         <Dialog open={showPreview} onOpenChange={setShowPreview}>
           <div onClick={handleImageClick} className="cursor-pointer">
@@ -163,8 +175,20 @@ function RankingListingItem({ item, index, imageUrl }: { item: any; index: numbe
           </DialogContent>
         </Dialog>
       </div>
-      <span onClick={handleImageClick} className="truncate hover:text-white/100 transition-colors text-[10px] flex-1">{item.title}</span>
-    </div>
+        <div className="flex-1 min-w-0">
+          <span onClick={handleImageClick} className="truncate hover:text-white/100 transition-colors text-[10px] block">{item.title}</span>
+        </div>
+        <div className="flex items-center gap-2 text-white/60 text-[9px] flex-shrink-0">
+          {metrics && (
+            <span className="flex items-center gap-1">
+              {metricsType === 'views' ? '👁' : '❤'} {metrics}
+            </span>
+          )}
+        </div>
+        <span className="text-white/40 text-[16px]">&gt;</span>
+      </div>
+      {index < 9 && <div className="h-px bg-white/5 mx-2"></div>}
+    </>
   );
 }
 
@@ -732,7 +756,7 @@ export default function Home() {
                       {mostViewedItemsData.map((item, index) => {
                         const imageUrl = resolveTradebiliaListingImage({ title: item.title, category: item.category, primaryPhotoUrl: item.primaryPhotoUrl });
                         return (
-                          <RankingListingItem key={`${item.id}-${index}`} item={item} index={index} imageUrl={imageUrl} />
+                          <RankingListingItem key={`${item.id}-${index}`} item={item} index={index} imageUrl={imageUrl} metricsType="views" metrics={item.viewCount} />
                         );
                       })}
                   </CardContent>
@@ -745,7 +769,7 @@ export default function Home() {
                       {mostRequestedItemsData.map((item, index) => {
                         const imageUrl = resolveTradebiliaListingImage({ title: item.title, category: item.category, primaryPhotoUrl: item.primaryPhotoUrl });
                         return (
-                          <RankingListingItem key={`${item.id}-${index}`} item={item} index={index} imageUrl={imageUrl} />
+                          <RankingListingItem key={`${item.id}-${index}`} item={item} index={index} imageUrl={imageUrl} metricsType="favorites" metrics={item.favoriteCount} />
                         );
                       })}
                   </CardContent>
