@@ -834,9 +834,6 @@ export default function Home() {
                         return (
                           <div key={item.id}>
                             <HighestTradeValueItem item={item} index={index} imageUrl={imageUrl} />
-                            {index < 9 && (
-                              <div className="my-2 border-t border-white/10"></div>
-                            )}
                           </div>
                         );
                       })}
@@ -846,7 +843,6 @@ export default function Home() {
                             const placeholderIndex = (highestTradeValueItems ?? []).length + index;
                             return (
                               <div key={`placeholder-${placeholderIndex}`}>
-                                <div className="my-2 border-t border-white/10"></div>
                                 <div className="flex items-center gap-2 py-2">
                                   <span className="text-[11px] font-bold text-white/60 min-w-[20px]">{placeholderIndex + 1}</span>
                                   <div className="h-16 w-16 rounded bg-white/5 flex items-center justify-center">
