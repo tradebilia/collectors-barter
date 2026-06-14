@@ -145,7 +145,7 @@ function RankingListingItem({ item, index, imageUrl }: { item: any; index: numbe
       <div onMouseEnter={() => setShowPreview(true)} className="relative">
         <Dialog open={showPreview} onOpenChange={setShowPreview}>
           <div onClick={handleImageClick} className="cursor-pointer">
-            <img src={imageUrl} alt={item.title} className="h-8 w-8 object-contain rounded flex-shrink-0 hover:opacity-80 transition-opacity" />
+            <img src={imageUrl} alt={item.title} className="h-10 w-10 object-contain rounded flex-shrink-0 hover:opacity-80 transition-opacity" />
           </div>
           <DialogContent className="max-w-md">
             <DialogHeader>
@@ -760,7 +760,7 @@ export default function Home() {
                         return (
                           <div key={`${index}`} className="flex items-center gap-2 rounded-md px-2 py-1 transition-colors hover:bg-slate-700/20">
                             <span className="min-w-[20px] text-center font-semibold">{index + 1}.</span>
-                            <img src={avatarUrl} alt={owner.displayName} className="h-8 w-8 object-cover rounded-full flex-shrink-0 hover:opacity-80 transition-opacity" />
+                            <img src={avatarUrl} alt={owner.displayName} className="h-10 w-10 object-cover rounded-full flex-shrink-0 hover:opacity-80 transition-opacity" />
                             <span className="truncate hover:text-slate-900 transition-colors">{owner.displayName}</span>
                           </div>
                         );
