@@ -30,6 +30,12 @@ import { SearchResults } from "./pages/SearchResults";
 import AdminDashboard from "./pages/AdminDashboard";
 import { AnimatedDemo } from "./pages/AnimatedDemo";
 import Contact from "./pages/Contact";
+import {
+  AllMostViewedRankings,
+  AllMostFavoritedRankings,
+  AllRatedTradersRankings,
+  AllHighestTradeValuesRankings,
+} from "./pages/RankingPages";
 
 function Router() {
   return (
@@ -107,6 +113,10 @@ function Router() {
       <Route path="/contact" component={Contact} />
       <Route path="/category/:slug" component={CategoryPage} />
       <Route path="/animated-demo" component={AnimatedDemo} />
+      <Route path="/rankings/most-viewed" component={AllMostViewedRankings} />
+      <Route path="/rankings/most-favorited" component={AllMostFavoritedRankings} />
+      <Route path="/rankings/top-rated-traders" component={AllRatedTradersRankings} />
+      <Route path="/rankings/top-trade-values" component={AllHighestTradeValuesRankings} />
       <Route path="/listings/:listingId" component={ItemDetail} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />

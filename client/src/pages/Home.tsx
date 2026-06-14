@@ -506,15 +506,15 @@ export default function Home() {
       }));
 
   const mostViewedItemsData = (topMostViewedQuery.data?.items ?? []).length
-    ? (topMostViewedQuery.data?.items ?? []).slice(0, 6)
+    ? (topMostViewedQuery.data?.items ?? []).slice(0, 10)
     : [];
 
   const mostRequestedItemsData = (topMostFavoritedQuery.data?.items ?? []).length
-    ? (topMostFavoritedQuery.data?.items ?? []).slice(0, 6)
+    ? (topMostFavoritedQuery.data?.items ?? []).slice(0, 10)
     : [];
 
   const topTraderItemsData = (marketplaceQuery.data?.listings ?? []).length
-    ? (marketplaceQuery.data?.listings ?? []).slice(0, 6).map(listing => listing.owner)
+    ? (marketplaceQuery.data?.listings ?? []).slice(0, 10).map(listing => listing.owner)
     : [];
 
   const mostViewedItems = mostViewedItemsData.map(listing => listing.title);
@@ -767,7 +767,7 @@ export default function Home() {
                 <div className="grid gap-0 md:grid-cols-2 xl:grid-cols-4 lg:col-start-2 divide-x divide-white/10">
                 <Card className="overflow-hidden rounded-none border-0 bg-[radial-gradient(circle_at_top,rgba(48,149,255,0.5),transparent_40%),linear-gradient(135deg,#05204f_0%,#0d2d68_100%)] text-white shadow-none">
                   <CardHeader className="pb-2 pt-4 text-center">
-                    <CardTitle className="font-['Oswald'] text-[1.1rem] uppercase tracking-[0.22em] text-white/90">👀 Most Viewed</CardTitle>
+                    <CardTitle className="font-['Oswald'] text-[1.1rem] uppercase tracking-[0.22em] text-white/90">👀 Top 10 Most Viewed</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-2 pb-4 text-[8.5px] leading-4 text-white/85">
                       {mostViewedItemsData.map((item, index) => {
@@ -778,11 +778,14 @@ export default function Home() {
                           </div>
                         );
                       })}
+                      <Link href="/rankings/most-viewed" className="block mt-3 pt-3 border-t border-white/10 text-center text-[9px] font-semibold uppercase tracking-wider text-white/60 hover:text-white/90 transition-colors">
+                        View All Rankings →
+                      </Link>
                   </CardContent>
                 </Card>
                 <Card className="overflow-hidden rounded-none border-0 bg-[linear-gradient(135deg,#090b10_0%,#262937_100%)] text-white shadow-none border-l border-white/10">
                   <CardHeader className="pb-2 pt-4 text-center">
-                    <CardTitle className="font-['Oswald'] text-[1.1rem] uppercase tracking-[0.22em] text-white/90">❤️ Most Favorited</CardTitle>
+                    <CardTitle className="font-['Oswald'] text-[1.1rem] uppercase tracking-[0.22em] text-white/90">❤️ Top 10 Most Favorited</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-2 pb-4 text-[8.5px] leading-4 text-white/85">
                       {mostRequestedItemsData.map((item, index) => {
@@ -793,11 +796,14 @@ export default function Home() {
                           </div>
                         );
                       })}
+                      <Link href="/rankings/most-favorited" className="block mt-3 pt-3 border-t border-white/10 text-center text-[9px] font-semibold uppercase tracking-wider text-white/60 hover:text-white/90 transition-colors">
+                        View All Rankings →
+                      </Link>
                   </CardContent>
                 </Card>
                 <Card className="overflow-hidden rounded-none border-0 bg-[linear-gradient(135deg,#1a2847_0%,#2d3e5f_100%)] text-white shadow-none border-l border-white/10">
                   <CardHeader className="pb-2 pt-4 text-center">
-                     <CardTitle className="font-['Oswald'] text-[1.1rem] uppercase tracking-[0.22em] text-white/90">👑 Top Rated Traders</CardTitle>
+                     <CardTitle className="font-['Oswald'] text-[1.1rem] uppercase tracking-[0.22em] text-white/90">👑 Top 10 Rated Traders</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-2 pb-4 text-[8.5px] leading-4 text-white/85">
                       {topTraderItemsData.map((owner, index) => {
@@ -828,6 +834,9 @@ export default function Home() {
                           </div>
                         );
                       })}
+                      <Link href="/rankings/top-rated-traders" className="block mt-3 pt-3 border-t border-white/10 text-center text-[9px] font-semibold uppercase tracking-wider text-white/60 hover:text-white/90 transition-colors">
+                        View All Rankings →
+                      </Link>
                   </CardContent>
                 </Card>
                 <Card className="overflow-hidden rounded-none border-0 bg-[radial-gradient(circle_at_top,rgba(18,222,255,0.35),transparent_35%),linear-gradient(135deg,#00477b_0%,#0a86b4_100%)] text-white shadow-none border-l border-white/10">
@@ -861,6 +870,9 @@ export default function Home() {
                           })}
                         </>
                       )}
+                      <Link href="/rankings/top-trade-values" className="block mt-3 pt-3 border-t border-white/10 text-center text-[9px] font-semibold uppercase tracking-wider text-white/60 hover:text-white/90 transition-colors">
+                        View All Rankings →
+                      </Link>
                   </CardContent>
                 </Card>
                 </div>

@@ -2026,3 +2026,32 @@ Completed Features:
   - [x] Removed saved items and active trades stats cards
   - [x] Removed "Find collectors" button from sidebar
   - [x] Simplified layout to focus on watchlist items only
+
+
+## Ranking System Enhancement - Display and Navigation (Jun 14, 2026)
+- [x] Update ranking sections on homepage to display 1-10 items instead of 1-6
+  - [x] Update "Top 10 Most Viewed" section to show 10 items
+  - [x] Update "Top 10 Most Favorited" section to show 10 items
+  - [x] Update "Top 10 Rated Traders" section to show 10 items
+  - [x] Update "Top 10 Highest Trade Values" section to show 10 items
+- [x] Add "View All Rankings" link to each ranking section
+  - [x] Add navigation link styling consistent with section theme
+  - [x] Link positioned at bottom of each section
+  - [x] Link navigates to corresponding full ranking page
+- [x] Create dedicated full ranking pages
+  - [x] Create /rankings/most-viewed page - "All Most Viewed Rankings"
+  - [x] Create /rankings/most-favorited page - "All Most Favorited Rankings"
+  - [x] Create /rankings/top-rated-traders page - "All Rated Traders Rankings"
+  - [x] Create /rankings/top-trade-values page - "All Highest Trade Values Rankings"
+- [x] Ensure consistent styling across all ranking sections
+  - [x] All sections use same layout and spacing
+  - [x] All sections have same hover effects
+  - [x] All sections display items 1-10 with consistent styling
+- [x] Test all ranking pages and navigation
+  - [x] Verify homepage sections display 1-10 items
+  - [x] Verify "View All Rankings" links work correctly
+  - [x] Verify full ranking pages display all rankings
+  - [x] Verify consistent styling across all sections
+- [x] Create and run unit tests for ranking system
+  - [x] Created server/rankings.test.ts with 13 comprehensive tests
+  - [x] All tests pass: homepage sections, full pages, navigation, data consistency, display fields
