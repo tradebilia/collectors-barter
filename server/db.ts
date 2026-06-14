@@ -221,6 +221,8 @@ async function formatListings(listingRows: any[], viewerId: number | null) {
     updatedAt: row.updatedAt.getTime(),
     owner: {
       displayName: profileMap.get(row.ownerId)?.displayName ?? `Collector ${row.ownerId}`,
+      firstName: profileMap.get(row.ownerId)?.firstName ?? null,
+      lastName: profileMap.get(row.ownerId)?.lastName ?? null,
       avatarUrl: profileMap.get(row.ownerId)?.avatarUrl ?? null,
     },
     ownerRating: ratingMap.get(row.ownerId) ?? { averageRating: 0, reviewCount: 0 },
