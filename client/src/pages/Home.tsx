@@ -799,7 +799,7 @@ export default function Home() {
                   <CardHeader className="pb-2 pt-4">
                      <CardTitle className="font-['Oswald'] text-[1.1rem] uppercase tracking-[0.22em] text-white/90">👑 Top Rated Traders</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-2 pb-4 text-[9.5px] leading-4 text-slate-700">
+                  <CardContent className="space-y-2 pb-4 text-[8.5px] leading-4 text-white/85">
                       {topTraderItemsData.map((owner, index) => {
                         const avatarUrl = owner.avatarUrl || '/images/placeholder.png';
                         const getRankingBadge = () => {
@@ -828,7 +828,7 @@ export default function Home() {
                   <CardHeader className="pb-3 pt-4">
                     <CardTitle className="font-['Oswald'] text-[1.1rem] uppercase tracking-[0.22em] text-white/90">🏆 Top 10 Highest Trade Values</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-0 pb-4">
+                  <CardContent className="space-y-2 pb-4 text-[8.5px] leading-4 text-white/85">
                       {(highestTradeValueItems ?? []).map((item, index) => {
                         const imageUrl = resolveTradebiliaListingImage({ title: item.title, category: item.category, primaryPhotoUrl: item.primaryPhotoUrl });
                         return (
