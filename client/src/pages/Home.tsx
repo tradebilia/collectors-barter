@@ -188,7 +188,6 @@ function RankingListingItem({ item, index, imageUrl, metricsType, metrics }: { i
         </div>
         <span className="text-white/40 text-[16px]">&gt;</span>
       </div>
-      {index < 9 && <div className="h-px bg-white/5 mx-2"></div>}
     </>
   );
 }
@@ -820,7 +819,6 @@ export default function Home() {
                               <span className="truncate hover:text-white/100 transition-colors text-[10px] flex-1">{owner.displayName}</span>
                               <span className="text-white/40 text-[16px]">&gt;</span>
                             </div>
-                            {index < 9 && <div className="h-px bg-white/5 mx-2"></div>}
                           </div>
                         );
                       })}
