@@ -140,12 +140,12 @@ function RankingListingItem({ item, index, imageUrl }: { item: any; index: numbe
   };
 
   return (
-    <div className="flex items-center gap-2 rounded-md px-2 py-1 transition-colors hover:bg-white/10 cursor-pointer" ref={containerRef} onMouseMove={handleMouseMove}>
-      <span className="min-w-[20px] text-center font-semibold">{index + 1}.</span>
+    <div className="flex items-center gap-3 rounded-md px-2 py-2 transition-colors hover:bg-white/5 cursor-pointer" ref={containerRef} onMouseMove={handleMouseMove}>
+      <span className="min-w-[20px] text-center font-semibold text-[12px]">{index + 1}.</span>
       <div onMouseEnter={() => setShowPreview(true)} className="relative">
         <Dialog open={showPreview} onOpenChange={setShowPreview}>
           <div onClick={handleImageClick} className="cursor-pointer">
-            <img src={imageUrl} alt={item.title} className="h-10 w-10 object-cover rounded flex-shrink-0 hover:opacity-80 transition-opacity" />
+            <img src={imageUrl} alt={item.title} className="h-12 w-12 object-contain rounded flex-shrink-0 hover:opacity-80 transition-opacity" />
           </div>
           <DialogContent className="max-w-md">
             <DialogHeader>
@@ -163,7 +163,7 @@ function RankingListingItem({ item, index, imageUrl }: { item: any; index: numbe
           </DialogContent>
         </Dialog>
       </div>
-      <span onClick={handleImageClick} className="truncate hover:text-white/100 transition-colors text-[8.5px]">{item.title}</span>
+      <span onClick={handleImageClick} className="truncate hover:text-white/100 transition-colors text-[8.5px] flex-1">{item.title}</span>
     </div>
   );
 }
