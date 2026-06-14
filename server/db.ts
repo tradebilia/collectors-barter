@@ -158,9 +158,12 @@ async function getProfileMap(userIds: number[]) {
       userId: userProfiles.userId,
       displayName: userProfiles.displayName,
       avatarUrl: userProfiles.avatarUrl,
+      firstName: userProfiles.firstName,
+      lastName: userProfiles.lastName,
     })
     .from(userProfiles)
     .where(inArray(userProfiles.userId, userIds));
+  
   return new Map(profiles.map(p => [p.userId, p]));
 }
 

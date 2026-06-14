@@ -2004,3 +2004,16 @@ Completed Features:
 - [x] Add hover preview dialog to Top Rated Traders section (hover effect only, no dialog for traders)
 - [x] Make ranking items clickable to navigate to detail pages
 - [x] Create RankingListingItem component for consistent styling
+
+
+## Avatar Initials Data Consistency Fix (Jun 14, 2026)
+- [x] Fix TypeScript error in getProfileMap where firstName and lastName were not being selected from userProfiles
+  - [x] Updated getProfileMap to select firstName and lastName from userProfiles table
+  - [x] Verified that formatListings now includes firstName and lastName in the owner object
+  - [x] Confirmed that Avatar component uses firstName and lastName to generate initials (e.g., "PT" for Pierre Turgeon)
+- [x] Verify avatar initials display correctly in Top Rated Traders section
+  - [x] Tested in browser and confirmed "PT" initials display for Pierre Turgeon
+  - [x] Confirmed Avatar component correctly prioritizes firstName+lastName over displayName
+- [x] Create and run unit tests for getAvatarInitials function
+  - [x] Created server/tradebilia.test.ts with 8 comprehensive tests
+  - [x] All tests pass: firstName+lastName priority, fallback to firstName, fallback to displayName, uppercase conversion, empty string handling
