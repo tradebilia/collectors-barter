@@ -140,10 +140,10 @@ function RankingListingItem({ item, index, imageUrl, metricsType, metrics }: { i
   };
 
   const getRankingBadge = () => {
-    if (index === 0) return { bg: 'bg-gradient-to-br from-yellow-400 to-yellow-500 shadow-lg shadow-yellow-500/50', text: 'text-yellow-900 font-bold', label: '🥇' };
-    if (index === 1) return { bg: 'bg-gradient-to-br from-gray-300 to-gray-400 shadow-lg shadow-gray-400/50', text: 'text-gray-900 font-bold', label: '🥈' };
-    if (index === 2) return { bg: 'bg-gradient-to-br from-orange-400 to-orange-500 shadow-lg shadow-orange-500/50', text: 'text-orange-900 font-bold', label: '🥉' };
-    return { bg: 'bg-slate-700/30', text: 'text-white/60', label: `${index + 1}` };
+    if (index === 0) return { bg: '', text: 'text-yellow-400 font-bold', label: '🥇' };
+    if (index === 1) return { bg: '', text: 'text-gray-300 font-bold', label: '🥈' };
+    if (index === 2) return { bg: '', text: 'text-orange-400 font-bold', label: '🥉' };
+    return { bg: '', text: 'text-white/60', label: `${index + 1}` };
   };
 
   const badge = getRankingBadge();
@@ -151,7 +151,7 @@ function RankingListingItem({ item, index, imageUrl, metricsType, metrics }: { i
   return (
     <>
       <div className={`flex items-center gap-3 rounded-md px-3 py-3 transition-all hover:bg-white/10 cursor-pointer border border-white/5 hover:border-white/10`} ref={containerRef} onMouseMove={handleMouseMove}>
-        <div className={`min-w-[32px] h-8 flex items-center justify-center rounded-full font-bold text-[14px] ${badge.text} ${badge.bg}`}>
+        <div className={`min-w-[40px] h-10 flex items-center justify-center rounded-full font-bold text-[18px] ${badge.text}`}>
           {badge.label}
         </div>
         <div onMouseEnter={() => setShowPreview(true)} className="relative">
@@ -224,10 +224,10 @@ function HighestTradeValueItem({ item, index, imageUrl }: { item: any; index: nu
   };
 
   const getRankingBadge = () => {
-    if (index === 0) return { bg: 'bg-gradient-to-br from-yellow-400 to-yellow-500 shadow-lg shadow-yellow-500/50', text: 'text-yellow-900 font-bold', label: '🥇' };
-    if (index === 1) return { bg: 'bg-gradient-to-br from-gray-300 to-gray-400 shadow-lg shadow-gray-400/50', text: 'text-gray-900 font-bold', label: '🥈' };
-    if (index === 2) return { bg: 'bg-gradient-to-br from-orange-400 to-orange-500 shadow-lg shadow-orange-500/50', text: 'text-orange-900 font-bold', label: '🥉' };
-    return { bg: 'bg-slate-700/30', text: 'text-white/60', label: `${index + 1}` };
+    if (index === 0) return { bg: '', text: 'text-yellow-400 font-bold', label: '🥇' };
+    if (index === 1) return { bg: '', text: 'text-gray-300 font-bold', label: '🥈' };
+    if (index === 2) return { bg: '', text: 'text-orange-400 font-bold', label: '🥉' };
+    return { bg: '', text: 'text-white/60', label: `${index + 1}` };
   };
 
   const badge = getRankingBadge();
@@ -814,7 +814,7 @@ export default function Home() {
                         return (
                           <div key={`trader-${index}`}>
                             <div className={`flex items-center gap-3 rounded-md px-3 py-3 transition-all hover:bg-white/10 cursor-pointer border border-white/5 hover:border-white/10`}>
-                              <div className={`min-w-[32px] h-8 flex items-center justify-center rounded-full font-bold text-[14px] ${badge.text} ${badge.bg}`}>
+                              <div className={`min-w-[40px] h-10 flex items-center justify-center rounded-full font-bold text-[18px] ${badge.text}`}>
                                 {badge.label}
                               </div>
                               <img src={avatarUrl} alt={owner.displayName} className="h-16 w-16 object-cover rounded-full flex-shrink-0 hover:opacity-80 transition-opacity" />
