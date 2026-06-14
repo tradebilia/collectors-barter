@@ -1,6 +1,6 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { resolveTradebiliaListingImage } from "@/lib/listingImages";
-import { getTradebiliaCategoryLabel } from "@/lib/tradebilia";
+import { getTradebiliaCategoryLabel, getAvatarInitials } from "@/lib/tradebilia";
 import { trpc } from "@/lib/trpc";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -801,7 +801,8 @@ export default function Home() {
                   </CardHeader>
                   <CardContent className="space-y-2 pb-4 text-[8.5px] leading-4 text-white/85">
                       {topTraderItemsData.map((owner, index) => {
-                        const avatarUrl = owner.avatarUrl || 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + encodeURIComponent(owner.displayName);
+                        const avatarUrl = owner.avatarUrl;
+                        const initials = getAvatarInitials({ firstName: (owner as any).firstName, lastName: (owner as any).lastName, displayName: owner.displayName });
                         const getRankingBadge = () => {
                           if (index === 0) return { bg: '', text: 'text-yellow-400 font-bold', label: '🥇' };
                           if (index === 1) return { bg: '', text: 'text-gray-300 font-bold', label: '🥈' };
@@ -815,7 +816,13 @@ export default function Home() {
                               <div className={`min-w-[48px] h-12 flex items-center justify-center rounded-full font-bold text-[22px] ${badge.text}`}>
                                 {badge.label}
                               </div>
-                              <img src={avatarUrl} alt={owner.displayName} className="h-16 w-16 object-cover rounded-full flex-shrink-0 hover:opacity-80 transition-opacity" />
+                              {avatarUrl ? (
+                                <img src={avatarUrl} alt={owner.displayName} className="h-16 w-16 object-cover rounded-full flex-shrink-0 hover:opacity-80 transition-opacity" />
+                              ) : (
+                                <div className="h-16 w-16 flex items-center justify-center rounded-full bg-[#7f31ff] text-white font-bold text-sm flex-shrink-0">
+                                  {initials}
+                                </div>
+                              )}
                               <span className="truncate hover:text-white/100 transition-colors text-[10px] flex-1">{owner.displayName}</span>
                               <span className="text-white/40 text-[16px]">&gt;</span>
                             </div>
