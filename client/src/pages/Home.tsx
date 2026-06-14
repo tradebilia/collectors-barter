@@ -412,17 +412,21 @@ export default function Home() {
         ownerId: null,
       }));
 
-  const mostViewedItems = (topMostViewedQuery.data?.items ?? []).length
-    ? (topMostViewedQuery.data?.items ?? []).slice(0, 6).map(listing => listing.title)
-    : fallbackMostViewed;
+  const mostViewedItemsData = (topMostViewedQuery.data?.items ?? []).length
+    ? (topMostViewedQuery.data?.items ?? []).slice(0, 6)
+    : [];
 
-  const mostRequestedItems = (topMostFavoritedQuery.data?.items ?? []).length
-    ? (topMostFavoritedQuery.data?.items ?? []).slice(0, 6).map(listing => listing.title)
-    : fallbackMostRequested;
+  const mostRequestedItemsData = (topMostFavoritedQuery.data?.items ?? []).length
+    ? (topMostFavoritedQuery.data?.items ?? []).slice(0, 6)
+    : [];
 
-  const topTraderItems = (marketplaceQuery.data?.listings ?? []).length
-    ? (marketplaceQuery.data?.listings ?? []).slice(0, 6).map(listing => listing.owner.displayName)
-    : fallbackTopTraders;
+  const topTraderItemsData = (marketplaceQuery.data?.listings ?? []).length
+    ? (marketplaceQuery.data?.listings ?? []).slice(0, 6).map(listing => listing.owner)
+    : [];
+
+  const mostViewedItems = mostViewedItemsData.map(listing => listing.title);
+  const mostRequestedItems = mostRequestedItemsData.map(listing => listing.title);
+  const topTraderItems = topTraderItemsData.map(owner => owner.displayName);
 
   const highestTradeValueItems = (topHighestValueItemsQuery.data ?? []).length > 0
     ? topHighestValueItemsQuery.data
@@ -672,33 +676,51 @@ export default function Home() {
                   <CardHeader className="pb-2 pt-4">
                     <CardTitle className="font-['Oswald'] text-[1.1rem] uppercase tracking-[0.22em] text-white/90">👀 Most Viewed</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-1 pb-4 text-[8.5px] leading-4 text-white/85">
-                      {mostViewedItems.map((entry, index) => (
-                        <p key={`${entry}-${index}`}>{index + 1}. {entry}</p>
-                      ))}
-
+                  <CardContent className="space-y-2 pb-4 text-[8.5px] leading-4 text-white/85">
+                      {mostViewedItemsData.map((item, index) => {
+                        const imageUrl = item.photos?.[0]?.url ? resolveTradebiliaListingImage(item.photos[0].url) : '/images/placeholder.png';
+                        return (
+                          <div key={`${item.id}-${index}`} className="flex items-center gap-2">
+                            <span className="min-w-[20px] text-center font-semibold">{index + 1}.</span>
+                            <img src={imageUrl} alt={item.title} className="h-8 w-8 object-cover rounded flex-shrink-0" />
+                            <span className="truncate">{item.title}</span>
+                          </div>
+                        );
+                      })}
                   </CardContent>
                 </Card>
                 <Card className="overflow-hidden rounded-none border-0 bg-[linear-gradient(135deg,#090b10_0%,#262937_100%)] text-white shadow-none border-l border-white/10">
                   <CardHeader className="pb-2 pt-4">
                     <CardTitle className="font-['Oswald'] text-[1.1rem] uppercase tracking-[0.22em] text-white/90">⭐ Most Favorited</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-1 pb-4 text-[8.5px] leading-4 text-white/85">
-                      {mostRequestedItems.map((entry, index) => (
-                        <p key={`${entry}-${index}`}>{index + 1}. {entry}</p>
-                      ))}
-
+                  <CardContent className="space-y-2 pb-4 text-[8.5px] leading-4 text-white/85">
+                      {mostRequestedItemsData.map((item, index) => {
+                        const imageUrl = item.photos?.[0]?.url ? resolveTradebiliaListingImage(item.photos[0].url) : '/images/placeholder.png';
+                        return (
+                          <div key={`${item.id}-${index}`} className="flex items-center gap-2">
+                            <span className="min-w-[20px] text-center font-semibold">{index + 1}.</span>
+                            <img src={imageUrl} alt={item.title} className="h-8 w-8 object-cover rounded flex-shrink-0" />
+                            <span className="truncate">{item.title}</span>
+                          </div>
+                        );
+                      })}
                   </CardContent>
                 </Card>
                 <Card className="overflow-hidden rounded-none border-0 bg-[linear-gradient(135deg,#d7bba9_0%,#f3e8de_100%)] text-slate-900 shadow-none border-l border-white/10">
                   <CardHeader className="pb-2 pt-4">
                      <CardTitle className="font-['Oswald'] text-[1.1rem] uppercase tracking-[0.22em] text-white/90">👑 Top Rated Traders</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-1 pb-4 text-[9.5px] leading-4 text-slate-700">
-                      {topTraderItems.map((entry, index) => (
-                        <p key={`${entry}-${index}`}>{index + 1}. {entry}</p>
-                      ))}
-
+                  <CardContent className="space-y-2 pb-4 text-[9.5px] leading-4 text-slate-700">
+                      {topTraderItemsData.map((owner, index) => {
+                        const avatarUrl = owner.avatarUrl || '/images/placeholder.png';
+                        return (
+                          <div key={`${index}`} className="flex items-center gap-2">
+                            <span className="min-w-[20px] text-center font-semibold">{index + 1}.</span>
+                            <img src={avatarUrl} alt={owner.displayName} className="h-8 w-8 object-cover rounded-full flex-shrink-0" />
+                            <span className="truncate">{owner.displayName}</span>
+                          </div>
+                        );
+                      })}
                   </CardContent>
                 </Card>
                 <Card className="overflow-hidden rounded-none border-0 bg-[radial-gradient(circle_at_top,rgba(18,222,255,0.35),transparent_35%),linear-gradient(135deg,#00477b_0%,#0a86b4_100%)] text-white shadow-none border-l border-white/10">

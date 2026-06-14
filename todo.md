@@ -1953,3 +1953,46 @@ Completed Features:
 - [x] Add cursor pointer to thumbnail to indicate clickability
 - [x] Update HighestTradeValueItem to show preview on hover and navigate to detail page on click
 - [x] Fix hover dialog to stay open when moving pointer to the dialog
+
+
+## Favorite & View Count Tracking (Jun 13, 2026)
+- [x] Add favorites table to track user favorites
+  - [x] Created favorites table in schema with userId, listingId, and createdAt
+  - [x] Added unique constraint on (userId, listingId) to prevent duplicates
+- [x] Add view count column to listings table
+  - [x] Added viewCount column to listings table with default value of 0
+- [x] Create backend procedures for tracking views
+  - [x] Implemented trackListingView() function to increment view count
+- [x] Create backend procedures for managing favorites
+  - [x] Implemented addToFavorites() function to add items to favorites
+  - [x] Implemented removeFromFavorites() function to remove items from favorites
+  - [x] Implemented isFavorited() function to check if user has favorited an item
+- [x] Create backend procedures for ranking by favorites
+  - [x] Implemented getTopMostFavoritedItems() function to get top 10 most favorited items
+- [x] Create backend procedures for ranking by views
+  - [x] Implemented getTopMostViewedItems() function to get top 10 most viewed items
+- [x] Add tRPC endpoints for favorites and view tracking
+  - [x] Added favorites.trackView endpoint (public)
+  - [x] Added favorites.addToFavorites endpoint (protected)
+  - [x] Added favorites.removeFromFavorites endpoint (protected)
+  - [x] Added favorites.isFavorited endpoint (protected)
+  - [x] Added favorites.getTopMostFavorited endpoint (public)
+  - [x] Added favorites.getTopMostViewed endpoint (public)
+- [x] Update frontend to track views
+  - [x] Added useTrackView hook to ItemDetail component
+  - [x] Automatically track view when user visits item detail page
+- [x] Update frontend to display rankings
+  - [x] Renamed "Most Popular" section to "Most Viewed"
+  - [x] Renamed "Most Wanted" section to "Most Favorited"
+  - [x] Updated Home page to query new ranking endpoints
+  - [x] Updated rankings to refresh every 5 minutes
+- [x] Create comprehensive test file
+  - [x] Created server/favorites.test.ts with tests for all functionality
+
+
+## Ranking Section Thumbnails (Jun 13, 2026)
+- [x] Add item thumbnails to Most Viewed ranking section
+- [x] Add item thumbnails to Most Favorited ranking section
+- [x] Add member avatar thumbnails to Top Rated Traders section
+- [x] Update ranking data structures to include image URLs
+- [x] Create reusable ranking item component with thumbnail and title
