@@ -68,41 +68,7 @@ export default function Watchlist() {
       <CategoryBar />
 
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="grid gap-6 lg:grid-cols-[300px_minmax(0,1fr)]">
-          <aside className="space-y-6">
-            <Card className="rounded-[1.75rem] border-white/10 bg-white/5 text-white shadow-[0_20px_60px_rgba(0,0,0,0.28)] backdrop-blur">
-              <CardHeader className="pb-4">
-                <Badge className="w-fit rounded-full bg-white/10 px-3 py-1 text-white/80 hover:bg-white/10">Saved listings</Badge>
-                <CardTitle className="mt-3 text-2xl">Standalone Watchlist</CardTitle>
-                <CardDescription className="text-white/65">
-                  A dedicated saved-items workspace that matches the rest of Tradebilia while giving your Watchlist its own route.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4 text-sm leading-7 text-white/72">
-                <div className="rounded-[1.25rem] border border-white/10 bg-black/20 p-4">
-                  <p className="text-sm uppercase tracking-[0.24em] text-white/55">Member</p>
-                  <p className="mt-2 text-xl font-semibold text-white">{user?.name || user?.email || "Subscriber"}</p>
-                  <p className="mt-1 text-sm text-white/65">Revisit listings you want to compare, research, or propose trades on later.</p>
-                </div>
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
-                  {[
-                    ["Saved items", String(dashboardQuery.data?.watchlist.length ?? 0)],
-                    ["Active trades", String(dashboardQuery.data?.tradeProposals.filter(item => item.status !== "completed").length ?? 0)],
-                  ].map(([label, value]) => (
-                    <div key={label as string} className="rounded-[1rem] border border-white/10 bg-white/5 p-4">
-                      <p className="text-sm text-white/60">{label as string}</p>
-                      <p className="mt-2 text-3xl font-semibold text-white">{value as string}</p>
-                    </div>
-                  ))}
-                </div>
-                <Button asChild className="w-full rounded-full bg-white text-slate-950 hover:bg-white/90">
-                  <Link href="/members">Find collectors</Link>
-                </Button>
-              </CardContent>
-            </Card>
-          </aside>
-
-          <Card className="rounded-[2rem] border-white/10 bg-slate-950/65 text-white shadow-[0_24px_70px_rgba(0,0,0,0.35)] backdrop-blur">
+        <Card className="rounded-[2rem] border-white/10 bg-slate-950/65 text-white shadow-[0_24px_70px_rgba(0,0,0,0.35)] backdrop-blur">
             <CardHeader className="pb-4">
               <CardTitle className="font-serif text-[2.45rem] font-medium tracking-[-0.035em] sm:text-[2.8rem] text-white">Watchlist management</CardTitle>
               <CardDescription className="max-w-2xl text-base leading-7 text-white/65">
@@ -179,8 +145,7 @@ export default function Watchlist() {
                 </div>
               )}
             </CardContent>
-          </Card>
-        </div>
+        </Card>
       </main>
     </div>
   );

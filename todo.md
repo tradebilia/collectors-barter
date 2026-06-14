@@ -2017,3 +2017,12 @@ Completed Features:
 - [x] Create and run unit tests for getAvatarInitials function
   - [x] Created server/tradebilia.test.ts with 8 comprehensive tests
   - [x] All tests pass: firstName+lastName priority, fallback to firstName, fallback to displayName, uppercase conversion, empty string handling
+
+
+## Watchlist Page UI Cleanup (Jun 14, 2026)
+- [x] Remove email address display from watchlist page member section
+- [x] Remove entire member section from watchlist page (not needed for personal watchlist view)
+  - [x] Removed member card with name and email display
+  - [x] Removed saved items and active trades stats cards
+  - [x] Removed "Find collectors" button from sidebar
+  - [x] Simplified layout to focus on watchlist items only
