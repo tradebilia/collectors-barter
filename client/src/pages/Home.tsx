@@ -234,7 +234,7 @@ function HighestTradeValueItem({ item, index, imageUrl }: { item: any; index: nu
 
   return (
     <>
-      <div className={`flex items-center gap-3 rounded-md px-3 py-3 transition-all hover:bg-white/10 cursor-pointer border border-white/5 hover:border-white/10 ${badge.bg}`} ref={containerRef} onMouseMove={handleMouseMove}>
+      <div className={`flex items-center gap-3 rounded-md px-3 py-3 transition-all hover:bg-white/10 cursor-pointer border border-white/5 hover:border-white/10`} ref={containerRef} onMouseMove={handleMouseMove}>
         <div className={`min-w-[32px] h-8 flex items-center justify-center rounded-full font-bold text-[14px] ${badge.text} bg-white/5`}>
           {badge.label}
         </div>
