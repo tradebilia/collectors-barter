@@ -222,9 +222,21 @@ function HighestTradeValueItem({ item, index, imageUrl }: { item: any; index: nu
     return 'bg-white/5 text-white/70';
   };
 
+  const getRankingBadge = () => {
+    if (index === 0) return { bg: 'bg-yellow-500/20', text: 'text-yellow-400', label: '🥇' };
+    if (index === 1) return { bg: 'bg-gray-400/20', text: 'text-gray-300', label: '🥈' };
+    if (index === 2) return { bg: 'bg-orange-600/20', text: 'text-orange-400', label: '🥉' };
+    return { bg: 'bg-slate-700/30', text: 'text-white/60', label: `${index + 1}` };
+  };
+
+  const badge = getRankingBadge();
+
   return (
-    <div className="flex items-center gap-3 rounded-md px-2 py-2 transition-colors hover:bg-white/5" ref={containerRef} onMouseMove={handleMouseMove}>
-      <span className="text-[20px] min-w-[28px] text-center">{index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : <span className="text-[12px] font-semibold text-white/70">{index + 1}</span>}</span>
+    <>
+      <div className={`flex items-center gap-3 rounded-md px-3 py-3 transition-all hover:bg-white/10 cursor-pointer border border-white/5 hover:border-white/10 ${badge.bg}`} ref={containerRef} onMouseMove={handleMouseMove}>
+        <div className={`min-w-[32px] h-8 flex items-center justify-center rounded-full font-bold text-[14px] ${badge.text} bg-white/5`}>
+          {badge.label}
+        </div>
       <div
         onMouseEnter={() => setShowPreview(true)}
         className="relative"
@@ -251,16 +263,22 @@ function HighestTradeValueItem({ item, index, imageUrl }: { item: any; index: nu
           </div>
         </DialogContent>
         </Dialog>
+        </div>
+        <div className="flex-1 min-w-0">
+          <p 
+            onClick={handleImageClick}
+            className="text-[10px] text-white/85 truncate cursor-pointer hover:text-white/100 transition-colors"
+          >
+            {item.title} {item.certificationCompany && item.grade ? `• ${item.certificationCompany} ${item.grade}` : item.grade ? `• ${item.grade}` : ''}
+          </p>
+        </div>
+        <div className="flex items-center gap-2 text-white/60 text-[9px] flex-shrink-0">
+          <span className="font-semibold text-yellow-300">${item.estimatedValue?.toFixed(0) ?? 'N/A'}</span>
+        </div>
+        <span className="text-white/40 text-[16px]">&gt;</span>
       </div>
-      <div className="flex-1 min-w-0">
-        <p 
-          onClick={handleImageClick}
-          className="text-[9.5px] text-white/85 truncate cursor-pointer hover:text-white/100 transition-colors"
-        >
-          {item.title} {item.certificationCompany && item.grade ? `• ${item.certificationCompany} ${item.grade}` : item.grade ? `• ${item.grade}` : ''} • <span className="font-semibold text-yellow-300">${item.estimatedValue?.toFixed(0) ?? 'N/A'}</span>
-        </p>
-      </div>
-    </div>
+      {index < 9 && <div className="h-px bg-white/5 mx-2"></div>}
+    </>
   );
 }
 
@@ -781,12 +799,25 @@ export default function Home() {
                   <CardContent className="space-y-2 pb-4 text-[9.5px] leading-4 text-slate-700">
                       {topTraderItemsData.map((owner, index) => {
                         const avatarUrl = owner.avatarUrl || '/images/placeholder.png';
+                        const getRankingBadge = () => {
+                          if (index === 0) return { bg: 'bg-yellow-500/20', text: 'text-yellow-400', label: '🥇' };
+                          if (index === 1) return { bg: 'bg-gray-400/20', text: 'text-gray-300', label: '🥈' };
+                          if (index === 2) return { bg: 'bg-orange-600/20', text: 'text-orange-400', label: '🥉' };
+                          return { bg: 'bg-slate-700/30', text: 'text-white/60', label: `${index + 1}` };
+                        };
+                        const badge = getRankingBadge();
                         return (
-                          <div key={`${index}`} className="flex items-center gap-2 rounded-md px-2 py-1 transition-colors hover:bg-slate-700/20">
-                            <span className="min-w-[20px] text-center font-semibold">{index + 1}.</span>
-                            <img src={avatarUrl} alt={owner.displayName} className="h-16 w-16 object-cover rounded-full flex-shrink-0 hover:opacity-80 transition-opacity" />
-                            <span className="truncate hover:text-slate-900 transition-colors">{owner.displayName}</span>
-                          </div>
+                          <>
+                            <div key={`${index}`} className={`flex items-center gap-3 rounded-md px-3 py-3 transition-all hover:bg-white/10 cursor-pointer border border-white/5 hover:border-white/10 ${badge.bg}`}>
+                              <div className={`min-w-[32px] h-8 flex items-center justify-center rounded-full font-bold text-[14px] ${badge.text} bg-white/5`}>
+                                {badge.label}
+                              </div>
+                              <img src={avatarUrl} alt={owner.displayName} className="h-16 w-16 object-cover rounded-full flex-shrink-0 hover:opacity-80 transition-opacity" />
+                              <span className="truncate hover:text-white/100 transition-colors text-[10px] flex-1">{owner.displayName}</span>
+                              <span className="text-white/40 text-[16px]">&gt;</span>
+                            </div>
+                            {index < 9 && <div className="h-px bg-white/5 mx-2"></div>}
+                          </>
                         );
                       })}
                   </CardContent>
