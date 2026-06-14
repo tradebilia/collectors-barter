@@ -179,9 +179,10 @@ function RankingListingItem({ item, index, imageUrl, metricsType, metrics }: { i
           <span onClick={handleImageClick} className="truncate hover:text-white/100 transition-colors text-[10px] block">{item.title}</span>
         </div>
         <div className="flex items-center gap-2 text-white/60 text-[9px] flex-shrink-0">
-          {metrics && (
-            <span className="flex items-center gap-1">
-              {metricsType === 'views' ? '👁' : '❤'} {metrics}
+          {metrics !== undefined && metrics !== null && (
+            <span className="flex items-center gap-1.5 whitespace-nowrap">
+              <span>{metricsType === 'views' ? '👁️' : '❤️'}</span>
+              <span>{metrics}</span>
             </span>
           )}
         </div>
@@ -804,16 +805,16 @@ export default function Home() {
                       {topTraderItemsData.map((owner, index) => {
                         const avatarUrl = owner.avatarUrl || '/images/placeholder.png';
                         const getRankingBadge = () => {
-                          if (index === 0) return { bg: 'bg-yellow-500/20', text: 'text-yellow-400', label: '🥇' };
-                          if (index === 1) return { bg: 'bg-gray-400/20', text: 'text-gray-300', label: '🥈' };
-                          if (index === 2) return { bg: 'bg-orange-600/20', text: 'text-orange-400', label: '🥉' };
+                          if (index === 0) return { bg: 'bg-gradient-to-br from-yellow-400 to-yellow-500 shadow-lg shadow-yellow-500/50', text: 'text-yellow-900 font-bold', label: '🥇' };
+                          if (index === 1) return { bg: 'bg-gradient-to-br from-gray-300 to-gray-400 shadow-lg shadow-gray-400/50', text: 'text-gray-900 font-bold', label: '🥈' };
+                          if (index === 2) return { bg: 'bg-gradient-to-br from-orange-400 to-orange-500 shadow-lg shadow-orange-500/50', text: 'text-orange-900 font-bold', label: '🥉' };
                           return { bg: 'bg-slate-700/30', text: 'text-white/60', label: `${index + 1}` };
                         };
                         const badge = getRankingBadge();
                         return (
-                          <>
-                            <div key={`${index}`} className={`flex items-center gap-3 rounded-md px-3 py-3 transition-all hover:bg-white/10 cursor-pointer border border-white/5 hover:border-white/10 ${badge.bg}`}>
-                              <div className={`min-w-[32px] h-8 flex items-center justify-center rounded-full font-bold text-[14px] ${badge.text} bg-white/5`}>
+                          <div key={`trader-${index}`}>
+                            <div className={`flex items-center gap-3 rounded-md px-3 py-3 transition-all hover:bg-white/10 cursor-pointer border border-white/5 hover:border-white/10`}>
+                              <div className={`min-w-[32px] h-8 flex items-center justify-center rounded-full font-bold text-[14px] ${badge.text} ${badge.bg}`}>
                                 {badge.label}
                               </div>
                               <img src={avatarUrl} alt={owner.displayName} className="h-16 w-16 object-cover rounded-full flex-shrink-0 hover:opacity-80 transition-opacity" />
@@ -821,7 +822,7 @@ export default function Home() {
                               <span className="text-white/40 text-[16px]">&gt;</span>
                             </div>
                             {index < 9 && <div className="h-px bg-white/5 mx-2"></div>}
-                          </>
+                          </div>
                         );
                       })}
                   </CardContent>
