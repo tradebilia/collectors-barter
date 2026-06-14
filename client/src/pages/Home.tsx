@@ -816,13 +816,12 @@ export default function Home() {
                               <div className={`min-w-[48px] h-12 flex items-center justify-center rounded-full font-bold text-[22px] ${badge.text}`}>
                                 {badge.label}
                               </div>
-                              {avatarUrl ? (
-                                <img src={avatarUrl} alt={owner.displayName} className="h-16 w-16 object-cover rounded-full flex-shrink-0 hover:opacity-80 transition-opacity" />
-                              ) : (
-                                <div className="h-16 w-16 flex items-center justify-center rounded-full bg-[#7f31ff] text-white font-bold text-sm flex-shrink-0">
+                              <Avatar className="h-16 w-16 flex-shrink-0 border border-white/30">
+                                <AvatarImage src={avatarUrl || undefined} alt={owner.displayName} />
+                                <AvatarFallback className="bg-[#7f31ff] text-white text-sm font-semibold">
                                   {initials}
-                                </div>
-                              )}
+                                </AvatarFallback>
+                              </Avatar>
                               <span className="truncate hover:text-white/100 transition-colors text-[10px] flex-1">{owner.displayName}</span>
                               <span className="text-white/40 text-[16px]">&gt;</span>
                             </div>
