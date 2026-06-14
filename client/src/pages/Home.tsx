@@ -145,7 +145,7 @@ function RankingListingItem({ item, index, imageUrl }: { item: any; index: numbe
       <div onMouseEnter={() => setShowPreview(true)} className="relative">
         <Dialog open={showPreview} onOpenChange={setShowPreview}>
           <div onClick={handleImageClick} className="cursor-pointer">
-            <img src={imageUrl} alt={item.title} className="h-10 w-10 object-contain rounded flex-shrink-0 hover:opacity-80 transition-opacity" />
+            <img src={imageUrl} alt={item.title} className="h-10 w-10 object-cover rounded flex-shrink-0 hover:opacity-80 transition-opacity" />
           </div>
           <DialogContent className="max-w-md">
             <DialogHeader>
