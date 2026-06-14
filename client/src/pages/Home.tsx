@@ -730,7 +730,7 @@ export default function Home() {
                   </CardHeader>
                   <CardContent className="space-y-2 pb-4 text-[8.5px] leading-4 text-white/85">
                       {mostViewedItemsData.map((item, index) => {
-                        const imageUrl = item.photos?.[0]?.url ? resolveTradebiliaListingImage(item.photos[0].url) : '/images/placeholder.png';
+                        const imageUrl = resolveTradebiliaListingImage({ title: item.title, category: item.category, primaryPhotoUrl: item.primaryPhotoUrl });
                         return (
                           <RankingListingItem key={`${item.id}-${index}`} item={item} index={index} imageUrl={imageUrl} />
                         );
@@ -739,11 +739,11 @@ export default function Home() {
                 </Card>
                 <Card className="overflow-hidden rounded-none border-0 bg-[linear-gradient(135deg,#090b10_0%,#262937_100%)] text-white shadow-none border-l border-white/10">
                   <CardHeader className="pb-2 pt-4">
-                    <CardTitle className="font-['Oswald'] text-[1.1rem] uppercase tracking-[0.22em] text-white/90">⭐ Most Favorited</CardTitle>
+                    <CardTitle className="font-['Oswald'] text-[1.1rem] uppercase tracking-[0.22em] text-white/90">❤️ Most Favorited</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-2 pb-4 text-[8.5px] leading-4 text-white/85">
                       {mostRequestedItemsData.map((item, index) => {
-                        const imageUrl = item.photos?.[0]?.url ? resolveTradebiliaListingImage(item.photos[0].url) : '/images/placeholder.png';
+                        const imageUrl = resolveTradebiliaListingImage({ title: item.title, category: item.category, primaryPhotoUrl: item.primaryPhotoUrl });
                         return (
                           <RankingListingItem key={`${item.id}-${index}`} item={item} index={index} imageUrl={imageUrl} />
                         );
