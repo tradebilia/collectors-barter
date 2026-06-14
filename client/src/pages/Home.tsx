@@ -805,10 +805,10 @@ export default function Home() {
                       {topTraderItemsData.map((owner, index) => {
                         const avatarUrl = owner.avatarUrl || '/images/placeholder.png';
                         const getRankingBadge = () => {
-                          if (index === 0) return { bg: 'bg-gradient-to-br from-yellow-400 to-yellow-500 shadow-lg shadow-yellow-500/50', text: 'text-yellow-900 font-bold', label: '🥇' };
-                          if (index === 1) return { bg: 'bg-gradient-to-br from-gray-300 to-gray-400 shadow-lg shadow-gray-400/50', text: 'text-gray-900 font-bold', label: '🥈' };
-                          if (index === 2) return { bg: 'bg-gradient-to-br from-orange-400 to-orange-500 shadow-lg shadow-orange-500/50', text: 'text-orange-900 font-bold', label: '🥉' };
-                          return { bg: 'bg-slate-700/30', text: 'text-white/60', label: `${index + 1}` };
+                          if (index === 0) return { bg: '', text: 'text-yellow-400 font-bold', label: '🥇' };
+                          if (index === 1) return { bg: '', text: 'text-gray-300 font-bold', label: '🥈' };
+                          if (index === 2) return { bg: '', text: 'text-orange-400 font-bold', label: '🥉' };
+                          return { bg: '', text: 'text-white/60', label: `${index + 1}` };
                         };
                         const badge = getRankingBadge();
                         return (
