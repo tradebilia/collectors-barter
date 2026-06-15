@@ -2132,3 +2132,11 @@ Completed Features:
   - [x] Highest Trade Values Rankings page displays "Highest Trade Values" title
 - [x] Verify component renders correctly with spinning animation
 - [x] Commit and push to GitHub
+
+## Ranking Page Title Font Size (Jun 15, 2026)
+- [x] Match ranking page title font size to home page (132)
+  - [x] Updated RankingPageHero component to use font-size 132
+  - [x] Increased SVG viewBox from 2400 to 2800 to accommodate larger font
+  - [x] Verified all 4 ranking pages display with consistent typography
+  - [x] Ensured no text cutoff or overlap with spinning wheel/divider bar
+  - [x] All titles fully visible: MOST VIEWED, MOST FAVORITED, TOP RATED TRADERS, HIGHEST TRADE VALUES
