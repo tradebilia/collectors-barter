@@ -2152,3 +2152,7 @@ Completed Features:
 - [x] Remove duplicate value display
   - [x] Removed value from left side (title section)
   - [x] Kept single value on right side with "trade value" label
+
+## Top 10 Rated Traders Deduplication
+
+- [x] Fix Top 10 Rated Traders section - ensure each trader appears only once (no duplicates if they have multiple listings)
