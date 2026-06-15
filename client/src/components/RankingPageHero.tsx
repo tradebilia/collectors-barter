@@ -15,7 +15,7 @@ export function RankingPageHero({ title, subtitle = "Collectors Trading Exchange
     }}>
       <div className="container relative flex h-64 items-center justify-center py-0 sm:h-72 sm:py-0 lg:h-80 lg:py-0">
         <svg
-          viewBox="0 0 2400 864"
+          viewBox="0 0 2800 864"
           className="h-auto w-full max-w-full"
           xmlns="http://www.w3.org/2000/svg"
         >
@@ -133,7 +133,7 @@ export function RankingPageHero({ title, subtitle = "Collectors Trading Exchange
             y="468"
             textAnchor="start"
             fontFamily="Montserrat, Avenir Next, Gotham, Arial, Helvetica, sans-serif"
-            fontSize="100"
+            fontSize="132"
             fontWeight="700"
             fill="white"
             className="uppercase"
