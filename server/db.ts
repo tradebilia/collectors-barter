@@ -810,11 +810,20 @@ export async function toggleWatchlist(userId: number, listingId: number) {
   const isSaved = !existing[0];
   
   if (existing[0]) {
+    // Remove from both watchlist and favorites
     await db
       .delete(watchlistEntries)
       .where(and(eq(watchlistEntries.userId, userId), eq(watchlistEntries.listingId, listingId)));
+    await db
+      .delete(favorites)
+      .where(and(eq(favorites.userId, userId), eq(favorites.listingId, listingId)));
   } else {
+    // Add to both watchlist and favorites
     await db.insert(watchlistEntries).values({
+      userId,
+      listingId,
+    });
+    await db.insert(favorites).values({
       userId,
       listingId,
     });

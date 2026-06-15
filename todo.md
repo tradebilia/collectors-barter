@@ -2068,3 +2068,11 @@ Completed Features:
   - [x] Query now filters: COUNT(favorites.id) > 0
   - [x] Only items with at least one favorite will appear in the Most Favorited section
   - [x] Verified in browser - Most Favorited section now only shows items with favorites
+
+## Watchlist-Favorites Sync Integration (Jun 15, 2026)
+- [x] Sync watchlist entries with favorites table for Most Favorited ranking
+  - [x] Updated toggleWatchlist function to create/delete favorites entries when items are added/removed from watchlist
+  - [x] Populated existing watchlist entries into favorites table
+  - [x] Verified Most Favorited section now displays items with accurate favorite counts
+  - [x] Each unique listing tracks how many users have added it to their watchlist
+  - [x] Only items with at least one favorite appear in the Most Favorited ranking section
