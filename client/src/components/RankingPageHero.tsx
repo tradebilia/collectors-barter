@@ -16,7 +16,7 @@ export function RankingPageHero({ title, subtitle = "Collectors Trading Exchange
       <div className="container relative flex h-64 items-center justify-center py-0 sm:h-72 sm:py-0 lg:h-80 lg:py-0">
         <svg
           viewBox="0 0 1536 864"
-          className="h-auto w-full max-w-4xl"
+          className="h-auto w-full max-w-5xl"
           xmlns="http://www.w3.org/2000/svg"
         >
           <defs>
@@ -127,11 +127,11 @@ export function RankingPageHero({ title, subtitle = "Collectors Trading Exchange
           {/* Divider line */}
           <line x1="590" y1="271" x2="590" y2="595" stroke="white" strokeWidth="8.5" strokeLinecap="round" />
 
-          {/* Dynamic title */}
+          {/* Dynamic title - positioned to the right of divider with proper spacing */}
           <text
-            x="1440"
+            x="750"
             y="468"
-            textAnchor="end"
+            textAnchor="start"
             fontFamily="Montserrat, Avenir Next, Gotham, Arial, Helvetica, sans-serif"
             fontSize="132"
             fontWeight="700"
@@ -141,11 +141,11 @@ export function RankingPageHero({ title, subtitle = "Collectors Trading Exchange
             {title}
           </text>
 
-          {/* Subtitle */}
+          {/* Subtitle - positioned below title */}
           <text
-            x="1440"
+            x="750"
             y="536"
-            textAnchor="end"
+            textAnchor="start"
             fontFamily="Montserrat, Avenir Next, Gotham, Arial, Helvetica, sans-serif"
             fontSize="32"
             fontWeight="400"
