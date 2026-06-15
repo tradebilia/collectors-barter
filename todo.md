@@ -2104,3 +2104,16 @@ Completed Features:
   - [x] Check if listing owner matches current user
   - [x] Disable heart/favorite button with tooltip explaining why
   - [x] Show visual feedback that the action is not allowed
+
+## Hero Sections on Ranking Pages (Jun 15, 2026)
+- [x] Add hero sections to all 4 ranking pages
+  - [x] Added hero section to Most Viewed Rankings page
+  - [x] Added hero section to Most Favorited Rankings page
+  - [x] Added hero section to Top Rated Traders Rankings page
+  - [x] Added hero section to Highest Trade Values Rankings page
+  - [x] Each hero uses the same background image as home page (Mainpage_9b45311d.jpg)
+  - [x] Centered title with responsive sizing (text-4xl → text-6xl)
+  - [x] Subtitle describing each ranking type
+  - [x] Drop shadow for text readability
+  - [x] CategoryBar positioned directly below each hero
+  - [x] Responsive heights: h-64 on mobile, h-72 on tablet, h-80 on desktop
