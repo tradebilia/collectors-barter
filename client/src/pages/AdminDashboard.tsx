@@ -1,14 +1,180 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { BarChart3, Users, Package, Settings, Trash2, Flag, Mail } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { BarChart3, Users, Package, Settings, Trash2, Flag, Mail, Search, ArrowUpDown } from "lucide-react";
 import { getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
 import { TopBar } from "@/components/TopBar";
 import { ReferralsTab } from "@/components/ReferralsTab";
+import { Link } from "wouter";
+
+function AdminListingsTab({ listingsQuery }: { listingsQuery: any }) {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortBy, setSortBy] = useState<"refId" | "title" | "category" | "date" | "views" | "status" | "owner">("refId");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+
+  const filteredAndSortedListings = useMemo(() => {
+    if (!listingsQuery.data) return [];
+
+    let filtered = (listingsQuery.data as any[]).filter((listing: any) => {
+      const searchLower = searchTerm.toLowerCase();
+      return (
+        listing.id.toString().includes(searchLower) ||
+        listing.title.toLowerCase().includes(searchLower) ||
+        listing.category.toLowerCase().includes(searchLower) ||
+        listing.ownerProfile?.displayName?.toLowerCase().includes(searchLower)
+      );
+    });
+
+    filtered.sort((a: any, b: any) => {
+      let compareValue = 0;
+      switch (sortBy) {
+        case "refId":
+          compareValue = a.id - b.id;
+          break;
+        case "title":
+          compareValue = a.title.localeCompare(b.title);
+          break;
+        case "category":
+          compareValue = a.category.localeCompare(b.category);
+          break;
+        case "date":
+          compareValue = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+          break;
+        case "views":
+          compareValue = (a.viewCount || 0) - (b.viewCount || 0);
+          break;
+        case "status":
+          compareValue = (a.status || "").localeCompare(b.status || "");
+          break;
+        case "owner":
+          compareValue = (a.ownerProfile?.displayName || "").localeCompare(b.ownerProfile?.displayName || "");
+          break;
+      }
+      return sortOrder === "asc" ? compareValue : -compareValue;
+    });
+
+    return filtered;
+  }, [listingsQuery.data, searchTerm, sortBy, sortOrder]);
+
+  const toggleSort = (column: typeof sortBy) => {
+    if (sortBy === column) {
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    } else {
+      setSortBy(column);
+      setSortOrder("asc");
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Listings Management</CardTitle>
+        <CardDescription>
+          Review, moderate, and manage collectible listings
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex items-center gap-2">
+          <Search className="h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search by Ref ID, Title, Category, or Owner..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="flex-1"
+          />
+        </div>
+
+        {listingsQuery.isLoading ? (
+          <div className="text-sm text-muted-foreground">Loading listings...</div>
+        ) : filteredAndSortedListings.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="border-b border-border">
+                <tr>
+                  <th className="text-left py-2 px-4 cursor-pointer hover:bg-accent/50" onClick={() => toggleSort("refId")}>
+                    <div className="flex items-center gap-2">
+                      Ref ID
+                      {sortBy === "refId" && <ArrowUpDown className="h-3 w-3" />}
+                    </div>
+                  </th>
+                  <th className="text-left py-2 px-4 cursor-pointer hover:bg-accent/50" onClick={() => toggleSort("category")}>
+                    <div className="flex items-center gap-2">
+                      Category
+                      {sortBy === "category" && <ArrowUpDown className="h-3 w-3" />}
+                    </div>
+                  </th>
+                  <th className="text-left py-2 px-4 cursor-pointer hover:bg-accent/50" onClick={() => toggleSort("title")}>
+                    <div className="flex items-center gap-2">
+                      Item Title
+                      {sortBy === "title" && <ArrowUpDown className="h-3 w-3" />}
+                    </div>
+                  </th>
+                  <th className="text-left py-2 px-4 cursor-pointer hover:bg-accent/50" onClick={() => toggleSort("date")}>
+                    <div className="flex items-center gap-2">
+                      Created Date
+                      {sortBy === "date" && <ArrowUpDown className="h-3 w-3" />}
+                    </div>
+                  </th>
+                  <th className="text-left py-2 px-4 cursor-pointer hover:bg-accent/50" onClick={() => toggleSort("views")}>
+                    <div className="flex items-center gap-2">
+                      View Count
+                      {sortBy === "views" && <ArrowUpDown className="h-3 w-3" />}
+                    </div>
+                  </th>
+                  <th className="text-left py-2 px-4 cursor-pointer hover:bg-accent/50" onClick={() => toggleSort("status")}>
+                    <div className="flex items-center gap-2">
+                      Status
+                      {sortBy === "status" && <ArrowUpDown className="h-3 w-3" />}
+                    </div>
+                  </th>
+                  <th className="text-left py-2 px-4 cursor-pointer hover:bg-accent/50" onClick={() => toggleSort("owner")}>
+                    <div className="flex items-center gap-2">
+                      Owner
+                      {sortBy === "owner" && <ArrowUpDown className="h-3 w-3" />}
+                    </div>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredAndSortedListings.map((listing: any) => (
+                  <tr key={listing.id} className="border-b border-border hover:bg-accent/50">
+                    <td className="py-2 px-4">
+                      <Link href={`/listings/${listing.id}`} className="text-blue-600 hover:text-blue-800 font-semibold">
+                        #{listing.id}
+                      </Link>
+                    </td>
+                    <td className="py-2 px-4">{listing.category}</td>
+                    <td className="py-2 px-4 truncate max-w-xs">{listing.title}</td>
+                    <td className="py-2 px-4">{new Date(listing.createdAt).toLocaleDateString()}</td>
+                    <td className="py-2 px-4">{listing.viewCount || 0}</td>
+                    <td className="py-2 px-4">
+                      <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                        listing.status === 'active' ? 'bg-green-500/20 text-green-700' : 'bg-gray-500/20 text-gray-700'
+                      }`}>
+                        {listing.status}
+                      </span>
+                    </td>
+                    <td className="py-2 px-4">{listing.ownerProfile?.displayName || `User ${listing.ownerId}`}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="text-sm text-muted-foreground">No listings found</div>
+        )}
+        <div className="text-xs text-muted-foreground">
+          Showing {filteredAndSortedListings.length} of {listingsQuery.data?.length || 0} listings
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
 export default function AdminDashboard() {
   const { user, loading } = useAuth();
@@ -342,57 +508,7 @@ export default function AdminDashboard() {
 
           {/* Listings Tab */}
           <TabsContent value="listings" className="space-y-4 mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Listings Management</CardTitle>
-                <CardDescription>
-                  Review, moderate, and manage collectible listings
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {listingsQuery.isLoading ? (
-                  <div className="text-sm text-muted-foreground">Loading listings...</div>
-                ) : listingsQuery.data && listingsQuery.data.length > 0 ? (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead className="border-b border-border">
-                        <tr>
-                          <th className="text-left py-2 px-4">Title</th>
-                          <th className="text-left py-2 px-4">Category</th>
-                          <th className="text-left py-2 px-4">Condition</th>
-                          <th className="text-left py-2 px-4">Status</th>
-                          <th className="text-left py-2 px-4">Owner ID</th>
-                          <th className="text-left py-2 px-4">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {(listingsQuery.data as any[])?.map((listing: any) => (
-                          <tr key={listing.id} className="border-b border-border hover:bg-accent/50">
-                            <td className="py-2 px-4 truncate max-w-xs">{listing.title}</td>
-                            <td className="py-2 px-4">{listing.category}</td>
-                            <td className="py-2 px-4">{listing.condition}</td>
-                            <td className="py-2 px-4">
-                              <span className={`px-2 py-1 rounded text-xs font-semibold ${
-                                listing.status === 'active' ? 'bg-green-500/20 text-green-700' : 'bg-gray-500/20 text-gray-700'
-                              }`}>
-                                {listing.status}
-                              </span>
-                            </td>
-                            <td className="py-2 px-4">{(listing as any).ownerId}</td>
-                            <td className="py-2 px-4 text-xs space-x-2">
-                              <Button size="sm" variant="outline">View</Button>
-                              <Button size="sm" variant="destructive">Delete</Button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                ) : (
-                  <div className="text-sm text-muted-foreground">No listings found</div>
-                )}
-              </CardContent>
-            </Card>
+            <AdminListingsTab listingsQuery={listingsQuery} />
           </TabsContent>
 
           {/* Trades Tab */}

@@ -275,9 +275,15 @@ export default function ItemDetail() {
 
             <div className="pt-2">
               <div className="rounded-[2rem] border border-white/10 bg-white p-8 shadow-[0_40px_90px_rgba(0,0,0,0.28)] backdrop-blur-sm">
-                <Badge className="rounded-full border border-gray-300 bg-gray-100 px-4 py-2 text-[0.7rem] uppercase tracking-[0.25em] text-gray-700 hover:bg-gray-200">
-                  {getTradebiliaCategoryLabel(listing.category)}
-                </Badge>
+                <div className="flex items-center justify-between">
+                  <Badge className="rounded-full border border-gray-300 bg-gray-100 px-4 py-2 text-[0.7rem] uppercase tracking-[0.25em] text-gray-700 hover:bg-gray-200">
+                    {getTradebiliaCategoryLabel(listing.category)}
+                  </Badge>
+                  <div className="text-right">
+                    <p className="text-xs uppercase tracking-[0.25em] text-gray-500">Reference ID</p>
+                    <p className="mt-1 text-lg font-semibold text-gray-900">#{listing.id}</p>
+                  </div>
+                </div>
                 <h1 className="mt-6 text-5xl font-semibold leading-[1.05] tracking-tight text-gray-900">{listing.title}</h1>
                 <div className="mt-6 grid gap-4 text-lg text-gray-700 sm:grid-cols-2">
                   <div>

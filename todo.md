@@ -2076,3 +2076,21 @@ Completed Features:
   - [x] Verified Most Favorited section now displays items with accurate favorite counts
   - [x] Each unique listing tracks how many users have added it to their watchlist
   - [x] Only items with at least one favorite appear in the Most Favorited ranking section
+
+## Reference ID Display Throughout Application (Jun 15, 2026)
+- [x] Display reference ID (listingId) on item detail page
+  - [x] Show reference ID prominently on the item detail page
+  - [x] Format and position it clearly for user visibility
+- [x] Display reference ID in inventory management area
+  - [x] Show reference ID for each item in My Inventory page
+  - [x] Make it easy to reference when managing items
+- [ ] Add reference ID to trade proposals (conditional display)
+  - [ ] Include reference ID in trade proposal details
+  - [ ] Only display after both sides agree and full contact info is shared
+- [x] Create admin listings management page
+  - [x] New "Listings" tab on admin page
+  - [x] Display columns in order: Ref ID, Category, Item Title, Created Date, View Count, Status, Owner
+  - [x] Make Ref ID clickable to navigate to item detail page
+  - [x] Implement search functionality across all columns
+  - [x] Implement sort functionality for all columns
+  - [x] Display all active and inactive listings
