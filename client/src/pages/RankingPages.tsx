@@ -50,7 +50,11 @@ export function AllMostViewedRankings() {
                 primaryPhotoUrl: item.primaryPhotoUrl 
               });
               return (
-                <div key={`${item.id}-${index}`} className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-lg transition-shadow">
+                <button
+                  key={`${item.id}-${index}`}
+                  onClick={() => setLocation(`/item/${item.id}`)}
+                  className="w-full text-left bg-white rounded-lg border border-gray-200 p-4 hover:shadow-lg transition-shadow cursor-pointer"
+                >
                   <div className="flex items-start gap-4">
                     <div className="flex-shrink-0 w-24 h-24 bg-gray-100 rounded-lg overflow-hidden">
                       <img src={imageUrl} alt={item.title} className="w-full h-full object-cover" />
@@ -70,7 +74,7 @@ export function AllMostViewedRankings() {
                       </div>
                     </div>
                   </div>
-                </div>
+                </button>
               );
             })}
           </div>
@@ -121,7 +125,11 @@ export function AllMostFavoritedRankings() {
                 primaryPhotoUrl: item.primaryPhotoUrl 
               });
               return (
-                <div key={`${item.id}-${index}`} className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-lg transition-shadow">
+                <button
+                  key={`${item.id}-${index}`}
+                  onClick={() => setLocation(`/item/${item.id}`)}
+                  className="w-full text-left bg-white rounded-lg border border-gray-200 p-4 hover:shadow-lg transition-shadow cursor-pointer"
+                >
                   <div className="flex items-start gap-4">
                     <div className="flex-shrink-0 w-24 h-24 bg-gray-100 rounded-lg overflow-hidden">
                       <img src={imageUrl} alt={item.title} className="w-full h-full object-cover" />
@@ -140,7 +148,7 @@ export function AllMostFavoritedRankings() {
                       </div>
                     </div>
                   </div>
-                </div>
+                </button>
               );
             })}
           </div>
