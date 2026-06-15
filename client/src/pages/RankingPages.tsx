@@ -19,6 +19,21 @@ export function AllMostViewedRankings() {
   return (
     <div className="min-h-screen bg-white">
       <TopBar />
+      
+      <section className="relative z-0 w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden text-white" style={{
+        backgroundImage: 'url(/manus-storage/Mainpage_9b45311d.jpg)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat'
+      }}>
+        <div className="container relative flex h-64 items-center justify-center py-0 sm:h-72 sm:py-0 lg:h-80 lg:py-0">
+          <div className="flex flex-col items-center justify-center">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white text-center drop-shadow-lg">Most Viewed Rankings</h1>
+            <p className="text-lg sm:text-xl text-white/90 mt-2 drop-shadow-md">Browse all items ranked by view count</p>
+          </div>
+        </div>
+      </section>
+      
       <CategoryBar />
       
       <div className="container mx-auto px-4 py-8">
@@ -87,6 +102,21 @@ export function AllMostFavoritedRankings() {
   return (
     <div className="min-h-screen bg-white">
       <TopBar />
+      
+      <section className="relative z-0 w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden text-white" style={{
+        backgroundImage: 'url(/manus-storage/Mainpage_9b45311d.jpg)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat'
+      }}>
+        <div className="container relative flex h-64 items-center justify-center py-0 sm:h-72 sm:py-0 lg:h-80 lg:py-0">
+          <div className="flex flex-col items-center justify-center">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white text-center drop-shadow-lg">Most Favorited Rankings</h1>
+            <p className="text-lg sm:text-xl text-white/90 mt-2 drop-shadow-md">Browse all items ranked by favorite count</p>
+          </div>
+        </div>
+      </section>
+      
       <CategoryBar />
       
       <div className="container mx-auto px-4 py-8">
@@ -160,6 +190,21 @@ export function AllRatedTradersRankings() {
   return (
     <div className="min-h-screen bg-white">
       <TopBar />
+      
+      <section className="relative z-0 w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden text-white" style={{
+        backgroundImage: 'url(/manus-storage/Mainpage_9b45311d.jpg)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat'
+      }}>
+        <div className="container relative flex h-64 items-center justify-center py-0 sm:h-72 sm:py-0 lg:h-80 lg:py-0">
+          <div className="flex flex-col items-center justify-center">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white text-center drop-shadow-lg">Top Rated Traders Rankings</h1>
+            <p className="text-lg sm:text-xl text-white/90 mt-2 drop-shadow-md">Browse all traders ranked by trade activity</p>
+          </div>
+        </div>
+      </section>
+      
       <CategoryBar />
       
       <div className="container mx-auto px-4 py-8">
@@ -236,6 +281,21 @@ export function AllHighestTradeValuesRankings() {
   return (
     <div className="min-h-screen bg-white">
       <TopBar />
+      
+      <section className="relative z-0 w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden text-white" style={{
+        backgroundImage: 'url(/manus-storage/Mainpage_9b45311d.jpg)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat'
+      }}>
+        <div className="container relative flex h-64 items-center justify-center py-0 sm:h-72 sm:py-0 lg:h-80 lg:py-0">
+          <div className="flex flex-col items-center justify-center">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white text-center drop-shadow-lg">Highest Trade Values Rankings</h1>
+            <p className="text-lg sm:text-xl text-white/90 mt-2 drop-shadow-md">Browse all items ranked by trade value</p>
+          </div>
+        </div>
+      </section>
+      
       <CategoryBar />
       
       <div className="container mx-auto px-4 py-8">
