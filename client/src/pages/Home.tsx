@@ -116,7 +116,7 @@ function initials(name: string) {
     .join("") || "CE";
 }
 
-function RankingListingItem({ item, index, imageUrl, metricsType, metrics }: { item: any; index: number; imageUrl: string; metricsType?: 'views' | 'favorites'; metrics?: number | string }) {
+function RankingListingItem({ item, index, imageUrl, metricsType, metrics }: { item: any; index: number; imageUrl: string; metricsType?: 'views' | 'favorites' | 'value'; metrics?: number | string | null }) {
   const [, setLocation] = useLocation();
   const [showPreview, setShowPreview] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -181,8 +181,8 @@ function RankingListingItem({ item, index, imageUrl, metricsType, metrics }: { i
         <div className="flex items-center gap-2 text-white/60 text-[9px] flex-shrink-0">
           {metrics !== undefined && metrics !== null && (
             <span className="flex items-center gap-1.5 whitespace-nowrap">
-              <span>{metricsType === 'views' ? '👁️' : '❤️'}</span>
-              <span>{metrics}</span>
+              <span>{metricsType === 'views' ? '👁️' : metricsType === 'value' ? '$' : '❤️'}</span>
+              <span>{metricsType === 'value' ? `${metrics}` : metrics}</span>
             </span>
           )}
         </div>
@@ -192,94 +192,6 @@ function RankingListingItem({ item, index, imageUrl, metricsType, metrics }: { i
   );
 }
 
-function HighestTradeValueItem({ item, index, imageUrl }: { item: any; index: number; imageUrl: string }) {
-  const [, setLocation] = useLocation();
-  const [showPreview, setShowPreview] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-  
-  const handleImageClick = () => {
-    setLocation(`/listings/${item.id}`);
-  };
-  
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!containerRef.current) return;
-    const rect = containerRef.current.getBoundingClientRect();
-    const isInside = 
-      e.clientX >= rect.left - 10 &&
-      e.clientX <= rect.right + 10 &&
-      e.clientY >= rect.top - 10 &&
-      e.clientY <= rect.bottom + 10;
-    
-    if (!isInside && showPreview) {
-      setShowPreview(false);
-    }
-  };
-  
-  const getRankColor = (rank: number) => {
-    if (rank === 0) return 'bg-yellow-500/20 text-yellow-300';
-    if (rank === 1) return 'bg-gray-400/20 text-gray-200';
-    if (rank === 2) return 'bg-orange-600/20 text-orange-300';
-    return 'bg-white/5 text-white/70';
-  };
-
-  const getRankingBadge = () => {
-    if (index === 0) return { bg: '', text: 'text-yellow-400 font-bold', label: '🥇' };
-    if (index === 1) return { bg: '', text: 'text-gray-300 font-bold', label: '🥈' };
-    if (index === 2) return { bg: '', text: 'text-orange-400 font-bold', label: '🥉' };
-    return { bg: '', text: 'text-white/60', label: `${index + 1}` };
-  };
-
-  const badge = getRankingBadge();
-
-  return (
-    <>
-      <div className={`flex items-center gap-3 rounded-md px-3 py-3 transition-all hover:bg-white/10 cursor-pointer border border-white/5 hover:border-white/10`} ref={containerRef} onMouseMove={handleMouseMove}>
-        <div className={`min-w-[48px] h-12 flex items-center justify-center rounded-full font-bold text-[22px] ${badge.text}`}>
-          {badge.label}
-        </div>
-      <div
-        onMouseEnter={() => setShowPreview(true)}
-        className="relative"
-      >
-        <Dialog open={showPreview} onOpenChange={setShowPreview}>
-          <div
-            onClick={handleImageClick}
-            className="cursor-pointer"
-          >
-            <img src={imageUrl} alt={item.title} className="h-16 w-16 object-contain rounded hover:opacity-80 transition-opacity" />
-          </div>
-          <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>{item.title}</DialogTitle>
-            <DialogDescription>
-              {item.certificationCompany && item.grade ? `${item.certificationCompany} ${item.grade}` : item.grade ? `Grade: ${item.grade}` : 'Ungraded'}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex justify-center">
-            <img src={imageUrl} alt={item.title} className="max-h-96 w-auto object-contain" />
-          </div>
-          <div className="text-center text-sm font-semibold">
-            Estimated Value: ${item.estimatedValue?.toFixed(0) ?? 'N/A'}
-          </div>
-        </DialogContent>
-        </Dialog>
-        </div>
-        <div className="flex-1 min-w-0">
-          <p 
-            onClick={handleImageClick}
-            className="text-[10px] text-white/85 truncate cursor-pointer hover:text-white/100 transition-colors"
-          >
-            {item.title} {item.certificationCompany && item.grade ? `• ${item.certificationCompany} ${item.grade}` : item.grade ? `• ${item.grade}` : ''}
-          </p>
-        </div>
-        <div className="flex items-center gap-2 text-white/60 text-[9px] flex-shrink-0">
-          <span className="font-semibold text-yellow-300">${item.estimatedValue?.toFixed(0) ?? 'N/A'}</span>
-        </div>
-        <span className="text-white/40 text-[16px]">&gt;</span>
-      </div>
-    </>
-  );
-}
 
 async function readFiles(files: FileList | null) {
   if (!files) return [] as UploadedImage[];
@@ -847,8 +759,8 @@ export default function Home() {
                       {(highestTradeValueItems ?? []).map((item, index) => {
                         const imageUrl = resolveTradebiliaListingImage({ title: item.title, category: item.category, primaryPhotoUrl: item.primaryPhotoUrl });
                         return (
-                          <div key={item.id}>
-                            <HighestTradeValueItem item={item} index={index} imageUrl={imageUrl} />
+                          <div key={`${item.id}-${index}`}>
+                            <RankingListingItem item={item} index={index} imageUrl={imageUrl} metricsType="value" metrics={item.estimatedValue} />
                           </div>
                         );
                       })}

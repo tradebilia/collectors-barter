@@ -2055,3 +2055,9 @@ Completed Features:
 - [x] Create and run unit tests for ranking system
   - [x] Created server/rankings.test.ts with 13 comprehensive tests
   - [x] All tests pass: homepage sections, full pages, navigation, data consistency, display fields
+
+- [x] Fix Top 10 Highest Trade Values formatting alignment
+  - [x] Replaced HighestTradeValueItem with RankingListingItem for consistency
+  - [x] Updated RankingListingItem to support 'value' metricsType
+  - [x] All 4 ranking sections now have identical formatting and alignment
+  - [x] Removed unused HighestTradeValueItem component
