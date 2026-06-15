@@ -131,8 +131,7 @@ export function AllMostFavoritedRankings() {
                         <div>
                           <div className="text-sm font-semibold text-gray-500 mb-1">#{index + 1}</div>
                           <h3 className="text-lg font-semibold text-[#2d241e] mb-1">{item.title}</h3>
-                          <p className="text-sm text-gray-600 mb-2">{getTradebiliaCategoryLabel(item.category)}</p>
-                          <p className="text-sm font-semibold text-primary">${item.price}</p>
+                          <p className="text-sm text-gray-600">{getTradebiliaCategoryLabel(item.category)}</p>
                         </div>
                         <div className="text-right">
                           <div className="text-2xl font-bold text-gray-300">❤️ {item.favoriteCount}</div>
