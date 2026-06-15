@@ -2140,3 +2140,15 @@ Completed Features:
   - [x] Verified all 4 ranking pages display with consistent typography
   - [x] Ensured no text cutoff or overlap with spinning wheel/divider bar
   - [x] All titles fully visible: MOST VIEWED, MOST FAVORITED, TOP RATED TRADERS, HIGHEST TRADE VALUES
+
+## Highest Trade Values Page Fix (Jun 15, 2026)
+- [x] Make items clickable to navigate to item detail page
+  - [x] Changed div to button element for proper semantics
+  - [x] Added onClick handler to navigate to `/item/{id}`
+  - [x] Added cursor-pointer class for visual feedback
+- [x] Display dollar values for each item
+  - [x] Fixed field name from 'price' to 'estimatedValue'
+  - [x] Values now display correctly ($5500, $5250, $4500, etc.)
+- [x] Remove duplicate value display
+  - [x] Removed value from left side (title section)
+  - [x] Kept single value on right side with "trade value" label
