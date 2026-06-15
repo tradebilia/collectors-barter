@@ -426,7 +426,17 @@ export default function Home() {
     : [];
 
   const topTraderItemsData = (marketplaceQuery.data?.listings ?? []).length
-    ? (marketplaceQuery.data?.listings ?? []).slice(0, 10).map(listing => listing.owner)
+    ? (() => {
+        const seen = new Set<number>();
+        const traders = [];
+        for (const listing of (marketplaceQuery.data?.listings ?? [])) {
+          if (!seen.has(listing.owner.id) && traders.length < 10) {
+            seen.add(listing.owner.id);
+            traders.push(listing.owner);
+          }
+        }
+        return traders;
+      })()
     : [];
 
   const mostViewedItems = mostViewedItemsData.map(listing => listing.title);
