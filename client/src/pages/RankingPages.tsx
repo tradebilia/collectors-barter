@@ -212,7 +212,11 @@ export function AllRatedTradersRankings() {
               const badge = getRankingBadge();
               
               return (
-                <div key={`trader-${trader.id}`} className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-lg transition-shadow">
+                <button
+                  key={`trader-${trader.id}`}
+                  onClick={() => setLocation(`/profile/${trader.id}`)}
+                  className="w-full text-left bg-white rounded-lg border border-gray-200 p-4 hover:shadow-lg transition-shadow cursor-pointer"
+                >
                   <div className="flex items-center gap-4">
                     <div className={`flex-shrink-0 w-12 h-12 flex items-center justify-center rounded-full font-bold text-2xl ${badge.text}`}>
                       {badge.label}
@@ -232,7 +236,7 @@ export function AllRatedTradersRankings() {
                       <div className="text-xs text-gray-500">rating</div>
                     </div>
                   </div>
-                </div>
+                </button>
               );
             })}
           </div>

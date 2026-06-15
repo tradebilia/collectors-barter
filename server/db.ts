@@ -223,6 +223,7 @@ async function formatListings(listingRows: any[], viewerId: number | null) {
     createdAt: row.createdAt.getTime(),
     updatedAt: row.updatedAt.getTime(),
     owner: {
+      id: row.ownerId,
       displayName: profileMap.get(row.ownerId)?.displayName ?? `Collector ${row.ownerId}`,
       firstName: profileMap.get(row.ownerId)?.firstName ?? null,
       lastName: profileMap.get(row.ownerId)?.lastName ?? null,
