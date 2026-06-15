@@ -1320,6 +1320,7 @@ export const appRouter = router({
         status: listings.status,
         createdAt: listings.createdAt,
         viewCount: listings.viewCount,
+        estimatedValue: listings.estimatedValue,
         ownerId: listings.ownerId,
         ownerProfile: {
           displayName: userProfiles.displayName,

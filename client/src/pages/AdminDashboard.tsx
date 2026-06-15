@@ -14,7 +14,7 @@ import { Link } from "wouter";
 
 function AdminListingsTab({ listingsQuery }: { listingsQuery: any }) {
   const [searchTerm, setSearchTerm] = useState("");
-  const [sortBy, setSortBy] = useState<"refId" | "title" | "category" | "date" | "views" | "status" | "owner">("refId");
+  const [sortBy, setSortBy] = useState<"refId" | "title" | "category" | "date" | "value" | "views" | "status" | "owner">("refId");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
 
   const filteredAndSortedListings = useMemo(() => {
@@ -44,6 +44,9 @@ function AdminListingsTab({ listingsQuery }: { listingsQuery: any }) {
           break;
         case "date":
           compareValue = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+          break;
+        case "value":
+          compareValue = (a.estimatedValue || 0) - (b.estimatedValue || 0);
           break;
         case "views":
           compareValue = (a.viewCount || 0) - (b.viewCount || 0);
@@ -120,6 +123,12 @@ function AdminListingsTab({ listingsQuery }: { listingsQuery: any }) {
                       {sortBy === "date" && <ArrowUpDown className="h-3 w-3" />}
                     </div>
                   </th>
+                  <th className="text-left py-2 px-4 cursor-pointer hover:bg-accent/50" onClick={() => toggleSort("value")}>
+                    <div className="flex items-center gap-2">
+                      Value
+                      {sortBy === "value" && <ArrowUpDown className="h-3 w-3" />}
+                    </div>
+                  </th>
                   <th className="text-left py-2 px-4 cursor-pointer hover:bg-accent/50" onClick={() => toggleSort("views")}>
                     <div className="flex items-center gap-2">
                       View Count
@@ -151,6 +160,7 @@ function AdminListingsTab({ listingsQuery }: { listingsQuery: any }) {
                     <td className="py-2 px-4">{listing.category}</td>
                     <td className="py-2 px-4 truncate max-w-xs">{listing.title}</td>
                     <td className="py-2 px-4">{new Date(listing.createdAt).toLocaleDateString()}</td>
+                    <td className="py-2 px-4">${(listing.estimatedValue || 0).toLocaleString()}</td>
                     <td className="py-2 px-4">{listing.viewCount || 0}</td>
                     <td className="py-2 px-4">
                       <span className={`px-2 py-1 rounded text-xs font-semibold ${
