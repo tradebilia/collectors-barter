@@ -52,7 +52,7 @@ export function AllMostViewedRankings() {
               return (
                 <button
                   key={`${item.id}-${index}`}
-                  onClick={() => setLocation(`/item/${item.id}`)}
+                  onClick={() => setLocation(`/listings/${item.id}`)}
                   className="w-full text-left bg-white rounded-lg border border-gray-200 p-4 hover:shadow-lg transition-shadow cursor-pointer"
                 >
                   <div className="flex items-start gap-4">
@@ -127,7 +127,7 @@ export function AllMostFavoritedRankings() {
               return (
                 <button
                   key={`${item.id}-${index}`}
-                  onClick={() => setLocation(`/item/${item.id}`)}
+                  onClick={() => setLocation(`/listings/${item.id}`)}
                   className="w-full text-left bg-white rounded-lg border border-gray-200 p-4 hover:shadow-lg transition-shadow cursor-pointer"
                 >
                   <div className="flex items-start gap-4">
@@ -289,7 +289,7 @@ export function AllHighestTradeValuesRankings() {
               return (
                 <button
                   key={`${item.id}-${index}`}
-                  onClick={() => setLocation(`/item/${item.id}`)}
+                  onClick={() => setLocation(`/listings/${item.id}`)}
                   className="w-full text-left bg-white rounded-lg border border-gray-200 p-4 hover:shadow-lg transition-shadow cursor-pointer"
                 >
                   <div className="flex items-start gap-4">
