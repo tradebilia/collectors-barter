@@ -340,9 +340,19 @@ export default function ItemDetail() {
                     <MessageCircleMore className="mr-0.5 h-4 w-4" />
                     Message Owner
                   </Button>
-                  <Button onClick={toggleWatchlist} variant="secondary" className="h-12 rounded-[1rem] bg-gray-200 text-xs font-semibold text-gray-900 hover:bg-gray-300 whitespace-nowrap">
+                  <Button 
+                    onClick={toggleWatchlist} 
+                    variant="secondary" 
+                    className={`h-12 rounded-[1rem] text-xs font-semibold whitespace-nowrap ${
+                      listing.ownerId === user?.id 
+                        ? "bg-gray-100 text-gray-400 cursor-not-allowed hover:bg-gray-100" 
+                        : "bg-gray-200 text-gray-900 hover:bg-gray-300"
+                    }`}
+                    disabled={listing.ownerId === user?.id}
+                    title={listing.ownerId === user?.id ? "You cannot favorite your own items" : ""}
+                  >
                     <Heart className={`mr-0.5 h-4 w-4 ${listing.savedToWatchlist ? "fill-current text-pink-500" : ""}`} />
-                    {listing.savedToWatchlist ? "Saved" : "Add to Watchlist"}
+                    {listing.ownerId === user?.id ? "Cannot Favorite Own Item" : (listing.savedToWatchlist ? "Saved" : "Add to Watchlist")}
                   </Button>
                 </div>
               </div>

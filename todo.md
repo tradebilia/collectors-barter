@@ -2094,3 +2094,13 @@ Completed Features:
   - [x] Implement search functionality across all columns
   - [x] Implement sort functionality for all columns
   - [x] Display all active and inactive listings
+
+
+## Prevent Users from Favoriting Own Items (Jun 15, 2026)
+- [x] Add backend validation to prevent users from favoriting their own items
+  - [x] Check if listing owner matches current user in toggleWatchlist procedure
+  - [x] Return error if user tries to favorite their own item
+- [x] Update frontend to disable favorite button for user's own items
+  - [x] Check if listing owner matches current user
+  - [x] Disable heart/favorite button with tooltip explaining why
+  - [x] Show visual feedback that the action is not allowed

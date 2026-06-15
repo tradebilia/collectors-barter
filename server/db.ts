@@ -801,6 +801,17 @@ export async function respondToTradeProposal(
 export async function toggleWatchlist(userId: number, listingId: number) {
   const db = await requireDb();
 
+  // Check if the listing belongs to the current user
+  const listing = await db
+    .select({ ownerId: listings.ownerId })
+    .from(listings)
+    .where(eq(listings.id, listingId))
+    .limit(1);
+
+  if (listing[0] && listing[0].ownerId === userId) {
+    throw new Error("You cannot favorite your own items");
+  }
+
   const existing = await db
     .select()
     .from(watchlistEntries)
