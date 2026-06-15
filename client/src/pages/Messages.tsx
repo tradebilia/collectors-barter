@@ -503,10 +503,18 @@ export default function Messages() {
                         <div className="rounded-[1.25rem] border border-slate-200 bg-slate-50 p-4 text-sm">
                           <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Requested listing</p>
                           <p className="mt-2 font-semibold text-slate-900">{activeThread.proposal.requestedListing?.title ?? "Listing unavailable"}</p>
+                          {activeThread.proposal.contactDetails && activeThread.proposal.requestedListing?.id && (
+                            <p className="mt-2 text-xs text-slate-600">Ref ID: #{activeThread.proposal.requestedListing.id}</p>
+                          )}
                         </div>
                         <div className="rounded-[1.25rem] border border-slate-200 bg-slate-50 p-4 text-sm">
                           <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Selected items</p>
                           <p className="mt-2 font-semibold text-slate-900">{activeThread.proposal.offeredListings.length}</p>
+                          {activeThread.proposal.contactDetails && activeThread.proposal.offeredListings.length > 0 && (
+                            <p className="mt-2 text-xs text-slate-600">
+                              Ref IDs: {activeThread.proposal.offeredListings.map((l: any) => `#${l.id}`).join(", ")}
+                            </p>
+                          )}
                         </div>
                       </div>
                     ) : null}

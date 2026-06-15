@@ -2084,9 +2084,9 @@ Completed Features:
 - [x] Display reference ID in inventory management area
   - [x] Show reference ID for each item in My Inventory page
   - [x] Make it easy to reference when managing items
-- [ ] Add reference ID to trade proposals (conditional display)
-  - [ ] Include reference ID in trade proposal details
-  - [ ] Only display after both sides agree and full contact info is shared
+- [x] Add reference ID to trade proposals (conditional display)
+  - [x] Include reference ID in trade proposal details
+  - [x] Only display after both sides agree and full contact info is shared
 - [x] Create admin listings management page
   - [x] New "Listings" tab on admin page
   - [x] Display columns in order: Ref ID, Category, Item Title, Created Date, View Count, Status, Owner
