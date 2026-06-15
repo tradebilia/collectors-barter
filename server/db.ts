@@ -2756,6 +2756,7 @@ export async function getTopMostFavoritedItems(viewerId?: number | null) {
     listings.updatedAt,
     listingPhotos.imageUrl
   )
+  .having(sql`COUNT(${favorites.id}) > 0`)
   .orderBy(desc(sql`COUNT(${favorites.id})`))
   .limit(10);
 

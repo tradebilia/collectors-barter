@@ -2061,3 +2061,10 @@ Completed Features:
   - [x] Updated RankingListingItem to support 'value' metricsType
   - [x] All 4 ranking sections now have identical formatting and alignment
   - [x] Removed unused HighestTradeValueItem component
+
+## Most Favorited Ranking Filter (Jun 15, 2026)
+- [x] Filter out items with zero favorites from the "Top 10 Most Favorited" ranking section
+  - [x] Added HAVING clause to getTopMostFavoritedItems query in server/db.ts
+  - [x] Query now filters: COUNT(favorites.id) > 0
+  - [x] Only items with at least one favorite will appear in the Most Favorited section
+  - [x] Verified in browser - Most Favorited section now only shows items with favorites

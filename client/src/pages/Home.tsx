@@ -140,9 +140,9 @@ function RankingListingItem({ item, index, imageUrl, metricsType, metrics }: { i
   };
 
   const getRankingBadge = () => {
-    if (index === 0) return { bg: '', text: 'text-yellow-400 font-bold', label: '🥇' };
-    if (index === 1) return { bg: '', text: 'text-gray-300 font-bold', label: '🥈' };
-    if (index === 2) return { bg: '', text: 'text-orange-400 font-bold', label: '🥉' };
+    if (index === 0) return { bg: '', text: 'text-yellow-400 font-bold text-[28px]', label: '🥇' };
+    if (index === 1) return { bg: '', text: 'text-gray-300 font-bold text-[28px]', label: '🥈' };
+    if (index === 2) return { bg: '', text: 'text-orange-400 font-bold text-[28px]', label: '🥉' };
     return { bg: '', text: 'text-white/60', label: `${index + 1}` };
   };
 
@@ -152,7 +152,7 @@ function RankingListingItem({ item, index, imageUrl, metricsType, metrics }: { i
     <>
       <div className={`flex items-center gap-3 rounded-md px-3 py-3 transition-all hover:bg-white/10 cursor-pointer border border-white/5 hover:border-white/10`} ref={containerRef} onMouseMove={handleMouseMove}>
         <div className={`min-w-[48px] h-12 flex items-center justify-center rounded-full font-bold text-[22px] ${badge.text}`}>
-          {badge.label}
+          <span className={badge.label.match(/[🥇🥈🥉]/) ? 'text-[28px]' : ''}>{badge.label}</span>
         </div>
         <div onMouseEnter={() => setShowPreview(true)} className="relative">
         <Dialog open={showPreview} onOpenChange={setShowPreview}>
@@ -677,7 +677,7 @@ export default function Home() {
                 </div>
 
                 <div className="grid gap-0 md:grid-cols-2 xl:grid-cols-4 lg:col-start-2 divide-x divide-white/10">
-                <Card className="overflow-hidden rounded-none border-0 bg-[radial-gradient(circle_at_top,rgba(48,149,255,0.5),transparent_40%),linear-gradient(135deg,#05204f_0%,#0d2d68_100%)] text-white shadow-none">
+                <Card className="overflow-hidden rounded-none border-0 bg-[radial-gradient(circle_at_top,rgba(48,149,255,0.5),transparent_40%),linear-gradient(135deg,#05204f_0%,#0d2d68_100%)] text-white shadow-none border-l border-white/10">
                   <CardHeader className="pb-2 pt-4 text-center">
                     <CardTitle className="font-['Oswald'] text-[1.1rem] uppercase tracking-[0.22em] text-white/90">👀 Top 10 Most Viewed</CardTitle>
                   </CardHeader>
@@ -715,23 +715,23 @@ export default function Home() {
                 </Card>
                 <Card className="overflow-hidden rounded-none border-0 bg-[linear-gradient(135deg,#1a2847_0%,#2d3e5f_100%)] text-white shadow-none border-l border-white/10">
                   <CardHeader className="pb-2 pt-4 text-center">
-                     <CardTitle className="font-['Oswald'] text-[1.1rem] uppercase tracking-[0.22em] text-white/90">👑 Top 10 Rated Traders</CardTitle>
+                    <CardTitle className="font-['Oswald'] text-[1.1rem] uppercase tracking-[0.22em] text-white/90">👑 Top 10 Rated Traders</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-2 pb-4 text-[8.5px] leading-4 text-white/85">
                       {topTraderItemsData.map((owner, index) => {
                         const avatarUrl = owner.avatarUrl;
                         const initials = getAvatarInitials({ firstName: (owner as any).firstName, lastName: (owner as any).lastName, displayName: owner.displayName });
                         const getRankingBadge = () => {
-                          if (index === 0) return { bg: '', text: 'text-yellow-400 font-bold', label: '🥇' };
-                          if (index === 1) return { bg: '', text: 'text-gray-300 font-bold', label: '🥈' };
-                          if (index === 2) return { bg: '', text: 'text-orange-400 font-bold', label: '🥉' };
+                          if (index === 0) return { bg: '', text: 'text-yellow-400 font-bold text-[28px]', label: '🥇' };
+                          if (index === 1) return { bg: '', text: 'text-gray-300 font-bold text-[28px]', label: '🥈' };
+                          if (index === 2) return { bg: '', text: 'text-orange-400 font-bold text-[28px]', label: '🥉' };
                           return { bg: '', text: 'text-white/60', label: `${index + 1}` };
                         };
                         const badge = getRankingBadge();
                         return (
                           <div key={`trader-${index}`}>
                             <div className={`flex items-center gap-3 rounded-md px-3 py-3 transition-all hover:bg-white/10 cursor-pointer border border-white/5 hover:border-white/10`}>
-                              <div className={`min-w-[48px] h-12 flex items-center justify-center rounded-full font-bold text-[22px] ${badge.text}`}>
+                              <div className={`min-w-[48px] h-12 flex items-center justify-center rounded-full font-bold ${badge.label.match(/[🥇🥈🥉]/) ? 'text-[28px]' : 'text-[22px]'} ${badge.text}`}>
                                 {badge.label}
                               </div>
                               <Avatar className="h-16 w-16 flex-shrink-0 border border-white/30">
@@ -752,7 +752,7 @@ export default function Home() {
                   </CardContent>
                 </Card>
                 <Card className="overflow-hidden rounded-none border-0 bg-[radial-gradient(circle_at_top,rgba(18,222,255,0.35),transparent_35%),linear-gradient(135deg,#00477b_0%,#0a86b4_100%)] text-white shadow-none border-l border-white/10">
-                  <CardHeader className="pb-3 pt-4">
+                  <CardHeader className="pb-2 pt-4 text-center">
                     <CardTitle className="font-['Oswald'] text-[1.1rem] uppercase tracking-[0.22em] text-white/90">🏆 Top 10 Highest Trade Values</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-2 pb-4 text-[8.5px] leading-4 text-white/85">
@@ -764,24 +764,7 @@ export default function Home() {
                           </div>
                         );
                       })}
-                      {((highestTradeValueItems ?? []).length < 10) && (
-                        <>
-                          {Array.from({ length: 10 - (highestTradeValueItems ?? []).length }).map((_, index) => {
-                            const placeholderIndex = (highestTradeValueItems ?? []).length + index;
-                            return (
-                              <div key={`placeholder-${placeholderIndex}`}>
-                                <div className="flex items-center gap-2 py-2">
-                                  <span className="text-[11px] font-bold text-white/60 min-w-[20px]">{placeholderIndex + 1}</span>
-                                  <div className="h-16 w-16 rounded bg-white/5 flex items-center justify-center">
-                                    <span className="text-[9px] text-white/30">—</span>
-                                  </div>
-                                  <span className="text-[8.5px] text-white/40">Coming soon...</span>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </>
-                      )}
+
                       <Link href="/rankings/top-trade-values" className="block mt-3 pt-3 border-t border-white/10 text-center text-[9px] font-semibold uppercase tracking-wider text-white/60 hover:text-white/90 transition-colors">
                         View All Rankings →
                       </Link>
