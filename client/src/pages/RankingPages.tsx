@@ -7,6 +7,7 @@ import { Loader2 } from "lucide-react";
 import { useLocation } from "wouter";
 import { TopBar } from "@/components/TopBar";
 import { CategoryBar } from "@/components/CategoryBar";
+import { RankingPageHero } from "@/components/RankingPageHero";
 
 export function AllMostViewedRankings() {
   const [, setLocation] = useLocation();
@@ -20,19 +21,7 @@ export function AllMostViewedRankings() {
     <div className="min-h-screen bg-white">
       <TopBar />
       
-      <section className="relative z-0 w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden text-white" style={{
-        backgroundImage: 'url(/manus-storage/Mainpage_9b45311d.jpg)',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat'
-      }}>
-        <div className="container relative flex h-64 items-center justify-center py-0 sm:h-72 sm:py-0 lg:h-80 lg:py-0">
-          <div className="flex flex-col items-center justify-center">
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white text-center drop-shadow-lg">Most Viewed Rankings</h1>
-            <p className="text-lg sm:text-xl text-white/90 mt-2 drop-shadow-md">Browse all items ranked by view count</p>
-          </div>
-        </div>
-      </section>
+      <RankingPageHero title="Most Viewed" />
       
       <CategoryBar />
       
@@ -103,19 +92,7 @@ export function AllMostFavoritedRankings() {
     <div className="min-h-screen bg-white">
       <TopBar />
       
-      <section className="relative z-0 w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden text-white" style={{
-        backgroundImage: 'url(/manus-storage/Mainpage_9b45311d.jpg)',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat'
-      }}>
-        <div className="container relative flex h-64 items-center justify-center py-0 sm:h-72 sm:py-0 lg:h-80 lg:py-0">
-          <div className="flex flex-col items-center justify-center">
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white text-center drop-shadow-lg">Most Favorited Rankings</h1>
-            <p className="text-lg sm:text-xl text-white/90 mt-2 drop-shadow-md">Browse all items ranked by favorite count</p>
-          </div>
-        </div>
-      </section>
+      <RankingPageHero title="Most Favorited" />
       
       <CategoryBar />
       
@@ -191,19 +168,7 @@ export function AllRatedTradersRankings() {
     <div className="min-h-screen bg-white">
       <TopBar />
       
-      <section className="relative z-0 w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden text-white" style={{
-        backgroundImage: 'url(/manus-storage/Mainpage_9b45311d.jpg)',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat'
-      }}>
-        <div className="container relative flex h-64 items-center justify-center py-0 sm:h-72 sm:py-0 lg:h-80 lg:py-0">
-          <div className="flex flex-col items-center justify-center">
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white text-center drop-shadow-lg">Top Rated Traders Rankings</h1>
-            <p className="text-lg sm:text-xl text-white/90 mt-2 drop-shadow-md">Browse all traders ranked by trade activity</p>
-          </div>
-        </div>
-      </section>
+      <RankingPageHero title="Top Rated Traders" />
       
       <CategoryBar />
       
@@ -282,19 +247,7 @@ export function AllHighestTradeValuesRankings() {
     <div className="min-h-screen bg-white">
       <TopBar />
       
-      <section className="relative z-0 w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden text-white" style={{
-        backgroundImage: 'url(/manus-storage/Mainpage_9b45311d.jpg)',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat'
-      }}>
-        <div className="container relative flex h-64 items-center justify-center py-0 sm:h-72 sm:py-0 lg:h-80 lg:py-0">
-          <div className="flex flex-col items-center justify-center">
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white text-center drop-shadow-lg">Highest Trade Values Rankings</h1>
-            <p className="text-lg sm:text-xl text-white/90 mt-2 drop-shadow-md">Browse all items ranked by trade value</p>
-          </div>
-        </div>
-      </section>
+      <RankingPageHero title="Highest Trade Values" />
       
       <CategoryBar />
       
