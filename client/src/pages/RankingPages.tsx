@@ -276,7 +276,11 @@ export function AllHighestTradeValuesRankings() {
                 primaryPhotoUrl: item.primaryPhotoUrl 
               });
               return (
-                <div key={`${item.id}-${index}`} className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-lg transition-shadow">
+                <button
+                  key={`${item.id}-${index}`}
+                  onClick={() => setLocation(`/item/${item.id}`)}
+                  className="w-full text-left bg-white rounded-lg border border-gray-200 p-4 hover:shadow-lg transition-shadow cursor-pointer"
+                >
                   <div className="flex items-start gap-4">
                     <div className="flex-shrink-0 w-24 h-24 bg-gray-100 rounded-lg overflow-hidden">
                       <img src={imageUrl} alt={item.title} className="w-full h-full object-cover" />
@@ -286,17 +290,16 @@ export function AllHighestTradeValuesRankings() {
                         <div>
                           <div className="text-sm font-semibold text-gray-500 mb-1">#{index + 1}</div>
                           <h3 className="text-lg font-semibold text-[#2d241e] mb-1">{item.title}</h3>
-                          <p className="text-sm text-gray-600 mb-2">{getTradebiliaCategoryLabel(item.category)}</p>
-                          <p className="text-sm font-semibold text-primary">${item.price}</p>
+                          <p className="text-sm text-gray-600">{getTradebiliaCategoryLabel(item.category)}</p>
                         </div>
                         <div className="text-right">
-                          <div className="text-2xl font-bold text-primary">${item.price}</div>
+                          <div className="text-2xl font-bold text-primary">${item.estimatedValue}</div>
                           <div className="text-xs text-gray-500">trade value</div>
                         </div>
                       </div>
                     </div>
                   </div>
-                </div>
+                </button>
               );
             })}
           </div>
