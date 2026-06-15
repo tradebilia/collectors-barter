@@ -2117,3 +2117,18 @@ Completed Features:
   - [x] Drop shadow for text readability
   - [x] CategoryBar positioned directly below each hero
   - [x] Responsive heights: h-64 on mobile, h-72 on tablet, h-80 on desktop
+
+## Ranking Page Logo with Dynamic Titles (Jun 15, 2026)
+- [x] Create RankingPageHero component with spinning wheel logo
+  - [x] Extract spinning multicolor wheel from home page logo SVG
+  - [x] Include vertical divider bar
+  - [x] Add dynamic title prop to replace TRADEBILIA text
+  - [x] Keep subtitle as "Collectors Trading Exchange"
+  - [x] Maintain 12-second rotation animation
+- [x] Update all 4 ranking pages to use RankingPageHero
+  - [x] Most Viewed Rankings page displays "Most Viewed" title
+  - [x] Most Favorited Rankings page displays "Most Favorited" title
+  - [x] Top Rated Traders Rankings page displays "Top Rated Traders" title
+  - [x] Highest Trade Values Rankings page displays "Highest Trade Values" title
+- [x] Verify component renders correctly with spinning animation
+- [x] Commit and push to GitHub
