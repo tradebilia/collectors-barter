@@ -134,7 +134,7 @@ function AdminListingsTab({ listingsQuery }: { listingsQuery: any }) {
                   </th>
                   <th className="text-left py-2 px-4 cursor-pointer hover:bg-accent/50" onClick={() => toggleSort("owner")}>
                     <div className="flex items-center gap-2">
-                      Owner
+                      Username
                       {sortBy === "owner" && <ArrowUpDown className="h-3 w-3" />}
                     </div>
                   </th>

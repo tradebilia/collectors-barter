@@ -1312,8 +1312,24 @@ export const appRouter = router({
     // Listings management
     getAllListings: protectedProcedure.query(async ({ ctx }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
-      // This will be implemented with proper queries
-      return [];
+      const db = await requireDb();
+      const allListings = await db.select({
+        id: listings.id,
+        title: listings.title,
+        category: listings.category,
+        status: listings.status,
+        createdAt: listings.createdAt,
+        viewCount: listings.viewCount,
+        ownerId: listings.ownerId,
+        ownerProfile: {
+          displayName: userProfiles.displayName,
+          firstName: userProfiles.firstName,
+          lastName: userProfiles.lastName,
+        },
+      }).from(listings)
+        .leftJoin(userProfiles, eq(listings.ownerId, userProfiles.userId))
+        .orderBy(desc(listings.createdAt));
+      return allListings;
     }),
     getAllTrades: protectedProcedure.query(async ({ ctx }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });

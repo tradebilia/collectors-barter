@@ -1076,7 +1076,6 @@ export default function CategoryPage() {
               <>
                 <div className={viewMode === "grid" ? "grid gap-3 grid-cols-6" : "space-y-3"}>
                   {listings.map(listing => (
-                  <>
                     <Card key={listing.id} className={`${viewMode === "list" ? "flex flex-col" : "relative"} ${viewMode === "list" ? "" : "overflow-hidden"} border bg-white border-gray-200 text-black ${isSportsCardsPage ? "rounded-md shadow-sm" : "rounded-[2rem]"}`}>
                       {listing.ownerId && viewMode === "list" && (
                         <div className="px-3 py-0.5">
@@ -1219,7 +1218,6 @@ export default function CategoryPage() {
                       </CardContent>
                       </div>
                     </Card>
-                  </>
                 ))}
               </div>
               {/* Pagination controls */}
