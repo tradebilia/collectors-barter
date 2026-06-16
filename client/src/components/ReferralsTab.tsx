@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Mail, Eye } from "lucide-react";
+import { Mail, Eye, Trash2 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 
 export function ReferralsTab() {
@@ -13,8 +13,10 @@ export function ReferralsTab() {
   const [bulkEmailMessage, setBulkEmailMessage] = useState("");
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [selectedReferral, setSelectedReferral] = useState<any>(null);
+  const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
   const sendBulkEmailMutation = trpc.admin.sendBulkEmailToReferrals.useMutation();
   const deleteReferralMutation = trpc.admin.deleteReferral.useMutation();
+  const bulkDeleteReferralsMutation = trpc.admin.bulkDeleteReferrals.useMutation();
 
   const handleSendBulkEmail = async () => {
     await sendBulkEmailMutation.mutateAsync({
@@ -30,8 +32,22 @@ export function ReferralsTab() {
   };
 
   const handleDeleteReferral = async (referralId: number) => {
-    await deleteReferralMutation.mutateAsync({ referralId });
-    referralsQuery.refetch();
+    if (confirm('Are you sure you want to delete this referral request?')) {
+      await deleteReferralMutation.mutateAsync({ referralId });
+      referralsQuery.refetch();
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedReferralIds.size === 0) return;
+    if (confirm(`Are you sure you want to delete ${selectedReferralIds.size} referral request(s)? This action cannot be undone.`)) {
+      await bulkDeleteReferralsMutation.mutateAsync({
+        referralIds: Array.from(selectedReferralIds),
+      });
+      setSelectedReferralIds(new Set());
+      setBulkDeleteDialogOpen(false);
+      referralsQuery.refetch();
+    }
   };
 
   const toggleSelectAll = (checked: boolean) => {
@@ -71,9 +87,17 @@ export function ReferralsTab() {
               <Button
                 size="sm"
                 onClick={() => setBulkEmailDialogOpen(true)}
-                className="ml-auto"
               >
                 Send Bulk Email
+              </Button>
+              <Button
+                size="sm"
+                variant="destructive"
+                onClick={() => setBulkDeleteDialogOpen(true)}
+                className="flex items-center gap-1"
+              >
+                <Trash2 className="h-3 w-3" />
+                Delete Selected
               </Button>
             </div>
           )}
@@ -151,15 +175,15 @@ export function ReferralsTab() {
                           <Eye className="h-3 w-3" />
                           View
                         </Button>
-                        {referral.hasJoined && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleDeleteReferral(referral.id)}
-                          >
-                            Remove
-                          </Button>
-                        )}
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => handleDeleteReferral(referral.id)}
+                          className="flex items-center gap-1"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                          Delete
+                        </Button>
                       </td>
                     </tr>
                   ))}
@@ -282,6 +306,33 @@ export function ReferralsTab() {
                 {sendBulkEmailMutation.isPending ? "Sending..." : "Send Emails"}
               </Button>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk Delete Dialog */}
+      <Dialog open={bulkDeleteDialogOpen} onOpenChange={setBulkDeleteDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-red-600">Delete Referral Requests</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to permanently delete {selectedReferralIds.size} referral request(s)? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex gap-2 justify-end">
+            <Button
+              variant="outline"
+              onClick={() => setBulkDeleteDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleBulkDelete}
+              disabled={bulkDeleteReferralsMutation.isPending}
+            >
+              {bulkDeleteReferralsMutation.isPending ? "Deleting..." : "Delete All"}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

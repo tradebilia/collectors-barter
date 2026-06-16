@@ -70,8 +70,8 @@ import { getUserByUsername, createUser, requireDb } from "./db";
 import { getEbayAuthUrl, exchangeCodeForToken, getUserInfo, getUserFeedback, refreshAccessToken } from "./_core/ebay";
 import { sdk } from "./_core/sdk";
 import { customAuth } from "./_core/customAuth";
-import { users, userProfiles, listings, deletedAccounts, tradeProposals, tradeMessages, tradeReviews, watchlistEntries, draftListings, passwordResetTokens } from "../drizzle/schema";
-import { eq, sql, desc, or } from "drizzle-orm";
+import { users, userProfiles, listings, deletedAccounts, tradeProposals, tradeMessages, tradeReviews, watchlistEntries, draftListings, passwordResetTokens, referralRequests } from "../drizzle/schema";
+import { eq, sql, desc, or, inArray } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { ONE_YEAR_MS } from "@shared/const";
 
@@ -1448,6 +1448,15 @@ export const appRouter = router({
         if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
         await removeReferral(input.referralId);
         return { success: true };
+      }),
+    bulkDeleteReferrals: protectedProcedure
+      .input(z.object({ referralIds: z.array(z.number()) }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+        if (input.referralIds.length === 0) throw new TRPCError({ code: 'BAD_REQUEST', message: 'No referrals selected' });
+        const db = await requireDb();
+        await db.delete(referralRequests).where(inArray(referralRequests.id, input.referralIds));
+        return { success: true, deletedCount: input.referralIds.length };
       }),
   }),
   // Online status procedures

@@ -2303,3 +2303,13 @@ All 8 remaining filter optimization and caching items have been successfully imp
 - [x] Checks for existing pending referrals before creating new ones
 - [x] Cleaned up 7 duplicate entries from database
 - [x] Prevents test suite from creating duplicate referral requests
+
+
+## Admin Referral Deletion Feature - IN PROGRESS
+- [ ] Add individual delete button to each referral request row
+- [ ] Add mass delete checkbox and bulk delete button
+- [ ] Create deleteReferral tRPC procedure
+- [ ] Create bulkDeleteReferrals tRPC procedure
+- [ ] Add confirmation dialog for delete actions
+- [ ] Update admin referrals UI component
+- [ ] Test individual and mass deletion flows
