@@ -288,6 +288,22 @@ export const appRouter = router({
     topHighestValueItems: publicProcedure.query(({ ctx }) => {
       return getTopHighestValueItems(ctx.user?.id ?? null);
     }),
+    getUserProfile: publicProcedure
+      .input(z.object({ userId: z.number().int().positive() }))
+      .query(async ({ input, ctx }) => {
+        const db = await requireDb();
+        const user = await db.select().from(users).where(eq(users.id, input.userId)).limit(1);
+        if (!user.length) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'User not found' });
+        }
+        const profile = await db.select().from(userProfiles).where(eq(userProfiles.userId, input.userId)).limit(1);
+        const userListings = await db.select().from(listings).where(eq(listings.ownerId, input.userId)).limit(100);
+        return {
+          user: user[0],
+          profile: profile[0] || null,
+          listings: userListings,
+        };
+      }),
     search: publicProcedure
       .input(
         z.object({

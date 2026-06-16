@@ -18,9 +18,10 @@ const TRADEBILIA_LOGO_URL = "/manus-storage/tradebilia-logo_c676d640.svg";
 
 export default function PublicProfile() {
   const { userId } = useParams<{ userId: string }>();
-  const dashboardQuery = trpc.market.dashboard.useQuery(undefined, {
-    enabled: !!userId,
-  });
+  const userProfileQuery = trpc.market.getUserProfile.useQuery(
+    { userId: userId ? parseInt(userId, 10) : 0 },
+    { enabled: !!userId }
+  );
 
   if (!userId) {
     return (
@@ -36,7 +37,7 @@ export default function PublicProfile() {
     );
   }
 
-  if (dashboardQuery.isLoading) {
+  if (userProfileQuery.isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#f5f5f3]">
         <Loader2 className="h-10 w-10 animate-spin text-slate-950" />
@@ -44,7 +45,7 @@ export default function PublicProfile() {
     );
   }
 
-  const profile = dashboardQuery.data?.profile;
+  const profile = userProfileQuery.data?.profile;
 
   if (!profile) {
     return (
