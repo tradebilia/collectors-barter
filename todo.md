@@ -2159,7 +2159,7 @@ Completed Features:
 
 ## Performance Optimization - ItemDetail Page Loading
 
-- [ ] Optimize ItemDetail page loading - reduce N+1 queries in formatListings
+- [x] Optimize ItemDetail page loading - reduce N+1 queries in formatListings
 - [ ] Add database indexes for frequently queried fields (category, status, ownerId)
 - [ ] Cache similar listings query results
 
