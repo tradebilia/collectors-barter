@@ -2567,6 +2567,24 @@ export async function createReferralRequest(data: {
   message: string;
 }) {
   const db = await requireDb();
+  
+  // Check if a pending referral already exists for this email
+  const existingRequest = await db
+    .select()
+    .from(referralRequests)
+    .where(
+      and(
+        eq(referralRequests.collectorEmail, data.collectorEmail),
+        eq(referralRequests.status, "pending")
+      )
+    )
+    .limit(1);
+  
+  if (existingRequest.length > 0) {
+    // Return existing request instead of creating a duplicate
+    return existingRequest[0];
+  }
+  
   const result = await db.insert(referralRequests).values(data);
   return result;
 }
