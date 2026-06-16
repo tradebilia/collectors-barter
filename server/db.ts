@@ -584,14 +584,30 @@ export async function getListingDetail(listingId: number, viewerId: number | nul
       isActive: listings.isActive,
       createdAt: listings.createdAt,
       updatedAt: listings.updatedAt,
-      primaryPhotoUrl: sql<string | null>`(
-        select imageUrl from listingPhotos where listingId = listings.id order by sortOrder asc limit 1
-      )`,
     })
     .from(listings)
     .where(and(eq(listings.category, detailCard[0].category), ne(listings.id, listingId), eq(listings.status, "active")))
     .orderBy(desc(listings.createdAt))
     .limit(6);
+
+  // Fetch primary photos for similar listings in a single query
+  const similarListingIds = similarRows.map(r => r.id);
+  const similarPhotosRows = similarListingIds.length > 0
+    ? await db
+        .select({
+          listingId: listingPhotos.listingId,
+          imageUrl: listingPhotos.imageUrl,
+        })
+        .from(listingPhotos)
+        .where(and(inArray(listingPhotos.listingId, similarListingIds), eq(listingPhotos.sortOrder, 0)))
+    : [];
+  const similarPhotosMap = new Map(similarPhotosRows.map(p => [p.listingId, p.imageUrl]));
+  
+  // Add primaryPhotoUrl to similarRows
+  const similarRowsWithPhotos = similarRows.map(row => ({
+    ...row,
+    primaryPhotoUrl: similarPhotosMap.get(row.id) ?? null,
+  }));
 
   const photoRows = await db
     .select({
@@ -643,7 +659,7 @@ export async function getListingDetail(listingId: number, viewerId: number | nul
       altText: p.altText,
     })),
     primaryPhotoUrl: photoRows.length > 0 ? photoRows[0].imageUrl : null,
-    similarListings: await formatListings(similarRows, viewerId),
+    similarListings: await formatListings(similarRowsWithPhotos, viewerId),
     savedToWatchlist: isSaved,
   };
 }

@@ -2156,3 +2156,10 @@ Completed Features:
 ## Top 10 Rated Traders Deduplication
 
 - [x] Fix Top 10 Rated Traders section - ensure each trader appears only once (no duplicates if they have multiple listings)
+
+## Performance Optimization - ItemDetail Page Loading
+
+- [ ] Optimize ItemDetail page loading - reduce N+1 queries in formatListings
+- [ ] Add database indexes for frequently queried fields (category, status, ownerId)
+- [ ] Cache similar listings query results
+
