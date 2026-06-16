@@ -739,7 +739,7 @@ export default function Home() {
                         };
                         const badge = getRankingBadge();
                         return (
-                          <div key={`trader-${index}`}>
+                          <Link key={`trader-${index}`} href={`/profile/${owner.id}`}>
                             <div className={`flex items-center gap-3 rounded-md px-3 py-3 transition-all hover:bg-white/10 cursor-pointer border border-white/5 hover:border-white/10`}>
                               <div className={`min-w-[48px] h-12 flex items-center justify-center rounded-full font-bold ${badge.label.match(/[🥇🥈🥉]/) ? 'text-[28px]' : 'text-[22px]'} ${badge.text}`}>
                                 {badge.label}
@@ -753,7 +753,7 @@ export default function Home() {
                               <span className="truncate hover:text-white/100 transition-colors text-[10px] flex-1">{owner.displayName}</span>
                               <span className="text-white/40 text-[16px]">&gt;</span>
                             </div>
-                          </div>
+                          </Link>
                         );
                       })}
                       <Link href="/rankings/top-rated-traders" className="block mt-3 pt-3 border-t border-white/10 text-center text-[9px] font-semibold uppercase tracking-wider text-white/60 hover:text-white/90 transition-colors">

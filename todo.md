@@ -2163,3 +2163,12 @@ Completed Features:
 - [ ] Add database indexes for frequently queried fields (category, status, ownerId)
 - [ ] Cache similar listings query results
 
+
+## Top Rated Traders Navigation (Jun 15, 2026)
+
+- [x] Make Top Rated Traders entries clickable to navigate to trader profile pages
+  - [x] Wrapped trader entries in Link component with href={`/profile/${owner.id}`}
+  - [x] Verified clicking on traders navigates to their profile page
+  - [x] Tested with PT Collector 2 - successfully navigates to /profile/2
+  - [x] All trader entries now have proper navigation functionality
+
