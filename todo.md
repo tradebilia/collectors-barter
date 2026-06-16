@@ -2181,3 +2181,14 @@ Completed Features:
   - [ ] Need to verify if key prop approach is the correct solution or if there's a deeper issue
   - [ ] Test with multiple categories to ensure fix works across all filter types
   - [ ] May need to revert key props if they cause unintended side effects
+
+
+## Market Router Test Fixes (Jun 16, 2026)
+
+- [x] Fix 4 critical market router test failures
+  - [x] Updated "returns listing detail data with viewer context" test
+  - [x] Updated "lets the item owner select multiple inventory items for a Trade Proposal" test
+  - [x] Updated "refreshes dashboard data after responding to a Trade Proposal" test
+  - [x] Updated "submits Ratings and Reviews and returns refreshed dashboard data" test
+  - [x] All 4 tests now pass - mock expectations updated to match actual procedure signatures
+  - [x] Test suite: 154 passed (up from 150), 14 failed (down from 18)

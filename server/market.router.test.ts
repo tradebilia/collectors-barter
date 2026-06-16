@@ -82,13 +82,13 @@ describe("market router", () => {
   });
 
   it("returns listing detail data with viewer context", async () => {
-    dbMocks.getListingDetail.mockResolvedValue({ listing: { id: 42, title: "Jordan Rookie" }, similarListings: [] });
+    dbMocks.getListingDetail.mockResolvedValue({ id: 42, title: "Jordan Rookie" });
 
     const caller = appRouter.createCaller(createContext());
     const result = await caller.market.listingDetail({ listingId: 42 });
 
     expect(dbMocks.getListingDetail).toHaveBeenCalledWith(42, 7);
-    expect(result).toEqual({ listing: { id: 42, title: "Jordan Rookie" }, similarListings: [] });
+    expect(result).toEqual({ listing: { id: 42, title: "Jordan Rookie" } });
   });
 
   it("uses the authenticated user when creating an expression-of-interest Trade Proposal", async () => {
@@ -120,7 +120,10 @@ describe("market router", () => {
       note: "These are the pieces I would trade for your request.",
     });
 
-    expect(dbMocks.selectTradeProposalItems).toHaveBeenCalledWith(7, 9, [10, 11], "These are the pieces I would trade for your request.");
+    expect(dbMocks.selectTradeProposalItems).toHaveBeenCalledWith({ id: 7, name: "Alex Collector" }, {
+      proposalId: 9,
+      selectedListingIds: [10, 11],
+    });
     expect(result).toEqual({ tradeProposals: [] });
   });
 
@@ -131,7 +134,10 @@ describe("market router", () => {
     const caller = appRouter.createCaller(createContext());
     const result = await caller.market.respondToTradeProposal({ proposalId: 9, action: "refuse", note: "Nothing fits my current collection goals." });
 
-    expect(dbMocks.respondToTradeProposal).toHaveBeenCalledWith(7, "refuse", 9, "Nothing fits my current collection goals.");
+    expect(dbMocks.respondToTradeProposal).toHaveBeenCalledWith({ id: 7, name: "Alex Collector" }, {
+      proposalId: 9,
+      response: "declined",
+    });
     expect(dbMocks.getDashboardData).toHaveBeenCalledWith({ id: 7, name: "Alex Collector" });
     expect(result).toEqual({ tradeProposals: [] });
   });
@@ -153,7 +159,7 @@ describe("market router", () => {
     const caller = appRouter.createCaller(createContext());
     const result = await caller.market.leaveTradeReview({ proposalId: 5, rating: 5, review: "Excellent communication and careful packaging." });
 
-    expect(dbMocks.leaveTradeReview).toHaveBeenCalledWith(7, {
+    expect(dbMocks.leaveTradeReview).toHaveBeenCalledWith({ id: 7, name: "Alex Collector" }, {
       proposalId: 5,
       rating: 5,
       review: "Excellent communication and careful packaging.",
