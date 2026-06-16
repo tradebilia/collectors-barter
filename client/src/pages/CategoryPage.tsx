@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { FilterInput } from "@/components/FilterInput";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
@@ -816,8 +817,7 @@ export default function CategoryPage() {
                       />
                     </div>
                   ) : filter.label === "Title" ? (
-                    <Input 
-                      key={`title-${keyword}`}
+                    <FilterInput 
                       placeholder={filter.placeholder} 
                       value={keyword}
                       onChange={(e) => setKeyword(e.target.value)}
@@ -825,8 +825,7 @@ export default function CategoryPage() {
                       className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black`} 
                     />
                   ) : filter.label === "Issue Number" ? (
-                    <Input 
-                      key={`issue-${issueNumber}`}
+                    <FilterInput 
                       placeholder={filter.placeholder} 
                       value={issueNumber}
                       onChange={(e) => setIssueNumber(e.target.value)}
@@ -834,8 +833,7 @@ export default function CategoryPage() {
                       className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black`} 
                     />
                   ) : filter.label === "Manufacturer" ? (
-                    <Input 
-                      key={`manufacturer-${manufacturer}`}
+                    <FilterInput 
                       placeholder={filter.placeholder} 
                       value={manufacturer}
                       onChange={(e) => setManufacturer(e.target.value)}
@@ -843,8 +841,7 @@ export default function CategoryPage() {
                       className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black`} 
                     />
                   ) : filter.label === "Year / era" ? (
-                    <Input 
-                      key={`year-${year}`}
+                    <FilterInput 
                       placeholder={filter.placeholder} 
                       value={year}
                       onChange={(e) => setYear(e.target.value)}
@@ -852,8 +849,7 @@ export default function CategoryPage() {
                       className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black`} 
                     />
                   ) : filter.label === "Team" ? (
-                    <Input 
-                      key={`team-${team}`}
+                    <FilterInput 
                       placeholder={filter.placeholder} 
                       value={team}
                       onChange={(e) => setTeam(e.target.value)}
@@ -861,8 +857,7 @@ export default function CategoryPage() {
                       className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black`} 
                     />
                   ) : filter.label === "Set / series" ? (
-                    <Input 
-                      key={`series-${series}`}
+                    <FilterInput 
                       placeholder={filter.placeholder} 
                       value={series}
                       onChange={(e) => setSeries(e.target.value)}
@@ -870,8 +865,7 @@ export default function CategoryPage() {
                       className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black`} 
                     />
                   ) : filter.label === "Name" ? (
-                    <Input 
-                      key={`name-${keyword}`}
+                    <FilterInput 
                       placeholder={filter.placeholder}
                       value={keyword}
                       onChange={(e) => setKeyword(e.target.value)}
@@ -879,8 +873,7 @@ export default function CategoryPage() {
                       className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black`}
                     />
                   ) : filter.label === "Franchise" ? (
-                    <Input 
-                      key={`franchise-${series}`}
+                    <FilterInput 
                       placeholder={filter.placeholder}
                       value={series}
                       onChange={(e) => setSeries(e.target.value)}
@@ -888,8 +881,7 @@ export default function CategoryPage() {
                       className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black`}
                     />
                   ) : filter.label === "Issuer" ? (
-                    <Input 
-                      key={`issuer-${manufacturer}`}
+                    <FilterInput 
                       placeholder={filter.placeholder}
                       value={manufacturer}
                       onChange={(e) => setManufacturer(e.target.value)}
@@ -897,8 +889,7 @@ export default function CategoryPage() {
                       className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black`}
                     />
                   ) : filter.label === "Mint mark" ? (
-                    <Input 
-                      key={`mint-${team}`}
+                    <FilterInput 
                       placeholder={filter.placeholder}
                       value={team}
                       onChange={(e) => setTeam(e.target.value)}
@@ -906,8 +897,7 @@ export default function CategoryPage() {
                       className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black`}
                     />
                   ) : filter.label === "Pokémon" ? (
-                    <Input 
-                      key={`pokemon-${keyword}`}
+                    <FilterInput 
                       placeholder={filter.placeholder}
                       value={keyword}
                       onChange={(e) => setKeyword(e.target.value)}
@@ -915,8 +905,7 @@ export default function CategoryPage() {
                       className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black`}
                     />
                   ) : filter.label === "Signer" ? (
-                    <Input 
-                      key={`signer-${keyword}`}
+                    <FilterInput 
                       placeholder={filter.placeholder}
                       value={keyword}
                       onChange={(e) => setKeyword(e.target.value)}
@@ -924,8 +913,7 @@ export default function CategoryPage() {
                       className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black`}
                     />
                   ) : filter.label === "Pin name" ? (
-                    <Input 
-                      key={`pin-${keyword}`}
+                    <FilterInput 
                       placeholder={filter.placeholder}
                       value={keyword}
                       onChange={(e) => setKeyword(e.target.value)}
