@@ -2172,3 +2172,12 @@ Completed Features:
   - [x] Tested with PT Collector 2 - successfully navigates to /profile/2
   - [x] All trader entries now have proper navigation functionality
 
+
+## Filter Clear Button Visual Feedback Investigation (Jun 16, 2026)
+
+- [ ] Fix clear button visual feedback - input fields not visually clearing when state is cleared
+  - [ ] Added key props to all filter input fields to force re-renders when state changes
+  - [ ] Investigated root cause: state is being cleared but input fields not re-rendering
+  - [ ] Need to verify if key prop approach is the correct solution or if there's a deeper issue
+  - [ ] Test with multiple categories to ensure fix works across all filter types
+  - [ ] May need to revert key props if they cause unintended side effects

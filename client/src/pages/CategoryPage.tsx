@@ -817,6 +817,7 @@ export default function CategoryPage() {
                     </div>
                   ) : filter.label === "Title" ? (
                     <Input 
+                      key={`title-${keyword}`}
                       placeholder={filter.placeholder} 
                       value={keyword}
                       onChange={(e) => setKeyword(e.target.value)}
@@ -825,6 +826,7 @@ export default function CategoryPage() {
                     />
                   ) : filter.label === "Issue Number" ? (
                     <Input 
+                      key={`issue-${issueNumber}`}
                       placeholder={filter.placeholder} 
                       value={issueNumber}
                       onChange={(e) => setIssueNumber(e.target.value)}
@@ -833,6 +835,7 @@ export default function CategoryPage() {
                     />
                   ) : filter.label === "Manufacturer" ? (
                     <Input 
+                      key={`manufacturer-${manufacturer}`}
                       placeholder={filter.placeholder} 
                       value={manufacturer}
                       onChange={(e) => setManufacturer(e.target.value)}
@@ -841,6 +844,7 @@ export default function CategoryPage() {
                     />
                   ) : filter.label === "Year / era" ? (
                     <Input 
+                      key={`year-${year}`}
                       placeholder={filter.placeholder} 
                       value={year}
                       onChange={(e) => setYear(e.target.value)}
@@ -849,6 +853,7 @@ export default function CategoryPage() {
                     />
                   ) : filter.label === "Team" ? (
                     <Input 
+                      key={`team-${team}`}
                       placeholder={filter.placeholder} 
                       value={team}
                       onChange={(e) => setTeam(e.target.value)}
@@ -857,6 +862,7 @@ export default function CategoryPage() {
                     />
                   ) : filter.label === "Set / series" ? (
                     <Input 
+                      key={`series-${series}`}
                       placeholder={filter.placeholder} 
                       value={series}
                       onChange={(e) => setSeries(e.target.value)}
@@ -865,6 +871,7 @@ export default function CategoryPage() {
                     />
                   ) : filter.label === "Name" ? (
                     <Input 
+                      key={`name-${keyword}`}
                       placeholder={filter.placeholder}
                       value={keyword}
                       onChange={(e) => setKeyword(e.target.value)}
@@ -873,6 +880,7 @@ export default function CategoryPage() {
                     />
                   ) : filter.label === "Franchise" ? (
                     <Input 
+                      key={`franchise-${series}`}
                       placeholder={filter.placeholder}
                       value={series}
                       onChange={(e) => setSeries(e.target.value)}
@@ -881,6 +889,7 @@ export default function CategoryPage() {
                     />
                   ) : filter.label === "Issuer" ? (
                     <Input 
+                      key={`issuer-${manufacturer}`}
                       placeholder={filter.placeholder}
                       value={manufacturer}
                       onChange={(e) => setManufacturer(e.target.value)}
@@ -889,6 +898,7 @@ export default function CategoryPage() {
                     />
                   ) : filter.label === "Mint mark" ? (
                     <Input 
+                      key={`mint-${team}`}
                       placeholder={filter.placeholder}
                       value={team}
                       onChange={(e) => setTeam(e.target.value)}
@@ -897,6 +907,7 @@ export default function CategoryPage() {
                     />
                   ) : filter.label === "Pokémon" ? (
                     <Input 
+                      key={`pokemon-${keyword}`}
                       placeholder={filter.placeholder}
                       value={keyword}
                       onChange={(e) => setKeyword(e.target.value)}
@@ -905,6 +916,7 @@ export default function CategoryPage() {
                     />
                   ) : filter.label === "Signer" ? (
                     <Input 
+                      key={`signer-${keyword}`}
                       placeholder={filter.placeholder}
                       value={keyword}
                       onChange={(e) => setKeyword(e.target.value)}
@@ -913,6 +925,7 @@ export default function CategoryPage() {
                     />
                   ) : filter.label === "Pin name" ? (
                     <Input 
+                      key={`pin-${keyword}`}
                       placeholder={filter.placeholder}
                       value={keyword}
                       onChange={(e) => setKeyword(e.target.value)}
