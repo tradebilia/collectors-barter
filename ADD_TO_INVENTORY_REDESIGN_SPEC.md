@@ -346,13 +346,38 @@ CREATE INDEX listings_itemType_idx ON listings(itemType);
 | "Other" Field Position | To the right of dropdown, required | Clean layout, user must fill in |
 | Collapsible Sections | Yes, for Recommended and Optional | Better UX, less overwhelming |
 
-### Pending Questions (Not Yet Discussed)
+### Final Answers to Pending Questions (RESOLVED)
 
-- [ ] What should happen when user clicks "Save as Draft"? (Show toast? Redirect? Continue editing?)
-- [ ] For category page filtering, should Item Type be: dropdown, multi-select checkboxes, or toggle buttons?
-- [ ] Should invalid grading companies be: disabled (grayed out) or completely hidden?
-- [ ] Should Quantity be: always editable, disabled for single items, or hidden for single items?
-- [ ] Should Collection/Lot items show: different visual style, banner alert, or silent field change?
+**1. Draft Save Behavior:** Show success toast/message and allow user to continue editing
+- User clicks "Save as Draft"
+- Toast appears confirming save (e.g., "Draft saved successfully")
+- Form remains open for continued editing
+- User can make more changes and save again
+
+**2. Item Type Filter UI:** Dropdown (with future consideration for multi-select checkboxes)
+- Primary implementation: Dropdown filter (like Condition filter)
+- Note: Multi-select checkboxes are a good UX enhancement for future iteration
+- First option: "ALL" (shows all item types)
+- Subsequent options: Individual item types for the category
+
+**3. Invalid Grading Companies:** Completely hidden from dropdown
+- Invalid grading companies are NOT shown in the dropdown at all
+- Example: If category is "Comics", only comic grading companies appear
+- No grayed-out or disabled states
+- Cleaner UI, prevents user confusion
+
+**4. Quantity Field:** Always editable, defaults to 1
+- Quantity input is ALWAYS visible and editable
+- Default value: 1
+- User can change to any number (1, 2, 5, etc.)
+- Applies to all item types (single items AND collections)
+- Allows users to list multiple identical items
+
+**5. Collection/Lot Visual Indicator:** Silent field change (Option B)
+- No special visual styling or banner
+- Form fields simply change based on item type selection
+- Collection/Lot items show different fields than single items
+- No visual indicator that it's a collection (fields speak for themselves)
 
 ---
 
@@ -380,9 +405,9 @@ CREATE INDEX listings_itemType_idx ON listings(itemType);
 ## Implementation Checklist
 
 ### Before Starting Implementation
-- [ ] Confirm all pending questions are answered
+- [x] Confirm all pending questions are answered ✅ COMPLETE
 - [ ] Review field specifications document one more time
-- [ ] Get final approval from Rich
+- [ ] Get final approval from Rich to proceed with Phase 1
 
 ### During Implementation
 - [ ] Create git branch for this feature
@@ -424,10 +449,11 @@ CREATE INDEX listings_itemType_idx ON listings(itemType);
 ## Document History
 
 | Date | Version | Changes |
-|------|---------|---------|
+|------|---------|------|
+| 2026-06-18 | 1.1 | Final answers to all pending questions - SPECIFICATION COMPLETE |
 | 2026-06-17 | 1.0 | Initial specification document created during planning phase |
 
 ---
 
-**Status:** READY FOR IMPLEMENTATION (pending final approval)  
-**Next Step:** Answer pending questions, then proceed with Phase 1
+**Status:** SPECIFICATION FINALIZED - READY FOR IMPLEMENTATION ✅  
+**Next Step:** Proceed with Phase 1 (Database Preparation)
