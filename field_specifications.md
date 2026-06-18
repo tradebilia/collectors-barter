@@ -50,7 +50,7 @@ Pokemon | Single Card, Unopened Product, Set, Collection/Lot
 |Serial Numbered|Dropdown|Recommended|Yes, No|No||Always||
 |Serial Number|Text Input|Conditional||No||Serial Numbered = Yes||
 |Is Graded|Dropdown|Required|Yes, No|No||Always|If Yes, reveal grading fields, and remove condition dropdown is not active (cant input). If No, user needs to select from Condition dropdown box|
-|Grading Company|Dropdown|Conditional|PSA, BGS, SGC, CGC Cards, TAG Grading, HGA, Arena Club, Degree, ACE, ISA, GMA, Rare Edition, FCG, MNT, KSA, PGA, RCG, OnlyGraded, Diamond, CGA, TRCG, Pokegrade, Tree Frog, AP, PRO, GEM, GAI, PCI, WCG|No||Is Graded = Yes||
+|Grading Company|Dropdown|Conditional|PSA, BGS, SGC, CGC Cards, TAG Grading, HGA, Arena Club, Degree, ACE, ISA, GMA, Rare Edition, FCG, MNT, KSA, PGA, RCG, OnlyGraded, Diamond Service Grading, CGA Card Grading, TRCG, Pokegrade, Tree Frog, AP, PRO, GEM, GAI, PCI, WCG|No||Is Graded = Yes||
 |Grade|Text Input|Conditional||No||Is Graded = Yes||
 |Certification Number|Text Input|Conditional||No||Is Graded = Yes||
 
@@ -229,7 +229,7 @@ Pokemon | Single Card, Unopened Product, Set, Collection/Lot
 |Original Case Included|Dropdown|Conditional|Yes, No, Unknown|No||Complete In Box = No||
 |Sealed|Dropdown|Recommended|Yes, No|No||Always||
 |Is Graded|Dropdown|Required|Yes, No|No||Always|If Yes, reveal grading fields, and remove condition dropdown is not active (cant input). If No, user needs to select from Condition dropdown box|
-|Grading Company|Dropdown|Conditional|WATA, CGC N Video Games, VGA, CGC Home Video, IGS|No||Is Graded = Yes||
+|Grading Company|Dropdown|Conditional|WATA Games (PSA Video Games), CGC Video Games, VGA, CGC Home Video, IGS|No||Is Graded = Yes||
 |Grade|Text Input|Conditional||No||Is Graded = Yes||
 |Certification Number|Text Input|Conditional||No||Is Graded = Yes||
 
@@ -255,7 +255,7 @@ Pokemon | Single Card, Unopened Product, Set, Collection/Lot
 |Controllers Included|Number Input|Recommended||No||Always||
 |Region|Dropdown|Recommended|NTSC-U, NTSC-J, PAL, Region Free, Unknown, Other|Yes|Custom Region|Always||
 |Is Graded|Dropdown|Required|Yes, No|No||Always|If Yes, reveal grading fields, and remove condition dropdown is not active (cant input). If No, user needs to select from Condition dropdown box|
-|Grading Company|Dropdown|Conditional|WATA, CGC N Video Games, VGA, CGC Home Video, IGS|No||Is Graded =|Yes|
+|Grading Company|Dropdown|Conditional|WATA Games (PSA Video Games), CGC Video Games, VGA, CGC Home Video, IGS|No||Is Graded =|Yes|
 |Grade|Text Input|Conditional||No||Is Graded = Yes||
 |Certification Number|Text Input|Conditional||No||Is Graded = Yes||
 
@@ -353,6 +353,11 @@ Pokemon | Single Card, Unopened Product, Set, Collection/Lot
 |Vehicle Type|Dropdown|Recommended|Car, Truck, Aircraft, Spaceship, Boat, Motorcycle, Train, Other|Yes|Custom Vehicle Type|Always||
 |Working Features|Dropdown|Recommended|Yes, No, Unknown|No||Always||
 
+|Is Graded|Dropdown|Required|Yes, No|No||Always|If Yes, reveal grading fields, and remove condition dropdown is not active (cant input). If No, user needs to select from Condition dropdown box|
+|Grading Company|Dropdown|Conditional|AFA, CAS, UKG|No||Is Graded = Yes||
+|Grade|Text Input|Conditional||No||Is Graded = Yes||
+|Certification Number|Text Input|Conditional||No||Is Graded = Yes|
+
 
 
 ### Playset
@@ -374,6 +379,11 @@ Pokemon | Single Card, Unopened Product, Set, Collection/Lot
 |Missing Pieces|Text Area|Conditional||No||Complete = No||
 |Instructions Included|Dropdown|Recommended|Yes, No, Unknown|No||Always||
 |Original Box Included|Dropdown|Recommended|Yes, No, Unknown|No||Always||
+
+|Is Graded|Dropdown|Required|Yes, No|No||Always|If Yes, reveal grading fields, and remove condition dropdown is not active (cant input). If No, user needs to select from Condition dropdown box|
+|Grading Company|Dropdown|Conditional|AFA, CAS, UKG|No||Is Graded = Yes||
+|Grade|Text Input|Conditional||No||Is Graded = Yes||
+|Certification Number|Text Input|Conditional||No||Is Graded = Yes|
 
 
 
@@ -397,6 +407,11 @@ Pokemon | Single Card, Unopened Product, Set, Collection/Lot
 |Instructions Included|Dropdown|Recommended|Yes, No|No||Always||
 |Box Included|Dropdown|Recommended|Yes, No|No||Always||
 
+|Is Graded|Dropdown|Required|Yes, No|No||Always|If Yes, reveal grading fields, and remove condition dropdown is not active (cant input). If No, user needs to select from Condition dropdown box|
+|Grading Company|Dropdown|Conditional|AFA, CAS, UKG|No||Is Graded = Yes||
+|Grade|Text Input|Conditional||No||Is Graded = Yes||
+|Certification Number|Text Input|Conditional||No||Is Graded = Yes|
+
 
 
 ### Plush / Stuffed Toy
@@ -415,6 +430,11 @@ Pokemon | Single Card, Unopened Product, Set, Collection/Lot
 |Year|Number Input|Recommended||No||Always||
 |Tags Attached|Dropdown|Recommended|Yes, No, Unknown|No||Always||
 |Cleanliness / Odor Notes|Text Area|Optional||No||Always||
+
+|Is Graded|Dropdown|Required|Yes, No|No||Always|If Yes, reveal grading fields, and remove condition dropdown is not active (cant input). If No, user needs to select from Condition dropdown box|
+|Grading Company|Dropdown|Conditional|AFA, CAS, UKG|No||Is Graded = Yes||
+|Grade|Text Input|Conditional||No||Is Graded = Yes||
+|Certification Number|Text Input|Conditional||No||Is Graded = Yes|
 
 
 
@@ -438,6 +458,11 @@ Pokemon | Single Card, Unopened Product, Set, Collection/Lot
 |Sound Works|Dropdown|Optional|Yes, No, Unknown|No||Always||
 |Lights Work|Dropdown|Optional|Yes, No, Unknown|No||Always||
 
+|Is Graded|Dropdown|Required|Yes, No|No||Always|If Yes, reveal grading fields, and remove condition dropdown is not active (cant input). If No, user needs to select from Condition dropdown box|
+|Grading Company|Dropdown|Conditional|AFA, CAS, UKG|No||Is Graded = Yes||
+|Grade|Text Input|Conditional||No||Is Graded = Yes||
+|Certification Number|Text Input|Conditional||No||Is Graded = Yes|
+
 
 
 ### Model / Kit
@@ -458,6 +483,11 @@ Pokemon | Single Card, Unopened Product, Set, Collection/Lot
 |Complete|Dropdown|Recommended|Yes, No, Unknown|No||Always||
 |Instructions Included|Dropdown|Recommended|Yes, No|No||Always||
 
+|Is Graded|Dropdown|Required|Yes, No|No||Always|If Yes, reveal grading fields, and remove condition dropdown is not active (cant input). If No, user needs to select from Condition dropdown box|
+|Grading Company|Dropdown|Conditional|AFA, CAS, UKG|No||Is Graded = Yes||
+|Grade|Text Input|Conditional||No||Is Graded = Yes||
+|Certification Number|Text Input|Conditional||No||Is Graded = Yes|
+
 
 
 ### Collection/Lot
@@ -475,6 +505,11 @@ Pokemon | Single Card, Unopened Product, Set, Collection/Lot
 |Brands Included|Text Area|Recommended||No||Always||
 |Franchises Included|Text Area|Recommended||No||Always||
 |Notable Items|Text Area|Recommended||No||Always||
+
+|Is Graded|Dropdown|Required|Yes, No|No||Always|If Yes, reveal grading fields, and remove condition dropdown is not active (cant input). If No, user needs to select from Condition dropdown box|
+|Grading Company|Dropdown|Conditional|AFA, CAS, UKG|No||Is Graded = Yes||
+|Grade|Text Input|Conditional||No||Is Graded = Yes||
+|Certification Number|Text Input|Conditional||No||Is Graded = Yes|
 
 
 
@@ -642,7 +677,7 @@ Pokemon | Single Card, Unopened Product, Set, Collection/Lot
 |Sealed|Dropdown|Recommended|Yes, No|No||Always||
 |Region|Text Input|Optional||No||Always||
 |Is Graded|Dropdown|Required|Yes, No|No||Always|If Yes, reveal grading fields, and remove condition dropdown box is not active (cant input). If No, user needs to select from Condition dropdown box|
-|Grading Company|Dropdown|Conditional|VGA, IGS, VHSDNA, CGC, Rewind, Other|Yes|Custom Grading Company|Is Graded = Yes||
+|Grading Company|Dropdown|Conditional|CGC Home Video, VHS Grading, IGS|No||Is Graded = Yes||
 |Grade|Text Input|Conditional||No||Is Graded = Yes||
 |Certification Number|Text Input|Conditional||No||Is Graded = Yes||
 
@@ -829,7 +864,7 @@ Pokemon | Single Card, Unopened Product, Set, Collection/Lot
 |Special Attributes|Dropdown|Optional|None, Staff Stamp, Prerelease Stamp, Promo, Misprint / Error, Miscut, Corrected Error, Other|Yes|Custom Attribute|Always|For niche collector items.|
 |Language|Dropdown|Required|English, Japanese, French, German, Italian, Spanish, Korean, Chinese, Other|Yes|Custom Language|Always||
 |Is Graded|Dropdown|Required|Yes, No|No||Always|If Yes, reveal grading fields, and remove condition dropdown is not active (cant input). If No, user needs to select from Condition dropdown box|
-|Grading Company|Dropdown|Conditional|PSA, BGS, SGC, CGC Cards, TAG Grading, HGA, Arena Club, Degree, ACE, ISA, GMA, Rare Edition, FCG, MNT, KSA, PGA, RCG, OnlyGraded, Diamond, CGA, TRCG, Pokegrade, Tree Frog, AP, PRO, GEM, GAI, PCI, WCG|No||Is Graded = Yes||
+|Grading Company|Dropdown|Conditional|PSA, BGS, SGC, CGC Cards, TAG Grading, HGA, Arena Club, Degree, ACE, ISA, GMA, Rare Edition, FCG, MNT, KSA, PGA, RCG, OnlyGraded, Diamond Service Grading, CGA Card Grading, TRCG, Pokegrade, Tree Frog, AP, PRO, GEM, GAI, PCI, WCG|No||Is Graded = Yes||
 |Grade|Text Input|Conditional||No||Is Graded = Yes||
 |Certification Number|Text Input|Conditional||No||Is Graded = Yes||
 
