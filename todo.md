@@ -2729,3 +2729,16 @@ All 8 remaining filter optimization and caching items have been successfully imp
 ## Add to Inventory Page - Input Field Width Fix
 - [x] Apply max-w-xs styling to half-width input fields (Quantity, Year, Issue Number)
 - [x] Verify styling applies correctly to text, number, and currency input types
+
+
+## Add to Inventory Page - Comics Single Comic Field Audit and Fixes
+- [x] Add missing Volume field (Optional)
+- [x] Add missing Variant Cover field (Recommended) with options: Yes, No, Not Sure
+- [x] Add missing Variant Description field (Conditional - when Variant Cover = Yes)
+- [x] Add missing Key Issue field (Optional) with options: Yes, No, Unknown
+- [x] Add missing First Appearance field (Optional) with options: Yes, No, Unknown
+- [x] Rename seriesName to comicTitle to match specification
+- [x] Rename year to publicationYear to match specification
+- [x] Update Signed field options to include 'Unknown'
+- [x] Remove facsimile field (not in specification)
+- [x] Remove firstEdition field (not in specification)
