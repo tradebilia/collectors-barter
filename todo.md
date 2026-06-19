@@ -2780,6 +2780,6 @@ All 8 remaining filter optimization and caching items have been successfully imp
 
 
 ## Fix # of Signatures Conditional Logic
-- [ ] Ensure "# of Signatures" field only appears when Signed = Yes (not always visible)
-- [ ] Verify individual signature input boxes appear in Recommended Fields when number is selected
-- [ ] Test that signature fields are properly hidden when Signed = No
+- [x] Ensure "# of Signatures" field only appears when Signed = Yes (not always visible)
+- [x] Verify individual signature input boxes appear in Recommended Fields when number is selected
+- [x] Test that signature fields are properly hidden when Signed = No
