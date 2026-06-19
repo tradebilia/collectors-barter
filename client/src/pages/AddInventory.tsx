@@ -251,7 +251,7 @@ export default function AddInventory() {
       </section>
 
       <div className="container mx-auto max-w-7xl px-4 py-12">
-        <form id="add-inventory-form" onSubmit={submitListing} className="grid grid-cols-1 gap-6">
+        <form id="add-inventory-form" onSubmit={submitListing} className="grid grid-cols-4 gap-6">
           {/* Left Column (75%) - Form Content */}
           <div className="col-span-3 space-y-6">
             {/* Progress Indicator */}
@@ -266,7 +266,7 @@ export default function AddInventory() {
             />
 
             {/* Required Fields Section */}
-            <CollapsibleFormSection title="Required Fields" defaultExpanded={true} fieldCount={allFields.filter((f: FieldDefinition) => f.requirement === "required").length}>
+            <CollapsibleFormSection title="1. Required Fields" defaultExpanded={true} fieldCount={allFields.filter((f: FieldDefinition) => f.requirement === "required").length}>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {allFields
                   .filter((f: FieldDefinition) => f.requirement === "required" && shouldShowField(f))
@@ -300,7 +300,7 @@ export default function AddInventory() {
             </CollapsibleFormSection>
 
             {/* Optional Fields Section */}
-            <CollapsibleFormSection title="Optional Fields" defaultExpanded={true} fieldCount={allFields.filter((f: FieldDefinition) => f.requirement === "optional").length}>
+            <CollapsibleFormSection title="2. Optional Fields" defaultExpanded={true} fieldCount={allFields.filter((f: FieldDefinition) => f.requirement === "optional").length}>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {allFields
                   .filter((f: FieldDefinition) => f.requirement === "optional" && shouldShowField(f))
@@ -317,7 +317,7 @@ export default function AddInventory() {
             </CollapsibleFormSection>
 
             {/* Shipping & Quantity Section */}
-            <CollapsibleFormSection title="Shipping and Quantity" defaultExpanded={true} fieldCount={2}>
+            <CollapsibleFormSection title="3. Shipping and Quantity" defaultExpanded={true} fieldCount={2}>
               <div className="space-y-4">
                 <DynamicFieldRenderer
                   field={{
@@ -346,7 +346,7 @@ export default function AddInventory() {
             </CollapsibleFormSection>
 
             {/* Description Section */}
-            <CollapsibleFormSection title="Description" defaultExpanded={true} fieldCount={1}>
+            <CollapsibleFormSection title="4. Description" defaultExpanded={true} fieldCount={1}>
               <div className="w-full">
                 <DynamicFieldRenderer
                   field={{
@@ -363,10 +363,10 @@ export default function AddInventory() {
             </CollapsibleFormSection>
           </div>
 
-          {/* Photo Upload Panel */}
-          <div className="w-full">
+          {/* Photo Upload Panel - Right Sidebar */}
+          <div className="col-span-1 sticky top-20 h-fit">
             <div className="rounded-lg border border-white/20 bg-white/5 p-6 backdrop-blur">
-              <h3 className="mb-4 text-lg font-semibold">Photos</h3>
+              <h3 className="mb-4 text-lg font-semibold">5. Photos</h3>
 
               {/* Drag and Drop Area */}
               <div
