@@ -265,7 +265,7 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({
 
         {showOtherInput && field.supportsOther && value === 'Other' && (
           <div className="mt-2 p-3 rounded-lg" style={{ backgroundColor: '#ffffff' }}>
-            <label className="text-sm font-medium block mb-2" style={{ color: '#ffffff' }}>
+            <label className="text-sm font-medium block mb-2" style={{ color: '#000000' }}>
               {field.otherFieldName || 'Custom value'}
             </label>
             <input
