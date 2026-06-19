@@ -116,7 +116,8 @@ export const useAddInventoryForm = (): UseAddInventoryFormReturn => {
   // Check if a field should be shown
   const shouldShowField = useCallback(
     (field: FieldDefinition): boolean => {
-      if (field.requirement === 'conditional' && field.conditionalLogic) {
+      // If field has conditional logic, evaluate it regardless of requirement type
+      if (field.conditionalLogic) {
         return evaluateCondition(field.conditionalLogic);
       }
       return true;
