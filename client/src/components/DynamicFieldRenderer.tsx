@@ -80,6 +80,15 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({
   const renderField = () => {
     switch (field.inputType) {
       case 'text':
+        // Calculate width based on maxLength
+        let widthClass = '';
+        if (field.maxLength) {
+          if (field.maxLength <= 4) widthClass = 'max-w-12';
+          else if (field.maxLength <= 5) widthClass = 'max-w-16';
+          else if (field.maxLength <= 7) widthClass = 'max-w-20';
+          else if (field.maxLength <= 9) widthClass = 'max-w-24';
+          else if (field.maxLength <= 10) widthClass = 'max-w-28';
+        }
         return (
           <Input
             type="text"
@@ -87,11 +96,21 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({
             onChange={(e) => onChange(e.target.value)}
             disabled={disabled}
             placeholder={field.notes}
-            className={`bg-white text-black ${hasError ? 'border-red-500' : ''} ${field.gridColumn === 'half' ? 'max-w-xs' : ''}`}
+            maxLength={field.maxLength}
+            className={`bg-white text-black ${hasError ? 'border-red-500' : ''} ${widthClass || (field.gridColumn === 'half' ? 'max-w-xs' : '')}`}
           />
         );
 
       case 'number':
+        // Calculate width based on maxLength
+        let numberWidthClass = '';
+        if (field.maxLength) {
+          if (field.maxLength <= 4) numberWidthClass = 'max-w-12';
+          else if (field.maxLength <= 5) numberWidthClass = 'max-w-16';
+          else if (field.maxLength <= 7) numberWidthClass = 'max-w-20';
+          else if (field.maxLength <= 9) numberWidthClass = 'max-w-24';
+          else if (field.maxLength <= 10) numberWidthClass = 'max-w-28';
+        }
         return (
           <Input
             type="number"
@@ -100,7 +119,8 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({
             disabled={disabled}
             min={field.validation?.min}
             max={field.validation?.max}
-            className={`bg-white text-black ${hasError ? 'border-red-500' : ''} ${field.gridColumn === 'half' ? 'max-w-xs' : ''}`}
+            maxLength={field.maxLength}
+            className={`bg-white text-black ${hasError ? 'border-red-500' : ''} ${numberWidthClass || (field.gridColumn === 'half' ? 'max-w-xs' : '')}`}
           />
         );
 

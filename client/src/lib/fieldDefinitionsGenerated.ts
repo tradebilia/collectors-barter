@@ -36,6 +36,7 @@ export const AUTOGRAPHS_COLLECTION_LOT_FIELDS: FieldDefinition[] = [
     name: 'quantity',
     label: 'Quantity',
     inputType: 'number',
+    maxLength: 4,
     requirement: 'recommended',
   },
 
@@ -104,6 +105,7 @@ export const AUTOGRAPHS_SIGNED_ITEM_FIELDS: FieldDefinition[] = [
     name: 'quantity',
     label: 'Quantity',
     inputType: 'number',
+    maxLength: 4,
     requirement: 'recommended',
   },
 
@@ -218,6 +220,7 @@ export const COINS_COIN_SET_FIELDS: FieldDefinition[] = [
     name: 'quantity',
     label: 'Quantity',
     inputType: 'number',
+    maxLength: 4,
     requirement: 'recommended',
   },
 
@@ -231,6 +234,7 @@ export const COINS_COIN_SET_FIELDS: FieldDefinition[] = [
     name: 'year',
     label: 'Year',
     inputType: 'number',
+    maxLength: 10,
     requirement: 'required',
   },
   {
@@ -296,6 +300,7 @@ export const COINS_COLLECTION_LOT_FIELDS: FieldDefinition[] = [
     name: 'quantity',
     label: 'Quantity',
     inputType: 'number',
+    maxLength: 4,
     requirement: 'recommended',
   },
 
@@ -372,18 +377,21 @@ export const COINS_SINGLE_COIN_FIELDS: FieldDefinition[] = [
     name: 'quantity',
     label: 'Quantity',
     inputType: 'number',
+    maxLength: 4,
     requirement: 'recommended',
   },
   {
     name: 'denomination',
     label: 'Denomination',
     inputType: 'text',
+    maxLength: 10,
     requirement: 'required',
   },
   {
     name: 'year',
     label: 'Year',
     inputType: 'number',
+    maxLength: 10,
     requirement: 'required',
   },
   {
@@ -435,6 +443,7 @@ export const COINS_SINGLE_COIN_FIELDS: FieldDefinition[] = [
     name: 'grade',
     label: 'Grade',
     inputType: 'text',
+    maxLength: 4,
     requirement: 'required',
     conditionalLogic: 'Is Graded = Yes',
   },
@@ -479,6 +488,7 @@ export const COMICS_COLLECTION_LOT_FIELDS: FieldDefinition[] = [
     name: 'quantity',
     label: 'Quantity',
     inputType: 'number',
+    maxLength: 4,
     requirement: 'recommended',
   },
 
@@ -547,6 +557,7 @@ export const COMICS_ORIGINAL_ART_FIELDS: FieldDefinition[] = [
     name: 'quantity',
     label: 'Quantity',
     inputType: 'number',
+    maxLength: 4,
     requirement: 'recommended',
   },
 
@@ -581,12 +592,14 @@ export const COMICS_ORIGINAL_ART_FIELDS: FieldDefinition[] = [
     name: 'issueNumber',
     label: 'Issue Number',
     inputType: 'text',
+    maxLength: 5,
     requirement: 'recommended',
   },
   {
     name: 'pageNumber',
     label: 'Page Number',
     inputType: 'text',
+    maxLength: 7,
     requirement: 'recommended',
   },
   {
@@ -682,6 +695,7 @@ export const COMICS_SINGLE_COMIC_FIELDS: FieldDefinition[] = [
     name: 'quantity',
     label: 'Quantity',
     inputType: 'number',
+    maxLength: 4,
     requirement: 'recommended',
   },
 
@@ -695,6 +709,7 @@ export const COMICS_SINGLE_COMIC_FIELDS: FieldDefinition[] = [
     name: 'issueNumber',
     label: 'Issue Number',
     inputType: 'text',
+    maxLength: 5,
     requirement: 'required',
   },
   {
@@ -710,12 +725,14 @@ export const COMICS_SINGLE_COMIC_FIELDS: FieldDefinition[] = [
     name: 'volume',
     label: 'Volume',
     inputType: 'text',
+    maxLength: 9,
     requirement: 'optional',
   },
   {
     name: 'publicationYear',
     label: 'Publication Year',
     inputType: 'number',
+    maxLength: 5,
     requirement: 'recommended',
   },
   {
@@ -772,6 +789,7 @@ export const COMICS_SINGLE_COMIC_FIELDS: FieldDefinition[] = [
     name: 'grade',
     label: 'Grade',
     inputType: 'text',
+    maxLength: 4,
     requirement: 'required',
     conditionalLogic: 'Is Graded = Yes',
   },
@@ -831,6 +849,7 @@ export const DISNEY_PINS_COLLECTION_LOT_FIELDS: FieldDefinition[] = [
     name: 'quantity',
     label: 'Quantity',
     inputType: 'number',
+    maxLength: 4,
     requirement: 'recommended',
   },
 
@@ -907,6 +926,7 @@ export const DISNEY_PINS_INDIVIDUAL_PIN_FIELDS: FieldDefinition[] = [
     name: 'quantity',
     label: 'Quantity',
     inputType: 'number',
+    maxLength: 4,
     requirement: 'recommended',
   },
 
@@ -932,6 +952,7 @@ export const DISNEY_PINS_INDIVIDUAL_PIN_FIELDS: FieldDefinition[] = [
     name: 'year',
     label: 'Year',
     inputType: 'number',
+    maxLength: 10,
     requirement: 'recommended',
   },
   {
@@ -1015,6 +1036,7 @@ export const DISNEY_PINS_PIN_SET_FIELDS: FieldDefinition[] = [
     name: 'quantity',
     label: 'Quantity',
     inputType: 'number',
+    maxLength: 4,
     requirement: 'recommended',
   },
 
@@ -1028,6 +1050,7 @@ export const DISNEY_PINS_PIN_SET_FIELDS: FieldDefinition[] = [
     name: 'numberOfPins',
     label: 'Number of Pins',
     inputType: 'number',
+    maxLength: 5,
     requirement: 'required',
   },
   {
@@ -1097,6 +1120,7 @@ export const MOVIES_BOX_SET_FIELDS: FieldDefinition[] = [
     name: 'quantity',
     label: 'Quantity',
     inputType: 'number',
+    maxLength: 4,
     requirement: 'recommended',
   },
 
@@ -1168,6 +1192,7 @@ export const MOVIES_COLLECTION_LOT_FIELDS: FieldDefinition[] = [
     name: 'quantity',
     label: 'Quantity',
     inputType: 'number',
+    maxLength: 4,
     requirement: 'recommended',
   },
 
@@ -1231,6 +1256,7 @@ export const MOVIES_INDIVIDUAL_MOVIE_FIELDS: FieldDefinition[] = [
     name: 'quantity',
     label: 'Quantity',
     inputType: 'number',
+    maxLength: 4,
     requirement: 'recommended',
   },
 
@@ -1293,6 +1319,7 @@ export const MOVIES_INDIVIDUAL_MOVIE_FIELDS: FieldDefinition[] = [
     name: 'grade',
     label: 'Grade',
     inputType: 'text',
+    maxLength: 4,
     requirement: 'required',
     conditionalLogic: 'Is Graded = Yes',
   },
@@ -1337,6 +1364,7 @@ export const POKEMON_COLLECTION_LOT_FIELDS: FieldDefinition[] = [
     name: 'quantity',
     label: 'Quantity',
     inputType: 'number',
+    maxLength: 4,
     requirement: 'recommended',
   },
 
@@ -1408,6 +1436,7 @@ export const POKEMON_SET_FIELDS: FieldDefinition[] = [
     name: 'quantity',
     label: 'Quantity',
     inputType: 'number',
+    maxLength: 4,
     requirement: 'recommended',
   },
 
@@ -1471,6 +1500,7 @@ export const POKEMON_UNOPENED_PRODUCT_FIELDS: FieldDefinition[] = [
     name: 'quantity',
     label: 'Quantity',
     inputType: 'number',
+    maxLength: 4,
     requirement: 'recommended',
   },
 
@@ -1646,6 +1676,7 @@ export const SPORTS_CARDS_SET_FIELDS: FieldDefinition[] = [
     name: 'quantity',
     label: 'Quantity',
     inputType: 'number',
+    maxLength: 4,
     requirement: 'recommended',
   },
 
@@ -1662,6 +1693,7 @@ export const SPORTS_CARDS_SET_FIELDS: FieldDefinition[] = [
     name: 'year',
     label: 'Year',
     inputType: 'number',
+    maxLength: 10,
     requirement: 'required',
   },
   {
@@ -1736,6 +1768,7 @@ export const SPORTS_CARDS_SINGLE_CARD_FIELDS: FieldDefinition[] = [
     name: 'quantity',
     label: 'Quantity',
     inputType: 'number',
+    maxLength: 4,
     requirement: 'recommended',
   },
 
@@ -1758,6 +1791,7 @@ export const SPORTS_CARDS_SINGLE_CARD_FIELDS: FieldDefinition[] = [
     name: 'year',
     label: 'Year',
     inputType: 'number',
+    maxLength: 10,
     requirement: 'required',
   },
   {
@@ -1779,6 +1813,7 @@ export const SPORTS_CARDS_SINGLE_CARD_FIELDS: FieldDefinition[] = [
     name: 'cardNumber',
     label: 'Card Number',
     inputType: 'text',
+    maxLength: 8,
     requirement: 'recommended',
   },
   {
@@ -1841,6 +1876,7 @@ export const SPORTS_CARDS_SINGLE_CARD_FIELDS: FieldDefinition[] = [
     name: 'grade',
     label: 'Grade',
     inputType: 'text',
+    maxLength: 4,
     requirement: 'required',
     conditionalLogic: 'Is Graded = Yes',
   },
@@ -1885,6 +1921,7 @@ export const SPORTS_CARDS_UNOPENED_PRODUCT_FIELDS: FieldDefinition[] = [
     name: 'quantity',
     label: 'Quantity',
     inputType: 'number',
+    maxLength: 4,
     requirement: 'recommended',
   },
 
@@ -1901,6 +1938,7 @@ export const SPORTS_CARDS_UNOPENED_PRODUCT_FIELDS: FieldDefinition[] = [
     name: 'year',
     label: 'Year',
     inputType: 'number',
+    maxLength: 10,
     requirement: 'required',
   },
   {
@@ -2007,6 +2045,7 @@ export const STAMPS_COLLECTION_LOT_FIELDS: FieldDefinition[] = [
     name: 'quantity',
     label: 'Quantity',
     inputType: 'number',
+    maxLength: 4,
     requirement: 'recommended',
   },
 
@@ -2083,6 +2122,7 @@ export const STAMPS_SINGLE_STAMP_FIELDS: FieldDefinition[] = [
     name: 'quantity',
     label: 'Quantity',
     inputType: 'number',
+    maxLength: 4,
     requirement: 'recommended',
   },
   {
@@ -2095,12 +2135,14 @@ export const STAMPS_SINGLE_STAMP_FIELDS: FieldDefinition[] = [
     name: 'year',
     label: 'Year',
     inputType: 'number',
+    maxLength: 10,
     requirement: 'recommended',
   },
   {
     name: 'denomination',
     label: 'Denomination',
     inputType: 'text',
+    maxLength: 10,
     requirement: 'recommended',
   },
   {
@@ -2136,6 +2178,7 @@ export const STAMPS_SINGLE_STAMP_FIELDS: FieldDefinition[] = [
     name: 'grade',
     label: 'Grade',
     inputType: 'text',
+    maxLength: 4,
     requirement: 'required',
     conditionalLogic: 'Is Graded = Yes',
   },
@@ -2188,12 +2231,14 @@ export const STAMPS_STAMP_SET_SHEET_FIELDS: FieldDefinition[] = [
     name: 'quantity',
     label: 'Quantity',
     inputType: 'number',
+    maxLength: 4,
     requirement: 'recommended',
   },
   {
     name: 'year',
     label: 'Year',
     inputType: 'number',
+    maxLength: 10,
     requirement: 'recommended',
   },
   {
@@ -2258,6 +2303,7 @@ export const VIDEO_GAMES_ACCESSORY_FIELDS: FieldDefinition[] = [
     name: 'quantity',
     label: 'Quantity',
     inputType: 'number',
+    maxLength: 4,
     requirement: 'recommended',
   },
 
@@ -2320,6 +2366,7 @@ export const VIDEO_GAMES_ACCESSORY_FIELDS: FieldDefinition[] = [
     name: 'grade',
     label: 'Grade',
     inputType: 'text',
+    maxLength: 4,
     requirement: 'required',
     conditionalLogic: 'Is Graded = Yes',
   },
@@ -2364,6 +2411,7 @@ export const VIDEO_GAMES_COLLECTION_LOT_FIELDS: FieldDefinition[] = [
     name: 'quantity',
     label: 'Quantity',
     inputType: 'number',
+    maxLength: 4,
     requirement: 'recommended',
   },
 
@@ -2426,6 +2474,7 @@ export const VIDEO_GAMES_CONSOLE_FIELDS: FieldDefinition[] = [
     name: 'quantity',
     label: 'Quantity',
     inputType: 'number',
+    maxLength: 4,
     requirement: 'recommended',
   },
 
@@ -2499,6 +2548,7 @@ export const VIDEO_GAMES_CONSOLE_FIELDS: FieldDefinition[] = [
     name: 'grade',
     label: 'Grade',
     inputType: 'text',
+    maxLength: 4,
     requirement: 'required',
     conditionalLogic: 'Is Graded = Yes',
   },
@@ -2544,6 +2594,7 @@ export const VIDEO_GAMES_GAME_FIELDS: FieldDefinition[] = [
     name: 'quantity',
     label: 'Quantity',
     inputType: 'number',
+    maxLength: 4,
     requirement: 'recommended',
   },
 
@@ -2626,6 +2677,7 @@ export const VIDEO_GAMES_GAME_FIELDS: FieldDefinition[] = [
     name: 'grade',
     label: 'Grade',
     inputType: 'text',
+    maxLength: 4,
     requirement: 'required',
     conditionalLogic: 'Is Graded = Yes',
   },
@@ -2671,6 +2723,7 @@ export const VINTAGE_TOYS_ACTION_FIGURE_DOLL_FIELDS: FieldDefinition[] = [
     name: 'quantity',
     label: 'Quantity',
     inputType: 'number',
+    maxLength: 4,
     requirement: 'recommended',
   },
 
@@ -2705,6 +2758,7 @@ export const VINTAGE_TOYS_ACTION_FIGURE_DOLL_FIELDS: FieldDefinition[] = [
     name: 'year',
     label: 'Year',
     inputType: 'number',
+    maxLength: 10,
     requirement: 'recommended',
   },
   {
@@ -2751,6 +2805,7 @@ export const VINTAGE_TOYS_ACTION_FIGURE_DOLL_FIELDS: FieldDefinition[] = [
     name: 'grade',
     label: 'Grade',
     inputType: 'text',
+    maxLength: 4,
     requirement: 'required',
     conditionalLogic: 'Is Graded = Yes',
   },
@@ -2795,6 +2850,7 @@ export const VINTAGE_TOYS_BOARD_GAME_PUZZLE_FIELDS: FieldDefinition[] = [
     name: 'quantity',
     label: 'Quantity',
     inputType: 'number',
+    maxLength: 4,
     requirement: 'recommended',
   },
 
@@ -2817,6 +2873,7 @@ export const VINTAGE_TOYS_BOARD_GAME_PUZZLE_FIELDS: FieldDefinition[] = [
     name: 'year',
     label: 'Year',
     inputType: 'number',
+    maxLength: 10,
     requirement: 'recommended',
   },
   {
@@ -2887,6 +2944,7 @@ export const VINTAGE_TOYS_COLLECTION_LOT_FIELDS: FieldDefinition[] = [
     name: 'quantity',
     label: 'Quantity',
     inputType: 'number',
+    maxLength: 4,
     requirement: 'recommended',
   },
 
@@ -2948,6 +3006,7 @@ export const VINTAGE_TOYS_ELECTRONIC_TOY_FIELDS: FieldDefinition[] = [
     name: 'quantity',
     label: 'Quantity',
     inputType: 'number',
+    maxLength: 4,
     requirement: 'recommended',
   },
 
@@ -2970,6 +3029,7 @@ export const VINTAGE_TOYS_ELECTRONIC_TOY_FIELDS: FieldDefinition[] = [
     name: 'year',
     label: 'Year',
     inputType: 'number',
+    maxLength: 10,
     requirement: 'recommended',
   },
   {
@@ -3041,6 +3101,7 @@ export const VINTAGE_TOYS_MODEL_KIT_FIELDS: FieldDefinition[] = [
     name: 'quantity',
     label: 'Quantity',
     inputType: 'number',
+    maxLength: 4,
     requirement: 'recommended',
   },
 
@@ -3063,6 +3124,7 @@ export const VINTAGE_TOYS_MODEL_KIT_FIELDS: FieldDefinition[] = [
     name: 'scale',
     label: 'Scale',
     inputType: 'text',
+    maxLength: 10,
     requirement: 'recommended',
   },
   {
@@ -3120,6 +3182,7 @@ export const VINTAGE_TOYS_PLAYSET_FIELDS: FieldDefinition[] = [
     name: 'quantity',
     label: 'Quantity',
     inputType: 'number',
+    maxLength: 4,
     requirement: 'recommended',
   },
 
@@ -3148,6 +3211,7 @@ export const VINTAGE_TOYS_PLAYSET_FIELDS: FieldDefinition[] = [
     name: 'year',
     label: 'Year',
     inputType: 'number',
+    maxLength: 10,
     requirement: 'recommended',
   },
   {
@@ -3212,6 +3276,7 @@ export const VINTAGE_TOYS_PLUSH_STUFFED_TOY_FIELDS: FieldDefinition[] = [
     name: 'quantity',
     label: 'Quantity',
     inputType: 'number',
+    maxLength: 4,
     requirement: 'recommended',
   },
 
@@ -3234,6 +3299,7 @@ export const VINTAGE_TOYS_PLUSH_STUFFED_TOY_FIELDS: FieldDefinition[] = [
     name: 'year',
     label: 'Year',
     inputType: 'number',
+    maxLength: 10,
     requirement: 'recommended',
   },
   {
@@ -3283,6 +3349,7 @@ export const VINTAGE_TOYS_VEHICLE_FIELDS: FieldDefinition[] = [
     name: 'quantity',
     label: 'Quantity',
     inputType: 'number',
+    maxLength: 4,
     requirement: 'recommended',
   },
 
@@ -3311,6 +3378,7 @@ export const VINTAGE_TOYS_VEHICLE_FIELDS: FieldDefinition[] = [
     name: 'year',
     label: 'Year',
     inputType: 'number',
+    maxLength: 10,
     requirement: 'recommended',
   },
   {
@@ -3380,18 +3448,21 @@ export const COINS_PAPER_MONEY_BANKNOTES_FIELDS: FieldDefinition[] = [
     name: 'quantity',
     label: 'Quantity',
     inputType: 'number',
+    maxLength: 4,
     requirement: 'recommended',
   },
   {
     name: 'denomination',
     label: 'Denomination',
     inputType: 'text',
+    maxLength: 10,
     requirement: 'required',
   },
   {
     name: 'year',
     label: 'Year',
     inputType: 'number',
+    maxLength: 10,
     requirement: 'required',
   },
   {
@@ -3425,6 +3496,7 @@ export const COINS_PAPER_MONEY_BANKNOTES_FIELDS: FieldDefinition[] = [
     name: 'grade',
     label: 'Grade',
     inputType: 'text',
+    maxLength: 4,
     requirement: 'required',
     conditionalLogic: 'Is Graded = Yes',
   },
@@ -3470,6 +3542,7 @@ export const POKEMON_SINGLE_CARD_FIELDS: FieldDefinition[] = [
     name: 'quantity',
     label: 'Quantity',
     inputType: 'number',
+    maxLength: 4,
     requirement: 'recommended',
   },
 
@@ -3483,6 +3556,7 @@ export const POKEMON_SINGLE_CARD_FIELDS: FieldDefinition[] = [
     name: 'cardNumber',
     label: 'Card Number',
     inputType: 'text',
+    maxLength: 8,
     requirement: 'required',
   },
   {
@@ -3501,6 +3575,7 @@ export const POKEMON_SINGLE_CARD_FIELDS: FieldDefinition[] = [
     name: 'year',
     label: 'Year',
     inputType: 'number',
+    maxLength: 10,
     requirement: 'recommended',
   },
   {
@@ -3529,6 +3604,7 @@ export const POKEMON_SINGLE_CARD_FIELDS: FieldDefinition[] = [
     name: 'grade',
     label: 'Grade',
     inputType: 'text',
+    maxLength: 4,
     requirement: 'required',
     conditionalLogic: 'Is Graded = Yes',
   },
