@@ -220,11 +220,10 @@ export const useAddInventoryForm = (photos: any[] = []): UseAddInventoryFormRetu
 
   // Set category (resets item type and form data)
   const setCategory = useCallback((category: CollectibleCategory) => {
-    setFormData((prev) => ({
-      ...prev,
+    setFormData({
       category,
       itemType: '',
-    }));
+    });
   }, []);
 
   // Set item type

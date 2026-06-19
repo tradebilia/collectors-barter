@@ -279,18 +279,35 @@ export default function AddInventory() {
             {/* Required Fields Section */}
             <CollapsibleFormSection title="2. Required Fields *" defaultExpanded={true} fieldCount={allFields.filter((f: FieldDefinition) => f.requirement === "required").length}>
               <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {allFields
-                    .filter((f: FieldDefinition) => f.requirement === "required" && shouldShowField(f))
-                    .map((field: FieldDefinition) => (
-                      <DynamicFieldRenderer
-                        key={field.name}
-                        field={field}
-                        value={formData[field.name as keyof typeof formData] || ""}
-                        onChange={(value) => updateField(field.name, value)}
-                        onOtherChange={(value) => updateOtherField(field.name, value)}
-                      />
-                    ))}
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {allFields
+                      .filter((f: FieldDefinition) => f.requirement === "required" && shouldShowField(f))
+                      .map((field: FieldDefinition) => (
+                        <div key={field.name}>
+                          <DynamicFieldRenderer
+                            field={field}
+                            value={formData[field.name as keyof typeof formData] || ""}
+                            onChange={(value) => updateField(field.name, value)}
+                            onOtherChange={(value) => updateOtherField(field.name, value)}
+                          />
+                          {field.supportsOther && formData[field.name as keyof typeof formData] === 'Other' && (
+                            <div className="mt-2">
+                              <label className="block text-sm font-medium text-gray-700 mb-1">
+                                {field.otherFieldName || 'Custom Value'} *
+                              </label>
+                              <input
+                                type="text"
+                                placeholder={`Enter ${field.otherFieldName?.toLowerCase() || 'custom value'}`}
+                                value={formData[`custom${field.name.charAt(0).toUpperCase() + field.name.slice(1)}` as keyof typeof formData] || ""}
+                                onChange={(e) => updateOtherField(field.name, e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              />
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                  </div>
                 </div>
                 
 
@@ -302,18 +319,35 @@ export default function AddInventory() {
             {/* Recommended Fields Section */}
             <CollapsibleFormSection title="3. Recommended Fields" defaultExpanded={true} fieldCount={allFields.filter((f: FieldDefinition) => f.requirement === "recommended").length}>
               <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {allFields
-                    .filter((f: FieldDefinition) => f.requirement === "recommended" && shouldShowField(f) && f.name !== 'signatures')
-                    .map((field: FieldDefinition) => (
-                      <DynamicFieldRenderer
-                        key={field.name}
-                        field={field}
-                        value={formData[field.name as keyof typeof formData] || ""}
-                        onChange={(value) => updateField(field.name, value)}
-                        onOtherChange={(value) => updateOtherField(field.name, value)}
-                      />
-                    ))}
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {allFields
+                      .filter((f: FieldDefinition) => f.requirement === "recommended" && shouldShowField(f) && f.name !== 'signatures')
+                      .map((field: FieldDefinition) => (
+                        <div key={field.name}>
+                          <DynamicFieldRenderer
+                            field={field}
+                            value={formData[field.name as keyof typeof formData] || ""}
+                            onChange={(value) => updateField(field.name, value)}
+                            onOtherChange={(value) => updateOtherField(field.name, value)}
+                          />
+                          {field.supportsOther && formData[field.name as keyof typeof formData] === 'Other' && (
+                            <div className="mt-2">
+                              <label className="block text-sm font-medium text-gray-700 mb-1">
+                                {field.otherFieldName || 'Custom Value'}
+                              </label>
+                              <input
+                                type="text"
+                                placeholder={`Enter ${field.otherFieldName?.toLowerCase() || 'custom value'}`}
+                                value={formData[`custom${field.name.charAt(0).toUpperCase() + field.name.slice(1)}` as keyof typeof formData] || ""}
+                                onChange={(e) => updateOtherField(field.name, e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              />
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                  </div>
                 </div>
                 
                 {/* Inline Conditional Signature Fields */}
@@ -348,19 +382,36 @@ export default function AddInventory() {
             {/* Optional Fields Section */}
             {allFields.filter((f: FieldDefinition) => f.requirement === "optional" && f.name !== "description" && shouldShowField(f)).length > 0 && (
             <CollapsibleFormSection title="4. Optional Fields" defaultExpanded={true} fieldCount={allFields.filter((f: FieldDefinition) => f.requirement === "optional" && f.name !== "description").length}>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {allFields
-                  .filter((f: FieldDefinition) => f.requirement === "optional" && f.name !== "description" && shouldShowField(f))
-                  .map((field: FieldDefinition) => (
-                    <DynamicFieldRenderer
-                      key={field.name}
-                      field={field}
-                      value={formData[field.name as keyof typeof formData] || ""}
-                      onChange={(value) => updateField(field.name, value)}
-                      onOtherChange={(value) => updateOtherField(field.name, value)}
-                    />
-                  ))}
-              </div>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {allFields
+                      .filter((f: FieldDefinition) => f.requirement === "optional" && shouldShowField(f))
+                      .map((field: FieldDefinition) => (
+                        <div key={field.name}>
+                          <DynamicFieldRenderer
+                            field={field}
+                            value={formData[field.name as keyof typeof formData] || ""}
+                            onChange={(value) => updateField(field.name, value)}
+                            onOtherChange={(value) => updateOtherField(field.name, value)}
+                          />
+                          {field.supportsOther && formData[field.name as keyof typeof formData] === 'Other' && (
+                            <div className="mt-2">
+                              <label className="block text-sm font-medium text-gray-700 mb-1">
+                                {field.otherFieldName || 'Custom Value'}
+                              </label>
+                              <input
+                                type="text"
+                                placeholder={`Enter ${field.otherFieldName?.toLowerCase() || 'custom value'}`}
+                                value={formData[`custom${field.name.charAt(0).toUpperCase() + field.name.slice(1)}` as keyof typeof formData] || ""}
+                                onChange={(e) => updateOtherField(field.name, e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              />
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                  </div>
+                </div>
             </CollapsibleFormSection>
             )}
 
