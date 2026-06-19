@@ -313,7 +313,7 @@ const VIDEO_GAMES_GAME_FIELDS: FieldDefinition[] = [
     name: 'missingItems',
     label: 'Missing Items',
     inputType: 'textarea',
-    requirement: 'optional',
+    requirement: 'recommended',
     conditionalLogic: 'Complete In Box = No',
   },
   {
