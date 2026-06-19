@@ -2580,7 +2580,7 @@ export const VIDEO_GAMES_GAME_FIELDS: FieldDefinition[] = [
     name: 'originalCaseIncluded',
     label: 'Original Case Included',
     inputType: 'dropdown',
-    requirement: 'recommended',
+    requirement: 'required',
     dropdownOptions: ['Yes', 'No', 'Unknown'],
     conditionalLogic: 'Complete In Box = No',
   },
