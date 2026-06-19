@@ -42,11 +42,11 @@ function mergeFieldDefinitions(generatedFields: FieldDefinition[]): FieldDefinit
   );
   
   // Combine: common fields first, then category-specific
+  // Note: PHOTOS_FIELD is excluded here because it has its own dedicated sticky panel
   const commonFieldsArray: FieldDefinition[] = [
     { ...COMMON_FIELDS.LISTING_TITLE_FIELD, gridColumn: 'full' as const },
     { ...COMMON_FIELDS.TRADE_VALUE_FIELD, gridColumn: 'half' as const },
     COMMON_FIELDS.CONDITION_FIELD,
-    COMMON_FIELDS.PHOTOS_FIELD,
     COMMON_FIELDS.DESCRIPTION_FIELD,
     { ...COMMON_FIELDS.QUANTITY_FIELD, gridColumn: 'half' as const, defaultValue: '1' },
     COMMON_FIELDS.SHIPPING_AVAILABLE_FIELD,
