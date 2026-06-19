@@ -2817,7 +2817,7 @@ All 8 remaining filter optimization and caching items have been successfully imp
 - [x] Adjust input bubble CSS widths to match character limits (narrow for Year, wider for Trade Value, etc.)
 - [x] Update Shipping dropdown options from "Yes/No" to "Yes", "Local Only", "In Person Only"
 - [x] Test input field sizing across all categories - VERIFIED WORKING
-- [ ] Test conditional field ordering for condition field appearing after Is Graded selection
+- [x] Test conditional field ordering for condition field appearing after Is Graded selection
 - [x] Verify Shipping dropdown options display correctly
 
 
@@ -2851,3 +2851,9 @@ All 8 remaining filter optimization and caching items have been successfully imp
 
 - [x] Fix required fields count calculation to include Shipping, Description, and Photos sections (each counts as 1)
 - [x] Verified counter updates correctly as fields are filled in
+
+## UI Refinements - Required Field Labels
+
+- [x] Add asterisks (*) to Description, Shipping, and Photos section headers to indicate required fields
+- [x] Remove redundant "Shipping Available" label from Shipping dropdown (keep just the dropdown)
+- [x] Remove redundant "Description" label from Description textarea (keep just the textarea)

@@ -354,12 +354,12 @@ export default function AddInventory() {
             )}
 
             {/* Shipping Section */}
-            <CollapsibleFormSection title={allFields.filter((f: FieldDefinition) => f.requirement === "optional" && shouldShowField(f)).length > 0 ? "5. Shipping" : "4. Shipping"} defaultExpanded={true} fieldCount={1}>
+            <CollapsibleFormSection title={allFields.filter((f: FieldDefinition) => f.requirement === "optional" && shouldShowField(f)).length > 0 ? "5. Shipping *" : "4. Shipping *"} defaultExpanded={true} fieldCount={1}>
               <div className="space-y-4">
                 <DynamicFieldRenderer
                   field={{
                     name: "shippingAvailable",
-                    label: "Shipping Available",
+                    label: "",
                     inputType: "dropdown",
                     requirement: "required",
                     dropdownOptions: ["Yes", "Local Only", "In Person Only"],
@@ -372,12 +372,12 @@ export default function AddInventory() {
             </CollapsibleFormSection>
 
             {/* Description Section */}
-            <CollapsibleFormSection title={allFields.filter((f: FieldDefinition) => f.requirement === "optional" && shouldShowField(f)).length > 0 ? "6. Description" : "5. Description"} defaultExpanded={true} fieldCount={1}>
+            <CollapsibleFormSection title={allFields.filter((f: FieldDefinition) => f.requirement === "optional" && shouldShowField(f)).length > 0 ? "6. Description *" : "5. Description *"} defaultExpanded={true} fieldCount={1}>
               <div className="w-full">
                 <DynamicFieldRenderer
                   field={{
                     name: "description",
-                    label: "Description",
+                    label: "",
                     inputType: "textarea",
                     requirement: "optional",
                   }}
@@ -393,7 +393,7 @@ export default function AddInventory() {
         {/* Photo Upload Panel - positioned absolutely on the right */}
         <div className="absolute top-12 -right-4 w-80 z-10">
             <div className="rounded-lg border border-white/20 bg-white/5 p-6 backdrop-blur">
-              <h3 className="mb-4 text-lg font-semibold text-white">{allFields.filter((f: FieldDefinition) => f.requirement === "optional" && shouldShowField(f)).length > 0 ? "7. Photos" : "6. Photos"}</h3>
+              <h3 className="mb-4 text-lg font-semibold text-white">{allFields.filter((f: FieldDefinition) => f.requirement === "optional" && shouldShowField(f)).length > 0 ? "7. Photos *" : "6. Photos *"}</h3>
 
               {/* Drag and Drop Area */}
               <div
