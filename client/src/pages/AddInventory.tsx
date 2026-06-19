@@ -297,7 +297,7 @@ export default function AddInventory() {
               <div className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {allFields
-                    .filter((f: FieldDefinition) => f.requirement === "recommended" && shouldShowField(f))
+                    .filter((f: FieldDefinition) => f.requirement === "recommended" && shouldShowField(f) && f.name !== 'signatures')
                     .map((field: FieldDefinition) => (
                       <DynamicFieldRenderer
                         key={field.name}
@@ -310,7 +310,7 @@ export default function AddInventory() {
                 </div>
                 
                 {/* Inline Conditional Signature Fields */}
-                {formData.numberOfSignatures && parseInt(formData.numberOfSignatures) > 0 && (
+                {formData.signed === 'Yes' && formData.numberOfSignatures && parseInt(formData.numberOfSignatures) > 0 && (
                   <div className="space-y-3 bg-blue-50 p-4 rounded-lg">
                     <h4 className="font-semibold text-sm text-blue-900">Signatures</h4>
                     <div className="space-y-2">

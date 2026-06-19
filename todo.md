@@ -2879,3 +2879,8 @@ All 8 remaining filter optimization and caching items have been successfully imp
 ## Dynamic Signature Fields Section Fix
 
 - [x] Move dynamic signature fields (Signature 1, 2, 3, etc.) from Required Fields section to Recommended Fields section so they appear alongside their parent "# of Signatures" field
+
+## Dynamic Signature Fields - Final Fixes
+
+- [x] Remove standalone "Signatures" textarea field from Recommended Fields (keep only the dynamic Signature 1, 2, 3 inputs)
+- [x] Fix conditional logic so dynamic signature fields only show when "Signed = Yes" AND "# of Signatures > 0" (hide when Signed = No)
