@@ -4,7 +4,7 @@
  */
 
 import { useState, useCallback, useMemo } from 'react';
-import { FieldDefinition, CollectibleCategory } from '@/lib/formFieldDefinitions';
+import { FieldDefinition, CollectibleCategory, COMMON_FIELDS } from '@/lib/formFieldDefinitions';
 import { ALL_FIELD_DEFINITIONS } from '@/lib/fieldDefinitionsComplete';
 import { REMAINING_FIELD_DEFINITIONS } from '@/lib/fieldDefinitionsRemaining';
 
@@ -51,10 +51,19 @@ export const useAddInventoryForm = (): UseAddInventoryFormReturn => {
   const currentFields = useMemo(() => {
     if (!formData.category || !formData.itemType) return [];
 
-    const categoryDef = ALL_DEFINITIONS[formData.category as CollectibleCategory] as Record<string, FieldDefinition[]> | undefined;
-    if (!categoryDef) return [];
+    // Get common fields that apply to all categories
+    const commonFieldsArray = [
+      COMMON_FIELDS.LISTING_TITLE_FIELD,
+      COMMON_FIELDS.TRADE_VALUE_FIELD,
+      COMMON_FIELDS.PHOTOS_FIELD,
+    ];
 
-    return categoryDef[formData.itemType] || [];
+    // Get category-specific fields
+    const categoryDef = ALL_DEFINITIONS[formData.category as CollectibleCategory] as Record<string, FieldDefinition[]> | undefined;
+    const categorySpecificFields = categoryDef ? (categoryDef[formData.itemType] || []) : [];
+
+    // Combine common fields with category-specific fields
+    return [...commonFieldsArray, ...categorySpecificFields];
   }, [formData.category, formData.itemType]);
 
   // Evaluate conditional logic

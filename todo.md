@@ -2742,3 +2742,8 @@ All 8 remaining filter optimization and caching items have been successfully imp
 - [x] Update Signed field options to include 'Unknown'
 - [x] Remove facsimile field (not in specification)
 - [x] Remove firstEdition field (not in specification)
+
+
+## Add to Inventory Page - Include Common Fields in Form
+- [x] Fix useAddInventoryForm to include common fields (Listing Title, Trade Value, Photos) in currentFields
+- [x] Ensure common fields appear before category-specific fields in form rendering
