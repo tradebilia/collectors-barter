@@ -251,7 +251,7 @@ export default function AddInventory() {
       </section>
 
       <div className="container mx-auto max-w-7xl px-4 py-12">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:pl-32">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-20 lg:pl-32">
           {/* Left column: Form (2 columns wide) */}
           <form id="add-inventory-form" onSubmit={submitListing} className="lg:col-span-2 space-y-6">
             {/* Progress Indicator */}
