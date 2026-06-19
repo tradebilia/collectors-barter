@@ -264,17 +264,18 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({
         {renderField()}
 
         {showOtherInput && field.supportsOther && value === 'Other' && (
-          <div className="mt-2 p-3 bg-white rounded-lg">
-            <label className="text-black text-sm font-medium block mb-2">
+          <div className="mt-2 p-3 rounded-lg" style={{ backgroundColor: '#ffffff' }}>
+            <label className="text-sm font-medium block mb-2" style={{ color: '#ffffff' }}>
               {field.otherFieldName || 'Custom value'}
             </label>
-            <Input
+            <input
               type="text"
               value={otherValue}
               onChange={(e) => onOtherChange?.(e.target.value)}
               disabled={disabled}
               placeholder={`Enter ${field.otherFieldName || 'custom value'}`}
-              className="bg-white text-black border border-gray-300"
+              style={{ backgroundColor: '#ffffff', color: '#000000' }}
+              className="w-full border border-gray-300 rounded px-3 py-2 placeholder:text-gray-400"
             />
           </div>
         )}
