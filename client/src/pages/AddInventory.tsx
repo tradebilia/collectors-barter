@@ -268,80 +268,51 @@ export default function AddInventory() {
 
             {/* Required Fields Section */}
             <CollapsibleFormSection title="2. Required Fields" defaultExpanded={true} fieldCount={allFields.filter((f: FieldDefinition) => f.requirement === "required").length}>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {allFields
-                  .filter((f: FieldDefinition) => f.requirement === "required" && shouldShowField(f))
-                  .map((field: FieldDefinition) => (
-                    <DynamicFieldRenderer
-                      key={field.name}
-                      field={field}
-                      value={formData[field.name as keyof typeof formData] || ""}
-                      onChange={(value) => updateField(field.name, value)}
-                      onOtherChange={(value) => updateOtherField(field.name, value)}
-                    />
-                  ))}
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {allFields
+                    .filter((f: FieldDefinition) => f.requirement === "required" && shouldShowField(f))
+                    .map((field: FieldDefinition) => (
+                      <DynamicFieldRenderer
+                        key={field.name}
+                        field={field}
+                        value={formData[field.name as keyof typeof formData] || ""}
+                        onChange={(value) => updateField(field.name, value)}
+                        onOtherChange={(value) => updateOtherField(field.name, value)}
+                      />
+                    ))}
+                </div>
+                
+                {/* Inline Conditional Signature Fields */}
+                {formData.numberOfSignatures && parseInt(formData.numberOfSignatures) > 0 && (
+                  <div className="space-y-3 bg-blue-50 p-4 rounded-lg">
+                    <h4 className="font-semibold text-sm text-blue-900">Signatures</h4>
+                    <div className="space-y-2">
+                      {Array.from({ length: parseInt(formData.numberOfSignatures) }).map((_, index) => (
+                        <div key={`signature-${index}`}>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Signature {index + 1}
+                          </label>
+                          <input
+                            type="text"
+                            value={(formData.signatures && Array.isArray(formData.signatures) && formData.signatures[index]) || ""}
+                            onChange={(e) => {
+                              const signatures = Array.isArray(formData.signatures) ? [...formData.signatures] : [];
+                              signatures[index] = e.target.value;
+                              updateField('signatures', signatures);
+                            }}
+                            placeholder={`Enter name for signature ${index + 1}`}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </CollapsibleFormSection>
 
-            {/* Conditional Fields Section */}
-            {allFields.filter((f: FieldDefinition) => f.requirement === "conditional" && shouldShowField(f)).length > 0 && (
-            <div className="space-y-4 border-l-2 border-blue-500 pl-4 ml-4">
-              {allFields
-                .filter((f: FieldDefinition) => f.requirement === "conditional" && shouldShowField(f))
-                .map((field: FieldDefinition) => {
-                  // Special rendering for numberOfSignatures field
-                  if (field.name === 'numberOfSignatures') {
-                    return (
-                      <div key={field.name} className="space-y-4">
-                        <DynamicFieldRenderer
-                          field={field}
-                          value={formData[field.name as keyof typeof formData] || ""}
-                          onChange={(value) => updateField(field.name, value)}
-                          onOtherChange={(value) => updateOtherField(field.name, value)}
-                        />
-                        
-                        {/* Dynamic Signature Input Fields */}
-                        {formData.numberOfSignatures && parseInt(formData.numberOfSignatures) > 0 && (
-                          <div className="space-y-3 bg-blue-50 p-4 rounded-lg">
-                            <h4 className="font-semibold text-sm text-blue-900">Signatures</h4>
-                            <div className="space-y-2">
-                              {Array.from({ length: parseInt(formData.numberOfSignatures) }).map((_, index) => (
-                                <div key={`signature-${index}`}>
-                                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Signature {index + 1}
-                                  </label>
-                                  <input
-                                    type="text"
-                                    value={(formData.signatures && Array.isArray(formData.signatures) && formData.signatures[index]) || ""}
-                                    onChange={(e) => {
-                                      const signatures = Array.isArray(formData.signatures) ? [...formData.signatures] : [];
-                                      signatures[index] = e.target.value;
-                                      updateField('signatures', signatures);
-                                    }}
-                                    placeholder={`Enter name for signature ${index + 1}`}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                  />
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  }
-                  
-                  return (
-                    <DynamicFieldRenderer
-                      key={field.name}
-                      field={field}
-                      value={formData[field.name as keyof typeof formData] || ""}
-                      onChange={(value) => updateField(field.name, value)}
-                      onOtherChange={(value) => updateOtherField(field.name, value)}
-                    />
-                  );
-                })}
-            </div>
-            )}
+
 
             {/* Recommended Fields Section */}
             <CollapsibleFormSection title="3. Recommended Fields" defaultExpanded={true} fieldCount={allFields.filter((f: FieldDefinition) => f.requirement === "recommended").length}>

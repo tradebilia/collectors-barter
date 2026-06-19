@@ -2753,3 +2753,8 @@ All 8 remaining filter optimization and caching items have been successfully imp
 - [x] Store signatures as array in form data: signatures: ["Name1", "Name2", ...]
 - [x] Limit nested conditional signatures to Comics/Single Comic category only
 - [x] Test nested conditional signatures across different numbers (1-10) and verify correct number of input fields appear
+
+## Fix Conditional Field Section Placement
+- [x] Move signature input fields to remain in Required Fields section (not a new section) when # of Signatures > 0
+- [x] Ensure all conditional fields stay within their original sections (Required, Recommended, Optional)
+- [x] Update form rendering logic to keep conditional fields inline with their parent section instead of creating new sections
