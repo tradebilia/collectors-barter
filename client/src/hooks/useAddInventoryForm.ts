@@ -103,11 +103,12 @@ export const useAddInventoryForm = (): UseAddInventoryFormReturn => {
         return result;
       }
 
-      // Handle string equality like "isGraded = Yes" or "Condition = Mint"
-      const stringEqualityMatch = condition.match(/^([a-zA-Z]+)\s*=\s*(.+)$/);
+      // Handle string equality like "isGraded = Yes" or "Condition = Mint" or "Is Graded = Yes"
+      const stringEqualityMatch = condition.match(/^([a-zA-Z\s]+)\s*=\s*(.+)$/);
       if (stringEqualityMatch) {
         const [, fieldName, expectedValue] = stringEqualityMatch;
         const fieldKey = fieldName
+          .trim()
           .split(' ')
           .map((word, index) => {
             if (index === 0) return word.toLowerCase();
@@ -116,7 +117,7 @@ export const useAddInventoryForm = (): UseAddInventoryFormReturn => {
           .join('');
 
         const actualValue = formData[fieldKey];
-        return actualValue === expectedValue;
+        return actualValue === expectedValue.trim();
       }
 
       return true;

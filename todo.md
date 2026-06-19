@@ -2858,3 +2858,10 @@ All 8 remaining filter optimization and caching items have been successfully imp
 - [x] Remove redundant "Shipping Available" label from Shipping dropdown (keep just the dropdown)
 - [x] Remove redundant "Description" label from Description textarea (keep just the textarea)
 - [x] Fix DynamicFieldRenderer to not render asterisk when field label is empty (prevents duplicate asterisks)
+
+## Conditional Field Logic Fix
+
+- [x] Fix evaluateCondition function to properly handle field names with spaces (e.g., "Is Graded = Yes")
+- [x] Update regex pattern to match field names containing spaces
+- [x] Verify conditional fields (Grading Company, Grade, Certification Number) are hidden until parent field is activated
+- [x] Test conditional fields appear when parent field condition is met
