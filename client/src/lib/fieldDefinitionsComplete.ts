@@ -31,7 +31,8 @@ function applyLayoutProperties(fields: FieldDefinition[]): FieldDefinition[] {
 
 // Helper function to merge common fields with category-specific fields
 function mergeFieldDefinitions(generatedFields: FieldDefinition[]): FieldDefinition[] {
-  // Filter out common fields from generated (they'll be added separately)
+  // Filter out common fields from generated (they'll be added separately or handled elsewhere)
+  // Note: photos is excluded because it has its own dedicated sticky panel
   const commonFieldNames = [
     'listingTitle', 'tradeValue', 'condition', 'photos', 'description', 
     'quantity', 'shippingAvailable'
@@ -39,6 +40,11 @@ function mergeFieldDefinitions(generatedFields: FieldDefinition[]): FieldDefinit
   
   const categorySpecificFields = generatedFields.filter(
     f => !commonFieldNames.includes(f.name)
+  );
+  
+  // Also remove any photos fields that might have slipped through
+  const fieldsWithoutPhotos = categorySpecificFields.filter(
+    f => f.name !== 'photos'
   );
   
   // Combine: common fields first, then category-specific
@@ -52,7 +58,7 @@ function mergeFieldDefinitions(generatedFields: FieldDefinition[]): FieldDefinit
     COMMON_FIELDS.SHIPPING_AVAILABLE_FIELD,
   ];
   
-  return applyLayoutProperties([...commonFieldsArray, ...categorySpecificFields]);
+  return applyLayoutProperties([...commonFieldsArray, ...fieldsWithoutPhotos]);
 }
 
 // ============================================================================
