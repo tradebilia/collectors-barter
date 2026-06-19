@@ -2811,8 +2811,8 @@ All 8 remaining filter optimization and caching items have been successfully imp
 
 ## Input Field Sizing and Conditional Field Ordering Fixes
 
-- [ ] Receive max character limits from user for input fields that need sizing adjustments
-- [ ] Fix conditional field ordering - condition field should appear AFTER "Is Graded = No" condition is met
+- [x] Updated field_specifications.md with all recent changes (Shipping options, Original Box rename, Description field placement)
+- [x] Fix Description field duplication - removed from Optional Fields section so it only appears in its own dedicated section
 - [ ] Add maxLength properties to field definitions based on character limits
 - [ ] Adjust input bubble CSS widths to match character limits (narrow for Year, wider for Trade Value, etc.)
 - [x] Update Shipping dropdown options from "Yes/No" to "Yes", "Local Only", "In Person Only"

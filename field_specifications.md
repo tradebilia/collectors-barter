@@ -36,7 +36,7 @@ Pokemon | Single Card, Unopened Product, Set, Collection/Lot
 |Photos|Image Upload|Required||No||Always|Require at least 1 photo.|
 |Description|Text Area|Required||No||Always|Free-form details, defects, provenance, trade notes. Users may write a lot of stuff.|
 |Quantity|Number Input|Recommended||No||Always|Default to 1.|
-|Shipping Available|Dropdown|Recommended|Yes, No, Local Only|No||Always||
+|Shipping Available|Dropdown|Recommended|Yes, Local Only, In Person Only|No||Always||
 |Sport|Dropdown|Required|Baseball, Basketball, Football, Hockey, Soccer, Racing, Wrestling, Golf, MMA, Tennis, Multi-Sport, Other|Yes|Custom Sport|Always||
 |Player|Text Input|Required||No||Always||
 |Year|Number Input|Required||No||Always||
@@ -66,7 +66,7 @@ Pokemon | Single Card, Unopened Product, Set, Collection/Lot
 |Photos|Image Upload|Required||No||Always|Require at least 1 photo.|
 |Description|Text Area|Required||No||Always|Free-form details, defects, provenance, trade notes. Users may write a lot of stuff.|
 |Quantity|Number Input|Recommended||No||Always|Default to 1.|
-|Shipping Available|Dropdown|Recommended|Yes, No, Local Only|No||Always||
+|Shipping Available|Dropdown|Recommended|Yes, Local Only, In Person Only|No||Always||
 |Sport|Dropdown|Required|Baseball, Basketball, Football, Hockey, Soccer, Racing, Wrestling, Golf, MMA, Tennis, Multi-Sport, Other|Yes|Custom Sport|Always||
 |Year|Number Input|Required||No||Always||
 |Manufacturer|Dropdown|Required|Topps, Bowman, Panini, Upper Deck, Fleer, Donruss, Score, Leaf, Other|Yes|Custom Manufacturer|Always||
@@ -90,7 +90,7 @@ Pokemon | Single Card, Unopened Product, Set, Collection/Lot
 |Photos|Image Upload|Required||No||Always|Require at least 1 photo.|
 |Description|Text Area|Required||No||Always|Free-form details, defects, provenance, trade notes. Users may write a lot of stuff.|
 |Quantity|Number Input|Recommended||No||Always|Default to 1.|
-|Shipping Available|Dropdown|Recommended|Yes, No, Local Only|No||Always||
+|Shipping Available|Dropdown|Recommended|Yes, Local Only, In Person Only|No||Always||
 |Sport|Dropdown|Required|Baseball, Basketball, Football, Hockey, Soccer, Racing, Wrestling, Golf, MMA, Tennis, Multi-Sport, Other|Yes|Custom Sport|Always||
 |Year|Number Input|Required||No||Always||
 |Manufacturer|Dropdown|Required|Topps, Bowman, Panini, Upper Deck, Fleer, Donruss, Score, Leaf, Other|Yes|Custom Manufacturer|Always||
@@ -111,7 +111,7 @@ Pokemon | Single Card, Unopened Product, Set, Collection/Lot
 |Photos|Image Upload|Required||No||Always|Require at least 1 photo.|
 |Description|Text Area|Required||No||Always|Free-form details, defects, provenance, trade notes. Users may write a lot of stuff.|
 |||||||||
-|Shipping Available|Dropdown|Recommended|Yes, No, Local Only|No||Always||
+|Shipping Available|Dropdown|Recommended|Yes, Local Only, In Person Only|No||Always||
 |Sport|Dropdown|Recommended|Baseball, Basketball, Football, Hockey, Soccer, Racing, Wrestling, Golf, MMA, Tennis, Multi-Sport, Mixed, Other|Yes|Custom Sport|Always||
 |Approximate Card Count|Number Input|Required||No||Always||
 |Years Included|Text Input|Recommended||No||Always||
@@ -138,7 +138,7 @@ Pokemon | Single Card, Unopened Product, Set, Collection/Lot
 |Photos|Image Upload|Required||No||Always|Require at least 1 photo.|
 |Description|Text Area|Required||No||Always|Free-form details, defects, provenance, trade notes. Users may write a lot of stuff.|
 |Quantity|Number Input|Recommended||No||Always|Default to 1.|
-|Shipping Available|Dropdown|Recommended|Yes, No, Local Only|No||Always||
+|Shipping Available|Dropdown|Recommended|Yes, Local Only, In Person Only|No||Always||
 |Comic Title|Text Input|Required||No||Always||
 |Issue Number|Text Input|Required||No||Always||
 |Publisher|Dropdown|Required|Marvel, DC, Image, Dark Horse, IDW, Boom, Archie, Other|Yes|Custom Publisher|Always||
@@ -166,7 +166,7 @@ Pokemon | Single Card, Unopened Product, Set, Collection/Lot
 |Photos|Image Upload|Required||No||Always|Require at least 1 photo.|
 |Description|Text Area|Required||No||Always|Free-form details, defects, provenance, trade notes. Users may write a lot of stuff.|
 |Quantity|Number Input|Recommended||No||Always|Default to 1.|
-|Shipping Available|Dropdown|Recommended|Yes, No, Local Only|No||Always||
+|Shipping Available|Dropdown|Recommended|Yes, Local Only, In Person Only|No||Always||
 |Artist Name|Text Input|Required||No||Always||
 |Artwork Title|Text Input|Recommended||No||Always||
 |Publisher|Dropdown|Recommended|Marvel, DC, Image, Dark Horse, IDW, Boom, Archie, Other|Yes|Custom Publisher|Always||
@@ -194,7 +194,7 @@ Pokemon | Single Card, Unopened Product, Set, Collection/Lot
 |Photos|Image Upload|Required||No||Always|Require at least 1 photo.|
 |Description|Text Area|Required||No||Always|Free-form details, defects, provenance, trade notes. Users may write a lot of stuff.|
 |Quantity|Number Input|Recommended||No||Always|Default to 1.|
-|Shipping Available|Dropdown|Recommended|Yes, No, Local Only|No||Always||
+|Shipping Available|Dropdown|Recommended|Yes, Local Only, In Person Only|No||Always||
 |Number of Comics|Number Input|Required||No||Always||
 |Publishers Included|Text Area|Recommended||No||Always||
 |Major Titles Included|Text Area|Recommended||No||Always||
@@ -219,14 +219,14 @@ Pokemon | Single Card, Unopened Product, Set, Collection/Lot
 |Photos|Image Upload|Required||No||Always|Require at least 1 photo.|
 |Description|Text Area|Required||No||Always|Free-form details, defects, provenance, trade notes. Users may write a lot of stuff.|
 |Quantity|Number Input|Recommended||No||Always|Default to 1.|
-|Shipping Available|Dropdown|Recommended|Yes, No, Local Only|No||Always||
+|Shipping Available|Dropdown|Recommended|Yes, Local Only, In Person Only|No||Always||
 |Game Title|Text Input|Required||No||Always||
 |Platform|Dropdown|Required|NES, SNES, N64, GameCube, Wii, Wii U, Switch, Switch 2, Sega Master System, Genesis, Saturn, Dreamcast, PS1, PS2, PS3, PS4, PS5, Xbox, Xbox 360, Xbox One, Xbox Series X/S, PC, Other|Yes|Platform Name|Always||
 |Release Year|Number Input|Recommended||No||Always||
 |Region|Dropdown|Recommended|NTSC-U, NTSC-J, PAL, Region Free, Unknown, Other|Yes|Custom Region|Always||
 |Complete In Box|Dropdown|Recommended|Yes, No, Unknown|No||Always||
 |Manual Included|Dropdown|Conditional|Yes, No, Unknown|No||Complete In Box = No||
-|Original Case Included|Dropdown|Conditional|Yes, No, Unknown|No||Complete In Box = No||
+|Original Box|Dropdown|Conditional|Yes, No, Unknown|No||Complete In Box = No||
 |Sealed|Dropdown|Recommended|Yes, No|No||Always||
 |Is Graded|Dropdown|Required|Yes, No|No||Always|If Yes, reveal grading fields, and remove condition dropdown is not active (cant input). If No, user needs to select from Condition dropdown box|
 |Grading Company|Dropdown|Conditional|WATA Games (PSA Video Games), CGC Video Games, VGA, CGC Home Video, IGS|No||Is Graded = Yes||
@@ -245,7 +245,7 @@ Pokemon | Single Card, Unopened Product, Set, Collection/Lot
 |Photos|Image Upload|Required||No||Always|Require at least 1 photo.|
 |Description|Text Area|Required||No||Always|Free-form details, defects, provenance, trade notes. Users may write a lot of stuff.|
 |Quantity|Number Input|Recommended||No||Always|Default to 1.|
-|Shipping Available|Dropdown|Recommended|Yes, No, Local Only|No||Always||
+|Shipping Available|Dropdown|Recommended|Yes, Local Only, In Person Only|No||Always||
 |Console Name|Dropdown|Required|NES, SNES, N64, GameCube, Wii, Wii U, Switch, Switch 2, Sega Genesis, Sega Saturn, Dreamcast, PS1, PS2, PS3, PS4, PS5, Xbox, Xbox 360, Xbox One, Xbox Series X/S, Other|Yes|Custom Console Name|Always||
 |Model Number|Text Input|Recommended||No||Always||
 |Region|Dropdown|Recommended|NTSC-U, NTSC-J, PAL, Region Free, Unknown, Other|Yes|Custom Region|Always||
@@ -271,7 +271,7 @@ Pokemon | Single Card, Unopened Product, Set, Collection/Lot
 |Photos|Image Upload|Required||No||Always|Require at least 1 photo.|
 |Description|Text Area|Required||No||Always|Free-form details, defects, provenance, trade notes. Users may write a lot of stuff.|
 |Quantity|Number Input|Recommended||No||Always|Default to 1.|
-|Shipping Available|Dropdown|Recommended|Yes, No, Local Only|No||Always||
+|Shipping Available|Dropdown|Recommended|Yes, Local Only, In Person Only|No||Always||
 |Accessory Type|Text Input|Required||No||Always||
 |Platform|Dropdown|Required|NES, SNES, N64, GameCube, Wii, Wii U, Switch, PlayStation, Xbox, Sega, PC, Other|Yes|Custom Platform|Always||
 |Manufacturer|Dropdown|Recommended|Nintendo, Sony, Microsoft, Sega, Logitech, Mad Catz, Other|Yes|Custom Manufacturer|Always||
@@ -294,7 +294,7 @@ Pokemon | Single Card, Unopened Product, Set, Collection/Lot
 |Photos|Image Upload|Required||No||Always|Require at least 1 photo.|
 |Description|Text Area|Required||No||Always|Free-form details, defects, provenance, trade notes. Users may write a lot of stuff.|
 |Quantity|Number Input|Recommended||No||Always|Default to 1.|
-|Shipping Available|Dropdown|Recommended|Yes, No, Local Only|No||Always||
+|Shipping Available|Dropdown|Recommended|Yes, Local Only, In Person Only|No||Always||
 |Platforms Included|Text Area|Recommended||No||Always||
 |Approximate Item Count|Number Input|Required||No||Always||
 |Notable Games / Consoles|Text Area|Recommended||No||Always||
@@ -318,7 +318,7 @@ Pokemon | Single Card, Unopened Product, Set, Collection/Lot
 |Photos|Image Upload|Required||No||Always|Require at least 1 photo.|
 |Description|Text Area|Required||No||Always|Free-form details, defects, provenance, trade notes. Users may write a lot of stuff.|
 |Quantity|Number Input|Recommended||No||Always|Default to 1.|
-|Shipping Available|Dropdown|Recommended|Yes, No, Local Only|No||Always||
+|Shipping Available|Dropdown|Recommended|Yes, Local Only, In Person Only|No||Always||
 |Toy Name|Text Input|Required||No||Always||
 |Brand|Dropdown|Recommended|Hasbro, Mattel, Kenner, Playmates, Bandai, LEGO, Milton Bradley, Parker Brothers, Fisher-Price, Ty, Other|Yes|Custom Brand|Always||
 |Franchise|Text Input|Recommended||No||Always||
@@ -344,7 +344,7 @@ Pokemon | Single Card, Unopened Product, Set, Collection/Lot
 |Photos|Image Upload|Required||No||Always|Require at least 1 photo.|
 |Description|Text Area|Required||No||Always|Free-form details, defects, provenance, trade notes. Users may write a lot of stuff.|
 |Quantity|Number Input|Recommended||No||Always|Default to 1.|
-|Shipping Available|Dropdown|Recommended|Yes, No, Local Only|No||Always||
+|Shipping Available|Dropdown|Recommended|Yes, Local Only, In Person Only|No||Always||
 |Vehicle Name|Text Input|Required||No||Always||
 |Brand|Dropdown|Recommended|Hot Wheels, Matchbox, Kenner, Hasbro, Mattel, Tonka, Bandai, Other|Yes|Custom Brand|Always||
 |Franchise|Text Input|Recommended||No||Always||
@@ -370,7 +370,7 @@ Pokemon | Single Card, Unopened Product, Set, Collection/Lot
 |Photos|Image Upload|Required||No||Always|Require at least 1 photo.|
 |Description|Text Area|Required||No||Always|Free-form details, defects, provenance, trade notes. Users may write a lot of stuff.|
 |Quantity|Number Input|Recommended||No||Always|Default to 1.|
-|Shipping Available|Dropdown|Recommended|Yes, No, Local Only|No||Always||
+|Shipping Available|Dropdown|Recommended|Yes, Local Only, In Person Only|No||Always||
 |Playset Name|Text Input|Required||No||Always||
 |Brand|Dropdown|Recommended|Hasbro, Mattel, Kenner, Playmates, LEGO, Fisher-Price, Other|Yes|Custom Brand|Always||
 |Franchise|Text Input|Recommended||No||Always||
@@ -397,7 +397,7 @@ Pokemon | Single Card, Unopened Product, Set, Collection/Lot
 |Photos|Image Upload|Required||No||Always|Require at least 1 photo.|
 |Description|Text Area|Required||No||Always|Free-form details, defects, provenance, trade notes. Users may write a lot of stuff.|
 |Quantity|Number Input|Recommended||No||Always|Default to 1.|
-|Shipping Available|Dropdown|Recommended|Yes, No, Local Only|No||Always||
+|Shipping Available|Dropdown|Recommended|Yes, Local Only, In Person Only|No||Always||
 |Game / Puzzle Name|Text Input|Required||No||Always||
 |Publisher / Brand|Dropdown|Required|Milton Bradley, Parker Brothers, Hasbro, Mattel, Ideal, Avalon Hill, TSR, Games Workshop, Other|Yes|Custom Publisher / Brand|Always||
 |Year|Number Input|Recommended||No||Always||
@@ -424,7 +424,7 @@ Pokemon | Single Card, Unopened Product, Set, Collection/Lot
 |Photos|Image Upload|Required||No||Always|Require at least 1 photo.|
 |Description|Text Area|Required||No||Always|Free-form details, defects, provenance, trade notes. Users may write a lot of stuff.|
 |Quantity|Number Input|Recommended||No||Always|Default to 1.|
-|Shipping Available|Dropdown|Recommended|Yes, No, Local Only|No||Always||
+|Shipping Available|Dropdown|Recommended|Yes, Local Only, In Person Only|No||Always||
 |Toy Name / Character|Text Input|Required||No||Always||
 |Brand|Dropdown|Recommended|Ty, Disney, Gund, Applause, Fisher-Price, Mattel, Other|Yes|Custom Brand|Always||
 |Year|Number Input|Recommended||No||Always||
@@ -448,7 +448,7 @@ Pokemon | Single Card, Unopened Product, Set, Collection/Lot
 |Photos|Image Upload|Required||No||Always|Require at least 1 photo.|
 |Description|Text Area|Required||No||Always|Free-form details, defects, provenance, trade notes. Users may write a lot of stuff.|
 |Quantity|Number Input|Recommended||No||Always|Default to 1.|
-|Shipping Available|Dropdown|Recommended|Yes, No, Local Only|No||Always||
+|Shipping Available|Dropdown|Recommended|Yes, Local Only, In Person Only|No||Always||
 |Toy Name|Text Input|Required||No||Always||
 |Brand|Dropdown|Recommended|Hasbro, Mattel, Milton Bradley, Tiger Electronics, Coleco, Radio Shack, Other|Yes|Custom Brand|Always||
 |Year|Number Input|Recommended||No||Always||
@@ -475,7 +475,7 @@ Pokemon | Single Card, Unopened Product, Set, Collection/Lot
 |Photos|Image Upload|Required||No||Always|Require at least 1 photo.|
 |Description|Text Area|Required||No||Always|Free-form details, defects, provenance, trade notes. Users may write a lot of stuff.|
 |Quantity|Number Input|Recommended||No||Always|Default to 1.|
-|Shipping Available|Dropdown|Recommended|Yes, No, Local Only|No||Always||
+|Shipping Available|Dropdown|Recommended|Yes, Local Only, In Person Only|No||Always||
 |Model / Kit Name|Text Input|Required||No||Always||
 |Brand|Dropdown|Recommended|Revell, Monogram, AMT, Tamiya, LEGO, MPC, Other|Yes|Custom Brand|Always||
 |Scale|Text Input|Recommended||No||Always||
@@ -500,7 +500,7 @@ Pokemon | Single Card, Unopened Product, Set, Collection/Lot
 |Photos|Image Upload|Required||No||Always|Require at least 1 photo.|
 |Description|Text Area|Required||No||Always|Free-form details, defects, provenance, trade notes. Users may write a lot of stuff.|
 |Quantity|Number Input|Recommended||No||Always|Default to 1.|
-|Shipping Available|Dropdown|Recommended|Yes, No, Local Only|No||Always||
+|Shipping Available|Dropdown|Recommended|Yes, Local Only, In Person Only|No||Always||
 |Approximate Item Count|Number Input|Required||No||Always||
 |Brands Included|Text Area|Recommended||No||Always||
 |Franchises Included|Text Area|Recommended||No||Always||
@@ -529,7 +529,7 @@ Pokemon | Single Card, Unopened Product, Set, Collection/Lot
 |Photos|Image Upload|Required||No||Always|Require at least 1 photo.|
 |Description|Text Area|Required||No||Always|Free-form details, defects, provenance, trade notes. Users may write a lot of stuff.|
 |Quantity|Number Input|Recommended||No||Always|Default to 1.|
-|Shipping Available|Dropdown|Recommended|Yes, No, Local Only|No||Always||
+|Shipping Available|Dropdown|Recommended|Yes, Local Only, In Person Only|No||Always||
 |Country|Text Input|Required||No||Always||
 |Scott Number or Description|Text Input|Required||No||Always||
 |Year|Number Input|Recommended||No||Always||
@@ -553,7 +553,7 @@ Pokemon | Single Card, Unopened Product, Set, Collection/Lot
 |Photos|Image Upload|Required||No||Always|Require at least 1 photo.|
 |Description|Text Area|Required||No||Always|Free-form details, defects, provenance, trade notes. Users may write a lot of stuff.|
 |Quantity|Number Input|Recommended||No||Always|Default to 1.|
-|Shipping Available|Dropdown|Recommended|Yes, No, Local Only|No||Always||
+|Shipping Available|Dropdown|Recommended|Yes, Local Only, In Person Only|No||Always||
 |Country|Text Input|Required||No||Always||
 |Year|Number Input|Recommended||No||Always||
 |Set Name / Description|Text Input|Required||No||Always||
@@ -573,7 +573,7 @@ Pokemon | Single Card, Unopened Product, Set, Collection/Lot
 |Photos|Image Upload|Required||No||Always|Require at least 1 photo.|
 |Description|Text Area|Required||No||Always|Free-form details, defects, provenance, trade notes. Users may write a lot of stuff.|
 |Quantity|Number Input|Recommended||No||Always|Default to 1.|
-|Shipping Available|Dropdown|Recommended|Yes, No, Local Only|No||Always||
+|Shipping Available|Dropdown|Recommended|Yes, Local Only, In Person Only|No||Always||
 |Countries Included|Text Area|Recommended||No||Always||
 |Approximate Quantity|Number Input|Required||No||Always||
 |Years Included|Text Input|Recommended||No||Always||
@@ -598,7 +598,7 @@ Pokemon | Single Card, Unopened Product, Set, Collection/Lot
 |Photos|Image Upload|Required||No||Always|Require at least 1 photo.|
 |Description|Text Area|Required||No||Always|Free-form details, defects, provenance, trade notes. Users may write a lot of stuff.|
 |Quantity|Number Input|Recommended||No||Always|Default to 1.|
-|Shipping Available|Dropdown|Recommended|Yes, No, Local Only|No||Always||
+|Shipping Available|Dropdown|Recommended|Yes, Local Only, In Person Only|No||Always||
 |Country|Text Input|Required||No||Always||
 |Denomination|Text Input|Required||No||Always||
 |Year|Number Input|Required||No||Always||
@@ -624,7 +624,7 @@ Pokemon | Single Card, Unopened Product, Set, Collection/Lot
 |Photos|Image Upload|Required||No||Always|Require at least 1 photo.|
 |Description|Text Area|Required||No||Always|Free-form details, defects, provenance, trade notes. Users may write a lot of stuff.|
 |Quantity|Number Input|Recommended||No||Always|Default to 1.|
-|Shipping Available|Dropdown|Recommended|Yes, No, Local Only|No||Always||
+|Shipping Available|Dropdown|Recommended|Yes, Local Only, In Person Only|No||Always||
 |Set Name|Text Input|Required||No||Always||
 |Country|Text Input|Required||No||Always||
 |Year|Number Input|Required||No||Always||
@@ -644,7 +644,7 @@ Pokemon | Single Card, Unopened Product, Set, Collection/Lot
 |Photos|Image Upload|Required||No||Always|Require at least 1 photo.|
 |Description|Text Area|Required||No||Always|Free-form details, defects, provenance, trade notes. Users may write a lot of stuff.|
 |Quantity|Number Input|Recommended||No||Always|Default to 1.|
-|Shipping Available|Dropdown|Recommended|Yes, No, Local Only|No||Always||
+|Shipping Available|Dropdown|Recommended|Yes, Local Only, In Person Only|No||Always||
 |Countries Included|Text Area|Recommended||No||Always||
 |Approximate Coin Count|Number Input|Required||No||Always||
 |Years Included|Text Input|Recommended||No||Always||
@@ -669,7 +669,7 @@ Pokemon | Single Card, Unopened Product, Set, Collection/Lot
 |Photos|Image Upload|Required||No||Always|Require at least 1 photo.|
 |Description|Text Area|Required||No||Always|Free-form details, defects, provenance, trade notes. Users may write a lot of stuff.|
 |Quantity|Number Input|Recommended||No||Always|Default to 1.|
-|Shipping Available|Dropdown|Recommended|Yes, No, Local Only|No||Always||
+|Shipping Available|Dropdown|Recommended|Yes, Local Only, In Person Only|No||Always||
 |Title|Text Input|Required||No||Always||
 |Format|Dropdown|Required|DVD, Blu-ray, 4K UHD, VHS, LaserDisc, Other|Yes|Custom Format|Always||
 |Release Year|Number Input|Recommended||No||Always||
@@ -693,7 +693,7 @@ Pokemon | Single Card, Unopened Product, Set, Collection/Lot
 |Photos|Image Upload|Required||No||Always|Require at least 1 photo.|
 |Description|Text Area|Required||No||Always|Free-form details, defects, provenance, trade notes. Users may write a lot of stuff.|
 |Quantity|Number Input|Recommended||No||Always|Default to 1.|
-|Shipping Available|Dropdown|Recommended|Yes, No, Local Only|No||Always||
+|Shipping Available|Dropdown|Recommended|Yes, Local Only, In Person Only|No||Always||
 |Box Set Name|Text Input|Required||No||Always||
 |Format|Dropdown|Required|DVD, Blu-ray, 4K UHD, VHS, LaserDisc, Mixed, Other|Yes|Custom Format|Always||
 |Number of Movies|Number Input|Required||No||Always||
@@ -712,7 +712,7 @@ Pokemon | Single Card, Unopened Product, Set, Collection/Lot
 |Photos|Image Upload|Required||No||Always|Require at least 1 photo.|
 |Description|Text Area|Required||No||Always|Free-form details, defects, provenance, trade notes. Users may write a lot of stuff.|
 |Quantity|Number Input|Recommended||No||Always|Default to 1.|
-|Shipping Available|Dropdown|Recommended|Yes, No, Local Only|No||Always||
+|Shipping Available|Dropdown|Recommended|Yes, Local Only, In Person Only|No||Always||
 |Formats Included|Text Area|Recommended||No||Always||
 |Approximate Quantity|Number Input|Required||No||Always||
 |Notable Titles|Text Area|Recommended||No||Always||
@@ -736,7 +736,7 @@ Pokemon | Single Card, Unopened Product, Set, Collection/Lot
 |Photos|Image Upload|Required||No||Always|Require at least 1 photo.|
 |Description|Text Area|Required||No||Always|Free-form details, defects, provenance, trade notes. Users may write a lot of stuff.|
 |Quantity|Number Input|Recommended||No||Always|Default to 1.|
-|Shipping Available|Dropdown|Recommended|Yes, No, Local Only|No||Always||
+|Shipping Available|Dropdown|Recommended|Yes, Local Only, In Person Only|No||Always||
 |Signer|Text Input|Required||No||Always||
 |Signed Item Type|Dropdown|Required|Photo, Card, Baseball, Football, Basketball, Hockey Puck, Jersey, Helmet, Bat, Glove, Book, Poster, Program, Ticket, Document, Other|Yes|Custom Signed Item Type|Always||
 |Autograph Category|Dropdown|Recommended|Sports, Entertainment, Historical, Music, Other|Yes|Custom Autograph Category|Always||
@@ -759,7 +759,7 @@ Pokemon | Single Card, Unopened Product, Set, Collection/Lot
 |Photos|Image Upload|Required||No||Always|Require at least 1 photo.|
 |Description|Text Area|Required||No||Always|Free-form details, defects, provenance, trade notes. Users may write a lot of stuff.|
 |Quantity|Number Input|Recommended||No||Always|Default to 1.|
-|Shipping Available|Dropdown|Recommended|Yes, No, Local Only|No||Always||
+|Shipping Available|Dropdown|Recommended|Yes, Local Only, In Person Only|No||Always||
 |Number of Signed Items|Number Input|Required||No||Always||
 |Signers Included|Text Area|Recommended||No||Always||
 |Authentication Included|Dropdown|Recommended|Yes, No, Mixed|No||Always||
@@ -784,7 +784,7 @@ Pokemon | Single Card, Unopened Product, Set, Collection/Lot
 |Photos|Image Upload|Required||No||Always|Require at least 1 photo.|
 |Description|Text Area|Required||No||Always|Free-form details, defects, provenance, trade notes. Users may write a lot of stuff.|
 |Quantity|Number Input|Recommended||No||Always|Default to 1.|
-|Shipping Available|Dropdown|Recommended|Yes, No, Local Only|No||Always||
+|Shipping Available|Dropdown|Recommended|Yes, Local Only, In Person Only|No||Always||
 |Pin Name|Text Input|Required||No||Always||
 |Character|Text Input|Recommended||No||Always||
 |Series|Text Input|Recommended||No||Always||
@@ -809,7 +809,7 @@ Pokemon | Single Card, Unopened Product, Set, Collection/Lot
 |Photos|Image Upload|Required||No||Always|Require at least 1 photo.|
 |Description|Text Area|Required||No||Always|Free-form details, defects, provenance, trade notes. Users may write a lot of stuff.|
 |Quantity|Number Input|Recommended||No||Always|Default to 1.|
-|Shipping Available|Dropdown|Recommended|Yes, No, Local Only|No||Always||
+|Shipping Available|Dropdown|Recommended|Yes, Local Only, In Person Only|No||Always||
 |Set Name|Text Input|Required||No||Always||
 |Number of Pins|Number Input|Required||No||Always||
 |Complete Set|Dropdown|Required|Yes, No|No||Always||
@@ -830,7 +830,7 @@ Pokemon | Single Card, Unopened Product, Set, Collection/Lot
 |Photos|Image Upload|Required||No||Always|Require at least 1 photo.|
 |Description|Text Area|Required||No||Always|Free-form details, defects, provenance, trade notes. Users may write a lot of stuff.|
 |Quantity|Number Input|Recommended||No||Always|Default to 1.|
-|Shipping Available|Dropdown|Recommended|Yes, No, Local Only|No||Always||
+|Shipping Available|Dropdown|Recommended|Yes, Local Only, In Person Only|No||Always||
 |Approximate Pin Count|Number Input|Required||No||Always||
 |Characters Included|Text Area|Recommended||No||Always||
 |Series Included|Text Area|Recommended||No||Always||
@@ -854,7 +854,7 @@ Pokemon | Single Card, Unopened Product, Set, Collection/Lot
 |Photos|Image Upload|Required||No||Always|Require at least 1 photo.|
 |Description|Text Area|Required||No||Always|Free-form details, defects, provenance, trade notes. Users may write a lot of stuff.|
 |Quantity|Number Input|Recommended||No||Always|Default to 1.|
-|Shipping Available|Dropdown|Recommended|Yes, No, Local Only|No||Always||
+|Shipping Available|Dropdown|Recommended|Yes, Local Only, In Person Only|No||Always||
 |Card Name|Text Input|Required||No||Always||
 |Set Name|Text Input|Required||No||Always||
 |Card Number|Text Input|Required||No||Always|e.g., 102/102, SWSH001|
@@ -880,7 +880,7 @@ Pokemon | Single Card, Unopened Product, Set, Collection/Lot
 |Photos|Image Upload|Required||No||Always|Require at least 1 photo.|
 |Description|Text Area|Required||No||Always|Free-form details, defects, provenance, trade notes. Users may write a lot of stuff.|
 |Quantity|Number Input|Recommended||No||Always|Default to 1.|
-|Shipping Available|Dropdown|Recommended|Yes, No, Local Only|No||Always||
+|Shipping Available|Dropdown|Recommended|Yes, Local Only, In Person Only|No||Always||
 |Product Name|Text Input|Required||No||Always||
 |Set Name|Text Input|Required||No||Always||
 |Product Type|Dropdown|Required|Booster Box, Elite Trainer Box, Blaster Box, Tin, Collection Box, Booster Pack, Build \& Battle Box, Premium Collection, Other|Yes|Custom Product Type|Always||
@@ -902,7 +902,7 @@ Pokemon | Single Card, Unopened Product, Set, Collection/Lot
 |Photos|Image Upload|Required||No||Always|Require at least 1 photo.|
 |Description|Text Area|Required||No||Always|Free-form details, defects, provenance, trade notes. Users may write a lot of stuff.|
 |Quantity|Number Input|Recommended||No||Always|Default to 1.|
-|Shipping Available|Dropdown|Recommended|Yes, No, Local Only|No||Always||
+|Shipping Available|Dropdown|Recommended|Yes, Local Only, In Person Only|No||Always||
 |Set Name|Text Input|Required||No||Always||
 |Completion|Dropdown|Required|Master Set, Complete (Base), Near Complete, Incomplete|No||Always|Master Set includes all variants/reverses.|
 |Notable Cards|Text Area|Recommended||No||Always||
@@ -920,7 +920,7 @@ Pokemon | Single Card, Unopened Product, Set, Collection/Lot
 |Photos|Image Upload|Required||No||Always|Require at least 1 photo.|
 |Description|Text Area|Required||No||Always|Free-form details, defects, provenance, trade notes. Users may write a lot of stuff.|
 |Quantity|Number Input|Recommended||No||Always|Default to 1.|
-|Shipping Available|Dropdown|Recommended|Yes, No, Local Only|No||Always||
+|Shipping Available|Dropdown|Recommended|Yes, Local Only, In Person Only|No||Always||
 |Approximate Card Count|Number Input|Required||No||Always||
 |Eras / Series Included|Dropdown|Recommended|Wizards of the Coast, EX, Diamond \& Pearl, Platinum, HeartGold SoulSilver, Black \& White, XY, Sun \& Moon, Sword \& Shield, Scarlet \& Violet, Mixed, Other|Yes|Custom Era|Always||
 |Notable Cards|Text Area|Recommended||No||Always||
