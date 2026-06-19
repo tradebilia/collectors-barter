@@ -2692,3 +2692,8 @@ All 8 remaining filter optimization and caching items have been successfully imp
 ## Add to Inventory Page - Fix Section Numbering Bug
 - [x] Fixed duplicate numbering - "Select Category and Item Type" is now 1, Required is 2, Recommended is 3, Optional is 4 (when visible)
 - [x] Corrected dynamic numbering for Shipping (5 or 4), Description (6 or 5), and Photos (7 or 6)
+
+
+## Add to Inventory Page - Remove Shipping from Recommended Fields
+- [x] Changed SHIPPING_AVAILABLE_FIELD requirement from 'recommended' to 'conditional' to exclude it from Recommended Fields section
+- [x] Shipping Available now only appears in its own dedicated Shipping section
