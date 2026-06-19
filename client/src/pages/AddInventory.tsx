@@ -421,18 +421,21 @@ export default function AddInventory() {
 
               {/* Photo Preview Grid */}
               <div className="mb-4 space-y-2">
+                {photos.length > 0 && (
+                  <p className="text-xs text-yellow-400 mb-2">💡 Click on a photo to set it as your cover photo (highlighted with yellow border)</p>
+                )}
                 {photos.length > 0 ? (
                   <div className="grid grid-cols-2 gap-2">
                     {photos.map((photo, index) => (
                       <div
                         key={index}
                         className={`relative cursor-pointer overflow-hidden rounded-lg border-2 transition-all ${
-                          index === primaryPhotoIndex ? "border-blue-500 ring-2 ring-blue-500/50" : "border-white/20 hover:border-white/40"
+                          index === primaryPhotoIndex ? "border-yellow-400 ring-2 ring-yellow-400/50" : "border-white/20 hover:border-white/40"
                         }`}
                         onClick={() => setPrimaryPhotoIndex(index)}
                       >
                         <img src={photo.previewUrl} alt={`Photo ${index + 1}`} className="h-24 w-full object-cover" />
-                        {index === primaryPhotoIndex && <div className="absolute inset-0 bg-blue-500/10" />}
+                        {index === primaryPhotoIndex && <div className="absolute inset-0 bg-yellow-400/10" />}
                         <button
                           type="button"
                           onClick={(e) => {
@@ -462,6 +465,7 @@ export default function AddInventory() {
               </label>
 
               <p className="mt-2 text-xs text-white/50">At least 1 photo required</p>
+              <p className="mt-2 text-xs text-yellow-400/70">📸 The photo with the yellow border will be displayed as your listing's cover photo</p>
             </div>
           </div>
 
