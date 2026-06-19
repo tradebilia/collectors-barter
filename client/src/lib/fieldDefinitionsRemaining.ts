@@ -759,6 +759,133 @@ const VINTAGE_TOYS_BOARD_GAME_FIELDS: FieldDefinition[] = [
   },
 ];
 
+const VINTAGE_TOYS_ELECTRONIC_TOY_FIELDS: FieldDefinition[] = [
+  COMMON_FIELDS.LISTING_TITLE_FIELD,
+  COMMON_FIELDS.TRADE_VALUE_FIELD,
+  
+  COMMON_FIELDS.DESCRIPTION_FIELD,
+  COMMON_FIELDS.QUANTITY_FIELD,
+  COMMON_FIELDS.SHIPPING_AVAILABLE_FIELD,
+  {
+    name: 'toyName',
+    label: 'Toy Name',
+    inputType: 'text',
+    requirement: 'required',
+  },
+  {
+    name: 'brand',
+    label: 'Brand',
+    inputType: 'text',
+    requirement: 'required',
+  },
+  {
+    name: 'year',
+    label: 'Year',
+    inputType: 'number',
+    maxLength: 10,
+    requirement: 'recommended',
+    validation: { min: 1900, max: 2100 },
+  },
+  {
+    name: 'workingCondition',
+    label: 'Working Condition',
+    inputType: 'dropdown',
+    requirement: 'recommended',
+    dropdownOptions: ['Yes', 'No', 'Unknown'],
+  },
+  COMMON_FIELDS.IS_GRADED_FIELD,
+  {
+    ...COMMON_FIELDS.CONDITION_FIELD,
+  },
+];
+
+const VINTAGE_TOYS_MODEL_KIT_FIELDS: FieldDefinition[] = [
+  COMMON_FIELDS.LISTING_TITLE_FIELD,
+  COMMON_FIELDS.TRADE_VALUE_FIELD,
+  
+  COMMON_FIELDS.DESCRIPTION_FIELD,
+  COMMON_FIELDS.QUANTITY_FIELD,
+  COMMON_FIELDS.SHIPPING_AVAILABLE_FIELD,
+  {
+    name: 'kitName',
+    label: 'Kit Name',
+    inputType: 'text',
+    requirement: 'required',
+  },
+  {
+    name: 'manufacturer',
+    label: 'Manufacturer',
+    inputType: 'text',
+    requirement: 'required',
+  },
+  {
+    name: 'year',
+    label: 'Year',
+    inputType: 'number',
+    maxLength: 10,
+    requirement: 'recommended',
+    validation: { min: 1900, max: 2100 },
+  },
+  {
+    name: 'assembled',
+    label: 'Assembled',
+    inputType: 'dropdown',
+    requirement: 'recommended',
+    dropdownOptions: ['Yes', 'No'],
+  },
+  {
+    name: 'completeInBox',
+    label: 'Complete In Box',
+    inputType: 'dropdown',
+    requirement: 'recommended',
+    dropdownOptions: ['Yes', 'No'],
+  },
+  COMMON_FIELDS.IS_GRADED_FIELD,
+  {
+    ...COMMON_FIELDS.CONDITION_FIELD,
+  },
+];
+
+const VINTAGE_TOYS_PLUSH_TOY_FIELDS: FieldDefinition[] = [
+  COMMON_FIELDS.LISTING_TITLE_FIELD,
+  COMMON_FIELDS.TRADE_VALUE_FIELD,
+  
+  COMMON_FIELDS.DESCRIPTION_FIELD,
+  COMMON_FIELDS.QUANTITY_FIELD,
+  COMMON_FIELDS.SHIPPING_AVAILABLE_FIELD,
+  {
+    name: 'toyName',
+    label: 'Toy Name',
+    inputType: 'text',
+    requirement: 'required',
+  },
+  {
+    name: 'character',
+    label: 'Character / Franchise',
+    inputType: 'text',
+    requirement: 'required',
+  },
+  {
+    name: 'year',
+    label: 'Year',
+    inputType: 'number',
+    maxLength: 10,
+    requirement: 'recommended',
+    validation: { min: 1900, max: 2100 },
+  },
+  {
+    name: 'tagPresent',
+    label: 'Original Tag Present',
+    inputType: 'dropdown',
+    requirement: 'recommended',
+    dropdownOptions: ['Yes', 'No'],
+  },
+  COMMON_FIELDS.IS_GRADED_FIELD,
+  {
+    ...COMMON_FIELDS.CONDITION_FIELD,
+  },
+];
+
 const VINTAGE_TOYS_COLLECTION_LOT_FIELDS: FieldDefinition[] = [
   COMMON_FIELDS.LISTING_TITLE_FIELD,
   COMMON_FIELDS.TRADE_VALUE_FIELD,
@@ -906,6 +1033,9 @@ export const REMAINING_FIELD_DEFINITIONS = {
   },
   vintage_toys: {
     action_figure: VINTAGE_TOYS_ACTION_FIGURE_FIELDS,
+    electronic_toy: VINTAGE_TOYS_ELECTRONIC_TOY_FIELDS,
+    model_kit: VINTAGE_TOYS_MODEL_KIT_FIELDS,
+    plush_toy: VINTAGE_TOYS_PLUSH_TOY_FIELDS,
     vehicle: VINTAGE_TOYS_VEHICLE_FIELDS,
     playset: VINTAGE_TOYS_PLAYSET_FIELDS,
     board_game: VINTAGE_TOYS_BOARD_GAME_FIELDS,

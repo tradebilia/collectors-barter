@@ -25,10 +25,10 @@ export const FormProgressIndicator: React.FC<FormProgressIndicatorProps> = ({
   return (
     <div className={`space-y-2 ${className}`}>
       <div className="flex items-center justify-between">
-        <span className="text-sm font-medium text-gray-700">
+        <span className="text-sm font-medium text-white">
           Required fields completed
         </span>
-        <span className="text-sm font-semibold text-gray-900">
+        <span className="text-sm font-semibold text-white">
           {completedRequiredFields}/{totalRequiredFields}
         </span>
       </div>

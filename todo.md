@@ -2840,3 +2840,9 @@ All 8 remaining filter optimization and caching items have been successfully imp
 ## Item Type Dropdown Ordering
 
 - [x] Prioritize "Single" item types to appear first in Item Type dropdown across all categories (most commonly used items should be easiest to select)
+
+## Progress Bar and Vintage Toys Fixes
+
+- [x] Change progress bar text color to white for better visibility
+- [x] Fix missing Vintage Toys item types (Electronic Toy, Model Kit, Plush / Stuffed Toy)
+- [x] Fix display name mapping for plush_toy field
