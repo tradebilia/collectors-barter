@@ -2681,3 +2681,9 @@ All 8 remaining filter optimization and caching items have been successfully imp
 ## Add to Inventory Page - Hide Empty Optional Fields Section
 - [x] Added conditional rendering to hide Optional Fields section when no optional fields are available
 - [x] Section title and number are completely hidden when there are no optional fields for the selected category/item type
+
+
+## Add to Inventory Page - Dynamic Section Numbering
+- [x] Implemented dynamic section numbering based on Optional Fields visibility
+- [x] When Optional Fields is hidden, Shipping, Description, and Photos sections renumber automatically
+- [x] No gaps in numbering - sections always appear consecutive (1, 2, 3, 4, 5 or 1, 2, 3, 4 depending on visibility)

@@ -266,7 +266,7 @@ export default function AddInventory() {
             />
 
             {/* Required Fields Section */}
-            <CollapsibleFormSection title="2. Required Fields" defaultExpanded={true} fieldCount={allFields.filter((f: FieldDefinition) => f.requirement === "required").length}>
+            <CollapsibleFormSection title="1. Required Fields" defaultExpanded={true} fieldCount={allFields.filter((f: FieldDefinition) => f.requirement === "required").length}>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {allFields
                   .filter((f: FieldDefinition) => f.requirement === "required" && shouldShowField(f))
@@ -283,7 +283,7 @@ export default function AddInventory() {
             </CollapsibleFormSection>
 
             {/* Recommended Fields Section */}
-            <CollapsibleFormSection title="3. Recommended Fields" defaultExpanded={true} fieldCount={allFields.filter((f: FieldDefinition) => f.requirement === "recommended").length}>
+            <CollapsibleFormSection title="2. Recommended Fields" defaultExpanded={true} fieldCount={allFields.filter((f: FieldDefinition) => f.requirement === "recommended").length}>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {allFields
                   .filter((f: FieldDefinition) => f.requirement === "recommended" && shouldShowField(f))
@@ -301,7 +301,7 @@ export default function AddInventory() {
 
             {/* Optional Fields Section */}
             {allFields.filter((f: FieldDefinition) => f.requirement === "optional" && shouldShowField(f)).length > 0 && (
-            <CollapsibleFormSection title="4. Optional Fields" defaultExpanded={true} fieldCount={allFields.filter((f: FieldDefinition) => f.requirement === "optional").length}>
+            <CollapsibleFormSection title="3. Optional Fields" defaultExpanded={true} fieldCount={allFields.filter((f: FieldDefinition) => f.requirement === "optional").length}>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {allFields
                   .filter((f: FieldDefinition) => f.requirement === "optional" && shouldShowField(f))
@@ -318,8 +318,8 @@ export default function AddInventory() {
             </CollapsibleFormSection>
             )}
 
-            {/* Shipping & Quantity Section */}
-            <CollapsibleFormSection title="5. Shipping" defaultExpanded={true} fieldCount={1}>
+            {/* Shipping Section */}
+            <CollapsibleFormSection title={allFields.filter((f: FieldDefinition) => f.requirement === "optional" && shouldShowField(f)).length > 0 ? "4. Shipping" : "3. Shipping"} defaultExpanded={true} fieldCount={1}>
               <div className="space-y-4">
                 <DynamicFieldRenderer
                   field={{
@@ -337,7 +337,7 @@ export default function AddInventory() {
             </CollapsibleFormSection>
 
             {/* Description Section */}
-            <CollapsibleFormSection title="6. Description" defaultExpanded={true} fieldCount={1}>
+            <CollapsibleFormSection title={allFields.filter((f: FieldDefinition) => f.requirement === "optional" && shouldShowField(f)).length > 0 ? "5. Description" : "4. Description"} defaultExpanded={true} fieldCount={1}>
               <div className="w-full">
                 <DynamicFieldRenderer
                   field={{
@@ -357,7 +357,7 @@ export default function AddInventory() {
           {/* Photo Upload Panel - Right Sidebar */}
           <div className="fixed right-8 top-32 w-80 max-h-[calc(100vh-150px)] overflow-y-auto">
             <div className="rounded-lg border border-white/20 bg-white/5 p-6 backdrop-blur">
-              <h3 className="mb-4 text-lg font-semibold text-white">7. Photos</h3>
+              <h3 className="mb-4 text-lg font-semibold text-white">{allFields.filter((f: FieldDefinition) => f.requirement === "optional" && shouldShowField(f)).length > 0 ? "6. Photos" : "5. Photos"}</h3>
 
               {/* Drag and Drop Area */}
               <div
