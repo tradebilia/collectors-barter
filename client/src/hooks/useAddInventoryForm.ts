@@ -56,17 +56,27 @@ export const useAddInventoryForm = (): UseAddInventoryFormReturn => {
     const categoryDef = ALL_DEFINITIONS[formData.category as any] as Record<string, FieldDefinition[]> | undefined;
     const categorySpecificFields = categoryDef ? (categoryDef[formData.itemType] || []) : [];
 
+    if (formData.category === 'comics' && formData.itemType === 'single_comic') {
+      console.log(`[currentFields] Comics Single Comic: found ${categorySpecificFields.length} fields`);
+      const numberOfSignaturesField = categorySpecificFields.find(f => f.name === 'numberOfSignatures');
+      if (numberOfSignaturesField) {
+        console.log(`[currentFields] numberOfSignatures field found:`, numberOfSignaturesField);
+      }
+    }
+
     // Filter out photos field since it has its own dedicated sticky panel
     return categorySpecificFields.filter(f => f.name !== 'photos');
   }, [formData.category, formData.itemType]);
+
 
   // Evaluate conditional logic
   const evaluateCondition = useCallback(
     (condition: string | undefined): boolean => {
       if (!condition) return true;
 
-      // Handle numeric comparisons like "numberOfSignatures > 0"
-      const numericComparisonMatch = condition.match(/^([a-zA-Z]+)\s*([><=!]+)\s*(.+)$/);
+      // Handle numeric comparisons like "numberOfSignatures > 0" (but not "Signed = Yes")
+      // Only match comparison operators: >, <, >=, <=, !=, <>, ==  (NOT single =)
+      const numericComparisonMatch = condition.match(/^([a-zA-Z]+)\s*(>=|<=|!=|<>|==|[><])\s*(.+)$/);
       if (numericComparisonMatch) {
         const [, fieldName, operator, expectedValue] = numericComparisonMatch;
         // Convert field name to camelCase if needed
@@ -90,7 +100,7 @@ export const useAddInventoryForm = (): UseAddInventoryFormReturn => {
         else if (operator === '=' || operator === '==') result = actualNum === expectedNum;
         else if (operator === '!=' || operator === '<>') result = actualNum !== expectedNum;
 
-        console.log(`[Conditional] Numeric: ${condition} | fieldKey: ${fieldKey} | actualValue: ${actualValue} (${actualNum}) | operator: ${operator} | expectedValue: ${expectedValue} (${expectedNum}) | result: ${result}`);
+        // Numeric comparison debug removed
         return result;
       }
 
@@ -107,7 +117,7 @@ export const useAddInventoryForm = (): UseAddInventoryFormReturn => {
 
       const actualValue = formData[fieldKey];
       const result = actualValue === expectedValue;
-      console.log(`[Conditional] Equality: ${condition} | fieldKey: ${fieldKey} | actualValue: ${actualValue} | expectedValue: ${expectedValue} | result: ${result}`);
+      console.log(`[evaluateCondition] Equality: condition='${condition}', fieldKey='${fieldKey}', actualValue='${actualValue}', expectedValue='${expectedValue}', result=${result}`);
       return result;
     },
     [formData]
@@ -118,11 +128,15 @@ export const useAddInventoryForm = (): UseAddInventoryFormReturn => {
     (field: FieldDefinition): boolean => {
       // If field has conditional logic, evaluate it regardless of requirement type
       if (field.conditionalLogic) {
-        return evaluateCondition(field.conditionalLogic);
+        const result = evaluateCondition(field.conditionalLogic);
+        if (field.name === 'numberOfSignatures') {
+          console.log(`[shouldShowField] ${field.label}: condition='${field.conditionalLogic}', result=${result}, formData.signed='${formData['signed']}'`);
+        }
+        return result;
       }
       return true;
     },
-    [evaluateCondition]
+    [evaluateCondition, formData]
   );
 
   // Get fields by requirement level

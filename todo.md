@@ -2777,3 +2777,9 @@ All 8 remaining filter optimization and caching items have been successfully imp
 
 - [x] Move conditional grading fields (Grading Company, Grade, Certification Number) to Required section so they appear below Is Graded when Is Graded = Yes
 - [x] Verify all conditional fields appear in their logical parent section, not in a different section
+
+
+## Fix # of Signatures Conditional Logic
+- [ ] Ensure "# of Signatures" field only appears when Signed = Yes (not always visible)
+- [ ] Verify individual signature input boxes appear in Recommended Fields when number is selected
+- [ ] Test that signature fields are properly hidden when Signed = No
