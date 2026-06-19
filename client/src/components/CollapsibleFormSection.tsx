@@ -35,7 +35,7 @@ export const CollapsibleFormSection: React.FC<CollapsibleFormSectionProps> = ({
         <div className="flex items-center gap-3">
           {icon && <span className="text-xl">{icon}</span>}
           <div className="text-left">
-            <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+            <h3 className="text-lg font-semibold text-white">{title}</h3>
             {fieldCount && (
               <p className="text-sm text-gray-500">
                 {fieldCount} field{fieldCount !== 1 ? 's' : ''}

@@ -364,9 +364,9 @@ export default function AddInventory() {
           </div>
 
           {/* Photo Upload Panel - Right Sidebar */}
-          <div className="col-span-1 sticky top-20 h-fit">
+          <div className="col-span-1 sticky top-20 h-fit mr-8">
             <div className="rounded-lg border border-white/20 bg-white/5 p-6 backdrop-blur">
-              <h3 className="mb-4 text-lg font-semibold">5. Photos</h3>
+              <h3 className="mb-4 text-lg font-semibold text-white">5. Photos</h3>
 
               {/* Drag and Drop Area */}
               <div
@@ -430,7 +430,7 @@ export default function AddInventory() {
 
         {/* Action Buttons - Visible when scrolling to bottom */}
         <div className="fixed bottom-0 left-0 right-0 border-t border-white/10 bg-black/80 backdrop-blur">
-          <div className="container mx-auto max-w-7xl px-4 py-4 flex justify-end gap-4">
+          <div className="container mx-auto max-w-7xl px-4 py-4 flex justify-center gap-4">
             <Button variant="outline" onClick={(e) => { e.preventDefault(); handleSaveDraft(); }} disabled={saveDraftMutation.isPending}>
               {saveDraftMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Save as Draft
