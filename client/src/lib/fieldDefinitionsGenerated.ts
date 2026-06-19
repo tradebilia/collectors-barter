@@ -1945,7 +1945,7 @@ export const SPORTS_CARDS_UNOPENED_PRODUCT_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'required',
     dropdownOptions: ['BBCE', 'PSA', 'iCert', 'RVP', 'Other'],
-    conditionalLogic: 'Is Authenticated = Yes',
+    conditionalLogic: 'Authenticated = Yes',
     supportsOther: true,
     otherFieldName: 'Custom Authentication Company',
   },
@@ -1955,7 +1955,7 @@ export const SPORTS_CARDS_UNOPENED_PRODUCT_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'required',
     dropdownOptions: ['Yes', 'No'],
-    conditionalLogic: 'Is Authenticated = Yes',
+    conditionalLogic: 'Authenticated = Yes',
   },
 ];
 
