@@ -30,25 +30,14 @@ export const AUTOGRAPHS_COLLECTION_LOT_FIELDS: FieldDefinition[] = [
     inputType: 'image-upload',
     requirement: 'required',
   },
-  {
-    name: 'description',
-    label: 'Description',
-    inputType: 'textarea',
-    requirement: 'required',
-  },
+
   {
     name: 'quantity',
     label: 'Quantity',
     inputType: 'number',
     requirement: 'recommended',
   },
-  {
-    name: 'shippingAvailable',
-    label: 'Shipping Available',
-    inputType: 'dropdown',
-    requirement: 'recommended',
-    dropdownOptions: ['Yes', 'No', 'Local Only'],
-  },
+
   {
     name: 'numberOfSignedItems',
     label: 'Number of Signed Items',
@@ -109,25 +98,14 @@ export const AUTOGRAPHS_SIGNED_ITEM_FIELDS: FieldDefinition[] = [
     inputType: 'image-upload',
     requirement: 'required',
   },
-  {
-    name: 'description',
-    label: 'Description',
-    inputType: 'textarea',
-    requirement: 'required',
-  },
+
   {
     name: 'quantity',
     label: 'Quantity',
     inputType: 'number',
     requirement: 'recommended',
   },
-  {
-    name: 'shippingAvailable',
-    label: 'Shipping Available',
-    inputType: 'dropdown',
-    requirement: 'recommended',
-    dropdownOptions: ['Yes', 'No', 'Local Only'],
-  },
+
   {
     name: 'signer',
     label: 'Signer',
@@ -227,25 +205,14 @@ export const COINS_COIN_SET_FIELDS: FieldDefinition[] = [
     inputType: 'image-upload',
     requirement: 'required',
   },
-  {
-    name: 'description',
-    label: 'Description',
-    inputType: 'textarea',
-    requirement: 'required',
-  },
+
   {
     name: 'quantity',
     label: 'Quantity',
     inputType: 'number',
     requirement: 'recommended',
   },
-  {
-    name: 'shippingAvailable',
-    label: 'Shipping Available',
-    inputType: 'dropdown',
-    requirement: 'recommended',
-    dropdownOptions: ['Yes', 'No', 'Local Only'],
-  },
+
   {
     name: 'setName',
     label: 'Set Name',
@@ -315,25 +282,14 @@ export const COINS_COLLECTION_LOT_FIELDS: FieldDefinition[] = [
     inputType: 'image-upload',
     requirement: 'required',
   },
-  {
-    name: 'description',
-    label: 'Description',
-    inputType: 'textarea',
-    requirement: 'required',
-  },
+
   {
     name: 'quantity',
     label: 'Quantity',
     inputType: 'number',
     requirement: 'recommended',
   },
-  {
-    name: 'shippingAvailable',
-    label: 'Shipping Available',
-    inputType: 'dropdown',
-    requirement: 'recommended',
-    dropdownOptions: ['Yes', 'No', 'Local Only'],
-  },
+
   {
     name: 'countriesIncluded',
     label: 'Countries Included',
@@ -395,25 +351,14 @@ export const COINS_SINGLE_COIN_FIELDS: FieldDefinition[] = [
     inputType: 'image-upload',
     requirement: 'required',
   },
-  {
-    name: 'description',
-    label: 'Description',
-    inputType: 'textarea',
-    requirement: 'required',
-  },
+
   {
     name: 'quantity',
     label: 'Quantity',
     inputType: 'number',
     requirement: 'recommended',
   },
-  {
-    name: 'shippingAvailable',
-    label: 'Shipping Available',
-    inputType: 'dropdown',
-    requirement: 'recommended',
-    dropdownOptions: ['Yes', 'No', 'Local Only'],
-  },
+
   {
     name: 'country',
     label: 'Country',
@@ -520,25 +465,14 @@ export const COMICS_COLLECTION_LOT_FIELDS: FieldDefinition[] = [
     inputType: 'image-upload',
     requirement: 'required',
   },
-  {
-    name: 'description',
-    label: 'Description',
-    inputType: 'textarea',
-    requirement: 'required',
-  },
+
   {
     name: 'quantity',
     label: 'Quantity',
     inputType: 'number',
     requirement: 'recommended',
   },
-  {
-    name: 'shippingAvailable',
-    label: 'Shipping Available',
-    inputType: 'dropdown',
-    requirement: 'recommended',
-    dropdownOptions: ['Yes', 'No', 'Local Only'],
-  },
+
   {
     name: 'numberOfComics',
     label: 'Number of Comics',
@@ -599,25 +533,14 @@ export const COMICS_ORIGINAL_ART_FIELDS: FieldDefinition[] = [
     inputType: 'image-upload',
     requirement: 'required',
   },
-  {
-    name: 'description',
-    label: 'Description',
-    inputType: 'textarea',
-    requirement: 'required',
-  },
+
   {
     name: 'quantity',
     label: 'Quantity',
     inputType: 'number',
     requirement: 'recommended',
   },
-  {
-    name: 'shippingAvailable',
-    label: 'Shipping Available',
-    inputType: 'dropdown',
-    requirement: 'recommended',
-    dropdownOptions: ['Yes', 'No', 'Local Only'],
-  },
+
   {
     name: 'artistName',
     label: 'Artist Name',
@@ -745,25 +668,14 @@ export const COMICS_SINGLE_COMIC_FIELDS: FieldDefinition[] = [
     inputType: 'image-upload',
     requirement: 'required',
   },
-  {
-    name: 'description',
-    label: 'Description',
-    inputType: 'textarea',
-    requirement: 'required',
-  },
+
   {
     name: 'quantity',
     label: 'Quantity',
     inputType: 'number',
     requirement: 'recommended',
   },
-  {
-    name: 'shippingAvailable',
-    label: 'Shipping Available',
-    inputType: 'dropdown',
-    requirement: 'recommended',
-    dropdownOptions: ['Yes', 'No', 'Local Only'],
-  },
+
   {
     name: 'comicTitle',
     label: 'Comic Title',
@@ -890,25 +802,14 @@ export const DISNEY_PINS_COLLECTION_LOT_FIELDS: FieldDefinition[] = [
     inputType: 'image-upload',
     requirement: 'required',
   },
-  {
-    name: 'description',
-    label: 'Description',
-    inputType: 'textarea',
-    requirement: 'required',
-  },
+
   {
     name: 'quantity',
     label: 'Quantity',
     inputType: 'number',
     requirement: 'recommended',
   },
-  {
-    name: 'shippingAvailable',
-    label: 'Shipping Available',
-    inputType: 'dropdown',
-    requirement: 'recommended',
-    dropdownOptions: ['Yes', 'No', 'Local Only'],
-  },
+
   {
     name: 'approximatePinCount',
     label: 'Approximate Pin Count',
@@ -977,25 +878,14 @@ export const DISNEY_PINS_INDIVIDUAL_PIN_FIELDS: FieldDefinition[] = [
     inputType: 'image-upload',
     requirement: 'required',
   },
-  {
-    name: 'description',
-    label: 'Description',
-    inputType: 'textarea',
-    requirement: 'required',
-  },
+
   {
     name: 'quantity',
     label: 'Quantity',
     inputType: 'number',
     requirement: 'recommended',
   },
-  {
-    name: 'shippingAvailable',
-    label: 'Shipping Available',
-    inputType: 'dropdown',
-    requirement: 'recommended',
-    dropdownOptions: ['Yes', 'No', 'Local Only'],
-  },
+
   {
     name: 'pinName',
     label: 'Pin Name',
@@ -1096,25 +986,14 @@ export const DISNEY_PINS_PIN_SET_FIELDS: FieldDefinition[] = [
     inputType: 'image-upload',
     requirement: 'required',
   },
-  {
-    name: 'description',
-    label: 'Description',
-    inputType: 'textarea',
-    requirement: 'required',
-  },
+
   {
     name: 'quantity',
     label: 'Quantity',
     inputType: 'number',
     requirement: 'recommended',
   },
-  {
-    name: 'shippingAvailable',
-    label: 'Shipping Available',
-    inputType: 'dropdown',
-    requirement: 'recommended',
-    dropdownOptions: ['Yes', 'No', 'Local Only'],
-  },
+
   {
     name: 'setName',
     label: 'Set Name',
@@ -1189,25 +1068,14 @@ export const MOVIES_BOX_SET_FIELDS: FieldDefinition[] = [
     inputType: 'image-upload',
     requirement: 'required',
   },
-  {
-    name: 'description',
-    label: 'Description',
-    inputType: 'textarea',
-    requirement: 'required',
-  },
+
   {
     name: 'quantity',
     label: 'Quantity',
     inputType: 'number',
     requirement: 'recommended',
   },
-  {
-    name: 'shippingAvailable',
-    label: 'Shipping Available',
-    inputType: 'dropdown',
-    requirement: 'recommended',
-    dropdownOptions: ['Yes', 'No', 'Local Only'],
-  },
+
   {
     name: 'boxSetName',
     label: 'Box Set Name',
@@ -1271,25 +1139,14 @@ export const MOVIES_COLLECTION_LOT_FIELDS: FieldDefinition[] = [
     inputType: 'image-upload',
     requirement: 'required',
   },
-  {
-    name: 'description',
-    label: 'Description',
-    inputType: 'textarea',
-    requirement: 'required',
-  },
+
   {
     name: 'quantity',
     label: 'Quantity',
     inputType: 'number',
     requirement: 'recommended',
   },
-  {
-    name: 'shippingAvailable',
-    label: 'Shipping Available',
-    inputType: 'dropdown',
-    requirement: 'recommended',
-    dropdownOptions: ['Yes', 'No', 'Local Only'],
-  },
+
   {
     name: 'formatsIncluded',
     label: 'Formats Included',
@@ -1345,25 +1202,14 @@ export const MOVIES_INDIVIDUAL_MOVIE_FIELDS: FieldDefinition[] = [
     inputType: 'image-upload',
     requirement: 'required',
   },
-  {
-    name: 'description',
-    label: 'Description',
-    inputType: 'textarea',
-    requirement: 'required',
-  },
+
   {
     name: 'quantity',
     label: 'Quantity',
     inputType: 'number',
     requirement: 'recommended',
   },
-  {
-    name: 'shippingAvailable',
-    label: 'Shipping Available',
-    inputType: 'dropdown',
-    requirement: 'recommended',
-    dropdownOptions: ['Yes', 'No', 'Local Only'],
-  },
+
   {
     name: 'title',
     label: 'Title',
@@ -1462,25 +1308,14 @@ export const POKEMON_COLLECTION_LOT_FIELDS: FieldDefinition[] = [
     inputType: 'image-upload',
     requirement: 'required',
   },
-  {
-    name: 'description',
-    label: 'Description',
-    inputType: 'textarea',
-    requirement: 'required',
-  },
+
   {
     name: 'quantity',
     label: 'Quantity',
     inputType: 'number',
     requirement: 'recommended',
   },
-  {
-    name: 'shippingAvailable',
-    label: 'Shipping Available',
-    inputType: 'dropdown',
-    requirement: 'recommended',
-    dropdownOptions: ['Yes', 'No', 'Local Only'],
-  },
+
   {
     name: 'approximateCardCount',
     label: 'Approximate Card Count',
@@ -1544,25 +1379,14 @@ export const POKEMON_SET_FIELDS: FieldDefinition[] = [
     inputType: 'image-upload',
     requirement: 'required',
   },
-  {
-    name: 'description',
-    label: 'Description',
-    inputType: 'textarea',
-    requirement: 'required',
-  },
+
   {
     name: 'quantity',
     label: 'Quantity',
     inputType: 'number',
     requirement: 'recommended',
   },
-  {
-    name: 'shippingAvailable',
-    label: 'Shipping Available',
-    inputType: 'dropdown',
-    requirement: 'recommended',
-    dropdownOptions: ['Yes', 'No', 'Local Only'],
-  },
+
   {
     name: 'setName',
     label: 'Set Name',
@@ -1618,25 +1442,14 @@ export const POKEMON_UNOPENED_PRODUCT_FIELDS: FieldDefinition[] = [
     inputType: 'image-upload',
     requirement: 'required',
   },
-  {
-    name: 'description',
-    label: 'Description',
-    inputType: 'textarea',
-    requirement: 'required',
-  },
+
   {
     name: 'quantity',
     label: 'Quantity',
     inputType: 'number',
     requirement: 'recommended',
   },
-  {
-    name: 'shippingAvailable',
-    label: 'Shipping Available',
-    inputType: 'dropdown',
-    requirement: 'recommended',
-    dropdownOptions: ['Yes', 'No', 'Local Only'],
-  },
+
   {
     name: 'productName',
     label: 'Product Name',
@@ -1728,19 +1541,7 @@ export const SPORTS_CARDS_COLLECTION_LOT_FIELDS: FieldDefinition[] = [
     inputType: 'image-upload',
     requirement: 'required',
   },
-  {
-    name: 'description',
-    label: 'Description',
-    inputType: 'textarea',
-    requirement: 'required',
-  },
-  {
-    name: 'shippingAvailable',
-    label: 'Shipping Available',
-    inputType: 'dropdown',
-    requirement: 'recommended',
-    dropdownOptions: ['Yes', 'No', 'Local Only'],
-  },
+
   {
     name: 'sport',
     label: 'Sport',
@@ -1816,25 +1617,14 @@ export const SPORTS_CARDS_SET_FIELDS: FieldDefinition[] = [
     inputType: 'image-upload',
     requirement: 'required',
   },
-  {
-    name: 'description',
-    label: 'Description',
-    inputType: 'textarea',
-    requirement: 'required',
-  },
+
   {
     name: 'quantity',
     label: 'Quantity',
     inputType: 'number',
     requirement: 'recommended',
   },
-  {
-    name: 'shippingAvailable',
-    label: 'Shipping Available',
-    inputType: 'dropdown',
-    requirement: 'recommended',
-    dropdownOptions: ['Yes', 'No', 'Local Only'],
-  },
+
   {
     name: 'sport',
     label: 'Sport',
@@ -1917,25 +1707,14 @@ export const SPORTS_CARDS_SINGLE_CARD_FIELDS: FieldDefinition[] = [
     inputType: 'image-upload',
     requirement: 'required',
   },
-  {
-    name: 'description',
-    label: 'Description',
-    inputType: 'textarea',
-    requirement: 'required',
-  },
+
   {
     name: 'quantity',
     label: 'Quantity',
     inputType: 'number',
     requirement: 'recommended',
   },
-  {
-    name: 'shippingAvailable',
-    label: 'Shipping Available',
-    inputType: 'dropdown',
-    requirement: 'recommended',
-    dropdownOptions: ['Yes', 'No', 'Local Only'],
-  },
+
   {
     name: 'sport',
     label: 'Sport',
@@ -2077,25 +1856,14 @@ export const SPORTS_CARDS_UNOPENED_PRODUCT_FIELDS: FieldDefinition[] = [
     inputType: 'image-upload',
     requirement: 'required',
   },
-  {
-    name: 'description',
-    label: 'Description',
-    inputType: 'textarea',
-    requirement: 'required',
-  },
+
   {
     name: 'quantity',
     label: 'Quantity',
     inputType: 'number',
     requirement: 'recommended',
   },
-  {
-    name: 'shippingAvailable',
-    label: 'Shipping Available',
-    inputType: 'dropdown',
-    requirement: 'recommended',
-    dropdownOptions: ['Yes', 'No', 'Local Only'],
-  },
+
   {
     name: 'sport',
     label: 'Sport',
@@ -2203,25 +1971,14 @@ export const STAMPS_COLLECTION_LOT_FIELDS: FieldDefinition[] = [
     inputType: 'image-upload',
     requirement: 'required',
   },
-  {
-    name: 'description',
-    label: 'Description',
-    inputType: 'textarea',
-    requirement: 'required',
-  },
+
   {
     name: 'quantity',
     label: 'Quantity',
     inputType: 'number',
     requirement: 'recommended',
   },
-  {
-    name: 'shippingAvailable',
-    label: 'Shipping Available',
-    inputType: 'dropdown',
-    requirement: 'recommended',
-    dropdownOptions: ['Yes', 'No', 'Local Only'],
-  },
+
   {
     name: 'countriesIncluded',
     label: 'Countries Included',
@@ -2283,25 +2040,14 @@ export const STAMPS_SINGLE_STAMP_FIELDS: FieldDefinition[] = [
     inputType: 'image-upload',
     requirement: 'required',
   },
-  {
-    name: 'description',
-    label: 'Description',
-    inputType: 'textarea',
-    requirement: 'required',
-  },
+
   {
     name: 'quantity',
     label: 'Quantity',
     inputType: 'number',
     requirement: 'recommended',
   },
-  {
-    name: 'shippingAvailable',
-    label: 'Shipping Available',
-    inputType: 'dropdown',
-    requirement: 'recommended',
-    dropdownOptions: ['Yes', 'No', 'Local Only'],
-  },
+
   {
     name: 'country',
     label: 'Country',
@@ -2399,25 +2145,14 @@ export const STAMPS_STAMP_SET_SHEET_FIELDS: FieldDefinition[] = [
     inputType: 'image-upload',
     requirement: 'required',
   },
-  {
-    name: 'description',
-    label: 'Description',
-    inputType: 'textarea',
-    requirement: 'required',
-  },
+
   {
     name: 'quantity',
     label: 'Quantity',
     inputType: 'number',
     requirement: 'recommended',
   },
-  {
-    name: 'shippingAvailable',
-    label: 'Shipping Available',
-    inputType: 'dropdown',
-    requirement: 'recommended',
-    dropdownOptions: ['Yes', 'No', 'Local Only'],
-  },
+
   {
     name: 'country',
     label: 'Country',
@@ -2487,25 +2222,14 @@ export const VIDEO_GAMES_ACCESSORY_FIELDS: FieldDefinition[] = [
     inputType: 'image-upload',
     requirement: 'required',
   },
-  {
-    name: 'description',
-    label: 'Description',
-    inputType: 'textarea',
-    requirement: 'required',
-  },
+
   {
     name: 'quantity',
     label: 'Quantity',
     inputType: 'number',
     requirement: 'recommended',
   },
-  {
-    name: 'shippingAvailable',
-    label: 'Shipping Available',
-    inputType: 'dropdown',
-    requirement: 'recommended',
-    dropdownOptions: ['Yes', 'No', 'Local Only'],
-  },
+
   {
     name: 'accessoryType',
     label: 'Accessory Type',
@@ -2604,25 +2328,14 @@ export const VIDEO_GAMES_COLLECTION_LOT_FIELDS: FieldDefinition[] = [
     inputType: 'image-upload',
     requirement: 'required',
   },
-  {
-    name: 'description',
-    label: 'Description',
-    inputType: 'textarea',
-    requirement: 'required',
-  },
+
   {
     name: 'quantity',
     label: 'Quantity',
     inputType: 'number',
     requirement: 'recommended',
   },
-  {
-    name: 'shippingAvailable',
-    label: 'Shipping Available',
-    inputType: 'dropdown',
-    requirement: 'recommended',
-    dropdownOptions: ['Yes', 'No', 'Local Only'],
-  },
+
   {
     name: 'platformsIncluded',
     label: 'Platforms Included',
@@ -2677,25 +2390,14 @@ export const VIDEO_GAMES_CONSOLE_FIELDS: FieldDefinition[] = [
     inputType: 'image-upload',
     requirement: 'required',
   },
-  {
-    name: 'description',
-    label: 'Description',
-    inputType: 'textarea',
-    requirement: 'required',
-  },
+
   {
     name: 'quantity',
     label: 'Quantity',
     inputType: 'number',
     requirement: 'recommended',
   },
-  {
-    name: 'shippingAvailable',
-    label: 'Shipping Available',
-    inputType: 'dropdown',
-    requirement: 'recommended',
-    dropdownOptions: ['Yes', 'No', 'Local Only'],
-  },
+
   {
     name: 'consoleName',
     label: 'Console Name',
@@ -2806,25 +2508,14 @@ export const VIDEO_GAMES_GAME_FIELDS: FieldDefinition[] = [
     inputType: 'image-upload',
     requirement: 'required',
   },
-  {
-    name: 'description',
-    label: 'Description',
-    inputType: 'textarea',
-    requirement: 'required',
-  },
+
   {
     name: 'quantity',
     label: 'Quantity',
     inputType: 'number',
     requirement: 'recommended',
   },
-  {
-    name: 'shippingAvailable',
-    label: 'Shipping Available',
-    inputType: 'dropdown',
-    requirement: 'recommended',
-    dropdownOptions: ['Yes', 'No', 'Local Only'],
-  },
+
   {
     name: 'gameTitle',
     label: 'Game Title',
@@ -2944,25 +2635,14 @@ export const VINTAGE_TOYS_ACTION_FIGURE_DOLL_FIELDS: FieldDefinition[] = [
     inputType: 'image-upload',
     requirement: 'required',
   },
-  {
-    name: 'description',
-    label: 'Description',
-    inputType: 'textarea',
-    requirement: 'required',
-  },
+
   {
     name: 'quantity',
     label: 'Quantity',
     inputType: 'number',
     requirement: 'recommended',
   },
-  {
-    name: 'shippingAvailable',
-    label: 'Shipping Available',
-    inputType: 'dropdown',
-    requirement: 'recommended',
-    dropdownOptions: ['Yes', 'No', 'Local Only'],
-  },
+
   {
     name: 'toyName',
     label: 'Toy Name',
@@ -3079,25 +2759,14 @@ export const VINTAGE_TOYS_BOARD_GAME_PUZZLE_FIELDS: FieldDefinition[] = [
     inputType: 'image-upload',
     requirement: 'required',
   },
-  {
-    name: 'description',
-    label: 'Description',
-    inputType: 'textarea',
-    requirement: 'required',
-  },
+
   {
     name: 'quantity',
     label: 'Quantity',
     inputType: 'number',
     requirement: 'recommended',
   },
-  {
-    name: 'shippingAvailable',
-    label: 'Shipping Available',
-    inputType: 'dropdown',
-    requirement: 'recommended',
-    dropdownOptions: ['Yes', 'No', 'Local Only'],
-  },
+
   {
     name: 'gamePuzzleName',
     label: 'Game / Puzzle Name',
@@ -3182,25 +2851,14 @@ export const VINTAGE_TOYS_COLLECTION_LOT_FIELDS: FieldDefinition[] = [
     inputType: 'image-upload',
     requirement: 'required',
   },
-  {
-    name: 'description',
-    label: 'Description',
-    inputType: 'textarea',
-    requirement: 'required',
-  },
+
   {
     name: 'quantity',
     label: 'Quantity',
     inputType: 'number',
     requirement: 'recommended',
   },
-  {
-    name: 'shippingAvailable',
-    label: 'Shipping Available',
-    inputType: 'dropdown',
-    requirement: 'recommended',
-    dropdownOptions: ['Yes', 'No', 'Local Only'],
-  },
+
   {
     name: 'approximateItemCount',
     label: 'Approximate Item Count',
@@ -3254,25 +2912,14 @@ export const VINTAGE_TOYS_ELECTRONIC_TOY_FIELDS: FieldDefinition[] = [
     inputType: 'image-upload',
     requirement: 'required',
   },
-  {
-    name: 'description',
-    label: 'Description',
-    inputType: 'textarea',
-    requirement: 'required',
-  },
+
   {
     name: 'quantity',
     label: 'Quantity',
     inputType: 'number',
     requirement: 'recommended',
   },
-  {
-    name: 'shippingAvailable',
-    label: 'Shipping Available',
-    inputType: 'dropdown',
-    requirement: 'recommended',
-    dropdownOptions: ['Yes', 'No', 'Local Only'],
-  },
+
   {
     name: 'toyName',
     label: 'Toy Name',
@@ -3358,25 +3005,14 @@ export const VINTAGE_TOYS_MODEL_KIT_FIELDS: FieldDefinition[] = [
     inputType: 'image-upload',
     requirement: 'required',
   },
-  {
-    name: 'description',
-    label: 'Description',
-    inputType: 'textarea',
-    requirement: 'required',
-  },
+
   {
     name: 'quantity',
     label: 'Quantity',
     inputType: 'number',
     requirement: 'recommended',
   },
-  {
-    name: 'shippingAvailable',
-    label: 'Shipping Available',
-    inputType: 'dropdown',
-    requirement: 'recommended',
-    dropdownOptions: ['Yes', 'No', 'Local Only'],
-  },
+
   {
     name: 'modelKitName',
     label: 'Model / Kit Name',
@@ -3448,25 +3084,14 @@ export const VINTAGE_TOYS_PLAYSET_FIELDS: FieldDefinition[] = [
     inputType: 'image-upload',
     requirement: 'required',
   },
-  {
-    name: 'description',
-    label: 'Description',
-    inputType: 'textarea',
-    requirement: 'required',
-  },
+
   {
     name: 'quantity',
     label: 'Quantity',
     inputType: 'number',
     requirement: 'recommended',
   },
-  {
-    name: 'shippingAvailable',
-    label: 'Shipping Available',
-    inputType: 'dropdown',
-    requirement: 'recommended',
-    dropdownOptions: ['Yes', 'No', 'Local Only'],
-  },
+
   {
     name: 'playsetName',
     label: 'Playset Name',
@@ -3551,25 +3176,14 @@ export const VINTAGE_TOYS_PLUSH_STUFFED_TOY_FIELDS: FieldDefinition[] = [
     inputType: 'image-upload',
     requirement: 'required',
   },
-  {
-    name: 'description',
-    label: 'Description',
-    inputType: 'textarea',
-    requirement: 'required',
-  },
+
   {
     name: 'quantity',
     label: 'Quantity',
     inputType: 'number',
     requirement: 'recommended',
   },
-  {
-    name: 'shippingAvailable',
-    label: 'Shipping Available',
-    inputType: 'dropdown',
-    requirement: 'recommended',
-    dropdownOptions: ['Yes', 'No', 'Local Only'],
-  },
+
   {
     name: 'toyNameCharacter',
     label: 'Toy Name / Character',
@@ -3633,25 +3247,14 @@ export const VINTAGE_TOYS_VEHICLE_FIELDS: FieldDefinition[] = [
     inputType: 'image-upload',
     requirement: 'required',
   },
-  {
-    name: 'description',
-    label: 'Description',
-    inputType: 'textarea',
-    requirement: 'required',
-  },
+
   {
     name: 'quantity',
     label: 'Quantity',
     inputType: 'number',
     requirement: 'recommended',
   },
-  {
-    name: 'shippingAvailable',
-    label: 'Shipping Available',
-    inputType: 'dropdown',
-    requirement: 'recommended',
-    dropdownOptions: ['Yes', 'No', 'Local Only'],
-  },
+
   {
     name: 'vehicleName',
     label: 'Vehicle Name',
@@ -3734,25 +3337,14 @@ export const COINS_PAPER_MONEY_BANKNOTES_FIELDS: FieldDefinition[] = [
     inputType: 'image-upload',
     requirement: 'required',
   },
-  {
-    name: 'description',
-    label: 'Description',
-    inputType: 'textarea',
-    requirement: 'required',
-  },
+
   {
     name: 'quantity',
     label: 'Quantity',
     inputType: 'number',
     requirement: 'recommended',
   },
-  {
-    name: 'shippingAvailable',
-    label: 'Shipping Available',
-    inputType: 'dropdown',
-    requirement: 'recommended',
-    dropdownOptions: ['Yes', 'No', 'Local Only'],
-  },
+
   {
     name: 'country',
     label: 'Country',
@@ -3842,25 +3434,14 @@ export const POKEMON_SINGLE_CARD_FIELDS: FieldDefinition[] = [
     inputType: 'image-upload',
     requirement: 'required',
   },
-  {
-    name: 'description',
-    label: 'Description',
-    inputType: 'textarea',
-    requirement: 'required',
-  },
+
   {
     name: 'quantity',
     label: 'Quantity',
     inputType: 'number',
     requirement: 'recommended',
   },
-  {
-    name: 'shippingAvailable',
-    label: 'Shipping Available',
-    inputType: 'dropdown',
-    requirement: 'recommended',
-    dropdownOptions: ['Yes', 'No', 'Local Only'],
-  },
+
   {
     name: 'pokemonName',
     label: 'Pokemon Name',
