@@ -1,0 +1,264 @@
+/**
+ * Form Field Definitions and Constants
+ * Defines all field types, categories, item types, and their configurations
+ */
+
+export type FieldInputType = 
+  | 'text' 
+  | 'number' 
+  | 'currency' 
+  | 'textarea' 
+  | 'dropdown' 
+  | 'image-upload' 
+  | 'checkbox';
+
+export type FieldRequirement = 'required' | 'recommended' | 'optional' | 'conditional';
+
+export interface FieldDefinition {
+  name: string;
+  label: string;
+  inputType: FieldInputType;
+  requirement: FieldRequirement;
+  dropdownOptions?: string[];
+  supportsOther?: boolean;
+  otherFieldName?: string;
+  conditionalLogic?: string; // e.g., "Is Graded = Yes"
+  notes?: string;
+  validation?: {
+    minLength?: number;
+    maxLength?: number;
+    min?: number;
+    max?: number;
+    pattern?: RegExp;
+  };
+}
+
+export interface ItemTypeDefinition {
+  name: string;
+  displayName: string;
+  fields: FieldDefinition[];
+}
+
+export interface CategoryDefinition {
+  name: string;
+  displayName: string;
+  itemTypes: ItemTypeDefinition[];
+  gradingCompanies: string[];
+}
+
+// Collectible Categories
+export const COLLECTIBLE_CATEGORIES = [
+  'sports_cards',
+  'comics',
+  'coins',
+  'stamps',
+  'video_games',
+  'movies',
+  'autographs',
+  'vintage_toys',
+  'disney_pins',
+  'pokemon',
+] as const;
+
+export type CollectibleCategory = typeof COLLECTIBLE_CATEGORIES[number];
+
+// Common field definitions
+const LISTING_TITLE_FIELD: FieldDefinition = {
+  name: 'title',
+  label: 'Listing Title',
+  inputType: 'text',
+  requirement: 'required',
+  validation: { minLength: 3, maxLength: 160 },
+  notes: 'User-editable title; may be auto-suggested from item details.',
+};
+
+const TRADE_VALUE_FIELD: FieldDefinition = {
+  name: 'estimatedValue',
+  label: 'Trade Value',
+  inputType: 'currency',
+  requirement: 'required',
+  validation: { min: 0 },
+  notes: 'Estimated value for trade matching.',
+};
+
+const CONDITION_FIELD: FieldDefinition = {
+  name: 'condition',
+  label: 'Condition',
+  inputType: 'dropdown',
+  requirement: 'conditional',
+  dropdownOptions: ['Mint', 'Near Mint', 'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'],
+  conditionalLogic: 'Is Graded = No',
+  notes: 'Condition of the item.',
+};
+
+const PHOTOS_FIELD: FieldDefinition = {
+  name: 'photos',
+  label: 'Photos',
+  inputType: 'image-upload',
+  requirement: 'required',
+  notes: 'Require at least 1 photo.',
+};
+
+const DESCRIPTION_FIELD: FieldDefinition = {
+  name: 'description',
+  label: 'Description',
+  inputType: 'textarea',
+  requirement: 'required',
+  validation: { minLength: 20, maxLength: 4000 },
+  notes: 'Free-form details, defects, provenance, trade notes. Users may write a lot of stuff.',
+};
+
+const QUANTITY_FIELD: FieldDefinition = {
+  name: 'quantity',
+  label: 'Quantity',
+  inputType: 'number',
+  requirement: 'recommended',
+  validation: { min: 1 },
+  notes: 'Default to 1.',
+};
+
+const SHIPPING_AVAILABLE_FIELD: FieldDefinition = {
+  name: 'shippingAvailable',
+  label: 'Shipping Available',
+  inputType: 'dropdown',
+  requirement: 'recommended',
+  dropdownOptions: ['Yes', 'No', 'Local Only'],
+};
+
+const IS_GRADED_FIELD: FieldDefinition = {
+  name: 'isGraded',
+  label: 'Is Graded',
+  inputType: 'dropdown',
+  requirement: 'required',
+  dropdownOptions: ['Yes', 'No'],
+  notes: 'If Yes, reveal grading fields. If No, user needs to select from Condition dropdown.',
+};
+
+const GRADING_COMPANY_FIELD: FieldDefinition = {
+  name: 'certificationCompany',
+  label: 'Grading Company',
+  inputType: 'dropdown',
+  requirement: 'conditional',
+  conditionalLogic: 'Is Graded = Yes',
+  notes: 'Will be filtered by category.',
+};
+
+const GRADE_FIELD: FieldDefinition = {
+  name: 'grade',
+  label: 'Grade',
+  inputType: 'text',
+  requirement: 'conditional',
+  conditionalLogic: 'Is Graded = Yes',
+};
+
+const CERTIFICATION_NUMBER_FIELD: FieldDefinition = {
+  name: 'certificationNumber',
+  label: 'Certification Number',
+  inputType: 'text',
+  requirement: 'conditional',
+  conditionalLogic: 'Is Graded = Yes',
+};
+
+// Grading companies by category
+export const GRADING_COMPANIES_BY_CATEGORY: Record<CollectibleCategory, string[]> = {
+  sports_cards: [
+    'PSA', 'BGS', 'SGC', 'CGC Cards', 'TAG Grading', 'HGA', 'Arena Club', 'Degree',
+    'ACE', 'ISA', 'GMA', 'Rare Edition', 'FCG', 'MNT', 'KSA', 'PGA', 'RCG',
+    'OnlyGraded', 'Diamond Service Grading', 'CGA Card Grading', 'TRCG', 'Pokegrade',
+    'Tree Frog', 'AP', 'PRO', 'GEM', 'GAI', 'PCI', 'WCG'
+  ],
+  comics: ['CGC Comics', 'CBCS', 'PGX Comics'],
+  coins: ['PCGS', 'NGC', 'ANACS', 'ICG', 'SEGS', 'SGS'],
+  stamps: ['PSE', 'ASG', 'PSAG'],
+  video_games: ['WATA Games (PSA Video Games)', 'CGC Video Games', 'VGA', 'CGC Home Video', 'IGS'],
+  movies: ['CGC Home Video', 'VHS Grading', 'IGS'],
+  autographs: [], // Autographs don't have grading companies for Signed Item
+  vintage_toys: ['AFA', 'CAS', 'UKG'],
+  disney_pins: [],
+  pokemon: [
+    'PSA', 'BGS', 'SGC', 'CGC Cards', 'TAG Grading', 'HGA', 'Arena Club', 'Degree',
+    'ACE', 'ISA', 'GMA', 'Rare Edition', 'FCG', 'MNT', 'KSA', 'PGA', 'RCG',
+    'OnlyGraded', 'Diamond Service Grading', 'CGA Card Grading', 'TRCG', 'Pokegrade',
+    'Tree Frog', 'AP', 'PRO', 'GEM', 'GAI', 'PCI', 'WCG'
+  ],
+};
+
+// Export category definitions (will be built dynamically from field_specifications.md)
+// For now, we'll export the structure
+export const CATEGORY_DEFINITIONS: Record<CollectibleCategory, CategoryDefinition> = {
+  sports_cards: {
+    name: 'sports_cards',
+    displayName: 'Sports Cards',
+    itemTypes: [],
+    gradingCompanies: GRADING_COMPANIES_BY_CATEGORY.sports_cards,
+  },
+  comics: {
+    name: 'comics',
+    displayName: 'Comics',
+    itemTypes: [],
+    gradingCompanies: GRADING_COMPANIES_BY_CATEGORY.comics,
+  },
+  coins: {
+    name: 'coins',
+    displayName: 'Coins',
+    itemTypes: [],
+    gradingCompanies: GRADING_COMPANIES_BY_CATEGORY.coins,
+  },
+  stamps: {
+    name: 'stamps',
+    displayName: 'Stamps',
+    itemTypes: [],
+    gradingCompanies: GRADING_COMPANIES_BY_CATEGORY.stamps,
+  },
+  video_games: {
+    name: 'video_games',
+    displayName: 'Video Games',
+    itemTypes: [],
+    gradingCompanies: GRADING_COMPANIES_BY_CATEGORY.video_games,
+  },
+  movies: {
+    name: 'movies',
+    displayName: 'Movies',
+    itemTypes: [],
+    gradingCompanies: GRADING_COMPANIES_BY_CATEGORY.movies,
+  },
+  autographs: {
+    name: 'autographs',
+    displayName: 'Autographs',
+    itemTypes: [],
+    gradingCompanies: GRADING_COMPANIES_BY_CATEGORY.autographs,
+  },
+  vintage_toys: {
+    name: 'vintage_toys',
+    displayName: 'Vintage Toys',
+    itemTypes: [],
+    gradingCompanies: GRADING_COMPANIES_BY_CATEGORY.vintage_toys,
+  },
+  disney_pins: {
+    name: 'disney_pins',
+    displayName: 'Disney Pins',
+    itemTypes: [],
+    gradingCompanies: GRADING_COMPANIES_BY_CATEGORY.disney_pins,
+  },
+  pokemon: {
+    name: 'pokemon',
+    displayName: 'Pokemon',
+    itemTypes: [],
+    gradingCompanies: GRADING_COMPANIES_BY_CATEGORY.pokemon,
+  },
+};
+
+// Export common fields for reuse
+export const COMMON_FIELDS = {
+  LISTING_TITLE_FIELD,
+  TRADE_VALUE_FIELD,
+  CONDITION_FIELD,
+  PHOTOS_FIELD,
+  DESCRIPTION_FIELD,
+  QUANTITY_FIELD,
+  SHIPPING_AVAILABLE_FIELD,
+  IS_GRADED_FIELD,
+  GRADING_COMPANY_FIELD,
+  GRADE_FIELD,
+  CERTIFICATION_NUMBER_FIELD,
+};
