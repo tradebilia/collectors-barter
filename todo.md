@@ -2687,3 +2687,8 @@ All 8 remaining filter optimization and caching items have been successfully imp
 - [x] Implemented dynamic section numbering based on Optional Fields visibility
 - [x] When Optional Fields is hidden, Shipping, Description, and Photos sections renumber automatically
 - [x] No gaps in numbering - sections always appear consecutive (1, 2, 3, 4, 5 or 1, 2, 3, 4 depending on visibility)
+
+
+## Add to Inventory Page - Fix Section Numbering Bug
+- [x] Fixed duplicate numbering - "Select Category and Item Type" is now 1, Required is 2, Recommended is 3, Optional is 4 (when visible)
+- [x] Corrected dynamic numbering for Shipping (5 or 4), Description (6 or 5), and Photos (7 or 6)
