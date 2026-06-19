@@ -251,7 +251,7 @@ export default function AddInventory() {
       </section>
 
       <div className="container mx-auto max-w-7xl px-4 py-12">
-        <form id="add-inventory-form" onSubmit={submitListing} className="grid grid-cols-4 gap-6 pr-96">
+        <form id="add-inventory-form" onSubmit={submitListing} className="grid grid-cols-1 gap-6">
           {/* Left Column (75%) - Form Content */}
           <div className="col-span-3 space-y-6">
             {/* Progress Indicator */}
@@ -363,13 +363,37 @@ export default function AddInventory() {
             </CollapsibleFormSection>
           </div>
 
-          {/* Right Column (25%) - Photo Upload Panel */}
-          <div className="col-span-1 fixed right-8 top-20 w-80 h-[calc(100vh-120px)] overflow-y-auto">
-            <div className="rounded-lg border border-white/20 bg-white/5 p-6 backdrop-blur h-full flex flex-col">
-              <h3 className="mb-4 text-lg font-semibold">📷 Photos</h3>
+          {/* Photo Upload Panel */}
+          <div className="w-full">
+            <div className="rounded-lg border border-white/20 bg-white/5 p-6 backdrop-blur">
+              <h3 className="mb-4 text-lg font-semibold">Photos</h3>
+
+              {/* Drag and Drop Area */}
+              <div
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  e.currentTarget.classList.add('bg-blue-500/20', 'border-blue-500');
+                }}
+                onDragLeave={(e) => {
+                  e.currentTarget.classList.remove('bg-blue-500/20', 'border-blue-500');
+                }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  e.currentTarget.classList.remove('bg-blue-500/20', 'border-blue-500');
+                  const files = Array.from(e.dataTransfer.files).filter((file) => file.type.startsWith('image/'));
+                  if (files.length > 0) {
+                    handlePhotos({ target: { files } } as any);
+                  }
+                }}
+                className="mb-4 flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-white/20 p-6 transition-colors hover:border-white/40"
+              >
+                <Upload className="mb-2 h-8 w-8 text-white/50" />
+                <p className="text-sm text-white/70">Drag and drop photos here</p>
+                <p className="text-xs text-white/50">or use the button below</p>
+              </div>
 
               {/* Photo Preview Grid */}
-              <div className="mb-4 space-y-2 flex-1">
+              <div className="mb-4 space-y-2">
                 {photos.length > 0 ? (
                   <div className="grid grid-cols-2 gap-2">
                     {photos.map((photo, index) => (
