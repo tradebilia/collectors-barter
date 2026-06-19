@@ -2870,3 +2870,8 @@ All 8 remaining filter optimization and caching items have been successfully imp
 
 - [x] Remove up/down chevron arrows from all field bundle section headers (Required Fields, Recommended Fields, Optional Fields, Shipping, Description, Photos)
 - [x] Remove up/down spinner arrows from all number input fields (Quantity, Year, Trade Value, etc.) using CSS
+
+
+## Conditional Field Section Placement Fix
+
+- [x] Fix "Signatures" field to appear in Recommended Fields section (same as parent "Signed" field) instead of Required Fields section

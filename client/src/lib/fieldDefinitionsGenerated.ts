@@ -812,8 +812,8 @@ export const COMICS_SINGLE_COMIC_FIELDS: FieldDefinition[] = [
     name: 'signatures',
     label: 'Signatures',
     inputType: 'textarea',
-    requirement: 'optional',
-    conditionalLogic: 'numberOfSignatures > 0',
+    requirement: 'recommended',
+    conditionalLogic: 'Signed = Yes',
   },
 ];
 
