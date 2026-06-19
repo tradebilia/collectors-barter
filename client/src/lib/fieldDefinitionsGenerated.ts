@@ -773,6 +773,21 @@ export const COMICS_SINGLE_COMIC_FIELDS: FieldDefinition[] = [
     requirement: 'conditional',
     conditionalLogic: 'Is Graded = Yes',
   },
+  {
+    name: 'numberOfSignatures',
+    label: '# of Signatures',
+    inputType: 'dropdown',
+    requirement: 'conditional',
+    dropdownOptions: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'],
+    conditionalLogic: 'Signed = Yes',
+  },
+  {
+    name: 'signatures',
+    label: 'Signatures',
+    inputType: 'textarea',
+    requirement: 'conditional',
+    conditionalLogic: 'numberOfSignatures > 0',
+  },
 ];
 
 // Disney Pins - Collection/Lot

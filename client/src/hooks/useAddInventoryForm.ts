@@ -37,6 +37,7 @@ interface UseAddInventoryFormReturn {
   getCompletedRequiredFieldsCount: () => number;
   getFieldsByRequirement: (requirement: string) => FieldDefinition[];
   shouldShowField: (field: FieldDefinition) => boolean;
+  getItemDetails: () => Record<string, string>;
 }
 
 export const useAddInventoryForm = (): UseAddInventoryFormReturn => {
@@ -64,7 +65,36 @@ export const useAddInventoryForm = (): UseAddInventoryFormReturn => {
     (condition: string | undefined): boolean => {
       if (!condition) return true;
 
-      // Parse condition like "Is Graded = Yes"
+      // Handle numeric comparisons like "numberOfSignatures > 0"
+      const numericComparisonMatch = condition.match(/^([a-zA-Z]+)\s*([><=!]+)\s*(.+)$/);
+      if (numericComparisonMatch) {
+        const [, fieldName, operator, expectedValue] = numericComparisonMatch;
+        // Convert field name to camelCase if needed
+        const fieldKey = fieldName
+          .split(' ')
+          .map((word, index) => {
+            if (index === 0) return word.toLowerCase();
+            return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+          })
+          .join('');
+
+        const actualValue = formData[fieldKey];
+        const actualNum = parseInt(actualValue) || 0;
+        const expectedNum = parseInt(expectedValue) || 0;
+
+        let result = false;
+        if (operator === '>') result = actualNum > expectedNum;
+        else if (operator === '<') result = actualNum < expectedNum;
+        else if (operator === '>=') result = actualNum >= expectedNum;
+        else if (operator === '<=') result = actualNum <= expectedNum;
+        else if (operator === '=' || operator === '==') result = actualNum === expectedNum;
+        else if (operator === '!=' || operator === '<>') result = actualNum !== expectedNum;
+
+        console.log(`[Conditional] Numeric: ${condition} | fieldKey: ${fieldKey} | actualValue: ${actualValue} (${actualNum}) | operator: ${operator} | expectedValue: ${expectedValue} (${expectedNum}) | result: ${result}`);
+        return result;
+      }
+
+      // Handle equality comparisons like "Is Graded = Yes"
       const [fieldName, expectedValue] = condition.split('=').map((s) => s.trim());
       // Convert "Is Graded" to "isGraded" (camelCase)
       const fieldKey = fieldName
@@ -76,7 +106,9 @@ export const useAddInventoryForm = (): UseAddInventoryFormReturn => {
         .join('');
 
       const actualValue = formData[fieldKey];
-      return actualValue === expectedValue;
+      const result = actualValue === expectedValue;
+      console.log(`[Conditional] Equality: ${condition} | fieldKey: ${fieldKey} | actualValue: ${actualValue} | expectedValue: ${expectedValue} | result: ${result}`);
+      return result;
     },
     [formData]
   );
@@ -229,6 +261,38 @@ export const useAddInventoryForm = (): UseAddInventoryFormReturn => {
     return Object.keys(newErrors).length === 0;
   }, [formData, currentFields, shouldShowField]);
 
+  // Generate itemDetails object from form data
+  const getItemDetails = useCallback((): Record<string, string> => {
+    const itemDetails: Record<string, string> = {};
+    
+    // Exclude these fields from itemDetails as they have their own database columns
+    const excludedFields = new Set([
+      'category',
+      'itemType',
+      'title',
+      'listingTitle',
+      'description',
+      'estimatedValue',
+      'tradeValue',
+      'shippingAvailable',
+      'photos',
+    ]);
+    
+    // Add all form data fields to itemDetails except excluded ones
+    Object.entries(formData).forEach(([key, value]) => {
+      if (!excludedFields.has(key) && value !== undefined && value !== null && value !== '') {
+        // Convert arrays (like signatures) to JSON string
+        if (Array.isArray(value)) {
+          itemDetails[key] = JSON.stringify(value);
+        } else {
+          itemDetails[key] = String(value);
+        }
+      }
+    });
+    
+    return itemDetails;
+  }, [formData]);
+
   return {
     formData,
     errors,
@@ -243,6 +307,7 @@ export const useAddInventoryForm = (): UseAddInventoryFormReturn => {
     getCompletedRequiredFieldsCount,
     getFieldsByRequirement,
     shouldShowField,
+    getItemDetails,
   };
 };
 
