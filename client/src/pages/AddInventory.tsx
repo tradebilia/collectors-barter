@@ -335,6 +335,7 @@ export default function AddInventory() {
       await createListingMutation.mutateAsync({
         title: draft.title,
         category: draft.category,
+        itemType: "single_card", // TODO: Replace with actual itemType from form
         condition: mapGradeToCondition(draft.grade),
         description: descriptionSections,
         estimatedValue: draft.value ? parseFloat(draft.value) : 0,

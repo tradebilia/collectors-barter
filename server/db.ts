@@ -1628,6 +1628,7 @@ export async function createListing(
   input: {
     title: string;
     category: (typeof collectibleCategories)[number];
+    itemType: string;
     condition: (typeof itemConditions)[number];
     description: string;
     estimatedValue?: number;
@@ -1644,6 +1645,7 @@ export async function createListing(
     ownerId: user.id,
     title: input.title.trim(),
     category: input.category,
+    itemType: input.itemType,
     condition: input.condition,
     description: input.description.trim(),
     estimatedValue: input.estimatedValue ? String(input.estimatedValue) : null,

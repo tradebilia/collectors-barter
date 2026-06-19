@@ -549,6 +549,7 @@ export const appRouter = router({
         z.object({
           title: z.string().min(3).max(160),
           category: z.enum(collectibleCategories),
+          itemType: z.string().min(1).max(50),
           condition: z.enum(itemConditions),
           description: z.string().min(20).max(4000),
           estimatedValue: z.number().nonnegative().optional(),
@@ -594,6 +595,7 @@ export const appRouter = router({
           {
             title: input.title,
             category: input.category,
+            itemType: input.itemType,
             condition: input.condition,
             description: input.description,
             estimatedValue: input.estimatedValue,

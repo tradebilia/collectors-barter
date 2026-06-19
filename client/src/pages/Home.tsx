@@ -469,6 +469,7 @@ export default function Home() {
     event.preventDefault();
     await createListingMutation.mutateAsync({
       ...listingDraft,
+      itemType: "single_card", // TODO: Replace with actual itemType from form
       photos: listingPhotos.map(({ previewUrl, ...photo }) => photo),
     });
   };

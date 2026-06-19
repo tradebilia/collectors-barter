@@ -55,6 +55,19 @@ export const collectibleCategories = [
   "disney_pins",
 ] as const;
 
+export const itemTypesByCategory = {
+  sports_cards: ["single_card", "unopened_product", "set", "collection_lot"],
+  comics: ["single_comic", "collection_lot"],
+  pokemon: ["single_card", "unopened_product", "set", "collection_lot"],
+  video_games: ["game", "console", "accessory", "collection_lot"],
+  stamps: ["single_stamp", "stamp_set_sheet", "collection_lot"],
+  coins: ["single_coin", "coin_set", "collection_lot"],
+  vintage_toys: ["action_figure_doll", "vehicle", "playset", "board_game_puzzle", "plush_stuffed_toy", "electronic_toy", "model_kit", "die_cast_car", "collection_lot"],
+  movies: ["single_movie", "collection_lot"],
+  autographs: ["signed_item", "collection_lot"],
+  disney_pins: ["single_pin", "collection_lot"],
+} as const;
+
 export const itemConditions = [
   "mint",
   "near_mint",
@@ -142,6 +155,7 @@ export const listings = mysqlTable(
     ownerId: int("ownerId").notNull().references(() => users.id),
     title: varchar("title", { length: 160 }).notNull(),
     category: mysqlEnum("category", collectibleCategories).notNull(),
+    itemType: varchar("itemType", { length: 50 }).notNull(),
     condition: mysqlEnum("condition", itemConditions).notNull(),
     grade: mysqlEnum("grade", gradeValues).default("ungraded").notNull(),
     certificationCompany: varchar("certificationCompany", { length: 50 }),
@@ -160,6 +174,7 @@ export const listings = mysqlTable(
     categoryIdx: index("listings_category_idx").on(table.category),
     conditionIdx: index("listings_condition_idx").on(table.condition),
     statusIdx: index("listings_status_idx").on(table.status),
+    itemTypeIdx: index("listings_itemType_idx").on(table.itemType),
     fullTextIdx: index("listings_fulltext_idx").on(table.title, table.description, table.certificationCompany),
   }),
 );
