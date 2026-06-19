@@ -2866,6 +2866,7 @@ All 8 remaining filter optimization and caching items have been successfully imp
 - [x] Verify conditional fields (Grading Company, Grade, Certification Number) are hidden until parent field is activated
 - [x] Test conditional fields appear when parent field condition is met
 
-## UI Polish - Remove Chevron Arrows
+## UI Polish - Remove Chevron Arrows and Number Spinners
 
 - [x] Remove up/down chevron arrows from all field bundle section headers (Required Fields, Recommended Fields, Optional Fields, Shipping, Description, Photos)
+- [x] Remove up/down spinner arrows from all number input fields (Quantity, Year, Trade Value, etc.) using CSS
