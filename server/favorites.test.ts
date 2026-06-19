@@ -33,6 +33,7 @@ describe("Favorites and View Tracking", () => {
       ownerId: testUserId,
       title: "Test Listing",
       category: "comics",
+      itemType: "single_comic",
       condition: "mint",
       description: "Test description",
       status: "active",

@@ -1,116 +1,26 @@
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { TopBar } from "@/components/TopBar";
-import { CategoryBar } from "@/components/CategoryBar";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
-import { Loader2, Upload } from "lucide-react";
-import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Upload, Loader2 } from "lucide-react";
+import { ChangeEvent, FormEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useParams, useLocation } from "wouter";
-import type { TradebiliaCategorySlug } from "@/lib/tradebilia";
-import { getGradingCompaniesForCategory, getValidGradesForCompany } from "@/../../shared/gradingCompanyConfig";
+import { useAddInventoryForm } from "@/hooks/useAddInventoryForm";
+import { CategoryItemTypeSelector } from "@/components/CategoryItemTypeSelector";
+import { FormProgressIndicator } from "@/components/FormProgressIndicator";
+import { CollapsibleFormSection } from "@/components/CollapsibleFormSection";
+import { DynamicFieldRenderer } from "@/components/DynamicFieldRenderer";
+import type { CollectibleCategory, FieldDefinition } from "@/lib/formFieldDefinitions";
 
 const TRADEBILIA_LOGO_URL = "/manus-storage/tradebilia-logo_c676d640.svg";
-const DRAFT_STORAGE_KEY = "tradebilia-add-inventory-draft";
-
-const categoryLinks = [
-  { value: "comics", label: "Comics" },
-  { value: "sports_cards", label: "Sports Cards" },
-  { value: "vintage_toys", label: "Vintage Toys" },
-  { value: "video_games", label: "Video Games" },
-  { value: "stamps", label: "Stamps" },
-  { value: "coins", label: "Coins" },
-  { value: "pokemon", label: "Pokemon" },
-  { value: "movies", label: "Movies" },
-  { value: "autographs", label: "Autographs" },
-  { value: "disney_pins", label: "Disney Pins" },
-] as const;
 
 type UploadedImage = {
   name: string;
   type: string;
   contentBase64: string;
   previewUrl: string;
-};
-
-type ListingCategory = (typeof categoryLinks)[number]["value"];
-
-// Category-specific fields based on filter presets
-const categoryFieldPresets: Record<ListingCategory, Array<{ name: string; label: string; type: "text" | "select"; placeholder: string; selectOptions?: string[] }>> = {
-  comics: [
-    { name: "issueNumber", label: "Issue Number", type: "text", placeholder: "#1, #100, #50" },
-    { name: "signed", label: "Signed", type: "select", placeholder: "Select option", selectOptions: ["Yes", "No"] },
-    { name: "facsimile", label: "Facsimile", type: "select", placeholder: "Select option", selectOptions: ["Yes", "No"] },
-  ],
-  sports_cards: [
-    { name: "manufacturer", label: "Manufacturer", type: "text", placeholder: "Topps, Fleer, Upper Deck" },
-    { name: "sport", label: "Sport", type: "select", placeholder: "Select a sport", selectOptions: ["Baseball", "Basketball", "Football", "Hockey", "Soccer", "Tennis", "Golf", "Boxing", "MMA", "Wrestling", "Track & Field", "Swimming", "Cycling", "Motorsports", "Other"] },
-    { name: "year", label: "Year / Era", type: "text", placeholder: "1950s, 1986, junk wax, ultra-modern" },
-    { name: "team", label: "Team", type: "text", placeholder: "Yankees, Bulls, Cowboys" },
-    { name: "set", label: "Set / Series", type: "text", placeholder: "Topps Chrome, Prizm, Fleer" },
-    { name: "rookie", label: "Rookie", type: "select", placeholder: "Select option", selectOptions: ["Yes", "No"] },
-    { name: "autographed", label: "Autographed", type: "select", placeholder: "Select option", selectOptions: ["Yes", "No"] },
-  ],
-  vintage_toys: [
-    { name: "name", label: "Name", type: "text", placeholder: "Barbie, G.I. Joe, Star Wars" },
-    { name: "genre", label: "Genre", type: "select", placeholder: "Action figure, doll, vehicle", selectOptions: ["Action figure", "Doll", "Vehicle", "Playset", "Other"] },
-    { name: "franchise", label: "Franchise", type: "text", placeholder: "Star Wars, TMNT" },
-  ],
-  video_games: [
-    { name: "system", label: "System", type: "select", placeholder: "NES, SNES, Sega", selectOptions: ["NES", "SNES", "Sega", "PlayStation", "Xbox", "Nintendo 64", "GameCube", "Wii", "Switch", "Other"] },
-    { name: "region", label: "Region", type: "select", placeholder: "United States, Japan", selectOptions: ["United States", "Japan", "Europe", "PAL", "NTSC", "Other"] },
-  ],
-  stamps: [
-    { name: "year", label: "Year", type: "text", placeholder: "1918" },
-    { name: "issuer", label: "Issuer", type: "text", placeholder: "Post office or monarchy" },
-    { name: "country", label: "Country", type: "select", placeholder: "United States, Bermuda", selectOptions: ["United States", "United Kingdom", "Canada", "France", "Germany", "Japan", "Other"] },
-  ],
-  coins: [
-    { name: "year", label: "Year", type: "text", placeholder: "1909, 1933, 1794" },
-    { name: "denomination", label: "Denomination", type: "select", placeholder: "Cent, dollar, eagle", selectOptions: ["Penny", "Nickel", "Dime", "Quarter", "Half Dollar", "Dollar", "Eagle", "Other"] },
-    { name: "mintMark", label: "Mint Mark", type: "text", placeholder: "S, D, CC" },
-  ],
-  pokemon: [
-    { name: "pokemon", label: "Pokémon", type: "text", placeholder: "Charizard, Pikachu, Mew" },
-    { name: "set", label: "Set", type: "text", placeholder: "Base Set, Neo, Evolving Skies" },
-    { name: "rarity", label: "Rarity", type: "select", placeholder: "Holo, Secret Rare", selectOptions: ["Common", "Uncommon", "Rare", "Holo Rare", "Secret Rare", "Ultra Rare", "Other"] },
-  ],
-  movies: [
-    { name: "format", label: "Format", type: "select", placeholder: "Poster, prop, lobby card", selectOptions: ["Poster", "Prop", "Lobby Card", "Still", "Promotional Material", "Other"] },
-    { name: "franchise", label: "Franchise", type: "text", placeholder: "Marvel, Disney, horror" },
-  ],
-  autographs: [
-    { name: "signer", label: "Signer", type: "text", placeholder: "Athlete, actor, creator" },
-    { name: "medium", label: "Medium", type: "select", placeholder: "Photo, comic, baseball", selectOptions: ["Photo", "Comic", "Baseball", "Jersey", "Helmet", "Bat", "Memorabilia", "Other"] },
-    { name: "franchise", label: "Franchise", type: "text", placeholder: "Marvel, MLB, Disney" },
-  ],
-  disney_pins: [
-    { name: "pinName", label: "Pin Name", type: "text", placeholder: "LE park release, character pin" },
-    { name: "parkOrEvent", label: "Park or Event", type: "text", placeholder: "D23, EPCOT, Disneyland" },
-    { name: "series", label: "Series", type: "select", placeholder: "Character, attraction", selectOptions: ["Character", "Attraction", "Movie", "Park", "Event", "Limited Edition", "Other"] },
-    { name: "edition", label: "Edition", type: "text", placeholder: "LE 300, LE 1000" },
-  ],
-};
-
-// Map ListingCategory to CollectibleCategory for grading company lookup
-const mapCategoryToGradingCategory = (category: ListingCategory): "comics" | "sports_cards" | "vintage_toys" | "video_games" | "stamps" | "coins" | "pokemon" | "movies" | "autographs" | "disney_pins" => {
-  return category as "comics" | "sports_cards" | "vintage_toys" | "video_games" | "stamps" | "coins" | "pokemon" | "movies" | "autographs" | "disney_pins";
-};
-
-// Map grade to condition
-const mapGradeToCondition = (grade: string): "mint" | "near_mint" | "very_good" | "good" | "fair" | "poor" => {
-  const gradeNum = parseFloat(grade);
-  if (gradeNum >= 9) return "mint";
-  if (gradeNum >= 8) return "near_mint";
-  if (gradeNum >= 7) return "very_good";
-  if (gradeNum >= 5) return "good";
-  if (gradeNum >= 3) return "fair";
-  return "poor";
 };
 
 // Read files as base64
@@ -140,32 +50,25 @@ const readFiles = async (fileList: FileList | null): Promise<UploadedImage[]> =>
 
 export default function AddInventory() {
   const { isAuthenticated } = useAuth();
-  const [draft, setDraft] = useState<{
-    category: ListingCategory;
-    title: string;
-    value: string;
-    graderCompany: string;
-    certificationNumber: string;
-    grade: string;
-    categoryFields: Record<string, string>;
-    additionalNotes: string;
-  }>({
-    category: "comics",
-    title: "",
-    value: "",
-    graderCompany: "CGC Cards",
-    certificationNumber: "",
-    grade: "9.0",
-    categoryFields: {},
-    additionalNotes: "",
-  });
-
   const [photos, setPhotos] = useState<UploadedImage[]>([]);
   const [primaryPhotoIndex, setPrimaryPhotoIndex] = useState<number>(0);
   const params = useParams<{ listingId?: string }>();
   const [, navigate] = useLocation();
   const isEditMode = !!params.listingId;
-  
+
+  const {
+    formData,
+    setCategory,
+    setItemType,
+    updateField,
+    updateOtherField,
+    validateForm,
+    getRequiredFieldsCount,
+    getCompletedRequiredFieldsCount,
+    shouldShowField,
+    currentFields,
+  } = useAddInventoryForm();
+
   const createListingMutation = trpc.market.createListing.useMutation();
   const saveDraftMutation = trpc.market.saveDraft.useMutation();
   const getListingDetailQuery = trpc.market.listingDetail.useQuery(
@@ -174,68 +77,34 @@ export default function AddInventory() {
   );
   const updateListingMutation = trpc.market.updateListing.useMutation();
 
-  // Note: Draft auto-loading removed to prevent form data persistence on page refresh.
-  // This prevents accidental duplicate submissions or mistakes from previous entries.
-  // Users can manually save drafts using the "Save Draft" button if they want to continue later.
-  // useEffect(() => {
-  //   const saved = localStorage.getItem(DRAFT_STORAGE_KEY);
-  //   if (saved) {
-  //     try {
-  //       const { draft: savedDraft, photos: savedPhotos } = JSON.parse(saved);
-  //       setDraft(savedDraft);
-  //       setPhotos(savedPhotos);
-  //     } catch (e) {
-  //       console.error("Failed to load draft:", e);
-  //     }
-  //   }
-  // }, []);
-
   // Load existing listing data when in edit mode
   useEffect(() => {
     if (isEditMode && getListingDetailQuery.data?.listing) {
       const listing = getListingDetailQuery.data.listing;
-      
-      // Parse description to extract grading info
-      const descriptionLines = listing.description.split('\n');
-      const gradingInfo: Record<string, string> = {};
-      let graderCompany = 'Raw';
-      let certificationNumber = '';
-      let grade = '9.0';
-      let additionalNotes = '';
-      
-      descriptionLines.forEach(line => {
-        if (line.startsWith('Grading Company: ')) {
-          graderCompany = line.replace('Grading Company: ', '');
-        } else if (line.startsWith('Certification Number: ')) {
-          certificationNumber = line.replace('Certification Number: ', '');
-        } else if (line.startsWith('Grade: ')) {
-          grade = line.replace('Grade: ', '');
-        } else if (line.startsWith('Additional Notes: ')) {
-          additionalNotes = line.replace('Additional Notes: ', '');
-        } else if (line.includes(': ')) {
-          const [key, value] = line.split(': ', 2);
-          gradingInfo[key] = value;
-        }
-      });
-      
-      // Populate form with listing data
-      setDraft({
-        category: listing.category as ListingCategory,
-        title: listing.title,
-        value: listing.estimatedValue ? String(listing.estimatedValue) : '',
-        graderCompany,
-        certificationNumber,
-        grade,
-        categoryFields: gradingInfo,
-        additionalNotes,
-      });
-      
+      if (listing.category) {
+        setCategory(listing.category as CollectibleCategory);
+      }
+      const itemType = (listing as any).itemType;
+      if (itemType) {
+        setItemType(itemType);
+      }
+      updateField("title", listing.title);
+      updateField("estimatedValue", String(listing.estimatedValue || ""));
+      updateField("description", listing.description);
+
+      // Load item details
+      if (listing.itemDetails && typeof listing.itemDetails === "object") {
+        Object.entries(listing.itemDetails).forEach(([key, value]) => {
+          updateField(key, String(value || ""));
+        });
+      }
+
       // Load existing photos
       if (listing.photos && listing.photos.length > 0) {
         const existingPhotos: UploadedImage[] = listing.photos.map(photo => ({
-          name: photo.altText || 'photo',
-          type: 'image/jpeg',
-          contentBase64: '', // Empty for existing photos
+          name: photo.altText || "photo",
+          type: "image/jpeg",
+          contentBase64: "",
           previewUrl: photo.imageUrl,
         }));
         setPhotos(existingPhotos);
@@ -243,25 +112,8 @@ export default function AddInventory() {
     }
   }, [isEditMode, getListingDetailQuery.data]);
 
-  const primaryPhoto = useMemo(() => photos[0] ?? null, [photos]);
-  const currentCategoryFields = categoryFieldPresets[draft.category] || [];
-  
-  // Get grading companies for current category
-  const currentGradingCompanies = useMemo(() => {
-    const gradingCategory = mapCategoryToGradingCategory(draft.category);
-    const companies = getGradingCompaniesForCategory(gradingCategory);
-    return companies.map(c => c.name);
-  }, [draft.category]);
-  
-  // Get valid grades for currently selected grading company
-  const currentValidGrades = useMemo(() => {
-    return getValidGradesForCompany(draft.graderCompany);
-  }, [draft.graderCompany]);
-
   const handlePhotos = async (event: ChangeEvent<HTMLInputElement>) => {
     const nextPhotos = await readFiles(event.target.files);
-    // In edit mode, merge new photos with existing ones
-    // In create mode, replace all photos
     if (isEditMode) {
       setPhotos([...photos, ...nextPhotos]);
     } else {
@@ -271,15 +123,19 @@ export default function AddInventory() {
 
   const handleSaveDraft = async () => {
     try {
+      if (!formData.category) {
+        toast.error("Please select a category before saving.");
+        return;
+      }
       await saveDraftMutation.mutateAsync({
-        title: draft.title,
-        category: draft.category,
-        grade: draft.grade as "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" | "ungraded" | "1.5" | "2.5" | "3.5" | "4.5" | "5.5" | "6.5" | "7.5" | "8.5" | "9.5" | "10",
-        graderCompany: draft.graderCompany,
-        certificationNumber: draft.certificationNumber,
-        estimatedValue: draft.value ? parseFloat(draft.value) : 0,
-        categoryFields: draft.categoryFields,
-        additionalNotes: draft.additionalNotes,
+        title: formData.title,
+        category: formData.category,
+        grade: formData.grade as any,
+        graderCompany: formData.gradingCompany || "Raw",
+        certificationNumber: formData.certificationNumber || "",
+        estimatedValue: formData.estimatedValue ? parseFloat(formData.estimatedValue) : 0,
+        categoryFields: formData.itemDetails,
+        additionalNotes: formData.description,
         photos: photos,
       });
       toast.success("Inventory draft saved.");
@@ -292,22 +148,18 @@ export default function AddInventory() {
   const submitListing = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (!draft.title.trim()) {
-      toast.error("Please enter an item title.");
+    // Validate required fields
+    const isValid = validateForm();
+    if (!isValid) {
+      toast.error("Please fill in all required fields.");
       return;
     }
 
-    const descriptionSections = [
-      `Grading Company: ${draft.graderCompany}`,
-      draft.certificationNumber ? `Certification Number: ${draft.certificationNumber}` : null,
-      `Grade: ${draft.grade}`,
-      ...Object.entries(draft.categoryFields)
-        .filter(([, value]) => value?.trim())
-        .map(([key, value]) => `${key}: ${value}`),
-      draft.additionalNotes ? `Additional Notes: ${draft.additionalNotes}` : null,
-    ]
-      .filter(Boolean)
-      .join("\n");
+    // Validate photos
+    if (photos.length === 0) {
+      toast.error("Please upload at least one photo.");
+      return;
+    }
 
     // Reorder photos so the selected primary image is first
     const reorderedPhotos = photos.map(({ previewUrl, ...photo }) => photo);
@@ -317,54 +169,43 @@ export default function AddInventory() {
     }
 
     if (isEditMode && params.listingId) {
-      // In edit mode, only send newly uploaded photos (those with contentBase64)
       const newPhotos = reorderedPhotos.filter(p => p.contentBase64);
-      await updateListingMutation.mutateAsync({
-        listingId: parseInt(params.listingId),
-        title: draft.title,
-        category: draft.category,
-        condition: mapGradeToCondition(draft.grade),
-        description: descriptionSections,
-        estimatedValue: draft.value ? parseFloat(draft.value) : 0,
-        photos: newPhotos,
-        itemDetails: draft.categoryFields,
-      });
+      if (formData.category) {
+        await updateListingMutation.mutateAsync({
+          listingId: parseInt(params.listingId),
+          title: formData.title,
+          category: formData.category,
+          condition: "mint", // TODO: Map from grade
+          description: formData.description,
+          estimatedValue: formData.estimatedValue ? parseFloat(formData.estimatedValue) : 0,
+          photos: newPhotos,
+          itemDetails: formData.itemDetails,
+        });
+      } else {
+        toast.error("Please select a category before updating.");
+        return;
+      }
       toast.success("Listing updated successfully!");
       navigate("/inventory");
-    } else {
+    } else if (formData.category) {
       await createListingMutation.mutateAsync({
-        title: draft.title,
-        category: draft.category,
-        itemType: "single_card", // TODO: Replace with actual itemType from form
-        condition: mapGradeToCondition(draft.grade),
-        description: descriptionSections,
-        estimatedValue: draft.value ? parseFloat(draft.value) : 0,
+        title: formData.title,
+        category: formData.category,
+        itemType: formData.itemType,
+        condition: "mint", // TODO: Map from grade
+        description: formData.description,
+        estimatedValue: formData.estimatedValue ? parseFloat(formData.estimatedValue) : 0,
         photos: reorderedPhotos,
-        itemDetails: draft.categoryFields,
-        certificationCompany: draft.graderCompany !== 'Raw' ? draft.graderCompany : undefined,
-        grade: draft.grade !== 'ungraded' ? draft.grade : undefined,
+        itemDetails: formData.itemDetails,
+        certificationCompany: formData.gradingCompany !== "Raw" ? formData.gradingCompany : undefined,
+        grade: formData.grade !== "ungraded" ? formData.grade : undefined,
       });
+    } else {
+      toast.error("Please select a category before submitting.");
+      return;
       toast.success("Listing created successfully!");
+      navigate("/inventory");
     }
-    
-    // Clear the draft after successful submission
-    localStorage.removeItem(DRAFT_STORAGE_KEY);
-    
-    // Reset form to initial state
-    setDraft({
-      category: "comics",
-      title: "",
-      value: "",
-      graderCompany: "CGC Cards",
-      certificationNumber: "",
-      grade: "9.0",
-      categoryFields: {},
-      additionalNotes: "",
-    });
-    setPhotos([]);
-    setPrimaryPhotoIndex(0);
-    
-    toast.success("Item added to your inventory!");
   };
 
   if (!isAuthenticated) {
@@ -384,17 +225,24 @@ export default function AddInventory() {
     );
   }
 
+  const requiredFieldsCount = getRequiredFieldsCount();
+  const filledRequiredFieldsCount = getCompletedRequiredFieldsCount();
+  const allFields = currentFields;
+
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,#1c2468_0%,#0b0a22_65%)] text-white">
       <TopBar logoUrl={TRADEBILIA_LOGO_URL} searchPlaceholder="Search..." />
 
       <section className="relative w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden bg-[#00143A] text-white">
-        <div className="absolute inset-0 opacity-20" style={{
-          backgroundImage: 'url(/manus-storage/Sportscardwallpaper_a86b605b.webp)',
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundRepeat: 'no-repeat'
-        }} />
+        <div
+          className="absolute inset-0 opacity-20"
+          style={{
+            backgroundImage: "url(/manus-storage/Sportscardwallpaper_a86b605b.webp)",
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            backgroundRepeat: "no-repeat",
+          }}
+        />
         <div className="container relative flex h-64 items-center justify-center py-0 sm:h-72 sm:py-0 lg:h-80 lg:py-0">
           <div className="flex w-full max-w-6xl items-center justify-center -ml-32">
             <img src="/manus-storage/Add_To_Your_Inventory_e01ed84b.svg" alt="Add To Your Inventory" className="h-auto w-full" />
@@ -402,285 +250,175 @@ export default function AddInventory() {
         </div>
       </section>
 
-      <CategoryBar />
+      <div className="container mx-auto max-w-7xl px-4 py-12">
+        <form id="add-inventory-form" onSubmit={submitListing} className="grid grid-cols-4 gap-6">
+          {/* Left Column (75%) - Form Content */}
+          <div className="col-span-3 space-y-6">
+            {/* Progress Indicator */}
+            <FormProgressIndicator completedRequiredFields={filledRequiredFieldsCount} totalRequiredFields={requiredFieldsCount} />
 
-      <main className="px-4 py-10 lg:px-8">
-        <form className="mx-auto max-w-7xl" onSubmit={submitListing}>
-          {/* Required Fields Note */}
-          <div className="mt-6 rounded-lg border border-blue-500/30 bg-blue-500/10 p-4 text-sm text-blue-100">
-            <p><span className="font-semibold text-blue-300">*</span> Required Field</p>
+            {/* Category & Item Type Selection */}
+            <CategoryItemTypeSelector
+              selectedCategory={formData.category}
+              selectedItemType={formData.itemType}
+              onCategoryChange={setCategory}
+              onItemTypeChange={setItemType}
+            />
+
+            {/* Required Fields Section */}
+            <CollapsibleFormSection title="📋 Required Fields" defaultExpanded={true} fieldCount={allFields.filter((f: FieldDefinition) => f.requirement === "required").length}>
+              <div className="space-y-4">
+                {allFields
+                  .filter((f: FieldDefinition) => f.requirement === "required" && shouldShowField(f))
+                  .map((field: FieldDefinition) => (
+                    <DynamicFieldRenderer
+                      key={field.name}
+                      field={field}
+                      value={formData[field.name as keyof typeof formData] || ""}
+                      onChange={(value) => updateField(field.name, value)}
+                      onOtherChange={(value) => updateOtherField(field.name, value)}
+                    />
+                  ))}
+              </div>
+            </CollapsibleFormSection>
+
+            {/* Recommended Fields Section */}
+            <CollapsibleFormSection title="⭐ Recommended Fields" defaultExpanded={false} fieldCount={allFields.filter((f: FieldDefinition) => f.requirement === "recommended").length}>
+              <div className="space-y-4">
+                {allFields
+                  .filter((f: FieldDefinition) => f.requirement === "recommended" && shouldShowField(f))
+                  .map((field: FieldDefinition) => (
+                    <DynamicFieldRenderer
+                      key={field.name}
+                      field={field}
+                      value={formData[field.name as keyof typeof formData] || ""}
+                      onChange={(value) => updateField(field.name, value)}
+                      onOtherChange={(value) => updateOtherField(field.name, value)}
+                    />
+                  ))}
+              </div>
+            </CollapsibleFormSection>
+
+            {/* Optional Fields Section */}
+            <CollapsibleFormSection title="✨ Optional Fields" defaultExpanded={false} fieldCount={allFields.filter((f: FieldDefinition) => f.requirement === "optional").length}>
+              <div className="space-y-4">
+                {allFields
+                  .filter((f: FieldDefinition) => f.requirement === "optional" && shouldShowField(f))
+                  .map((field: FieldDefinition) => (
+                    <DynamicFieldRenderer
+                      key={field.name}
+                      field={field}
+                      value={formData[field.name as keyof typeof formData] || ""}
+                      onChange={(value) => updateField(field.name, value)}
+                      onOtherChange={(value) => updateOtherField(field.name, value)}
+                    />
+                  ))}
+              </div>
+            </CollapsibleFormSection>
+
+            {/* Shipping & Quantity Section */}
+            <CollapsibleFormSection title="📦 Shipping & Quantity" defaultExpanded={false} fieldCount={2}>
+              <div className="space-y-4">
+                <DynamicFieldRenderer
+                  field={{
+                    name: "quantity",
+                    label: "Quantity",
+                    inputType: "text",
+                    requirement: "required",
+                  }}
+                  value={formData.quantity || "1"}
+                  onChange={(value) => updateField("quantity", value)}
+                  onOtherChange={() => {}}
+                />
+                <DynamicFieldRenderer
+                  field={{
+                    name: "shippingAvailable",
+                    label: "Shipping Available",
+                    inputType: "dropdown",
+                    requirement: "required",
+                    dropdownOptions: ["Yes", "No"],
+                  }}
+                  value={formData.shippingAvailable || "Yes"}
+                  onChange={(value) => updateField("shippingAvailable", value)}
+                  onOtherChange={() => {}}
+                />
+              </div>
+            </CollapsibleFormSection>
+
+            {/* Description Section */}
+            <CollapsibleFormSection title="📝 Description" defaultExpanded={false} fieldCount={1}>
+              <DynamicFieldRenderer
+                field={{
+                  name: "description",
+                  label: "Description",
+                  inputType: "textarea",
+                  requirement: "required",
+                }}
+                value={formData.description || ""}
+                onChange={(value) => updateField("description", value)}
+                onOtherChange={() => {}}
+              />
+            </CollapsibleFormSection>
           </div>
 
-          {/* Main content grid with image on right */}
-          <div className="mt-10 grid gap-10 grid-cols-1 lg:grid-cols-[1fr_320px] lg:auto-rows-max">
-            {/* Left side - Form fields */}
-            <div className="space-y-6">
-              {/* 1. Category Selection */}
-              <div className="rounded-2xl border border-green-500/20 bg-gradient-to-br from-green-500/10 to-green-500/5 p-6 shadow-lg">
-                <h3 className="mb-4 text-lg font-semibold uppercase tracking-[0.1em] text-white/95">1. Select Category</h3>
-                <div className="space-y-3">
-                  <Label className="text-sm uppercase tracking-[0.08em] text-white/70">Category *</Label>
-                  <Select value={draft.category} onValueChange={value => {
-                    const gradingCategory = mapCategoryToGradingCategory(value as ListingCategory);
-                    const companiesForCategory = getGradingCompaniesForCategory(gradingCategory);
-                    const firstCompany = companiesForCategory.length > 0 ? companiesForCategory[0].name : "Raw";
-                    setDraft(current => ({
-                      ...current,
-                      category: value as ListingCategory,
-                      categoryFields: {},
-                      graderCompany: firstCompany,
-                      grade: "",
-                    }));
-                  }}>
-                    <SelectTrigger className="h-12 border-white/10 bg-white/8 text-white hover:bg-white/12">
-                      <SelectValue placeholder="Select category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categoryLinks.map(option => (
-                        <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
+          {/* Right Column (25%) - Photo Upload Panel */}
+          <div className="col-span-1 sticky top-20 h-fit">
+            <div className="rounded-lg border border-white/20 bg-white/5 p-6 backdrop-blur">
+              <h3 className="mb-4 text-lg font-semibold">📷 Photos</h3>
 
-              {/* 2. Grading Company & Certification Number */}
-              <div className="rounded-2xl border border-blue-500/20 bg-gradient-to-br from-blue-500/10 to-blue-500/5 p-6 shadow-lg">
-                <h3 className="mb-4 text-lg font-semibold uppercase tracking-[0.1em] text-white/95">2. Grading & Certification</h3>
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="space-y-3">
-                    <Label className="text-sm uppercase tracking-[0.08em] text-white/70">Grading Company</Label>
-                    <Select value={draft.graderCompany} onValueChange={value => setDraft(current => ({ ...current, graderCompany: value, grade: "" }))}>
-                      <SelectTrigger className="h-12 border-white/10 bg-white/8 text-white hover:bg-white/12">
-                        <SelectValue placeholder="Select grading company" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {currentGradingCompanies.map(service => (
-                          <SelectItem key={service} value={service}>{service}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+              {/* Photo Preview Grid */}
+              <div className="mb-4 space-y-2">
+                {photos.length > 0 ? (
+                  <div className="grid grid-cols-2 gap-2">
+                    {photos.map((photo, index) => (
+                      <div
+                        key={index}
+                        className={`relative cursor-pointer overflow-hidden rounded-lg border-2 transition-all ${
+                          index === primaryPhotoIndex ? "border-blue-500 ring-2 ring-blue-500/50" : "border-white/20 hover:border-white/40"
+                        }`}
+                        onClick={() => setPrimaryPhotoIndex(index)}
+                      >
+                        <img src={photo.previewUrl} alt={`Photo ${index + 1}`} className="h-24 w-full object-cover" />
+                        {index === primaryPhotoIndex && <div className="absolute inset-0 bg-blue-500/10" />}
+                      </div>
+                    ))}
                   </div>
-
-                  <div className="space-y-3">
-                    <Label className="text-sm uppercase tracking-[0.08em] text-white/70">Certification Number</Label>
-                    <Input
-                      value={draft.certificationNumber}
-                      onChange={event => setDraft(current => ({ ...current, certificationNumber: event.target.value }))}
-                      placeholder="e.g., 123456789"
-                      className="h-12 border-white/10 bg-white/8 text-white placeholder:text-white/35"
-                    />
-                  </div>
-                </div>
-
-                <div className="mt-4 space-y-3">
-                  <Label className="text-sm uppercase tracking-[0.08em] text-white/70">Grade</Label>
-                  <Select value={draft.grade} onValueChange={value => setDraft(current => ({ ...current, grade: value }))}>
-                    <SelectTrigger className="h-12 border-white/10 bg-white/8 text-white">
-                      <SelectValue placeholder="Select a grade" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {currentValidGrades.map(grade => (
-                        <SelectItem key={grade} value={grade}>{grade}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              {/* 3. Item Details - Combined Title, Value, and Category-Specific Fields */}
-              <div className="rounded-2xl border border-purple-500/20 bg-gradient-to-br from-purple-500/10 to-purple-500/5 p-6 shadow-lg">
-                <h3 className="mb-4 text-lg font-semibold uppercase tracking-[0.1em] text-white/95">3. Item Details</h3>
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  {/* Listing Title Field */}
-                  <div className="space-y-3">
-                    <Label className="text-sm uppercase tracking-[0.08em] text-white/70">Listing Title *</Label>
-                    <Input
-                      value={draft.title}
-                      onChange={event => setDraft(current => ({ ...current, title: event.target.value }))}
-                      placeholder="e.g., Amazing Spider-Man, Charizard"
-                      className="h-10 border-white/10 bg-white/8 text-white placeholder:text-white/35 text-sm"
-                    />
-                  </div>
-                  
-                  {/* Estimated Value Field */}
-                  <div className="space-y-3">
-                    <Label className="text-sm uppercase tracking-[0.08em] text-white/70">Estimated Value</Label>
-                    <Input
-                      type="text"
-                      inputMode="decimal"
-                      value={draft.value}
-                      onChange={event => setDraft(current => ({ ...current, value: event.target.value }))}
-                      placeholder="Enter estimated value (e.g., 150.00)"
-                      className="h-10 border-white/10 bg-white/8 text-white placeholder:text-white/35 text-sm"
-                    />
-                  </div>
-                  
-                  {/* Category-Specific Fields */}
-                  {currentCategoryFields.map(field => (
-                    <div key={field.name} className="space-y-3">
-                      <Label className="text-sm uppercase tracking-[0.08em] text-white/70">{field.label}</Label>
-                      {field.type === "text" ? (
-                        <Input
-                          value={draft.categoryFields[field.name] || ""}
-                          onChange={event => setDraft(current => ({
-                            ...current,
-                            categoryFields: { ...current.categoryFields, [field.name]: event.target.value }
-                          }))}
-                          placeholder={field.placeholder}
-                          className="h-10 border-white/10 bg-white/8 text-white placeholder:text-white/35 text-sm"
-                        />
-                      ) : (
-                        <Select
-                          value={draft.categoryFields[field.name] || ""}
-                          onValueChange={value =>
-                            setDraft(current => ({
-                              ...current,
-                              categoryFields: { ...current.categoryFields, [field.name]: value }
-                            }))
-                          }
-                        >
-                          <SelectTrigger className="h-10 border-white/10 bg-white/8 text-white hover:bg-white/12 text-sm">
-                            <SelectValue placeholder={field.placeholder} />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {field.selectOptions?.map(option => (
-                              <SelectItem key={option} value={option}>{option}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* 4. Additional Information */}
-              <div className="rounded-2xl border border-indigo-500/20 bg-gradient-to-br from-indigo-500/10 to-indigo-500/5 p-6 shadow-lg">
-                <h3 className="mb-4 text-lg font-semibold uppercase tracking-[0.1em] text-white/95">4. Additional Information</h3>
-                <div className="space-y-3">
-                  <Label className="text-sm uppercase tracking-[0.08em] text-white/70">Additional Notes</Label>
-                  <Textarea
-                    value={draft.additionalNotes}
-                    onChange={event => setDraft(current => ({ ...current, additionalNotes: event.target.value }))}
-                    placeholder="Any additional details about this item..."
-                    className="min-h-24 border-white/10 bg-white/8 text-white placeholder:text-white/35"
-                  />
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex gap-4">
-                <Button
-                  type="button"
-                  onClick={handleSaveDraft}
-                  variant="outline"
-                  className="flex-1 h-12 border-white/20 text-white hover:bg-white/10"
-                  disabled={createListingMutation.isPending || saveDraftMutation.isPending}
-                >
-                  {saveDraftMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  SAVE DRAFT
-                </Button>
-                <Button
-                  type="submit"
-                  className="flex-1 h-12 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold"
-                  disabled={createListingMutation.isPending}
-                >
-                  {createListingMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  SUBMIT COLLECTIBLE
-                </Button>
-              </div>
-            </div>
-
-            {/* Right side - Image Upload */}
-            <div className="flex flex-col gap-6 w-full lg:w-auto lg:max-w-xs lg:row-span-2 lg:h-fit lg:justify-between">
-              <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-white/8 to-white/4 p-6 shadow-lg flex flex-col flex-1">
-                <h3 className="mb-6 text-lg font-semibold uppercase tracking-[0.1em] text-white/95"><span className="text-white/60">5. </span>Upload Images</h3>
-                
-                {/* Main upload area */}
-                <div
-                  className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-white/20 bg-white/5 p-6 cursor-pointer transition-all hover:border-white/40 hover:bg-white/10 flex-1 min-h-48"
-                  onDragOver={(e) => {
-                    e.preventDefault();
-                    e.currentTarget.classList.add('border-white/60', 'bg-white/20');
-                  }}
-                  onDragLeave={(e) => {
-                    e.currentTarget.classList.remove('border-white/60', 'bg-white/20');
-                  }}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    e.currentTarget.classList.remove('border-white/60', 'bg-white/20');
-                    if (e.dataTransfer.files) {
-                      handlePhotos({ target: { files: e.dataTransfer.files } } as any);
-                    }
-                  }}
-                >
-                  {primaryPhoto ? (
-                    <div className="w-full h-full flex flex-col items-center justify-center">
-                      <img src={primaryPhoto.previewUrl} alt="Preview" className="max-w-full max-h-40 rounded-lg object-contain" />
-                      <p className="text-xs text-white/50 mt-2">Main Image</p>
-                    </div>
-                  ) : (
-                    <div className="text-center">
-                      <Upload className="mx-auto h-12 w-12 text-white/50 mb-3" />
-                      <p className="text-sm text-white/70">Drag & drop or click to upload</p>
-                      <p className="text-xs text-white/50 mt-1">PNG, JPG up to 10MB</p>
-                    </div>
-                  )}
-                </div>
-                
-                <label className="mt-4 inline-block w-full">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full border-white/20 text-white hover:bg-white/10"
-                    onClick={() => document.getElementById('inventory-photos')?.click()}
-                  >
-                    Browse Files
-                  </Button>
-                  <input
-                    id="inventory-photos"
-                    type="file"
-                    multiple
-                    accept="image/*"
-                    onChange={handlePhotos}
-                    className="hidden"
-                  />
-                </label>
-                
-                {/* Image thumbnails and primary selection */}
-                {photos.length > 0 && (
-                  <div className="mt-6 space-y-3">
-                    <p className="text-sm font-semibold text-white/90">Images ({photos.length})</p>
-                    <div className="grid grid-cols-3 gap-2 max-h-32 overflow-y-auto">
-                      {photos.map((photo, index) => (
-                        <button
-                          key={index}
-                          type="button"
-                          onClick={() => setPrimaryPhotoIndex(index)}
-                          className={`relative rounded-lg overflow-hidden border-2 transition-all ${
-                            index === primaryPhotoIndex
-                              ? 'border-blue-500 ring-2 ring-blue-400'
-                              : 'border-white/20 hover:border-white/40'
-                          }`}
-                        >
-                          <img src={photo.previewUrl} alt={`Thumbnail ${index + 1}`} className="w-full h-20 object-cover" />
-                          {index === primaryPhotoIndex && (
-                            <div className="absolute inset-0 bg-blue-500/20 flex items-center justify-center">
-                              <span className="text-xs font-bold text-white bg-blue-600 px-2 py-1 rounded">MAIN</span>
-                            </div>
-                          )}
-                        </button>
-                      ))}
-                    </div>
-                    <p className="text-xs text-white/50">Click an image to set it as the main image</p>
+                ) : (
+                  <div className="flex h-32 items-center justify-center rounded-lg border-2 border-dashed border-white/20">
+                    <span className="text-sm text-white/50">No photos yet</span>
                   </div>
                 )}
               </div>
+
+              {/* Upload Button */}
+              <label className="flex cursor-pointer items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium hover:bg-blue-700 transition-colors">
+                <Upload className="mr-2 h-4 w-4" />
+                Upload Photos
+                <input type="file" multiple accept="image/*" onChange={handlePhotos} className="hidden" />
+              </label>
+
+              <p className="mt-2 text-xs text-white/50">At least 1 photo required</p>
             </div>
           </div>
         </form>
-      </main>
+
+        {/* Action Buttons - Visible when scrolling to bottom */}
+        <div className="fixed bottom-0 left-0 right-0 border-t border-white/10 bg-black/80 backdrop-blur">
+          <div className="container mx-auto max-w-7xl px-4 py-4 flex justify-end gap-4">
+            <Button variant="outline" onClick={(e) => { e.preventDefault(); handleSaveDraft(); }} disabled={saveDraftMutation.isPending}>
+              {saveDraftMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Save as Draft
+            </Button>
+            <Button type="submit" form="add-inventory-form" disabled={createListingMutation.isPending || updateListingMutation.isPending}>
+              {(createListingMutation.isPending || updateListingMutation.isPending) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isEditMode ? "Update Listing" : "Submit Collectible"}
+            </Button>
+          </div>
+        </div>
+
+        {/* Spacer for fixed button bar */}
+        <div className="h-20" />
+      </div>
     </div>
   );
 }

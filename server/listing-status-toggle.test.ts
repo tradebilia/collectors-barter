@@ -59,6 +59,7 @@ describe.skip("Listing Status Toggle", () => {
       ownerId: testUserId,
       title: "Test Listing",
       category: "sports_cards",
+      itemType: "single_card",
       condition: "mint",
       description: "Test listing for toggle status",
       isActive: true,
