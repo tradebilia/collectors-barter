@@ -2807,3 +2807,15 @@ All 8 remaining filter optimization and caching items have been successfully imp
 - [x] Fix manualIncluded field placement - moved from Optional to Recommended section (parent: completeInBox)
 - [x] Test Sports Cards Single Card to verify serialNumber now appears in Recommended Fields when Serial Numbered = Yes
 - [x] Verify all conditional fields now appear in the same section as their parent fields
+
+
+## Input Field Sizing and Conditional Field Ordering Fixes
+
+- [ ] Receive max character limits from user for input fields that need sizing adjustments
+- [ ] Fix conditional field ordering - condition field should appear AFTER "Is Graded = No" condition is met
+- [ ] Add maxLength properties to field definitions based on character limits
+- [ ] Adjust input bubble CSS widths to match character limits (narrow for Year, wider for Trade Value, etc.)
+- [ ] Update Shipping dropdown options from "Yes/No" to "Yes", "Local Only", "In Person Only"
+- [ ] Test input field sizing across all categories
+- [ ] Test conditional field ordering for condition field appearing after Is Graded selection
+- [ ] Verify Shipping dropdown options display correctly
