@@ -1,4 +1,4 @@
-/**
+/*
  * useAddInventoryForm Hook
  * Manages form state, validation, and conditional field logic
  */
@@ -100,50 +100,45 @@ export const useAddInventoryForm = (): UseAddInventoryFormReturn => {
         else if (operator === '=' || operator === '==') result = actualNum === expectedNum;
         else if (operator === '!=' || operator === '<>') result = actualNum !== expectedNum;
 
-        // Numeric comparison debug removed
         return result;
       }
 
-      // Handle equality comparisons like "Is Graded = Yes"
-      const [fieldName, expectedValue] = condition.split('=').map((s) => s.trim());
-      // Convert "Is Graded" to "isGraded" (camelCase)
-      const fieldKey = fieldName
-        .split(' ')
-        .map((word, index) => {
-          if (index === 0) return word.toLowerCase();
-          return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
-        })
-        .join('');
+      // Handle string equality like "isGraded = Yes" or "Condition = Mint"
+      const stringEqualityMatch = condition.match(/^([a-zA-Z]+)\s*=\s*(.+)$/);
+      if (stringEqualityMatch) {
+        const [, fieldName, expectedValue] = stringEqualityMatch;
+        const fieldKey = fieldName
+          .split(' ')
+          .map((word, index) => {
+            if (index === 0) return word.toLowerCase();
+            return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+          })
+          .join('');
 
-      const actualValue = formData[fieldKey];
-      const result = actualValue === expectedValue;
-      console.log(`[evaluateCondition] Equality: condition='${condition}', fieldKey='${fieldKey}', actualValue='${actualValue}', expectedValue='${expectedValue}', result=${result}`);
-      return result;
+        const actualValue = formData[fieldKey];
+        return actualValue === expectedValue;
+      }
+
+      return true;
     },
     [formData]
   );
 
-  // Check if a field should be shown
+  // Check if field should be shown based on visibility conditions
   const shouldShowField = useCallback(
     (field: FieldDefinition): boolean => {
-      // If field has conditional logic, evaluate it regardless of requirement type
-      if (field.conditionalLogic) {
-        const result = evaluateCondition(field.conditionalLogic);
-        if (field.name === 'numberOfSignatures') {
-          console.log(`[shouldShowField] ${field.label}: condition='${field.conditionalLogic}', result=${result}, formData.signed='${formData['signed']}'`);
-        }
-        return result;
-      }
-      return true;
+      if (!field.conditionalLogic) return true;
+      return evaluateCondition(field.conditionalLogic);
     },
-    [evaluateCondition, formData]
+    [evaluateCondition]
   );
 
-  // Get fields by requirement level
+  // Get fields by requirement type
   const getFieldsByRequirement = useCallback(
     (requirement: string): FieldDefinition[] => {
       return currentFields.filter(
-        (field: FieldDefinition) => field.requirement === requirement && shouldShowField(field)
+        (field: FieldDefinition) =>
+          field.requirement === requirement && shouldShowField(field)
       );
     },
     [currentFields, shouldShowField]
@@ -151,12 +146,19 @@ export const useAddInventoryForm = (): UseAddInventoryFormReturn => {
 
   // Count required fields
   const getRequiredFieldsCount = useCallback((): number => {
-    return currentFields.filter((field: FieldDefinition) => field.requirement === 'required').length;
+    // Count all required fields (including conditional ones that could be activated)
+    const requiredFieldsCount = currentFields.filter((field: FieldDefinition) => field.requirement === 'required').length;
+    
+    // Add 3 for: Shipping (1), Description (1), Photos (1)
+    const sectionCount = 3;
+    
+    return requiredFieldsCount + sectionCount;
   }, [currentFields]);
 
   // Count completed required fields
   const getCompletedRequiredFieldsCount = useCallback((): number => {
-    return currentFields.filter((field: FieldDefinition) => {
+    // Count completed visible required fields
+    const completedFieldsCount = currentFields.filter((field: FieldDefinition) => {
       if (field.requirement !== 'required') return false;
       if (!shouldShowField(field)) return false;
 
@@ -169,6 +171,26 @@ export const useAddInventoryForm = (): UseAddInventoryFormReturn => {
       
       return value !== undefined && value !== null && value !== '';
     }).length;
+    
+    // Count completed sections: Shipping, Description, Photos
+    let completedSections = 0;
+    
+    // Shipping is always required
+    if (formData.shippingAvailable !== undefined && formData.shippingAvailable !== null && formData.shippingAvailable !== '') {
+      completedSections++;
+    }
+    
+    // Description is always required
+    if (formData.description !== undefined && formData.description !== null && formData.description !== '') {
+      completedSections++;
+    }
+    
+    // Photos are always required (at least 1)
+    if (Array.isArray(formData.photos) && formData.photos.length > 0) {
+      completedSections++;
+    }
+    
+    return completedFieldsCount + completedSections;
   }, [currentFields, formData, shouldShowField]);
 
   // Update field value
@@ -198,38 +220,21 @@ export const useAddInventoryForm = (): UseAddInventoryFormReturn => {
   // Set category (resets item type and form data)
   const setCategory = useCallback((category: CollectibleCategory) => {
     setFormData((prev) => ({
+      ...prev,
       category,
       itemType: '',
     }));
-    setErrors({});
   }, []);
 
-  // Set item type (resets form data but keeps category)
+  // Set item type
   const setItemType = useCallback((itemType: string) => {
-    setFormData((prev) => {
-      // Get the fields for this item type to initialize defaults
-      const categoryDef = ALL_DEFINITIONS[prev.category as CollectibleCategory] as Record<string, FieldDefinition[]> | undefined;
-      const itemTypeFields = categoryDef?.[itemType] || [];
-      
-      // Initialize form data with default values for all fields
-      const initialData: FormData = {
-        category: prev.category,
-        itemType,
-      };
-      
-      // Set default values for fields that have them
-      itemTypeFields.forEach((field: FieldDefinition) => {
-        if (field.defaultValue !== undefined) {
-          initialData[field.name] = field.defaultValue;
-        }
-      });
-      
-      return initialData;
-    });
-    setErrors({});
+    setFormData((prev) => ({
+      ...prev,
+      itemType,
+    }));
   }, []);
 
-  // Reset entire form
+  // Reset form
   const resetForm = useCallback(() => {
     setFormData({
       category: '',
@@ -242,70 +247,46 @@ export const useAddInventoryForm = (): UseAddInventoryFormReturn => {
   const validateForm = useCallback((): boolean => {
     const newErrors: FormErrors = {};
 
-    // Check category and item type
-    if (!formData.category) {
-      newErrors.category = 'Please select a category';
-    }
-    if (!formData.itemType) {
-      newErrors.itemType = 'Please select an item type';
-    }
-
     // Check required fields
     currentFields.forEach((field: FieldDefinition) => {
       if (field.requirement === 'required' && shouldShowField(field)) {
         const value = formData[field.name];
-
-        if (field.inputType === 'image-upload') {
-          if (!Array.isArray(value) || value.length === 0) {
-            newErrors[field.name] = `${field.label} is required`;
-          }
-        } else if (value === undefined || value === null || value === '') {
+        if (value === undefined || value === null || value === '') {
           newErrors[field.name] = `${field.label} is required`;
-        }
-
-        // Validate Trade Value > 0
-        if (field.name === 'estimatedValue' && value !== undefined && value !== null) {
-          if (Number(value) <= 0) {
-            newErrors[field.name] = 'Trade Value must be greater than 0';
-          }
         }
       }
     });
+
+    // Check shipping
+    if (formData.shippingAvailable === undefined || formData.shippingAvailable === null || formData.shippingAvailable === '') {
+      newErrors.shippingAvailable = 'Shipping availability is required';
+    }
+
+    // Check description
+    if (formData.description === undefined || formData.description === null || formData.description === '') {
+      newErrors.description = 'Description is required';
+    }
+
+    // Check photos
+    if (!Array.isArray(formData.photos) || formData.photos.length === 0) {
+      newErrors.photos = 'At least 1 photo is required';
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  }, [formData, currentFields, shouldShowField]);
+  }, [currentFields, formData, shouldShowField]);
 
-  // Generate itemDetails object from form data
+  // Get item details (all fields except category, itemType, shippingAvailable, description, photos)
   const getItemDetails = useCallback((): Record<string, string> => {
-    const itemDetails: Record<string, string> = {};
+    const details: Record<string, string> = {};
     
-    // Exclude these fields from itemDetails as they have their own database columns
-    const excludedFields = new Set([
-      'category',
-      'itemType',
-      'title',
-      'listingTitle',
-      'description',
-      'estimatedValue',
-      'tradeValue',
-      'shippingAvailable',
-      'photos',
-    ]);
-    
-    // Add all form data fields to itemDetails except excluded ones
     Object.entries(formData).forEach(([key, value]) => {
-      if (!excludedFields.has(key) && value !== undefined && value !== null && value !== '') {
-        // Convert arrays (like signatures) to JSON string
-        if (Array.isArray(value)) {
-          itemDetails[key] = JSON.stringify(value);
-        } else {
-          itemDetails[key] = String(value);
-        }
+      if (!['category', 'itemType', 'shippingAvailable', 'description', 'photos'].includes(key)) {
+        details[key] = String(value || '');
       }
     });
-    
-    return itemDetails;
+
+    return details;
   }, [formData]);
 
   return {
@@ -325,5 +306,3 @@ export const useAddInventoryForm = (): UseAddInventoryFormReturn => {
     getItemDetails,
   };
 };
-
-export default useAddInventoryForm;

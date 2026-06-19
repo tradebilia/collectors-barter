@@ -2846,3 +2846,8 @@ All 8 remaining filter optimization and caching items have been successfully imp
 - [x] Change progress bar text color to white for better visibility
 - [x] Fix missing Vintage Toys item types (Electronic Toy, Model Kit, Plush / Stuffed Toy)
 - [x] Fix display name mapping for plush_toy field
+
+## Required Fields Counter Fix
+
+- [x] Fix required fields count calculation to include Shipping, Description, and Photos sections (each counts as 1)
+- [x] Verified counter updates correctly as fields are filled in
