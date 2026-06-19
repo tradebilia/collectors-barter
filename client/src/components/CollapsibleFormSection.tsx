@@ -51,7 +51,7 @@ export const CollapsibleFormSection: React.FC<CollapsibleFormSectionProps> = ({
       </button>
 
       {isExpanded && (
-        <div className="pb-4 space-y-4 animate-in fade-in duration-200">
+        <div className="pb-4 grid grid-cols-1 gap-4 animate-in fade-in duration-200">
           {children}
         </div>
       )}

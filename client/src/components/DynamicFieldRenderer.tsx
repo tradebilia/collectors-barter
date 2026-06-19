@@ -194,8 +194,11 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({
     }
   };
 
+  // Determine grid column classes based on gridColumn property
+  const gridColClass = field.gridColumn === 'half' ? 'col-span-1 md:col-span-2' : field.gridColumn === 'third' ? 'col-span-1 md:col-span-3' : 'col-span-1';
+
   return (
-    <div className="space-y-2">
+    <div className={`space-y-2 ${gridColClass}`}>
       <div className="flex items-center gap-1">
         <Label htmlFor={field.name} className="text-sm font-medium">
           {field.label}
