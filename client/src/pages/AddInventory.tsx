@@ -115,10 +115,17 @@ export default function AddInventory() {
 
   const handlePhotos = async (event: ChangeEvent<HTMLInputElement>) => {
     const nextPhotos = await readFiles(event.target.files);
-    if (isEditMode) {
-      setPhotos([...photos, ...nextPhotos]);
-    } else {
-      setPhotos(nextPhotos);
+    setPhotos([...photos, ...nextPhotos]);
+  };
+
+  const handleDeletePhoto = (indexToDelete: number) => {
+    const updatedPhotos = photos.filter((_, index) => index !== indexToDelete);
+    setPhotos(updatedPhotos);
+    // If the deleted photo was the primary, reset to first photo or 0
+    if (primaryPhotoIndex === indexToDelete) {
+      setPrimaryPhotoIndex(0);
+    } else if (primaryPhotoIndex > indexToDelete) {
+      setPrimaryPhotoIndex(primaryPhotoIndex - 1);
     }
   };
 
@@ -426,6 +433,17 @@ export default function AddInventory() {
                       >
                         <img src={photo.previewUrl} alt={`Photo ${index + 1}`} className="h-24 w-full object-cover" />
                         {index === primaryPhotoIndex && <div className="absolute inset-0 bg-blue-500/10" />}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeletePhoto(index);
+                          }}
+                          className="absolute top-1 right-1 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white hover:bg-red-600 transition-colors"
+                          title="Delete photo"
+                        >
+                          ✕
+                        </button>
                       </div>
                     ))}
                   </div>

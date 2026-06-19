@@ -2819,3 +2819,12 @@ All 8 remaining filter optimization and caching items have been successfully imp
 - [ ] Test input field sizing across all categories
 - [ ] Test conditional field ordering for condition field appearing after Is Graded selection
 - [x] Verify Shipping dropdown options display correctly
+
+
+## Photo Upload Functionality Fixes
+
+- [x] Fix photo upload to append multiple photos instead of replacing (was overwriting on new uploads in create mode)
+- [x] Add delete button (X) to each photo thumbnail for individual photo deletion
+- [x] Implement handleDeletePhoto function to remove photos by index
+- [x] Update primary photo index when deleting photos
+- [x] Test multiple photo upload and delete functionality - VERIFIED WORKING
