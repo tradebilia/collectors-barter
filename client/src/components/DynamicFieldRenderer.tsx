@@ -116,8 +116,8 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({
             onChange={(e) => onChange(e.target.value)}
             disabled={disabled}
             placeholder={field.notes}
-            rows={4}
-            className={hasError ? 'border-red-500' : ''}
+            rows={8}
+            className={`w-full ${hasError ? 'border-red-500' : ''}`}
           />
         );
 
@@ -195,7 +195,7 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({
   };
 
   // Determine grid column classes based on gridColumn property
-  const gridColClass = field.gridColumn === 'half' ? 'col-span-1 md:col-span-2' : field.gridColumn === 'third' ? 'col-span-1 md:col-span-3' : 'col-span-1';
+  const gridColClass = field.inputType === 'textarea' ? 'col-span-full' : field.gridColumn === 'half' ? 'col-span-1 md:col-span-2' : field.gridColumn === 'third' ? 'col-span-1 md:col-span-3' : 'col-span-1';
 
   return (
     <div className={`space-y-2 ${gridColClass}`}>

@@ -30,7 +30,7 @@ export const CollapsibleFormSection: React.FC<CollapsibleFormSectionProps> = ({
     <div className={`border-b border-gray-200 last:border-b-0 ${className}`}>
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full flex items-center justify-between py-4 px-0 hover:bg-gray-50 transition rounded-lg"
+        className="w-full flex items-center justify-between py-4 px-0 transition rounded-lg"
       >
         <div className="flex items-center gap-3">
           {icon && <span className="text-xl">{icon}</span>}

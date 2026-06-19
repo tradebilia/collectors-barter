@@ -347,17 +347,19 @@ export default function AddInventory() {
 
             {/* Description Section */}
             <CollapsibleFormSection title="Description" defaultExpanded={true} fieldCount={1}>
-              <DynamicFieldRenderer
-                field={{
-                  name: "description",
-                  label: "Description",
-                  inputType: "textarea",
-                  requirement: "required",
-                }}
-                value={formData.description || ""}
-                onChange={(value) => updateField("description", value)}
-                onOtherChange={() => {}}
-              />
+              <div className="w-full">
+                <DynamicFieldRenderer
+                  field={{
+                    name: "description",
+                    label: "Description",
+                    inputType: "textarea",
+                    requirement: "optional",
+                  }}
+                  value={formData.description || ""}
+                  onChange={(value) => updateField("description", value)}
+                  onOtherChange={() => {}}
+                />
+              </div>
             </CollapsibleFormSection>
           </div>
 
