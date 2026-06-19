@@ -313,7 +313,7 @@ const VIDEO_GAMES_GAME_FIELDS: FieldDefinition[] = [
     name: 'missingItems',
     label: 'Missing Items',
     inputType: 'textarea',
-    requirement: 'conditional',
+    requirement: 'optional',
     conditionalLogic: 'Complete In Box = No',
   },
   {
@@ -562,7 +562,7 @@ const AUTOGRAPHS_SIGNED_ITEM_FIELDS: FieldDefinition[] = [
     name: 'authenticationCompany',
     label: 'Authentication Company',
     inputType: 'dropdown',
-    requirement: 'conditional',
+    requirement: 'recommended',
     dropdownOptions: ['PSA/DNA', 'JSA', 'Beckett Authentication Services'],
     conditionalLogic: 'Authenticated = Yes',
   },

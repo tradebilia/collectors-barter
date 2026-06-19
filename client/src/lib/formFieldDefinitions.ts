@@ -87,7 +87,7 @@ const CONDITION_FIELD: FieldDefinition = {
   name: 'condition',
   label: 'Condition',
   inputType: 'dropdown',
-  requirement: 'conditional',
+  requirement: 'required',
   dropdownOptions: ['Mint', 'Near Mint', 'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'],
   conditionalLogic: 'Is Graded = No',
   notes: 'Condition of the item.',
@@ -105,7 +105,7 @@ const DESCRIPTION_FIELD: FieldDefinition = {
   name: 'description',
   label: 'Description',
   inputType: 'textarea',
-  requirement: 'conditional',
+  requirement: 'optional',
   validation: { minLength: 20, maxLength: 4000 },
   notes: 'Free-form details, defects, provenance, trade notes. Users may write a lot of stuff.',
 };
@@ -125,7 +125,7 @@ const SHIPPING_AVAILABLE_FIELD: FieldDefinition = {
   name: 'shippingAvailable',
   label: 'Shipping Available',
   inputType: 'dropdown',
-  requirement: 'conditional',
+  requirement: 'required',
   dropdownOptions: ['Yes', 'No', 'Local Only'],
 };
 
@@ -142,7 +142,7 @@ const GRADING_COMPANY_FIELD: FieldDefinition = {
   name: 'certificationCompany',
   label: 'Grading Company',
   inputType: 'dropdown',
-  requirement: 'conditional',
+  requirement: 'required',
   conditionalLogic: 'Is Graded = Yes',
   notes: 'Will be filtered by category.',
 };
@@ -151,7 +151,7 @@ const GRADE_FIELD: FieldDefinition = {
   name: 'grade',
   label: 'Grade',
   inputType: 'text',
-  requirement: 'conditional',
+  requirement: 'required',
   conditionalLogic: 'Is Graded = Yes',
 };
 
@@ -159,7 +159,7 @@ const CERTIFICATION_NUMBER_FIELD: FieldDefinition = {
   name: 'certificationNumber',
   label: 'Certification Number',
   inputType: 'text',
-  requirement: 'conditional',
+  requirement: 'required',
   conditionalLogic: 'Is Graded = Yes',
 };
 
