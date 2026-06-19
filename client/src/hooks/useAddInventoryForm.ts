@@ -147,18 +147,18 @@ export const useAddInventoryForm = (): UseAddInventoryFormReturn => {
 
   // Count required fields
   const getRequiredFieldsCount = useCallback((): number => {
-    // Count all required fields (including conditional ones that could be activated)
-    const requiredFieldsCount = currentFields.filter((field: FieldDefinition) => field.requirement === 'required').length;
+    // Count only visible required fields (exclude conditional fields that aren't activated)
+    const requiredFieldsCount = currentFields.filter((field: FieldDefinition) => field.requirement === 'required' && shouldShowField(field)).length;
     
     // Add 3 for: Shipping (1), Description (1), Photos (1)
     const sectionCount = 3;
     
     return requiredFieldsCount + sectionCount;
-  }, [currentFields]);
+  }, [currentFields, shouldShowField]);
 
   // Count completed required fields
   const getCompletedRequiredFieldsCount = useCallback((): number => {
-    // Count completed visible required fields
+    // Count completed visible required fields only (not conditional fields that aren't shown)
     const completedFieldsCount = currentFields.filter((field: FieldDefinition) => {
       if (field.requirement !== 'required') return false;
       if (!shouldShowField(field)) return false;
