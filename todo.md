@@ -2420,3 +2420,37 @@ All 8 remaining filter optimization and caching items have been successfully imp
 ✅ Maintained responsive design (mobile-first approach)
 ✅ Sticky photo panel stays visible while scrolling form fields
 ✅ Cleaner, more compact form presentation
+
+
+## Add to Inventory Page - Styling & Visibility Fixes - PHASE 3C COMPLETE ✅ (Jun 19, 2026)
+
+### Styling Improvements
+- [x] Changed CategoryItemTypeSelector background from white (bg-white) to dark gray (bg-gray-900)
+- [x] Changed CategoryItemTypeSelector border from gray-200 to gray-700 for dark theme consistency
+- [x] Updated section title color from gray-900 to white for visibility on dark background
+- [x] Updated section description text from gray-600 to gray-300 for better contrast
+- [x] Updated label text color to white for better visibility
+- [x] Changed required field asterisk from white to red-400 for better distinction
+
+### Section Visibility Fixes
+- [x] Changed all form sections to defaultExpanded={true}
+  - Required Fields: now expanded by default
+  - Recommended Fields: now expanded by default
+  - Optional Fields: now expanded by default
+  - Shipping & Quantity: now expanded by default
+  - Description: now expanded by default
+- [x] All sections display immediately after category and item type selection
+- [x] Users can now see all available fields without clicking to expand
+
+### User Experience Improvements
+✅ Dark background matches the rest of the form styling
+✅ White text is clearly visible on dark background
+✅ Selected category/item type values are now visible with proper contrast
+✅ All form sections visible immediately after selection (no need to expand)
+✅ Consistent dark theme throughout the Add to Inventory page
+✅ Better visual hierarchy with red asterisks for required fields
+
+### Build Status
+✅ TypeScript: PASSED (0 errors)
+✅ Project Build: PASSED (no build errors)
+✅ Tests: PASSED (151 passed, 0 failed, 25 skipped)

@@ -106,10 +106,10 @@ export const CategoryItemTypeSelector: React.FC<CategoryItemTypeSelectorProps> =
   };
 
   return (
-    <div className="space-y-6 p-6 bg-white rounded-lg border border-gray-200">
+    <div className="space-y-6 p-6 bg-gray-900 rounded-lg border border-gray-700">
       <div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">📋 Select Category & Item Type</h2>
-        <p className="text-sm text-gray-600 mb-4">
+        <h2 className="text-2xl font-bold text-white mb-6">📋 Select Category & Item Type</h2>
+        <p className="text-sm text-gray-300 mb-4">
           Choose your collectible category first, then select the specific item type.
         </p>
       </div>
@@ -117,8 +117,8 @@ export const CategoryItemTypeSelector: React.FC<CategoryItemTypeSelectorProps> =
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Category Selector */}
         <div className="space-y-2">
-          <Label htmlFor="category" className="text-sm font-medium">
-            Category <span className="text-white">*</span>
+          <Label htmlFor="category" className="text-sm font-medium text-white">
+            Category <span className="text-red-400">*</span>
           </Label>
           <Select value={selectedCategory} onValueChange={handleCategoryChange}>
             <SelectTrigger 
@@ -139,8 +139,8 @@ export const CategoryItemTypeSelector: React.FC<CategoryItemTypeSelectorProps> =
 
         {/* Item Type Selector */}
         <div className="space-y-2">
-          <Label htmlFor="itemType" className="text-sm font-medium">
-            Item Type <span className="text-white">*</span>
+          <Label htmlFor="itemType" className="text-sm font-medium text-white">
+            Item Type <span className="text-red-400">*</span>
           </Label>
           <Select 
             value={selectedItemType} 
