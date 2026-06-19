@@ -51,19 +51,12 @@ export const useAddInventoryForm = (): UseAddInventoryFormReturn => {
   const currentFields = useMemo(() => {
     if (!formData.category || !formData.itemType) return [];
 
-    // Get common fields that apply to all categories
-    // Note: PHOTOS_FIELD is excluded here because it has its own dedicated sticky panel
-    const commonFieldsArray = [
-      COMMON_FIELDS.LISTING_TITLE_FIELD,
-      COMMON_FIELDS.TRADE_VALUE_FIELD,
-    ];
-
-    // Get category-specific fields
+    // Get category-specific fields (which already include common fields like listingTitle, tradeValue)
     const categoryDef = ALL_DEFINITIONS[formData.category as any] as Record<string, FieldDefinition[]> | undefined;
     const categorySpecificFields = categoryDef ? (categoryDef[formData.itemType] || []) : [];
 
-    // Combine common fields with category-specific fields
-    return [...commonFieldsArray, ...categorySpecificFields];
+    // Filter out photos field since it has its own dedicated sticky panel
+    return categorySpecificFields.filter(f => f.name !== 'photos');
   }, [formData.category, formData.itemType]);
 
   // Evaluate conditional logic
