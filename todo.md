@@ -2857,3 +2857,4 @@ All 8 remaining filter optimization and caching items have been successfully imp
 - [x] Add asterisks (*) to Description, Shipping, and Photos section headers to indicate required fields
 - [x] Remove redundant "Shipping Available" label from Shipping dropdown (keep just the dropdown)
 - [x] Remove redundant "Description" label from Description textarea (keep just the textarea)
+- [x] Fix DynamicFieldRenderer to not render asterisk when field label is empty (prevents duplicate asterisks)

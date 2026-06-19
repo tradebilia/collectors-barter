@@ -250,10 +250,14 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({
   return (
     <div className={`space-y-2 ${gridColClass}`}>
       <div className="flex items-center gap-1">
-        <Label htmlFor={field.name} className="text-sm font-medium">
-          {field.label}
-        </Label>
-        {isRequired && <span className="text-white text-xs">*</span>}
+        {field.label && (
+          <>
+            <Label htmlFor={field.name} className="text-sm font-medium">
+              {field.label}
+            </Label>
+            {isRequired && <span className="text-white text-xs">*</span>}
+          </>
+        )}
       </div>
 
       <div className="space-y-2">
