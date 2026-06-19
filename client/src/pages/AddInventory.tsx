@@ -250,10 +250,10 @@ export default function AddInventory() {
         </div>
       </section>
 
-      <div className="container mx-auto max-w-7xl px-4 py-12">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-20 lg:pl-32">
-          {/* Left column: Form (2 columns wide) */}
-          <form id="add-inventory-form" onSubmit={submitListing} className="lg:col-span-2 space-y-6">
+      <div className="container mx-auto max-w-7xl px-4 py-12 relative">
+        <div className="grid grid-cols-1 lg:grid-cols-1 gap-20 lg:pl-32">
+          {/* Left column: Form */}
+          <form id="add-inventory-form" onSubmit={submitListing} className="lg:max-w-2xl space-y-6">
             {/* Progress Indicator */}
             <FormProgressIndicator completedRequiredFields={filledRequiredFieldsCount} totalRequiredFields={requiredFieldsCount} />
 
@@ -353,9 +353,10 @@ export default function AddInventory() {
               </div>
             </CollapsibleFormSection>
           </form>
+        </div>
 
-          {/* Right column: Photo Upload Panel */}
-          <div className="lg:col-span-1 ml-auto mr-8">
+        {/* Photo Upload Panel - positioned absolutely on the right */}
+        <div className="absolute top-12 right-8 w-80 z-10">
             <div className="rounded-lg border border-white/20 bg-white/5 p-6 backdrop-blur">
               <h3 className="mb-4 text-lg font-semibold text-white">{allFields.filter((f: FieldDefinition) => f.requirement === "optional" && shouldShowField(f)).length > 0 ? "7. Photos" : "6. Photos"}</h3>
 
@@ -417,7 +418,6 @@ export default function AddInventory() {
               <p className="mt-2 text-xs text-white/50">At least 1 photo required</p>
             </div>
           </div>
-        </div>
 
       {/* Action Buttons - Visible when scrolling to bottom */}
       <div className="fixed bottom-0 left-0 right-0 border-t border-white/10 bg-black/80 backdrop-blur z-50">
