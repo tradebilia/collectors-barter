@@ -47,6 +47,16 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({
 }) => {
   const isRequired = field.requirement === 'required';
   const hasError = !!error;
+  
+  // Debug logging for country field
+  if (field.name === 'country') {
+    console.log('Country field debug:', {
+      name: field.name,
+      inputType: field.inputType,
+      dropdownOptions: field.dropdownOptions?.length,
+      value,
+    });
+  }
 
   const handleFileUpload = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {

@@ -4,6 +4,7 @@
  */
 
 import { FieldDefinition, COMMON_FIELDS, GRADING_COMPANIES_BY_CATEGORY } from './formFieldDefinitions';
+import { COUNTRIES_LIST } from './countries';
 
 // ============================================================================
 // COINS
@@ -19,8 +20,9 @@ const COINS_SINGLE_COIN_FIELDS: FieldDefinition[] = [
   {
     name: 'country',
     label: 'Country',
-    inputType: 'text',
+    inputType: 'dropdown',
     requirement: 'required',
+    dropdownOptions: COUNTRIES_LIST,
   },
   {
     name: 'year',
@@ -98,8 +100,9 @@ const COINS_PAPER_MONEY_FIELDS: FieldDefinition[] = [
   {
     name: 'country',
     label: 'Country',
-    inputType: 'text',
+    inputType: 'dropdown',
     requirement: 'required',
+    dropdownOptions: COUNTRIES_LIST,
   },
   {
     name: 'denomination',
@@ -157,8 +160,9 @@ const STAMPS_SINGLE_STAMP_FIELDS: FieldDefinition[] = [
   {
     name: 'country',
     label: 'Country',
-    inputType: 'text',
+    inputType: 'dropdown',
     requirement: 'required',
+    dropdownOptions: COUNTRIES_LIST,
   },
   {
     name: 'year',
@@ -208,8 +212,9 @@ const STAMPS_STAMP_SET_FIELDS: FieldDefinition[] = [
   {
     name: 'country',
     label: 'Country',
-    inputType: 'text',
+    inputType: 'dropdown',
     requirement: 'required',
+    dropdownOptions: COUNTRIES_LIST,
   },
   {
     name: 'year',
