@@ -2697,3 +2697,8 @@ All 8 remaining filter optimization and caching items have been successfully imp
 ## Add to Inventory Page - Remove Shipping from Recommended Fields
 - [x] Changed SHIPPING_AVAILABLE_FIELD requirement from 'recommended' to 'conditional' to exclude it from Recommended Fields section
 - [x] Shipping Available now only appears in its own dedicated Shipping section
+
+
+## Add to Inventory Page - Initialize Default Quantity to 1
+- [x] Updated setItemType hook to initialize default values for all fields when item type is selected
+- [x] Quantity field now defaults to 1 when category and item type are selected
