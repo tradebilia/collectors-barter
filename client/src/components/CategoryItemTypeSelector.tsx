@@ -108,7 +108,7 @@ export const CategoryItemTypeSelector: React.FC<CategoryItemTypeSelectorProps> =
   return (
     <div className="space-y-6 p-6 bg-gray-900 rounded-lg border border-gray-700">
       <div>
-        <h2 className="text-2xl font-bold text-white mb-6">Select Category and Item Type</h2>
+        <h2 className="text-2xl font-bold text-white mb-6">1. Select Category and Item Type</h2>
         <p className="text-sm text-gray-300 mb-4">
           Choose your collectible category first, then select the specific item type.
         </p>

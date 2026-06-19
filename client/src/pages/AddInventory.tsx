@@ -266,7 +266,7 @@ export default function AddInventory() {
             />
 
             {/* Required Fields Section */}
-            <CollapsibleFormSection title="1. Required Fields" defaultExpanded={true} fieldCount={allFields.filter((f: FieldDefinition) => f.requirement === "required").length}>
+            <CollapsibleFormSection title="2. Required Fields" defaultExpanded={true} fieldCount={allFields.filter((f: FieldDefinition) => f.requirement === "required").length}>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {allFields
                   .filter((f: FieldDefinition) => f.requirement === "required" && shouldShowField(f))
@@ -283,7 +283,7 @@ export default function AddInventory() {
             </CollapsibleFormSection>
 
             {/* Recommended Fields Section */}
-            <CollapsibleFormSection title="Recommended Fields" defaultExpanded={true} fieldCount={allFields.filter((f: FieldDefinition) => f.requirement === "recommended").length}>
+            <CollapsibleFormSection title="3. Recommended Fields" defaultExpanded={true} fieldCount={allFields.filter((f: FieldDefinition) => f.requirement === "recommended").length}>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {allFields
                   .filter((f: FieldDefinition) => f.requirement === "recommended" && shouldShowField(f))
@@ -300,7 +300,7 @@ export default function AddInventory() {
             </CollapsibleFormSection>
 
             {/* Optional Fields Section */}
-            <CollapsibleFormSection title="2. Optional Fields" defaultExpanded={true} fieldCount={allFields.filter((f: FieldDefinition) => f.requirement === "optional").length}>
+            <CollapsibleFormSection title="4. Optional Fields" defaultExpanded={true} fieldCount={allFields.filter((f: FieldDefinition) => f.requirement === "optional").length}>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {allFields
                   .filter((f: FieldDefinition) => f.requirement === "optional" && shouldShowField(f))
@@ -317,7 +317,7 @@ export default function AddInventory() {
             </CollapsibleFormSection>
 
             {/* Shipping & Quantity Section */}
-            <CollapsibleFormSection title="3. Shipping and Quantity" defaultExpanded={true} fieldCount={2}>
+            <CollapsibleFormSection title="5. Shipping and Quantity" defaultExpanded={true} fieldCount={2}>
               <div className="space-y-4">
                 <DynamicFieldRenderer
                   field={{
@@ -346,7 +346,7 @@ export default function AddInventory() {
             </CollapsibleFormSection>
 
             {/* Description Section */}
-            <CollapsibleFormSection title="4. Description" defaultExpanded={true} fieldCount={1}>
+            <CollapsibleFormSection title="6. Description" defaultExpanded={true} fieldCount={1}>
               <div className="w-full">
                 <DynamicFieldRenderer
                   field={{
@@ -366,7 +366,7 @@ export default function AddInventory() {
           {/* Photo Upload Panel - Right Sidebar */}
           <div className="col-span-1 sticky top-32 h-fit">
             <div className="rounded-lg border border-white/20 bg-white/5 p-6 backdrop-blur">
-              <h3 className="mb-4 text-lg font-semibold text-white">5. Photos</h3>
+              <h3 className="mb-4 text-lg font-semibold text-white">7. Photos</h3>
 
               {/* Drag and Drop Area */}
               <div
