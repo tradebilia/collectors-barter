@@ -2,6 +2,7 @@
 // DO NOT EDIT MANUALLY - regenerate using generate_production_fields.py
 
 import type { FieldDefinition } from './formFieldDefinitions';
+import { COUNTRIES_LIST } from './countries';
 
 // Autographs - Collection/Lot
 export const AUTOGRAPHS_COLLECTION_LOT_FIELDS: FieldDefinition[] = [
@@ -193,6 +194,13 @@ export const COINS_COIN_SET_FIELDS: FieldDefinition[] = [
     requirement: 'required',
   },
   {
+    name: 'country',
+    label: 'Country',
+    inputType: 'dropdown',
+    requirement: 'required',
+    dropdownOptions: COUNTRIES_LIST,
+  },
+  {
     name: 'condition',
     label: 'Condition',
     inputType: 'dropdown',
@@ -216,12 +224,6 @@ export const COINS_COIN_SET_FIELDS: FieldDefinition[] = [
   {
     name: 'setName',
     label: 'Set Name',
-    inputType: 'text',
-    requirement: 'required',
-  },
-  {
-    name: 'country',
-    label: 'Country',
     inputType: 'text',
     requirement: 'required',
   },
@@ -268,6 +270,13 @@ export const COINS_COLLECTION_LOT_FIELDS: FieldDefinition[] = [
     label: 'Trade Value',
     inputType: 'currency',
     requirement: 'required',
+  },
+  {
+    name: 'country',
+    label: 'Country',
+    inputType: 'dropdown',
+    requirement: 'required',
+    dropdownOptions: COUNTRIES_LIST,
   },
   {
     name: 'condition',
@@ -338,6 +347,13 @@ export const COINS_SINGLE_COIN_FIELDS: FieldDefinition[] = [
     requirement: 'required',
   },
   {
+    name: 'country',
+    label: 'Country',
+    inputType: 'dropdown',
+    requirement: 'required',
+    dropdownOptions: COUNTRIES_LIST,
+  },
+  {
     name: 'condition',
     label: 'Condition',
     inputType: 'dropdown',
@@ -357,13 +373,6 @@ export const COINS_SINGLE_COIN_FIELDS: FieldDefinition[] = [
     label: 'Quantity',
     inputType: 'number',
     requirement: 'recommended',
-  },
-
-  {
-    name: 'country',
-    label: 'Country',
-    inputType: 'text',
-    requirement: 'required',
   },
   {
     name: 'denomination',
@@ -1974,6 +1983,13 @@ export const STAMPS_COLLECTION_LOT_FIELDS: FieldDefinition[] = [
     requirement: 'required',
   },
   {
+    name: 'country',
+    label: 'Country',
+    inputType: 'dropdown',
+    requirement: 'required',
+    dropdownOptions: COUNTRIES_LIST,
+  },
+  {
     name: 'condition',
     label: 'Condition',
     inputType: 'dropdown',
@@ -2042,6 +2058,13 @@ export const STAMPS_SINGLE_STAMP_FIELDS: FieldDefinition[] = [
     requirement: 'required',
   },
   {
+    name: 'country',
+    label: 'Country',
+    inputType: 'dropdown',
+    requirement: 'required',
+    dropdownOptions: COUNTRIES_LIST,
+  },
+  {
     name: 'condition',
     label: 'Condition',
     inputType: 'dropdown',
@@ -2061,13 +2084,6 @@ export const STAMPS_SINGLE_STAMP_FIELDS: FieldDefinition[] = [
     label: 'Quantity',
     inputType: 'number',
     requirement: 'recommended',
-  },
-
-  {
-    name: 'country',
-    label: 'Country',
-    inputType: 'text',
-    requirement: 'required',
   },
   {
     name: 'scottNumberOrDescription',
@@ -2147,6 +2163,13 @@ export const STAMPS_STAMP_SET_SHEET_FIELDS: FieldDefinition[] = [
     requirement: 'required',
   },
   {
+    name: 'country',
+    label: 'Country',
+    inputType: 'dropdown',
+    requirement: 'required',
+    dropdownOptions: COUNTRIES_LIST,
+  },
+  {
     name: 'condition',
     label: 'Condition',
     inputType: 'dropdown',
@@ -2166,13 +2189,6 @@ export const STAMPS_STAMP_SET_SHEET_FIELDS: FieldDefinition[] = [
     label: 'Quantity',
     inputType: 'number',
     requirement: 'recommended',
-  },
-
-  {
-    name: 'country',
-    label: 'Country',
-    inputType: 'text',
-    requirement: 'required',
   },
   {
     name: 'year',
@@ -3339,6 +3355,13 @@ export const COINS_PAPER_MONEY_BANKNOTES_FIELDS: FieldDefinition[] = [
     requirement: 'required',
   },
   {
+    name: 'country',
+    label: 'Country',
+    inputType: 'dropdown',
+    requirement: 'required',
+    dropdownOptions: COUNTRIES_LIST,
+  },
+  {
     name: 'condition',
     label: 'Condition',
     inputType: 'dropdown',
@@ -3358,13 +3381,6 @@ export const COINS_PAPER_MONEY_BANKNOTES_FIELDS: FieldDefinition[] = [
     label: 'Quantity',
     inputType: 'number',
     requirement: 'recommended',
-  },
-
-  {
-    name: 'country',
-    label: 'Country',
-    inputType: 'text',
-    requirement: 'required',
   },
   {
     name: 'denomination',

@@ -18,6 +18,7 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { AlertCircle, Upload, X } from 'lucide-react';
+import { CountrySelect } from '@/components/CountrySelect';
 
 interface DynamicFieldRendererProps {
   field: FieldDefinition;
@@ -122,19 +123,38 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({
         );
 
       case 'dropdown':
+        // Standard dropdown for all fields
         return (
           <Select value={value || ''} onValueChange={onChange} disabled={disabled}>
             <SelectTrigger className={`bg-white text-black ${hasError ? 'border-red-500' : ''}` }>
               <SelectValue placeholder="Select an option" />
             </SelectTrigger>
             <SelectContent>
-              {field.dropdownOptions?.map((option) => (
-                <SelectItem key={option} value={option}>
-                  {option}
-                </SelectItem>
-              ))}
-              {field.supportsOther && (
-                <SelectItem value="Other">Other</SelectItem>
+              {field.name === 'country' ? (
+                // For country field: United States first, then separator, then other countries
+                <>
+                  <SelectItem value="United States">United States</SelectItem>
+                  <div className="relative flex cursor-default select-none items-center justify-center border-t border-gray-200 py-1.5 text-xs text-gray-500">
+                    ─────────────
+                  </div>
+                  {field.dropdownOptions?.filter((option: string) => option !== 'United States').map((option: string) => (
+                    <SelectItem key={option} value={option}>
+                      {option}
+                    </SelectItem>
+                  ))}
+                </>
+              ) : (
+                // For other fields: render all options normally
+                <>
+                  {field.dropdownOptions?.map((option) => (
+                    <SelectItem key={option} value={option}>
+                      {option}
+                    </SelectItem>
+                  ))}
+                  {field.supportsOther && (
+                    <SelectItem value="Other">Other</SelectItem>
+                  )}
+                </>
               )}
             </SelectContent>
           </Select>
