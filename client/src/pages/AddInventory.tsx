@@ -286,6 +286,29 @@ export default function AddInventory() {
                     ))}
                 </div>
                 
+
+              </div>
+            </CollapsibleFormSection>
+
+
+
+            {/* Recommended Fields Section */}
+            <CollapsibleFormSection title="3. Recommended Fields" defaultExpanded={true} fieldCount={allFields.filter((f: FieldDefinition) => f.requirement === "recommended").length}>
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {allFields
+                    .filter((f: FieldDefinition) => f.requirement === "recommended" && shouldShowField(f))
+                    .map((field: FieldDefinition) => (
+                      <DynamicFieldRenderer
+                        key={field.name}
+                        field={field}
+                        value={formData[field.name as keyof typeof formData] || ""}
+                        onChange={(value) => updateField(field.name, value)}
+                        onOtherChange={(value) => updateOtherField(field.name, value)}
+                      />
+                    ))}
+                </div>
+                
                 {/* Inline Conditional Signature Fields */}
                 {formData.numberOfSignatures && parseInt(formData.numberOfSignatures) > 0 && (
                   <div className="space-y-3 bg-blue-50 p-4 rounded-lg">
@@ -312,25 +335,6 @@ export default function AddInventory() {
                     </div>
                   </div>
                 )}
-              </div>
-            </CollapsibleFormSection>
-
-
-
-            {/* Recommended Fields Section */}
-            <CollapsibleFormSection title="3. Recommended Fields" defaultExpanded={true} fieldCount={allFields.filter((f: FieldDefinition) => f.requirement === "recommended").length}>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {allFields
-                  .filter((f: FieldDefinition) => f.requirement === "recommended" && shouldShowField(f))
-                  .map((field: FieldDefinition) => (
-                    <DynamicFieldRenderer
-                      key={field.name}
-                      field={field}
-                      value={formData[field.name as keyof typeof formData] || ""}
-                      onChange={(value) => updateField(field.name, value)}
-                      onOtherChange={(value) => updateOtherField(field.name, value)}
-                    />
-                  ))}
               </div>
             </CollapsibleFormSection>
 

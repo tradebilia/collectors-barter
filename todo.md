@@ -2875,3 +2875,7 @@ All 8 remaining filter optimization and caching items have been successfully imp
 ## Conditional Field Section Placement Fix
 
 - [x] Fix "Signatures" field to appear in Recommended Fields section (same as parent "Signed" field) instead of Required Fields section
+
+## Dynamic Signature Fields Section Fix
+
+- [x] Move dynamic signature fields (Signature 1, 2, 3, etc.) from Required Fields section to Recommended Fields section so they appear alongside their parent "# of Signatures" field
