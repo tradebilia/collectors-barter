@@ -90,7 +90,15 @@ export const CategoryItemTypeSelector: React.FC<CategoryItemTypeSelectorProps> =
   useEffect(() => {
     if (selectedCategory && selectedCategory in ALL_DEFINITIONS) {
       const types = Object.keys(ALL_DEFINITIONS[selectedCategory as any] || {});
-      setItemTypes(types);
+      // Sort so that "single" item types appear first
+      const sorted = types.sort((a, b) => {
+        const aIsSingle = a.includes('single');
+        const bIsSingle = b.includes('single');
+        if (aIsSingle && !bIsSingle) return -1;
+        if (!aIsSingle && bIsSingle) return 1;
+        return 0;
+      });
+      setItemTypes(sorted);
     } else {
       setItemTypes([]);
     }

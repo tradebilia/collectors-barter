@@ -2813,10 +2813,10 @@ All 8 remaining filter optimization and caching items have been successfully imp
 
 - [x] Updated field_specifications.md with all recent changes (Shipping options, Original Box rename, Description field placement)
 - [x] Fix Description field duplication - removed from Optional Fields section so it only appears in its own dedicated section
-- [ ] Add maxLength properties to field definitions based on character limits
-- [ ] Adjust input bubble CSS widths to match character limits (narrow for Year, wider for Trade Value, etc.)
+- [x] Add maxLength properties to field definitions based on character limits (Year: 10, Quantity: 4, Card Number: 8, Grade: 4, Denomination: 10, etc.)
+- [x] Adjust input bubble CSS widths to match character limits (narrow for Year, wider for Trade Value, etc.)
 - [x] Update Shipping dropdown options from "Yes/No" to "Yes", "Local Only", "In Person Only"
-- [ ] Test input field sizing across all categories
+- [x] Test input field sizing across all categories - VERIFIED WORKING
 - [ ] Test conditional field ordering for condition field appearing after Is Graded selection
 - [x] Verify Shipping dropdown options display correctly
 
@@ -2836,3 +2836,7 @@ All 8 remaining filter optimization and caching items have been successfully imp
 - [x] Added disclaimer below photos: "📸 The photo with the yellow border will be displayed as your listing's cover photo"
 - [x] Verified yellow border switches when clicking different photos
 - [x] Tested cover photo selection - VERIFIED WORKING
+
+## Item Type Dropdown Ordering
+
+- [x] Prioritize "Single" item types to appear first in Item Type dropdown across all categories (most commonly used items should be easiest to select)
