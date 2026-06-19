@@ -251,7 +251,9 @@ export default function AddInventory() {
       </section>
 
       <div className="container mx-auto max-w-7xl px-4 py-12">
-        <form id="add-inventory-form" onSubmit={submitListing} className="space-y-6 pr-96">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Left column: Form (2 columns wide) */}
+          <form id="add-inventory-form" onSubmit={submitListing} className="lg:col-span-2 space-y-6">
             {/* Progress Indicator */}
             <FormProgressIndicator completedRequiredFields={filledRequiredFieldsCount} totalRequiredFields={requiredFieldsCount} />
 
@@ -350,12 +352,12 @@ export default function AddInventory() {
                 />
               </div>
             </CollapsibleFormSection>
-        </form>
+          </form>
 
-        {/* Photo Upload Panel - Fixed Right Sidebar */}
-        <div className="fixed right-8 top-32 w-80 max-h-[calc(100vh-150px)] overflow-y-auto z-40">
-          <div className="rounded-lg border border-white/20 bg-white/5 p-6 backdrop-blur">
-            <h3 className="mb-4 text-lg font-semibold text-white">{allFields.filter((f: FieldDefinition) => f.requirement === "optional" && shouldShowField(f)).length > 0 ? "7. Photos" : "6. Photos"}</h3>
+          {/* Right column: Photo Upload Panel */}
+          <div className="lg:col-span-1">
+            <div className="sticky top-32 rounded-lg border border-white/20 bg-white/5 p-6 backdrop-blur">
+              <h3 className="mb-4 text-lg font-semibold text-white">{allFields.filter((f: FieldDefinition) => f.requirement === "optional" && shouldShowField(f)).length > 0 ? "7. Photos" : "6. Photos"}</h3>
 
               {/* Drag and Drop Area */}
               <div
@@ -412,7 +414,8 @@ export default function AddInventory() {
                 <input type="file" multiple accept="image/*" onChange={handlePhotos} className="hidden" />
               </label>
 
-            <p className="mt-2 text-xs text-white/50">At least 1 photo required</p>
+              <p className="mt-2 text-xs text-white/50">At least 1 photo required</p>
+            </div>
           </div>
         </div>
 
