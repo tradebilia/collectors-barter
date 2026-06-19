@@ -336,7 +336,7 @@ export default function AddInventory() {
                     label: "Shipping Available",
                     inputType: "dropdown",
                     requirement: "required",
-                    dropdownOptions: ["Yes", "No"],
+                    dropdownOptions: ["Yes", "Local Only"],
                   }}
                   value={formData.shippingAvailable || "Yes"}
                   onChange={(value) => updateField("shippingAvailable", value)}

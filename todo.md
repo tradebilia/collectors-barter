@@ -2509,3 +2509,17 @@ All 8 remaining filter optimization and caching items have been successfully imp
 ✅ Description textarea is now prominently displayed
 ✅ More space for users to write detailed descriptions
 ✅ Full-width textarea makes better use of available space
+
+
+## Add to Inventory Page - Shipping Options Update - PHASE 3F COMPLETE ✅ (Jun 19, 2026)
+
+### Shipping Options Update
+- [x] Changed shipping dropdown options from ["Yes", "No"] to ["Yes", "Local Only"]
+- [x] Updated shippingAvailable field in Shipping and Quantity section
+- [x] Default value remains "Yes"
+- [x] Users can now select between "Yes" (ships anywhere) or "Local Only" (local pickup/delivery only)
+
+### Build Status
+✅ TypeScript: PASSED (0 errors)
+✅ Project Build: PASSED (no build errors)
+✅ Tests: PASSED (151 passed, 0 failed, 25 skipped)
