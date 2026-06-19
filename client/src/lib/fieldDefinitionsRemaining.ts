@@ -329,6 +329,7 @@ const VIDEO_GAMES_GAME_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'recommended',
     dropdownOptions: ['Yes', 'No'],
+    conditionalLogic: 'Complete In Box = No',
   },
 ];
 
