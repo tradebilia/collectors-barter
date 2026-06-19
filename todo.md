@@ -2793,3 +2793,17 @@ All 8 remaining filter optimization and caching items have been successfully imp
 - [x] Fix any misplaced conditional fields in field definitions (verified grading company fields appear in Required Fields when Is Graded = Yes)
 - [x] Remove field count text from all section headings (e.g., "1 field", "6 fields")
 - [x] Test all categories to verify conditional field placement is correct
+
+
+## Comprehensive Conditional Field Audit and Fixes
+
+- [x] Conduct systematic audit of all conditional fields across all categories
+- [x] Identify misplaced conditional fields (where child section != parent section)
+- [x] Fix serialNumber field placement - moved from Optional to Recommended section (parent: serialNumbered)
+- [x] Fix condition field placement - moved from Optional to Required section (parent: isGraded) - 10 occurrences across categories
+- [x] Fix missingCards field placement - moved from Optional to Required section (parent: setType)
+- [x] Fix missingPieces field placement - moved from Optional to Required section (parent: complete) - 2 occurrences
+- [x] Fix missingPins field placement - moved from Optional to Required section (parent: completeSet)
+- [x] Fix manualIncluded field placement - moved from Optional to Recommended section (parent: completeInBox)
+- [x] Test Sports Cards Single Card to verify serialNumber now appears in Recommended Fields when Serial Numbered = Yes
+- [x] Verify all conditional fields now appear in the same section as their parent fields
