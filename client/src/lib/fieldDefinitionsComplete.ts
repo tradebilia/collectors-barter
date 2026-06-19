@@ -29,49 +29,13 @@ function applyLayoutProperties(fields: FieldDefinition[]): FieldDefinition[] {
   });
 }
 
-// Helper function to merge common fields with category-specific fields
+// Helper function to merge field definitions
+// Simply remove photos field (it has its own dedicated sticky panel)
 function mergeFieldDefinitions(generatedFields: FieldDefinition[]): FieldDefinition[] {
-  // Filter out common fields from generated (they'll be added separately or handled elsewhere)
-  // Note: photos is excluded because it has its own dedicated sticky panel
-  const commonFieldNames = [
-    'title', 'estimatedValue', 'condition', 'photos', 'description', 
-    'quantity', 'shippingAvailable'
-  ];
+  // Remove photos field since it has its own dedicated sticky panel
+  const fieldsWithoutPhotos = generatedFields.filter(f => f.name !== 'photos');
   
-  // Also filter out the generated field versions of these common fields
-  const generatedCommonFieldNames = [
-    'listingTitle', 'tradeValue'
-  ];
-  
-  // Remove ALL common fields and photos from generated fields
-  const categorySpecificFields = generatedFields.filter(
-    f => !commonFieldNames.includes(f.name) && !generatedCommonFieldNames.includes(f.name) && f.name !== 'photos'
-  );
-  
-  // Combine: common fields first, then category-specific
-  // Note: PHOTOS_FIELD is excluded here because it has its own dedicated sticky panel
-  const commonFieldsArray: FieldDefinition[] = [
-    { ...COMMON_FIELDS.LISTING_TITLE_FIELD, gridColumn: 'full' as const, name: 'listingTitle' },
-    { ...COMMON_FIELDS.TRADE_VALUE_FIELD, gridColumn: 'half' as const, name: 'tradeValue' },
-    COMMON_FIELDS.CONDITION_FIELD,
-    COMMON_FIELDS.DESCRIPTION_FIELD,
-    { ...COMMON_FIELDS.QUANTITY_FIELD, gridColumn: 'half' as const, defaultValue: '1' },
-    COMMON_FIELDS.SHIPPING_AVAILABLE_FIELD,
-  ];
-  
-  // Combine common fields with category-specific fields
-  // Remove duplicates by name - keep first occurrence (common fields)
-  const allFields = [...commonFieldsArray, ...categorySpecificFields];
-  const seenNames = new Set<string>();
-  const uniqueFields = allFields.filter(field => {
-    if (seenNames.has(field.name)) {
-      return false;
-    }
-    seenNames.add(field.name);
-    return true;
-  });
-  
-  return applyLayoutProperties(uniqueFields);
+  return applyLayoutProperties(fieldsWithoutPhotos);
 }
 
 // ============================================================================
