@@ -4,7 +4,7 @@
  */
 
 import React, { useState } from 'react';
-import { ChevronDown } from 'lucide-react';
+
 import { Button } from '@/components/ui/button';
 
 interface CollapsibleFormSectionProps {
@@ -38,11 +38,7 @@ export const CollapsibleFormSection: React.FC<CollapsibleFormSectionProps> = ({
             <h3 className="text-lg font-semibold text-white">{title}</h3>
           </div>
         </div>
-        <ChevronDown
-          className={`w-5 h-5 text-gray-600 transition-transform ${
-            isExpanded ? 'rotate-180' : ''
-          }`}
-        />
+
       </button>
 
       {isExpanded && (

@@ -2865,3 +2865,7 @@ All 8 remaining filter optimization and caching items have been successfully imp
 - [x] Update regex pattern to match field names containing spaces
 - [x] Verify conditional fields (Grading Company, Grade, Certification Number) are hidden until parent field is activated
 - [x] Test conditional fields appear when parent field condition is met
+
+## UI Polish - Remove Chevron Arrows
+
+- [x] Remove up/down chevron arrows from all field bundle section headers (Required Fields, Recommended Fields, Optional Fields, Shipping, Description, Photos)
