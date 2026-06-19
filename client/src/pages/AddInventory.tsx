@@ -328,11 +328,11 @@ export default function AddInventory() {
             </CollapsibleFormSection>
 
             {/* Optional Fields Section */}
-            {allFields.filter((f: FieldDefinition) => f.requirement === "optional" && shouldShowField(f)).length > 0 && (
-            <CollapsibleFormSection title="4. Optional Fields" defaultExpanded={true} fieldCount={allFields.filter((f: FieldDefinition) => f.requirement === "optional").length}>
+            {allFields.filter((f: FieldDefinition) => f.requirement === "optional" && f.name !== "description" && shouldShowField(f)).length > 0 && (
+            <CollapsibleFormSection title="4. Optional Fields" defaultExpanded={true} fieldCount={allFields.filter((f: FieldDefinition) => f.requirement === "optional" && f.name !== "description").length}>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {allFields
-                  .filter((f: FieldDefinition) => f.requirement === "optional" && shouldShowField(f))
+                  .filter((f: FieldDefinition) => f.requirement === "optional" && f.name !== "description" && shouldShowField(f))
                   .map((field: FieldDefinition) => (
                     <DynamicFieldRenderer
                       key={field.name}

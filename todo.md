@@ -2815,7 +2815,7 @@ All 8 remaining filter optimization and caching items have been successfully imp
 - [ ] Fix conditional field ordering - condition field should appear AFTER "Is Graded = No" condition is met
 - [ ] Add maxLength properties to field definitions based on character limits
 - [ ] Adjust input bubble CSS widths to match character limits (narrow for Year, wider for Trade Value, etc.)
-- [ ] Update Shipping dropdown options from "Yes/No" to "Yes", "Local Only", "In Person Only"
+- [x] Update Shipping dropdown options from "Yes/No" to "Yes", "Local Only", "In Person Only"
 - [ ] Test input field sizing across all categories
 - [ ] Test conditional field ordering for condition field appearing after Is Graded selection
-- [ ] Verify Shipping dropdown options display correctly
+- [x] Verify Shipping dropdown options display correctly
