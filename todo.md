@@ -2748,8 +2748,8 @@ All 8 remaining filter optimization and caching items have been successfully imp
 - [x] Fix useAddInventoryForm to include common fields (Listing Title, Trade Value, Photos) in currentFields
 - [x] Ensure common fields appear before category-specific fields in form rendering
 
-- [ ] Add nested conditional for Signed field: When Signed = Yes, show "# of Signatures" dropdown (1-10) in Recommended Fields
-- [ ] Add dynamic signature input fields: When "# of Signatures" is selected, show that many input boxes labeled "Signature 1", "Signature 2", etc.
-- [ ] Store signatures as array in form data: signatures: ["Name1", "Name2", ...]
-- [ ] Limit nested conditional signatures to Comics/Single Comic category only
-- [ ] Test nested conditional signatures across different numbers (1-10) and verify correct number of input fields appear
+- [x] Add nested conditional for Signed field: When Signed = Yes, show "# of Signatures" dropdown (1-10) in Recommended Fields
+- [x] Add dynamic signature input fields: When "# of Signatures" is selected, show that many input boxes labeled "Signature 1", "Signature 2", etc.
+- [x] Store signatures as array in form data: signatures: ["Name1", "Name2", ...]
+- [x] Limit nested conditional signatures to Comics/Single Comic category only
+- [x] Test nested conditional signatures across different numbers (1-10) and verify correct number of input fields appear
