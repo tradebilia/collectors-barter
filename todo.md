@@ -2908,3 +2908,4 @@ All 8 remaining filter optimization and caching items have been successfully imp
 - [x] Remove duplicate "Other" from Manufacturer dropdown (removed from dropdownOptions since it's added by supportsOther)
 - [x] Add custom input field when "Other" is selected for fields with supportsOther (using otherFieldName as label)
 - [x] Fix category reset to completely clear all form data including Manufacturer field
+- [x] Update custom input styling to have white background with black text label and input
