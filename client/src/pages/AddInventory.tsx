@@ -251,9 +251,7 @@ export default function AddInventory() {
       </section>
 
       <div className="container mx-auto max-w-7xl px-4 py-12">
-        <form id="add-inventory-form" onSubmit={submitListing} className="grid grid-cols-4 gap-6">
-          {/* Left Column (75%) - Form Content */}
-          <div className="col-span-3 space-y-6">
+        <form id="add-inventory-form" onSubmit={submitListing} className="space-y-6 pr-96">
             {/* Progress Indicator */}
             <FormProgressIndicator completedRequiredFields={filledRequiredFieldsCount} totalRequiredFields={requiredFieldsCount} />
 
@@ -352,12 +350,12 @@ export default function AddInventory() {
                 />
               </div>
             </CollapsibleFormSection>
-          </div>
+        </form>
 
-          {/* Photo Upload Panel - Right Sidebar */}
-          <div className="sticky top-32 w-80 max-h-[calc(100vh-150px)] overflow-y-auto">
-            <div className="rounded-lg border border-white/20 bg-white/5 p-6 backdrop-blur">
-              <h3 className="mb-4 text-lg font-semibold text-white">{allFields.filter((f: FieldDefinition) => f.requirement === "optional" && shouldShowField(f)).length > 0 ? "7. Photos" : "6. Photos"}</h3>
+        {/* Photo Upload Panel - Fixed Right Sidebar */}
+        <div className="fixed right-8 top-32 w-80 max-h-[calc(100vh-150px)] overflow-y-auto z-40">
+          <div className="rounded-lg border border-white/20 bg-white/5 p-6 backdrop-blur">
+            <h3 className="mb-4 text-lg font-semibold text-white">{allFields.filter((f: FieldDefinition) => f.requirement === "optional" && shouldShowField(f)).length > 0 ? "7. Photos" : "6. Photos"}</h3>
 
               {/* Drag and Drop Area */}
               <div
@@ -414,13 +412,12 @@ export default function AddInventory() {
                 <input type="file" multiple accept="image/*" onChange={handlePhotos} className="hidden" />
               </label>
 
-              <p className="mt-2 text-xs text-white/50">At least 1 photo required</p>
-            </div>
+            <p className="mt-2 text-xs text-white/50">At least 1 photo required</p>
           </div>
-        </form>
+        </div>
 
-        {/* Action Buttons - Visible when scrolling to bottom */}
-        <div className="fixed bottom-0 left-0 right-0 border-t border-white/10 bg-black/80 backdrop-blur">
+      {/* Action Buttons - Visible when scrolling to bottom */}
+      <div className="fixed bottom-0 left-0 right-0 border-t border-white/10 bg-black/80 backdrop-blur z-50">
           <div className="container mx-auto max-w-7xl px-4 py-4 flex justify-center gap-4">
             <Button variant="outline" onClick={(e) => { e.preventDefault(); handleSaveDraft(); }} disabled={saveDraftMutation.isPending}>
               {saveDraftMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -431,11 +428,11 @@ export default function AddInventory() {
               {isEditMode ? "Update Listing" : "Submit Collectible"}
             </Button>
           </div>
-        </div>
-
-        {/* Spacer for fixed button bar */}
-        <div className="h-20" />
       </div>
+
+      {/* Spacer for fixed button bar */}
+      <div className="h-20" />
     </div>
-  );
+  </div>
+);
 }
