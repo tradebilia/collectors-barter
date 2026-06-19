@@ -364,7 +364,7 @@ export default function AddInventory() {
           </div>
 
           {/* Photo Upload Panel - Right Sidebar */}
-          <div className="col-span-1 sticky top-20 h-fit mr-8">
+          <div className="col-span-1 sticky top-32 h-fit">
             <div className="rounded-lg border border-white/20 bg-white/5 p-6 backdrop-blur">
               <h3 className="mb-4 text-lg font-semibold text-white">5. Photos</h3>
 
