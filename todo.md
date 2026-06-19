@@ -2774,3 +2774,6 @@ All 8 remaining filter optimization and caching items have been successfully imp
 - [x] Update shouldShowField function to evaluate conditionalLogic regardless of requirement type
 - [x] Verify conditional fields are properly hidden/shown based on their conditions
 - [x] Test across multiple categories to ensure all conditional fields work correctly
+
+- [x] Move conditional grading fields (Grading Company, Grade, Certification Number) to Required section so they appear below Is Graded when Is Graded = Yes
+- [x] Verify all conditional fields appear in their logical parent section, not in a different section
