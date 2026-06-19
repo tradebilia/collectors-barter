@@ -66,10 +66,14 @@ export const useAddInventoryForm = (): UseAddInventoryFormReturn => {
 
       // Parse condition like "Is Graded = Yes"
       const [fieldName, expectedValue] = condition.split('=').map((s) => s.trim());
+      // Convert "Is Graded" to "isGraded" (camelCase)
       const fieldKey = fieldName
-        .replace(/\s+/g, '')
-        .replace(/([A-Z])/g, (m) => m.toLowerCase())
-        .replace(/^./, (m) => m.toLowerCase());
+        .split(' ')
+        .map((word, index) => {
+          if (index === 0) return word.toLowerCase();
+          return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+        })
+        .join('');
 
       const actualValue = formData[fieldKey];
       return actualValue === expectedValue;
