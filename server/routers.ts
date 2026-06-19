@@ -843,29 +843,17 @@ export const appRouter = router({
             isMerchant: input.isMerchant,
             message: input.message.trim(),
           });
+          return {
+            success: true,
+            message: "Your referral request has been submitted successfully.",
+          };
         } catch (error) {
           console.error('[referralRequest] Failed to save to database:', error);
+          return {
+            success: false,
+            message: "Your referral request could not be saved. Please try again shortly.",
+          };
         }
-        
-        const delivered = await notifyOwner({
-          title: `Tradebilia referral request: ${input.friendName.trim()}`,
-          content: [
-            `Referrer: ${referrerName}`,
-            `Referrer user ID: ${ctx.user.id}`,
-            `Referrer account email: ${ctx.user.email ?? "Not available"}`,
-            `Referral candidate name: ${input.friendName.trim()}`,
-            `Referral candidate email: ${input.friendEmail.trim()}`,
-            `Collector focus: ${input.collectorFocus.trim()}`,
-            `Referral message: ${input.message.trim()}`,
-          ].join("\n"),
-        });
-
-        return {
-          success: delivered,
-          message: delivered
-            ? "Your referral request was sent for Tradebilia review."
-            : "Your referral request could not be delivered right now. Please try again shortly.",
-        };
       }),
     saveDraft: protectedProcedure
       .input(

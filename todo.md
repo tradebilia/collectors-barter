@@ -2718,3 +2718,16 @@ All 8 remaining filter optimization and caching items have been successfully imp
 ## Bug Fix - Stop Repeated Referral Request Emails
 - [x] Mocked notifyOwner function in market.referralRequest.test.ts to prevent sending real emails during test execution
 - [x] Tests now run without triggering email notifications to project owner
+
+
+## Referral Notification Batching
+- [ ] Modify referralRequest mutation to NOT send immediate notifications
+- [ ] Create scheduled task to batch referral notifications every 3 days
+- [ ] Send digest email with all referrals from past 3 days instead of individual emails
+
+
+## Referral Notification Batching
+- [x] Remove immediate notifications from referralRequest mutation
+- [x] Create scheduled endpoint /api/scheduled/referralDigest for batching
+- [x] Implement 3-day digest email instead of individual notifications
+- [x] Update tests to reflect new batching behavior

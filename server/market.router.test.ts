@@ -4,6 +4,7 @@ import type { TrpcContext } from "./_core/context";
 const dbMocks = vi.hoisted(() => ({
   createListing: vi.fn(),
   createTradeProposal: vi.fn(),
+  createReferralRequest: vi.fn(),
   getDashboardData: vi.fn(),
   getListingDetail: vi.fn(),
   getMarketplaceFeed: vi.fn(),
@@ -191,8 +192,6 @@ describe("market router", () => {
   });
 
   it("sends a Tradebilia referral request for owner review", async () => {
-    notificationMocks.notifyOwner.mockResolvedValue(true);
-
     const caller = appRouter.createCaller(createContext());
     const result = await caller.market.referralRequest({
       friendName: "Jordan Example",
@@ -201,13 +200,10 @@ describe("market router", () => {
       message: "Jordan is a careful collector who would add value to the Tradebilia community.",
     });
 
-    expect(notificationMocks.notifyOwner).toHaveBeenCalledWith({
-      title: "Tradebilia referral request: Jordan Example",
-      content: expect.stringContaining("Referral candidate email: jordan@example.com"),
-    });
+    // Referral requests are now batched and sent via scheduled digest, not immediately
     expect(result).toEqual({
       success: true,
-      message: "Your referral request was sent for Tradebilia review.",
+      message: "Your referral request has been submitted successfully.",
     });
   });
 });

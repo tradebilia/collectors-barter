@@ -1,4 +1,3 @@
-import "dotenv/config";
 import express from "express";
 import { createServer } from "http";
 import net from "net";
@@ -8,6 +7,9 @@ import { registerStorageProxy } from "./storageProxy";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
+import { sdk } from "./sdk";
+import { notifyOwner } from "./notification";
+import { desc, gte } from "drizzle-orm";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -44,6 +46,57 @@ async function startServer() {
       createContext,
     })
   );
+
+  // Scheduled referral digest endpoint
+  app.post("/api/scheduled/referralDigest", async (req, res) => {
+    try {
+      const user = await sdk.authenticateRequest(req);
+      
+      if (!user.isCron) {
+        return res.status(403).json({ error: "cron-only" });
+      }
+
+      // Dynamic import to get db instance
+      const { requireDb } = await import("../db");
+      const db = await requireDb();
+      // Use require for schema since it's TypeScript
+      const { referralRequests } = require("../drizzle/schema");
+
+      // Get referrals from the last 3 days
+      const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000);
+      const pendingReferrals = await db.select()
+        .from(referralRequests)
+        .where(gte(referralRequests.createdAt, threeDaysAgo))
+        .orderBy(desc(referralRequests.createdAt));
+
+      if (pendingReferrals.length === 0) {
+        return res.json({ ok: true, skipped: "no-referrals" });
+      }
+
+      // Build digest email
+      const referralLines = pendingReferrals.map((ref: any) => 
+        `• ${ref.collectorName} (${ref.collectorEmail}) - Focus: ${ref.collectorFocus} - Referrer: ${ref.referrerFirstName} ${ref.referrerLastName}`
+      );
+
+      const delivered = await notifyOwner({
+        title: `Tradebilia Referral Digest - ${pendingReferrals.length} new referrals`,
+        content: [
+          `You have ${pendingReferrals.length} new referral request(s) from the past 3 days:\n`,
+          referralLines.join("\n"),
+        ].join("\n"),
+      });
+
+      res.json({ ok: true, referralCount: pendingReferrals.length, notified: delivered });
+    } catch (error: any) {
+      console.error('[referralDigest] Error:', error);
+      res.status(500).json({
+        error: error.message,
+        stack: error.stack,
+        timestamp: new Date().toISOString(),
+      });
+    }
+  });
+
   // development mode uses Vite, production mode uses static files
   if (process.env.NODE_ENV === "development") {
     await setupVite(app, server);
