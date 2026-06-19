@@ -264,8 +264,20 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({
         {renderField()}
 
         {showOtherInput && field.supportsOther && value === 'Other' && (
-          <div className="mt-2 p-3 rounded-lg" style={{ backgroundColor: '#ffffff' }}>
-            <label className="text-sm font-medium block mb-2" style={{ color: '#000000' }}>
+          <div style={{
+            marginTop: '0.5rem',
+            padding: '0.75rem',
+            borderRadius: '0.5rem',
+            backgroundColor: '#ffffff',
+            border: '1px solid #e5e7eb'
+          }}>
+            <label style={{
+              display: 'block',
+              fontSize: '0.875rem',
+              fontWeight: '500',
+              marginBottom: '0.5rem',
+              color: '#000000'
+            }}>
               {field.otherFieldName || 'Custom value'}
             </label>
             <input
@@ -274,8 +286,17 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({
               onChange={(e) => onOtherChange?.(e.target.value)}
               disabled={disabled}
               placeholder={`Enter ${field.otherFieldName || 'custom value'}`}
-              style={{ backgroundColor: '#ffffff', color: '#000000' }}
-              className="w-full border border-gray-300 rounded px-3 py-2 placeholder:text-gray-400"
+              style={{
+                width: '100%',
+                backgroundColor: '#ffffff',
+                color: '#000000',
+                border: '1px solid #d1d5db',
+                borderRadius: '0.375rem',
+                padding: '0.5rem 0.75rem',
+                fontSize: '1rem',
+                fontFamily: 'inherit',
+                boxSizing: 'border-box'
+              }}
             />
           </div>
         )}
