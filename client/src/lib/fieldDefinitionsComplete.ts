@@ -38,13 +38,9 @@ function mergeFieldDefinitions(generatedFields: FieldDefinition[]): FieldDefinit
     'quantity', 'shippingAvailable'
   ];
   
+  // Remove ALL common fields and photos from generated fields
   const categorySpecificFields = generatedFields.filter(
-    f => !commonFieldNames.includes(f.name)
-  );
-  
-  // Also remove any photos fields that might have slipped through
-  const fieldsWithoutPhotos = categorySpecificFields.filter(
-    f => f.name !== 'photos'
+    f => !commonFieldNames.includes(f.name) && f.name !== 'photos'
   );
   
   // Combine: common fields first, then category-specific
@@ -58,18 +54,10 @@ function mergeFieldDefinitions(generatedFields: FieldDefinition[]): FieldDefinit
     COMMON_FIELDS.SHIPPING_AVAILABLE_FIELD,
   ];
   
-  // Remove duplicate fields by name - keep first occurrence
-  const allFields = [...commonFieldsArray, ...fieldsWithoutPhotos];
-  const seenNames = new Set<string>();
-  const uniqueFields = allFields.filter(field => {
-    if (seenNames.has(field.name)) {
-      return false;
-    }
-    seenNames.add(field.name);
-    return true;
-  });
+  // Combine common fields with category-specific fields
+  const allFields = [...commonFieldsArray, ...categorySpecificFields];
   
-  return applyLayoutProperties(uniqueFields);
+  return applyLayoutProperties(allFields);
 }
 
 // ============================================================================
