@@ -2884,3 +2884,7 @@ All 8 remaining filter optimization and caching items have been successfully imp
 
 - [x] Remove standalone "Signatures" textarea field from Recommended Fields (keep only the dynamic Signature 1, 2, 3 inputs)
 - [x] Fix conditional logic so dynamic signature fields only show when "Signed = Yes" AND "# of Signatures > 0" (hide when Signed = No)
+
+## Section Header Asterisks
+
+- [x] Add asterisk (*) to "Required Fields" section header to indicate all fields in this section are required
