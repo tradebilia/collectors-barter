@@ -356,7 +356,7 @@ export default function AddInventory() {
         </div>
 
         {/* Photo Upload Panel - positioned absolutely on the right */}
-        <div className="absolute top-12 right-0 w-80 z-10">
+        <div className="absolute top-12 -right-4 w-80 z-10">
             <div className="rounded-lg border border-white/20 bg-white/5 p-6 backdrop-blur">
               <h3 className="mb-4 text-lg font-semibold text-white">{allFields.filter((f: FieldDefinition) => f.requirement === "optional" && shouldShowField(f)).length > 0 ? "7. Photos" : "6. Photos"}</h3>
 

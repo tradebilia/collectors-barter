@@ -58,7 +58,18 @@ function mergeFieldDefinitions(generatedFields: FieldDefinition[]): FieldDefinit
     COMMON_FIELDS.SHIPPING_AVAILABLE_FIELD,
   ];
   
-  return applyLayoutProperties([...commonFieldsArray, ...fieldsWithoutPhotos]);
+  // Remove duplicate fields by name - keep first occurrence
+  const allFields = [...commonFieldsArray, ...fieldsWithoutPhotos];
+  const seenNames = new Set<string>();
+  const uniqueFields = allFields.filter(field => {
+    if (seenNames.has(field.name)) {
+      return false;
+    }
+    seenNames.add(field.name);
+    return true;
+  });
+  
+  return applyLayoutProperties(uniqueFields);
 }
 
 // ============================================================================
