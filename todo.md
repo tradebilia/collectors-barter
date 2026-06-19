@@ -2724,3 +2724,8 @@ All 8 remaining filter optimization and caching items have been successfully imp
 - [x] Modify referralRequest mutation to NOT send immediate notifications
 - [x] Create scheduled task to batch referral notifications every 3 days
 - [x] Send digest email with all referrals from past 3 days instead of individual emails
+
+
+## Add to Inventory Page - Input Field Width Fix
+- [x] Apply max-w-xs styling to half-width input fields (Quantity, Year, Issue Number)
+- [x] Verify styling applies correctly to text, number, and currency input types

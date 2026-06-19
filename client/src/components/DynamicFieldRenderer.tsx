@@ -76,7 +76,7 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({
             onChange={(e) => onChange(e.target.value)}
             disabled={disabled}
             placeholder={field.notes}
-            className={`bg-white text-black ${hasError ? 'border-red-500' : ''}`}
+            className={`bg-white text-black ${hasError ? 'border-red-500' : ''} ${field.gridColumn === 'half' ? 'max-w-xs' : ''}`}
           />
         );
 
@@ -89,13 +89,13 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({
             disabled={disabled}
             min={field.validation?.min}
             max={field.validation?.max}
-            className={`bg-white text-black ${hasError ? 'border-red-500' : ''}`}
+            className={`bg-white text-black ${hasError ? 'border-red-500' : ''} ${field.gridColumn === 'half' ? 'max-w-xs' : ''}`}
           />
         );
 
       case 'currency':
         return (
-          <div className="relative">
+          <div className={`relative ${field.gridColumn === 'half' ? 'max-w-xs' : ''}`}>
             <span className="absolute left-3 top-2.5 text-gray-500">$</span>
             <Input
               type="number"
@@ -104,7 +104,7 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({
               disabled={disabled}
               min={field.validation?.min}
               placeholder="0.00"
-              className={`pl-7 bg-white text-black ${hasError ? 'border-red-500' : ''}`}
+              className={`pl-7 bg-white text-black ${hasError ? 'border-red-500' : ''} w-full`}
             />
           </div>
         );
