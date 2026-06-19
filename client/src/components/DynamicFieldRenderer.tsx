@@ -76,7 +76,7 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({
             onChange={(e) => onChange(e.target.value)}
             disabled={disabled}
             placeholder={field.notes}
-            className={hasError ? 'border-red-500' : ''}
+            className={`bg-white text-black ${hasError ? 'border-red-500' : ''}`}
           />
         );
 
@@ -89,7 +89,7 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({
             disabled={disabled}
             min={field.validation?.min}
             max={field.validation?.max}
-            className={hasError ? 'border-red-500' : ''}
+            className={`bg-white text-black ${hasError ? 'border-red-500' : ''}`}
           />
         );
 
@@ -104,7 +104,7 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({
               disabled={disabled}
               min={field.validation?.min}
               placeholder="0.00"
-              className={`pl-7 ${hasError ? 'border-red-500' : ''}`}
+              className={`pl-7 bg-white text-black ${hasError ? 'border-red-500' : ''}`}
             />
           </div>
         );
@@ -117,14 +117,14 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({
             disabled={disabled}
             placeholder={field.notes}
             rows={8}
-            className={`w-full ${hasError ? 'border-red-500' : ''}`}
+            className={`w-full bg-white text-black ${hasError ? 'border-red-500' : ''}`}
           />
         );
 
       case 'dropdown':
         return (
           <Select value={value || ''} onValueChange={onChange} disabled={disabled}>
-            <SelectTrigger className={hasError ? 'border-red-500' : ''}>
+            <SelectTrigger className={`bg-white text-black ${hasError ? 'border-red-500' : ''}` }>
               <SelectValue placeholder="Select an option" />
             </SelectTrigger>
             <SelectContent>
