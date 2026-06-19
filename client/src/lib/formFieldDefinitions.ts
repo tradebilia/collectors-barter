@@ -126,7 +126,7 @@ const SHIPPING_AVAILABLE_FIELD: FieldDefinition = {
   label: 'Shipping Available',
   inputType: 'dropdown',
   requirement: 'required',
-  dropdownOptions: ['Yes', 'No', 'Local Only'],
+  dropdownOptions: ['Yes', 'Local Only', 'In Person Only'],
 };
 
 const IS_GRADED_FIELD: FieldDefinition = {
