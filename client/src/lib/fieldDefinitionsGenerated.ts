@@ -2748,15 +2748,6 @@ export const VIDEO_GAMES_CONSOLE_FIELDS: FieldDefinition[] = [
     requirement: 'recommended',
   },
   {
-    name: 'region',
-    label: 'Region',
-    inputType: 'dropdown',
-    requirement: 'recommended',
-    dropdownOptions: ['NTSC-U', 'NTSC-J', 'PAL', 'Region Free', 'Unknown', 'Other'],
-    supportsOther: true,
-    otherFieldName: 'Custom Region',
-  },
-  {
     name: 'isGraded',
     label: 'Is Graded',
     inputType: 'dropdown',
