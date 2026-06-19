@@ -2676,3 +2676,8 @@ All 8 remaining filter optimization and caching items have been successfully imp
 ## Add to Inventory Page - Remove Description from Optional Section
 - [x] Changed DESCRIPTION_FIELD requirement from 'optional' to 'conditional' to exclude it from Optional Fields section
 - [x] Description now only appears in its own standalone section
+
+
+## Add to Inventory Page - Hide Empty Optional Fields Section
+- [x] Added conditional rendering to hide Optional Fields section when no optional fields are available
+- [x] Section title and number are completely hidden when there are no optional fields for the selected category/item type
