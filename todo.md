@@ -2896,3 +2896,8 @@ All 8 remaining filter optimization and caching items have been successfully imp
 ## Photos Counter Fix
 
 - [x] Fix required fields counter to properly count photos when uploaded (pass photos state to hook)
+
+## Form Reset and Shipping Default Fixes
+
+- [x] Reset all form data (including photos, shipping, description) when category changes
+- [x] Remove default "Yes" value from Shipping dropdown (show "Select an option" initially)

@@ -129,6 +129,13 @@ export default function AddInventory() {
     }
   };
 
+  const handleCategoryChange = (category: CollectibleCategory) => {
+    // Reset all form data when category changes
+    setPhotos([]);
+    setPrimaryPhotoIndex(0);
+    setCategory(category);
+  };
+
   const handleSaveDraft = async () => {
     try {
       if (!formData.category) {
@@ -265,7 +272,7 @@ export default function AddInventory() {
             <CategoryItemTypeSelector
               selectedCategory={formData.category}
               selectedItemType={formData.itemType}
-              onCategoryChange={setCategory}
+              onCategoryChange={handleCategoryChange}
               onItemTypeChange={setItemType}
             />
 
@@ -368,7 +375,7 @@ export default function AddInventory() {
                     requirement: "required",
                     dropdownOptions: ["Yes", "Local Only", "In Person Only"],
                   }}
-                  value={formData.shippingAvailable || "Yes"}
+                  value={formData.shippingAvailable || ""}
                   onChange={(value) => updateField("shippingAvailable", value)}
                   onOtherChange={() => {}}
                 />
