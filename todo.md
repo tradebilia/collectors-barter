@@ -2671,3 +2671,8 @@ All 8 remaining filter optimization and caching items have been successfully imp
 - [x] Updated all input fields (text, number, currency, textarea, dropdown) to have white background
 - [x] Updated all input text to be black for better contrast and readability
 - [x] Applied styling to all field types in DynamicFieldRenderer
+
+
+## Add to Inventory Page - Remove Description from Optional Section
+- [x] Changed DESCRIPTION_FIELD requirement from 'optional' to 'conditional' to exclude it from Optional Fields section
+- [x] Description now only appears in its own standalone section

@@ -105,7 +105,7 @@ const DESCRIPTION_FIELD: FieldDefinition = {
   name: 'description',
   label: 'Description',
   inputType: 'textarea',
-  requirement: 'optional',
+  requirement: 'conditional',
   validation: { minLength: 20, maxLength: 4000 },
   notes: 'Free-form details, defects, provenance, trade notes. Users may write a lot of stuff.',
 };
