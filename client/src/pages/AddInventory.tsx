@@ -317,19 +317,8 @@ export default function AddInventory() {
             </CollapsibleFormSection>
 
             {/* Shipping & Quantity Section */}
-            <CollapsibleFormSection title="5. Shipping and Quantity" defaultExpanded={true} fieldCount={2}>
+            <CollapsibleFormSection title="5. Shipping" defaultExpanded={true} fieldCount={1}>
               <div className="space-y-4">
-                <DynamicFieldRenderer
-                  field={{
-                    name: "quantity",
-                    label: "Quantity",
-                    inputType: "text",
-                    requirement: "required",
-                  }}
-                  value={formData.quantity || "1"}
-                  onChange={(value) => updateField("quantity", value)}
-                  onOtherChange={() => {}}
-                />
                 <DynamicFieldRenderer
                   field={{
                     name: "shippingAvailable",
@@ -364,7 +353,7 @@ export default function AddInventory() {
           </div>
 
           {/* Photo Upload Panel - Right Sidebar */}
-          <div className="col-span-1 sticky top-32 h-fit">
+          <div className="fixed right-8 top-32 w-80 max-h-[calc(100vh-150px)] overflow-y-auto">
             <div className="rounded-lg border border-white/20 bg-white/5 p-6 backdrop-blur">
               <h3 className="mb-4 text-lg font-semibold text-white">7. Photos</h3>
 

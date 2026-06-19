@@ -15,6 +15,7 @@ export type FieldInputType =
 export type FieldRequirement = 'required' | 'recommended' | 'optional' | 'conditional';
 
 export interface FieldDefinition {
+  defaultValue?: string;
   name: string;
   label: string;
   inputType: FieldInputType;
@@ -115,6 +116,7 @@ const QUANTITY_FIELD: FieldDefinition = {
   inputType: 'number',
   requirement: 'recommended',
   validation: { min: 1 },
+  defaultValue: '1',
   notes: 'Default to 1.',
 };
 

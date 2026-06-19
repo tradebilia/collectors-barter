@@ -2657,3 +2657,11 @@ All 8 remaining filter optimization and caching items have been successfully imp
 - [x] Renumbered all form sections: 1. Category/ItemType, 2. Required, 3. Recommended, 4. Optional, 5. Shipping, 6. Description, 7. Photos
 - [x] Updated CategoryItemTypeSelector heading to show "1. Select Category and Item Type"
 - [x] All section numbers now follow logical progression
+
+
+## Add to Inventory Page - Photo Panel and Shipping Section Updates
+- [x] Changed photo panel from sticky to fixed positioning so it stays locked on screen while scrolling
+- [x] Removed quantity field from Shipping section
+- [x] Renamed "Shipping and Quantity" section to just "Shipping"
+- [x] Added defaultValue: '1' to QUANTITY_FIELD so it defaults to 1 in Recommended section
+- [x] Updated fieldCount from 2 to 1 in Shipping section
