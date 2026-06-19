@@ -238,7 +238,7 @@ export default function AddInventory() {
         <div
           className="absolute inset-0 opacity-20"
           style={{
-            backgroundImage: "url(/manus-storage/Sportscardwallpaper_a86b605b.webp)",
+            backgroundImage: "url(/manus-storage/Mainpage_9b45311d.jpg)",
             backgroundSize: "cover",
             backgroundPosition: "center",
             backgroundRepeat: "no-repeat",

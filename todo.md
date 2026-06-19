@@ -2783,3 +2783,13 @@ All 8 remaining filter optimization and caching items have been successfully imp
 - [x] Ensure "# of Signatures" field only appears when Signed = Yes (not always visible)
 - [x] Verify individual signature input boxes appear in Recommended Fields when number is selected
 - [x] Test that signature fields are properly hidden when Signed = No
+
+
+## Fix Add to Inventory Page and Conditional Fields
+
+- [x] Update Add to Your Inventory page hero background to match homepage hero section
+- [x] Audit all conditional fields across all categories (Comics, Sports Cards, Coins, Stamps, Video Games, Movies, Autographs, Vintage Toys, Disney Pins, Pokemon)
+- [x] Verify conditional fields appear in correct parent sections (not in wrong sections)
+- [x] Fix any misplaced conditional fields in field definitions (verified grading company fields appear in Required Fields when Is Graded = Yes)
+- [x] Remove field count text from all section headings (e.g., "1 field", "6 fields")
+- [x] Test all categories to verify conditional field placement is correct
