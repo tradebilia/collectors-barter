@@ -41,6 +41,7 @@ const SPORTS_CARDS_SINGLE_CARD_FIELDS: FieldDefinition[] = [
   },
   {
     name: 'year',
+    gridColumn: 'half',
     label: 'Year',
     inputType: 'number',
     requirement: 'required',
@@ -151,6 +152,7 @@ const SPORTS_CARDS_UNOPENED_PRODUCT_FIELDS: FieldDefinition[] = [
   },
   {
     name: 'year',
+    gridColumn: 'half',
     label: 'Year',
     inputType: 'number',
     requirement: 'required',
@@ -252,6 +254,7 @@ const SPORTS_CARDS_SET_FIELDS: FieldDefinition[] = [
   },
   {
     name: 'year',
+    gridColumn: 'half',
     label: 'Year',
     inputType: 'number',
     requirement: 'required',
@@ -345,6 +348,7 @@ const COMICS_SINGLE_COMIC_FIELDS: FieldDefinition[] = [
     label: 'Issue Number',
     inputType: 'text',
     requirement: 'required',
+    gridColumn: 'half',
   },
   {
     name: 'publisher',
@@ -357,6 +361,7 @@ const COMICS_SINGLE_COMIC_FIELDS: FieldDefinition[] = [
   },
   {
     name: 'year',
+    gridColumn: 'half',
     label: 'Year',
     inputType: 'number',
     requirement: 'recommended',

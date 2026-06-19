@@ -2707,3 +2707,9 @@ All 8 remaining filter optimization and caching items have been successfully imp
 ## Add to Inventory Page - Fix Category Selection Bug
 - [x] Fixed setItemType callback to use setFormData callback function instead of direct formData reference
 - [x] This ensures form updates properly when category is selected and item type is chosen
+
+
+## Add to Inventory Page - Optimize Input Field Widths
+- [x] Added gridColumn: 'half' to Quantity field to reduce width
+- [x] Added gridColumn: 'half' to all Year fields to reduce width
+- [x] Added gridColumn: 'half' to Issue Number field to reduce width
