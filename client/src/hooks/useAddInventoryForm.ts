@@ -153,26 +153,28 @@ export const useAddInventoryForm = (): UseAddInventoryFormReturn => {
 
   // Set item type (resets form data but keeps category)
   const setItemType = useCallback((itemType: string) => {
-    // Get the fields for this item type to initialize defaults
-    const categoryDef = ALL_DEFINITIONS[formData.category as CollectibleCategory] as Record<string, FieldDefinition[]> | undefined;
-    const itemTypeFields = categoryDef?.[itemType] || [];
-    
-    // Initialize form data with default values for all fields
-    const initialData: FormData = {
-      category: formData.category,
-      itemType,
-    };
-    
-    // Set default values for fields that have them
-    itemTypeFields.forEach((field: FieldDefinition) => {
-      if (field.defaultValue !== undefined) {
-        initialData[field.name] = field.defaultValue;
-      }
+    setFormData((prev) => {
+      // Get the fields for this item type to initialize defaults
+      const categoryDef = ALL_DEFINITIONS[prev.category as CollectibleCategory] as Record<string, FieldDefinition[]> | undefined;
+      const itemTypeFields = categoryDef?.[itemType] || [];
+      
+      // Initialize form data with default values for all fields
+      const initialData: FormData = {
+        category: prev.category,
+        itemType,
+      };
+      
+      // Set default values for fields that have them
+      itemTypeFields.forEach((field: FieldDefinition) => {
+        if (field.defaultValue !== undefined) {
+          initialData[field.name] = field.defaultValue;
+        }
+      });
+      
+      return initialData;
     });
-    
-    setFormData(initialData);
     setErrors({});
-  }, [formData.category]);
+  }, []);
 
   // Reset entire form
   const resetForm = useCallback(() => {

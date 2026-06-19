@@ -2702,3 +2702,8 @@ All 8 remaining filter optimization and caching items have been successfully imp
 ## Add to Inventory Page - Initialize Default Quantity to 1
 - [x] Updated setItemType hook to initialize default values for all fields when item type is selected
 - [x] Quantity field now defaults to 1 when category and item type are selected
+
+
+## Add to Inventory Page - Fix Category Selection Bug
+- [x] Fixed setItemType callback to use setFormData callback function instead of direct formData reference
+- [x] This ensures form updates properly when category is selected and item type is chosen
