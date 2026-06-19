@@ -68,7 +68,7 @@ export default function AddInventory() {
     shouldShowField,
     currentFields,
     getItemDetails,
-  } = useAddInventoryForm();
+  } = useAddInventoryForm(photos);
 
   const createListingMutation = trpc.market.createListing.useMutation();
   const saveDraftMutation = trpc.market.saveDraft.useMutation();

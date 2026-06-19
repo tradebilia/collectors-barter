@@ -2892,3 +2892,7 @@ All 8 remaining filter optimization and caching items have been successfully imp
 ## Required Fields Counter - Fix for Conditional Fields
 
 - [x] Fix getRequiredFieldsCount to only count visible required fields (exclude conditional fields that aren't activated yet)
+
+## Photos Counter Fix
+
+- [x] Fix required fields counter to properly count photos when uploaded (pass photos state to hook)

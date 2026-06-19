@@ -40,7 +40,7 @@ interface UseAddInventoryFormReturn {
   getItemDetails: () => Record<string, string>;
 }
 
-export const useAddInventoryForm = (): UseAddInventoryFormReturn => {
+export const useAddInventoryForm = (photos: any[] = []): UseAddInventoryFormReturn => {
   const [formData, setFormData] = useState<FormData>({
     category: '',
     itemType: '',
@@ -187,12 +187,12 @@ export const useAddInventoryForm = (): UseAddInventoryFormReturn => {
     }
     
     // Photos are always required (at least 1)
-    if (Array.isArray(formData.photos) && formData.photos.length > 0) {
+    if (Array.isArray(photos) && photos.length > 0) {
       completedSections++;
     }
     
     return completedFieldsCount + completedSections;
-  }, [currentFields, formData, shouldShowField]);
+  }, [currentFields, formData, shouldShowField, photos]);
 
   // Update field value
   const updateField = useCallback((fieldName: string, value: any) => {
