@@ -52,10 +52,10 @@ export const useAddInventoryForm = (): UseAddInventoryFormReturn => {
     if (!formData.category || !formData.itemType) return [];
 
     // Get common fields that apply to all categories
+    // Note: PHOTOS_FIELD is excluded here because it has its own dedicated sticky panel
     const commonFieldsArray = [
       COMMON_FIELDS.LISTING_TITLE_FIELD,
       COMMON_FIELDS.TRADE_VALUE_FIELD,
-      COMMON_FIELDS.PHOTOS_FIELD,
     ];
 
     // Get category-specific fields
