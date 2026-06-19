@@ -2713,3 +2713,8 @@ All 8 remaining filter optimization and caching items have been successfully imp
 - [x] Added gridColumn: 'half' to Quantity field to reduce width
 - [x] Added gridColumn: 'half' to all Year fields to reduce width
 - [x] Added gridColumn: 'half' to Issue Number field to reduce width
+
+
+## Bug Fix - Stop Repeated Referral Request Emails
+- [x] Mocked notifyOwner function in market.referralRequest.test.ts to prevent sending real emails during test execution
+- [x] Tests now run without triggering email notifications to project owner

@@ -1,6 +1,7 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { appRouter } from "./routers";
 import type { TrpcContext } from "./_core/context";
+import * as notificationModule from "./_core/notification";
 
 type AuthenticatedUser = NonNullable<TrpcContext["user"]>;
 
@@ -30,6 +31,10 @@ function createUserContext(role: "user" | "admin" = "user"): TrpcContext {
 }
 
 describe("Referral Request Procedures", () => {
+  beforeEach(() => {
+    // Mock notifyOwner to prevent sending real emails during tests
+    vi.spyOn(notificationModule, "notifyOwner").mockResolvedValue(true);
+  });
   describe("submitReferralRequest", () => {
     it("should successfully submit a referral request with valid data", async () => {
       const ctx = createUserContext("user");
