@@ -264,41 +264,24 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({
         {renderField()}
 
         {showOtherInput && field.supportsOther && value === 'Other' && (
-          <div style={{
-            marginTop: '0.5rem',
-            padding: '0.75rem',
-            borderRadius: '0.5rem',
-            backgroundColor: '#ffffff',
-            border: '1px solid #e5e7eb'
-          }}>
-            <label style={{
-              display: 'block',
-              fontSize: '0.875rem',
-              fontWeight: '500',
-              marginBottom: '0.5rem',
-              color: '#000000'
-            }}>
-              {field.otherFieldName || 'Custom value'}
-            </label>
-            <input
-              type="text"
-              value={otherValue}
-              onChange={(e) => onOtherChange?.(e.target.value)}
-              disabled={disabled}
-              placeholder={`Enter ${field.otherFieldName || 'custom value'}`}
-              style={{
-                width: '100%',
-                backgroundColor: '#ffffff',
-                color: '#000000',
-                border: '1px solid #d1d5db',
-                borderRadius: '0.375rem',
-                padding: '0.5rem 0.75rem',
-                fontSize: '1rem',
-                fontFamily: 'inherit',
-                boxSizing: 'border-box'
-              }}
-            />
-          </div>
+          <input
+            type="text"
+            value={otherValue}
+            onChange={(e) => onOtherChange?.(e.target.value)}
+            disabled={disabled}
+            placeholder={`Enter ${field.otherFieldName || 'custom value'}`}
+            style={{
+              width: '100%',
+              backgroundColor: 'white',
+              color: 'black',
+              border: 'none',
+              borderRadius: '0.375rem',
+              padding: '0.625rem 0.75rem',
+              fontSize: '1rem',
+              fontFamily: 'inherit',
+              boxSizing: 'border-box'
+            }}
+          />
         )}
       </div>
 

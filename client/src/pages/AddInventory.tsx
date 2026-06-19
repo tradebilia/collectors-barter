@@ -290,21 +290,9 @@ export default function AddInventory() {
                             value={formData[field.name as keyof typeof formData] || ""}
                             onChange={(value) => updateField(field.name, value)}
                             onOtherChange={(value) => updateOtherField(field.name, value)}
+                            showOtherInput={field.supportsOther && formData[field.name as keyof typeof formData] === 'Other'}
+                            otherValue={formData[`custom${field.name.charAt(0).toUpperCase() + field.name.slice(1)}` as keyof typeof formData] as string || ""}
                           />
-                          {field.supportsOther && formData[field.name as keyof typeof formData] === 'Other' && (
-                            <div className="mt-2">
-                              <label className="block text-sm font-medium text-gray-700 mb-1">
-                                {field.otherFieldName || 'Custom Value'} *
-                              </label>
-                              <input
-                                type="text"
-                                placeholder={`Enter ${field.otherFieldName?.toLowerCase() || 'custom value'}`}
-                                value={formData[`custom${field.name.charAt(0).toUpperCase() + field.name.slice(1)}` as keyof typeof formData] || ""}
-                                onChange={(e) => updateOtherField(field.name, e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                              />
-                            </div>
-                          )}
                         </div>
                       ))}
                   </div>
@@ -330,21 +318,9 @@ export default function AddInventory() {
                             value={formData[field.name as keyof typeof formData] || ""}
                             onChange={(value) => updateField(field.name, value)}
                             onOtherChange={(value) => updateOtherField(field.name, value)}
+                            showOtherInput={field.supportsOther && formData[field.name as keyof typeof formData] === 'Other'}
+                            otherValue={formData[`custom${field.name.charAt(0).toUpperCase() + field.name.slice(1)}` as keyof typeof formData] as string || ""}
                           />
-                          {field.supportsOther && formData[field.name as keyof typeof formData] === 'Other' && (
-                            <div className="mt-2">
-                              <label className="block text-sm font-medium text-gray-700 mb-1">
-                                {field.otherFieldName || 'Custom Value'}
-                              </label>
-                              <input
-                                type="text"
-                                placeholder={`Enter ${field.otherFieldName?.toLowerCase() || 'custom value'}`}
-                                value={formData[`custom${field.name.charAt(0).toUpperCase() + field.name.slice(1)}` as keyof typeof formData] || ""}
-                                onChange={(e) => updateOtherField(field.name, e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                              />
-                            </div>
-                          )}
                         </div>
                       ))}
                   </div>
@@ -393,21 +369,9 @@ export default function AddInventory() {
                             value={formData[field.name as keyof typeof formData] || ""}
                             onChange={(value) => updateField(field.name, value)}
                             onOtherChange={(value) => updateOtherField(field.name, value)}
+                            showOtherInput={field.supportsOther && formData[field.name as keyof typeof formData] === 'Other'}
+                            otherValue={formData[`custom${field.name.charAt(0).toUpperCase() + field.name.slice(1)}` as keyof typeof formData] as string || ""}
                           />
-                          {field.supportsOther && formData[field.name as keyof typeof formData] === 'Other' && (
-                            <div className="mt-2">
-                              <label className="block text-sm font-medium text-gray-700 mb-1">
-                                {field.otherFieldName || 'Custom Value'}
-                              </label>
-                              <input
-                                type="text"
-                                placeholder={`Enter ${field.otherFieldName?.toLowerCase() || 'custom value'}`}
-                                value={formData[`custom${field.name.charAt(0).toUpperCase() + field.name.slice(1)}` as keyof typeof formData] || ""}
-                                onChange={(e) => updateOtherField(field.name, e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                              />
-                            </div>
-                          )}
                         </div>
                       ))}
                   </div>
