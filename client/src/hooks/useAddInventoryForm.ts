@@ -8,10 +8,10 @@ import { FieldDefinition, CollectibleCategory, COMMON_FIELDS } from '@/lib/formF
 import { ALL_FIELD_DEFINITIONS } from '@/lib/fieldDefinitionsComplete';
 import { REMAINING_FIELD_DEFINITIONS } from '@/lib/fieldDefinitionsRemaining';
 
-const ALL_DEFINITIONS = {
+const ALL_DEFINITIONS: Record<string, Record<string, FieldDefinition[]>> = {
   ...ALL_FIELD_DEFINITIONS,
   ...REMAINING_FIELD_DEFINITIONS,
-};
+} as const;
 
 interface FormErrors {
   [key: string]: string;
@@ -59,7 +59,7 @@ export const useAddInventoryForm = (): UseAddInventoryFormReturn => {
     ];
 
     // Get category-specific fields
-    const categoryDef = ALL_DEFINITIONS[formData.category as CollectibleCategory] as Record<string, FieldDefinition[]> | undefined;
+    const categoryDef = ALL_DEFINITIONS[formData.category as any] as Record<string, FieldDefinition[]> | undefined;
     const categorySpecificFields = categoryDef ? (categoryDef[formData.itemType] || []) : [];
 
     // Combine common fields with category-specific fields

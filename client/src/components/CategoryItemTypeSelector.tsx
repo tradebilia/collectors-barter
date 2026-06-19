@@ -19,7 +19,7 @@ import { ALL_FIELD_DEFINITIONS } from '@/lib/fieldDefinitionsComplete';
 import { REMAINING_FIELD_DEFINITIONS } from '@/lib/fieldDefinitionsRemaining';
 
 // Combine all field definitions
-const ALL_DEFINITIONS = {
+const ALL_DEFINITIONS: Record<string, Record<string, any>> = {
   ...ALL_FIELD_DEFINITIONS,
   ...REMAINING_FIELD_DEFINITIONS,
 };
@@ -89,7 +89,7 @@ export const CategoryItemTypeSelector: React.FC<CategoryItemTypeSelectorProps> =
   // Update item types when category changes
   useEffect(() => {
     if (selectedCategory && selectedCategory in ALL_DEFINITIONS) {
-      const types = Object.keys(ALL_DEFINITIONS[selectedCategory as CollectibleCategory] || {});
+      const types = Object.keys(ALL_DEFINITIONS[selectedCategory as any] || {});
       setItemTypes(types);
     } else {
       setItemTypes([]);
