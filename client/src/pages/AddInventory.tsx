@@ -356,7 +356,7 @@ export default function AddInventory() {
 
           {/* Right column: Photo Upload Panel */}
           <div className="lg:col-span-1">
-            <div className="sticky top-32 rounded-lg border border-white/20 bg-white/5 p-6 backdrop-blur">
+            <div className="rounded-lg border border-white/20 bg-white/5 p-6 backdrop-blur">
               <h3 className="mb-4 text-lg font-semibold text-white">{allFields.filter((f: FieldDefinition) => f.requirement === "optional" && shouldShowField(f)).length > 0 ? "7. Photos" : "6. Photos"}</h3>
 
               {/* Drag and Drop Area */}
