@@ -282,6 +282,23 @@ export default function AddInventory() {
               </div>
             </CollapsibleFormSection>
 
+            {/* Conditional Fields Section */}
+            {allFields.filter((f: FieldDefinition) => f.requirement === "conditional" && shouldShowField(f)).length > 0 && (
+            <div className="space-y-4 border-l-2 border-blue-500 pl-4 ml-4">
+              {allFields
+                .filter((f: FieldDefinition) => f.requirement === "conditional" && shouldShowField(f))
+                .map((field: FieldDefinition) => (
+                  <DynamicFieldRenderer
+                    key={field.name}
+                    field={field}
+                    value={formData[field.name as keyof typeof formData] || ""}
+                    onChange={(value) => updateField(field.name, value)}
+                    onOtherChange={(value) => updateOtherField(field.name, value)}
+                  />
+                ))}
+            </div>
+            )}
+
             {/* Recommended Fields Section */}
             <CollapsibleFormSection title="3. Recommended Fields" defaultExpanded={true} fieldCount={allFields.filter((f: FieldDefinition) => f.requirement === "recommended").length}>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
