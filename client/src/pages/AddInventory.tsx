@@ -355,7 +355,7 @@ export default function AddInventory() {
           </form>
 
           {/* Right column: Photo Upload Panel */}
-          <div className="lg:col-span-1">
+          <div className="lg:col-span-1 ml-auto mr-8">
             <div className="rounded-lg border border-white/20 bg-white/5 p-6 backdrop-blur">
               <h3 className="mb-4 text-lg font-semibold text-white">{allFields.filter((f: FieldDefinition) => f.requirement === "optional" && shouldShowField(f)).length > 0 ? "7. Photos" : "6. Photos"}</h3>
 
