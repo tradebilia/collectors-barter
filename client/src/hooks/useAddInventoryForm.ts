@@ -150,11 +150,19 @@ export const useAddInventoryForm = (photos: any[] = []): UseAddInventoryFormRetu
     // Count only visible required fields (exclude conditional fields that aren't activated)
     const requiredFieldsCount = currentFields.filter((field: FieldDefinition) => field.requirement === 'required' && shouldShowField(field)).length;
     
+    // Count custom "Other" fields for required fields that have "Other" selected
+    const customOtherFieldsCount = currentFields.filter((field: FieldDefinition) => {
+      if (field.requirement !== 'required') return false;
+      if (!field.supportsOther) return false;
+      if (!shouldShowField(field)) return false;
+      return formData[field.name] === 'Other';
+    }).length;
+    
     // Add 3 for: Shipping (1), Description (1), Photos (1)
     const sectionCount = 3;
     
-    return requiredFieldsCount + sectionCount;
-  }, [currentFields, shouldShowField]);
+    return requiredFieldsCount + customOtherFieldsCount + sectionCount;
+  }, [currentFields, shouldShowField, formData]);
 
   // Count completed required fields
   const getCompletedRequiredFieldsCount = useCallback((): number => {
@@ -171,6 +179,19 @@ export const useAddInventoryForm = (photos: any[] = []): UseAddInventoryFormRetu
       }
       
       return value !== undefined && value !== null && value !== '';
+    }).length;
+    
+    // Count completed custom "Other" fields for required fields that have "Other" selected
+    const completedCustomOtherFieldsCount = currentFields.filter((field: FieldDefinition) => {
+      if (field.requirement !== 'required') return false;
+      if (!field.supportsOther) return false;
+      if (!shouldShowField(field)) return false;
+      if (formData[field.name] !== 'Other') return false;
+      
+      // Check if the custom field has a value
+      const customFieldKey = `custom${field.name.charAt(0).toUpperCase() + field.name.slice(1)}`;
+      const customValue = formData[customFieldKey];
+      return customValue !== undefined && customValue !== null && customValue !== '';
     }).length;
     
     // Count completed sections: Shipping, Description, Photos
@@ -191,7 +212,7 @@ export const useAddInventoryForm = (photos: any[] = []): UseAddInventoryFormRetu
       completedSections++;
     }
     
-    return completedFieldsCount + completedSections;
+    return completedFieldsCount + completedCustomOtherFieldsCount + completedSections;
   }, [currentFields, formData, shouldShowField, photos]);
 
   // Update field value
