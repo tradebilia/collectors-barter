@@ -106,7 +106,7 @@ const DESCRIPTION_FIELD: FieldDefinition = {
   name: 'description',
   label: 'Description',
   inputType: 'textarea',
-  requirement: 'optional',
+  requirement: 'conditional',
   validation: { minLength: 20, maxLength: 4000 },
   notes: 'Free-form details, defects, provenance, trade notes. Users may write a lot of stuff.',
 };
@@ -126,7 +126,7 @@ const SHIPPING_AVAILABLE_FIELD: FieldDefinition = {
   name: 'shippingAvailable',
   label: 'Shipping Available',
   inputType: 'dropdown',
-  requirement: 'optional',
+  requirement: 'conditional',
   dropdownOptions: ['Yes', 'Local Only', 'In Person Only'],
 };
 
