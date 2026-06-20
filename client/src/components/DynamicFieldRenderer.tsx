@@ -252,7 +252,7 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({
       <div className="flex items-center gap-1">
         {field.label && (
           <>
-            <Label htmlFor={field.name} className="text-sm font-medium">
+            <Label htmlFor={field.name} className="text-sm font-medium whitespace-nowrap">
               {field.label}
             </Label>
             {isRequired && <span className="text-white text-xs">*</span>}
