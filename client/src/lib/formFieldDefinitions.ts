@@ -126,7 +126,7 @@ const SHIPPING_AVAILABLE_FIELD: FieldDefinition = {
   name: 'shippingAvailable',
   label: 'Shipping Available',
   inputType: 'dropdown',
-  requirement: 'required',
+  requirement: 'optional',
   dropdownOptions: ['Yes', 'Local Only', 'In Person Only'],
 };
 
