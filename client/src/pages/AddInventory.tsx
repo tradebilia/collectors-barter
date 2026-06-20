@@ -280,7 +280,7 @@ export default function AddInventory() {
             <CollapsibleFormSection title="2. Required Fields *" defaultExpanded={true} fieldCount={allFields.filter((f: FieldDefinition) => f.requirement === "required").length}>
               <div className="space-y-6">
                 <div className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     {allFields
                       .filter((f: FieldDefinition) => f.requirement === "required" && shouldShowField(f))
                       .map((field: FieldDefinition) => (
@@ -308,7 +308,7 @@ export default function AddInventory() {
             <CollapsibleFormSection title="3. Recommended Fields" defaultExpanded={true} fieldCount={allFields.filter((f: FieldDefinition) => f.requirement === "recommended").length}>
               <div className="space-y-6">
                 <div className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     {allFields
                       .filter((f: FieldDefinition) => f.requirement === "recommended" && shouldShowField(f) && f.name !== 'signatures')
                       .map((field: FieldDefinition) => (
@@ -359,7 +359,7 @@ export default function AddInventory() {
             {allFields.filter((f: FieldDefinition) => f.requirement === "optional" && f.name !== "description" && shouldShowField(f)).length > 0 && (
             <CollapsibleFormSection title="4. Optional Fields" defaultExpanded={true} fieldCount={allFields.filter((f: FieldDefinition) => f.requirement === "optional" && f.name !== "description").length}>
                 <div className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     {allFields
                       .filter((f: FieldDefinition) => f.requirement === "optional" && shouldShowField(f))
                       .map((field: FieldDefinition) => (
