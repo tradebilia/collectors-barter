@@ -12,7 +12,6 @@ import { CategoryItemTypeSelector } from "@/components/CategoryItemTypeSelector"
 import { FormProgressIndicator } from "@/components/FormProgressIndicator";
 import { CollapsibleFormSection } from "@/components/CollapsibleFormSection";
 import { DynamicFieldRenderer } from "@/components/DynamicFieldRenderer";
-import { FieldWithCustomInput } from "@/components/FieldWithCustomInput";
 import type { CollectibleCategory, FieldDefinition } from "@/lib/formFieldDefinitions";
 
 const TRADEBILIA_LOGO_URL = "/manus-storage/tradebilia-logo_c676d640.svg";
@@ -285,16 +284,16 @@ export default function AddInventory() {
                     {allFields
                       .filter((f: FieldDefinition) => f.requirement === "required" && shouldShowField(f))
                       .map((field: FieldDefinition) => (
-                        
-                          <FieldWithCustomInput
+                        <div key={field.name}>
+                          <DynamicFieldRenderer
                             field={field}
                             value={formData[field.name as keyof typeof formData] || ""}
                             onChange={(value) => updateField(field.name, value)}
                             onOtherChange={(value) => updateOtherField(field.name, value)}
-                            
-                            formData={formData}
+                            showOtherInput={field.supportsOther && formData[field.name as keyof typeof formData] === 'Other'}
+                            otherValue={formData[`custom${field.name.charAt(0).toUpperCase() + field.name.slice(1)}` as keyof typeof formData] as string || ""}
                           />
-                        
+                        </div>
                       ))}
                   </div>
                 </div>
@@ -313,19 +312,19 @@ export default function AddInventory() {
                     {allFields
                       .filter((f: FieldDefinition) => f.requirement === "recommended" && shouldShowField(f) && f.name !== 'signatures')
                       .map((field: FieldDefinition) => (
-                        
-                          <FieldWithCustomInput
+                        <div key={field.name}>
+                          <DynamicFieldRenderer
                             field={field}
                             value={formData[field.name as keyof typeof formData] || ""}
                             onChange={(value) => updateField(field.name, value)}
                             onOtherChange={(value) => updateOtherField(field.name, value)}
-                            
-                            formData={formData}
+                            showOtherInput={field.supportsOther && formData[field.name as keyof typeof formData] === 'Other'}
+                            otherValue={formData[`custom${field.name.charAt(0).toUpperCase() + field.name.slice(1)}` as keyof typeof formData] as string || ""}
                           />
-                        
+                        </div>
                       ))}
-                  
-                
+                  </div>
+                </div>
                 
                 {/* Inline Conditional Signature Fields */}
                 {formData.signed === 'Yes' && formData.numberOfSignatures && parseInt(formData.numberOfSignatures) > 0 && (
@@ -364,19 +363,19 @@ export default function AddInventory() {
                     {allFields
                       .filter((f: FieldDefinition) => f.requirement === "optional" && shouldShowField(f))
                       .map((field: FieldDefinition) => (
-                        
-                          <FieldWithCustomInput
+                        <div key={field.name}>
+                          <DynamicFieldRenderer
                             field={field}
                             value={formData[field.name as keyof typeof formData] || ""}
                             onChange={(value) => updateField(field.name, value)}
                             onOtherChange={(value) => updateOtherField(field.name, value)}
-                            
-                            formData={formData}
+                            showOtherInput={field.supportsOther && formData[field.name as keyof typeof formData] === 'Other'}
+                            otherValue={formData[`custom${field.name.charAt(0).toUpperCase() + field.name.slice(1)}` as keyof typeof formData] as string || ""}
                           />
-                        
+                        </div>
                       ))}
-                  
-                
+                  </div>
+                </div>
             </CollapsibleFormSection>
             )}
 
