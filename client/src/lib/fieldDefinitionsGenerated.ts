@@ -3576,7 +3576,7 @@ export const POKEMON_SINGLE_CARD_FIELDS: FieldDefinition[] = [
     label: 'Year',
     inputType: 'number',
     maxLength: 10,
-    requirement: 'recommended',
+    requirement: 'required',
   },
   {
     name: 'cardType',
