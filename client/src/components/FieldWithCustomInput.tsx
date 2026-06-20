@@ -46,18 +46,7 @@ export const FieldWithCustomInput: React.FC<FieldWithCustomInputProps> = ({
             type="text"
             value={customValue}
             onChange={(e) => onOtherChange(e.target.value)}
-            placeholder={`Enter ${field.otherFieldName || 'custom value'}`}
-            style={{
-              width: '100%',
-              backgroundColor: 'white',
-              color: 'black',
-              border: '1px solid #e5e7eb',
-              borderRadius: '0.375rem',
-              padding: '0.625rem 0.75rem',
-              fontSize: '1rem',
-              fontFamily: 'inherit',
-              boxSizing: 'border-box'
-            }}
+            className="bg-white text-black border border-gray-300 rounded-md px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
       )}
