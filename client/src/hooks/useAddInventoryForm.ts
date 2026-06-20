@@ -224,12 +224,13 @@ export const useAddInventoryForm = (photos: any[] = []): UseAddInventoryFormRetu
       category,
       itemType: '',
     });
+    setErrors({});
   }, []);
 
-  // Set item type
+  // Set item type (resets form data for category-specific fields)
   const setItemType = useCallback((itemType: string) => {
     setFormData((prev) => ({
-      ...prev,
+      category: prev.category,
       itemType,
     }));
   }, []);
