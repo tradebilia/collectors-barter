@@ -181,7 +181,7 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({
                       {option}
                     </SelectItem>
                   ))}
-                  {field.supportsOther && (
+                  {field.supportsOther && !field.dropdownOptions?.includes('Other') && (
                     <SelectItem value="Other">Other</SelectItem>
                   )}
                 </>
