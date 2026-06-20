@@ -262,27 +262,6 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({
 
       <div className="space-y-2">
         {renderField()}
-
-        {showOtherInput && field.supportsOther && value === 'Other' && (
-          <input
-            type="text"
-            value={otherValue}
-            onChange={(e) => onOtherChange?.(e.target.value)}
-            disabled={disabled}
-            placeholder={`Enter ${field.otherFieldName || 'custom value'}`}
-            style={{
-              width: '100%',
-              backgroundColor: 'white',
-              color: 'black',
-              border: 'none',
-              borderRadius: '0.375rem',
-              padding: '0.625rem 0.75rem',
-              fontSize: '1rem',
-              fontFamily: 'inherit',
-              boxSizing: 'border-box'
-            }}
-          />
-        )}
       </div>
 
       {error && (
