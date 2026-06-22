@@ -531,13 +531,6 @@ const VIDEO_GAMES_ACCESSORY_FIELDS: FieldDefinition[] = [
     supportsOther: true,
   },
   {
-    name: 'tested',
-    label: 'Tested',
-    inputType: 'dropdown',
-    requirement: 'required',
-    dropdownOptions: ['Yes', 'No'],
-  },
-  {
     name: 'workingCondition',
     label: 'Working Condition',
     inputType: 'dropdown',
