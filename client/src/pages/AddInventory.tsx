@@ -307,20 +307,18 @@ export default function AddInventory() {
             <CollapsibleFormSection title="3. Recommended Fields" defaultExpanded={true} fieldCount={allFields.filter((f: FieldDefinition) => f.requirement === "recommended").length}>
               <div className="space-y-6">
                 <div className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="space-y-4">
                     {allFields
                       .filter((f: FieldDefinition) => f.requirement === "recommended" && shouldShowField(f) && f.name !== 'signatures')
                       .map((field: FieldDefinition) => (
-                        <div key={field.name}>
-                          <DynamicFieldRenderer
-                            field={field}
-                            value={formData[field.name as keyof typeof formData] || ""}
-                            onChange={(value) => updateField(field.name, value)}
-                            onOtherChange={(value) => updateOtherField(field.name, value)}
-                            showOtherInput={field.supportsOther && formData[field.name as keyof typeof formData] === 'Other'}
-                            otherValue={formData[`custom${field.name.charAt(0).toUpperCase() + field.name.slice(1)}` as keyof typeof formData] as string || ""}
-                          />
-                        </div>
+                        <FieldWithCustomInput
+                          key={field.name}
+                          field={field}
+                          value={formData[field.name as keyof typeof formData] || ""}
+                          onChange={(value) => updateField(field.name, value)}
+                          onOtherChange={(value) => updateOtherField(field.name, value)}
+                          formData={formData}
+                        />
                       ))}
                   </div>
                 </div>
