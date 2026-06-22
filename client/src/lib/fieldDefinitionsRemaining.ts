@@ -538,18 +538,18 @@ const VIDEO_GAMES_ACCESSORY_FIELDS: FieldDefinition[] = [
     dropdownOptions: ['Fully Functional', 'Partially Functional', 'Not Functional'],
   },
   {
-    name: 'originalPackaging',
-    label: 'Original Packaging',
-    inputType: 'dropdown',
-    requirement: 'recommended',
-    dropdownOptions: ['Yes', 'No'],
-  },
-  {
     name: 'quantity',
     label: 'Quantity',
     inputType: 'number',
     requirement: 'recommended',
     defaultValue: '1',
+  },
+  {
+    name: 'originalPackaging',
+    label: 'Original Packaging',
+    inputType: 'dropdown',
+    requirement: 'recommended',
+    dropdownOptions: ['Yes', 'No'],
   },
   {
     name: 'manufacturer',
