@@ -485,14 +485,6 @@ export const COMICS_COLLECTION_LOT_FIELDS: FieldDefinition[] = [
   },
 
   {
-    name: 'quantity',
-    label: 'Quantity',
-    inputType: 'number',
-    maxLength: 4,
-    requirement: 'recommended',
-  },
-
-  {
     name: 'numberOfComics',
     label: 'Number of Comics',
     inputType: 'number',
@@ -583,26 +575,6 @@ export const COMICS_ORIGINAL_ART_FIELDS: FieldDefinition[] = [
     otherFieldName: 'Custom Publisher',
   },
   {
-    name: 'comicSeries',
-    label: 'Comic Series',
-    inputType: 'text',
-    requirement: 'recommended',
-  },
-  {
-    name: 'issueNumber',
-    label: 'Issue Number',
-    inputType: 'text',
-    maxLength: 5,
-    requirement: 'recommended',
-  },
-  {
-    name: 'pageNumber',
-    label: 'Page Number',
-    inputType: 'text',
-    maxLength: 7,
-    requirement: 'recommended',
-  },
-  {
     name: 'artType',
     label: 'Art Type',
     inputType: 'dropdown',
@@ -659,6 +631,29 @@ export const COMICS_ORIGINAL_ART_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'recommended',
     dropdownOptions: ['Yes', 'No'],
+  },
+  {
+    name: 'comicSeries',
+    label: 'Comic Series',
+    inputType: 'text',
+    requirement: 'recommended',
+    conditionalLogic: 'Original Published Page = Yes',
+  },
+  {
+    name: 'issueNumber',
+    label: 'Issue Number',
+    inputType: 'text',
+    maxLength: 5,
+    requirement: 'recommended',
+    conditionalLogic: 'Original Published Page = Yes',
+  },
+  {
+    name: 'pageNumber',
+    label: 'Page Number',
+    inputType: 'text',
+    maxLength: 7,
+    requirement: 'recommended',
+    conditionalLogic: 'Original Published Page = Yes',
   },
 ];
 
@@ -753,7 +748,7 @@ export const COMICS_SINGLE_COMIC_FIELDS: FieldDefinition[] = [
     name: 'keyIssue',
     label: 'Key Issue',
     inputType: 'dropdown',
-    requirement: 'required',
+    requirement: 'recommended',
     dropdownOptions: ['Yes', 'No', 'Unknown'],
   },
   {
@@ -762,6 +757,13 @@ export const COMICS_SINGLE_COMIC_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'optional',
     dropdownOptions: ['Yes', 'No', 'Unknown'],
+  },
+  {
+    name: 'characterName',
+    label: 'Character Name',
+    inputType: 'text',
+    requirement: 'optional',
+    conditionalLogic: 'First Appearance = Yes',
   },
   {
     name: 'signed',
@@ -1361,19 +1363,27 @@ export const POKEMON_COLLECTION_LOT_FIELDS: FieldDefinition[] = [
   },
 
   {
-    name: 'quantity',
-    label: 'Quantity',
-    inputType: 'number',
-    maxLength: 4,
-    requirement: 'recommended',
-  },
-
-  {
     name: 'approximateCardCount',
     label: 'Approximate Card Count',
     inputType: 'number',
     requirement: 'required',
   },
+  {
+    name: 'setsIncluded',
+    label: 'Sets Included',
+    inputType: 'textarea',
+    requirement: 'recommended',
+  },
+  {
+    name: 'notableCards',
+    label: 'Notable Cards',
+    inputType: 'textarea',
+    requirement: 'recommended',
+  },
+];
+
+// PLACEHOLDER - Remove extra fields below
+/*
   {
     name: 'erasSeriesIncluded',
     label: 'Eras / Series Included',
@@ -1383,26 +1393,7 @@ export const POKEMON_COLLECTION_LOT_FIELDS: FieldDefinition[] = [
     supportsOther: true,
     otherFieldName: 'Custom Era',
   },
-  {
-    name: 'notableCards',
-    label: 'Notable Cards',
-    inputType: 'textarea',
-    requirement: 'recommended',
-  },
-  {
-    name: 'includesGradedCards',
-    label: 'Includes Graded Cards',
-    inputType: 'dropdown',
-    requirement: 'optional',
-    dropdownOptions: ['Yes', 'No'],
-  },
-  {
-    name: 'bulkRareRatio',
-    label: 'Bulk / Rare Ratio',
-    inputType: 'text',
-    requirement: 'optional',
-  },
-];
+*/
 
 // Pokemon - Set
 export const POKEMON_SET_FIELDS: FieldDefinition[] = [
@@ -1433,37 +1424,43 @@ export const POKEMON_SET_FIELDS: FieldDefinition[] = [
   },
 
   {
-    name: 'quantity',
-    label: 'Quantity',
-    inputType: 'number',
-    maxLength: 4,
-    requirement: 'recommended',
-  },
-
-  {
     name: 'setName',
     label: 'Set Name',
     inputType: 'text',
     requirement: 'required',
   },
   {
-    name: 'completion',
-    label: 'Completion',
+    name: 'setNumber',
+    label: 'Set Number',
+    inputType: 'text',
+    requirement: 'required',
+  },
+  {
+    name: 'releaseYear',
+    label: 'Release Year',
+    inputType: 'number',
+    requirement: 'required',
+    validation: { min: 1900, max: 2100 },
+  },
+  {
+    name: 'numberOfCards',
+    label: 'Number of Cards',
+    inputType: 'number',
+    requirement: 'required',
+    validation: { min: 1 },
+  },
+  {
+    name: 'complete',
+    label: 'Complete',
     inputType: 'dropdown',
     requirement: 'required',
-    dropdownOptions: ['Master Set', 'Complete (Base)', 'Near Complete', 'Incomplete'],
+    dropdownOptions: ['Yes', 'No', 'Unknown'],
   },
   {
-    name: 'notableCards',
-    label: 'Notable Cards',
-    inputType: 'textarea',
-    requirement: 'recommended',
-  },
-  {
-    name: 'includesGradedCards',
-    label: 'Includes Graded Cards',
+    name: 'originalPackaging',
+    label: 'Original Packaging',
     inputType: 'dropdown',
-    requirement: 'optional',
+    requirement: 'recommended',
     dropdownOptions: ['Yes', 'No', 'Unknown'],
   },
 ];
@@ -1502,6 +1499,7 @@ export const POKEMON_UNOPENED_PRODUCT_FIELDS: FieldDefinition[] = [
     inputType: 'number',
     maxLength: 4,
     requirement: 'recommended',
+    defaultValue: '1',
   },
 
   {
@@ -1524,6 +1522,13 @@ export const POKEMON_UNOPENED_PRODUCT_FIELDS: FieldDefinition[] = [
     dropdownOptions: ['Booster Box', 'Elite Trainer Box', 'Blaster Box', 'Tin', 'Collection Box', 'Booster Pack', 'Build \& Battle Box', 'Premium Collection', 'Other'],
     supportsOther: true,
     otherFieldName: 'Custom Product Type',
+  },
+  {
+    name: 'releaseYear',
+    label: 'Release Year',
+    inputType: 'number',
+    requirement: 'required',
+    validation: { min: 1900, max: 2100 },
   },
   {
     name: 'era',
@@ -1554,7 +1559,7 @@ export const POKEMON_UNOPENED_PRODUCT_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'required',
     dropdownOptions: ['BBCE', 'PSA', 'iCert', 'RVP', 'Other'],
-    conditionalLogic: 'Is Authenticated = Yes',
+    conditionalLogic: 'Authenticated = Yes',
     supportsOther: true,
     otherFieldName: 'Authentication Company',
   },
@@ -1564,7 +1569,7 @@ export const POKEMON_UNOPENED_PRODUCT_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'required',
     dropdownOptions: ['Yes', 'No'],
-    conditionalLogic: 'Is Authenticated = Yes',
+    conditionalLogic: 'Authenticated = Yes',
   },
 ];
 
@@ -1725,13 +1730,21 @@ export const SPORTS_CARDS_SET_FIELDS: FieldDefinition[] = [
     requirement: 'required',
     dropdownOptions: ['Yes', 'No'],
     conditionalLogic: 'Set Type = Partial Set',
+    gridColumn: 'half',
   },
   {
     name: 'missingCardDetails',
     label: 'Missing Card Details',
-    inputType: 'textarea',
-    requirement: 'optional',
+    inputType: 'text',
+    requirement: 'required',
     conditionalLogic: 'Missing Cards = Yes',
+    gridColumn: 'half',
+  },
+  {
+    name: 'numberOfCardsInSet',
+    label: 'Number of Cards in Set',
+    inputType: 'text',
+    requirement: 'optional',
   },
 ];
 
@@ -1783,7 +1796,7 @@ export const SPORTS_CARDS_SINGLE_CARD_FIELDS: FieldDefinition[] = [
   },
   {
     name: 'player',
-    label: 'Player',
+    label: 'Player\'s Name',
     inputType: 'text',
     requirement: 'required',
   },
@@ -2636,20 +2649,18 @@ export const VIDEO_GAMES_GAME_FIELDS: FieldDefinition[] = [
     dropdownOptions: ['Yes', 'No', 'Unknown'],
   },
   {
-    name: 'manualIncluded',
-    label: 'Manual Included',
-    inputType: 'dropdown',
-    requirement: 'recommended',
-    dropdownOptions: ['Yes', 'No', 'Unknown'],
-    conditionalLogic: 'Complete In Box = No',
-  },
-  {
     name: 'originalCaseIncluded',
     label: 'Original Case Included',
     inputType: 'dropdown',
     requirement: 'required',
     dropdownOptions: ['Yes', 'No', 'Unknown'],
-    conditionalLogic: 'Complete In Box = No',
+  },
+  {
+    name: 'manualIncluded',
+    label: 'Manual Included',
+    inputType: 'dropdown',
+    requirement: 'recommended',
+    dropdownOptions: ['Yes', 'No', 'Unknown'],
   },
   {
     name: 'sealed',

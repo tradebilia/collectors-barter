@@ -72,7 +72,6 @@ const LISTING_TITLE_FIELD: FieldDefinition = {
   inputType: 'text',
   requirement: 'required',
   validation: { minLength: 3, maxLength: 160 },
-  notes: 'User-editable title; may be auto-suggested from item details.',
 };
 
 const TRADE_VALUE_FIELD: FieldDefinition = {
@@ -81,7 +80,6 @@ const TRADE_VALUE_FIELD: FieldDefinition = {
   inputType: 'currency',
   requirement: 'required',
   validation: { min: 0 },
-  notes: 'Estimated value for trade matching.',
 };
 
 const CONDITION_FIELD: FieldDefinition = {
@@ -91,7 +89,6 @@ const CONDITION_FIELD: FieldDefinition = {
   requirement: 'required',
   dropdownOptions: ['Mint', 'Near Mint', 'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'],
   conditionalLogic: 'Is Graded = No',
-  notes: 'Condition of the item.',
 };
 
 const PHOTOS_FIELD: FieldDefinition = {
@@ -99,7 +96,6 @@ const PHOTOS_FIELD: FieldDefinition = {
   label: 'Photos',
   inputType: 'image-upload',
   requirement: 'required',
-  notes: 'Require at least 1 photo.',
 };
 
 const DESCRIPTION_FIELD: FieldDefinition = {
@@ -108,7 +104,6 @@ const DESCRIPTION_FIELD: FieldDefinition = {
   inputType: 'textarea',
   requirement: 'conditional',
   validation: { minLength: 20, maxLength: 4000 },
-  notes: 'Free-form details, defects, provenance, trade notes. Users may write a lot of stuff.',
 };
 
 const QUANTITY_FIELD: FieldDefinition = {
@@ -119,7 +114,6 @@ const QUANTITY_FIELD: FieldDefinition = {
   validation: { min: 1 },
   defaultValue: '1',
   gridColumn: 'half',
-  notes: 'Default to 1.',
 };
 
 const SHIPPING_AVAILABLE_FIELD: FieldDefinition = {
@@ -136,7 +130,6 @@ const IS_GRADED_FIELD: FieldDefinition = {
   inputType: 'dropdown',
   requirement: 'required',
   dropdownOptions: ['Yes', 'No'],
-  notes: 'If Yes, reveal grading fields. If No, user needs to select from Condition dropdown.',
 };
 
 const GRADING_COMPANY_FIELD: FieldDefinition = {
@@ -145,7 +138,6 @@ const GRADING_COMPANY_FIELD: FieldDefinition = {
   inputType: 'dropdown',
   requirement: 'required',
   conditionalLogic: 'Is Graded = Yes',
-  notes: 'Will be filtered by category.',
 };
 
 const GRADE_FIELD: FieldDefinition = {

@@ -56,11 +56,39 @@ export const useAddInventoryForm = (photos: any[] = []): UseAddInventoryFormRetu
     const categoryDef = ALL_DEFINITIONS[formData.category as any] as Record<string, FieldDefinition[]> | undefined;
     const categorySpecificFields = categoryDef ? (categoryDef[formData.itemType] || []) : [];
 
+    if (formData.category === 'autographs' && formData.itemType === 'signed_item') {
+      console.log(`[currentFields] Autographs Signed Item: found ${categorySpecificFields.length} fields BEFORE filter`);
+      console.log('[currentFields] Field names BEFORE filter:', categorySpecificFields.map(f => f.name));
+      const afterFilter = categorySpecificFields.filter(f => f.name !== 'photos');
+      console.log(`[currentFields] After filtering photos: ${afterFilter.length} fields`);
+      console.log('[currentFields] Field names AFTER filter:', afterFilter.map(f => f.name));
+      const conditionField = afterFilter.find(f => f.name === 'condition');
+      if (conditionField) {
+        console.log(`[currentFields] condition field found:`, conditionField);
+      } else {
+        console.log('[currentFields] condition field NOT found!');
+      }
+    }
+    
     if (formData.category === 'comics' && formData.itemType === 'single_comic') {
       console.log(`[currentFields] Comics Single Comic: found ${categorySpecificFields.length} fields`);
       const numberOfSignaturesField = categorySpecificFields.find(f => f.name === 'numberOfSignatures');
       if (numberOfSignaturesField) {
         console.log(`[currentFields] numberOfSignatures field found:`, numberOfSignaturesField);
+      }
+    }
+
+    if (formData.category === 'pokemon' && formData.itemType === 'single_card') {
+      console.log(`[currentFields] Pokemon Single Card: found ${categorySpecificFields.length} fields BEFORE filter`);
+      console.log('[currentFields] Field names BEFORE filter:', categorySpecificFields.map(f => f.name));
+      const afterFilter = categorySpecificFields.filter(f => f.name !== 'photos');
+      console.log(`[currentFields] After filtering photos: ${afterFilter.length} fields`);
+      console.log('[currentFields] Field names AFTER filter:', afterFilter.map(f => f.name));
+      const conditionField = afterFilter.find(f => f.name === 'condition');
+      if (conditionField) {
+        console.log(`[currentFields] condition field found:`, conditionField);
+      } else {
+        console.log('[currentFields] condition field NOT found!');
       }
     }
 
@@ -250,10 +278,25 @@ export const useAddInventoryForm = (photos: any[] = []): UseAddInventoryFormRetu
 
   // Set item type (resets form data for category-specific fields)
   const setItemType = useCallback((itemType: string) => {
-    setFormData((prev) => ({
-      category: prev.category,
-      itemType,
-    }));
+    setFormData((prev) => {
+      // Get the fields for this category/item type to seed defaults
+      const categoryDef = ALL_DEFINITIONS[prev.category as any] as Record<string, FieldDefinition[]> | undefined;
+      const fields = categoryDef ? (categoryDef[itemType] || []) : [];
+      
+      // Initialize form data with default values from field definitions
+      const initialData: FormData = {
+        category: prev.category,
+        itemType,
+      };
+      
+      fields.forEach((field) => {
+        if (field.defaultValue !== undefined) {
+          initialData[field.name] = field.defaultValue;
+        }
+      });
+      
+      return initialData;
+    });
   }, []);
 
   // Reset form

@@ -362,7 +362,7 @@ export default function AddInventory() {
                     {allFields
                       .filter((f: FieldDefinition) => f.requirement === "optional" && shouldShowField(f))
                       .map((field: FieldDefinition) => (
-                        <div key={field.name}>
+                        <div key={field.name} className={field.gridColumn === 'full' ? 'lg:col-span-4' : field.gridColumn === 'half' ? 'lg:col-span-2' : field.gridColumn === 'third' ? 'lg:col-span-3' : ''}>
                           <DynamicFieldRenderer
                             field={field}
                             value={formData[field.name as keyof typeof formData] || ""}
@@ -490,7 +490,6 @@ export default function AddInventory() {
               </label>
 
               <p className="mt-2 text-xs text-white/50">At least 1 photo required</p>
-              <p className="mt-2 text-xs text-yellow-400/70">📸 The photo with the yellow border will be displayed as your listing's cover photo</p>
             </div>
           </div>
 
