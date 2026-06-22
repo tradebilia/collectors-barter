@@ -501,10 +501,13 @@ const VIDEO_GAMES_CONSOLE_FIELDS: FieldDefinition[] = [
 const VIDEO_GAMES_ACCESSORY_FIELDS: FieldDefinition[] = [
   COMMON_FIELDS.LISTING_TITLE_FIELD,
   COMMON_FIELDS.TRADE_VALUE_FIELD,
-  
-  COMMON_FIELDS.DESCRIPTION_FIELD,
-  COMMON_FIELDS.QUANTITY_FIELD,
-  COMMON_FIELDS.SHIPPING_AVAILABLE_FIELD,
+  {
+    name: 'condition',
+    label: 'Condition',
+    inputType: 'dropdown',
+    requirement: 'required',
+    dropdownOptions: ['Mint', 'Near Mint', 'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'],
+  },
   {
     name: 'accessoryName',
     label: 'Accessory Name',
@@ -512,17 +515,41 @@ const VIDEO_GAMES_ACCESSORY_FIELDS: FieldDefinition[] = [
     requirement: 'required',
   },
   {
-    name: 'system',
-    label: 'System',
-    inputType: 'text',
-    requirement: 'required',
-  },
-  {
-    name: 'condition',
-    label: 'Condition',
+    name: 'platform',
+    label: 'Platform',
     inputType: 'dropdown',
     requirement: 'required',
-    dropdownOptions: ['Mint', 'Near Mint', 'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'],
+    dropdownOptions: ['NES', 'SNES', 'N64', 'GameCube', 'Wii', 'Wii U', 'Switch', 'Switch 2', 'Sega Genesis', 'Sega Saturn', 'Dreamcast', 'PS1', 'PS2', 'PS3', 'PS4', 'PS5', 'Xbox', 'Xbox 360', 'Xbox One', 'Xbox Series X/S', 'Other'],
+    supportsOther: true,
+  },
+  {
+    name: 'accessoryType',
+    label: 'Accessory Type',
+    inputType: 'dropdown',
+    requirement: 'required',
+    dropdownOptions: ['Controller', 'Cable', 'Adapter', 'Stand', 'Carrying Case', 'Charging Dock', 'Memory Card', 'Battery', 'Other'],
+    supportsOther: true,
+  },
+  {
+    name: 'tested',
+    label: 'Tested',
+    inputType: 'dropdown',
+    requirement: 'required',
+    dropdownOptions: ['Yes', 'No'],
+  },
+  {
+    name: 'workingCondition',
+    label: 'Working Condition',
+    inputType: 'dropdown',
+    requirement: 'required',
+    dropdownOptions: ['Fully Functional', 'Partially Functional', 'Not Functional'],
+  },
+  {
+    name: 'originalPackaging',
+    label: 'Original Packaging',
+    inputType: 'dropdown',
+    requirement: 'recommended',
+    dropdownOptions: ['Yes', 'No'],
   },
 ];
 
