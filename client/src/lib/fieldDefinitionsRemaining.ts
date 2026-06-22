@@ -551,6 +551,22 @@ const VIDEO_GAMES_ACCESSORY_FIELDS: FieldDefinition[] = [
     requirement: 'recommended',
     dropdownOptions: ['Yes', 'No'],
   },
+  {
+    name: 'quantity',
+    label: 'Quantity',
+    inputType: 'number',
+    requirement: 'recommended',
+    defaultValue: '1',
+  },
+  {
+    name: 'manufacturer',
+    label: 'Manufacturer',
+    inputType: 'dropdown',
+    requirement: 'recommended',
+    dropdownOptions: ['Nintendo', 'Sony', 'Microsoft', 'Sega', 'Logitech', 'Mad Catz', 'Other'],
+    supportsOther: true,
+    otherFieldName: 'Custom Manufacturer',
+  },
 ];
 
 const VIDEO_GAMES_COLLECTION_LOT_FIELDS: FieldDefinition[] = [
