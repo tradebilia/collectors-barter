@@ -307,18 +307,19 @@ export default function AddInventory() {
             <CollapsibleFormSection title="3. Recommended Fields" defaultExpanded={true} fieldCount={allFields.filter((f: FieldDefinition) => f.requirement === "recommended").length}>
               <div className="space-y-6">
                 <div className="space-y-4">
-                  <div className="space-y-4">
+                  <div className="flex gap-4 flex-wrap items-end">
                     {allFields
                       .filter((f: FieldDefinition) => f.requirement === "recommended" && shouldShowField(f) && f.name !== 'signatures')
                       .map((field: FieldDefinition) => (
-                        <FieldWithCustomInput
-                          key={field.name}
-                          field={field}
-                          value={formData[field.name as keyof typeof formData] || ""}
-                          onChange={(value) => updateField(field.name, value)}
-                          onOtherChange={(value) => updateOtherField(field.name, value)}
-                          formData={formData}
-                        />
+                        <div key={field.name} className={field.name === 'quantity' ? 'flex-shrink-0' : 'flex-1 min-w-0'}>
+                          <FieldWithCustomInput
+                            field={field}
+                            value={formData[field.name as keyof typeof formData] || ""}
+                            onChange={(value) => updateField(field.name, value)}
+                            onOtherChange={(value) => updateOtherField(field.name, value)}
+                            formData={formData}
+                          />
+                        </div>
                       ))}
                   </div>
                 </div>

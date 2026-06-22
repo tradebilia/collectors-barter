@@ -113,6 +113,7 @@ const QUANTITY_FIELD: FieldDefinition = {
   requirement: 'recommended',
   validation: { min: 1 },
   defaultValue: '1',
+  maxLength: 3,
   gridColumn: 'half',
 };
 
