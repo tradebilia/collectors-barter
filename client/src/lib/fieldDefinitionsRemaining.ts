@@ -565,22 +565,38 @@ const VIDEO_GAMES_ACCESSORY_FIELDS: FieldDefinition[] = [
 const VIDEO_GAMES_COLLECTION_LOT_FIELDS: FieldDefinition[] = [
   COMMON_FIELDS.LISTING_TITLE_FIELD,
   COMMON_FIELDS.TRADE_VALUE_FIELD,
-  
-  COMMON_FIELDS.DESCRIPTION_FIELD,
-  COMMON_FIELDS.QUANTITY_FIELD,
-  COMMON_FIELDS.SHIPPING_AVAILABLE_FIELD,
   {
-    name: 'itemCount',
-    label: 'Item Count',
+    name: 'condition',
+    label: 'Condition',
+    inputType: 'dropdown',
+    requirement: 'required',
+    dropdownOptions: ['Mint', 'Near Mint', 'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'],
+  },
+  {
+    name: 'approximateItemCount',
+    label: 'Approximate Item Count',
     inputType: 'number',
-    requirement: 'recommended',
+    requirement: 'required',
     validation: { min: 1 },
   },
   {
-    name: 'systems',
-    label: 'Systems Included',
-    inputType: 'textarea',
+    name: 'platformsIncluded',
+    label: 'Platforms Included',
+    inputType: 'text',
     requirement: 'recommended',
+  },
+  {
+    name: 'notableGamesConsoles',
+    label: 'Notable Games/Consoles',
+    inputType: 'text',
+    requirement: 'recommended',
+  },
+  {
+    name: 'includesGradedGames',
+    label: 'Includes Graded Games',
+    inputType: 'dropdown',
+    requirement: 'optional',
+    dropdownOptions: ['Yes', 'No'],
   },
 ];
 
