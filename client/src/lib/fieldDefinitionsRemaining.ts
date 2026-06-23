@@ -895,6 +895,15 @@ const VINTAGE_TOYS_ACTION_FIGURE_FIELDS: FieldDefinition[] = [
     requirement: 'required',
     dropdownOptions: ['Original Box', 'Loose', 'Bagged', 'Other'],
   },
+
+  {
+    name: 'quantity',
+    label: 'Quantity',
+    inputType: 'number',
+    requirement: 'recommended',
+    defaultValue: '1',
+    maxLength: 3,
+  },
   {
     name: 'brand',
     label: 'Brand',
@@ -930,14 +939,6 @@ const VINTAGE_TOYS_ACTION_FIGURE_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'recommended',
     dropdownOptions: ['Yes', 'No', 'Unknown'],
-  },
-  {
-    name: 'quantity',
-    label: 'Quantity',
-    inputType: 'number',
-    requirement: 'recommended',
-    defaultValue: '1',
-    maxLength: 3,
   },
   COMMON_FIELDS.IS_GRADED_FIELD,
   {
