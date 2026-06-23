@@ -993,6 +993,7 @@ const VINTAGE_TOYS_VEHICLE_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'required',
     dropdownOptions: ['Mint', 'Near Mint', 'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'],
+    conditionalLogic: 'Is Graded = No',
   },
   {
     name: 'vehicleName',
