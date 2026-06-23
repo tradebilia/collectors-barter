@@ -156,7 +156,7 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({
         // Standard dropdown for all fields
         return (
           <Select value={value || ''} onValueChange={onChange} disabled={disabled}>
-            <SelectTrigger className={`bg-white text-black ${hasError ? 'border-red-500' : ''}` }>
+            <SelectTrigger className={`bg-white text-black h-10 ${hasError ? 'border-red-500' : ''}`}>
               <SelectValue placeholder="Select an option" />
             </SelectTrigger>
             <SelectContent>
