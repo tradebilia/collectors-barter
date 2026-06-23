@@ -283,16 +283,17 @@ export default function AddInventory() {
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     {allFields
-                      .filter((f: FieldDefinition) => f.requirement === "required" && shouldShowField(f))
+                      .filter((f: FieldDefinition) => (f.requirement === "required" || f.requirement === "conditional") && shouldShowField(f))
                       .map((field: FieldDefinition) => (
-                        <FieldWithCustomInput
-                          key={field.name}
-                          field={field}
-                          value={formData[field.name as keyof typeof formData] || ""}
-                          onChange={(value) => updateField(field.name, value)}
-                          onOtherChange={(value) => updateOtherField(field.name, value)}
-                          formData={formData}
-                        />
+                        <div key={field.name} className={field.gridColumn === 'full' ? 'lg:col-span-4' : field.gridColumn === 'half' ? 'lg:col-span-2' : field.gridColumn === 'third' ? 'lg:col-span-1' : ''}>
+                          <FieldWithCustomInput
+                            field={field}
+                            value={formData[field.name as keyof typeof formData] || ""}
+                            onChange={(value) => updateField(field.name, value)}
+                            onOtherChange={(value) => updateOtherField(field.name, value)}
+                            formData={formData}
+                          />
+                        </div>
                       ))}
                   </div>
                 </div>
@@ -307,11 +308,11 @@ export default function AddInventory() {
             <CollapsibleFormSection title="3. Recommended Fields" defaultExpanded={true} fieldCount={allFields.filter((f: FieldDefinition) => f.requirement === "recommended").length}>
               <div className="space-y-6">
                 <div className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     {allFields
                       .filter((f: FieldDefinition) => f.requirement === "recommended" && shouldShowField(f) && f.name !== 'signatures')
                       .map((field: FieldDefinition) => (
-                        <div key={field.name}>
+                        <div key={field.name} className={field.gridColumn === 'full' ? 'lg:col-span-4' : field.gridColumn === 'half' ? 'lg:col-span-2' : field.gridColumn === 'third' ? 'lg:col-span-1' : ''}>
                           <FieldWithCustomInput
                             field={field}
                             value={formData[field.name as keyof typeof formData] || ""}
@@ -361,7 +362,7 @@ export default function AddInventory() {
                     {allFields
                       .filter((f: FieldDefinition) => f.requirement === "optional" && shouldShowField(f))
                       .map((field: FieldDefinition) => (
-                        <div key={field.name} className={field.gridColumn === 'full' ? 'lg:col-span-4' : field.gridColumn === 'half' ? 'lg:col-span-2' : field.gridColumn === 'third' ? 'lg:col-span-3' : ''}>
+                        <div key={field.name} className={field.gridColumn === 'full' ? 'lg:col-span-4' : field.gridColumn === 'half' ? 'lg:col-span-2' : field.gridColumn === 'third' ? 'lg:col-span-1' : ''}>
                           <DynamicFieldRenderer
                             field={field}
                             value={formData[field.name as keyof typeof formData] || ""}

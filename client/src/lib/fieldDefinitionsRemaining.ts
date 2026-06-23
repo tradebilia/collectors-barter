@@ -879,9 +879,17 @@ const AUTOGRAPHS_COLLECTION_LOT_FIELDS: FieldDefinition[] = [
 // ============================================================================
 
 const VINTAGE_TOYS_ACTION_FIGURE_FIELDS: FieldDefinition[] = [
+  // Required Fields
   COMMON_FIELDS.LISTING_TITLE_FIELD,
   COMMON_FIELDS.TRADE_VALUE_FIELD,
-  COMMON_FIELDS.CONDITION_FIELD,
+  {
+    name: 'condition',
+    label: 'Condition',
+    inputType: 'dropdown',
+    requirement: 'required',
+    dropdownOptions: ['Mint', 'Near Mint', 'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'],
+    conditionalLogic: 'Is Graded = No',
+  },
   {
     name: 'toyNameCharacter',
     label: 'Toy Name/Character',
@@ -894,8 +902,39 @@ const VINTAGE_TOYS_ACTION_FIGURE_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'required',
     dropdownOptions: ['Original Box', 'Loose', 'Bagged', 'Other'],
+    supportsOther: true,
+    otherFieldName: 'Custom Packaging Type',
+    gridColumn: 'full',
+  },
+  {
+    ...COMMON_FIELDS.IS_GRADED_FIELD,
+    gridColumn: 'half',
+  },
+  {
+    ...COMMON_FIELDS.GRADING_COMPANY_FIELD,
+    requirement: 'required',
+    conditionalLogic: 'Is Graded = Yes',
+    dropdownOptions: [...GRADING_COMPANIES_BY_CATEGORY.vintage_toys, 'Other'],
+    supportsOther: true,
+    otherFieldName: 'Custom Grading Company',
+    gridColumn: 'half',
+  },
+  {
+    ...COMMON_FIELDS.GRADE_FIELD,
+    requirement: 'required',
+    conditionalLogic: 'Is Graded = Yes',
+    inputType: 'text',
+    maxLength: 4,
+    gridColumn: 'half',
+  },
+  {
+    ...COMMON_FIELDS.CERTIFICATION_NUMBER_FIELD,
+    requirement: 'required',
+    conditionalLogic: 'Is Graded = Yes',
+    gridColumn: 'half',
   },
 
+  // Recommended Fields
   {
     name: 'quantity',
     label: 'Quantity',
@@ -910,7 +949,9 @@ const VINTAGE_TOYS_ACTION_FIGURE_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'recommended',
     dropdownOptions: ['Hasbro', 'Mattel', 'Kenner', 'Playmates', 'Bandai', 'LEGO', 'Milton Bradley', 'Parker Brothers', 'Fisher-Price', 'Ty', 'Other'],
-    conditionalLogic: 'brand = Other',
+    supportsOther: true,
+    otherFieldName: 'Custom Brand',
+    gridColumn: 'half',
   },
   {
     name: 'franchise',
@@ -925,6 +966,7 @@ const VINTAGE_TOYS_ACTION_FIGURE_FIELDS: FieldDefinition[] = [
     maxLength: 10,
     requirement: 'recommended',
     validation: { min: 1900, max: 2100 },
+    gridColumn: 'full',
   },
   {
     name: 'complete',
@@ -940,23 +982,18 @@ const VINTAGE_TOYS_ACTION_FIGURE_FIELDS: FieldDefinition[] = [
     requirement: 'recommended',
     dropdownOptions: ['Yes', 'No', 'Unknown'],
   },
-  COMMON_FIELDS.IS_GRADED_FIELD,
-  {
-    ...COMMON_FIELDS.GRADING_COMPANY_FIELD,
-    dropdownOptions: [...GRADING_COMPANIES_BY_CATEGORY.vintage_toys, 'Other'],
-    conditionalLogic: 'gradingCompany = Other',
-  },
-  COMMON_FIELDS.GRADE_FIELD,
-  COMMON_FIELDS.CERTIFICATION_NUMBER_FIELD,
 ];
 
 const VINTAGE_TOYS_VEHICLE_FIELDS: FieldDefinition[] = [
   COMMON_FIELDS.LISTING_TITLE_FIELD,
   COMMON_FIELDS.TRADE_VALUE_FIELD,
-  
-  COMMON_FIELDS.DESCRIPTION_FIELD,
-  COMMON_FIELDS.QUANTITY_FIELD,
-  COMMON_FIELDS.SHIPPING_AVAILABLE_FIELD,
+  {
+    name: 'condition',
+    label: 'Condition',
+    inputType: 'dropdown',
+    requirement: 'required',
+    dropdownOptions: ['Mint', 'Near Mint', 'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'],
+  },
   {
     name: 'vehicleName',
     label: 'Vehicle Name',
@@ -964,10 +1001,66 @@ const VINTAGE_TOYS_VEHICLE_FIELDS: FieldDefinition[] = [
     requirement: 'required',
   },
   {
+    name: 'packagingType',
+    label: 'Packaging Type',
+    inputType: 'dropdown',
+    requirement: 'required',
+    dropdownOptions: ['Loose', 'Carded', 'Boxed', 'Sealed', 'Other'],
+    supportsOther: true,
+    otherFieldName: 'Custom Packaging Type',
+    gridColumn: 'full',
+  },
+  {
+    name: 'isGraded',
+    label: 'Is Graded',
+    inputType: 'dropdown',
+    requirement: 'required',
+    dropdownOptions: ['Yes', 'No'],
+  },
+  {
+    name: 'certificationCompany',
+    label: 'Grading Company',
+    inputType: 'dropdown',
+    requirement: 'conditional',
+    conditionalLogic: 'Is Graded = Yes',
+    dropdownOptions: ['AFA', 'CAS', 'UKG', 'Other'],
+    supportsOther: true,
+    otherFieldName: 'Custom Grading Company',
+    gridColumn: 'half',
+  },
+  {
+    name: 'grade',
+    label: 'Grade',
+    inputType: 'text',
+    requirement: 'conditional',
+    conditionalLogic: 'Is Graded = Yes',
+    maxLength: 4,
+    gridColumn: 'half',
+  },
+  {
+    name: 'certificationNumber',
+    label: 'Certification Number',
+    inputType: 'text',
+    requirement: 'conditional',
+    conditionalLogic: 'Is Graded = Yes',
+  },
+  COMMON_FIELDS.QUANTITY_FIELD,
+  {
+    name: 'brand',
+    label: 'Brand',
+    inputType: 'dropdown',
+    requirement: 'recommended',
+    dropdownOptions: ['Hot Wheels', 'Matchbox', 'Kenner', 'Hasbro', 'Mattel', 'Tonka', 'Bandai', 'Other'],
+    supportsOther: true,
+    otherFieldName: 'Custom Brand',
+    gridColumn: 'half',
+  },
+  {
     name: 'franchise',
     label: 'Franchise',
     inputType: 'text',
-    requirement: 'required',
+    requirement: 'recommended',
+    gridColumn: 'third',
   },
   {
     name: 'year',
@@ -976,17 +1069,26 @@ const VINTAGE_TOYS_VEHICLE_FIELDS: FieldDefinition[] = [
     maxLength: 10,
     requirement: 'recommended',
     validation: { min: 1900, max: 2100 },
-  },
-  COMMON_FIELDS.IS_GRADED_FIELD,
-  {
-    ...COMMON_FIELDS.CONDITION_FIELD,
+    gridColumn: 'third',
   },
   {
-    ...COMMON_FIELDS.GRADING_COMPANY_FIELD,
-    dropdownOptions: GRADING_COMPANIES_BY_CATEGORY.vintage_toys,
+    name: 'workingFeatures',
+    label: 'Working Features',
+    inputType: 'dropdown',
+    requirement: 'recommended',
+    dropdownOptions: ['Yes', 'No', 'Unknown'],
+    gridColumn: 'third',
   },
-  COMMON_FIELDS.GRADE_FIELD,
-  COMMON_FIELDS.CERTIFICATION_NUMBER_FIELD,
+  {
+    name: 'vehicleType',
+    label: 'Vehicle Type',
+    inputType: 'dropdown',
+    requirement: 'recommended',
+    dropdownOptions: ['Car', 'Truck', 'Aircraft', 'Spaceship', 'Boat', 'Motorcycles', 'Train', 'Other'],
+    supportsOther: true,
+    otherFieldName: 'Custom Vehicle Type',
+    gridColumn: 'full',
+  },
 ];
 
 const VINTAGE_TOYS_PLAYSET_FIELDS: FieldDefinition[] = [
