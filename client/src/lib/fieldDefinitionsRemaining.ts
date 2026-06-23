@@ -881,21 +881,37 @@ const AUTOGRAPHS_COLLECTION_LOT_FIELDS: FieldDefinition[] = [
 const VINTAGE_TOYS_ACTION_FIGURE_FIELDS: FieldDefinition[] = [
   COMMON_FIELDS.LISTING_TITLE_FIELD,
   COMMON_FIELDS.TRADE_VALUE_FIELD,
-  
-  COMMON_FIELDS.DESCRIPTION_FIELD,
-  COMMON_FIELDS.QUANTITY_FIELD,
-  COMMON_FIELDS.SHIPPING_AVAILABLE_FIELD,
+  COMMON_FIELDS.CONDITION_FIELD,
   {
-    name: 'figureName',
-    label: 'Figure Name',
+    name: 'toyNameCharacter',
+    label: 'Toy Name/Character',
     inputType: 'text',
     requirement: 'required',
+  },
+  {
+    name: 'packagingType',
+    label: 'Packaging Type',
+    inputType: 'dropdown',
+    requirement: 'required',
+    dropdownOptions: ['Original Box', 'Loose', 'Bagged', 'Other'],
+  },
+  {
+    name: 'brand',
+    label: 'Brand',
+    inputType: 'text',
+    requirement: 'recommended',
   },
   {
     name: 'franchise',
     label: 'Franchise',
     inputType: 'text',
-    requirement: 'required',
+    requirement: 'recommended',
+  },
+  {
+    name: 'character',
+    label: 'Character',
+    inputType: 'text',
+    requirement: 'recommended',
   },
   {
     name: 'year',
@@ -906,16 +922,19 @@ const VINTAGE_TOYS_ACTION_FIGURE_FIELDS: FieldDefinition[] = [
     validation: { min: 1900, max: 2100 },
   },
   {
-    name: 'completeInBox',
-    label: 'Complete In Box',
+    name: 'complete',
+    label: 'Complete',
     inputType: 'dropdown',
     requirement: 'recommended',
     dropdownOptions: ['Yes', 'No'],
   },
-  COMMON_FIELDS.IS_GRADED_FIELD,
   {
-    ...COMMON_FIELDS.CONDITION_FIELD,
+    name: 'accessoriesIncluded',
+    label: 'Accessories Included',
+    inputType: 'text',
+    requirement: 'recommended',
   },
+  COMMON_FIELDS.IS_GRADED_FIELD,
   {
     ...COMMON_FIELDS.GRADING_COMPANY_FIELD,
     dropdownOptions: GRADING_COMPANIES_BY_CATEGORY.vintage_toys,

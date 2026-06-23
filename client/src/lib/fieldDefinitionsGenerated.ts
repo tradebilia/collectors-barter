@@ -2590,37 +2590,18 @@ export const VINTAGE_TOYS_ACTION_FIGURE_DOLL_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'required',
     dropdownOptions: ['Mint', 'Near Mint', 'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'],
-    conditionalLogic: 'Is Graded = No',
   },
   {
-    name: 'photos',
-    label: 'Photos',
-    inputType: 'image-upload',
-    requirement: 'required',
-  },
-
-  {
-    name: 'quantity',
-    label: 'Quantity',
-    inputType: 'number',
-    maxLength: 4,
-    requirement: 'recommended',
-  },
-
-  {
-    name: 'toyName',
-    label: 'Toy Name',
+    name: 'toyNameCharacter',
+    label: 'Toy Name/Character',
     inputType: 'text',
     requirement: 'required',
   },
   {
     name: 'brand',
     label: 'Brand',
-    inputType: 'dropdown',
+    inputType: 'text',
     requirement: 'recommended',
-    dropdownOptions: ['Hasbro', 'Mattel', 'Kenner', 'Playmates', 'Bandai', 'LEGO', 'Milton Bradley', 'Parker Brothers', 'Fisher-Price', 'Ty', 'Other'],
-    supportsOther: true,
-    otherFieldName: 'Custom Brand',
   },
   {
     name: 'franchise',
@@ -2660,9 +2641,8 @@ export const VINTAGE_TOYS_ACTION_FIGURE_DOLL_FIELDS: FieldDefinition[] = [
   {
     name: 'accessoriesIncluded',
     label: 'Accessories Included',
-    inputType: 'dropdown',
+    inputType: 'text',
     requirement: 'recommended',
-    dropdownOptions: ['Yes', 'No', 'Unknown'],
   },
   {
     name: 'isGraded',
@@ -2684,9 +2664,9 @@ export const VINTAGE_TOYS_ACTION_FIGURE_DOLL_FIELDS: FieldDefinition[] = [
   {
     name: 'grade',
     label: 'Grade',
-    inputType: 'text',
-    maxLength: 4,
+    inputType: 'dropdown',
     requirement: 'required',
+    dropdownOptions: ['10', '9.8', '9.5', '9', '8.5', '8', '7.5', '7', '6.5', '6', '5.5', '5', '4.5', '4', '3.5', '3', '2.5', '2', '1.5', '1'],
     conditionalLogic: 'Is Graded = Yes',
   },
   {
