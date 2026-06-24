@@ -2909,3 +2909,29 @@ All 8 remaining filter optimization and caching items have been successfully imp
 - [x] Add custom input field when "Other" is selected for fields with supportsOther (using otherFieldName as label)
 - [x] Fix category reset to completely clear all form data including Manufacturer field
 - [x] Update custom input styling to have white background with black text label and input
+
+
+## Field Layout Optimization - Vintage Toys Categories
+
+- [x] Fix Vintage Toys / Vehicle layout: place Year, Franchise, and Working Features on the same row
+- [x] Add conditional logic to hide Condition field when Is Graded = Yes across all categories
+- [x] Fix gridColumn mapping for 'third' value from lg:col-span-3 to lg:col-span-1 in AddInventory.tsx
+- [x] Implement Vintage Toys / Playset fields with proper grid layout
+- [x] Add conditional logic to Playset Condition field: Is Graded = No
+- [x] Update Grade field maxLength to 4 characters across all categories
+- [x] Update Certification Number field maxLength to 40 characters across all categories
+- [x] Implement Vintage Toys / Board Game / Puzzle fields with complete grid specification
+- [x] Add conditional logic to Board Game Condition field: Is Graded = No
+- [x] Reorder Board Game grading fields: Is Graded → Grading Company → Grade → Certification Number
+- [x] Change Certification Number to half width so it appears next to Grade
+- [x] Reduce Game / Puzzle Name maxLength to 40 and change to half width
+- [x] Move Game / Puzzle Name field to appear right after Trade Value
+- [x] Place Complete field next to Publisher / Brand field (both half width)
+- [x] Move Quantity field to appear first in Board Game recommended fields
+- [x] Add maxLength: 10 to Number of Pieces field
+- [x] Change Number of Pieces to half width and place next to Year field
+- [x] Optimize recommended fields section to show 3 fields per row using gridColumn: 'third'
+- [x] Change QUANTITY_FIELD gridColumn from 'half' to 'third' for alignment with other recommended fields
+- [x] Verify all Condition fields have conditional logic: Is Graded = No (14 fields fixed)
+- [x] Ensure no overlapping fields across all category layouts
+

@@ -88,6 +88,11 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({
           else if (field.maxLength <= 7) widthClass = 'max-w-20';
           else if (field.maxLength <= 9) widthClass = 'max-w-24';
           else if (field.maxLength <= 10) widthClass = 'max-w-28';
+          else if (field.maxLength <= 15) widthClass = 'max-w-32';
+          else if (field.maxLength <= 20) widthClass = 'max-w-40';
+          else if (field.maxLength <= 30) widthClass = 'max-w-56';
+          else if (field.maxLength <= 40) widthClass = 'max-w-64';
+          else widthClass = 'max-w-full';
         }
         return (
           <Input

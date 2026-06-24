@@ -114,7 +114,7 @@ const QUANTITY_FIELD: FieldDefinition = {
   validation: { min: 1 },
   defaultValue: '1',
   maxLength: 3,
-  gridColumn: 'half',
+  gridColumn: 'third',
 };
 
 const SHIPPING_AVAILABLE_FIELD: FieldDefinition = {
@@ -147,6 +147,7 @@ const GRADE_FIELD: FieldDefinition = {
   inputType: 'text',
   requirement: 'required',
   conditionalLogic: 'Is Graded = Yes',
+  maxLength: 4,
 };
 
 const CERTIFICATION_NUMBER_FIELD: FieldDefinition = {
@@ -155,6 +156,7 @@ const CERTIFICATION_NUMBER_FIELD: FieldDefinition = {
   inputType: 'text',
   requirement: 'required',
   conditionalLogic: 'Is Graded = Yes',
+  maxLength: 40,
 };
 
 // Grading companies by category
