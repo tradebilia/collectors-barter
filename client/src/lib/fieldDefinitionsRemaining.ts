@@ -228,9 +228,9 @@ const STAMPS_SINGLE_STAMP_FIELDS: FieldDefinition[] = [
   {
     name: 'country',
     label: 'Country',
-    inputType: 'text',
+    inputType: 'dropdown',
     requirement: 'required',
-    maxLength: 50,
+    dropdownOptions: COUNTRIES_LIST,
     gridColumn: 'half',
   },
   {
