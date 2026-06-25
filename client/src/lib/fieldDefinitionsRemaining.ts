@@ -1578,6 +1578,7 @@ const VINTAGE_TOYS_COLLECTION_LOT_FIELDS: FieldDefinition[] = [
   COMMON_FIELDS.TRADE_VALUE_FIELD,
   {
     ...COMMON_FIELDS.CONDITION_FIELD,
+    conditionalLogic: undefined,
   },
   {
     name: 'itemCount',
