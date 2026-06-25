@@ -1586,6 +1586,7 @@ const VINTAGE_TOYS_COLLECTION_LOT_FIELDS: FieldDefinition[] = [
     inputType: 'number',
     requirement: 'required',
     validation: { min: 1 },
+    maxLength: 5,
     gridColumn: 'half',
   },
   {
