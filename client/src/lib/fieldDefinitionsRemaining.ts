@@ -1448,14 +1448,6 @@ const VINTAGE_TOYS_PLUSH_TOY_FIELDS: FieldDefinition[] = [
     otherFieldName: 'Custom Brand',
     gridColumn: 'half',
   },
-  {
-    name: 'customBrand',
-    label: 'Custom Brand',
-    inputType: 'text',
-    requirement: 'optional',
-    conditionalLogic: 'Brand = Other',
-    gridColumn: 'half',
-  },
   COMMON_FIELDS.QUANTITY_FIELD,
   {
     name: 'year',
