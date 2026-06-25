@@ -221,31 +221,34 @@ const COINS_COLLECTION_LOT_FIELDS: FieldDefinition[] = [
 const STAMPS_SINGLE_STAMP_FIELDS: FieldDefinition[] = [
   COMMON_FIELDS.LISTING_TITLE_FIELD,
   COMMON_FIELDS.TRADE_VALUE_FIELD,
-  
-  COMMON_FIELDS.DESCRIPTION_FIELD,
-  COMMON_FIELDS.QUANTITY_FIELD,
-  COMMON_FIELDS.SHIPPING_AVAILABLE_FIELD,
+  {
+    ...COMMON_FIELDS.CONDITION_FIELD,
+    conditionalLogic: 'Is Graded = No',
+  },
   {
     name: 'country',
     label: 'Country',
-    inputType: 'dropdown',
+    inputType: 'text',
     requirement: 'required',
-    dropdownOptions: COUNTRIES_LIST,
+    maxLength: 50,
+    gridColumn: 'half',
   },
   {
     name: 'year',
     label: 'Year',
     inputType: 'number',
-    maxLength: 10,
     requirement: 'required',
+    maxLength: 4,
     validation: { min: 1800, max: 2100 },
+    gridColumn: 'half',
   },
   {
     name: 'denomination',
     label: 'Denomination',
     inputType: 'text',
-    maxLength: 10,
-    requirement: 'required',
+    requirement: 'recommended',
+    maxLength: 20,
+    gridColumn: 'third',
   },
   {
     name: 'mintOrUsed',
@@ -253,17 +256,34 @@ const STAMPS_SINGLE_STAMP_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'required',
     dropdownOptions: ['Mint', 'Used', 'Unused', 'CTO', 'Unknown'],
+    gridColumn: 'third',
   },
-  COMMON_FIELDS.IS_GRADED_FIELD,
   {
-    ...COMMON_FIELDS.CONDITION_FIELD,
+    name: 'hinged',
+    label: 'Hinged',
+    inputType: 'dropdown',
+    requirement: 'optional',
+    dropdownOptions: ['Never Hinged', 'Hinged', 'Hinge Remnant', 'Unknown'],
+    gridColumn: 'third',
   },
+  COMMON_FIELDS.QUANTITY_FIELD,
+  COMMON_FIELDS.IS_GRADED_FIELD,
   {
     ...COMMON_FIELDS.GRADING_COMPANY_FIELD,
     dropdownOptions: GRADING_COMPANIES_BY_CATEGORY.stamps,
+    conditionalLogic: 'Is Graded = Yes',
+    gridColumn: 'half',
   },
-  COMMON_FIELDS.GRADE_FIELD,
-  COMMON_FIELDS.CERTIFICATION_NUMBER_FIELD,
+  {
+    ...COMMON_FIELDS.GRADE_FIELD,
+    conditionalLogic: 'Is Graded = Yes',
+    gridColumn: 'half',
+  },
+  {
+    ...COMMON_FIELDS.CERTIFICATION_NUMBER_FIELD,
+    conditionalLogic: 'Is Graded = Yes',
+    gridColumn: 'half',
+  },
 ];
 
 const STAMPS_STAMP_SET_FIELDS: FieldDefinition[] = [
