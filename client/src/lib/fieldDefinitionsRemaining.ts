@@ -1576,22 +1576,37 @@ const VINTAGE_TOYS_PLUSH_TOY_FIELDS: FieldDefinition[] = [
 const VINTAGE_TOYS_COLLECTION_LOT_FIELDS: FieldDefinition[] = [
   COMMON_FIELDS.LISTING_TITLE_FIELD,
   COMMON_FIELDS.TRADE_VALUE_FIELD,
-  
-  COMMON_FIELDS.DESCRIPTION_FIELD,
-  COMMON_FIELDS.QUANTITY_FIELD,
-  COMMON_FIELDS.SHIPPING_AVAILABLE_FIELD,
   {
-    name: 'itemCount',
-    label: 'Item Count',
-    inputType: 'number',
-    requirement: 'recommended',
-    validation: { min: 1 },
+    ...COMMON_FIELDS.CONDITION_FIELD,
   },
   {
-    name: 'itemTypes',
-    label: 'Item Types Included',
+    name: 'itemCount',
+    label: 'Approximate Item Count',
+    inputType: 'number',
+    requirement: 'required',
+    validation: { min: 1 },
+    gridColumn: 'half',
+  },
+  {
+    name: 'brandsIncluded',
+    label: 'Brands Included',
     inputType: 'textarea',
     requirement: 'recommended',
+    gridColumn: 'half',
+  },
+  {
+    name: 'franchisesIncluded',
+    label: 'Franchises Included',
+    inputType: 'textarea',
+    requirement: 'recommended',
+    gridColumn: 'half',
+  },
+  {
+    name: 'notableItems',
+    label: 'Notable Items',
+    inputType: 'textarea',
+    requirement: 'recommended',
+    gridColumn: 'half',
   },
 ];
 
