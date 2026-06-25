@@ -130,7 +130,7 @@ const IS_GRADED_FIELD: FieldDefinition = {
   label: 'Is Graded',
   inputType: 'dropdown',
   requirement: 'required',
-  dropdownOptions: ['Yes', 'No'],
+  dropdownOptions: ['Yes', 'No', 'Other'],
 };
 
 const GRADING_COMPANY_FIELD: FieldDefinition = {
