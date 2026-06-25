@@ -72,6 +72,7 @@ const LISTING_TITLE_FIELD: FieldDefinition = {
   inputType: 'text',
   requirement: 'required',
   validation: { minLength: 3, maxLength: 160 },
+  gridColumn: 'half',
 };
 
 const TRADE_VALUE_FIELD: FieldDefinition = {
@@ -80,6 +81,7 @@ const TRADE_VALUE_FIELD: FieldDefinition = {
   inputType: 'currency',
   requirement: 'required',
   validation: { min: 0 },
+  gridColumn: 'half',
 };
 
 const CONDITION_FIELD: FieldDefinition = {
