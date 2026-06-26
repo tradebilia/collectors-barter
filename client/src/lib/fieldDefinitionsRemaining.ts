@@ -452,11 +452,33 @@ const MOVIES_BOX_SET_FIELDS: FieldDefinition[] = [
 const MOVIES_COLLECTION_LOT_FIELDS: FieldDefinition[] = [
   COMMON_FIELDS.LISTING_TITLE_FIELD,
   COMMON_FIELDS.TRADE_VALUE_FIELD,
+  COMMON_FIELDS.CONDITION_FIELD,
   {
-    ...COMMON_FIELDS.CONDITION_FIELD,
-    conditionalLogic: 'Is Graded = No',
+    name: 'formatsIncluded',
+    label: 'Formats Included',
+    inputType: 'textarea',
+    requirement: 'recommended',
   },
-  COMMON_FIELDS.QUANTITY_FIELD,
+  {
+    name: 'approximateQuantity',
+    label: 'Approximate Quantity',
+    inputType: 'number',
+    requirement: 'required',
+    validation: { min: 1 },
+  },
+  {
+    name: 'notableTitles',
+    label: 'Notable Titles',
+    inputType: 'textarea',
+    requirement: 'recommended',
+  },
+  {
+    name: 'sealedItemsIncluded',
+    label: 'Sealed Items Included',
+    inputType: 'dropdown',
+    requirement: 'optional',
+    dropdownOptions: ['Yes', 'No'],
+  },
 ];
 
 // ============================================================================
