@@ -14,6 +14,8 @@ import { CollapsibleFormSection } from "@/components/CollapsibleFormSection";
 import { DynamicFieldRenderer } from "@/components/DynamicFieldRenderer";
 import { FieldWithCustomInput } from "@/components/FieldWithCustomInput";
 import type { CollectibleCategory, FieldDefinition } from "@/lib/formFieldDefinitions";
+import { getLayoutConfig, getGridColumnsClass, getColSpanClass } from "@/lib/layoutConfigs/layoutTypes";
+import { ITEM_TYPE_LAYOUTS } from "@/lib/layoutConfigs/itemTypeLayouts";
 
 const TRADEBILIA_LOGO_URL = "/manus-storage/tradebilia-logo_c676d640.svg";
 
@@ -280,29 +282,43 @@ export default function AddInventory() {
             {/* Required Fields Section */}
             <CollapsibleFormSection title="2. Required Fields *" defaultExpanded={true} fieldCount={allFields.filter((f: FieldDefinition) => f.requirement === "required").length}>
               <div className="space-y-6 w-full">
-                <div className="space-y-4 w-full">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-16 w-full">
-                    {allFields
-                      .filter((f: FieldDefinition) => (f.requirement === "required" || f.requirement === "conditional") && shouldShowField(f))
-                      .map((field: FieldDefinition) => {
-                        const colSpan = field.gridColumn === 'full' ? 'lg:col-span-4' : field.gridColumn === 'half' ? 'lg:col-span-2' : field.gridColumn === 'third' ? 'lg:col-span-1' : field.gridColumn === 'fourth' ? 'lg:col-span-1' : '';
-                        return (
-                        <div key={field.name} className={`${colSpan} w-full`}>
-                          <FieldWithCustomInput
-                            field={field}
-                            value={formData[field.name as keyof typeof formData] || ""}
-                            onChange={(value) => updateField(field.name, value)}
-                            onOtherChange={(value) => updateOtherField(field.name, value)}
-                            formData={formData}
-                          />
-                        </div>
-                      );
-                      })
+                {(() => {
+                  const layoutKey = `${formData.category}_${formData.itemType}`;
+                  const layoutConfig = getLayoutConfig(layoutKey);
+                  const requiredColumns = layoutConfig?.sections?.required?.columns || 2;
+                  const fieldLayout = layoutConfig?.sections?.required?.fieldLayout || {};
+                  const gap = layoutConfig?.spacing?.gap || 'gap-6';
+                  
+                  return (
+                    <div className={`grid grid-cols-1 md:grid-cols-2 ${getGridColumnsClass(requiredColumns)} ${gap} w-full`}>
+                      {allFields
+                        .filter((f: FieldDefinition) => (f.requirement === "required" || f.requirement === "conditional") && shouldShowField(f))
+                        .sort((a, b) => {
+                          const posA = fieldLayout[a.name]?.position || 999;
+                          const posB = fieldLayout[b.name]?.position || 999;
+                          return posA - posB;
+                        })
+                        .map((field: FieldDefinition) => {
+                          const fieldConfig = fieldLayout[field.name];
+                          const colSpan = fieldConfig?.colSpan || 'half';
+                          const colSpanClass = getColSpanClass(colSpan, requiredColumns);
+                          
+                          return (
+                            <div key={field.name} className={`${colSpanClass} w-full`}>
+                              <FieldWithCustomInput
+                                field={field}
+                                value={formData[field.name as keyof typeof formData] || ""}
+                                onChange={(value) => updateField(field.name, value)}
+                                onOtherChange={(value) => updateOtherField(field.name, value)}
+                                formData={formData}
+                              />
+                            </div>
+                          );
+                        })
                       }
-                  </div>
-                </div>
-                
-
+                    </div>
+                  );
+                })()}
               </div>
             </CollapsibleFormSection>
 
@@ -311,26 +327,43 @@ export default function AddInventory() {
             {/* Recommended Fields Section */}
             <CollapsibleFormSection title="3. Recommended Fields" defaultExpanded={true} fieldCount={allFields.filter((f: FieldDefinition) => f.requirement === "recommended").length}>
               <div className="space-y-6 w-full">
-                <div className="space-y-4 w-full">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-16 w-full">
-                    {allFields
-                      .filter((f: FieldDefinition) => f.requirement === "recommended" && shouldShowField(f) && f.name !== 'signatures')
-                      .map((field: FieldDefinition) => {
-                        const colSpan = field.inputType === 'textarea' ? 'lg:col-span-2' : field.gridColumn === 'full' ? 'lg:col-span-4' : field.gridColumn === 'half' ? 'lg:col-span-2' : field.gridColumn === 'third' ? 'lg:col-span-1' : field.gridColumn === 'fourth' ? 'lg:col-span-1' : '';
-                        return (
-                        <div key={field.name} className={`${colSpan} w-full`}>
-                          <FieldWithCustomInput
-                            field={field}
-                            value={formData[field.name as keyof typeof formData] || ""}
-                            onChange={(value) => updateField(field.name, value)}
-                            onOtherChange={(value) => updateOtherField(field.name, value)}
-                            formData={formData}
-                          />
-                        </div>
-                      );
-                      })}
-                  </div>
-                </div>
+                {(() => {
+                  const layoutKey = `${formData.category}_${formData.itemType}`;
+                  const layoutConfig = getLayoutConfig(layoutKey);
+                  const recommendedColumns = layoutConfig?.sections?.recommended?.columns || 2;
+                  const fieldLayout = layoutConfig?.sections?.recommended?.fieldLayout || {};
+                  const gap = layoutConfig?.spacing?.gap || 'gap-6';
+                  
+                  return (
+                    <div className={`grid grid-cols-1 md:grid-cols-2 ${getGridColumnsClass(recommendedColumns)} ${gap} w-full`}>
+                      {allFields
+                        .filter((f: FieldDefinition) => f.requirement === "recommended" && shouldShowField(f) && f.name !== 'signatures')
+                        .sort((a, b) => {
+                          const posA = fieldLayout[a.name]?.position || 999;
+                          const posB = fieldLayout[b.name]?.position || 999;
+                          return posA - posB;
+                        })
+                        .map((field: FieldDefinition) => {
+                          const fieldConfig = fieldLayout[field.name];
+                          const colSpan = fieldConfig?.colSpan || 'half';
+                          const colSpanClass = getColSpanClass(colSpan, recommendedColumns);
+                          
+                          return (
+                            <div key={field.name} className={`${colSpanClass} w-full`}>
+                              <FieldWithCustomInput
+                                field={field}
+                                value={formData[field.name as keyof typeof formData] || ""}
+                                onChange={(value) => updateField(field.name, value)}
+                                onOtherChange={(value) => updateOtherField(field.name, value)}
+                                formData={formData}
+                              />
+                            </div>
+                          );
+                        })
+                      }
+                    </div>
+                  );
+                })()}
                 
                 {/* Inline Conditional Signature Fields */}
                 {formData.signed === 'Yes' && formData.numberOfSignatures && parseInt(formData.numberOfSignatures) > 0 && (
@@ -365,25 +398,44 @@ export default function AddInventory() {
             {allFields.filter((f: FieldDefinition) => f.requirement === "optional" && f.name !== "description" && shouldShowField(f)).length > 0 && (
             <CollapsibleFormSection title="4. Optional Fields" defaultExpanded={true} fieldCount={allFields.filter((f: FieldDefinition) => f.requirement === "optional" && f.name !== "description").length}>
                 <div className="space-y-4 w-full">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-16 w-full">
-                    {allFields
-                      .filter((f: FieldDefinition) => f.requirement === "optional" && shouldShowField(f))
-                      .map((field: FieldDefinition) => {
-                        const colSpan = field.gridColumn === 'full' ? 'lg:col-span-4' : field.gridColumn === 'half' ? 'lg:col-span-2' : field.gridColumn === 'third' ? 'lg:col-span-1' : field.gridColumn === 'fourth' ? 'lg:col-span-1' : '';
-                        return (
-                        <div key={field.name} className={`${colSpan} w-full`}>
-                          <DynamicFieldRenderer
-                            field={field}
-                            value={formData[field.name as keyof typeof formData] || ""}
-                            onChange={(value) => updateField(field.name, value)}
-                            onOtherChange={(value) => updateOtherField(field.name, value)}
-                            showOtherInput={field.supportsOther && formData[field.name as keyof typeof formData] === 'Other'}
-                            otherValue={formData[`custom${field.name.charAt(0).toUpperCase() + field.name.slice(1)}` as keyof typeof formData] as string || ""}
-                          />
-                        </div>
-                      );
-                      })}
-                  </div>
+                  {(() => {
+                    const layoutKey = `${formData.category}_${formData.itemType}`;
+                    const layoutConfig = getLayoutConfig(layoutKey);
+                    const optionalColumns = layoutConfig?.sections?.optional?.columns || 1;
+                    const fieldLayout = layoutConfig?.sections?.optional?.fieldLayout || {};
+                    const gap = layoutConfig?.spacing?.gap || 'gap-6';
+                    
+                    return (
+                      <div className={`grid grid-cols-1 md:grid-cols-2 ${getGridColumnsClass(optionalColumns)} ${gap} w-full`}>
+                        {allFields
+                          .filter((f: FieldDefinition) => f.requirement === "optional" && shouldShowField(f))
+                          .sort((a, b) => {
+                            const posA = fieldLayout[a.name]?.position || 999;
+                            const posB = fieldLayout[b.name]?.position || 999;
+                            return posA - posB;
+                          })
+                          .map((field: FieldDefinition) => {
+                            const fieldConfig = fieldLayout[field.name];
+                            const colSpan = fieldConfig?.colSpan || 'full';
+                            const colSpanClass = getColSpanClass(colSpan, optionalColumns);
+                            
+                            return (
+                              <div key={field.name} className={`${colSpanClass} w-full`}>
+                                <DynamicFieldRenderer
+                                  field={field}
+                                  value={formData[field.name as keyof typeof formData] || ""}
+                                  onChange={(value) => updateField(field.name, value)}
+                                  onOtherChange={(value) => updateOtherField(field.name, value)}
+                                  showOtherInput={field.supportsOther && formData[field.name as keyof typeof formData] === 'Other'}
+                                  otherValue={formData[`custom${field.name.charAt(0).toUpperCase() + field.name.slice(1)}` as keyof typeof formData] as string || ""}
+                                />
+                              </div>
+                            );
+                          })
+                        }
+                      </div>
+                    );
+                  })()}
                 </div>
             </CollapsibleFormSection>
             )}
