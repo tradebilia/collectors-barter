@@ -49,16 +49,16 @@ export const FieldWithCustomInput: React.FC<FieldWithCustomInputProps> = ({
   return (
     <div className="w-full">
       {/* Labels Row */}
-      <div className="flex gap-3 mb-2">
+      <div className="flex gap-3 mb-2 min-h-10">
         <div className="flex-1 min-w-0">
-          <label className="text-sm font-medium text-white block whitespace-nowrap overflow-hidden text-ellipsis">
+          <label className="text-sm font-medium text-white block">
             {field.label}
             {field.requirement === 'required' && <span className="text-red-500 ml-1">*</span>}
           </label>
         </div>
         {showCustomInput && (
           <div className="flex-1 min-w-0">
-            <label className="text-sm font-medium text-white block whitespace-nowrap overflow-hidden text-ellipsis">
+            <label className="text-sm font-medium text-white block">
               {field.otherFieldName || `Custom ${field.label}`}
             </label>
           </div>
