@@ -2373,13 +2373,6 @@ export const VIDEO_GAMES_COLLECTION_LOT_FIELDS: FieldDefinition[] = [
     requirement: 'required',
   },
   {
-    name: 'quantity',
-    label: 'Quantity',
-    inputType: 'number',
-    maxLength: 4,
-    requirement: 'recommended',
-  },
-  {
     name: 'platformsIncluded',
     label: 'Platforms Included',
     inputType: 'textarea',
