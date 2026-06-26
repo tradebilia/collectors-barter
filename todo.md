@@ -2946,3 +2946,14 @@ All 8 remaining filter optimization and caching items have been successfully imp
 - [x] Create FIELD_NAME_MAPPING.md documentation linking Master List (Title Case) to codebase (camelCase)
 - [x] Document naming convention rules for field name conversions
 - [x] Create full checkpoint with git and GitHub push
+
+
+## Layout Approvals - Locked In
+
+- [x] Sports Cards / Single Card
+- [x] Sports Cards / Unopened Product
+- [x] Sports Cards / Set
+- [x] Sports Cards / Collection / Lot
+- [x] Comics / Original Art
+- [x] Comics / Single Comic
+- [x] Comics / Collection / Lot

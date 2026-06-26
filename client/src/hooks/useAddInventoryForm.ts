@@ -131,24 +131,37 @@ export const useAddInventoryForm = (photos: any[] = []): UseAddInventoryFormRetu
         return result;
       }
 
-      // Handle string equality like "isGraded = Yes" or "Condition = Mint" or "Is Graded = Yes"
-      const stringEqualityMatch = condition.match(/^([a-zA-Z\s]+)\s*=\s*(.+)$/);
+      // Handle string equality like "isGraded = Yes" or "Condition = Mint" or "Is Graded = Yes" or "completeInBox = No"
+      const stringEqualityMatch = condition.match(/^([a-zA-Z0-9\s]+)\s*=\s*(.+)$/);
       if (stringEqualityMatch) {
         const [, fieldName, expectedValue] = stringEqualityMatch;
-        const fieldKey = fieldName
-          .trim()
-          .split(' ')
-          .map((word, index) => {
-            if (index === 0) return word.toLowerCase();
-            return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
-          })
-          .join('');
+        const trimmedFieldName = fieldName.trim();
+        
+        // Check if it's already in camelCase (contains uppercase letters not at start)
+        const isCamelCase = /[a-z][A-Z]/.test(trimmedFieldName);
+        
+        let fieldKey: string;
+        if (isCamelCase) {
+          // Already camelCase, use as-is
+          fieldKey = trimmedFieldName;
+        } else {
+          // Convert from Title Case or space-separated to camelCase
+          fieldKey = trimmedFieldName
+            .split(' ')
+            .map((word, index) => {
+              if (index === 0) return word.toLowerCase();
+              return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+            })
+            .join('');
+        }
 
         const actualValue = formData[fieldKey];
         return actualValue === expectedValue.trim();
       }
 
-      return true;
+      // If condition string doesn't match any pattern, return false (safer than true)
+      console.warn('[evaluateCondition] Unparseable condition:', condition);
+      return false;
     },
     [formData]
   );
