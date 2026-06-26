@@ -153,7 +153,11 @@ const COINS_COIN_SET_FIELDS: FieldDefinition[] = [
 const COINS_COLLECTION_LOT_FIELDS: FieldDefinition[] = [
   COMMON_FIELDS.LISTING_TITLE_FIELD,
   COMMON_FIELDS.TRADE_VALUE_FIELD,
-  COMMON_FIELDS.CONDITION_FIELD,
+  {
+    ...COMMON_FIELDS.CONDITION_FIELD,
+    conditionalLogic: undefined,
+    gridColumn: 'half',
+  },
   {
     name: 'approximateCoinCount',
     label: 'Approximate Coin Count',
