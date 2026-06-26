@@ -3438,7 +3438,10 @@ export const COINS_PAPER_MONEY_BANKNOTES_FIELDS: FieldDefinition[] = [
     label: 'Grading Company',
     inputType: 'dropdown',
     requirement: 'required',
-    dropdownOptions: ['PCGS', 'PMG', 'ANACS', 'ICG'],
+    dropdownOptions: ['PCGS', 'PMG', 'ANACS', 'ICG', 'Other'],
+    supportsOther: true,
+    inlineCustomField: true,
+    otherFieldName: 'Custom Grading Company',
     conditionalLogic: 'Is Graded = Yes',
   },
   {
@@ -3566,7 +3569,7 @@ export const POKEMON_SINGLE_CARD_FIELDS: FieldDefinition[] = [
     conditionalLogic: 'Is Graded = Yes',
     supportsOther: true,
     inlineCustomField: true,
-    otherFieldName: 'customGradingCompany',
+    otherFieldName: 'Custom Grading Company',
   },
   {
     name: 'grade',

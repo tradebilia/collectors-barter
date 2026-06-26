@@ -8,178 +8,40 @@ import {
   SPORTS_CARDS_SET_FIELDS,
   COINS_COLLECTION_LOT_FIELDS,
   COINS_PAPER_MONEY_BANKNOTES_FIELDS,
+  COINS_SINGLE_COIN_FIELDS,
+  COINS_COIN_SET_FIELDS,
   COMICS_COLLECTION_LOT_FIELDS,
   COMICS_ORIGINAL_ART_FIELDS,
+  COMICS_SINGLE_COMIC_FIELDS,
   AUTOGRAPHS_COLLECTION_LOT_FIELDS,
+  AUTOGRAPHS_SIGNED_ITEM_FIELDS,
   VIDEO_GAMES_ACCESSORY_FIELDS,
   VIDEO_GAMES_COLLECTION_LOT_FIELDS,
+  VIDEO_GAMES_GAME_FIELDS,
+  VIDEO_GAMES_CONSOLE_FIELDS,
   VINTAGE_TOYS_ACTION_FIGURE_DOLL_FIELDS,
   VINTAGE_TOYS_BOARD_GAME_PUZZLE_FIELDS,
   VINTAGE_TOYS_PLAYSET_FIELDS,
   VINTAGE_TOYS_VEHICLE_FIELDS,
+  VINTAGE_TOYS_ELECTRONIC_TOY_FIELDS,
+  VINTAGE_TOYS_MODEL_KIT_FIELDS,
+  VINTAGE_TOYS_COLLECTION_LOT_FIELDS,
   POKEMON_COLLECTION_LOT_FIELDS,
   POKEMON_UNOPENED_PRODUCT_FIELDS,
   POKEMON_SET_FIELDS,
   DISNEY_PINS_COLLECTION_LOT_FIELDS,
+  DISNEY_PINS_PIN_SET_FIELDS,
   STAMPS_STAMP_SET_SHEET_FIELDS,
   STAMPS_COLLECTION_LOT_FIELDS,
+  STAMPS_SINGLE_STAMP_FIELDS,
+  MOVIES_BOX_SET_FIELDS,
+  MOVIES_COLLECTION_LOT_FIELDS,
+  MOVIES_INDIVIDUAL_MOVIE_FIELDS,
 } from './fieldDefinitionsGenerated';
 
 // ============================================================================
-// COINS
+// COMICS - COMIC SET (unique to Remaining, not in Generated)
 // ============================================================================
-
-const COINS_SINGLE_COIN_FIELDS: FieldDefinition[] = [
-  COMMON_FIELDS.LISTING_TITLE_FIELD,
-  COMMON_FIELDS.TRADE_VALUE_FIELD,
-  {
-    ...COMMON_FIELDS.CONDITION_FIELD,
-    conditionalLogic: 'Is Graded = No',
-  },
-  COMMON_FIELDS.QUANTITY_FIELD,
-  {
-    name: 'country',
-    label: 'Country',
-    inputType: 'dropdown',
-    requirement: 'required',
-    dropdownOptions: COUNTRIES_LIST,
-    gridColumn: 'third',
-  },
-  {
-    name: 'denomination',
-    label: 'Denomination',
-    inputType: 'text',
-    requirement: 'required',
-    maxLength: 20,
-    gridColumn: 'third',
-  },
-  {
-    name: 'year',
-    label: 'Year',
-    inputType: 'number',
-    requirement: 'required',
-    maxLength: 4,
-    validation: { min: 1800, max: 2100 },
-    gridColumn: 'third',
-  },
-  {
-    name: 'mintMark',
-    label: 'Mint Mark',
-    inputType: 'text',
-    requirement: 'recommended',
-    gridColumn: 'third',
-  },
-  {
-    name: 'variety',
-    label: 'Variety',
-    inputType: 'text',
-    requirement: 'optional',
-    gridColumn: 'third',
-  },
-  {
-    name: 'metal',
-    label: 'Metal Composition',
-    inputType: 'text',
-    requirement: 'optional',
-    gridColumn: 'third',
-  },
-  COMMON_FIELDS.IS_GRADED_FIELD,
-  {
-    ...COMMON_FIELDS.GRADING_COMPANY_FIELD,
-    dropdownOptions: GRADING_COMPANIES_BY_CATEGORY.coins,
-  },
-  COMMON_FIELDS.GRADE_FIELD,
-  COMMON_FIELDS.CERTIFICATION_NUMBER_FIELD,
-];
-
-const COINS_COIN_SET_FIELDS: FieldDefinition[] = [
-  COMMON_FIELDS.LISTING_TITLE_FIELD,
-  COMMON_FIELDS.TRADE_VALUE_FIELD,
-  {
-    ...COMMON_FIELDS.CONDITION_FIELD,
-    conditionalLogic: 'Is Graded = No',
-  },
-  COMMON_FIELDS.QUANTITY_FIELD,
-  {
-    name: 'setName',
-    label: 'Set Name',
-    inputType: 'text',
-    requirement: 'required',
-  },
-  {
-    name: 'coinCount',
-    label: 'Number of Coins',
-    inputType: 'number',
-    requirement: 'recommended',
-  },
-  {
-    name: 'year',
-    label: 'Year',
-    inputType: 'number',
-    requirement: 'recommended',
-    maxLength: 4,
-    validation: { min: 1800, max: 2100 },
-  },
-  {
-    name: 'country',
-    label: 'Country',
-    inputType: 'dropdown',
-    requirement: 'optional',
-    dropdownOptions: COUNTRIES_LIST,
-  },
-  COMMON_FIELDS.IS_GRADED_FIELD,
-  {
-    ...COMMON_FIELDS.GRADING_COMPANY_FIELD,
-    dropdownOptions: GRADING_COMPANIES_BY_CATEGORY.coins,
-  },
-  COMMON_FIELDS.GRADE_FIELD,
-  COMMON_FIELDS.CERTIFICATION_NUMBER_FIELD,
-];
-
-// ============================================================================
-// COMICS
-// ============================================================================
-
-const COMICS_SINGLE_COMIC_FIELDS: FieldDefinition[] = [
-  COMMON_FIELDS.LISTING_TITLE_FIELD,
-  COMMON_FIELDS.TRADE_VALUE_FIELD,
-  {
-    ...COMMON_FIELDS.CONDITION_FIELD,
-    conditionalLogic: 'Is Graded = No',
-  },
-  COMMON_FIELDS.QUANTITY_FIELD,
-  {
-    name: 'title',
-    label: 'Title',
-    inputType: 'text',
-    requirement: 'required',
-  },
-  {
-    name: 'issueNumber',
-    label: 'Issue Number',
-    inputType: 'number',
-    requirement: 'recommended',
-  },
-  {
-    name: 'publisher',
-    label: 'Publisher',
-    inputType: 'text',
-    requirement: 'recommended',
-  },
-  {
-    name: 'year',
-    label: 'Year Published',
-    inputType: 'number',
-    requirement: 'recommended',
-  },
-  COMMON_FIELDS.IS_GRADED_FIELD,
-  {
-    ...COMMON_FIELDS.GRADING_COMPANY_FIELD,
-    dropdownOptions: GRADING_COMPANIES_BY_CATEGORY.comics,
-  },
-  COMMON_FIELDS.GRADE_FIELD,
-  COMMON_FIELDS.CERTIFICATION_NUMBER_FIELD,
-];
 
 const COMICS_COMIC_SET_FIELDS: FieldDefinition[] = [
   COMMON_FIELDS.LISTING_TITLE_FIELD,
@@ -222,363 +84,7 @@ const COMICS_COMIC_SET_FIELDS: FieldDefinition[] = [
   COMMON_FIELDS.CERTIFICATION_NUMBER_FIELD,
 ];
 
-// ============================================================================
-// STAMPS
-// ============================================================================
 
-const STAMPS_SINGLE_STAMP_FIELDS: FieldDefinition[] = [
-  COMMON_FIELDS.LISTING_TITLE_FIELD,
-  COMMON_FIELDS.TRADE_VALUE_FIELD,
-  COMMON_FIELDS.CONDITION_FIELD,
-  COMMON_FIELDS.QUANTITY_FIELD,
-  {
-    name: 'country',
-    label: 'Country',
-    inputType: 'dropdown',
-    requirement: 'required',
-    dropdownOptions: COUNTRIES_LIST,
-  },
-  {
-    name: 'year',
-    label: 'Year',
-    inputType: 'number',
-    requirement: 'recommended',
-  },
-  {
-    name: 'denomination',
-    label: 'Denomination',
-    inputType: 'text',
-    requirement: 'recommended',
-  },
-  {
-    name: 'catalog',
-    label: 'Catalog Number',
-    inputType: 'text',
-    requirement: 'optional',
-  },
-];
-
-// ============================================================================
-// VIDEO GAMES
-// ============================================================================
-
-const VIDEO_GAMES_GAME_FIELDS: FieldDefinition[] = [
-  COMMON_FIELDS.LISTING_TITLE_FIELD,
-  COMMON_FIELDS.TRADE_VALUE_FIELD,
-  COMMON_FIELDS.CONDITION_FIELD,
-  COMMON_FIELDS.QUANTITY_FIELD,
-  {
-    name: 'platform',
-    label: 'Platform',
-    inputType: 'text',
-    requirement: 'required',
-  },
-  {
-    name: 'releaseYear',
-    label: 'Release Year',
-    inputType: 'number',
-    requirement: 'recommended',
-  },
-  {
-    name: 'publisher',
-    label: 'Publisher',
-    inputType: 'text',
-    requirement: 'recommended',
-  },
-];
-
-const VIDEO_GAMES_CONSOLE_FIELDS: FieldDefinition[] = [
-  COMMON_FIELDS.LISTING_TITLE_FIELD,
-  COMMON_FIELDS.TRADE_VALUE_FIELD,
-  COMMON_FIELDS.CONDITION_FIELD,
-  COMMON_FIELDS.QUANTITY_FIELD,
-  {
-    name: 'consoleName',
-    label: 'Console Name',
-    inputType: 'text',
-    requirement: 'required',
-  },
-  {
-    name: 'releaseYear',
-    label: 'Release Year',
-    inputType: 'number',
-    requirement: 'recommended',
-  },
-  {
-    name: 'manufacturer',
-    label: 'Manufacturer',
-    inputType: 'text',
-    requirement: 'recommended',
-  },
-];
-
-// ============================================================================
-// MOVIES
-// ============================================================================
-
-const MOVIES_INDIVIDUAL_MOVIE_FIELDS: FieldDefinition[] = [
-  COMMON_FIELDS.LISTING_TITLE_FIELD,
-  COMMON_FIELDS.TRADE_VALUE_FIELD,
-  {
-    ...COMMON_FIELDS.CONDITION_FIELD,
-    conditionalLogic: 'Is Graded = No',
-  },
-  COMMON_FIELDS.QUANTITY_FIELD,
-  {
-    name: 'title',
-    label: 'Title',
-    inputType: 'text',
-    requirement: 'required',
-    maxLength: 80,
-    gridColumn: 'third',
-  },
-  {
-    name: 'format',
-    label: 'Format',
-    inputType: 'dropdown',
-    requirement: 'required',
-    dropdownOptions: ['DVD', 'Blu-ray', '4K UHD', 'VHS', 'LaserDisc', 'Other'],
-    supportsOther: true,
-    otherFieldName: 'Custom Format',
-    gridColumn: 'third',
-  },
-  {
-    name: 'releaseYear',
-    label: 'Release Year',
-    inputType: 'number',
-    requirement: 'recommended',
-    gridColumn: 'third',
-  },
-  {
-    name: 'sealed',
-    label: 'Sealed',
-    inputType: 'dropdown',
-    requirement: 'recommended',
-    dropdownOptions: ['Yes', 'No'],
-    gridColumn: 'third',
-  },
-  {
-    name: 'region',
-    label: 'Region',
-    inputType: 'text',
-    requirement: 'optional',
-    gridColumn: 'third',
-  },
-  {
-    name: 'edition',
-    label: 'Edition',
-    inputType: 'text',
-    requirement: 'optional',
-    gridColumn: 'third',
-  },
-  COMMON_FIELDS.IS_GRADED_FIELD,
-  {
-    ...COMMON_FIELDS.GRADING_COMPANY_FIELD,
-    dropdownOptions: GRADING_COMPANIES_BY_CATEGORY.movies,
-    supportsOther: true,
-    otherFieldName: 'Custom Grading Company',
-  },
-  COMMON_FIELDS.GRADE_FIELD,
-  COMMON_FIELDS.CERTIFICATION_NUMBER_FIELD,
-];
-
-const MOVIES_BOX_SET_FIELDS: FieldDefinition[] = [
-  COMMON_FIELDS.LISTING_TITLE_FIELD,
-  COMMON_FIELDS.TRADE_VALUE_FIELD,
-  {
-    ...COMMON_FIELDS.CONDITION_FIELD,
-    conditionalLogic: 'Is Graded = No',
-  },
-  COMMON_FIELDS.QUANTITY_FIELD,
-  {
-    name: 'boxSetName',
-    label: 'Box Set Name',
-    inputType: 'text',
-    requirement: 'required',
-    gridColumn: 'half',
-  },
-  {
-    name: 'format',
-    label: 'Format',
-    inputType: 'dropdown',
-    requirement: 'required',
-    dropdownOptions: ['DVD', 'Blu-ray', '4K UHD', 'VHS', 'LaserDisc', 'Mixed', 'Other'],
-    supportsOther: true,
-    otherFieldName: 'Custom Format',
-    gridColumn: 'half',
-  },
-  {
-    name: 'numberOfMoviesInSet',
-    label: 'Number of Movies in Set',
-    inputType: 'number',
-    requirement: 'recommended',
-    gridColumn: 'third',
-  },
-  {
-    name: 'edition',
-    label: 'Edition',
-    inputType: 'text',
-    requirement: 'optional',
-    gridColumn: 'third',
-  },
-  {
-    name: 'sealed',
-    label: 'Sealed',
-    inputType: 'dropdown',
-    requirement: 'recommended',
-    dropdownOptions: ['Yes', 'No'],
-    gridColumn: 'third',
-  },
-  {
-    ...COMMON_FIELDS.IS_GRADED_FIELD,
-    gridColumn: 'third',
-  },
-  {
-    ...COMMON_FIELDS.GRADING_COMPANY_FIELD,
-    dropdownOptions: GRADING_COMPANIES_BY_CATEGORY.movies,
-    gridColumn: 'third',
-  },
-  {
-    ...COMMON_FIELDS.GRADE_FIELD,
-    gridColumn: 'third',
-  },
-  {
-    ...COMMON_FIELDS.CERTIFICATION_NUMBER_FIELD,
-    gridColumn: 'third',
-  },
-];
-
-const MOVIES_COLLECTION_LOT_FIELDS: FieldDefinition[] = [
-  COMMON_FIELDS.LISTING_TITLE_FIELD,
-  COMMON_FIELDS.TRADE_VALUE_FIELD,
-  {
-    ...COMMON_FIELDS.CONDITION_FIELD,
-    conditionalLogic: undefined,
-  },
-  {
-    name: 'formatsIncluded',
-    label: 'Formats Included',
-    inputType: 'textarea',
-    requirement: 'recommended',
-  },
-  {
-    name: 'approximateQuantity',
-    label: 'Approximate Quantity',
-    inputType: 'number',
-    requirement: 'required',
-    validation: { min: 1 },
-  },
-  {
-    name: 'notableTitles',
-    label: 'Notable Titles',
-    inputType: 'textarea',
-    requirement: 'recommended',
-  },
-  {
-    name: 'sealedItemsIncluded',
-    label: 'Sealed Items Included',
-    inputType: 'dropdown',
-    requirement: 'optional',
-    dropdownOptions: ['Yes', 'No'],
-  },
-];
-
-// ============================================================================
-// AUTOGRAPHS
-// ============================================================================
-
-const AUTOGRAPHS_SIGNED_ITEM_FIELDS: FieldDefinition[] = [
-  // Required Fields
-  COMMON_FIELDS.LISTING_TITLE_FIELD,
-  {
-    name: 'signer',
-    label: 'Signer',
-    inputType: 'text',
-    requirement: 'required',
-    gridColumn: 'third',
-  },
-  COMMON_FIELDS.TRADE_VALUE_FIELD,
-  {
-    ...COMMON_FIELDS.CONDITION_FIELD,
-    conditionalLogic: undefined,
-  },
-  {
-    name: 'signedItemType',
-    label: 'Signed Item Type',
-    inputType: 'dropdown',
-    requirement: 'required',
-    dropdownOptions: ['Photo', 'Card', 'Baseball', 'Football', 'Basketball', 'Hockey Puck', 'Jersey', 'Helmet', 'Bat', 'Glove', 'Book', 'Poster', 'Program', 'Ticket', 'Document', 'Other'],
-    supportsOther: true,
-    gridColumn: 'third',
-  },
-  // Recommended Fields
-  COMMON_FIELDS.QUANTITY_FIELD,
-  {
-    name: 'autographCategory',
-    label: 'Autograph Category',
-    inputType: 'dropdown',
-    requirement: 'recommended',
-    dropdownOptions: ['Sports', 'Entertainment', 'Historical', 'Music', 'Other'],
-    supportsOther: true,
-    gridColumn: 'third',
-  },
-  {
-    name: 'authenticationIncluded',
-    label: 'Authentication Included',
-    inputType: 'dropdown',
-    requirement: 'recommended',
-    dropdownOptions: ['Yes', 'No'],
-    gridColumn: 'third',
-  },
-  {
-    name: 'authenticationCompany',
-    label: 'Authentication Company',
-    inputType: 'dropdown',
-    requirement: 'recommended',
-    dropdownOptions: ['PSA/DNA', 'JSA', 'Beckett Authentication Services', 'Other'],
-    supportsOther: true,
-    conditionalLogic: 'Authentication Included = Yes',
-    gridColumn: 'half',
-  },
-  {
-    name: 'authenticationType',
-    label: 'Authentication Type',
-    inputType: 'dropdown',
-    requirement: 'recommended',
-    dropdownOptions: ['COA (Card)', 'LOA (Letter)', 'Encapsulated (Slab)', 'Other'],
-    supportsOther: true,
-    conditionalLogic: 'Authentication Included = Yes',
-    gridColumn: 'half',
-  },
-  {
-    name: 'certificateNumber',
-    label: 'Certificate Number',
-    inputType: 'text',
-    requirement: 'recommended',
-    conditionalLogic: 'Authentication Included = Yes',
-    gridColumn: 'half',
-  },
-  // Optional Fields
-  {
-    name: 'inscriptionPresent',
-    label: 'Inscription Present',
-    inputType: 'dropdown',
-    requirement: 'optional',
-    dropdownOptions: ['Yes', 'No'],
-    gridColumn: 'third',
-  },
-  {
-    name: 'inscriptionText',
-    label: 'Inscription Text',
-    inputType: 'text',
-    requirement: 'optional',
-    conditionalLogic: 'Inscription Present = Yes',
-  },
-];
-
-// ============================================================================
-// VINTAGE TOYS
-// ============================================================================
 
 const VINTAGE_TOYS_PLUSH_TOY_FIELDS: FieldDefinition[] = [
   COMMON_FIELDS.LISTING_TITLE_FIELD,
@@ -605,81 +111,10 @@ const VINTAGE_TOYS_PLUSH_TOY_FIELDS: FieldDefinition[] = [
   },
 ];
 
-const VINTAGE_TOYS_ELECTRONIC_TOY_FIELDS: FieldDefinition[] = [
-  COMMON_FIELDS.LISTING_TITLE_FIELD,
-  COMMON_FIELDS.TRADE_VALUE_FIELD,
-  COMMON_FIELDS.CONDITION_FIELD,
-  COMMON_FIELDS.QUANTITY_FIELD,
-  {
-    name: 'toyName',
-    label: 'Toy Name',
-    inputType: 'text',
-    requirement: 'required',
-  },
-  {
-    name: 'manufacturer',
-    label: 'Manufacturer',
-    inputType: 'text',
-    requirement: 'recommended',
-  },
-  {
-    name: 'year',
-    label: 'Year',
-    inputType: 'number',
-    requirement: 'recommended',
-  },
-  {
-    name: 'working',
-    label: 'Working Condition',
-    inputType: 'dropdown',
-    requirement: 'recommended',
-    dropdownOptions: ['Yes', 'No', 'Unknown'],
-  },
-];
 
-const VINTAGE_TOYS_MODEL_KIT_FIELDS: FieldDefinition[] = [
-  COMMON_FIELDS.LISTING_TITLE_FIELD,
-  COMMON_FIELDS.TRADE_VALUE_FIELD,
-  COMMON_FIELDS.CONDITION_FIELD,
-  COMMON_FIELDS.QUANTITY_FIELD,
-  {
-    name: 'kitName',
-    label: 'Kit Name',
-    inputType: 'text',
-    requirement: 'required',
-  },
-  {
-    name: 'manufacturer',
-    label: 'Manufacturer',
-    inputType: 'text',
-    requirement: 'recommended',
-  },
-  {
-    name: 'year',
-    label: 'Year',
-    inputType: 'number',
-    requirement: 'recommended',
-  },
-  {
-    name: 'assembled',
-    label: 'Assembled',
-    inputType: 'dropdown',
-    requirement: 'recommended',
-    dropdownOptions: ['Yes', 'No', 'Partially'],
-  },
-];
-
-const VINTAGE_TOYS_COLLECTION_LOT_FIELDS: FieldDefinition[] = [
-  COMMON_FIELDS.LISTING_TITLE_FIELD,
-  COMMON_FIELDS.TRADE_VALUE_FIELD,
-  COMMON_FIELDS.CONDITION_FIELD,
-  COMMON_FIELDS.QUANTITY_FIELD,
-];
 
 // ============================================================================
-// POKEMON
-// ============================================================================
-// DISNEY PINS
+// DISNEY PINS - SINGLE PIN (unique to Remaining, not in Generated)
 // ============================================================================
 
 const DISNEY_PINS_SINGLE_PIN_FIELDS: FieldDefinition[] = [
@@ -769,67 +204,6 @@ const DISNEY_PINS_SINGLE_PIN_FIELDS: FieldDefinition[] = [
   },
 ];
 
-const DISNEY_PINS_PIN_SET_FIELDS: FieldDefinition[] = [
-  // Required Fields
-  COMMON_FIELDS.LISTING_TITLE_FIELD,
-  COMMON_FIELDS.TRADE_VALUE_FIELD,
-  {
-    name: 'condition',
-    label: 'Condition',
-    inputType: 'dropdown',
-    requirement: 'required',
-    dropdownOptions: ['Mint', 'Near Mint', 'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'],
-  },
-  {
-    name: 'setName',
-    label: 'Set Name',
-    inputType: 'text',
-    requirement: 'required',
-  },
-  {
-    name: 'completeSet',
-    label: 'Complete Set',
-    inputType: 'dropdown',
-    requirement: 'required',
-    dropdownOptions: ['Yes', 'No'],
-  },
-  // Recommended Fields
-  COMMON_FIELDS.QUANTITY_FIELD,
-  {
-    name: 'numberOfPinsInSet',
-    label: 'Number of Pins in Set',
-    inputType: 'number',
-    requirement: 'recommended',
-  },
-  {
-    name: 'limitedEdition',
-    label: 'Limited Edition',
-    inputType: 'dropdown',
-    requirement: 'recommended',
-    dropdownOptions: ['Yes', 'No'],
-  },
-  {
-    name: 'charactersIncluded',
-    label: 'Characters Included',
-    inputType: 'textarea',
-    requirement: 'recommended',
-  },
-  {
-    name: 'series',
-    label: 'Series',
-    inputType: 'text',
-    requirement: 'recommended',
-  },
-  // Conditional Fields
-  {
-    name: 'missingPins',
-    label: 'Missing Pins',
-    inputType: 'textarea',
-    requirement: 'conditional',
-    conditionalLogic: 'Complete Set = No',
-  },
-];
-
 // ============================================================================
 // CATEGORY DEFINITIONS
 // ============================================================================
@@ -843,6 +217,7 @@ export const CATEGORY_ITEM_TYPES = {
   },
   comics: {
     single_comic: COMICS_SINGLE_COMIC_FIELDS,
+    comic_set: COMICS_COMIC_SET_FIELDS,
     original_art: COMICS_ORIGINAL_ART_FIELDS,
     collection_lot: COMICS_COLLECTION_LOT_FIELDS,
   },
