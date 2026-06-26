@@ -489,6 +489,7 @@ const MOVIES_COLLECTION_LOT_FIELDS: FieldDefinition[] = [
 // ============================================================================
 
 const AUTOGRAPHS_SIGNED_ITEM_FIELDS: FieldDefinition[] = [
+  // Required Fields
   COMMON_FIELDS.LISTING_TITLE_FIELD,
   {
     name: 'signer',
@@ -511,6 +512,7 @@ const AUTOGRAPHS_SIGNED_ITEM_FIELDS: FieldDefinition[] = [
     supportsOther: true,
     gridColumn: 'third',
   },
+  // Recommended Fields
   COMMON_FIELDS.QUANTITY_FIELD,
   {
     name: 'autographCategory',
@@ -533,7 +535,7 @@ const AUTOGRAPHS_SIGNED_ITEM_FIELDS: FieldDefinition[] = [
     name: 'authenticationCompany',
     label: 'Authentication Company',
     inputType: 'dropdown',
-    requirement: 'conditional',
+    requirement: 'recommended',
     dropdownOptions: ['PSA/DNA', 'JSA', 'Beckett Authentication Services', 'Other'],
     supportsOther: true,
     conditionalLogic: 'Authentication Included = Yes',
@@ -543,7 +545,7 @@ const AUTOGRAPHS_SIGNED_ITEM_FIELDS: FieldDefinition[] = [
     name: 'authenticationType',
     label: 'Authentication Type',
     inputType: 'dropdown',
-    requirement: 'conditional',
+    requirement: 'recommended',
     dropdownOptions: ['COA (Card)', 'LOA (Letter)', 'Encapsulated (Slab)', 'Other'],
     supportsOther: true,
     conditionalLogic: 'Authentication Included = Yes',
@@ -553,10 +555,11 @@ const AUTOGRAPHS_SIGNED_ITEM_FIELDS: FieldDefinition[] = [
     name: 'certificateNumber',
     label: 'Certificate Number',
     inputType: 'text',
-    requirement: 'conditional',
+    requirement: 'recommended',
     conditionalLogic: 'Authentication Included = Yes',
     gridColumn: 'third',
   },
+  // Optional Fields
   {
     name: 'inscriptionPresent',
     label: 'Inscription Present',
@@ -569,7 +572,7 @@ const AUTOGRAPHS_SIGNED_ITEM_FIELDS: FieldDefinition[] = [
     name: 'inscriptionText',
     label: 'Inscription Text',
     inputType: 'text',
-    requirement: 'conditional',
+    requirement: 'optional',
     conditionalLogic: 'Inscription Present = Yes',
   },
 ];
