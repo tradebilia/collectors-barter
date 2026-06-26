@@ -111,10 +111,10 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({
         let numberWidthClass = '';
         if (field.maxLength) {
           if (field.maxLength <= 4) numberWidthClass = 'max-w-12';
-          else if (field.maxLength <= 5) numberWidthClass = 'max-w-16';
-          else if (field.maxLength <= 7) numberWidthClass = 'max-w-20';
-          else if (field.maxLength <= 9) numberWidthClass = 'max-w-24';
-          else if (field.maxLength <= 10) numberWidthClass = 'max-w-28';
+          else if (field.maxLength <= 5) numberWidthClass = 'max-w-20';
+          else if (field.maxLength <= 7) numberWidthClass = 'max-w-24';
+          else if (field.maxLength <= 9) numberWidthClass = 'max-w-28';
+          else if (field.maxLength <= 10) numberWidthClass = 'max-w-32';
         }
         return (
           <Input
