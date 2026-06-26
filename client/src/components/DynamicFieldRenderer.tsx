@@ -269,10 +269,34 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({
         </div>
       )}
 
-      <div className="space-y-2">
-        {renderField()}
+      <div className={field.inlineCustomField ? 'flex gap-2 items-end' : 'space-y-2'}>
+        <div className={field.inlineCustomField && showOtherInput && field.supportsOther && value === 'Other' ? 'flex-1' : ''}>
+          {renderField()}
+        </div>
 
-        {showOtherInput && field.supportsOther && value === 'Other' && (
+        {showOtherInput && field.supportsOther && value === 'Other' && field.inlineCustomField && (
+          <input
+            type="text"
+            value={otherValue}
+            onChange={(e) => onOtherChange?.(e.target.value)}
+            disabled={disabled}
+            placeholder={`Enter ${field.otherFieldName || 'custom value'}`}
+            style={{
+              flex: 1,
+              backgroundColor: 'white',
+              color: 'black',
+              border: 'none',
+              borderRadius: '0.375rem',
+              padding: '0.625rem 0.75rem',
+              fontSize: '1rem',
+              fontFamily: 'inherit',
+              boxSizing: 'border-box',
+              minHeight: '2.5rem'
+            }}
+          />
+        )}
+
+        {showOtherInput && field.supportsOther && value === 'Other' && !field.inlineCustomField && (
           <input
             type="text"
             value={otherValue}

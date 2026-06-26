@@ -23,6 +23,7 @@ export interface FieldDefinition {
   dropdownOptions?: string[];
   supportsOther?: boolean;
   otherFieldName?: string;
+  inlineCustomField?: boolean; // Display custom field inline with parent field
   conditionalLogic?: string; // e.g., "Is Graded = Yes"
   notes?: string;
   gridColumn?: 'full' | 'half' | 'third' | 'fourth'; // For multi-column layouts
