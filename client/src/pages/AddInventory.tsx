@@ -287,7 +287,7 @@ export default function AddInventory() {
                       .map((field: FieldDefinition) => {
                         const colSpan = field.gridColumn === 'full' ? 'lg:col-span-4' : field.gridColumn === 'half' ? 'lg:col-span-2' : field.gridColumn === 'third' ? 'lg:col-span-1' : '';
                         return (
-                        <div key={field.name} className={colSpan}>
+                        <div key={field.name} className={`${colSpan} w-full`}>
                           <FieldWithCustomInput
                             field={field}
                             value={formData[field.name as keyof typeof formData] || ""}
@@ -318,7 +318,7 @@ export default function AddInventory() {
                       .map((field: FieldDefinition) => {
                         const colSpan = field.inputType === 'textarea' ? 'lg:col-span-2' : field.gridColumn === 'full' ? 'lg:col-span-4' : field.gridColumn === 'half' ? 'lg:col-span-2' : field.gridColumn === 'third' ? 'lg:col-span-1' : '';
                         return (
-                        <div key={field.name} className={colSpan}>
+                        <div key={field.name} className={`${colSpan} w-full`}>
                           <FieldWithCustomInput
                             field={field}
                             value={formData[field.name as keyof typeof formData] || ""}
@@ -371,7 +371,7 @@ export default function AddInventory() {
                       .map((field: FieldDefinition) => {
                         const colSpan = field.gridColumn === 'full' ? 'lg:col-span-4' : field.gridColumn === 'half' ? 'lg:col-span-2' : field.gridColumn === 'third' ? 'lg:col-span-1' : '';
                         return (
-                        <div key={field.name} className={colSpan}>
+                        <div key={field.name} className={`${colSpan} w-full`}>
                           <DynamicFieldRenderer
                             field={field}
                             value={formData[field.name as keyof typeof formData] || ""}
