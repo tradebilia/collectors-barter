@@ -318,7 +318,7 @@ export default function AddInventory() {
                       .filter((f: FieldDefinition) => f.requirement === "recommended" && shouldShowField(f) && f.name !== 'signatures')
                       .map((field: FieldDefinition) => {
                         const showCustomInput = field.supportsOther && formData[field.name as keyof typeof formData] === 'Other';
-                        const colSpan = field.gridColumn === 'full' ? 'lg:col-span-4' : field.gridColumn === 'half' ? 'lg:col-span-2' : field.gridColumn === 'third' && showCustomInput ? 'lg:col-span-2' : field.gridColumn === 'third' ? 'lg:col-span-1' : '';
+                        const colSpan = field.inputType === 'textarea' ? 'lg:col-span-2' : field.gridColumn === 'full' ? 'lg:col-span-4' : field.gridColumn === 'half' ? 'lg:col-span-2' : field.gridColumn === 'third' && showCustomInput ? 'lg:col-span-2' : field.gridColumn === 'third' ? 'lg:col-span-1' : '';
                         return (
                         <div key={field.name} className={colSpan}>
                           <FieldWithCustomInput
