@@ -1305,38 +1305,53 @@ export const POKEMON_SET_FIELDS: FieldDefinition[] = [
     requirement: 'required',
   },
   {
-    name: 'setNumber',
-    label: 'Set Number',
+    name: 'year',
+    label: 'Year',
     inputType: 'text',
     requirement: 'required',
-  },
-  {
-    name: 'releaseYear',
-    label: 'Release Year',
-    inputType: 'number',
-    requirement: 'required',
-    validation: { min: 1900, max: 2100 },
-  },
-  {
-    name: 'numberOfCards',
-    label: 'Number of Cards',
-    inputType: 'number',
-    requirement: 'required',
-    validation: { min: 1 },
   },
   {
     name: 'complete',
     label: 'Complete',
     inputType: 'dropdown',
     requirement: 'required',
+    dropdownOptions: ['Yes', 'No'],
+  },
+
+  {
+    name: 'quantity',
+    label: 'Quantity',
+    inputType: 'number',
+    maxLength: 4,
+    requirement: 'recommended',
+    defaultValue: '1',
+  },
+
+  {
+    name: 'notableCards',
+    label: 'Notable Cards',
+    inputType: 'textarea',
+    requirement: 'optional',
+  },
+  {
+    name: 'includesGradedCards',
+    label: 'Includes Graded Cards',
+    inputType: 'dropdown',
+    requirement: 'optional',
     dropdownOptions: ['Yes', 'No', 'Unknown'],
+  },
+  {
+    name: 'numberOfCardsInSet',
+    label: 'Number of Cards in Set',
+    inputType: 'textarea',
+    requirement: 'optional',
   },
   {
     name: 'originalPackaging',
     label: 'Original Packaging',
     inputType: 'dropdown',
-    requirement: 'recommended',
-    dropdownOptions: ['Yes', 'No', 'Unknown'],
+    requirement: 'optional',
+    dropdownOptions: ['Yes', 'No'],
   },
 ];
 
