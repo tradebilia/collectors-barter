@@ -3478,7 +3478,7 @@ export const POKEMON_SINGLE_CARD_FIELDS: FieldDefinition[] = [
     name: 'finishVariant',
     label: 'Finish / Variant',
     inputType: 'dropdown',
-    requirement: 'recommended',
+    requirement: 'required',
     dropdownOptions: ['Normal', 'Holo', 'Reverse Holo', 'Full Art', 'Rainbow Rare', 'Gold', 'V', 'VMAX', 'VSTAR', 'ex', 'GX', 'BREAK', 'Tag Team', 'Other'],
     supportsOther: true,
     otherFieldName: 'customFinish',
