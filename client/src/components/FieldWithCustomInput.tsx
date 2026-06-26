@@ -25,52 +25,16 @@ export const FieldWithCustomInput: React.FC<FieldWithCustomInputProps> = ({
   const customFieldKey = `custom${field.name.charAt(0).toUpperCase() + field.name.slice(1)}`;
   const customValue = formData[customFieldKey] as string || '';
 
-  // For textarea fields, render without flex constraints
-  if (field.inputType === 'textarea') {
-    return (
-      <div className="w-full">
-        <label className="text-sm font-medium text-white block mb-2 whitespace-nowrap">
-          {field.label}
-          {field.requirement === 'required' && <span className="text-red-500 ml-1">*</span>}
-        </label>
-        <DynamicFieldRenderer
-          field={field}
-          value={value}
-          onChange={onChange}
-          onOtherChange={onOtherChange}
-          disabled={disabled}
-          error={error}
-          hideLabel={true}
-        />
-      </div>
-    );
-  }
-
   return (
     <div className="w-full">
-      {/* Labels Row */}
-      <div className="flex gap-3 mb-2 min-h-10">
-        <div className="flex-1 min-w-0">
-          <label className="text-sm font-medium text-white block whitespace-nowrap">
-            {field.label}
-            {field.requirement === 'required' && <span className="text-red-500 ml-1">*</span>}
-          </label>
-        </div>
-        {showCustomInput && (
-          <div className="flex-1 min-w-0">
-            <label className="text-sm font-medium text-white block whitespace-nowrap">
-              {field.otherFieldName || `Custom ${field.label}`}
-            </label>
-          </div>
-        )}
-        {!showCustomInput && (
-          <div className="flex-1"></div>
-        )}
-      </div>
+      {/* Label */}
+      <label className="text-sm font-medium text-white block mb-2">
+        {field.label}
+        {field.requirement === 'required' && <span className="text-red-500 ml-1">*</span>}
+      </label>
       
-      {/* Fields Row */}
-      <div className="flex gap-3 items-center flex-nowrap">
-        <div className="flex-1 min-w-0 flex items-center">
+      {/* Main Input */}
+      <div className="mb-3">
         <DynamicFieldRenderer
           field={field}
           value={value}
@@ -80,19 +44,23 @@ export const FieldWithCustomInput: React.FC<FieldWithCustomInputProps> = ({
           error={error}
           hideLabel={true}
         />
-        </div>
-        {showCustomInput && (
-          <div className="flex-1 min-w-0 flex items-center">
-            <input
-              type="text"
-              value={customValue}
-              onChange={(e) => onOtherChange(e.target.value)}
-              placeholder=""
-              className="bg-white text-black border border-gray-300 rounded-md px-3 py-2 w-full h-9 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-        )}
       </div>
+      
+      {/* Custom Input (if shown) */}
+      {showCustomInput && (
+        <>
+          <label className="text-sm font-medium text-white block mb-2">
+            {field.otherFieldName || `Custom ${field.label}`}
+          </label>
+          <input
+            type="text"
+            value={customValue}
+            onChange={(e) => onOtherChange(e.target.value)}
+            placeholder=""
+            className="bg-white text-black border border-gray-300 rounded-md px-3 py-2 w-full h-9 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </>
+      )}
     </div>
   );
 };
