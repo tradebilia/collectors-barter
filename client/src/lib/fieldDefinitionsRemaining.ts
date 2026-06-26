@@ -723,7 +723,13 @@ const DISNEY_PINS_SINGLE_PIN_FIELDS: FieldDefinition[] = [
   // Required Fields
   COMMON_FIELDS.LISTING_TITLE_FIELD,
   COMMON_FIELDS.TRADE_VALUE_FIELD,
-  COMMON_FIELDS.CONDITION_FIELD,
+  {
+    name: 'condition',
+    label: 'Condition',
+    inputType: 'dropdown',
+    requirement: 'required',
+    dropdownOptions: ['Mint', 'Near Mint', 'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'],
+  },
   {
     name: 'pinName',
     label: 'Pin Name',
