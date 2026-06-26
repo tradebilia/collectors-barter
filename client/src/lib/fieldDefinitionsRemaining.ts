@@ -131,7 +131,7 @@ const COINS_COIN_SET_FIELDS: FieldDefinition[] = [
     inputType: 'number',
     requirement: 'recommended',
     maxLength: 3,
-    gridColumn: 'half',
+    gridColumn: 'third',
   },
   {
     name: 'originalPackagingIncluded',
@@ -139,7 +139,7 @@ const COINS_COIN_SET_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'recommended',
     dropdownOptions: ['Yes', 'No', 'Unknown'],
-    gridColumn: 'half',
+    gridColumn: 'third',
   },
   COMMON_FIELDS.IS_GRADED_FIELD,
   {
