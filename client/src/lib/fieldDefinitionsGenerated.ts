@@ -2336,6 +2336,13 @@ export const VIDEO_GAMES_ACCESSORY_FIELDS: FieldDefinition[] = [
     requirement: 'required',
     conditionalLogic: 'Is Graded = Yes',
   },
+  {
+    name: 'originalPackaging',
+    label: 'Original Packaging',
+    inputType: 'dropdown',
+    requirement: 'recommended',
+    dropdownOptions: ['Yes', 'No'],
+  },
 ];
 
 // Video Games - Collection/Lot
