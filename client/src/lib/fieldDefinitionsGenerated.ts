@@ -42,7 +42,7 @@ export const AUTOGRAPHS_SIGNED_ITEM_FIELDS: FieldDefinition[] = [
     supportsOther: true,
     otherFieldName: 'Custom Signed Item Type',
   },
-  // Row 1: Quantity, Autograph Category, Authenticated, (empty)
+  // Row 1: Quantity + Autograph Category (Col 1), (Col 2 empty), Custom Autograph Category (Col 3), Authentication Included (Col 4)
   {
     name: 'quantity',
     label: 'Quantity',
@@ -65,7 +65,7 @@ export const AUTOGRAPHS_SIGNED_ITEM_FIELDS: FieldDefinition[] = [
   },
   {
     name: 'authenticated',
-    label: 'Authenticated',
+    label: 'Authentication Included',
     inputType: 'dropdown',
     requirement: 'required',
     dropdownOptions: ['Yes', 'No'],
@@ -78,7 +78,7 @@ export const AUTOGRAPHS_SIGNED_ITEM_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'required',
     dropdownOptions: ['PSA/DNA', 'JSA', 'Beckett Authentication Services'],
-    conditionalLogic: 'Authenticated = Yes',
+    conditionalLogic: 'Authentication Included = Yes',
     gridColumn: 'third',
   },
   {
@@ -87,7 +87,7 @@ export const AUTOGRAPHS_SIGNED_ITEM_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'required',
     dropdownOptions: ['COA (Card)', 'LOA (Letter)', 'Encapsulated (Slab)', 'Other'],
-    conditionalLogic: 'Authenticated = Yes',
+    conditionalLogic: 'Authentication Included = Yes',
     supportsOther: true,
     otherFieldName: 'Custom Authentication Type',
     gridColumn: 'third',
@@ -97,7 +97,7 @@ export const AUTOGRAPHS_SIGNED_ITEM_FIELDS: FieldDefinition[] = [
     label: 'Certificate Number',
     inputType: 'text',
     requirement: 'required',
-    conditionalLogic: 'Authenticated = Yes',
+    conditionalLogic: 'Authentication Included = Yes',
     gridColumn: 'third',
   },
   {
