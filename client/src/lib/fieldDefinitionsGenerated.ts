@@ -1795,7 +1795,9 @@ export const SPORTS_CARDS_SINGLE_CARD_FIELDS: FieldDefinition[] = [
     label: 'Grading Company',
     inputType: 'dropdown',
     requirement: 'required',
-    dropdownOptions: ['PSA', 'BGS', 'SGC', 'CGC Cards', 'TAG Grading', 'HGA', 'Arena Club', 'Degree', 'ACE', 'ISA', 'GMA', 'Rare Edition', 'FCG', 'MNT', 'KSA', 'PGA', 'RCG', 'OnlyGraded', 'Diamond Service Grading', 'CGA Card Grading', 'TRCG', 'Pokegrade', 'Tree Frog', 'AP', 'PRO', 'GEM', 'GAI', 'PCI', 'WCG'],
+    dropdownOptions: ['PSA', 'BGS', 'SGC', 'CGC Cards', 'TAG Grading', 'HGA', 'Arena Club', 'Degree', 'ACE', 'ISA', 'GMA', 'Rare Edition', 'FCG', 'MNT', 'KSA', 'PGA', 'RCG', 'OnlyGraded', 'Diamond Service Grading', 'CGA Card Grading', 'TRCG', 'Pokegrade', 'Tree Frog', 'AP', 'PRO', 'GEM', 'GAI', 'PCI', 'WCG', 'Other'],
+    supportsOther: true,
+    otherFieldName: 'Custom Grading Company',
     conditionalLogic: 'Is Graded = Yes',
   },
   {
