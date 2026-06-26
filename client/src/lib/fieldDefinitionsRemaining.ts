@@ -809,6 +809,7 @@ export const CATEGORY_ITEM_TYPES = {
   },
   comics: {
     single_comic: COMICS_SINGLE_COMIC_FIELDS,
+    comic_set: COMICS_COMIC_SET_FIELDS,
     original_art: COMICS_ORIGINAL_ART_FIELDS,
     collection_lot: COMICS_COLLECTION_LOT_FIELDS,
   },
