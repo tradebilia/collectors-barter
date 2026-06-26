@@ -49,7 +49,7 @@ export const FieldWithCustomInput: React.FC<FieldWithCustomInputProps> = ({
   return (
     <div className="w-full">
       {/* Labels Row */}
-      <div className="flex gap-3 mb-2">
+      <div className="flex gap-3 mb-2 h-5">
         <div className="flex-1">
           <label className="text-sm font-medium text-white block">
             {field.label}
@@ -62,6 +62,9 @@ export const FieldWithCustomInput: React.FC<FieldWithCustomInputProps> = ({
               {field.otherFieldName || `Custom ${field.label}`}
             </label>
           </div>
+        )}
+        {!showCustomInput && (
+          <div className="flex-1"></div>
         )}
       </div>
       
