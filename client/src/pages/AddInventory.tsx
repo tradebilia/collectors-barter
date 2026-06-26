@@ -285,7 +285,7 @@ export default function AddInventory() {
                     {allFields
                       .filter((f: FieldDefinition) => (f.requirement === "required" || f.requirement === "conditional") && shouldShowField(f))
                       .map((field: FieldDefinition) => {
-                        const colSpan = field.gridColumn === 'full' ? 'lg:col-span-4' : field.gridColumn === 'half' ? 'lg:col-span-2' : field.gridColumn === 'third' ? 'lg:col-span-1' : '';
+                        const colSpan = field.gridColumn === 'full' ? 'lg:col-span-4' : field.gridColumn === 'half' ? 'lg:col-span-2' : field.gridColumn === 'third' ? 'lg:col-span-1' : field.gridColumn === 'fourth' ? 'lg:col-span-1' : '';
                         return (
                         <div key={field.name} className={`${colSpan} w-full`}>
                           <FieldWithCustomInput
@@ -369,7 +369,7 @@ export default function AddInventory() {
                     {allFields
                       .filter((f: FieldDefinition) => f.requirement === "optional" && shouldShowField(f))
                       .map((field: FieldDefinition) => {
-                        const colSpan = field.gridColumn === 'full' ? 'lg:col-span-4' : field.gridColumn === 'half' ? 'lg:col-span-2' : field.gridColumn === 'third' ? 'lg:col-span-1' : '';
+                        const colSpan = field.gridColumn === 'full' ? 'lg:col-span-4' : field.gridColumn === 'half' ? 'lg:col-span-2' : field.gridColumn === 'third' ? 'lg:col-span-1' : field.gridColumn === 'fourth' ? 'lg:col-span-1' : '';
                         return (
                         <div key={field.name} className={`${colSpan} w-full`}>
                           <DynamicFieldRenderer

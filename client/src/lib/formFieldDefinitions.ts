@@ -25,7 +25,7 @@ export interface FieldDefinition {
   otherFieldName?: string;
   conditionalLogic?: string; // e.g., "Is Graded = Yes"
   notes?: string;
-  gridColumn?: 'full' | 'half' | 'third'; // For multi-column layouts
+  gridColumn?: 'full' | 'half' | 'third' | 'fourth'; // For multi-column layouts
   maxLength?: number; // Maximum character length for input fields
   validation?: {
     minLength?: number;

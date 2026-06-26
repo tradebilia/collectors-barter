@@ -77,7 +77,7 @@ export const AUTOGRAPHS_SIGNED_ITEM_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'recommended',
     dropdownOptions: ['Yes', 'No'],
-    gridColumn: 'third',
+    gridColumn: 'fourth',
   },
   // Row 2: Authentication Company, Custom Authentication Company, Authentication Type, Custom Authentication Type
   {
