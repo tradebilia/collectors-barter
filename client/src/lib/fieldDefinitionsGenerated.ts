@@ -89,6 +89,7 @@ export const AUTOGRAPHS_SIGNED_ITEM_FIELDS: FieldDefinition[] = [
     dropdownOptions: ['Sports', 'Entertainment', 'Historical', 'Music', 'Other'],
     supportsOther: true,
     otherFieldName: 'Custom Autograph Category',
+    gridColumn: 'third',
   },
   {
     name: 'authenticated',
@@ -96,6 +97,7 @@ export const AUTOGRAPHS_SIGNED_ITEM_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'required',
     dropdownOptions: ['Yes', 'No'],
+    gridColumn: 'third',
   },
   {
     name: 'authenticationCompany',
@@ -104,6 +106,7 @@ export const AUTOGRAPHS_SIGNED_ITEM_FIELDS: FieldDefinition[] = [
     requirement: 'required',
     dropdownOptions: ['PSA/DNA', 'JSA', 'Beckett Authentication Services'],
     conditionalLogic: 'Authenticated = Yes',
+    gridColumn: 'third',
   },
   {
     name: 'authenticationType',
@@ -114,6 +117,7 @@ export const AUTOGRAPHS_SIGNED_ITEM_FIELDS: FieldDefinition[] = [
     conditionalLogic: 'Authenticated = Yes',
     supportsOther: true,
     otherFieldName: 'Custom Authentication Type',
+    gridColumn: 'third',
   },
   {
     name: 'certificateNumber',
@@ -121,6 +125,7 @@ export const AUTOGRAPHS_SIGNED_ITEM_FIELDS: FieldDefinition[] = [
     inputType: 'text',
     requirement: 'required',
     conditionalLogic: 'Authenticated = Yes',
+    gridColumn: 'third',
   },
   {
     name: 'inscriptionPresent',
