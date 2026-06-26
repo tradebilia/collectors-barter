@@ -31,6 +31,7 @@ interface DynamicFieldRendererProps {
   otherValue?: string;
   uploadedFiles?: File[];
   onFilesChange?: (files: File[]) => void;
+  hideLabel?: boolean;
 }
 
 export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({
@@ -44,6 +45,7 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({
   otherValue = '',
   uploadedFiles = [],
   onFilesChange,
+  hideLabel = false,
 }) => {
   const isRequired = field.requirement === 'required';
   const hasError = !!error;
@@ -254,16 +256,18 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({
 
   return (
     <div className={`space-y-2 ${gridColClass}`}>
-      <div className="flex items-start gap-1">
-        {field.label && (
-          <>
-            <Label htmlFor={field.name} className="text-sm font-medium whitespace-nowrap">
-              {field.label}
-            </Label>
-            {isRequired && <span className="text-white text-xs">*</span>}
-          </>
-        )}
-      </div>
+      {!hideLabel && (
+        <div className="flex items-start gap-1">
+          {field.label && (
+            <>
+              <Label htmlFor={field.name} className="text-sm font-medium whitespace-nowrap">
+                {field.label}
+              </Label>
+              {isRequired && <span className="text-white text-xs">*</span>}
+            </>
+          )}
+        </div>
+      )}
 
       <div className="space-y-2">
         {renderField()}

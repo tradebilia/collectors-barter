@@ -331,18 +331,7 @@ const MOVIES_INDIVIDUAL_MOVIE_FIELDS: FieldDefinition[] = [
     inputType: 'text',
     requirement: 'required',
     maxLength: 80,
-  },
-  {
-    name: 'releaseYear',
-    label: 'Release Year',
-    inputType: 'number',
-    requirement: 'recommended',
-  },
-  {
-    name: 'studio',
-    label: 'Studio',
-    inputType: 'text',
-    requirement: 'recommended',
+    gridColumn: 'third',
   },
   {
     name: 'format',
@@ -352,6 +341,14 @@ const MOVIES_INDIVIDUAL_MOVIE_FIELDS: FieldDefinition[] = [
     dropdownOptions: ['DVD', 'Blu-ray', '4K UHD', 'VHS', 'LaserDisc', 'Other'],
     supportsOther: true,
     otherFieldName: 'Custom Format',
+    gridColumn: 'third',
+  },
+  {
+    name: 'releaseYear',
+    label: 'Release Year',
+    inputType: 'number',
+    requirement: 'recommended',
+    gridColumn: 'third',
   },
   {
     name: 'sealed',
@@ -359,18 +356,28 @@ const MOVIES_INDIVIDUAL_MOVIE_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'recommended',
     dropdownOptions: ['Yes', 'No'],
+    gridColumn: 'third',
+  },
+  {
+    name: 'studio',
+    label: 'Studio',
+    inputType: 'text',
+    requirement: 'recommended',
+    gridColumn: 'third',
   },
   {
     name: 'region',
     label: 'Region',
     inputType: 'text',
     requirement: 'optional',
+    gridColumn: 'third',
   },
   {
     name: 'edition',
     label: 'Edition',
     inputType: 'text',
     requirement: 'optional',
+    gridColumn: 'third',
   },
   COMMON_FIELDS.IS_GRADED_FIELD,
   {

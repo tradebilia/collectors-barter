@@ -133,6 +133,7 @@ const IS_GRADED_FIELD: FieldDefinition = {
   inputType: 'dropdown',
   requirement: 'required',
   dropdownOptions: ['Yes', 'No'],
+  gridColumn: 'third',
 };
 
 const GRADING_COMPANY_FIELD: FieldDefinition = {
@@ -143,6 +144,7 @@ const GRADING_COMPANY_FIELD: FieldDefinition = {
   conditionalLogic: 'Is Graded = Yes',
   supportsOther: true,
   otherFieldName: 'Custom Grading Company',
+  gridColumn: 'third',
 };
 
 const GRADE_FIELD: FieldDefinition = {
@@ -152,6 +154,7 @@ const GRADE_FIELD: FieldDefinition = {
   requirement: 'required',
   conditionalLogic: 'Is Graded = Yes',
   maxLength: 4,
+  gridColumn: 'third',
 };
 
 const CERTIFICATION_NUMBER_FIELD: FieldDefinition = {
@@ -161,6 +164,7 @@ const CERTIFICATION_NUMBER_FIELD: FieldDefinition = {
   requirement: 'required',
   conditionalLogic: 'Is Graded = Yes',
   maxLength: 40,
+  gridColumn: 'third',
 };
 
 // Grading companies by category

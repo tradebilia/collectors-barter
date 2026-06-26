@@ -26,8 +26,27 @@ export const FieldWithCustomInput: React.FC<FieldWithCustomInputProps> = ({
   const customValue = formData[customFieldKey] as string || '';
 
   return (
-    <div className="w-full flex flex-wrap gap-3 items-start">
-      <div className="flex-1 min-w-0" style={{ minWidth: '120px' }}>
+    <div className="w-full">
+      {/* Labels Row */}
+      <div className="flex gap-3 mb-2">
+        <div className="flex-1">
+          <label className="text-sm font-medium text-white block">
+            {field.label}
+            {field.requirement === 'required' && <span className="text-red-500 ml-1">*</span>}
+          </label>
+        </div>
+        {showCustomInput && (
+          <div className="flex-1">
+            <label className="text-sm font-medium text-white block">
+              {field.otherFieldName || `Custom ${field.label}`}
+            </label>
+          </div>
+        )}
+      </div>
+      
+      {/* Fields Row */}
+      <div className="flex gap-3 items-end flex-nowrap">
+        <div className="flex-1 min-w-0">
         <DynamicFieldRenderer
           field={field}
           value={value}
@@ -35,22 +54,21 @@ export const FieldWithCustomInput: React.FC<FieldWithCustomInputProps> = ({
           onOtherChange={onOtherChange}
           disabled={disabled}
           error={error}
+          hideLabel={true}
         />
-      </div>
-      {showCustomInput && (
-        <div className="flex-1 min-w-0" style={{ minWidth: '120px' }}>
-          <label className="text-sm font-medium text-white whitespace-nowrap block mb-2">
-            {field.otherFieldName || `Custom ${field.label}`}
-          </label>
-          <input
-            type="text"
-            value={customValue}
-            onChange={(e) => onOtherChange(e.target.value)}
-            placeholder={`Enter ${field.otherFieldName || `custom ${field.label.toLowerCase()}`}`}
-            className="bg-white text-black border border-gray-300 rounded-md px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
         </div>
-      )}
+        {showCustomInput && (
+          <div className="flex-1 min-w-0">
+            <input
+              type="text"
+              value={customValue}
+              onChange={(e) => onOtherChange(e.target.value)}
+              placeholder={`Enter ${field.otherFieldName || `custom ${field.label.toLowerCase()}`}`}
+              className="bg-white text-black border border-gray-300 rounded-md px-3 py-2 w-full h-10 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+        )}
+      </div>
     </div>
   );
 };
