@@ -1703,18 +1703,21 @@ export const SPORTS_CARDS_SINGLE_CARD_FIELDS: FieldDefinition[] = [
     label: 'Listing Title',
     inputType: 'text',
     requirement: 'required',
+    gridColumn: 'third',
   },
   {
     name: 'tradeValue',
     label: 'Trade Value',
     inputType: 'currency',
     requirement: 'required',
+    gridColumn: 'third',
   },
   {
     name: 'playerName',
     label: 'Player Name',
     inputType: 'text',
     requirement: 'required',
+    gridColumn: 'third',
   },
   {
     name: 'sport',
@@ -1724,12 +1727,14 @@ export const SPORTS_CARDS_SINGLE_CARD_FIELDS: FieldDefinition[] = [
     dropdownOptions: ['Baseball', 'Basketball', 'Football', 'Hockey', 'Soccer', 'Other'],
     supportsOther: true,
     otherFieldName: 'Custom Sport',
+    gridColumn: 'third',
   },
   {
     name: 'year',
     label: 'Year',
     inputType: 'number',
     requirement: 'required',
+    gridColumn: 'third',
   },
   {
     name: 'condition',
@@ -1737,6 +1742,7 @@ export const SPORTS_CARDS_SINGLE_CARD_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'required',
     dropdownOptions: ['Mint', 'Near Mint', 'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'],
+    gridColumn: 'third',
   },
   {
     name: 'isGraded',
@@ -1744,6 +1750,7 @@ export const SPORTS_CARDS_SINGLE_CARD_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'required',
     dropdownOptions: ['Yes', 'No'],
+    gridColumn: 'third',
   },
   {
     name: 'certificationCompany',
