@@ -49,7 +49,7 @@ export const FieldWithCustomInput: React.FC<FieldWithCustomInputProps> = ({
   return (
     <div className="w-full">
       {/* Labels Row */}
-      <div className="flex gap-3 mb-2 min-h-10">
+      <div className="flex gap-8 mb-2 min-h-10">
         <div className="flex-1 min-w-0">
           <label className="text-sm font-medium text-white block">
             {field.label}
@@ -69,7 +69,7 @@ export const FieldWithCustomInput: React.FC<FieldWithCustomInputProps> = ({
       </div>
       
       {/* Fields Row */}
-      <div className="flex gap-3 items-center flex-nowrap">
+      <div className="flex gap-8 items-center flex-nowrap">
         <div className="flex-1 min-w-0 flex items-center">
         <DynamicFieldRenderer
           field={field}
