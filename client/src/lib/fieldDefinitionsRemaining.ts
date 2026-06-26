@@ -359,13 +359,6 @@ const MOVIES_INDIVIDUAL_MOVIE_FIELDS: FieldDefinition[] = [
     gridColumn: 'third',
   },
   {
-    name: 'studio',
-    label: 'Studio',
-    inputType: 'text',
-    requirement: 'recommended',
-    gridColumn: 'third',
-  },
-  {
     name: 'region',
     label: 'Region',
     inputType: 'text',
@@ -409,12 +402,6 @@ const MOVIES_BOX_SET_FIELDS: FieldDefinition[] = [
     name: 'releaseYear',
     label: 'Release Year',
     inputType: 'number',
-    requirement: 'recommended',
-  },
-  {
-    name: 'studio',
-    label: 'Studio',
-    inputType: 'text',
     requirement: 'recommended',
   },
   {
