@@ -113,7 +113,7 @@ const COINS_COIN_SET_FIELDS: FieldDefinition[] = [
     requirement: 'required',
     maxLength: 4,
     validation: { min: 1800, max: 2100 },
-    gridColumn: 'third',
+    gridColumn: 'half',
   },
   {
     name: 'setType',
@@ -123,7 +123,7 @@ const COINS_COIN_SET_FIELDS: FieldDefinition[] = [
     dropdownOptions: ['Proof Set', 'Mint Set', 'Commemorative Set', 'Type Set', 'Other'],
     supportsOther: true,
     otherFieldName: 'Custom Set Type',
-    gridColumn: 'third',
+    gridColumn: 'half',
   },
   {
     name: 'originalPackagingIncluded',
@@ -131,7 +131,7 @@ const COINS_COIN_SET_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'recommended',
     dropdownOptions: ['Yes', 'No', 'Unknown'],
-    gridColumn: 'third',
+    gridColumn: 'half',
   },
   {
     name: 'numberOfCoinsInSet',
@@ -139,7 +139,7 @@ const COINS_COIN_SET_FIELDS: FieldDefinition[] = [
     inputType: 'number',
     requirement: 'recommended',
     maxLength: 3,
-    gridColumn: 'third',
+    gridColumn: 'half',
   },
   COMMON_FIELDS.IS_GRADED_FIELD,
   {
