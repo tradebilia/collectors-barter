@@ -31,6 +31,7 @@ import {
   POKEMON_SET_FIELDS,
   DISNEY_PINS_COLLECTION_LOT_FIELDS,
   DISNEY_PINS_PIN_SET_FIELDS,
+  DISNEY_PINS_INDIVIDUAL_PIN_FIELDS,
   STAMPS_STAMP_SET_SHEET_FIELDS,
   STAMPS_COLLECTION_LOT_FIELDS,
   STAMPS_SINGLE_STAMP_FIELDS,
@@ -113,96 +114,7 @@ const VINTAGE_TOYS_PLUSH_TOY_FIELDS: FieldDefinition[] = [
 
 
 
-// ============================================================================
-// DISNEY PINS - SINGLE PIN (unique to Remaining, not in Generated)
-// ============================================================================
 
-const DISNEY_PINS_SINGLE_PIN_FIELDS: FieldDefinition[] = [
-  // Required Fields
-  COMMON_FIELDS.LISTING_TITLE_FIELD,
-  COMMON_FIELDS.TRADE_VALUE_FIELD,
-  {
-    name: 'condition',
-    label: 'Condition',
-    inputType: 'dropdown',
-    requirement: 'required',
-    dropdownOptions: ['Mint', 'Near Mint', 'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'],
-  },
-  {
-    name: 'pinName',
-    label: 'Pin Name',
-    inputType: 'text',
-    requirement: 'required',
-  },
-  // Recommended Fields
-  COMMON_FIELDS.QUANTITY_FIELD,
-  {
-    name: 'character',
-    label: 'Character',
-    inputType: 'text',
-    requirement: 'recommended',
-  },
-  {
-    name: 'series',
-    label: 'Series',
-    inputType: 'text',
-    requirement: 'recommended',
-  },
-  {
-    name: 'year',
-    label: 'Year',
-    inputType: 'number',
-    requirement: 'recommended',
-  },
-  {
-    name: 'pinTradingEvent',
-    label: 'Pin Trading Event',
-    inputType: 'text',
-    requirement: 'recommended',
-  },
-  {
-    name: 'limitedEdition',
-    label: 'Limited Edition',
-    inputType: 'dropdown',
-    requirement: 'recommended',
-    dropdownOptions: ['Yes', 'No'],
-  },
-  {
-    name: 'openEdition',
-    label: 'Open Edition',
-    inputType: 'dropdown',
-    requirement: 'recommended',
-    dropdownOptions: ['Yes', 'No'],
-  },
-  {
-    name: 'artistProof',
-    label: 'Artist Proof (AP)',
-    inputType: 'dropdown',
-    requirement: 'recommended',
-    dropdownOptions: ['Yes', 'No'],
-  },
-  {
-    name: 'preProduction',
-    label: 'Pre-Production (PP)',
-    inputType: 'dropdown',
-    requirement: 'recommended',
-    dropdownOptions: ['Yes', 'No'],
-  },
-  {
-    name: 'backstampInformation',
-    label: 'Backstamp Information',
-    inputType: 'textarea',
-    requirement: 'recommended',
-  },
-  // Optional Fields
-  {
-    name: 'backerCardIncluded',
-    label: 'Backer Card Included',
-    inputType: 'dropdown',
-    requirement: 'optional',
-    dropdownOptions: ['Yes', 'No'],
-  },
-];
 
 // ============================================================================
 // CATEGORY DEFINITIONS
@@ -258,7 +170,7 @@ export const CATEGORY_ITEM_TYPES = {
   },
 
   disney_pins: {
-    single_pin: DISNEY_PINS_SINGLE_PIN_FIELDS,
+    single_pin: DISNEY_PINS_INDIVIDUAL_PIN_FIELDS,
     pin_set: DISNEY_PINS_PIN_SET_FIELDS,
     collection_lot: DISNEY_PINS_COLLECTION_LOT_FIELDS,
   },

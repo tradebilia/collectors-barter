@@ -3586,3 +3586,112 @@ export const POKEMON_SINGLE_CARD_FIELDS: FieldDefinition[] = [
     conditionalLogic: 'Is Graded = Yes',
   },
 ];
+
+// Disney Pins - Individual Pin
+export const DISNEY_PINS_INDIVIDUAL_PIN_FIELDS: FieldDefinition[] = [
+  // Required Fields
+  {
+    name: 'listingTitle',
+    label: 'Listing Title',
+    inputType: 'text',
+    requirement: 'required',
+  },
+  {
+    name: 'tradeValue',
+    label: 'Trade Value',
+    inputType: 'currency',
+    requirement: 'required',
+  },
+  {
+    name: 'condition',
+    label: 'Condition',
+    inputType: 'dropdown',
+    requirement: 'required',
+    dropdownOptions: ['Mint', 'Near Mint', 'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'],
+  },
+  {
+    name: 'pinName',
+    label: 'Pin Name',
+    inputType: 'text',
+    requirement: 'required',
+  },
+  // Recommended Fields
+  {
+    name: 'quantity',
+    label: 'Quantity',
+    inputType: 'number',
+    requirement: 'recommended',
+  },
+  {
+    name: 'character',
+    label: 'Character',
+    inputType: 'text',
+    requirement: 'recommended',
+  },
+  {
+    name: 'series',
+    label: 'Series',
+    inputType: 'text',
+    requirement: 'recommended',
+  },
+  {
+    name: 'year',
+    label: 'Year',
+    inputType: 'number',
+    requirement: 'recommended',
+  },
+  {
+    name: 'pinTradingEvent',
+    label: 'Pin Trading Event',
+    inputType: 'text',
+    requirement: 'recommended',
+  },
+  {
+    name: 'limitedEdition',
+    label: 'Limited Edition',
+    inputType: 'dropdown',
+    requirement: 'recommended',
+    dropdownOptions: ['Yes', 'No'],
+  },
+  {
+    name: 'openEdition',
+    label: 'Open Edition',
+    inputType: 'dropdown',
+    requirement: 'recommended',
+    dropdownOptions: ['Yes', 'No'],
+  },
+  {
+    name: 'artistProof',
+    label: 'Artist Proof (AP)',
+    inputType: 'dropdown',
+    requirement: 'recommended',
+    dropdownOptions: ['Yes', 'No'],
+  },
+  {
+    name: 'preProduction',
+    label: 'Pre-Production (PP)',
+    inputType: 'dropdown',
+    requirement: 'recommended',
+    dropdownOptions: ['Yes', 'No'],
+  },
+  {
+    name: 'backstampInformation',
+    label: 'Backstamp Information',
+    inputType: 'textarea',
+    requirement: 'recommended',
+  },
+  // Optional Fields
+  {
+    name: 'backerCardIncluded',
+    label: 'Backer Card Included',
+    inputType: 'dropdown',
+    requirement: 'optional',
+    dropdownOptions: ['Yes', 'No'],
+  },
+  {
+    name: 'photos',
+    label: 'Photos',
+    inputType: 'image-upload',
+    requirement: 'required',
+  },
+];
