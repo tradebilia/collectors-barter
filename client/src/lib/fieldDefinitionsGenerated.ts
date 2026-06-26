@@ -24,6 +24,7 @@ export const AUTOGRAPHS_COLLECTION_LOT_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'conditional',
     dropdownOptions: ['Mint', 'Near Mint', 'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'],
+    conditionalLogic: 'Is Graded = No',
   },
   {
     name: 'numberOfSignedItems',
@@ -84,6 +85,7 @@ export const AUTOGRAPHS_SIGNED_ITEM_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'conditional',
     dropdownOptions: ['Mint', 'Near Mint', 'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'],
+    conditionalLogic: 'Is Graded = No',
   },
   {
     name: 'photos',
@@ -199,6 +201,7 @@ export const COINS_COIN_SET_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'conditional',
     dropdownOptions: ['Mint', 'Near Mint', 'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'],
+    conditionalLogic: 'Is Graded = No',
   },
   {
     name: 'photos',
@@ -279,6 +282,7 @@ export const COINS_COLLECTION_LOT_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'conditional',
     dropdownOptions: ['Mint', 'Near Mint', 'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'],
+    conditionalLogic: 'Is Graded = No',
   },
   {
     name: 'photos',
@@ -470,6 +474,7 @@ export const COMICS_COLLECTION_LOT_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'conditional',
     dropdownOptions: ['Mint', 'Near Mint', 'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'],
+    conditionalLogic: 'Is Graded = No',
   },
   {
     name: 'photos',
@@ -531,6 +536,7 @@ export const COMICS_ORIGINAL_ART_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'conditional',
     dropdownOptions: ['Mint', 'Near Mint', 'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'],
+    conditionalLogic: 'Is Graded = No',
   },
   {
     name: 'photos',
@@ -836,6 +842,7 @@ export const DISNEY_PINS_COLLECTION_LOT_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'conditional',
     dropdownOptions: ['Mint', 'Near Mint', 'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'],
+    conditionalLogic: 'Is Graded = No',
   },
   {
     name: 'photos',
@@ -907,6 +914,7 @@ export const DISNEY_PINS_PIN_SET_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'conditional',
     dropdownOptions: ['Mint', 'Near Mint', 'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'],
+    conditionalLogic: 'Is Graded = No',
   },
   {
     name: 'photos',
@@ -991,6 +999,7 @@ export const MOVIES_BOX_SET_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'conditional',
     dropdownOptions: ['Mint', 'Near Mint', 'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'],
+    conditionalLogic: 'Is Graded = No',
   },
   {
     name: 'photos',
@@ -1063,6 +1072,7 @@ export const MOVIES_COLLECTION_LOT_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'conditional',
     dropdownOptions: ['Mint', 'Near Mint', 'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'],
+    conditionalLogic: 'Is Graded = No',
   },
   {
     name: 'photos',
@@ -1238,6 +1248,7 @@ export const POKEMON_COLLECTION_LOT_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'conditional',
     dropdownOptions: ['Mint', 'Near Mint', 'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'],
+    conditionalLogic: 'Is Graded = No',
   },
   {
     name: 'photos',
@@ -1307,6 +1318,7 @@ export const POKEMON_SET_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'conditional',
     dropdownOptions: ['Mint', 'Near Mint', 'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'],
+    conditionalLogic: 'Is Graded = No',
   },
   {
     name: 'photos',
@@ -1392,6 +1404,7 @@ export const POKEMON_UNOPENED_PRODUCT_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'conditional',
     dropdownOptions: ['Mint', 'Near Mint', 'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'],
+    conditionalLogic: 'Is Graded = No',
   },
   {
     name: 'photos',
@@ -1500,6 +1513,7 @@ export const SPORTS_CARDS_COLLECTION_LOT_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'conditional',
     dropdownOptions: ['Mint', 'Near Mint', 'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'],
+    conditionalLogic: 'Is Graded = No',
   },
   {
     name: 'photos',
@@ -1576,6 +1590,7 @@ export const SPORTS_CARDS_SET_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'conditional',
     dropdownOptions: ['Mint', 'Near Mint', 'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'],
+    conditionalLogic: 'Is Graded = No',
   },
   {
     name: 'photos',
@@ -1847,6 +1862,7 @@ export const SPORTS_CARDS_UNOPENED_PRODUCT_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'conditional',
     dropdownOptions: ['Mint', 'Near Mint', 'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'],
+    conditionalLogic: 'Is Graded = No',
   },
   {
     name: 'photos',
@@ -1971,6 +1987,7 @@ export const STAMPS_COLLECTION_LOT_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'conditional',
     dropdownOptions: ['Mint', 'Near Mint', 'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'],
+    conditionalLogic: 'Is Graded = No',
   },
   {
     name: 'photos',
@@ -2232,6 +2249,7 @@ export const VIDEO_GAMES_ACCESSORY_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'conditional',
     dropdownOptions: ['Mint', 'Near Mint', 'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'],
+    conditionalLogic: 'Is Graded = No',
   },
   {
     name: 'photos',
@@ -2343,6 +2361,7 @@ export const VIDEO_GAMES_COLLECTION_LOT_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'conditional',
     dropdownOptions: ['Mint', 'Near Mint', 'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'],
+    conditionalLogic: 'Is Graded = No',
   },
   {
     name: 'photos',
@@ -2406,6 +2425,7 @@ export const VIDEO_GAMES_CONSOLE_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'conditional',
     dropdownOptions: ['Mint', 'Near Mint', 'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'],
+    conditionalLogic: 'Is Graded = No',
   },
   {
     name: 'photos',
@@ -2789,6 +2809,7 @@ export const VINTAGE_TOYS_BOARD_GAME_PUZZLE_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'conditional',
     dropdownOptions: ['Mint', 'Near Mint', 'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'],
+    conditionalLogic: 'Is Graded = No',
   },
   {
     name: 'photos',
@@ -2883,6 +2904,7 @@ export const VINTAGE_TOYS_COLLECTION_LOT_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'conditional',
     dropdownOptions: ['Mint', 'Near Mint', 'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'],
+    conditionalLogic: 'Is Graded = No',
   },
   {
     name: 'photos',
@@ -2945,6 +2967,7 @@ export const VINTAGE_TOYS_ELECTRONIC_TOY_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'conditional',
     dropdownOptions: ['Mint', 'Near Mint', 'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'],
+    conditionalLogic: 'Is Graded = No',
   },
   {
     name: 'photos',
@@ -3040,6 +3063,7 @@ export const VINTAGE_TOYS_MODEL_KIT_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'conditional',
     dropdownOptions: ['Mint', 'Near Mint', 'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'],
+    conditionalLogic: 'Is Graded = No',
   },
   {
     name: 'photos',
@@ -3121,6 +3145,7 @@ export const VINTAGE_TOYS_PLAYSET_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'conditional',
     dropdownOptions: ['Mint', 'Near Mint', 'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'],
+    conditionalLogic: 'Is Graded = No',
   },
   {
     name: 'photos',
@@ -3215,6 +3240,7 @@ export const VINTAGE_TOYS_PLUSH_STUFFED_TOY_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'conditional',
     dropdownOptions: ['Mint', 'Near Mint', 'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'],
+    conditionalLogic: 'Is Graded = No',
   },
   {
     name: 'photos',
@@ -3288,6 +3314,7 @@ export const VINTAGE_TOYS_VEHICLE_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'conditional',
     dropdownOptions: ['Mint', 'Near Mint', 'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'],
+    conditionalLogic: 'Is Graded = No',
   },
   {
     name: 'photos',
@@ -3610,6 +3637,7 @@ export const DISNEY_PINS_INDIVIDUAL_PIN_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'conditional',
     dropdownOptions: ['Mint', 'Near Mint', 'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'],
+    conditionalLogic: 'Is Graded = No',
   },
   {
     name: 'pinName',
