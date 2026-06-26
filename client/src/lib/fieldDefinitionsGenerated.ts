@@ -1255,6 +1255,14 @@ export const POKEMON_COLLECTION_LOT_FIELDS: FieldDefinition[] = [
     inputType: 'textarea',
     requirement: 'recommended',
   },
+
+  {
+    name: 'includesGradedCards',
+    label: 'Includes Graded Cards',
+    inputType: 'dropdown',
+    requirement: 'optional',
+    dropdownOptions: ['Yes', 'No'],
+  },
 ];
 
 // PLACEHOLDER - Remove extra fields below
