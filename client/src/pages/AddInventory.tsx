@@ -284,8 +284,11 @@ export default function AddInventory() {
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     {allFields
                       .filter((f: FieldDefinition) => (f.requirement === "required" || f.requirement === "conditional") && shouldShowField(f))
-                      .map((field: FieldDefinition) => (
-                        <div key={field.name} className={field.gridColumn === 'full' ? 'lg:col-span-4' : field.gridColumn === 'half' ? 'lg:col-span-2' : field.gridColumn === 'third' ? 'lg:col-span-1' : ''}>
+                      .map((field: FieldDefinition) => {
+                        const showCustomInput = field.supportsOther && formData[field.name as keyof typeof formData] === 'Other';
+                        const colSpan = field.gridColumn === 'full' ? 'lg:col-span-4' : field.gridColumn === 'half' ? 'lg:col-span-2' : field.gridColumn === 'third' && showCustomInput ? 'lg:col-span-2' : field.gridColumn === 'third' ? 'lg:col-span-1' : '';
+                        return (
+                        <div key={field.name} className={colSpan}>
                           <FieldWithCustomInput
                             field={field}
                             value={formData[field.name as keyof typeof formData] || ""}
@@ -294,7 +297,9 @@ export default function AddInventory() {
                             formData={formData}
                           />
                         </div>
-                      ))}
+                      );
+                      })
+                      }
                   </div>
                 </div>
                 
@@ -311,8 +316,11 @@ export default function AddInventory() {
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     {allFields
                       .filter((f: FieldDefinition) => f.requirement === "recommended" && shouldShowField(f) && f.name !== 'signatures')
-                      .map((field: FieldDefinition) => (
-                        <div key={field.name} className={field.gridColumn === 'full' ? 'lg:col-span-4' : field.gridColumn === 'half' ? 'lg:col-span-2' : field.gridColumn === 'third' ? 'lg:col-span-1' : ''}>
+                      .map((field: FieldDefinition) => {
+                        const showCustomInput = field.supportsOther && formData[field.name as keyof typeof formData] === 'Other';
+                        const colSpan = field.gridColumn === 'full' ? 'lg:col-span-4' : field.gridColumn === 'half' ? 'lg:col-span-2' : field.gridColumn === 'third' && showCustomInput ? 'lg:col-span-2' : field.gridColumn === 'third' ? 'lg:col-span-1' : '';
+                        return (
+                        <div key={field.name} className={colSpan}>
                           <FieldWithCustomInput
                             field={field}
                             value={formData[field.name as keyof typeof formData] || ""}
@@ -321,7 +329,8 @@ export default function AddInventory() {
                             formData={formData}
                           />
                         </div>
-                      ))}
+                      );
+                      })}
                   </div>
                 </div>
                 
@@ -361,8 +370,11 @@ export default function AddInventory() {
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     {allFields
                       .filter((f: FieldDefinition) => f.requirement === "optional" && shouldShowField(f))
-                      .map((field: FieldDefinition) => (
-                        <div key={field.name} className={field.gridColumn === 'full' ? 'lg:col-span-4' : field.gridColumn === 'half' ? 'lg:col-span-2' : field.gridColumn === 'third' ? 'lg:col-span-1' : ''}>
+                      .map((field: FieldDefinition) => {
+                        const showCustomInput = field.supportsOther && formData[field.name as keyof typeof formData] === 'Other';
+                        const colSpan = field.gridColumn === 'full' ? 'lg:col-span-4' : field.gridColumn === 'half' ? 'lg:col-span-2' : field.gridColumn === 'third' && showCustomInput ? 'lg:col-span-2' : field.gridColumn === 'third' ? 'lg:col-span-1' : '';
+                        return (
+                        <div key={field.name} className={colSpan}>
                           <DynamicFieldRenderer
                             field={field}
                             value={formData[field.name as keyof typeof formData] || ""}
@@ -372,7 +384,8 @@ export default function AddInventory() {
                             otherValue={formData[`custom${field.name.charAt(0).toUpperCase() + field.name.slice(1)}` as keyof typeof formData] as string || ""}
                           />
                         </div>
-                      ))}
+                      );
+                      })}
                   </div>
                 </div>
             </CollapsibleFormSection>
