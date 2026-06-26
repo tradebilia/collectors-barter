@@ -29,7 +29,7 @@ export const FieldWithCustomInput: React.FC<FieldWithCustomInputProps> = ({
   if (field.inputType === 'textarea') {
     return (
       <div className="w-full">
-        <label className="text-sm font-medium text-white block mb-2">
+        <label className="text-sm font-medium text-white block mb-2 whitespace-nowrap">
           {field.label}
           {field.requirement === 'required' && <span className="text-red-500 ml-1">*</span>}
         </label>
@@ -51,14 +51,14 @@ export const FieldWithCustomInput: React.FC<FieldWithCustomInputProps> = ({
       {/* Labels Row */}
       <div className="flex gap-3 mb-2 min-h-10">
         <div className="flex-1 min-w-0">
-          <label className="text-sm font-medium text-white block">
+          <label className="text-sm font-medium text-white block whitespace-nowrap">
             {field.label}
             {field.requirement === 'required' && <span className="text-red-500 ml-1">*</span>}
           </label>
         </div>
         {showCustomInput && (
           <div className="flex-1 min-w-0">
-            <label className="text-sm font-medium text-white block">
+            <label className="text-sm font-medium text-white block whitespace-nowrap">
               {field.otherFieldName || `Custom ${field.label}`}
             </label>
           </div>
