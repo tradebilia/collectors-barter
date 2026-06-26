@@ -46,7 +46,7 @@ export const FieldWithCustomInput: React.FC<FieldWithCustomInputProps> = ({
       
       {/* Fields Row */}
       <div className="flex gap-3 items-center flex-nowrap">
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 flex items-center">
         <DynamicFieldRenderer
           field={field}
           value={value}
@@ -58,7 +58,7 @@ export const FieldWithCustomInput: React.FC<FieldWithCustomInputProps> = ({
         />
         </div>
         {showCustomInput && (
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 flex items-center">
             <input
               type="text"
               value={customValue}
