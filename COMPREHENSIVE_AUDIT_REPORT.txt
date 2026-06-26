@@ -1,0 +1,1183 @@
+========================================================================================================================
+COMPREHENSIVE FIELD AUDIT - MASTER LIST vs CODEBASE
+========================================================================================================================
+
+========================================================================================================================
+CATEGORY: Sports Cards
+========================================================================================================================
+
+  Single Card:
+    Master: 20 fields | Codebase: 21 fields
+    ❌ MISSING IN CODEBASE (20): Autograph, Card Number, Certification Number, Condition, Grade, Grading Company, Is Graded, Listing Title, Manufacturer, Parallel / Variation, Player Name, Quantity, Relic / Memorabilia, Rookie Card, Serial Number, Serial Numbered, Set Name, Sport, Trade Value, Year
+    ✅ EXTRA IN CODEBASE (21): autograph, cardNumber, certificationNumber, condition, grade, gradingCompany, isGraded, listingTitle, manufacturer, parallelVariation, photos, player, quantity, relicMemorabilia, rookieCard, serialNumber, serialNumbered, setName, sport, tradeValue, year
+
+  Unopened Product:
+    Master: 14 fields | Codebase: 15 fields
+    ❌ MISSING IN CODEBASE (14): Authenticated, Authentication Company, Condition, Factory Sealed, From A Sealed Case, Listing Title, Manufacturer, Product Format, Product Name, Product Type, Quantity, Sport, Trade Value, Year
+    ✅ EXTRA IN CODEBASE (15): authenticated, authenticationCompany, condition, factorySealed, fromASealedCase, listingTitle, manufacturer, photos, productFormat, productName, productType, quantity, sport, tradeValue, year
+
+  Set:
+    Master: 12 fields | Codebase: 13 fields
+    ❌ MISSING IN CODEBASE (12): Condition, Listing Title, Manufacturer, Missing Card Details, Missing Cards, Number of Cards in Set, Quantity, Set Name, Set Type, Sport, Trade Value, Year
+    ✅ EXTRA IN CODEBASE (13): condition, listingTitle, manufacturer, missingCardDetails, missingCards, numberOfCardsInSet, photos, quantity, setName, setType, sport, tradeValue, year
+
+  Collection/Lot:
+    Master: 10 fields | Codebase: 11 fields
+    ❌ MISSING IN CODEBASE (10): Approximate Card Count, Condition, Includes Graded Cards, Listing Title, Manufacturers Included, Notable Cards, Notable Players, Sport, Trade Value, Years Included
+    ✅ EXTRA IN CODEBASE (11): approximateCardCount, condition, includesGradedCards, listingTitle, manufacturersIncluded, notableCards, notablePlayers, photos, sport, tradeValue, yearsIncluded
+
+========================================================================================================================
+CATEGORY: Comics
+========================================================================================================================
+
+  Single Comic:
+    Master: 19 fields | Codebase: 22 fields
+    ❌ MISSING IN CODEBASE (19): Certification Number, Character Name, Comic Title, Condition, First Appearance, Grade, Grading Company, Is Graded, Issue Number, Key Issue, Listing Title, Publication Year, Publisher, Quantity, Signed, Trade Value, Variant Cover, Variant Description, Volume
+    ✅ EXTRA IN CODEBASE (22): certificationNumber, characterName, comicTitle, condition, firstAppearance, grade, gradingCompany, isGraded, issueNumber, keyIssue, listingTitle, numberOfSignatures, photos, publicationYear, publisher, quantity, signatures, signed, tradeValue, variantCover, variantDescription, volume
+
+  Original Art:
+    Master: 18 fields | Codebase: 19 fields
+    ❌ MISSING IN CODEBASE (18): Art Type, Artist Name, Artwork Title, COA Included, Comic Series, Condition, Dimensions, Framed, Issue Number, Listing Title, Medium, Original Published Page, Page Number, Publisher, Quantity, Signed By Artist, Trade Value, Year Created
+    ✅ EXTRA IN CODEBASE (19): artType, artistName, artworkTitle, coaIncluded, comicSeries, condition, dimensions, framed, issueNumber, listingTitle, medium, originalPublishedPage, pageNumber, photos, publisher, quantity, signedByArtist, tradeValue, yearCreated
+
+  Collection/Lot:
+    Master: 8 fields | Codebase: 9 fields
+    ❌ MISSING IN CODEBASE (8): Condition, Includes Graded Comics, Listing Title, Major Titles Included, Number of Comics, Publishers Included, Trade Value, Years Included
+    ✅ EXTRA IN CODEBASE (9): condition, includesGradedComics, listingTitle, majorTitlesIncluded, numberOfComics, photos, publishersIncluded, tradeValue, yearsIncluded
+
+========================================================================================================================
+CATEGORY: Video Games
+========================================================================================================================
+
+  Game:
+    Master: 16 fields | Codebase: 17 fields
+    ❌ MISSING IN CODEBASE (16): Certification Number, Complete In Box, Condition, Game Title, Grade, Grading Company, Is Graded, Listing Title, Manual Included, Original Case Included, Platform, Quantity, Region, Release Year, Sealed, Trade Value
+    ✅ EXTRA IN CODEBASE (17): certificationNumber, completeInBox, condition, gameTitle, grade, gradingCompany, isGraded, listingTitle, manualIncluded, originalCaseIncluded, photos, platform, quantity, region, releaseYear, sealed, tradeValue
+
+  Console:
+    Master: 11 fields | Codebase: 16 fields
+    ❌ MISSING IN CODEBASE (11): Cables Included, Condition, Console Name, Controllers Included, Listing Title, Model Number, Original Box Included, Quantity, Region, Trade Value, Working Condition
+    ✅ EXTRA IN CODEBASE (16): cablesIncluded, certificationNumber, condition, consoleName, controllersIncluded, grade, gradingCompany, isGraded, listingTitle, modelNumber, originalBoxIncluded, photos, quantity, region, tradeValue, workingCondition
+
+  Accessory:
+    Master: 10 fields | Codebase: 14 fields
+    ❌ MISSING IN CODEBASE (10): Accessory Name, Accessory Type, Condition, Listing Title, Manufacturer, Original Packaging, Platform, Quantity, Trade Value, Working Condition
+    ✅ EXTRA IN CODEBASE (14): accessoryType, certificationNumber, condition, grade, gradingCompany, isGraded, listingTitle, manufacturer, photos, platform, quantity, region, tradeValue, workingCondition
+
+  Collection/Lot:
+    Master: 7 fields | Codebase: 9 fields
+    ❌ MISSING IN CODEBASE (7): Approximate Item Count, Condition, Includes Graded Games, Listing Title, Notable Games / Consoles, Platforms Included, Trade Value
+    ✅ EXTRA IN CODEBASE (9): approximateItemCount, condition, includesGradedGames, listingTitle, notableGamesConsoles, photos, platformsIncluded, quantity, tradeValue
+
+========================================================================================================================
+CATEGORY: Vintage Toys
+========================================================================================================================
+
+  Action Figure / Doll:
+    Master: 15 fields | Codebase: 17 fields
+    ❌ MISSING IN CODEBASE (15): Accessories Included, Brand, Certification Number, Complete, Condition, Franchise, Grade, Grading Company, Is Graded, Listing Title, Packaging Type, Quantity, Toy Name / Character, Trade Value, Year
+    ✅ EXTRA IN CODEBASE (17): accessoriesIncluded, brand, certificationNumber, character, complete, condition, franchise, grade, gradingCompany, isGraded, listingTitle, packagingType, photos, quantity, toyName, tradeValue, year
+
+  Vehicle:
+    Master: 15 fields | Codebase: 12 fields
+    ❌ MISSING IN CODEBASE (15): Brand, Certification Number, Condition, Franchise, Grade, Grading Company, Is Graded, Listing Title, Packaging Type, Quantity, Trade Value, Vehicle Name, Vehicle Type, Working Features, Year
+    ✅ EXTRA IN CODEBASE (12): brand, condition, franchise, listingTitle, packagingType, photos, quantity, tradeValue, vehicleName, vehicleType, workingFeatures, year
+
+  Playset:
+    Master: 16 fields | Codebase: 13 fields
+    ❌ MISSING IN CODEBASE (16): Brand, Certification Number, Complete, Condition, Franchise, Grade, Grading Company, Instructions Included, Is Graded, Listing Title, Missing Pieces, Original Box Included, Playset Name, Quantity, Trade Value, Year
+    ✅ EXTRA IN CODEBASE (13): brand, complete, condition, franchise, instructionsIncluded, listingTitle, missingPieces, originalBoxIncluded, photos, playsetName, quantity, tradeValue, year
+
+  Board Game / Puzzle:
+    Master: 16 fields | Codebase: 13 fields
+    ❌ MISSING IN CODEBASE (16): Box Included, Certification Number, Complete, Condition, Game / Puzzle Name, Grade, Grading Company, Instructions Included, Is Graded, Listing Title, Missing Pieces, Number of Pieces, Publisher / Brand, Quantity, Trade Value, Year
+    ✅ EXTRA IN CODEBASE (13): boxIncluded, complete, condition, gamePuzzleName, instructionsIncluded, listingTitle, missingPieces, numberOfPieces, photos, publisherBrand, quantity, tradeValue, year
+
+  Plush / Stuffed Toy:
+    Master: 13 fields | Codebase: 10 fields
+    ❌ MISSING IN CODEBASE (13): Brand, Certification Number, Cleanliness / Odor Notes, Condition, Grade, Grading Company, Is Graded, Listing Title, Quantity, Tags Attached, Toy Name / Character, Trade Value, Year
+    ✅ EXTRA IN CODEBASE (10): brand, cleanlinessOdorNotes, condition, listingTitle, photos, quantity, tagsAttached, toyNameCharacter, tradeValue, year
+
+  Electronic Toy:
+    Master: 16 fields | Codebase: 13 fields
+    ❌ MISSING IN CODEBASE (16): Battery Compartment Condition, Brand, Certification Number, Condition, Grade, Grading Company, Is Graded, Lights Work, Listing Title, Quantity, Sound Works, Tested, Toy Name, Trade Value, Working Condition, Year
+    ✅ EXTRA IN CODEBASE (13): batteryCompartmentCondition, brand, condition, lightsWork, listingTitle, photos, quantity, soundWorks, tested, toyName, tradeValue, workingCondition, year
+
+  Model / Kit:
+    Master: 14 fields | Codebase: 11 fields
+    ❌ MISSING IN CODEBASE (14): Brand, Built or Unbuilt, Certification Number, Complete, Condition, Grade, Grading Company, Instructions Included, Is Graded, Listing Title, Model / Kit Name, Quantity, Scale, Trade Value
+    ✅ EXTRA IN CODEBASE (11): brand, builtOrUnbuilt, complete, condition, instructionsIncluded, listingTitle, modelKitName, photos, quantity, scale, tradeValue
+
+  Collection/Lot:
+    Master: 7 fields | Codebase: 9 fields
+    ❌ MISSING IN CODEBASE (7): Approximate Item Count, Brands Included, Condition, Franchises Included, Listing Title, Notable Items, Trade Value
+    ✅ EXTRA IN CODEBASE (9): approximateItemCount, brandsIncluded, condition, franchisesIncluded, listingTitle, notableItems, photos, quantity, tradeValue
+
+========================================================================================================================
+CATEGORY: Stamps
+========================================================================================================================
+
+  Single Stamp:
+    Master: 13 fields | Codebase: 15 fields
+    ❌ MISSING IN CODEBASE (13): Certification Number, Condition, Country, Denomination, Grade, Grading Company, Hinged, Is Graded, Listing Title, Mint or Used, Quantity, Trade Value, Year
+    ✅ EXTRA IN CODEBASE (15): certificationNumber, condition, country, denomination, grade, gradingCompany, hinged, isGraded, listingTitle, mintOrUsed, photos, quantity, scottNumberOrDescription, tradeValue, year
+
+  Stamp Set / Sheet:
+    Master: 14 fields | Codebase: 11 fields
+    ❌ MISSING IN CODEBASE (14): Certification Number, Condition, Country, Grade, Grading Company, Is Graded, Listing Title, Mint or Used, Number of Stamps in Set, Quantity, Set Name, Sheet Type, Trade Value, Year
+    ✅ EXTRA IN CODEBASE (11): condition, country, listingTitle, mintOrUsed, numberOfStamps, photos, quantity, setNameDescription, sheetType, tradeValue, year
+
+  Collection/Lot:
+    Master: 8 fields | Codebase: 11 fields
+    ❌ MISSING IN CODEBASE (8): Album Included, Approximate Quantity, Condition, Countries Included, Listing Title, Notable Stamps, Trade Value, Years Included
+    ✅ EXTRA IN CODEBASE (11): albumIncluded, approximateQuantity, condition, countriesIncluded, country, listingTitle, notableStamps, photos, quantity, tradeValue, yearsIncluded
+
+========================================================================================================================
+CATEGORY: Coins
+========================================================================================================================
+
+  Single Coin:
+    Master: 16 fields | Codebase: 17 fields
+    ❌ MISSING IN CODEBASE (16): Certification Number, Composition, Condition, Country, Denomination, Diameter, Grade, Grading Company, Is Graded, Listing Title, Mint Mark, Quantity, Trade Value, Variety, Weight, Year
+    ✅ EXTRA IN CODEBASE (17): certificationNumber, composition, condition, country, denomination, diameter, grade, gradingCompany, isGraded, listingTitle, mintMark, photos, quantity, tradeValue, variety, weight, year
+
+  Coin Set:
+    Master: 10 fields | Codebase: 11 fields
+    ❌ MISSING IN CODEBASE (10): Condition, Country, Listing Title, Number of Coins in Set, Original Packaging Included, Quantity, Set Name, Set Type, Trade Value, Year
+    ✅ EXTRA IN CODEBASE (11): condition, country, listingTitle, numberOfCoins, originalPackagingIncluded, photos, quantity, setName, setType, tradeValue, year
+
+  Collection/Lot:
+    Master: 8 fields | Codebase: 11 fields
+    ❌ MISSING IN CODEBASE (8): Approximate Coin Count, Condition, Countries Included, Includes Graded Coins, Listing Title, Notable Coins, Trade Value, Years Included
+    ✅ EXTRA IN CODEBASE (11): approximateCoinCount, condition, countriesIncluded, country, includesGradedCoins, listingTitle, notableCoins, photos, quantity, tradeValue, yearsIncluded
+
+========================================================================================================================
+CATEGORY: Movies
+========================================================================================================================
+
+  Individual Movie:
+    Master: 14 fields | Codebase: 15 fields
+    ❌ MISSING IN CODEBASE (14): Certification Number, Condition, Edition, Format, Grade, Grading Company, Is Graded, Listing Title, Quantity, Region, Release Year, Sealed, Title, Trade Value
+    ✅ EXTRA IN CODEBASE (15): certificationNumber, condition, edition, format, grade, gradingCompany, isGraded, listingTitle, photos, quantity, region, releaseYear, sealed, title, tradeValue
+
+  Box Set:
+    Master: 13 fields | Codebase: 10 fields
+    ❌ MISSING IN CODEBASE (13): Box Set Name, Certification Number, Condition, Edition, Format, Grade, Grading Company, Is Graded, Listing Title, Number of Movies in Set, Quantity, Sealed, Trade Value
+    ✅ EXTRA IN CODEBASE (10): boxSetName, condition, edition, format, listingTitle, numberOfMovies, photos, quantity, sealed, tradeValue
+
+  Collection/Lot:
+    Master: 7 fields | Codebase: 9 fields
+    ❌ MISSING IN CODEBASE (7): Approximate Quantity, Condition, Formats Included, Listing Title, Notable Titles, Sealed Items Included, Trade Value
+    ✅ EXTRA IN CODEBASE (9): approximateQuantity, condition, formatsIncluded, listingTitle, notableTitles, photos, quantity, sealedItemsIncluded, tradeValue
+
+========================================================================================================================
+CATEGORY: Autographs
+========================================================================================================================
+
+  Signed Item:
+    Master: 13 fields | Codebase: 14 fields
+    ❌ MISSING IN CODEBASE (13): Authentication Company, Authentication Included, Authentication Type, Autograph Category, Certificate Number, Condition, Inscription Present, Inscription Text, Listing Title, Quantity, Signed Item Type, Signer, Trade Value
+    ✅ EXTRA IN CODEBASE (14): authenticationCompany, authenticationIncluded, authenticationType, autographCategory, certificateNumber, condition, inscriptionPresent, inscriptionText, listingTitle, photos, quantity, signedItemType, signer, tradeValue
+
+  Collection/Lot:
+    Master: 8 fields | Codebase: 9 fields
+    ❌ MISSING IN CODEBASE (8): Authentication Included, Condition, Item Types Included, Listing Title, Notable Items, Number of Signed Items, Signers Included, Trade Value
+    ✅ EXTRA IN CODEBASE (9): authenticationIncluded, condition, itemTypesIncluded, listingTitle, notableItems, numberOfSignedItems, photos, signersIncluded, tradeValue
+
+========================================================================================================================
+CATEGORY: Disney Pins
+========================================================================================================================
+
+  Individual Pin:
+    Master: 15 fields | Codebase: 16 fields
+    ❌ MISSING IN CODEBASE (15): Artist Proof (AP), Backer Card Included, Backstamp Information, Character, Condition, Limited Edition, Listing Title, Open Edition, Pin Name, Pin Trading Event, Pre-Production (PP), Quantity, Series, Trade Value, Year
+    ✅ EXTRA IN CODEBASE (16): artistProof, backerCardIncluded, backstampInformation, character, condition, limitedEdition, listingTitle, openEdition, photos, pinName, pinTradingEvent, preProduction, quantity, series, tradeValue, year
+
+  Pin Set:
+    Master: 11 fields | Codebase: 12 fields
+    ❌ MISSING IN CODEBASE (11): Characters Included, Complete Set, Condition, Limited Edition, Listing Title, Missing Pins, Number of Pins in Set, Quantity, Series, Set Name, Trade Value
+    ✅ EXTRA IN CODEBASE (12): charactersIncluded, completeSet, condition, limitedEdition, listingTitle, missingPins, numberOfPins, photos, quantity, series, setName, tradeValue
+
+  Collection/Lot:
+    Master: 9 fields | Codebase: 10 fields
+    ❌ MISSING IN CODEBASE (9): AP / PP Pins Included, Approximate Pin Count, Backer Cards Included, Characters Included, Condition, Limited Edition Pins Included, Listing Title, Series Included, Trade Value
+    ✅ EXTRA IN CODEBASE (10): apPpPinsIncluded, approximatePinCount, backerCardsIncluded, charactersIncluded, condition, limitedEditionPinsIncluded, listingTitle, photos, seriesIncluded, tradeValue
+
+========================================================================================================================
+CATEGORY: Pokemon
+========================================================================================================================
+
+  Single Card:
+    Master: 16 fields | Codebase: 16 fields
+    ❌ MISSING IN CODEBASE (16): Card Name, Card Number, Certification Number, Condition, Edition / Era, Finish / Variant, Grade, Grading Company, Is Graded, Language, Listing Title, Quantity, Rarity, Set Name, Special Attributes, Trade Value
+    ✅ EXTRA IN CODEBASE (16): cardName, cardNumber, certificationNumber, condition, editionEra, finishVariant, grade, gradingCompany, isGraded, language, listingTitle, quantity, rarity, setName, specialAttributes, tradeValue
+
+  Unopened Product:
+    Master: 13 fields | Codebase: 14 fields
+    ❌ MISSING IN CODEBASE (13): Authenticated, Authentication Company, Condition, Era, Factory Sealed, From A Sealed Case, Listing Title, Product Name, Product Type, Quantity, Set Name, Trade Value, Year
+    ✅ EXTRA IN CODEBASE (14): authenticated, authenticationCompany, condition, era, factorySealed, fromASealedCase, listingTitle, photos, productName, productType, quantity, releaseYear, setName, tradeValue
+
+  Set:
+    Master: 11 fields | Codebase: 12 fields
+    ❌ MISSING IN CODEBASE (11): Complete, Condition, Includes Graded Cards, Listing Title, Notable Cards, Number of Cards in Set, Original Packaging, Quantity, Set Name, Trade Value, Year
+    ✅ EXTRA IN CODEBASE (12): complete, condition, includesGradedCards, listingTitle, notableCards, numberOfCardsInSet, originalPackaging, photos, quantity, setName, tradeValue, year
+
+  Collection/Lot:
+    Master: 7 fields | Codebase: 8 fields
+    ❌ MISSING IN CODEBASE (7): Approximate Card Count, Condition, Eras / Series Included, Includes Graded Cards, Listing Title, Notable Cards, Trade Value
+    ✅ EXTRA IN CODEBASE (8): approximateCardCount, condition, includesGradedCards, listingTitle, notableCards, photos, setsIncluded, tradeValue
+
+
+========================================================================================================================
+SUMMARY
+========================================================================================================================
+Total issues found: 948
+
+  • Autographs / Collection/Lot: EXTRA FIELD 'authenticationIncluded'
+  • Autographs / Collection/Lot: EXTRA FIELD 'condition'
+  • Autographs / Collection/Lot: EXTRA FIELD 'itemTypesIncluded'
+  • Autographs / Collection/Lot: EXTRA FIELD 'listingTitle'
+  • Autographs / Collection/Lot: EXTRA FIELD 'notableItems'
+  • Autographs / Collection/Lot: EXTRA FIELD 'numberOfSignedItems'
+  • Autographs / Collection/Lot: EXTRA FIELD 'photos'
+  • Autographs / Collection/Lot: EXTRA FIELD 'signersIncluded'
+  • Autographs / Collection/Lot: EXTRA FIELD 'tradeValue'
+  • Autographs / Collection/Lot: MISSING FIELD 'Authentication Included'
+  • Autographs / Collection/Lot: MISSING FIELD 'Condition'
+  • Autographs / Collection/Lot: MISSING FIELD 'Item Types Included'
+  • Autographs / Collection/Lot: MISSING FIELD 'Listing Title'
+  • Autographs / Collection/Lot: MISSING FIELD 'Notable Items'
+  • Autographs / Collection/Lot: MISSING FIELD 'Number of Signed Items'
+  • Autographs / Collection/Lot: MISSING FIELD 'Signers Included'
+  • Autographs / Collection/Lot: MISSING FIELD 'Trade Value'
+  • Autographs / Signed Item: EXTRA FIELD 'authenticationCompany'
+  • Autographs / Signed Item: EXTRA FIELD 'authenticationIncluded'
+  • Autographs / Signed Item: EXTRA FIELD 'authenticationType'
+  • Autographs / Signed Item: EXTRA FIELD 'autographCategory'
+  • Autographs / Signed Item: EXTRA FIELD 'certificateNumber'
+  • Autographs / Signed Item: EXTRA FIELD 'condition'
+  • Autographs / Signed Item: EXTRA FIELD 'inscriptionPresent'
+  • Autographs / Signed Item: EXTRA FIELD 'inscriptionText'
+  • Autographs / Signed Item: EXTRA FIELD 'listingTitle'
+  • Autographs / Signed Item: EXTRA FIELD 'photos'
+  • Autographs / Signed Item: EXTRA FIELD 'quantity'
+  • Autographs / Signed Item: EXTRA FIELD 'signedItemType'
+  • Autographs / Signed Item: EXTRA FIELD 'signer'
+  • Autographs / Signed Item: EXTRA FIELD 'tradeValue'
+  • Autographs / Signed Item: MISSING FIELD 'Authentication Company'
+  • Autographs / Signed Item: MISSING FIELD 'Authentication Included'
+  • Autographs / Signed Item: MISSING FIELD 'Authentication Type'
+  • Autographs / Signed Item: MISSING FIELD 'Autograph Category'
+  • Autographs / Signed Item: MISSING FIELD 'Certificate Number'
+  • Autographs / Signed Item: MISSING FIELD 'Condition'
+  • Autographs / Signed Item: MISSING FIELD 'Inscription Present'
+  • Autographs / Signed Item: MISSING FIELD 'Inscription Text'
+  • Autographs / Signed Item: MISSING FIELD 'Listing Title'
+  • Autographs / Signed Item: MISSING FIELD 'Quantity'
+  • Autographs / Signed Item: MISSING FIELD 'Signed Item Type'
+  • Autographs / Signed Item: MISSING FIELD 'Signer'
+  • Autographs / Signed Item: MISSING FIELD 'Trade Value'
+  • Coins / Coin Set: EXTRA FIELD 'condition'
+  • Coins / Coin Set: EXTRA FIELD 'country'
+  • Coins / Coin Set: EXTRA FIELD 'listingTitle'
+  • Coins / Coin Set: EXTRA FIELD 'numberOfCoins'
+  • Coins / Coin Set: EXTRA FIELD 'originalPackagingIncluded'
+  • Coins / Coin Set: EXTRA FIELD 'photos'
+  • Coins / Coin Set: EXTRA FIELD 'quantity'
+  • Coins / Coin Set: EXTRA FIELD 'setName'
+  • Coins / Coin Set: EXTRA FIELD 'setType'
+  • Coins / Coin Set: EXTRA FIELD 'tradeValue'
+  • Coins / Coin Set: EXTRA FIELD 'year'
+  • Coins / Coin Set: MISSING FIELD 'Condition'
+  • Coins / Coin Set: MISSING FIELD 'Country'
+  • Coins / Coin Set: MISSING FIELD 'Listing Title'
+  • Coins / Coin Set: MISSING FIELD 'Number of Coins in Set'
+  • Coins / Coin Set: MISSING FIELD 'Original Packaging Included'
+  • Coins / Coin Set: MISSING FIELD 'Quantity'
+  • Coins / Coin Set: MISSING FIELD 'Set Name'
+  • Coins / Coin Set: MISSING FIELD 'Set Type'
+  • Coins / Coin Set: MISSING FIELD 'Trade Value'
+  • Coins / Coin Set: MISSING FIELD 'Year'
+  • Coins / Collection/Lot: EXTRA FIELD 'approximateCoinCount'
+  • Coins / Collection/Lot: EXTRA FIELD 'condition'
+  • Coins / Collection/Lot: EXTRA FIELD 'countriesIncluded'
+  • Coins / Collection/Lot: EXTRA FIELD 'country'
+  • Coins / Collection/Lot: EXTRA FIELD 'includesGradedCoins'
+  • Coins / Collection/Lot: EXTRA FIELD 'listingTitle'
+  • Coins / Collection/Lot: EXTRA FIELD 'notableCoins'
+  • Coins / Collection/Lot: EXTRA FIELD 'photos'
+  • Coins / Collection/Lot: EXTRA FIELD 'quantity'
+  • Coins / Collection/Lot: EXTRA FIELD 'tradeValue'
+  • Coins / Collection/Lot: EXTRA FIELD 'yearsIncluded'
+  • Coins / Collection/Lot: MISSING FIELD 'Approximate Coin Count'
+  • Coins / Collection/Lot: MISSING FIELD 'Condition'
+  • Coins / Collection/Lot: MISSING FIELD 'Countries Included'
+  • Coins / Collection/Lot: MISSING FIELD 'Includes Graded Coins'
+  • Coins / Collection/Lot: MISSING FIELD 'Listing Title'
+  • Coins / Collection/Lot: MISSING FIELD 'Notable Coins'
+  • Coins / Collection/Lot: MISSING FIELD 'Trade Value'
+  • Coins / Collection/Lot: MISSING FIELD 'Years Included'
+  • Coins / Single Coin: EXTRA FIELD 'certificationNumber'
+  • Coins / Single Coin: EXTRA FIELD 'composition'
+  • Coins / Single Coin: EXTRA FIELD 'condition'
+  • Coins / Single Coin: EXTRA FIELD 'country'
+  • Coins / Single Coin: EXTRA FIELD 'denomination'
+  • Coins / Single Coin: EXTRA FIELD 'diameter'
+  • Coins / Single Coin: EXTRA FIELD 'grade'
+  • Coins / Single Coin: EXTRA FIELD 'gradingCompany'
+  • Coins / Single Coin: EXTRA FIELD 'isGraded'
+  • Coins / Single Coin: EXTRA FIELD 'listingTitle'
+  • Coins / Single Coin: EXTRA FIELD 'mintMark'
+  • Coins / Single Coin: EXTRA FIELD 'photos'
+  • Coins / Single Coin: EXTRA FIELD 'quantity'
+  • Coins / Single Coin: EXTRA FIELD 'tradeValue'
+  • Coins / Single Coin: EXTRA FIELD 'variety'
+  • Coins / Single Coin: EXTRA FIELD 'weight'
+  • Coins / Single Coin: EXTRA FIELD 'year'
+  • Coins / Single Coin: MISSING FIELD 'Certification Number'
+  • Coins / Single Coin: MISSING FIELD 'Composition'
+  • Coins / Single Coin: MISSING FIELD 'Condition'
+  • Coins / Single Coin: MISSING FIELD 'Country'
+  • Coins / Single Coin: MISSING FIELD 'Denomination'
+  • Coins / Single Coin: MISSING FIELD 'Diameter'
+  • Coins / Single Coin: MISSING FIELD 'Grade'
+  • Coins / Single Coin: MISSING FIELD 'Grading Company'
+  • Coins / Single Coin: MISSING FIELD 'Is Graded'
+  • Coins / Single Coin: MISSING FIELD 'Listing Title'
+  • Coins / Single Coin: MISSING FIELD 'Mint Mark'
+  • Coins / Single Coin: MISSING FIELD 'Quantity'
+  • Coins / Single Coin: MISSING FIELD 'Trade Value'
+  • Coins / Single Coin: MISSING FIELD 'Variety'
+  • Coins / Single Coin: MISSING FIELD 'Weight'
+  • Coins / Single Coin: MISSING FIELD 'Year'
+  • Comics / Collection/Lot: EXTRA FIELD 'condition'
+  • Comics / Collection/Lot: EXTRA FIELD 'includesGradedComics'
+  • Comics / Collection/Lot: EXTRA FIELD 'listingTitle'
+  • Comics / Collection/Lot: EXTRA FIELD 'majorTitlesIncluded'
+  • Comics / Collection/Lot: EXTRA FIELD 'numberOfComics'
+  • Comics / Collection/Lot: EXTRA FIELD 'photos'
+  • Comics / Collection/Lot: EXTRA FIELD 'publishersIncluded'
+  • Comics / Collection/Lot: EXTRA FIELD 'tradeValue'
+  • Comics / Collection/Lot: EXTRA FIELD 'yearsIncluded'
+  • Comics / Collection/Lot: MISSING FIELD 'Condition'
+  • Comics / Collection/Lot: MISSING FIELD 'Includes Graded Comics'
+  • Comics / Collection/Lot: MISSING FIELD 'Listing Title'
+  • Comics / Collection/Lot: MISSING FIELD 'Major Titles Included'
+  • Comics / Collection/Lot: MISSING FIELD 'Number of Comics'
+  • Comics / Collection/Lot: MISSING FIELD 'Publishers Included'
+  • Comics / Collection/Lot: MISSING FIELD 'Trade Value'
+  • Comics / Collection/Lot: MISSING FIELD 'Years Included'
+  • Comics / Original Art: EXTRA FIELD 'artType'
+  • Comics / Original Art: EXTRA FIELD 'artistName'
+  • Comics / Original Art: EXTRA FIELD 'artworkTitle'
+  • Comics / Original Art: EXTRA FIELD 'coaIncluded'
+  • Comics / Original Art: EXTRA FIELD 'comicSeries'
+  • Comics / Original Art: EXTRA FIELD 'condition'
+  • Comics / Original Art: EXTRA FIELD 'dimensions'
+  • Comics / Original Art: EXTRA FIELD 'framed'
+  • Comics / Original Art: EXTRA FIELD 'issueNumber'
+  • Comics / Original Art: EXTRA FIELD 'listingTitle'
+  • Comics / Original Art: EXTRA FIELD 'medium'
+  • Comics / Original Art: EXTRA FIELD 'originalPublishedPage'
+  • Comics / Original Art: EXTRA FIELD 'pageNumber'
+  • Comics / Original Art: EXTRA FIELD 'photos'
+  • Comics / Original Art: EXTRA FIELD 'publisher'
+  • Comics / Original Art: EXTRA FIELD 'quantity'
+  • Comics / Original Art: EXTRA FIELD 'signedByArtist'
+  • Comics / Original Art: EXTRA FIELD 'tradeValue'
+  • Comics / Original Art: EXTRA FIELD 'yearCreated'
+  • Comics / Original Art: MISSING FIELD 'Art Type'
+  • Comics / Original Art: MISSING FIELD 'Artist Name'
+  • Comics / Original Art: MISSING FIELD 'Artwork Title'
+  • Comics / Original Art: MISSING FIELD 'COA Included'
+  • Comics / Original Art: MISSING FIELD 'Comic Series'
+  • Comics / Original Art: MISSING FIELD 'Condition'
+  • Comics / Original Art: MISSING FIELD 'Dimensions'
+  • Comics / Original Art: MISSING FIELD 'Framed'
+  • Comics / Original Art: MISSING FIELD 'Issue Number'
+  • Comics / Original Art: MISSING FIELD 'Listing Title'
+  • Comics / Original Art: MISSING FIELD 'Medium'
+  • Comics / Original Art: MISSING FIELD 'Original Published Page'
+  • Comics / Original Art: MISSING FIELD 'Page Number'
+  • Comics / Original Art: MISSING FIELD 'Publisher'
+  • Comics / Original Art: MISSING FIELD 'Quantity'
+  • Comics / Original Art: MISSING FIELD 'Signed By Artist'
+  • Comics / Original Art: MISSING FIELD 'Trade Value'
+  • Comics / Original Art: MISSING FIELD 'Year Created'
+  • Comics / Single Comic: EXTRA FIELD 'certificationNumber'
+  • Comics / Single Comic: EXTRA FIELD 'characterName'
+  • Comics / Single Comic: EXTRA FIELD 'comicTitle'
+  • Comics / Single Comic: EXTRA FIELD 'condition'
+  • Comics / Single Comic: EXTRA FIELD 'firstAppearance'
+  • Comics / Single Comic: EXTRA FIELD 'grade'
+  • Comics / Single Comic: EXTRA FIELD 'gradingCompany'
+  • Comics / Single Comic: EXTRA FIELD 'isGraded'
+  • Comics / Single Comic: EXTRA FIELD 'issueNumber'
+  • Comics / Single Comic: EXTRA FIELD 'keyIssue'
+  • Comics / Single Comic: EXTRA FIELD 'listingTitle'
+  • Comics / Single Comic: EXTRA FIELD 'numberOfSignatures'
+  • Comics / Single Comic: EXTRA FIELD 'photos'
+  • Comics / Single Comic: EXTRA FIELD 'publicationYear'
+  • Comics / Single Comic: EXTRA FIELD 'publisher'
+  • Comics / Single Comic: EXTRA FIELD 'quantity'
+  • Comics / Single Comic: EXTRA FIELD 'signatures'
+  • Comics / Single Comic: EXTRA FIELD 'signed'
+  • Comics / Single Comic: EXTRA FIELD 'tradeValue'
+  • Comics / Single Comic: EXTRA FIELD 'variantCover'
+  • Comics / Single Comic: EXTRA FIELD 'variantDescription'
+  • Comics / Single Comic: EXTRA FIELD 'volume'
+  • Comics / Single Comic: MISSING FIELD 'Certification Number'
+  • Comics / Single Comic: MISSING FIELD 'Character Name'
+  • Comics / Single Comic: MISSING FIELD 'Comic Title'
+  • Comics / Single Comic: MISSING FIELD 'Condition'
+  • Comics / Single Comic: MISSING FIELD 'First Appearance'
+  • Comics / Single Comic: MISSING FIELD 'Grade'
+  • Comics / Single Comic: MISSING FIELD 'Grading Company'
+  • Comics / Single Comic: MISSING FIELD 'Is Graded'
+  • Comics / Single Comic: MISSING FIELD 'Issue Number'
+  • Comics / Single Comic: MISSING FIELD 'Key Issue'
+  • Comics / Single Comic: MISSING FIELD 'Listing Title'
+  • Comics / Single Comic: MISSING FIELD 'Publication Year'
+  • Comics / Single Comic: MISSING FIELD 'Publisher'
+  • Comics / Single Comic: MISSING FIELD 'Quantity'
+  • Comics / Single Comic: MISSING FIELD 'Signed'
+  • Comics / Single Comic: MISSING FIELD 'Trade Value'
+  • Comics / Single Comic: MISSING FIELD 'Variant Cover'
+  • Comics / Single Comic: MISSING FIELD 'Variant Description'
+  • Comics / Single Comic: MISSING FIELD 'Volume'
+  • Disney Pins / Collection/Lot: EXTRA FIELD 'apPpPinsIncluded'
+  • Disney Pins / Collection/Lot: EXTRA FIELD 'approximatePinCount'
+  • Disney Pins / Collection/Lot: EXTRA FIELD 'backerCardsIncluded'
+  • Disney Pins / Collection/Lot: EXTRA FIELD 'charactersIncluded'
+  • Disney Pins / Collection/Lot: EXTRA FIELD 'condition'
+  • Disney Pins / Collection/Lot: EXTRA FIELD 'limitedEditionPinsIncluded'
+  • Disney Pins / Collection/Lot: EXTRA FIELD 'listingTitle'
+  • Disney Pins / Collection/Lot: EXTRA FIELD 'photos'
+  • Disney Pins / Collection/Lot: EXTRA FIELD 'seriesIncluded'
+  • Disney Pins / Collection/Lot: EXTRA FIELD 'tradeValue'
+  • Disney Pins / Collection/Lot: MISSING FIELD 'AP / PP Pins Included'
+  • Disney Pins / Collection/Lot: MISSING FIELD 'Approximate Pin Count'
+  • Disney Pins / Collection/Lot: MISSING FIELD 'Backer Cards Included'
+  • Disney Pins / Collection/Lot: MISSING FIELD 'Characters Included'
+  • Disney Pins / Collection/Lot: MISSING FIELD 'Condition'
+  • Disney Pins / Collection/Lot: MISSING FIELD 'Limited Edition Pins Included'
+  • Disney Pins / Collection/Lot: MISSING FIELD 'Listing Title'
+  • Disney Pins / Collection/Lot: MISSING FIELD 'Series Included'
+  • Disney Pins / Collection/Lot: MISSING FIELD 'Trade Value'
+  • Disney Pins / Individual Pin: EXTRA FIELD 'artistProof'
+  • Disney Pins / Individual Pin: EXTRA FIELD 'backerCardIncluded'
+  • Disney Pins / Individual Pin: EXTRA FIELD 'backstampInformation'
+  • Disney Pins / Individual Pin: EXTRA FIELD 'character'
+  • Disney Pins / Individual Pin: EXTRA FIELD 'condition'
+  • Disney Pins / Individual Pin: EXTRA FIELD 'limitedEdition'
+  • Disney Pins / Individual Pin: EXTRA FIELD 'listingTitle'
+  • Disney Pins / Individual Pin: EXTRA FIELD 'openEdition'
+  • Disney Pins / Individual Pin: EXTRA FIELD 'photos'
+  • Disney Pins / Individual Pin: EXTRA FIELD 'pinName'
+  • Disney Pins / Individual Pin: EXTRA FIELD 'pinTradingEvent'
+  • Disney Pins / Individual Pin: EXTRA FIELD 'preProduction'
+  • Disney Pins / Individual Pin: EXTRA FIELD 'quantity'
+  • Disney Pins / Individual Pin: EXTRA FIELD 'series'
+  • Disney Pins / Individual Pin: EXTRA FIELD 'tradeValue'
+  • Disney Pins / Individual Pin: EXTRA FIELD 'year'
+  • Disney Pins / Individual Pin: MISSING FIELD 'Artist Proof (AP)'
+  • Disney Pins / Individual Pin: MISSING FIELD 'Backer Card Included'
+  • Disney Pins / Individual Pin: MISSING FIELD 'Backstamp Information'
+  • Disney Pins / Individual Pin: MISSING FIELD 'Character'
+  • Disney Pins / Individual Pin: MISSING FIELD 'Condition'
+  • Disney Pins / Individual Pin: MISSING FIELD 'Limited Edition'
+  • Disney Pins / Individual Pin: MISSING FIELD 'Listing Title'
+  • Disney Pins / Individual Pin: MISSING FIELD 'Open Edition'
+  • Disney Pins / Individual Pin: MISSING FIELD 'Pin Name'
+  • Disney Pins / Individual Pin: MISSING FIELD 'Pin Trading Event'
+  • Disney Pins / Individual Pin: MISSING FIELD 'Pre-Production (PP)'
+  • Disney Pins / Individual Pin: MISSING FIELD 'Quantity'
+  • Disney Pins / Individual Pin: MISSING FIELD 'Series'
+  • Disney Pins / Individual Pin: MISSING FIELD 'Trade Value'
+  • Disney Pins / Individual Pin: MISSING FIELD 'Year'
+  • Disney Pins / Pin Set: EXTRA FIELD 'charactersIncluded'
+  • Disney Pins / Pin Set: EXTRA FIELD 'completeSet'
+  • Disney Pins / Pin Set: EXTRA FIELD 'condition'
+  • Disney Pins / Pin Set: EXTRA FIELD 'limitedEdition'
+  • Disney Pins / Pin Set: EXTRA FIELD 'listingTitle'
+  • Disney Pins / Pin Set: EXTRA FIELD 'missingPins'
+  • Disney Pins / Pin Set: EXTRA FIELD 'numberOfPins'
+  • Disney Pins / Pin Set: EXTRA FIELD 'photos'
+  • Disney Pins / Pin Set: EXTRA FIELD 'quantity'
+  • Disney Pins / Pin Set: EXTRA FIELD 'series'
+  • Disney Pins / Pin Set: EXTRA FIELD 'setName'
+  • Disney Pins / Pin Set: EXTRA FIELD 'tradeValue'
+  • Disney Pins / Pin Set: MISSING FIELD 'Characters Included'
+  • Disney Pins / Pin Set: MISSING FIELD 'Complete Set'
+  • Disney Pins / Pin Set: MISSING FIELD 'Condition'
+  • Disney Pins / Pin Set: MISSING FIELD 'Limited Edition'
+  • Disney Pins / Pin Set: MISSING FIELD 'Listing Title'
+  • Disney Pins / Pin Set: MISSING FIELD 'Missing Pins'
+  • Disney Pins / Pin Set: MISSING FIELD 'Number of Pins in Set'
+  • Disney Pins / Pin Set: MISSING FIELD 'Quantity'
+  • Disney Pins / Pin Set: MISSING FIELD 'Series'
+  • Disney Pins / Pin Set: MISSING FIELD 'Set Name'
+  • Disney Pins / Pin Set: MISSING FIELD 'Trade Value'
+  • Movies / Box Set: EXTRA FIELD 'boxSetName'
+  • Movies / Box Set: EXTRA FIELD 'condition'
+  • Movies / Box Set: EXTRA FIELD 'edition'
+  • Movies / Box Set: EXTRA FIELD 'format'
+  • Movies / Box Set: EXTRA FIELD 'listingTitle'
+  • Movies / Box Set: EXTRA FIELD 'numberOfMovies'
+  • Movies / Box Set: EXTRA FIELD 'photos'
+  • Movies / Box Set: EXTRA FIELD 'quantity'
+  • Movies / Box Set: EXTRA FIELD 'sealed'
+  • Movies / Box Set: EXTRA FIELD 'tradeValue'
+  • Movies / Box Set: MISSING FIELD 'Box Set Name'
+  • Movies / Box Set: MISSING FIELD 'Certification Number'
+  • Movies / Box Set: MISSING FIELD 'Condition'
+  • Movies / Box Set: MISSING FIELD 'Edition'
+  • Movies / Box Set: MISSING FIELD 'Format'
+  • Movies / Box Set: MISSING FIELD 'Grade'
+  • Movies / Box Set: MISSING FIELD 'Grading Company'
+  • Movies / Box Set: MISSING FIELD 'Is Graded'
+  • Movies / Box Set: MISSING FIELD 'Listing Title'
+  • Movies / Box Set: MISSING FIELD 'Number of Movies in Set'
+  • Movies / Box Set: MISSING FIELD 'Quantity'
+  • Movies / Box Set: MISSING FIELD 'Sealed'
+  • Movies / Box Set: MISSING FIELD 'Trade Value'
+  • Movies / Collection/Lot: EXTRA FIELD 'approximateQuantity'
+  • Movies / Collection/Lot: EXTRA FIELD 'condition'
+  • Movies / Collection/Lot: EXTRA FIELD 'formatsIncluded'
+  • Movies / Collection/Lot: EXTRA FIELD 'listingTitle'
+  • Movies / Collection/Lot: EXTRA FIELD 'notableTitles'
+  • Movies / Collection/Lot: EXTRA FIELD 'photos'
+  • Movies / Collection/Lot: EXTRA FIELD 'quantity'
+  • Movies / Collection/Lot: EXTRA FIELD 'sealedItemsIncluded'
+  • Movies / Collection/Lot: EXTRA FIELD 'tradeValue'
+  • Movies / Collection/Lot: MISSING FIELD 'Approximate Quantity'
+  • Movies / Collection/Lot: MISSING FIELD 'Condition'
+  • Movies / Collection/Lot: MISSING FIELD 'Formats Included'
+  • Movies / Collection/Lot: MISSING FIELD 'Listing Title'
+  • Movies / Collection/Lot: MISSING FIELD 'Notable Titles'
+  • Movies / Collection/Lot: MISSING FIELD 'Sealed Items Included'
+  • Movies / Collection/Lot: MISSING FIELD 'Trade Value'
+  • Movies / Individual Movie: EXTRA FIELD 'certificationNumber'
+  • Movies / Individual Movie: EXTRA FIELD 'condition'
+  • Movies / Individual Movie: EXTRA FIELD 'edition'
+  • Movies / Individual Movie: EXTRA FIELD 'format'
+  • Movies / Individual Movie: EXTRA FIELD 'grade'
+  • Movies / Individual Movie: EXTRA FIELD 'gradingCompany'
+  • Movies / Individual Movie: EXTRA FIELD 'isGraded'
+  • Movies / Individual Movie: EXTRA FIELD 'listingTitle'
+  • Movies / Individual Movie: EXTRA FIELD 'photos'
+  • Movies / Individual Movie: EXTRA FIELD 'quantity'
+  • Movies / Individual Movie: EXTRA FIELD 'region'
+  • Movies / Individual Movie: EXTRA FIELD 'releaseYear'
+  • Movies / Individual Movie: EXTRA FIELD 'sealed'
+  • Movies / Individual Movie: EXTRA FIELD 'title'
+  • Movies / Individual Movie: EXTRA FIELD 'tradeValue'
+  • Movies / Individual Movie: MISSING FIELD 'Certification Number'
+  • Movies / Individual Movie: MISSING FIELD 'Condition'
+  • Movies / Individual Movie: MISSING FIELD 'Edition'
+  • Movies / Individual Movie: MISSING FIELD 'Format'
+  • Movies / Individual Movie: MISSING FIELD 'Grade'
+  • Movies / Individual Movie: MISSING FIELD 'Grading Company'
+  • Movies / Individual Movie: MISSING FIELD 'Is Graded'
+  • Movies / Individual Movie: MISSING FIELD 'Listing Title'
+  • Movies / Individual Movie: MISSING FIELD 'Quantity'
+  • Movies / Individual Movie: MISSING FIELD 'Region'
+  • Movies / Individual Movie: MISSING FIELD 'Release Year'
+  • Movies / Individual Movie: MISSING FIELD 'Sealed'
+  • Movies / Individual Movie: MISSING FIELD 'Title'
+  • Movies / Individual Movie: MISSING FIELD 'Trade Value'
+  • Pokemon / Collection/Lot: EXTRA FIELD 'approximateCardCount'
+  • Pokemon / Collection/Lot: EXTRA FIELD 'condition'
+  • Pokemon / Collection/Lot: EXTRA FIELD 'includesGradedCards'
+  • Pokemon / Collection/Lot: EXTRA FIELD 'listingTitle'
+  • Pokemon / Collection/Lot: EXTRA FIELD 'notableCards'
+  • Pokemon / Collection/Lot: EXTRA FIELD 'photos'
+  • Pokemon / Collection/Lot: EXTRA FIELD 'setsIncluded'
+  • Pokemon / Collection/Lot: EXTRA FIELD 'tradeValue'
+  • Pokemon / Collection/Lot: MISSING FIELD 'Approximate Card Count'
+  • Pokemon / Collection/Lot: MISSING FIELD 'Condition'
+  • Pokemon / Collection/Lot: MISSING FIELD 'Eras / Series Included'
+  • Pokemon / Collection/Lot: MISSING FIELD 'Includes Graded Cards'
+  • Pokemon / Collection/Lot: MISSING FIELD 'Listing Title'
+  • Pokemon / Collection/Lot: MISSING FIELD 'Notable Cards'
+  • Pokemon / Collection/Lot: MISSING FIELD 'Trade Value'
+  • Pokemon / Set: EXTRA FIELD 'complete'
+  • Pokemon / Set: EXTRA FIELD 'condition'
+  • Pokemon / Set: EXTRA FIELD 'includesGradedCards'
+  • Pokemon / Set: EXTRA FIELD 'listingTitle'
+  • Pokemon / Set: EXTRA FIELD 'notableCards'
+  • Pokemon / Set: EXTRA FIELD 'numberOfCardsInSet'
+  • Pokemon / Set: EXTRA FIELD 'originalPackaging'
+  • Pokemon / Set: EXTRA FIELD 'photos'
+  • Pokemon / Set: EXTRA FIELD 'quantity'
+  • Pokemon / Set: EXTRA FIELD 'setName'
+  • Pokemon / Set: EXTRA FIELD 'tradeValue'
+  • Pokemon / Set: EXTRA FIELD 'year'
+  • Pokemon / Set: MISSING FIELD 'Complete'
+  • Pokemon / Set: MISSING FIELD 'Condition'
+  • Pokemon / Set: MISSING FIELD 'Includes Graded Cards'
+  • Pokemon / Set: MISSING FIELD 'Listing Title'
+  • Pokemon / Set: MISSING FIELD 'Notable Cards'
+  • Pokemon / Set: MISSING FIELD 'Number of Cards in Set'
+  • Pokemon / Set: MISSING FIELD 'Original Packaging'
+  • Pokemon / Set: MISSING FIELD 'Quantity'
+  • Pokemon / Set: MISSING FIELD 'Set Name'
+  • Pokemon / Set: MISSING FIELD 'Trade Value'
+  • Pokemon / Set: MISSING FIELD 'Year'
+  • Pokemon / Single Card: EXTRA FIELD 'cardName'
+  • Pokemon / Single Card: EXTRA FIELD 'cardNumber'
+  • Pokemon / Single Card: EXTRA FIELD 'certificationNumber'
+  • Pokemon / Single Card: EXTRA FIELD 'condition'
+  • Pokemon / Single Card: EXTRA FIELD 'editionEra'
+  • Pokemon / Single Card: EXTRA FIELD 'finishVariant'
+  • Pokemon / Single Card: EXTRA FIELD 'grade'
+  • Pokemon / Single Card: EXTRA FIELD 'gradingCompany'
+  • Pokemon / Single Card: EXTRA FIELD 'isGraded'
+  • Pokemon / Single Card: EXTRA FIELD 'language'
+  • Pokemon / Single Card: EXTRA FIELD 'listingTitle'
+  • Pokemon / Single Card: EXTRA FIELD 'quantity'
+  • Pokemon / Single Card: EXTRA FIELD 'rarity'
+  • Pokemon / Single Card: EXTRA FIELD 'setName'
+  • Pokemon / Single Card: EXTRA FIELD 'specialAttributes'
+  • Pokemon / Single Card: EXTRA FIELD 'tradeValue'
+  • Pokemon / Single Card: MISSING FIELD 'Card Name'
+  • Pokemon / Single Card: MISSING FIELD 'Card Number'
+  • Pokemon / Single Card: MISSING FIELD 'Certification Number'
+  • Pokemon / Single Card: MISSING FIELD 'Condition'
+  • Pokemon / Single Card: MISSING FIELD 'Edition / Era'
+  • Pokemon / Single Card: MISSING FIELD 'Finish / Variant'
+  • Pokemon / Single Card: MISSING FIELD 'Grade'
+  • Pokemon / Single Card: MISSING FIELD 'Grading Company'
+  • Pokemon / Single Card: MISSING FIELD 'Is Graded'
+  • Pokemon / Single Card: MISSING FIELD 'Language'
+  • Pokemon / Single Card: MISSING FIELD 'Listing Title'
+  • Pokemon / Single Card: MISSING FIELD 'Quantity'
+  • Pokemon / Single Card: MISSING FIELD 'Rarity'
+  • Pokemon / Single Card: MISSING FIELD 'Set Name'
+  • Pokemon / Single Card: MISSING FIELD 'Special Attributes'
+  • Pokemon / Single Card: MISSING FIELD 'Trade Value'
+  • Pokemon / Unopened Product: EXTRA FIELD 'authenticated'
+  • Pokemon / Unopened Product: EXTRA FIELD 'authenticationCompany'
+  • Pokemon / Unopened Product: EXTRA FIELD 'condition'
+  • Pokemon / Unopened Product: EXTRA FIELD 'era'
+  • Pokemon / Unopened Product: EXTRA FIELD 'factorySealed'
+  • Pokemon / Unopened Product: EXTRA FIELD 'fromASealedCase'
+  • Pokemon / Unopened Product: EXTRA FIELD 'listingTitle'
+  • Pokemon / Unopened Product: EXTRA FIELD 'photos'
+  • Pokemon / Unopened Product: EXTRA FIELD 'productName'
+  • Pokemon / Unopened Product: EXTRA FIELD 'productType'
+  • Pokemon / Unopened Product: EXTRA FIELD 'quantity'
+  • Pokemon / Unopened Product: EXTRA FIELD 'releaseYear'
+  • Pokemon / Unopened Product: EXTRA FIELD 'setName'
+  • Pokemon / Unopened Product: EXTRA FIELD 'tradeValue'
+  • Pokemon / Unopened Product: MISSING FIELD 'Authenticated'
+  • Pokemon / Unopened Product: MISSING FIELD 'Authentication Company'
+  • Pokemon / Unopened Product: MISSING FIELD 'Condition'
+  • Pokemon / Unopened Product: MISSING FIELD 'Era'
+  • Pokemon / Unopened Product: MISSING FIELD 'Factory Sealed'
+  • Pokemon / Unopened Product: MISSING FIELD 'From A Sealed Case'
+  • Pokemon / Unopened Product: MISSING FIELD 'Listing Title'
+  • Pokemon / Unopened Product: MISSING FIELD 'Product Name'
+  • Pokemon / Unopened Product: MISSING FIELD 'Product Type'
+  • Pokemon / Unopened Product: MISSING FIELD 'Quantity'
+  • Pokemon / Unopened Product: MISSING FIELD 'Set Name'
+  • Pokemon / Unopened Product: MISSING FIELD 'Trade Value'
+  • Pokemon / Unopened Product: MISSING FIELD 'Year'
+  • Sports Cards / Collection/Lot: EXTRA FIELD 'approximateCardCount'
+  • Sports Cards / Collection/Lot: EXTRA FIELD 'condition'
+  • Sports Cards / Collection/Lot: EXTRA FIELD 'includesGradedCards'
+  • Sports Cards / Collection/Lot: EXTRA FIELD 'listingTitle'
+  • Sports Cards / Collection/Lot: EXTRA FIELD 'manufacturersIncluded'
+  • Sports Cards / Collection/Lot: EXTRA FIELD 'notableCards'
+  • Sports Cards / Collection/Lot: EXTRA FIELD 'notablePlayers'
+  • Sports Cards / Collection/Lot: EXTRA FIELD 'photos'
+  • Sports Cards / Collection/Lot: EXTRA FIELD 'sport'
+  • Sports Cards / Collection/Lot: EXTRA FIELD 'tradeValue'
+  • Sports Cards / Collection/Lot: EXTRA FIELD 'yearsIncluded'
+  • Sports Cards / Collection/Lot: MISSING FIELD 'Approximate Card Count'
+  • Sports Cards / Collection/Lot: MISSING FIELD 'Condition'
+  • Sports Cards / Collection/Lot: MISSING FIELD 'Includes Graded Cards'
+  • Sports Cards / Collection/Lot: MISSING FIELD 'Listing Title'
+  • Sports Cards / Collection/Lot: MISSING FIELD 'Manufacturers Included'
+  • Sports Cards / Collection/Lot: MISSING FIELD 'Notable Cards'
+  • Sports Cards / Collection/Lot: MISSING FIELD 'Notable Players'
+  • Sports Cards / Collection/Lot: MISSING FIELD 'Sport'
+  • Sports Cards / Collection/Lot: MISSING FIELD 'Trade Value'
+  • Sports Cards / Collection/Lot: MISSING FIELD 'Years Included'
+  • Sports Cards / Set: EXTRA FIELD 'condition'
+  • Sports Cards / Set: EXTRA FIELD 'listingTitle'
+  • Sports Cards / Set: EXTRA FIELD 'manufacturer'
+  • Sports Cards / Set: EXTRA FIELD 'missingCardDetails'
+  • Sports Cards / Set: EXTRA FIELD 'missingCards'
+  • Sports Cards / Set: EXTRA FIELD 'numberOfCardsInSet'
+  • Sports Cards / Set: EXTRA FIELD 'photos'
+  • Sports Cards / Set: EXTRA FIELD 'quantity'
+  • Sports Cards / Set: EXTRA FIELD 'setName'
+  • Sports Cards / Set: EXTRA FIELD 'setType'
+  • Sports Cards / Set: EXTRA FIELD 'sport'
+  • Sports Cards / Set: EXTRA FIELD 'tradeValue'
+  • Sports Cards / Set: EXTRA FIELD 'year'
+  • Sports Cards / Set: MISSING FIELD 'Condition'
+  • Sports Cards / Set: MISSING FIELD 'Listing Title'
+  • Sports Cards / Set: MISSING FIELD 'Manufacturer'
+  • Sports Cards / Set: MISSING FIELD 'Missing Card Details'
+  • Sports Cards / Set: MISSING FIELD 'Missing Cards'
+  • Sports Cards / Set: MISSING FIELD 'Number of Cards in Set'
+  • Sports Cards / Set: MISSING FIELD 'Quantity'
+  • Sports Cards / Set: MISSING FIELD 'Set Name'
+  • Sports Cards / Set: MISSING FIELD 'Set Type'
+  • Sports Cards / Set: MISSING FIELD 'Sport'
+  • Sports Cards / Set: MISSING FIELD 'Trade Value'
+  • Sports Cards / Set: MISSING FIELD 'Year'
+  • Sports Cards / Single Card: EXTRA FIELD 'autograph'
+  • Sports Cards / Single Card: EXTRA FIELD 'cardNumber'
+  • Sports Cards / Single Card: EXTRA FIELD 'certificationNumber'
+  • Sports Cards / Single Card: EXTRA FIELD 'condition'
+  • Sports Cards / Single Card: EXTRA FIELD 'grade'
+  • Sports Cards / Single Card: EXTRA FIELD 'gradingCompany'
+  • Sports Cards / Single Card: EXTRA FIELD 'isGraded'
+  • Sports Cards / Single Card: EXTRA FIELD 'listingTitle'
+  • Sports Cards / Single Card: EXTRA FIELD 'manufacturer'
+  • Sports Cards / Single Card: EXTRA FIELD 'parallelVariation'
+  • Sports Cards / Single Card: EXTRA FIELD 'photos'
+  • Sports Cards / Single Card: EXTRA FIELD 'player'
+  • Sports Cards / Single Card: EXTRA FIELD 'quantity'
+  • Sports Cards / Single Card: EXTRA FIELD 'relicMemorabilia'
+  • Sports Cards / Single Card: EXTRA FIELD 'rookieCard'
+  • Sports Cards / Single Card: EXTRA FIELD 'serialNumber'
+  • Sports Cards / Single Card: EXTRA FIELD 'serialNumbered'
+  • Sports Cards / Single Card: EXTRA FIELD 'setName'
+  • Sports Cards / Single Card: EXTRA FIELD 'sport'
+  • Sports Cards / Single Card: EXTRA FIELD 'tradeValue'
+  • Sports Cards / Single Card: EXTRA FIELD 'year'
+  • Sports Cards / Single Card: MISSING FIELD 'Autograph'
+  • Sports Cards / Single Card: MISSING FIELD 'Card Number'
+  • Sports Cards / Single Card: MISSING FIELD 'Certification Number'
+  • Sports Cards / Single Card: MISSING FIELD 'Condition'
+  • Sports Cards / Single Card: MISSING FIELD 'Grade'
+  • Sports Cards / Single Card: MISSING FIELD 'Grading Company'
+  • Sports Cards / Single Card: MISSING FIELD 'Is Graded'
+  • Sports Cards / Single Card: MISSING FIELD 'Listing Title'
+  • Sports Cards / Single Card: MISSING FIELD 'Manufacturer'
+  • Sports Cards / Single Card: MISSING FIELD 'Parallel / Variation'
+  • Sports Cards / Single Card: MISSING FIELD 'Player Name'
+  • Sports Cards / Single Card: MISSING FIELD 'Quantity'
+  • Sports Cards / Single Card: MISSING FIELD 'Relic / Memorabilia'
+  • Sports Cards / Single Card: MISSING FIELD 'Rookie Card'
+  • Sports Cards / Single Card: MISSING FIELD 'Serial Number'
+  • Sports Cards / Single Card: MISSING FIELD 'Serial Numbered'
+  • Sports Cards / Single Card: MISSING FIELD 'Set Name'
+  • Sports Cards / Single Card: MISSING FIELD 'Sport'
+  • Sports Cards / Single Card: MISSING FIELD 'Trade Value'
+  • Sports Cards / Single Card: MISSING FIELD 'Year'
+  • Sports Cards / Unopened Product: EXTRA FIELD 'authenticated'
+  • Sports Cards / Unopened Product: EXTRA FIELD 'authenticationCompany'
+  • Sports Cards / Unopened Product: EXTRA FIELD 'condition'
+  • Sports Cards / Unopened Product: EXTRA FIELD 'factorySealed'
+  • Sports Cards / Unopened Product: EXTRA FIELD 'fromASealedCase'
+  • Sports Cards / Unopened Product: EXTRA FIELD 'listingTitle'
+  • Sports Cards / Unopened Product: EXTRA FIELD 'manufacturer'
+  • Sports Cards / Unopened Product: EXTRA FIELD 'photos'
+  • Sports Cards / Unopened Product: EXTRA FIELD 'productFormat'
+  • Sports Cards / Unopened Product: EXTRA FIELD 'productName'
+  • Sports Cards / Unopened Product: EXTRA FIELD 'productType'
+  • Sports Cards / Unopened Product: EXTRA FIELD 'quantity'
+  • Sports Cards / Unopened Product: EXTRA FIELD 'sport'
+  • Sports Cards / Unopened Product: EXTRA FIELD 'tradeValue'
+  • Sports Cards / Unopened Product: EXTRA FIELD 'year'
+  • Sports Cards / Unopened Product: MISSING FIELD 'Authenticated'
+  • Sports Cards / Unopened Product: MISSING FIELD 'Authentication Company'
+  • Sports Cards / Unopened Product: MISSING FIELD 'Condition'
+  • Sports Cards / Unopened Product: MISSING FIELD 'Factory Sealed'
+  • Sports Cards / Unopened Product: MISSING FIELD 'From A Sealed Case'
+  • Sports Cards / Unopened Product: MISSING FIELD 'Listing Title'
+  • Sports Cards / Unopened Product: MISSING FIELD 'Manufacturer'
+  • Sports Cards / Unopened Product: MISSING FIELD 'Product Format'
+  • Sports Cards / Unopened Product: MISSING FIELD 'Product Name'
+  • Sports Cards / Unopened Product: MISSING FIELD 'Product Type'
+  • Sports Cards / Unopened Product: MISSING FIELD 'Quantity'
+  • Sports Cards / Unopened Product: MISSING FIELD 'Sport'
+  • Sports Cards / Unopened Product: MISSING FIELD 'Trade Value'
+  • Sports Cards / Unopened Product: MISSING FIELD 'Year'
+  • Stamps / Collection/Lot: EXTRA FIELD 'albumIncluded'
+  • Stamps / Collection/Lot: EXTRA FIELD 'approximateQuantity'
+  • Stamps / Collection/Lot: EXTRA FIELD 'condition'
+  • Stamps / Collection/Lot: EXTRA FIELD 'countriesIncluded'
+  • Stamps / Collection/Lot: EXTRA FIELD 'country'
+  • Stamps / Collection/Lot: EXTRA FIELD 'listingTitle'
+  • Stamps / Collection/Lot: EXTRA FIELD 'notableStamps'
+  • Stamps / Collection/Lot: EXTRA FIELD 'photos'
+  • Stamps / Collection/Lot: EXTRA FIELD 'quantity'
+  • Stamps / Collection/Lot: EXTRA FIELD 'tradeValue'
+  • Stamps / Collection/Lot: EXTRA FIELD 'yearsIncluded'
+  • Stamps / Collection/Lot: MISSING FIELD 'Album Included'
+  • Stamps / Collection/Lot: MISSING FIELD 'Approximate Quantity'
+  • Stamps / Collection/Lot: MISSING FIELD 'Condition'
+  • Stamps / Collection/Lot: MISSING FIELD 'Countries Included'
+  • Stamps / Collection/Lot: MISSING FIELD 'Listing Title'
+  • Stamps / Collection/Lot: MISSING FIELD 'Notable Stamps'
+  • Stamps / Collection/Lot: MISSING FIELD 'Trade Value'
+  • Stamps / Collection/Lot: MISSING FIELD 'Years Included'
+  • Stamps / Single Stamp: EXTRA FIELD 'certificationNumber'
+  • Stamps / Single Stamp: EXTRA FIELD 'condition'
+  • Stamps / Single Stamp: EXTRA FIELD 'country'
+  • Stamps / Single Stamp: EXTRA FIELD 'denomination'
+  • Stamps / Single Stamp: EXTRA FIELD 'grade'
+  • Stamps / Single Stamp: EXTRA FIELD 'gradingCompany'
+  • Stamps / Single Stamp: EXTRA FIELD 'hinged'
+  • Stamps / Single Stamp: EXTRA FIELD 'isGraded'
+  • Stamps / Single Stamp: EXTRA FIELD 'listingTitle'
+  • Stamps / Single Stamp: EXTRA FIELD 'mintOrUsed'
+  • Stamps / Single Stamp: EXTRA FIELD 'photos'
+  • Stamps / Single Stamp: EXTRA FIELD 'quantity'
+  • Stamps / Single Stamp: EXTRA FIELD 'scottNumberOrDescription'
+  • Stamps / Single Stamp: EXTRA FIELD 'tradeValue'
+  • Stamps / Single Stamp: EXTRA FIELD 'year'
+  • Stamps / Single Stamp: MISSING FIELD 'Certification Number'
+  • Stamps / Single Stamp: MISSING FIELD 'Condition'
+  • Stamps / Single Stamp: MISSING FIELD 'Country'
+  • Stamps / Single Stamp: MISSING FIELD 'Denomination'
+  • Stamps / Single Stamp: MISSING FIELD 'Grade'
+  • Stamps / Single Stamp: MISSING FIELD 'Grading Company'
+  • Stamps / Single Stamp: MISSING FIELD 'Hinged'
+  • Stamps / Single Stamp: MISSING FIELD 'Is Graded'
+  • Stamps / Single Stamp: MISSING FIELD 'Listing Title'
+  • Stamps / Single Stamp: MISSING FIELD 'Mint or Used'
+  • Stamps / Single Stamp: MISSING FIELD 'Quantity'
+  • Stamps / Single Stamp: MISSING FIELD 'Trade Value'
+  • Stamps / Single Stamp: MISSING FIELD 'Year'
+  • Stamps / Stamp Set / Sheet: EXTRA FIELD 'condition'
+  • Stamps / Stamp Set / Sheet: EXTRA FIELD 'country'
+  • Stamps / Stamp Set / Sheet: EXTRA FIELD 'listingTitle'
+  • Stamps / Stamp Set / Sheet: EXTRA FIELD 'mintOrUsed'
+  • Stamps / Stamp Set / Sheet: EXTRA FIELD 'numberOfStamps'
+  • Stamps / Stamp Set / Sheet: EXTRA FIELD 'photos'
+  • Stamps / Stamp Set / Sheet: EXTRA FIELD 'quantity'
+  • Stamps / Stamp Set / Sheet: EXTRA FIELD 'setNameDescription'
+  • Stamps / Stamp Set / Sheet: EXTRA FIELD 'sheetType'
+  • Stamps / Stamp Set / Sheet: EXTRA FIELD 'tradeValue'
+  • Stamps / Stamp Set / Sheet: EXTRA FIELD 'year'
+  • Stamps / Stamp Set / Sheet: MISSING FIELD 'Certification Number'
+  • Stamps / Stamp Set / Sheet: MISSING FIELD 'Condition'
+  • Stamps / Stamp Set / Sheet: MISSING FIELD 'Country'
+  • Stamps / Stamp Set / Sheet: MISSING FIELD 'Grade'
+  • Stamps / Stamp Set / Sheet: MISSING FIELD 'Grading Company'
+  • Stamps / Stamp Set / Sheet: MISSING FIELD 'Is Graded'
+  • Stamps / Stamp Set / Sheet: MISSING FIELD 'Listing Title'
+  • Stamps / Stamp Set / Sheet: MISSING FIELD 'Mint or Used'
+  • Stamps / Stamp Set / Sheet: MISSING FIELD 'Number of Stamps in Set'
+  • Stamps / Stamp Set / Sheet: MISSING FIELD 'Quantity'
+  • Stamps / Stamp Set / Sheet: MISSING FIELD 'Set Name'
+  • Stamps / Stamp Set / Sheet: MISSING FIELD 'Sheet Type'
+  • Stamps / Stamp Set / Sheet: MISSING FIELD 'Trade Value'
+  • Stamps / Stamp Set / Sheet: MISSING FIELD 'Year'
+  • Video Games / Accessory: EXTRA FIELD 'accessoryType'
+  • Video Games / Accessory: EXTRA FIELD 'certificationNumber'
+  • Video Games / Accessory: EXTRA FIELD 'condition'
+  • Video Games / Accessory: EXTRA FIELD 'grade'
+  • Video Games / Accessory: EXTRA FIELD 'gradingCompany'
+  • Video Games / Accessory: EXTRA FIELD 'isGraded'
+  • Video Games / Accessory: EXTRA FIELD 'listingTitle'
+  • Video Games / Accessory: EXTRA FIELD 'manufacturer'
+  • Video Games / Accessory: EXTRA FIELD 'photos'
+  • Video Games / Accessory: EXTRA FIELD 'platform'
+  • Video Games / Accessory: EXTRA FIELD 'quantity'
+  • Video Games / Accessory: EXTRA FIELD 'region'
+  • Video Games / Accessory: EXTRA FIELD 'tradeValue'
+  • Video Games / Accessory: EXTRA FIELD 'workingCondition'
+  • Video Games / Accessory: MISSING FIELD 'Accessory Name'
+  • Video Games / Accessory: MISSING FIELD 'Accessory Type'
+  • Video Games / Accessory: MISSING FIELD 'Condition'
+  • Video Games / Accessory: MISSING FIELD 'Listing Title'
+  • Video Games / Accessory: MISSING FIELD 'Manufacturer'
+  • Video Games / Accessory: MISSING FIELD 'Original Packaging'
+  • Video Games / Accessory: MISSING FIELD 'Platform'
+  • Video Games / Accessory: MISSING FIELD 'Quantity'
+  • Video Games / Accessory: MISSING FIELD 'Trade Value'
+  • Video Games / Accessory: MISSING FIELD 'Working Condition'
+  • Video Games / Collection/Lot: EXTRA FIELD 'approximateItemCount'
+  • Video Games / Collection/Lot: EXTRA FIELD 'condition'
+  • Video Games / Collection/Lot: EXTRA FIELD 'includesGradedGames'
+  • Video Games / Collection/Lot: EXTRA FIELD 'listingTitle'
+  • Video Games / Collection/Lot: EXTRA FIELD 'notableGamesConsoles'
+  • Video Games / Collection/Lot: EXTRA FIELD 'photos'
+  • Video Games / Collection/Lot: EXTRA FIELD 'platformsIncluded'
+  • Video Games / Collection/Lot: EXTRA FIELD 'quantity'
+  • Video Games / Collection/Lot: EXTRA FIELD 'tradeValue'
+  • Video Games / Collection/Lot: MISSING FIELD 'Approximate Item Count'
+  • Video Games / Collection/Lot: MISSING FIELD 'Condition'
+  • Video Games / Collection/Lot: MISSING FIELD 'Includes Graded Games'
+  • Video Games / Collection/Lot: MISSING FIELD 'Listing Title'
+  • Video Games / Collection/Lot: MISSING FIELD 'Notable Games / Consoles'
+  • Video Games / Collection/Lot: MISSING FIELD 'Platforms Included'
+  • Video Games / Collection/Lot: MISSING FIELD 'Trade Value'
+  • Video Games / Console: EXTRA FIELD 'cablesIncluded'
+  • Video Games / Console: EXTRA FIELD 'certificationNumber'
+  • Video Games / Console: EXTRA FIELD 'condition'
+  • Video Games / Console: EXTRA FIELD 'consoleName'
+  • Video Games / Console: EXTRA FIELD 'controllersIncluded'
+  • Video Games / Console: EXTRA FIELD 'grade'
+  • Video Games / Console: EXTRA FIELD 'gradingCompany'
+  • Video Games / Console: EXTRA FIELD 'isGraded'
+  • Video Games / Console: EXTRA FIELD 'listingTitle'
+  • Video Games / Console: EXTRA FIELD 'modelNumber'
+  • Video Games / Console: EXTRA FIELD 'originalBoxIncluded'
+  • Video Games / Console: EXTRA FIELD 'photos'
+  • Video Games / Console: EXTRA FIELD 'quantity'
+  • Video Games / Console: EXTRA FIELD 'region'
+  • Video Games / Console: EXTRA FIELD 'tradeValue'
+  • Video Games / Console: EXTRA FIELD 'workingCondition'
+  • Video Games / Console: MISSING FIELD 'Cables Included'
+  • Video Games / Console: MISSING FIELD 'Condition'
+  • Video Games / Console: MISSING FIELD 'Console Name'
+  • Video Games / Console: MISSING FIELD 'Controllers Included'
+  • Video Games / Console: MISSING FIELD 'Listing Title'
+  • Video Games / Console: MISSING FIELD 'Model Number'
+  • Video Games / Console: MISSING FIELD 'Original Box Included'
+  • Video Games / Console: MISSING FIELD 'Quantity'
+  • Video Games / Console: MISSING FIELD 'Region'
+  • Video Games / Console: MISSING FIELD 'Trade Value'
+  • Video Games / Console: MISSING FIELD 'Working Condition'
+  • Video Games / Game: EXTRA FIELD 'certificationNumber'
+  • Video Games / Game: EXTRA FIELD 'completeInBox'
+  • Video Games / Game: EXTRA FIELD 'condition'
+  • Video Games / Game: EXTRA FIELD 'gameTitle'
+  • Video Games / Game: EXTRA FIELD 'grade'
+  • Video Games / Game: EXTRA FIELD 'gradingCompany'
+  • Video Games / Game: EXTRA FIELD 'isGraded'
+  • Video Games / Game: EXTRA FIELD 'listingTitle'
+  • Video Games / Game: EXTRA FIELD 'manualIncluded'
+  • Video Games / Game: EXTRA FIELD 'originalCaseIncluded'
+  • Video Games / Game: EXTRA FIELD 'photos'
+  • Video Games / Game: EXTRA FIELD 'platform'
+  • Video Games / Game: EXTRA FIELD 'quantity'
+  • Video Games / Game: EXTRA FIELD 'region'
+  • Video Games / Game: EXTRA FIELD 'releaseYear'
+  • Video Games / Game: EXTRA FIELD 'sealed'
+  • Video Games / Game: EXTRA FIELD 'tradeValue'
+  • Video Games / Game: MISSING FIELD 'Certification Number'
+  • Video Games / Game: MISSING FIELD 'Complete In Box'
+  • Video Games / Game: MISSING FIELD 'Condition'
+  • Video Games / Game: MISSING FIELD 'Game Title'
+  • Video Games / Game: MISSING FIELD 'Grade'
+  • Video Games / Game: MISSING FIELD 'Grading Company'
+  • Video Games / Game: MISSING FIELD 'Is Graded'
+  • Video Games / Game: MISSING FIELD 'Listing Title'
+  • Video Games / Game: MISSING FIELD 'Manual Included'
+  • Video Games / Game: MISSING FIELD 'Original Case Included'
+  • Video Games / Game: MISSING FIELD 'Platform'
+  • Video Games / Game: MISSING FIELD 'Quantity'
+  • Video Games / Game: MISSING FIELD 'Region'
+  • Video Games / Game: MISSING FIELD 'Release Year'
+  • Video Games / Game: MISSING FIELD 'Sealed'
+  • Video Games / Game: MISSING FIELD 'Trade Value'
+  • Vintage Toys / Action Figure / Doll: EXTRA FIELD 'accessoriesIncluded'
+  • Vintage Toys / Action Figure / Doll: EXTRA FIELD 'brand'
+  • Vintage Toys / Action Figure / Doll: EXTRA FIELD 'certificationNumber'
+  • Vintage Toys / Action Figure / Doll: EXTRA FIELD 'character'
+  • Vintage Toys / Action Figure / Doll: EXTRA FIELD 'complete'
+  • Vintage Toys / Action Figure / Doll: EXTRA FIELD 'condition'
+  • Vintage Toys / Action Figure / Doll: EXTRA FIELD 'franchise'
+  • Vintage Toys / Action Figure / Doll: EXTRA FIELD 'grade'
+  • Vintage Toys / Action Figure / Doll: EXTRA FIELD 'gradingCompany'
+  • Vintage Toys / Action Figure / Doll: EXTRA FIELD 'isGraded'
+  • Vintage Toys / Action Figure / Doll: EXTRA FIELD 'listingTitle'
+  • Vintage Toys / Action Figure / Doll: EXTRA FIELD 'packagingType'
+  • Vintage Toys / Action Figure / Doll: EXTRA FIELD 'photos'
+  • Vintage Toys / Action Figure / Doll: EXTRA FIELD 'quantity'
+  • Vintage Toys / Action Figure / Doll: EXTRA FIELD 'toyName'
+  • Vintage Toys / Action Figure / Doll: EXTRA FIELD 'tradeValue'
+  • Vintage Toys / Action Figure / Doll: EXTRA FIELD 'year'
+  • Vintage Toys / Action Figure / Doll: MISSING FIELD 'Accessories Included'
+  • Vintage Toys / Action Figure / Doll: MISSING FIELD 'Brand'
+  • Vintage Toys / Action Figure / Doll: MISSING FIELD 'Certification Number'
+  • Vintage Toys / Action Figure / Doll: MISSING FIELD 'Complete'
+  • Vintage Toys / Action Figure / Doll: MISSING FIELD 'Condition'
+  • Vintage Toys / Action Figure / Doll: MISSING FIELD 'Franchise'
+  • Vintage Toys / Action Figure / Doll: MISSING FIELD 'Grade'
+  • Vintage Toys / Action Figure / Doll: MISSING FIELD 'Grading Company'
+  • Vintage Toys / Action Figure / Doll: MISSING FIELD 'Is Graded'
+  • Vintage Toys / Action Figure / Doll: MISSING FIELD 'Listing Title'
+  • Vintage Toys / Action Figure / Doll: MISSING FIELD 'Packaging Type'
+  • Vintage Toys / Action Figure / Doll: MISSING FIELD 'Quantity'
+  • Vintage Toys / Action Figure / Doll: MISSING FIELD 'Toy Name / Character'
+  • Vintage Toys / Action Figure / Doll: MISSING FIELD 'Trade Value'
+  • Vintage Toys / Action Figure / Doll: MISSING FIELD 'Year'
+  • Vintage Toys / Board Game / Puzzle: EXTRA FIELD 'boxIncluded'
+  • Vintage Toys / Board Game / Puzzle: EXTRA FIELD 'complete'
+  • Vintage Toys / Board Game / Puzzle: EXTRA FIELD 'condition'
+  • Vintage Toys / Board Game / Puzzle: EXTRA FIELD 'gamePuzzleName'
+  • Vintage Toys / Board Game / Puzzle: EXTRA FIELD 'instructionsIncluded'
+  • Vintage Toys / Board Game / Puzzle: EXTRA FIELD 'listingTitle'
+  • Vintage Toys / Board Game / Puzzle: EXTRA FIELD 'missingPieces'
+  • Vintage Toys / Board Game / Puzzle: EXTRA FIELD 'numberOfPieces'
+  • Vintage Toys / Board Game / Puzzle: EXTRA FIELD 'photos'
+  • Vintage Toys / Board Game / Puzzle: EXTRA FIELD 'publisherBrand'
+  • Vintage Toys / Board Game / Puzzle: EXTRA FIELD 'quantity'
+  • Vintage Toys / Board Game / Puzzle: EXTRA FIELD 'tradeValue'
+  • Vintage Toys / Board Game / Puzzle: EXTRA FIELD 'year'
+  • Vintage Toys / Board Game / Puzzle: MISSING FIELD 'Box Included'
+  • Vintage Toys / Board Game / Puzzle: MISSING FIELD 'Certification Number'
+  • Vintage Toys / Board Game / Puzzle: MISSING FIELD 'Complete'
+  • Vintage Toys / Board Game / Puzzle: MISSING FIELD 'Condition'
+  • Vintage Toys / Board Game / Puzzle: MISSING FIELD 'Game / Puzzle Name'
+  • Vintage Toys / Board Game / Puzzle: MISSING FIELD 'Grade'
+  • Vintage Toys / Board Game / Puzzle: MISSING FIELD 'Grading Company'
+  • Vintage Toys / Board Game / Puzzle: MISSING FIELD 'Instructions Included'
+  • Vintage Toys / Board Game / Puzzle: MISSING FIELD 'Is Graded'
+  • Vintage Toys / Board Game / Puzzle: MISSING FIELD 'Listing Title'
+  • Vintage Toys / Board Game / Puzzle: MISSING FIELD 'Missing Pieces'
+  • Vintage Toys / Board Game / Puzzle: MISSING FIELD 'Number of Pieces'
+  • Vintage Toys / Board Game / Puzzle: MISSING FIELD 'Publisher / Brand'
+  • Vintage Toys / Board Game / Puzzle: MISSING FIELD 'Quantity'
+  • Vintage Toys / Board Game / Puzzle: MISSING FIELD 'Trade Value'
+  • Vintage Toys / Board Game / Puzzle: MISSING FIELD 'Year'
+  • Vintage Toys / Collection/Lot: EXTRA FIELD 'approximateItemCount'
+  • Vintage Toys / Collection/Lot: EXTRA FIELD 'brandsIncluded'
+  • Vintage Toys / Collection/Lot: EXTRA FIELD 'condition'
+  • Vintage Toys / Collection/Lot: EXTRA FIELD 'franchisesIncluded'
+  • Vintage Toys / Collection/Lot: EXTRA FIELD 'listingTitle'
+  • Vintage Toys / Collection/Lot: EXTRA FIELD 'notableItems'
+  • Vintage Toys / Collection/Lot: EXTRA FIELD 'photos'
+  • Vintage Toys / Collection/Lot: EXTRA FIELD 'quantity'
+  • Vintage Toys / Collection/Lot: EXTRA FIELD 'tradeValue'
+  • Vintage Toys / Collection/Lot: MISSING FIELD 'Approximate Item Count'
+  • Vintage Toys / Collection/Lot: MISSING FIELD 'Brands Included'
+  • Vintage Toys / Collection/Lot: MISSING FIELD 'Condition'
+  • Vintage Toys / Collection/Lot: MISSING FIELD 'Franchises Included'
+  • Vintage Toys / Collection/Lot: MISSING FIELD 'Listing Title'
+  • Vintage Toys / Collection/Lot: MISSING FIELD 'Notable Items'
+  • Vintage Toys / Collection/Lot: MISSING FIELD 'Trade Value'
+  • Vintage Toys / Electronic Toy: EXTRA FIELD 'batteryCompartmentCondition'
+  • Vintage Toys / Electronic Toy: EXTRA FIELD 'brand'
+  • Vintage Toys / Electronic Toy: EXTRA FIELD 'condition'
+  • Vintage Toys / Electronic Toy: EXTRA FIELD 'lightsWork'
+  • Vintage Toys / Electronic Toy: EXTRA FIELD 'listingTitle'
+  • Vintage Toys / Electronic Toy: EXTRA FIELD 'photos'
+  • Vintage Toys / Electronic Toy: EXTRA FIELD 'quantity'
+  • Vintage Toys / Electronic Toy: EXTRA FIELD 'soundWorks'
+  • Vintage Toys / Electronic Toy: EXTRA FIELD 'tested'
+  • Vintage Toys / Electronic Toy: EXTRA FIELD 'toyName'
+  • Vintage Toys / Electronic Toy: EXTRA FIELD 'tradeValue'
+  • Vintage Toys / Electronic Toy: EXTRA FIELD 'workingCondition'
+  • Vintage Toys / Electronic Toy: EXTRA FIELD 'year'
+  • Vintage Toys / Electronic Toy: MISSING FIELD 'Battery Compartment Condition'
+  • Vintage Toys / Electronic Toy: MISSING FIELD 'Brand'
+  • Vintage Toys / Electronic Toy: MISSING FIELD 'Certification Number'
+  • Vintage Toys / Electronic Toy: MISSING FIELD 'Condition'
+  • Vintage Toys / Electronic Toy: MISSING FIELD 'Grade'
+  • Vintage Toys / Electronic Toy: MISSING FIELD 'Grading Company'
+  • Vintage Toys / Electronic Toy: MISSING FIELD 'Is Graded'
+  • Vintage Toys / Electronic Toy: MISSING FIELD 'Lights Work'
+  • Vintage Toys / Electronic Toy: MISSING FIELD 'Listing Title'
+  • Vintage Toys / Electronic Toy: MISSING FIELD 'Quantity'
+  • Vintage Toys / Electronic Toy: MISSING FIELD 'Sound Works'
+  • Vintage Toys / Electronic Toy: MISSING FIELD 'Tested'
+  • Vintage Toys / Electronic Toy: MISSING FIELD 'Toy Name'
+  • Vintage Toys / Electronic Toy: MISSING FIELD 'Trade Value'
+  • Vintage Toys / Electronic Toy: MISSING FIELD 'Working Condition'
+  • Vintage Toys / Electronic Toy: MISSING FIELD 'Year'
+  • Vintage Toys / Model / Kit: EXTRA FIELD 'brand'
+  • Vintage Toys / Model / Kit: EXTRA FIELD 'builtOrUnbuilt'
+  • Vintage Toys / Model / Kit: EXTRA FIELD 'complete'
+  • Vintage Toys / Model / Kit: EXTRA FIELD 'condition'
+  • Vintage Toys / Model / Kit: EXTRA FIELD 'instructionsIncluded'
+  • Vintage Toys / Model / Kit: EXTRA FIELD 'listingTitle'
+  • Vintage Toys / Model / Kit: EXTRA FIELD 'modelKitName'
+  • Vintage Toys / Model / Kit: EXTRA FIELD 'photos'
+  • Vintage Toys / Model / Kit: EXTRA FIELD 'quantity'
+  • Vintage Toys / Model / Kit: EXTRA FIELD 'scale'
+  • Vintage Toys / Model / Kit: EXTRA FIELD 'tradeValue'
+  • Vintage Toys / Model / Kit: MISSING FIELD 'Brand'
+  • Vintage Toys / Model / Kit: MISSING FIELD 'Built or Unbuilt'
+  • Vintage Toys / Model / Kit: MISSING FIELD 'Certification Number'
+  • Vintage Toys / Model / Kit: MISSING FIELD 'Complete'
+  • Vintage Toys / Model / Kit: MISSING FIELD 'Condition'
+  • Vintage Toys / Model / Kit: MISSING FIELD 'Grade'
+  • Vintage Toys / Model / Kit: MISSING FIELD 'Grading Company'
+  • Vintage Toys / Model / Kit: MISSING FIELD 'Instructions Included'
+  • Vintage Toys / Model / Kit: MISSING FIELD 'Is Graded'
+  • Vintage Toys / Model / Kit: MISSING FIELD 'Listing Title'
+  • Vintage Toys / Model / Kit: MISSING FIELD 'Model / Kit Name'
+  • Vintage Toys / Model / Kit: MISSING FIELD 'Quantity'
+  • Vintage Toys / Model / Kit: MISSING FIELD 'Scale'
+  • Vintage Toys / Model / Kit: MISSING FIELD 'Trade Value'
+  • Vintage Toys / Playset: EXTRA FIELD 'brand'
+  • Vintage Toys / Playset: EXTRA FIELD 'complete'
+  • Vintage Toys / Playset: EXTRA FIELD 'condition'
+  • Vintage Toys / Playset: EXTRA FIELD 'franchise'
+  • Vintage Toys / Playset: EXTRA FIELD 'instructionsIncluded'
+  • Vintage Toys / Playset: EXTRA FIELD 'listingTitle'
+  • Vintage Toys / Playset: EXTRA FIELD 'missingPieces'
+  • Vintage Toys / Playset: EXTRA FIELD 'originalBoxIncluded'
+  • Vintage Toys / Playset: EXTRA FIELD 'photos'
+  • Vintage Toys / Playset: EXTRA FIELD 'playsetName'
+  • Vintage Toys / Playset: EXTRA FIELD 'quantity'
+  • Vintage Toys / Playset: EXTRA FIELD 'tradeValue'
+  • Vintage Toys / Playset: EXTRA FIELD 'year'
+  • Vintage Toys / Playset: MISSING FIELD 'Brand'
+  • Vintage Toys / Playset: MISSING FIELD 'Certification Number'
+  • Vintage Toys / Playset: MISSING FIELD 'Complete'
+  • Vintage Toys / Playset: MISSING FIELD 'Condition'
+  • Vintage Toys / Playset: MISSING FIELD 'Franchise'
+  • Vintage Toys / Playset: MISSING FIELD 'Grade'
+  • Vintage Toys / Playset: MISSING FIELD 'Grading Company'
+  • Vintage Toys / Playset: MISSING FIELD 'Instructions Included'
+  • Vintage Toys / Playset: MISSING FIELD 'Is Graded'
+  • Vintage Toys / Playset: MISSING FIELD 'Listing Title'
+  • Vintage Toys / Playset: MISSING FIELD 'Missing Pieces'
+  • Vintage Toys / Playset: MISSING FIELD 'Original Box Included'
+  • Vintage Toys / Playset: MISSING FIELD 'Playset Name'
+  • Vintage Toys / Playset: MISSING FIELD 'Quantity'
+  • Vintage Toys / Playset: MISSING FIELD 'Trade Value'
+  • Vintage Toys / Playset: MISSING FIELD 'Year'
+  • Vintage Toys / Plush / Stuffed Toy: EXTRA FIELD 'brand'
+  • Vintage Toys / Plush / Stuffed Toy: EXTRA FIELD 'cleanlinessOdorNotes'
+  • Vintage Toys / Plush / Stuffed Toy: EXTRA FIELD 'condition'
+  • Vintage Toys / Plush / Stuffed Toy: EXTRA FIELD 'listingTitle'
+  • Vintage Toys / Plush / Stuffed Toy: EXTRA FIELD 'photos'
+  • Vintage Toys / Plush / Stuffed Toy: EXTRA FIELD 'quantity'
+  • Vintage Toys / Plush / Stuffed Toy: EXTRA FIELD 'tagsAttached'
+  • Vintage Toys / Plush / Stuffed Toy: EXTRA FIELD 'toyNameCharacter'
+  • Vintage Toys / Plush / Stuffed Toy: EXTRA FIELD 'tradeValue'
+  • Vintage Toys / Plush / Stuffed Toy: EXTRA FIELD 'year'
+  • Vintage Toys / Plush / Stuffed Toy: MISSING FIELD 'Brand'
+  • Vintage Toys / Plush / Stuffed Toy: MISSING FIELD 'Certification Number'
+  • Vintage Toys / Plush / Stuffed Toy: MISSING FIELD 'Cleanliness / Odor Notes'
+  • Vintage Toys / Plush / Stuffed Toy: MISSING FIELD 'Condition'
+  • Vintage Toys / Plush / Stuffed Toy: MISSING FIELD 'Grade'
+  • Vintage Toys / Plush / Stuffed Toy: MISSING FIELD 'Grading Company'
+  • Vintage Toys / Plush / Stuffed Toy: MISSING FIELD 'Is Graded'
+  • Vintage Toys / Plush / Stuffed Toy: MISSING FIELD 'Listing Title'
+  • Vintage Toys / Plush / Stuffed Toy: MISSING FIELD 'Quantity'
+  • Vintage Toys / Plush / Stuffed Toy: MISSING FIELD 'Tags Attached'
+  • Vintage Toys / Plush / Stuffed Toy: MISSING FIELD 'Toy Name / Character'
+  • Vintage Toys / Plush / Stuffed Toy: MISSING FIELD 'Trade Value'
+  • Vintage Toys / Plush / Stuffed Toy: MISSING FIELD 'Year'
+  • Vintage Toys / Vehicle: EXTRA FIELD 'brand'
+  • Vintage Toys / Vehicle: EXTRA FIELD 'condition'
+  • Vintage Toys / Vehicle: EXTRA FIELD 'franchise'
+  • Vintage Toys / Vehicle: EXTRA FIELD 'listingTitle'
+  • Vintage Toys / Vehicle: EXTRA FIELD 'packagingType'
+  • Vintage Toys / Vehicle: EXTRA FIELD 'photos'
+  • Vintage Toys / Vehicle: EXTRA FIELD 'quantity'
+  • Vintage Toys / Vehicle: EXTRA FIELD 'tradeValue'
+  • Vintage Toys / Vehicle: EXTRA FIELD 'vehicleName'
+  • Vintage Toys / Vehicle: EXTRA FIELD 'vehicleType'
+  • Vintage Toys / Vehicle: EXTRA FIELD 'workingFeatures'
+  • Vintage Toys / Vehicle: EXTRA FIELD 'year'
+  • Vintage Toys / Vehicle: MISSING FIELD 'Brand'
+  • Vintage Toys / Vehicle: MISSING FIELD 'Certification Number'
+  • Vintage Toys / Vehicle: MISSING FIELD 'Condition'
+  • Vintage Toys / Vehicle: MISSING FIELD 'Franchise'
+  • Vintage Toys / Vehicle: MISSING FIELD 'Grade'
+  • Vintage Toys / Vehicle: MISSING FIELD 'Grading Company'
+  • Vintage Toys / Vehicle: MISSING FIELD 'Is Graded'
+  • Vintage Toys / Vehicle: MISSING FIELD 'Listing Title'
+  • Vintage Toys / Vehicle: MISSING FIELD 'Packaging Type'
+  • Vintage Toys / Vehicle: MISSING FIELD 'Quantity'
+  • Vintage Toys / Vehicle: MISSING FIELD 'Trade Value'
+  • Vintage Toys / Vehicle: MISSING FIELD 'Vehicle Name'
+  • Vintage Toys / Vehicle: MISSING FIELD 'Vehicle Type'
+  • Vintage Toys / Vehicle: MISSING FIELD 'Working Features'
+  • Vintage Toys / Vehicle: MISSING FIELD 'Year'
