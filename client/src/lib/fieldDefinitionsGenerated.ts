@@ -2359,21 +2359,19 @@ export const VIDEO_GAMES_COLLECTION_LOT_FIELDS: FieldDefinition[] = [
     inputType: 'currency',
     requirement: 'required',
   },
-  {
+    {
     name: 'condition',
     label: 'Condition',
     inputType: 'dropdown',
-    requirement: 'conditional',
+    requirement: 'required',
     dropdownOptions: ['Mint', 'Near Mint', 'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'],
-    conditionalLogic: 'Is Graded = No',
   },
   {
-    name: 'photos',
-    label: 'Photos',
-    inputType: 'image-upload',
+    name: 'approximateItemCount',
+    label: 'Approximate Item Count',
+    inputType: 'number',
     requirement: 'required',
   },
-
   {
     name: 'quantity',
     label: 'Quantity',
@@ -2381,18 +2379,11 @@ export const VIDEO_GAMES_COLLECTION_LOT_FIELDS: FieldDefinition[] = [
     maxLength: 4,
     requirement: 'recommended',
   },
-
   {
     name: 'platformsIncluded',
     label: 'Platforms Included',
     inputType: 'textarea',
     requirement: 'recommended',
-  },
-  {
-    name: 'approximateItemCount',
-    label: 'Approximate Item Count',
-    inputType: 'number',
-    requirement: 'required',
   },
   {
     name: 'notableGamesConsoles',
