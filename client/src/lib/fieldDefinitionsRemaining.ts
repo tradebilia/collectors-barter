@@ -689,7 +689,88 @@ const VIDEO_GAMES_CONSOLE_FIELDS: FieldDefinition[] = [
 // MOVIES
 // ============================================================================
 
-const MOVIES_VHS_FIELDS: FieldDefinition[] = [
+const MOVIES_INDIVIDUAL_MOVIE_FIELDS: FieldDefinition[] = [
+  COMMON_FIELDS.LISTING_TITLE_FIELD,
+  COMMON_FIELDS.TRADE_VALUE_FIELD,
+  {
+    ...COMMON_FIELDS.CONDITION_FIELD,
+    conditionalLogic: 'Is Graded = No',
+    gridColumn: 'third',
+  },
+  {
+    name: 'quantity',
+    label: 'Quantity',
+    inputType: 'number',
+    requirement: 'recommended',
+    gridColumn: 'third',
+  },
+  {
+    name: 'title',
+    label: 'Title',
+    inputType: 'text',
+    requirement: 'required',
+    maxLength: 80,
+    gridColumn: 'third',
+  },
+  {
+    name: 'format',
+    label: 'Format',
+    inputType: 'dropdown',
+    requirement: 'required',
+    dropdownOptions: ['DVD', 'Blu-ray', '4K UHD', 'VHS', 'LaserDisc', 'Other'],
+    gridColumn: 'third',
+  },
+  {
+    name: 'releaseYear',
+    label: 'Release Year',
+    inputType: 'number',
+    requirement: 'recommended',
+    gridColumn: 'third',
+  },
+  {
+    name: 'edition',
+    label: 'Edition',
+    inputType: 'text',
+    requirement: 'optional',
+    gridColumn: 'third',
+  },
+  {
+    name: 'sealed',
+    label: 'Sealed',
+    inputType: 'dropdown',
+    requirement: 'recommended',
+    dropdownOptions: ['Yes', 'No'],
+    gridColumn: 'third',
+  },
+  {
+    name: 'region',
+    label: 'Region',
+    inputType: 'text',
+    requirement: 'optional',
+    gridColumn: 'third',
+  },
+  {
+    ...COMMON_FIELDS.IS_GRADED_FIELD,
+    gridColumn: 'third',
+  },
+  {
+    ...COMMON_FIELDS.GRADING_COMPANY_FIELD,
+    dropdownOptions: GRADING_COMPANIES_BY_CATEGORY.movies,
+    supportsOther: true,
+    otherFieldName: 'Custom Grading Company',
+    gridColumn: 'third',
+  },
+  {
+    ...COMMON_FIELDS.GRADE_FIELD,
+    gridColumn: 'third',
+  },
+  {
+    ...COMMON_FIELDS.CERTIFICATION_NUMBER_FIELD,
+    gridColumn: 'third',
+  },
+];
+
+const MOVIES_BOX_SET_FIELDS: FieldDefinition[] = [
   COMMON_FIELDS.LISTING_TITLE_FIELD,
   COMMON_FIELDS.TRADE_VALUE_FIELD,
   {
@@ -738,53 +819,15 @@ const MOVIES_VHS_FIELDS: FieldDefinition[] = [
   COMMON_FIELDS.CERTIFICATION_NUMBER_FIELD,
 ];
 
-const MOVIES_DVD_FIELDS: FieldDefinition[] = [
+const MOVIES_COLLECTION_LOT_FIELDS: FieldDefinition[] = [
   COMMON_FIELDS.LISTING_TITLE_FIELD,
   COMMON_FIELDS.TRADE_VALUE_FIELD,
   {
     ...COMMON_FIELDS.CONDITION_FIELD,
-    conditionalLogic: 'Is Graded = No',
+    conditionalLogic: undefined,
+    gridColumn: 'half',
   },
   COMMON_FIELDS.QUANTITY_FIELD,
-  {
-    name: 'title',
-    label: 'Title',
-    inputType: 'text',
-    requirement: 'required',
-    maxLength: 80,
-  },
-  {
-    name: 'releaseYear',
-    label: 'Release Year',
-    inputType: 'number',
-    requirement: 'recommended',
-  },
-  {
-    name: 'studio',
-    label: 'Studio',
-    inputType: 'text',
-    requirement: 'recommended',
-  },
-  {
-    name: 'format',
-    label: 'Format',
-    inputType: 'text',
-    requirement: 'recommended',
-  },
-  {
-    name: 'sealed',
-    label: 'Sealed',
-    inputType: 'dropdown',
-    requirement: 'optional',
-    dropdownOptions: ['Yes', 'No'],
-  },
-  COMMON_FIELDS.IS_GRADED_FIELD,
-  {
-    ...COMMON_FIELDS.GRADING_COMPANY_FIELD,
-    dropdownOptions: GRADING_COMPANIES_BY_CATEGORY.movies,
-  },
-  COMMON_FIELDS.GRADE_FIELD,
-  COMMON_FIELDS.CERTIFICATION_NUMBER_FIELD,
 ];
 
 // ============================================================================
@@ -1333,8 +1376,9 @@ export const CATEGORY_ITEM_TYPES = {
     console: VIDEO_GAMES_CONSOLE_FIELDS,
   },
   movies: {
-    vhs: MOVIES_VHS_FIELDS,
-    dvd: MOVIES_DVD_FIELDS,
+    individual_movie: MOVIES_INDIVIDUAL_MOVIE_FIELDS,
+    box_set: MOVIES_BOX_SET_FIELDS,
+    collection_lot: MOVIES_COLLECTION_LOT_FIELDS,
   },
   autographs: {
     signed_item: AUTOGRAPHS_SIGNED_ITEM_FIELDS,

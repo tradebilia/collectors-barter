@@ -57,6 +57,7 @@ const ITEM_TYPE_DISPLAY_NAMES: Record<string, string> = {
   accessory: 'Accessory',
   individual_movie: 'Individual Movie',
   box_set: 'Box Set',
+  movies_collection_lot: 'Collection / Lot',
   signed_item: 'Signed Item',
   action_figure: 'Action Figure / Doll',
   vehicle: 'Vehicle',
