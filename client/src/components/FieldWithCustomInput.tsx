@@ -25,6 +25,27 @@ export const FieldWithCustomInput: React.FC<FieldWithCustomInputProps> = ({
   const customFieldKey = `custom${field.name.charAt(0).toUpperCase() + field.name.slice(1)}`;
   const customValue = formData[customFieldKey] as string || '';
 
+  // For textarea fields, render without flex constraints
+  if (field.inputType === 'textarea') {
+    return (
+      <div className="w-full">
+        <label className="text-sm font-medium text-white block mb-2">
+          {field.label}
+          {field.requirement === 'required' && <span className="text-red-500 ml-1">*</span>}
+        </label>
+        <DynamicFieldRenderer
+          field={field}
+          value={value}
+          onChange={onChange}
+          onOtherChange={onOtherChange}
+          disabled={disabled}
+          error={error}
+          hideLabel={true}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="w-full">
       {/* Labels Row */}
