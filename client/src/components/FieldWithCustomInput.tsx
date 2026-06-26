@@ -26,27 +26,23 @@ export const FieldWithCustomInput: React.FC<FieldWithCustomInputProps> = ({
   const customValue = formData[customFieldKey] as string || '';
 
   return (
-    <div className="w-full">
+    <div className="w-full flex flex-col">
       {/* Labels Row */}
-      <div className="flex gap-3 mb-2">
-        <div className="flex-1">
-          <label className="text-sm font-medium text-white block">
-            {field.label}
-            {field.requirement === 'required' && <span className="text-red-500 ml-1">*</span>}
-          </label>
-        </div>
+      <div className="flex gap-2 mb-2 flex-wrap">
+        <label className="text-sm font-medium text-white">
+          {field.label}
+          {field.requirement === 'required' && <span className="text-red-500 ml-1">*</span>}
+        </label>
         {showCustomInput && (
-          <div className="flex-1">
-            <label className="text-sm font-medium text-white block">
-              {field.otherFieldName || `Custom ${field.label}`}
-            </label>
-          </div>
+          <label className="text-sm font-medium text-white">
+            {field.otherFieldName || `Custom ${field.label}`}
+          </label>
         )}
       </div>
       
       {/* Inputs Row */}
-      <div className="flex gap-3">
-        <div className="flex-1">
+      <div className="flex gap-2 flex-wrap">
+        <div className={showCustomInput ? "flex-1 min-w-[120px]" : "w-full"}>
           <DynamicFieldRenderer
             field={field}
             value={value}
@@ -58,7 +54,7 @@ export const FieldWithCustomInput: React.FC<FieldWithCustomInputProps> = ({
           />
         </div>
         {showCustomInput && (
-          <div className="flex-1">
+          <div className="flex-1 min-w-[120px]">
             <input
               type="text"
               value={customValue}
