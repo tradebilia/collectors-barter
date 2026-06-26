@@ -539,7 +539,7 @@ const AUTOGRAPHS_SIGNED_ITEM_FIELDS: FieldDefinition[] = [
     dropdownOptions: ['PSA/DNA', 'JSA', 'Beckett Authentication Services', 'Other'],
     supportsOther: true,
     conditionalLogic: 'Authentication Included = Yes',
-    gridColumn: 'third',
+    gridColumn: 'half',
   },
   {
     name: 'authenticationType',
@@ -549,7 +549,7 @@ const AUTOGRAPHS_SIGNED_ITEM_FIELDS: FieldDefinition[] = [
     dropdownOptions: ['COA (Card)', 'LOA (Letter)', 'Encapsulated (Slab)', 'Other'],
     supportsOther: true,
     conditionalLogic: 'Authentication Included = Yes',
-    gridColumn: 'third',
+    gridColumn: 'half',
   },
   {
     name: 'certificateNumber',
