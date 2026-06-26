@@ -1400,7 +1400,7 @@ export const POKEMON_UNOPENED_PRODUCT_FIELDS: FieldDefinition[] = [
   },
   {
     name: 'releaseYear',
-    label: 'Release Year',
+    label: 'Year',
     inputType: 'number',
     requirement: 'required',
     validation: { min: 1900, max: 2100 },
