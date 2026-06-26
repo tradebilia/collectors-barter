@@ -42,7 +42,7 @@ export const AUTOGRAPHS_SIGNED_ITEM_FIELDS: FieldDefinition[] = [
     supportsOther: true,
     otherFieldName: 'Custom Signed Item Type',
   },
-  // Row 1: Quantity + Autograph Category (Col 1), (Col 2 empty), Custom Autograph Category (Col 3), Authentication Included (Col 4)
+  // Row 1: Quantity (Col1), Autograph Category (Col2), Custom Autograph Category (Col3), Authentication Included (Col4)
   {
     name: 'quantity',
     label: 'Quantity',
@@ -61,6 +61,14 @@ export const AUTOGRAPHS_SIGNED_ITEM_FIELDS: FieldDefinition[] = [
     dropdownOptions: ['Sports', 'Entertainment', 'Historical', 'Music', 'Other'],
     supportsOther: true,
     otherFieldName: 'Custom Autograph Category',
+    gridColumn: 'third',
+  },
+  {
+    name: 'customAutographCategory',
+    label: 'Custom Autograph Category',
+    inputType: 'text',
+    requirement: 'conditional',
+    conditionalLogic: 'Autograph Category = Other',
     gridColumn: 'third',
   },
   {
