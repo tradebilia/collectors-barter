@@ -374,22 +374,46 @@ const STAMPS_STAMP_SET_FIELDS: FieldDefinition[] = [
 const STAMPS_COLLECTION_LOT_FIELDS: FieldDefinition[] = [
   COMMON_FIELDS.LISTING_TITLE_FIELD,
   COMMON_FIELDS.TRADE_VALUE_FIELD,
-  
-  COMMON_FIELDS.DESCRIPTION_FIELD,
-  COMMON_FIELDS.QUANTITY_FIELD,
-  COMMON_FIELDS.SHIPPING_AVAILABLE_FIELD,
   {
-    name: 'approximateStampCount',
-    label: 'Approximate Stamp Count',
-    inputType: 'number',
-    requirement: 'recommended',
-    validation: { min: 1 },
+    ...COMMON_FIELDS.CONDITION_FIELD,
+    conditionalLogic: undefined,
   },
   {
-    name: 'countries',
+    name: 'countriesIncluded',
     label: 'Countries Included',
     inputType: 'textarea',
     requirement: 'recommended',
+    gridColumn: 'half',
+  },
+  {
+    name: 'approximateQuantity',
+    label: 'Approximate Quantity',
+    inputType: 'number',
+    requirement: 'required',
+    maxLength: 5,
+    gridColumn: 'half',
+  },
+  {
+    name: 'yearsIncluded',
+    label: 'Years Included',
+    inputType: 'text',
+    requirement: 'recommended',
+    gridColumn: 'half',
+  },
+  {
+    name: 'albumIncluded',
+    label: 'Album Included',
+    inputType: 'dropdown',
+    requirement: 'optional',
+    dropdownOptions: ['Yes', 'No'],
+    gridColumn: 'half',
+  },
+  {
+    name: 'notableStamps',
+    label: 'Notable Stamps',
+    inputType: 'textarea',
+    requirement: 'recommended',
+    gridColumn: 'half',
   },
 ];
 
