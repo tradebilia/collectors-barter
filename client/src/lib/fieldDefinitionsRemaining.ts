@@ -679,43 +679,6 @@ const VINTAGE_TOYS_COLLECTION_LOT_FIELDS: FieldDefinition[] = [
 // ============================================================================
 // POKEMON
 // ============================================================================
-
-const POKEMON_SINGLE_CARD_FIELDS: FieldDefinition[] = [
-  COMMON_FIELDS.LISTING_TITLE_FIELD,
-  COMMON_FIELDS.TRADE_VALUE_FIELD,
-  {
-    ...COMMON_FIELDS.CONDITION_FIELD,
-    conditionalLogic: 'Is Graded = No',
-  },
-  COMMON_FIELDS.QUANTITY_FIELD,
-  {
-    name: 'cardName',
-    label: 'Card Name',
-    inputType: 'text',
-    requirement: 'required',
-  },
-  {
-    name: 'setName',
-    label: 'Set Name',
-    inputType: 'text',
-    requirement: 'recommended',
-  },
-  {
-    name: 'cardNumber',
-    label: 'Card Number',
-    inputType: 'text',
-    requirement: 'recommended',
-  },
-  COMMON_FIELDS.IS_GRADED_FIELD,
-  {
-    ...COMMON_FIELDS.GRADING_COMPANY_FIELD,
-    dropdownOptions: GRADING_COMPANIES_BY_CATEGORY.pokemon,
-  },
-  COMMON_FIELDS.GRADE_FIELD,
-  COMMON_FIELDS.CERTIFICATION_NUMBER_FIELD,
-];
-
-// ============================================================================
 // DISNEY PINS
 // ============================================================================
 
@@ -919,12 +882,7 @@ export const CATEGORY_ITEM_TYPES = {
     board_game: VINTAGE_TOYS_BOARD_GAME_PUZZLE_FIELDS,
     collection_lot: VINTAGE_TOYS_COLLECTION_LOT_FIELDS,
   },
-  pokemon: {
-    single_card: POKEMON_SINGLE_CARD_FIELDS,
-    card_set: POKEMON_SET_FIELDS,
-    unopened_product: POKEMON_UNOPENED_PRODUCT_FIELDS,
-    collection_lot: POKEMON_COLLECTION_LOT_FIELDS,
-  },
+
   disney_pins: {
     single_pin: DISNEY_PINS_SINGLE_PIN_FIELDS,
     pin_set: DISNEY_PINS_PIN_SET_FIELDS,
