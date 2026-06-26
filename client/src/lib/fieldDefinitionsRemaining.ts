@@ -1,6 +1,11 @@
 import { FieldDefinition, GRADING_COMPANIES_BY_CATEGORY } from './formFieldDefinitions';
 import { COMMON_FIELDS } from './formFieldDefinitions';
 import { COUNTRIES_LIST } from './countries';
+import {
+  SPORTS_CARDS_UNOPENED_PRODUCT_FIELDS,
+  SPORTS_CARDS_COLLECTION_LOT_FIELDS,
+  SPORTS_CARDS_SET_FIELDS,
+} from './fieldDefinitionsGenerated';
 
 // ============================================================================
 // COINS
@@ -642,7 +647,7 @@ const VIDEO_GAMES_CONSOLE_FIELDS: FieldDefinition[] = [
 // MOVIES
 // ============================================================================
 
-const MOVIES_VHS_FIELDS: FieldDefinition[] = [
+const MOVIES_INDIVIDUAL_MOVIE_FIELDS: FieldDefinition[] = [
   COMMON_FIELDS.LISTING_TITLE_FIELD,
   COMMON_FIELDS.TRADE_VALUE_FIELD,
   {
@@ -691,7 +696,7 @@ const MOVIES_VHS_FIELDS: FieldDefinition[] = [
   COMMON_FIELDS.CERTIFICATION_NUMBER_FIELD,
 ];
 
-const MOVIES_DVD_FIELDS: FieldDefinition[] = [
+const MOVIES_BOX_SET_FIELDS: FieldDefinition[] = [
   COMMON_FIELDS.LISTING_TITLE_FIELD,
   COMMON_FIELDS.TRADE_VALUE_FIELD,
   {
@@ -738,6 +743,16 @@ const MOVIES_DVD_FIELDS: FieldDefinition[] = [
   },
   COMMON_FIELDS.GRADE_FIELD,
   COMMON_FIELDS.CERTIFICATION_NUMBER_FIELD,
+];
+
+const MOVIES_COLLECTION_LOT_FIELDS: FieldDefinition[] = [
+  COMMON_FIELDS.LISTING_TITLE_FIELD,
+  COMMON_FIELDS.TRADE_VALUE_FIELD,
+  {
+    ...COMMON_FIELDS.CONDITION_FIELD,
+    conditionalLogic: 'Is Graded = No',
+  },
+  COMMON_FIELDS.QUANTITY_FIELD,
 ];
 
 // ============================================================================
@@ -1273,7 +1288,9 @@ export const CATEGORY_ITEM_TYPES = {
   },
   sports_cards: {
     single_card: SPORTS_CARDS_SINGLE_CARD_FIELDS,
-    card_set: SPORTS_CARDS_CARD_SET_FIELDS,
+    card_set: SPORTS_CARDS_SET_FIELDS,
+    unopened_product: SPORTS_CARDS_UNOPENED_PRODUCT_FIELDS,
+    collection_lot: SPORTS_CARDS_COLLECTION_LOT_FIELDS,
   },
   stamps: {
     single_stamp: STAMPS_SINGLE_STAMP_FIELDS,
@@ -1285,8 +1302,9 @@ export const CATEGORY_ITEM_TYPES = {
     console: VIDEO_GAMES_CONSOLE_FIELDS,
   },
   movies: {
-    vhs: MOVIES_VHS_FIELDS,
-    dvd: MOVIES_DVD_FIELDS,
+    individual_movie: MOVIES_INDIVIDUAL_MOVIE_FIELDS,
+    box_set: MOVIES_BOX_SET_FIELDS,
+    collection_lot: MOVIES_COLLECTION_LOT_FIELDS,
   },
   autographs: {
     signed_item: AUTOGRAPHS_SIGNED_ITEM_FIELDS,

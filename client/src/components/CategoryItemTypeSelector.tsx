@@ -42,8 +42,8 @@ const CATEGORY_DISPLAY_NAMES: Record<CollectibleCategory, string> = {
 const ITEM_TYPE_DISPLAY_NAMES: Record<string, string> = {
   single_card: 'Single Card',
   unopened_product: 'Unopened Product',
-  set: 'Set',
-  collection_lot: 'Collection/Lot',
+  card_set: 'Set',
+  collection_lot: 'Collection / Lot',
   single_comic: 'Single Comic',
   original_art: 'Original Art',
   single_coin: 'Single Coin',
@@ -56,6 +56,7 @@ const ITEM_TYPE_DISPLAY_NAMES: Record<string, string> = {
   accessory: 'Accessory',
   individual_movie: 'Individual Movie',
   box_set: 'Box Set',
+  movies_collection_lot: 'Collection / Lot',
   signed_item: 'Signed Item',
   action_figure: 'Action Figure / Doll',
   vehicle: 'Vehicle',
