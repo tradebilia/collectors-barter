@@ -807,9 +807,16 @@ const DISNEY_PINS_SINGLE_PIN_FIELDS: FieldDefinition[] = [
 ];
 
 const DISNEY_PINS_PIN_SET_FIELDS: FieldDefinition[] = [
+  // Required Fields
   COMMON_FIELDS.LISTING_TITLE_FIELD,
   COMMON_FIELDS.TRADE_VALUE_FIELD,
-  COMMON_FIELDS.CONDITION_FIELD,
+  {
+    name: 'condition',
+    label: 'Condition',
+    inputType: 'dropdown',
+    requirement: 'required',
+    dropdownOptions: ['Mint', 'Near Mint', 'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'],
+  },
   {
     name: 'setName',
     label: 'Set Name',
@@ -817,30 +824,47 @@ const DISNEY_PINS_PIN_SET_FIELDS: FieldDefinition[] = [
     requirement: 'required',
   },
   {
-    name: 'pinCount',
-    label: 'Pin Count',
+    name: 'completeSet',
+    label: 'Complete Set',
+    inputType: 'dropdown',
+    requirement: 'required',
+    dropdownOptions: ['Yes', 'No'],
+  },
+  // Recommended Fields
+  COMMON_FIELDS.QUANTITY_FIELD,
+  {
+    name: 'numberOfPinsInSet',
+    label: 'Number of Pins in Set',
     inputType: 'number',
     requirement: 'recommended',
   },
   {
-    name: 'year',
-    label: 'Year',
-    inputType: 'number',
+    name: 'limitedEdition',
+    label: 'Limited Edition',
+    inputType: 'dropdown',
+    requirement: 'recommended',
+    dropdownOptions: ['Yes', 'No'],
+  },
+  {
+    name: 'charactersIncluded',
+    label: 'Characters Included',
+    inputType: 'textarea',
     requirement: 'recommended',
   },
   {
-    name: 'theme',
-    label: 'Theme',
+    name: 'series',
+    label: 'Series',
     inputType: 'text',
     requirement: 'recommended',
   },
-  COMMON_FIELDS.IS_GRADED_FIELD,
+  // Conditional Fields
   {
-    ...COMMON_FIELDS.GRADING_COMPANY_FIELD,
-    dropdownOptions: GRADING_COMPANIES_BY_CATEGORY.disney_pins,
+    name: 'missingPins',
+    label: 'Missing Pins',
+    inputType: 'textarea',
+    requirement: 'conditional',
+    conditionalLogic: 'Complete Set = No',
   },
-  COMMON_FIELDS.GRADE_FIELD,
-  COMMON_FIELDS.CERTIFICATION_NUMBER_FIELD,
 ];
 
 // ============================================================================
