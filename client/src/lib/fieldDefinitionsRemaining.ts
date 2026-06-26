@@ -721,15 +721,29 @@ const POKEMON_SINGLE_CARD_FIELDS: FieldDefinition[] = [
 // ============================================================================
 
 const DISNEY_PINS_SINGLE_PIN_FIELDS: FieldDefinition[] = [
+  // Required Fields
   COMMON_FIELDS.LISTING_TITLE_FIELD,
   COMMON_FIELDS.TRADE_VALUE_FIELD,
   COMMON_FIELDS.CONDITION_FIELD,
-  COMMON_FIELDS.QUANTITY_FIELD,
   {
     name: 'pinName',
     label: 'Pin Name',
     inputType: 'text',
     requirement: 'required',
+  },
+  // Recommended Fields
+  COMMON_FIELDS.QUANTITY_FIELD,
+  {
+    name: 'character',
+    label: 'Character',
+    inputType: 'text',
+    requirement: 'recommended',
+  },
+  {
+    name: 'series',
+    label: 'Series',
+    inputType: 'text',
+    requirement: 'recommended',
   },
   {
     name: 'year',
@@ -738,25 +752,53 @@ const DISNEY_PINS_SINGLE_PIN_FIELDS: FieldDefinition[] = [
     requirement: 'recommended',
   },
   {
-    name: 'pinNumber',
-    label: 'Pin Number',
+    name: 'pinTradingEvent',
+    label: 'Pin Trading Event',
     inputType: 'text',
     requirement: 'recommended',
   },
   {
-    name: 'official',
-    label: 'Official Disney',
+    name: 'limitedEdition',
+    label: 'Limited Edition',
+    inputType: 'dropdown',
+    requirement: 'recommended',
+    dropdownOptions: ['Yes', 'No'],
+  },
+  {
+    name: 'openEdition',
+    label: 'Open Edition',
+    inputType: 'dropdown',
+    requirement: 'recommended',
+    dropdownOptions: ['Yes', 'No'],
+  },
+  {
+    name: 'artistProof',
+    label: 'Artist Proof (AP)',
+    inputType: 'dropdown',
+    requirement: 'recommended',
+    dropdownOptions: ['Yes', 'No'],
+  },
+  {
+    name: 'preProduction',
+    label: 'Pre-Production (PP)',
+    inputType: 'dropdown',
+    requirement: 'recommended',
+    dropdownOptions: ['Yes', 'No'],
+  },
+  {
+    name: 'backstampInformation',
+    label: 'Backstamp Information',
+    inputType: 'textarea',
+    requirement: 'recommended',
+  },
+  // Optional Fields
+  {
+    name: 'backerCardIncluded',
+    label: 'Backer Card Included',
     inputType: 'dropdown',
     requirement: 'optional',
     dropdownOptions: ['Yes', 'No'],
   },
-  COMMON_FIELDS.IS_GRADED_FIELD,
-  {
-    ...COMMON_FIELDS.GRADING_COMPANY_FIELD,
-    dropdownOptions: GRADING_COMPANIES_BY_CATEGORY.disney_pins,
-  },
-  COMMON_FIELDS.GRADE_FIELD,
-  COMMON_FIELDS.CERTIFICATION_NUMBER_FIELD,
 ];
 
 const DISNEY_PINS_PIN_SET_FIELDS: FieldDefinition[] = [
