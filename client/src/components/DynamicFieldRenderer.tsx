@@ -155,7 +155,7 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({
             disabled={disabled}
             placeholder={field.notes}
             rows={8}
-            className={`w-full bg-white text-black min-h-32 ${hasError ? 'border-red-500' : ''}`}
+            className={`w-full bg-white text-black min-h-24 ${hasError ? 'border-red-500' : ''}`}
           />
         );
 
