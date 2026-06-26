@@ -64,7 +64,7 @@ export const FieldWithCustomInput: React.FC<FieldWithCustomInputProps> = ({
               value={customValue}
               onChange={(e) => onOtherChange(e.target.value)}
               placeholder={`Enter ${field.otherFieldName || `custom ${field.label.toLowerCase()}`}`}
-              className="bg-white text-black border border-gray-300 rounded-md px-3 py-1 w-full h-8 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="bg-white text-black border border-gray-300 rounded-md px-3 py-2 w-full h-9 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
         )}

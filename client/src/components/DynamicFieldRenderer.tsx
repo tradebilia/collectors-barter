@@ -255,7 +255,7 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({
   const gridColClass = field.inputType === 'textarea' ? 'col-span-full' : field.gridColumn === 'half' ? 'col-span-1 md:col-span-2' : field.gridColumn === 'third' ? 'col-span-1 md:col-span-3' : 'col-span-1';
 
   return (
-    <div className={`space-y-2 ${gridColClass}`}>
+    <div className={`${hideLabel ? '' : 'space-y-2'} ${gridColClass}`}>
       {!hideLabel && (
         <div className="flex items-start gap-1">
           {field.label && (
