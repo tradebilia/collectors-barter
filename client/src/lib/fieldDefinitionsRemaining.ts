@@ -1,6 +1,4 @@
-import { FieldDefinition, GRADING_COMPANIES_BY_CATEGORY } from './formFieldDefinitions';
-import { COMMON_FIELDS } from './formFieldDefinitions';
-import { COUNTRIES_LIST } from './countries';
+import { FieldDefinition } from './formFieldDefinitions';
 import {
   SPORTS_CARDS_SINGLE_CARD_FIELDS,
   SPORTS_CARDS_UNOPENED_PRODUCT_FIELDS,
@@ -26,6 +24,7 @@ import {
   VINTAGE_TOYS_ELECTRONIC_TOY_FIELDS,
   VINTAGE_TOYS_MODEL_KIT_FIELDS,
   VINTAGE_TOYS_COLLECTION_LOT_FIELDS,
+  VINTAGE_TOYS_PLUSH_STUFFED_TOY_FIELDS,
   POKEMON_COLLECTION_LOT_FIELDS,
   POKEMON_UNOPENED_PRODUCT_FIELDS,
   POKEMON_SET_FIELDS,
@@ -39,82 +38,6 @@ import {
   MOVIES_COLLECTION_LOT_FIELDS,
   MOVIES_INDIVIDUAL_MOVIE_FIELDS,
 } from './fieldDefinitionsGenerated';
-
-// ============================================================================
-// COMICS - COMIC SET (unique to Remaining, not in Generated)
-// ============================================================================
-
-const COMICS_COMIC_SET_FIELDS: FieldDefinition[] = [
-  COMMON_FIELDS.LISTING_TITLE_FIELD,
-  COMMON_FIELDS.TRADE_VALUE_FIELD,
-  {
-    ...COMMON_FIELDS.CONDITION_FIELD,
-    conditionalLogic: 'Is Graded = No',
-  },
-  COMMON_FIELDS.QUANTITY_FIELD,
-  {
-    name: 'setName',
-    label: 'Set Name',
-    inputType: 'text',
-    requirement: 'required',
-  },
-  {
-    name: 'issueRange',
-    label: 'Issue Range',
-    inputType: 'text',
-    requirement: 'recommended',
-  },
-  {
-    name: 'publisher',
-    label: 'Publisher',
-    inputType: 'text',
-    requirement: 'recommended',
-  },
-  {
-    name: 'year',
-    label: 'Year Published',
-    inputType: 'number',
-    requirement: 'recommended',
-  },
-  COMMON_FIELDS.IS_GRADED_FIELD,
-  {
-    ...COMMON_FIELDS.GRADING_COMPANY_FIELD,
-    dropdownOptions: GRADING_COMPANIES_BY_CATEGORY.comics,
-  },
-  COMMON_FIELDS.GRADE_FIELD,
-  COMMON_FIELDS.CERTIFICATION_NUMBER_FIELD,
-];
-
-
-
-const VINTAGE_TOYS_PLUSH_TOY_FIELDS: FieldDefinition[] = [
-  COMMON_FIELDS.LISTING_TITLE_FIELD,
-  COMMON_FIELDS.TRADE_VALUE_FIELD,
-  COMMON_FIELDS.CONDITION_FIELD,
-  COMMON_FIELDS.QUANTITY_FIELD,
-  {
-    name: 'toyName',
-    label: 'Toy Name',
-    inputType: 'text',
-    requirement: 'required',
-  },
-  {
-    name: 'manufacturer',
-    label: 'Manufacturer',
-    inputType: 'text',
-    requirement: 'recommended',
-  },
-  {
-    name: 'year',
-    label: 'Year',
-    inputType: 'number',
-    requirement: 'recommended',
-  },
-];
-
-
-
-
 
 // ============================================================================
 // CATEGORY DEFINITIONS
@@ -159,7 +82,7 @@ export const CATEGORY_ITEM_TYPES = {
     collection_lot: AUTOGRAPHS_COLLECTION_LOT_FIELDS,
   },
   vintage_toys: {
-    plush_toy: VINTAGE_TOYS_PLUSH_TOY_FIELDS,
+    plush_toy: VINTAGE_TOYS_PLUSH_STUFFED_TOY_FIELDS,
     electronic_toy: VINTAGE_TOYS_ELECTRONIC_TOY_FIELDS,
     model_kit: VINTAGE_TOYS_MODEL_KIT_FIELDS,
     action_figure: VINTAGE_TOYS_ACTION_FIGURE_DOLL_FIELDS,
