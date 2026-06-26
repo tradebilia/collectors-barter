@@ -60,7 +60,7 @@ export const ALL_FIELD_DEFINITIONS: Record<string, Record<string, FieldDefinitio
   },
   'disney_pins': {
     'collection_lot': mergeFieldDefinitions(GeneratedFields.DISNEY_PINS_COLLECTION_LOT_FIELDS),
-    'individual_pin': mergeFieldDefinitions(GeneratedFields.DISNEY_PINS_INDIVIDUAL_PIN_FIELDS),
+    // 'individual_pin' is defined in fieldDefinitionsRemaining.ts
     'pin_set': mergeFieldDefinitions(GeneratedFields.DISNEY_PINS_PIN_SET_FIELDS),
   },
   'movies': {
