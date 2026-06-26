@@ -150,6 +150,49 @@ const COINS_COIN_SET_FIELDS: FieldDefinition[] = [
   COMMON_FIELDS.CERTIFICATION_NUMBER_FIELD,
 ];
 
+const COINS_COLLECTION_LOT_FIELDS: FieldDefinition[] = [
+  COMMON_FIELDS.LISTING_TITLE_FIELD,
+  COMMON_FIELDS.TRADE_VALUE_FIELD,
+  COMMON_FIELDS.CONDITION_FIELD,
+  {
+    name: 'approximateCoinCount',
+    label: 'Approximate Coin Count',
+    inputType: 'number',
+    requirement: 'required',
+    maxLength: 5,
+    gridColumn: 'half',
+  },
+  {
+    name: 'countriesIncluded',
+    label: 'Countries Included',
+    inputType: 'textarea',
+    requirement: 'recommended',
+    gridColumn: 'half',
+  },
+  {
+    name: 'yearsIncluded',
+    label: 'Years Included',
+    inputType: 'text',
+    requirement: 'recommended',
+    gridColumn: 'half',
+  },
+  {
+    name: 'notableCoins',
+    label: 'Notable Coins',
+    inputType: 'textarea',
+    requirement: 'recommended',
+    gridColumn: 'half',
+  },
+  {
+    name: 'includesGradedCoins',
+    label: 'Includes Graded Coins',
+    inputType: 'dropdown',
+    requirement: 'optional',
+    dropdownOptions: ['Yes', 'No'],
+    gridColumn: 'half',
+  },
+];
+
 // ============================================================================
 // COMICS
 // ============================================================================
@@ -1266,6 +1309,7 @@ export const CATEGORY_ITEM_TYPES = {
   coins: {
     single_coin: COINS_SINGLE_COIN_FIELDS,
     coin_set: COINS_COIN_SET_FIELDS,
+    coin_collection_lot: COINS_COLLECTION_LOT_FIELDS,
   },
   comics: {
     single_comic: COMICS_SINGLE_COMIC_FIELDS,

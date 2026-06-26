@@ -48,6 +48,7 @@ const ITEM_TYPE_DISPLAY_NAMES: Record<string, string> = {
   original_art: 'Original Art',
   single_coin: 'Single Coin',
   coin_set: 'Coin Set',
+  coin_collection_lot: 'Collection / Lot',
   paper_money: 'Paper Money / Banknotes',
   single_stamp: 'Single Stamp',
   stamp_set: 'Stamp Set / Sheet',
