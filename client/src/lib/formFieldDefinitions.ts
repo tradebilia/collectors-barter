@@ -153,7 +153,6 @@ const GRADE_FIELD: FieldDefinition = {
   inputType: 'text',
   requirement: 'required',
   conditionalLogic: 'Is Graded = Yes',
-  maxLength: 4,
   gridColumn: 'third',
 };
 
