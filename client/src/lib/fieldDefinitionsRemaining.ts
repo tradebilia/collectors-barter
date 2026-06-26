@@ -498,7 +498,10 @@ const AUTOGRAPHS_SIGNED_ITEM_FIELDS: FieldDefinition[] = [
     gridColumn: 'third',
   },
   COMMON_FIELDS.TRADE_VALUE_FIELD,
-  COMMON_FIELDS.CONDITION_FIELD,
+  {
+    ...COMMON_FIELDS.CONDITION_FIELD,
+    conditionalLogic: undefined,
+  },
   {
     name: 'signedItemType',
     label: 'Signed Item Type',
