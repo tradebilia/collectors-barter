@@ -452,7 +452,10 @@ const MOVIES_BOX_SET_FIELDS: FieldDefinition[] = [
 const MOVIES_COLLECTION_LOT_FIELDS: FieldDefinition[] = [
   COMMON_FIELDS.LISTING_TITLE_FIELD,
   COMMON_FIELDS.TRADE_VALUE_FIELD,
-  COMMON_FIELDS.CONDITION_FIELD,
+  {
+    ...COMMON_FIELDS.CONDITION_FIELD,
+    conditionalLogic: undefined,
+  },
   {
     name: 'formatsIncluded',
     label: 'Formats Included',
