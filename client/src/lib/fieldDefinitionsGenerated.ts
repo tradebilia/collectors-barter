@@ -26,24 +26,15 @@ export const AUTOGRAPHS_COLLECTION_LOT_FIELDS: FieldDefinition[] = [
     dropdownOptions: ['Mint', 'Near Mint', 'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'],
   },
   {
-    name: 'photos',
-    label: 'Photos',
-    inputType: 'image-upload',
-    requirement: 'required',
-  },
-
-  {
-    name: 'quantity',
-    label: 'Quantity',
-    inputType: 'number',
-    maxLength: 4,
-    requirement: 'recommended',
-  },
-
-  {
     name: 'numberOfSignedItems',
     label: 'Number of Signed Items',
     inputType: 'number',
+    requirement: 'required',
+  },
+  {
+    name: 'photos',
+    label: 'Photos',
+    inputType: 'image-upload',
     requirement: 'required',
   },
   {
