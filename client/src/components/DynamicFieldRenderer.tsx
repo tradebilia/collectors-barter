@@ -252,7 +252,7 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({
   };
 
   // Determine grid column classes based on gridColumn property
-  const gridColClass = field.inputType === 'textarea' ? 'col-span-full' : field.gridColumn === 'half' ? 'col-span-1 md:col-span-2' : field.gridColumn === 'third' ? 'col-span-1 md:col-span-3' : 'col-span-1';
+  const gridColClass = field.inputType === 'textarea' ? 'col-span-1 md:col-span-2' : field.gridColumn === 'half' ? 'col-span-1 md:col-span-2' : field.gridColumn === 'third' ? 'col-span-1 md:col-span-3' : 'col-span-1';
 
   return (
     <div className={`${hideLabel ? '' : 'space-y-2'} ${gridColClass}`}>
