@@ -238,7 +238,7 @@ const STAMPS_SINGLE_STAMP_FIELDS: FieldDefinition[] = [
     label: 'Year',
     inputType: 'number',
     requirement: 'required',
-    maxLength: 4,
+    maxLength: 5,
     validation: { min: 1800, max: 2100 },
     gridColumn: 'third',
   },
