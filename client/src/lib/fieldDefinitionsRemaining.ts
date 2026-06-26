@@ -88,7 +88,7 @@ const COINS_COIN_SET_FIELDS: FieldDefinition[] = [
   COMMON_FIELDS.TRADE_VALUE_FIELD,
   {
     ...COMMON_FIELDS.CONDITION_FIELD,
-    conditionalLogic: undefined,
+    conditionalLogic: 'Is Graded = No',
   },
   COMMON_FIELDS.QUANTITY_FIELD,
   {
