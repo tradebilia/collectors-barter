@@ -2509,7 +2509,7 @@ export const VIDEO_GAMES_CONSOLE_FIELDS: FieldDefinition[] = [
     supportsOther: true,
     inlineCustomField: true,
     otherFieldName: 'Custom Grading Company',
-    conditionalLogic: 'Is Graded =',
+    conditionalLogic: 'Is Graded = Yes',
   },
   {
     name: 'grade',
