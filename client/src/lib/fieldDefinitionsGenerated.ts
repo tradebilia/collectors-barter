@@ -75,7 +75,7 @@ export const AUTOGRAPHS_SIGNED_ITEM_FIELDS: FieldDefinition[] = [
     name: 'authenticated',
     label: 'Authentication Included',
     inputType: 'dropdown',
-    requirement: 'required',
+    requirement: 'recommended',
     dropdownOptions: ['Yes', 'No'],
     gridColumn: 'third',
   },
