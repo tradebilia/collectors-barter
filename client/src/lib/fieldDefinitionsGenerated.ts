@@ -3513,7 +3513,7 @@ export const POKEMON_SINGLE_CARD_FIELDS: FieldDefinition[] = [
     label: 'Grading Company',
     inputType: 'dropdown',
     requirement: 'conditional',
-    dropdownOptions: ['PSA', 'BGS', 'SGC', 'CGC Cards', 'TAG Grading', 'HGA', 'Arena Club', 'Degree', 'ACE', 'ISA', 'GMA', 'Rare Edition', 'FCG', 'MNT', 'KSA', 'PGA', 'RCG', 'OnlyGraded', 'Diamond', 'CGA', 'TRCG', 'Pokegrade', 'Tree F No'],
+    dropdownOptions: ['PSA', 'BGS', 'SGC', 'CGC Cards', 'TAG Grading', 'HGA', 'Arena Club', 'Degree', 'ACE', 'ISA', 'GMA', 'Rare Edition', 'FCG', 'MNT', 'KSA', 'PGA', 'RCG', 'OnlyGraded', 'Diamond', 'CGA', 'TRCG', 'Pokegrade', 'Tree Frog', 'AP', 'PRO', 'GEM', 'GAI', 'PCI', 'WCG'],
     conditionalLogic: 'Is Graded = Yes',
   },
   {
