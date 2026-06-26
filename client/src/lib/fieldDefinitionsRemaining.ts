@@ -557,7 +557,7 @@ const AUTOGRAPHS_SIGNED_ITEM_FIELDS: FieldDefinition[] = [
     inputType: 'text',
     requirement: 'recommended',
     conditionalLogic: 'Authentication Included = Yes',
-    gridColumn: 'third',
+    gridColumn: 'half',
   },
   // Optional Fields
   {
