@@ -2273,6 +2273,12 @@ export const VIDEO_GAMES_ACCESSORY_FIELDS: FieldDefinition[] = [
     requirement: 'required',
   },
   {
+    name: 'accessoryName',
+    label: 'Accessory Name',
+    inputType: 'text',
+    requirement: 'required',
+  },
+  {
     name: 'platform',
     label: 'Platform',
     inputType: 'dropdown',
@@ -2296,15 +2302,6 @@ export const VIDEO_GAMES_ACCESSORY_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'required',
     dropdownOptions: ['Working', 'Not Working', 'Untested'],
-  },
-  {
-    name: 'region',
-    label: 'Region',
-    inputType: 'dropdown',
-    requirement: 'recommended',
-    dropdownOptions: ['NTSC-U', 'NTSC-J', 'PAL', 'Region Free', 'Unknown', 'Other'],
-    supportsOther: true,
-    otherFieldName: 'Custom Region',
   },
   {
     name: 'isGraded',

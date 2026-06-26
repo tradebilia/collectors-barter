@@ -21,6 +21,10 @@ export const video_gamesAccessoryLayout: ItemTypeLayoutConfig = {
         accessoryName: { colSpan: 'half', position: 5 },
         platform: { colSpan: 'half', position: 6 },
         workingCondition: { colSpan: 'half', position: 7 },
+        isGraded: { colSpan: 'half', position: 8 },
+        gradingCompany: { colSpan: 'half', position: 9 },
+        grade: { colSpan: 'half', position: 10 },
+        certificationNumber: { colSpan: 'half', position: 11 },
       },
     },
     recommended: {
