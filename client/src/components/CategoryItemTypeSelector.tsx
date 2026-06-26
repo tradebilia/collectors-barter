@@ -42,6 +42,7 @@ const CATEGORY_DISPLAY_NAMES: Record<CollectibleCategory, string> = {
 const ITEM_TYPE_DISPLAY_NAMES: Record<string, string> = {
   single_card: 'Single Card',
   unopened_product: 'Unopened Product',
+  set: 'Set',
   card_set: 'Set',
   collection_lot: 'Collection / Lot',
   single_comic: 'Single Comic',
