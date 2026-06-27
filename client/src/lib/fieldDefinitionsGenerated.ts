@@ -1171,17 +1171,17 @@ export const MOVIES_INDIVIDUAL_MOVIE_FIELDS: FieldDefinition[] = [
     requirement: 'optional',
   },
   {
-    name: 'sealed',
-    label: 'Sealed',
-    inputType: 'dropdown',
-    requirement: 'required',
-    dropdownOptions: ['Yes', 'No'],
-  },
-  {
     name: 'region',
     label: 'Region',
     inputType: 'text',
     requirement: 'optional',
+  },
+  {
+    name: 'sealed',
+    label: 'Sealed',
+    inputType: 'dropdown',
+    requirement: 'recommended',
+    dropdownOptions: ['Yes', 'No'],
   },
   {
     name: 'isGraded',
@@ -1195,7 +1195,7 @@ export const MOVIES_INDIVIDUAL_MOVIE_FIELDS: FieldDefinition[] = [
     label: 'Grading Company',
     inputType: 'dropdown',
     requirement: 'required',
-    dropdownOptions: ['CGC Home Video', 'IGS', 'VHS Grading', 'Other'],
+    dropdownOptions: ['VGA', 'IGS', 'VHSDNA', 'CGC', 'Rewind', 'Other'],
     supportsOther: true,
     inlineCustomField: true,
     otherFieldName: 'Custom Grading Company',
