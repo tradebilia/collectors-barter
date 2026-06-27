@@ -1261,7 +1261,6 @@ export const POKEMON_COLLECTION_LOT_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'required',
     dropdownOptions: ['Mint', 'Near Mint', 'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'],
-    conditionalLogic: 'Is Graded = No',
   },
   {
     name: 'photos',
@@ -1331,7 +1330,6 @@ export const POKEMON_SET_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'required',
     dropdownOptions: ['Mint', 'Near Mint', 'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'],
-    conditionalLogic: 'Is Graded = No',
   },
   {
     name: 'photos',
@@ -1417,7 +1415,6 @@ export const POKEMON_UNOPENED_PRODUCT_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'required',
     dropdownOptions: ['Mint', 'Near Mint', 'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'],
-    conditionalLogic: 'Is Graded = No',
   },
   {
     name: 'photos',
