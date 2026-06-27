@@ -65,7 +65,7 @@ const ITEM_TYPE_DISPLAY_NAMES: Record<string, string> = {
   board_game: 'Board Game / Puzzle',
   plush_toy: 'Plush / Stuffed Toy',
   electronic_toy: 'Electronic Toy',
-  model_kit: 'Model Kit',
+  model_kit: 'Model / Kit',
   die_cast_car: 'Die-Cast Car',
   single_pin: 'Individual Pin',
   individual_pin: 'Individual Pin',

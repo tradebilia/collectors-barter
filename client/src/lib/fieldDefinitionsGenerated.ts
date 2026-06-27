@@ -3200,7 +3200,7 @@ export const VINTAGE_TOYS_MODEL_KIT_FIELDS: FieldDefinition[] = [
     name: 'instructionsIncluded',
     label: 'Instructions Included',
     inputType: 'dropdown',
-    requirement: 'required',
+    requirement: 'recommended',
     dropdownOptions: ['Yes', 'No'],
   },
   {
