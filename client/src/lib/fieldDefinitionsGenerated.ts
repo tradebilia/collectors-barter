@@ -831,9 +831,8 @@ export const DISNEY_PINS_COLLECTION_LOT_FIELDS: FieldDefinition[] = [
     name: 'condition',
     label: 'Condition',
     inputType: 'dropdown',
-    requirement: 'conditional',
+    requirement: 'required',
     dropdownOptions: ['Mint', 'Near Mint', 'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'],
-    conditionalLogic: 'Is Graded = No',
   },
   {
     name: 'photos',
@@ -903,9 +902,8 @@ export const DISNEY_PINS_PIN_SET_FIELDS: FieldDefinition[] = [
     name: 'condition',
     label: 'Condition',
     inputType: 'dropdown',
-    requirement: 'conditional',
+    requirement: 'required',
     dropdownOptions: ['Mint', 'Near Mint', 'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'],
-    conditionalLogic: 'Is Graded = No',
   },
   {
     name: 'photos',
@@ -3872,9 +3870,8 @@ export const DISNEY_PINS_INDIVIDUAL_PIN_FIELDS: FieldDefinition[] = [
     name: 'condition',
     label: 'Condition',
     inputType: 'dropdown',
-    requirement: 'conditional',
+    requirement: 'required',
     dropdownOptions: ['Mint', 'Near Mint', 'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'],
-    conditionalLogic: 'Is Graded = No',
   },
   {
     name: 'pinName',
