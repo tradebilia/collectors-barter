@@ -22,9 +22,8 @@ export const AUTOGRAPHS_COLLECTION_LOT_FIELDS: FieldDefinition[] = [
     name: 'condition',
     label: 'Condition',
     inputType: 'dropdown',
-    requirement: 'conditional',
+    requirement: 'required',
     dropdownOptions: ['Mint', 'Near Mint', 'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'],
-    conditionalLogic: 'Is Graded = No',
   },
   {
     name: 'numberOfSignedItems',
