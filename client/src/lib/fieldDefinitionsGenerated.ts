@@ -279,9 +279,8 @@ export const COINS_COLLECTION_LOT_FIELDS: FieldDefinition[] = [
     name: 'condition',
     label: 'Condition',
     inputType: 'dropdown',
-    requirement: 'conditional',
+    requirement: 'required',
     dropdownOptions: ['Mint', 'Near Mint', 'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'],
-    conditionalLogic: 'Is Graded = No',
   },
   {
     name: 'photos',
@@ -291,24 +290,16 @@ export const COINS_COLLECTION_LOT_FIELDS: FieldDefinition[] = [
   },
 
   {
-    name: 'quantity',
-    label: 'Quantity',
+    name: 'approximateCoinCount',
+    label: 'Approximate Coin Count',
     inputType: 'number',
-    maxLength: 4,
-    requirement: 'recommended',
+    requirement: 'required',
   },
-
   {
     name: 'countriesIncluded',
     label: 'Countries Included',
     inputType: 'textarea',
     requirement: 'recommended',
-  },
-  {
-    name: 'approximateCoinCount',
-    label: 'Approximate Coin Count',
-    inputType: 'number',
-    requirement: 'required',
   },
   {
     name: 'yearsIncluded',
