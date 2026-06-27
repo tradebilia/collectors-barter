@@ -29,7 +29,7 @@ export const moviesBoxsetLayout: ItemTypeLayoutConfig = {
       columns: 2,
       fieldLayout: {
         quantity: { colSpan: 'half', position: 1 },
-        numberOfMoviesInSet: { colSpan: 'half', position: 2 },
+        numberOfMovies: { colSpan: 'half', position: 2 },
         sealed: { colSpan: 'half', position: 3 },
       },
     },

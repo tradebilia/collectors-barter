@@ -987,7 +987,7 @@ export const MOVIES_BOX_SET_FIELDS: FieldDefinition[] = [
     name: 'condition',
     label: 'Condition',
     inputType: 'dropdown',
-    requirement: 'conditional',
+    requirement: 'required',
     dropdownOptions: ['Mint', 'Near Mint', 'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'],
     conditionalLogic: 'Is Graded = No',
   },
@@ -996,14 +996,6 @@ export const MOVIES_BOX_SET_FIELDS: FieldDefinition[] = [
     label: 'Photos',
     inputType: 'image-upload',
     requirement: 'required',
-  },
-
-  {
-    name: 'quantity',
-    label: 'Quantity',
-    inputType: 'number',
-    maxLength: 4,
-    requirement: 'recommended',
   },
 
   {
@@ -1022,10 +1014,52 @@ export const MOVIES_BOX_SET_FIELDS: FieldDefinition[] = [
     otherFieldName: 'Custom Format',
   },
   {
-    name: 'numberOfMovies',
-    label: 'Number of Movies',
-    inputType: 'number',
+    name: 'isGraded',
+    label: 'Is Graded',
+    inputType: 'dropdown',
     requirement: 'required',
+    dropdownOptions: ['Yes', 'No'],
+  },
+  {
+    name: 'gradingCompany',
+    label: 'Grading Company',
+    inputType: 'dropdown',
+    requirement: 'required',
+    dropdownOptions: ['VGA', 'IGS', 'VHSDNA', 'CGC', 'Rewind', 'Other'],
+    supportsOther: true,
+    inlineCustomField: true,
+    otherFieldName: 'Custom Grading Company',
+    conditionalLogic: 'Is Graded = Yes',
+  },
+  {
+    name: 'grade',
+    label: 'Grade',
+    inputType: 'text',
+    maxLength: 4,
+    requirement: 'required',
+    conditionalLogic: 'Is Graded = Yes',
+  },
+  {
+    name: 'certificationNumber',
+    label: 'Certification Number',
+    inputType: 'text',
+    requirement: 'required',
+    conditionalLogic: 'Is Graded = Yes',
+  },
+
+  {
+    name: 'quantity',
+    label: 'Quantity',
+    inputType: 'number',
+    maxLength: 4,
+    requirement: 'recommended',
+  },
+
+  {
+    name: 'numberOfMovies',
+    label: 'Number of Movies in Set',
+    inputType: 'number',
+    requirement: 'recommended',
   },
   {
     name: 'edition',
@@ -1037,7 +1071,7 @@ export const MOVIES_BOX_SET_FIELDS: FieldDefinition[] = [
     name: 'sealed',
     label: 'Sealed',
     inputType: 'dropdown',
-    requirement: 'required',
+    requirement: 'recommended',
     dropdownOptions: ['Yes', 'No'],
   },
 ];
