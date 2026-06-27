@@ -1975,19 +1975,11 @@ export const STAMPS_COLLECTION_LOT_FIELDS: FieldDefinition[] = [
     requirement: 'required',
   },
   {
-    name: 'country',
-    label: 'Country',
-    inputType: 'dropdown',
-    requirement: 'required',
-    dropdownOptions: COUNTRIES_LIST,
-  },
-  {
     name: 'condition',
     label: 'Condition',
     inputType: 'dropdown',
-    requirement: 'conditional',
+    requirement: 'required',
     dropdownOptions: ['Mint', 'Near Mint', 'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'],
-    conditionalLogic: 'Is Graded = No',
   },
   {
     name: 'photos',
@@ -1997,24 +1989,16 @@ export const STAMPS_COLLECTION_LOT_FIELDS: FieldDefinition[] = [
   },
 
   {
-    name: 'quantity',
-    label: 'Quantity',
+    name: 'approximateQuantity',
+    label: 'Approximate Quantity',
     inputType: 'number',
-    maxLength: 4,
-    requirement: 'recommended',
+    requirement: 'required',
   },
-
   {
     name: 'countriesIncluded',
     label: 'Countries Included',
     inputType: 'textarea',
     requirement: 'recommended',
-  },
-  {
-    name: 'approximateQuantity',
-    label: 'Approximate Quantity',
-    inputType: 'number',
-    requirement: 'required',
   },
   {
     name: 'yearsIncluded',
@@ -2081,17 +2065,11 @@ export const STAMPS_SINGLE_STAMP_FIELDS: FieldDefinition[] = [
     requirement: 'recommended',
   },
   {
-    name: 'scottNumberOrDescription',
-    label: 'Scott Number or Description',
-    inputType: 'text',
-    requirement: 'required',
-  },
-  {
     name: 'year',
     label: 'Year',
     inputType: 'number',
     maxLength: 10,
-    requirement: 'recommended',
+    requirement: 'required',
   },
   {
     name: 'denomination',
@@ -2130,7 +2108,7 @@ export const STAMPS_SINGLE_STAMP_FIELDS: FieldDefinition[] = [
     supportsOther: true,
     inlineCustomField: true,
     otherFieldName: 'Custom Grading Company',
-    conditionalLogic: 'Is Graded = yes',
+    conditionalLogic: 'Is Graded = Yes',
   },
   {
     name: 'grade',
@@ -2201,7 +2179,7 @@ export const STAMPS_STAMP_SET_SHEET_FIELDS: FieldDefinition[] = [
   },
   {
     name: 'setNameDescription',
-    label: 'Set Name / Description',
+    label: 'Set Name',
     inputType: 'text',
     requirement: 'required',
   },
@@ -2216,7 +2194,7 @@ export const STAMPS_STAMP_SET_SHEET_FIELDS: FieldDefinition[] = [
   },
   {
     name: 'numberOfStamps',
-    label: 'Number of Stamps',
+    label: 'Number of Stamps in Set',
     inputType: 'number',
     requirement: 'recommended',
   },
@@ -2226,6 +2204,39 @@ export const STAMPS_STAMP_SET_SHEET_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'recommended',
     dropdownOptions: ['Mint', 'Used', 'Mixed', 'Unknown'],
+  },
+  {
+    name: 'isGraded',
+    label: 'Is Graded',
+    inputType: 'dropdown',
+    requirement: 'required',
+    dropdownOptions: ['Yes', 'No'],
+  },
+  {
+    name: 'gradingCompany',
+    label: 'Grading Company',
+    inputType: 'dropdown',
+    requirement: 'required',
+    dropdownOptions: ['ASG', 'PSAG', 'PSE', 'Other'],
+    conditionalLogic: 'Is Graded = Yes',
+    supportsOther: true,
+    inlineCustomField: true,
+    otherFieldName: 'Custom Grading Company',
+  },
+  {
+    name: 'grade',
+    label: 'Grade',
+    inputType: 'text',
+    maxLength: 4,
+    requirement: 'required',
+    conditionalLogic: 'Is Graded = Yes',
+  },
+  {
+    name: 'certificationNumber',
+    label: 'Certification Number',
+    inputType: 'text',
+    requirement: 'required',
+    conditionalLogic: 'Is Graded = Yes',
   },
 ];
 

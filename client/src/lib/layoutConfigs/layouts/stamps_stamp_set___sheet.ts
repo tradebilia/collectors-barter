@@ -17,7 +17,7 @@ export const stampsStampsetsheetLayout: ItemTypeLayoutConfig = {
         listingTitle: { colSpan: 'half', position: 1 },
         tradeValue: { colSpan: 'half', position: 2 },
         country: { colSpan: 'half', position: 3 },
-        setName: { colSpan: 'half', position: 4 },
+        setNameDescription: { colSpan: 'half', position: 4 },
         sheetType: { colSpan: 'half', position: 5 },
         isGraded: { colSpan: 'half', position: 6 },
         condition: { colSpan: 'half', position: 7 },
@@ -31,7 +31,7 @@ export const stampsStampsetsheetLayout: ItemTypeLayoutConfig = {
       fieldLayout: {
         quantity: { colSpan: 'half', position: 1 },
         year: { colSpan: 'half', position: 2 },
-        numberOfStampsInSet: { colSpan: 'half', position: 3 },
+        numberOfStamps: { colSpan: 'half', position: 3 },
         mintOrUsed: { colSpan: 'half', position: 4 },
       },
     },

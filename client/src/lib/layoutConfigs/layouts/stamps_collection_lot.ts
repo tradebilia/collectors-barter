@@ -21,11 +21,11 @@ export const stampsCollectionlotLayout: ItemTypeLayoutConfig = {
       },
     },
     recommended: {
-      columns: 2,
+      columns: 1,
       fieldLayout: {
-        countriesIncluded: { colSpan: 'half', position: 1 },
-        yearsIncluded: { colSpan: 'half', position: 2 },
-        notableStamps: { colSpan: 'half', position: 3 },
+        yearsIncluded: { colSpan: 'full', position: 1 },
+        countriesIncluded: { colSpan: 'full', position: 2 },
+        notableStamps: { colSpan: 'full', position: 3 },
       },
     },
     optional: {
