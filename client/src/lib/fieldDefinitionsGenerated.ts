@@ -2687,7 +2687,7 @@ export const VINTAGE_TOYS_ACTION_FIGURE_DOLL_FIELDS: FieldDefinition[] = [
 
   {
     name: 'toyName',
-    label: 'Toy Name',
+    label: 'Toy Name / Character',
     inputType: 'text',
     requirement: 'required',
   },
