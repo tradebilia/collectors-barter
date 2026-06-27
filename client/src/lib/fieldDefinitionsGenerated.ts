@@ -913,24 +913,9 @@ export const DISNEY_PINS_PIN_SET_FIELDS: FieldDefinition[] = [
   },
 
   {
-    name: 'quantity',
-    label: 'Quantity',
-    inputType: 'number',
-    maxLength: 4,
-    requirement: 'recommended',
-  },
-
-  {
     name: 'setName',
     label: 'Set Name',
     inputType: 'text',
-    requirement: 'required',
-  },
-  {
-    name: 'numberOfPins',
-    label: 'Number of Pins',
-    inputType: 'number',
-    maxLength: 5,
     requirement: 'required',
   },
   {
@@ -948,22 +933,36 @@ export const DISNEY_PINS_PIN_SET_FIELDS: FieldDefinition[] = [
     conditionalLogic: 'Complete Set = No',
   },
   {
+    name: 'quantity',
+    label: 'Quantity',
+    inputType: 'number',
+    maxLength: 4,
+    requirement: 'recommended',
+  },
+  {
+    name: 'numberOfPins',
+    label: 'Number of Pins in Set',
+    inputType: 'number',
+    maxLength: 5,
+    requirement: 'recommended',
+  },
+  {
     name: 'limitedEdition',
     label: 'Limited Edition',
     inputType: 'dropdown',
-    requirement: 'required',
-    dropdownOptions: ['Yes', 'No'],
-  },
-  {
-    name: 'charactersIncluded',
-    label: 'Characters Included',
-    inputType: 'textarea',
     requirement: 'recommended',
+    dropdownOptions: ['Yes', 'No'],
   },
   {
     name: 'series',
     label: 'Series',
     inputType: 'text',
+    requirement: 'recommended',
+  },
+  {
+    name: 'charactersIncluded',
+    label: 'Characters Included',
+    inputType: 'textarea',
     requirement: 'recommended',
   },
 ];

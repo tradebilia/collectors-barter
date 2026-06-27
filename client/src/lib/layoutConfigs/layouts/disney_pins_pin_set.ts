@@ -26,10 +26,10 @@ export const disney_pinsPinsetLayout: ItemTypeLayoutConfig = {
       columns: 2,
       fieldLayout: {
         quantity: { colSpan: 'half', position: 1 },
-        numberOfPinsInSet: { colSpan: 'half', position: 2 },
+        numberOfPins: { colSpan: 'half', position: 2 },
         limitedEdition: { colSpan: 'half', position: 3 },
-        charactersIncluded: { colSpan: 'half', position: 4 },
-        series: { colSpan: 'half', position: 5 },
+        series: { colSpan: 'half', position: 4 },
+        charactersIncluded: { colSpan: 'half', position: 5 },
       },
     },
     optional: {
