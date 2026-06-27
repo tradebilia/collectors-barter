@@ -29,10 +29,10 @@ export const disney_pinsCollectionlotLayout: ItemTypeLayoutConfig = {
       },
     },
     optional: {
-      columns: 1,
+      columns: 2,
       fieldLayout: {
-        apPpPinsIncluded: { colSpan: 'full', position: 1 },
-        backerCardsIncluded: { colSpan: 'full', position: 2 },
+        apPpPinsIncluded: { colSpan: 'half', position: 1 },
+        backerCardsIncluded: { colSpan: 'half', position: 2 },
       },
     },
   },

@@ -44,6 +44,8 @@ export interface ItemTypeLayoutConfig {
   conditionalFieldPlacement: ConditionalFieldPlacementConfig;
 }
 
+import { getLayoutConfig as getLayoutConfigFromLayouts } from './itemTypeLayouts';
+
 /**
  * Helper function to convert ColSpan to Tailwind classes
  */
@@ -66,7 +68,18 @@ export function getColSpanClass(colSpan: ColSpan, baseColumns: number): string {
  * Helper function to get grid columns class
  */
 export function getGridColumnsClass(columns: number): string {
-  return `grid-cols-1 md:grid-cols-2 lg:grid-cols-${columns}`;
+  switch (columns) {
+    case 1:
+      return 'grid-cols-1 md:grid-cols-1 lg:grid-cols-1';
+    case 2:
+      return 'grid-cols-1 md:grid-cols-2 lg:grid-cols-2';
+    case 3:
+      return 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3';
+    case 4:
+      return 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4';
+    default:
+      return 'grid-cols-1 md:grid-cols-2 lg:grid-cols-2';
+  }
 }
 
 /**
@@ -74,7 +87,5 @@ export function getGridColumnsClass(columns: number): string {
  * This function is imported from itemTypeLayouts.ts
  */
 export function getLayoutConfig(itemType: string): ItemTypeLayoutConfig | null {
-  // This will be replaced by the actual implementation from itemTypeLayouts.ts
-  // For now, return null as a placeholder
-  return null;
+  return getLayoutConfigFromLayouts(itemType);
 }

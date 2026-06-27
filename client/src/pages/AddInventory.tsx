@@ -290,7 +290,7 @@ export default function AddInventory() {
                   const gap = layoutConfig?.spacing?.gap || 'gap-6';
                   
                   return (
-                    <div className={`grid grid-cols-1 md:grid-cols-2 ${getGridColumnsClass(requiredColumns)} ${gap} w-full`}>
+                    <div className={`grid ${getGridColumnsClass(requiredColumns)} ${gap} w-full`}>
                       {allFields
                         .filter((f: FieldDefinition) => (f.requirement === "required" || f.requirement === "conditional") && shouldShowField(f))
                         .sort((a, b) => {
@@ -335,7 +335,7 @@ export default function AddInventory() {
                   const gap = layoutConfig?.spacing?.gap || 'gap-6';
                   
                   return (
-                    <div className={`grid grid-cols-1 md:grid-cols-2 ${getGridColumnsClass(recommendedColumns)} ${gap} w-full`}>
+                    <div className={`grid ${getGridColumnsClass(recommendedColumns)} ${gap} w-full`}>
                       {allFields
                         .filter((f: FieldDefinition) => f.requirement === "recommended" && shouldShowField(f) && f.name !== 'signatures')
                         .sort((a, b) => {
@@ -401,12 +401,13 @@ export default function AddInventory() {
                   {(() => {
                     const layoutKey = `${formData.category}_${formData.itemType}`;
                     const layoutConfig = getLayoutConfig(layoutKey);
+                    console.log('Optional Fields Debug:', { layoutKey, layoutConfig, optionalColumns: layoutConfig?.sections?.optional?.columns });
                     const optionalColumns = layoutConfig?.sections?.optional?.columns || 1;
                     const fieldLayout = layoutConfig?.sections?.optional?.fieldLayout || {};
                     const gap = layoutConfig?.spacing?.gap || 'gap-6';
                     
                     return (
-                      <div className={`grid grid-cols-1 md:grid-cols-2 ${getGridColumnsClass(optionalColumns)} ${gap} w-full`}>
+                      <div className={`grid ${getGridColumnsClass(optionalColumns)} ${gap} w-full`}>
                         {allFields
                           .filter((f: FieldDefinition) => f.requirement === "optional" && shouldShowField(f))
                           .sort((a, b) => {

@@ -191,18 +191,46 @@ export const useAddInventoryForm = (photos: any[] = []): UseAddInventoryFormRetu
     // Count only visible required fields (exclude conditional fields that aren't activated)
     const requiredFieldsCount = currentFields.filter((field: FieldDefinition) => field.requirement === 'required' && shouldShowField(field)).length;
     
-    // Count custom "Other" fields for required fields that have "Other" selected
+    // Count conditional fields whose parent is a required field and the condition is met
+    const conditionalRequiredFieldsCount = currentFields.filter((field: FieldDefinition) => {
+      if (field.requirement !== 'conditional') return false;
+      if (!field.conditionalLogic) return false;
+      if (!shouldShowField(field)) return false;
+      
+      // Find the parent field by parsing the conditional logic
+      // The parent is the field mentioned in the conditional logic
+      const parentFieldMatch = field.conditionalLogic.match(/^([a-zA-Z0-9\s]+)\s*=/);
+      if (!parentFieldMatch) return false;
+      
+      const parentFieldName = parentFieldMatch[1].trim();
+      const parentFieldKey = parentFieldName
+        .split(' ')
+        .map((word, index) => {
+          if (index === 0) return word.toLowerCase();
+          return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+        })
+        .join('');
+      
+      // Check if parent field exists and is required
+      const parentField = currentFields.find(f => f.name === parentFieldKey);
+      return parentField && parentField.requirement === 'required';
+    }).length;
+    
+    // Count custom "Other" fields for fields that have "Other" selected
+    // These are counted as SEPARATE required fields that must be completed
+    // Include required, recommended, and conditional fields
     const customOtherFieldsCount = currentFields.filter((field: FieldDefinition) => {
-      if (field.requirement !== 'required') return false;
       if (!field.supportsOther) return false;
       if (!shouldShowField(field)) return false;
+      // Only count if the parent field is set to "Other"
+      // This means the custom field is now required to be filled
       return formData[field.name] === 'Other';
     }).length;
     
     // Add 3 for: Shipping (1), Description (1), Photos (1)
     const sectionCount = 3;
     
-    return requiredFieldsCount + customOtherFieldsCount + sectionCount;
+    return requiredFieldsCount + conditionalRequiredFieldsCount + customOtherFieldsCount + sectionCount;
   }, [currentFields, shouldShowField, formData]);
 
   // Count completed required fields
@@ -222,9 +250,41 @@ export const useAddInventoryForm = (photos: any[] = []): UseAddInventoryFormRetu
       return value !== undefined && value !== null && value !== '';
     }).length;
     
-    // Count completed custom "Other" fields for required fields that have "Other" selected
+    // Count completed conditional fields whose parent is a required field
+    const completedConditionalRequiredFieldsCount = currentFields.filter((field: FieldDefinition) => {
+      if (field.requirement !== 'conditional') return false;
+      if (!field.conditionalLogic) return false;
+      if (!shouldShowField(field)) return false;
+      
+      // Find the parent field by parsing the conditional logic
+      const parentFieldMatch = field.conditionalLogic.match(/^([a-zA-Z0-9\s]+)\s*=/);
+      if (!parentFieldMatch) return false;
+      
+      const parentFieldName = parentFieldMatch[1].trim();
+      const parentFieldKey = parentFieldName
+        .split(' ')
+        .map((word, index) => {
+          if (index === 0) return word.toLowerCase();
+          return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+        })
+        .join('');
+      
+      // Check if parent field exists and is required
+      const parentField = currentFields.find(f => f.name === parentFieldKey);
+      if (!parentField || parentField.requirement !== 'required') return false;
+      
+      // Check if the conditional field has a value
+      const value = formData[field.name];
+      if (field.inputType === 'image-upload') {
+        return Array.isArray(value) && value.length > 0;
+      }
+      
+      return value !== undefined && value !== null && value !== '';
+    }).length;
+    
+    // Count completed custom "Other" fields for fields that have "Other" selected
+    // Include required, recommended, and conditional fields
     const completedCustomOtherFieldsCount = currentFields.filter((field: FieldDefinition) => {
-      if (field.requirement !== 'required') return false;
       if (!field.supportsOther) return false;
       if (!shouldShowField(field)) return false;
       if (formData[field.name] !== 'Other') return false;
@@ -253,7 +313,7 @@ export const useAddInventoryForm = (photos: any[] = []): UseAddInventoryFormRetu
       completedSections++;
     }
     
-    return completedFieldsCount + completedCustomOtherFieldsCount + completedSections;
+    return completedFieldsCount + completedConditionalRequiredFieldsCount + completedCustomOtherFieldsCount + completedSections;
   }, [currentFields, formData, shouldShowField, photos]);
 
   // Update field value
