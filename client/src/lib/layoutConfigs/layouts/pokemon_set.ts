@@ -29,12 +29,12 @@ export const pokemonSetLayout: ItemTypeLayoutConfig = {
       },
     },
     optional: {
-      columns: 1,
+      columns: 2,
       fieldLayout: {
-        notableCards: { colSpan: 'full', position: 1 },
-        includesGradedCards: { colSpan: 'full', position: 2 },
-        numberOfCardsInSet: { colSpan: 'full', position: 3 },
-        originalPackaging: { colSpan: 'full', position: 4 },
+        includesGradedCards: { colSpan: 'half', position: 1 },
+        originalPackaging: { colSpan: 'half', position: 2 },
+        notableCards: { colSpan: 'full', position: 3 },
+        numberOfCardsInSet: { colSpan: 'full', position: 4 },
       },
     },
   },
