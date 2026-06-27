@@ -1277,7 +1277,7 @@ export const POKEMON_COLLECTION_LOT_FIELDS: FieldDefinition[] = [
   },
   {
     name: 'setsIncluded',
-    label: 'Sets Included',
+    label: 'Eras / Series Included',
     inputType: 'textarea',
     requirement: 'recommended',
   },
