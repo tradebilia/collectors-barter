@@ -2707,12 +2707,6 @@ export const VINTAGE_TOYS_ACTION_FIGURE_DOLL_FIELDS: FieldDefinition[] = [
     requirement: 'recommended',
   },
   {
-    name: 'character',
-    label: 'Character',
-    inputType: 'text',
-    requirement: 'recommended',
-  },
-  {
     name: 'year',
     label: 'Year',
     inputType: 'number',
