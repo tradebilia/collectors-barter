@@ -83,9 +83,8 @@ export const AUTOGRAPHS_SIGNED_ITEM_FIELDS: FieldDefinition[] = [
     name: 'condition',
     label: 'Condition',
     inputType: 'dropdown',
-    requirement: 'conditional',
+    requirement: 'required',
     dropdownOptions: ['Mint', 'Near Mint', 'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'],
-    conditionalLogic: 'Is Graded = No',
   },
   {
     name: 'photos',
@@ -138,7 +137,10 @@ export const AUTOGRAPHS_SIGNED_ITEM_FIELDS: FieldDefinition[] = [
     label: 'Authentication Company',
     inputType: 'dropdown',
     requirement: 'required',
-    dropdownOptions: ['PSA/DNA', 'JSA', 'Beckett Authentication Services'],
+    dropdownOptions: ['PSA/DNA', 'JSA', 'Beckett Authentication Services', 'Other'],
+    supportsOther: true,
+    inlineCustomField: true,
+    otherFieldName: 'Custom Authentication Company',
     conditionalLogic: 'Authentication Included = Yes',
   },
   {
