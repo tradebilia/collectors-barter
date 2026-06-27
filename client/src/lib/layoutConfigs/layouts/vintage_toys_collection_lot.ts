@@ -18,6 +18,10 @@ export const vintage_toysCollectionlotLayout: ItemTypeLayoutConfig = {
         tradeValue: { colSpan: 'half', position: 2 },
         condition: { colSpan: 'half', position: 3 },
         approximateItemCount: { colSpan: 'half', position: 4 },
+        isGraded: { colSpan: 'half', position: 5 },
+        gradingCompany: { colSpan: 'half', position: 6 },
+        grade: { colSpan: 'half', position: 7 },
+        certificationNumber: { colSpan: 'half', position: 8 },
       },
     },
     recommended: {
