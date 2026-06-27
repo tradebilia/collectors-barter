@@ -71,6 +71,7 @@ export default function AddInventory() {
     shouldShowField,
     currentFields,
     getItemDetails,
+    errors,
   } = useAddInventoryForm(photos);
 
   const createListingMutation = trpc.market.createListing.useMutation();
@@ -170,6 +171,12 @@ export default function AddInventory() {
     const isValid = validateForm();
     if (!isValid) {
       toast.error("Please fill in all required fields.");
+      
+      // Scroll to the first field with an error
+      const firstErrorField = document.querySelector('[data-error="true"]');
+      if (firstErrorField) {
+        firstErrorField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
       return;
     }
 
@@ -304,13 +311,14 @@ export default function AddInventory() {
                           const colSpanClass = getColSpanClass(colSpan, requiredColumns);
                           
                           return (
-                            <div key={field.name} className={`${colSpanClass} w-full`}>
+                            <div key={field.name} className={`${colSpanClass} w-full`} data-error={!!errors[field.name]}>
                               <FieldWithCustomInput
                                 field={field}
                                 value={formData[field.name as keyof typeof formData] || ""}
                                 onChange={(value) => updateField(field.name, value)}
                                 onOtherChange={(value) => updateOtherField(field.name, value)}
                                 formData={formData}
+                                error={errors[field.name]}
                               />
                             </div>
                           );
@@ -356,6 +364,7 @@ export default function AddInventory() {
                                 onChange={(value) => updateField(field.name, value)}
                                 onOtherChange={(value) => updateOtherField(field.name, value)}
                                 formData={formData}
+                                error={errors[field.name]}
                               />
                             </div>
                           );
@@ -421,7 +430,7 @@ export default function AddInventory() {
                             const colSpanClass = getColSpanClass(colSpan, optionalColumns);
                             
                             return (
-                              <div key={field.name} className={`${colSpanClass} w-full`}>
+                              <div key={field.name} className={`${colSpanClass} w-full`} data-error={!!errors[field.name]}>
                                 <DynamicFieldRenderer
                                   field={field}
                                   value={formData[field.name as keyof typeof formData] || ""}
@@ -429,6 +438,7 @@ export default function AddInventory() {
                                   onOtherChange={(value) => updateOtherField(field.name, value)}
                                   showOtherInput={field.supportsOther && formData[field.name as keyof typeof formData] === 'Other'}
                                   otherValue={formData[`custom${field.name.charAt(0).toUpperCase() + field.name.slice(1)}` as keyof typeof formData] as string || ""}
+                                  error={errors[field.name]}
                                 />
                               </div>
                             );
@@ -455,6 +465,7 @@ export default function AddInventory() {
                   value={formData.shippingAvailable || ""}
                   onChange={(value) => updateField("shippingAvailable", value)}
                   onOtherChange={() => {}}
+                  error={errors.shippingAvailable}
                 />
               </div>
             </CollapsibleFormSection>
@@ -472,6 +483,7 @@ export default function AddInventory() {
                   value={formData.description || ""}
                   onChange={(value) => updateField("description", value)}
                   onOtherChange={() => {}}
+                  error={errors.description}
                 />
               </div>
             </CollapsibleFormSection>
@@ -506,6 +518,14 @@ export default function AddInventory() {
                 <p className="text-sm text-white/70">Drag and drop photos here</p>
                 <p className="text-xs text-white/50">or use the button below</p>
               </div>
+
+              {/* Photo Error Display */}
+              {errors.photos && (
+                <div className="mb-4 flex items-center gap-2 text-red-400 text-sm bg-red-500/10 border border-red-500/30 rounded-lg p-3">
+                  <span>⚠️</span>
+                  <span>{errors.photos}</span>
+                </div>
+              )}
 
               {/* Photo Preview Grid */}
               <div className="mb-4 space-y-2">

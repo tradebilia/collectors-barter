@@ -24,6 +24,7 @@ export const FieldWithCustomInput: React.FC<FieldWithCustomInputProps> = ({
   const showCustomInput = field.supportsOther && value === 'Other';
   const customFieldKey = `custom${field.name.charAt(0).toUpperCase() + field.name.slice(1)}`;
   const customValue = formData[customFieldKey] as string || '';
+  const customError = error && showCustomInput ? `Custom ${field.label} is required` : undefined;
 
   return (
     <div className="w-full">
@@ -64,8 +65,13 @@ export const FieldWithCustomInput: React.FC<FieldWithCustomInputProps> = ({
               value={customValue}
               onChange={(e) => onOtherChange(e.target.value)}
               placeholder=""
-              className="bg-white text-black border border-gray-300 rounded-md px-3 py-2 w-full h-9 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className={`bg-white text-black border rounded-md px-3 py-2 w-full h-9 focus:outline-none focus:ring-2 ${
+                customError ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
+              }`}
             />
+            {customError && (
+              <p className="text-red-500 text-xs mt-1">{customError}</p>
+            )}
           </div>
         )}
       </div>

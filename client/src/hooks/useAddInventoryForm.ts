@@ -385,12 +385,21 @@ export const useAddInventoryForm = (photos: any[] = []): UseAddInventoryFormRetu
   const validateForm = useCallback((): boolean => {
     const newErrors: FormErrors = {};
 
-    // Check required fields
+    // Check required and conditional fields
     currentFields.forEach((field: FieldDefinition) => {
-      if (field.requirement === 'required' && shouldShowField(field)) {
+      if ((field.requirement === 'required' || field.requirement === 'conditional') && shouldShowField(field)) {
         const value = formData[field.name];
         if (value === undefined || value === null || value === '') {
           newErrors[field.name] = `${field.label} is required`;
+        }
+        
+        // If field supports "Other" and value is "Other", check if custom field is filled
+        if (field.supportsOther && value === 'Other') {
+          const customFieldName = `custom${field.name.charAt(0).toUpperCase() + field.name.slice(1)}`;
+          const customValue = formData[customFieldName];
+          if (customValue === undefined || customValue === null || customValue === '') {
+            newErrors[field.name] = `Custom ${field.label} is required`;
+          }
         }
       }
     });
@@ -406,13 +415,13 @@ export const useAddInventoryForm = (photos: any[] = []): UseAddInventoryFormRetu
     }
 
     // Check photos
-    if (!Array.isArray(formData.photos) || formData.photos.length === 0) {
+    if (!Array.isArray(photos) || photos.length === 0) {
       newErrors.photos = 'At least 1 photo is required';
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  }, [currentFields, formData, shouldShowField]);
+  }, [currentFields, formData, shouldShowField, photos]);
 
   // Get item details (all fields except category, itemType, shippingAvailable, description, photos)
   const getItemDetails = useCallback((): Record<string, string> => {
