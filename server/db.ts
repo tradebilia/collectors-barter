@@ -2875,3 +2875,87 @@ export async function getTopMostViewedItems(viewerId?: number | null) {
 
   return formatListings(listingRows, viewerId ?? null);
 }
+
+
+// Admin delete functions
+export async function adminDeleteListing(
+  admin: Pick<User, "id" | "name">,
+  input: {
+    listingId: number;
+    deletionReason?: string;
+  },
+) {
+  const db = await requireDb();
+
+  // Verify admin role
+  const adminUser = await db.select().from(users).where(eq(users.id, admin.id)).limit(1);
+  if (!adminUser[0] || adminUser[0].role !== 'admin') {
+    throw new Error("Only admins can delete listings.");
+  }
+
+  // Get listing details
+  const listing = await db
+    .select({ id: listings.id, ownerId: listings.ownerId, title: listings.title })
+    .from(listings)
+    .where(eq(listings.id, input.listingId))
+    .limit(1);
+
+  if (!listing[0]) {
+    throw new Error("Listing not found.");
+  }
+
+  // Delete associated photos first (foreign key constraint)
+  await db.delete(listingPhotos).where(eq(listingPhotos.listingId, input.listingId));
+
+  // Delete the listing
+  await db.delete(listings).where(eq(listings.id, input.listingId));
+
+  return {
+    success: true,
+    deletedListingId: input.listingId,
+    listingTitle: listing[0].title,
+    ownerId: listing[0].ownerId,
+  };
+}
+
+export async function adminBulkDeleteListings(
+  admin: Pick<User, "id" | "name">,
+  input: {
+    listingIds: number[];
+    deletionReason?: string;
+  },
+) {
+  const db = await requireDb();
+
+  // Verify admin role
+  const adminUser = await db.select().from(users).where(eq(users.id, admin.id)).limit(1);
+  if (!adminUser[0] || adminUser[0].role !== 'admin') {
+    throw new Error("Only admins can delete listings.");
+  }
+
+  if (input.listingIds.length === 0) {
+    throw new Error("No listings selected for deletion.");
+  }
+
+  // Get listing details
+  const listings_to_delete = await db
+    .select({ id: listings.id, title: listings.title, ownerId: listings.ownerId })
+    .from(listings)
+    .where(inArray(listings.id, input.listingIds));
+
+  if (listings_to_delete.length === 0) {
+    throw new Error("No listings found.");
+  }
+
+  // Delete associated photos first (foreign key constraint)
+  await db.delete(listingPhotos).where(inArray(listingPhotos.listingId, input.listingIds));
+
+  // Delete the listings
+  await db.delete(listings).where(inArray(listings.id, input.listingIds));
+
+  return {
+    success: true,
+    deletedCount: listings_to_delete.length,
+    deletedListings: listings_to_delete,
+  };
+}

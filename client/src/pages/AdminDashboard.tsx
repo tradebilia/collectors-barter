@@ -11,11 +11,36 @@ import { trpc } from "@/lib/trpc";
 import { TopBar } from "@/components/TopBar";
 import { ReferralsTab } from "@/components/ReferralsTab";
 import { Link } from "wouter";
+import { DeleteConfirmationDialog } from "@/components/DeleteConfirmationDialog";
 
 function AdminListingsTab({ listingsQuery }: { listingsQuery: any }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState<"refId" | "title" | "category" | "date" | "value" | "views" | "status" | "owner">("refId");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedListingForDelete, setSelectedListingForDelete] = useState<any>(null);
+
+  const deleteMutation = trpc.market.adminDeleteListing.useMutation({
+    onSuccess: () => {
+      listingsQuery.refetch();
+      setDeleteDialogOpen(false);
+      setSelectedListingForDelete(null);
+    },
+  });
+
+  const handleDeleteClick = (listing: any) => {
+    setSelectedListingForDelete(listing);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async (reason?: string) => {
+    if (selectedListingForDelete) {
+      await deleteMutation.mutateAsync({
+        listingId: selectedListingForDelete.id,
+        deletionReason: reason || undefined,
+      });
+    }
+  };
 
   const filteredAndSortedListings = useMemo(() => {
     if (!listingsQuery.data) return [];
@@ -147,6 +172,7 @@ function AdminListingsTab({ listingsQuery }: { listingsQuery: any }) {
                       {sortBy === "owner" && <ArrowUpDown className="h-3 w-3" />}
                     </div>
                   </th>
+                  <th className="text-left py-2 px-4">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -170,6 +196,16 @@ function AdminListingsTab({ listingsQuery }: { listingsQuery: any }) {
                       </span>
                     </td>
                     <td className="py-2 px-4">{listing.ownerProfile?.displayName || `User ${listing.ownerId}`}</td>
+                    <td className="py-2 px-4">
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => handleDeleteClick(listing)}
+                        disabled={deleteMutation.isPending}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -182,6 +218,17 @@ function AdminListingsTab({ listingsQuery }: { listingsQuery: any }) {
           Showing {filteredAndSortedListings.length} of {listingsQuery.data?.length || 0} listings
         </div>
       </CardContent>
+
+      {selectedListingForDelete && (
+        <DeleteConfirmationDialog
+          isOpen={deleteDialogOpen}
+          itemCount={1}
+          itemTitles={[selectedListingForDelete.title]}
+          onConfirm={handleConfirmDelete}
+          onCancel={() => setDeleteDialogOpen(false)}
+          isLoading={deleteMutation.isPending}
+        />
+      )}
     </Card>
   );
 }

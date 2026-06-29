@@ -60,6 +60,8 @@ import {
   isFavorited,
   getTopMostFavoritedItems,
   getTopMostViewedItems,
+  adminDeleteListing,
+  adminBulkDeleteListings,
 } from "./db";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -785,6 +787,28 @@ export const appRouter = router({
       .mutation(async ({ ctx, input }) => {
         await restoreDeletedListings({ id: ctx.user.id, name: ctx.user.name }, { listingIds: input.deletedListings });
         return getDashboardData({ id: ctx.user.id, name: ctx.user.name });
+      }),
+    adminDeleteListing: protectedProcedure
+      .input(
+        z.object({
+          listingId: z.number().int().positive(),
+          deletionReason: z.string().max(500).optional(),
+        }),
+      )
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN', message: 'Only admins can delete listings' });
+        return adminDeleteListing({ id: ctx.user.id, name: ctx.user.name }, input);
+      }),
+    adminBulkDeleteListings: protectedProcedure
+      .input(
+        z.object({
+          listingIds: z.array(z.number().int().positive()),
+          deletionReason: z.string().max(500).optional(),
+        }),
+      )
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN', message: 'Only admins can delete listings' });
+        return adminBulkDeleteListings({ id: ctx.user.id, name: ctx.user.name }, input);
       }),
     leaveTradeReview: protectedProcedure
       .input(
