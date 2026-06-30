@@ -615,6 +615,40 @@ export default function Inventory() {
           </aside>
 
           <div className="flex-1 py-4 px-4">
+            {showDrafts && getDraftsQuery.data && getDraftsQuery.data.length > 0 && (
+              <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <div className="flex items-start gap-3">
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-yellow-900 mb-1">Draft Expiration Notice</h3>
+                    <p className="text-sm text-yellow-800 mb-2">
+                      Drafts are automatically deleted after 30 days. Review your drafts below:
+                    </p>
+                    <ul className="text-sm text-yellow-800 space-y-1">
+                      {getDraftsQuery.data.map((draft: any) => {
+                        const daysOld = Math.floor((Date.now() - new Date(draft.createdAt).getTime()) / (1000 * 60 * 60 * 24));
+                        const daysRemaining = 30 - daysOld;
+                        const isExpiringSoon = daysRemaining <= 10;
+                        return (
+                          <li key={draft.id} className={isExpiringSoon ? "font-semibold text-yellow-900" : ""}>
+                            <span className="font-medium">{draft.title || "Untitled Draft"}</span>
+                            {isExpiringSoon && (
+                              <span className="ml-2 text-red-600 font-bold">
+                                WARNING: {daysRemaining} day{daysRemaining !== 1 ? 's' : ''} left
+                              </span>
+                            )}
+                            {!isExpiringSoon && (
+                              <span className="ml-2 text-yellow-700">
+                                ({daysRemaining} day{daysRemaining !== 1 ? 's' : ''} left)
+                              </span>
+                            )}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            )}
             <div className="px-4 py-2 lg:px-8 border-b border-slate-200 -mx-4 mb-2">
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div className="flex gap-4">

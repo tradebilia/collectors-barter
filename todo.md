@@ -3110,3 +3110,15 @@ All 8 remaining filter optimization and caching items have been successfully imp
   - [x] User can make changes and click "Save as Draft" to update
   - [x] User can complete form and click "Submit" to publish as live listing
   - [x] Draft is removed after successful publication
+
+
+## Draft Expiration Feature (COMPLETED)
+
+- [x] Add `deleteDraftsOlderThan` function to backend to delete drafts older than 30 days
+- [x] Implement periodic cleanup job using Heartbeat (runs daily at 3 AM UTC)
+- [x] Created Heartbeat cron job: `draft-cleanup` (Task UID: SC8qe4PxuumLMtrzcPHVxU)
+- [x] Add warning banner to Inventory page for drafts expiring soon (within 10 days)
+- [x] Display days remaining before draft expires (30 - age) in warning banner
+- [x] Highlight drafts expiring within 10 days with red "WARNING" text
+- [x] Create comprehensive backend tests for draft expiration (all 3 tests passing)
+- [x] Verify cleanup job endpoint is properly registered and authenticated

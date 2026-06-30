@@ -3113,3 +3113,30 @@ export async function adminBulkDeleteListings(
     deletedListings: listings_to_delete,
   };
 }
+
+
+export async function deleteDraftsOlderThan(db: any, cutoffDate: Date): Promise<number> {
+  // Get all drafts older than cutoff date
+  const { draftListings, listingPhotos } = await import("../drizzle/schema");
+  const { lt } = await import("drizzle-orm");
+  
+  const oldDrafts = await db.select({ id: draftListings.id })
+    .from(draftListings)
+    .where(lt(draftListings.createdAt, cutoffDate));
+
+  if (oldDrafts.length === 0) {
+    return 0;
+  }
+
+  const draftIds = oldDrafts.map((d: any) => d.id);
+
+  // Delete photos associated with these drafts
+  await db.delete(listingPhotos)
+    .where(inArray(listingPhotos.listingId, draftIds));
+
+  // Delete the drafts
+  await db.delete(draftListings)
+    .where(inArray(draftListings.id, draftIds));
+
+  return draftIds.length;
+}

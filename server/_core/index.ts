@@ -47,6 +47,34 @@ async function startServer() {
     })
   );
 
+  // Scheduled draft cleanup endpoint
+  app.post("/api/scheduled/cleanupExpiredDrafts", async (req, res) => {
+    try {
+      const user = await sdk.authenticateRequest(req);
+      
+      if (!user.isCron) {
+        return res.status(403).json({ error: "cron-only" });
+      }
+
+      // Dynamic import to get db instance
+      const { requireDb, deleteDraftsOlderThan } = await import("../db");
+      const db = await requireDb();
+
+      // Delete drafts older than 30 days
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+      const deletedCount = await deleteDraftsOlderThan(db, thirtyDaysAgo);
+
+      res.json({ ok: true, deletedCount, cutoffDate: thirtyDaysAgo.toISOString() });
+    } catch (error: any) {
+      console.error('[cleanupExpiredDrafts] Error:', error);
+      res.status(500).json({
+        error: error.message,
+        stack: error.stack,
+        timestamp: new Date().toISOString(),
+      });
+    }
+  });
+
   // Scheduled referral digest endpoint
   app.post("/api/scheduled/referralDigest", async (req, res) => {
     try {
