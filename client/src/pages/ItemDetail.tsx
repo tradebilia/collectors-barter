@@ -68,6 +68,21 @@ import { ArrowLeft } from "lucide-react";
 const TRADEBILIA_LOGO_URL = "/images/tradebilia-logo.svg";
 
 
+const getConditionDisplayName = (condition: string): string => {
+  const conditionMap: Record<string, string> = {
+    'mint': 'Mint',
+    'near_mint': 'Near Mint',
+    'excellent': 'Excellent',
+    'very_good': 'Very Good',
+    'good': 'Good',
+    'fair': 'Fair',
+    'poor': 'Poor',
+    'raw': 'Raw',
+    'ungraded': 'Ungraded',
+  };
+  return conditionMap[condition?.toLowerCase()] || condition;
+};
+
 const getCategoryWallpaperUrl = (category: string): string => {
   switch(category) {
     case 'sports_cards':
@@ -288,7 +303,7 @@ export default function ItemDetail() {
                 <div className="mt-6 grid gap-4 text-lg text-gray-700 sm:grid-cols-2">
                   <div>
                     <p className="text-sm uppercase tracking-[0.25em] text-gray-500">Condition</p>
-                    <p className="mt-2 font-medium text-gray-900">{listing.condition}</p>
+                    <p className="mt-2 font-medium text-gray-900">{getConditionDisplayName(listing.condition)}</p>
                   </div>
                   <div>
                     <p className="text-sm uppercase tracking-[0.25em] text-gray-500">Listing status</p>

@@ -350,7 +350,7 @@ export const COINS_SINGLE_COIN_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'conditional',
     dropdownOptions: ['Mint', 'Near Mint', 'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'],
-    conditionalLogic: 'Is Graded = No',
+    conditionalLogic: 'Is Graded = no',
   },
   {
     name: 'photos',
@@ -426,7 +426,7 @@ export const COINS_SINGLE_COIN_FIELDS: FieldDefinition[] = [
     supportsOther: true,
     inlineCustomField: true,
     otherFieldName: 'Custom Grading Company',
-    conditionalLogic: 'Is Graded = Yes',
+    conditionalLogic: 'Is Graded = yes',
   },
   {
     name: 'grade',
@@ -434,14 +434,14 @@ export const COINS_SINGLE_COIN_FIELDS: FieldDefinition[] = [
     inputType: 'text',
     maxLength: 4,
     requirement: 'required',
-    conditionalLogic: 'Is Graded = Yes',
+    conditionalLogic: 'Is Graded = yes',
   },
   {
     name: 'certificationNumber',
     label: 'Certification Number',
     inputType: 'text',
     requirement: 'required',
-    conditionalLogic: 'Is Graded = Yes',
+    conditionalLogic: 'Is Graded = yes',
   },
 ];
 
@@ -465,7 +465,7 @@ export const COMICS_COLLECTION_LOT_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'conditional',
     dropdownOptions: ['Mint', 'Near Mint', 'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'],
-    conditionalLogic: 'Is Graded = No',
+    conditionalLogic: 'Is Graded = no',
   },
   {
     name: 'photos',
@@ -527,7 +527,7 @@ export const COMICS_ORIGINAL_ART_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'conditional',
     dropdownOptions: ['Mint', 'Near Mint', 'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'],
-    conditionalLogic: 'Is Graded = No',
+    conditionalLogic: 'Is Graded = no',
   },
   {
     name: 'photos',
@@ -668,7 +668,7 @@ export const COMICS_SINGLE_COMIC_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'conditional',
     dropdownOptions: ['Mint', 'Near Mint', 'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'],
-    conditionalLogic: 'Is Graded = No',
+    conditionalLogic: 'Is Graded = no',
   },
   {
     name: 'photos',
@@ -779,7 +779,7 @@ export const COMICS_SINGLE_COMIC_FIELDS: FieldDefinition[] = [
     supportsOther: true,
     inlineCustomField: true,
     otherFieldName: 'Custom Grading Company',
-    conditionalLogic: 'Is Graded = Yes',
+    conditionalLogic: 'Is Graded = yes',
   },
   {
     name: 'grade',
@@ -787,14 +787,14 @@ export const COMICS_SINGLE_COMIC_FIELDS: FieldDefinition[] = [
     inputType: 'text',
     maxLength: 4,
     requirement: 'required',
-    conditionalLogic: 'Is Graded = Yes',
+    conditionalLogic: 'Is Graded = yes',
   },
   {
     name: 'certificationNumber',
     label: 'Certification Number',
     inputType: 'text',
     requirement: 'required',
-    conditionalLogic: 'Is Graded = Yes',
+    conditionalLogic: 'Is Graded = yes',
   },
   {
     name: 'numberOfSignatures',
@@ -987,7 +987,7 @@ export const MOVIES_BOX_SET_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'required',
     dropdownOptions: ['Mint', 'Near Mint', 'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'],
-    conditionalLogic: 'Is Graded = No',
+    conditionalLogic: 'Is Graded = no',
   },
   {
     name: 'photos',
@@ -1027,7 +1027,7 @@ export const MOVIES_BOX_SET_FIELDS: FieldDefinition[] = [
     supportsOther: true,
     inlineCustomField: true,
     otherFieldName: 'Custom Grading Company',
-    conditionalLogic: 'Is Graded = Yes',
+    conditionalLogic: 'Is Graded = yes',
   },
   {
     name: 'grade',
@@ -1035,14 +1035,14 @@ export const MOVIES_BOX_SET_FIELDS: FieldDefinition[] = [
     inputType: 'text',
     maxLength: 4,
     requirement: 'required',
-    conditionalLogic: 'Is Graded = Yes',
+    conditionalLogic: 'Is Graded = yes',
   },
   {
     name: 'certificationNumber',
     label: 'Certification Number',
     inputType: 'text',
     requirement: 'required',
-    conditionalLogic: 'Is Graded = Yes',
+    conditionalLogic: 'Is Graded = yes',
   },
 
   {
@@ -1149,7 +1149,7 @@ export const MOVIES_INDIVIDUAL_MOVIE_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'conditional',
     dropdownOptions: ['Mint', 'Near Mint', 'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'],
-    conditionalLogic: 'Is Graded = No',
+    conditionalLogic: 'Is Graded = no',
   },
   {
     name: 'photos',
@@ -1222,7 +1222,7 @@ export const MOVIES_INDIVIDUAL_MOVIE_FIELDS: FieldDefinition[] = [
     supportsOther: true,
     inlineCustomField: true,
     otherFieldName: 'Custom Grading Company',
-    conditionalLogic: 'Is Graded = Yes',
+    conditionalLogic: 'Is Graded = yes',
   },
   {
     name: 'grade',
@@ -1230,14 +1230,14 @@ export const MOVIES_INDIVIDUAL_MOVIE_FIELDS: FieldDefinition[] = [
     inputType: 'text',
     maxLength: 4,
     requirement: 'required',
-    conditionalLogic: 'Is Graded = Yes',
+    conditionalLogic: 'Is Graded = yes',
   },
   {
     name: 'certificationNumber',
     label: 'Certification Number',
     inputType: 'text',
     requirement: 'required',
-    conditionalLogic: 'Is Graded = Yes',
+    conditionalLogic: 'Is Graded = yes',
   },
 ];
 
@@ -1523,7 +1523,7 @@ export const SPORTS_CARDS_COLLECTION_LOT_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'conditional',
     dropdownOptions: ['Mint', 'Near Mint', 'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'],
-    conditionalLogic: 'Is Graded = No',
+    conditionalLogic: 'Is Graded = no',
   },
   {
     name: 'photos',
@@ -1600,7 +1600,7 @@ export const SPORTS_CARDS_SET_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'conditional',
     dropdownOptions: ['Mint', 'Near Mint', 'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'],
-    conditionalLogic: 'Is Graded = No',
+    conditionalLogic: 'Is Graded = no',
   },
   {
     name: 'photos',
@@ -1702,7 +1702,7 @@ export const SPORTS_CARDS_SINGLE_CARD_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'conditional',
     dropdownOptions: ['Mint', 'Near Mint', 'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'],
-    conditionalLogic: 'Is Graded = No',
+    conditionalLogic: 'Is Graded = no',
     gridColumn: 'third',
   },
   {
@@ -1833,7 +1833,7 @@ export const SPORTS_CARDS_SINGLE_CARD_FIELDS: FieldDefinition[] = [
     supportsOther: true,
     inlineCustomField: true,
     otherFieldName: 'Custom Grading Company',
-    conditionalLogic: 'Is Graded = Yes',
+    conditionalLogic: 'Is Graded = yes',
   },
   {
     name: 'grade',
@@ -1841,14 +1841,14 @@ export const SPORTS_CARDS_SINGLE_CARD_FIELDS: FieldDefinition[] = [
     inputType: 'text',
     maxLength: 4,
     requirement: 'required',
-    conditionalLogic: 'Is Graded = Yes',
+    conditionalLogic: 'Is Graded = yes',
   },
   {
     name: 'certificationNumber',
     label: 'Certification Number',
     inputType: 'text',
     requirement: 'required',
-    conditionalLogic: 'Is Graded = Yes',
+    conditionalLogic: 'Is Graded = yes',
   },
 ];
 
@@ -1872,7 +1872,7 @@ export const SPORTS_CARDS_UNOPENED_PRODUCT_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'conditional',
     dropdownOptions: ['Mint', 'Near Mint', 'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'],
-    conditionalLogic: 'Is Graded = No',
+    conditionalLogic: 'Is Graded = no',
   },
   {
     name: 'photos',
@@ -2058,7 +2058,7 @@ export const STAMPS_SINGLE_STAMP_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'conditional',
     dropdownOptions: ['Mint', 'Near Mint', 'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'],
-    conditionalLogic: 'Is Graded = No',
+    conditionalLogic: 'Is Graded = no',
   },
   {
     name: 'photos',
@@ -2118,7 +2118,7 @@ export const STAMPS_SINGLE_STAMP_FIELDS: FieldDefinition[] = [
     supportsOther: true,
     inlineCustomField: true,
     otherFieldName: 'Custom Grading Company',
-    conditionalLogic: 'Is Graded = Yes',
+    conditionalLogic: 'Is Graded = yes',
   },
   {
     name: 'grade',
@@ -2126,14 +2126,14 @@ export const STAMPS_SINGLE_STAMP_FIELDS: FieldDefinition[] = [
     inputType: 'text',
     maxLength: 4,
     requirement: 'required',
-    conditionalLogic: 'Is Graded = Yes',
+    conditionalLogic: 'Is Graded = yes',
   },
   {
     name: 'certificationNumber',
     label: 'Certification Number',
     inputType: 'text',
     requirement: 'required',
-    conditionalLogic: 'Is Graded = Yes',
+    conditionalLogic: 'Is Graded = yes',
   },
 ];
 
@@ -2164,7 +2164,7 @@ export const STAMPS_STAMP_SET_SHEET_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'conditional',
     dropdownOptions: ['Mint', 'Near Mint', 'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'],
-    conditionalLogic: 'Is Graded = No',
+    conditionalLogic: 'Is Graded = no',
   },
   {
     name: 'photos',
@@ -2228,7 +2228,7 @@ export const STAMPS_STAMP_SET_SHEET_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'required',
     dropdownOptions: ['ASG', 'PSAG', 'PSE', 'Other'],
-    conditionalLogic: 'Is Graded = Yes',
+    conditionalLogic: 'Is Graded = yes',
     supportsOther: true,
     inlineCustomField: true,
     otherFieldName: 'Custom Grading Company',
@@ -2239,14 +2239,14 @@ export const STAMPS_STAMP_SET_SHEET_FIELDS: FieldDefinition[] = [
     inputType: 'text',
     maxLength: 4,
     requirement: 'required',
-    conditionalLogic: 'Is Graded = Yes',
+    conditionalLogic: 'Is Graded = yes',
   },
   {
     name: 'certificationNumber',
     label: 'Certification Number',
     inputType: 'text',
     requirement: 'required',
-    conditionalLogic: 'Is Graded = Yes',
+    conditionalLogic: 'Is Graded = yes',
   },
 ];
 
@@ -2270,7 +2270,7 @@ export const VIDEO_GAMES_ACCESSORY_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'conditional',
     dropdownOptions: ['Mint', 'Near Mint', 'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'],
-    conditionalLogic: 'Is Graded = No',
+    conditionalLogic: 'Is Graded = no',
   },
   {
     name: 'photos',
@@ -2340,7 +2340,7 @@ export const VIDEO_GAMES_ACCESSORY_FIELDS: FieldDefinition[] = [
     supportsOther: true,
     inlineCustomField: true,
     otherFieldName: 'Custom Grading Company',
-    conditionalLogic: 'Is Graded = Yes',
+    conditionalLogic: 'Is Graded = yes',
   },
   {
     name: 'grade',
@@ -2348,14 +2348,14 @@ export const VIDEO_GAMES_ACCESSORY_FIELDS: FieldDefinition[] = [
     inputType: 'text',
     maxLength: 4,
     requirement: 'required',
-    conditionalLogic: 'Is Graded = Yes',
+    conditionalLogic: 'Is Graded = yes',
   },
   {
     name: 'certificationNumber',
     label: 'Certification Number',
     inputType: 'text',
     requirement: 'required',
-    conditionalLogic: 'Is Graded = Yes',
+    conditionalLogic: 'Is Graded = yes',
   },
   {
     name: 'originalPackaging',
@@ -2434,7 +2434,7 @@ export const VIDEO_GAMES_CONSOLE_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'conditional',
     dropdownOptions: ['Mint', 'Near Mint', 'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'],
-    conditionalLogic: 'Is Graded = No',
+    conditionalLogic: 'Is Graded = no',
   },
   {
     name: 'photos',
@@ -2518,7 +2518,7 @@ export const VIDEO_GAMES_CONSOLE_FIELDS: FieldDefinition[] = [
     supportsOther: true,
     inlineCustomField: true,
     otherFieldName: 'Custom Grading Company',
-    conditionalLogic: 'Is Graded = Yes',
+    conditionalLogic: 'Is Graded = yes',
   },
   {
     name: 'grade',
@@ -2526,14 +2526,14 @@ export const VIDEO_GAMES_CONSOLE_FIELDS: FieldDefinition[] = [
     inputType: 'text',
     maxLength: 4,
     requirement: 'required',
-    conditionalLogic: 'Is Graded = Yes',
+    conditionalLogic: 'Is Graded = yes',
   },
   {
     name: 'certificationNumber',
     label: 'Certification Number',
     inputType: 'text',
     requirement: 'required',
-    conditionalLogic: 'Is Graded = Yes',
+    conditionalLogic: 'Is Graded = yes',
   },
 ];
 
@@ -2557,7 +2557,7 @@ export const VIDEO_GAMES_GAME_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'conditional',
     dropdownOptions: ['Mint', 'Near Mint', 'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'],
-    conditionalLogic: 'Is Graded = No',
+    conditionalLogic: 'Is Graded = no',
   },
   {
     name: 'photos',
@@ -2650,7 +2650,7 @@ export const VIDEO_GAMES_GAME_FIELDS: FieldDefinition[] = [
     supportsOther: true,
     inlineCustomField: true,
     otherFieldName: 'Custom Grading Company',
-    conditionalLogic: 'Is Graded = Yes',
+    conditionalLogic: 'Is Graded = yes',
   },
   {
     name: 'grade',
@@ -2658,14 +2658,14 @@ export const VIDEO_GAMES_GAME_FIELDS: FieldDefinition[] = [
     inputType: 'text',
     maxLength: 4,
     requirement: 'required',
-    conditionalLogic: 'Is Graded = Yes',
+    conditionalLogic: 'Is Graded = yes',
   },
   {
     name: 'certificationNumber',
     label: 'Certification Number',
     inputType: 'text',
     requirement: 'required',
-    conditionalLogic: 'Is Graded = Yes',
+    conditionalLogic: 'Is Graded = yes',
   },
 ];
 
@@ -2689,7 +2689,7 @@ export const VINTAGE_TOYS_ACTION_FIGURE_DOLL_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'conditional',
     dropdownOptions: ['Mint', 'Near Mint', 'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'],
-    conditionalLogic: 'Is Graded = No',
+    conditionalLogic: 'Is Graded = no',
   },
   {
     name: 'photos',
@@ -2770,7 +2770,7 @@ export const VINTAGE_TOYS_ACTION_FIGURE_DOLL_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'required',
     dropdownOptions: ['AFA', 'CAS', 'UKG', 'Other'],
-    conditionalLogic: 'Is Graded = Yes',
+    conditionalLogic: 'Is Graded = yes',
     supportsOther: true,
     inlineCustomField: true,
     otherFieldName: 'Custom Grading Company',
@@ -2781,14 +2781,14 @@ export const VINTAGE_TOYS_ACTION_FIGURE_DOLL_FIELDS: FieldDefinition[] = [
     inputType: 'text',
     maxLength: 4,
     requirement: 'required',
-    conditionalLogic: 'Is Graded = Yes',
+    conditionalLogic: 'Is Graded = yes',
   },
   {
     name: 'certificationNumber',
     label: 'Certification Number',
     inputType: 'text',
     requirement: 'required',
-    conditionalLogic: 'Is Graded = Yes',
+    conditionalLogic: 'Is Graded = yes',
   },
 ];
 
@@ -2812,7 +2812,7 @@ export const VINTAGE_TOYS_BOARD_GAME_PUZZLE_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'conditional',
     dropdownOptions: ['Mint', 'Near Mint', 'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'],
-    conditionalLogic: 'Is Graded = No',
+    conditionalLogic: 'Is Graded = no',
   },
   {
     name: 'photos',
@@ -2887,21 +2887,21 @@ export const VINTAGE_TOYS_BOARD_GAME_PUZZLE_FIELDS: FieldDefinition[] = [
     supportsOther: true,
     inlineCustomField: true,
     otherFieldName: 'Custom Grading Company',
-    conditionalLogic: 'Is Graded = Yes',
+    conditionalLogic: 'Is Graded = yes',
   },
   {
     name: 'grade',
     label: 'Grade',
     inputType: 'text',
     requirement: 'required',
-    conditionalLogic: 'Is Graded = Yes',
+    conditionalLogic: 'Is Graded = yes',
   },
   {
     name: 'certificationNumber',
     label: 'Certification Number',
     inputType: 'text',
     requirement: 'required',
-    conditionalLogic: 'Is Graded = Yes',
+    conditionalLogic: 'Is Graded = yes',
   },
   {
     name: 'instructionsIncluded',
@@ -2939,7 +2939,7 @@ export const VINTAGE_TOYS_COLLECTION_LOT_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'conditional',
     dropdownOptions: ['Mint', 'Near Mint', 'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'],
-    conditionalLogic: 'Is Graded = No',
+    conditionalLogic: 'Is Graded = no',
   },
   {
     name: 'photos',
@@ -2993,7 +2993,7 @@ export const VINTAGE_TOYS_COLLECTION_LOT_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'required',
     dropdownOptions: ['AFA', 'CAS', 'UKG', 'Other'],
-    conditionalLogic: 'Is Graded = Yes',
+    conditionalLogic: 'Is Graded = yes',
     supportsOther: true,
     inlineCustomField: true,
     otherFieldName: 'Custom Grading Company',
@@ -3004,14 +3004,14 @@ export const VINTAGE_TOYS_COLLECTION_LOT_FIELDS: FieldDefinition[] = [
     inputType: 'text',
     maxLength: 4,
     requirement: 'required',
-    conditionalLogic: 'Is Graded = Yes',
+    conditionalLogic: 'Is Graded = yes',
   },
   {
     name: 'certificationNumber',
     label: 'Certification Number',
     inputType: 'text',
     requirement: 'required',
-    conditionalLogic: 'Is Graded = Yes',
+    conditionalLogic: 'Is Graded = yes',
   },
 ];
 
@@ -3035,7 +3035,7 @@ export const VINTAGE_TOYS_ELECTRONIC_TOY_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'conditional',
     dropdownOptions: ['Mint', 'Near Mint', 'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'],
-    conditionalLogic: 'Is Graded = No',
+    conditionalLogic: 'Is Graded = no',
   },
   {
     name: 'photos',
@@ -3122,7 +3122,7 @@ export const VINTAGE_TOYS_ELECTRONIC_TOY_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'required',
     dropdownOptions: ['AFA', 'CAS', 'UKG', 'Other'],
-    conditionalLogic: 'Is Graded = Yes',
+    conditionalLogic: 'Is Graded = yes',
     supportsOther: true,
     inlineCustomField: true,
     otherFieldName: 'Custom Grading Company',
@@ -3133,14 +3133,14 @@ export const VINTAGE_TOYS_ELECTRONIC_TOY_FIELDS: FieldDefinition[] = [
     inputType: 'text',
     maxLength: 4,
     requirement: 'required',
-    conditionalLogic: 'Is Graded = Yes',
+    conditionalLogic: 'Is Graded = yes',
   },
   {
     name: 'certificationNumber',
     label: 'Certification Number',
     inputType: 'text',
     requirement: 'required',
-    conditionalLogic: 'Is Graded = Yes',
+    conditionalLogic: 'Is Graded = yes',
   },
 ];
 
@@ -3164,7 +3164,7 @@ export const VINTAGE_TOYS_MODEL_KIT_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'conditional',
     dropdownOptions: ['Mint', 'Near Mint', 'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'],
-    conditionalLogic: 'Is Graded = No',
+    conditionalLogic: 'Is Graded = no',
   },
   {
     name: 'photos',
@@ -3237,7 +3237,7 @@ export const VINTAGE_TOYS_MODEL_KIT_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'required',
     dropdownOptions: ['AFA', 'CAS', 'UKG', 'Other'],
-    conditionalLogic: 'Is Graded = Yes',
+    conditionalLogic: 'Is Graded = yes',
     supportsOther: true,
     inlineCustomField: true,
     otherFieldName: 'Custom Grading Company',
@@ -3248,14 +3248,14 @@ export const VINTAGE_TOYS_MODEL_KIT_FIELDS: FieldDefinition[] = [
     inputType: 'text',
     maxLength: 4,
     requirement: 'required',
-    conditionalLogic: 'Is Graded = Yes',
+    conditionalLogic: 'Is Graded = yes',
   },
   {
     name: 'certificationNumber',
     label: 'Certification Number',
     inputType: 'text',
     requirement: 'required',
-    conditionalLogic: 'Is Graded = Yes',
+    conditionalLogic: 'Is Graded = yes',
   },
 ];
 
@@ -3279,7 +3279,7 @@ export const VINTAGE_TOYS_PLAYSET_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'conditional',
     dropdownOptions: ['Mint', 'Near Mint', 'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'],
-    conditionalLogic: 'Is Graded = No',
+    conditionalLogic: 'Is Graded = no',
   },
   {
     name: 'photos',
@@ -3354,21 +3354,21 @@ export const VINTAGE_TOYS_PLAYSET_FIELDS: FieldDefinition[] = [
     supportsOther: true,
     inlineCustomField: true,
     otherFieldName: 'Custom Grading Company',
-    conditionalLogic: 'Is Graded = Yes',
+    conditionalLogic: 'Is Graded = yes',
   },
   {
     name: 'grade',
     label: 'Grade',
     inputType: 'text',
     requirement: 'required',
-    conditionalLogic: 'Is Graded = Yes',
+    conditionalLogic: 'Is Graded = yes',
   },
   {
     name: 'certificationNumber',
     label: 'Certification Number',
     inputType: 'text',
     requirement: 'required',
-    conditionalLogic: 'Is Graded = Yes',
+    conditionalLogic: 'Is Graded = yes',
   },
   {
     name: 'instructionsIncluded',
@@ -3406,7 +3406,7 @@ export const VINTAGE_TOYS_PLUSH_STUFFED_TOY_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'conditional',
     dropdownOptions: ['Mint', 'Near Mint', 'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'],
-    conditionalLogic: 'Is Graded = No',
+    conditionalLogic: 'Is Graded = no',
   },
   {
     name: 'photos',
@@ -3471,7 +3471,7 @@ export const VINTAGE_TOYS_PLUSH_STUFFED_TOY_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'required',
     dropdownOptions: ['AFA', 'CAS', 'UKG', 'Other'],
-    conditionalLogic: 'Is Graded = Yes',
+    conditionalLogic: 'Is Graded = yes',
     supportsOther: true,
     inlineCustomField: true,
     otherFieldName: 'Custom Grading Company',
@@ -3482,14 +3482,14 @@ export const VINTAGE_TOYS_PLUSH_STUFFED_TOY_FIELDS: FieldDefinition[] = [
     inputType: 'text',
     maxLength: 4,
     requirement: 'required',
-    conditionalLogic: 'Is Graded = Yes',
+    conditionalLogic: 'Is Graded = yes',
   },
   {
     name: 'certificationNumber',
     label: 'Certification Number',
     inputType: 'text',
     requirement: 'required',
-    conditionalLogic: 'Is Graded = Yes',
+    conditionalLogic: 'Is Graded = yes',
   },
 ];
 
@@ -3513,7 +3513,7 @@ export const VINTAGE_TOYS_VEHICLE_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'conditional',
     dropdownOptions: ['Mint', 'Near Mint', 'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'],
-    conditionalLogic: 'Is Graded = No',
+    conditionalLogic: 'Is Graded = no',
   },
   {
     name: 'isGraded',
@@ -3531,21 +3531,21 @@ export const VINTAGE_TOYS_VEHICLE_FIELDS: FieldDefinition[] = [
     supportsOther: true,
     inlineCustomField: true,
     otherFieldName: 'Custom Grading Company',
-    conditionalLogic: 'Is Graded = Yes',
+    conditionalLogic: 'Is Graded = yes',
   },
   {
     name: 'grade',
     label: 'Grade',
     inputType: 'text',
     requirement: 'required',
-    conditionalLogic: 'Is Graded = Yes',
+    conditionalLogic: 'Is Graded = yes',
   },
   {
     name: 'certificationNumber',
     label: 'Certification Number',
     inputType: 'text',
     requirement: 'required',
-    conditionalLogic: 'Is Graded = Yes',
+    conditionalLogic: 'Is Graded = yes',
   },
   {
     name: 'photos',
@@ -3644,7 +3644,7 @@ export const COINS_PAPER_MONEY_BANKNOTES_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'conditional',
     dropdownOptions: ['Mint', 'Near Mint', 'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'],
-    conditionalLogic: 'Is Graded = No',
+    conditionalLogic: 'Is Graded = no',
   },
   {
     name: 'photos',
@@ -3702,7 +3702,7 @@ export const COINS_PAPER_MONEY_BANKNOTES_FIELDS: FieldDefinition[] = [
     supportsOther: true,
     inlineCustomField: true,
     otherFieldName: 'Custom Grading Company',
-    conditionalLogic: 'Is Graded = Yes',
+    conditionalLogic: 'Is Graded = yes',
   },
   {
     name: 'grade',
@@ -3710,14 +3710,14 @@ export const COINS_PAPER_MONEY_BANKNOTES_FIELDS: FieldDefinition[] = [
     inputType: 'text',
     maxLength: 4,
     requirement: 'required',
-    conditionalLogic: 'Is Graded = Yes',
+    conditionalLogic: 'Is Graded = yes',
   },
   {
     name: 'certificationNumber',
     label: 'Certification Number',
     inputType: 'text',
     requirement: 'required',
-    conditionalLogic: 'Is Graded = Yes',
+    conditionalLogic: 'Is Graded = yes',
   },
 ];
 
@@ -3741,7 +3741,7 @@ export const POKEMON_SINGLE_CARD_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'required',
     dropdownOptions: ['Mint', 'Near Mint', 'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'],
-    conditionalLogic: 'Is Graded = No',
+    conditionalLogic: 'Is Graded = no',
   },
   {
     name: 'quantity',
@@ -3826,7 +3826,7 @@ export const POKEMON_SINGLE_CARD_FIELDS: FieldDefinition[] = [
     inputType: 'dropdown',
     requirement: 'conditional',
     dropdownOptions: ['ACE', 'AP', 'Arena Club', 'BGS', 'CGA', 'CGC Cards', 'Degree', 'Diamond', 'FCG', 'GAI', 'GEM', 'GMA', 'HGA', 'ISA', 'KSA', 'MNT', 'OnlyGraded', 'PCI', 'PGA', 'PRO', 'PSA', 'Pokegrade', 'RCG', 'Rare Edition', 'SGC', 'TAG Grading', 'TRCG', 'Tree Frog', 'WCG', 'Other'],
-    conditionalLogic: 'Is Graded = Yes',
+    conditionalLogic: 'Is Graded = yes',
     supportsOther: true,
     inlineCustomField: true,
     otherFieldName: 'Custom Grading Company',
@@ -3836,14 +3836,14 @@ export const POKEMON_SINGLE_CARD_FIELDS: FieldDefinition[] = [
     label: 'Grade',
     inputType: 'text',
     requirement: 'conditional',
-    conditionalLogic: 'Is Graded = Yes',
+    conditionalLogic: 'Is Graded = yes',
   },
   {
     name: 'certificationNumber',
     label: 'Certification Number',
     inputType: 'text',
     requirement: 'conditional',
-    conditionalLogic: 'Is Graded = Yes',
+    conditionalLogic: 'Is Graded = yes',
   },
 ];
 

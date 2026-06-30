@@ -162,7 +162,12 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({
       case 'dropdown':
         // Standard dropdown for all fields
         return (
-          <Select value={value || ''} onValueChange={onChange} disabled={disabled}>
+          <Select value={value || ''} onValueChange={(newValue) => {
+            if (field.name === 'condition') {
+              console.log('Condition dropdown onChange:', { newValue, fieldName: field.name, displayLabel: field.displayLabels?.[newValue] });
+            }
+            onChange(newValue);
+          }} disabled={disabled}>
             <SelectTrigger className={`bg-white text-black ${hasError ? 'border-red-500' : ''}`}>
               <SelectValue placeholder="Select an option" />
             </SelectTrigger>
@@ -185,7 +190,7 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({
                 <>
                   {field.dropdownOptions?.map((option) => (
                     <SelectItem key={option} value={option}>
-                      {option}
+                      {field.displayLabels?.[option] || option}
                     </SelectItem>
                   ))}
                   {field.supportsOther && !field.dropdownOptions?.includes('Other') && (

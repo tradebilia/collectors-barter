@@ -156,7 +156,12 @@ export const useAddInventoryForm = (photos: any[] = []): UseAddInventoryFormRetu
         }
 
         const actualValue = formData[fieldKey];
-        return actualValue === expectedValue.trim();
+        // Case-insensitive comparison for enum values
+        const actualValueStr = String(actualValue).toLowerCase().trim();
+        const expectedValueStr = expectedValue.trim().toLowerCase();
+        const result = actualValueStr === expectedValueStr;
+        console.log(`[evaluateCondition] Comparing: "${actualValue}" (${actualValueStr}) === "${expectedValue.trim()}" (${expectedValueStr}), result: ${result}`);
+        return result;
       }
 
       // If condition string doesn't match any pattern, return false (safer than true)

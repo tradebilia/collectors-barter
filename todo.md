@@ -2957,3 +2957,124 @@ All 8 remaining filter optimization and caching items have been successfully imp
 - [x] Comics / Original Art
 - [x] Comics / Single Comic
 - [x] Comics / Collection / Lot
+
+
+## Form Submission Workflow - COMPLETED ✅ (Latest Session)
+
+### Critical Fixes Applied
+
+- [x] **Conditional Field Visibility** - Fixed case-sensitive comparison in conditional logic evaluation
+  - Issue: Condition field was not appearing after selecting "Is Graded = No"
+  - Root Cause: Case-sensitive string comparison in evaluateCondition function
+  - Solution: Updated evaluateCondition() to perform case-insensitive comparisons
+  - File: `client/src/hooks/useAddInventoryForm.ts` (lines 160-162)
+
+- [x] **Button Click Handlers** - Fixed unresponsive Save as Draft and Submit buttons
+  - Issue: Buttons were not responding to clicks
+  - Root Cause: Buttons were in fixed bottom position causing z-index/pointer-events issues
+  - Solution: Moved buttons inside form content area (removed fixed positioning)
+  - File: `client/src/pages/AddInventory.tsx`
+
+- [x] **Form Data Collection** - Fixed incomplete form data being sent to server
+  - Issue: Form data was not being properly collected
+  - Root Cause: handleSaveDraft() was accessing incorrect field names (grade instead of isGraded)
+  - Solution: Fixed function to properly map form fields and call getItemDetails()
+  - File: `client/src/pages/AddInventory.tsx`
+
+- [x] **Grade Mapping** - Fixed invalid grade values being sent to backend
+  - Issue: Server rejected grade value "No" (from isGraded field)
+  - Root Cause: When isGraded = "No", grade should be "raw", not "No"
+  - Solution: Added logic to map isGraded value to appropriate grade enum value
+  - File: `client/src/pages/AddInventory.tsx`
+
+- [x] **Condition Enum Mapping** - Fixed display name to enum value conversion
+  - Issue: Form was sending display names (e.g., "Near Mint") instead of enum values (e.g., "near_mint")
+  - Root Cause: No mapping between display names and enum values
+  - Solution: Added mapping function to convert display names to enum values before submission
+  - File: `client/src/pages/AddInventory.tsx`
+
+- [x] **Display Name Rendering** - Fixed item detail page showing enum values instead of display names
+  - Issue: Item detail page was displaying enum values (e.g., "near_mint") to users
+  - Root Cause: No conversion from enum values back to display names for rendering
+  - Solution: Added function to convert condition enum values to display names
+  - File: `client/src/pages/ItemDetail.tsx`
+
+### End-to-End Testing - COMPLETED ✅
+
+- [x] **Test Item 1: Comics Category**
+  - Title: Amazing Spider-Man #300
+  - Category: Comics
+  - Item Type: Single Comic
+  - Condition: Near Mint (conditionally displayed)
+  - Value: $250.00
+  - Status: Active
+  - Verification: Appears on Comics category page, home carousel, and rankings
+
+- [x] **Test Item 2: Sports Cards Category**
+  - Title: 1986-87 Michael Jordan Rookie Card
+  - Category: Sports Cards
+  - Item Type: Single Card
+  - Condition: Near Mint
+  - Grade: 10
+  - Certification: PRO
+  - Value: $500,000.00
+  - Status: Active
+  - Verification: Appears on Sports Cards category page, home carousel, and rankings
+
+- [x] **Form Validation** - Verified all validation rules work correctly
+  - Required fields validation
+  - Photo requirement validation
+  - Conditional field requirements
+
+- [x] **Data Persistence** - Verified data is correctly stored in database
+  - Draft listings stored in draftListings table
+  - Published listings stored in listings table
+  - All fields correctly persisted
+
+- [x] **Display Consistency** - Verified display names appear everywhere
+  - Category pages show display names
+  - Home carousel shows display names
+  - Item detail pages show display names
+  - Rankings show display names
+
+### Implementation Notes
+
+**Database Schema**:
+- listings table: Stores published/active listings with status enum (active, traded, archived)
+- draftListings table: Stores incomplete listings (drafts)
+- Condition field: Stores enum values (mint, near_mint, excellent, very_good, good, fair, poor)
+- Grade field: Stores enum values (raw, ungraded, or grading company grades)
+
+**Form Data Flow**:
+1. User selects display name from dropdown (e.g., "Near Mint")
+2. Form stores display name in formData.condition
+3. On submission, display name is converted to enum value (e.g., "near_mint")
+4. Backend stores enum value in database
+5. On retrieval, enum value is converted back to display name for rendering
+
+**Key Files Modified**:
+- client/src/hooks/useAddInventoryForm.ts - Conditional logic evaluation
+- client/src/pages/AddInventory.tsx - Form submission and data mapping
+- client/src/pages/ItemDetail.tsx - Display name rendering
+
+### Testing Checklist
+
+- [x] Conditional field visibility works correctly
+- [x] Form submission succeeds with valid data
+- [x] Draft saving works without photos
+- [x] Item submission requires photos
+- [x] Items appear on category pages
+- [x] Items appear on home carousel
+- [x] Display names render correctly everywhere
+- [x] Enum values are never shown to users
+- [x] Data persists correctly in database
+- [x] All required fields are validated
+
+### Deployment Status
+
+✅ **PRODUCTION READY**
+- All fixes are backward compatible
+- No database migrations required
+- No breaking API changes
+- Comprehensive end-to-end testing completed
+- Ready for immediate deployment

@@ -124,26 +124,16 @@ async function uploadImage(folder: string, userId: number, input: PhotoUploadInp
     console.log(`[uploadImage] Starting upload: name=${input.name}, size=${buffer.length} bytes, type=${input.type}`);
     const timestamp = Date.now();
     const randomId = Math.random().toString(36).substring(2, 8);
-    const fileKey = `${folder}-${userId}-${timestamp}-${randomId}-${input.name}`;
+    const fileKey = `${folder}/${userId}/${timestamp}-${randomId}-${input.name}`;
     console.log(`[uploadImage] File key: ${fileKey}`);
     
-    // Save to local filesystem instead of S3 to work around CloudFront issues
-    const fs = await import("fs/promises");
-    const path = await import("path");
-    const publicDir = path.resolve(process.cwd(), "client/public/images");
+    // Import storagePut helper
+    const { storagePut } = await import("./storage");
     
-    // Ensure directory exists
-    await fs.mkdir(publicDir, { recursive: true });
-    
-    // Save file locally
-    const filePath = path.join(publicDir, fileKey);
-    await fs.writeFile(filePath, buffer);
-    console.log(`[uploadImage] File saved locally to: ${filePath}`);
-    
-    // Return URL pointing to local file
-    const url = `/images/${fileKey}`;
-    console.log(`[uploadImage] Upload successful, URL: ${url}`);
-    return { key: fileKey, url };
+    // Upload to S3 using storagePut
+    const result = await storagePut(fileKey, buffer, input.type);
+    console.log(`[uploadImage] Upload successful, URL: ${result.url}`);
+    return result;
   } catch (error) {
     console.error(`[uploadImage] Upload failed:`, error);
     throw error;

@@ -21,6 +21,7 @@ export interface FieldDefinition {
   inputType: FieldInputType;
   requirement: FieldRequirement;
   dropdownOptions?: string[];
+  displayLabels?: Record<string, string>; // Map enum values to display labels
   supportsOther?: boolean;
   otherFieldName?: string;
   inlineCustomField?: boolean; // Display custom field inline with parent field
@@ -90,8 +91,9 @@ const CONDITION_FIELD: FieldDefinition = {
   label: 'Condition',
   inputType: 'dropdown',
   requirement: 'required',
-  dropdownOptions: ['Mint', 'Near Mint', 'Excellent', 'Very Good', 'Good', 'Fair', 'Poor'],
-  conditionalLogic: 'Is Graded = No',
+  dropdownOptions: ['mint', 'near_mint', 'excellent', 'very_good', 'good', 'fair', 'poor'],
+  conditionalLogic: 'Is Graded = no',
+  displayLabels: { 'mint': 'Mint', 'near_mint': 'Near Mint', 'excellent': 'Excellent', 'very_good': 'Very Good', 'good': 'Good', 'fair': 'Fair', 'poor': 'Poor' },
 };
 
 const PHOTOS_FIELD: FieldDefinition = {
@@ -106,7 +108,7 @@ const DESCRIPTION_FIELD: FieldDefinition = {
   label: 'Description',
   inputType: 'textarea',
   requirement: 'conditional',
-  validation: { minLength: 20, maxLength: 4000 },
+  validation: { maxLength: 4000 },
 };
 
 const QUANTITY_FIELD: FieldDefinition = {
@@ -125,7 +127,8 @@ const SHIPPING_AVAILABLE_FIELD: FieldDefinition = {
   label: 'Shipping Available',
   inputType: 'dropdown',
   requirement: 'conditional',
-  dropdownOptions: ['Yes', 'Local Only', 'In Person Only'],
+  dropdownOptions: ['yes', 'local_only', 'in_person_only'],
+  displayLabels: { 'yes': 'Yes', 'local_only': 'Local Only', 'in_person_only': 'In Person Only' },
 };
 
 const IS_GRADED_FIELD: FieldDefinition = {
@@ -133,7 +136,8 @@ const IS_GRADED_FIELD: FieldDefinition = {
   label: 'Is Graded',
   inputType: 'dropdown',
   requirement: 'required',
-  dropdownOptions: ['Yes', 'No'],
+  dropdownOptions: ['yes', 'no'],
+  displayLabels: { 'yes': 'Yes', 'no': 'No' },
   gridColumn: 'third',
 };
 
@@ -142,7 +146,7 @@ const GRADING_COMPANY_FIELD: FieldDefinition = {
   label: 'Grading Company',
   inputType: 'dropdown',
   requirement: 'required',
-  conditionalLogic: 'Is Graded = Yes',
+  conditionalLogic: 'Is Graded = yes',
   supportsOther: true,
   otherFieldName: 'Custom Grading Company',
   gridColumn: 'third',
@@ -153,7 +157,7 @@ const GRADE_FIELD: FieldDefinition = {
   label: 'Grade',
   inputType: 'text',
   requirement: 'required',
-  conditionalLogic: 'Is Graded = Yes',
+  conditionalLogic: 'Is Graded = yes',
   gridColumn: 'third',
 };
 
@@ -162,7 +166,7 @@ const CERTIFICATION_NUMBER_FIELD: FieldDefinition = {
   label: 'Certification Number',
   inputType: 'text',
   requirement: 'required',
-  conditionalLogic: 'Is Graded = Yes',
+  conditionalLogic: 'Is Graded = yes',
   maxLength: 40,
   gridColumn: 'third',
 };

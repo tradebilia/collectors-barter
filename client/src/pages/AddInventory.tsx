@@ -19,6 +19,17 @@ import { ITEM_TYPE_LAYOUTS } from "@/lib/layoutConfigs/itemTypeLayouts";
 
 const TRADEBILIA_LOGO_URL = "/manus-storage/tradebilia-logo_c676d640.svg";
 
+// Map display names to enum values
+const conditionDisplayToEnum: Record<string, string> = {
+  'Mint': 'mint',
+  'Near Mint': 'near_mint',
+  'Excellent': 'excellent',
+  'Very Good': 'very_good',
+  'Good': 'good',
+  'Fair': 'fair',
+  'Poor': 'poor',
+};
+
 type UploadedImage = {
   name: string;
   type: string;
@@ -146,15 +157,26 @@ export default function AddInventory() {
         toast.error("Please select a category before saving.");
         return;
       }
+      
+      // Map isGraded to grade value
+      let gradeValue = "raw";
+      if (formData.isGraded && formData.isGraded.toLowerCase() === "yes") {
+        // If graded, use the condition value (e.g., "Mint", "Near Mint", etc.)
+        // For now, default to the condition field if available
+        gradeValue = formData.condition || "ungraded";
+      } else if (formData.isGraded && formData.isGraded.toLowerCase() === "no") {
+        gradeValue = "raw";
+      }
+      
       await saveDraftMutation.mutateAsync({
-        title: formData.title,
+        title: formData.listingTitle || "",
         category: formData.category,
-        grade: formData.grade as any,
+        grade: gradeValue,
         graderCompany: formData.gradingCompany || "Raw",
         certificationNumber: formData.certificationNumber || "",
-        estimatedValue: formData.estimatedValue ? parseFloat(formData.estimatedValue) : 0,
-        categoryFields: formData.itemDetails,
-        additionalNotes: formData.description,
+        estimatedValue: formData.tradeValue ? parseFloat(formData.tradeValue) : 0,
+        categoryFields: getItemDetails(),
+        additionalNotes: formData.description || "",
         photos: photos,
       });
       toast.success("Inventory draft saved.");
@@ -165,71 +187,108 @@ export default function AddInventory() {
   };
 
   const submitListing = async (event: FormEvent<HTMLFormElement>) => {
+    console.log('submitListing called with event:', event);
     event.preventDefault();
 
-    // Validate required fields
-    const isValid = validateForm();
-    if (!isValid) {
-      toast.error("Please fill in all required fields.");
-      
-      // Scroll to the first field with an error
-      const firstErrorField = document.querySelector('[data-error="true"]');
-      if (firstErrorField) {
-        firstErrorField.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-      return;
-    }
-
-    // Validate photos
-    if (photos.length === 0) {
-      toast.error("Please upload at least one photo.");
-      return;
-    }
-
-    // Reorder photos so the selected primary image is first
-    const reorderedPhotos = photos.map(({ previewUrl, ...photo }) => photo);
-    if (reorderedPhotos.length > 0 && primaryPhotoIndex > 0) {
-      const [primaryPhoto] = reorderedPhotos.splice(primaryPhotoIndex, 1);
-      reorderedPhotos.unshift(primaryPhoto);
-    }
-
-    if (isEditMode && params.listingId) {
-      const newPhotos = reorderedPhotos.filter(p => p.contentBase64);
-      if (formData.category) {
-      await updateListingMutation.mutateAsync({
-        listingId: parseInt(params.listingId),
-        title: formData.listingTitle,
-          category: formData.category,
-          condition: formData.condition || "near_mint",
-          description: formData.description,
-          estimatedValue: formData.tradeValue ? parseFloat(formData.tradeValue) : 0,
-          photos: newPhotos,
-          itemDetails: getItemDetails(),
-        });
-      } else {
-        toast.error("Please select a category before updating.");
+    try {
+      // Validate required fields
+      console.log('Validating form...');
+      const isValid = validateForm();
+      console.log('Form validation result:', isValid);
+      if (!isValid) {
+        console.log('Form validation failed');
+        toast.error("Please fill in all required fields.");
+        
+        // Scroll to the first field with an error
+        const firstErrorField = document.querySelector('[data-error="true"]');
+        if (firstErrorField) {
+          firstErrorField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
         return;
       }
-      toast.success("Listing updated successfully!");
-      navigate("/inventory");
-    } else if (formData.category) {
-      await createListingMutation.mutateAsync({
-        title: formData.listingTitle,
-        category: formData.category,
-        itemType: formData.itemType,
-        condition: formData.condition || "near_mint",
-        description: formData.description,
-        estimatedValue: formData.tradeValue ? parseFloat(formData.tradeValue) : 0,
-        photos: reorderedPhotos,
-        itemDetails: getItemDetails(),
-        certificationCompany: formData.gradingCompany && formData.gradingCompany !== "Raw" ? formData.gradingCompany : undefined,
-        grade: formData.grade && formData.grade !== "ungraded" ? formData.grade : undefined,
-      });
-      toast.success("Listing created successfully!");
-      navigate("/inventory");
-    } else {
-      toast.error("Please select a category before submitting.");
-      return;
+
+      // Validate photos
+      console.log('Checking photos, count:', photos.length);
+      if (photos.length === 0) {
+        console.log('No photos uploaded');
+        toast.error("Please upload at least one photo.");
+        return;
+      }
+
+      // Reorder photos so the selected primary image is first
+      const reorderedPhotos = photos.map(({ previewUrl, ...photo }) => photo);
+      if (reorderedPhotos.length > 0 && primaryPhotoIndex > 0) {
+        const [primaryPhoto] = reorderedPhotos.splice(primaryPhotoIndex, 1);
+        reorderedPhotos.unshift(primaryPhoto);
+      }
+
+      console.log('isEditMode:', isEditMode, 'params.listingId:', params.listingId);
+      console.log('formData.category:', formData.category);
+      console.log('formData:', formData);
+      if (isEditMode && params.listingId) {
+        const newPhotos = reorderedPhotos.filter(p => p.contentBase64);
+        if (formData.category) {
+          await updateListingMutation.mutateAsync({
+            listingId: parseInt(params.listingId),
+            title: formData.listingTitle,
+            category: formData.category,
+            condition: formData.condition || "near_mint",
+            description: formData.description,
+            estimatedValue: formData.tradeValue ? parseFloat(formData.tradeValue) : 0,
+            photos: newPhotos,
+            itemDetails: getItemDetails(),
+          });
+          toast.success("Listing updated successfully!");
+          navigate("/inventory");
+        } else {
+          toast.error("Please select a category before updating.");
+          return;
+        }
+      } else if (formData.category) {
+        console.log('Creating listing with data:', {
+          title: formData.listingTitle,
+          category: formData.category,
+          itemType: formData.itemType,
+          condition: formData.condition,
+          description: formData.description,
+          estimatedValue: formData.tradeValue,
+          photosCount: reorderedPhotos.length,
+        });
+        console.log('createListingMutation object:', createListingMutation);
+        console.log('About to call createListingMutation.mutateAsync...');
+        console.log('formData.condition value:', formData.condition);
+        console.log('formData.condition type:', typeof formData.condition);
+        // Convert condition display name to enum value
+        const conditionEnum = formData.condition ? conditionDisplayToEnum[formData.condition] || formData.condition : "near_mint";
+        
+        await createListingMutation.mutateAsync({
+          title: formData.listingTitle,
+          category: formData.category,
+          itemType: formData.itemType,
+          condition: conditionEnum,
+          description: formData.description,
+          estimatedValue: formData.tradeValue ? parseFloat(formData.tradeValue) : 0,
+          photos: reorderedPhotos,
+          itemDetails: getItemDetails(),
+          certificationCompany: formData.gradingCompany && formData.gradingCompany !== "Raw" ? formData.gradingCompany : undefined,
+          grade: formData.grade && formData.grade !== "ungraded" ? formData.grade : undefined,
+        });
+        console.log('Listing created successfully!');
+        console.log('Mutation response received, navigating to inventory...');
+        toast.success("Listing created successfully!");
+        navigate("/inventory");
+      } else {
+        toast.error("Please select a category before submitting.");
+        return;
+      }
+    } catch (error) {
+      console.error("Error submitting listing:", error);
+      console.error("Error type:", error instanceof Error ? error.constructor.name : typeof error);
+      console.error("Error stack:", error instanceof Error ? error.stack : 'N/A');
+      const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred. Please try again.";
+      console.error('Error message:', errorMessage);
+      console.error('Full error object:', JSON.stringify(error, null, 2));
+      toast.error(`Failed to submit listing: ${errorMessage}`);
     }
   };
 
@@ -375,7 +434,7 @@ export default function AddInventory() {
                 })()}
                 
                 {/* Inline Conditional Signature Fields */}
-                {formData.signed === 'Yes' && formData.numberOfSignatures && parseInt(formData.numberOfSignatures) > 0 && (
+                {formData.signed === 'yes' && formData.numberOfSignatures && parseInt(formData.numberOfSignatures) > 0 && (
                   <div className="space-y-3 bg-blue-50 p-4 rounded-lg">
                     <h4 className="font-semibold text-sm text-blue-900">Signatures</h4>
                     <div className="space-y-2">
@@ -460,7 +519,8 @@ export default function AddInventory() {
                     label: "",
                     inputType: "dropdown",
                     requirement: "required",
-                    dropdownOptions: ["Yes", "Local Only", "In Person Only"],
+                    dropdownOptions: ["yes", "local_only", "in_person_only"],
+                    displayLabels: { 'yes': 'Yes', 'local_only': 'Local Only', 'in_person_only': 'In Person Only' },
                   }}
                   value={formData.shippingAvailable || ""}
                   onChange={(value) => updateField("shippingAvailable", value)}
@@ -478,7 +538,7 @@ export default function AddInventory() {
                     name: "description",
                     label: "",
                     inputType: "textarea",
-                    requirement: "optional",
+                    requirement: "required",
                   }}
                   value={formData.description || ""}
                   onChange={(value) => updateField("description", value)}
@@ -487,6 +547,18 @@ export default function AddInventory() {
                 />
               </div>
             </CollapsibleFormSection>
+
+            {/* Action Buttons - Inside form content */}
+            <div className="mt-8 flex justify-center gap-4 pb-20">
+              <Button variant="outline" type="button" onClick={handleSaveDraft} disabled={saveDraftMutation.isPending}>
+                {saveDraftMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Save as Draft
+              </Button>
+              <Button type="submit" disabled={createListingMutation.isPending || updateListingMutation.isPending}>
+                {(createListingMutation.isPending || updateListingMutation.isPending) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {isEditMode ? "Update Listing" : "Submit Collectible"}
+              </Button>
+            </div>
           </form>
         </div>
 
@@ -576,19 +648,7 @@ export default function AddInventory() {
             </div>
           </div>
 
-      {/* Action Buttons - Visible when scrolling to bottom */}
-      <div className="fixed bottom-0 left-0 right-0 border-t border-white/10 bg-black/80 backdrop-blur z-50">
-          <div className="container mx-auto max-w-7xl px-4 py-4 flex justify-center gap-4">
-            <Button variant="outline" onClick={(e) => { e.preventDefault(); handleSaveDraft(); }} disabled={saveDraftMutation.isPending}>
-              {saveDraftMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Save as Draft
-            </Button>
-            <Button type="submit" form="add-inventory-form" disabled={createListingMutation.isPending || updateListingMutation.isPending}>
-              {(createListingMutation.isPending || updateListingMutation.isPending) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isEditMode ? "Update Listing" : "Submit Collectible"}
-            </Button>
-          </div>
-      </div>
+
 
       {/* Spacer for fixed button bar */}
       <div className="h-20" />
