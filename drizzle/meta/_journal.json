@@ -71,6 +71,13 @@
       "when": 1781830658023,
       "tag": "0009_fluffy_steve_rogers",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "5",
+      "when": 1782788011060,
+      "tag": "0010_jittery_texas_twister",
+      "breakpoints": true
     }
   ]
 }
