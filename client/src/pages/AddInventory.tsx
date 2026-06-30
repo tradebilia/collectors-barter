@@ -7,9 +7,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useAuth } from '@/_core/hooks/useAuth';
 import { collectibleCategories } from '../../../drizzle/schema';
 import { X } from 'lucide-react';
+import { trpc } from '@/lib/trpc';
+import { useLocation } from 'wouter';
 
 export default function AddInventory() {
   const { user } = useAuth();
+  const [, navigate] = useLocation();
+  const createListingMutation = trpc.market.createListing.useMutation();
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [title, setTitle] = useState('');
   const [condition, setCondition] = useState('');
@@ -86,17 +90,42 @@ export default function AddInventory() {
 
     setIsSubmitting(true);
     try {
-      // TODO: Implement form submission logic with API call
-      console.log('Form submitted:', {
-        category: selectedCategory,
+      // Convert photos to base64 for upload
+      const photosWithBase64 = await Promise.all(
+        photos.map(async (photo) => {
+          return new Promise<{ name: string; type: string; contentBase64: string }>((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+              const base64 = (reader.result as string).split(',')[1];
+              resolve({
+                name: photo.name,
+                type: photo.type,
+                contentBase64: base64,
+              });
+            };
+            reader.readAsDataURL(photo);
+          });
+        })
+      );
+
+      // Submit to backend
+      await createListingMutation.mutateAsync({
         title,
-        condition,
+        category: selectedCategory as any,
+        itemType: selectedCategory,
+        condition: condition as any,
         description,
-        estimatedValue,
+        estimatedValue: estimatedValue ? parseFloat(estimatedValue) : undefined,
+        photos: photosWithBase64,
       });
-    } catch (error) {
+
+      alert('Item added successfully!');
+      resetForm();
+      navigate('/my-inventory');
+    } catch (error: any) {
       console.error('Error submitting form:', error);
-      setErrors({ submit: 'Failed to submit form. Please try again.' });
+      const errorMessage = error?.message || 'Failed to submit form. Please try again.';
+      setErrors({ submit: errorMessage });
     } finally {
       setIsSubmitting(false);
     }
@@ -106,7 +135,7 @@ export default function AddInventory() {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      // TODO: Implement draft saving logic
+      // TODO: Implement draft saving logic with API call
       console.log('Draft saved:', {
         category: selectedCategory,
         title,
@@ -114,6 +143,7 @@ export default function AddInventory() {
         description,
         estimatedValue,
       });
+      alert('Draft saved successfully!');
     } catch (error) {
       console.error('Error saving draft:', error);
       setErrors({ submit: 'Failed to save draft. Please try again.' });

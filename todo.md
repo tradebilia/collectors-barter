@@ -2969,7 +2969,7 @@ All 8 remaining filter optimization and caching items have been successfully imp
 - [x] Implement Basic Add Inventory Page Structure
 - [x] Integrate Form Fields and Validation
 - [x] Implement Image Upload Functionality
-- [ ] Connect to Backend API for Listing Creation
+- [x] Connect to Backend API for Listing Creation
 - [ ] Add Conditional Fields and Dynamic Behavior
 - [ ] Refine UI/UX and Add Error Handling
 - [x] Create Unit Tests for Add Inventory Page

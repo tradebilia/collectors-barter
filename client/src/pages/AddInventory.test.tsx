@@ -82,4 +82,28 @@ describe('AddInventory Component - Structure Tests', () => {
     const componentStr = AddInventory.toString();
     expect(componentStr).toContain('Only image files are allowed');
   });
+
+  it('should have backend API integration', () => {
+    const componentStr = AddInventory.toString();
+    expect(componentStr).toContain('createListingMutation');
+    expect(componentStr).toContain('mutateAsync');
+  });
+
+  it('should convert photos to base64 for upload', () => {
+    const componentStr = AddInventory.toString();
+    expect(componentStr).toContain('contentBase64');
+    expect(componentStr).toContain('FileReader');
+  });
+
+  it('should navigate to inventory on successful submission', () => {
+    const componentStr = AddInventory.toString();
+    expect(componentStr).toContain('navigate');
+    expect(componentStr).toContain('/my-inventory');
+  });
+
+  it('should handle submission errors gracefully', () => {
+    const componentStr = AddInventory.toString();
+    expect(componentStr).toContain('catch');
+    expect(componentStr).toContain('error?.message');
+  });
 });
