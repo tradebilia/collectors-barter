@@ -60,4 +60,26 @@ describe('AddInventory Component - Structure Tests', () => {
     expect(componentStr).toContain('Mint');
     expect(componentStr).toContain('Excellent');
   });
+
+  it('should have photo upload functionality', () => {
+    const componentStr = AddInventory.toString();
+    expect(componentStr).toContain('handlePhotoSelect');
+    expect(componentStr).toContain('photos');
+    expect(componentStr).toContain('photoPreviewUrls');
+  });
+
+  it('should have photo removal functionality', () => {
+    const componentStr = AddInventory.toString();
+    expect(componentStr).toContain('removePhoto');
+  });
+
+  it('should require at least one photo', () => {
+    const componentStr = AddInventory.toString();
+    expect(componentStr).toContain('At least one photo is required');
+  });
+
+  it('should validate image file types', () => {
+    const componentStr = AddInventory.toString();
+    expect(componentStr).toContain('Only image files are allowed');
+  });
 });

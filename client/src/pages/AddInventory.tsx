@@ -6,6 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/_core/hooks/useAuth';
 import { collectibleCategories } from '../../../drizzle/schema';
+import { X } from 'lucide-react';
 
 export default function AddInventory() {
   const { user } = useAuth();
@@ -16,6 +17,8 @@ export default function AddInventory() {
   const [estimatedValue, setEstimatedValue] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [photos, setPhotos] = useState<File[]>([]);
+  const [photoPreviewUrls, setPhotoPreviewUrls] = useState<string[]>([]);
 
   // Reset form on component mount
   useEffect(() => {
@@ -41,9 +44,37 @@ export default function AddInventory() {
     if (!selectedCategory) newErrors.category = 'Category is required';
     if (!title.trim()) newErrors.title = 'Title is required';
     if (!condition) newErrors.condition = 'Condition is required';
+    if (photos.length === 0) newErrors.photos = 'At least one photo is required';
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  };
+
+  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files) {
+      const newFiles = Array.from(files);
+      const validFiles = newFiles.filter(file => file.type.startsWith('image/'));
+      
+      if (validFiles.length !== newFiles.length) {
+        setErrors(prev => ({ ...prev, photos: 'Only image files are allowed' }));
+      }
+
+      setPhotos(prev => [...prev, ...validFiles]);
+
+      validFiles.forEach(file => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setPhotoPreviewUrls(prev => [...prev, reader.result as string]);
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+  };
+
+  const removePhoto = (index: number) => {
+    setPhotos(prev => prev.filter((_, i) => i !== index));
+    setPhotoPreviewUrls(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -194,6 +225,46 @@ export default function AddInventory() {
               step="0.01"
               min="0"
             />
+          </div>
+
+          {/* Photo Upload */}
+          <div>
+            <label className="block text-sm font-medium mb-2">
+              Photos <span className="text-white">*</span>
+            </label>
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-gray-400 transition">
+              <input
+                type="file"
+                multiple
+                accept="image/*"
+                onChange={handlePhotoSelect}
+                className="hidden"
+                id="photo-input"
+              />
+              <label htmlFor="photo-input" className="cursor-pointer">
+                <p className="text-gray-600">Click to upload or drag and drop</p>
+                <p className="text-sm text-gray-500">PNG, JPG, GIF up to 10MB each</p>
+              </label>
+            </div>
+            {errors.photos && <p className="text-red-500 text-sm mt-1">{errors.photos}</p>}
+
+            {/* Photo Preview */}
+            {photoPreviewUrls.length > 0 && (
+              <div className="mt-4 grid grid-cols-2 md:grid-cols-3 gap-4">
+                {photoPreviewUrls.map((url, index) => (
+                  <div key={index} className="relative">
+                    <img src={url} alt={`Preview ${index + 1}`} className="w-full h-32 object-cover rounded" />
+                    <button
+                      type="button"
+                      onClick={() => removePhoto(index)}
+                      className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Action Buttons */}
