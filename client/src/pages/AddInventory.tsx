@@ -6,7 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/_core/hooks/useAuth';
 import { collectibleCategories } from '../../../drizzle/schema';
-import { X } from 'lucide-react';
+import { X, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import { useLocation } from 'wouter';
 
@@ -27,6 +27,8 @@ export default function AddInventory() {
   const [gradingCompany, setGradingCompany] = useState<string>('');
   const [grade, setGrade] = useState<string>('');
   const [certificationNumber, setCertificationNumber] = useState<string>('');
+  const [successMessage, setSuccessMessage] = useState<string>('');
+  const [showSuccessAlert, setShowSuccessAlert] = useState(false);
 
   // Reset form on component mount
   useEffect(() => {
@@ -44,6 +46,8 @@ export default function AddInventory() {
     setGradingCompany('');
     setGrade('');
     setCertificationNumber('');
+    setSuccessMessage('');
+    setShowSuccessAlert(false);
   };
 
   const handleCategoryChange = (value: string) => {
@@ -192,9 +196,12 @@ export default function AddInventory() {
         photos: photosWithBase64,
       });
 
-      alert('Item added successfully!');
-      resetForm();
-      navigate('/my-inventory');
+      setSuccessMessage('Item added successfully! Redirecting to your inventory...');
+      setShowSuccessAlert(true);
+      setTimeout(() => {
+        resetForm();
+        navigate('/my-inventory');
+      }, 2000);
     } catch (error: any) {
       console.error('Error submitting form:', error);
       const errorMessage = error?.message || 'Failed to submit form. Please try again.';
@@ -241,10 +248,19 @@ export default function AddInventory() {
         <h1 className="text-3xl font-bold mb-8">Add to Your Inventory</h1>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Error Message */}
+          {/* Success Alert */}
+          {showSuccessAlert && (
+            <div className="p-4 bg-green-50 border border-green-200 text-green-800 rounded-lg flex items-center gap-3">
+              <CheckCircle className="w-5 h-5 flex-shrink-0" />
+              <span>{successMessage}</span>
+            </div>
+          )}
+
+          {/* Error Alert */}
           {errors.submit && (
-            <div className="p-4 bg-red-100 border border-red-400 text-red-700 rounded">
-              {errors.submit}
+            <div className="p-4 bg-red-50 border border-red-200 text-red-800 rounded-lg flex items-center gap-3">
+              <AlertCircle className="w-5 h-5 flex-shrink-0" />
+              <span>{errors.submit}</span>
             </div>
           )}
 
@@ -376,10 +392,24 @@ export default function AddInventory() {
           {/* Action Buttons */}
           <div className="flex gap-4 pt-6">
             <Button type="submit" className="flex-1" disabled={isSubmitting}>
-              {isSubmitting ? 'Adding...' : 'Add Item'}
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Adding...
+                </>
+              ) : (
+                'Add Item'
+              )}
             </Button>
             <Button type="button" variant="outline" className="flex-1" onClick={handleSaveDraft} disabled={isSubmitting}>
-              {isSubmitting ? 'Saving...' : 'Save as Draft'}
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                'Save as Draft'
+              )}
             </Button>
           </div>
         </form>

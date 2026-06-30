@@ -2971,7 +2971,7 @@ All 8 remaining filter optimization and caching items have been successfully imp
 - [x] Implement Image Upload Functionality
 - [x] Connect to Backend API for Listing Creation
 - [x] Add Conditional Fields and Dynamic Behavior
-- [ ] Refine UI/UX and Add Error Handling
+- [x] Refine UI/UX and Add Error Handling
 - [x] Create Unit Tests for Add Inventory Page
 
 ## General Improvements

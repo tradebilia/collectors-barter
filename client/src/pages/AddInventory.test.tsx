@@ -129,3 +129,26 @@ describe('AddInventory Component - Structure Tests', () => {
     expect(componentStr).toContain('setCertificationNumber');
   });
 });
+
+  it('should display loading spinner during submission', () => {
+    const componentStr = AddInventory.toString();
+    expect(componentStr).toContain('Loader2');
+    expect(componentStr).toContain('animate-spin');
+  });
+
+  it('should show success alert on successful submission', () => {
+    const componentStr = AddInventory.toString();
+    expect(componentStr).toContain('showSuccessAlert');
+    expect(componentStr).toContain('CheckCircle');
+  });
+
+  it('should show error alert on submission failure', () => {
+    const componentStr = AddInventory.toString();
+    expect(componentStr).toContain('errors.submit');
+    expect(componentStr).toContain('AlertCircle');
+  });
+
+  it('should disable buttons during submission', () => {
+    const componentStr = AddInventory.toString();
+    expect(componentStr).toContain('disabled={isSubmitting}');
+  });
