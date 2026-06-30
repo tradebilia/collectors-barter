@@ -213,11 +213,22 @@ export default function AddInventory() {
       toast.success("Listing updated successfully!");
       navigate("/inventory");
     } else if (formData.category) {
+      // Map condition display labels to enum values
+      const conditionMap: Record<string, 'mint' | 'near_mint' | 'very_good' | 'good' | 'fair' | 'poor'> = {
+        'Mint': 'mint',
+        'Near Mint': 'near_mint',
+        'Excellent': 'very_good',  // Map "Excellent" to "very_good"
+        'Very Good': 'very_good',
+        'Good': 'good',
+        'Fair': 'fair',
+        'Poor': 'poor',
+      };
+      
       await createListingMutation.mutateAsync({
         title: formData.listingTitle,
         category: formData.category,
         itemType: formData.itemType,
-        condition: formData.condition || "near_mint",
+        condition: (conditionMap[formData.condition] as 'mint' | 'near_mint' | 'very_good' | 'good' | 'fair' | 'poor') || "near_mint",
         description: formData.description,
         estimatedValue: formData.tradeValue ? parseFloat(formData.tradeValue) : 0,
         photos: reorderedPhotos,
