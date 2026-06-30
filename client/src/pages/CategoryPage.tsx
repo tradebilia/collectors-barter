@@ -1063,13 +1063,26 @@ export default function CategoryPage() {
               <div className={`rounded-[2rem] border p-8 ${theme.panelClassName}`}>
                 {isSportsCardsPage ? (
                   <div className="text-center">
-                    <h3 className="text-4xl font-semibold" style={{ fontFamily: theme.headingFont }}>No Cards Are Available</h3>
+                    {Object.values(submittedFilters).some(v => v !== undefined && v !== "") ? (
+                      <>
+                        <h3 className="text-4xl font-semibold" style={{ fontFamily: theme.headingFont }}>No Cards Match These Filters</h3>
+                        <p className="mt-4 text-base leading-8 opacity-80">Try adjusting your search criteria.</p>
+                      </>
+                    ) : (
+                      <h3 className="text-4xl font-semibold" style={{ fontFamily: theme.headingFont }}>No Items Listed</h3>
+                    )}
                   </div>
                 ) : (
                   <div className="text-center">
                     <Sparkles className="mx-auto h-10 w-10" />
-                    <h3 className="mt-5 text-3xl font-semibold" style={{ fontFamily: theme.headingFont }}>No listings match these filters yet.</h3>
-                    <p className="mt-4 text-base leading-8 opacity-80">Try broadening the search or explore another Tradebilia category exchange.</p>
+                    {Object.values(submittedFilters).some(v => v !== undefined && v !== "") ? (
+                      <>
+                        <h3 className="mt-5 text-3xl font-semibold" style={{ fontFamily: theme.headingFont }}>No listings match these filters yet.</h3>
+                        <p className="mt-4 text-base leading-8 opacity-80">Try broadening the search or explore another Tradebilia category exchange.</p>
+                      </>
+                    ) : (
+                      <h3 className="mt-5 text-3xl font-semibold" style={{ fontFamily: theme.headingFont }}>No Items Listed</h3>
+                    )}
                   </div>
                 )}
               </div>

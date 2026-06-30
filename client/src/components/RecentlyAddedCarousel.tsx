@@ -43,7 +43,14 @@ export function RecentlyAddedCarousel({
   proposalDraft,
   setProposalDraft,
 }: RecentlyAddedCarouselProps) {
-  if (items.length === 0) return null;
+  if (items.length === 0) {
+    return (
+      <div className="mt-4 text-center py-12 text-muted-foreground">
+        <p className="text-lg font-medium">No Items Listed</p>
+        <p className="text-sm mt-1">Check back soon for new collectibles</p>
+      </div>
+    );
+  }
 
   // Duplicate items to ensure enough content for the marquee
   const displayItems = [...items, ...items, ...items, ...items];
