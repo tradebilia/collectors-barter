@@ -246,6 +246,9 @@ export default function Inventory() {
     // If showing drafts, return drafts from database
     if (showDrafts) {
       const dbDrafts = getDraftsQuery.data || [];
+      console.log('getDraftsQuery.data:', getDraftsQuery.data);
+      console.log('getDraftsQuery.isLoading:', getDraftsQuery.isLoading);
+      console.log('getDraftsQuery.error:', getDraftsQuery.error);
       const drafts: any[] = dbDrafts.map((draft: any) => ({
         id: `draft-${draft.id}`,
         title: draft.title,
@@ -329,7 +332,7 @@ export default function Inventory() {
       if (sortBy === "condition") return a.condition.localeCompare(b.condition);
       return b.id - a.id;
     });
-  }, [category, condition, dateRange, gradeRange, graderCompany, keyword, listings, maxValue, minValue, sortBy, status, tradeOnly, showDrafts]);
+  }, [category, condition, dateRange, gradeRange, graderCompany, keyword, listings, maxValue, minValue, sortBy, status, tradeOnly, showDrafts, getDraftsQuery.data]);
 
   const exportInventory = () => {
     const payload = filteredListings.map((listing: any) => ({

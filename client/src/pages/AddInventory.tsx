@@ -209,7 +209,10 @@ export default function AddInventory() {
         gradeValue = "raw";
       }
       
-      await saveDraftMutation.mutateAsync({
+      // Filter photos to only include new photos with contentBase64
+      const newPhotos = photos.filter(photo => photo.contentBase64);
+      
+      const draftData = {
         title: formData.listingTitle || "",
         category: formData.category,
         grade: gradeValue,
@@ -218,12 +221,19 @@ export default function AddInventory() {
         estimatedValue: formData.tradeValue ? parseFloat(formData.tradeValue) : 0,
         categoryFields: getItemDetails(),
         additionalNotes: formData.description || "",
-        photos: photos,
-      });
+        photos: newPhotos,
+      };
+      
+      console.log('Saving draft with data:', draftData);
+      
+      await saveDraftMutation.mutateAsync(draftData);
       toast.success("Inventory draft saved.");
+      // Reset form after successful save
+      // You might want to navigate back or clear the form
     } catch (error) {
-      toast.error("Failed to save draft. Please try again.");
       console.error("Error saving draft:", error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to save draft. Please try again.";
+      toast.error(errorMessage);
     }
   };
 

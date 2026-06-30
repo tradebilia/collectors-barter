@@ -884,15 +884,15 @@ export const appRouter = router({
     saveDraft: protectedProcedure
       .input(
         z.object({
-          title: z.string().min(1).max(160),
+          title: z.string().min(0).max(160).optional().default(""),
           category: z.enum(collectibleCategories),
           grade: z.string().max(10),
           graderCompany: z.string().max(100),
           certificationNumber: z.string().max(100).optional(),
           estimatedValue: z.number().nonnegative().optional(),
-          categoryFields: z.record(z.string(), z.string()),
+          categoryFields: z.record(z.string(), z.string()).optional().default({}),
           additionalNotes: z.string().max(4000).optional(),
-          photos: z.array(uploadedImageSchema),
+          photos: z.array(uploadedImageSchema).optional().default([]),
         }),
       )
       .mutation(({ ctx, input }) => {

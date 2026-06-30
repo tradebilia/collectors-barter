@@ -3086,3 +3086,27 @@ All 8 remaining filter optimization and caching items have been successfully imp
 - [x] Update AddInventory component to use updateDraft mutation when editing drafts
 - [x] Update Inventory page to use deleteDraft mutation for drafts instead of bulkDelete
 - [x] Fix delete dialog to properly handle both draft and listing deletions
+
+
+## Draft Management Workflow - COMPLETE (June 30, 2026)
+
+- [x] Extended `getDrafts` query to return all stored fields (condition, description, graderCompany, certificationNumber, estimatedValue, categoryFields, additionalNotes)
+- [x] Added `getDraftById` procedure to load a specific draft for editing
+- [x] Added `updateDraft` procedure to save changes to a draft
+- [x] Updated AddInventory.tsx to detect draft IDs (format: `draft-123`)
+- [x] Updated AddInventory.tsx to load draft data into form when editing a draft
+- [x] Updated AddInventory.tsx to use `updateDraft` mutation when saving changes to a draft
+- [x] Fixed Inventory.tsx to use correct `deleteDraft` mutation for draft deletion
+- [x] Fixed draft display on Inventory page by adding `getDraftsQuery.data` to useMemo dependency array
+- [x] Made `title` and `categoryFields` optional in `saveDraft` procedure to allow partial drafts
+- [x] Made `photos` optional in `saveDraft` procedure to allow drafts without images
+- [x] Fixed `handleSaveDraft` to only send photos with `contentBase64` (exclude existing photos)
+- [x] Added comprehensive backend tests for draft operations (getDrafts, getDraftById, updateDraft, deleteDraft)
+- [x] Verified complete draft workflow end-to-end:
+  - [x] User can save incomplete items as drafts
+  - [x] Drafts appear in Inventory page with "Show Drafts" toggle
+  - [x] User can click "Edit" to load draft back into form
+  - [x] Form pre-populates with all previously entered data
+  - [x] User can make changes and click "Save as Draft" to update
+  - [x] User can complete form and click "Submit" to publish as live listing
+  - [x] Draft is removed after successful publication
