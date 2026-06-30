@@ -409,13 +409,7 @@ export default function Home() {
         ownerId: listing.ownerId,
         estimatedValue: listing.estimatedValue,
       }))
-    : fallbackRecentItems.map(item => ({
-        ...item,
-        href: undefined,
-        tradeListingId: null,
-        savedToWatchlist: false,
-        ownerId: null,
-      }));
+    : [];
 
   const mostViewedItemsData = (topMostViewedQuery.data?.items ?? []).length
     ? (topMostViewedQuery.data?.items ?? []).slice(0, 10)
