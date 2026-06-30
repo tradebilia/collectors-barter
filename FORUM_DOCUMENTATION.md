@@ -22,6 +22,9 @@ Stores all forum topics/discussions created by users.
 | `content` | LONGTEXT | Post content/description |
 | `viewCount` | INT DEFAULT 0 | Number of times post has been viewed |
 | `replyCount` | INT DEFAULT 0 | Number of replies to this post |
+| `isPinned` | BOOLEAN DEFAULT false | Admin flag: pin topic to top of category |
+| `isLocked` | BOOLEAN DEFAULT false | Admin flag: prevent new replies |
+| `isSolved` | BOOLEAN DEFAULT false | Topic creator flag: mark topic as solved/resolved |
 | `createdAt` | TIMESTAMP | Post creation timestamp |
 | `updatedAt` | TIMESTAMP | Last update timestamp |
 
@@ -641,3 +644,41 @@ SELECT * FROM forumPosts WHERE category = 'comics';
 ## Summary
 
 The Collector's Forum is a fully functional, tested community discussion platform that allows Tradebilia users to engage in organized conversations about their collectible interests. With hybrid category support, automatic sorting, and clean data management, it provides a solid foundation for community building and user engagement.
+
+---
+
+## Moderation Features (Ready for Implementation)
+
+### Pre-built Database Fields
+
+The following fields are already in the `forumPosts` table and ready for implementation:
+
+| Field | Type | Purpose | Status |
+|-------|------|---------|--------|
+| `isPinned` | BOOLEAN | Pin important topics to top of category | Ready - add UI controls |
+| `isLocked` | BOOLEAN | Prevent new replies on locked topics | Ready - add validation |
+| `isSolved` | BOOLEAN | Mark topics as resolved/answered | Ready - add UI controls |
+
+### Implementation Guide for Next Session
+
+These fields are already in the database schema. To activate moderation features:
+
+**1. Pin Topic (Admin Only)**
+- Add `updateForumPost()` function to `server/db.ts`
+- Create `updateForumPost` tRPC procedure in `server/routers.ts`
+- Add "Pin Topic" button to ForumTopic.tsx (admin only)
+
+**2. Lock Topic (Admin Only)**
+- Add validation in `addForumReply()` to check `isLocked` status
+- Create `lockForumPost` tRPC procedure
+- Add "Lock Topic" button to ForumTopic.tsx (admin only)
+
+**3. Mark as Solved (Topic Creator)**
+- Create `markSolved` tRPC procedure
+- Add "Mark as Solved" button to ForumTopic.tsx (creator only)
+- Update `getForumPosts()` to sort solved topics differently
+
+### Why These Fields Exist
+
+The database schema was designed with future moderation in mind. All fields are present but not yet wired to the UI. This allows for seamless implementation of moderation features without database migration.
+
