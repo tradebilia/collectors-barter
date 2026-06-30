@@ -427,9 +427,23 @@ export const useAddInventoryForm = (photos: any[] = []): UseAddInventoryFormRetu
   const getItemDetails = useCallback((): Record<string, string> => {
     const details: Record<string, string> = {};
     
+    // Fields that should NOT be in itemDetails (they're sent separately or not needed)
+    const excludeFields = [
+      'category',           // sent as category
+      'itemType',           // sent as itemType
+      'listingTitle',       // sent as title
+      'tradeValue',         // sent as estimatedValue
+      'condition',          // sent as condition
+      'description',        // sent as description
+      'photos',             // sent as photos
+      'gradingCompany',     // sent as certificationCompany
+      'grade',              // sent as grade
+      'certificationNumber' // sent as certificationNumber
+    ];
+    
     Object.entries(formData).forEach(([key, value]) => {
-      if (!['category', 'itemType', 'shippingAvailable', 'description', 'photos'].includes(key)) {
-        details[key] = String(value || '');
+      if (!excludeFields.includes(key) && value !== undefined && value !== '') {
+        details[key] = String(value);
       }
     });
 

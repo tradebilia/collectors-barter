@@ -200,11 +200,11 @@ export default function AddInventory() {
         listingId: parseInt(params.listingId),
         title: formData.listingTitle,
           category: formData.category,
-          condition: "mint", // TODO: Map from grade
+          condition: formData.condition || "near_mint",
           description: formData.description,
-          estimatedValue: formData.estimatedValue ? parseFloat(formData.estimatedValue) : 0,
+          estimatedValue: formData.tradeValue ? parseFloat(formData.tradeValue) : 0,
           photos: newPhotos,
-          itemDetails: formData.itemDetails,
+          itemDetails: getItemDetails(),
         });
       } else {
         toast.error("Please select a category before updating.");
@@ -217,13 +217,13 @@ export default function AddInventory() {
         title: formData.listingTitle,
         category: formData.category,
         itemType: formData.itemType,
-        condition: "mint", // TODO: Map from grade
+        condition: formData.condition || "near_mint",
         description: formData.description,
-        estimatedValue: formData.estimatedValue ? parseFloat(formData.estimatedValue) : 0,
+        estimatedValue: formData.tradeValue ? parseFloat(formData.tradeValue) : 0,
         photos: reorderedPhotos,
         itemDetails: getItemDetails(),
-        certificationCompany: formData.gradingCompany !== "Raw" ? formData.gradingCompany : undefined,
-        grade: formData.grade !== "ungraded" ? formData.grade : undefined,
+        certificationCompany: formData.gradingCompany && formData.gradingCompany !== "Raw" ? formData.gradingCompany : undefined,
+        grade: formData.grade && formData.grade !== "ungraded" ? formData.grade : undefined,
       });
       toast.success("Listing created successfully!");
       navigate("/inventory");
