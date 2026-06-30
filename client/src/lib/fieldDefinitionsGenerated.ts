@@ -431,9 +431,10 @@ export const COINS_SINGLE_COIN_FIELDS: FieldDefinition[] = [
   {
     name: 'grade',
     label: 'Grade',
-    inputType: 'text',
+    inputType: 'dropdown',
     maxLength: 4,
-    requirement: 'required',
+    requirement:
+    dropdownOptions: ['1', '1.5', '2', '2.5', '3', '3.5', '4', '4.5', '5', '5.5', '6', '6.5', '7', '7.5', '8', '8.5', '9', '9.5', '10'], 'required',
     conditionalLogic: 'Is Graded = Yes',
   },
   {
@@ -784,9 +785,10 @@ export const COMICS_SINGLE_COMIC_FIELDS: FieldDefinition[] = [
   {
     name: 'grade',
     label: 'Grade',
-    inputType: 'text',
+    inputType: 'dropdown',
     maxLength: 4,
-    requirement: 'required',
+    requirement:
+    dropdownOptions: ['1', '1.5', '2', '2.5', '3', '3.5', '4', '4.5', '5', '5.5', '6', '6.5', '7', '7.5', '8', '8.5', '9', '9.5', '10'], 'required',
     conditionalLogic: 'Is Graded = Yes',
   },
   {
@@ -1032,9 +1034,10 @@ export const MOVIES_BOX_SET_FIELDS: FieldDefinition[] = [
   {
     name: 'grade',
     label: 'Grade',
-    inputType: 'text',
+    inputType: 'dropdown',
     maxLength: 4,
-    requirement: 'required',
+    requirement:
+    dropdownOptions: ['1', '1.5', '2', '2.5', '3', '3.5', '4', '4.5', '5', '5.5', '6', '6.5', '7', '7.5', '8', '8.5', '9', '9.5', '10'], 'required',
     conditionalLogic: 'Is Graded = Yes',
   },
   {
@@ -1227,9 +1230,10 @@ export const MOVIES_INDIVIDUAL_MOVIE_FIELDS: FieldDefinition[] = [
   {
     name: 'grade',
     label: 'Grade',
-    inputType: 'text',
+    inputType: 'dropdown',
     maxLength: 4,
-    requirement: 'required',
+    requirement:
+    dropdownOptions: ['1', '1.5', '2', '2.5', '3', '3.5', '4', '4.5', '5', '5.5', '6', '6.5', '7', '7.5', '8', '8.5', '9', '9.5', '10'], 'required',
     conditionalLogic: 'Is Graded = Yes',
   },
   {
@@ -1838,9 +1842,10 @@ export const SPORTS_CARDS_SINGLE_CARD_FIELDS: FieldDefinition[] = [
   {
     name: 'grade',
     label: 'Grade',
-    inputType: 'text',
+    inputType: 'dropdown',
     maxLength: 4,
-    requirement: 'required',
+    requirement:
+    dropdownOptions: ['1', '1.5', '2', '2.5', '3', '3.5', '4', '4.5', '5', '5.5', '6', '6.5', '7', '7.5', '8', '8.5', '9', '9.5', '10'], 'required',
     conditionalLogic: 'Is Graded = Yes',
   },
   {
@@ -2123,9 +2128,10 @@ export const STAMPS_SINGLE_STAMP_FIELDS: FieldDefinition[] = [
   {
     name: 'grade',
     label: 'Grade',
-    inputType: 'text',
+    inputType: 'dropdown',
     maxLength: 4,
-    requirement: 'required',
+    requirement:
+    dropdownOptions: ['1', '1.5', '2', '2.5', '3', '3.5', '4', '4.5', '5', '5.5', '6', '6.5', '7', '7.5', '8', '8.5', '9', '9.5', '10'], 'required',
     conditionalLogic: 'Is Graded = Yes',
   },
   {
@@ -2236,9 +2242,10 @@ export const STAMPS_STAMP_SET_SHEET_FIELDS: FieldDefinition[] = [
   {
     name: 'grade',
     label: 'Grade',
-    inputType: 'text',
+    inputType: 'dropdown',
     maxLength: 4,
-    requirement: 'required',
+    requirement:
+    dropdownOptions: ['1', '1.5', '2', '2.5', '3', '3.5', '4', '4.5', '5', '5.5', '6', '6.5', '7', '7.5', '8', '8.5', '9', '9.5', '10'], 'required',
     conditionalLogic: 'Is Graded = Yes',
   },
   {
@@ -2345,9 +2352,10 @@ export const VIDEO_GAMES_ACCESSORY_FIELDS: FieldDefinition[] = [
   {
     name: 'grade',
     label: 'Grade',
-    inputType: 'text',
+    inputType: 'dropdown',
     maxLength: 4,
-    requirement: 'required',
+    requirement:
+    dropdownOptions: ['1', '1.5', '2', '2.5', '3', '3.5', '4', '4.5', '5', '5.5', '6', '6.5', '7', '7.5', '8', '8.5', '9', '9.5', '10'], 'required',
     conditionalLogic: 'Is Graded = Yes',
   },
   {
@@ -2523,9 +2531,10 @@ export const VIDEO_GAMES_CONSOLE_FIELDS: FieldDefinition[] = [
   {
     name: 'grade',
     label: 'Grade',
-    inputType: 'text',
+    inputType: 'dropdown',
     maxLength: 4,
-    requirement: 'required',
+    requirement:
+    dropdownOptions: ['1', '1.5', '2', '2.5', '3', '3.5', '4', '4.5', '5', '5.5', '6', '6.5', '7', '7.5', '8', '8.5', '9', '9.5', '10'], 'required',
     conditionalLogic: 'Is Graded = Yes',
   },
   {
@@ -2655,9 +2664,10 @@ export const VIDEO_GAMES_GAME_FIELDS: FieldDefinition[] = [
   {
     name: 'grade',
     label: 'Grade',
-    inputType: 'text',
+    inputType: 'dropdown',
     maxLength: 4,
-    requirement: 'required',
+    requirement:
+    dropdownOptions: ['1', '1.5', '2', '2.5', '3', '3.5', '4', '4.5', '5', '5.5', '6', '6.5', '7', '7.5', '8', '8.5', '9', '9.5', '10'], 'required',
     conditionalLogic: 'Is Graded = Yes',
   },
   {
@@ -2778,9 +2788,10 @@ export const VINTAGE_TOYS_ACTION_FIGURE_DOLL_FIELDS: FieldDefinition[] = [
   {
     name: 'grade',
     label: 'Grade',
-    inputType: 'text',
+    inputType: 'dropdown',
     maxLength: 4,
-    requirement: 'required',
+    requirement:
+    dropdownOptions: ['1', '1.5', '2', '2.5', '3', '3.5', '4', '4.5', '5', '5.5', '6', '6.5', '7', '7.5', '8', '8.5', '9', '9.5', '10'], 'required',
     conditionalLogic: 'Is Graded = Yes',
   },
   {
@@ -3001,9 +3012,10 @@ export const VINTAGE_TOYS_COLLECTION_LOT_FIELDS: FieldDefinition[] = [
   {
     name: 'grade',
     label: 'Grade',
-    inputType: 'text',
+    inputType: 'dropdown',
     maxLength: 4,
-    requirement: 'required',
+    requirement:
+    dropdownOptions: ['1', '1.5', '2', '2.5', '3', '3.5', '4', '4.5', '5', '5.5', '6', '6.5', '7', '7.5', '8', '8.5', '9', '9.5', '10'], 'required',
     conditionalLogic: 'Is Graded = Yes',
   },
   {
@@ -3130,9 +3142,10 @@ export const VINTAGE_TOYS_ELECTRONIC_TOY_FIELDS: FieldDefinition[] = [
   {
     name: 'grade',
     label: 'Grade',
-    inputType: 'text',
+    inputType: 'dropdown',
     maxLength: 4,
-    requirement: 'required',
+    requirement:
+    dropdownOptions: ['1', '1.5', '2', '2.5', '3', '3.5', '4', '4.5', '5', '5.5', '6', '6.5', '7', '7.5', '8', '8.5', '9', '9.5', '10'], 'required',
     conditionalLogic: 'Is Graded = Yes',
   },
   {
@@ -3245,9 +3258,10 @@ export const VINTAGE_TOYS_MODEL_KIT_FIELDS: FieldDefinition[] = [
   {
     name: 'grade',
     label: 'Grade',
-    inputType: 'text',
+    inputType: 'dropdown',
     maxLength: 4,
-    requirement: 'required',
+    requirement:
+    dropdownOptions: ['1', '1.5', '2', '2.5', '3', '3.5', '4', '4.5', '5', '5.5', '6', '6.5', '7', '7.5', '8', '8.5', '9', '9.5', '10'], 'required',
     conditionalLogic: 'Is Graded = Yes',
   },
   {
@@ -3479,9 +3493,10 @@ export const VINTAGE_TOYS_PLUSH_STUFFED_TOY_FIELDS: FieldDefinition[] = [
   {
     name: 'grade',
     label: 'Grade',
-    inputType: 'text',
+    inputType: 'dropdown',
     maxLength: 4,
-    requirement: 'required',
+    requirement:
+    dropdownOptions: ['1', '1.5', '2', '2.5', '3', '3.5', '4', '4.5', '5', '5.5', '6', '6.5', '7', '7.5', '8', '8.5', '9', '9.5', '10'], 'required',
     conditionalLogic: 'Is Graded = Yes',
   },
   {
@@ -3707,9 +3722,10 @@ export const COINS_PAPER_MONEY_BANKNOTES_FIELDS: FieldDefinition[] = [
   {
     name: 'grade',
     label: 'Grade',
-    inputType: 'text',
+    inputType: 'dropdown',
     maxLength: 4,
-    requirement: 'required',
+    requirement:
+    dropdownOptions: ['1', '1.5', '2', '2.5', '3', '3.5', '4', '4.5', '5', '5.5', '6', '6.5', '7', '7.5', '8', '8.5', '9', '9.5', '10'], 'required',
     conditionalLogic: 'Is Graded = Yes',
   },
   {
