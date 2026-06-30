@@ -438,7 +438,7 @@ export const useAddInventoryForm = (photos: any[] = []): UseAddInventoryFormRetu
       'photos',             // sent as photos
       'gradingCompany',     // sent as certificationCompany
       'grade',              // sent as grade
-      'certificationNumber' // sent as certificationNumber
+      // certificationNumber is included in itemDetails
     ];
     
     Object.entries(formData).forEach(([key, value]) => {
