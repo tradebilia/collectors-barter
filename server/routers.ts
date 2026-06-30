@@ -1,9 +1,12 @@
 import { z } from "zod";
+import { PhotoUploadInput } from "./db";
+
 import { COOKIE_NAME } from "@shared/const";
 import { collectibleCategories, itemConditions, gradeValues } from "../drizzle/schema";
 import { isValidGradeForCompany, getGradingCompanyByName } from "@shared/gradingCompanyConfig";
 import {
   createListing,
+  uploadImage,
   updateListing,
   createTradeProposal,
   getDashboardData,
@@ -80,7 +83,11 @@ import { ONE_YEAR_MS } from "@shared/const";
 const uploadedImageSchema = z.object({
   name: z.string().min(1).max(200),
   type: z.string().min(1).max(120),
-  contentBase64: z.string().min(1),
+  contentBase64: z.string().min(1).optional(),
+  fileKey: z.string().optional(),
+  imageUrl: z.string().optional(),
+  altText: z.string().optional(),
+  sortOrder: z.number().optional(),
 });
 
 const listingFiltersSchema = z.object({
@@ -561,7 +568,7 @@ export const appRouter = router({
           grade: z.string().optional(),
         }),
       )
-      .mutation(({ ctx, input }) => {
+      .mutation(async ({ ctx, input }) => {
         // Validate grading company and grade from description if present
         const descriptionLines = input.description.split('\n');
         let graderCompany = '';
@@ -601,7 +608,13 @@ export const appRouter = router({
             condition: input.condition,
             description: input.description,
             estimatedValue: input.estimatedValue,
-            photos: input.photos,
+            photos: await Promise.all(input.photos.map(async (photo) => {
+              if (photo.contentBase64) {
+                const uploaded = await uploadImage("listings", ctx.user.id, photo);
+                return { ...photo, fileKey: uploaded.fileKey, imageUrl: uploaded.imageUrl };
+              }
+              return photo;
+            })),
             itemDetails: input.itemDetails as Record<string, string> | undefined,
             certificationCompany: input.certificationCompany,
             grade: input.grade,
@@ -621,7 +634,7 @@ export const appRouter = router({
           itemDetails: z.record(z.string(), z.string()).optional(),
         }),
       )
-      .mutation(({ ctx, input }) => {
+      .mutation(async ({ ctx, input }) => {
         // Validate grading company and grade from description if present
         const descriptionLines = input.description.split('\n');
         let graderCompany = '';
@@ -661,7 +674,13 @@ export const appRouter = router({
             condition: input.condition,
             description: input.description,
             estimatedValue: input.estimatedValue,
-            photos: input.photos,
+            photos: await Promise.all(input.photos.map(async (photo) => {
+              if (photo.contentBase64) {
+                const uploaded = await uploadImage("listings", ctx.user.id, photo);
+                return { ...photo, fileKey: uploaded.fileKey, imageUrl: uploaded.imageUrl };
+              }
+              return photo;
+            })),
             itemDetails: input.itemDetails as Record<string, string> | undefined,
           },
         );

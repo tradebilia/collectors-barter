@@ -2957,3 +2957,8 @@ All 8 remaining filter optimization and caching items have been successfully imp
 - [x] Comics / Original Art
 - [x] Comics / Single Comic
 - [x] Comics / Collection / Lot
+
+- [x] Refactor photo upload logic in server/db.ts
+- [x] Update createListing and updateListing functions to correctly handle photo data
+- [x] Adjust server/routers.ts to align with refactored photo handling
+- [x] Verify changes and ensure no new errors are introduced
