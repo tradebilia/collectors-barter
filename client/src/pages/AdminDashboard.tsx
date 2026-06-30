@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { BarChart3, Users, Package, Settings, Trash2, Flag, Mail, Search, ArrowUpDown } from "lucide-react";
 import { getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
@@ -19,12 +20,22 @@ function AdminListingsTab({ listingsQuery }: { listingsQuery: any }) {
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedListingForDelete, setSelectedListingForDelete] = useState<any>(null);
+  const [selectedListings, setSelectedListings] = useState<Set<number>>(new Set());
+  const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
 
   const deleteMutation = trpc.market.adminDeleteListing.useMutation({
     onSuccess: () => {
       listingsQuery.refetch();
       setDeleteDialogOpen(false);
       setSelectedListingForDelete(null);
+    },
+  });
+
+  const bulkDeleteMutation = trpc.market.adminBulkDeleteListings.useMutation({
+    onSuccess: () => {
+      listingsQuery.refetch();
+      setBulkDeleteDialogOpen(false);
+      setSelectedListings(new Set());
     },
   });
 
@@ -37,6 +48,40 @@ function AdminListingsTab({ listingsQuery }: { listingsQuery: any }) {
     if (selectedListingForDelete) {
       await deleteMutation.mutateAsync({
         listingId: selectedListingForDelete.id,
+        deletionReason: reason || undefined,
+      });
+    }
+  };
+
+  const handleToggleListingSelection = (listingId: number) => {
+    const newSelected = new Set(selectedListings);
+    if (newSelected.has(listingId)) {
+      newSelected.delete(listingId);
+    } else {
+      newSelected.add(listingId);
+    }
+    setSelectedListings(newSelected);
+  };
+
+  const handleSelectAll = () => {
+    if (selectedListings.size === filteredAndSortedListings.length) {
+      setSelectedListings(new Set());
+    } else {
+      const allIds = new Set(filteredAndSortedListings.map((l: any) => l.id));
+      setSelectedListings(allIds);
+    }
+  };
+
+  const handleBulkDeleteClick = () => {
+    if (selectedListings.size > 0) {
+      setBulkDeleteDialogOpen(true);
+    }
+  };
+
+  const handleConfirmBulkDelete = async (reason?: string) => {
+    if (selectedListings.size > 0) {
+      await bulkDeleteMutation.mutateAsync({
+        listingIds: Array.from(selectedListings),
         deletionReason: reason || undefined,
       });
     }
@@ -117,6 +162,21 @@ function AdminListingsTab({ listingsQuery }: { listingsQuery: any }) {
           />
         </div>
 
+        {selectedListings.size > 0 && (
+          <div className="flex items-center gap-2 bg-accent/50 p-3 rounded border border-accent">
+            <span className="text-sm font-medium">{selectedListings.size} selected</span>
+            <Button
+              size="sm"
+              variant="destructive"
+              onClick={handleBulkDeleteClick}
+              disabled={bulkDeleteMutation.isPending}
+            >
+              <Trash2 className="h-4 w-4 mr-1" />
+              Delete Selected
+            </Button>
+          </div>
+        )}
+
         {listingsQuery.isLoading ? (
           <div className="text-sm text-muted-foreground">Loading listings...</div>
         ) : filteredAndSortedListings.length > 0 ? (
@@ -124,6 +184,12 @@ function AdminListingsTab({ listingsQuery }: { listingsQuery: any }) {
             <table className="w-full text-sm">
               <thead className="border-b border-border">
                 <tr>
+                  <th className="text-left py-2 px-4 w-12">
+                    <Checkbox
+                      checked={selectedListings.size === filteredAndSortedListings.length && filteredAndSortedListings.length > 0}
+                      onCheckedChange={handleSelectAll}
+                    />
+                  </th>
                   <th className="text-left py-2 px-4 cursor-pointer hover:bg-accent/50" onClick={() => toggleSort("refId")}>
                     <div className="flex items-center gap-2">
                       Ref ID
@@ -178,6 +244,12 @@ function AdminListingsTab({ listingsQuery }: { listingsQuery: any }) {
               <tbody>
                 {filteredAndSortedListings.map((listing: any) => (
                   <tr key={listing.id} className="border-b border-border hover:bg-accent/50">
+                    <td className="py-2 px-4 w-12">
+                      <Checkbox
+                        checked={selectedListings.has(listing.id)}
+                        onCheckedChange={() => handleToggleListingSelection(listing.id)}
+                      />
+                    </td>
                     <td className="py-2 px-4">
                       <Link href={`/listings/${listing.id}`} className="text-blue-600 hover:text-blue-800 font-semibold">
                         #{listing.id}
@@ -227,6 +299,19 @@ function AdminListingsTab({ listingsQuery }: { listingsQuery: any }) {
           onConfirm={handleConfirmDelete}
           onCancel={() => setDeleteDialogOpen(false)}
           isLoading={deleteMutation.isPending}
+        />
+      )}
+
+      {selectedListings.size > 0 && (
+        <DeleteConfirmationDialog
+          isOpen={bulkDeleteDialogOpen}
+          itemCount={selectedListings.size}
+          itemTitles={filteredAndSortedListings
+            .filter((l: any) => selectedListings.has(l.id))
+            .map((l: any) => l.title)}
+          onConfirm={handleConfirmBulkDelete}
+          onCancel={() => setBulkDeleteDialogOpen(false)}
+          isLoading={bulkDeleteMutation.isPending}
         />
       )}
     </Card>
