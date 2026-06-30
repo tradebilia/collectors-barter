@@ -234,7 +234,7 @@ export default function AddInventory() {
         photos: reorderedPhotos,
         itemDetails: getItemDetails(),
         certificationCompany: formData.gradingCompany && formData.gradingCompany !== "Raw" ? formData.gradingCompany : undefined,
-        grade: formData.grade && formData.grade !== "ungraded" ? formData.grade : undefined,
+        grade: formData.grade || "ungraded",
       });
       toast.success("Listing created successfully!");
       navigate("/inventory");
