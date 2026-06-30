@@ -441,13 +441,22 @@ export const useAddInventoryForm = (photos: any[] = []): UseAddInventoryFormRetu
       // certificationNumber is included in itemDetails
     ];
     
+    // Collect all valid fields
     Object.entries(formData).forEach(([key, value]) => {
       if (!excludeFields.includes(key) && value !== undefined && value !== '') {
         details[key] = String(value);
       }
     });
 
-    return details;
+    // Sort fields alphabetically for consistent ordering
+    const sortedDetails: Record<string, string> = {};
+    Object.keys(details)
+      .sort()
+      .forEach(key => {
+        sortedDetails[key] = details[key];
+      });
+
+    return sortedDetails;
   }, [formData]);
 
   return {
