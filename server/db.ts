@@ -2904,10 +2904,31 @@ export async function adminDeleteListing(
     throw new Error("Listing not found.");
   }
 
-  // Delete associated photos first (foreign key constraint)
+  // Delete all related records in order of foreign key dependencies
+  // 1. Delete trade proposal items that reference this listing
+  await db.delete(tradeProposalItems).where(eq(tradeProposalItems.offeredListingId, input.listingId));
+  
+  // 2. Delete trade proposals that reference this listing
+  await db.delete(tradeProposals).where(eq(tradeProposals.requestedListingId, input.listingId));
+  
+  // 3. Delete watchlist entries
+  await db.delete(watchlistEntries).where(eq(watchlistEntries.listingId, input.listingId));
+  
+  // 4. Delete item inquiries and their replies
+  const inquiryIds = await db.select({ id: itemInquiries.id }).from(itemInquiries).where(eq(itemInquiries.listingId, input.listingId));
+  if (inquiryIds.length > 0) {
+    const ids = inquiryIds.map(i => i.id);
+    await db.delete(inquiryReplies).where(inArray(inquiryReplies.inquiryId, ids));
+  }
+  await db.delete(itemInquiries).where(eq(itemInquiries.listingId, input.listingId));
+  
+  // 5. Delete favorites
+  await db.delete(favorites).where(eq(favorites.listingId, input.listingId));
+  
+  // 6. Delete photos
   await db.delete(listingPhotos).where(eq(listingPhotos.listingId, input.listingId));
 
-  // Delete the listing
+  // 7. Delete the listing
   await db.delete(listings).where(eq(listings.id, input.listingId));
 
   return {
@@ -2947,10 +2968,31 @@ export async function adminBulkDeleteListings(
     throw new Error("No listings found.");
   }
 
-  // Delete associated photos first (foreign key constraint)
+  // Delete all related records in order of foreign key dependencies
+  // 1. Delete trade proposal items that reference these listings
+  await db.delete(tradeProposalItems).where(inArray(tradeProposalItems.offeredListingId, input.listingIds));
+  
+  // 2. Delete trade proposals that reference these listings
+  await db.delete(tradeProposals).where(inArray(tradeProposals.requestedListingId, input.listingIds));
+  
+  // 3. Delete watchlist entries
+  await db.delete(watchlistEntries).where(inArray(watchlistEntries.listingId, input.listingIds));
+  
+  // 4. Delete item inquiries and their replies
+  const inquiryIds = await db.select({ id: itemInquiries.id }).from(itemInquiries).where(inArray(itemInquiries.listingId, input.listingIds));
+  if (inquiryIds.length > 0) {
+    const ids = inquiryIds.map(i => i.id);
+    await db.delete(inquiryReplies).where(inArray(inquiryReplies.inquiryId, ids));
+  }
+  await db.delete(itemInquiries).where(inArray(itemInquiries.listingId, input.listingIds));
+  
+  // 5. Delete favorites
+  await db.delete(favorites).where(inArray(favorites.listingId, input.listingIds));
+  
+  // 6. Delete photos
   await db.delete(listingPhotos).where(inArray(listingPhotos.listingId, input.listingIds));
 
-  // Delete the listings
+  // 7. Delete the listings
   await db.delete(listings).where(inArray(listings.id, input.listingIds));
 
   return {
