@@ -3124,19 +3124,6 @@ All 8 remaining filter optimization and caching items have been successfully imp
 - [x] Verify cleanup job endpoint is properly registered and authenticated
 
 
-## Collector's Forum Feature (In Progress)
-
-- [ ] Create ForumPost and ForumReply database tables
-- [ ] Add forum CRUD procedures to backend (create, read, update, delete posts/replies)
-- [ ] Create /forum main page with category listing
-- [ ] Create /forum/[categoryId] page to browse topics in a category
-- [ ] Create /forum/[postId] detail page with replies and threading
-- [ ] Create New Topic modal/form for creating discussions
-- [ ] Add "Collector's Forum" link to left sidebar navigation
-- [ ] Implement topic sorting (newest, most replies, trending)
-- [ ] Add admin features (pin, lock, mark as solved)
-- [ ] Write forum functionality tests
-
 
 ## Collector's Forum Feature (COMPLETED)
 
