@@ -1,12 +1,9 @@
 import { z } from "zod";
-import { PhotoUploadInput } from "./db";
-
 import { COOKIE_NAME } from "@shared/const";
 import { collectibleCategories, itemConditions, gradeValues } from "../drizzle/schema";
 import { isValidGradeForCompany, getGradingCompanyByName } from "@shared/gradingCompanyConfig";
 import {
   createListing,
-  uploadImage,
   updateListing,
   createTradeProposal,
   getDashboardData,
@@ -83,11 +80,7 @@ import { ONE_YEAR_MS } from "@shared/const";
 const uploadedImageSchema = z.object({
   name: z.string().min(1).max(200),
   type: z.string().min(1).max(120),
-  contentBase64: z.string().min(1).optional(),
-  fileKey: z.string().optional(),
-  imageUrl: z.string().optional(),
-  altText: z.string().optional(),
-  sortOrder: z.number().optional(),
+  contentBase64: z.string().min(1),
 });
 
 const listingFiltersSchema = z.object({
@@ -560,7 +553,7 @@ export const appRouter = router({
           category: z.enum(collectibleCategories),
           itemType: z.string().min(1).max(50),
           condition: z.enum(itemConditions),
-          description: z.string().max(4000).optional(),
+          description: z.string().min(20).max(4000),
           estimatedValue: z.number().nonnegative().optional(),
           photos: z.array(uploadedImageSchema).max(6),
           itemDetails: z.record(z.string(), z.string()).optional(),
@@ -568,9 +561,9 @@ export const appRouter = router({
           grade: z.string().optional(),
         }),
       )
-      .mutation(async ({ ctx, input }) => {
+      .mutation(({ ctx, input }) => {
         // Validate grading company and grade from description if present
-        const descriptionLines = (input.description || '').split('\n');
+        const descriptionLines = input.description.split('\n');
         let graderCompany = '';
         let grade = '';
         
@@ -606,15 +599,9 @@ export const appRouter = router({
             category: input.category,
             itemType: input.itemType,
             condition: input.condition,
-            description: input.description || '',
+            description: input.description,
             estimatedValue: input.estimatedValue,
-            photos: await Promise.all(input.photos.map(async (photo) => {
-              if (photo.contentBase64) {
-                const uploaded = await uploadImage("listings", ctx.user.id, photo);
-                return { ...photo, fileKey: uploaded.fileKey, imageUrl: uploaded.imageUrl };
-              }
-              return photo;
-            })),
+            photos: input.photos,
             itemDetails: input.itemDetails as Record<string, string> | undefined,
             certificationCompany: input.certificationCompany,
             grade: input.grade,
@@ -628,15 +615,15 @@ export const appRouter = router({
           title: z.string().min(3).max(160),
           category: z.enum(collectibleCategories),
           condition: z.enum(itemConditions),
-          description: z.string().max(4000).optional(),
+          description: z.string().min(20).max(4000),
           estimatedValue: z.number().nonnegative().optional(),
           photos: z.array(uploadedImageSchema).max(6),
           itemDetails: z.record(z.string(), z.string()).optional(),
         }),
       )
-      .mutation(async ({ ctx, input }) => {
+      .mutation(({ ctx, input }) => {
         // Validate grading company and grade from description if present
-        const descriptionLines = (input.description || '').split('\n');
+        const descriptionLines = input.description.split('\n');
         let graderCompany = '';
         let grade = '';
         
@@ -672,15 +659,9 @@ export const appRouter = router({
             title: input.title,
             category: input.category,
             condition: input.condition,
-            description: input.description || '',
+            description: input.description,
             estimatedValue: input.estimatedValue,
-            photos: await Promise.all(input.photos.map(async (photo) => {
-              if (photo.contentBase64) {
-                const uploaded = await uploadImage("listings", ctx.user.id, photo);
-                return { ...photo, fileKey: uploaded.fileKey, imageUrl: uploaded.imageUrl };
-              }
-              return photo;
-            })),
+            photos: input.photos,
             itemDetails: input.itemDetails as Record<string, string> | undefined,
           },
         );

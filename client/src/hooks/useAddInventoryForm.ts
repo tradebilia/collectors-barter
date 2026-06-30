@@ -447,10 +447,6 @@ export const useAddInventoryForm = (photos: any[] = []): UseAddInventoryFormRetu
         details[key] = String(value);
       }
     });
-    
-    // Note: All other dropdown fields (Yes/No, Yes/No/Mixed, etc.) are stored as-is
-    // in itemDetails. They don't have enum constraints, so display labels are acceptable.
-    // Only 'condition' field has enum constraint and is handled separately in AddInventory.tsx
 
     // Sort fields alphabetically for consistent ordering
     const sortedDetails: Record<string, string> = {};

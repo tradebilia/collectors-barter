@@ -54,20 +54,16 @@ const conditionLabels: Record<(typeof itemConditions)[number], string> = {
   poor: "Poor",
 };
 
-export type PhotoUploadInput = {
+type PhotoUploadInput = {
   name: string;
   type: string;
-  contentBase64?: string; // Make contentBase64 optional for direct uploads
-  fileKey?: string;
-  imageUrl?: string;
-  altText?: string;
-  sortOrder?: number;
+  contentBase64: string;
 };
 
 type AvatarUploadInput = {
   name: string;
   type: string;
-  contentBase64?: string;
+  contentBase64: string;
 };
 
 export async function requireDb(): Promise<ReturnType<typeof drizzle>> {
@@ -122,11 +118,8 @@ async function ensureUserProfileRecord(user: Pick<User, "id" | "name">) {
   }
 }
 
-export async function uploadImage(folder: string, userId: number, input: PhotoUploadInput | AvatarUploadInput) {
+async function uploadImage(folder: string, userId: number, input: PhotoUploadInput | AvatarUploadInput) {
   try {
-    if (!input.contentBase64) {
-      throw new Error("contentBase64 is required for image upload.");
-    }
     const buffer = Buffer.from(input.contentBase64, "base64");
     console.log(`[uploadImage] Starting upload: name=${input.name}, size=${buffer.length} bytes, type=${input.type}`);
     const timestamp = Date.now();
@@ -135,9 +128,22 @@ export async function uploadImage(folder: string, userId: number, input: PhotoUp
     console.log(`[uploadImage] File key: ${fileKey}`);
     
     // Save to local filesystem instead of S3 to work around CloudFront issues
-    const { key, url } = await storagePut(fileKey, buffer, input.type);
-    console.log(`[uploadImage] Upload successful, key: ${key}, URL: ${url}`);
-    return { fileKey: key, imageUrl: url };
+    const fs = await import("fs/promises");
+    const path = await import("path");
+    const publicDir = path.resolve(process.cwd(), "client/public/images");
+    
+    // Ensure directory exists
+    await fs.mkdir(publicDir, { recursive: true });
+    
+    // Save file locally
+    const filePath = path.join(publicDir, fileKey);
+    await fs.writeFile(filePath, buffer);
+    console.log(`[uploadImage] File saved locally to: ${filePath}`);
+    
+    // Return URL pointing to local file
+    const url = `/images/${fileKey}`;
+    console.log(`[uploadImage] Upload successful, URL: ${url}`);
+    return { key: fileKey, url };
   } catch (error) {
     console.error(`[uploadImage] Upload failed:`, error);
     throw error;
@@ -1205,8 +1211,8 @@ export async function saveDraft(
     const uploaded = await uploadImage("drafts", user.id, photo);
     await db.insert(listingPhotos).values({
       listingId: draftId,
-      fileKey: uploaded.fileKey,
-      imageUrl: uploaded.imageUrl,
+      fileKey: uploaded.key,
+      imageUrl: uploaded.url,
       altText: `${input.title.trim()} draft photo ${index + 1}`,
       sortOrder: index,
     });
@@ -1577,8 +1583,8 @@ export async function updateProfile(
   if (input.avatar) {
     try {
       const uploaded = await uploadImage("avatars", user.id, input.avatar);
-      updateSet.avatarKey = uploaded.fileKey;
-      updateSet.avatarUrl = uploaded.imageUrl;
+      updateSet.avatarKey = uploaded.key;
+      updateSet.avatarUrl = uploaded.url;
     } catch (error) {
       console.error("[updateProfile] Upload failed, skipping avatar update:", error);
     }
@@ -1635,56 +1641,34 @@ export async function createListing(
   const db = await requireDb();
   await ensureUserProfileRecord(user);
 
-  try {
-    const insertResult = await db.insert(listings).values({
-      ownerId: user.id,
-      title: input.title.trim(),
-      category: input.category,
-      itemType: input.itemType,
-      condition: input.condition,
-      description: input.description.trim(),
-      estimatedValue: input.estimatedValue ? String(input.estimatedValue) : null,
-      itemDetails: input.itemDetails ? JSON.stringify(input.itemDetails) : null,
-      certificationCompany: input.certificationCompany || undefined,
-      grade: (input.grade || undefined) as any,
-      featured: false,
+  const insertResult = await db.insert(listings).values({
+    ownerId: user.id,
+    title: input.title.trim(),
+    category: input.category,
+    itemType: input.itemType,
+    condition: input.condition,
+    description: input.description.trim(),
+    estimatedValue: input.estimatedValue ? String(input.estimatedValue) : null,
+    itemDetails: input.itemDetails ? JSON.stringify(input.itemDetails) : null,
+    certificationCompany: input.certificationCompany || undefined,
+    grade: (input.grade || undefined) as any,
+    featured: false,
+  });
+  const listingId = getInsertId(insertResult);
+
+  for (let index = 0; index < input.photos.length; index += 1) {
+    const photo = input.photos[index]!;
+    const uploaded = await uploadImage("listings", user.id, photo);
+    await db.insert(listingPhotos).values({
+      listingId,
+      fileKey: uploaded.key,
+      imageUrl: uploaded.url,
+      altText: `${input.title.trim()} photo ${index + 1}`,
+      sortOrder: index,
     });
-    const listingId = getInsertId(insertResult);
-
-    for (const photo of input.photos) {
-      let fileKey = photo.fileKey;
-      let imageUrl = photo.imageUrl;
-
-      if (photo.contentBase64) {
-        const uploaded = await uploadImage("listings", user.id, photo as PhotoUploadInput);
-        fileKey = uploaded.fileKey;
-        imageUrl = uploaded.imageUrl;
-      }
-
-      if (!fileKey || !imageUrl) {
-        throw new Error("Photo upload failed: missing fileKey or imageUrl");
-      }
-
-      await db.insert(listingPhotos).values({
-        listingId,
-        fileKey,
-        imageUrl,
-        altText: photo.altText || null,
-        sortOrder: photo.sortOrder || 0,
-      });
-    }
-
-    return getDashboardData(user);
-  } catch (error: any) {
-    console.error("[createListing] Database insert failed:", error);
-    console.error("[createListing] Error details:", {
-      message: error.message,
-      code: error.code,
-      sqlMessage: error.sqlMessage,
-      sqlState: error.sqlState,
-    });
-    throw new Error(`Failed to create listing: ${error.sqlMessage || error.message}`);
   }
+
+  return getDashboardData(user);
 }
 
 export async function updateListing(
@@ -1698,78 +1682,61 @@ export async function updateListing(
     estimatedValue?: number;
     photos: PhotoUploadInput[];
     itemDetails?: Record<string, string>;
-    certificationCompany?: string;
-    grade?: string;
   },
 ) {
   const db = await requireDb();
   await ensureUserProfileRecord(user);
 
-  try {
-    // Verify ownership
-    const listing = await db
-      .select({ ownerId: listings.ownerId })
-      .from(listings)
-      .where(eq(listings.id, input.listingId))
-      .limit(1);
+  // Verify ownership
+  const listing = await db
+    .select({ ownerId: listings.ownerId })
+    .from(listings)
+    .where(eq(listings.id, input.listingId))
+    .limit(1);
 
-    if (!listing[0] || listing[0].ownerId !== user.id) {
-      throw new Error("Unauthorized: You can only edit your own listings");
-    }
-
-    // Update listing
-    await db
-      .update(listings)
-      .set({
-        title: input.title.trim(),
-        category: input.category,
-        condition: input.condition,
-        description: input.description.trim(),
-        estimatedValue: input.estimatedValue ? String(input.estimatedValue) : null,
-        itemDetails: input.itemDetails ? JSON.stringify(input.itemDetails) : null,
-        certificationCompany: input.certificationCompany || undefined,
-        grade: (input.grade || undefined) as any,
-      })
-      .where(eq(listings.id, input.listingId));
-
-    // Delete existing photos and insert new ones if provided
-    if (input.photos.length > 0) {
-      await db.delete(listingPhotos).where(eq(listingPhotos.listingId, input.listingId));
-      for (const photo of input.photos) {
-        let fileKey = photo.fileKey;
-        let imageUrl = photo.imageUrl;
-
-        if (photo.contentBase64) {
-          const uploaded = await uploadImage("listings", user.id, photo as PhotoUploadInput);
-          fileKey = uploaded.fileKey;
-          imageUrl = uploaded.imageUrl;
-        }
-
-        if (!fileKey || !imageUrl) {
-          throw new Error("Photo upload failed: missing fileKey or imageUrl");
-        }
-
-        await db.insert(listingPhotos).values({
-          listingId: input.listingId,
-          fileKey,
-          imageUrl,
-          altText: photo.altText || null,
-          sortOrder: photo.sortOrder || 0,
-        });
-      }
-    }
-
-    return getDashboardData(user);
-  } catch (error: any) {
-    console.error("[updateListing] Database update failed:", error);
-    console.error("[updateListing] Error details:", {
-      message: error.message,
-      code: error.code,
-      sqlMessage: error.sqlMessage,
-      sqlState: error.sqlState,
-    });
-    throw new Error(`Failed to update listing: ${error.sqlMessage || error.message}`);
+  if (!listing[0] || listing[0].ownerId !== user.id) {
+    throw new Error("Unauthorized: You can only edit your own listings");
   }
+
+  // Update listing
+  await db
+    .update(listings)
+    .set({
+      title: input.title.trim(),
+      category: input.category,
+      condition: input.condition,
+      description: input.description.trim(),
+      estimatedValue: input.estimatedValue ? String(input.estimatedValue) : null,
+      itemDetails: input.itemDetails ? JSON.stringify(input.itemDetails) : null,
+    })
+    .where(eq(listings.id, input.listingId));
+
+  // Only update photos if new ones are provided
+  if (input.photos.length > 0) {
+    // Get existing photos to preserve them
+    const existingPhotos = await db
+      .select()
+      .from(listingPhotos)
+      .where(eq(listingPhotos.listingId, input.listingId))
+      .orderBy(asc(listingPhotos.sortOrder));
+
+    // Upload new photos and add them after existing ones
+    for (let index = 0; index < input.photos.length; index += 1) {
+      const photo = input.photos[index]!;
+      const uploaded = await uploadImage("listings", user.id, photo);
+      const newSortOrder = existingPhotos.length + index;
+      await db.insert(listingPhotos).values({
+        listingId: input.listingId,
+        fileKey: uploaded.key,
+        imageUrl: uploaded.url,
+        altText: `${input.title.trim()} photo ${newSortOrder + 1}`,
+        sortOrder: newSortOrder,
+      });
+    }
+  }
+  // If no new photos provided, keep existing photos
+
+  return getDashboardData(user);
 }
 
 export async function upsertUser(input: {
