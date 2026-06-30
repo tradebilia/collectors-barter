@@ -78,6 +78,7 @@ export default function Inventory() {
   const toggleListingStatusMutation = trpc.market.toggleListingStatus.useMutation();
   const bulkUpdateStatusMutation = trpc.market.bulkUpdateListingStatus.useMutation();
   const bulkDeleteMutation = trpc.market.bulkDeleteListings.useMutation();
+  const deleteDraftMutation = trpc.market.deleteDraft.useMutation();
   const restoreMutation = trpc.market.restoreDeletedListings.useMutation();
   const utils = trpc.useUtils();
 
@@ -802,13 +803,22 @@ export default function Inventory() {
                 onClick={async () => {
                   if (listingToDelete) {
                     try {
-                      await bulkDeleteMutation.mutateAsync({
-                        listingIds: [listingToDelete],
-                      });
+                      const isDraft = String(listingToDelete).startsWith('draft-');
+                      if (isDraft) {
+                        const draftId = parseInt(String(listingToDelete).replace('draft-', ''));
+                        await deleteDraftMutation.mutateAsync({ draftId });
+                      } else {
+                        await bulkDeleteMutation.mutateAsync({
+                          listingIds: [listingToDelete as number],
+                        });
+                      }
                       setDeleteDialogOpen(false);
                       setListingToDelete(null);
                       toast.success("Item deleted successfully");
                       await dashboardQuery.refetch();
+                      if (showDrafts) {
+                        await getDraftsQuery.refetch();
+                      }
                     } catch (error) {
                       toast.error("Failed to delete item");
                     }

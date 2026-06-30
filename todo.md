@@ -3078,3 +3078,11 @@ All 8 remaining filter optimization and caching items have been successfully imp
 - No breaking API changes
 - Comprehensive end-to-end testing completed
 - Ready for immediate deployment
+- [x] Fix draft management workflow to allow viewing, editing, and deleting drafts from inventory
+- [x] Extend getDrafts to return all stored fields (condition, description, graderCompany, certificationNumber, estimatedValue, categoryFields, additionalNotes)
+- [x] Add getDraftById procedure to load a specific draft for editing
+- [x] Add updateDraft procedure to save changes to a draft
+- [x] Update AddInventory component to detect draft IDs and load draft data
+- [x] Update AddInventory component to use updateDraft mutation when editing drafts
+- [x] Update Inventory page to use deleteDraft mutation for drafts instead of bulkDelete
+- [x] Fix delete dialog to properly handle both draft and listing deletions

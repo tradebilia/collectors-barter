@@ -1,29 +1,38 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import { saveDraft, getDrafts, deleteDraft } from "./db";
+import { requireDb } from "./db";
+import { users, draftListings, listingPhotos } from "../drizzle/schema";
+import { eq } from "drizzle-orm";
+import { saveDraft, getDrafts, getDraftById, updateDraft, deleteDraft } from "./db";
 
-describe.skip("Draft Storage", () => {
-  // NOTE: These are integration tests that require a real user to exist in the database.
-  // They should be run against a test database with proper setup, not in the unit test environment.
-  // To enable these tests:
-  // 1. Create a test user in the database
-  // 2. Update testUserId to match the created user's ID
-  // 3. Change describe.skip to describe
-  const testUserId = 1; // Use the first user from the database
+describe("Draft Storage", () => {
+  let testUserId: number;
+  let testUser: { id: number; name: string };
   let draftId: number;
+  let db: Awaited<ReturnType<typeof requireDb>>;
 
   beforeAll(async () => {
-    // Clean up any existing test drafts
-    const existingDrafts = await getDrafts(testUserId);
-    for (const draft of existingDrafts) {
-      await deleteDraft(draft.id, testUserId);
-    }
+    // Create a test user with all required fields
+    db = await requireDb();
+    const result = await db.insert(users).values({
+      name: "Test User",
+      openId: `test-user-${Date.now()}`,
+      email: `test-${Date.now()}@example.com`,
+      loginMethod: "test",
+      displayName: "Test User",
+      passwordHash: "test_hash",
+      username: `testuser${Date.now()}`,
+    });
+    testUserId = Number(result.insertId);
+    testUser = { id: testUserId, name: "Test User" };
   });
 
   afterAll(async () => {
     // Clean up test data
     if (draftId) {
-      await deleteDraft(draftId, testUserId);
+      await db.delete(listingPhotos).where(eq(listingPhotos.listingId, draftId));
+      await db.delete(draftListings).where(eq(draftListings.id, draftId));
     }
+    await db.delete(users).where(eq(users.id, testUserId));
   });
 
   it("should save a draft and return an ID", async () => {

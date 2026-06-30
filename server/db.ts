@@ -1220,6 +1220,11 @@ export async function getDrafts(user: Pick<User, "id" | "name">) {
         title: draftListings.title,
         category: draftListings.category,
         grade: draftListings.grade,
+        graderCompany: draftListings.graderCompany,
+        certificationNumber: draftListings.certificationNumber,
+        estimatedValue: draftListings.estimatedValue,
+        categoryFields: draftListings.categoryFields,
+        additionalNotes: draftListings.additionalNotes,
         createdAt: draftListings.createdAt,
       })
     .from(draftListings)
@@ -1252,6 +1257,11 @@ export async function getDrafts(user: Pick<User, "id" | "name">) {
     title: d.title,
     category: d.category,
     grade: d.grade,
+    graderCompany: d.graderCompany,
+    certificationNumber: d.certificationNumber,
+    estimatedValue: d.estimatedValue ? Number(d.estimatedValue) : null,
+    categoryFields: d.categoryFields ? JSON.parse(d.categoryFields) : {},
+    additionalNotes: d.additionalNotes,
     photos: photoMap.get(d.id) ?? [],
     createdAt: d.createdAt.getTime(),
   }));
@@ -1283,6 +1293,118 @@ export async function deleteDraft(
   await db.delete(listingPhotos).where(eq(listingPhotos.listingId, input.draftId));
 
   return { success: true };
+}
+
+export async function getDraftById(
+  user: Pick<User, "id" | "name">,
+  draftId: number,
+) {
+  const db = await requireDb();
+
+  const draftRow = await db
+    .select()
+    .from(draftListings)
+    .where(eq(draftListings.id, draftId))
+    .limit(1);
+
+  if (!draftRow[0]) {
+    throw new Error("Draft not found.");
+  }
+
+  if (draftRow[0].userId !== user.id) {
+    throw new Error("You can only access your own drafts.");
+  }
+
+  const photoRows = await db
+    .select({
+      imageUrl: listingPhotos.imageUrl,
+      altText: listingPhotos.altText,
+      sortOrder: listingPhotos.sortOrder,
+    })
+    .from(listingPhotos)
+    .where(eq(listingPhotos.listingId, draftId))
+    .orderBy(asc(listingPhotos.sortOrder));
+
+  const draft = draftRow[0];
+  return {
+    id: draft.id,
+    title: draft.title,
+    category: draft.category,
+    grade: draft.grade,
+    graderCompany: draft.graderCompany,
+    certificationNumber: draft.certificationNumber,
+    estimatedValue: draft.estimatedValue ? Number(draft.estimatedValue) : null,
+    categoryFields: draft.categoryFields ? JSON.parse(draft.categoryFields) : {},
+    additionalNotes: draft.additionalNotes,
+    photos: photoRows.map(p => ({
+      imageUrl: p.imageUrl,
+      altText: p.altText,
+    })),
+    createdAt: draft.createdAt.getTime(),
+  };
+}
+
+export async function updateDraft(
+  user: Pick<User, "id" | "name">,
+  input: {
+    draftId: number;
+    title: string;
+    category: (typeof collectibleCategories)[number];
+    grade?: (typeof gradeValues)[number];
+    graderCompany?: string;
+    certificationNumber?: string;
+    estimatedValue?: number;
+    categoryFields?: Record<string, any>;
+    additionalNotes?: string;
+    photos: PhotoUploadInput[];
+  },
+) {
+  const db = await requireDb();
+
+  const draft = await db
+    .select()
+    .from(draftListings)
+    .where(eq(draftListings.id, input.draftId))
+    .limit(1);
+
+  if (!draft[0]) {
+    throw new Error("Draft not found.");
+  }
+
+  if (draft[0].userId !== user.id) {
+    throw new Error("You can only update your own drafts.");
+  }
+
+  await db
+    .update(draftListings)
+    .set({
+      title: input.title.trim(),
+      category: input.category,
+      grade: (input.grade as (typeof gradeValues)[number]) || "ungraded",
+      graderCompany: input.graderCompany || null,
+      certificationNumber: input.certificationNumber || null,
+      estimatedValue: input.estimatedValue ? String(input.estimatedValue) : null,
+      categoryFields: input.categoryFields ? JSON.stringify(input.categoryFields) : null,
+      additionalNotes: input.additionalNotes || null,
+      updatedAt: new Date(),
+    })
+    .where(eq(draftListings.id, input.draftId));
+
+  await db.delete(listingPhotos).where(eq(listingPhotos.listingId, input.draftId));
+
+  for (let index = 0; index < input.photos.length; index += 1) {
+    const photo = input.photos[index]!;
+    const uploaded = await uploadImage("drafts", user.id, photo);
+    await db.insert(listingPhotos).values({
+      listingId: input.draftId,
+      fileKey: uploaded.key,
+      imageUrl: uploaded.url,
+      altText: `${input.title.trim()} draft photo ${index + 1}`,
+      sortOrder: index,
+    });
+  }
+
+  return { draftId: input.draftId };
 }
 
 export async function getDashboardData(user: Pick<User, "id" | "name">): Promise<{

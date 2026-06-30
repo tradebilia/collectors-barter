@@ -24,6 +24,8 @@ import {
   getUnreadMessageCount,
   saveDraft,
   getDrafts,
+  getDraftById,
+  updateDraft,
   deleteDraft,
   getSiteStatistics,
   submitUserReport,
@@ -925,6 +927,40 @@ export const appRouter = router({
     getDrafts: protectedProcedure.query(({ ctx }) => {
       return getDrafts({ id: ctx.user.id, name: ctx.user.name });
     }),
+    getDraftById: protectedProcedure
+      .input(z.object({ draftId: z.number().int().positive() }))
+      .query(({ ctx, input }) => {
+        return getDraftById({ id: ctx.user.id, name: ctx.user.name }, input.draftId);
+      }),
+    updateDraft: protectedProcedure
+      .input(
+        z.object({
+          draftId: z.number().int().positive(),
+          title: z.string().min(1).max(160),
+          category: z.enum(collectibleCategories),
+          condition: z.enum(itemConditions),
+          description: z.string(),
+          grade: z.enum(gradeValues).optional(),
+          graderCompany: z.string().optional(),
+          certificationNumber: z.string().optional(),
+          estimatedValue: z.number().optional(),
+          photos: z.array(z.object({ name: z.string(), type: z.string(), contentBase64: z.string() })),
+        }),
+      )
+      .mutation(({ ctx, input }) => {
+        return updateDraft({ id: ctx.user.id, name: ctx.user.name }, {
+          draftId: input.draftId,
+          title: input.title,
+          category: input.category,
+          grade: input.grade,
+          graderCompany: input.graderCompany,
+          certificationNumber: input.certificationNumber,
+          estimatedValue: input.estimatedValue,
+          categoryFields: {},
+          additionalNotes: input.description,
+          photos: input.photos,
+        });
+      }),
     deleteDraft: protectedProcedure
       .input(
         z.object({

@@ -69,6 +69,8 @@ export default function AddInventory() {
   const params = useParams<{ listingId?: string }>();
   const [, navigate] = useLocation();
   const isEditMode = !!params.listingId;
+  const isDraftMode = params.listingId?.startsWith('draft-');
+  const draftId = isDraftMode ? parseInt(params.listingId!.replace('draft-', '')) : null;
 
   const {
     formData,
@@ -88,14 +90,53 @@ export default function AddInventory() {
   const createListingMutation = trpc.market.createListing.useMutation();
   const saveDraftMutation = trpc.market.saveDraft.useMutation();
   const getListingDetailQuery = trpc.market.listingDetail.useQuery(
-    { listingId: params.listingId ? parseInt(params.listingId) : 0 },
-    { enabled: isEditMode }
+    { listingId: params.listingId && !isDraftMode ? parseInt(params.listingId) : 0 },
+    { enabled: isEditMode && !isDraftMode }
+  );
+  const getDraftByIdQuery = trpc.market.getDraftById.useQuery(
+    { draftId: draftId || 0 },
+    { enabled: isDraftMode && !!draftId }
   );
   const updateListingMutation = trpc.market.updateListing.useMutation();
+  const updateDraftMutation = trpc.market.updateDraft.useMutation();
+
+  // Load existing draft data when in draft edit mode
+  useEffect(() => {
+    if (isDraftMode && getDraftByIdQuery.data) {
+      const draft = getDraftByIdQuery.data;
+      if (draft.category) {
+        setCategory(draft.category as CollectibleCategory);
+      }
+      updateField("listingTitle", draft.title);
+      updateField("estimatedValue", String(draft.estimatedValue || ""));
+      updateField("description", draft.additionalNotes || "");
+      updateField("gradingCompany", draft.graderCompany || "");
+      updateField("certificationNumber", draft.certificationNumber || "");
+      updateField("grade", draft.grade || "ungraded");
+
+      // Load category fields
+      if (draft.categoryFields && typeof draft.categoryFields === "object") {
+        Object.entries(draft.categoryFields).forEach(([key, value]) => {
+          updateField(key, String(value || ""));
+        });
+      }
+
+      // Load existing photos
+      if (draft.photos && draft.photos.length > 0) {
+        const existingPhotos: UploadedImage[] = draft.photos.map(photo => ({
+          name: photo.altText || "photo",
+          type: "image/jpeg",
+          contentBase64: "",
+          previewUrl: photo.imageUrl,
+        }));
+        setPhotos(existingPhotos);
+      }
+    }
+  }, [isDraftMode, getDraftByIdQuery.data]);
 
   // Load existing listing data when in edit mode
   useEffect(() => {
-    if (isEditMode && getListingDetailQuery.data?.listing) {
+    if (isEditMode && !isDraftMode && getListingDetailQuery.data?.listing) {
       const listing = getListingDetailQuery.data.listing;
       if (listing.category) {
         setCategory(listing.category as CollectibleCategory);
@@ -222,10 +263,33 @@ export default function AddInventory() {
         reorderedPhotos.unshift(primaryPhoto);
       }
 
-      console.log('isEditMode:', isEditMode, 'params.listingId:', params.listingId);
+      console.log('isEditMode:', isEditMode, 'isDraftMode:', isDraftMode, 'params.listingId:', params.listingId);
       console.log('formData.category:', formData.category);
       console.log('formData:', formData);
-      if (isEditMode && params.listingId) {
+      
+      if (isDraftMode && draftId) {
+        // Update draft
+        const newPhotos = reorderedPhotos.filter(p => p.contentBase64);
+        if (formData.category) {
+          await updateDraftMutation.mutateAsync({
+            draftId: draftId,
+            title: formData.listingTitle,
+            category: formData.category,
+            condition: formData.condition || "near_mint",
+            description: formData.description,
+            grade: formData.grade,
+            graderCompany: formData.gradingCompany,
+            certificationNumber: formData.certificationNumber,
+            estimatedValue: formData.tradeValue ? parseFloat(formData.tradeValue) : 0,
+            photos: newPhotos.length > 0 ? newPhotos : reorderedPhotos,
+          });
+          toast.success("Draft updated successfully!");
+          navigate("/inventory");
+        } else {
+          toast.error("Please select a category before updating.");
+          return;
+        }
+      } else if (isEditMode && params.listingId && !isDraftMode) {
         const newPhotos = reorderedPhotos.filter(p => p.contentBase64);
         if (formData.category) {
           await updateListingMutation.mutateAsync({
