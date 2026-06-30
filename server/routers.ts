@@ -48,6 +48,11 @@ import {
   deleteInquiry,
   getDeletedInquiries,
   emptyDeletedInquiries,
+  createForumPost,
+  getForumPosts,
+  getForumPostById,
+  addForumReply,
+  getForumReplies,
   createReferralRequest,
   getAllReferralRequests,
   updateReferralRequestStatus,
@@ -969,6 +974,47 @@ export const appRouter = router({
       )
       .mutation(({ ctx, input }) => {
         return deleteDraft({ id: ctx.user.id, name: ctx.user.name }, { draftId: input.draftId });
+      }),
+    createForumPost: protectedProcedure
+      .input(
+        z.object({
+          category: z.string().min(1).max(64),
+          title: z.string().min(3).max(255),
+          content: z.string().min(10).max(5000),
+        }),
+      )
+      .mutation(({ ctx, input }) => {
+        return createForumPost({ id: ctx.user.id, name: ctx.user.name }, input);
+      }),
+    getForumPosts: publicProcedure
+      .input(
+        z.object({
+          category: z.string().optional(),
+          sortBy: z.enum(["newest", "popular", "replies"]).default("newest"),
+        }),
+      )
+      .query(({ input }) => {
+        return getForumPosts(input.category, input.sortBy);
+      }),
+    getForumPostDetail: publicProcedure
+      .input(z.object({ postId: z.number().int().positive() }))
+      .query(({ input }) => {
+        return getForumPostById(input.postId);
+      }),
+    getForumReplies: publicProcedure
+      .input(z.object({ postId: z.number().int().positive() }))
+      .query(({ input }) => {
+        return getForumReplies(input.postId);
+      }),
+    addForumReply: protectedProcedure
+      .input(
+        z.object({
+          postId: z.number().int().positive(),
+          content: z.string().min(1).max(2000),
+        }),
+      )
+      .mutation(({ ctx, input }) => {
+        return addForumReply({ id: ctx.user.id, name: ctx.user.name }, input);
       }),
     submitReport: protectedProcedure
       .input(

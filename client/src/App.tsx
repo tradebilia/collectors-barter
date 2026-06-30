@@ -30,6 +30,8 @@ import { SearchResults } from "./pages/SearchResults";
 import AdminDashboard from "./pages/AdminDashboard";
 import { AnimatedDemo } from "./pages/AnimatedDemo";
 import Contact from "./pages/Contact";
+import { Forum } from "./pages/Forum";
+import { ForumTopic } from "./pages/ForumTopic";
 import {
   AllMostViewedRankings,
   AllMostFavoritedRankings,
@@ -111,6 +113,8 @@ function Router() {
         </ProtectedRoute>
       </Route>
       <Route path="/contact" component={Contact} />
+      <Route path="/forum" component={Forum} />
+      <Route path="/forum/:postId" component={ForumTopic} />
       <Route path="/category/:slug" component={CategoryPage} />
       <Route path="/animated-demo" component={AnimatedDemo} />
       <Route path="/rankings/most-viewed" component={AllMostViewedRankings} />

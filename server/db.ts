@@ -3140,3 +3140,158 @@ export async function deleteDraftsOlderThan(db: any, cutoffDate: Date): Promise<
 
   return draftIds.length;
 }
+
+
+// Forum functions
+export async function createForumPost(
+  user: Pick<User, "id" | "name">,
+  input: {
+    category: string;
+    title: string;
+    content: string;
+  }
+) {
+  const db = await requireDb();
+  const { forumPosts } = await import("../drizzle/schema");
+
+  const result = await db.insert(forumPosts).values({
+    userId: user.id,
+    category: input.category,
+    title: input.title.trim().slice(0, 255),
+    content: input.content.trim(),
+  });
+
+  return { postId: getInsertId(result) };
+}
+
+export async function getForumPosts(category?: string, sortBy: "newest" | "popular" | "replies" = "newest") {
+  const db = await requireDb();
+  const { forumPosts, users } = await import("../drizzle/schema");
+  const { eq, desc } = await import("drizzle-orm");
+
+  const baseQuery = db
+    .select({
+      id: forumPosts.id,
+      userId: forumPosts.userId,
+      category: forumPosts.category,
+      title: forumPosts.title,
+      content: forumPosts.content,
+      isPinned: forumPosts.isPinned,
+      isLocked: forumPosts.isLocked,
+      isSolved: forumPosts.isSolved,
+      viewCount: forumPosts.viewCount,
+      replyCount: forumPosts.replyCount,
+      createdAt: forumPosts.createdAt,
+      updatedAt: forumPosts.updatedAt,
+      author: {
+        id: users.id,
+        name: users.displayName,
+        avatarUrl: users.avatarUrl,
+      },
+    })
+    .from(forumPosts)
+    .leftJoin(users, eq(forumPosts.userId, users.id));
+
+  if (category) {
+    if (sortBy === "newest") {
+      return baseQuery.where(eq(forumPosts.category, category)).orderBy(desc(forumPosts.isPinned), desc(forumPosts.createdAt));
+    } else if (sortBy === "popular") {
+      return baseQuery.where(eq(forumPosts.category, category)).orderBy(desc(forumPosts.isPinned), desc(forumPosts.viewCount));
+    } else {
+      return baseQuery.where(eq(forumPosts.category, category)).orderBy(desc(forumPosts.isPinned), desc(forumPosts.replyCount));
+    }
+  } else {
+    if (sortBy === "newest") {
+      return baseQuery.orderBy(desc(forumPosts.isPinned), desc(forumPosts.createdAt));
+    } else if (sortBy === "popular") {
+      return baseQuery.orderBy(desc(forumPosts.isPinned), desc(forumPosts.viewCount));
+    } else {
+      return baseQuery.orderBy(desc(forumPosts.isPinned), desc(forumPosts.replyCount));
+    }
+  }
+}
+
+export async function getForumPostById(postId: number) {
+  const db = await requireDb();
+  const { forumPosts, users } = await import("../drizzle/schema");
+  const { eq, sql } = await import("drizzle-orm");
+
+  // Increment view count
+  await db.update(forumPosts).set({ viewCount: sql`viewCount + 1` }).where(eq(forumPosts.id, postId));
+
+  const result = await db
+    .select({
+      id: forumPosts.id,
+      userId: forumPosts.userId,
+      category: forumPosts.category,
+      title: forumPosts.title,
+      content: forumPosts.content,
+      isPinned: forumPosts.isPinned,
+      isLocked: forumPosts.isLocked,
+      isSolved: forumPosts.isSolved,
+      viewCount: forumPosts.viewCount,
+      replyCount: forumPosts.replyCount,
+      createdAt: forumPosts.createdAt,
+      updatedAt: forumPosts.updatedAt,
+      author: {
+        id: users.id,
+        name: users.displayName,
+        avatarUrl: users.avatarUrl,
+      },
+    })
+    .from(forumPosts)
+    .leftJoin(users, eq(forumPosts.userId, users.id))
+    .where(eq(forumPosts.id, postId))
+    .limit(1);
+
+  return result[0] || null;
+}
+
+export async function addForumReply(
+  user: Pick<User, "id" | "name">,
+  input: {
+    postId: number;
+    content: string;
+  }
+) {
+  const db = await requireDb();
+  const { forumReplies, forumPosts } = await import("../drizzle/schema");
+  const { eq } = await import("drizzle-orm");
+
+  const result = await db.insert(forumReplies).values({
+    postId: input.postId,
+    userId: user.id,
+    content: input.content.trim(),
+  });
+
+  // Increment reply count
+  const { sql } = await import("drizzle-orm");
+  await db.update(forumPosts).set({ replyCount: sql`replyCount + 1` }).where(eq(forumPosts.id, input.postId));
+
+  return { replyId: getInsertId(result) };
+}
+
+export async function getForumReplies(postId: number) {
+  const db = await requireDb();
+  const { forumReplies, users } = await import("../drizzle/schema");
+  const { eq } = await import("drizzle-orm");
+
+  return db
+    .select({
+      id: forumReplies.id,
+      postId: forumReplies.postId,
+      userId: forumReplies.userId,
+      content: forumReplies.content,
+      createdAt: forumReplies.createdAt,
+      updatedAt: forumReplies.updatedAt,
+      author: {
+        id: users.id,
+        name: users.displayName,
+        avatarUrl: users.avatarUrl,
+      },
+    })
+    .from(forumReplies)
+    .leftJoin(users, eq(forumReplies.userId, users.id))
+    .where(eq(forumReplies.postId, postId))
+    .orderBy(asc(forumReplies.createdAt));
+}

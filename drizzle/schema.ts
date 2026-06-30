@@ -566,3 +566,49 @@ export const favorites = mysqlTable(
 );
 export type Favorite = typeof favorites.$inferSelect;
 export type FavoriteInsert = typeof favorites.$inferInsert;
+
+
+export const forumPosts = mysqlTable(
+  "forumPosts",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    userId: int("userId").notNull().references(() => users.id),
+    category: varchar("category", { length: 64 }).notNull(), // "general" or collectible category
+    title: varchar("title", { length: 255 }).notNull(),
+    content: text("content").notNull(),
+    isPinned: boolean("isPinned").default(false).notNull(),
+    isLocked: boolean("isLocked").default(false).notNull(),
+    isSolved: boolean("isSolved").default(false).notNull(),
+    viewCount: int("viewCount").default(0).notNull(),
+    replyCount: int("replyCount").default(0).notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  table => ({
+    userIdx: index("forumPosts_userId_idx").on(table.userId),
+    categoryIdx: index("forumPosts_category_idx").on(table.category),
+    pinnedIdx: index("forumPosts_isPinned_idx").on(table.isPinned),
+    createdAtIdx: index("forumPosts_createdAt_idx").on(table.createdAt),
+  })
+);
+export type ForumPost = typeof forumPosts.$inferSelect;
+export type ForumPostInsert = typeof forumPosts.$inferInsert;
+
+export const forumReplies = mysqlTable(
+  "forumReplies",
+  {
+    id: int("id").autoincrement().primaryKey(),
+    postId: int("postId").notNull().references(() => forumPosts.id, { onDelete: "cascade" }),
+    userId: int("userId").notNull().references(() => users.id),
+    content: text("content").notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  },
+  table => ({
+    postIdx: index("forumReplies_postId_idx").on(table.postId),
+    userIdx: index("forumReplies_userId_idx").on(table.userId),
+    createdAtIdx: index("forumReplies_createdAt_idx").on(table.createdAt),
+  })
+);
+export type ForumReply = typeof forumReplies.$inferSelect;
+export type ForumReplyInsert = typeof forumReplies.$inferInsert;

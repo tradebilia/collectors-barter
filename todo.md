@@ -3122,3 +3122,35 @@ All 8 remaining filter optimization and caching items have been successfully imp
 - [x] Highlight drafts expiring within 10 days with red "WARNING" text
 - [x] Create comprehensive backend tests for draft expiration (all 3 tests passing)
 - [x] Verify cleanup job endpoint is properly registered and authenticated
+
+
+## Collector's Forum Feature (In Progress)
+
+- [ ] Create ForumPost and ForumReply database tables
+- [ ] Add forum CRUD procedures to backend (create, read, update, delete posts/replies)
+- [ ] Create /forum main page with category listing
+- [ ] Create /forum/[categoryId] page to browse topics in a category
+- [ ] Create /forum/[postId] detail page with replies and threading
+- [ ] Create New Topic modal/form for creating discussions
+- [ ] Add "Collector's Forum" link to left sidebar navigation
+- [ ] Implement topic sorting (newest, most replies, trending)
+- [ ] Add admin features (pin, lock, mark as solved)
+- [ ] Write forum functionality tests
+
+
+## Collector's Forum Feature (COMPLETED)
+
+- [x] Create ForumPost and ForumReply database tables with proper indexes and foreign keys
+- [x] Add forum database helper functions (createForumPost, getForumPosts, getForumPostById, addForumReply, getForumReplies)
+- [x] Add forum tRPC procedures to backend (create, read, update, delete posts/replies)
+- [x] Create /forum main page with category listing and topic browser (Forum.tsx)
+- [x] Create /forum/[postId] detail page with replies and threading (ForumTopic.tsx)
+- [x] Add routes to App.tsx (/forum, /forum/:postId)
+- [x] Add "Collector's Forum" link to left sidebar navigation in Home.tsx
+- [x] Implement topic sorting (newest, most replies, popular/trending)
+- [x] Implement view count tracking for posts
+- [x] Write comprehensive forum functionality tests (all 4 tests passing)
+- [x] Hybrid category structure (General + 10 collectible categories)
+- [x] Users can create new topics in any category
+- [x] Users can reply to existing topics
+- [x] Reply count automatically increments when replies are added
