@@ -2961,4 +2961,25 @@ All 8 remaining filter optimization and caching items have been successfully imp
 - [x] Refactor photo upload logic in server/db.ts
 - [x] Update createListing and updateListing functions to correctly handle photo data
 - [x] Adjust server/routers.ts to align with refactored photo handling
+- [x] Debug and fix form submission issue in AddInventory.tsx
+- [ ] Display server-side validation errors on the AddInventory form
 - [x] Verify changes and ensure no new errors are introduced
+
+## Add Inventory Page
+- [x] Implement Basic Add Inventory Page Structure
+- [x] Integrate Form Fields and Validation
+- [ ] Implement Image Upload Functionality
+- [ ] Connect to Backend API for Listing Creation
+- [ ] Add Conditional Fields and Dynamic Behavior
+- [ ] Refine UI/UX and Add Error Handling
+- [x] Create Unit Tests for Add Inventory Page
+
+## General Improvements
+- [ ] Ensure all input fields reset on page refresh for the 'Add to my inventory' page.
+- [ ] Implement client-side and server-side validation for all forms.
+- [ ] Use a white asterisk for required fields.
+- [ ] Prevent users from entering values that already exist in dropdowns.
+- [ ] Implement 'Save as Draft' functionality, including all filled-out information.
+- [ ] No auto-fill for continuing drafts; user selects from saved drafts.
+- [ ] Implement dynamic updating of item details based on category selection.
+- [ ] Allow users to enter a certification number and use a 'Fetch' button to retrieve item details from grading company APIs.

@@ -560,7 +560,7 @@ export const appRouter = router({
           category: z.enum(collectibleCategories),
           itemType: z.string().min(1).max(50),
           condition: z.enum(itemConditions),
-          description: z.string().min(20).max(4000),
+          description: z.string().max(4000).optional(),
           estimatedValue: z.number().nonnegative().optional(),
           photos: z.array(uploadedImageSchema).max(6),
           itemDetails: z.record(z.string(), z.string()).optional(),
@@ -570,7 +570,7 @@ export const appRouter = router({
       )
       .mutation(async ({ ctx, input }) => {
         // Validate grading company and grade from description if present
-        const descriptionLines = input.description.split('\n');
+        const descriptionLines = (input.description || '').split('\n');
         let graderCompany = '';
         let grade = '';
         
@@ -606,7 +606,7 @@ export const appRouter = router({
             category: input.category,
             itemType: input.itemType,
             condition: input.condition,
-            description: input.description,
+            description: input.description || '',
             estimatedValue: input.estimatedValue,
             photos: await Promise.all(input.photos.map(async (photo) => {
               if (photo.contentBase64) {
@@ -628,7 +628,7 @@ export const appRouter = router({
           title: z.string().min(3).max(160),
           category: z.enum(collectibleCategories),
           condition: z.enum(itemConditions),
-          description: z.string().min(20).max(4000),
+          description: z.string().max(4000).optional(),
           estimatedValue: z.number().nonnegative().optional(),
           photos: z.array(uploadedImageSchema).max(6),
           itemDetails: z.record(z.string(), z.string()).optional(),
@@ -636,7 +636,7 @@ export const appRouter = router({
       )
       .mutation(async ({ ctx, input }) => {
         // Validate grading company and grade from description if present
-        const descriptionLines = input.description.split('\n');
+        const descriptionLines = (input.description || '').split('\n');
         let graderCompany = '';
         let grade = '';
         
@@ -672,7 +672,7 @@ export const appRouter = router({
             title: input.title,
             category: input.category,
             condition: input.condition,
-            description: input.description,
+            description: input.description || '',
             estimatedValue: input.estimatedValue,
             photos: await Promise.all(input.photos.map(async (photo) => {
               if (photo.contentBase64) {
