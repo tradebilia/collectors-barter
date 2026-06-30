@@ -196,9 +196,9 @@ export default function AddInventory() {
     if (isEditMode && params.listingId) {
       const newPhotos = reorderedPhotos.filter(p => p.contentBase64);
       if (formData.category) {
-        await updateListingMutation.mutateAsync({
-          listingId: parseInt(params.listingId),
-          title: formData.title,
+      await updateListingMutation.mutateAsync({
+        listingId: parseInt(params.listingId),
+        title: formData.listingTitle,
           category: formData.category,
           condition: "mint", // TODO: Map from grade
           description: formData.description,
@@ -214,7 +214,7 @@ export default function AddInventory() {
       navigate("/inventory");
     } else if (formData.category) {
       await createListingMutation.mutateAsync({
-        title: formData.title,
+        title: formData.listingTitle,
         category: formData.category,
         itemType: formData.itemType,
         condition: "mint", // TODO: Map from grade
