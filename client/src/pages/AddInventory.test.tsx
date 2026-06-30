@@ -106,4 +106,26 @@ describe('AddInventory Component - Structure Tests', () => {
     expect(componentStr).toContain('catch');
     expect(componentStr).toContain('error?.message');
   });
+
+  it('should render conditional fields for grading categories', () => {
+    const componentStr = AddInventory.toString();
+    expect(componentStr).toContain('renderConditionalFields');
+    expect(componentStr).toContain('gradingCategories');
+  });
+
+  it('should show grading fields when Is Graded is yes', () => {
+    const componentStr = AddInventory.toString();
+    expect(componentStr).toContain('isGraded');
+    expect(componentStr).toContain('Grading Company');
+    expect(componentStr).toContain('Grade');
+    expect(componentStr).toContain('Certification Number');
+  });
+
+  it('should reset conditional fields when category changes', () => {
+    const componentStr = AddInventory.toString();
+    expect(componentStr).toContain('setIsGraded');
+    expect(componentStr).toContain('setGradingCompany');
+    expect(componentStr).toContain('setGrade');
+    expect(componentStr).toContain('setCertificationNumber');
+  });
 });

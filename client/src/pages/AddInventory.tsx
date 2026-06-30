@@ -23,6 +23,10 @@ export default function AddInventory() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [photos, setPhotos] = useState<File[]>([]);
   const [photoPreviewUrls, setPhotoPreviewUrls] = useState<string[]>([]);
+  const [isGraded, setIsGraded] = useState<string>('');
+  const [gradingCompany, setGradingCompany] = useState<string>('');
+  const [grade, setGrade] = useState<string>('');
+  const [certificationNumber, setCertificationNumber] = useState<string>('');
 
   // Reset form on component mount
   useEffect(() => {
@@ -36,10 +40,79 @@ export default function AddInventory() {
     setDescription('');
     setEstimatedValue('');
     setErrors({});
+    setIsGraded('');
+    setGradingCompany('');
+    setGrade('');
+    setCertificationNumber('');
   };
 
   const handleCategoryChange = (value: string) => {
     setSelectedCategory(value);
+    setIsGraded('');
+    setGradingCompany('');
+    setGrade('');
+    setCertificationNumber('');
+  };
+
+  const renderConditionalFields = () => {
+    if (!selectedCategory) return null;
+
+    const fields: React.ReactNode[] = [];
+    const gradingCategories = ['Sports Cards', 'Comic Books', 'Pokemon Cards', 'Coins', 'Stamps'];
+
+    if (gradingCategories.includes(selectedCategory)) {
+      fields.push(
+        <div key="is-graded">
+          <label className="block text-sm font-medium mb-2">Is Graded?</label>
+          <Select value={isGraded} onValueChange={setIsGraded}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="yes">Yes</SelectItem>
+              <SelectItem value="no">No</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      );
+
+      if (isGraded === 'yes') {
+        fields.push(
+          <div key="grading-company">
+            <label className="block text-sm font-medium mb-2">Grading Company</label>
+            <Input
+              placeholder="e.g., PSA, BGS, CGC"
+              value={gradingCompany}
+              onChange={(e) => setGradingCompany(e.target.value)}
+            />
+          </div>
+        );
+
+        fields.push(
+          <div key="grade">
+            <label className="block text-sm font-medium mb-2">Grade</label>
+            <Input
+              placeholder="e.g., 9.5, 10"
+              value={grade}
+              onChange={(e) => setGrade(e.target.value)}
+            />
+          </div>
+        );
+
+        fields.push(
+          <div key="certification-number">
+            <label className="block text-sm font-medium mb-2">Certification Number</label>
+            <Input
+              placeholder="Enter certification number"
+              value={certificationNumber}
+              onChange={(e) => setCertificationNumber(e.target.value)}
+            />
+          </div>
+        );
+      }
+    }
+
+    return fields;
   };
 
   const validateForm = (): boolean => {
@@ -232,6 +305,9 @@ export default function AddInventory() {
             </Select>
             {errors.condition && <p className="text-red-500 text-sm mt-1">{errors.condition}</p>}
           </div>
+
+          {/* Conditional Fields */}
+          {renderConditionalFields()}
 
           {/* Description */}
           <div>
