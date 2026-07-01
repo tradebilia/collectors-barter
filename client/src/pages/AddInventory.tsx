@@ -139,14 +139,18 @@ export default function AddInventory() {
   useEffect(() => {
     if (isEditMode && !isDraftMode && getListingDetailQuery.data?.listing) {
       const listing = getListingDetailQuery.data.listing;
+      console.log('[DEBUG] Edit mode - listing loaded:', { category: listing.category, itemType: (listing as any).itemType, itemDetails: listing.itemDetails });
       if (listing.category) {
         // In edit mode, just set category and itemType without resetting form data
         // The form data will be loaded in the next useEffect
-        setFormData((prev) => ({
-          ...prev,
-          category: listing.category as CollectibleCategory,
-          itemType: (listing as any).itemType || '',
-        }));
+        setFormData((prev) => {
+          console.log('[DEBUG] Setting category and itemType');
+          return {
+            ...prev,
+            category: listing.category as CollectibleCategory,
+            itemType: (listing as any).itemType || '',
+          };
+        });
       }
     }
   }, [isEditMode, isDraftMode, getListingDetailQuery.data]);
@@ -156,27 +160,39 @@ export default function AddInventory() {
     if (isEditMode && !isDraftMode && getListingDetailQuery.data?.listing && formData.category) {
       const listing = getListingDetailQuery.data.listing;
       
-      // Load all basic fields
-      updateField("listingTitle", listing.title);
-      updateField("tradeValue", String(listing.estimatedValue || ""));
-      updateField("description", listing.description);
-      updateField("condition", listing.condition || "");
-      updateField("grade", listing.grade || "");
-      updateField("certificationCompany", listing.certificationCompany || "");
-      updateField("gradingCompany", listing.certificationCompany || "");
-      updateField("certificationNumber", (listing.itemDetails?.certificationNumber) || "");
-      updateField("shipping", (listing.itemDetails?.shipping) || "");
-      updateField("isGraded", listing.certificationCompany ? "yes" : "no");
+      // Batch all field updates into a single setFormData call
+      const updates: Record<string, any> = {
+        listingTitle: listing.title,
+        tradeValue: String(listing.estimatedValue || ""),
+        description: listing.description,
+        condition: listing.condition || "",
+        grade: listing.grade || "",
+        certificationCompany: listing.certificationCompany || "",
+        gradingCompany: listing.certificationCompany || "",
+        certificationNumber: (listing.itemDetails?.certificationNumber) || "",
+        shipping: (listing.itemDetails?.shipping) || "",
+        isGraded: listing.certificationCompany ? "yes" : "no",
+      };
 
       // Load item details (skip fields we've already loaded)
       if (listing.itemDetails && typeof listing.itemDetails === "object") {
+        console.log('[DEBUG] itemDetails found, loading fields:', Object.keys(listing.itemDetails));
         Object.entries(listing.itemDetails).forEach(([key, value]) => {
           // Skip fields that are already loaded separately at the top level
           if (key !== "title" && key !== "estimatedValue" && key !== "shipping") {
-            updateField(key, String(value || ""));
+            console.log('[DEBUG] updateField:', key, '=', value);
+            updates[key] = String(value || "");
           }
         });
+      } else {
+        console.log('[DEBUG] No itemDetails found or not an object');
       }
+      
+      // Apply all updates at once
+      setFormData((prev) => ({
+        ...prev,
+        ...updates,
+      }));
 
       // Load existing photos
       if (listing.photos && listing.photos.length > 0) {
@@ -189,7 +205,7 @@ export default function AddInventory() {
         setPhotos(existingPhotos);
       }
     }
-  }, [isEditMode, isDraftMode, getListingDetailQuery.data, formData.category, formData.itemType, updateField, setPhotos]);
+  }, [isEditMode, isDraftMode, getListingDetailQuery.data, formData.category, formData.itemType, setPhotos]);
 
   const handlePhotos = async (event: ChangeEvent<HTMLInputElement>) => {
     const nextPhotos = await readFiles(event.target.files);
@@ -435,6 +451,7 @@ export default function AddInventory() {
 
             {/* Category & Item Type Selection */}
             <CategoryItemTypeSelector
+              key={`category-selector-${formData.category}-${formData.itemType}`}
               selectedCategory={formData.category}
               selectedItemType={formData.itemType}
               onCategoryChange={handleCategoryChange}
@@ -464,9 +481,10 @@ export default function AddInventory() {
                           const fieldConfig = fieldLayout[field.name];
                           const colSpan = fieldConfig?.colSpan || 'half';
                           const colSpanClass = getColSpanClass(colSpan, requiredColumns);
+                          const fieldValue = formData[field.name as keyof typeof formData];
                           
                           return (
-                            <div key={field.name} className={`${colSpanClass} w-full`} data-error={!!errors[field.name]}>
+                            <div key={`${field.name}-${fieldValue}`} className={`${colSpanClass} w-full`} data-error={!!errors[field.name]}>
                               <FieldWithCustomInput
                                 field={field}
                                 value={formData[field.name as keyof typeof formData] || ""}
@@ -510,9 +528,10 @@ export default function AddInventory() {
                           const fieldConfig = fieldLayout[field.name];
                           const colSpan = fieldConfig?.colSpan || 'half';
                           const colSpanClass = getColSpanClass(colSpan, recommendedColumns);
+                          const fieldValue = formData[field.name as keyof typeof formData];
                           
                           return (
-                            <div key={field.name} className={`${colSpanClass} w-full`}>
+                            <div key={`${field.name}-${fieldValue}`} className={`${colSpanClass} w-full`}>
                               <FieldWithCustomInput
                                 field={field}
                                 value={formData[field.name as keyof typeof formData] || ""}

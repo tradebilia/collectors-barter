@@ -161,8 +161,13 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({
 
       case 'dropdown':
         // Standard dropdown for all fields
+        console.log('[DEBUG] Rendering dropdown:', { fieldName: field.name, value, dropdownOptions: field.dropdownOptions?.length });
         return (
           <Select value={value || ''} onValueChange={(newValue) => {
+            console.log('[DEBUG] Dropdown onChange:', { fieldName: field.name, newValue, oldValue: value });
+            if (newValue === '' && value !== '') {
+              console.log('[DEBUG] WARNING: Value being cleared!', { fieldName: field.name, stack: new Error().stack });
+            }
             if (field.name === 'condition') {
               console.log('Condition dropdown onChange:', { newValue, fieldName: field.name, displayLabel: field.displayLabels?.[newValue] });
             }
