@@ -123,11 +123,11 @@ async function uploadImage(folder: string, userId: number, input: PhotoUploadInp
     console.log(`[uploadImage] Starting upload: name=${input.name}, size=${buffer.length} bytes, type=${input.type}`);
     const timestamp = Date.now();
     const randomId = Math.random().toString(36).substring(2, 8);
-    const fileKey = `${folder}/${userId}/${timestamp}-${randomId}-${input.name}`;
+    // Remove spaces from filename to avoid URL encoding issues with storage proxy
+    const sanitizedName = input.name.replace(/\s+/g, '-');
+    const fileKey = `${folder}/${userId}/${timestamp}-${randomId}-${sanitizedName}`;
     console.log(`[uploadImage] File key: ${fileKey}`);
-    
-    // Import storagePut helper
-    const { storagePut } = await import("./storage");
+    console.log(`[uploadImage] Original name: ${input.name}, Sanitized name: ${sanitizedName}`);
     
     // Upload to S3 using storagePut
     const result = await storagePut(fileKey, buffer, input.type);
