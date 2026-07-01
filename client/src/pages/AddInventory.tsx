@@ -74,6 +74,7 @@ export default function AddInventory() {
 
   const {
     formData,
+    setFormData,
     setCategory,
     setItemType,
     updateField,
@@ -139,18 +140,20 @@ export default function AddInventory() {
     if (isEditMode && !isDraftMode && getListingDetailQuery.data?.listing) {
       const listing = getListingDetailQuery.data.listing;
       if (listing.category) {
-        setCategory(listing.category as CollectibleCategory);
-      }
-      const itemType = (listing as any).itemType;
-      if (itemType) {
-        setItemType(itemType);
+        // In edit mode, just set category and itemType without resetting form data
+        // The form data will be loaded in the next useEffect
+        setFormData((prev) => ({
+          ...prev,
+          category: listing.category as CollectibleCategory,
+          itemType: (listing as any).itemType || '',
+        }));
       }
     }
-  }, [isEditMode, isDraftMode, getListingDetailQuery.data, setCategory, setItemType]);
+  }, [isEditMode, isDraftMode, getListingDetailQuery.data]);
 
   // Separate effect to load fields after category and itemType are set
   useEffect(() => {
-    if (isEditMode && !isDraftMode && getListingDetailQuery.data?.listing && formData.category && formData.itemType) {
+    if (isEditMode && !isDraftMode && getListingDetailQuery.data?.listing && formData.category) {
       const listing = getListingDetailQuery.data.listing;
       
       // Load all basic fields

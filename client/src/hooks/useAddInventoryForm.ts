@@ -466,6 +466,7 @@ export const useAddInventoryForm = (photos: any[] = []): UseAddInventoryFormRetu
 
   return {
     formData,
+    setFormData,
     errors,
     currentFields,
     updateField,
