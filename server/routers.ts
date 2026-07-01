@@ -628,6 +628,9 @@ export const appRouter = router({
           estimatedValue: z.number().nonnegative().optional(),
           photos: z.array(uploadedImageSchema).max(6),
           itemDetails: z.record(z.string(), z.string()).optional(),
+          certificationCompany: z.string().optional(),
+          certificationNumber: z.string().optional(),
+          grade: z.string().optional(),
         }),
       )
       .mutation(({ ctx, input }) => {
@@ -672,6 +675,9 @@ export const appRouter = router({
             estimatedValue: input.estimatedValue,
             photos: input.photos,
             itemDetails: input.itemDetails as Record<string, string> | undefined,
+            certificationCompany: input.certificationCompany,
+            certificationNumber: input.certificationNumber,
+            grade: input.grade,
           },
         );
       }),

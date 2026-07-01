@@ -1798,6 +1798,9 @@ export async function updateListing(
     estimatedValue?: number;
     photos: PhotoUploadInput[];
     itemDetails?: Record<string, string>;
+    certificationCompany?: string;
+    certificationNumber?: string;
+    grade?: string;
   },
 ) {
   const db = await requireDb();
@@ -1824,6 +1827,9 @@ export async function updateListing(
       description: input.description.trim(),
       estimatedValue: input.estimatedValue ? String(input.estimatedValue) : null,
       itemDetails: input.itemDetails ? JSON.stringify(input.itemDetails) : null,
+      certificationCompany: input.certificationCompany || null,
+      certificationNumber: input.certificationNumber || null,
+      grade: input.grade || null,
     })
     .where(eq(listings.id, input.listingId));
 

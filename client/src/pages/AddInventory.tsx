@@ -168,8 +168,8 @@ export default function AddInventory() {
       // Load item details (skip fields we've already loaded)
       if (listing.itemDetails && typeof listing.itemDetails === "object") {
         Object.entries(listing.itemDetails).forEach(([key, value]) => {
-          // Skip fields that are already loaded separately
-          if (key !== "certificationNumber" && key !== "shipping" && key !== "title" && key !== "estimatedValue" && key !== "gradingCompany" && key !== "isGraded") {
+          // Skip fields that are already loaded separately at the top level
+          if (key !== "title" && key !== "estimatedValue" && key !== "shipping") {
             updateField(key, String(value || ""));
           }
         });
@@ -322,6 +322,9 @@ export default function AddInventory() {
             estimatedValue: formData.tradeValue ? parseFloat(formData.tradeValue) : 0,
             photos: newPhotos,
             itemDetails: getItemDetails(),
+            certificationCompany: formData.gradingCompany && formData.gradingCompany !== 'Raw' ? formData.gradingCompany : undefined,
+            certificationNumber: formData.certificationNumber || undefined,
+            grade: formData.grade && formData.grade !== 'ungraded' ? formData.grade : 'ungraded',
           });
           toast.success("Listing updated successfully!");
           navigate("/inventory");
