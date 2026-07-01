@@ -171,7 +171,8 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({
           <Select value={internalValue} onValueChange={(newValue) => {
             console.log('[DEBUG] Dropdown onChange:', { fieldName: field.name, newValue, oldValue: internalValue });
             if (newValue === '' && internalValue !== '') {
-              console.log('[DEBUG] WARNING: Value being cleared - IGNORING!', { fieldName: field.name });
+              console.log('[DEBUG] WARNING: Value being cleared - RESTORING!', { fieldName: field.name, restoredValue: internalValue });
+              setTimeout(() => setInternalValue(internalValue), 0);
               return;
             }
             setInternalValue(newValue);

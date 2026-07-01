@@ -12,7 +12,7 @@ interface FieldWithCustomInputProps {
   error?: string;
 }
 
-export const FieldWithCustomInput: React.FC<FieldWithCustomInputProps> = ({
+const FieldWithCustomInputComponent: React.FC<FieldWithCustomInputProps> = ({
   field,
   value,
   onChange,
@@ -83,4 +83,5 @@ export const FieldWithCustomInput: React.FC<FieldWithCustomInputProps> = ({
   );
 };
 
+export const FieldWithCustomInput = React.memo(FieldWithCustomInputComponent);
 export default FieldWithCustomInput;
