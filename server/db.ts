@@ -635,8 +635,8 @@ export async function getListingDetail(listingId: number, viewerId: number | nul
     status: detailCard[0].status,
     featured: detailCard[0].featured,
     isActive: detailCard[0].isActive,
-    createdAt: detailCard[0].createdAt.getTime(),
-    updatedAt: detailCard[0].updatedAt.getTime(),
+    createdAt: new Date(detailCard[0].createdAt).getTime(),
+    updatedAt: new Date(detailCard[0].updatedAt).getTime(),
     ownerProfile: {
       displayName: ownerProfileRows[0]?.displayName ?? `Collector ${detailCard[0].ownerId}`,
       bio: ownerProfileRows[0]?.bio ?? "Open to thoughtful, collector-to-collector trades.",
