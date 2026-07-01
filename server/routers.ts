@@ -263,7 +263,7 @@ export const appRouter = router({
       // Clear lastActivityAt to mark user as offline (set to a very old date)
       if (ctx.user?.id) {
         // Use a date far in the past (year 1970) to ensure user is marked as offline
-        const offlineTime = new Date('1970-01-02T00:00:00Z');
+        const offlineTime = '1970-01-02T00:00:00Z';
         await db.update(users).set({ lastActivityAt: offlineTime }).where(eq(users.id, ctx.user.id));
       }
       
@@ -546,9 +546,9 @@ export const appRouter = router({
         console.log('[savePreferences] User ID:', ctx.user.id);
         const result = await db.update(userProfiles).set({
           preferredCategories: JSON.stringify(input.preferredCategories),
-          showProfile: input.showProfile,
-          hideInventoryValue: input.hideInventoryValue,
-          receiveContactRequests: input.receiveContactRequests,
+          showProfile: input.showProfile ? 1 : 0,
+          hideInventoryValue: input.hideInventoryValue ? 1 : 0,
+          receiveContactRequests: input.receiveContactRequests ? 1 : 0,
         }).where(eq(userProfiles.userId, ctx.user.id));
         console.log('[savePreferences] Update result:', result);
         return { success: true };

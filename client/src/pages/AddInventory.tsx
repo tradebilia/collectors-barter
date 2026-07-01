@@ -160,13 +160,16 @@ export default function AddInventory() {
       updateField("condition", listing.condition || "");
       updateField("grade", listing.grade || "");
       updateField("certificationCompany", listing.certificationCompany || "");
+      updateField("gradingCompany", listing.certificationCompany || "");
       updateField("certificationNumber", (listing.itemDetails?.certificationNumber) || "");
       updateField("shipping", (listing.itemDetails?.shipping) || "");
+      updateField("isGraded", listing.certificationCompany ? "yes" : "no");
 
       // Load item details (skip fields we've already loaded)
       if (listing.itemDetails && typeof listing.itemDetails === "object") {
         Object.entries(listing.itemDetails).forEach(([key, value]) => {
-          if (key !== "certificationNumber" && key !== "shipping" && key !== "title" && key !== "estimatedValue") {
+          // Skip fields that are already loaded separately
+          if (key !== "certificationNumber" && key !== "shipping" && key !== "title" && key !== "estimatedValue" && key !== "gradingCompany" && key !== "isGraded") {
             updateField(key, String(value || ""));
           }
         });

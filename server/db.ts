@@ -47,6 +47,7 @@ const categoryLabels: Record<(typeof collectibleCategories)[number], string> = {
 const conditionLabels: Record<(typeof itemConditions)[number], string> = {
   mint: "Mint",
   near_mint: "Near Mint",
+  excellent: "Excellent",
   very_good: "Very Good",
   good: "Good",
   fair: "Fair",
@@ -254,7 +255,7 @@ export async function getMarketplaceFeed(
   const db = await requireDb();
 
   // Build where clauses for filtering
-  const whereClauses = [eq(listings.status, "active"), eq(listings.isActive, true)];
+  const whereClauses = [eq(listings.status, "active"), eq(listings.isActive, 1)];
   if (filters.category) {
     whereClauses.push(eq(listings.category, filters.category));
   }
@@ -494,10 +495,10 @@ async function getProposalCards(userId: number) {
     requestedListing: listingMap.get(p.requestedListingId) ?? null,
     note: p.note,
     status: p.status,
-    respondedAt: p.respondedAt?.getTime() ?? null,
-    completedAt: p.completedAt?.getTime() ?? null,
-    createdAt: p.createdAt.getTime(),
-    updatedAt: p.respondedAt?.getTime() ?? p.createdAt.getTime(),
+    respondedAt: p.respondedAt ? new Date(p.respondedAt).getTime() : null,
+    completedAt: p.completedAt ? new Date(p.completedAt).getTime() : null,
+    createdAt: new Date(p.createdAt).getTime(),
+    updatedAt: p.respondedAt ? new Date(p.respondedAt).getTime() : new Date(p.createdAt).getTime(),
     direction: p.requesterId === userId ? 'outgoing' : 'incoming',
     canReview: p.status === 'completed',
     canRespond: p.status === 'pending' && p.recipientId === userId,
@@ -511,7 +512,7 @@ async function getProposalCards(userId: number) {
       proposalId: msg.proposalId,
       senderId: msg.senderId,
       message: msg.message,
-      createdAt: msg.createdAt.getTime(),
+      createdAt: new Date(msg.createdAt).getTime(),
     })),
     canCancel: p.status === 'pending',
     canComplete: p.status === 'accepted',
@@ -783,7 +784,7 @@ export async function respondToTradeProposal(
     .update(tradeProposals)
     .set({
       status: newStatus,
-      respondedAt: new Date(),
+      respondedAt: new Date().toISOString(),
     })
     .where(eq(tradeProposals.id, input.proposalId));
 
@@ -1052,7 +1053,7 @@ export async function toggleListingStatus(
 
   await db
     .update(listings)
-    .set({ isActive: input.isActive })
+    .set({ isActive: input.isActive ? 1 : 0 })
     .where(eq(listings.id, input.listingId));
 
   return getDashboardData(user);
@@ -1084,7 +1085,7 @@ export async function bulkUpdateListingStatus(
 
   await db
     .update(listings)
-    .set({ isActive: input.isActive })
+    .set({ isActive: input.isActive ? 1 : 0 })
     .where(inArray(listings.id, input.listingIds));
 
   return getDashboardData(user);
@@ -1139,7 +1140,7 @@ export async function restoreDeletedListings(
 
   await db
     .update(listings)
-    .set({ isActive: true })
+    .set({ isActive: 1 })
     .where(inArray(listings.id, input.listingIds));
 
   return getDashboardData(user);
@@ -1160,7 +1161,7 @@ export async function getUnreadMessageCount(userId: number) {
     .where(
       and(
         eq(itemInquiries.recipientId, userId),
-        eq(itemInquiries.isRead, false),
+        eq(itemInquiries.isRead, 0),
       ),
     );
 
@@ -1190,7 +1191,7 @@ export async function saveDraft(
     userId: user.id,
     title: input.title.trim(),
     category: input.category,
-    grade: input.grade || 0,
+    grade: input.grade || 'ungraded',
     graderCompany: input.graderCompany || null,
     certificationNumber: input.certificationNumber || null,
     estimatedValue: input.estimatedValue ? String(input.estimatedValue) : null,
@@ -1264,7 +1265,7 @@ export async function getDrafts(user: Pick<User, "id" | "name">) {
     categoryFields: d.categoryFields ? JSON.parse(d.categoryFields) : {},
     additionalNotes: d.additionalNotes,
     photos: photoMap.get(d.id) ?? [],
-    createdAt: d.createdAt.getTime(),
+    createdAt: new Date(d.createdAt).getTime(),
   }));
 }
 
@@ -1341,7 +1342,7 @@ export async function getDraftById(
       imageUrl: p.imageUrl,
       altText: p.altText,
     })),
-    createdAt: draft.createdAt.getTime(),
+    createdAt: new Date(draft.createdAt).getTime(),
   };
 }
 
@@ -1381,13 +1382,13 @@ export async function updateDraft(
     .set({
       title: input.title.trim(),
       category: input.category,
-      grade: input.grade || 0,
+      grade: String(input.grade || 'ungraded'),
       graderCompany: input.graderCompany || null,
       certificationNumber: input.certificationNumber || null,
       estimatedValue: input.estimatedValue ? String(input.estimatedValue) : null,
       categoryFields: input.categoryFields ? JSON.stringify(input.categoryFields) : null,
       additionalNotes: input.additionalNotes || null,
-      updatedAt: new Date(),
+      updatedAt: new Date().toISOString(),
     })
     .where(eq(draftListings.id, input.draftId));
 
@@ -1632,7 +1633,7 @@ export async function getDashboardData(user: Pick<User, "id" | "name">): Promise
         proposalId: review.proposalId,
         rating: review.rating,
         review: review.review ?? "",
-        createdAt: review.createdAt.getTime(),
+        createdAt: new Date(review.createdAt).getTime(),
         reviewer,
       };
     }),
@@ -1767,7 +1768,7 @@ export async function createListing(
     certificationCompany: input.certificationCompany || undefined,
     certificationNumber: input.certificationNumber || undefined,
     grade: (input.grade || undefined) as any,
-    featured: false,
+    featured: 0,
   });
   const listingId = getInsertId(insertResult);
 
@@ -1878,7 +1879,7 @@ export async function upsertUser(input: {
         name: input.name,
         email: input.email,
         loginMethod: input.loginMethod,
-        lastSignedIn: input.lastSignedIn,
+        lastSignedIn: typeof input.lastSignedIn === 'string' ? input.lastSignedIn : input.lastSignedIn?.toISOString(),
       })
       .where(eq(users.openId, input.openId));
 
@@ -2283,7 +2284,7 @@ export async function updateReportStatus(input: {
     .set({
       status: input.status,
       adminNotes: input.adminNotes,
-      reviewedAt: new Date(),
+      reviewedAt: new Date().toISOString(),
       reviewedBy: input.reviewedBy,
     })
     .where(eq(userReports.reportId, input.reportId));
@@ -2311,7 +2312,7 @@ export async function updateUserEbayInfo(input: {
       ebayFeedbackScore: input.ebayFeedbackScore,
       ebayFeedbackPercentage: input.ebayFeedbackPercentage.toString(),
       ebayMemberSince: input.ebayMemberSince,
-      ebayConnectedAt: new Date(),
+      ebayConnectedAt: new Date().toISOString(),
       ebayAccessToken: input.ebayAccessToken,
       ebayRefreshToken: input.ebayRefreshToken,
       ebayTokenExpiresAt: input.ebayTokenExpiresAt,
@@ -2548,7 +2549,7 @@ export async function markInquiryAsRead(inquiryId: number, userId: number) {
   
   await db
     .update(itemInquiries)
-    .set({ isRead: true })
+    .set({ isRead: 1 })
     .where(eq(itemInquiries.id, inquiryId));
   
   return { success: true };
@@ -2583,7 +2584,7 @@ export async function sendInquiryReply(inquiryId: number, senderId: number, mess
   // Mark the original inquiry as unread so it shows up in the recipient's inbox
   await db
     .update(itemInquiries)
-    .set({ isRead: false })
+    .set({ isRead: 0 })
     .where(eq(itemInquiries.id, inquiryId));
   
   // Fetch the newly created reply to get the ID
@@ -2634,7 +2635,7 @@ export async function deleteInquiry(inquiryId: number, userId: number) {
   
   await db
     .update(itemInquiries)
-    .set({ deletedAt: new Date() })
+    .set({ deletedAt: new Date().toISOString() })
     .where(eq(itemInquiries.id, inquiryId));
 }
 
@@ -2738,7 +2739,7 @@ export async function updateReferralRequestStatus(id: number, status: string, ad
       status: status as any,
       adminNotes,
       reviewedBy,
-      reviewedAt: new Date(),
+      reviewedAt: new Date().toISOString(),
     })
     .where(eq(referralRequests.id, id));
 }
@@ -2760,8 +2761,8 @@ export async function markReferralsAsEmailed(ids: number[]) {
   await db
     .update(referralRequests)
     .set({
-      emailSent: true,
-      emailSentAt: new Date(),
+      emailSent: 1,
+      emailSentAt: new Date().toISOString(),
     })
     .where(inArray(referralRequests.id, ids));
 }
@@ -2771,8 +2772,8 @@ export async function markReferralAsJoined(id: number, userId: number) {
   await db
     .update(referralRequests)
     .set({
-      hasJoined: true,
-      joinedAt: new Date(),
+      hasJoined: 1,
+      joinedAt: new Date().toISOString(),
       joinedUserId: userId,
     })
     .where(eq(referralRequests.id, id));
