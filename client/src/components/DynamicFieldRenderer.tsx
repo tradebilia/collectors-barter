@@ -55,15 +55,7 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({
   }, [value]);
   const hasError = !!error;
   
-  // Debug logging for country field
-  if (field.name === 'country') {
-    console.log('Country field debug:', {
-      name: field.name,
-      inputType: field.inputType,
-      dropdownOptions: field.dropdownOptions?.length,
-      value,
-    });
-  }
+
 
   const handleFileUpload = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -166,27 +158,18 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({
 
       case 'dropdown':
         // Standard dropdown for all fields
-        console.log('[DEBUG] Rendering dropdown:', { fieldName: field.name, value, dropdownOptions: field.dropdownOptions?.length });
         return (
           <Select value={internalValue} onValueChange={(newValue) => {
-            console.log('[DEBUG] Dropdown onChange:', { fieldName: field.name, newValue, oldValue: internalValue });
             if (newValue === '' && internalValue !== '') {
-              console.log('[DEBUG] WARNING: Value being cleared - RESTORING!', { fieldName: field.name, restoredValue: internalValue });
               setTimeout(() => setInternalValue(internalValue), 0);
               return;
             }
             setInternalValue(newValue);
-            if (field.name === 'condition') {
-              console.log('Condition dropdown onChange:', { newValue, fieldName: field.name, displayLabel: field.displayLabels?.[newValue] });
-            }
             onChange(newValue);
           }} disabled={disabled}>
-            <>
-              {field.name === 'isGraded' && console.log('[DEBUG] SelectTrigger rendering for isGraded', { internalValue, value })}
-              <SelectTrigger className={`bg-white text-black ${hasError ? 'border-red-500' : ''}`}>
-                <SelectValue placeholder="Select an option" />
-              </SelectTrigger>
-            </>
+            <SelectTrigger className={`bg-white text-black ${hasError ? 'border-red-500' : ''}`}>
+              <SelectValue placeholder="Select an option" />
+            </SelectTrigger>
             <SelectContent>
               {field.name === 'country' ? (
                 // For country field: United States first, then separator, then other countries

@@ -181,7 +181,12 @@ export default function AddInventory() {
           // Skip fields that are already loaded separately at the top level
           if (key !== "title" && key !== "estimatedValue" && key !== "shipping") {
             console.log('[DEBUG] updateField:', key, '=', value);
-            updates[key] = String(value || "");
+            // Handle signatures as an array
+            if (key === 'signatures' && typeof value === 'string') {
+              updates[key] = value.split(',').map(s => s.trim());
+            } else {
+              updates[key] = String(value || "");
+            }
           }
         });
       } else {

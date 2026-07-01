@@ -25,10 +25,6 @@ const FieldWithCustomInputComponent: React.FC<FieldWithCustomInputProps> = ({
   const customFieldKey = `custom${field.name.charAt(0).toUpperCase() + field.name.slice(1)}`;
   const customValue = formData[customFieldKey] as string || '';
   const customError = error && showCustomInput ? `Custom ${field.label} is required` : undefined;
-  
-  if (['isGraded', 'firstAppearance', 'numberOfSignatures'].includes(field.name)) {
-    console.log('[FieldWithCustomInput]', { fieldName: field.name, value, inputType: field.inputType, showCustomInput });
-  }
 
   return (
     <div className="w-full">
