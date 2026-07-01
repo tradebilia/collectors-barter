@@ -5,7 +5,6 @@ import type { InsertUser, User } from "../drizzle/schema";
 import {
   collectibleCategories,
   itemConditions,
-  gradeValues,
   users,
   ebayFeedbackHistory,
   emailVerificationOtps,
@@ -210,8 +209,8 @@ async function formatListings(listingRows: any[], viewerId: number | null) {
     status: row.status,
     featured: row.featured,
     isActive: row.isActive,
-    createdAt: row.createdAt.getTime(),
-    updatedAt: row.updatedAt.getTime(),
+    createdAt: new Date(row.createdAt).getTime(),
+    updatedAt: new Date(row.updatedAt).getTime(),
     owner: {
       id: row.ownerId,
       displayName: profileMap.get(row.ownerId)?.displayName ?? `Collector ${row.ownerId}`,
@@ -1175,7 +1174,7 @@ export async function saveDraft(
     category: (typeof collectibleCategories)[number];
     condition: (typeof itemConditions)[number];
     description: string;
-    grade?: (typeof gradeValues)[number];
+    grade?: number;
     graderCompany?: string;
     certificationNumber?: string;
     estimatedValue?: number;
@@ -1189,7 +1188,7 @@ export async function saveDraft(
     userId: user.id,
     title: input.title.trim(),
     category: input.category,
-    grade: (input.grade as (typeof gradeValues)[number]) || "ungraded",
+    grade: input.grade || 0,
     graderCompany: input.graderCompany || null,
     certificationNumber: input.certificationNumber || null,
     estimatedValue: input.estimatedValue ? String(input.estimatedValue) : null,
@@ -1350,7 +1349,7 @@ export async function updateDraft(
     draftId: number;
     title: string;
     category: (typeof collectibleCategories)[number];
-    grade?: (typeof gradeValues)[number];
+    grade?: number;
     graderCompany?: string;
     certificationNumber?: string;
     estimatedValue?: number;
@@ -1380,7 +1379,7 @@ export async function updateDraft(
     .set({
       title: input.title.trim(),
       category: input.category,
-      grade: (input.grade as (typeof gradeValues)[number]) || "ungraded",
+      grade: input.grade || 0,
       graderCompany: input.graderCompany || null,
       certificationNumber: input.certificationNumber || null,
       estimatedValue: input.estimatedValue ? String(input.estimatedValue) : null,
@@ -1747,6 +1746,7 @@ export async function createListing(
     photos: PhotoUploadInput[];
     itemDetails?: Record<string, string>;
     certificationCompany?: string;
+    certificationNumber?: string;
     grade?: string;
   },
 ) {
@@ -1763,6 +1763,7 @@ export async function createListing(
     estimatedValue: input.estimatedValue ? String(input.estimatedValue) : null,
     itemDetails: input.itemDetails ? JSON.stringify(input.itemDetails) : null,
     certificationCompany: input.certificationCompany || undefined,
+    certificationNumber: input.certificationNumber || undefined,
     grade: (input.grade || undefined) as any,
     featured: false,
   });

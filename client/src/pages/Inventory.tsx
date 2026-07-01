@@ -518,6 +518,7 @@ export default function Inventory() {
                       <SelectItem value="all">All Conditions</SelectItem>
                       <SelectItem value="mint">Mint</SelectItem>
                       <SelectItem value="near_mint">Near Mint</SelectItem>
+                      <SelectItem value="excellent">Excellent</SelectItem>
                       <SelectItem value="very_good">Very Good</SelectItem>
                       <SelectItem value="good">Good</SelectItem>
                       <SelectItem value="fair">Fair</SelectItem>

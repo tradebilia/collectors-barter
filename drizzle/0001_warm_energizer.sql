@@ -1,0 +1,1 @@
+ALTER TABLE `listings` ADD `certificationNumber` varchar(100);

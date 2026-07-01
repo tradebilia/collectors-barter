@@ -91,6 +91,7 @@ const CONDITION_FIELD: FieldDefinition = {
   label: 'Condition',
   inputType: 'dropdown',
   requirement: 'required',
+  defaultValue: 'mint',
   dropdownOptions: ['mint', 'near_mint', 'excellent', 'very_good', 'good', 'fair', 'poor'],
   conditionalLogic: 'Is Graded = no',
   displayLabels: { 'mint': 'Mint', 'near_mint': 'Near Mint', 'excellent': 'Excellent', 'very_good': 'Very Good', 'good': 'Good', 'fair': 'Fair', 'poor': 'Poor' },
@@ -155,7 +156,7 @@ const GRADING_COMPANY_FIELD: FieldDefinition = {
 const GRADE_FIELD: FieldDefinition = {
   name: 'grade',
   label: 'Grade',
-  inputType: 'text',
+  inputType: 'number',
   requirement: 'required',
   conditionalLogic: 'Is Graded = yes',
   gridColumn: 'third',

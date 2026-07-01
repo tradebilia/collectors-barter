@@ -1,614 +1,441 @@
-import {
-  boolean,
-  decimal,
-  index,
-  int,
-  mysqlEnum,
-  mysqlTable,
-  text,
-  timestamp,
-  uniqueIndex,
-  varchar,
-} from "drizzle-orm/mysql-core";
+import { mysqlTable, mysqlSchema, AnyMySqlColumn, index, foreignKey, int, varchar, text, timestamp, mysqlEnum, decimal, tinyint } from "drizzle-orm/mysql-core"
+import { sql } from "drizzle-orm"
+
+export const deletedAccounts = mysqlTable("deletedAccounts", {
+	id: int().autoincrement().notNull(),
+	userId: int().notNull(),
+	username: varchar({ length: 64 }).notNull(),
+	email: varchar({ length: 320 }),
+	displayName: varchar({ length: 255 }),
+	firstName: varchar({ length: 100 }),
+	lastName: varchar({ length: 100 }),
+	deletedBy: int().notNull().references(() => users.id),
+	reason: text(),
+	deletedAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+},
+(table) => [
+	index("deletedAccounts_userId_idx").on(table.userId),
+	index("deletedAccounts_username_idx").on(table.username),
+	index("deletedAccounts_email_idx").on(table.email),
+	index("deletedAccounts_deletedAt_idx").on(table.deletedAt),
+]);
+
+export const draftListings = mysqlTable("draftListings", {
+	id: int().autoincrement().notNull(),
+	userId: int().notNull().references(() => users.id),
+	title: varchar({ length: 160 }).notNull(),
+	category: mysqlEnum(['comics','sports_cards','vintage_toys','video_games','stamps','coins','pokemon','movies','autographs','disney_pins']).notNull(),
+	grade: varchar({ length: 50 }).default('ungraded').notNull(),
+	graderCompany: varchar({ length: 100 }),
+	certificationNumber: varchar({ length: 100 }),
+	estimatedValue: decimal({ precision: 12, scale: 2 }),
+	categoryFields: text(),
+	additionalNotes: text(),
+	photos: text(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+},
+(table) => [
+	index("draftListings_user_idx").on(table.userId),
+	index("draftListings_createdAt_idx").on(table.createdAt),
+]);
+
+export const ebayFeedbackHistory = mysqlTable("ebayFeedbackHistory", {
+	id: int().autoincrement().notNull(),
+	userId: int().notNull().references(() => users.id),
+	feedbackId: varchar({ length: 64 }).notNull(),
+	rating: mysqlEnum(['positive','neutral','negative']).notNull(),
+	comment: text(),
+	from: varchar({ length: 64 }).notNull(),
+	itemId: varchar({ length: 64 }),
+	itemTitle: varchar({ length: 255 }),
+	feedbackDate: timestamp({ mode: 'string' }).notNull(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+},
+(table) => [
+	index("ebayFeedbackHistory_userId_idx").on(table.userId),
+	index("ebayFeedbackHistory_feedbackId_idx").on(table.feedbackId),
+	index("ebayFeedbackHistory_feedbackDate_idx").on(table.feedbackDate),
+]);
+
+export const emailVerificationOtps = mysqlTable("emailVerificationOtps", {
+	id: int().autoincrement().notNull(),
+	email: varchar({ length: 320 }).notNull(),
+	otp: varchar({ length: 6 }).notNull(),
+	attempts: int().default(0).notNull(),
+	expiresAt: timestamp({ mode: 'string' }).notNull(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+},
+(table) => [
+	index("emailVerificationOtps_email_idx").on(table.email),
+	index("emailVerificationOtps_expiresAt_idx").on(table.expiresAt),
+]);
+
+export const favorites = mysqlTable("favorites", {
+	id: int().autoincrement().notNull(),
+	userId: int().notNull().references(() => users.id),
+	listingId: int().notNull().references(() => listings.id),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+},
+(table) => [
+	index("favorites_user_listing_unique").on(table.userId, table.listingId),
+	index("favorites_user_idx").on(table.userId),
+	index("favorites_listing_idx").on(table.listingId),
+]);
+
+export const forumPosts = mysqlTable("forumPosts", {
+	id: int().autoincrement().notNull(),
+	userId: int().notNull().references(() => users.id),
+	category: varchar({ length: 64 }).notNull(),
+	title: varchar({ length: 255 }).notNull(),
+	content: text().notNull(),
+	isPinned: tinyint().default(0).notNull(),
+	isLocked: tinyint().default(0).notNull(),
+	isSolved: tinyint().default(0).notNull(),
+	viewCount: int().default(0).notNull(),
+	replyCount: int().default(0).notNull(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+},
+(table) => [
+	index("forumPosts_userId_idx").on(table.userId),
+	index("forumPosts_category_idx").on(table.category),
+	index("forumPosts_isPinned_idx").on(table.isPinned),
+	index("forumPosts_createdAt_idx").on(table.createdAt),
+]);
+
+export const forumReplies = mysqlTable("forumReplies", {
+	id: int().autoincrement().notNull(),
+	postId: int().notNull().references(() => forumPosts.id, { onDelete: "cascade" } ),
+	userId: int().notNull().references(() => users.id),
+	content: text().notNull(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+},
+(table) => [
+	index("forumReplies_postId_idx").on(table.postId),
+	index("forumReplies_userId_idx").on(table.userId),
+	index("forumReplies_createdAt_idx").on(table.createdAt),
+]);
+
+export const inquiryReplies = mysqlTable("inquiryReplies", {
+	id: int().autoincrement().notNull(),
+	inquiryId: int().notNull().references(() => itemInquiries.id),
+	senderId: int().notNull().references(() => users.id),
+	message: text().notNull(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+	recipientId: int().notNull(),
+	isRead: tinyint().default(0).notNull(),
+},
+(table) => [
+	index("inquiryReplies_inquiry_idx").on(table.inquiryId),
+	index("inquiryReplies_sender_idx").on(table.senderId),
+]);
+
+export const itemInquiries = mysqlTable("itemInquiries", {
+	id: int().autoincrement().notNull(),
+	senderId: int().notNull().references(() => users.id),
+	recipientId: int().notNull().references(() => users.id),
+	listingId: int().notNull().references(() => listings.id),
+	subject: varchar({ length: 255 }).notNull(),
+	message: text().notNull(),
+	isRead: tinyint().default(0).notNull(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+	deletedAt: timestamp({ mode: 'string' }),
+	senderIsRead: tinyint().default(0).notNull(),
+	recipientIsRead: tinyint().default(0).notNull(),
+},
+(table) => [
+	index("itemInquiries_sender_idx").on(table.senderId),
+	index("itemInquiries_recipient_idx").on(table.recipientId),
+	index("itemInquiries_listing_idx").on(table.listingId),
+	index("itemInquiries_recipient_unread_idx").on(table.recipientId, table.isRead),
+]);
+
+export const listingPhotos = mysqlTable("listingPhotos", {
+	id: int().autoincrement().notNull(),
+	listingId: int().notNull().references(() => listings.id),
+	fileKey: varchar({ length: 255 }).notNull(),
+	imageUrl: text().notNull(),
+	altText: varchar({ length: 180 }),
+	sortOrder: int().default(0).notNull(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+},
+(table) => [
+	index("listingPhotos_listing_idx").on(table.listingId),
+]);
+
+export const listings = mysqlTable("listings", {
+	id: int().autoincrement().notNull(),
+	ownerId: int().notNull().references(() => users.id),
+	title: varchar({ length: 160 }).notNull(),
+	category: mysqlEnum(['comics','sports_cards','vintage_toys','video_games','stamps','coins','pokemon','movies','autographs','disney_pins']).notNull(),
+	condition: mysqlEnum(['mint','near_mint','excellent','very_good','good','fair','poor']).notNull(),
+		grade: decimal({ precision: 5, scale: 2 }).default('0').notNull(),
+		certificationCompany: varchar({ length: 50 }),
+		certificationNumber: varchar({ length: 100 }),
+	estimatedValue: decimal({ precision: 12, scale: 2 }),
+	description: text().notNull(),
+	status: mysqlEnum(['active','traded','archived']).default('active').notNull(),
+	isActive: tinyint().default(1).notNull(),
+	featured: tinyint().default(0).notNull(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+		itemDetails: text(),
+		viewCount: int().default(0).notNull(),
+		itemType: varchar({ length: 50 }).notNull(),
+		signatures: text(), // JSON array of signature names for signed items
+	},
+(table) => [
+	index("listings_owner_idx").on(table.ownerId),
+	index("listings_category_idx").on(table.category),
+	index("listings_condition_idx").on(table.condition),
+	index("listings_status_idx").on(table.status),
+	index("listings_itemType_idx").on(table.itemType),
+]);
+
+export const lowFeedbackFlags = mysqlTable("lowFeedbackFlags", {
+	id: int().autoincrement().notNull(),
+	userId: int().notNull().references(() => users.id),
+	feedbackScore: int().notNull(),
+	feedbackPercentage: decimal({ precision: 5, scale: 2 }).notNull(),
+	flaggedReason: text(),
+	status: mysqlEnum(['pending','reviewed','dismissed','action_taken']).default('pending').notNull(),
+	adminNotes: text(),
+	flaggedAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	reviewedAt: timestamp({ mode: 'string' }),
+	reviewedBy: int().references(() => users.id),
+},
+(table) => [
+	index("lowFeedbackFlags_userId_idx").on(table.userId),
+	index("lowFeedbackFlags_status_idx").on(table.status),
+	index("lowFeedbackFlags_flaggedAt_idx").on(table.flaggedAt),
+]);
+
+export const passwordResetTokens = mysqlTable("passwordResetTokens", {
+	id: int().autoincrement().notNull(),
+	userId: int().notNull().references(() => users.id, { onDelete: "cascade" } ),
+	token: varchar({ length: 255 }).notNull(),
+	expiresAt: timestamp({ mode: 'string' }).notNull(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+},
+(table) => [
+	index("passwordResetTokens_token_unique").on(table.token),
+	index("passwordResetTokens_user_idx").on(table.userId),
+	index("passwordResetTokens_expiresAt_idx").on(table.expiresAt),
+]);
+
+export const phoneVerificationOtps = mysqlTable("phoneVerificationOtps", {
+	id: int().autoincrement().notNull(),
+	phone: varchar({ length: 20 }).notNull(),
+	otp: varchar({ length: 6 }).notNull(),
+	attempts: int().default(0).notNull(),
+	expiresAt: timestamp({ mode: 'string' }).notNull(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+},
+(table) => [
+	index("phoneVerificationOtps_phone_idx").on(table.phone),
+	index("phoneVerificationOtps_expiresAt_idx").on(table.expiresAt),
+]);
+
+export const referralRequests = mysqlTable("referralRequests", {
+	id: int().autoincrement().notNull(),
+	referrerId: int().notNull().references(() => users.id),
+	referrerEmail: varchar({ length: 320 }).notNull(),
+	referrerFirstName: varchar({ length: 255 }).notNull(),
+	referrerLastName: varchar({ length: 255 }).notNull(),
+	collectorName: varchar({ length: 255 }).notNull(),
+	collectorEmail: varchar({ length: 320 }).notNull(),
+	collectorFocus: varchar({ length: 255 }).notNull(),
+	message: text().notNull(),
+	status: mysqlEnum(['pending','reviewed','approved','rejected']).default('pending').notNull(),
+	adminNotes: text(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	reviewedAt: timestamp({ mode: 'string' }),
+	reviewedBy: int().references(() => users.id),
+	emailSent: tinyint().default(0).notNull(),
+	emailSentAt: timestamp({ mode: 'string' }),
+	hasJoined: tinyint().default(0).notNull(),
+	joinedAt: timestamp({ mode: 'string' }),
+	joinedUserId: int().references(() => users.id),
+	isMerchant: tinyint().default(0).notNull(),
+},
+(table) => [
+	index("referralRequests_referrer_idx").on(table.referrerId),
+	index("referralRequests_status_idx").on(table.status),
+	index("referralRequests_createdAt_idx").on(table.createdAt),
+	index("referralRequests_emailSent_idx").on(table.emailSent),
+	index("referralRequests_hasJoined_idx").on(table.hasJoined),
+]);
+
+export const tradeMessages = mysqlTable("tradeMessages", {
+	id: int().autoincrement().notNull(),
+	proposalId: int().notNull().references(() => tradeProposals.id),
+	senderId: int().notNull().references(() => users.id),
+	message: text().notNull(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+},
+(table) => [
+	index("tradeMessages_proposal_idx").on(table.proposalId),
+	index("tradeMessages_sender_idx").on(table.senderId),
+]);
+
+export const tradeProposalItems = mysqlTable("tradeProposalItems", {
+	id: int().autoincrement().notNull(),
+	proposalId: int().notNull().references(() => tradeProposals.id),
+	offeredListingId: int().notNull().references(() => listings.id),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+},
+(table) => [
+	index("tradeProposalItems_unique_item").on(table.proposalId, table.offeredListingId),
+	index("tradeProposalItems_proposal_idx").on(table.proposalId),
+	index("tradeProposalItems_offeredListing_idx").on(table.offeredListingId),
+]);
+
+export const tradeProposals = mysqlTable("tradeProposals", {
+	id: int().autoincrement().notNull(),
+	requesterId: int().notNull().references(() => users.id),
+	recipientId: int().notNull().references(() => users.id),
+	requestedListingId: int().notNull().references(() => listings.id),
+	note: text(),
+	status: mysqlEnum(['pending','accepted','declined','completed','cancelled']).default('pending').notNull(),
+	respondedAt: timestamp({ mode: 'string' }),
+	completedAt: timestamp({ mode: 'string' }),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+},
+(table) => [
+	index("tradeProposals_requester_idx").on(table.requesterId),
+	index("tradeProposals_recipient_idx").on(table.recipientId),
+	index("tradeProposals_requestedListing_idx").on(table.requestedListingId),
+	index("tradeProposals_status_idx").on(table.status),
+]);
+
+export const tradeReviews = mysqlTable("tradeReviews", {
+	id: int().autoincrement().notNull(),
+	proposalId: int().notNull().references(() => tradeProposals.id),
+	reviewerId: int().notNull().references(() => users.id),
+	revieweeId: int().notNull().references(() => users.id),
+	rating: int().notNull(),
+	review: text(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+},
+(table) => [
+	index("tradeReviews_unique_reviewer_per_proposal").on(table.proposalId, table.reviewerId),
+	index("tradeReviews_proposal_idx").on(table.proposalId),
+	index("tradeReviews_reviewer_idx").on(table.reviewerId),
+	index("tradeReviews_reviewee_idx").on(table.revieweeId),
+]);
+
+export const userProfiles = mysqlTable("userProfiles", {
+	id: int().autoincrement().notNull(),
+	userId: int().notNull().references(() => users.id),
+	displayName: varchar({ length: 120 }).notNull(),
+	firstName: varchar({ length: 100 }),
+	lastName: varchar({ length: 100 }),
+	avatarUrl: text(),
+	avatarKey: varchar({ length: 255 }),
+	bio: text(),
+	contactFullName: varchar({ length: 160 }),
+	contactEmail: varchar({ length: 320 }),
+	contactPhone: varchar({ length: 40 }),
+	contactAddress: text(),
+	contactTown: varchar({ length: 100 }),
+	contactState: varchar({ length: 100 }),
+	contactZipCode: varchar({ length: 20 }),
+	contactCountry: varchar({ length: 100 }),
+	acceptedTerms: tinyint().default(0).notNull(),
+	isMerchant: tinyint().default(0).notNull(),
+	securityQuestion: varchar({ length: 255 }),
+	securityAnswer: varchar({ length: 255 }),
+	preferredCategories: text(),
+	notificationPreferences: text(),
+	connectedAccounts: text(),
+	showProfile: tinyint().default(1).notNull(),
+	hideInventoryValue: tinyint().default(0).notNull(),
+	receiveContactRequests: tinyint().default(1).notNull(),
+	emailVerified: tinyint().default(0).notNull(),
+	phoneVerified: tinyint().default(0).notNull(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+},
+(table) => [
+	index("userProfiles_userId_unique").on(table.userId),
+]);
+
+export const userReports = mysqlTable("userReports", {
+	id: int().autoincrement().notNull(),
+	reportId: varchar({ length: 20 }).notNull(),
+	reportedUserId: int().notNull().references(() => users.id),
+	reporterUserId: int().notNull().references(() => users.id),
+	reason: varchar({ length: 100 }).notNull(),
+	description: text().notNull(),
+	evidence: text(),
+	status: mysqlEnum(['pending','reviewed','dismissed','action_taken']).default('pending').notNull(),
+	adminNotes: text(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+	reviewedAt: timestamp({ mode: 'string' }),
+	reviewedBy: int().references(() => users.id),
+},
+(table) => [
+	index("userReports_reportId_unique").on(table.reportId),
+	index("userReports_reportedUserId_idx").on(table.reportedUserId),
+	index("userReports_reporterUserId_idx").on(table.reporterUserId),
+	index("userReports_status_idx").on(table.status),
+	index("userReports_createdAt_idx").on(table.createdAt),
+]);
 
 export const users = mysqlTable("users", {
-  id: int("id").autoincrement().primaryKey(),
-  openId: varchar("openId", { length: 64 }).unique(),
-  username: varchar("username", { length: 64 }).unique(),
-  passwordHash: varchar("passwordHash", { length: 255 }),
-  name: text("name"),
-  email: varchar("email", { length: 320 }),
-  displayName: varchar("displayName", { length: 255 }),
-  avatarUrl: text("avatarUrl"),
-  loginMethod: varchar("loginMethod", { length: 64 }),
-  role: mysqlEnum("role", ["user", "admin"]).default("user").notNull(),
-  securityQuestion: varchar("securityQuestion", { length: 255 }),
-  securityAnswerHash: varchar("securityAnswerHash", { length: 255 }),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-  lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
-  lastActivityAt: timestamp("lastActivityAt").defaultNow().notNull(),
-  ebayUsername: varchar("ebayUsername", { length: 64 }),
-  ebayUserId: varchar("ebayUserId", { length: 64 }),
-  ebayFeedbackScore: int("ebayFeedbackScore"),
-  ebayFeedbackPercentage: decimal("ebayFeedbackPercentage", { precision: 5, scale: 2 }),
-  ebayMemberSince: timestamp("ebayMemberSince"),
-  ebayConnectedAt: timestamp("ebayConnectedAt"),
-  ebayAccessToken: text("ebayAccessToken"),
-  ebayRefreshToken: text("ebayRefreshToken"),
-  ebayTokenExpiresAt: timestamp("ebayTokenExpiresAt"),
-});
+	id: int().autoincrement().notNull(),
+	openId: varchar({ length: 64 }),
+	username: varchar({ length: 64 }),
+	passwordHash: varchar({ length: 255 }),
+	name: text(),
+	email: varchar({ length: 320 }),
+	displayName: varchar({ length: 255 }),
+	avatarUrl: text(),
+	loginMethod: varchar({ length: 64 }),
+	role: mysqlEnum(['user','admin']).default('user').notNull(),
+	securityQuestion: varchar({ length: 255 }),
+	securityAnswerHash: varchar({ length: 255 }),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+	lastSignedIn: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	lastActivityAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	ebayUsername: varchar({ length: 64 }),
+	ebayUserId: varchar({ length: 64 }),
+	ebayFeedbackScore: int(),
+	ebayFeedbackPercentage: decimal({ precision: 5, scale: 2 }),
+	ebayMemberSince: timestamp({ mode: 'string' }),
+	ebayConnectedAt: timestamp({ mode: 'string' }),
+	ebayAccessToken: text(),
+	ebayRefreshToken: text(),
+	ebayTokenExpiresAt: timestamp({ mode: 'string' }),
+},
+(table) => [
+	index("users_openId_unique").on(table.openId),
+	index("users_username_unique").on(table.username),
+]);
 
-// Online status is considered active if lastActivityAt is within the last 5 minutes
-export const ONLINE_STATUS_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
-
-export const collectibleCategories = [
-  "comics",
-  "sports_cards",
-  "vintage_toys",
-  "video_games",
-  "stamps",
-  "coins",
-  "pokemon",
-  "movies",
-  "autographs",
-  "disney_pins",
-] as const;
-
-export const itemTypesByCategory = {
-  sports_cards: ["single_card", "unopened_product", "set", "collection_lot"],
-  comics: ["single_comic", "collection_lot"],
-  pokemon: ["single_card", "unopened_product", "set", "collection_lot"],
-  video_games: ["game", "console", "accessory", "collection_lot"],
-  stamps: ["single_stamp", "stamp_set_sheet", "collection_lot"],
-  coins: ["single_coin", "coin_set", "collection_lot"],
-  vintage_toys: ["action_figure_doll", "vehicle", "playset", "board_game_puzzle", "plush_stuffed_toy", "electronic_toy", "model_kit", "die_cast_car", "collection_lot"],
-  movies: ["single_movie", "collection_lot"],
-  autographs: ["signed_item", "collection_lot"],
-  disney_pins: ["single_pin", "collection_lot"],
-} as const;
-
-export const itemConditions = [
-  "mint",
-  "near_mint",
-  "very_good",
-  "good",
-  "fair",
-  "poor",
-] as const;
-
-export const listingStatuses = ["active", "traded", "archived"] as const;
-export const tradeStatuses = [
-  "pending",
-  "accepted",
-  "declined",
-  "completed",
-  "cancelled",
-] as const;
-
-export const gradeValues = [
-  "ungraded",
-  "1",
-  "1.5",
-  "2",
-  "2.5",
-  "3",
-  "3.5",
-  "4",
-  "4.5",
-  "5",
-  "5.5",
-  "6",
-  "6.5",
-  "7",
-  "7.5",
-  "8",
-  "8.5",
-  "9",
-  "9.5",
-  "10",
-] as const;
-
-export const userProfiles = mysqlTable(
-  "userProfiles",
-  {
-    id: int("id").autoincrement().primaryKey(),
-    userId: int("userId").notNull().references(() => users.id),
-    displayName: varchar("displayName", { length: 120 }).notNull(),
-    firstName: varchar("firstName", { length: 100 }),
-    lastName: varchar("lastName", { length: 100 }),
-    avatarUrl: text("avatarUrl"),
-    avatarKey: varchar("avatarKey", { length: 255 }),
-    bio: text("bio"),
-    contactFullName: varchar("contactFullName", { length: 160 }),
-    contactEmail: varchar("contactEmail", { length: 320 }),
-    contactPhone: varchar("contactPhone", { length: 40 }),
-    contactAddress: text("contactAddress"),
-    contactTown: varchar("contactTown", { length: 100 }),
-    contactState: varchar("contactState", { length: 100 }),
-    contactZipCode: varchar("contactZipCode", { length: 20 }),
-    contactCountry: varchar("contactCountry", { length: 100 }),
-    acceptedTerms: boolean("acceptedTerms").default(false).notNull(),
-    isMerchant: boolean("isMerchant").default(false).notNull(),
-    securityQuestion: varchar("securityQuestion", { length: 255 }),
-    securityAnswer: varchar("securityAnswer", { length: 255 }),
-    preferredCategories: text("preferredCategories"),
-    notificationPreferences: text("notificationPreferences"),
-    connectedAccounts: text("connectedAccounts"),
-    showProfile: boolean("showProfile").default(true).notNull(),
-    hideInventoryValue: boolean("hideInventoryValue").default(false).notNull(),
-    receiveContactRequests: boolean("receiveContactRequests").default(true).notNull(),
-    emailVerified: boolean("emailVerified").default(false).notNull(),
-    phoneVerified: boolean("phoneVerified").default(false).notNull(),
-    createdAt: timestamp("createdAt").defaultNow().notNull(),
-    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-  },
-  table => ({
-    userIdUnique: uniqueIndex("userProfiles_userId_unique").on(table.userId),
-  }),
-);
-
-export const listings = mysqlTable(
-  "listings",
-  {
-    id: int("id").autoincrement().primaryKey(),
-    ownerId: int("ownerId").notNull().references(() => users.id),
-    title: varchar("title", { length: 160 }).notNull(),
-    category: mysqlEnum("category", collectibleCategories).notNull(),
-    itemType: varchar("itemType", { length: 50 }).notNull(),
-    condition: mysqlEnum("condition", itemConditions).notNull(),
-    grade: varchar("grade", { length: 50 }).default("ungraded").notNull(),
-    certificationCompany: varchar("certificationCompany", { length: 50 }),
-    estimatedValue: decimal("estimatedValue", { precision: 12, scale: 2 }),
-    description: text("description").notNull(),
-    itemDetails: text("itemDetails"), // JSON string storing category-specific fields
-    status: mysqlEnum("status", listingStatuses).default("active").notNull(),
-    isActive: boolean("isActive").default(true).notNull(),
-    featured: boolean("featured").default(false).notNull(),
-    viewCount: int("viewCount").default(0).notNull(),
-    createdAt: timestamp("createdAt").defaultNow().notNull(),
-    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-  },
-  table => ({
-    ownerIdx: index("listings_owner_idx").on(table.ownerId),
-    categoryIdx: index("listings_category_idx").on(table.category),
-    conditionIdx: index("listings_condition_idx").on(table.condition),
-    statusIdx: index("listings_status_idx").on(table.status),
-    itemTypeIdx: index("listings_itemType_idx").on(table.itemType),
-    fullTextIdx: index("listings_fulltext_idx").on(table.title, table.description, table.certificationCompany),
-  }),
-);
-
-export const listingPhotos = mysqlTable(
-  "listingPhotos",
-  {
-    id: int("id").autoincrement().primaryKey(),
-    listingId: int("listingId").notNull().references(() => listings.id),
-    fileKey: varchar("fileKey", { length: 255 }).notNull(),
-    imageUrl: text("imageUrl").notNull(),
-    altText: varchar("altText", { length: 180 }),
-    sortOrder: int("sortOrder").default(0).notNull(),
-    createdAt: timestamp("createdAt").defaultNow().notNull(),
-  },
-  table => ({
-    listingIdx: index("listingPhotos_listing_idx").on(table.listingId),
-  }),
-);
-
-export const tradeProposals = mysqlTable(
-  "tradeProposals",
-  {
-    id: int("id").autoincrement().primaryKey(),
-    requesterId: int("requesterId").notNull().references(() => users.id),
-    recipientId: int("recipientId").notNull().references(() => users.id),
-    requestedListingId: int("requestedListingId").notNull().references(() => listings.id),
-    note: text("note"),
-    status: mysqlEnum("status", tradeStatuses).default("pending").notNull(),
-    respondedAt: timestamp("respondedAt"),
-    completedAt: timestamp("completedAt"),
-    createdAt: timestamp("createdAt").defaultNow().notNull(),
-    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-  },
-  table => ({
-    requesterIdx: index("tradeProposals_requester_idx").on(table.requesterId),
-    recipientIdx: index("tradeProposals_recipient_idx").on(table.recipientId),
-    requestedListingIdx: index("tradeProposals_requestedListing_idx").on(table.requestedListingId),
-    statusIdx: index("tradeProposals_status_idx").on(table.status),
-  }),
-);
-
-export const tradeProposalItems = mysqlTable(
-  "tradeProposalItems",
-  {
-    id: int("id").autoincrement().primaryKey(),
-    proposalId: int("proposalId").notNull().references(() => tradeProposals.id),
-    offeredListingId: int("offeredListingId").notNull().references(() => listings.id),
-    createdAt: timestamp("createdAt").defaultNow().notNull(),
-  },
-  table => ({
-    proposalIdx: index("tradeProposalItems_proposal_idx").on(table.proposalId),
-    offeredListingIdx: index("tradeProposalItems_offeredListing_idx").on(table.offeredListingId),
-    uniqueProposalItem: uniqueIndex("tradeProposalItems_unique_item").on(table.proposalId, table.offeredListingId),
-  }),
-);
-
-export const tradeMessages = mysqlTable(
-  "tradeMessages",
-  {
-    id: int("id").autoincrement().primaryKey(),
-    proposalId: int("proposalId").notNull().references(() => tradeProposals.id),
-    senderId: int("senderId").notNull().references(() => users.id),
-    message: text("message").notNull(),
-    createdAt: timestamp("createdAt").defaultNow().notNull(),
-  },
-  table => ({
-    proposalIdx: index("tradeMessages_proposal_idx").on(table.proposalId),
-    senderIdx: index("tradeMessages_sender_idx").on(table.senderId),
-  }),
-);
-
-export const tradeReviews = mysqlTable(
-  "tradeReviews",
-  {
-    id: int("id").autoincrement().primaryKey(),
-    proposalId: int("proposalId").notNull().references(() => tradeProposals.id),
-    reviewerId: int("reviewerId").notNull().references(() => users.id),
-    revieweeId: int("revieweeId").notNull().references(() => users.id),
-    rating: int("rating").notNull(),
-    review: text("review"),
-    createdAt: timestamp("createdAt").defaultNow().notNull(),
-  },
-  table => ({
-    proposalIdx: index("tradeReviews_proposal_idx").on(table.proposalId),
-    reviewerIdx: index("tradeReviews_reviewer_idx").on(table.reviewerId),
-    revieweeIdx: index("tradeReviews_reviewee_idx").on(table.revieweeId),
-    uniqueReviewerPerProposal: uniqueIndex("tradeReviews_unique_reviewer_per_proposal").on(
-      table.proposalId,
-      table.reviewerId,
-    ),
-  }),
-);
-
-export const watchlistEntries = mysqlTable(
-  "watchlistEntries",
-  {
-    id: int("id").autoincrement().primaryKey(),
-    userId: int("userId").notNull().references(() => users.id),
-    listingId: int("listingId").notNull().references(() => listings.id),
-    createdAt: timestamp("createdAt").defaultNow().notNull(),
-  },
-  table => ({
-    userIdx: index("watchlistEntries_user_idx").on(table.userId),
-    listingIdx: index("watchlistEntries_listing_idx").on(table.listingId),
-    uniqueWatchlistItem: uniqueIndex("watchlistEntries_unique_user_listing").on(table.userId, table.listingId),
-  }),
-);
-
-export const draftListings = mysqlTable(
-  "draftListings",
-  {
-    id: int("id").autoincrement().primaryKey(),
-    userId: int("userId").notNull().references(() => users.id),
-    title: varchar("title", { length: 160 }).notNull(),
-    category: mysqlEnum("category", collectibleCategories).notNull(),
-    grade: varchar("grade", { length: 50 }).default("ungraded").notNull(),
-    graderCompany: varchar("graderCompany", { length: 100 }),
-    certificationNumber: varchar("certificationNumber", { length: 100 }),
-    estimatedValue: decimal("estimatedValue", { precision: 12, scale: 2 }),
-    categoryFields: text("categoryFields"), // JSON string of category-specific fields
-    additionalNotes: text("additionalNotes"),
-    photos: text("photos"), // JSON string of photo data
-    createdAt: timestamp("createdAt").defaultNow().notNull(),
-    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-  },
-  table => ({
-    userIdx: index("draftListings_user_idx").on(table.userId),
-    createdAtIdx: index("draftListings_createdAt_idx").on(table.createdAt),
-  }),
-);
-
-export const passwordResetTokens = mysqlTable(
-  "passwordResetTokens",
-  {
-    id: int("id").autoincrement().primaryKey(),
-    userId: int("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
-    token: varchar("token", { length: 255 }).unique().notNull(),
-    expiresAt: timestamp("expiresAt").notNull(),
-    createdAt: timestamp("createdAt").defaultNow().notNull(),
-  },
-  table => ({
-    userIdx: index("passwordResetTokens_user_idx").on(table.userId),
-    expiresAtIdx: index("passwordResetTokens_expiresAt_idx").on(table.expiresAt),
-  })
-);
-
-export const emailVerificationOtps = mysqlTable(
-  "emailVerificationOtps",
-  {
-    id: int("id").autoincrement().primaryKey(),
-    email: varchar("email", { length: 320 }).notNull(),
-    otp: varchar("otp", { length: 6 }).notNull(),
-    attempts: int("attempts").default(0).notNull(),
-    expiresAt: timestamp("expiresAt").notNull(),
-    createdAt: timestamp("createdAt").defaultNow().notNull(),
-  },
-  table => ({
-    emailIdx: index("emailVerificationOtps_email_idx").on(table.email),
-    expiresAtIdx: index("emailVerificationOtps_expiresAt_idx").on(table.expiresAt),
-  })
-);
-
-export const phoneVerificationOtps = mysqlTable(
-  "phoneVerificationOtps",
-  {
-    id: int("id").autoincrement().primaryKey(),
-    phone: varchar("phone", { length: 20 }).notNull(),
-    otp: varchar("otp", { length: 6 }).notNull(),
-    attempts: int("attempts").default(0).notNull(),
-    expiresAt: timestamp("expiresAt").notNull(),
-    createdAt: timestamp("createdAt").defaultNow().notNull(),
-  },
-  table => ({
-    phoneIdx: index("phoneVerificationOtps_phone_idx").on(table.phone),
-    expiresAtIdx: index("phoneVerificationOtps_expiresAt_idx").on(table.expiresAt),
-  })
-);
-
-export type User = typeof users.$inferSelect;
-export type InsertUser = typeof users.$inferInsert;
-export type UserProfile = typeof userProfiles.$inferSelect;
-export type Listing = typeof listings.$inferSelect;
-export type ListingPhoto = typeof listingPhotos.$inferSelect;
-export type TradeProposal = typeof tradeProposals.$inferSelect;
-export type TradeProposalItem = typeof tradeProposalItems.$inferSelect;
-export type TradeMessage = typeof tradeMessages.$inferSelect;
-export type TradeReview = typeof tradeReviews.$inferSelect;
-export type WatchlistEntry = typeof watchlistEntries.$inferSelect;
-export type DraftListing = typeof draftListings.$inferSelect;
-
-export const deletedAccounts = mysqlTable(
-  "deletedAccounts",
-  {
-    id: int("id").autoincrement().primaryKey(),
-    userId: int("userId").notNull(),
-    username: varchar("username", { length: 64 }).notNull(),
-    email: varchar("email", { length: 320 }),
-    displayName: varchar("displayName", { length: 255 }),
-    firstName: varchar("firstName", { length: 100 }),
-    lastName: varchar("lastName", { length: 100 }),
-    deletedBy: int("deletedBy").notNull().references(() => users.id),
-    reason: text("reason"),
-    deletedAt: timestamp("deletedAt").defaultNow().notNull(),
-  },
-  table => ({
-    userIdIdx: index("deletedAccounts_userId_idx").on(table.userId),
-    usernameIdx: index("deletedAccounts_username_idx").on(table.username),
-    emailIdx: index("deletedAccounts_email_idx").on(table.email),
-    deletedAtIdx: index("deletedAccounts_deletedAt_idx").on(table.deletedAt),
-  })
-);
-
-export type DeletedAccount = typeof deletedAccounts.$inferSelect;
+export const watchlistEntries = mysqlTable("watchlistEntries", {
+	id: int().autoincrement().notNull(),
+	userId: int().notNull().references(() => users.id),
+	listingId: int().notNull().references(() => listings.id),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+},
+(table) => [
+	index("watchlistEntries_unique_user_listing").on(table.userId, table.listingId),
+	index("watchlistEntries_user_idx").on(table.userId),
+	index("watchlistEntries_listing_idx").on(table.listingId),
+]);
 
 
-export const userReports = mysqlTable(
-  "userReports",
-  {
-    id: int("id").autoincrement().primaryKey(),
-    reportId: varchar("reportId", { length: 20 }).unique().notNull(), // e.g., "RPT-001", "RPT-002"
-    reportedUserId: int("reportedUserId").notNull().references(() => users.id),
-    reporterUserId: int("reporterUserId").notNull().references(() => users.id),
-    reason: varchar("reason", { length: 100 }).notNull(), // e.g., "Fraud", "Harassment", "Inappropriate Content"
-    description: text("description").notNull(),
-    evidence: text("evidence"), // Optional: URL or description of evidence
-    status: mysqlEnum("status", ["pending", "reviewed", "dismissed", "action_taken"]).default("pending").notNull(),
-    adminNotes: text("adminNotes"), // Notes added by admin when reviewing
-    createdAt: timestamp("createdAt").defaultNow().notNull(),
-    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-    reviewedAt: timestamp("reviewedAt"),
-    reviewedBy: int("reviewedBy").references(() => users.id),
-  },
-  table => ({
-    reportedUserIdIdx: index("userReports_reportedUserId_idx").on(table.reportedUserId),
-    reporterUserIdIdx: index("userReports_reporterUserId_idx").on(table.reporterUserId),
-    statusIdx: index("userReports_status_idx").on(table.status),
-    createdAtIdx: index("userReports_createdAt_idx").on(table.createdAt),
-  })
-);
-
-export type UserReport = typeof userReports.$inferSelect;
-export type UserReportInsert = typeof userReports.$inferInsert;
-
-export const ebayFeedbackHistory = mysqlTable(
-  "ebayFeedbackHistory",
-  {
-    id: int("id").autoincrement().primaryKey(),
-    userId: int("userId").notNull().references(() => users.id),
-    feedbackId: varchar("feedbackId", { length: 64 }).notNull(),
-    rating: mysqlEnum("rating", ["positive", "neutral", "negative"]).notNull(),
-    comment: text("comment"),
-    from: varchar("from", { length: 64 }).notNull(),
-    itemId: varchar("itemId", { length: 64 }),
-    itemTitle: varchar("itemTitle", { length: 255 }),
-    feedbackDate: timestamp("feedbackDate").notNull(),
-    createdAt: timestamp("createdAt").defaultNow().notNull(),
-  },
-  table => ({
-    userIdIdx: index("ebayFeedbackHistory_userId_idx").on(table.userId),
-    feedbackIdIdx: index("ebayFeedbackHistory_feedbackId_idx").on(table.feedbackId),
-    feedbackDateIdx: index("ebayFeedbackHistory_feedbackDate_idx").on(table.feedbackDate),
-  })
-);
-export type EbayFeedbackHistory = typeof ebayFeedbackHistory.$inferSelect;
-export type EbayFeedbackHistoryInsert = typeof ebayFeedbackHistory.$inferInsert;
-
-export const lowFeedbackFlags = mysqlTable(
-  "lowFeedbackFlags",
-  {
-    id: int("id").autoincrement().primaryKey(),
-    userId: int("userId").notNull().references(() => users.id),
-    feedbackScore: int("feedbackScore").notNull(),
-    feedbackPercentage: decimal("feedbackPercentage", { precision: 5, scale: 2 }).notNull(),
-    flaggedReason: text("flaggedReason"),
-    status: mysqlEnum("status", ["pending", "reviewed", "dismissed", "action_taken"]).default("pending").notNull(),
-    adminNotes: text("adminNotes"),
-    flaggedAt: timestamp("flaggedAt").defaultNow().notNull(),
-    reviewedAt: timestamp("reviewedAt"),
-    reviewedBy: int("reviewedBy").references(() => users.id),
-  },
-  table => ({
-    userIdIdx: index("lowFeedbackFlags_userId_idx").on(table.userId),
-    statusIdx: index("lowFeedbackFlags_status_idx").on(table.status),
-    flaggedAtIdx: index("lowFeedbackFlags_flaggedAt_idx").on(table.flaggedAt),
-  })
-);
-export type LowFeedbackFlag = typeof lowFeedbackFlags.$inferSelect;
-export type LowFeedbackFlagInsert = typeof lowFeedbackFlags.$inferInsert;
-
-
-export const itemInquiries = mysqlTable(
-  "itemInquiries",
-  {
-    id: int("id").autoincrement().primaryKey(),
-    senderId: int("senderId").notNull().references(() => users.id),
-    recipientId: int("recipientId").notNull().references(() => users.id),
-    listingId: int("listingId").notNull().references(() => listings.id),
-    subject: varchar("subject", { length: 255 }).notNull(),
-    message: text("message").notNull(),
-    isRead: boolean("isRead").default(false).notNull(),
-    deletedAt: timestamp("deletedAt"),
-    createdAt: timestamp("createdAt").defaultNow().notNull(),
-    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-  },
-  table => ({
-    senderIdx: index("itemInquiries_sender_idx").on(table.senderId),
-    recipientIdx: index("itemInquiries_recipient_idx").on(table.recipientId),
-    listingIdx: index("itemInquiries_listing_idx").on(table.listingId),
-    recipientUnreadIdx: index("itemInquiries_recipient_unread_idx").on(table.recipientId, table.isRead),
-  }),
-);
-
-export type ItemInquiry = typeof itemInquiries.$inferSelect;
-export type InsertItemInquiry = typeof itemInquiries.$inferInsert;
-
-export const inquiryReplies = mysqlTable(
-  "inquiryReplies",
-  {
-    id: int("id").autoincrement().primaryKey(),
-    inquiryId: int("inquiryId").notNull().references(() => itemInquiries.id),
-    senderId: int("senderId").notNull().references(() => users.id),
-    recipientId: int("recipientId").notNull().references(() => users.id),
-    message: text("message").notNull(),
-    isRead: boolean("isRead").default(false).notNull(),
-    createdAt: timestamp("createdAt").defaultNow().notNull(),
-    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-  },
-  table => ({
-    inquiryIdx: index("inquiryReplies_inquiry_idx").on(table.inquiryId),
-    senderIdx: index("inquiryReplies_sender_idx").on(table.senderId),
-    recipientIdx: index("inquiryReplies_recipient_idx").on(table.recipientId),
-    recipientUnreadIdx: index("inquiryReplies_recipient_unread_idx").on(table.recipientId, table.isRead),
-  }),
-);
-
-export type InquiryReply = typeof inquiryReplies.$inferSelect;
-export type InsertInquiryReply = typeof inquiryReplies.$inferInsert;
-
-export const referralRequests = mysqlTable(
-  "referralRequests",
-  {
-    id: int("id").autoincrement().primaryKey(),
-    referrerId: int("referrerId").notNull().references(() => users.id),
-    referrerEmail: varchar("referrerEmail", { length: 320 }).notNull(),
-    referrerFirstName: varchar("referrerFirstName", { length: 255 }).notNull(),
-    referrerLastName: varchar("referrerLastName", { length: 255 }).notNull(),
-    collectorName: varchar("collectorName", { length: 255 }).notNull(),
-    collectorEmail: varchar("collectorEmail", { length: 320 }).notNull(),
-    collectorFocus: varchar("collectorFocus", { length: 255 }).notNull(),
-    isMerchant: boolean("isMerchant").default(false).notNull(),
-    message: text("message").notNull(),
-    status: mysqlEnum("status", ["pending", "reviewed", "approved", "rejected"]).default("pending").notNull(),
-    adminNotes: text("adminNotes"),
-    emailSent: boolean("emailSent").default(false).notNull(),
-    emailSentAt: timestamp("emailSentAt"),
-    hasJoined: boolean("hasJoined").default(false).notNull(),
-    joinedAt: timestamp("joinedAt"),
-    joinedUserId: int("joinedUserId").references(() => users.id),
-    createdAt: timestamp("createdAt").defaultNow().notNull(),
-    reviewedAt: timestamp("reviewedAt"),
-    reviewedBy: int("reviewedBy").references(() => users.id),
-  },
-  table => ({
-    referrerIdx: index("referralRequests_referrer_idx").on(table.referrerId),
-    statusIdx: index("referralRequests_status_idx").on(table.status),
-    createdAtIdx: index("referralRequests_createdAt_idx").on(table.createdAt),
-    emailSentIdx: index("referralRequests_emailSent_idx").on(table.emailSent),
-    hasJoinedIdx: index("referralRequests_hasJoined_idx").on(table.hasJoined),
-  })
-);
-export type ReferralRequest = typeof referralRequests.$inferSelect;
-export type ReferralRequestInsert = typeof referralRequests.$inferInsert;
-
-
-export const favorites = mysqlTable(
-  "favorites",
-  {
-    id: int("id").autoincrement().primaryKey(),
-    userId: int("userId").notNull().references(() => users.id),
-    listingId: int("listingId").notNull().references(() => listings.id),
-    createdAt: timestamp("createdAt").defaultNow().notNull(),
-  },
-  table => ({
-    userIdIdx: index("favorites_userId_idx").on(table.userId),
-    listingIdIdx: index("favorites_listingId_idx").on(table.listingId),
-    userListingUnique: uniqueIndex("favorites_userId_listingId_unique").on(table.userId, table.listingId),
-  })
-);
-export type Favorite = typeof favorites.$inferSelect;
-export type FavoriteInsert = typeof favorites.$inferInsert;
-
-
-export const forumPosts = mysqlTable(
-  "forumPosts",
-  {
-    id: int("id").autoincrement().primaryKey(),
-    userId: int("userId").notNull().references(() => users.id),
-    category: varchar("category", { length: 64 }).notNull(), // "general" or collectible category
-    title: varchar("title", { length: 255 }).notNull(),
-    content: text("content").notNull(),
-    isPinned: boolean("isPinned").default(false).notNull(),
-    isLocked: boolean("isLocked").default(false).notNull(),
-    isSolved: boolean("isSolved").default(false).notNull(),
-    viewCount: int("viewCount").default(0).notNull(),
-    replyCount: int("replyCount").default(0).notNull(),
-    createdAt: timestamp("createdAt").defaultNow().notNull(),
-    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-  },
-  table => ({
-    userIdx: index("forumPosts_userId_idx").on(table.userId),
-    categoryIdx: index("forumPosts_category_idx").on(table.category),
-    pinnedIdx: index("forumPosts_isPinned_idx").on(table.isPinned),
-    createdAtIdx: index("forumPosts_createdAt_idx").on(table.createdAt),
-  })
-);
-export type ForumPost = typeof forumPosts.$inferSelect;
-export type ForumPostInsert = typeof forumPosts.$inferInsert;
-
-export const forumReplies = mysqlTable(
-  "forumReplies",
-  {
-    id: int("id").autoincrement().primaryKey(),
-    postId: int("postId").notNull().references(() => forumPosts.id, { onDelete: "cascade" }),
-    userId: int("userId").notNull().references(() => users.id),
-    content: text("content").notNull(),
-    createdAt: timestamp("createdAt").defaultNow().notNull(),
-    updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-  },
-  table => ({
-    postIdx: index("forumReplies_postId_idx").on(table.postId),
-    userIdx: index("forumReplies_userId_idx").on(table.userId),
-    createdAtIdx: index("forumReplies_createdAt_idx").on(table.createdAt),
-  })
-);
-export type ForumReply = typeof forumReplies.$inferSelect;
-export type ForumReplyInsert = typeof forumReplies.$inferInsert;
+// Export constants for use in application code
+export const collectibleCategories = ['comics','sports_cards','vintage_toys','video_games','stamps','coins','pokemon','movies','autographs','disney_pins'] as const;
+export const itemConditions = ['mint','near_mint','excellent','very_good','good','fair','poor'] as const;
+// Grade is now a decimal field, allowing any numeric value
+export const listingStatuses = ['active','traded','archived'] as const;
+export const itemConditions_enum = ['mint','near_mint','excellent','very_good','good','fair','poor'] as const;

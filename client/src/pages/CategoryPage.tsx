@@ -36,7 +36,7 @@ const categoryFilterPresets: Record<TradebiliaCategorySlug, Array<{ label: strin
     { label: "Title", placeholder: "Amazing Fantasy, X-Men" },
     { label: "Issue Number", placeholder: "#1, #100, #50" },
     { label: "Grading service", placeholder: "Select grading service", type: "select" },
-    { label: "Grade", placeholder: "Select grade 0-10", type: "select" },
+    { label: "Grade", placeholder: "Enter grade (e.g., 9.5)", type: "input" },
     { label: "Value Range", placeholder: "Min - Max", type: "input" },
     { label: "Signed", placeholder: "Select option", type: "select" },
     { label: "Facsimile", placeholder: "Select option", type: "select" },
@@ -48,7 +48,7 @@ const categoryFilterPresets: Record<TradebiliaCategorySlug, Array<{ label: strin
     { label: "Year / era", placeholder: "1950s, 1986, junk wax, ultra-modern" },
     { label: "Team", placeholder: "Yankees, Bulls, Cowboys" },
     { label: "Set / series", placeholder: "Topps Chrome, Prizm, Fleer" },
-    { label: "Grade", placeholder: "Select grade 0-10", type: "select" as const },
+    { label: "Grade", placeholder: "Enter grade (e.g., 9.5)", type: "input" as const },
     { label: "Value Range", placeholder: "Min - Max", type: "input" as const },
     { label: "Rookie", placeholder: "Select option", type: "select" as const },
     { label: "Autographed", placeholder: "Select option", type: "select" as const },
@@ -816,6 +816,15 @@ export default function CategoryPage() {
                         type="number" 
                       />
                     </div>
+                  ) : filter.label === "Grade" ? (
+                    <Input 
+                      placeholder={filter.placeholder} 
+                      value={grade || ""}
+                      onChange={(e) => setGrade(e.target.value ? parseFloat(e.target.value) : undefined)}
+                      className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black`} 
+                      type="number" 
+                      step="0.1"
+                    />
                   ) : filter.label === "Title" ? (
                     <FilterInput 
                       placeholder={filter.placeholder} 

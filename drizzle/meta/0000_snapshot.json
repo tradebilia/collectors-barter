@@ -1,7 +1,7 @@
 {
   "version": "5",
   "dialect": "mysql",
-  "id": "4e41ac69-ffc0-4f56-b4c6-cab39cf41f7a",
+  "id": "d0fd86fc-df54-4ff4-a675-9cd8b1ac5e7d",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "deletedAccounts": {
@@ -76,7 +76,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "(now())"
+          "default": "'CURRENT_TIMESTAMP'"
         }
       },
       "indexes": {
@@ -124,14 +124,7 @@
           "onUpdate": "no action"
         }
       },
-      "compositePrimaryKeys": {
-        "deletedAccounts_id": {
-          "name": "deletedAccounts_id",
-          "columns": [
-            "id"
-          ]
-        }
-      },
+      "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "checkConstraint": {}
     },
@@ -168,7 +161,7 @@
         },
         "grade": {
           "name": "grade",
-          "type": "enum('ungraded','1','1.5','2','2.5','3','3.5','4','4.5','5','5.5','6','6.5','7','7.5','8','8.5','9','9.5','10')",
+          "type": "varchar(50)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
@@ -222,7 +215,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "(now())"
+          "default": "'CURRENT_TIMESTAMP'"
         },
         "updatedAt": {
           "name": "updatedAt",
@@ -265,14 +258,7 @@
           "onUpdate": "no action"
         }
       },
-      "compositePrimaryKeys": {
-        "draftListings_id": {
-          "name": "draftListings_id",
-          "columns": [
-            "id"
-          ]
-        }
-      },
+      "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "checkConstraint": {}
     },
@@ -348,7 +334,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "(now())"
+          "default": "'CURRENT_TIMESTAMP'"
         }
       },
       "indexes": {
@@ -389,14 +375,7 @@
           "onUpdate": "no action"
         }
       },
-      "compositePrimaryKeys": {
-        "ebayFeedbackHistory_id": {
-          "name": "ebayFeedbackHistory_id",
-          "columns": [
-            "id"
-          ]
-        }
-      },
+      "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "checkConstraint": {}
     },
@@ -445,7 +424,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "(now())"
+          "default": "'CURRENT_TIMESTAMP'"
         }
       },
       "indexes": {
@@ -465,14 +444,345 @@
         }
       },
       "foreignKeys": {},
-      "compositePrimaryKeys": {
-        "emailVerificationOtps_id": {
-          "name": "emailVerificationOtps_id",
-          "columns": [
-            "id"
-          ]
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraint": {}
+    },
+    "favorites": {
+      "name": "favorites",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "userId": {
+          "name": "userId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "listingId": {
+          "name": "listingId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'CURRENT_TIMESTAMP'"
         }
       },
+      "indexes": {
+        "favorites_user_listing_unique": {
+          "name": "favorites_user_listing_unique",
+          "columns": [
+            "userId",
+            "listingId"
+          ],
+          "isUnique": false
+        },
+        "favorites_user_idx": {
+          "name": "favorites_user_idx",
+          "columns": [
+            "userId"
+          ],
+          "isUnique": false
+        },
+        "favorites_listing_idx": {
+          "name": "favorites_listing_idx",
+          "columns": [
+            "listingId"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "favorites_userId_users_id_fk": {
+          "name": "favorites_userId_users_id_fk",
+          "tableFrom": "favorites",
+          "tableTo": "users",
+          "columnsFrom": [
+            "userId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "favorites_listingId_listings_id_fk": {
+          "name": "favorites_listingId_listings_id_fk",
+          "tableFrom": "favorites",
+          "tableTo": "listings",
+          "columnsFrom": [
+            "listingId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraint": {}
+    },
+    "forumPosts": {
+      "name": "forumPosts",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "userId": {
+          "name": "userId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "category": {
+          "name": "category",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "title": {
+          "name": "title",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "content": {
+          "name": "content",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "isPinned": {
+          "name": "isPinned",
+          "type": "tinyint",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "isLocked": {
+          "name": "isLocked",
+          "type": "tinyint",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "isSolved": {
+          "name": "isSolved",
+          "type": "tinyint",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "viewCount": {
+          "name": "viewCount",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "replyCount": {
+          "name": "replyCount",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'CURRENT_TIMESTAMP'"
+        },
+        "updatedAt": {
+          "name": "updatedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "onUpdate": true,
+          "default": "(now())"
+        }
+      },
+      "indexes": {
+        "forumPosts_userId_idx": {
+          "name": "forumPosts_userId_idx",
+          "columns": [
+            "userId"
+          ],
+          "isUnique": false
+        },
+        "forumPosts_category_idx": {
+          "name": "forumPosts_category_idx",
+          "columns": [
+            "category"
+          ],
+          "isUnique": false
+        },
+        "forumPosts_isPinned_idx": {
+          "name": "forumPosts_isPinned_idx",
+          "columns": [
+            "isPinned"
+          ],
+          "isUnique": false
+        },
+        "forumPosts_createdAt_idx": {
+          "name": "forumPosts_createdAt_idx",
+          "columns": [
+            "createdAt"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "forumPosts_userId_users_id_fk": {
+          "name": "forumPosts_userId_users_id_fk",
+          "tableFrom": "forumPosts",
+          "tableTo": "users",
+          "columnsFrom": [
+            "userId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraint": {}
+    },
+    "forumReplies": {
+      "name": "forumReplies",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "postId": {
+          "name": "postId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "userId": {
+          "name": "userId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "content": {
+          "name": "content",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'CURRENT_TIMESTAMP'"
+        },
+        "updatedAt": {
+          "name": "updatedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "onUpdate": true,
+          "default": "(now())"
+        }
+      },
+      "indexes": {
+        "forumReplies_postId_idx": {
+          "name": "forumReplies_postId_idx",
+          "columns": [
+            "postId"
+          ],
+          "isUnique": false
+        },
+        "forumReplies_userId_idx": {
+          "name": "forumReplies_userId_idx",
+          "columns": [
+            "userId"
+          ],
+          "isUnique": false
+        },
+        "forumReplies_createdAt_idx": {
+          "name": "forumReplies_createdAt_idx",
+          "columns": [
+            "createdAt"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "forumReplies_postId_forumPosts_id_fk": {
+          "name": "forumReplies_postId_forumPosts_id_fk",
+          "tableFrom": "forumReplies",
+          "tableTo": "forumPosts",
+          "columnsFrom": [
+            "postId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "forumReplies_userId_users_id_fk": {
+          "name": "forumReplies_userId_users_id_fk",
+          "tableFrom": "forumReplies",
+          "tableTo": "users",
+          "columnsFrom": [
+            "userId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "checkConstraint": {}
     },
@@ -513,7 +823,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "(now())"
+          "default": "'CURRENT_TIMESTAMP'"
         },
         "updatedAt": {
           "name": "updatedAt",
@@ -523,6 +833,21 @@
           "autoincrement": false,
           "onUpdate": true,
           "default": "(now())"
+        },
+        "recipientId": {
+          "name": "recipientId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "isRead": {
+          "name": "isRead",
+          "type": "tinyint",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
         }
       },
       "indexes": {
@@ -569,14 +894,7 @@
           "onUpdate": "no action"
         }
       },
-      "compositePrimaryKeys": {
-        "inquiryReplies_id": {
-          "name": "inquiryReplies_id",
-          "columns": [
-            "id"
-          ]
-        }
-      },
+      "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "checkConstraint": {}
     },
@@ -627,11 +945,11 @@
         },
         "isRead": {
           "name": "isRead",
-          "type": "boolean",
+          "type": "tinyint",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": false
+          "default": 0
         },
         "createdAt": {
           "name": "createdAt",
@@ -639,7 +957,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "(now())"
+          "default": "'CURRENT_TIMESTAMP'"
         },
         "updatedAt": {
           "name": "updatedAt",
@@ -649,6 +967,29 @@
           "autoincrement": false,
           "onUpdate": true,
           "default": "(now())"
+        },
+        "deletedAt": {
+          "name": "deletedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "senderIsRead": {
+          "name": "senderIsRead",
+          "type": "tinyint",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "recipientIsRead": {
+          "name": "recipientIsRead",
+          "type": "tinyint",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
         }
       },
       "indexes": {
@@ -723,14 +1064,7 @@
           "onUpdate": "no action"
         }
       },
-      "compositePrimaryKeys": {
-        "itemInquiries_id": {
-          "name": "itemInquiries_id",
-          "columns": [
-            "id"
-          ]
-        }
-      },
+      "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "checkConstraint": {}
     },
@@ -786,7 +1120,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "(now())"
+          "default": "'CURRENT_TIMESTAMP'"
         }
       },
       "indexes": {
@@ -813,14 +1147,7 @@
           "onUpdate": "no action"
         }
       },
-      "compositePrimaryKeys": {
-        "listingPhotos_id": {
-          "name": "listingPhotos_id",
-          "columns": [
-            "id"
-          ]
-        }
-      },
+      "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "checkConstraint": {}
     },
@@ -857,18 +1184,18 @@
         },
         "condition": {
           "name": "condition",
-          "type": "enum('mint','near_mint','very_good','good','fair','poor')",
+          "type": "enum('mint','near_mint','excellent','very_good','good','fair','poor')",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
         "grade": {
           "name": "grade",
-          "type": "enum('ungraded','1','1.5','2','2.5','3','3.5','4','4.5','5','5.5','6','6.5','7','7.5','8','8.5','9','9.5','10')",
+          "type": "decimal(5,2)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'ungraded'"
+          "default": "'0'"
         },
         "certificationCompany": {
           "name": "certificationCompany",
@@ -901,19 +1228,19 @@
         },
         "isActive": {
           "name": "isActive",
-          "type": "boolean",
+          "type": "tinyint",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": true
+          "default": 1
         },
         "featured": {
           "name": "featured",
-          "type": "boolean",
+          "type": "tinyint",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": false
+          "default": 0
         },
         "createdAt": {
           "name": "createdAt",
@@ -921,7 +1248,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "(now())"
+          "default": "'CURRENT_TIMESTAMP'"
         },
         "updatedAt": {
           "name": "updatedAt",
@@ -931,6 +1258,35 @@
           "autoincrement": false,
           "onUpdate": true,
           "default": "(now())"
+        },
+        "itemDetails": {
+          "name": "itemDetails",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "viewCount": {
+          "name": "viewCount",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "itemType": {
+          "name": "itemType",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "signatures": {
+          "name": "signatures",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
         }
       },
       "indexes": {
@@ -961,6 +1317,13 @@
             "status"
           ],
           "isUnique": false
+        },
+        "listings_itemType_idx": {
+          "name": "listings_itemType_idx",
+          "columns": [
+            "itemType"
+          ],
+          "isUnique": false
         }
       },
       "foreignKeys": {
@@ -978,14 +1341,7 @@
           "onUpdate": "no action"
         }
       },
-      "compositePrimaryKeys": {
-        "listings_id": {
-          "name": "listings_id",
-          "columns": [
-            "id"
-          ]
-        }
-      },
+      "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "checkConstraint": {}
     },
@@ -1048,7 +1404,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "(now())"
+          "default": "'CURRENT_TIMESTAMP'"
         },
         "reviewedAt": {
           "name": "reviewedAt",
@@ -1116,14 +1472,7 @@
           "onUpdate": "no action"
         }
       },
-      "compositePrimaryKeys": {
-        "lowFeedbackFlags_id": {
-          "name": "lowFeedbackFlags_id",
-          "columns": [
-            "id"
-          ]
-        }
-      },
+      "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "checkConstraint": {}
     },
@@ -1164,10 +1513,17 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "(now())"
+          "default": "'CURRENT_TIMESTAMP'"
         }
       },
       "indexes": {
+        "passwordResetTokens_token_unique": {
+          "name": "passwordResetTokens_token_unique",
+          "columns": [
+            "token"
+          ],
+          "isUnique": false
+        },
         "passwordResetTokens_user_idx": {
           "name": "passwordResetTokens_user_idx",
           "columns": [
@@ -1198,22 +1554,8 @@
           "onUpdate": "no action"
         }
       },
-      "compositePrimaryKeys": {
-        "passwordResetTokens_id": {
-          "name": "passwordResetTokens_id",
-          "columns": [
-            "id"
-          ]
-        }
-      },
-      "uniqueConstraints": {
-        "passwordResetTokens_token_unique": {
-          "name": "passwordResetTokens_token_unique",
-          "columns": [
-            "token"
-          ]
-        }
-      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
       "checkConstraint": {}
     },
     "phoneVerificationOtps": {
@@ -1261,7 +1603,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "(now())"
+          "default": "'CURRENT_TIMESTAMP'"
         }
       },
       "indexes": {
@@ -1281,14 +1623,238 @@
         }
       },
       "foreignKeys": {},
-      "compositePrimaryKeys": {
-        "phoneVerificationOtps_id": {
-          "name": "phoneVerificationOtps_id",
-          "columns": [
-            "id"
-          ]
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraint": {}
+    },
+    "referralRequests": {
+      "name": "referralRequests",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "referrerId": {
+          "name": "referrerId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "referrerEmail": {
+          "name": "referrerEmail",
+          "type": "varchar(320)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "referrerFirstName": {
+          "name": "referrerFirstName",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "referrerLastName": {
+          "name": "referrerLastName",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "collectorName": {
+          "name": "collectorName",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "collectorEmail": {
+          "name": "collectorEmail",
+          "type": "varchar(320)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "collectorFocus": {
+          "name": "collectorFocus",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "message": {
+          "name": "message",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "status": {
+          "name": "status",
+          "type": "enum('pending','reviewed','approved','rejected')",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'pending'"
+        },
+        "adminNotes": {
+          "name": "adminNotes",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'CURRENT_TIMESTAMP'"
+        },
+        "reviewedAt": {
+          "name": "reviewedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "reviewedBy": {
+          "name": "reviewedBy",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "emailSent": {
+          "name": "emailSent",
+          "type": "tinyint",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "emailSentAt": {
+          "name": "emailSentAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "hasJoined": {
+          "name": "hasJoined",
+          "type": "tinyint",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "joinedAt": {
+          "name": "joinedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "joinedUserId": {
+          "name": "joinedUserId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "isMerchant": {
+          "name": "isMerchant",
+          "type": "tinyint",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
         }
       },
+      "indexes": {
+        "referralRequests_referrer_idx": {
+          "name": "referralRequests_referrer_idx",
+          "columns": [
+            "referrerId"
+          ],
+          "isUnique": false
+        },
+        "referralRequests_status_idx": {
+          "name": "referralRequests_status_idx",
+          "columns": [
+            "status"
+          ],
+          "isUnique": false
+        },
+        "referralRequests_createdAt_idx": {
+          "name": "referralRequests_createdAt_idx",
+          "columns": [
+            "createdAt"
+          ],
+          "isUnique": false
+        },
+        "referralRequests_emailSent_idx": {
+          "name": "referralRequests_emailSent_idx",
+          "columns": [
+            "emailSent"
+          ],
+          "isUnique": false
+        },
+        "referralRequests_hasJoined_idx": {
+          "name": "referralRequests_hasJoined_idx",
+          "columns": [
+            "hasJoined"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "referralRequests_referrerId_users_id_fk": {
+          "name": "referralRequests_referrerId_users_id_fk",
+          "tableFrom": "referralRequests",
+          "tableTo": "users",
+          "columnsFrom": [
+            "referrerId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "referralRequests_reviewedBy_users_id_fk": {
+          "name": "referralRequests_reviewedBy_users_id_fk",
+          "tableFrom": "referralRequests",
+          "tableTo": "users",
+          "columnsFrom": [
+            "reviewedBy"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "referralRequests_joinedUserId_users_id_fk": {
+          "name": "referralRequests_joinedUserId_users_id_fk",
+          "tableFrom": "referralRequests",
+          "tableTo": "users",
+          "columnsFrom": [
+            "joinedUserId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "checkConstraint": {}
     },
@@ -1329,7 +1895,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "(now())"
+          "default": "'CURRENT_TIMESTAMP'"
         }
       },
       "indexes": {
@@ -1376,14 +1942,7 @@
           "onUpdate": "no action"
         }
       },
-      "compositePrimaryKeys": {
-        "tradeMessages_id": {
-          "name": "tradeMessages_id",
-          "columns": [
-            "id"
-          ]
-        }
-      },
+      "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "checkConstraint": {}
     },
@@ -1417,10 +1976,18 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "(now())"
+          "default": "'CURRENT_TIMESTAMP'"
         }
       },
       "indexes": {
+        "tradeProposalItems_unique_item": {
+          "name": "tradeProposalItems_unique_item",
+          "columns": [
+            "proposalId",
+            "offeredListingId"
+          ],
+          "isUnique": false
+        },
         "tradeProposalItems_proposal_idx": {
           "name": "tradeProposalItems_proposal_idx",
           "columns": [
@@ -1434,14 +2001,6 @@
             "offeredListingId"
           ],
           "isUnique": false
-        },
-        "tradeProposalItems_unique_item": {
-          "name": "tradeProposalItems_unique_item",
-          "columns": [
-            "proposalId",
-            "offeredListingId"
-          ],
-          "isUnique": true
         }
       },
       "foreignKeys": {
@@ -1472,14 +2031,7 @@
           "onUpdate": "no action"
         }
       },
-      "compositePrimaryKeys": {
-        "tradeProposalItems_id": {
-          "name": "tradeProposalItems_id",
-          "columns": [
-            "id"
-          ]
-        }
-      },
+      "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "checkConstraint": {}
     },
@@ -1549,7 +2101,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "(now())"
+          "default": "'CURRENT_TIMESTAMP'"
         },
         "updatedAt": {
           "name": "updatedAt",
@@ -1632,14 +2184,7 @@
           "onUpdate": "no action"
         }
       },
-      "compositePrimaryKeys": {
-        "tradeProposals_id": {
-          "name": "tradeProposals_id",
-          "columns": [
-            "id"
-          ]
-        }
-      },
+      "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "checkConstraint": {}
     },
@@ -1694,10 +2239,18 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "(now())"
+          "default": "'CURRENT_TIMESTAMP'"
         }
       },
       "indexes": {
+        "tradeReviews_unique_reviewer_per_proposal": {
+          "name": "tradeReviews_unique_reviewer_per_proposal",
+          "columns": [
+            "proposalId",
+            "reviewerId"
+          ],
+          "isUnique": false
+        },
         "tradeReviews_proposal_idx": {
           "name": "tradeReviews_proposal_idx",
           "columns": [
@@ -1718,14 +2271,6 @@
             "revieweeId"
           ],
           "isUnique": false
-        },
-        "tradeReviews_unique_reviewer_per_proposal": {
-          "name": "tradeReviews_unique_reviewer_per_proposal",
-          "columns": [
-            "proposalId",
-            "reviewerId"
-          ],
-          "isUnique": true
         }
       },
       "foreignKeys": {
@@ -1769,14 +2314,7 @@
           "onUpdate": "no action"
         }
       },
-      "compositePrimaryKeys": {
-        "tradeReviews_id": {
-          "name": "tradeReviews_id",
-          "columns": [
-            "id"
-          ]
-        }
-      },
+      "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "checkConstraint": {}
     },
@@ -1897,19 +2435,19 @@
         },
         "acceptedTerms": {
           "name": "acceptedTerms",
-          "type": "boolean",
+          "type": "tinyint",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": false
+          "default": 0
         },
         "isMerchant": {
           "name": "isMerchant",
-          "type": "boolean",
+          "type": "tinyint",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": false
+          "default": 0
         },
         "securityQuestion": {
           "name": "securityQuestion",
@@ -1948,43 +2486,43 @@
         },
         "showProfile": {
           "name": "showProfile",
-          "type": "boolean",
+          "type": "tinyint",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": true
+          "default": 1
         },
         "hideInventoryValue": {
           "name": "hideInventoryValue",
-          "type": "boolean",
+          "type": "tinyint",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": false
+          "default": 0
         },
         "receiveContactRequests": {
           "name": "receiveContactRequests",
-          "type": "boolean",
+          "type": "tinyint",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": true
+          "default": 1
         },
         "emailVerified": {
           "name": "emailVerified",
-          "type": "boolean",
+          "type": "tinyint",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": false
+          "default": 0
         },
         "phoneVerified": {
           "name": "phoneVerified",
-          "type": "boolean",
+          "type": "tinyint",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": false
+          "default": 0
         },
         "createdAt": {
           "name": "createdAt",
@@ -1992,7 +2530,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "(now())"
+          "default": "'CURRENT_TIMESTAMP'"
         },
         "updatedAt": {
           "name": "updatedAt",
@@ -2010,7 +2548,7 @@
           "columns": [
             "userId"
           ],
-          "isUnique": true
+          "isUnique": false
         }
       },
       "foreignKeys": {
@@ -2028,14 +2566,7 @@
           "onUpdate": "no action"
         }
       },
-      "compositePrimaryKeys": {
-        "userProfiles_id": {
-          "name": "userProfiles_id",
-          "columns": [
-            "id"
-          ]
-        }
-      },
+      "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "checkConstraint": {}
     },
@@ -2112,7 +2643,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "(now())"
+          "default": "'CURRENT_TIMESTAMP'"
         },
         "updatedAt": {
           "name": "updatedAt",
@@ -2139,6 +2670,13 @@
         }
       },
       "indexes": {
+        "userReports_reportId_unique": {
+          "name": "userReports_reportId_unique",
+          "columns": [
+            "reportId"
+          ],
+          "isUnique": false
+        },
         "userReports_reportedUserId_idx": {
           "name": "userReports_reportedUserId_idx",
           "columns": [
@@ -2209,22 +2747,8 @@
           "onUpdate": "no action"
         }
       },
-      "compositePrimaryKeys": {
-        "userReports_id": {
-          "name": "userReports_id",
-          "columns": [
-            "id"
-          ]
-        }
-      },
-      "uniqueConstraints": {
-        "userReports_reportId_unique": {
-          "name": "userReports_reportId_unique",
-          "columns": [
-            "reportId"
-          ]
-        }
-      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
       "checkConstraint": {}
     },
     "users": {
@@ -2321,7 +2845,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "(now())"
+          "default": "'CURRENT_TIMESTAMP'"
         },
         "updatedAt": {
           "name": "updatedAt",
@@ -2338,7 +2862,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "(now())"
+          "default": "'CURRENT_TIMESTAMP'"
         },
         "lastActivityAt": {
           "name": "lastActivityAt",
@@ -2346,7 +2870,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "(now())"
+          "default": "'CURRENT_TIMESTAMP'"
         },
         "ebayUsername": {
           "name": "ebayUsername",
@@ -2412,30 +2936,25 @@
           "autoincrement": false
         }
       },
-      "indexes": {},
-      "foreignKeys": {},
-      "compositePrimaryKeys": {
-        "users_id": {
-          "name": "users_id",
-          "columns": [
-            "id"
-          ]
-        }
-      },
-      "uniqueConstraints": {
+      "indexes": {
         "users_openId_unique": {
           "name": "users_openId_unique",
           "columns": [
             "openId"
-          ]
+          ],
+          "isUnique": false
         },
         "users_username_unique": {
           "name": "users_username_unique",
           "columns": [
             "username"
-          ]
+          ],
+          "isUnique": false
         }
       },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
       "checkConstraint": {}
     },
     "watchlistEntries": {
@@ -2468,10 +2987,18 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "(now())"
+          "default": "'CURRENT_TIMESTAMP'"
         }
       },
       "indexes": {
+        "watchlistEntries_unique_user_listing": {
+          "name": "watchlistEntries_unique_user_listing",
+          "columns": [
+            "userId",
+            "listingId"
+          ],
+          "isUnique": false
+        },
         "watchlistEntries_user_idx": {
           "name": "watchlistEntries_user_idx",
           "columns": [
@@ -2485,14 +3012,6 @@
             "listingId"
           ],
           "isUnique": false
-        },
-        "watchlistEntries_unique_user_listing": {
-          "name": "watchlistEntries_unique_user_listing",
-          "columns": [
-            "userId",
-            "listingId"
-          ],
-          "isUnique": true
         }
       },
       "foreignKeys": {
@@ -2523,14 +3042,7 @@
           "onUpdate": "no action"
         }
       },
-      "compositePrimaryKeys": {
-        "watchlistEntries_id": {
-          "name": "watchlistEntries_id",
-          "columns": [
-            "id"
-          ]
-        }
-      },
+      "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "checkConstraint": {}
     }

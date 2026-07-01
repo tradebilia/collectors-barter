@@ -74,6 +74,7 @@ export function SearchResults() {
             <option value="all">All Conditions</option>
             <option value="mint">Mint</option>
             <option value="near_mint">Near Mint</option>
+            <option value="excellent">Excellent</option>
             <option value="very_good">Very Good</option>
             <option value="good">Good</option>
             <option value="fair">Fair</option>

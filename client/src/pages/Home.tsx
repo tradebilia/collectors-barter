@@ -51,6 +51,7 @@ const categoryOptions = [
 const conditionOptions = [
   { value: "mint", label: "Mint" },
   { value: "near_mint", label: "Near Mint" },
+  { value: "excellent", label: "Excellent" },
   { value: "very_good", label: "Very Good" },
   { value: "good", label: "Good" },
   { value: "fair", label: "Fair" },
@@ -242,7 +243,7 @@ export default function Home() {
   }>({
     title: "",
     category: "comics",
-    condition: "near_mint",
+    condition: "mint",
     description: "",
   });
   const [listingPhotos, setListingPhotos] = useState<UploadedImage[]>([]);
@@ -278,7 +279,7 @@ export default function Home() {
 
   const createListingMutation = trpc.market.createListing.useMutation({
     onSuccess: async () => {
-      setListingDraft({ title: "", category: "comics", condition: "near_mint", description: "" });
+      setListingDraft({ title: "", category: "comics", condition: "mint", description: "" });
       setListingPhotos([]);
       toast.success("Listing published successfully.");
       await Promise.all([utils.market.dashboard.invalidate(), utils.market.feed.invalidate()]);

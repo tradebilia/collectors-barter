@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { COOKIE_NAME } from "@shared/const";
-import { collectibleCategories, itemConditions, gradeValues } from "../drizzle/schema";
+import { collectibleCategories, itemConditions } from "../drizzle/schema";
 import { isValidGradeForCompany, getGradingCompanyByName } from "@shared/gradingCompanyConfig";
 import {
   createListing,
@@ -565,6 +565,7 @@ export const appRouter = router({
           photos: z.array(uploadedImageSchema).max(6),
           itemDetails: z.record(z.string(), z.string()).optional(),
           certificationCompany: z.string().optional(),
+          certificationNumber: z.string().optional(),
           grade: z.string().optional(),
         }),
       )
@@ -611,6 +612,7 @@ export const appRouter = router({
             photos: input.photos,
             itemDetails: input.itemDetails as Record<string, string> | undefined,
             certificationCompany: input.certificationCompany,
+            certificationNumber: input.certificationNumber,
             grade: input.grade,
           },
         );
@@ -945,7 +947,7 @@ export const appRouter = router({
           category: z.enum(collectibleCategories),
           condition: z.enum(itemConditions),
           description: z.string(),
-          grade: z.enum(gradeValues).optional(),
+          grade: z.number().optional(),
           graderCompany: z.string().optional(),
           certificationNumber: z.string().optional(),
           estimatedValue: z.number().optional(),
@@ -1237,8 +1239,8 @@ export const appRouter = router({
         lastName: string | null;
         email: string | null;
         role: string;
-        createdAt: Date;
-        lastActivityAt: Date;
+        createdAt: string;
+        lastActivityAt: string;
         contactFullName: string | null;
         contactEmail: string | null;
         contactPhone: string | null;
@@ -1267,7 +1269,7 @@ export const appRouter = router({
       return allUsers.map(user => ({
         ...user,
         itemsListed: countMap.get(user.id) || 0,
-        isOnline: (now - user.lastActivityAt.getTime()) < ONLINE_TIMEOUT,
+        isOnline: (now - new Date(user.lastActivityAt).getTime()) < ONLINE_TIMEOUT,
       }));
       
     }),
@@ -1595,7 +1597,7 @@ export const appRouter = router({
       const db = await requireDb();
       // Only update lastActivityAt if user is authenticated
       if (ctx.user?.id) {
-        await db.update(users).set({ lastActivityAt: new Date() }).where(eq(users.id, ctx.user.id));
+        await db.update(users).set({ lastActivityAt: new Date().toISOString() }).where(eq(users.id, ctx.user.id));
       }
       return { success: true };
     }),
@@ -1607,7 +1609,7 @@ export const appRouter = router({
         if (!seller.length) return { isOnline: false };
         const lastActivity = seller[0].lastActivityAt;
         const now = new Date();
-        const timeSinceActivity = now.getTime() - lastActivity.getTime();
+        const timeSinceActivity = now.getTime() - new Date(lastActivity).getTime();
         const ONLINE_STATUS_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
         const isOnline = timeSinceActivity < ONLINE_STATUS_TIMEOUT_MS;
         console.log(`[getSellerOnlineStatus] User: ${seller[0].name} (ID: ${seller[0].id}), lastActivityAt: ${lastActivity}, now: ${now}, timeSinceActivity: ${timeSinceActivity}ms, isOnline: ${isOnline}`);

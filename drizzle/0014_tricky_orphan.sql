@@ -1,0 +1,1 @@
+ALTER TABLE `listings` MODIFY COLUMN `grade` decimal(5,2) NOT NULL DEFAULT '0';
