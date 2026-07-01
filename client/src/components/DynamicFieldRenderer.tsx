@@ -181,9 +181,12 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({
             }
             onChange(newValue);
           }} disabled={disabled}>
-            <SelectTrigger className={`bg-white text-black ${hasError ? 'border-red-500' : ''}`}>
-              <SelectValue placeholder="Select an option" />
-            </SelectTrigger>
+            <>
+              {field.name === 'isGraded' && console.log('[DEBUG] SelectTrigger rendering for isGraded', { internalValue, value })}
+              <SelectTrigger className={`bg-white text-black ${hasError ? 'border-red-500' : ''}`}>
+                <SelectValue placeholder="Select an option" />
+              </SelectTrigger>
+            </>
             <SelectContent>
               {field.name === 'country' ? (
                 // For country field: United States first, then separator, then other countries

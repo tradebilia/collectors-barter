@@ -131,7 +131,8 @@ export const AUTOGRAPHS_SIGNED_ITEM_FIELDS: FieldDefinition[] = [
     label: 'Authentication Included',
     inputType: 'dropdown',
     requirement: 'required',
-    dropdownOptions: ['Yes', 'No'],
+    dropdownOptions: ['yes', 'no'],
+    displayLabels: { 'yes': 'Yes', 'no': 'No' },
   },
   {
     name: 'authenticationCompany',
@@ -166,7 +167,8 @@ export const AUTOGRAPHS_SIGNED_ITEM_FIELDS: FieldDefinition[] = [
     label: 'Inscription Present',
     inputType: 'dropdown',
     requirement: 'optional',
-    dropdownOptions: ['Yes', 'No'],
+    dropdownOptions: ['yes', 'no'],
+    displayLabels: { 'yes': 'Yes', 'no': 'No' },
   },
   {
     name: 'inscriptionText',
@@ -323,7 +325,8 @@ export const COINS_COLLECTION_LOT_FIELDS: FieldDefinition[] = [
     label: 'Includes Graded Coins',
     inputType: 'dropdown',
     requirement: 'optional',
-    dropdownOptions: ['Yes', 'No'],
+    dropdownOptions: ['yes', 'no'],
+    displayLabels: { 'yes': 'Yes', 'no': 'No' },
   },
 ];
 
@@ -420,7 +423,8 @@ export const COINS_SINGLE_COIN_FIELDS: FieldDefinition[] = [
     label: 'Is Graded',
     inputType: 'dropdown',
     requirement: 'required',
-    dropdownOptions: ['Yes', 'No'],
+    dropdownOptions: ['yes', 'no'],
+    displayLabels: { 'yes': 'Yes', 'no': 'No' },
   },
   {
     name: 'gradingCompany',
@@ -509,7 +513,8 @@ export const COMICS_COLLECTION_LOT_FIELDS: FieldDefinition[] = [
     label: 'Includes Graded Comics',
     inputType: 'dropdown',
     requirement: 'optional',
-    dropdownOptions: ['Yes', 'No'],
+    dropdownOptions: ['yes', 'no'],
+    displayLabels: { 'yes': 'Yes', 'no': 'No' },
   },
 ];
 
@@ -601,14 +606,16 @@ export const COMICS_ORIGINAL_ART_FIELDS: FieldDefinition[] = [
     label: 'Signed By Artist',
     inputType: 'dropdown',
     requirement: 'recommended',
-    dropdownOptions: ['Yes', 'No'],
+    dropdownOptions: ['yes', 'no'],
+    displayLabels: { 'yes': 'Yes', 'no': 'No' },
   },
   {
     name: 'coaIncluded',
     label: 'COA Included',
     inputType: 'dropdown',
     requirement: 'recommended',
-    dropdownOptions: ['Yes', 'No'],
+    dropdownOptions: ['yes', 'no'],
+    displayLabels: { 'yes': 'Yes', 'no': 'No' },
   },
   {
     name: 'dimensions',
@@ -621,14 +628,16 @@ export const COMICS_ORIGINAL_ART_FIELDS: FieldDefinition[] = [
     label: 'Framed',
     inputType: 'dropdown',
     requirement: 'optional',
-    dropdownOptions: ['Yes', 'No'],
+    dropdownOptions: ['yes', 'no'],
+    displayLabels: { 'yes': 'Yes', 'no': 'No' },
   },
   {
     name: 'originalPublishedPage',
     label: 'Original Published Page',
     inputType: 'dropdown',
     requirement: 'recommended',
-    dropdownOptions: ['Yes', 'No'],
+    dropdownOptions: ['yes', 'no'],
+    displayLabels: { 'yes': 'Yes', 'no': 'No' },
   },
   {
     name: 'comicSeries',
@@ -777,7 +786,8 @@ export const COMICS_SINGLE_COMIC_FIELDS: FieldDefinition[] = [
     label: 'Is Graded',
     inputType: 'dropdown',
     requirement: 'required',
-    dropdownOptions: ['Yes', 'No'],
+    dropdownOptions: ['yes', 'no'],
+    displayLabels: { 'yes': 'Yes', 'no': 'No' },
   },
   {
     name: 'gradingCompany',
@@ -887,7 +897,8 @@ export const DISNEY_PINS_COLLECTION_LOT_FIELDS: FieldDefinition[] = [
     label: 'Backer Cards Included',
     inputType: 'dropdown',
     requirement: 'optional',
-    dropdownOptions: ['Yes', 'No'],
+    dropdownOptions: ['yes', 'no'],
+    displayLabels: { 'yes': 'Yes', 'no': 'No' },
   },
 ];
 
@@ -934,7 +945,8 @@ export const DISNEY_PINS_PIN_SET_FIELDS: FieldDefinition[] = [
     label: 'Complete Set',
     inputType: 'dropdown',
     requirement: 'required',
-    dropdownOptions: ['Yes', 'No'],
+    dropdownOptions: ['yes', 'no'],
+    displayLabels: { 'yes': 'Yes', 'no': 'No' },
   },
   {
     name: 'missingPins',
@@ -962,7 +974,8 @@ export const DISNEY_PINS_PIN_SET_FIELDS: FieldDefinition[] = [
     label: 'Limited Edition',
     inputType: 'dropdown',
     requirement: 'recommended',
-    dropdownOptions: ['Yes', 'No'],
+    dropdownOptions: ['yes', 'no'],
+    displayLabels: { 'yes': 'Yes', 'no': 'No' },
   },
   {
     name: 'series',
@@ -1028,7 +1041,8 @@ export const MOVIES_BOX_SET_FIELDS: FieldDefinition[] = [
     label: 'Is Graded',
     inputType: 'dropdown',
     requirement: 'required',
-    dropdownOptions: ['Yes', 'No'],
+    dropdownOptions: ['yes', 'no'],
+    displayLabels: { 'yes': 'Yes', 'no': 'No' },
   },
   {
     name: 'gradingCompany',
@@ -1082,7 +1096,8 @@ export const MOVIES_BOX_SET_FIELDS: FieldDefinition[] = [
     label: 'Sealed',
     inputType: 'dropdown',
     requirement: 'recommended',
-    dropdownOptions: ['Yes', 'No'],
+    dropdownOptions: ['yes', 'no'],
+    displayLabels: { 'yes': 'Yes', 'no': 'No' },
   },
 ];
 
@@ -1138,7 +1153,8 @@ export const MOVIES_COLLECTION_LOT_FIELDS: FieldDefinition[] = [
     label: 'Sealed Items Included',
     inputType: 'dropdown',
     requirement: 'optional',
-    dropdownOptions: ['Yes', 'No'],
+    dropdownOptions: ['yes', 'no'],
+    displayLabels: { 'yes': 'Yes', 'no': 'No' },
   },
 ];
 
@@ -1218,14 +1234,16 @@ export const MOVIES_INDIVIDUAL_MOVIE_FIELDS: FieldDefinition[] = [
     label: 'Sealed',
     inputType: 'dropdown',
     requirement: 'recommended',
-    dropdownOptions: ['Yes', 'No'],
+    dropdownOptions: ['yes', 'no'],
+    displayLabels: { 'yes': 'Yes', 'no': 'No' },
   },
   {
     name: 'isGraded',
     label: 'Is Graded',
     inputType: 'dropdown',
     requirement: 'required',
-    dropdownOptions: ['Yes', 'No'],
+    dropdownOptions: ['yes', 'no'],
+    displayLabels: { 'yes': 'Yes', 'no': 'No' },
   },
   {
     name: 'gradingCompany',
@@ -1308,7 +1326,8 @@ export const POKEMON_COLLECTION_LOT_FIELDS: FieldDefinition[] = [
     label: 'Includes Graded Cards',
     inputType: 'dropdown',
     requirement: 'optional',
-    dropdownOptions: ['Yes', 'No'],
+    dropdownOptions: ['yes', 'no'],
+    displayLabels: { 'yes': 'Yes', 'no': 'No' },
   },
 ];
 
@@ -1371,7 +1390,8 @@ export const POKEMON_SET_FIELDS: FieldDefinition[] = [
     label: 'Complete',
     inputType: 'dropdown',
     requirement: 'required',
-    dropdownOptions: ['Yes', 'No'],
+    dropdownOptions: ['yes', 'no'],
+    displayLabels: { 'yes': 'Yes', 'no': 'No' },
   },
 
   {
@@ -1407,7 +1427,8 @@ export const POKEMON_SET_FIELDS: FieldDefinition[] = [
     label: 'Original Packaging',
     inputType: 'dropdown',
     requirement: 'optional',
-    dropdownOptions: ['Yes', 'No'],
+    dropdownOptions: ['yes', 'no'],
+    displayLabels: { 'yes': 'Yes', 'no': 'No' },
   },
 ];
 
@@ -1491,14 +1512,16 @@ export const POKEMON_UNOPENED_PRODUCT_FIELDS: FieldDefinition[] = [
     label: 'Factory Sealed',
     inputType: 'dropdown',
     requirement: 'required',
-    dropdownOptions: ['Yes', 'No'],
+    dropdownOptions: ['yes', 'no'],
+    displayLabels: { 'yes': 'Yes', 'no': 'No' },
   },
   {
     name: 'authenticated',
     label: 'Authenticated',
     inputType: 'dropdown',
     requirement: 'required',
-    dropdownOptions: ['Yes', 'No'],
+    dropdownOptions: ['yes', 'no'],
+    displayLabels: { 'yes': 'Yes', 'no': 'No' },
   },
   {
     name: 'authenticationCompany',
@@ -1515,7 +1538,8 @@ export const POKEMON_UNOPENED_PRODUCT_FIELDS: FieldDefinition[] = [
     label: 'From A Sealed Case',
     inputType: 'dropdown',
     requirement: 'required',
-    dropdownOptions: ['Yes', 'No'],
+    dropdownOptions: ['yes', 'no'],
+    displayLabels: { 'yes': 'Yes', 'no': 'No' },
     conditionalLogic: 'Authenticated = Yes',
   },
 ];
@@ -1594,7 +1618,8 @@ export const SPORTS_CARDS_COLLECTION_LOT_FIELDS: FieldDefinition[] = [
     label: 'Includes Graded Cards',
     inputType: 'dropdown',
     requirement: 'optional',
-    dropdownOptions: ['Yes', 'No'],
+    dropdownOptions: ['yes', 'no'],
+    displayLabels: { 'yes': 'Yes', 'no': 'No' },
   },
 ];
 
@@ -1679,7 +1704,8 @@ export const SPORTS_CARDS_SET_FIELDS: FieldDefinition[] = [
     label: 'Missing Cards',
     inputType: 'dropdown',
     requirement: 'required',
-    dropdownOptions: ['Yes', 'No'],
+    dropdownOptions: ['yes', 'no'],
+    displayLabels: { 'yes': 'Yes', 'no': 'No' },
     conditionalLogic: 'Set Type = Partial Set',
     gridColumn: 'half',
   },
@@ -1802,7 +1828,8 @@ export const SPORTS_CARDS_SINGLE_CARD_FIELDS: FieldDefinition[] = [
     label: 'Rookie Card',
     inputType: 'dropdown',
     requirement: 'recommended',
-    dropdownOptions: ['Yes', 'No'],
+    dropdownOptions: ['yes', 'no'],
+    displayLabels: { 'yes': 'Yes', 'no': 'No' },
     gridColumn: 'third',
   },
   {
@@ -1810,7 +1837,8 @@ export const SPORTS_CARDS_SINGLE_CARD_FIELDS: FieldDefinition[] = [
     label: 'Autograph',
     inputType: 'dropdown',
     requirement: 'recommended',
-    dropdownOptions: ['Yes', 'No'],
+    dropdownOptions: ['yes', 'no'],
+    displayLabels: { 'yes': 'Yes', 'no': 'No' },
     gridColumn: 'third',
   },
   {
@@ -1818,7 +1846,8 @@ export const SPORTS_CARDS_SINGLE_CARD_FIELDS: FieldDefinition[] = [
     label: 'Relic / Memorabilia',
     inputType: 'dropdown',
     requirement: 'recommended',
-    dropdownOptions: ['Yes', 'No'],
+    dropdownOptions: ['yes', 'no'],
+    displayLabels: { 'yes': 'Yes', 'no': 'No' },
     gridColumn: 'third',
   },
   {
@@ -1826,7 +1855,8 @@ export const SPORTS_CARDS_SINGLE_CARD_FIELDS: FieldDefinition[] = [
     label: 'Serial Numbered',
     inputType: 'dropdown',
     requirement: 'recommended',
-    dropdownOptions: ['Yes', 'No'],
+    dropdownOptions: ['yes', 'no'],
+    displayLabels: { 'yes': 'Yes', 'no': 'No' },
     gridColumn: 'third',
   },
   {
@@ -1841,7 +1871,8 @@ export const SPORTS_CARDS_SINGLE_CARD_FIELDS: FieldDefinition[] = [
     label: 'Is Graded',
     inputType: 'dropdown',
     requirement: 'required',
-    dropdownOptions: ['Yes', 'No'],
+    dropdownOptions: ['yes', 'no'],
+    displayLabels: { 'yes': 'Yes', 'no': 'No' },
     gridColumn: 'third',
   },
   {
@@ -1962,14 +1993,16 @@ export const SPORTS_CARDS_UNOPENED_PRODUCT_FIELDS: FieldDefinition[] = [
     label: 'Factory Sealed',
     inputType: 'dropdown',
     requirement: 'required',
-    dropdownOptions: ['Yes', 'No'],
+    dropdownOptions: ['yes', 'no'],
+    displayLabels: { 'yes': 'Yes', 'no': 'No' },
   },
   {
     name: 'authenticated',
     label: 'Authenticated',
     inputType: 'dropdown',
     requirement: 'required',
-    dropdownOptions: ['Yes', 'No'],
+    dropdownOptions: ['yes', 'no'],
+    displayLabels: { 'yes': 'Yes', 'no': 'No' },
   },
   {
     name: 'authenticationCompany',
@@ -1986,7 +2019,8 @@ export const SPORTS_CARDS_UNOPENED_PRODUCT_FIELDS: FieldDefinition[] = [
     label: 'From A Sealed Case',
     inputType: 'dropdown',
     requirement: 'required',
-    dropdownOptions: ['Yes', 'No'],
+    dropdownOptions: ['yes', 'no'],
+    displayLabels: { 'yes': 'Yes', 'no': 'No' },
     conditionalLogic: 'Authenticated = Yes',
   },
 ];
@@ -2043,7 +2077,8 @@ export const STAMPS_COLLECTION_LOT_FIELDS: FieldDefinition[] = [
     label: 'Album Included',
     inputType: 'dropdown',
     requirement: 'optional',
-    dropdownOptions: ['Yes', 'No'],
+    dropdownOptions: ['yes', 'no'],
+    displayLabels: { 'yes': 'Yes', 'no': 'No' },
   },
   {
     name: 'notableStamps',
@@ -2130,7 +2165,8 @@ export const STAMPS_SINGLE_STAMP_FIELDS: FieldDefinition[] = [
     label: 'Is Graded',
     inputType: 'dropdown',
     requirement: 'required',
-    dropdownOptions: ['Yes', 'No'],
+    dropdownOptions: ['yes', 'no'],
+    displayLabels: { 'yes': 'Yes', 'no': 'No' },
   },
   {
     name: 'gradingCompany',
@@ -2244,7 +2280,8 @@ export const STAMPS_STAMP_SET_SHEET_FIELDS: FieldDefinition[] = [
     label: 'Is Graded',
     inputType: 'dropdown',
     requirement: 'required',
-    dropdownOptions: ['Yes', 'No'],
+    dropdownOptions: ['yes', 'no'],
+    displayLabels: { 'yes': 'Yes', 'no': 'No' },
   },
   {
     name: 'gradingCompany',
@@ -2354,7 +2391,8 @@ export const VIDEO_GAMES_ACCESSORY_FIELDS: FieldDefinition[] = [
     label: 'Is Graded',
     inputType: 'dropdown',
     requirement: 'required',
-    dropdownOptions: ['Yes', 'No'],
+    dropdownOptions: ['yes', 'no'],
+    displayLabels: { 'yes': 'Yes', 'no': 'No' },
   },
   {
     name: 'gradingCompany',
@@ -2387,7 +2425,8 @@ export const VIDEO_GAMES_ACCESSORY_FIELDS: FieldDefinition[] = [
     label: 'Original Packaging',
     inputType: 'dropdown',
     requirement: 'recommended',
-    dropdownOptions: ['Yes', 'No'],
+    dropdownOptions: ['yes', 'no'],
+    displayLabels: { 'yes': 'Yes', 'no': 'No' },
   },
 ];
 
@@ -2436,7 +2475,8 @@ export const VIDEO_GAMES_COLLECTION_LOT_FIELDS: FieldDefinition[] = [
     label: 'Includes Graded Games',
     inputType: 'dropdown',
     requirement: 'optional',
-    dropdownOptions: ['Yes', 'No'],
+    dropdownOptions: ['yes', 'no'],
+    displayLabels: { 'yes': 'Yes', 'no': 'No' },
   },
 ];
 
@@ -2514,14 +2554,16 @@ export const VIDEO_GAMES_CONSOLE_FIELDS: FieldDefinition[] = [
     label: 'Original Box Included',
     inputType: 'dropdown',
     requirement: 'recommended',
-    dropdownOptions: ['Yes', 'No'],
+    dropdownOptions: ['yes', 'no'],
+    displayLabels: { 'yes': 'Yes', 'no': 'No' },
   },
   {
     name: 'cablesIncluded',
     label: 'Cables Included',
     inputType: 'dropdown',
     requirement: 'recommended',
-    dropdownOptions: ['Yes', 'No'],
+    dropdownOptions: ['yes', 'no'],
+    displayLabels: { 'yes': 'Yes', 'no': 'No' },
   },
   {
     name: 'controllersIncluded',
@@ -2534,7 +2576,8 @@ export const VIDEO_GAMES_CONSOLE_FIELDS: FieldDefinition[] = [
     label: 'Is Graded',
     inputType: 'dropdown',
     requirement: 'required',
-    dropdownOptions: ['Yes', 'No'],
+    dropdownOptions: ['yes', 'no'],
+    displayLabels: { 'yes': 'Yes', 'no': 'No' },
   },
   {
     name: 'gradingCompany',
@@ -2660,14 +2703,16 @@ export const VIDEO_GAMES_GAME_FIELDS: FieldDefinition[] = [
     label: 'Sealed',
     inputType: 'dropdown',
     requirement: 'recommended',
-    dropdownOptions: ['Yes', 'No'],
+    dropdownOptions: ['yes', 'no'],
+    displayLabels: { 'yes': 'Yes', 'no': 'No' },
   },
   {
     name: 'isGraded',
     label: 'Is Graded',
     inputType: 'dropdown',
     requirement: 'required',
-    dropdownOptions: ['Yes', 'No'],
+    dropdownOptions: ['yes', 'no'],
+    displayLabels: { 'yes': 'Yes', 'no': 'No' },
   },
   {
     name: 'gradingCompany',
@@ -2791,7 +2836,8 @@ export const VINTAGE_TOYS_ACTION_FIGURE_DOLL_FIELDS: FieldDefinition[] = [
     label: 'Is Graded',
     inputType: 'dropdown',
     requirement: 'required',
-    dropdownOptions: ['Yes', 'No'],
+    dropdownOptions: ['yes', 'no'],
+    displayLabels: { 'yes': 'Yes', 'no': 'No' },
   },
   {
     name: 'gradingCompany',
@@ -2906,7 +2952,8 @@ export const VINTAGE_TOYS_BOARD_GAME_PUZZLE_FIELDS: FieldDefinition[] = [
     label: 'Is Graded',
     inputType: 'dropdown',
     requirement: 'required',
-    dropdownOptions: ['Yes', 'No'],
+    dropdownOptions: ['yes', 'no'],
+    displayLabels: { 'yes': 'Yes', 'no': 'No' },
   },
   {
     name: 'gradingCompany',
@@ -2945,7 +2992,8 @@ export const VINTAGE_TOYS_BOARD_GAME_PUZZLE_FIELDS: FieldDefinition[] = [
     label: 'Box Included',
     inputType: 'dropdown',
     requirement: 'recommended',
-    dropdownOptions: ['Yes', 'No'],
+    dropdownOptions: ['yes', 'no'],
+    displayLabels: { 'yes': 'Yes', 'no': 'No' },
   },
 ];
 
@@ -3016,7 +3064,8 @@ export const VINTAGE_TOYS_COLLECTION_LOT_FIELDS: FieldDefinition[] = [
     label: 'Is Graded',
     inputType: 'dropdown',
     requirement: 'required',
-    dropdownOptions: ['Yes', 'No'],
+    dropdownOptions: ['yes', 'no'],
+    displayLabels: { 'yes': 'Yes', 'no': 'No' },
   },
   {
     name: 'gradingCompany',
@@ -3111,7 +3160,8 @@ export const VINTAGE_TOYS_ELECTRONIC_TOY_FIELDS: FieldDefinition[] = [
     label: 'Tested',
     inputType: 'dropdown',
     requirement: 'required',
-    dropdownOptions: ['Yes', 'No'],
+    dropdownOptions: ['yes', 'no'],
+    displayLabels: { 'yes': 'Yes', 'no': 'No' },
   },
   {
     name: 'workingCondition',
@@ -3146,7 +3196,8 @@ export const VINTAGE_TOYS_ELECTRONIC_TOY_FIELDS: FieldDefinition[] = [
     label: 'Is Graded',
     inputType: 'dropdown',
     requirement: 'required',
-    dropdownOptions: ['Yes', 'No'],
+    dropdownOptions: ['yes', 'no'],
+    displayLabels: { 'yes': 'Yes', 'no': 'No' },
   },
   {
     name: 'gradingCompany',
@@ -3255,14 +3306,16 @@ export const VINTAGE_TOYS_MODEL_KIT_FIELDS: FieldDefinition[] = [
     label: 'Instructions Included',
     inputType: 'dropdown',
     requirement: 'recommended',
-    dropdownOptions: ['Yes', 'No'],
+    dropdownOptions: ['yes', 'no'],
+    displayLabels: { 'yes': 'Yes', 'no': 'No' },
   },
   {
     name: 'isGraded',
     label: 'Is Graded',
     inputType: 'dropdown',
     requirement: 'required',
-    dropdownOptions: ['Yes', 'No'],
+    dropdownOptions: ['yes', 'no'],
+    displayLabels: { 'yes': 'Yes', 'no': 'No' },
   },
   {
     name: 'gradingCompany',
@@ -3377,7 +3430,8 @@ export const VINTAGE_TOYS_PLAYSET_FIELDS: FieldDefinition[] = [
     label: 'Is Graded',
     inputType: 'dropdown',
     requirement: 'required',
-    dropdownOptions: ['Yes', 'No'],
+    dropdownOptions: ['yes', 'no'],
+    displayLabels: { 'yes': 'Yes', 'no': 'No' },
   },
   {
     name: 'gradingCompany',
@@ -3498,7 +3552,8 @@ export const VINTAGE_TOYS_PLUSH_STUFFED_TOY_FIELDS: FieldDefinition[] = [
     label: 'Is Graded',
     inputType: 'dropdown',
     requirement: 'required',
-    dropdownOptions: ['Yes', 'No'],
+    dropdownOptions: ['yes', 'no'],
+    displayLabels: { 'yes': 'Yes', 'no': 'No' },
   },
   {
     name: 'gradingCompany',
@@ -3556,7 +3611,8 @@ export const VINTAGE_TOYS_VEHICLE_FIELDS: FieldDefinition[] = [
     label: 'Is Graded',
     inputType: 'dropdown',
     requirement: 'required',
-    dropdownOptions: ['Yes', 'No'],
+    dropdownOptions: ['yes', 'no'],
+    displayLabels: { 'yes': 'Yes', 'no': 'No' },
   },
   {
     name: 'gradingCompany',
@@ -3728,7 +3784,8 @@ export const COINS_PAPER_MONEY_BANKNOTES_FIELDS: FieldDefinition[] = [
     label: 'Is Graded',
     inputType: 'dropdown',
     requirement: 'required',
-    dropdownOptions: ['Yes', 'No'],
+    dropdownOptions: ['yes', 'no'],
+    displayLabels: { 'yes': 'Yes', 'no': 'No' },
   },
   {
     name: 'gradingCompany',
@@ -3856,7 +3913,8 @@ export const POKEMON_SINGLE_CARD_FIELDS: FieldDefinition[] = [
     label: 'Is Graded',
     inputType: 'dropdown',
     requirement: 'required',
-    dropdownOptions: ['Yes', 'No'],
+    dropdownOptions: ['yes', 'no'],
+    displayLabels: { 'yes': 'Yes', 'no': 'No' },
   },
   {
     name: 'gradingCompany',
@@ -3950,28 +4008,32 @@ export const DISNEY_PINS_INDIVIDUAL_PIN_FIELDS: FieldDefinition[] = [
     label: 'Limited Edition',
     inputType: 'dropdown',
     requirement: 'recommended',
-    dropdownOptions: ['Yes', 'No'],
+    dropdownOptions: ['yes', 'no'],
+    displayLabels: { 'yes': 'Yes', 'no': 'No' },
   },
   {
     name: 'openEdition',
     label: 'Open Edition',
     inputType: 'dropdown',
     requirement: 'recommended',
-    dropdownOptions: ['Yes', 'No'],
+    dropdownOptions: ['yes', 'no'],
+    displayLabels: { 'yes': 'Yes', 'no': 'No' },
   },
   {
     name: 'artistProof',
     label: 'Artist Proof (AP)',
     inputType: 'dropdown',
     requirement: 'recommended',
-    dropdownOptions: ['Yes', 'No'],
+    dropdownOptions: ['yes', 'no'],
+    displayLabels: { 'yes': 'Yes', 'no': 'No' },
   },
   {
     name: 'preProduction',
     label: 'Pre-Production (PP)',
     inputType: 'dropdown',
     requirement: 'recommended',
-    dropdownOptions: ['Yes', 'No'],
+    dropdownOptions: ['yes', 'no'],
+    displayLabels: { 'yes': 'Yes', 'no': 'No' },
   },
   {
     name: 'backstampInformation',
@@ -3985,7 +4047,8 @@ export const DISNEY_PINS_INDIVIDUAL_PIN_FIELDS: FieldDefinition[] = [
     label: 'Backer Card Included',
     inputType: 'dropdown',
     requirement: 'optional',
-    dropdownOptions: ['Yes', 'No'],
+    dropdownOptions: ['yes', 'no'],
+    displayLabels: { 'yes': 'Yes', 'no': 'No' },
   },
   {
     name: 'photos',
