@@ -88,6 +88,10 @@ export const CategoryItemTypeSelector: React.FC<CategoryItemTypeSelectorProps> =
   error,
 }) => {
   const [itemTypes, setItemTypes] = useState<string[]>([]);
+  
+  React.useEffect(() => {
+    console.log('[CategoryItemTypeSelector] Props updated:', { selectedCategory, selectedItemType, itemTypesCount: itemTypes.length });
+  }, [selectedCategory, selectedItemType, itemTypes]);
 
   // Update item types when category changes
   useEffect(() => {

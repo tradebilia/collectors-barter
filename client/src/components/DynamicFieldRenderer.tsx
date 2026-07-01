@@ -48,6 +48,11 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({
   hideLabel = false,
 }) => {
   const isRequired = field.requirement === 'required';
+  const [internalValue, setInternalValue] = React.useState(value || '');
+  
+  React.useEffect(() => {
+    setInternalValue(value || '');
+  }, [value]);
   const hasError = !!error;
   
   // Debug logging for country field
@@ -163,11 +168,13 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({
         // Standard dropdown for all fields
         console.log('[DEBUG] Rendering dropdown:', { fieldName: field.name, value, dropdownOptions: field.dropdownOptions?.length });
         return (
-          <Select value={value || ''} onValueChange={(newValue) => {
-            console.log('[DEBUG] Dropdown onChange:', { fieldName: field.name, newValue, oldValue: value });
-            if (newValue === '' && value !== '') {
-              console.log('[DEBUG] WARNING: Value being cleared!', { fieldName: field.name, stack: new Error().stack });
+          <Select value={internalValue} onValueChange={(newValue) => {
+            console.log('[DEBUG] Dropdown onChange:', { fieldName: field.name, newValue, oldValue: internalValue });
+            if (newValue === '' && internalValue !== '') {
+              console.log('[DEBUG] WARNING: Value being cleared - IGNORING!', { fieldName: field.name });
+              return;
             }
+            setInternalValue(newValue);
             if (field.name === 'condition') {
               console.log('Condition dropdown onChange:', { newValue, fieldName: field.name, displayLabel: field.displayLabels?.[newValue] });
             }
