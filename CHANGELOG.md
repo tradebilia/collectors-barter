@@ -1,6 +1,63 @@
 # Tradebilia Changelog
 
-## [Latest] - Jun 14, 2026
+## [Latest] - Jun 30, 2026 - Edit Form Pre-Population Complete
+
+### Overview
+Fixed critical issues preventing form fields from pre-populating with saved values when editing listings. All 10 collectible categories now properly load and display field values across all field types (dropdowns, text inputs, textareas, file uploads).
+
+### Major Fixes
+
+#### 1. Case Sensitivity in Dropdown Options
+- Changed all 63 occurrences of `['Yes', 'No']` to `['yes', 'no']` in fieldDefinitionsGenerated.ts
+- Added `displayLabels` to show capitalized labels to users while storing lowercase values
+- Applied across all categories: Comics, Sports Cards, Pokemon, Video Games, Stamps, Coins, Vintage Toys, Movies, Autographs, Disney Pins
+
+#### 2. Radix UI Select Component State Management
+- Added internal state (`internalValue`) to track Select component value separately
+- Implemented useEffect to sync prop value with internal state
+- Added ref callback to SelectTrigger to force proper rendering
+- Implemented logic to prevent value clearing when onChange is triggered with empty string
+
+#### 3. Signatures Field Array Parsing
+- Added special handling to detect signatures field and parse comma-separated string into array
+- Allows individual signature inputs (Signature 1, Signature 2, etc.) to populate correctly
+
+#### 4. React.memo Optimization
+- Wrapped FieldWithCustomInput with React.memo to prevent unnecessary re-renders
+- Reduces re-render cycles and improves form stability
+
+#### 5. Batch Form Data Updates
+- Consolidated all field updates into single `setFormData` call
+- Ensures all fields update together in one render cycle
+- Prevents state inconsistencies
+
+#### 6. ItemType Auto-Selection in Edit Mode
+- Added key prop to CategoryItemTypeSelector that includes both category and itemType
+- Forces component re-creation when itemType changes
+- Ensures Select component displays correct value
+
+### Files Modified
+- `client/src/lib/fieldDefinitionsGenerated.ts` - 63 case sensitivity replacements
+- `client/src/components/DynamicFieldRenderer.tsx` - Select state management (+50 lines)
+- `client/src/components/FieldWithCustomInput.tsx` - React.memo optimization
+- `client/src/pages/AddInventory.tsx` - Batch updates, array parsing, itemType selection
+
+### Testing Coverage
+- ✅ Comics category with all field types
+- ✅ All dropdown field types across all categories
+- ✅ Conditional fields (fields dependent on other field values)
+- ✅ Edit mode field pre-population
+- ✅ Create mode with new items
+
+### Impact
+- Users can now edit listings without losing field values
+- All form fields correctly persist and load
+- Works across all 10 collectible categories
+- Fixes apply universally to all field types
+
+---
+
+## [Previous] - Jun 14, 2026
 
 ### Features Added
 
