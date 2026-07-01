@@ -145,14 +145,30 @@ export default function AddInventory() {
       if (itemType) {
         setItemType(itemType);
       }
-      updateField("title", listing.title);
-      updateField("estimatedValue", String(listing.estimatedValue || ""));
-      updateField("description", listing.description);
+    }
+  }, [isEditMode, isDraftMode, getListingDetailQuery.data, setCategory, setItemType]);
 
-      // Load item details
+  // Separate effect to load fields after category and itemType are set
+  useEffect(() => {
+    if (isEditMode && !isDraftMode && getListingDetailQuery.data?.listing && formData.category && formData.itemType) {
+      const listing = getListingDetailQuery.data.listing;
+      
+      // Load all basic fields
+      updateField("listingTitle", listing.title);
+      updateField("tradeValue", String(listing.estimatedValue || ""));
+      updateField("description", listing.description);
+      updateField("condition", listing.condition || "");
+      updateField("grade", listing.grade || "");
+      updateField("certificationCompany", listing.certificationCompany || "");
+      updateField("certificationNumber", (listing.itemDetails?.certificationNumber) || "");
+      updateField("shipping", (listing.itemDetails?.shipping) || "");
+
+      // Load item details (skip fields we've already loaded)
       if (listing.itemDetails && typeof listing.itemDetails === "object") {
         Object.entries(listing.itemDetails).forEach(([key, value]) => {
-          updateField(key, String(value || ""));
+          if (key !== "certificationNumber" && key !== "shipping" && key !== "title" && key !== "estimatedValue") {
+            updateField(key, String(value || ""));
+          }
         });
       }
 
@@ -167,7 +183,7 @@ export default function AddInventory() {
         setPhotos(existingPhotos);
       }
     }
-  }, [isEditMode, getListingDetailQuery.data]);
+  }, [isEditMode, isDraftMode, getListingDetailQuery.data, formData.category, formData.itemType, updateField, setPhotos]);
 
   const handlePhotos = async (event: ChangeEvent<HTMLInputElement>) => {
     const nextPhotos = await readFiles(event.target.files);
