@@ -308,18 +308,18 @@ export default function ItemDetail() {
                 </div>
                 <h1 className="mt-6 text-5xl font-semibold leading-[1.05] tracking-tight text-gray-900">{listing.title}</h1>
                 <div className="mt-6 grid gap-4 text-lg text-gray-700 sm:grid-cols-2">
-                  <div>
-                    <p className="text-sm uppercase tracking-[0.25em] text-gray-500">Condition</p>
-                    <p className="mt-2 font-medium text-gray-900">{getConditionDisplayName(listing.condition)}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm uppercase tracking-[0.25em] text-gray-500">Listing status</p>
-                    <p className="mt-2 font-medium capitalize text-gray-900">{listing.status}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm uppercase tracking-[0.25em] text-gray-500">Saved by you</p>
-                    <p className="mt-2 font-medium text-gray-900">{listing.savedToWatchlist ? "On your Watchlist" : "Not yet saved"}</p>
-                  </div>
+                  {listing.grade && listing.grade !== '0' && (
+                    <div>
+                      <p className="text-sm uppercase tracking-[0.25em] text-gray-500">Grade</p>
+                      <p className="mt-2 font-medium text-gray-900">{listing.grade}</p>
+                    </div>
+                  )}
+                  {listing.certificationCompany && (
+                    <div>
+                      <p className="text-sm uppercase tracking-[0.25em] text-gray-500">Grading Company</p>
+                      <p className="mt-2 font-medium text-gray-900">{listing.certificationCompany}</p>
+                    </div>
+                  )}
                   <div>
                     <p className="text-sm uppercase tracking-[0.25em] text-gray-500">Listed</p>
                     <p className="mt-2 font-medium text-gray-900">{new Date(listing.createdAt).toLocaleDateString()}</p>
