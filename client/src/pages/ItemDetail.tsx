@@ -83,6 +83,13 @@ const getConditionDisplayName = (condition: string): string => {
   return conditionMap[condition?.toLowerCase()] || condition;
 };
 
+const formatFieldName = (fieldName: string): string => {
+  return fieldName
+    .replace(/([A-Z])/g, ' $1')
+    .replace(/^./, str => str.toUpperCase())
+    .trim();
+};
+
 const getCategoryWallpaperUrl = (category: string): string => {
   switch(category) {
     case 'sports_cards':
@@ -411,15 +418,49 @@ export default function ItemDetail() {
                   )}
                   
                   {/* Category-specific fields from itemDetails */}
+                  
+                  {/* Certification Number */}
+                  {listing.certificationNumber && (
+                    <div className="rounded-[1.5rem] border border-gray-200 bg-gray-50 p-5">
+                      <p className="text-sm uppercase tracking-[0.2em] text-gray-500">Certification Number</p>
+                      <p className="mt-3 text-xl font-medium text-gray-900">{listing.certificationNumber}</p>
+                    </div>
+                  )}
+                  
+                  {/* Item Type */}
+                  {listing.itemType && (
+                    <div className="rounded-[1.5rem] border border-gray-200 bg-gray-50 p-5">
+                      <p className="text-sm uppercase tracking-[0.2em] text-gray-500">Item Type</p>
+                      <p className="mt-3 text-xl font-medium text-gray-900">{listing.itemType.replace(/_/g, ' ').split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}</p>
+                    </div>
+                  )}
+                  
+                  {/* Signatures */}
+                  {listing.signatures && listing.signatures.length > 0 && (
+                    <div className="rounded-[1.5rem] border border-gray-200 bg-gray-50 p-5">
+                      <p className="text-sm uppercase tracking-[0.2em] text-gray-500">Signatures</p>
+                      <p className="mt-3 text-xl font-medium text-gray-900">{listing.signatures.join(', ')}</p>
+                    </div>
+                  )}
+                  
+                  {/* Category-specific fields from itemDetails */}
                   {listing.itemDetails && Object.entries(listing.itemDetails).map(([key, value]) => (
                     <div key={key} className="rounded-[1.5rem] border border-gray-200 bg-gray-50 p-5">
-                      <p className="text-sm uppercase tracking-[0.2em] text-gray-500">{key}</p>
+                      <p className="text-sm uppercase tracking-[0.2em] text-gray-500">{formatFieldName(key)}</p>
                       <p className="mt-3 text-xl font-medium text-gray-900">{String(value)}</p>
                     </div>
                   ))}
                 </div>
               </div>
             </div>
+
+            {/* Description Section */}
+            {listing.description && (
+              <div className="rounded-[2rem] border border-gray-200 bg-white p-8 shadow-[0_40px_90px_rgba(0,0,0,0.08)]">
+                <p className="text-sm uppercase tracking-[0.3em] text-gray-500">Description</p>
+                <p className="mt-5 max-w-4xl text-lg leading-8 text-gray-700 whitespace-pre-wrap">{listing.description}</p>
+              </div>
+            )}
 
             {/* Section 4: Additional Information */}
             {listing.itemDetails?.additional_notes && (

@@ -3181,3 +3181,15 @@ Testing creation of new listings for all 10 item types to verify grade field fix
 - [ ] Movies / Single Item - Create new listing
 - [ ] Autographs / Single Item - Create new listing
 - [ ] Disney Pins / Single Pin - Create new listing
+
+
+## Item Detail Page Improvements (July 2, 2026)
+
+- [x] Fixed field name formatting for category-specific details (camelCase to Title Case)
+- [x] Updated quick view section to show Grade + Grading Company for graded items
+- [x] Updated quick view section to show Condition for ungraded items
+- [x] Removed "Listing status" field from quick view (redundant for active listings)
+- [x] Removed "Saved by you" field from quick view (watchlist button available in actions)
+- [x] Added missing fields to Details section: Certification Number, Item Type, Signatures, Description
+- [x] Moved Description to its own dedicated full-width section for better readability
+- [x] Added formatFieldName function to properly display category-specific field names
