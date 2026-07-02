@@ -322,7 +322,7 @@ export default function CategoryPage() {
   const [series, setSeries] = useState("");
   const [sport, setSport] = useState<string | undefined>(undefined);
   const [gradingService, setGradingService] = useState<string | undefined>(undefined);
-  const [grade, setGrade] = useState<number | undefined>(undefined);
+  const [grade, setGrade] = useState<string | undefined>(undefined);
   const [valueMin, setValueMin] = useState<number | undefined>(undefined);
   const [valueMax, setValueMax] = useState<number | undefined>(undefined);
   const [rookie, setRookie] = useState<string | undefined>(undefined);
@@ -334,7 +334,7 @@ export default function CategoryPage() {
   // Submitted filters state (only updates when user submits search)
   const [submittedFilters, setSubmittedFilters] = useState({
     keyword: "",
-    condition: undefined as any,
+    condition: undefined as 'mint' | 'near_mint' | 'very_good' | 'good' | 'fair' | 'poor' | undefined,
     issueNumber: undefined as string | undefined,
     manufacturer: undefined as string | undefined,
     year: undefined as string | undefined,
@@ -820,7 +820,7 @@ export default function CategoryPage() {
                     <Input 
                       placeholder={filter.placeholder} 
                       value={grade || ""}
-                      onChange={(e) => setGrade(e.target.value ? parseFloat(e.target.value) : undefined)}
+                      onChange={(e) => setGrade(e.target.value || undefined)}
                       className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black`} 
                       type="number" 
                       step="0.1"

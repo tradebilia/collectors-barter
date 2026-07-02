@@ -636,9 +636,11 @@ export async function getListingDetail(listingId: number, viewerId: number | nul
     condition: detailCard[0].condition,
     grade: detailCard[0].grade,
     certificationCompany: detailCard[0].certificationCompany,
+    certificationNumber: detailCard[0].certificationNumber,
     estimatedValue: detailCard[0].estimatedValue ? Number(detailCard[0].estimatedValue) : null,
     description: detailCard[0].description,
     itemDetails: detailCard[0].itemDetails ? JSON.parse(detailCard[0].itemDetails) : null,
+    signatures: detailCard[0].signatures ? JSON.parse(detailCard[0].signatures) : null,
     status: detailCard[0].status,
     featured: detailCard[0].featured,
     isActive: detailCard[0].isActive,
@@ -1198,7 +1200,7 @@ export async function saveDraft(
     grade: String(input.grade || 'ungraded'),
     graderCompany: input.graderCompany || null,
     certificationNumber: input.certificationNumber || null,
-    estimatedValue: input.estimatedValue ? parseFloat(String(input.estimatedValue)) : null,
+    estimatedValue: input.estimatedValue ? String(parseFloat(String(input.estimatedValue))) : null,
   });
   const draftId = getInsertId(insertResult);
 
@@ -2763,7 +2765,7 @@ export async function getUnsentReferrals() {
   const requests = await db
     .select()
     .from(referralRequests)
-    .where(and(eq(referralRequests.emailSent, false), eq(referralRequests.hasJoined, false)))
+    .where(and(eq(referralRequests.emailSent, 0), eq(referralRequests.hasJoined, 0)))
     .orderBy(asc(referralRequests.createdAt));
   return requests;
 }
