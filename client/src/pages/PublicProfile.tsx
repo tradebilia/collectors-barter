@@ -12,7 +12,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { useParams } from "wouter";
 import { Link } from "wouter";
 
-const TRADEBILIA_LOGO_URL = "/manus-storage/tradebilia-logo_c676d640.svg";
+const TRADEBILIA_LOGO_URL = "/images/tradebilia-logo_c676d640.svg";
 
 
 
@@ -67,7 +67,7 @@ export default function PublicProfile() {
 
       {/* Hero Section */}
       <section className="relative z-0 w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden text-white" style={{
-        backgroundImage: 'url(/manus-storage/Mainpage_9b45311d.jpg)',
+        backgroundImage: 'url(/images/Mainpage_9b45311d.jpg)',
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat'
@@ -75,7 +75,7 @@ export default function PublicProfile() {
         <div className="container relative flex h-64 items-center justify-center py-0 sm:h-72 sm:py-0 lg:h-80 lg:py-0">
           <div className="flex w-full max-w-6xl items-center justify-center -ml-32">
             <img
-              src="/manus-storage/Profile_60641144.svg"
+              src="/images/Profile_60641144.svg"
               alt="Profile"
               className="h-auto w-full"
             />

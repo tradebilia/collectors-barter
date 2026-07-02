@@ -8,7 +8,7 @@ interface RankingPageHeroProps {
 export function RankingPageHero({ title, subtitle = "Collectors Trading Exchange" }: RankingPageHeroProps) {
   return (
     <section className="relative z-0 w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden text-white" style={{
-      backgroundImage: 'url(/manus-storage/Mainpage_9b45311d.jpg)',
+      backgroundImage: 'url(/images/Mainpage_9b45311d.jpg)',
       backgroundSize: 'cover',
       backgroundPosition: 'center',
       backgroundRepeat: 'no-repeat'

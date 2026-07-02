@@ -15,7 +15,7 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Link } from "wouter";
 
-const TRADEBILIA_LOGO_URL = "/manus-storage/tradebilia-logo_c676d640.svg";
+const TRADEBILIA_LOGO_URL = "/images/tradebilia-logo_c676d640.svg";
 
 export default function Watchlist() {
   const { isAuthenticated, loading, user } = useAuth();
@@ -53,14 +53,14 @@ export default function Watchlist() {
       />
 
       <section className="border-b border-white/10 bg-[#00143A]" style={{
-        backgroundImage: 'url(/manus-storage/Mainpage_9b45311d.jpg)',
+        backgroundImage: 'url(/images/Mainpage_9b45311d.jpg)',
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat'
       }}>
         <div className="container relative flex h-64 items-center justify-center py-0 sm:h-72 sm:py-0 lg:h-80 lg:py-0">
           <div className="flex w-full max-w-6xl items-center justify-center -ml-32">
-            <img src="/manus-storage/Watchlist_d3646db6.svg" alt="Watchlist" className="h-auto w-full" />
+            <img src="/images/Watchlist_d3646db6.svg" alt="Watchlist" className="h-auto w-full" />
           </div>
         </div>
       </section>

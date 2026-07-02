@@ -28,7 +28,7 @@ import { toast } from "sonner";
 import { Link } from "wouter";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
-const TRADEBILIA_LOGO_URL = "/manus-storage/tradebilia-logo_c676d640.svg";
+const TRADEBILIA_LOGO_URL = "/images/tradebilia-logo_c676d640.svg";
 
 const categoryLinks = [
   { value: "comics", label: "Comics" },
@@ -389,7 +389,7 @@ export default function Inventory() {
       <div className="border-b border-white/10 bg-black">
         <div className="flex items-center justify-between gap-4 pl-2 pr-4 py-3">
           <div className="flex-shrink-0">
-            <img src="/manus-storage/tradebilia-logo_c676d640.svg" alt="Tradebilia" className="h-14 w-auto object-contain" />
+            <img src="/images/tradebilia-logo_c676d640.svg" alt="Tradebilia" className="h-14 w-auto object-contain" />
           </div>
           <div className="flex-1"></div>
           <TopRightIcons className="flex items-center gap-3 md:gap-4 flex-shrink-0" iconColor="text-white/70" />
@@ -398,14 +398,14 @@ export default function Inventory() {
 
       <section className="relative w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden bg-[#00143A] text-white">
         <div className="absolute inset-0" style={{
-          backgroundImage: 'url(/manus-storage/Mainpage_9b45311d.jpg)',
+          backgroundImage: 'url(/images/Mainpage_9b45311d.jpg)',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat'
         }} />
         <div className="relative flex w-full h-48 items-center justify-start py-0 sm:h-56 lg:h-64 overflow-hidden pl-8 lg:pl-16" style={{ maxHeight: '300px' }}>
           <img
-            src="/manus-storage/Myinventory_467a8c30_67884c88.svg"
+            src="/images/Myinventory_467a8c30_67884c88.svg"
             alt="My Inventory"
             style={{ height: '800px', width: '800px', objectFit: 'contain', maxWidth: '100%', marginLeft: '400px' }}
           />
