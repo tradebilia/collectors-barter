@@ -3163,24 +3163,24 @@ All 8 remaining filter optimization and caching items have been successfully imp
 ## Testing Status
 
 - [x] Comics / Single Comic - Working
-- [ ] Coins / Collection / Lot - Needs verification after grade fix
-- [ ] All other item types - Need comprehensive testing with grade fix
+- [x] Coins / Collection / Lot - Needs verification after grade fix
+- [x] All other item types - Need comprehensive testing with grade fix
 
 
 ## Comprehensive Item Type Testing (July 1, 2026)
 
 Testing creation of new listings for all 10 item types to verify grade field fix works universally:
 
-- [ ] Comics / Single Comic - Create new listing
-- [ ] Sports Cards / Single Card - Create new listing
-- [ ] Vintage Toys / Single Item - Create new listing
-- [ ] Video Games / Single Game - Create new listing
-- [ ] Stamps / Single Stamp - Create new listing
-- [ ] Coins / Collection / Lot - Create new listing (✅ Already verified working)
-- [ ] Pokemon / Single Card - Create new listing
-- [ ] Movies / Single Item - Create new listing
-- [ ] Autographs / Single Item - Create new listing
-- [ ] Disney Pins / Single Pin - Create new listing
+- [x] Comics / Single Comic - Create new listing
+- [x] Sports Cards / Single Card - Create new listing
+- [x] Vintage Toys / Single Item - Create new listing
+- [x] Video Games / Single Game - Create new listing
+- [x] Stamps / Single Stamp - Create new listing
+- [x] Coins / Collection / Lot - Create new listing (✅ Already verified working)
+- [x] Pokemon / Single Card - Create new listing
+- [x] Movies / Single Item - Create new listing
+- [x] Autographs / Single Item - Create new listing
+- [x] Disney Pins / Single Pin - Create new listing
 
 
 ## Item Detail Page Improvements (July 2, 2026)
