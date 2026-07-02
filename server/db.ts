@@ -1195,7 +1195,7 @@ export async function saveDraft(
     userId: user.id,
     title: input.title.trim(),
     category: input.category,
-    grade: input.grade || 'ungraded',
+    grade: String(input.grade || 'ungraded'),
     graderCompany: input.graderCompany || null,
     certificationNumber: input.certificationNumber || null,
     estimatedValue: input.estimatedValue ? parseFloat(String(input.estimatedValue)) : null,
@@ -1389,7 +1389,7 @@ export async function updateDraft(
       grade: String(input.grade || 'ungraded'),
       graderCompany: input.graderCompany || null,
       certificationNumber: input.certificationNumber || null,
-      estimatedValue: input.estimatedValue ? parseFloat(String(input.estimatedValue)) : null,
+      estimatedValue: input.estimatedValue ? String(parseFloat(String(input.estimatedValue))) : null,
       categoryFields: input.categoryFields ? JSON.stringify(input.categoryFields) : null,
       additionalNotes: input.additionalNotes || null,
       updatedAt: new Date(),
@@ -1767,11 +1767,11 @@ export async function createListing(
     itemType: input.itemType,
     condition: input.condition,
     description: input.description.trim(),
-    estimatedValue: input.estimatedValue ? parseFloat(String(input.estimatedValue)) : null,
+    estimatedValue: input.estimatedValue ? String(parseFloat(String(input.estimatedValue))) : null,
     itemDetails: input.itemDetails ? JSON.stringify(input.itemDetails) : null,
     certificationCompany: input.certificationCompany || undefined,
     certificationNumber: input.certificationNumber || undefined,
-    grade: input.grade && input.grade !== 'ungraded' && input.grade.trim() ? parseFloat(input.grade) : 0,
+    grade: input.grade && input.grade !== 'ungraded' && input.grade.trim() ? String(input.grade) : '0',
     featured: 0,
   });
   const listingId = getInsertId(insertResult);
@@ -1829,11 +1829,11 @@ export async function updateListing(
       category: input.category,
       condition: input.condition,
       description: input.description.trim(),
-      estimatedValue: input.estimatedValue ? parseFloat(String(input.estimatedValue)) : null,
+      estimatedValue: input.estimatedValue ? String(parseFloat(String(input.estimatedValue))) : null,
       itemDetails: input.itemDetails ? JSON.stringify(input.itemDetails) : null,
       certificationCompany: input.certificationCompany || null,
       certificationNumber: input.certificationNumber || null,
-      grade: input.grade && input.grade !== 'ungraded' && input.grade.trim() ? parseFloat(input.grade) : 0,
+      grade: input.grade && input.grade !== 'ungraded' && input.grade.trim() ? String(input.grade) : '0',
     })
     .where(eq(listings.id, input.listingId));
 
