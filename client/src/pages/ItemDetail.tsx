@@ -320,6 +320,12 @@ export default function ItemDetail() {
                       <p className="mt-2 font-medium text-gray-900">{listing.certificationCompany}</p>
                     </div>
                   )}
+                  {listing.estimatedValue && (
+                    <div>
+                      <p className="text-sm uppercase tracking-[0.25em] text-gray-500">Estimated Value</p>
+                      <p className="mt-2 font-medium text-gray-900">${listing.estimatedValue.toFixed(2)}</p>
+                    </div>
+                  )}
                   <div>
                     <p className="text-sm uppercase tracking-[0.25em] text-gray-500">Listed</p>
                     <p className="mt-2 font-medium text-gray-900">{new Date(listing.createdAt).toLocaleDateString()}</p>
