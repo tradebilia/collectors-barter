@@ -532,9 +532,11 @@ export async function getListingDetail(listingId: number, viewerId: number | nul
       condition: listings.condition,
       grade: listings.grade,
       certificationCompany: listings.certificationCompany,
+      certificationNumber: listings.certificationNumber,
       estimatedValue: listings.estimatedValue,
       description: listings.description,
       itemDetails: listings.itemDetails,
+      signatures: listings.signatures,
       status: listings.status,
       featured: listings.featured,
       isActive: listings.isActive,
@@ -568,8 +570,10 @@ export async function getListingDetail(listingId: number, viewerId: number | nul
       condition: listings.condition,
       grade: listings.grade,
       certificationCompany: listings.certificationCompany,
+      certificationNumber: listings.certificationNumber,
       estimatedValue: listings.estimatedValue,
       description: listings.description,
+      signatures: listings.signatures,
       status: listings.status,
       featured: listings.featured,
       isActive: listings.isActive,
@@ -784,7 +788,7 @@ export async function respondToTradeProposal(
     .update(tradeProposals)
     .set({
       status: newStatus,
-      respondedAt: new Date().toISOString(),
+      respondedAt: new Date(),
     })
     .where(eq(tradeProposals.id, input.proposalId));
 
@@ -1388,7 +1392,7 @@ export async function updateDraft(
       estimatedValue: input.estimatedValue ? parseFloat(String(input.estimatedValue)) : null,
       categoryFields: input.categoryFields ? JSON.stringify(input.categoryFields) : null,
       additionalNotes: input.additionalNotes || null,
-      updatedAt: new Date().toISOString(),
+      updatedAt: new Date(),
     })
     .where(eq(draftListings.id, input.draftId));
 
@@ -1885,7 +1889,7 @@ export async function upsertUser(input: {
         name: input.name,
         email: input.email,
         loginMethod: input.loginMethod,
-        lastSignedIn: typeof input.lastSignedIn === 'string' ? input.lastSignedIn : input.lastSignedIn?.toISOString(),
+        lastSignedIn: typeof input.lastSignedIn === 'string' ? new Date(input.lastSignedIn) : input.lastSignedIn || new Date(),
       })
       .where(eq(users.openId, input.openId));
 
@@ -2290,7 +2294,7 @@ export async function updateReportStatus(input: {
     .set({
       status: input.status,
       adminNotes: input.adminNotes,
-      reviewedAt: new Date().toISOString(),
+      reviewedAt: new Date(),
       reviewedBy: input.reviewedBy,
     })
     .where(eq(userReports.reportId, input.reportId));
@@ -2318,7 +2322,7 @@ export async function updateUserEbayInfo(input: {
       ebayFeedbackScore: input.ebayFeedbackScore,
       ebayFeedbackPercentage: input.ebayFeedbackPercentage.toString(),
       ebayMemberSince: input.ebayMemberSince,
-      ebayConnectedAt: new Date().toISOString(),
+      ebayConnectedAt: new Date(),
       ebayAccessToken: input.ebayAccessToken,
       ebayRefreshToken: input.ebayRefreshToken,
       ebayTokenExpiresAt: input.ebayTokenExpiresAt,
@@ -2482,7 +2486,7 @@ export async function sendItemInquiry(
     recipientId: input.recipientId,
     subject: input.subject.trim(),
     message: input.message.trim(),
-    isRead: false,
+    isRead: 0,
     createdAt: new Date(),
   });
   
@@ -2498,7 +2502,7 @@ export async function getUnreadInquiries(userId: number) {
     .where(
       and(
         eq(itemInquiries.recipientId, userId),
-        eq(itemInquiries.isRead, false)
+        eq(itemInquiries.isRead, 0)
       )
     )
     .orderBy(desc(itemInquiries.createdAt));
@@ -2641,7 +2645,7 @@ export async function deleteInquiry(inquiryId: number, userId: number) {
   
   await db
     .update(itemInquiries)
-    .set({ deletedAt: new Date().toISOString() })
+    .set({ deletedAt: new Date() })
     .where(eq(itemInquiries.id, inquiryId));
 }
 
@@ -2709,7 +2713,10 @@ export async function createReferralRequest(data: {
     return existingRequest[0];
   }
   
-  const result = await db.insert(referralRequests).values(data);
+  const result = await db.insert(referralRequests).values({
+    ...data,
+    isMerchant: data.isMerchant ? 1 : 0,
+  });
   return result;
 }
 
@@ -2745,7 +2752,7 @@ export async function updateReferralRequestStatus(id: number, status: string, ad
       status: status as any,
       adminNotes,
       reviewedBy,
-      reviewedAt: new Date().toISOString(),
+      reviewedAt: new Date(),
     })
     .where(eq(referralRequests.id, id));
 }
@@ -2768,7 +2775,7 @@ export async function markReferralsAsEmailed(ids: number[]) {
     .update(referralRequests)
     .set({
       emailSent: 1,
-      emailSentAt: new Date().toISOString(),
+      emailSentAt: new Date(),
     })
     .where(inArray(referralRequests.id, ids));
 }
@@ -2779,7 +2786,7 @@ export async function markReferralAsJoined(id: number, userId: number) {
     .update(referralRequests)
     .set({
       hasJoined: 1,
-      joinedAt: new Date().toISOString(),
+      joinedAt: new Date(),
       joinedUserId: userId,
     })
     .where(eq(referralRequests.id, id));

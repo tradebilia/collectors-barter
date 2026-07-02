@@ -334,7 +334,7 @@ export default function AddInventory() {
         const newPhotos = reorderedPhotos.filter(p => p.contentBase64);
         if (formData.category) {
           // Only include condition if it should be shown (not hidden by isGraded = Yes)
-          const conditionField = currentFields.find(f => f.id === 'condition');
+          const conditionField = currentFields.find(f => f.name === 'condition');
           const shouldIncludeCondition = conditionField ? shouldShowField(conditionField) : true;
           
           await updateListingMutation.mutateAsync({
@@ -374,7 +374,7 @@ export default function AddInventory() {
         const conditionEnum = formData.condition || "mint"; // formData.condition is already an enum value
         
         // Only include condition if it should be shown (not hidden by isGraded = Yes)
-        const conditionField = currentFields.find(f => f.id === 'condition');
+        const conditionField = currentFields.find(f => f.name === 'condition');
         const shouldIncludeCondition = conditionField ? shouldShowField(conditionField) : true;
         
         await createListingMutation.mutateAsync({

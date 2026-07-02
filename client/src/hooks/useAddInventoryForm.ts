@@ -25,6 +25,7 @@ interface FormData {
 
 interface UseAddInventoryFormReturn {
   formData: FormData;
+  setFormData: (data: FormData | ((prev: FormData) => FormData)) => void;
   errors: FormErrors;
   currentFields: FieldDefinition[];
   updateField: (fieldName: string, value: any) => void;

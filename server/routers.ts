@@ -263,7 +263,7 @@ export const appRouter = router({
       // Clear lastActivityAt to mark user as offline (set to a very old date)
       if (ctx.user?.id) {
         // Use a date far in the past (year 1970) to ensure user is marked as offline
-        const offlineTime = '1970-01-02T00:00:00Z';
+        const offlineTime = new Date('1970-01-02T00:00:00Z');
         await db.update(users).set({ lastActivityAt: offlineTime }).where(eq(users.id, ctx.user.id));
       }
       
@@ -1244,9 +1244,9 @@ export const appRouter = router({
         firstName: string | null;
         lastName: string | null;
         email: string | null;
-        role: string;
-        createdAt: string;
-        lastActivityAt: string;
+        role: "user" | "admin";
+        createdAt: Date;
+        lastActivityAt: Date;
         contactFullName: string | null;
         contactEmail: string | null;
         contactPhone: string | null;
@@ -1603,7 +1603,7 @@ export const appRouter = router({
       const db = await requireDb();
       // Only update lastActivityAt if user is authenticated
       if (ctx.user?.id) {
-        await db.update(users).set({ lastActivityAt: new Date().toISOString() }).where(eq(users.id, ctx.user.id));
+        await db.update(users).set({ lastActivityAt: new Date() }).where(eq(users.id, ctx.user.id));
       }
       return { success: true };
     }),

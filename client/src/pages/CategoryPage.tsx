@@ -322,7 +322,7 @@ export default function CategoryPage() {
   const [series, setSeries] = useState("");
   const [sport, setSport] = useState<string | undefined>(undefined);
   const [gradingService, setGradingService] = useState<string | undefined>(undefined);
-  const [grade, setGrade] = useState<string | undefined>(undefined);
+  const [grade, setGrade] = useState<number | undefined>(undefined);
   const [valueMin, setValueMin] = useState<number | undefined>(undefined);
   const [valueMax, setValueMax] = useState<number | undefined>(undefined);
   const [rookie, setRookie] = useState<string | undefined>(undefined);
