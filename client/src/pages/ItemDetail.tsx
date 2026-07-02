@@ -404,7 +404,7 @@ export default function ItemDetail() {
                   {/* Section 2: Grading Company */}
                   {listing.certificationCompany && (
                     <div className="rounded-[1.5rem] border border-gray-200 bg-gray-50 p-5">
-                      <p className="text-sm uppercase tracking-[0.2em] text-gray-500">2. Grading Company</p>
+                      <p className="text-sm uppercase tracking-[0.2em] text-gray-500">Grading Company</p>
                       <p className="mt-3 text-xl font-medium text-gray-900">{listing.certificationCompany}</p>
                     </div>
                   )}
@@ -418,14 +418,6 @@ export default function ItemDetail() {
                   )}
                   
                   {/* Category-specific fields from itemDetails */}
-                  
-                  {/* Certification Number */}
-                  {listing.certificationNumber && (
-                    <div className="rounded-[1.5rem] border border-gray-200 bg-gray-50 p-5">
-                      <p className="text-sm uppercase tracking-[0.2em] text-gray-500">Certification Number</p>
-                      <p className="mt-3 text-xl font-medium text-gray-900">{listing.certificationNumber}</p>
-                    </div>
-                  )}
                   
                   {/* Item Type */}
                   {listing.itemType && (
@@ -443,13 +435,58 @@ export default function ItemDetail() {
                     </div>
                   )}
                   
-                  {/* Category-specific fields from itemDetails */}
-                  {listing.itemDetails && Object.entries(listing.itemDetails).map(([key, value]) => (
-                    <div key={key} className="rounded-[1.5rem] border border-gray-200 bg-gray-50 p-5">
-                      <p className="text-sm uppercase tracking-[0.2em] text-gray-500">{formatFieldName(key)}</p>
-                      <p className="mt-3 text-xl font-medium text-gray-900">{String(value)}</p>
-                    </div>
-                  ))}
+                  {/* Category-specific fields from itemDetails - grouped by related fields */}
+                  {listing.itemDetails && (() => {
+                    const entries = Object.entries(listing.itemDetails).filter(([, v]) => v);
+                    const rendered = new Set<string>();
+                    
+                    // Define field groupings - related fields that should appear together
+                    const fieldGroups = [
+                      ['first_appearance', 'character_name'],
+                      ['is_graded', 'grade'],
+                      ['issue_number', 'publication_year'],
+                      ['key_issue', 'number_of_signatures']
+                    ];
+                    
+                    const result = [];
+                    
+                    // Render grouped fields
+                    for (const group of fieldGroups) {
+                      const groupFields = group.filter(f => entries.some(([k]) => k === f) && !rendered.has(f));
+                      if (groupFields.length > 0) {
+                        result.push(
+                          <div key={`group-${group.join('-')}`} className="rounded-[1.5rem] border border-gray-200 bg-gray-50 p-5 lg:col-span-2">
+                            <div className="grid grid-cols-2 gap-4">
+                              {groupFields.map(fieldName => {
+                                const value = entries.find(([k]) => k === fieldName)?.[1];
+                                rendered.add(fieldName);
+                                return (
+                                  <div key={fieldName}>
+                                    <p className="text-xs uppercase tracking-[0.15em] text-gray-500 font-semibold">{formatFieldName(fieldName)}</p>
+                                    <p className="mt-2 text-base font-medium text-gray-900">{String(value)}</p>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      }
+                    }
+                    
+                    // Render remaining ungrouped fields
+                    for (const [key, value] of entries) {
+                      if (!rendered.has(key)) {
+                        result.push(
+                          <div key={key} className="rounded-[1.5rem] border border-gray-200 bg-gray-50 p-5">
+                            <p className="text-sm uppercase tracking-[0.2em] text-gray-500">{formatFieldName(key)}</p>
+                            <p className="mt-3 text-xl font-medium text-gray-900">{String(value)}</p>
+                          </div>
+                        );
+                      }
+                    }
+                    
+                    return result;
+                  })()}
                 </div>
             </div>
 
