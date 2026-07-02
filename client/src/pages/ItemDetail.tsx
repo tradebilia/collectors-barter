@@ -390,7 +390,7 @@ export default function ItemDetail() {
         </section>
 
         <section className="px-4 lg:px-8">
-          <div className="mx-auto max-w-6xl space-y-8 text-gray-900">
+          <div className="mx-auto max-w-7xl space-y-8 text-gray-900">
             {/* Details Panel - Sections 1, 2, 3 */}
             <div className="rounded-[2rem] border border-gray-200 bg-white p-8 shadow-[0_40px_90px_rgba(0,0,0,0.08)]">
                 <p className="text-sm uppercase tracking-[0.3em] text-gray-500">Details</p>
