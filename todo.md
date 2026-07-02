@@ -3144,3 +3144,40 @@ All 8 remaining filter optimization and caching items have been successfully imp
 - [x] Fix database schema to add certificationNumber column for storing grading certification numbers
 - [x] Fix createdAt/updatedAt timestamp conversion error in formatListings function
 - [x] Test form submission with photo upload - verified photos display correctly in inventory and verify all fields are properly saved to database
+
+
+## Bug Fixes Applied (July 1, 2026)
+
+- [x] Fixed unstable React key in Recommended Fields section causing focus loss on text inputs
+- [x] Fixed grade field handling to convert 'ungraded' or empty strings to 0 (default value) for NOT NULL DECIMAL column
+- [x] Fixed grade field issue affecting ALL item types (Comics, Sports Cards, Coins, Pokemon, Video Games, Stamps, Autographs, Movies, Disney Pins, Vintage Toys)
+- [x] Fixed estimatedValue field to use parseFloat() instead of String() for proper DECIMAL handling
+- [x] Applied estimatedValue fix to all 4 functions: createListing, updateListing, saveDraft, updateDraft
+
+## Known Issues Resolved
+
+- [x] Comics / Single Comic - Form submission was failing due to grade field type mismatch
+- [x] Coins / Collection / Lot - Form submission was failing due to grade field type mismatch
+- [x] Text input fields in Recommended Fields were losing focus after each keystroke (Set Name, Card Number, etc.)
+
+## Testing Status
+
+- [x] Comics / Single Comic - Working
+- [ ] Coins / Collection / Lot - Needs verification after grade fix
+- [ ] All other item types - Need comprehensive testing with grade fix
+
+
+## Comprehensive Item Type Testing (July 1, 2026)
+
+Testing creation of new listings for all 10 item types to verify grade field fix works universally:
+
+- [ ] Comics / Single Comic - Create new listing
+- [ ] Sports Cards / Single Card - Create new listing
+- [ ] Vintage Toys / Single Item - Create new listing
+- [ ] Video Games / Single Game - Create new listing
+- [ ] Stamps / Single Stamp - Create new listing
+- [ ] Coins / Collection / Lot - Create new listing (✅ Already verified working)
+- [ ] Pokemon / Single Card - Create new listing
+- [ ] Movies / Single Item - Create new listing
+- [ ] Autographs / Single Item - Create new listing
+- [ ] Disney Pins / Single Pin - Create new listing

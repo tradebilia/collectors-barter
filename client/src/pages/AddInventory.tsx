@@ -536,7 +536,7 @@ export default function AddInventory() {
                           const fieldValue = formData[field.name as keyof typeof formData];
                           
                           return (
-                            <div key={`${field.name}-${fieldValue}`} className={`${colSpanClass} w-full`}>
+                            <div key={field.name} className={`${colSpanClass} w-full`}>
                               <FieldWithCustomInput
                                 field={field}
                                 value={formData[field.name as keyof typeof formData] || ""}
