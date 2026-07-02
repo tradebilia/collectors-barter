@@ -391,14 +391,8 @@ export default function ItemDetail() {
 
         <section className="px-4 lg:px-8">
           <div className="mx-auto max-w-6xl space-y-8 text-gray-900">
-            {/* Description Section */}
-            <div className="space-y-6 rounded-[2rem] border border-gray-200 bg-white p-8 shadow-[0_40px_90px_rgba(0,0,0,0.08)]">
-              <div>
-                <p className="text-sm uppercase tracking-[0.3em] text-gray-500">Description</p>
-                <h2 className="mt-4 text-4xl font-semibold tracking-tight text-gray-900">{listing.title}</h2>
-              </div>
-              {/* Details Panel - Sections 1, 2, 3 */}
-              <div className="rounded-[2rem] border border-gray-200 bg-white p-8 shadow-[0_40px_90px_rgba(0,0,0,0.08)]">
+            {/* Details Panel - Sections 1, 2, 3 */}
+            <div className="rounded-[2rem] border border-gray-200 bg-white p-8 shadow-[0_40px_90px_rgba(0,0,0,0.08)]">
                 <p className="text-sm uppercase tracking-[0.3em] text-gray-500">Details</p>
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mt-6">
                   {/* Section 1: Category */}
@@ -457,7 +451,6 @@ export default function ItemDetail() {
                     </div>
                   ))}
                 </div>
-              </div>
             </div>
 
             {/* Description Section */}
