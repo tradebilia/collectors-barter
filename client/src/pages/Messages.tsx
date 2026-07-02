@@ -262,7 +262,7 @@ export default function Messages() {
     <div className="min-h-screen bg-[linear-gradient(180deg,#0a0d22_0%,#121c48_26%,#ede3d3_26%,#ede3d3_100%)] text-slate-950">
       <TopBar />
       <header className="border-b border-white/10 bg-[#00143A] text-white" style={{
-        backgroundImage: 'url(/images/Mainpage_9b45311d.jpg)',
+        backgroundImage: 'url(/manus-storage/Mainpage_9b45311d.jpg)',
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat'

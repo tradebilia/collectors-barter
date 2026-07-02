@@ -93,25 +93,25 @@ const formatFieldName = (fieldName: string): string => {
 const getCategoryWallpaperUrl = (category: string): string => {
   switch(category) {
     case 'sports_cards':
-      return '/images/Sportscardwallpaper_bc1c7d7a.webp';
+      return '/manus-storage/Sportscardwallpaper_bc1c7d7a.webp';
     case 'video_games':
-      return '/images/video-games-background-kyx4vVUqTYCMC3kMbtokYU_c9f7dffa.webp';
+      return '/manus-storage/video-games-background-kyx4vVUqTYCMC3kMbtokYU_c9f7dffa.webp';
     case 'coins':
-      return '/images/CoinsBackground_ef9aac41.png';
+      return '/manus-storage/CoinsBackground_ef9aac41.png';
     case 'stamps':
-      return '/images/StampsBackground_381d3e98.png';
+      return '/manus-storage/StampsBackground_381d3e98.png';
     case 'vintage_toys':
-      return '/images/VintageToysBackground_8ab6860f.png';
+      return '/manus-storage/VintageToysBackground_8ab6860f.png';
     case 'autographs':
-      return '/images/AutoBackground_d025a571.png';
+      return '/manus-storage/AutoBackground_d025a571.png';
     case 'movies':
-      return '/images/VHSBackground_99756671.png';
+      return '/manus-storage/VHSBackground_99756671.png';
     case 'comics':
-      return '/images/comics-background-YZiiH2cyV8YJx6GFQj4PKC_2cc313bb.webp';
+      return '/manus-storage/comics-background-YZiiH2cyV8YJx6GFQj4PKC_2cc313bb.webp';
     case 'pokemon':
-      return '/images/pokemon-background-J6h7Mte6BSYA3GfQ4vtdFj_d1df88b6.webp';
+      return '/manus-storage/pokemon-background-J6h7Mte6BSYA3GfQ4vtdFj_d1df88b6.webp';
     case 'disney_pins':
-      return '/images/disney-pins-background-F6yUvFLVrhmnaWk6GsFMZ8_172dee25.webp';
+      return '/manus-storage/disney-pins-background-F6yUvFLVrhmnaWk6GsFMZ8_172dee25.webp';
     default:
       return '';
   }

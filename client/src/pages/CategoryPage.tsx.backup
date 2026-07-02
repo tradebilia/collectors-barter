@@ -210,7 +210,7 @@ export default function CategoryPage() {
     ...card,
     imageUrl: resolveTradebiliaListingImage({ title: card.title, category: slug }),
   }));
-  const SPORTS_CARDS_LONG_LOGO_URL = "/images/tradebilia-longform-no-navy-clean_d2f04453.png";
+  const SPORTS_CARDS_LONG_LOGO_URL = "/manus-storage/tradebilia-longform-no-navy-clean_d2f04453.png";
 
   return (
     <div className={`min-h-screen ${theme.pageClassName}`}>
@@ -241,7 +241,7 @@ export default function CategoryPage() {
       <header className={`relative overflow-hidden border-b ${theme.borderClassName} ${theme.heroClassName}`}>
         {isSportsCardsPage ? (
           <div className={`relative overflow-hidden ${theme.textureClassName}`} style={{
-            backgroundImage: 'url(/images/Sportscardwallpaper_7d372f7d.webp)',
+            backgroundImage: 'url(/manus-storage/Sportscardwallpaper_7d372f7d.webp)',
             backgroundSize: 'cover',
             backgroundPosition: 'center',
             backgroundAttachment: 'scroll'

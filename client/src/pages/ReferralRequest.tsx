@@ -14,7 +14,7 @@ import { toast } from "sonner";
 import { TopBar } from "@/components/TopBar";
 import { CategoryBar } from "@/components/CategoryBar";
 
-const TRADEBILIA_LOGO_URL = "/images/tradebilia-logo_c676d640.svg";
+const TRADEBILIA_LOGO_URL = "/manus-storage/tradebilia-logo_c676d640.svg";
 
 function firstName(name?: string | null) {
   return name?.split(" ").filter(Boolean)[0] || "Collector";
@@ -72,7 +72,7 @@ export default function ReferralRequest() {
       <TopBar />
       
       <section className="relative z-0 w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden text-white" style={{
-        backgroundImage: 'url(/images/Mainpage_9b45311d.jpg)',
+        backgroundImage: 'url(/manus-storage/Mainpage_9b45311d.jpg)',
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat'

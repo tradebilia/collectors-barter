@@ -11,7 +11,7 @@ import { TopBar } from "@/components/TopBar";
 import { CategoryBar } from "@/components/CategoryBar";
 import { Mail } from "lucide-react";
 
-const CONTACT_HERO_URL = "/images/Contact_Us_8b246a6c.svg";
+const CONTACT_HERO_URL = "/manus-storage/Contact_Us_8b246a6c.svg";
 
 export default function Contact() {
   const [name, setName] = useState("");
@@ -63,7 +63,7 @@ export default function Contact() {
       {/* Hero Section */}
       <section className="relative z-0 w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden bg-[#00143A] text-white border-b border-white/10">
         <div className="absolute inset-0" style={{
-          backgroundImage: 'url(/images/Mainpage_9b45311d.jpg)',
+          backgroundImage: 'url(/manus-storage/Mainpage_9b45311d.jpg)',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat'
