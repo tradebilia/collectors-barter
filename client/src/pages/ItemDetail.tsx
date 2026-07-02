@@ -323,7 +323,7 @@ export default function ItemDetail() {
                   {listing.estimatedValue && (
                     <div>
                       <p className="text-sm uppercase tracking-[0.25em] text-gray-500">Estimated Value</p>
-                      <p className="mt-2 font-medium text-gray-900">${listing.estimatedValue.toFixed(2)}</p>
+                      <p className="mt-2 font-medium text-gray-900">${Math.round(listing.estimatedValue).toLocaleString('en-US')}</p>
                     </div>
                   )}
                   <div>
