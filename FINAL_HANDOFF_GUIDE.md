@@ -15,6 +15,14 @@ That's it! The script handles everything.
 
 ---
 
+## ⚠️ Important: Broken Image URLs
+
+**When you clone the project, your database will have 21 broken image URLs.**
+
+These are stored as `/images/...` paths but should be `/manus-storage/...` paths. The `COMPLETE_HANDOFF.sh` script will automatically fix all 21 of them for you.
+
+---
+
 ## What the Script Does
 
 The `COMPLETE_HANDOFF.sh` script automates the entire setup process:
@@ -22,7 +30,7 @@ The `COMPLETE_HANDOFF.sh` script automates the entire setup process:
 1. ✅ Installs all dependencies with pnpm
 2. ✅ Sets up environment variables (.env file)
 3. ✅ Verifies database connection
-4. ✅ **Fixes ALL 21 broken image URLs** in the database
+4. ✅ **FIXES ALL 21 BROKEN IMAGE URLs** in the database (converts `/images/...` to `/manus-storage/...`)
 5. ✅ Collects database statistics
 6. ✅ Verifies git configuration
 7. ✅ Provides complete summary and next steps
@@ -62,9 +70,19 @@ VITE_FRONTEND_FORGE_API_URL=https://api.manus.im
 VITE_FRONTEND_FORGE_API_KEY=${VITE_FRONTEND_FORGE_API_KEY}
 ```
 
-### Step 3: Fix ALL 21 Broken Image URLs
+### Step 3: Fix ALL 21 Broken Image URLs (CRITICAL)
 
-**Option A: Using MySQL command line**
+**Your new session will have 21 broken image URLs that MUST be fixed.**
+
+Broken URLs look like:
+- `/images/Amazing Spider-Man 129.png`
+- `/images/1985 Mark McGwire.jpg`
+- `/images/1782949430583-0n37yl-Coin-lot-1.jpg`
+
+They need to be converted to:
+- `/manus-storage/listings/1/1782872450609-rfwm2b-Amazing-Spider-Man-129_772c5bbc.png`
+
+**Option A: Using MySQL command line (RECOMMENDED)**
 ```bash
 mysql -h gateway05.us-east-1.prod.aws.tidbcloud.com \
   -u 4ZXfWh5QbDJhQ4C.023db4f53938 \
@@ -80,7 +98,18 @@ SET imageUrl = CONCAT('/manus-storage/', fileKey)
 WHERE imageUrl NOT LIKE '/manus-storage/%';
 ```
 
-This fixes all broken image URLs from `/images/...` format to `/manus-storage/...` format.
+**Verification:** After running the fix, verify all images are fixed:
+```bash
+mysql -h gateway05.us-east-1.prod.aws.tidbcloud.com \
+  -u 4ZXfWh5QbDJhQ4C.023db4f53938 \
+  -p9gg6EhlcJlBPkKU3111k \
+  -D TzzwLt5FRwqjKKW5zhfchR \
+  -e "SELECT COUNT(*) as fixed FROM listingPhotos WHERE imageUrl LIKE '/manus-storage/%'; SELECT COUNT(*) as broken FROM listingPhotos WHERE imageUrl NOT LIKE '/manus-storage/%';"
+```
+
+Expected result:
+- `fixed: 21`
+- `broken: 0`
 
 ### Step 4: Start Dev Server
 ```bash
@@ -109,9 +138,11 @@ After setup, verify these features work:
 
 Expected data after setup:
 - **Listings:** 10
-- **Photos:** 21 (all with fixed /manus-storage/ URLs)
+- **Photos:** 21 (all with fixed /manus-storage/ URLs after running the fix)
 - **Users:** Multiple
 - **Forum Posts:** Multiple
+
+**CRITICAL:** If you see any photos with `/images/` URLs instead of `/manus-storage/`, you MUST run the SQL fix from Step 3 above.
 
 ---
 
