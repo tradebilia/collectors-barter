@@ -448,11 +448,14 @@ export default function ItemDetail() {
                       ['key_issue', 'number_of_signatures']
                     ];
                     
+                    // Fields to exclude (redundant or already shown elsewhere)
+                    const excludeFields = new Set(['certification_company']);
+                    
                     const result = [];
                     
                     // Render grouped fields
                     for (const group of fieldGroups) {
-                      const groupFields = group.filter(f => entries.some(([k]) => k === f) && !rendered.has(f));
+                      const groupFields = group.filter(f => entries.some(([k]) => k === f) && !rendered.has(f) && !excludeFields.has(f));
                       if (groupFields.length > 0) {
                         result.push(
                           <div key={`group-${group.join('-')}`} className="rounded-[1.5rem] border border-gray-200 bg-gray-50 p-5 lg:col-span-2">
@@ -475,7 +478,7 @@ export default function ItemDetail() {
                     
                     // Render remaining ungrouped fields
                     for (const [key, value] of entries) {
-                      if (!rendered.has(key)) {
+                      if (!rendered.has(key) && !excludeFields.has(key)) {
                         result.push(
                           <div key={key} className="rounded-[1.5rem] border border-gray-200 bg-gray-50 p-5">
                             <p className="text-sm uppercase tracking-[0.2em] text-gray-500">{formatFieldName(key)}</p>
