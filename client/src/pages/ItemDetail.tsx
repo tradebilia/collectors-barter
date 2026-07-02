@@ -402,6 +402,12 @@ export default function ItemDetail() {
                   </div>
                   
                   {/* Section 2: Grading Company */}
+                  {listing.certificationCompany && (
+                    <div className="rounded-[1.5rem] border border-gray-200 bg-gray-50 p-5">
+                      <p className="text-sm uppercase tracking-[0.2em] text-gray-500">2. Grading Company</p>
+                      <p className="mt-3 text-xl font-medium text-gray-900">{listing.certificationCompany}</p>
+                    </div>
+                  )}
                   
                   {/* Section 3: Estimated Value */}
                   {listing.estimatedValue && (
