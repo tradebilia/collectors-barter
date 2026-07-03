@@ -308,3 +308,20 @@ While the core functionality and image uploads have been verified, several advan
 *   **Mobile Responsiveness:** Although the UI is consistent on desktop, a full audit of mobile responsiveness across all subpages is recommended.
 
 Any corrective actions taken for these or other issues in future sessions **must** be documented in an updated version of this guide to maintain a complete and accurate "Source of Truth."
+
+### 3.11. Item Detail Page Background Fix
+
+**Issue:** A regression caused the Item Detail page to use the category wallpaper for the 'quick view' area instead of a solid color, and the hero section was not matching the category wallpaper.
+
+**Diagnosis:**
+*   A previous commit aimed at unifying visual experiences inadvertently applied the category wallpaper to the entire page background.
+*   The hero section was hardcoded to use `Mainpage.webp`.
+
+**Fix Implemented:**
+*   Updated `client/src/pages/ItemDetail.tsx` to dynamically set the hero section background using `getCategoryWallpaperUrl(listing.category)`.
+*   Reverted the 'quick view' area background to use the solid category color defined in `getItemDetailPageClassName(listing.category)`.
+*   Removed the `bg-black/20` overlay from the quick view area to allow the solid color to display cleanly.
+*   Ensured the content cards within the quick view area retained their clean white background.
+
+**Verification:**
+*   Code review confirmed the correct logic is in place. The hero section now matches the category wallpaper, and the quick view area has a solid background color corresponding to the category theme.

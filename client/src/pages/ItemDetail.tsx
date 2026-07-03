@@ -242,7 +242,7 @@ export default function ItemDetail() {
 
       <main className="pb-16">
         <section className="relative z-0 w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden text-white" style={{
-          backgroundImage: 'url(/images/Mainpage.webp)',
+          backgroundImage: `url(${getCategoryWallpaperUrl(listing.category)})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat'
@@ -260,13 +260,7 @@ export default function ItemDetail() {
 
         <CategoryBar />
 
-        <section className="px-4 py-10 lg:px-8 relative" style={{
-          backgroundImage: `url(${getCategoryWallpaperUrl(listing.category)})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundAttachment: 'fixed'
-        }}>
-          <div className="absolute inset-0 bg-black/20"></div>
+        <section className={`px-4 py-10 lg:px-8 relative ${getItemDetailPageClassName(listing.category)}`}>
           <div className="relative">
           <div className="mx-auto max-w-6xl mb-8">
             <button
