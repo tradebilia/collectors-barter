@@ -452,7 +452,7 @@ export default function ItemDetail() {
                     ];
                     
                     // Fields to exclude (redundant or already shown elsewhere)
-                    const excludeFields = new Set(['certification_company']);
+                    const excludeFields = new Set(['certification_company', 'shipping_available']);
                     
                     const result = [];
                     
@@ -501,6 +501,14 @@ export default function ItemDetail() {
               <div className="rounded-[2rem] border border-gray-200 bg-white p-8 shadow-[0_40px_90px_rgba(0,0,0,0.08)]">
                 <p className="text-sm uppercase tracking-[0.3em] text-gray-500">Description</p>
                 <p className="mt-5 max-w-4xl text-lg leading-8 text-gray-700 whitespace-pre-wrap">{listing.description}</p>
+              </div>
+            )}
+
+            {/* Shipping Available Section */}
+            {listing.itemDetails?.shipping_available && (
+              <div className="rounded-[2rem] border border-gray-200 bg-white p-8 shadow-[0_40px_90px_rgba(0,0,0,0.08)]">
+                <p className="text-sm uppercase tracking-[0.3em] text-gray-500">Shipping Available</p>
+                <p className="mt-5 text-lg font-medium text-gray-900 capitalize">{String(listing.itemDetails.shipping_available).replace(/_/g, ' ')}</p>
               </div>
             )}
 

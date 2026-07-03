@@ -16,17 +16,13 @@ export function OnlineIndicator({ sellerId, className = '', size = 'small' }: On
     { sellerId },
     {
       enabled: !!sellerId,
-      refetchInterval: 10000, // Refetch every 10 seconds to keep status current
-      staleTime: 5000, // Consider data stale after 5 seconds
+      refetchInterval: 0, // Disabled polling - status updates only on manual refetch or page reload
+      staleTime: 60000, // Consider data stale after 60 seconds to reduce redundant requests
     }
   );
 
-  // Invalidate cache on mount to ensure fresh data
-  useEffect(() => {
-    if (sellerId) {
-      utils.onlineStatus.getSellerOnlineStatus.invalidate({ sellerId });
-    }
-  }, [sellerId, utils]);
+  // Note: Removed cache invalidation on mount to prevent request storms
+  // The component will use cached data if available, reducing server load
 
 
 

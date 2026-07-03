@@ -1,3 +1,6 @@
+import dotenv from 'dotenv';
+dotenv.config();
+
 import express from "express";
 import { createServer } from "http";
 import net from "net";
@@ -66,7 +69,7 @@ async function startServer() {
 
       res.json({ ok: true, deletedCount, cutoffDate: thirtyDaysAgo.toISOString() });
     } catch (error: any) {
-      console.error('[cleanupExpiredDrafts] Error:', error);
+      console.error("[cleanupExpiredDrafts] Error:", error);
       res.status(500).json({
         error: error.message,
         stack: error.stack,
@@ -87,7 +90,7 @@ async function startServer() {
       // Dynamic import to get db instance
       const { requireDb } = await import("../db");
       const db = await requireDb();
-      // Use require for schema since it's TypeScript
+      // Use require for schema since it\"s TypeScript
       const { referralRequests } = require("../drizzle/schema");
 
       // Get referrals from the last 3 days
@@ -116,7 +119,7 @@ async function startServer() {
 
       res.json({ ok: true, referralCount: pendingReferrals.length, notified: delivered });
     } catch (error: any) {
-      console.error('[referralDigest] Error:', error);
+      console.error("[referralDigest] Error:", error);
       res.status(500).json({
         error: error.message,
         stack: error.stack,
@@ -128,8 +131,6 @@ async function startServer() {
   // development mode uses Vite, production mode uses static files
   if (process.env.NODE_ENV === "development") {
     await setupVite(app, server);
-  } else {
-    serveStatic(app);
   }
 
   const preferredPort = parseInt(process.env.PORT || "3000");

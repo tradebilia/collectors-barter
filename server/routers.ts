@@ -144,10 +144,8 @@ export const appRouter = router({
   system: systemRouter,
   auth: router({
     me: publicProcedure.query(async opts => {
-      console.log('[auth.me] Called, user:', opts.ctx.user?.username);
       const user = opts.ctx.user;
       if (!user) {
-        console.log('[auth.me] No user found, returning null');
         return null;
       }
 
@@ -1618,8 +1616,26 @@ export const appRouter = router({
         const timeSinceActivity = now.getTime() - new Date(lastActivity).getTime();
         const ONLINE_STATUS_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
         const isOnline = timeSinceActivity < ONLINE_STATUS_TIMEOUT_MS;
-        console.log(`[getSellerOnlineStatus] User: ${seller[0].name} (ID: ${seller[0].id}), lastActivityAt: ${lastActivity}, now: ${now}, timeSinceActivity: ${timeSinceActivity}ms, isOnline: ${isOnline}`);
+        // Removed verbose logging to reduce I/O overhead during high request volume
         return { isOnline, lastActivityAt: lastActivity };
+      }),
+    getMultipleSellerOnlineStatus: publicProcedure
+      .input(z.object({ sellerIds: z.array(z.number().int().positive()) }))
+      .query(async ({ input }) => {
+        if (!input.sellerIds.length) return {};
+        const db = await requireDb();
+        const sellers = await db.select({ id: users.id, lastActivityAt: users.lastActivityAt }).from(users).where(inArray(users.id, input.sellerIds));
+        const ONLINE_STATUS_TIMEOUT_MS = 5 * 60 * 1000;
+        const now = new Date();
+        const result: Record<number, { isOnline: boolean; lastActivityAt: Date | null }> = {};
+        sellers.forEach(seller => {
+          const timeSinceActivity = now.getTime() - new Date(seller.lastActivityAt).getTime();
+          result[seller.id] = {
+            isOnline: timeSinceActivity < ONLINE_STATUS_TIMEOUT_MS,
+            lastActivityAt: seller.lastActivityAt
+          };
+        });
+        return result;
       }),
   }),
 });
