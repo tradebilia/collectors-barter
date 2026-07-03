@@ -20,43 +20,43 @@ const categoryImageMap: Record<string, string> = {
 const keywordImageMap: Array<{ keywords: string[]; imageUrl: string }> = [
   {
     keywords: ["michael jordan", "jordan rookie"],
-    imageUrl: "https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/1986-87%20Michael%20Jordan.jpg",
+    imageUrl: "/images/1986-87 Michael Jordan.jpg",
   },
   {
     keywords: ["walter payton"],
-    imageUrl: "https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/1976%20Walter%20Payton.png",
+    imageUrl: "/images/1976 Walter Payton.png",
   },
   {
     keywords: ["rickey henderson"],
-    imageUrl: "https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/1980%20Rickey%20Henderson.png",
+    imageUrl: "/images/1980 Rickey Henderson.png",
   },
   {
     keywords: ["joe montana"],
-    imageUrl: "https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/1981%20Joe%20Montana.png",
+    imageUrl: "/images/1981 Joe Montana.png",
   },
   {
     keywords: ["martin brodeur"],
-    imageUrl: "https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/1990%20Martin%20Brodeur.png",
+    imageUrl: "/images/1990 Martin Brodeur.png",
   },
   {
     keywords: ["charizard holo", "charizard - holo", "1999 charizard"],
-    imageUrl: "https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/1999%20Charizard%20-%20Holo.png",
+    imageUrl: "/images/1999 Charizard - Holo.png",
   },
   {
     keywords: ["charizard v", "2022 charizard"],
-    imageUrl: "https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/2022%20Charizard%20V.png",
+    imageUrl: "/images/2022 Charizard V.png",
   },
   {
     keywords: ["sun & moon", "sun and moon"],
-    imageUrl: "https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/2019%20Sun%20&%20Moon.png",
+    imageUrl: "/images/2019 Sun & Moon.png",
   },
   {
     keywords: ["spider-verse", "spider verse", "edge of spider-verse"],
-    imageUrl: "https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/Edge%20of%20Spider-Verse%202.png",
+    imageUrl: "/images/Edge of Spider-Verse 2.png",
   },
   {
     keywords: ["star wars"],
-    imageUrl: "https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/Star%20Wars%201.png",
+    imageUrl: "/images/Star Wars 1.png",
   },
 ];
 

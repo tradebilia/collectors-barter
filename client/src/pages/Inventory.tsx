@@ -403,12 +403,14 @@ export default function Inventory() {
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat'
         }} />
-        <div className="relative flex w-full h-48 items-center justify-start py-0 sm:h-56 lg:h-64 overflow-hidden pl-8 lg:pl-16" style={{ maxHeight: '300px' }}>
+        <div className="container relative flex h-64 items-center justify-center py-0 sm:h-72 sm:py-0 lg:h-80 lg:py-0">
+          <div className="flex w-full max-w-4xl items-center justify-center -ml-32">
             <img
-            src="/images/heros/Myinventory.svg"
-            alt="My Inventory"
-            className="h-auto w-full"
-          />
+              src="/images/heros/Myinventory.svg"
+              alt="My Inventory"
+              className="h-auto w-full"
+            />
+          </div>
         </div>
       </section>
 
