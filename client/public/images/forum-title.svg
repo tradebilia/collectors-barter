@@ -67,16 +67,16 @@
   <!-- divider -->
   <line x1="590" y1="271" x2="590" y2="595" stroke="white" stroke-width="8.5" stroke-linecap="round"/>
 
-  <!-- wordmark -->
-  <text x="1440" y="468"
-        text-anchor="end"
+  <!-- wordmark: font size reduced and text-anchor set to start at the divider -->
+  <text x="630" y="468"
+        text-anchor="start"
         font-family="Montserrat, Avenir Next, Gotham, Arial, Helvetica, sans-serif"
-        font-size="120"
+        font-size="110"
         font-weight="700"
         fill="white">COLLECTOR'S FORUM</text>
 
-  <!-- tagline -->
-  <text x="1440" y="536" text-anchor="end" font-family="Montserrat, Avenir Next, Gotham, Arial, Helvetica, sans-serif" font-size="32"
+  <!-- tagline: aligned with the wordmark -->
+  <text x="630" y="536" text-anchor="start" font-family="Montserrat, Avenir Next, Gotham, Arial, Helvetica, sans-serif" font-size="32"
         font-weight="400"
-        fill="white">Community Exchange & Discussion</text>
+        fill="white">Community Exchange and Discussion</text>
 </svg>
