@@ -239,3 +239,21 @@ While the core functionality and image uploads have been verified, several advan
 *   **Mobile Responsiveness:** Although the UI is consistent on desktop, a full audit of mobile responsiveness across all subpages is recommended.
 
 Any corrective actions taken for these or other issues in future sessions **must** be documented in an updated version of this guide to maintain a complete and accurate "Source of Truth."
+
+### 3.6. Fix for Inventory Deletion Failure
+
+**Issue:** Users reported a "Failed to delete items" error when trying to delete draft items from the Inventory page.
+
+**Diagnosis:**
+*   The Inventory page distinguishes between live listings (numeric IDs) and draft listings (string IDs prefixed with `draft-`).
+*   The `handleBulkDelete` function was passing all selected IDs (including prefixed draft IDs) directly to the `bulkDeleteListings` mutation.
+*   The `bulkDeleteListings` mutation on the server side expects only numeric `listingIds` and validates them against the `listings` table, causing it to fail when receiving string draft IDs.
+
+**Fix Implemented:**
+*   Modified `handleBulkDelete` in `client/src/pages/Inventory.tsx` to separate selected IDs into `draftIds` and `listingIds`.
+*   Drafts are now deleted individually using the `deleteDraftMutation`.
+*   Live listings continue to be deleted in bulk using the `bulkDeleteMutation`.
+*   Added a refetch for `getDraftsQuery` after deletion to ensure the UI updates correctly when in "Show Drafts" mode.
+
+**Verification:**
+*   Verified that selecting and deleting multiple draft items no longer triggers the "Failed to delete items" error and correctly removes the items from the view.

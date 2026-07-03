@@ -178,12 +178,28 @@ export default function Inventory() {
   const handleBulkDelete = useCallback(
     async () => {
       if (selectedIds.size === 0) return;
-      if (!confirm(`Delete ${selectedIds.size} selected item(s)? You can undo within 30 seconds.`)) return;
+      if (!confirm(`Delete ${selectedIds.size} selected item(s)?`)) return;
       setBulkUpdatingStatus(true);
       try {
-        const result = await bulkDeleteMutation.mutateAsync({
-          listingIds: Array.from(selectedIds),
-        });
+        const idsArray = Array.from(selectedIds);
+        const draftIds = idsArray
+          .filter((id: any) => String(id).startsWith('draft-'))
+          .map((id: any) => parseInt(String(id).replace('draft-', '')));
+        const listingIds = idsArray
+          .filter((id: any) => !String(id).startsWith('draft-'))
+          .map((id: any) => id as number);
+
+        if (draftIds.length > 0) {
+          for (const draftId of draftIds) {
+            await deleteDraftMutation.mutateAsync({ draftId });
+          }
+        }
+
+        if (listingIds.length > 0) {
+          await bulkDeleteMutation.mutateAsync({
+            listingIds,
+          });
+        }
         
         const expiresAt = Date.now() + 30000;
         setUndoData({
@@ -200,19 +216,23 @@ export default function Inventory() {
         
         setSelectedIds(new Set());
         await dashboardQuery.refetch();
+        if (showDrafts) {
+          await getDraftsQuery.refetch();
+        }
         // Invalidate market.feed cache so carousel updates
         // Invalidate all market.feed queries regardless of parameters
         await utils.market.feed.invalidate();
         // Also try to refetch with common default parameters
         await utils.market.feed.refetch({ category: undefined, condition: undefined, keyword: "" }).catch(() => {});
-        toast.success(`${selectedIds.size} item(s) deleted - Undo available for 30 seconds`);
+        toast.success(`${selectedIds.size} item(s) deleted`);
       } catch (error) {
+        console.error("Bulk delete error:", error);
         toast.error("Failed to delete items");
       } finally {
         setBulkUpdatingStatus(false);
       }
     },
-    [selectedIds, bulkDeleteMutation, dashboardQuery, undoTimer],
+    [selectedIds, bulkDeleteMutation, deleteDraftMutation, dashboardQuery, getDraftsQuery, showDrafts, utils],
   );
 
   const handleUndo = useCallback(
