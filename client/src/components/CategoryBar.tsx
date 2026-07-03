@@ -13,7 +13,7 @@ export function CategoryBar() {
       <div className="flex w-full overflow-x-auto">
         <Link
           href="/"
-          className={`flex-1 border-r border-white/10 px-4 py-4 text-center text-sm font-semibold uppercase tracking-[0.16em] transition hover:bg-white/10 lg:text-base whitespace-nowrap ${
+          className={`flex-1 border-r border-white/10 px-4 py-4 text-center text-sm font-semibold uppercase tracking-[0.16em] transition hover:bg-white/10 lg:text-[1.1rem] whitespace-nowrap ${
             isHomePage === true ? "bg-white text-slate-950" : "text-white"
           }`}
         >
@@ -24,7 +24,7 @@ export function CategoryBar() {
             key={category.value}
             href={`/category/${category.value}`}
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-            className={`flex-1 border-r border-white/10 px-4 py-4 text-center text-sm font-semibold uppercase tracking-[0.16em] transition hover:bg-white/10 lg:text-base whitespace-nowrap ${
+            className={`flex-1 border-r border-white/10 px-4 py-4 text-center text-sm font-semibold uppercase tracking-[0.16em] transition hover:bg-white/10 lg:text-[1.1rem] whitespace-nowrap ${
               category.value === currentSlug ? "bg-white text-slate-950" : "text-white"
             }`}
           >

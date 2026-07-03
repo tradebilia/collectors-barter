@@ -39,7 +39,7 @@ const keywordImageMap: Array<{ keywords: string[]; imageUrl: string }> = [
     imageUrl: "/images/1990 Martin Brodeur.png",
   },
   {
-    keywords: ["charizard holo", "charizard - holo", "1999 charizard"],
+    keywords: ["charizard holo", "charizard - holo", "1999 charizard", "pokemon charizard"],
     imageUrl: "/images/1999 Charizard - Holo.png",
   },
   {
@@ -57,6 +57,10 @@ const keywordImageMap: Array<{ keywords: string[]; imageUrl: string }> = [
   {
     keywords: ["star wars"],
     imageUrl: "/images/Star Wars 1.png",
+  },
+  {
+    keywords: ["ken griffey jr", "griffey rookie"],
+    imageUrl: "/images/1989-Ken-Griffey-Jr.jpg",
   },
 ];
 

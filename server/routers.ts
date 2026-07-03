@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { COOKIE_NAME } from "@shared/const";
-import { collectibleCategories, itemConditions } from "../drizzle/schema";
+import { collectibleCategories, itemConditions } from "./db";
 import { isValidGradeForCompany, getGradingCompanyByName } from "@shared/gradingCompanyConfig";
 import {
   createListing,

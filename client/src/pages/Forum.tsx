@@ -7,7 +7,7 @@ import { Card } from "@/components/ui/card";
 import { TopBar } from "@/components/TopBar";
 import { CategoryBar } from "@/components/CategoryBar";
 
-import { collectibleCategories } from "../../../drizzle/schema";
+import { collectibleCategories } from "@/lib/constants";
 
 export function Forum() {
   const [, setLocation] = useLocation();
@@ -32,12 +32,27 @@ export function Forum() {
   return (
     <div className="min-h-screen bg-background">
       <TopBar />
+
+      {/* Hero Section */}
+      <section className="relative w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden bg-[#00143A] text-white">
+        <div className="absolute inset-0" style={{
+          backgroundImage: 'url(/images/Mainpage.jpg)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat'
+        }} />
+        <div className="container relative flex h-64 items-center justify-center py-0 sm:h-72 sm:py-0 lg:h-80 lg:py-0">
+          <div className="flex w-full max-w-4xl items-center justify-center -ml-32">
+            <img
+              src="/images/heros/SuggestionsContactUs.svg"
+              alt="Collector's Forum"
+              className="h-auto w-full"
+            />
+          </div>
+        </div>
+      </section>
+
       <CategoryBar />
-      
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-12 text-center">
-        <h1 className="text-4xl font-bold mb-2">Collector's Forum</h1>
-        <p className="text-lg opacity-90">Join discussions with fellow collectors</p>
-      </div>
 
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-6">

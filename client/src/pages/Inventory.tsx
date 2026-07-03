@@ -23,12 +23,14 @@ import { trpc } from "@/lib/trpc";
 import { getTradebiliaCategoryLabel } from "@/lib/tradebilia";
 import { Download, Loader2, Menu, MessageSquareText, Pencil, Plus, Search, Share2, Trash2, Eye, EyeOff } from "lucide-react";
 import { TopRightIcons } from "@/components/TopRightIcons";
+import { TopBar } from "@/components/TopBar";
+import { CategoryBar } from "@/components/CategoryBar";
 import { useMemo, useState, useCallback } from "react";
 import { toast } from "sonner";
 import { Link } from "wouter";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
-const TRADEBILIA_LOGO_URL = "/manus-storage/tradebilia-logo_c676d640.svg";
+const TRADEBILIA_LOGO_URL = "/images/tradebilia-logo.svg";
 
 const categoryLinks = [
   { value: "comics", label: "Comics" },
@@ -386,15 +388,11 @@ export default function Inventory() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100 text-slate-950">
-      <div className="border-b border-white/10 bg-black">
-        <div className="flex items-center justify-between gap-4 pl-2 pr-4 py-3">
-          <div className="flex-shrink-0">
-            <img src="/images/tradebilia-logo.svg" alt="Tradebilia" className="h-14 w-auto object-contain" />
-          </div>
-          <div className="flex-1"></div>
-          <TopRightIcons className="flex items-center gap-3 md:gap-4 flex-shrink-0" iconColor="text-white/70" />
-        </div>
-      </div>
+      <TopBar
+        logoUrl={TRADEBILIA_LOGO_URL}
+        searchPlaceholder="Search Inventory..."
+        onSearchChange={setKeyword}
+      />
 
       <section className="relative w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden bg-[#00143A] text-white">
         <div className="absolute inset-0" style={{
@@ -414,25 +412,7 @@ export default function Inventory() {
         </div>
       </section>
 
-      <nav className="relative z-10 border-t border-black bg-black">
-        <div className="flex w-full overflow-x-auto">
-          <Link
-            href="/"
-            className="flex-1 border-b border-r border-white/10 px-4 py-4 text-center text-xs font-semibold uppercase tracking-[0.16em] transition hover:bg-white/10 lg:text-[11px] text-white whitespace-nowrap"
-          >
-            Home
-          </Link>
-          {categoryLinks.map(categoryLink => (
-            <Link
-              key={categoryLink.value}
-              href={`/category/${categoryLink.value}`}
-              className="flex-1 border-b border-r border-white/10 px-4 py-4 text-center text-xs font-semibold uppercase tracking-[0.16em] transition hover:bg-white/10 lg:text-[11px] text-white whitespace-nowrap"
-            >
-              {categoryLink.label}
-            </Link>
-          ))}
-        </div>
-      </nav>
+      <CategoryBar />
 
       <main className="flex flex-col relative">
         <div className="flex flex-1 relative">
