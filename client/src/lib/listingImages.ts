@@ -5,58 +5,58 @@ export type TradebiliaListingImageInput = {
 };
 
 const categoryImageMap: Record<string, string> = {
-  comics: "/images/Comicpage2_6d086599.png",
-  sports_cards: "/images/sportscards2_50e2e734.png",
-  vintage_toys: "/images/Vintagetoys2_b56d7fdc.png",
-  video_games: "/images/VideoGames_dd67123d.png",
-  stamps: "/images/Stamps1_9eaf705a.png",
-  coins: "/images/Coins_353ff538.png",
-  pokemon: "/images/Pokemon_095946ab.png",
-  movies: "/images/Movies2_d17cc5ad.png",
-  autographs: "/images/Autographs_5775ffb1.png",
-  disney_pins: "/images/Disney_e4ae94b5.png",
+  comics: "https://raw.githubusercontent.com/tradebilia/collectors-barter/main/client/public/images/comics-background-YZiiH2cyV8YJx6GFQj4PKC.webp",
+  sports_cards: "https://raw.githubusercontent.com/tradebilia/collectors-barter/main/client/public/images/Sportscardwallpaper.webp",
+  vintage_toys: "/images/VintageToysBackground.png",
+  video_games: "https://raw.githubusercontent.com/tradebilia/collectors-barter/main/client/public/images/video-games-background-kyx4vVUqTYCMC3kMbtokYU.webp",
+  stamps: "/images/StampsBackground.png",
+  coins: "/images/CoinsBackground.png",
+  pokemon: "https://raw.githubusercontent.com/tradebilia/collectors-barter/main/client/public/images/pokemon-background-J6h7Mte6BSYA3GfQ4vtdFj.webp",
+  movies: "/images/VHSBackground.png",
+  autographs: "/images/AutoBackground.png",
+  disney_pins: "https://raw.githubusercontent.com/tradebilia/collectors-barter/main/client/public/images/disney-pins-background-F6yUvFLVrhmnaWk6GsFMZ8.webp",
 };
 
 const keywordImageMap: Array<{ keywords: string[]; imageUrl: string }> = [
   {
     keywords: ["michael jordan", "jordan rookie"],
-    imageUrl: "/images/michael-jordan-rookie_4440f620.jpg",
+    imageUrl: "https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/1986-87%20Michael%20Jordan.jpg",
   },
   {
     keywords: ["walter payton"],
-    imageUrl: "/images/walter-payton-rookie_9fa05678.png",
+    imageUrl: "https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/1976%20Walter%20Payton.png",
   },
   {
     keywords: ["rickey henderson"],
-    imageUrl: "/images/rickey-henderson-rookie_49b0e3a1.png",
+    imageUrl: "https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/1980%20Rickey%20Henderson.png",
   },
   {
     keywords: ["joe montana"],
-    imageUrl: "/images/1981JoeMontana_f9fb9609.png",
+    imageUrl: "https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/1981%20Joe%20Montana.png",
   },
   {
     keywords: ["martin brodeur"],
-    imageUrl: "/images/1990MartinBrodeur_b8430777.png",
+    imageUrl: "https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/1990%20Martin%20Brodeur.png",
   },
   {
     keywords: ["charizard holo", "charizard - holo", "1999 charizard"],
-    imageUrl: "/images/1999 Charizard - Holo_8a01b3b9.png",
+    imageUrl: "https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/1999%20Charizard%20-%20Holo.png",
   },
   {
     keywords: ["charizard v", "2022 charizard"],
-    imageUrl: "/images/2022 Charizard V_ca4f6c17.png",
+    imageUrl: "https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/2022%20Charizard%20V.png",
   },
   {
     keywords: ["sun & moon", "sun and moon"],
-    imageUrl: "/images/2019 Sun & Moon_fd3c941d.png",
+    imageUrl: "https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/2019%20Sun%20&%20Moon.png",
   },
   {
     keywords: ["spider-verse", "spider verse", "edge of spider-verse"],
-    imageUrl: "/images/Edge of Spider-Verse 2_29f507ed.png",
+    imageUrl: "https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/Edge%20of%20Spider-Verse%202.png",
   },
   {
     keywords: ["star wars"],
-    imageUrl: "/images/Star Wars 1_6bc27ee5.png",
+    imageUrl: "https://raw.githubusercontent.com/tradebilia/collectors-barter/main/assets/images/Star%20Wars%201.png",
   },
 ];
 

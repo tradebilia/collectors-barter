@@ -67,11 +67,11 @@
   <!-- divider -->
   <line x1="590" y1="271" x2="590" y2="595" stroke="white" stroke-width="8.5" stroke-linecap="round"/>
 
-  <!-- "Highest Trade Value" on the right side of the divider, left-aligned -->
+  <!-- "Account Settings" on the right side of the divider, left-aligned -->
   <text x="640" y="468"
         text-anchor="start"
         font-family="Montserrat, Avenir Next, Gotham, Arial, Helvetica, sans-serif"
         font-size="132"
         font-weight="700"
-        fill="white">Highest Trade Value</text>
+        fill="white">Account Settings</text>
 </svg>

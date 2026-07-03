@@ -67,11 +67,22 @@
   <!-- divider -->
   <line x1="590" y1="271" x2="590" y2="595" stroke="white" stroke-width="8.5" stroke-linecap="round"/>
 
-  <!-- "Highest Trade Value" on the right side of the divider, left-aligned -->
-  <text x="640" y="468"
-        text-anchor="start"
+  <!-- Both lines are now right-aligned to the same x-coordinate (1700) -->
+  <!-- This ensures the 'Y' in INVENTORY and the 'n' in Collection line up perfectly -->
+  
+  <!-- wordmark -->
+  <text x="1700" y="468"
+        text-anchor="end"
         font-family="Montserrat, Avenir Next, Gotham, Arial, Helvetica, sans-serif"
         font-size="132"
         font-weight="700"
-        fill="white">Highest Trade Value</text>
+        fill="white">MY INVENTORY</text>
+
+  <!-- tagline -->
+  <text x="1700" y="536" 
+        text-anchor="end" 
+        font-family="Montserrat, Avenir Next, Gotham, Arial, Helvetica, sans-serif" 
+        font-size="32"
+        font-weight="400"
+        fill="white">Manage and Organize your Collection</text>
 </svg>

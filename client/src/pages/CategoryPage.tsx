@@ -573,7 +573,7 @@ export default function CategoryPage() {
       />
       <header className={`relative overflow-hidden border-b ${theme.borderClassName} ${theme.heroClassName}`} style={{ minHeight: '400px' }}>
         <div className={`relative overflow-hidden ${theme.textureClassName}`} style={{
-          backgroundImage: isSportsCardsPage ? 'url(/manus-storage/Sportscardwallpaper_bc1c7d7a.webp)' : slug === 'video_games' ? 'url(/manus-storage/video-games-background-kyx4vVUqTYCMC3kMbtokYU_c9f7dffa.webp)' : slug === 'coins' ? 'url(/manus-storage/CoinsBackground_ef9aac41.png)' : slug === 'stamps' ? 'url(/manus-storage/StampsBackground_381d3e98.png)' : slug === 'vintage_toys' ? 'url(/manus-storage/VintageToysBackground_8ab6860f.png)' : slug === 'autographs' ? 'url(/manus-storage/AutoBackground_d025a571.png)' : slug === 'movies' ? 'url(/manus-storage/VHSBackground_99756671.png)' : slug === 'comics' ? 'url(/manus-storage/comics-background-YZiiH2cyV8YJx6GFQj4PKC_2cc313bb.webp)' : slug === 'pokemon' ? 'url(/manus-storage/pokemon-background-J6h7Mte6BSYA3GfQ4vtdFj_d1df88b6.webp)' : slug === 'disney_pins' ? 'url(/manus-storage/disney-pins-background-F6yUvFLVrhmnaWk6GsFMZ8_172dee25.webp)' : undefined,
+          backgroundImage: isSportsCardsPage ? 'url(/images/Sportscardwallpaper.webp)' : slug === 'video_games' ? 'url(/images/video-games-background-kyx4vVUqTYCMC3kMbtokYU.webp)' : slug === 'coins' ? 'url(/images/CoinsBackground.png)' : slug === 'stamps' ? 'url(/images/StampsBackground.png)' : slug === 'vintage_toys' ? 'url(/images/VintageToysBackground.png)' : slug === 'autographs' ? 'url(/images/AutoBackground.png)' : slug === 'movies' ? 'url(/images/VHSBackground.png)' : slug === 'comics' ? 'url(/images/comics-background-YZiiH2cyV8YJx6GFQj4PKC.webp)' : slug === 'pokemon' ? 'url(/images/pokemon-background-J6h7Mte6BSYA3GfQ4vtdFj.webp)' : slug === 'disney_pins' ? 'url(/images/disney-pins-background-F6yUvFLVrhmnaWk6GsFMZ8.webp)' : undefined,
           backgroundSize: 'cover',
           backgroundPosition: slug === 'movies' ? 'center top' : 'center',
           backgroundAttachment: 'scroll',
@@ -602,25 +602,25 @@ export default function CategoryPage() {
                   zIndex: 50
                 }}>
                   {slug === "disney_pins" ? (
-                    <img src="/manus-storage/DisneyPinsTitle_dc12f61b.png" alt="Disney Pins" style={{ maxHeight: "475px", width: "auto", objectFit: "contain", marginBottom: "30px", marginTop: "130px" }} />
+                    <img src="/images/DisneyPinsTitle.png" alt="Disney Pins" style={{ maxHeight: "475px", width: "auto", objectFit: "contain", marginBottom: "30px", marginTop: "130px" }} />
                   ) : slug === "pokemon" ? (
-                    <img src="/manus-storage/PokemonTitle_eaf0db72.png" alt="Pokemon" style={{ maxHeight: "380px", maxWidth: "90%", width: "auto", objectFit: "contain", marginBottom: "30px", transform: "translateY(15px)" }} />
+                    <img src="/images/PokemonTitle.png" alt="Pokemon" style={{ maxHeight: "380px", maxWidth: "90%", width: "auto", objectFit: "contain", marginBottom: "30px", transform: "translateY(15px)" }} />
                   ) : slug === "comics" ? (
-                    <img src="/manus-storage/ComicsTitle_b915b61d.png" alt="Comics" style={{ maxHeight: "300px", width: "auto", objectFit: "contain", marginBottom: "-40px" }} />
+                    <img src="/images/ComicsTitle.png" alt="Comics" style={{ maxHeight: "300px", width: "auto", objectFit: "contain", marginBottom: "-40px" }} />
                   ) : slug === "sports_cards" ? (
-                    <img src="/manus-storage/SportsCardsTitle_db2535b2.png" alt="Sports Cards" style={{ maxHeight: "300px", width: "auto", objectFit: "contain", marginBottom: "30px", transform: "translateY(-100px)", marginLeft: "-15px" }} />
+                    <img src="/images/SportsCardsTitle.png" alt="Sports Cards" style={{ maxHeight: "300px", width: "auto", objectFit: "contain", marginBottom: "30px", transform: "translateY(-100px)", marginLeft: "-15px" }} />
                   ) : slug === "vintage_toys" ? (
-                    <img src="/manus-storage/VintageToysTitle_11b8cdd9.png" alt="Vintage Toys" style={{ maxHeight: "550px", width: "auto", objectFit: "contain", marginBottom: "30px", transform: "translateY(-200px)" }} />
+                    <img src="/images/VintageToysTitle.png" alt="Vintage Toys" style={{ maxHeight: "550px", width: "auto", objectFit: "contain", marginBottom: "30px", transform: "translateY(-200px)" }} />
                   ) : slug === "coins" ? (
-                    <img src="/manus-storage/CoinsTitle_40d49d1d.webp" alt="Coins" style={{ maxHeight: "225px", width: "auto", objectFit: "contain", marginBottom: "30px", transform: "translateY(-75px)", marginLeft: "-15px" }} />
+                    <img src="/images/CoinsTitle.webp" alt="Coins" style={{ maxHeight: "225px", width: "auto", objectFit: "contain", marginBottom: "30px", transform: "translateY(-75px)", marginLeft: "-15px" }} />
                   ) : slug === "stamps" ? (
-                    <img src="/manus-storage/StampsTitle_cc0e76c3.webp" alt="Stamps" style={{ maxHeight: "200px", width: "auto", objectFit: "contain", marginBottom: "30px", transform: "translateY(10px)" }} />
+                    <img src="/images/StampsTitle.webp" alt="Stamps" style={{ maxHeight: "200px", width: "auto", objectFit: "contain", marginBottom: "30px", transform: "translateY(10px)" }} />
                   ) : slug === "video_games" ? (
-                    <img src="/manus-storage/VideoGamesTitle_e5b075b7.webp" alt="Video Games" style={{ maxHeight: "550px", width: "auto", objectFit: "contain", marginBottom: "30px", transform: "translateY(-200px)" }} />
+                    <img src="/images/VideoGamesTitle.webp" alt="Video Games" style={{ maxHeight: "550px", width: "auto", objectFit: "contain", marginBottom: "30px", transform: "translateY(-200px)" }} />
                   ) : slug === "movies" ? (
-                    <img src="/manus-storage/Movies4_fa883aec.png" alt="Movies" style={{ maxHeight: "250px", width: "auto", objectFit: "contain", marginBottom: "30px", transform: "translateY(-95px)" }} />
+                    <img src="/images/MoviesTitle.png" alt="Movies" style={{ maxHeight: "250px", width: "auto", objectFit: "contain", marginBottom: "30px", transform: "translateY(-95px)" }} />
                   ) : slug === "autographs" ? (
-                    <img src="/manus-storage/AutographsTitle_85ad05d3.png" alt="Autographs" style={{ maxHeight: "300px", width: "auto", objectFit: "contain", marginBottom: "30px", transform: "translateY(-100px)", marginLeft: "-25px" }} />
+                    <img src="/images/AutographsTitle.png" alt="Autographs" style={{ maxHeight: "300px", width: "auto", objectFit: "contain", marginBottom: "30px", transform: "translateY(-100px)", marginLeft: "-25px" }} />
                   ) : categoryLabel.toUpperCase()}
                 </h1>
                 <div className="mt-8 h-px bg-white/50 mx-auto" style={{ maxWidth: "100%", width: "100%", marginTop: "64px" }}></div>
