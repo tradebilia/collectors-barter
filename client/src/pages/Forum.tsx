@@ -7,7 +7,7 @@ import { Card } from "@/components/ui/card";
 import { TopBar } from "@/components/TopBar";
 import { CategoryBar } from "@/components/CategoryBar";
 
-import { collectibleCategories } from "../../../drizzle/schema";
+import { collectibleCategories } from "@/lib/constants";
 
 export function Forum() {
   const [, setLocation] = useLocation();
@@ -32,12 +32,27 @@ export function Forum() {
   return (
     <div className="min-h-screen bg-background">
       <TopBar />
+
+      {/* Hero Section */}
+      <section className="relative w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden bg-[#00143A] text-white">
+        <div className="absolute inset-0" style={{
+          backgroundImage: 'url(/images/Mainpage.jpg)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat'
+        }} />
+        <div className="container relative flex h-64 items-center justify-center py-0 sm:h-72 sm:py-0 lg:h-80 lg:py-0">
+          <div className="flex w-full max-w-4xl items-center justify-center -ml-32">
+            <img
+              src="/images/forum-title.svg"
+              alt="Collector's Forum"
+              className="h-auto w-full max-h-[300px]"
+            />
+          </div>
+        </div>
+      </section>
+
       <CategoryBar />
-      
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-12 text-center">
-        <h1 className="text-4xl font-bold mb-2">Collector's Forum</h1>
-        <p className="text-lg opacity-90">Join discussions with fellow collectors</p>
-      </div>
 
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-6">
@@ -97,9 +112,9 @@ export function Forum() {
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
-                      {post.isPinned && <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">PINNED</span>}
-                      {post.isSolved && <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">SOLVED</span>}
-                      {post.isLocked && <span className="text-xs bg-red-100 text-red-800 px-2 py-1 rounded">LOCKED</span>}
+                      {!!post.isPinned && <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">PINNED</span>}
+                      {!!post.isSolved && <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">SOLVED</span>}
+                      {!!post.isLocked && <span className="text-xs bg-red-100 text-red-800 px-2 py-1 rounded">LOCKED</span>}
                     </div>
                     <h3 className="text-lg font-semibold mb-1">{post.title || "(Untitled)"}</h3>
                     <p className="text-sm text-muted-foreground mb-2">

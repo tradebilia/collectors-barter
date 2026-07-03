@@ -3,8 +3,6 @@ import { and, asc, desc, eq, gte, inArray, isNotNull, like, lte, ne, or, sql } f
 import { drizzle } from "drizzle-orm/mysql2";
 import type { InsertUser, User } from "../drizzle/schema";
 import {
-  collectibleCategories,
-  itemConditions,
   users,
   ebayFeedbackHistory,
   emailVerificationOtps,
@@ -28,6 +26,9 @@ import {
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 import { storagePut } from "./storage";
+
+export const collectibleCategories = ['comics', 'sports_cards', 'vintage_toys', 'video_games', 'stamps', 'coins', 'pokemon', 'movies', 'autographs', 'disney_pins'] as const;
+export const itemConditions = ['mint', 'near_mint', 'excellent', 'very_good', 'good', 'fair', 'poor'] as const;
 
 let _db: ReturnType<typeof drizzle> | null = null;
 

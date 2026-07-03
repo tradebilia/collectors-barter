@@ -21,26 +21,29 @@ export async function setupVite(app: Express, server: Server) {
   });
 
   app.use(vite.middlewares);
+  const clientTemplate = path.resolve(
+    import.meta.dirname,
+    "../..",
+    "client",
+    "index.html"
+  );
+
+  // Cache the template in memory for dev speed, but let it be re-read if needed
+  let cachedTemplate: string | null = null;
+
   app.use("*", async (req, res, next) => {
     const url = req.originalUrl;
 
     try {
-      const clientTemplate = path.resolve(
-        import.meta.dirname,
-        "../..",
-        "client",
-        "index.html"
-      );
-
-      // always reload the index.html file from disk incase it changes
-      let template = await fs.promises.readFile(clientTemplate, "utf-8");
-      template = template.replace(
-        `src="/src/main.tsx"`,
-        `src="/src/main.tsx?v=${nanoid()}"`
-      );
-      const page = await vite.transformIndexHtml(url, template);
+      if (!cachedTemplate) {
+        cachedTemplate = await fs.promises.readFile(clientTemplate, "utf-8");
+      }
+      
+      const page = await vite.transformIndexHtml(url, cachedTemplate);
       res.status(200).set({ "Content-Type": "text/html" }).end(page);
     } catch (e) {
+      // Clear cache on error so we try reading again
+      cachedTemplate = null;
       vite.ssrFixStacktrace(e as Error);
       next(e);
     }

@@ -15,7 +15,23 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { getLoginUrl } from "@/const";
-import { Heart, Loader2, MessageSquareText, Search, ShieldCheck, Sparkles, Star, ArrowRightLeft, Clock3, Plus, Users, ListTodo, DollarSign, Handshake, TrendingUp } from "lucide-react";
+import { 
+  Heart, 
+  Loader2, 
+  MessageSquareText, 
+  Search, 
+  ShieldCheck, 
+  Sparkles, 
+  Star, 
+  ArrowRightLeft, 
+  Clock3, 
+  Plus, 
+  Users, 
+  ListTodo, 
+  DollarSign, 
+  Handshake, 
+  TrendingUp 
+} from "lucide-react";
 import { ChangeEvent, FormEvent, useMemo, useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { Link, useLocation } from "wouter";
@@ -557,7 +573,7 @@ export default function Home() {
 
       <main className="pb-24">
         <section className="relative z-0 w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden text-white" style={{
-          backgroundImage: 'url(/images/Mainpage.jpg)',
+          backgroundImage: 'url(/images/Mainpage.webp)',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat'

@@ -9,6 +9,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
 import { ChevronRight, Loader2, Upload, Eye, EyeOff } from "lucide-react";
 import { TopRightIcons } from "@/components/TopRightIcons";
+import { TopBar } from "@/components/TopBar";
+import { CategoryBar } from "@/components/CategoryBar";
 import { FormEvent, useEffect, useState, useRef } from "react";
 import { toast } from "sonner";
 import { Link, useLocation } from "wouter";
@@ -423,19 +425,15 @@ export default function AccountSetup() {
 
   return (
     <div className="min-h-screen bg-[#f5f5f3] text-slate-950">
-      <header className="border-b border-black/10 bg-[#161616] text-white">
-        <div className="flex flex-wrap items-center gap-4 px-4 py-3 lg:px-8">
-          <Link href="/" className="font-['Oswald'] text-[2.2rem] font-semibold leading-none tracking-[-0.05em] text-white">
-            HOME
-          </Link>
-          <TopRightIcons className="ml-auto flex items-center gap-3 md:gap-4" iconColor="text-white" />
-        </div>
-      </header>
+      <TopBar
+        logoUrl={TRADEBILIA_LOGO_URL}
+        searchPlaceholder="Search Account Setup..."
+      />
 
       {/* Hero Section */}
       <section className="relative w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden bg-[#00143A] text-white">
         <div className="absolute inset-0 opacity-20" style={{
-          backgroundImage: 'url(/manus-storage/Sportscardwallpaper_a86b605b.webp)',
+          backgroundImage: 'url(/images/Mainpage.jpg)',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat'
@@ -450,6 +448,8 @@ export default function AccountSetup() {
           </div>
         </div>
       </section>
+
+      <CategoryBar />
 
       {/* Development Navigation */}
       {showDevNav && (
