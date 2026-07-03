@@ -1,8 +1,0 @@
-{
-  "query": "SELECT id, preferredCategories FROM userProfiles WHERE id = (SELECT id FROM users WHERE email = 'rtavani@verizon.net') LIMIT 1;",
-  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4ZXfWh5QbDJhQ4C.root --database nAx6ATm2BH4G46yabuMZgM --execute SELECT id, preferredCategories FROM userProfiles WHERE id = (SELECT id FROM users WHERE email = 'rtavani@verizon.net') LIMIT 1;",
-  "returncode": 1,
-  "logs": [
-    "ERROR 1242 (21000) at line 1: Subquery returns more than 1 row"
-  ]
-}

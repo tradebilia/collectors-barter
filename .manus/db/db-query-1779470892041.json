@@ -1,9 +1,0 @@
-{
-  "query": "SELECT * FROM userProfiles WHERE displayName = 'rtavani' LIMIT 1;",
-  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4ZXfWh5QbDJhQ4C.root --database nAx6ATm2BH4G46yabuMZgM --execute SELECT * FROM userProfiles WHERE displayName = 'rtavani' LIMIT 1;",
-  "rows": [],
-  "messages": [],
-  "stdout": "",
-  "stderr": "",
-  "execution_time_ms": 261
-}

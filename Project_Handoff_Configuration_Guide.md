@@ -222,8 +222,10 @@ This section summarizes the critical environment variables and credentials used.
 
 ## 6. Lessons Learned & Future Considerations
 
+*   **Dual-Backup & Documentation SOP:** Every checkpoint must involve updating this Handoff Guide, backing up to the internal Manus project folder, and pushing to the external GitHub repository. This ensures triple redundancy and absolute clarity for future sessions.
 *   **Environment Variable Specificity:** The distinction between `api.manus.im` and `forge.manus.ai` for different API services is crucial. Future debugging should always verify the exact endpoint being used for each service.
 *   **Comprehensive `.env` Management:** Ensure all critical URLs and keys are correctly set and explicitly loaded when restarting the server, especially in development environments.
+*   **Three-Strike Rule:** If a specific technical issue (like SVG layout) is not resolved after three attempts using the same method, the agent must stop, explain the failure, and propose a new strategy.
 *   **Automated Testing:** Implementing automated tests for critical functionalities like image uploads and API connectivity would prevent regressions and quickly identify configuration issues.
 
 This document should provide a solid foundation for anyone working on the Tradebilia website in the future. All core functionalities and UI standards are now aligned and verified.
@@ -269,8 +271,17 @@ Any corrective actions taken for these or other issues in future sessions **must
 **Fix Implemented:**
 *   Created a custom branded SVG asset: `client/public/images/forum-title.svg`.
 *   This asset was derived from the original `tradebilia-logo.svg`, with the wordmark updated to "COLLECTOR'S FORUM" and the tagline changed to "Community Exchange & Discussion".
+*   Initially, the text in the SVG overlapped the spinning wheel due to the longer text length compared to "TRADEBILIA".
+*   **Refinement 1 (XML Error):** Corrected an XML parsing error in the SVG by escaping the ampersand in "Community Exchange & Discussion" to `&amp;`.
+*   **Refinement 2 (Layout Adjustment):** Adjusted the `font-size` for the wordmark to `90` and the tagline to `32`. The `text-anchor` for both was set to `end`, and the `x` coordinate was set to `1440` to align the text to the right of the divider, mirroring the original Tradebilia logo's layout.
 *   Updated `client/src/pages/Forum.tsx` and `client/src/pages/ForumTopic.tsx` to use this new branded SVG in their hero sections.
 *   Ensured the SVG is correctly sized (`max-h-[300px]`) and positioned to maintain the professional look of the site.
 
 **Verification:**
-*   Verified on the live site that the branded "COLLECTOR'S FORUM" logo now appears prominently in the hero section on both the main forum list and individual topic pages, perfectly matching the site's overall branding.
+*   Verified on the live site that the branded "COLLECTOR'S FORUM" logo now appears prominently in the hero section on both the main forum list and individual topic pages, perfectly matching the site's overall branding and without any overlapping.
+
+### 3.8. Forum Rendering Fix (000 Issue)
+- **Problem:** Three zeroes (`000`) were appearing above forum topic titles on the Forum page and within individual topic views.
+- **Cause:** The database (MySQL/TiDB) stores boolean flags like `isPinned`, `isSolved`, and `isLocked` as `tinyint` (0 or 1). In React/JSX, rendering `{0}` directly results in the number `0` being displayed. Since all three flags were often `0` for new posts, it rendered as `000`.
+- **Fix:** Updated `client/src/pages/Forum.tsx` and `client/src/pages/ForumTopic.tsx` to use double-negation (`!!post.isPinned`) to explicitly convert the numeric database values into true booleans. This ensures the flags only trigger the intended label components and do not render the numeric value when false.
+- **Status:** Fixed and verified.
