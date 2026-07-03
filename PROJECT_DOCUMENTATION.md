@@ -13,6 +13,19 @@ Tradebilia is a peer-to-peer collectors trading exchange platform built with Rea
 
 **Live Domain:** https://tradebilia-tzzwlt5f.manus.space
 
+## ⚠️ CRITICAL: Database Configuration for New Sessions
+
+**Primary Database (PRODUCTION):** `TzzwLt5FRwqjKKW5zhfchR`
+
+**Connection String:**
+```
+mysql://4ZXfWh5QbDJhQ4C.023db4f53938:9gg6EhlcJlBPkKU3111k@gateway05.us-east-1.prod.aws.tidbcloud.com:4000/TzzwLt5FRwqjKKW5zhfchR?ssl={"rejectUnauthorized":true}
+```
+
+**⚠️ IMPORTANT:** Each new session may get a DIFFERENT database. Always verify DATABASE_URL matches above.
+
+**See:** `NEW_SESSION_DATABASE_CONFIG.md` for complete setup instructions.
+
 ---
 
 ## Technology Stack
@@ -108,18 +121,20 @@ collectors-barter/
 
 ### System-Provided (Auto-Injected)
 ```
-DATABASE_URL=mysql://...
-JWT_SECRET=...
-VITE_APP_ID=...
-OAUTH_SERVER_URL=...
-VITE_OAUTH_PORTAL_URL=...
-OWNER_OPEN_ID=...
-OWNER_NAME=...
-BUILT_IN_FORGE_API_URL=...
-BUILT_IN_FORGE_API_KEY=...
-VITE_FRONTEND_FORGE_API_KEY=...
-VITE_FRONTEND_FORGE_API_URL=...
+DATABASE_URL=mysql://4ZXfWh5QbDJhQ4C.023db4f53938:9gg6EhlcJlBPkKU3111k@gateway05.us-east-1.prod.aws.tidbcloud.com:4000/TzzwLt5FRwqjKKW5zhfchR?ssl={"rejectUnauthorized":true}
+VITE_APP_ID=TzzwLt5FRwqjKKW5zhfchR
+JWT_SECRET=(auto-injected)
+OAUTH_SERVER_URL=(auto-injected)
+VITE_OAUTH_PORTAL_URL=(auto-injected)
+OWNER_OPEN_ID=(auto-injected)
+OWNER_NAME=(auto-injected)
+BUILT_IN_FORGE_API_URL=(auto-injected)
+BUILT_IN_FORGE_API_KEY=(auto-injected)
+VITE_FRONTEND_FORGE_API_KEY=(auto-injected)
+VITE_FRONTEND_FORGE_API_URL=(auto-injected)
 ```
+
+**⚠️ CRITICAL:** DATABASE_URL may differ in new sessions. Always verify it matches the primary database above.
 
 ---
 
@@ -304,6 +319,19 @@ webdev_execute_sql "SELECT * FROM migrations"
 
 ---
 
+## Asset Management
+
+### All Item Images (31 total)
+**Location:** `/client/public/images/`
+**Storage:** All committed to git repo
+**Categories:**
+- 19 S3-uploaded images (Megatron, Trump, Star Wars, SuperMario3, Coins, etc.)
+- 12 original images (Daredevil, Charizard, Joe Montana, etc.)
+
+**Naming Format:** `{timestamp}-{randomId}-{itemName}_{hash}.{ext}`
+
+**See:** `ITEM_IMAGES_INVENTORY.md` and `FILE_RENAME_MAPPING.md`
+
 ## Support & Maintenance
 
 ### Common Tasks
@@ -331,12 +359,26 @@ webdev_execute_sql "SELECT * FROM migrations"
 
 ---
 
+## New Session Setup Checklist
+
+**BEFORE starting any new session, read:** `NEW_SESSION_DATABASE_CONFIG.md`
+
+1. [ ] Verify DATABASE_URL: `echo $DATABASE_URL`
+2. [ ] Check database name is `TzzwLt5FRwqjKKW5zhfchR`
+3. [ ] If different, update DATABASE_URL (see NEW_SESSION_DATABASE_CONFIG.md)
+4. [ ] Restart dev server: `pnpm dev`
+5. [ ] Test login with AdminTavani
+6. [ ] Verify inventory items visible
+7. [ ] Check images load correctly
+
 ## Contact & Resources
 
 - **Repository:** https://github.com/tradebilia/collectors-barter
 - **Live Site:** https://tradebilia-tzzwlt5f.manus.space
+- **Manus Support:** https://help.manus.im
 - **Project Owner:** Rich
-- **Last Maintenance:** June 10, 2026
+- **Last Updated:** July 3, 2026
+- **Database:** TzzwLt5FRwqjKKW5zhfchR (primary)
 
 ---
 
