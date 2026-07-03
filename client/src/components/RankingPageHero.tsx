@@ -127,32 +127,14 @@ export function RankingPageHero({ title, subtitle = "Collectors Trading Exchange
           {/* Divider line */}
           <line x1="590" y1="271" x2="590" y2="595" stroke="white" strokeWidth="8.5" strokeLinecap="round" />
 
-          {/* Dynamic title - positioned to the right of divider with proper spacing */}
-          <text
-            x="800"
-            y="468"
-            textAnchor="start"
-            fontFamily="Montserrat, Avenir Next, Gotham, Arial, Helvetica, sans-serif"
-            fontSize="132"
-            fontWeight="700"
-            fill="white"
-            className="uppercase"
-          >
-            {title}
-          </text>
-
-          {/* Subtitle - positioned below title */}
-          <text
-            x="800"
-            y="536"
-            textAnchor="start"
-            fontFamily="Montserrat, Avenir Next, Gotham, Arial, Helvetica, sans-serif"
-            fontSize="32"
-            fontWeight="400"
-            fill="white"
-          >
-            {subtitle}
-          </text>
+          <image
+            x="650"
+            y="150"
+            width="1800"
+            height="564"
+            href={title === "Most Viewed" ? "/images/heros/MostViewed.svg" : title === "Most Favorited" ? "/images/heros/MostRequested.svg" : title === "Top Rated Traders" ? "/images/heros/TopRatedTraders.svg" : title === "Highest Trade Value" ? "/images/heros/HighestTradeValue.svg" : "/images/heros/TradeProposal.svg"}
+            preserveAspectRatio="xMinYMid meet"
+          />
         </svg>
       </div>
     </section>

@@ -208,15 +208,35 @@ export default function Profile() {
   return (
     <div className="min-h-screen bg-[#f5f5f3] text-slate-950">
       <TopBar />
+
+      {/* Hero Section */}
+      <section className="relative z-0 w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden bg-[#00143A] text-white border-b border-white/10">
+        <div className="absolute inset-0" style={{
+          backgroundImage: 'url(/manus-storage/Mainpage_9b45311d.jpg)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat'
+        }} />
+        <div className="container relative flex h-64 items-center justify-center py-0 sm:h-72 sm:py-0 lg:h-80 lg:py-0">
+          <div className="flex w-full max-w-6xl items-center justify-center -ml-32">
+            <img
+              src="/images/heros/Profile.svg"
+              alt="Profile"
+              className="h-auto w-full"
+            />
+          </div>
+        </div>
+      </section>
+
       <CategoryBar />
-
-
 
       <main className="px-4 py-10 lg:px-8">
         <div className="mx-auto max-w-6xl space-y-8">
           <section className="text-center">
-            <h1 className="text-5xl font-semibold tracking-tight text-slate-950">ACCOUNT SETTINGS</h1>
-            <p className="mt-3 text-xl text-slate-600">Manage your profile, security, and preferences</p>
+            <div className="hidden">
+              <h1 className="text-5xl font-semibold tracking-tight text-slate-950">ACCOUNT SETTINGS</h1>
+              <p className="mt-3 text-xl text-slate-600">Manage your profile, security, and preferences</p>
+            </div>
             <div className="mt-6 flex flex-wrap justify-center gap-4">
               <Button className="h-12 rounded-xl bg-[#2f73ed] px-6 text-lg text-white hover:bg-[#2563d8]">
                 <Plus className="mr-2 h-5 w-5" />

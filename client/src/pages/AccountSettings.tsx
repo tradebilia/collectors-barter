@@ -27,7 +27,7 @@ import { Link } from "wouter";
 import { TopBar } from "@/components/TopBar";
 import { CategoryBar } from "@/components/CategoryBar";
 
-const TRADEBILIA_LOGO_URL = "/manus-storage/tradebilia-logo_c676d640.svg";
+const TRADEBILIA_LOGO_URL = "/images/heros/AccountSettings.svg";
 
 const categoryOptions = [
   { value: "comics", label: "Comics" },

@@ -404,10 +404,10 @@ export default function Inventory() {
           backgroundRepeat: 'no-repeat'
         }} />
         <div className="relative flex w-full h-48 items-center justify-start py-0 sm:h-56 lg:h-64 overflow-hidden pl-8 lg:pl-16" style={{ maxHeight: '300px' }}>
-          <img
-            src="/manus-storage/Myinventory_467a8c30_67884c88.svg"
+            <img
+            src="/images/heros/Myinventory.svg"
             alt="My Inventory"
-            style={{ height: '800px', width: '800px', objectFit: 'contain', maxWidth: '100%', marginLeft: '400px' }}
+            className="h-auto w-full"
           />
         </div>
       </section>
