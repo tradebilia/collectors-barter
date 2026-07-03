@@ -65,15 +65,16 @@ function normalizeListingImageUrl(url: string) {
 }
 
 export function resolveTradebiliaListingImage(input: TradebiliaListingImageInput) {
-  // 1. If user-uploaded image is available, use it
-  if (input.primaryPhotoUrl) return normalizeListingImageUrl(input.primaryPhotoUrl);
-
-  // 2. Try to match by keyword
+  // 1. Try to match by keyword first to handle cases where uploaded images might be broken
+  // but we have a high-quality local asset for the item
   const titleLower = input.title.toLowerCase();
   const matched = keywordImageMap.find(entry => 
     entry.keywords.some(keyword => titleLower.includes(keyword))
   );
   if (matched) return normalizeListingImageUrl(matched.imageUrl);
+
+  // 2. If no keyword match, use user-uploaded image if available
+  if (input.primaryPhotoUrl) return normalizeListingImageUrl(input.primaryPhotoUrl);
 
   // 3. Try to match by category
   if (input.category && categoryImageMap[input.category]) {
