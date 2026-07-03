@@ -257,3 +257,19 @@ Any corrective actions taken for these or other issues in future sessions **must
 
 **Verification:**
 *   Verified that selecting and deleting multiple draft items no longer triggers the "Failed to delete items" error and correctly removes the items from the view.
+
+### 3.7. Fix for Missing Hero Title on Forum Page
+
+**Issue:** The hero section on the Forum page was missing its title text, making it inconsistent with the rest of the site.
+
+**Diagnosis:**
+*   The `Forum.tsx` and `ForumTopic.tsx` components were rendering the hero background and an SVG image but did not include any `<h1>` or overlaid text for the title.
+*   Unlike category pages that use specific title images (e.g., `PokemonTitle.png`), the Forum page requires overlaid text to match its utility-page design.
+
+**Fix Implemented:**
+*   Modified `client/src/pages/Forum.tsx` and `client/src/pages/ForumTopic.tsx` to include an overlaid `<h1>` element within the hero section.
+*   Applied the `Righteous` font family and a strong text shadow (`4px 4px 8px rgba(0,0,0,0.8)`) to ensure the title is clearly legible against the background.
+*   Positioned the title "Collector's Forum" to be centered over the hero SVG with appropriate padding for a balanced look.
+
+**Verification:**
+*   Verified on the live site that "Collector's Forum" now appears prominently in the hero section on both the main forum list and individual topic pages.

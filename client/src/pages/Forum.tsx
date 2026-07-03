@@ -42,12 +42,20 @@ export function Forum() {
           backgroundRepeat: 'no-repeat'
         }} />
         <div className="container relative flex h-64 items-center justify-center py-0 sm:h-72 sm:py-0 lg:h-80 lg:py-0">
-          <div className="flex w-full max-w-4xl items-center justify-center -ml-32">
+          <div className="flex w-full max-w-4xl items-center justify-center -ml-32 relative">
             <img
               src="/images/heros/SuggestionsContactUs.svg"
               alt="Collector's Forum"
               className="h-auto w-full"
             />
+            <h1 className="absolute inset-0 flex items-center justify-center text-5xl sm:text-6xl lg:text-7xl font-bold text-white uppercase tracking-wider text-center" style={{
+              fontFamily: "'Righteous', sans-serif",
+              textShadow: "4px 4px 8px rgba(0,0,0,0.8)",
+              zIndex: 10,
+              paddingLeft: "80px"
+            }}>
+              Collector's Forum
+            </h1>
           </div>
         </div>
       </section>
