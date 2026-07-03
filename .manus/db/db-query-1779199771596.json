@@ -1,9 +1,0 @@
-{
-  "query": "ALTER TABLE `userProfiles` ADD `firstName` varchar(100);\nALTER TABLE `userProfiles` ADD `lastName` varchar(100);",
-  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway05.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4ZXfWh5QbDJhQ4C.root --database nAx6ATm2BH4G46yabuMZgM --execute ALTER TABLE `userProfiles` ADD `firstName` varchar(100);\nALTER TABLE `userProfiles` ADD `lastName` varchar(100);",
-  "rows": [],
-  "messages": [],
-  "stdout": "",
-  "stderr": "",
-  "execution_time_ms": 851
-}
