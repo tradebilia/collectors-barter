@@ -251,11 +251,11 @@
 
 
 @keyframes scroll-marquee {
-  0% {
+  from {
     transform: translateX(0);
   }
-  100% {
-    transform: translateX(calc(-236px * 15));
+  to {
+    transform: translateX(-50%);
   }
 }
 

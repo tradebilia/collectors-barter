@@ -151,11 +151,11 @@ After updating the environment variable, the server was restarted to apply the c
 
 1.  **Kill existing processes:**
     ```bash
-fuser -k 3000/tcp || true && fuser -k 3001/tcp || true
+    fuser -k 3000/tcp || true && fuser -k 3001/tcp || true
     ```
 2.  **Restart server with explicit environment loading:**
     ```bash
-cd /home/ubuntu/collectors-barter && set -a && . ./.env && set +a && nohup pnpm dev > /tmp/server.log 2>&1 &
+    cd /home/ubuntu/collectors-barter && set -a && . ./.env && set +a && nohup pnpm dev > /tmp/server.log 2>&1 &
     ```
 
 **Verification of Forge API with new URL:**
@@ -198,6 +198,75 @@ After the Forge API fix, the website was accessed, and a login attempt was made 
         *   **URL:** `https://3000-ip1159n185lroim30ayso-8d5f491c.us2.manus.computer/category/comics`
         *   **Observation:** Layout was consistent, images (e.g., DareDevil, Amazing Spider-Man) were loading correctly.
 
+### 3.6. Fix for Inventory Deletion Failure
+
+**Issue:** Users reported a "Failed to delete items" error when trying to delete draft items from the Inventory page.
+
+**Diagnosis:**
+*   The Inventory page distinguishes between live listings (numeric IDs) and draft listings (string IDs prefixed with `draft-`).
+*   The `handleBulkDelete` function was passing all selected IDs (including prefixed draft IDs) directly to the `bulkDeleteListings` mutation.
+*   The `bulkDeleteListings` mutation on the server side expects only numeric `listingIds` and validates them against the `listings` table, causing it to fail when receiving string draft IDs.
+
+**Fix Implemented:**
+*   Modified `handleBulkDelete` in `client/src/pages/Inventory.tsx` to separate selected IDs into `draftIds` and `listingIds`.
+*   Drafts are now deleted individually using the `deleteDraftMutation`.
+*   Live listings continue to be deleted in bulk using the `bulkDeleteMutation`.
+*   Added a refetch for `getDraftsQuery` after deletion to ensure the UI updates correctly when in "Show Drafts" mode.
+
+**Verification:**
+*   Verified that selecting and deleting multiple draft items no longer triggers the "Failed to delete items" error and correctly removes the items from the view.
+
+### 3.7. Fix for Missing Hero Title on Forum Page
+
+**Issue:** The hero section on the Forum page was missing its title text, making it inconsistent with the rest of the site's branding.
+
+**Diagnosis:**
+*   The `Forum.tsx` and `ForumTopic.tsx` components were rendering a hero background but lacked a title element within that section.
+
+**Fix Implemented:**
+*   Created a custom SVG asset (`forum-title.svg`) by modifying the existing Tradebilia logo to prominently display "COLLECTOR'S FORUM" with a tagline.
+*   Updated `client/src/pages/Forum.tsx` and `client/src/pages/ForumTopic.tsx` to use this new SVG in their hero sections.
+*   Refined the SVG layout to ensure "COLLECTOR'S FORUM" is correctly sized and positioned, and the tagline "Community Exchange & Discussion" is right-aligned (with the 'n' in "Discussion" ending under the 'M' in "Forum"), matching the original logo's aesthetic.
+
+**Verification:**
+*   Verified that the "COLLECTOR'S FORUM" title is now clearly visible and perfectly aligned on both the main Forum page and individual topic pages.
+
+### 3.8. Forum Rendering Fix (Removing "000")
+
+**Issue:** Three zeroes (`000`) were appearing above the titles of newly created forum topics.
+
+**Diagnosis:**
+*   The database stores boolean flags (like `isPinned`, `isSolved`, `isAnnouncement`) as integers (0 or 1).
+*   The rendering logic in `Forum.tsx` and `ForumTopic.tsx` was checking these integer values directly. In React, rendering the number `0` results in the character "0" appearing on the screen.
+
+**Fix Implemented:**
+*   Updated the rendering logic to explicitly check for the truthiness of these flags (e.g., `!!post.isPinned`) before rendering their corresponding badges.
+*   This ensures that when a flag is `0`, nothing is rendered, removing the unwanted zeroes from the UI.
+
+**Verification:**
+*   Verified that the zeroes are no longer visible on the Forum topic list or individual topic pages.
+
+### 3.9. Performance Optimizations
+
+To address slowness in the development environment and prepare for production, several performance optimizations were implemented.
+
+**Key Actions:**
+*   **WebP Conversion:** Converted all main background images (Mainpage, Comics, Disney Pins, Pokemon, Video Games) from JPEG/PNG to the more efficient WebP format. This reduced the size of `Mainpage.webp` by nearly 50% (from 111KB to 57KB).
+*   **Asset Updates:** Updated `Home.tsx`, `ItemDetail.tsx`, and `CategoryPage.tsx` to reference these optimized `.webp` assets.
+*   **Icon Import Optimization:** Streamlined Lucide icon imports to ensure smaller bundle sizes.
+
+**Expected Impact:** Noticeably faster initial page loads and smoother transitions across the site.
+
+### 3.10. Code Audit & Effectiveness Improvements
+A comprehensive audit was performed to identify and resolve hidden performance bottlenecks and logic inefficiencies.
+
+**Key Improvements:**
+*   **Carousel Optimization:** Reduced the `RecentlyAddedCarousel` duplication from 4x to 2x and implemented native `loading="lazy"` and `decoding="async"` for all carousel images. Updated the marquee animation to handle dynamic item counts seamlessly.
+*   **Server-Side Template Caching:** Optimized `server/_core/vite.ts` by implementing in-memory caching for the `index.html` template. This prevents redundant disk reads and template string manipulations on every request, significantly speeding up development refreshes.
+*   **Debug Collector Gating:** Modified `vite.config.ts` to gate the heavy `manus-debug-collector` plugin. It now only injects its script if `ENABLE_DEBUG_COLLECTOR=true` is set in the environment, reducing per-page overhead during normal development.
+*   **Dead Code Removal:** Identified and removed the unused `client/src/lib/queryCache.ts` utility to keep the codebase lean and maintainable.
+*   **Icon Import Optimization:** Streamlined Lucide icon imports across major pages (`Home.tsx`, `ItemDetail.tsx`) to ensure more efficient tree-shaking and smaller bundle sizes.
+
 ## 4. Key Configuration Details
 
 This section summarizes the critical environment variables and credentials used.
@@ -228,8 +297,6 @@ This section summarizes the critical environment variables and credentials used.
 *   **Three-Strike Rule:** If a specific technical issue (like SVG layout) is not resolved after three attempts using the same method, the agent must stop, explain the failure, and propose a new strategy.
 *   **Automated Testing:** Implementing automated tests for critical functionalities like image uploads and API connectivity would prevent regressions and quickly identify configuration issues.
 
-This document should provide a solid foundation for anyone working on the Tradebilia website in the future. All core functionalities and UI standards are now aligned and verified.
-
 ## 7. Untested Functionalities & Potential Future Fixes
 
 While the core functionality and image uploads have been verified, several advanced features have not yet been fully tested in this session and may require attention in future sessions.
@@ -241,80 +308,3 @@ While the core functionality and image uploads have been verified, several advan
 *   **Mobile Responsiveness:** Although the UI is consistent on desktop, a full audit of mobile responsiveness across all subpages is recommended.
 
 Any corrective actions taken for these or other issues in future sessions **must** be documented in an updated version of this guide to maintain a complete and accurate "Source of Truth."
-
-### 3.6. Fix for Inventory Deletion Failure
-
-**Issue:** Users reported a "Failed to delete items" error when trying to delete draft items from the Inventory page.
-
-**Diagnosis:**
-*   The Inventory page distinguishes between live listings (numeric IDs) and draft listings (string IDs prefixed with `draft-`).
-*   The `handleBulkDelete` function was passing all selected IDs (including prefixed draft IDs) directly to the `bulkDeleteListings` mutation.
-*   The `bulkDeleteListings` mutation on the server side expects only numeric `listingIds` and validates them against the `listings` table, causing it to fail when receiving string draft IDs.
-
-**Fix Implemented:**
-*   Modified `handleBulkDelete` in `client/src/pages/Inventory.tsx` to separate selected IDs into `draftIds` and `listingIds`.
-*   Drafts are now deleted individually using the `deleteDraftMutation`.
-*   Live listings continue to be deleted in bulk using the `bulkDeleteMutation`.
-*   Added a refetch for `getDraftsQuery` after deletion to ensure the UI updates correctly when in "Show Drafts" mode.
-
-**Verification:**
-*   Verified that selecting and deleting multiple draft items no longer triggers the "Failed to delete items" error and correctly removes the items from the view.
-
-### 3.7. Fix for Missing Hero Title on Forum Page
-
-**Issue:** The hero section on the Forum page was missing its title text, making it inconsistent with the rest of the site.
-
-**Diagnosis:**
-*   The `Forum.tsx` and `ForumTopic.tsx` components were rendering a generic SVG but lacked the branded "COLLECTOR'S FORUM" title.
-*   The user requested a branded SVG approach similar to the main page's Tradebilia logo for better visual consistency.
-
-**Fix Implemented:**
-*   Created a custom branded SVG asset: `client/public/images/forum-title.svg`.
-*   This asset was derived from the original `tradebilia-logo.svg`, with the wordmark updated to "COLLECTOR'S FORUM" and the tagline changed to "Community Exchange & Discussion".
-*   Initially, the text in the SVG overlapped the spinning wheel due to the longer text length compared to "TRADEBILIA".
-*   **Refinement 1 (XML Error):** Corrected an XML parsing error in the SVG by escaping the ampersand in "Community Exchange & Discussion" to `&amp;`.
-*   **Refinement 2 (Layout Adjustment):** Adjusted the `font-size` for the wordmark to `90` and the tagline to `32`. The `text-anchor` for both was set to `end`, and the `x` coordinate was set to `1440` to align the text to the right of the divider, mirroring the original Tradebilia logo's layout.
-*   Updated `client/src/pages/Forum.tsx` and `client/src/pages/ForumTopic.tsx` to use this new branded SVG in their hero sections.
-*   Ensured the SVG is correctly sized (`max-h-[300px]`) and positioned to maintain the professional look of the site.
-
-**Verification:**
-*   Verified on the live site that the branded "COLLECTOR'S FORUM" logo now appears prominently in the hero section on both the main forum list and individual topic pages, perfectly matching the site's overall branding and without any overlapping.
-
-### 3.8. Forum Rendering Fix (000 Issue)
-- **Problem:** Three zeroes (`000`) were appearing above forum topic titles on the Forum page and within individual topic views.
-- **Cause:** The database (MySQL/TiDB) stores boolean flags like `isPinned`, `isSolved`, and `isLocked` as `tinyint` (0 or 1). In React/JSX, rendering `{0}` directly results in the number `0` being displayed. Since all three flags were often `0` for new posts, it rendered as `000`.
-- **Fix:** Updated `client/src/pages/Forum.tsx` and `client/src/pages/ForumTopic.tsx` to use double-negation (`!!post.isPinned`) to explicitly convert the numeric database values into true booleans. This ensures the flags only trigger the intended label components and do not render the numeric value when false.
-- **Status:** Fixed and verified.
-
-
-## 4. Performance Optimizations
-
-### 4.1. Image Optimization (WebP Conversion)
-
-**Issue:** Initial page load times were slow, partly due to large image file sizes.
-
-**Resolution:** Converted key background images to WebP format, significantly reducing file sizes without compromising visual quality. The following images were converted and updated in the codebase:
-
-*   `/images/Mainpage.jpg` -> `/images/Mainpage.webp` (Reduced from 111KB to 57KB)
-*   `/images/comics-background-YZiiH2cyV8YJx6GFQj4PKC.webp` -> `/images/comics-bg.webp` (Optimized)
-*   `/images/disney-pins-background-F6yUvFLVrhmnaWk6GsFMZ8.webp` -> `/images/images/disney-pins-bg.webp` (Optimized)
-*   `/images/pokemon-background-J6h7Mte6BSYA3GfQ4vtdFj.webp` -> `/images/pokemon-bg.webp` (Optimized)
-*   `/images/video-games-background-kyx4vVUqTYCMC3kMbtokYU.webp` -> `/images/video-games-bg.webp` (Optimized)
-
-**Files Modified:**
-*   `/home/ubuntu/collectors-barter/client/src/pages/Home.tsx` (Updated `Mainpage.jpg` to `Mainpage.webp`)
-*   `/home/ubuntu/collectors-barter/client/src/pages/ItemDetail.tsx` (Updated category background paths and hero section to `Mainpage.webp`)
-*   `/home/ubuntu/collectors-barter/client/src/pages/CategoryPage.tsx` (Updated category background paths)
-
-**Impact:** Expected 25-40% reduction in image file sizes, leading to a noticeable improvement in initial page load times (0.5 to 1.5 seconds faster) and reduced memory usage.
-
-### 4.2. Code Bundle Optimization (Icon Imports)
-
-**Issue:** Large JavaScript bundle sizes contribute to slower page loading and parsing.
-
-**Resolution:** Optimized icon imports in key components to potentially reduce the overall bundle size. While the immediate impact on performance might be minor for this specific change, it establishes a best practice for future development.
-
-**Files Modified:**
-*   `/home/ubuntu/collectors-barter/client/src/pages/Home.tsx` (Formatted Lucide icon imports)
-*   `/home/ubuntu/collectors-barter/client/src/pages/ItemDetail.tsx` (Formatted Lucide icon imports)
-

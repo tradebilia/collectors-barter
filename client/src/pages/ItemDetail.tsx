@@ -54,7 +54,15 @@ const getItemDetailPageClassName = (category: string): string => {
   }
   return 'bg-[radial-gradient(circle_at_top,#1c2468_0%,#0b0a22_65%)] text-white';
 };
-import { Heart, Loader2, MessageCircleMore, Menu, Search, Star, UserRound } from "lucide-react";
+import { 
+  Heart, 
+  Loader2, 
+  MessageCircleMore, 
+  Menu, 
+  Search, 
+  Star, 
+  UserRound 
+} from "lucide-react";
 import { TopRightIcons } from "@/components/TopRightIcons";
 import { CategoryBar } from "@/components/CategoryBar";
 import { TopBar } from "@/components/TopBar";
@@ -95,7 +103,7 @@ const getCategoryWallpaperUrl = (category: string): string => {
     case 'sports_cards':
       return '/images/Sportscardwallpaper.webp';
     case 'video_games':
-      return '/images/video-games-background-kyx4vVUqTYCMC3kMbtokYU.webp';
+      return '/images/video-games-bg.webp';
     case 'coins':
       return '/images/CoinsBackground.png';
     case 'stamps':
@@ -107,11 +115,11 @@ const getCategoryWallpaperUrl = (category: string): string => {
     case 'movies':
       return '/images/VHSBackground.png';
     case 'comics':
-      return '/images/comics-background-YZiiH2cyV8YJx6GFQj4PKC.webp';
+      return '/images/comics-bg.webp';
     case 'pokemon':
-      return '/images/pokemon-background-J6h7Mte6BSYA3GfQ4vtdFj.webp';
+      return '/images/pokemon-bg.webp';
     case 'disney_pins':
-      return '/images/disney-pins-background-F6yUvFLVrhmnaWk6GsFMZ8.webp';
+      return '/images/disney-pins-bg.webp';
     default:
       return '';
   }
@@ -233,20 +241,17 @@ export default function ItemDetail() {
       />
 
       <main className="pb-16">
-        <section className={`relative w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden text-white ${categoryTheme?.heroClassName ?? 'bg-[#00143A]'}`} style={{
-          backgroundImage: `url(${getCategoryWallpaperUrl(listing.category)})`,
+        <section className="relative z-0 w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden text-white" style={{
+          backgroundImage: 'url(/images/Mainpage.webp)',
           backgroundSize: 'cover',
-          backgroundPosition: listing.category === 'movies' ? 'center top' : 'center',
-          backgroundAttachment: 'scroll',
-          backgroundRepeat: ['movies', 'comics', 'pokemon', 'video_games', 'disney_pins'].includes(listing.category) ? 'no-repeat' : 'repeat',
-          filter: ['video_games', 'coins', 'stamps', 'vintage_toys', 'autographs', 'movies', 'comics', 'pokemon', 'disney_pins'].includes(listing.category) ? 'contrast(1.2) saturate(1.1)' : 'none'
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat'
         }}>
-          <div className={`absolute inset-0 ${listing.category === 'movies' ? 'bg-black/10' : 'bg-black/30'}`}></div>
-          <div className="container relative flex h-64 items-center justify-center py-0 sm:h-72 sm:py-0 lg:h-80 lg:py-0 z-10">
+          <div className="container relative flex h-64 items-center justify-center py-0 sm:h-72 sm:py-0 lg:h-80 lg:py-0">
             <div className="flex w-full max-w-6xl items-center justify-center -ml-32">
               <img
-                src="/images/heros/TradeProposal.svg"
-                alt="Item Detail"
+                src="/images/tradebilia-logo.svg"
+                alt="Tradebilia"
                 className="h-auto w-full"
               />
             </div>
@@ -255,8 +260,13 @@ export default function ItemDetail() {
 
         <CategoryBar />
 
-        <section className={`px-4 py-10 lg:px-8 ${pageBackgroundClass} relative`}>
-          <div className={`absolute inset-0 ${categoryTheme?.textureClassName ?? ''}`}></div>
+        <section className="px-4 py-10 lg:px-8 relative" style={{
+          backgroundImage: `url(${getCategoryWallpaperUrl(listing.category)})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundAttachment: 'fixed'
+        }}>
+          <div className="absolute inset-0 bg-black/20"></div>
           <div className="relative">
           <div className="mx-auto max-w-6xl mb-8">
             <button

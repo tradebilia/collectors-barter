@@ -52,8 +52,8 @@ export function RecentlyAddedCarousel({
     );
   }
 
-  // Duplicate items to ensure enough content for the marquee
-  const displayItems = [...items, ...items, ...items, ...items];
+  // Duplicate items once for seamless loop
+  const displayItems = [...items, ...items];
 
   return (
     <div className="mt-4 relative overflow-hidden group">
@@ -78,6 +78,8 @@ export function RecentlyAddedCarousel({
                   src={item.imageUrl}
                   alt={item.title}
                   className="h-full w-full object-contain"
+                  loading="lazy"
+                  decoding="async"
                 />
                 <div className="absolute inset-0 bg-black/0 group-hover/img:bg-black/5 transition-colors" />
               </div>
