@@ -133,7 +133,7 @@ export default function ReportUser() {
 
       <section className="relative z-0 w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden bg-[#00143A] text-white border-b border-white/10">
         <div className="absolute inset-0" style={{
-          backgroundImage: 'url(/manus-storage/Mainpage_9b45311d.jpg)',
+          backgroundImage: 'url(/images/Mainpage.jpg)',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat'

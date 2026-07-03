@@ -72,7 +72,7 @@ export default function ReferralRequest() {
       <TopBar />
       
       <section className="relative z-0 w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden text-white" style={{
-        backgroundImage: 'url(/manus-storage/Mainpage_9b45311d.jpg)',
+        backgroundImage: 'url(/images/Mainpage.jpg)',
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat'

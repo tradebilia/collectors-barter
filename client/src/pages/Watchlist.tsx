@@ -15,7 +15,7 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Link } from "wouter";
 
-const TRADEBILIA_LOGO_URL = "/manus-storage/tradebilia-logo_c676d640.svg";
+const TRADEBILIA_LOGO_URL = "/images/tradebilia-logo.svg";
 
 export default function Watchlist() {
   const { isAuthenticated, loading, user } = useAuth();
@@ -53,7 +53,7 @@ export default function Watchlist() {
       />
 
       <section className="border-b border-white/10 bg-[#00143A]" style={{
-        backgroundImage: 'url(/manus-storage/Mainpage_9b45311d.jpg)',
+        backgroundImage: 'url(/images/Mainpage.jpg)',
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat'
