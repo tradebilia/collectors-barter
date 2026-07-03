@@ -93,9 +93,9 @@ export function ForumTopic() {
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  {post.isPinned && <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">PINNED</span>}
-                  {post.isSolved && <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">SOLVED</span>}
-                  {post.isLocked && <span className="text-xs bg-red-100 text-red-800 px-2 py-1 rounded">LOCKED</span>}
+                  {!!post.isPinned && <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">PINNED</span>}
+                  {!!post.isSolved && <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">SOLVED</span>}
+                  {!!post.isLocked && <span className="text-xs bg-red-100 text-red-800 px-2 py-1 rounded">LOCKED</span>}
                 </div>
               </div>
 
