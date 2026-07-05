@@ -68,6 +68,20 @@ type AvatarUploadInput = {
 };
 
 /**
+ * Parse a JSON string stored in a TEXT column without crashing the caller.
+ * A single malformed row previously threw and turned entire pages into 500s.
+ */
+function safeJsonParse<T>(raw: string | null | undefined, fallback: T): T {
+  if (!raw) return fallback;
+  try {
+    return JSON.parse(raw) as T;
+  } catch {
+    console.error("[safeJsonParse] Malformed JSON in database column; using fallback.");
+    return fallback;
+  }
+}
+
+/**
  * Gracefully close the underlying mysql2 connection pool. Called on
  * SIGTERM/SIGINT so restarts never leave half-open database connections.
  */
@@ -656,8 +670,8 @@ export async function getListingDetail(listingId: number, viewerId: number | nul
     certificationNumber: detailCard[0].certificationNumber,
     estimatedValue: detailCard[0].estimatedValue ? Number(detailCard[0].estimatedValue) : null,
     description: detailCard[0].description,
-    itemDetails: detailCard[0].itemDetails ? JSON.parse(detailCard[0].itemDetails) : null,
-    signatures: detailCard[0].signatures ? JSON.parse(detailCard[0].signatures) : null,
+    itemDetails: safeJsonParse(detailCard[0].itemDetails, null),
+    signatures: safeJsonParse(detailCard[0].signatures, null),
     status: detailCard[0].status,
     featured: detailCard[0].featured,
     isActive: detailCard[0].isActive,
@@ -1285,7 +1299,7 @@ export async function getDrafts(user: Pick<User, "id" | "name">) {
     graderCompany: d.graderCompany,
     certificationNumber: d.certificationNumber,
     estimatedValue: d.estimatedValue ? Number(d.estimatedValue) : null,
-    categoryFields: d.categoryFields ? JSON.parse(d.categoryFields) : {},
+    categoryFields: safeJsonParse(d.categoryFields, {}),
     additionalNotes: d.additionalNotes,
     photos: photoMap.get(d.id) ?? [],
     createdAt: new Date(d.createdAt).getTime(),
@@ -1359,7 +1373,7 @@ export async function getDraftById(
     graderCompany: draft.graderCompany,
     certificationNumber: draft.certificationNumber,
     estimatedValue: draft.estimatedValue ? Number(draft.estimatedValue) : null,
-    categoryFields: draft.categoryFields ? JSON.parse(draft.categoryFields) : {},
+    categoryFields: safeJsonParse(draft.categoryFields, {}),
     additionalNotes: draft.additionalNotes,
     photos: photoRows.map(p => ({
       imageUrl: p.imageUrl,

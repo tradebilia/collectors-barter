@@ -3,9 +3,9 @@ import { hashPassword, verifyPassword, isValidUsername, isValidPassword, isValid
 
 describe("Auth Module", () => {
   describe("Password Hashing", () => {
-    it("should hash a password with bcrypt", () => {
+    it("should hash a password with bcrypt", async () => {
       const password = "TestPassword123";
-      const hash = hashPassword(password);
+      const hash = await hashPassword(password);
       
       expect(hash).toBeDefined();
       expect(typeof hash).toBe("string");
@@ -14,37 +14,37 @@ describe("Auth Module", () => {
       expect(hash).toMatch(/^\$2[aby]\$/);
     });
 
-    it("should produce different hashes for the same password", () => {
+    it("should produce different hashes for the same password", async () => {
       const password = "TestPassword123";
-      const hash1 = hashPassword(password);
-      const hash2 = hashPassword(password);
+      const hash1 = await hashPassword(password);
+      const hash2 = await hashPassword(password);
       
       // Bcrypt should produce different hashes due to random salt
       expect(hash1).not.toBe(hash2);
     });
 
-    it("should verify correct password", () => {
+    it("should verify correct password", async () => {
       const password = "TestPassword123";
-      const hash = hashPassword(password);
+      const hash = await hashPassword(password);
       
-      const isValid = verifyPassword(password, hash);
+      const isValid = await verifyPassword(password, hash);
       expect(isValid).toBe(true);
     });
 
-    it("should reject incorrect password", () => {
+    it("should reject incorrect password", async () => {
       const password = "TestPassword123";
       const wrongPassword = "WrongPassword456";
-      const hash = hashPassword(password);
+      const hash = await hashPassword(password);
       
-      const isValid = verifyPassword(wrongPassword, hash);
+      const isValid = await verifyPassword(wrongPassword, hash);
       expect(isValid).toBe(false);
     });
 
-    it("should handle invalid hash gracefully", () => {
+    it("should handle invalid hash gracefully", async () => {
       const password = "TestPassword123";
       const invalidHash = "not-a-valid-hash";
       
-      const isValid = verifyPassword(password, invalidHash);
+      const isValid = await verifyPassword(password, invalidHash);
       expect(isValid).toBe(false);
     });
   });

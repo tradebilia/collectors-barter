@@ -25,13 +25,17 @@ export function TopRightIcons({ className = "flex items-center gap-3 md:gap-4", 
   const unreadQuery = trpc.auth.unreadCounts.useQuery(undefined, {
     enabled: !!user,
     refetchOnMount: true,
-    refetchInterval: 5000, // Refetch every 5 seconds
-    staleTime: 0,
+    // 30s polling with matching staleTime: previously 5s + staleTime 0,
+    // which generated 12 requests/min (2 DB queries each) per logged-in user.
+    refetchInterval: 30000,
+    staleTime: 15000,
   });
   const dashboardQuery = trpc.market.dashboard.useQuery(undefined, {
     enabled: !!user,
     refetchOnMount: true,
-    staleTime: 0,
+    // Dashboard drives only the avatar fallback here; 60s freshness is ample
+    // (previously staleTime 0 re-ran one of the heaviest queries per mount).
+    staleTime: 60000,
   });
 
   if (!user) {

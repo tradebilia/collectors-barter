@@ -248,9 +248,11 @@ export default function Home() {
   // Update user activity status while on the page
   useUpdateActivity(isAuthenticated);
   
+  // Unread counts are already polled by TopRightIcons (rendered on this page);
+  // this duplicate 30s poll doubled the background load for no benefit.
   const unreadCountsQuery = trpc.auth.unreadCounts.useQuery(undefined, {
     enabled: isAuthenticated,
-    refetchInterval: 30000, // Refetch every 30 seconds
+    staleTime: 15000,
   });
 
   const [keyword, setKeyword] = useState("");

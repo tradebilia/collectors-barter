@@ -179,7 +179,6 @@ export const appRouter = router({
         }),
       )
       .mutation(async ({ input, ctx }) => {
-        console.log("[signup] Called with username:", input.username);
         if (!isValidUsername(input.username)) {
           throw new Error("Username must be 3-32 characters, alphanumeric with underscores/hyphens");
         }
@@ -195,7 +194,7 @@ export const appRouter = router({
           throw new Error("Username already taken");
         }
 
-        const passwordHash = hashPassword(input.password);
+        const passwordHash = await hashPassword(input.password);
         const userId = await createUser({
           username: input.username,
           passwordHash,
@@ -223,23 +222,15 @@ export const appRouter = router({
         }),
       )
       .mutation(async ({ input, ctx }) => {
-        console.log('[signin] Called with username:', input.username);
+        // NOTE: do not log password/hash details — sensitive material was
+        // previously written to server logs here.
         const user = await getUserByUsername(input.username);
-        console.log('[signin] User found:', user ? `ID ${user.id}` : 'null');
         if (!user || !user.passwordHash) {
-          console.log('[signin] User not found or no password hash');
           throw new Error("Invalid username or password");
         }
 
-        console.log('[signin] User password hash type:', typeof user.passwordHash);
-        console.log('[signin] User password hash length:', user.passwordHash?.length);
-        console.log('[signin] User password hash starts with:', user.passwordHash?.substring(0, 10));
-        console.log('[signin] Input password length:', input.password.length);
-        
-        const passwordMatch = verifyPassword(input.password, user.passwordHash);
-        console.log('[signin] Password match:', passwordMatch);
+        const passwordMatch = await verifyPassword(input.password, user.passwordHash);
         if (!passwordMatch) {
-          console.log('[signin] Password mismatch');
           throw new Error("Invalid username or password");
         }
 
@@ -481,11 +472,11 @@ export const appRouter = router({
         if (!user || !user.passwordHash) {
           throw new TRPCError({ code: "UNAUTHORIZED" });
         }
-        const isValid = verifyPassword(input.currentPassword, user.passwordHash);
+        const isValid = await verifyPassword(input.currentPassword, user.passwordHash);
         if (!isValid) {
           throw new TRPCError({ code: "UNAUTHORIZED", message: "Current password is incorrect" });
         }
-        const newHash = hashPassword(input.newPassword);
+        const newHash = await hashPassword(input.newPassword);
         await db.update(users).set({
           passwordHash: newHash,
         }).where(eq(users.id, ctx.user.id));

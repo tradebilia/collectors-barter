@@ -1,20 +1,22 @@
 import bcrypt from 'bcrypt';
 
 /**
- * Hash a password using bcrypt
+ * Hash a password using bcrypt (async).
+ *
+ * NOTE: previously used bcrypt.hashSync, which blocks the Node event loop
+ * ~100ms per call and froze ALL in-flight requests during login/signup
+ * bursts. The async version does the work on the libuv thread pool.
  */
-export function hashPassword(password: string): string {
-  // Note: In production, this should be async. For now, use sync version.
-  // bcryptSync is used here because the signup flow needs synchronous hashing.
-  return bcrypt.hashSync(password, 10);
+export function hashPassword(password: string): Promise<string> {
+  return bcrypt.hash(password, 10);
 }
 
 /**
- * Verify a password against a bcrypt hash
+ * Verify a password against a bcrypt hash (async).
  */
-export function verifyPassword(password: string, hash: string): boolean {
+export async function verifyPassword(password: string, hash: string): Promise<boolean> {
   try {
-    return bcrypt.compareSync(password, hash);
+    return await bcrypt.compare(password, hash);
   } catch (error) {
     return false;
   }
