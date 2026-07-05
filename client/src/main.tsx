@@ -44,11 +44,25 @@ const trpcClient = trpc.createClient({
       url: "/api/trpc",
       transformer: superjson,
       maxURLLength: 2000, // Prevent 414 errors by using POST for large batches
-      fetch(input, init) {
-        return globalThis.fetch(input, {
+      async fetch(input, init) {
+        const response = await globalThis.fetch(input, {
           ...(init ?? {}),
           credentials: "include",
         });
+
+        // If the server (or the hosting proxy) is down or restarting, an HTML
+        // error page can come back instead of JSON. Without this guard the
+        // user sees a cryptic "Unexpected token '<' ... is not valid JSON"
+        // toast. Detect it and surface a clear, actionable message instead.
+        const contentType = response.headers.get("content-type") ?? "";
+        if (!contentType.includes("application/json")) {
+          throw new Error(
+            "The server is temporarily unreachable (it may be restarting). " +
+              "Your entry has NOT been submitted - please wait a few seconds and try again."
+          );
+        }
+
+        return response;
       },
     }),
   ],
