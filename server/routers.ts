@@ -342,9 +342,13 @@ export const appRouter = router({
         const detail = await getListingDetail(input.listingId, ctx.user?.id ?? null);
         return { listing: detail };
       }),
-    saveProfile: publicProcedure
+    saveProfile: protectedProcedure
       .input(
         z.object({
+          // DEPRECATED: retained for client compatibility but IGNORED server-side.
+          // The authenticated session (ctx.user.id) is the only trusted identity.
+          // Previously this public procedure trusted a client-supplied userId,
+          // letting anonymous visitors overwrite any user's profile.
           userId: z.union([z.string(), z.number()]).optional(),
           displayName: z.string().min(2).max(120),
           bio: z.string().max(500).optional(),
@@ -375,23 +379,25 @@ export const appRouter = router({
         }),
       )
       .mutation(async ({ ctx, input }) => {
-        console.log("[saveProfile] Called with input:", input);
-        
-        // Validate user is authenticated or has userId
-        const userId = ctx.user?.id || input.userId;
-        if (!userId) {
-          throw new TRPCError({
-            code: 'UNAUTHORIZED',
-            message: 'Please login to save profile',
-          });
-        }
-        
-        // SECURITY: Identity fields can only be modified by admins
-        // These fields are verified during signup and should not be changed by regular users
-        const isAdmin = ctx.user?.role === 'admin';
-        
+        // Never trust input.userId — only the authenticated session identity.
+        const userId = ctx.user.id;
+
+        // SECURITY: Identity fields can only be modified by admins — EXCEPT
+        // during first-time account setup (before the profile is completed),
+        // when the user legitimately provides their own identity information.
+        // Without this exception, every new non-admin signup would be blocked
+        // with FORBIDDEN at Account Setup step 3.
+        const isAdmin = ctx.user.role === 'admin';
+        const db0 = await requireDb();
+        const existingProfile = await db0
+          .select({ acceptedTerms: userProfiles.acceptedTerms })
+          .from(userProfiles)
+          .where(eq(userProfiles.userId, userId))
+          .limit(1);
+        const isFirstTimeSetup = !existingProfile[0] || !existingProfile[0].acceptedTerms;
+
         // Check if any identity field is being modified by a non-admin user
-        if (!isAdmin) {
+        if (!isAdmin && !isFirstTimeSetup) {
           const identityFieldsAttempted = [];
           if (input.firstName !== undefined && input.firstName) identityFieldsAttempted.push('firstName');
           if (input.lastName !== undefined && input.lastName) identityFieldsAttempted.push('lastName');
@@ -416,21 +422,24 @@ export const appRouter = router({
           }
         }
         
+        // Identity fields are persisted when the caller is an admin OR this is
+        // the user's first-time account setup (their own verified info).
+        const canWriteIdentity = isAdmin || isFirstTimeSetup;
         return updateProfile(
-          { id: typeof userId === 'string' ? parseInt(userId, 10) : userId, name: input.displayName },
+          { id: userId, name: input.displayName },
           {
             displayName: input.displayName,
             bio: input.bio,
-            contactFullName: isAdmin ? input.contactFullName : undefined,
-            contactEmail: isAdmin ? input.contactEmail : undefined,
-            contactPhone: isAdmin ? input.contactPhone : undefined,
-            contactAddress: isAdmin ? input.contactAddress : undefined,
-            contactTown: isAdmin ? input.contactTown : undefined,
-            contactState: isAdmin ? input.contactState : undefined,
-            contactZipCode: isAdmin ? input.contactZipCode : undefined,
-            contactCountry: isAdmin ? input.contactCountry : undefined,
-            firstName: isAdmin ? input.firstName : undefined,
-            lastName: isAdmin ? input.lastName : undefined,
+            contactFullName: canWriteIdentity ? input.contactFullName : undefined,
+            contactEmail: canWriteIdentity ? input.contactEmail : undefined,
+            contactPhone: canWriteIdentity ? input.contactPhone : undefined,
+            contactAddress: canWriteIdentity ? input.contactAddress : undefined,
+            contactTown: canWriteIdentity ? input.contactTown : undefined,
+            contactState: canWriteIdentity ? input.contactState : undefined,
+            contactZipCode: canWriteIdentity ? input.contactZipCode : undefined,
+            contactCountry: canWriteIdentity ? input.contactCountry : undefined,
+            firstName: canWriteIdentity ? input.firstName : undefined,
+            lastName: canWriteIdentity ? input.lastName : undefined,
             avatar: input.avatar ?? null,
             acceptedTerms: input.acceptedTerms,
             isMerchant: input.isMerchant,

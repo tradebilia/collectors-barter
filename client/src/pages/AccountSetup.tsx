@@ -406,6 +406,9 @@ export default function AccountSetup() {
       userId: finalUserId,
       displayName: formData.userName,
       bio: formData.bio,
+      // Mark profile as completed: closes the server's one-time exception that
+      // allows identity fields to be written during first-time setup.
+      acceptedTerms: true,
       contactFullName: fullName,
       contactEmail: formData.email,
       contactPhone: formData.phoneNumber,
