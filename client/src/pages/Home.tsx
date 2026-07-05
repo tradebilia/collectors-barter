@@ -121,7 +121,12 @@ function useUpdateActivity(isAuthenticated: boolean) {
     }, 2 * 60 * 1000); // 2 minutes
     
     return () => clearInterval(interval);
-  }, [updateActivityMutation, isAuthenticated]);
+    // NOTE: updateActivityMutation is intentionally excluded from the deps.
+    // The object returned by useMutation() is not referentially stable, and
+    // including it caused the effect to re-run on every render (mutate ->
+    // re-render -> new mutation object -> mutate again), flooding the server.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated]);
 }
 
 function initials(name: string) {

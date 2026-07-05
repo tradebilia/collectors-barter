@@ -69,7 +69,8 @@ type AvatarUploadInput = {
 
 export async function requireDb(): Promise<ReturnType<typeof drizzle>> {
   if (!_db) {
-    const url = new URL(ENV.databaseUrl);
+    const dbUrl = process.env.DATABASE_URL || ENV.databaseUrl;
+    const url = new URL(dbUrl);
     const sslParam = url.searchParams.get("ssl");
     
     if (sslParam) {
@@ -85,10 +86,10 @@ export async function requireDb(): Promise<ReturnType<typeof drizzle>> {
         });
       } catch (e) {
         console.error("[requireDb] Failed to parse SSL config, falling back to default:", e);
-        _db = drizzle(ENV.databaseUrl);
+        _db = drizzle(dbUrl);
       }
     } else {
-      _db = drizzle(ENV.databaseUrl);
+      _db = drizzle(dbUrl);
     }
   }
   return _db;

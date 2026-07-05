@@ -2,11 +2,19 @@ import { useAuth } from "@/_core/hooks/useAuth";
 
 function useTrackView(listingId: number) {
   const trackViewMutation = trpc.favorites.trackView.useMutation();
+  const trackedListingIdRef = useRef<number | null>(null);
   useEffect(() => {
-    if (listingId > 0) {
+    // Only track the view once per listingId. The mutation object returned by
+    // useMutation() is not referentially stable, so it must NOT be in the
+    // dependency array — doing so caused an infinite mutate -> re-render ->
+    // mutate loop (~60+ requests per page view) that overwhelmed the server
+    // and made item detail pages time out.
+    if (listingId > 0 && trackedListingIdRef.current !== listingId) {
+      trackedListingIdRef.current = listingId;
       trackViewMutation.mutate({ listingId });
     }
-  }, [listingId, trackViewMutation]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [listingId]);
 }
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -68,7 +76,7 @@ import { CategoryBar } from "@/components/CategoryBar";
 import { TopBar } from "@/components/TopBar";
 import { OnlineIndicator } from "@/components/OnlineIndicator";
 import { EmailInquiryModal } from "@/components/EmailInquiryModal";
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import { Link, useRoute, useLocation } from "wouter";
 import { toast } from "sonner";
 import { ArrowLeft } from "lucide-react";
