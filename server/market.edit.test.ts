@@ -52,7 +52,10 @@ describe("market.updateListing - Input Validation", () => {
     }
   });
 
-  it("should validate that description has minimum length", async () => {
+  it("should enforce the description maximum length", async () => {
+    // NOTE: the schema intentionally has no minimum description length
+    // (z.string().max(4000)); short descriptions are allowed. The previous
+    // version of this test asserted a minimum that never existed in the schema.
     const { ctx } = createAuthContext(1, "Test User");
     const caller = appRouter.createCaller(ctx);
 
@@ -62,15 +65,14 @@ describe("market.updateListing - Input Validation", () => {
         title: "Valid Title",
         category: "comics",
         condition: "mint",
-        description: "Short", // Too short - minimum is 20
+        description: "x".repeat(4001), // Exceeds max of 4000
         estimatedValue: 100,
         photos: [],
       });
       expect.fail("Should have thrown validation error for description");
     } catch (error: any) {
-      // Should fail validation
       expect(error).toBeDefined();
-      expect(error.message).toContain("Too small");
+      expect(error.message).toContain("Too big");
     }
   });
 

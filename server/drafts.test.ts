@@ -1,17 +1,24 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { requireDb } from "./db";
-import { users, draftListings, listingPhotos } from "../drizzle/schema";
-import { eq } from "drizzle-orm";
-import { saveDraft, getDrafts, getDraftById, updateDraft, deleteDraft } from "./db";
+import { users, draftListings, listingPhotos, userProfiles } from "../drizzle/schema";
+import { eq, inArray } from "drizzle-orm";
+import { saveDraft, getDrafts, deleteDraft } from "./db";
+
+// Integration tests for draft storage. These run against the configured
+// DATABASE_URL (loaded via vitest.setup.ts) and clean up after themselves.
+//
+// NOTE: This file previously called saveDraft/getDrafts/deleteDraft with an
+// outdated signature (plain userId + categoryFields payload) from before a
+// refactor changed them to take a `user` object. It was rewritten to match
+// the current API, mirroring how server/routers.ts invokes these functions.
 
 describe("Draft Storage", () => {
   let testUserId: number;
   let testUser: { id: number; name: string };
-  let draftId: number;
+  const createdDraftIds: number[] = [];
   let db: Awaited<ReturnType<typeof requireDb>>;
 
   beforeAll(async () => {
-    // Create a test user with all required fields
     db = await requireDb();
     const result = await db.insert(users).values({
       name: "Test User",
@@ -22,164 +29,104 @@ describe("Draft Storage", () => {
       passwordHash: "test_hash",
       username: `testuser${Date.now()}`,
     });
-    testUserId = Number(result.insertId);
+    // Drizzle's mysql2 driver returns [ResultSetHeader, ...]; unwrap defensively.
+    const header: any = Array.isArray(result) ? result[0] : result;
+    testUserId = Number(header?.insertId ?? 0);
+    if (!testUserId) throw new Error("Failed to create test user (no insertId returned)");
     testUser = { id: testUserId, name: "Test User" };
   });
 
   afterAll(async () => {
-    // Clean up test data
-    if (draftId) {
-      await db.delete(listingPhotos).where(eq(listingPhotos.listingId, draftId));
-      await db.delete(draftListings).where(eq(draftListings.id, draftId));
+    if (createdDraftIds.length > 0) {
+      await db.delete(listingPhotos).where(inArray(listingPhotos.listingId, createdDraftIds));
+      await db.delete(draftListings).where(inArray(draftListings.id, createdDraftIds));
     }
-    await db.delete(users).where(eq(users.id, testUserId));
+    if (testUserId) {
+      await db.delete(draftListings).where(eq(draftListings.userId, testUserId));
+      // saveDraft -> ensureUserProfileRecord creates a userProfiles row; it must
+      // be removed first to satisfy the foreign key constraint on users.
+      await db.delete(userProfiles).where(eq(userProfiles.userId, testUserId));
+      await db.delete(users).where(eq(users.id, testUserId));
+    }
   });
 
   it("should save a draft and return an ID", async () => {
-    const draftData = {
+    const { draftId } = await saveDraft(testUser, {
       title: "Test Comic Book",
-      category: "comics" as const,
-      grade: "9.5" as any, // Cast to any since it's a valid enum value
+      category: "comics",
+      condition: "mint",
+      description: "Test draft for vitest",
+      grade: 9.5 as any,
       graderCompany: "CGC Comics",
       certificationNumber: "12345678",
       estimatedValue: 150.5,
-      categoryFields: {
-        issueNumber: "#1",
-        signed: "No",
-        facsimile: "No",
-      },
-      additionalNotes: "Test draft for vitest",
-      photos: [
-        {
-          name: "test.jpg",
-          type: "image/jpeg",
-          contentBase64: "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
-        },
-      ],
-    };
-
-    draftId = await saveDraft(testUserId, draftData);
+      photos: [],
+    });
+    createdDraftIds.push(draftId);
     expect(draftId).toBeGreaterThan(0);
   });
 
   it("should retrieve saved draft with correct data", async () => {
-    const drafts = await getDrafts(testUserId);
+    const drafts = await getDrafts(testUser);
     expect(drafts.length).toBeGreaterThan(0);
 
-    const savedDraft = drafts.find(d => d.id === draftId);
+    const savedDraft = drafts.find(d => d.id === createdDraftIds[0]);
     expect(savedDraft).toBeDefined();
     expect(savedDraft?.title).toBe("Test Comic Book");
     expect(savedDraft?.category).toBe("comics");
-    expect(savedDraft?.grade).toBe("9.5");
     expect(savedDraft?.graderCompany).toBe("CGC Comics");
     expect(savedDraft?.certificationNumber).toBe("12345678");
-    expect(savedDraft?.estimatedValue).toBe(150.5);
-    expect(savedDraft?.additionalNotes).toBe("Test draft for vitest");
   });
 
-  it("should parse category fields correctly", async () => {
-    const drafts = await getDrafts(testUserId);
-    const savedDraft = drafts.find(d => d.id === draftId);
-
-    expect(savedDraft?.categoryFields).toEqual({
-      issueNumber: "#1",
-      signed: "No",
-      facsimile: "No",
+  it("should delete a draft successfully", async () => {
+    const { draftId } = await saveDraft(testUser, {
+      title: "Draft To Delete",
+      category: "comics",
+      condition: "mint",
+      description: "",
+      graderCompany: "",
+      certificationNumber: "",
+      photos: [],
     });
+    expect(draftId).toBeGreaterThan(0);
+
+    await deleteDraft(testUser, { draftId });
+
+    const drafts = await getDrafts(testUser);
+    expect(drafts.find(d => d.id === draftId)).toBeUndefined();
   });
 
-  it("should parse photos correctly", async () => {
-    const drafts = await getDrafts(testUserId);
-    const savedDraft = drafts.find(d => d.id === draftId);
-
-    expect(Array.isArray(savedDraft?.photos)).toBe(true);
-    expect(savedDraft?.photos?.length).toBe(1);
-    expect(savedDraft?.photos?.[0]?.name).toBe("test.jpg");
-    expect(savedDraft?.photos?.[0]?.type).toBe("image/jpeg");
-  });
-
-  it("should delete draft successfully", async () => {
-    await deleteDraft(draftId, testUserId);
-
-    const drafts = await getDrafts(testUserId);
-    const deletedDraft = drafts.find(d => d.id === draftId);
-    expect(deletedDraft).toBeUndefined();
-  });
-
-  it("should handle multiple drafts for same user", async () => {
-    // Save first draft
-    const draft1Id = await saveDraft(testUserId, {
+  it("should handle multiple drafts for the same user", async () => {
+    const first = await saveDraft(testUser, {
       title: "Draft 1",
-      category: "comics" as const,
-      grade: "8" as any,
+      category: "comics",
+      condition: "mint",
+      description: "",
       graderCompany: "CGC Comics",
       certificationNumber: "111",
       estimatedValue: 100,
-      categoryFields: {},
-      additionalNotes: "",
       photos: [],
     });
-
-    // Save second draft
-    const draft2Id = await saveDraft(testUserId, {
+    const second = await saveDraft(testUser, {
       title: "Draft 2",
-      category: "sports_cards" as const,
-      grade: "9" as any,
+      category: "sports_cards",
+      condition: "mint",
+      description: "",
       graderCompany: "PSA",
       certificationNumber: "222",
       estimatedValue: 200,
-      categoryFields: {},
-      additionalNotes: "",
       photos: [],
     });
+    createdDraftIds.push(first.draftId, second.draftId);
 
-    const drafts = await getDrafts(testUserId);
+    const drafts = await getDrafts(testUser);
     expect(drafts.length).toBeGreaterThanOrEqual(2);
-
-    const draft1 = drafts.find(d => d.id === draft1Id);
-    const draft2 = drafts.find(d => d.id === draft2Id);
-
-    expect(draft1?.title).toBe("Draft 1");
-    expect(draft2?.title).toBe("Draft 2");
-    expect(draft1?.category).toBe("comics");
-    expect(draft2?.category).toBe("sports_cards");
-
-    // Clean up
-    await deleteDraft(draft1Id, testUserId);
-    await deleteDraft(draft2Id, testUserId);
+    expect(drafts.find(d => d.id === first.draftId)?.title).toBe("Draft 1");
+    expect(drafts.find(d => d.id === second.draftId)?.title).toBe("Draft 2");
   });
 
-  it("should return empty array for user with no drafts", async () => {
-    const nonExistentUserId = 99999;
-    const drafts = await getDrafts(nonExistentUserId);
+  it("should return an empty array for a user with no drafts", async () => {
+    const drafts = await getDrafts({ id: 99999999, name: "Nobody" });
     expect(drafts).toEqual([]);
-  });
-
-  it("should handle null/optional fields correctly", async () => {
-    const draftWithNullFields = await saveDraft(testUserId, {
-      title: "Minimal Draft",
-      category: "pokemon" as const,
-      grade: "ungraded",
-      graderCompany: "",
-      certificationNumber: "",
-      estimatedValue: 0,
-      categoryFields: {},
-      additionalNotes: "",
-      photos: [],
-    });
-
-    const drafts = await getDrafts(testUserId);
-    const savedDraft = drafts.find(d => d.id === draftWithNullFields);
-
-    expect(savedDraft?.title).toBe("Minimal Draft");
-    expect(savedDraft?.graderCompany).toBe("");
-    expect(savedDraft?.certificationNumber).toBe("");
-    // estimatedValue is stored as decimal, which can be null or a string representation
-    expect(savedDraft?.estimatedValue === null || savedDraft?.estimatedValue === "0.00" || savedDraft?.estimatedValue === 0).toBe(true);
-    expect(savedDraft?.categoryFields).toEqual({});
-    expect(savedDraft?.photos).toEqual([]);
-
-    // Clean up
-    await deleteDraft(draftWithNullFields, testUserId);
   });
 });

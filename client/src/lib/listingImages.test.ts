@@ -13,13 +13,17 @@ describe("resolveTradebiliaListingImage", () => {
     expect(resolveTradebiliaListingImage({
       title: "1986-87 Michael Jordan Rookie",
       category: "sports_cards",
-    })).toBe("/images/1986-87%20Michael%20Jordan_a9dcf0a5.jpg");
+    })).toBe("/images/1986-87%20Michael%20Jordan.jpg");
   });
 
   it("falls back to the category image when no keyword match exists", () => {
     expect(resolveTradebiliaListingImage({
       title: "Unlisted Sports Card",
       category: "sports_cards",
-    })).toBe("/images/sportscards2_50e2e734.png");
+    })).toBe(
+      encodeURI(
+        "https://raw.githubusercontent.com/tradebilia/collectors-barter/main/client/public/images/Sportscardwallpaper.webp",
+      ),
+    );
   });
 });

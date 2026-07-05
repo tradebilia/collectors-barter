@@ -21,7 +21,12 @@ const notificationMocks = vi.hoisted(() => ({
   notifyOwner: vi.fn(),
 }));
 
-vi.mock("./db", () => dbMocks);
+vi.mock("./db", async importOriginal => {
+  // Partially mock: keep real constants/schemas (collectibleCategories, itemConditions, etc.)
+  // while stubbing the data-access functions under test.
+  const actual = await importOriginal<typeof import("./db")>();
+  return { ...actual, ...dbMocks };
+});
 vi.mock("./_core/notification", () => notificationMocks);
 
 const { appRouter } = await import("./routers");
