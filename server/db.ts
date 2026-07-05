@@ -68,6 +68,21 @@ type AvatarUploadInput = {
 };
 
 /**
+ * Convert a JS Date to the MySQL DATETIME string format the schema expects.
+ * All timestamp columns use drizzle's { mode: 'string' }, so writes must be
+ * strings — passing Date objects only "worked" via implicit driver coercion
+ * and was flagged by the compiler at every call site.
+ */
+export function toMysqlDateTime(date: Date): string {
+  return date.toISOString().slice(0, 19).replace("T", " ");
+}
+
+/** Current timestamp in MySQL DATETIME string format. */
+export function mysqlNow(): string {
+  return toMysqlDateTime(new Date());
+}
+
+/**
  * Parse a JSON string stored in a TEXT column without crashing the caller.
  * A single malformed row previously threw and turned entire pages into 500s.
  */
@@ -828,7 +843,7 @@ export async function respondToTradeProposal(
       .update(tradeProposals)
       .set({
         status: newStatus,
-        respondedAt: new Date(),
+        respondedAt: mysqlNow(),
       })
       .where(eq(tradeProposals.id, input.proposalId));
 
@@ -1434,7 +1449,7 @@ export async function updateDraft(
       estimatedValue: input.estimatedValue ? String(parseFloat(String(input.estimatedValue))) : null,
       categoryFields: input.categoryFields ? JSON.stringify(input.categoryFields) : null,
       additionalNotes: input.additionalNotes || null,
-      updatedAt: new Date(),
+      updatedAt: mysqlNow(),
     })
     .where(eq(draftListings.id, input.draftId));
 
@@ -1931,7 +1946,9 @@ export async function upsertUser(input: {
         name: input.name,
         email: input.email,
         loginMethod: input.loginMethod,
-        lastSignedIn: typeof input.lastSignedIn === 'string' ? new Date(input.lastSignedIn) : input.lastSignedIn || new Date(),
+        lastSignedIn: toMysqlDateTime(
+          typeof input.lastSignedIn === 'string' ? new Date(input.lastSignedIn) : input.lastSignedIn || new Date(),
+        ),
       })
       .where(eq(users.openId, input.openId));
 
@@ -2336,7 +2353,7 @@ export async function updateReportStatus(input: {
     .set({
       status: input.status,
       adminNotes: input.adminNotes,
-      reviewedAt: new Date(),
+      reviewedAt: mysqlNow(),
       reviewedBy: input.reviewedBy,
     })
     .where(eq(userReports.reportId, input.reportId));
@@ -2363,11 +2380,11 @@ export async function updateUserEbayInfo(input: {
       ebayUserId: input.ebayUserId,
       ebayFeedbackScore: input.ebayFeedbackScore,
       ebayFeedbackPercentage: input.ebayFeedbackPercentage.toString(),
-      ebayMemberSince: input.ebayMemberSince,
-      ebayConnectedAt: new Date(),
+      ebayMemberSince: input.ebayMemberSince ? toMysqlDateTime(input.ebayMemberSince) : undefined,
+      ebayConnectedAt: mysqlNow(),
       ebayAccessToken: input.ebayAccessToken,
       ebayRefreshToken: input.ebayRefreshToken,
-      ebayTokenExpiresAt: input.ebayTokenExpiresAt,
+      ebayTokenExpiresAt: input.ebayTokenExpiresAt ? toMysqlDateTime(input.ebayTokenExpiresAt) : undefined,
     })
     .where(eq(users.id, input.userId));
 }
@@ -2687,7 +2704,7 @@ export async function deleteInquiry(inquiryId: number, userId: number) {
   
   await db
     .update(itemInquiries)
-    .set({ deletedAt: new Date() })
+    .set({ deletedAt: mysqlNow() })
     .where(eq(itemInquiries.id, inquiryId));
 }
 
@@ -2794,7 +2811,7 @@ export async function updateReferralRequestStatus(id: number, status: string, ad
       status: status as any,
       adminNotes,
       reviewedBy,
-      reviewedAt: new Date(),
+      reviewedAt: mysqlNow(),
     })
     .where(eq(referralRequests.id, id));
 }
@@ -2817,7 +2834,7 @@ export async function markReferralsAsEmailed(ids: number[]) {
     .update(referralRequests)
     .set({
       emailSent: 1,
-      emailSentAt: new Date(),
+      emailSentAt: mysqlNow(),
     })
     .where(inArray(referralRequests.id, ids));
 }
@@ -2828,7 +2845,7 @@ export async function markReferralAsJoined(id: number, userId: number) {
     .update(referralRequests)
     .set({
       hasJoined: 1,
-      joinedAt: new Date(),
+      joinedAt: mysqlNow(),
       joinedUserId: userId,
     })
     .where(eq(referralRequests.id, id));

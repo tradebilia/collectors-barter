@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { COOKIE_NAME } from "@shared/const";
-import { collectibleCategories, itemConditions } from "./db";
+import { collectibleCategories, itemConditions, mysqlNow, toMysqlDateTime } from "./db";
 import { isValidGradeForCompany, getGradingCompanyByName } from "@shared/gradingCompanyConfig";
 import {
   createListing,
@@ -252,7 +252,7 @@ export const appRouter = router({
       // Clear lastActivityAt to mark user as offline (set to a very old date)
       if (ctx.user?.id) {
         // Use a date far in the past (year 1970) to ensure user is marked as offline
-        const offlineTime = new Date('1970-01-02T00:00:00Z');
+        const offlineTime = toMysqlDateTime(new Date('1970-01-02T00:00:00Z'));
         await db.update(users).set({ lastActivityAt: offlineTime }).where(eq(users.id, ctx.user.id));
       }
       
@@ -1601,7 +1601,7 @@ export const appRouter = router({
       const db = await requireDb();
       // Only update lastActivityAt if user is authenticated
       if (ctx.user?.id) {
-        await db.update(users).set({ lastActivityAt: new Date() }).where(eq(users.id, ctx.user.id));
+        await db.update(users).set({ lastActivityAt: mysqlNow() }).where(eq(users.id, ctx.user.id));
       }
       return { success: true };
     }),
