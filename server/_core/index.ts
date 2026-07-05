@@ -138,8 +138,12 @@ async function startServer() {
       // NOTE: previously used `require("../drizzle/schema")` which crashes in
       // ESM at runtime; schema is now statically imported at the top of file.
 
-      // Get referrals from the last 3 days
-      const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000);
+      // Get referrals from the last 3 days. Schema timestamps are
+      // string-mode, so compare with a MySQL-format datetime string.
+      const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000)
+        .toISOString()
+        .slice(0, 19)
+        .replace("T", " ");
       const pendingReferrals = await db.select()
         .from(referralRequests)
         .where(gte(referralRequests.createdAt, threeDaysAgo))
