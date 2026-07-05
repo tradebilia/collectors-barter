@@ -1955,14 +1955,17 @@ export async function upsertUser(input: {
     return existing[0].id;
   } else {
     // Create new user
-    const result = await db.insert(users).values({
+        const result = await db.insert(users).values({
       openId: input.openId,
       name: input.name,
       email: input.email,
       loginMethod: input.loginMethod,
-      lastSignedIn: input.lastSignedIn,
+      lastSignedIn: input.lastSignedIn
+        ? toMysqlDateTime(
+            typeof input.lastSignedIn === "string" ? new Date(input.lastSignedIn) : input.lastSignedIn,
+          )
+        : undefined,
     });
-
     return getInsertId(result);
   }
 }
@@ -2023,7 +2026,7 @@ export async function createPasswordResetToken(userId: number, token: string, ex
   return db.insert(passwordResetTokens).values({
     userId,
     token,
-    expiresAt,
+    expiresAt: toMysqlDateTime(expiresAt),
   });
 }
 
@@ -2052,7 +2055,7 @@ export async function createEmailOtp(email: string, otp: string, expiresAt: Date
   return db.insert(emailVerificationOtps).values({
     email,
     otp,
-    expiresAt,
+    expiresAt: toMysqlDateTime(expiresAt),
   });
 }
 
@@ -2063,7 +2066,7 @@ export async function createPhoneOtp(phone: string, otp: string, expiresAt: Date
   return db.insert(phoneVerificationOtps).values({
     phone,
     otp,
-    expiresAt,
+    expiresAt: toMysqlDateTime(expiresAt),
   });
 }
 
@@ -2331,9 +2334,9 @@ export async function getUserReportDetails(reportId: string): Promise<{
     evidence: report[0].evidence ?? undefined,
     status: report[0].status,
     adminNotes: report[0].adminNotes ?? undefined,
-    createdAt: report[0].createdAt,
-    updatedAt: report[0].updatedAt,
-    reviewedAt: report[0].reviewedAt ?? undefined,
+    createdAt: new Date(report[0].createdAt),
+    updatedAt: new Date(report[0].updatedAt),
+    reviewedAt: report[0].reviewedAt ? new Date(report[0].reviewedAt) : undefined,
     reviewedBy: report[0].reviewedBy ?? undefined,
     reviewedByName: reviewedByUser?.username ?? undefined,
   };
@@ -2411,11 +2414,14 @@ export async function getUserEbayInfo(userId: number): Promise<{
     .where(eq(users.id, userId))
     .limit(1);
   
-  if (!user[0]) return null;
-  
+    if (!user[0]) return null;
   return {
     ...user[0],
     ebayFeedbackPercentage: user[0].ebayFeedbackPercentage ? parseFloat(user[0].ebayFeedbackPercentage) : null,
+    // Timestamp columns are string-mode; convert at the boundary to keep the
+    // declared Date-based API contract.
+    ebayMemberSince: user[0].ebayMemberSince ? new Date(user[0].ebayMemberSince) : null,
+    ebayConnectedAt: user[0].ebayConnectedAt ? new Date(user[0].ebayConnectedAt) : null,
   };
 }
 
@@ -2430,7 +2436,10 @@ export async function storeEbayFeedback(input: {
   feedbackDate: Date;
 }): Promise<void> {
   const db = await requireDb();
-  await db.insert(ebayFeedbackHistory).values(input);
+  await db.insert(ebayFeedbackHistory).values({
+    ...input,
+    feedbackDate: toMysqlDateTime(input.feedbackDate),
+  });
 }
 
 export async function getUserEbayFeedback(userId: number): Promise<Array<{
@@ -2546,7 +2555,7 @@ export async function sendItemInquiry(
     subject: input.subject.trim(),
     message: input.message.trim(),
     isRead: 0,
-    createdAt: new Date(),
+    createdAt: mysqlNow(),
   });
   
   return { id: getInsertId(result), success: true };
@@ -3192,7 +3201,7 @@ export async function deleteDraftsOlderThan(db: any, cutoffDate: Date): Promise<
   
   const oldDrafts = await db.select({ id: draftListings.id })
     .from(draftListings)
-    .where(lt(draftListings.createdAt, cutoffDate));
+    .where(lt(draftListings.createdAt, toMysqlDateTime(cutoffDate)));
 
   if (oldDrafts.length === 0) {
     return 0;

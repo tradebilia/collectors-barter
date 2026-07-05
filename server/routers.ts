@@ -1243,8 +1243,9 @@ export const appRouter = router({
         lastName: string | null;
         email: string | null;
         role: "user" | "admin";
-        createdAt: Date;
-        lastActivityAt: Date;
+        // Schema timestamps are string-mode
+        createdAt: string;
+        lastActivityAt: string;
         contactFullName: string | null;
         contactEmail: string | null;
         contactPhone: string | null;
@@ -1627,7 +1628,7 @@ export const appRouter = router({
         const sellers = await db.select({ id: users.id, lastActivityAt: users.lastActivityAt }).from(users).where(inArray(users.id, input.sellerIds));
         const ONLINE_STATUS_TIMEOUT_MS = 5 * 60 * 1000;
         const now = new Date();
-        const result: Record<number, { isOnline: boolean; lastActivityAt: Date | null }> = {};
+        const result: Record<number, { isOnline: boolean; lastActivityAt: string | null }> = {};
         sellers.forEach(seller => {
           const timeSinceActivity = now.getTime() - new Date(seller.lastActivityAt).getTime();
           result[seller.id] = {

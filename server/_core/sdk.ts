@@ -321,7 +321,8 @@ export type AuthenticatedUser = User & {
 function buildCronUser(
   userInfo: GetUserInfoWithJwtResponse
 ): AuthenticatedUser {
-  const now = new Date();
+  // Schema timestamp columns are string-mode; format accordingly.
+  const now = new Date().toISOString().slice(0, 19).replace("T", " ");
   return {
     id: -1,
     openId: userInfo.openId,
