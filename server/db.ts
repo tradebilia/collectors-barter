@@ -67,6 +67,21 @@ type AvatarUploadInput = {
   contentBase64: string;
 };
 
+/**
+ * Gracefully close the underlying mysql2 connection pool. Called on
+ * SIGTERM/SIGINT so restarts never leave half-open database connections.
+ */
+export async function closeDb(): Promise<void> {
+  if (_db) {
+    try {
+      const client: any = (_db as any).$client;
+      if (client?.end) await client.end();
+    } finally {
+      _db = null;
+    }
+  }
+}
+
 export async function requireDb(): Promise<ReturnType<typeof drizzle>> {
   if (!_db) {
     const dbUrl = process.env.DATABASE_URL || ENV.databaseUrl;

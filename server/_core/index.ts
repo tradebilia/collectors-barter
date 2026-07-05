@@ -13,29 +13,74 @@ import { serveStatic, setupVite } from "./vite";
 import { sdk } from "./sdk";
 import { notifyOwner } from "./notification";
 import { desc, gte } from "drizzle-orm";
+import { referralRequests } from "../../drizzle/schema";
+import { validateEnvironment, validateDatabaseConnection } from "./startupChecks";
 
-function isPortAvailable(port: number): Promise<boolean> {
-  return new Promise(resolve => {
-    const server = net.createServer();
-    server.listen(port, () => {
-      server.close(() => resolve(true));
-    });
-    server.on("error", () => resolve(false));
+// Bind strictly to the configured port. Previously the server silently
+// "drifted" to 3001+ when 3000 was briefly busy during a restart, while the
+// frontend/proxy still pointed at 3000 — the classic "server is running but
+// nothing connects" failure. Now we retry the SAME port a few times (to ride
+// out a not-yet-dead old process) and fail loudly if it stays occupied.
+function listenOnPort(server: ReturnType<typeof createServer>, port: number): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const onError = (err: NodeJS.ErrnoException) => {
+      server.removeListener("listening", onListening);
+      reject(err);
+    };
+    const onListening = () => {
+      server.removeListener("error", onError);
+      resolve();
+    };
+    server.once("error", onError);
+    server.once("listening", onListening);
+    server.listen(port);
   });
 }
 
-async function findAvailablePort(startPort: number = 3000): Promise<number> {
-  for (let port = startPort; port < startPort + 20; port++) {
-    if (await isPortAvailable(port)) {
-      return port;
+async function listenWithRetry(
+  server: ReturnType<typeof createServer>,
+  port: number,
+  attempts = 5,
+  delayMs = 500,
+): Promise<void> {
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    try {
+      await listenOnPort(server, port);
+      return;
+    } catch (err: any) {
+      if (err?.code === "EADDRINUSE" && attempt < attempts) {
+        console.warn(
+          `[startup] Port ${port} busy (attempt ${attempt}/${attempts}), retrying in ${delayMs}ms...`,
+        );
+        await new Promise(r => setTimeout(r, delayMs));
+        continue;
+      }
+      throw err;
     }
   }
-  throw new Error(`No available port found starting from ${startPort}`);
 }
 
 async function startServer() {
+  // Fail fast on misconfiguration instead of failing cryptically at first request.
+  validateEnvironment();
+  await validateDatabaseConnection();
+
   const app = express();
   const server = createServer(app);
+
+  // Health endpoint: lets tooling (and humans) verify the server AND its
+  // database connection are actually working, not just that a process exists.
+  app.get("/health", async (_req, res) => {
+    try {
+      const { requireDb } = await import("../db");
+      const db = await requireDb();
+      const { sql } = await import("drizzle-orm");
+      await db.execute(sql`select 1`);
+      res.json({ status: "ok", database: "connected", timestamp: new Date().toISOString() });
+    } catch {
+      res.status(503).json({ status: "degraded", database: "unreachable", timestamp: new Date().toISOString() });
+    }
+  });
   // Configure body parser with larger size limit for file uploads
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
@@ -90,8 +135,8 @@ async function startServer() {
       // Dynamic import to get db instance
       const { requireDb } = await import("../db");
       const db = await requireDb();
-      // Use require for schema since it\"s TypeScript
-      const { referralRequests } = require("../drizzle/schema");
+      // NOTE: previously used `require("../drizzle/schema")` which crashes in
+      // ESM at runtime; schema is now statically imported at the top of file.
 
       // Get referrals from the last 3 days
       const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000);
@@ -133,16 +178,40 @@ async function startServer() {
     await setupVite(app, server);
   }
 
-  const preferredPort = parseInt(process.env.PORT || "3000");
-  const port = await findAvailablePort(preferredPort);
+  const port = parseInt(process.env.PORT || "3000", 10);
+  await listenWithRetry(server, port);
+  console.log(`[startup] Port check: PASS (bound to ${port})`);
+  console.log(`Server running on http://localhost:${port}/`);
 
-  if (port !== preferredPort) {
-    console.log(`Port ${preferredPort} is busy, using port ${port} instead`);
-  }
-
-  server.listen(port, () => {
-    console.log(`Server running on http://localhost:${port}/`);
-  });
+  // Graceful shutdown: close the HTTP server and database pool so restarts
+  // never leave stale sockets holding the port (the cause of past restart
+  // failures) or half-open DB connections.
+  let shuttingDown = false;
+  const shutdown = async (signal: string) => {
+    if (shuttingDown) return;
+    shuttingDown = true;
+    console.log(`[shutdown] Received ${signal}, closing server...`);
+    // Terminate idle keep-alive sockets immediately so close() doesn't hang
+    // waiting for browsers/Vite HMR clients to drop their connections.
+    server.closeAllConnections?.();
+    server.close(async () => {
+      try {
+        const { closeDb } = await import("../db");
+        await closeDb();
+      } catch {
+        // best-effort pool cleanup
+      }
+      console.log("[shutdown] Clean exit.");
+      process.exit(0);
+    });
+    // Force-exit if something refuses to drain within 2s.
+    setTimeout(() => process.exit(1), 2000).unref();
+  };
+  process.on("SIGTERM", () => void shutdown("SIGTERM"));
+  process.on("SIGINT", () => void shutdown("SIGINT"));
 }
 
-startServer().catch(console.error);
+startServer().catch(err => {
+  console.error("[startup] FATAL: server failed to start:", err?.message ?? err);
+  process.exit(1);
+});
