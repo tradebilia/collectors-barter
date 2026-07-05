@@ -69,16 +69,18 @@ function normalizeListingImageUrl(url: string) {
 }
 
 export function resolveTradebiliaListingImage(input: TradebiliaListingImageInput) {
-  // 1. Try to match by keyword first to handle cases where uploaded images might be broken
-  // but we have a high-quality local asset for the item
+  // 1. The user's uploaded photo ALWAYS wins. (Previously the keyword map was
+  // checked first, silently overriding real uploads with hard-coded stock
+  // images — e.g. any listing titled "Star Wars ..." would never show the
+  // owner's actual photo.)
+  if (input.primaryPhotoUrl) return normalizeListingImageUrl(input.primaryPhotoUrl);
+
+  // 2. Keyword-based fallback for seed listings without an uploaded photo
   const titleLower = input.title.toLowerCase();
   const matched = keywordImageMap.find(entry => 
     entry.keywords.some(keyword => titleLower.includes(keyword))
   );
   if (matched) return normalizeListingImageUrl(matched.imageUrl);
-
-  // 2. If no keyword match, use user-uploaded image if available
-  if (input.primaryPhotoUrl) return normalizeListingImageUrl(input.primaryPhotoUrl);
 
   // 3. Try to match by category
   if (input.category && categoryImageMap[input.category]) {
