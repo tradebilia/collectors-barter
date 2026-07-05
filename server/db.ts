@@ -760,30 +760,33 @@ export async function selectTradeProposalItems(
     throw new Error("You can only select items for pending proposals.");
   }
 
-  // Delete existing items
-  await db.delete(tradeProposalItems).where(eq(tradeProposalItems.proposalId, input.proposalId));
-
-  // Insert new items
-  for (const listingId of input.selectedListingIds) {
-    const listing = await db
-      .select()
+  // Validate ownership of all offered listings in ONE query (was an N+1 loop).
+  if (input.selectedListingIds.length > 0) {
+    const ownedRows = await db
+      .select({ id: listings.id, ownerId: listings.ownerId })
       .from(listings)
-      .where(eq(listings.id, listingId))
-      .limit(1);
-
-    if (!listing[0]) {
-      throw new Error(`Listing ${listingId} not found.`);
+      .where(inArray(listings.id, input.selectedListingIds));
+    const ownedMap = new Map(ownedRows.map(r => [r.id, r.ownerId]));
+    for (const listingId of input.selectedListingIds) {
+      const ownerId = ownedMap.get(listingId);
+      if (ownerId === undefined) throw new Error(`Listing ${listingId} not found.`);
+      if (ownerId !== user.id) throw new Error(`You don't own listing ${listingId}.`);
     }
-
-    if (listing[0].ownerId !== user.id) {
-      throw new Error(`You don't own listing ${listingId}.`);
-    }
-
-    await db.insert(tradeProposalItems).values({
-      proposalId: input.proposalId,
-      offeredListingId: listingId,
-    });
   }
+
+  // Delete-then-insert atomically: without a transaction, a failure between
+  // the two steps left the proposal with NO items at all.
+  await db.transaction(async tx => {
+    await tx.delete(tradeProposalItems).where(eq(tradeProposalItems.proposalId, input.proposalId));
+    if (input.selectedListingIds.length > 0) {
+      await tx.insert(tradeProposalItems).values(
+        input.selectedListingIds.map(listingId => ({
+          proposalId: input.proposalId,
+          offeredListingId: listingId,
+        })),
+      );
+    }
+  });
 
   return { success: true };
 }
@@ -817,29 +820,33 @@ export async function respondToTradeProposal(
 
   const newStatus = input.response === "accepted" ? "accepted" : "declined";
 
-  await db
-    .update(tradeProposals)
-    .set({
-      status: newStatus,
-      respondedAt: new Date(),
-    })
-    .where(eq(tradeProposals.id, input.proposalId));
+  // Atomic: accepting a trade updates the proposal AND marks all involved
+  // listings as traded. Without a transaction, a failure in between left an
+  // "accepted" proposal whose items were still listed as available.
+  await db.transaction(async tx => {
+    await tx
+      .update(tradeProposals)
+      .set({
+        status: newStatus,
+        respondedAt: new Date(),
+      })
+      .where(eq(tradeProposals.id, input.proposalId));
 
-  if (input.response === "accepted") {
-    // Mark both listings as traded
-    const proposalItems = await db
-      .select()
-      .from(tradeProposalItems)
-      .where(eq(tradeProposalItems.proposalId, input.proposalId));
+    if (input.response === "accepted") {
+      const proposalItems = await tx
+        .select()
+        .from(tradeProposalItems)
+        .where(eq(tradeProposalItems.proposalId, input.proposalId));
 
-    const listingIds = proposalItems.map(item => item.offeredListingId);
-    listingIds.push(proposal[0].requestedListingId);
+      const listingIds = proposalItems.map(item => item.offeredListingId);
+      listingIds.push(proposal[0].requestedListingId);
 
-    await db
-      .update(listings)
-      .set({ status: "traded" })
-      .where(inArray(listings.id, listingIds));
-  }
+      await tx
+        .update(listings)
+        .set({ status: "traded" })
+        .where(inArray(listings.id, listingIds));
+    }
+  });
 
   return { success: true };
 }
@@ -1147,11 +1154,13 @@ export async function bulkDeleteListings(
     }
   }
 
-  // Delete associated photos first (foreign key constraint)
-  await db.delete(listingPhotos).where(inArray(listingPhotos.listingId, input.listingIds));
-
-  // Then delete the listings
-  await db.delete(listings).where(inArray(listings.id, input.listingIds));
+    // Atomic delete: photos + listings together. Without a transaction, a
+  // failure between the two deletes left listings with missing photos or
+  // half-deleted state.
+  await db.transaction(async tx => {
+    await tx.delete(listingPhotos).where(inArray(listingPhotos.listingId, input.listingIds));
+    await tx.delete(listings).where(inArray(listings.id, input.listingIds));
+  });
 
   return getDashboardData(user);
 }
@@ -3066,32 +3075,30 @@ export async function adminDeleteListing(
     throw new Error("Listing not found.");
   }
 
-  // Delete all related records in order of foreign key dependencies
-  // 1. Delete trade proposal items that reference this listing
-  await db.delete(tradeProposalItems).where(eq(tradeProposalItems.offeredListingId, input.listingId));
-  
-  // 2. Delete trade proposals that reference this listing
-  await db.delete(tradeProposals).where(eq(tradeProposals.requestedListingId, input.listingId));
-  
-  // 3. Delete watchlist entries
-  await db.delete(watchlistEntries).where(eq(watchlistEntries.listingId, input.listingId));
-  
-  // 4. Delete item inquiries and their replies
-  const inquiryIds = await db.select({ id: itemInquiries.id }).from(itemInquiries).where(eq(itemInquiries.listingId, input.listingId));
-  if (inquiryIds.length > 0) {
-    const ids = inquiryIds.map(i => i.id);
-    await db.delete(inquiryReplies).where(inArray(inquiryReplies.inquiryId, ids));
-  }
-  await db.delete(itemInquiries).where(eq(itemInquiries.listingId, input.listingId));
-  
-  // 5. Delete favorites
-  await db.delete(favorites).where(eq(favorites.listingId, input.listingId));
-  
-  // 6. Delete photos
-  await db.delete(listingPhotos).where(eq(listingPhotos.listingId, input.listingId));
-
-  // 7. Delete the listing
-  await db.delete(listings).where(eq(listings.id, input.listingId));
+    // Delete all related records atomically. This 7-step cascade previously ran
+  // as separate statements; any mid-sequence failure orphaned rows (e.g. a
+  // deleted listing whose proposals/watchlist entries survived).
+  await db.transaction(async tx => {
+    // 1. Trade proposal items that reference this listing
+    await tx.delete(tradeProposalItems).where(eq(tradeProposalItems.offeredListingId, input.listingId));
+    // 2. Trade proposals that reference this listing
+    await tx.delete(tradeProposals).where(eq(tradeProposals.requestedListingId, input.listingId));
+    // 3. Watchlist entries
+    await tx.delete(watchlistEntries).where(eq(watchlistEntries.listingId, input.listingId));
+    // 4. Item inquiries and their replies
+    const inquiryIds = await tx.select({ id: itemInquiries.id }).from(itemInquiries).where(eq(itemInquiries.listingId, input.listingId));
+    if (inquiryIds.length > 0) {
+      const ids = inquiryIds.map(i => i.id);
+      await tx.delete(inquiryReplies).where(inArray(inquiryReplies.inquiryId, ids));
+    }
+    await tx.delete(itemInquiries).where(eq(itemInquiries.listingId, input.listingId));
+    // 5. Favorites
+    await tx.delete(favorites).where(eq(favorites.listingId, input.listingId));
+    // 6. Photos
+    await tx.delete(listingPhotos).where(eq(listingPhotos.listingId, input.listingId));
+    // 7. The listing itself
+    await tx.delete(listings).where(eq(listings.id, input.listingId));
+  });
 
   return {
     success: true,
@@ -3130,32 +3137,28 @@ export async function adminBulkDeleteListings(
     throw new Error("No listings found.");
   }
 
-  // Delete all related records in order of foreign key dependencies
-  // 1. Delete trade proposal items that reference these listings
-  await db.delete(tradeProposalItems).where(inArray(tradeProposalItems.offeredListingId, input.listingIds));
-  
-  // 2. Delete trade proposals that reference these listings
-  await db.delete(tradeProposals).where(inArray(tradeProposals.requestedListingId, input.listingIds));
-  
-  // 3. Delete watchlist entries
-  await db.delete(watchlistEntries).where(inArray(watchlistEntries.listingId, input.listingIds));
-  
-  // 4. Delete item inquiries and their replies
-  const inquiryIds = await db.select({ id: itemInquiries.id }).from(itemInquiries).where(inArray(itemInquiries.listingId, input.listingIds));
-  if (inquiryIds.length > 0) {
-    const ids = inquiryIds.map(i => i.id);
-    await db.delete(inquiryReplies).where(inArray(inquiryReplies.inquiryId, ids));
-  }
-  await db.delete(itemInquiries).where(inArray(itemInquiries.listingId, input.listingIds));
-  
-  // 5. Delete favorites
-  await db.delete(favorites).where(inArray(favorites.listingId, input.listingIds));
-  
-  // 6. Delete photos
-  await db.delete(listingPhotos).where(inArray(listingPhotos.listingId, input.listingIds));
-
-  // 7. Delete the listings
-  await db.delete(listings).where(inArray(listings.id, input.listingIds));
+    // Delete all related records atomically (see adminDeleteListing for why).
+  await db.transaction(async tx => {
+    // 1. Trade proposal items that reference these listings
+    await tx.delete(tradeProposalItems).where(inArray(tradeProposalItems.offeredListingId, input.listingIds));
+    // 2. Trade proposals that reference these listings
+    await tx.delete(tradeProposals).where(inArray(tradeProposals.requestedListingId, input.listingIds));
+    // 3. Watchlist entries
+    await tx.delete(watchlistEntries).where(inArray(watchlistEntries.listingId, input.listingIds));
+    // 4. Item inquiries and their replies
+    const inquiryIds = await tx.select({ id: itemInquiries.id }).from(itemInquiries).where(inArray(itemInquiries.listingId, input.listingIds));
+    if (inquiryIds.length > 0) {
+      const ids = inquiryIds.map(i => i.id);
+      await tx.delete(inquiryReplies).where(inArray(inquiryReplies.inquiryId, ids));
+    }
+    await tx.delete(itemInquiries).where(inArray(itemInquiries.listingId, input.listingIds));
+    // 5. Favorites
+    await tx.delete(favorites).where(inArray(favorites.listingId, input.listingIds));
+    // 6. Photos
+    await tx.delete(listingPhotos).where(inArray(listingPhotos.listingId, input.listingIds));
+    // 7. The listings themselves
+    await tx.delete(listings).where(inArray(listings.id, input.listingIds));
+  });
 
   return {
     success: true,
