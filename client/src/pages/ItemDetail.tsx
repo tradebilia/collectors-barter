@@ -405,7 +405,12 @@ export default function ItemDetail() {
             {/* Details Panel — Option 1: Classic 4-Column Zebra */}
             {(() => {
               // Build a flat ordered list of all fields to display
-              const excludeFields = new Set(['certification_company', 'shipping_available', 'additional_notes']);
+              // Keys stored in camelCase in itemDetails JSON (matching useAddInventoryForm.ts)
+              const excludeFields = new Set([
+                'certification_company', 'shipping_available', 'additional_notes', // legacy snake_case
+                'certificationCompany', 'shippingAvailable', 'additionalNotes',   // camelCase (actual stored keys)
+                'description',                                                     // shown in its own section
+              ]);
               const allFields: { label: string; value: string }[] = [];
 
               // Core fields first
@@ -424,10 +429,8 @@ export default function ItemDetail() {
                 }
               }
 
-              // Split description and shipping out as separate rows at the bottom
-              if (listing.description) allFields.push({ label: 'Description', value: listing.description });
-              if (listing.itemDetails?.shipping_available) allFields.push({ label: 'Shipping Available', value: String(listing.itemDetails.shipping_available) });
-              if (listing.itemDetails?.additional_notes) allFields.push({ label: 'Additional Notes', value: String(listing.itemDetails.additional_notes) });
+              // NOTE: Description, Shipping, and Additional Notes are rendered
+              // as their own separate section cards below this table — not here.
 
               // Group into rows of 4
               const rows: { label: string; value: string }[][] = [];
@@ -463,6 +466,44 @@ export default function ItemDetail() {
                 </div>
               );
             })()}
+
+            {/* Description Section */}
+            {listing.description && (
+              <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden shadow-sm">
+                <div className="px-6 py-4 border-b border-gray-200 bg-white">
+                  <p className="text-xs font-semibold uppercase tracking-widest text-gray-500">Description</p>
+                </div>
+                <div className="px-6 py-5">
+                  <p className="text-base leading-7 text-gray-700 whitespace-pre-wrap">{listing.description}</p>
+                </div>
+              </div>
+            )}
+
+            {/* Shipping Section */}
+            {(listing.itemDetails?.shippingAvailable || listing.itemDetails?.shipping_available) && (
+              <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden shadow-sm">
+                <div className="px-6 py-4 border-b border-gray-200 bg-white">
+                  <p className="text-xs font-semibold uppercase tracking-widest text-gray-500">Shipping Available</p>
+                </div>
+                <div className="px-6 py-5">
+                  <p className="text-base font-medium text-gray-900 capitalize">
+                    {String(listing.itemDetails.shippingAvailable ?? listing.itemDetails.shipping_available).replace(/_/g, ' ')}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Additional Notes Section */}
+            {listing.itemDetails?.additional_notes && (
+              <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden shadow-sm">
+                <div className="px-6 py-4 border-b border-gray-200 bg-white">
+                  <p className="text-xs font-semibold uppercase tracking-widest text-gray-500">Additional Notes</p>
+                </div>
+                <div className="px-6 py-5">
+                  <p className="text-base leading-7 text-gray-700">{String(listing.itemDetails.additional_notes)}</p>
+                </div>
+              </div>
+            )}
 
             {/* Similar Items Section */}
             <div className="rounded-[2rem] border border-gray-200 bg-white p-8 shadow-[0_40px_90px_rgba(0,0,0,0.08)]">
