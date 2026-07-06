@@ -276,19 +276,20 @@ export default function ItemDetail() {
 
         <section className={`px-4 py-10 lg:px-8 relative ${getItemDetailPageClassName(listing.category)}`}>
           <div className="relative">
-          <div className="mx-auto max-w-6xl mb-8">
-            <button
-              onClick={() => window.location.href = `/category/${listing.category}`}
-              className={`flex items-center gap-3 px-6 py-3 rounded-lg border transition text-base font-semibold bg-white border-gray-300 text-black hover:bg-gray-50`}
-              title="Back to category"
-            >
-              <ArrowLeft className="w-6 h-6" />
-              <span>Back to {getTradebiliaCategoryLabel(listing.category)}</span>
-            </button>
-          </div>
           <div className="mx-auto grid max-w-6xl gap-8 xl:grid-cols-[1.02fr_0.98fr]">
-            {/* Photo column: main image on top, thumbnails centered below */}
+            {/* Photo column: Back button + main image + thumbnails */}
             <div className="flex flex-col gap-4">
+              {/* Back button sits at the top of the photo column */}
+              <div>
+                <button
+                  onClick={() => window.location.href = `/category/${listing.category}`}
+                  className={`flex items-center gap-3 px-5 py-2.5 rounded-lg border transition text-sm font-semibold bg-white border-gray-300 text-black hover:bg-gray-50`}
+                  title="Back to category"
+                >
+                  <ArrowLeft className="w-5 h-5" />
+                  <span>Back to {getTradebiliaCategoryLabel(listing.category)}</span>
+                </button>
+              </div>
               {/* Main image */}
               <div className="overflow-hidden rounded-[2rem] border border-white/10 bg-black/20 shadow-[0_40px_90px_rgba(0,0,0,0.35)]">
                 <div className="flex items-center justify-center bg-black/30 p-4" style={{ minHeight: "500px" }}>
