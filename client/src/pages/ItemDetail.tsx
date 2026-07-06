@@ -276,21 +276,20 @@ export default function ItemDetail() {
 
         <section className={`px-4 py-10 lg:px-8 relative ${getItemDetailPageClassName(listing.category)}`}>
           <div className="relative">
+          {/* Back button — sits at the very left edge, outside the centered grid */}
+          <div className="mb-4">
+            <button
+              onClick={() => window.location.href = `/category/${listing.category}`}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition text-sm font-semibold bg-white border-gray-300 text-black hover:bg-gray-50`}
+              title="Back to category"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Back to {getTradebiliaCategoryLabel(listing.category)}</span>
+            </button>
+          </div>
           <div className="mx-auto grid max-w-6xl gap-8 xl:grid-cols-[1.02fr_0.98fr]">
-            {/* Photo column: Back button top-left, then photo below */}
+            {/* Photo column */}
             <div className="flex flex-col gap-4">
-              {/* Back button — normal horizontal button, left-aligned */}
-              <div className="flex justify-start">
-                <button
-                  onClick={() => window.location.href = `/category/${listing.category}`}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition text-sm font-semibold bg-white border-gray-300 text-black hover:bg-gray-50`}
-                  title="Back to category"
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                  <span>Back to {getTradebiliaCategoryLabel(listing.category)}</span>
-                </button>
-              </div>
-
               {/* Photo + thumbnails */}
               <div className="flex flex-col gap-4">
                 {/* Main image */}
