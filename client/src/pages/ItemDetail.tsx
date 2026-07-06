@@ -274,7 +274,7 @@ export default function ItemDetail() {
 
         <CategoryBar />
 
-        <section className={`px-4 py-10 lg:px-8 relative ${getItemDetailPageClassName(listing.category)}`}>
+        <section className={`px-4 pt-4 pb-10 lg:px-8 relative ${getItemDetailPageClassName(listing.category)}`}>
           <div className="relative">
           {/* Back button — sits at the very left edge, outside the centered grid */}
           <div className="mb-4">
