@@ -532,7 +532,7 @@ export default function ItemDetail() {
               return (
                 <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden shadow-sm">
                   <div className="px-6 py-4 border-b border-gray-200 bg-white">
-                    <p className="text-xs font-semibold uppercase tracking-widest text-gray-500">Details</p>
+                    <p className="text-base font-bold uppercase tracking-widest text-gray-900">Details</p>
                   </div>
                   <table className="w-full text-sm">
                     <tbody>
@@ -540,10 +540,10 @@ export default function ItemDetail() {
                         <tr key={rowIdx} className={rowIdx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                           {row.map((field, colIdx) => (
                             <td key={colIdx} className="px-5 py-3.5 border-r border-gray-100 last:border-r-0 w-1/4 align-top">
-                              <span className="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-1.5">
+                              <span className="block text-sm font-bold uppercase tracking-wider text-gray-800 mb-1">
                                 {field.label}
                               </span>
-                              <span className="block text-sm font-medium text-gray-900 break-words">{field.value}</span>
+                              <span className="block text-xs font-medium text-gray-500 break-words">{field.value}</span>
                             </td>
                           ))}
                           {/* Pad short last row to maintain column alignment */}
@@ -562,7 +562,7 @@ export default function ItemDetail() {
             {listing.description && (
               <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden shadow-sm">
                 <div className="px-6 py-4 border-b border-gray-200 bg-white">
-                  <p className="text-xs font-semibold uppercase tracking-widest text-gray-500">Description</p>
+                  <p className="text-base font-bold uppercase tracking-widest text-gray-900">Description</p>
                 </div>
                 <div className="px-6 py-5">
                   <p className="text-base leading-7 text-gray-700 whitespace-pre-wrap">{listing.description}</p>
@@ -574,7 +574,7 @@ export default function ItemDetail() {
             {(listing.itemDetails?.shippingAvailable || listing.itemDetails?.shipping_available) && (
               <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden shadow-sm">
                 <div className="px-6 py-4 border-b border-gray-200 bg-white">
-                  <p className="text-xs font-semibold uppercase tracking-widest text-gray-500">Shipping Available</p>
+                  <p className="text-base font-bold uppercase tracking-widest text-gray-900">Shipping Available</p>
                 </div>
                 <div className="px-6 py-5">
                   <p className="text-base font-medium text-gray-900 capitalize">
@@ -588,7 +588,7 @@ export default function ItemDetail() {
             {listing.itemDetails?.additional_notes && (
               <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden shadow-sm">
                 <div className="px-6 py-4 border-b border-gray-200 bg-white">
-                  <p className="text-xs font-semibold uppercase tracking-widest text-gray-500">Additional Notes</p>
+                  <p className="text-base font-bold uppercase tracking-widest text-gray-900">Additional Notes</p>
                 </div>
                 <div className="px-6 py-5">
                   <p className="text-base leading-7 text-gray-700">{String(listing.itemDetails.additional_notes)}</p>
