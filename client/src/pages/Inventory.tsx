@@ -20,7 +20,7 @@ import { getLoginUrl } from "@/const";
 
 import { resolveTradebiliaListingImage } from "@/lib/listingImages";
 import { trpc } from "@/lib/trpc";
-import { getTradebiliaCategoryLabel } from "@/lib/tradebilia";
+import { getTradebiliaCategoryLabel, formatGrade } from "@/lib/tradebilia";
 import { Download, Loader2, Menu, MessageSquareText, Pencil, Plus, Search, Share2, Trash2, Eye, EyeOff } from "lucide-react";
 import { TopRightIcons } from "@/components/TopRightIcons";
 import { TopBar } from "@/components/TopBar";
@@ -788,7 +788,7 @@ export default function Inventory() {
                       </div>
                       <div className="space-y-2 text-sm">
                         <div><span className="text-slate-600"><strong>Category:</strong> {listing.categoryLabel}</span></div>
-                        <div><span className="text-slate-600"><strong>Grade:</strong> {listing.grade !== 'ungraded' ? listing.grade : 'Not graded'}</span></div>
+                        <div><span className="text-slate-600"><strong>Grade:</strong> {listing.grade && listing.grade !== 'ungraded' ? formatGrade(listing.grade) : 'Not graded'}</span></div>
                         {listing.certificationCompany ? (
                           <div><span className="text-slate-600"><strong>Certification:</strong> {listing.certificationCompany}</span></div>
                         ) : (

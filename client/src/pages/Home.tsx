@@ -1,6 +1,6 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { resolveTradebiliaListingImage } from "@/lib/listingImages";
-import { getTradebiliaCategoryLabel, getAvatarInitials } from "@/lib/tradebilia";
+import { getTradebiliaCategoryLabel, getAvatarInitials, formatGrade } from "@/lib/tradebilia";
 import { trpc } from "@/lib/trpc";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -185,7 +185,7 @@ function RankingListingItem({ item, index, imageUrl, metricsType, metrics }: { i
             <DialogHeader>
               <DialogTitle>{item.title}</DialogTitle>
               <DialogDescription>
-                {item.certificationCompany && item.grade ? `${item.certificationCompany} ${item.grade}` : item.grade ? `Grade: ${item.grade}` : 'Ungraded'}
+                {item.certificationCompany && item.grade ? `${item.certificationCompany} ${formatGrade(item.grade)}` : item.grade ? `Grade: ${formatGrade(item.grade)}` : 'Ungraded'}
               </DialogDescription>
             </DialogHeader>
             <div className="flex justify-center">

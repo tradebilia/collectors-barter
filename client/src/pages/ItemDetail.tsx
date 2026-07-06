@@ -26,7 +26,7 @@ import { Separator } from "@/components/ui/separator";
 import { resolveTradebiliaListingImage } from "@/lib/listingImages";
 import { trpc } from "@/lib/trpc";
 import { getLoginUrl } from "@/const";
-import { getTradebiliaCategoryTheme, getTradebiliaCategoryLabel } from "@/lib/tradebilia";
+import { getTradebiliaCategoryTheme, getTradebiliaCategoryLabel, formatGrade } from "@/lib/tradebilia";
 
 const getItemDetailPageClassName = (category: string): string => {
   // For item detail pages, use the content portion of the category page gradient
@@ -329,10 +329,10 @@ export default function ItemDetail() {
                 </div>
                 <h1 className="mt-6 text-5xl font-semibold leading-[1.05] tracking-tight text-gray-900">{listing.title}</h1>
                 <div className="mt-6 grid gap-4 text-lg text-gray-700 sm:grid-cols-2">
-                  {listing.grade && listing.grade !== '0' && (
+                  {listing.grade && listing.grade !== '0' && listing.grade !== 'ungraded' && (
                     <div>
                       <p className="text-sm uppercase tracking-[0.25em] text-gray-500">Grade</p>
-                      <p className="mt-2 font-medium text-gray-900">{listing.grade}</p>
+                      <p className="mt-2 font-medium text-gray-900">{formatGrade(listing.grade)}</p>
                     </div>
                   )}
                   {listing.certificationCompany && (

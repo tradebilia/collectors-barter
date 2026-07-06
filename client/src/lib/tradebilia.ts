@@ -193,6 +193,19 @@ export function getTradebiliaCategoryLabel(slug: string) {
   return tradebiliaCategories.find(category => category.value === slug)?.label ?? "Category";
 }
 
+/**
+ * Format a grade value for display.
+ * Grading companies use at most 1 decimal place (e.g. 9.4, not 9.40).
+ * Strips trailing zeros: "9.40" -> "9.4", "10.0" -> "10", "9.5" -> "9.5".
+ * Non-numeric grades (e.g. "NM", "ungraded") are returned unchanged.
+ */
+export function formatGrade(grade: string | null | undefined): string {
+  if (!grade || grade === 'ungraded' || grade === '0') return '';
+  const num = parseFloat(grade);
+  if (isNaN(num)) return grade; // non-numeric grades returned as-is
+  return num % 1 === 0 ? String(num) : parseFloat(num.toFixed(1)).toString();
+}
+
 export type TradebiliaBenchmarkNote = {
   eyebrow: string;
   title: string;
