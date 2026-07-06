@@ -277,45 +277,49 @@ export default function ItemDetail() {
         <section className={`px-4 py-10 lg:px-8 relative ${getItemDetailPageClassName(listing.category)}`}>
           <div className="relative">
           <div className="mx-auto grid max-w-6xl gap-8 xl:grid-cols-[1.02fr_0.98fr]">
-            {/* Photo column: Back button + main image + thumbnails */}
+            {/* Photo column: Back button top-left, then photo below */}
             <div className="flex flex-col gap-4">
-              {/* Back button sits at the top of the photo column */}
-              <div>
+              {/* Back button — normal horizontal button, left-aligned */}
+              <div className="flex justify-start">
                 <button
                   onClick={() => window.location.href = `/category/${listing.category}`}
-                  className={`flex items-center gap-3 px-5 py-2.5 rounded-lg border transition text-sm font-semibold bg-white border-gray-300 text-black hover:bg-gray-50`}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition text-sm font-semibold bg-white border-gray-300 text-black hover:bg-gray-50`}
                   title="Back to category"
                 >
-                  <ArrowLeft className="w-5 h-5" />
+                  <ArrowLeft className="w-4 h-4" />
                   <span>Back to {getTradebiliaCategoryLabel(listing.category)}</span>
                 </button>
               </div>
-              {/* Main image */}
-              <div className="overflow-hidden rounded-[2rem] border border-white/10 bg-black/20 shadow-[0_40px_90px_rgba(0,0,0,0.35)]">
-                <div className="flex items-center justify-center bg-black/30 p-4" style={{ minHeight: "500px" }}>
-                  <img src={activePhoto?.imageUrl ?? resolveTradebiliaListingImage({ title: listing.title, category: listing.category, primaryPhotoUrl: listing.primaryPhotoUrl })} alt={activePhoto?.altText ?? listing.title} className="max-h-full max-w-full object-contain" />
-                </div>
-              </div>
 
-              {/* Thumbnails — centered below main image */}
-              {listing.photos.length > 1 && (
-                <div className="flex justify-center gap-3 flex-wrap">
-                  {listing.photos.map((photo: any, index: number) => (
-                    <button
-                      key={`${photo.imageUrl}-${index}`}
-                      type="button"
-                      onClick={() => setActivePhotoIndex(index)}
-                      className={`overflow-hidden rounded-[1rem] border-2 transition ${
-                        index === activePhotoIndex
-                          ? "border-cyan-400 shadow-[0_0_0_3px_rgba(103,232,249,0.2)]"
-                          : "border-white/20 hover:border-white/50"
-                      }`}
-                    >
-                      <img src={photo.imageUrl} alt={photo.altText ?? `${listing.title} photo ${index + 1}`} className="h-20 w-20 object-cover" />
-                    </button>
-                  ))}
+              {/* Photo + thumbnails */}
+              <div className="flex flex-col gap-4">
+                {/* Main image */}
+                <div className="overflow-hidden rounded-[2rem] border border-white/10 bg-black/20 shadow-[0_40px_90px_rgba(0,0,0,0.35)]">
+                  <div className="flex items-center justify-center bg-black/30 p-4" style={{ minHeight: "500px" }}>
+                    <img src={activePhoto?.imageUrl ?? resolveTradebiliaListingImage({ title: listing.title, category: listing.category, primaryPhotoUrl: listing.primaryPhotoUrl })} alt={activePhoto?.altText ?? listing.title} className="max-h-full max-w-full object-contain" />
+                  </div>
                 </div>
-              )}
+
+                {/* Thumbnails — centered below main image */}
+                {listing.photos.length > 1 && (
+                  <div className="flex justify-center gap-3 flex-wrap">
+                    {listing.photos.map((photo: any, index: number) => (
+                      <button
+                        key={`${photo.imageUrl}-${index}`}
+                        type="button"
+                        onClick={() => setActivePhotoIndex(index)}
+                        className={`overflow-hidden rounded-[1rem] border-2 transition ${
+                          index === activePhotoIndex
+                            ? "border-cyan-400 shadow-[0_0_0_3px_rgba(103,232,249,0.2)]"
+                            : "border-white/20 hover:border-white/50"
+                        }`}
+                      >
+                        <img src={photo.imageUrl} alt={photo.altText ?? `${listing.title} photo ${index + 1}`} className="h-20 w-20 object-cover" />
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="pt-2">
