@@ -6,6 +6,43 @@ These rules ensure consistency, maintainability, and quality across the Tradebil
 
 ---
 
+## Session Startup Protocol
+
+**ALWAYS follow these steps at the start of every new session before attempting to view or test the site.**
+
+### Why This Matters
+This sandbox hibernates between sessions. When it resumes, leftover background processes from the previous session may still be holding onto the ports the server needs (port 3000). This causes "address already in use" errors that look alarming but are completely harmless — they just need to be cleared.
+
+### Step 1 — Clear stale processes
+```bash
+for port in 3000 5173; do lsof -t -i :$port | xargs -r kill -9; done
+```
+
+### Step 2 — Start the ONE combined server (not two separate servers)
+```bash
+cd /home/ubuntu/collectors-barter && nohup pnpm dev > backend.log 2>&1 &
+```
+**Important:** This project runs Vite (frontend) *inside* the backend server. Do NOT run `pnpm vite` separately — that creates a second conflicting process.
+
+### Step 3 — Expose port 3000
+```bash
+# Use the expose tool on port 3000
+```
+The site will be available at the exposed URL. Port 5173 is NOT needed.
+
+### Step 4 — Verify startup
+```bash
+cat /home/ubuntu/collectors-barter/backend.log
+# Should end with: Server running on http://localhost:3000/
+```
+
+### Quick Diagnosis
+- `address already in use` → Run Step 1, then Step 2 again
+- Blank page / loading spinner → Wait 5 seconds and refresh; Vite may still be compiling
+- `Unauthorized` on the exposed URL → You exposed the wrong port; use port 3000 only
+
+---
+
 ## Coding Standards
 
 ### TypeScript
