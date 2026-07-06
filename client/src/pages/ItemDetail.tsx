@@ -69,7 +69,11 @@ import {
   Menu, 
   Search, 
   Star, 
-  UserRound 
+  UserRound,
+  Facebook,
+  Twitter,
+  Link2,
+  Check
 } from "lucide-react";
 import { TopRightIcons } from "@/components/TopRightIcons";
 import { CategoryBar } from "@/components/CategoryBar";
@@ -184,6 +188,7 @@ export default function ItemDetail() {
 
   const [activePhotoIndex, setActivePhotoIndex] = useState(0);
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
 
   const activePhoto = useMemo(() => {
     if (!listing) return null;
@@ -281,29 +286,34 @@ export default function ItemDetail() {
             </button>
           </div>
           <div className="mx-auto grid max-w-6xl gap-8 xl:grid-cols-[1.02fr_0.98fr]">
-            <div className="flex gap-4">
-              {/* Thumbnails on the left */}
-              <div className="flex flex-col gap-3">
-                {(listing.photos.length ? listing.photos : [{ imageUrl: resolveTradebiliaListingImage({ title: listing.title, category: listing.category, primaryPhotoUrl: listing.primaryPhotoUrl }), altText: listing.title }]).map((photo: any, index: number) => (
-                  <button
-                    key={`${photo.imageUrl}-${index}`}
-                    type="button"
-                    onClick={() => setActivePhotoIndex(index)}
-                    className={`overflow-hidden rounded-[1.25rem] border transition ${index === activePhotoIndex ? "border-cyan-300 shadow-[0_0_0_3px_rgba(103,232,249,0.15)]" : "border-white/12"}`}
-                  >
-                    <img src={photo.imageUrl} alt={photo.altText ?? `${listing.title} ${index + 1}`} className="h-24 w-20 object-cover" />
-                  </button>
-                ))}
-              </div>
-              
-              {/* Main image on the right */}
-              <div className="flex-1">
-                <div className="overflow-hidden rounded-[2rem] border border-white/10 bg-black/20 shadow-[0_40px_90px_rgba(0,0,0,0.35)]">
-                  <div className="flex items-center justify-center bg-black/30 p-4" style={{ minHeight: "500px" }}>
-                    <img src={activePhoto?.imageUrl ?? resolveTradebiliaListingImage({ title: listing.title, category: listing.category, primaryPhotoUrl: listing.primaryPhotoUrl })} alt={activePhoto?.altText ?? listing.title} className="max-h-full max-w-full object-contain" />
-                  </div>
+            {/* Photo column: main image on top, thumbnails centered below */}
+            <div className="flex flex-col gap-4">
+              {/* Main image */}
+              <div className="overflow-hidden rounded-[2rem] border border-white/10 bg-black/20 shadow-[0_40px_90px_rgba(0,0,0,0.35)]">
+                <div className="flex items-center justify-center bg-black/30 p-4" style={{ minHeight: "500px" }}>
+                  <img src={activePhoto?.imageUrl ?? resolveTradebiliaListingImage({ title: listing.title, category: listing.category, primaryPhotoUrl: listing.primaryPhotoUrl })} alt={activePhoto?.altText ?? listing.title} className="max-h-full max-w-full object-contain" />
                 </div>
               </div>
+
+              {/* Thumbnails — centered below main image */}
+              {listing.photos.length > 1 && (
+                <div className="flex justify-center gap-3 flex-wrap">
+                  {listing.photos.map((photo: any, index: number) => (
+                    <button
+                      key={`${photo.imageUrl}-${index}`}
+                      type="button"
+                      onClick={() => setActivePhotoIndex(index)}
+                      className={`overflow-hidden rounded-[1rem] border-2 transition ${
+                        index === activePhotoIndex
+                          ? "border-cyan-400 shadow-[0_0_0_3px_rgba(103,232,249,0.2)]"
+                          : "border-white/20 hover:border-white/50"
+                      }`}
+                    >
+                      <img src={photo.imageUrl} alt={photo.altText ?? `${listing.title} photo ${index + 1}`} className="h-20 w-20 object-cover" />
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="pt-2">
@@ -393,6 +403,49 @@ export default function ItemDetail() {
                     <Heart className={`mr-0.5 h-4 w-4 ${listing.savedToWatchlist ? "fill-current text-pink-500" : ""}`} />
                     {listing.ownerId === user?.id ? "Cannot Favorite Own Item" : (listing.savedToWatchlist ? "Saved" : "Add to Watchlist")}
                   </Button>
+                </div>
+
+                {/* Social Share Row */}
+                <div className="mt-5 pt-5 border-t border-gray-100">
+                  <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">Share this listing</p>
+                  <div className="flex items-center gap-3">
+                    {/* Facebook */}
+                    <a
+                      href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(typeof window !== 'undefined' ? window.location.href : '')}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#1877F2] text-white text-xs font-semibold hover:bg-[#166fe5] transition"
+                      title="Share on Facebook"
+                    >
+                      <Facebook className="h-4 w-4" />
+                      <span>Facebook</span>
+                    </a>
+                    {/* X / Twitter */}
+                    <a
+                      href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(typeof window !== 'undefined' ? window.location.href : '')}&text=${encodeURIComponent(`Check out this listing on Tradebilia: ${listing.title}`)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 px-4 py-2 rounded-full bg-black text-white text-xs font-semibold hover:bg-gray-800 transition"
+                      title="Share on X"
+                    >
+                      <Twitter className="h-4 w-4" />
+                      <span>X</span>
+                    </a>
+                    {/* Copy Link */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(window.location.href);
+                        setLinkCopied(true);
+                        setTimeout(() => setLinkCopied(false), 2000);
+                      }}
+                      className="flex items-center gap-2 px-4 py-2 rounded-full bg-gray-100 text-gray-700 text-xs font-semibold hover:bg-gray-200 transition"
+                      title="Copy link"
+                    >
+                      {linkCopied ? <Check className="h-4 w-4 text-emerald-600" /> : <Link2 className="h-4 w-4" />}
+                      <span>{linkCopied ? 'Copied!' : 'Copy Link'}</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
