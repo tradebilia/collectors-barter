@@ -540,7 +540,7 @@ export default function ItemDetail() {
                         <tr key={rowIdx} className={rowIdx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                           {row.map((field, colIdx) => (
                             <td key={colIdx} className="px-5 py-3.5 border-r border-gray-100 last:border-r-0 w-1/4 align-top">
-                              <span className="block text-[10px] font-semibold uppercase tracking-widest text-gray-400 mb-1">
+                              <span className="block text-[11px] font-bold uppercase tracking-widest text-gray-500 mb-1">
                                 {field.label}
                               </span>
                               <span className="block font-medium text-gray-900 break-words">{field.value}</span>
