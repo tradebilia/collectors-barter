@@ -29,6 +29,7 @@ import { ProfileCompletion } from "./pages/ProfileCompletion";
 import { SearchResults } from "./pages/SearchResults";
 import AdminDashboard from "./pages/AdminDashboard";
 import { AnimatedDemo } from "./pages/AnimatedDemo";
+import DetailsLayoutMockups from "./pages/DetailsLayoutMockups";
 import Contact from "./pages/Contact";
 import { Forum } from "./pages/Forum";
 import { ForumTopic } from "./pages/ForumTopic";
@@ -117,6 +118,7 @@ function Router() {
       <Route path="/forum/:postId" component={ForumTopic} />
       <Route path="/category/:slug" component={CategoryPage} />
       <Route path="/animated-demo" component={AnimatedDemo} />
+      <Route path="/details-mockups" component={DetailsLayoutMockups} />
       <Route path="/rankings/most-viewed" component={AllMostViewedRankings} />
       <Route path="/rankings/most-favorited" component={AllMostFavoritedRankings} />
       <Route path="/rankings/top-rated-traders" component={AllRatedTradersRankings} />

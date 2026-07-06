@@ -402,131 +402,67 @@ export default function ItemDetail() {
 
         <section className="px-4 lg:px-8">
           <div className="space-y-8 text-gray-900 px-4 lg:px-8">
-            {/* Details Panel - Sections 1, 2, 3 */}
-            <div className="rounded-[2rem] border border-gray-200 bg-white p-8 shadow-[0_40px_90px_rgba(0,0,0,0.08)]">
-                <p className="text-sm uppercase tracking-[0.3em] text-gray-500">Details</p>
-                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mt-6">
-                  {/* Section 1: Category */}
-                  <div className="rounded-[1.5rem] border border-gray-200 bg-gray-50 p-5">
-                    <p className="text-sm uppercase tracking-[0.2em] text-gray-500">1. Category</p>
-                    <p className="mt-3 text-xl font-medium text-gray-900">{getTradebiliaCategoryLabel(listing.category)}</p>
+            {/* Details Panel — Option 1: Classic 4-Column Zebra */}
+            {(() => {
+              // Build a flat ordered list of all fields to display
+              const excludeFields = new Set(['certification_company', 'shipping_available', 'additional_notes']);
+              const allFields: { label: string; value: string }[] = [];
+
+              // Core fields first
+              allFields.push({ label: 'Category', value: getTradebiliaCategoryLabel(listing.category) });
+              if (listing.certificationCompany) allFields.push({ label: 'Grading Company', value: listing.certificationCompany });
+              if (listing.estimatedValue) allFields.push({ label: 'Estimated Value', value: `$${listing.estimatedValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` });
+              if (listing.itemType) allFields.push({ label: 'Item Type', value: listing.itemType.replace(/_/g, ' ').split(' ').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') });
+              if (listing.signatures && listing.signatures.length > 0) allFields.push({ label: 'Signatures', value: listing.signatures.join(', ') });
+
+              // Dynamic itemDetails fields
+              if (listing.itemDetails) {
+                for (const [key, value] of Object.entries(listing.itemDetails)) {
+                  if (value && !excludeFields.has(key)) {
+                    allFields.push({ label: formatFieldName(key), value: String(value) });
+                  }
+                }
+              }
+
+              // Split description and shipping out as separate rows at the bottom
+              if (listing.description) allFields.push({ label: 'Description', value: listing.description });
+              if (listing.itemDetails?.shipping_available) allFields.push({ label: 'Shipping Available', value: String(listing.itemDetails.shipping_available) });
+              if (listing.itemDetails?.additional_notes) allFields.push({ label: 'Additional Notes', value: String(listing.itemDetails.additional_notes) });
+
+              // Group into rows of 4
+              const rows: { label: string; value: string }[][] = [];
+              for (let i = 0; i < allFields.length; i += 4) {
+                rows.push(allFields.slice(i, i + 4));
+              }
+
+              return (
+                <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden shadow-sm">
+                  <div className="px-6 py-4 border-b border-gray-200 bg-white">
+                    <p className="text-xs font-semibold uppercase tracking-widest text-gray-500">Details</p>
                   </div>
-                  
-                  {/* Section 2: Grading Company */}
-                  {listing.certificationCompany && (
-                    <div className="rounded-[1.5rem] border border-gray-200 bg-gray-50 p-5">
-                      <p className="text-sm uppercase tracking-[0.2em] text-gray-500">2. Grading Company</p>
-                      <p className="mt-3 text-xl font-medium text-gray-900">{listing.certificationCompany}</p>
-                    </div>
-                  )}
-                  
-                  {/* Section 3: Estimated Value */}
-                  {listing.estimatedValue && (
-                    <div className="rounded-[1.5rem] border border-gray-200 bg-gray-50 p-5">
-                      <p className="text-sm uppercase tracking-[0.2em] text-gray-500">3. Estimated Value</p>
-                      <p className="mt-3 text-2xl font-bold text-emerald-600">${listing.estimatedValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                    </div>
-                  )}
-                  
-                  {/* Category-specific fields from itemDetails */}
-                  
-                  {/* Item Type */}
-                  {listing.itemType && (
-                    <div className="rounded-[1.5rem] border border-gray-200 bg-gray-50 p-5">
-                      <p className="text-sm uppercase tracking-[0.2em] text-gray-500">Item Type</p>
-                      <p className="mt-3 text-xl font-medium text-gray-900">{listing.itemType.replace(/_/g, ' ').split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}</p>
-                    </div>
-                  )}
-                  
-                  {/* Signatures */}
-                  {listing.signatures && listing.signatures.length > 0 && (
-                    <div className="rounded-[1.5rem] border border-gray-200 bg-gray-50 p-5">
-                      <p className="text-sm uppercase tracking-[0.2em] text-gray-500">Signatures</p>
-                      <p className="mt-3 text-xl font-medium text-gray-900">{listing.signatures.join(', ')}</p>
-                    </div>
-                  )}
-                  
-                  {/* Category-specific fields from itemDetails - grouped by related fields */}
-                  {listing.itemDetails && (() => {
-                    const entries = Object.entries(listing.itemDetails).filter(([, v]) => v);
-                    const rendered = new Set<string>();
-                    
-                    // Define field groupings - related fields that should appear together
-                    const fieldGroups = [
-                      ['first_appearance', 'character_name'],
-                      ['is_graded', 'grade'],
-                      ['issue_number', 'publication_year'],
-                      ['key_issue', 'number_of_signatures']
-                    ];
-                    
-                    // Fields to exclude (redundant or already shown elsewhere)
-                    const excludeFields = new Set(['certification_company', 'shipping_available']);
-                    
-                    const result = [];
-                    
-                    // Render grouped fields
-                    for (const group of fieldGroups) {
-                      const groupFields = group.filter(f => entries.some(([k]) => k === f) && !rendered.has(f) && !excludeFields.has(f));
-                      if (groupFields.length > 0) {
-                        result.push(
-                          <div key={`group-${group.join('-')}`} className="rounded-[1.5rem] border border-gray-200 bg-gray-50 p-5 lg:col-span-2">
-                            <div className="grid grid-cols-2 gap-4">
-                              {groupFields.map(fieldName => {
-                                const value = entries.find(([k]) => k === fieldName)?.[1];
-                                rendered.add(fieldName);
-                                return (
-                                  <div key={fieldName}>
-                                    <p className="text-xs uppercase tracking-[0.15em] text-gray-500 font-semibold">{formatFieldName(fieldName)}</p>
-                                    <p className="mt-2 text-base font-medium text-gray-900">{String(value)}</p>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        );
-                      }
-                    }
-                    
-                    // Render remaining ungrouped fields
-                    for (const [key, value] of entries) {
-                      if (!rendered.has(key) && !excludeFields.has(key)) {
-                        result.push(
-                          <div key={key} className="rounded-[1.5rem] border border-gray-200 bg-gray-50 p-5">
-                            <p className="text-sm uppercase tracking-[0.2em] text-gray-500">{formatFieldName(key)}</p>
-                            <p className="mt-3 text-xl font-medium text-gray-900">{String(value)}</p>
-                          </div>
-                        );
-                      }
-                    }
-                    
-                    return result;
-                  })()}
+                  <table className="w-full text-sm">
+                    <tbody>
+                      {rows.map((row, rowIdx) => (
+                        <tr key={rowIdx} className={rowIdx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                          {row.map((field, colIdx) => (
+                            <td key={colIdx} className="px-5 py-3.5 border-r border-gray-100 last:border-r-0 w-1/4 align-top">
+                              <span className="block text-[10px] font-semibold uppercase tracking-widest text-gray-400 mb-1">
+                                {field.label}
+                              </span>
+                              <span className="block font-medium text-gray-900 break-words">{field.value}</span>
+                            </td>
+                          ))}
+                          {/* Pad short last row to maintain column alignment */}
+                          {row.length < 4 && Array.from({ length: 4 - row.length }).map((_, i) => (
+                            <td key={`pad-${i}`} className={`w-1/4 border-r border-gray-100 last:border-r-0 ${rowIdx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`} />
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
-            </div>
-
-            {/* Description Section */}
-            {listing.description && (
-              <div className="rounded-[2rem] border border-gray-200 bg-white p-8 shadow-[0_40px_90px_rgba(0,0,0,0.08)]">
-                <p className="text-sm uppercase tracking-[0.3em] text-gray-500">Description</p>
-                <p className="mt-5 max-w-4xl text-lg leading-8 text-gray-700 whitespace-pre-wrap">{listing.description}</p>
-              </div>
-            )}
-
-            {/* Shipping Available Section */}
-            {listing.itemDetails?.shipping_available && (
-              <div className="rounded-[2rem] border border-gray-200 bg-white p-8 shadow-[0_40px_90px_rgba(0,0,0,0.08)]">
-                <p className="text-sm uppercase tracking-[0.3em] text-gray-500">Shipping Available</p>
-                <p className="mt-5 text-lg font-medium text-gray-900 capitalize">{String(listing.itemDetails.shipping_available).replace(/_/g, ' ')}</p>
-              </div>
-            )}
-
-            {/* Section 4: Additional Information */}
-            {listing.itemDetails?.additional_notes && (
-              <div className="rounded-[2rem] border border-gray-200 bg-white p-8 shadow-[0_40px_90px_rgba(0,0,0,0.08)]">
-                <p className="text-sm uppercase tracking-[0.3em] text-gray-500">4. Additional Information</p>
-                <p className="mt-5 max-w-4xl text-lg leading-8 text-gray-700">{listing.itemDetails.additional_notes}</p>
-              </div>
-            )}
+              );
+            })()}
 
             {/* Similar Items Section */}
             <div className="rounded-[2rem] border border-gray-200 bg-white p-8 shadow-[0_40px_90px_rgba(0,0,0,0.08)]">
