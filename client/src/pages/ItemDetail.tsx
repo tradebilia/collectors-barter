@@ -336,25 +336,25 @@ export default function ItemDetail() {
                 <div className="mt-6 grid gap-4 text-lg text-gray-700 sm:grid-cols-2">
                   {listing.grade && listing.grade !== '0' && listing.grade !== 'ungraded' && (
                     <div>
-                      <p className="text-sm uppercase tracking-[0.25em] text-gray-500">Grade</p>
-                      <p className="mt-2 font-medium text-gray-900">{formatGrade(listing.grade)}</p>
+                      <p className="text-sm font-bold uppercase tracking-[0.25em] text-gray-800">Grade</p>
+                      <p className="mt-2 font-medium text-gray-500">{formatGrade(listing.grade)}</p>
                     </div>
                   )}
                   {listing.certificationCompany && (
                     <div>
-                      <p className="text-sm uppercase tracking-[0.25em] text-gray-500">Grading Company</p>
-                      <p className="mt-2 font-medium text-gray-900">{listing.certificationCompany}</p>
+                      <p className="text-sm font-bold uppercase tracking-[0.25em] text-gray-800">Grading Company</p>
+                      <p className="mt-2 font-medium text-gray-500">{listing.certificationCompany}</p>
                     </div>
                   )}
                   {listing.estimatedValue && (
                     <div>
-                      <p className="text-sm uppercase tracking-[0.25em] text-gray-500">Estimated Value</p>
-                      <p className="mt-2 font-medium text-gray-900">${Math.round(listing.estimatedValue).toLocaleString('en-US')}</p>
+                      <p className="text-sm font-bold uppercase tracking-[0.25em] text-gray-800">Estimated Value</p>
+                      <p className="mt-2 font-medium text-gray-500">${Math.round(listing.estimatedValue).toLocaleString('en-US')}</p>
                     </div>
                   )}
                   <div>
-                    <p className="text-sm uppercase tracking-[0.25em] text-gray-500">Listed</p>
-                    <p className="mt-2 font-medium text-gray-900">{new Date(listing.createdAt).toLocaleDateString()}</p>
+                    <p className="text-sm font-bold uppercase tracking-[0.25em] text-gray-800">Listed</p>
+                    <p className="mt-2 font-medium text-gray-500">{new Date(listing.createdAt).toLocaleDateString()}</p>
                   </div>
                 </div>
 
