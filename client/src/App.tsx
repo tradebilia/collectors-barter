@@ -30,6 +30,7 @@ import { SearchResults } from "./pages/SearchResults";
 import AdminDashboard from "./pages/AdminDashboard";
 import { AnimatedDemo } from "./pages/AnimatedDemo";
 import DetailsLayoutMockups from "./pages/DetailsLayoutMockups";
+import HomepageLayoutMockups from "./pages/HomepageLayoutMockups";
 import Contact from "./pages/Contact";
 import { Forum } from "./pages/Forum";
 import { ForumTopic } from "./pages/ForumTopic";
@@ -119,6 +120,7 @@ function Router() {
       <Route path="/category/:slug" component={CategoryPage} />
       <Route path="/animated-demo" component={AnimatedDemo} />
       <Route path="/details-mockups" component={DetailsLayoutMockups} />
+      <Route path="/homepage-mockups" component={HomepageLayoutMockups} />
       <Route path="/rankings/most-viewed" component={AllMostViewedRankings} />
       <Route path="/rankings/most-favorited" component={AllMostFavoritedRankings} />
       <Route path="/rankings/top-rated-traders" component={AllRatedTradersRankings} />
