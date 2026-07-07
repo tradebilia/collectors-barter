@@ -322,36 +322,65 @@ export async function getMarketplaceFeed(
       whereClauses.push(searchCondition as any);
     }
   }
-  // Add filter conditions for category-specific fields stored in itemDetails JSON
+  // Add filter conditions for category-specific fields stored in itemDetails JSON.
+  // Key names MUST match how the inventory form stores data (camelCase keys).
+  // Uses JSON_UNQUOTE(JSON_EXTRACT(...)) + LIKE for case-tolerant partial matching.
+  const jsonLike = (key: string, value: string) =>
+    sql`JSON_UNQUOTE(JSON_EXTRACT(${listings.itemDetails}, ${`$.${key}`})) LIKE ${`%${value.trim()}%`}`;
+  const jsonLikeAny = (keys: string[], value: string) => {
+    const conditions = keys.map(key => jsonLike(key, value));
+    return sql.join(conditions, sql` OR `);
+  };
+
   if (filters.issueNumber?.trim()) {
-    whereClauses.push(sql`JSON_CONTAINS(${listings.itemDetails}, JSON_OBJECT('issueNumber', ${filters.issueNumber}))`);
+    whereClauses.push(sql`(${jsonLike("issueNumber", filters.issueNumber)})`);
   }
   if (filters.manufacturer?.trim()) {
-    whereClauses.push(sql`JSON_CONTAINS(${listings.itemDetails}, JSON_OBJECT('manufacturer', ${filters.manufacturer}))`);
+    // Form stores manufacturer, with customManufacturer as free-text fallback
+    whereClauses.push(sql`(${jsonLikeAny(["manufacturer", "customManufacturer"], filters.manufacturer)})`);
   }
   if (filters.year?.trim()) {
-    whereClauses.push(sql`JSON_CONTAINS(${listings.itemDetails}, JSON_OBJECT('year', ${filters.year}))`);
+    // Year is stored under different keys depending on category/item type:
+    // year (sports_cards, stamps, vintage_toys), releaseYear (video_games, movies),
+    // publicationYear (comics), yearsIncluded (coins collection lots)
+    whereClauses.push(sql`(${jsonLikeAny(["year", "releaseYear", "publicationYear", "yearsIncluded"], filters.year)})`);
   }
   if (filters.team?.trim()) {
-    whereClauses.push(sql`JSON_CONTAINS(${listings.itemDetails}, JSON_OBJECT('team', ${filters.team}))`);
+    // No dedicated team field in the new form; match against player and title/description via keyword-style search
+    whereClauses.push(sql`(${jsonLike("player", filters.team)} OR ${like(listings.title, `%${filters.team.trim()}%`)} OR ${like(listings.description, `%${filters.team.trim()}%`)})`);
   }
   if (filters.series?.trim()) {
-    whereClauses.push(sql`JSON_CONTAINS(${listings.itemDetails}, JSON_OBJECT('set', ${filters.series}))`);
+    // Form stores set name under setName (sports_cards, pokemon)
+    whereClauses.push(sql`(${jsonLikeAny(["setName", "set"], filters.series)})`);
   }
   if (filters.sport?.trim()) {
-    whereClauses.push(sql`JSON_CONTAINS(${listings.itemDetails}, JSON_OBJECT('sport', ${filters.sport}))`);
+    whereClauses.push(sql`(${jsonLike("sport", filters.sport)})`);
   }
+  // Boolean-like filters: the form stores "yes"/"no" (sometimes "true"/"false" in older data).
+  // Match either representation with an exact (case-insensitive) comparison.
+  const jsonBoolMatch = (keys: string[], value: string) => {
+    const lowered = value.trim().toLowerCase();
+    const synonyms = lowered === "yes" || lowered === "true" ? ["yes", "true"] : lowered === "no" || lowered === "false" ? ["no", "false"] : [lowered];
+    const conditions = keys.flatMap(key =>
+      synonyms.map(v => sql`LOWER(JSON_UNQUOTE(JSON_EXTRACT(${listings.itemDetails}, ${`$.${key}`}))) = ${v}`)
+    );
+    return sql.join(conditions, sql` OR `);
+  };
+
   if (filters.rookie?.trim() && filters.rookie !== "All") {
-    whereClauses.push(sql`JSON_CONTAINS(${listings.itemDetails}, JSON_OBJECT('rookie', ${filters.rookie}))`);
+    // Form stores this as rookieCard ("yes"/"no")
+    whereClauses.push(sql`(${jsonBoolMatch(["rookieCard", "rookie"], filters.rookie)})`);
   }
   if (filters.autographed?.trim() && filters.autographed !== "All") {
-    whereClauses.push(sql`JSON_CONTAINS(${listings.itemDetails}, JSON_OBJECT('autographed', ${filters.autographed}))`);
+    // Form stores this as autograph ("yes"/"no")
+    whereClauses.push(sql`(${jsonBoolMatch(["autograph", "autographed"], filters.autographed)})`);
   }
   if (filters.signed?.trim() && filters.signed !== "All") {
-    whereClauses.push(sql`JSON_CONTAINS(${listings.itemDetails}, JSON_OBJECT('signed', ${filters.signed}))`);
+    whereClauses.push(sql`(${jsonBoolMatch(["signed"], filters.signed)})`);
   }
   if (filters.facsimile?.trim() && filters.facsimile !== "All") {
-    whereClauses.push(sql`JSON_CONTAINS(${listings.itemDetails}, JSON_OBJECT('facsimile', ${filters.facsimile}))`);
+    // Facsimile info may live under signatures details or a facsimile key depending on form version
+    whereClauses.push(sql`(${jsonBoolMatch(["facsimile"], filters.facsimile)} OR ${sql`${listings.signatures} LIKE ${`%facsimile%`}`})`);
   }
   if (filters.gradingService) {
     whereClauses.push(like(listings.certificationCompany, `%${filters.gradingService}%`));
