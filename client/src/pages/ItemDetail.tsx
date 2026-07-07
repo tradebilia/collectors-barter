@@ -578,7 +578,7 @@ export default function ItemDetail() {
                   <p className="text-lg font-bold uppercase tracking-widest text-gray-900">Shipping Available</p>
                 </div>
                 <div className="px-6 py-5">
-                  <p className="text-base font-medium text-gray-900 capitalize">
+                  <p className="text-base font-medium text-gray-500 capitalize">
                     {String(listing.itemDetails.shippingAvailable ?? listing.itemDetails.shipping_available).replace(/_/g, ' ')}
                   </p>
                 </div>
