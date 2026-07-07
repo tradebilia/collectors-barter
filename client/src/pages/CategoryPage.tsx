@@ -13,6 +13,7 @@ import { resolveTradebiliaListingImage } from "@/lib/listingImages";
 import { trpc } from "@/lib/trpc";
 import {
   TRADEBILIA_LOGO_URL,
+  formatGrade,
   getTradebiliaCategoryBenchmark,
   getTradebiliaCategoryLabel,
   getTradebiliaCategoryTheme,
@@ -1130,8 +1131,16 @@ export default function CategoryPage() {
                             </Link>
                             <div className="flex items-center gap-3 text-xs mt-1 flex-nowrap overflow-x-auto">
                               <div>
-                                <span className="font-semibold">Condition:</span> {listing.conditionLabel}
+                                <span className="font-semibold">{listing.grade ? "Grade:" : "Condition:"}</span>{" "}
+                                {listing.grade
+                                  ? `${listing.certificationCompany ? `${listing.certificationCompany} ` : ""}${formatGrade(listing.grade)}`
+                                  : listing.conditionLabel}
                               </div>
+                              {listing.estimatedValue && (
+                                <div>
+                                  <span className="font-semibold">Value:</span> ${listing.estimatedValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                </div>
+                              )}
                               <div>
                                 <span className="font-semibold">Seller:</span> {listing.owner.displayName}
                               </div>
@@ -1140,14 +1149,6 @@ export default function CategoryPage() {
                                 <Star className="fill-current h-3 w-3" />
                                 <span>{listing.ownerRating.averageRating.toFixed(1)}</span>
                               </div>
-                              <div>
-                                <span className="font-semibold">Status:</span> {listing.status}
-                              </div>
-                              {listing.estimatedValue && (
-                                <div>
-                                  <span className="font-semibold">Value:</span> ${listing.estimatedValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                </div>
-                              )}
                             </div>
                             <p className="text-xs leading-relaxed opacity-80 mt-1 line-clamp-1">{listing.description}</p>
                           </div>
@@ -1167,12 +1168,20 @@ export default function CategoryPage() {
                           <p className="line-clamp-1 text-[0.65rem] leading-relaxed opacity-80">{listing.description}</p>
                           <div className="rounded-md border border-current/10 bg-black/5 p-3 grid grid-cols-2 gap-1 p-1 text-[0.5rem]">
                             <div>
-                              <p className="uppercase tracking-[0.1em] opacity-60 text-[0.45rem]">Collector</p>
-                              <p className="mt-1 font-semibold truncate mt-0 text-[0.55rem]">{listing.owner.displayName}</p>
+                              <p className="uppercase tracking-[0.1em] opacity-60 text-[0.45rem]">{listing.grade ? "Grade" : "Condition"}</p>
+                              <p className="mt-1 font-semibold truncate mt-0 text-[0.55rem]">
+                                {listing.grade
+                                  ? `${listing.certificationCompany ? `${listing.certificationCompany} ` : ""}${formatGrade(listing.grade)}`
+                                  : listing.conditionLabel}
+                              </p>
                             </div>
                             <div>
-                              <p className="uppercase tracking-[0.1em] opacity-60 text-[0.45rem]">Condition</p>
-                              <p className="mt-1 font-semibold truncate mt-0 text-[0.55rem]">{listing.conditionLabel}</p>
+                              <p className="uppercase tracking-[0.1em] opacity-60 text-[0.45rem]">Value</p>
+                              <p className="mt-1 font-semibold truncate mt-0 text-[0.55rem]">{listing.estimatedValue ? `$${listing.estimatedValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—"}</p>
+                            </div>
+                            <div>
+                              <p className="uppercase tracking-[0.1em] opacity-60 text-[0.45rem]">Collector</p>
+                              <p className="mt-1 font-semibold truncate mt-0 text-[0.55rem]">{listing.owner.displayName}</p>
                             </div>
                             <div>
                               <p className="uppercase tracking-[0.1em] opacity-60 text-[0.45rem]">Trust</p>
@@ -1181,16 +1190,6 @@ export default function CategoryPage() {
                                 <span className="truncate text-[0.55rem]">{listing.ownerRating.averageRating.toFixed(1)}</span>
                               </div>
                             </div>
-                            <div>
-                              <p className="uppercase tracking-[0.1em] opacity-60 text-[0.45rem]">Status</p>
-                              <p className="mt-1 font-semibold capitalize truncate mt-0 text-[0.55rem]">{listing.status}</p>
-                            </div>
-                            {listing.estimatedValue && (
-                              <div>
-                                <p className="uppercase tracking-[0.1em] opacity-60 text-[0.45rem]">Value</p>
-                                <p className="mt-1 font-semibold truncate mt-0 text-[0.55rem]">${listing.estimatedValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                              </div>
-                            )}
                           </div>
                         </>
                       )}
