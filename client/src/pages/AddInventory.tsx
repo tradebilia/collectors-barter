@@ -72,6 +72,11 @@ export default function AddInventory() {
   const isDraftMode = params.listingId?.startsWith('draft-');
   const draftId = isDraftMode ? parseInt(params.listingId!.replace('draft-', '')) : null;
 
+  // Always scroll to top when the page loads (both add and edit mode)
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }, []);
+
   const {
     formData,
     setFormData,
