@@ -1298,6 +1298,7 @@ export default function AdminDashboard() {
 function ConventionsAdminTab() {
   const utils = trpc.useUtils();
   const pendingQuery = trpc.conventions.pending.useQuery();
+  const [scrapeResult, setScrapeResult] = useState<{ inserted: number; skipped: number; errors: number; byCategory: Record<string, number> } | null>(null);
   const approveMutation = trpc.conventions.approve.useMutation({
     onSuccess: () => { pendingQuery.refetch(); },
   });
@@ -1307,11 +1308,42 @@ function ConventionsAdminTab() {
   const deleteMutation = trpc.conventions.delete.useMutation({
     onSuccess: () => { pendingQuery.refetch(); },
   });
+  const scrapeMutation = trpc.conventions.scrape.useMutation({
+    onSuccess: (result) => {
+      setScrapeResult(result);
+      pendingQuery.refetch();
+    },
+    onError: (e) => alert('Scrape failed: ' + e.message),
+  });
 
   const pending = pendingQuery.data ?? [];
 
   return (
     <div className="space-y-4">
+      {/* Scrape trigger */}
+      <div className="flex items-center justify-between bg-blue-50 border border-blue-200 rounded-xl p-4">
+        <div>
+          <h3 className="font-semibold text-blue-900">Refresh Convention Data</h3>
+          <p className="text-sm text-blue-700 mt-0.5">Scrapes all configured sources and inserts new upcoming conventions. Takes ~30 seconds.</p>
+          {scrapeResult && (
+            <p className="text-xs text-green-700 mt-1 font-medium">
+              Last run: {scrapeResult.inserted} new events inserted, {scrapeResult.skipped} already existed, {scrapeResult.errors} errors.
+              {Object.keys(scrapeResult.byCategory).length > 0 && (
+                <> New by category: {Object.entries(scrapeResult.byCategory).map(([k, v]) => `${k}: ${v}`).join(', ')}</>
+              )}
+            </p>
+          )}
+        </div>
+        <button
+          onClick={() => scrapeMutation.mutate()}
+          disabled={scrapeMutation.isPending}
+          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition disabled:opacity-50"
+        >
+          <Calendar className="w-4 h-4" />
+          {scrapeMutation.isPending ? 'Scraping...' : 'Run Scraper Now'}
+        </button>
+      </div>
+
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold">Pending Convention Submissions</h3>
         <span className="text-sm text-gray-500">{pending.length} pending</span>

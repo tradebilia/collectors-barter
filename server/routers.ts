@@ -1712,6 +1712,13 @@ export const appRouter = router({
         if (ctx.user?.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
         return deleteConvention(input.id);
       }),
+
+    scrape: publicProcedure
+      .mutation(async ({ ctx }) => {
+        if (ctx.user?.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+        const { runConventionScraper } = await import('./conventionScraper');
+        return runConventionScraper();
+      }),
   }),
 });
 
