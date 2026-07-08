@@ -306,7 +306,13 @@ export async function getMarketplaceFeed(
     whereClauses.push(eq(listings.category, filters.category));
   }
   if (filters.condition) {
-    whereClauses.push(eq(listings.condition, filters.condition));
+    // Condition only meaningfully applies to ungraded (raw) items.
+    // Graded items store a placeholder condition the seller never chose
+    // (the form hides Condition when Is Graded = yes), so they pass through
+    // this filter — their quality is expressed by the Grade filter instead.
+    whereClauses.push(
+      sql`(${eq(listings.condition, filters.condition)} OR ${listings.grade} > 0)`,
+    );
   }
   const keyword = filters.keyword?.trim();
   if (keyword) {
