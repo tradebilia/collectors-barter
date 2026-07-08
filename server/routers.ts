@@ -108,6 +108,20 @@ const listingFiltersSchema = z.object({
   autographed: z.string().max(10).optional(),
   signed: z.string().max(10).optional(),
   facsimile: z.string().max(10).optional(),
+  // Dedicated per-filter parameters (each filter owns its own channel)
+  title: z.string().max(160).optional(),
+  system: z.string().max(60).optional(),
+  region: z.string().max(60).optional(),
+  country: z.string().max(100).optional(),
+  format: z.string().max(60).optional(),
+  medium: z.string().max(60).optional(),
+  denomination: z.string().max(60).optional(),
+  mintMark: z.string().max(20).optional(),
+  issuer: z.string().max(100).optional(),
+  edition: z.string().max(60).optional(),
+  parkOrEvent: z.string().max(100).optional(),
+  franchise: z.string().max(100).optional(),
+  rarity: z.string().max(60).optional(),
 });
 
 const memberSearchSchema = z.object({

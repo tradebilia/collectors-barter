@@ -227,6 +227,19 @@ export default function CategoryPage() {
   const [signed, setSigned] = useState<string | undefined>(undefined);
   const [facsimile, setFacsimile] = useState<string | undefined>(undefined);
   const [rarity, setRarity] = useState<string | undefined>(undefined);
+  // Dedicated per-filter state (each filter owns its own channel — no shared state)
+  const [titleFilter, setTitleFilter] = useState("");
+  const [system, setSystem] = useState<string | undefined>(undefined);
+  const [region, setRegion] = useState<string | undefined>(undefined);
+  const [country, setCountry] = useState<string | undefined>(undefined);
+  const [format, setFormat] = useState<string | undefined>(undefined);
+  const [medium, setMedium] = useState<string | undefined>(undefined);
+  const [denomination, setDenomination] = useState("");
+  const [mintMark, setMintMark] = useState("");
+  const [issuer, setIssuer] = useState("");
+  const [edition, setEdition] = useState("");
+  const [parkOrEvent, setParkOrEvent] = useState("");
+  const [franchise, setFranchise] = useState("");
 
   // Submitted filters state (only updates when user submits search)
   const [submittedFilters, setSubmittedFilters] = useState({
@@ -247,6 +260,18 @@ export default function CategoryPage() {
     signed: undefined as string | undefined,
     facsimile: undefined as string | undefined,
     rarity: undefined as string | undefined,
+    title: undefined as string | undefined,
+    system: undefined as string | undefined,
+    region: undefined as string | undefined,
+    country: undefined as string | undefined,
+    format: undefined as string | undefined,
+    medium: undefined as string | undefined,
+    denomination: undefined as string | undefined,
+    mintMark: undefined as string | undefined,
+    issuer: undefined as string | undefined,
+    edition: undefined as string | undefined,
+    parkOrEvent: undefined as string | undefined,
+    franchise: undefined as string | undefined,
   });
 
   // Reset filters when category slug changes
@@ -271,6 +296,20 @@ export default function CategoryPage() {
     setFacsimile(undefined);
     setRarity(undefined);
     
+    // Reset dedicated per-filter state
+    setTitleFilter("");
+    setSystem(undefined);
+    setRegion(undefined);
+    setCountry(undefined);
+    setFormat(undefined);
+    setMedium(undefined);
+    setDenomination("");
+    setMintMark("");
+    setIssuer("");
+    setEdition("");
+    setParkOrEvent("");
+    setFranchise("");
+    
     // Reset numeric range filters
     setValueMin(undefined);
     setValueMax(undefined);
@@ -294,6 +333,18 @@ export default function CategoryPage() {
       signed: undefined,
       facsimile: undefined,
       rarity: undefined,
+      title: undefined,
+      system: undefined,
+      region: undefined,
+      country: undefined,
+      format: undefined,
+      medium: undefined,
+      denomination: undefined,
+      mintMark: undefined,
+      issuer: undefined,
+      edition: undefined,
+      parkOrEvent: undefined,
+      franchise: undefined,
     });
     
     // Reset pagination
@@ -320,6 +371,19 @@ export default function CategoryPage() {
       autographed: submittedFilters.autographed,
       signed: submittedFilters.signed,
       facsimile: submittedFilters.facsimile,
+      rarity: submittedFilters.rarity,
+      title: submittedFilters.title,
+      system: submittedFilters.system,
+      region: submittedFilters.region,
+      country: submittedFilters.country,
+      format: submittedFilters.format,
+      medium: submittedFilters.medium,
+      denomination: submittedFilters.denomination,
+      mintMark: submittedFilters.mintMark,
+      issuer: submittedFilters.issuer,
+      edition: submittedFilters.edition,
+      parkOrEvent: submittedFilters.parkOrEvent,
+      franchise: submittedFilters.franchise,
     } : undefined,
     [slug, submittedFilters]
   );
@@ -349,6 +413,18 @@ export default function CategoryPage() {
       signed: signed || undefined,
       facsimile: facsimile || undefined,
       rarity: rarity || undefined,
+      title: titleFilter || undefined,
+      system: system || undefined,
+      region: region || undefined,
+      country: country || undefined,
+      format: format || undefined,
+      medium: medium || undefined,
+      denomination: denomination || undefined,
+      mintMark: mintMark || undefined,
+      issuer: issuer || undefined,
+      edition: edition || undefined,
+      parkOrEvent: parkOrEvent || undefined,
+      franchise: franchise || undefined,
     };
 
     setSubmittedFilters(newFilters);
@@ -376,6 +452,20 @@ export default function CategoryPage() {
     setFacsimile(undefined);
     setRarity(undefined);
     
+    // Reset dedicated per-filter state
+    setTitleFilter("");
+    setSystem(undefined);
+    setRegion(undefined);
+    setCountry(undefined);
+    setFormat(undefined);
+    setMedium(undefined);
+    setDenomination("");
+    setMintMark("");
+    setIssuer("");
+    setEdition("");
+    setParkOrEvent("");
+    setFranchise("");
+    
     // Reset numeric range filters
     setValueMin(undefined);
     setValueMax(undefined);
@@ -399,6 +489,18 @@ export default function CategoryPage() {
       signed: undefined,
       facsimile: undefined,
       rarity: undefined,
+      title: undefined,
+      system: undefined,
+      region: undefined,
+      country: undefined,
+      format: undefined,
+      medium: undefined,
+      denomination: undefined,
+      mintMark: undefined,
+      issuer: undefined,
+      edition: undefined,
+      parkOrEvent: undefined,
+      franchise: undefined,
     });
   };
 
@@ -603,11 +705,11 @@ export default function CategoryPage() {
                              filter.label === "Signed" ? signed || "all" :
                               filter.label === "Facsimile" ? facsimile || "all" :
                               filter.label === "Rarity" ? rarity || "all" :
-                              filter.label === "System" ? keyword || "all" :
-                              filter.label === "Region" ? team || "all" :
-                              filter.label === "Country" ? manufacturer || "all" :
-                              filter.label === "Format" ? keyword || "all" :
-                              filter.label === "Medium" ? keyword || "all" : "all"}
+                              filter.label === "System" ? system || "all" :
+                              filter.label === "Region" ? region || "all" :
+                              filter.label === "Country" ? country || "all" :
+                              filter.label === "Format" ? format || "all" :
+                              filter.label === "Medium" ? medium || "all" : "all"}
                       onValueChange={(value) => {
                         if (value === "all") {
                           if (filter.label === "Sport") setSport(undefined);
@@ -621,11 +723,11 @@ export default function CategoryPage() {
                           else if (filter.label === "Signed") setSigned(undefined);
                            else if (filter.label === "Facsimile") setFacsimile(undefined);
                            else if (filter.label === "Rarity") setRarity(undefined);
-                           else if (filter.label === "System") setKeyword("");
-                           else if (filter.label === "Region") setTeam("");
-                           else if (filter.label === "Country") setManufacturer("");
-                           else if (filter.label === "Format") setKeyword("");
-                           else if (filter.label === "Medium") setKeyword("");
+                           else if (filter.label === "System") setSystem(undefined);
+                           else if (filter.label === "Region") setRegion(undefined);
+                           else if (filter.label === "Country") setCountry(undefined);
+                           else if (filter.label === "Format") setFormat(undefined);
+                           else if (filter.label === "Medium") setMedium(undefined);
                         } else {
                           if (filter.label === "Sport") setSport(value);
                           else if (filter.label === "Grading service") setGradingService(value);
@@ -638,11 +740,11 @@ export default function CategoryPage() {
                           else if (filter.label === "Signed") setSigned(value);
                            else if (filter.label === "Facsimile") setFacsimile(value);
                            else if (filter.label === "Rarity") setRarity(value);
-                           else if (filter.label === "System") setKeyword(value);
-                           else if (filter.label === "Region") setTeam(value);
-                           else if (filter.label === "Country") setManufacturer(value);
-                           else if (filter.label === "Format") setKeyword(value);
-                           else if (filter.label === "Medium") setKeyword(value);
+                           else if (filter.label === "System") setSystem(value);
+                           else if (filter.label === "Region") setRegion(value);
+                           else if (filter.label === "Country") setCountry(value);
+                           else if (filter.label === "Format") setFormat(value);
+                           else if (filter.label === "Medium") setMedium(value);
                         }
                       }}
                     >
@@ -731,8 +833,8 @@ export default function CategoryPage() {
                   ) : filter.label === "Title" ? (
                     <FilterInput 
                       placeholder={filter.placeholder} 
-                      value={team}
-                      onChange={(e) => setTeam(e.target.value)}
+                      value={titleFilter}
+                      onChange={(e) => setTitleFilter(e.target.value)}
                       onKeyDown={(e) => e.key === "Enter" && handleSubmitFilters()}
                       className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black`} 
                     />
@@ -787,24 +889,24 @@ export default function CategoryPage() {
                   ) : filter.label === "Franchise" ? (
                     <FilterInput 
                       placeholder={filter.placeholder}
-                      value={series}
-                      onChange={(e) => setSeries(e.target.value)}
+                      value={franchise}
+                      onChange={(e) => setFranchise(e.target.value)}
                       onKeyDown={(e) => e.key === "Enter" && handleSubmitFilters()}
                       className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black`}
                     />
                   ) : filter.label === "Issuer" ? (
                     <FilterInput 
                       placeholder={filter.placeholder}
-                      value={manufacturer}
-                      onChange={(e) => setManufacturer(e.target.value)}
+                      value={issuer}
+                      onChange={(e) => setIssuer(e.target.value)}
                       onKeyDown={(e) => e.key === "Enter" && handleSubmitFilters()}
                       className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black`}
                     />
                   ) : filter.label === "Mint mark" ? (
                     <FilterInput 
                       placeholder={filter.placeholder}
-                      value={team}
-                      onChange={(e) => setTeam(e.target.value)}
+                      value={mintMark}
+                      onChange={(e) => setMintMark(e.target.value)}
                       onKeyDown={(e) => e.key === "Enter" && handleSubmitFilters()}
                       className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black`}
                     />
@@ -835,16 +937,16 @@ export default function CategoryPage() {
                   ) : filter.label === "Denomination" ? (
                     <FilterInput 
                       placeholder={filter.placeholder}
-                      value={team}
-                      onChange={(e) => setTeam(e.target.value)}
+                      value={denomination}
+                      onChange={(e) => setDenomination(e.target.value)}
                       onKeyDown={(e) => e.key === "Enter" && handleSubmitFilters()}
                       className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black`}
                     />
                   ) : filter.label === "Series" ? (
                     <FilterInput 
                       placeholder={filter.placeholder}
-                      value={series}
-                      onChange={(e) => setSeries(e.target.value)}
+                      value={franchise}
+                      onChange={(e) => setFranchise(e.target.value)}
                       onKeyDown={(e) => e.key === "Enter" && handleSubmitFilters()}
                       className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black`}
                     />
@@ -859,16 +961,16 @@ export default function CategoryPage() {
                   ) : filter.label === "Edition" ? (
                     <FilterInput 
                       placeholder={filter.placeholder}
-                      value={team}
-                      onChange={(e) => setTeam(e.target.value)}
+                      value={edition}
+                      onChange={(e) => setEdition(e.target.value)}
                       onKeyDown={(e) => e.key === "Enter" && handleSubmitFilters()}
                       className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black`}
                     />
                   ) : filter.label === "Park or event" ? (
                     <FilterInput 
                       placeholder={filter.placeholder}
-                      value={manufacturer}
-                      onChange={(e) => setManufacturer(e.target.value)}
+                      value={parkOrEvent}
+                      onChange={(e) => setParkOrEvent(e.target.value)}
                       onKeyDown={(e) => e.key === "Enter" && handleSubmitFilters()}
                       className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black`}
                     />

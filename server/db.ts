@@ -295,6 +295,19 @@ export async function getMarketplaceFeed(
     autographed?: string;
     signed?: string;
     facsimile?: string;
+    title?: string;
+    system?: string;
+    region?: string;
+    country?: string;
+    format?: string;
+    medium?: string;
+    denomination?: string;
+    mintMark?: string;
+    issuer?: string;
+    edition?: string;
+    parkOrEvent?: string;
+    franchise?: string;
+    rarity?: string;
   },
   viewerId: number | null,
 ) {
@@ -345,9 +358,8 @@ export async function getMarketplaceFeed(
     whereClauses.push(sql`(${jsonLike("issueNumber", filters.issueNumber)})`);
   }
   if (filters.manufacturer?.trim()) {
-    // Multi-category channel: manufacturer/customManufacturer (sports cards),
-    // country (stamps/coins — the Issuer/Country filters), pinTradingEvent (disney pins Park or event)
-    whereClauses.push(sql`(${jsonLikeAny(["manufacturer", "customManufacturer", "country", "pinTradingEvent"], filters.manufacturer)})`);
+    // Sports cards Manufacturer filter
+    whereClauses.push(sql`(${jsonLikeAny(["manufacturer", "customManufacturer"], filters.manufacturer)})`);
   }
   if (filters.year?.trim()) {
     // Year is stored under different keys depending on category/item type:
@@ -356,15 +368,55 @@ export async function getMarketplaceFeed(
     whereClauses.push(sql`(${jsonLikeAny(["year", "releaseYear", "publicationYear", "yearsIncluded"], filters.year)})`);
   }
   if (filters.team?.trim()) {
-    // Multi-category channel: player/title/description (sports cards Team),
-    // mintMark + denomination (coins), region (video games), limitedEdition context (disney pins Edition),
-    // comicTitle (comics Title filter)
-    whereClauses.push(sql`(${jsonLikeAny(["player", "mintMark", "denomination", "region", "comicTitle"], filters.team)} OR ${like(listings.title, `%${filters.team.trim()}%`)} OR ${like(listings.description, `%${filters.team.trim()}%`)})`);
+    // Sports cards Team filter: no dedicated team field in the form;
+    // match against player, title and description
+    whereClauses.push(sql`(${jsonLike("player", filters.team)} OR ${like(listings.title, `%${filters.team.trim()}%`)} OR ${like(listings.description, `%${filters.team.trim()}%`)})`);
   }
   if (filters.series?.trim()) {
-    // Multi-category channel: setName/set (sports cards, pokemon),
-    // series (disney pins), franchise (vintage toys, movies, autographs)
-    whereClauses.push(sql`(${jsonLikeAny(["setName", "set", "series", "franchise"], filters.series)})`);
+    // Set / series filter (sports cards, pokemon)
+    whereClauses.push(sql`(${jsonLikeAny(["setName", "set", "series"], filters.series)})`);
+  }
+  // ---- Dedicated per-filter parameters (each filter owns its own channel) ----
+  if (filters.title?.trim()) {
+    // Title filter (comics comicTitle, video games gameTitle, movies title) + listing title
+    whereClauses.push(sql`(${jsonLikeAny(["comicTitle", "gameTitle", "title"], filters.title)} OR ${like(listings.title, `%${filters.title.trim()}%`)})`);
+  }
+  if (filters.system?.trim()) {
+    whereClauses.push(sql`(${jsonLike("platform", filters.system)})`);
+  }
+  if (filters.region?.trim()) {
+    whereClauses.push(sql`(${jsonLike("region", filters.region)})`);
+  }
+  if (filters.country?.trim()) {
+    whereClauses.push(sql`(${jsonLikeAny(["country", "countriesIncluded"], filters.country)})`);
+  }
+  if (filters.format?.trim()) {
+    whereClauses.push(sql`(${jsonLike("format", filters.format)})`);
+  }
+  if (filters.medium?.trim()) {
+    whereClauses.push(sql`(${jsonLikeAny(["signedItemType", "autographCategory"], filters.medium)})`);
+  }
+  if (filters.denomination?.trim()) {
+    whereClauses.push(sql`(${jsonLike("denomination", filters.denomination)})`);
+  }
+  if (filters.mintMark?.trim()) {
+    whereClauses.push(sql`(${jsonLike("mintMark", filters.mintMark)})`);
+  }
+  if (filters.issuer?.trim()) {
+    // Stamps Issuer: no dedicated field; match country plus title/description
+    whereClauses.push(sql`(${jsonLike("country", filters.issuer)} OR ${like(listings.title, `%${filters.issuer.trim()}%`)} OR ${like(listings.description, `%${filters.issuer.trim()}%`)})`);
+  }
+  if (filters.edition?.trim()) {
+    whereClauses.push(sql`(${jsonLikeAny(["limitedEdition", "openEdition", "backstampInformation"], filters.edition)} OR ${like(listings.title, `%${filters.edition.trim()}%`)} OR ${like(listings.description, `%${filters.edition.trim()}%`)})`);
+  }
+  if (filters.parkOrEvent?.trim()) {
+    whereClauses.push(sql`(${jsonLike("pinTradingEvent", filters.parkOrEvent)})`);
+  }
+  if (filters.franchise?.trim()) {
+    whereClauses.push(sql`(${jsonLikeAny(["franchise", "series"], filters.franchise)} OR ${like(listings.title, `%${filters.franchise.trim()}%`)} OR ${like(listings.description, `%${filters.franchise.trim()}%`)})`);
+  }
+  if (filters.rarity?.trim()) {
+    whereClauses.push(sql`(${jsonLikeAny(["rarity", "customRarity"], filters.rarity)})`);
   }
   if (filters.sport?.trim()) {
     whereClauses.push(sql`(${jsonLike("sport", filters.sport)})`);
