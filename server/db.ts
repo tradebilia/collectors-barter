@@ -310,12 +310,15 @@ export async function getMarketplaceFeed(
   }
   const keyword = filters.keyword?.trim();
   if (keyword) {
-    // Search across multiple fields including itemDetails JSON
+    // Search across multiple fields including itemDetails JSON,
+    // plus top-level columns: grade (e.g. "9.4") and certification number
     const searchCondition = or(
       like(listings.title, `%${keyword}%`),
       like(listings.description, `%${keyword}%`),
       like(listings.certificationCompany, `%${keyword}%`),
-      sql`${listings.itemDetails} LIKE ${`%${keyword}%`}`
+      sql`${listings.itemDetails} LIKE ${`%${keyword}%`}`,
+      sql`CAST(${listings.grade} AS CHAR) LIKE ${`%${keyword}%`}`,
+      like(listings.certificationNumber, `%${keyword}%`)
     );
     // Only add the condition if it's not undefined
     if (searchCondition !== undefined) {
