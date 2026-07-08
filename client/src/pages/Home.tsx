@@ -30,7 +30,14 @@ import {
   ListTodo, 
   DollarSign, 
   Handshake, 
-  TrendingUp 
+  TrendingUp,
+  Package,
+  AlertTriangle,
+  UserPlus,
+  Bookmark,
+  MessageCircle,
+  MessagesSquare,
+  Package2
 } from "lucide-react";
 import { ChangeEvent, FormEvent, useMemo, useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
@@ -648,34 +655,34 @@ export default function Home() {
                       } else {
                         setLocation('/inventory');
                       }
-                    }} className="w-full px-3 py-2 rounded bg-white/10 hover:bg-white/20 transition text-white text-sm font-medium text-left">📦 My Inventory</button>
+                    }} className="w-full px-3 py-2 rounded bg-white/10 hover:bg-white/20 transition text-white text-sm font-medium text-left flex items-center gap-2"><Package className="w-4 h-4 flex-shrink-0" /> My Inventory</button>
                     <button onClick={() => {
                       if (!isAuthenticated) {
                         toast.error('Members only - Please sign in to report a user');
                       } else {
                         setLocation('/report-user');
                       }
-                    }} className="w-full px-3 py-2 rounded bg-white/10 hover:bg-white/20 transition text-white text-sm font-medium text-left">⚠️ Report a User</button>
+                    }} className="w-full px-3 py-2 rounded bg-white/10 hover:bg-white/20 transition text-white text-sm font-medium text-left flex items-center gap-2"><AlertTriangle className="w-4 h-4 flex-shrink-0" /> Report a User</button>
                     <button onClick={() => {
                       if (!isAuthenticated) {
                         toast.error('Members only - Please sign in to submit a referral request');
                       } else {
                         setLocation('/referral-request');
                       }
-                    }} className="w-full px-3 py-2 rounded bg-white/10 hover:bg-white/20 transition text-white text-sm font-medium text-left">🤝 Refer a Collector</button>
+                    }} className="w-full px-3 py-2 rounded bg-white/10 hover:bg-white/20 transition text-white text-sm font-medium text-left flex items-center gap-2"><UserPlus className="w-4 h-4 flex-shrink-0" /> Refer a Collector</button>
                     <button onClick={() => {
                       if (!isAuthenticated) {
                         toast.error('Members only - Please sign in to access your watchlist');
                       } else {
                         setLocation('/watchlist');
                       }
-                    }} className="w-full px-3 py-2 rounded bg-white/10 hover:bg-white/20 transition text-white text-sm font-medium text-left">❤️ Watchlist</button>
+                    }} className="w-full px-3 py-2 rounded bg-white/10 hover:bg-white/20 transition text-white text-sm font-medium text-left flex items-center gap-2"><Bookmark className="w-4 h-4 flex-shrink-0" /> Watchlist</button>
                     <button onClick={() => {
                       setLocation('/contact');
-                    }} className="w-full px-3 py-2 rounded bg-white/10 hover:bg-white/20 transition text-white text-sm font-medium text-left">💬 Suggestions / Contact Us</button>
+                    }} className="w-full px-3 py-2 rounded bg-white/10 hover:bg-white/20 transition text-white text-sm font-medium text-left flex items-center gap-2"><MessageCircle className="w-4 h-4 flex-shrink-0" /> Suggestions / Contact Us</button>
                     <button onClick={() => {
                       setLocation('/forum');
-                    }} className="w-full px-3 py-2 rounded bg-white/10 hover:bg-white/20 transition text-white text-sm font-medium text-left">💭 Collector's Forum</button>
+                    }} className="w-full px-3 py-2 rounded bg-white/10 hover:bg-white/20 transition text-white text-sm font-medium text-left flex items-center gap-2"><MessagesSquare className="w-4 h-4 flex-shrink-0" /> Collector's Forum</button>
                     <div className="pt-4 border-t border-white/20 space-y-3">
                       {isAuthenticated && (
                         <div>
@@ -700,7 +707,7 @@ export default function Home() {
                         </div>
                       )}
                       <div>
-                        <p className="text-xs font-semibold uppercase tracking-wider text-white/90">📦 Shipping Supplies</p>
+                        <div className="flex items-center gap-1.5"><Package2 className="w-3.5 h-3.5 text-white/90" /><p className="text-xs font-semibold uppercase tracking-wider text-white/90">Shipping Supplies</p></div>
                         <p className="text-xs text-white/60 mt-1">Coming soon</p>
                       </div>
                     </div>
