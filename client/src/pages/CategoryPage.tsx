@@ -535,6 +535,14 @@ export default function CategoryPage() {
     const rows = [...(feedQuery.data?.listings ?? [])];
     if (sortBy === "title") return rows.sort((a, b) => a.title.localeCompare(b.title));
     if (sortBy === "newest") return rows.sort((a, b) => b.id - a.id);
+    if (sortBy === "price_low_high") return rows.sort((a, b) => (Number(a.estimatedValue) || 0) - (Number(b.estimatedValue) || 0));
+    if (sortBy === "price_high_low") return rows.sort((a, b) => (Number(b.estimatedValue) || 0) - (Number(a.estimatedValue) || 0));
+    if (sortBy === "condition") {
+      const conditionOrder: Record<string, number> = { mint: 0, near_mint: 1, excellent: 2, very_good: 3, good: 4, fair: 5, poor: 6 };
+      return rows.sort((a, b) => (conditionOrder[a.condition ?? ''] ?? 99) - (conditionOrder[b.condition ?? ''] ?? 99));
+    }
+    if (sortBy === "grade") return rows.sort((a, b) => (parseFloat(String(b.grade)) || 0) - (parseFloat(String(a.grade)) || 0));
+    // location: not yet implemented — falls through to best_match
     return rows.sort((a, b) => Number(b.featured) - Number(a.featured) || b.id - a.id);
   }, [feedQuery.data?.listings, sortBy]);
 
