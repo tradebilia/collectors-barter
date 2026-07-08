@@ -69,6 +69,13 @@ import {
   getTopMostViewedItems,
   adminDeleteListing,
   adminBulkDeleteListings,
+  getConventions,
+  getUpcomingConventions,
+  submitConvention,
+  getPendingConventions,
+  approveConvention,
+  rejectConvention,
+  deleteConvention,
 } from "./db";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -1651,6 +1658,59 @@ export const appRouter = router({
           };
         });
         return result;
+      }),
+  }),
+  conventions: router({
+    list: publicProcedure
+      .input(z.object({
+        category: z.string().optional(),
+        country: z.string().optional(),
+        state: z.string().optional(),
+      }).optional())
+      .query(({ input }) => getConventions(input ?? {})),
+
+    upcoming: publicProcedure
+      .input(z.object({ limit: z.number().min(1).max(10).optional() }).optional())
+      .query(({ input }) => getUpcomingConventions(input?.limit ?? 3)),
+
+    submit: publicProcedure
+      .input(z.object({
+        name: z.string().min(2).max(255),
+        category: z.string().min(1),
+        startDate: z.string().min(8).max(20),
+        endDate: z.string().max(20).optional(),
+        city: z.string().max(100).optional(),
+        state: z.string().max(100).optional(),
+        country: z.string().min(2).max(100),
+        venue: z.string().max(255).optional(),
+        website: z.string().max(500).optional(),
+        admission: z.string().max(100).optional(),
+        description: z.string().max(2000).optional(),
+      }))
+      .mutation(({ ctx, input }) => submitConvention({ ...input, submittedBy: ctx.user?.id })),
+
+    pending: publicProcedure
+      .query(() => getPendingConventions()),
+
+    approve: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(({ ctx, input }) => {
+        if (ctx.user?.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+        return approveConvention(input.id, ctx.user.id);
+      }),
+
+    reject: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(({ ctx, input }) => {
+        if (ctx.user?.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+        return rejectConvention(input.id, ctx.user.id);
+      }),
+
+    delete: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(({ ctx, input }) => {
+        if (ctx.user?.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+        return deleteConvention(input.id);
       }),
   }),
 });

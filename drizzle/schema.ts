@@ -432,6 +432,33 @@ export const watchlistEntries = mysqlTable("watchlistEntries", {
 	index("watchlistEntries_listing_idx").on(table.listingId),
 ]);
 
+export const conventions = mysqlTable("conventions", {
+	id: int().autoincrement().notNull(),
+	name: varchar({ length: 255 }).notNull(),
+	category: mysqlEnum(['comics','sports_cards','vintage_toys','video_games','stamps','coins','pokemon','movies','autographs','disney_pins','all']).notNull().default('all'),
+	startDate: varchar({ length: 20 }).notNull(),
+	endDate: varchar({ length: 20 }),
+	city: varchar({ length: 100 }),
+	state: varchar({ length: 100 }),
+	country: varchar({ length: 100 }).notNull().default('United States'),
+	venue: varchar({ length: 255 }),
+	website: varchar({ length: 500 }),
+	admission: varchar({ length: 100 }),
+	description: text(),
+	source: varchar({ length: 100 }).default('user'),
+	status: mysqlEnum(['pending','approved','rejected']).notNull().default('pending'),
+	submittedBy: int().references(() => users.id),
+	approvedBy: int().references(() => users.id),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+},
+(table) => [
+	index("conventions_category_idx").on(table.category),
+	index("conventions_startDate_idx").on(table.startDate),
+	index("conventions_status_idx").on(table.status),
+	index("conventions_country_idx").on(table.country),
+]);
+
 // ---------------------------------------------------------------------------
 // Inferred row types.
 // IMPORTANT: these exports are consumed across the server (db.ts, customAuth,

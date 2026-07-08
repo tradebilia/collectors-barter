@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { BarChart3, Users, Package, Settings, Trash2, Flag, Mail, Search, ArrowUpDown } from "lucide-react";
+import { BarChart3, Users, Package, Settings, Trash2, Flag, Mail, Search, ArrowUpDown, Calendar, ExternalLink, CheckCircle, XCircle } from "lucide-react";
 import { getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
 import { TopBar } from "@/components/TopBar";
@@ -501,6 +501,10 @@ export default function AdminDashboard() {
               <Mail className="h-4 w-4" />
               <span className="hidden sm:inline">Referrals</span>
             </TabsTrigger>
+            <TabsTrigger value="conventions" className="flex items-center gap-1 text-xs px-2 py-1">
+              <Calendar className="h-4 w-4" />
+              <span className="hidden sm:inline">Conventions</span>
+            </TabsTrigger>
         </TabsList>
 
           {/* Statistics Tab */}
@@ -856,6 +860,9 @@ export default function AdminDashboard() {
           {/* Referrals Tab */}
           <TabsContent value="referrals" className="space-y-4 mt-6">
             <ReferralsTab />
+          </TabsContent>
+          <TabsContent value="conventions" className="space-y-4 mt-6">
+            <ConventionsAdminTab />
           </TabsContent>
         </Tabs>
       </div>
@@ -1284,6 +1291,90 @@ export default function AdminDashboard() {
           )}
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+function ConventionsAdminTab() {
+  const utils = trpc.useUtils();
+  const pendingQuery = trpc.conventions.pending.useQuery();
+  const approveMutation = trpc.conventions.approve.useMutation({
+    onSuccess: () => { pendingQuery.refetch(); },
+  });
+  const rejectMutation = trpc.conventions.reject.useMutation({
+    onSuccess: () => { pendingQuery.refetch(); },
+  });
+  const deleteMutation = trpc.conventions.delete.useMutation({
+    onSuccess: () => { pendingQuery.refetch(); },
+  });
+
+  const pending = pendingQuery.data ?? [];
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-semibold">Pending Convention Submissions</h3>
+        <span className="text-sm text-gray-500">{pending.length} pending</span>
+      </div>
+      {pending.length === 0 ? (
+        <div className="text-center py-12 text-gray-400">
+          <Calendar className="w-12 h-12 mx-auto mb-3 opacity-40" />
+          <p>No pending convention submissions.</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {pending.map((conv: any) => (
+            <div key={conv.id} className="border border-gray-200 rounded-xl p-4 bg-white shadow-sm">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h4 className="font-semibold text-gray-900">{conv.name}</h4>
+                    <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">{conv.category}</span>
+                  </div>
+                  <div className="mt-1 text-sm text-gray-600 space-y-0.5">
+                    <p>📅 {conv.startDate}{conv.endDate && conv.endDate !== conv.startDate ? ` – ${conv.endDate}` : ""}</p>
+                    {(conv.city || conv.state || conv.country) && (
+                      <p>📍 {[conv.city, conv.state, conv.country].filter(Boolean).join(", ")}</p>
+                    )}
+                    {conv.venue && <p>🏢 {conv.venue}</p>}
+                    {conv.admission && <p>💵 {conv.admission}</p>}
+                    {conv.website && (
+                      <a href={conv.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-cyan-600 hover:underline">
+                        <ExternalLink className="w-3 h-3" />{conv.website}
+                      </a>
+                    )}
+                    {conv.description && <p className="text-gray-500 text-xs mt-1">{conv.description}</p>}
+                    <p className="text-xs text-gray-400 mt-1">Submitted by: {conv.submittedByName ?? "Anonymous"} · {new Date(conv.createdAt).toLocaleDateString()}</p>
+                  </div>
+                </div>
+                <div className="flex flex-col gap-2 flex-shrink-0">
+                  <button
+                    onClick={() => approveMutation.mutate({ id: conv.id })}
+                    disabled={approveMutation.isPending}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-500 hover:bg-green-600 text-white text-xs font-medium transition"
+                  >
+                    <CheckCircle className="w-3.5 h-3.5" /> Approve
+                  </button>
+                  <button
+                    onClick={() => rejectMutation.mutate({ id: conv.id })}
+                    disabled={rejectMutation.isPending}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500 hover:bg-red-600 text-white text-xs font-medium transition"
+                  >
+                    <XCircle className="w-3.5 h-3.5" /> Reject
+                  </button>
+                  <button
+                    onClick={() => deleteMutation.mutate({ id: conv.id })}
+                    disabled={deleteMutation.isPending}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-700 text-xs font-medium transition"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" /> Delete
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

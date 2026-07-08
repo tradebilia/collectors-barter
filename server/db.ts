@@ -3468,3 +3468,178 @@ export async function getForumReplies(postId: number) {
     .where(eq(forumReplies.postId, postId))
     .orderBy(asc(forumReplies.createdAt));
 }
+
+// ============================================================================
+// CONVENTIONS
+// ============================================================================
+
+export async function getConventions(filters: {
+  category?: string;
+  country?: string;
+  state?: string;
+}) {
+  const db = await requireDb();
+  const { conventions, users } = await import("../drizzle/schema");
+  const { eq, and, gte, asc, or } = await import("drizzle-orm");
+
+  const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+
+  const whereClauses: any[] = [
+    eq(conventions.status, "approved"),
+    gte(conventions.startDate, today),
+  ];
+
+  if (filters.category && filters.category !== "all") {
+    whereClauses.push(
+      or(eq(conventions.category, filters.category as any), eq(conventions.category, "all"))
+    );
+  }
+  if (filters.country) {
+    whereClauses.push(eq(conventions.country, filters.country));
+  }
+  if (filters.state) {
+    whereClauses.push(eq(conventions.state, filters.state));
+  }
+
+  const rows = await db
+    .select({
+      id: conventions.id,
+      name: conventions.name,
+      category: conventions.category,
+      startDate: conventions.startDate,
+      endDate: conventions.endDate,
+      city: conventions.city,
+      state: conventions.state,
+      country: conventions.country,
+      venue: conventions.venue,
+      website: conventions.website,
+      admission: conventions.admission,
+      description: conventions.description,
+      source: conventions.source,
+      createdAt: conventions.createdAt,
+    })
+    .from(conventions)
+    .where(and(...whereClauses))
+    .orderBy(asc(conventions.startDate))
+    .limit(500);
+
+  return rows;
+}
+
+export async function getUpcomingConventions(limit = 3) {
+  const db = await requireDb();
+  const { conventions } = await import("../drizzle/schema");
+  const { eq, gte, asc, and } = await import("drizzle-orm");
+
+  const today = new Date().toISOString().split("T")[0];
+
+  return db
+    .select({
+      id: conventions.id,
+      name: conventions.name,
+      category: conventions.category,
+      startDate: conventions.startDate,
+      endDate: conventions.endDate,
+      city: conventions.city,
+      state: conventions.state,
+      country: conventions.country,
+    })
+    .from(conventions)
+    .where(and(eq(conventions.status, "approved"), gte(conventions.startDate, today)))
+    .orderBy(asc(conventions.startDate))
+    .limit(limit);
+}
+
+export async function submitConvention(data: {
+  name: string;
+  category: string;
+  startDate: string;
+  endDate?: string;
+  city?: string;
+  state?: string;
+  country: string;
+  venue?: string;
+  website?: string;
+  admission?: string;
+  description?: string;
+  submittedBy?: number;
+}) {
+  const db = await requireDb();
+  const { conventions } = await import("../drizzle/schema");
+
+  const result = await db.insert(conventions).values({
+    name: data.name,
+    category: data.category as any,
+    startDate: data.startDate,
+    endDate: data.endDate ?? null,
+    city: data.city ?? null,
+    state: data.state ?? null,
+    country: data.country,
+    venue: data.venue ?? null,
+    website: data.website ?? null,
+    admission: data.admission ?? null,
+    description: data.description ?? null,
+    source: "user",
+    status: "pending",
+    submittedBy: data.submittedBy ?? null,
+  });
+
+  return { id: Number(result[0].insertId) };
+}
+
+export async function getPendingConventions() {
+  const db = await requireDb();
+  const { conventions, users } = await import("../drizzle/schema");
+  const { eq, desc } = await import("drizzle-orm");
+
+  return db
+    .select({
+      id: conventions.id,
+      name: conventions.name,
+      category: conventions.category,
+      startDate: conventions.startDate,
+      endDate: conventions.endDate,
+      city: conventions.city,
+      state: conventions.state,
+      country: conventions.country,
+      venue: conventions.venue,
+      website: conventions.website,
+      admission: conventions.admission,
+      description: conventions.description,
+      source: conventions.source,
+      status: conventions.status,
+      createdAt: conventions.createdAt,
+      submittedByName: users.displayName,
+    })
+    .from(conventions)
+    .leftJoin(users, eq(conventions.submittedBy, users.id))
+    .where(eq(conventions.status, "pending"))
+    .orderBy(desc(conventions.createdAt));
+}
+
+export async function approveConvention(id: number, adminId: number) {
+  const db = await requireDb();
+  const { conventions } = await import("../drizzle/schema");
+  const { eq } = await import("drizzle-orm");
+
+  await db.update(conventions).set({ status: "approved", approvedBy: adminId }).where(eq(conventions.id, id));
+  return { success: true };
+}
+
+export async function rejectConvention(id: number, adminId: number) {
+  const db = await requireDb();
+  const { conventions } = await import("../drizzle/schema");
+  const { eq } = await import("drizzle-orm");
+
+  await db.update(conventions).set({ status: "rejected", approvedBy: adminId }).where(eq(conventions.id, id));
+  return { success: true };
+}
+
+export async function deleteConvention(id: number) {
+  const db = await requireDb();
+  const { conventions } = await import("../drizzle/schema");
+  const { eq } = await import("drizzle-orm");
+
+  await db.delete(conventions).where(eq(conventions.id, id));
+  return { success: true };
+}

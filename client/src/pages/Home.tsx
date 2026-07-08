@@ -293,6 +293,7 @@ export default function Home() {
   const topMostFavoritedQuery = trpc.favorites.getTopMostFavorited.useQuery(undefined, {
     refetchInterval: 300000, // Refetch every 5 minutes
   });
+  const upcomingConventionsQuery = trpc.conventions.upcoming.useQuery({ limit: 3 }, { staleTime: 1000 * 60 * 60 });
   const topMostViewedQuery = trpc.favorites.getTopMostViewed.useQuery(undefined, {
     refetchInterval: 300000, // Refetch every 5 minutes
   });
@@ -677,8 +678,22 @@ export default function Home() {
                     }} className="w-full px-3 py-2 rounded bg-white/10 hover:bg-white/20 transition text-white text-sm font-medium text-left">💭 Collector's Forum</button>
                     <div className="pt-4 border-t border-white/20 space-y-3">
                       <div>
-                        <p className="text-xs font-semibold uppercase tracking-wider text-white/90">📅 Upcoming Conventions</p>
-                        <p className="text-xs text-white/60 mt-1">Coming soon</p>
+                        <div className="flex items-center justify-between">
+                          <p className="text-xs font-semibold uppercase tracking-wider text-white/90">📅 Upcoming Conventions</p>
+                          <a href="/conventions" className="text-[0.65rem] text-cyan-400 hover:text-cyan-300 transition">View All →</a>
+                        </div>
+                        {upcomingConventionsQuery.data && upcomingConventionsQuery.data.length > 0 ? (
+                          <div className="mt-1.5 space-y-1.5">
+                            {upcomingConventionsQuery.data.map((conv: any) => (
+                              <a key={conv.id} href="/conventions" className="block rounded bg-white/10 hover:bg-white/20 transition px-2 py-1.5">
+                                <p className="text-xs font-medium text-white leading-tight truncate">{conv.name}</p>
+                                <p className="text-[0.65rem] text-white/60 mt-0.5">{conv.startDate} · {[conv.city, conv.state].filter(Boolean).join(", ")}</p>
+                              </a>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-xs text-white/60 mt-1">No upcoming conventions. <a href="/conventions" className="text-cyan-400 hover:underline">Submit one →</a></p>
+                        )}
                       </div>
                       <div>
                         <p className="text-xs font-semibold uppercase tracking-wider text-white/90">📦 Shipping Supplies</p>
