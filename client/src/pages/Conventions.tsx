@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import { CategoryBar } from "@/components/CategoryBar";
-import { TopRightIcons } from "@/components/TopRightIcons";
+import { TopBar } from "@/components/TopBar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -117,15 +117,7 @@ export default function Conventions() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Top bar */}
-      <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
-        <div className="container mx-auto flex h-14 items-center justify-between px-4">
-          <a href="/" className="flex items-center gap-2">
-            <img src="/images/tradebilia-logo.svg" alt="Tradebilia" className="h-8 w-auto" />
-          </a>
-          <TopRightIcons />
-        </div>
-      </header>
+      <TopBar />
 
       {/* Hero */}
       <section className="relative w-full overflow-hidden bg-[#00143A] text-white">
