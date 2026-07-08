@@ -731,8 +731,8 @@ export default function CategoryPage() {
                   ) : filter.label === "Title" ? (
                     <FilterInput 
                       placeholder={filter.placeholder} 
-                      value={keyword}
-                      onChange={(e) => setKeyword(e.target.value)}
+                      value={team}
+                      onChange={(e) => setTeam(e.target.value)}
                       onKeyDown={(e) => e.key === "Enter" && handleSubmitFilters()}
                       className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black`} 
                     />

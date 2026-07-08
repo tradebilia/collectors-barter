@@ -357,8 +357,9 @@ export async function getMarketplaceFeed(
   }
   if (filters.team?.trim()) {
     // Multi-category channel: player/title/description (sports cards Team),
-    // mintMark + denomination (coins), region (video games), limitedEdition context (disney pins Edition)
-    whereClauses.push(sql`(${jsonLikeAny(["player", "mintMark", "denomination", "region"], filters.team)} OR ${like(listings.title, `%${filters.team.trim()}%`)} OR ${like(listings.description, `%${filters.team.trim()}%`)})`);
+    // mintMark + denomination (coins), region (video games), limitedEdition context (disney pins Edition),
+    // comicTitle (comics Title filter)
+    whereClauses.push(sql`(${jsonLikeAny(["player", "mintMark", "denomination", "region", "comicTitle"], filters.team)} OR ${like(listings.title, `%${filters.team.trim()}%`)} OR ${like(listings.description, `%${filters.team.trim()}%`)})`);
   }
   if (filters.series?.trim()) {
     // Multi-category channel: setName/set (sports cards, pokemon),
