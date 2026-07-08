@@ -272,6 +272,173 @@ async function scrapeNumismaticNews(): Promise<ConventionEvent[]> {
 }
 
 // ============================================================================
+// AMERICAN STAMP DEALER — Stamps
+// ============================================================================
+async function scrapeAmericanStampDealer(): Promise<ConventionEvent[]> {
+  const events: ConventionEvent[] = [];
+  try {
+    const html = await fetchHtml("https://www.americanstampdealer.com/Show_Calendar.aspx");
+    const doc = new JSDOM(html).window.document;
+    const rows = Array.from(doc.querySelectorAll("table tr"));
+    for (const row of rows) {
+      const cells = Array.from(row.querySelectorAll("td"));
+      if (cells.length < 2) continue;
+      const dateText = cells[0]?.textContent?.trim() || "";
+      const dateResult = parseDate(dateText);
+      if (!dateResult) continue;
+      const name = cells[1]?.textContent?.trim();
+      if (!name || name.length < 3) continue;
+      const locText = cells[2]?.textContent?.trim() || cells[3]?.textContent?.trim() || "";
+      const locMatch = locText.match(/([A-Za-z][A-Za-z\s.]+),\s+([A-Z]{2})/);
+      events.push({
+        name, category: "stamps", ...dateResult,
+        city: locMatch ? locMatch[1].trim() : null,
+        state: locMatch ? expandState(locMatch[2]) : null,
+        country: "United States", venue: null,
+        website: "https://www.americanstampdealer.com/Show_Calendar.aspx",
+        admission: null, description: null,
+      });
+    }
+  } catch {}
+  return events;
+}
+
+// ============================================================================
+// WFSC STAMPS — Stamps
+// ============================================================================
+async function scrapeWFSCStamps(): Promise<ConventionEvent[]> {
+  const events: ConventionEvent[] = [];
+  try {
+    const html = await fetchHtml("https://www.wfscstamps.org/Shows/");
+    const doc = new JSDOM(html).window.document;
+    const text = doc.body.textContent || "";
+    const lines = text.split("\n").map((l: string) => l.trim()).filter((l: string) => l.length > 5);
+    for (const line of lines) {
+      const dateResult = parseDate(line);
+      if (!dateResult) continue;
+      const dashIdx = line.indexOf(" - ", line.search(/\d{4}/));
+      const name = dashIdx > 0 ? line.substring(dashIdx + 3).trim() : "";
+      if (!name || name.length < 3) continue;
+      const locMatch = line.match(/([A-Za-z][A-Za-z\s.]+),\s+([A-Z]{2})/);
+      events.push({
+        name, category: "stamps", ...dateResult,
+        city: locMatch ? locMatch[1].trim() : null,
+        state: locMatch ? expandState(locMatch[2]) : null,
+        country: "United States", venue: null,
+        website: "https://www.wfscstamps.org/Shows/",
+        admission: null, description: null,
+      });
+    }
+  } catch {}
+  return events;
+}
+
+// ============================================================================
+// HALL OF FAME SIGNINGS — Autographs
+// ============================================================================
+async function scrapeHallOfFameSignings(): Promise<ConventionEvent[]> {
+  const events: ConventionEvent[] = [];
+  try {
+    const html = await fetchHtml("https://halloffamesignings.com/");
+    const doc = new JSDOM(html).window.document;
+    const text = doc.body.textContent || "";
+    const lines = text.split("\n").map((l: string) => l.trim()).filter((l: string) => l.length > 5);
+    for (let i = 0; i < lines.length; i++) {
+      const dateResult = parseDate(lines[i]);
+      if (!dateResult) continue;
+      const name = lines[i - 1] || "";
+      if (!name || name.length < 3 || name === "Hall of Fame Signings") continue;
+      const locMatch = lines[i + 1]?.match(/([A-Za-z][A-Za-z\s.]+),\s+([A-Z]{2})/) ||
+                       lines[i].match(/([A-Za-z][A-Za-z\s.]+),\s+([A-Z]{2})/);
+      events.push({
+        name: name.trim(), category: "autographs", ...dateResult,
+        city: locMatch ? locMatch[1].trim() : null,
+        state: locMatch ? expandState(locMatch[2]) : null,
+        country: "United States", venue: null,
+        website: "https://halloffamesignings.com",
+        admission: null, description: null,
+      });
+    }
+  } catch {}
+  return events;
+}
+
+// ============================================================================
+// CREATION ENTERTAINMENT — Autographs / Movies
+// ============================================================================
+async function scrapeCreationEnt(): Promise<ConventionEvent[]> {
+  const events: ConventionEvent[] = [];
+  try {
+    const html = await fetchHtml("https://www.creationent.com/calendar.htm");
+    const doc = new JSDOM(html).window.document;
+    const paras = Array.from(doc.querySelectorAll("p"));
+    for (const p of paras) {
+      const strong = p.querySelector("strong");
+      const dateLink = p.querySelector("a.small1, a");
+      if (!strong || !dateLink) continue;
+      const locationText = strong.textContent?.trim() || "";
+      const dateText = dateLink.textContent?.trim() || "";
+      const dateResult = parseDate(dateText);
+      if (!dateResult) continue;
+      const locMatch = locationText.match(/([A-Za-z][A-Za-z\s.]+),\s+([A-Z]{2})/);
+      const name = `Creation Entertainment — ${locationText}`;
+      events.push({
+        name, category: "autographs", ...dateResult,
+        city: locMatch ? locMatch[1].trim() : null,
+        state: locMatch ? expandState(locMatch[2]) : null,
+        country: "United States", venue: null,
+        website: "https://www.creationent.com/calendar.htm",
+        admission: null, description: "Celebrity autograph convention",
+      });
+    }
+  } catch {}
+  return events;
+}
+
+// ============================================================================
+// D23 EVENTS — Disney Pins
+// ============================================================================
+async function scrapeD23(): Promise<ConventionEvent[]> {
+  const events: ConventionEvent[] = [];
+  try {
+    const html = await fetchHtml("https://d23.com/events");
+    const doc = new JSDOM(html).window.document;
+    const articles = Array.from(doc.querySelectorAll("article, .event-item"));
+    for (const article of articles) {
+      const name = (article.querySelector("a, h2, h3") as HTMLElement)?.getAttribute("title") ||
+                   (article.querySelector("a, h2, h3") as HTMLElement)?.textContent?.trim() || "";
+      if (!name || name.length < 3) continue;
+      const dateText = article.querySelector(".d23-events-meta-text, time, .event-date")?.textContent?.trim() || article.textContent || "";
+      const dateResult = parseDate(dateText);
+      if (!dateResult) continue;
+      const locMatch = dateText.match(/([A-Za-z][A-Za-z\s.]+),\s+([A-Z]{2})/);
+      events.push({
+        name, category: "disney_pins", ...dateResult,
+        city: locMatch ? locMatch[1].trim() : null,
+        state: locMatch ? expandState(locMatch[2]) : null,
+        country: "United States", venue: null,
+        website: "https://d23.com/events",
+        admission: null, description: null,
+      });
+    }
+  } catch {}
+  return events;
+}
+
+// ============================================================================
+// VIDEOGAMECONS 2026 CALENDAR — Video Games + Pokemon/TCG
+// Tags events with Pokemon/TCG keywords as pokemon category
+// ============================================================================
+async function scrapeVideoGameCons2026(): Promise<ConventionEvent[]> {
+  const allEvents = await scrapeToyConsPage("https://videogamecons.com/calendar/calendar.php?year=2026", "video_games");
+  // Re-tag Pokemon/TCG events
+  return allEvents.map(e => ({
+    ...e,
+    category: /pokemon|poke|tcg|trading card/i.test(e.name) ? "pokemon" : e.category,
+  }));
+}
+
+// ============================================================================
 // MAIN RUNNER — called from tRPC endpoint
 // ============================================================================
 export async function runConventionScraper(): Promise<{ inserted: number; skipped: number; errors: number; byCategory: Record<string, number> }> {
@@ -285,11 +452,26 @@ export async function runConventionScraper(): Promise<{ inserted: number; skippe
 
   // Run all scrapers
   const scrapers: Array<{ name: string; fn: () => Promise<ConventionEvent[]> }> = [
+    // Sports Cards
     { name: "CardShowHub", fn: scrapeCardShowHub },
+    // Vintage Toys
     { name: "ToysCons", fn: () => scrapeToyConsPage("https://toycons.com/calendar/calendar.php?year=2026&loc=us", "vintage_toys") },
+    { name: "ToyConsFuture", fn: () => scrapeToyConsPage("https://toycons.com/calendar/", "vintage_toys") },
+    // Video Games + Pokemon/TCG
     { name: "VideoGameCons", fn: () => scrapeToyConsPage("https://videogamecons.com/calendar/", "video_games") },
+    { name: "VideoGameCons2026", fn: scrapeVideoGameCons2026 },
+    // Comics
     { name: "Popverse", fn: scrapePopverse },
+    // Coins
     { name: "NumismaticNews", fn: scrapeNumismaticNews },
+    // Stamps
+    { name: "AmericanStampDealer", fn: scrapeAmericanStampDealer },
+    { name: "WFSCStamps", fn: scrapeWFSCStamps },
+    // Autographs
+    { name: "HallOfFameSignings", fn: scrapeHallOfFameSignings },
+    { name: "CreationEnt", fn: scrapeCreationEnt },
+    // Disney Pins
+    { name: "D23", fn: scrapeD23 },
   ];
 
   for (const { name, fn } of scrapers) {
