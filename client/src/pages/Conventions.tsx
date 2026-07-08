@@ -134,7 +134,7 @@ export default function Conventions() {
           opacity: 0.35,
         }} />
         <div className="container relative flex h-64 items-center justify-center sm:h-72 lg:h-80">
-          <div className="flex w-full max-w-2xl items-center justify-center">
+          <div className="flex w-full max-w-[772px] items-center justify-center">
             <img
               src="/images/conventions-icon.svg"
               alt="Tradebilia Conventions"
