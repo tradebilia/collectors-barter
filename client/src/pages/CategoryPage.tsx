@@ -1189,8 +1189,8 @@ export default function CategoryPage() {
                             </Link>
                             <div className="flex items-center gap-3 text-xs mt-1 flex-nowrap overflow-x-auto">
                               <div>
-                                <span className="font-semibold">{listing.grade ? "Grade:" : "Condition:"}</span>{" "}
-                                {listing.grade
+                                <span className="font-semibold">{listing.grade && parseFloat(String(listing.grade)) > 0 ? "Grade:" : "Condition:"}</span>{" "}
+                                {listing.grade && parseFloat(String(listing.grade)) > 0
                                   ? `${listing.certificationCompany ? `${listing.certificationCompany} ` : ""}${formatGrade(listing.grade)}`
                                   : listing.conditionLabel}
                               </div>
@@ -1226,9 +1226,9 @@ export default function CategoryPage() {
                           <p className="line-clamp-1 text-[0.65rem] leading-relaxed opacity-80">{listing.description}</p>
                           <div className="rounded-md border border-current/10 bg-black/5 p-3 grid grid-cols-2 gap-1 p-1 text-[0.5rem]">
                             <div>
-                              <p className="uppercase tracking-[0.1em] opacity-60 text-[0.45rem]">{listing.grade ? "Grade" : "Condition"}</p>
+                              <p className="uppercase tracking-[0.1em] opacity-60 text-[0.45rem]">{listing.grade && parseFloat(String(listing.grade)) > 0 ? "Grade" : "Condition"}</p>
                               <p className="mt-1 font-semibold truncate mt-0 text-[0.55rem]">
-                                {listing.grade
+                                {listing.grade && parseFloat(String(listing.grade)) > 0
                                   ? `${listing.certificationCompany ? `${listing.certificationCompany} ` : ""}${formatGrade(listing.grade)}`
                                   : listing.conditionLabel}
                               </p>
