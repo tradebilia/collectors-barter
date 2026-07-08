@@ -84,7 +84,7 @@ import { EmailInquiryModal } from "@/components/EmailInquiryModal";
 import { useMemo, useState, useEffect, useRef } from "react";
 import { Link, useRoute, useLocation } from "wouter";
 import { toast } from "sonner";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
 
 const TRADEBILIA_LOGO_URL = "/images/tradebilia-logo.svg";
 
@@ -292,11 +292,42 @@ export default function ItemDetail() {
             <div className="flex flex-col gap-4">
               {/* Photo + thumbnails */}
               <div className="flex flex-col gap-4">
-                {/* Main image */}
-                <div className="overflow-hidden rounded-[2rem] border border-white/10 bg-black/20 shadow-[0_40px_90px_rgba(0,0,0,0.35)]">
+                {/* Main image with arrow navigation */}
+                <div className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-black/20 shadow-[0_40px_90px_rgba(0,0,0,0.35)]">
                   <div className="flex items-center justify-center bg-black/30 p-4" style={{ minHeight: "500px" }}>
                     <img src={activePhoto?.imageUrl ?? resolveTradebiliaListingImage({ title: listing.title, category: listing.category, primaryPhotoUrl: listing.primaryPhotoUrl })} alt={activePhoto?.altText ?? listing.title} className="max-h-full max-w-full object-contain" />
                   </div>
+                  {listing.photos.length > 1 && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setActivePhotoIndex(i => (i - 1 + listing.photos.length) % listing.photos.length)}
+                        className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center justify-center w-10 h-10 rounded-full bg-black/50 text-white hover:bg-black/75 transition backdrop-blur-sm"
+                        aria-label="Previous photo"
+                      >
+                        <ChevronLeft className="w-6 h-6" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setActivePhotoIndex(i => (i + 1) % listing.photos.length)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center justify-center w-10 h-10 rounded-full bg-black/50 text-white hover:bg-black/75 transition backdrop-blur-sm"
+                        aria-label="Next photo"
+                      >
+                        <ChevronRight className="w-6 h-6" />
+                      </button>
+                      <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
+                        {listing.photos.map((_: any, i: number) => (
+                          <button
+                            key={i}
+                            type="button"
+                            onClick={() => setActivePhotoIndex(i)}
+                            className={`w-2 h-2 rounded-full transition ${i === activePhotoIndex ? 'bg-white' : 'bg-white/40 hover:bg-white/70'}`}
+                            aria-label={`Go to photo ${i + 1}`}
+                          />
+                        ))}
+                      </div>
+                    </>
+                  )}
                 </div>
 
                 {/* Thumbnails — centered below main image */}
