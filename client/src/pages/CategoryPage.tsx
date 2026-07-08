@@ -30,6 +30,15 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Link, useRoute } from "wouter";
 import { getGradingCompanyNamesForCategory, getValidGradesForCompany, getGradingCompanyByName } from "@shared/gradingCompanyConfig";
+import {
+  autographsMediumOptions,
+  countryOptions,
+  moviesFormatOptions,
+  pokemonRarityOptions,
+  videoGameRegionOptions,
+  videoGameSystemOptions,
+  yesNoOptions,
+} from "@/lib/filterOptions";
 
 const categoryFilterPresets: Record<TradebiliaCategorySlug, Array<{ label: string; placeholder: string; type?: "select" | "input" }>> = {
   comics: [
@@ -56,7 +65,6 @@ const categoryFilterPresets: Record<TradebiliaCategorySlug, Array<{ label: strin
   ],
   vintage_toys: [
     { label: "Name", placeholder: "Barbie, G.I. Joe, Star Wars" },
-    { label: "Genre", placeholder: "Action figure, doll, vehicle", type: "select" },
     { label: "Grading service", placeholder: "AFA, CAS, VGA", type: "select" },
     { label: "Franchise", placeholder: "Star Wars, TMNT" },
     { label: "Value Range", placeholder: "Min - Max", type: "input" },
@@ -77,7 +85,7 @@ const categoryFilterPresets: Record<TradebiliaCategorySlug, Array<{ label: strin
   ],
   coins: [
     { label: "Year", placeholder: "1909, 1933, 1794" },
-    { label: "Denomination", placeholder: "Cent, dollar, eagle", type: "select" },
+    { label: "Denomination", placeholder: "Cent, dollar, eagle" },
     { label: "Mint mark", placeholder: "S, D, CC" },
     { label: "Grading service", placeholder: "PCGS, NGC", type: "select" },
     { label: "Value Range", placeholder: "Min - Max", type: "input" },
@@ -106,7 +114,7 @@ const categoryFilterPresets: Record<TradebiliaCategorySlug, Array<{ label: strin
   disney_pins: [
     { label: "Pin name", placeholder: "LE park release, character pin" },
     { label: "Park or event", placeholder: "D23, EPCOT, Disneyland" },
-    { label: "Series", placeholder: "Character, attraction", type: "select" },
+    { label: "Series", placeholder: "Character, attraction" },
     { label: "Edition", placeholder: "LE 300, LE 1000" },
     { label: "Value Range", placeholder: "Min - Max", type: "input" },
   ],
@@ -173,138 +181,15 @@ const gradingServicesList = ["Raw"];
 // This is a fallback for when no company is selected
 const defaultGradeOptions = Array.from({ length: 11 }, (_, i) => ({ value: i.toString(), label: i.toString() }));
 
-const rookieOptions = [
-  { value: "yes", label: "Yes" },
-  { value: "no", label: "No" },
-];
-
-const autographedOptions = [
-  { value: "yes", label: "Yes" },
-  { value: "no", label: "No" },
-];
-
-const signedOptions = [
-  { value: "yes", label: "Yes" },
-  { value: "no", label: "No" },
-];
-
-const facsimileOptions = [
-  { value: "yes", label: "Yes" },
-  { value: "no", label: "No" },
-];
-
-const rarityOptions = [
-  { value: "common", label: "Common" },
-  { value: "uncommon", label: "Uncommon" },
-  { value: "rare", label: "Rare" },
-  { value: "holo_rare", label: "Holo Rare" },
-  { value: "secret_rare", label: "Secret Rare" },
-  { value: "full_art", label: "Full Art" },
-  { value: "ex", label: "EX" },
-  { value: "gx", label: "GX" },
-  { value: "v", label: "V" },
-  { value: "vmax", label: "VMAX" },
-  { value: "vstar", label: "VSTAR" },
-];
-
-const videoGameSystemOptions = [
-  { value: "nes", label: "NES" },
-  { value: "snes", label: "SNES" },
-  { value: "n64", label: "Nintendo 64" },
-  { value: "gamecube", label: "GameCube" },
-  { value: "wii", label: "Wii" },
-  { value: "wiiu", label: "Wii U" },
-  { value: "switch", label: "Nintendo Switch" },
-  { value: "gameboy", label: "Game Boy" },
-  { value: "gba", label: "Game Boy Advance" },
-  { value: "ds", label: "Nintendo DS" },
-  { value: "3ds", label: "Nintendo 3DS" },
-  { value: "genesis", label: "Sega Genesis" },
-  { value: "saturn", label: "Sega Saturn" },
-  { value: "dreamcast", label: "Dreamcast" },
-  { value: "gamegear", label: "Game Gear" },
-  { value: "ps1", label: "PlayStation" },
-  { value: "ps2", label: "PlayStation 2" },
-  { value: "ps3", label: "PlayStation 3" },
-  { value: "ps4", label: "PlayStation 4" },
-  { value: "ps5", label: "PlayStation 5" },
-  { value: "psp", label: "PSP" },
-  { value: "vita", label: "PS Vita" },
-  { value: "xbox", label: "Xbox" },
-  { value: "xbox360", label: "Xbox 360" },
-  { value: "xboxone", label: "Xbox One" },
-  { value: "xseries", label: "Xbox Series X/S" },
-  { value: "pc", label: "PC" },
-  { value: "arcade", label: "Arcade" },
-  { value: "atari", label: "Atari" },
-  { value: "other", label: "Other" },
-];
-
-const videoGameRegionOptions = [
-  { value: "ntsc", label: "NTSC (North America)" },
-  { value: "pal", label: "PAL (Europe)" },
-  { value: "japan", label: "Japan" },
-  { value: "other", label: "Other" },
-];
-
-const vintageToysGenreOptions = [
-  { value: "action_figure", label: "Action figure" },
-  { value: "doll", label: "Doll" },
-  { value: "vehicle", label: "Vehicle" },
-  { value: "playset", label: "Playset" },
-  { value: "other", label: "Other" },
-];
-
-const stampsCountryOptions = [
-  { value: "united_states", label: "United States" },
-  { value: "united_kingdom", label: "United Kingdom" },
-  { value: "canada", label: "Canada" },
-  { value: "france", label: "France" },
-  { value: "germany", label: "Germany" },
-  { value: "japan", label: "Japan" },
-  { value: "other", label: "Other" },
-];
-
-const coinsDenominationOptions = [
-  { value: "penny", label: "Penny" },
-  { value: "nickel", label: "Nickel" },
-  { value: "dime", label: "Dime" },
-  { value: "quarter", label: "Quarter" },
-  { value: "half_dollar", label: "Half Dollar" },
-  { value: "dollar", label: "Dollar" },
-  { value: "eagle", label: "Eagle" },
-  { value: "other", label: "Other" },
-];
-
-const moviesFormatOptions = [
-  { value: "poster", label: "Poster" },
-  { value: "prop", label: "Prop" },
-  { value: "lobby_card", label: "Lobby Card" },
-  { value: "still", label: "Still" },
-  { value: "promotional_material", label: "Promotional Material" },
-  { value: "other", label: "Other" },
-];
-
-const autographsMediumOptions = [
-  { value: "photo", label: "Photo" },
-  { value: "comic", label: "Comic" },
-  { value: "baseball", label: "Baseball" },
-  { value: "jersey", label: "Jersey" },
-  { value: "helmet", label: "Helmet" },
-  { value: "bat", label: "Bat" },
-  { value: "memorabilia", label: "Memorabilia" },
-  { value: "other", label: "Other" },
-];
-
-const disneyPinsSeriesOptions = [
-  { value: "character", label: "Character" },
-  { value: "attraction", label: "Attraction" },
-  { value: "movie", label: "Movie" },
-  { value: "park", label: "Park" },
-  { value: "event", label: "Event" },
-  { value: "limited_edition", label: "Limited Edition" },
-  { value: "other", label: "Other" },
-];
+// Dropdown options are synced with the inventory form's field definitions.
+// See client/src/lib/filterOptions.ts — the single source of truth.
+const rookieOptions = yesNoOptions;
+const autographedOptions = yesNoOptions;
+const signedOptions = yesNoOptions;
+const facsimileOptions = yesNoOptions;
+const rarityOptions = pokemonRarityOptions;
+// videoGameSystemOptions, videoGameRegionOptions, moviesFormatOptions,
+// autographsMediumOptions and countryOptions are imported from filterOptions.ts
 
 export default function CategoryPage() {
   const [, params] = useRoute("/category/:slug");
@@ -714,7 +599,12 @@ export default function CategoryPage() {
                              filter.label === "Autographed" ? autographed || "all" :
                              filter.label === "Signed" ? signed || "all" :
                               filter.label === "Facsimile" ? facsimile || "all" :
-                              filter.label === "Rarity" ? rarity || "all" : "all"}
+                              filter.label === "Rarity" ? rarity || "all" :
+                              filter.label === "System" ? keyword || "all" :
+                              filter.label === "Region" ? team || "all" :
+                              filter.label === "Country" ? manufacturer || "all" :
+                              filter.label === "Format" ? keyword || "all" :
+                              filter.label === "Medium" ? keyword || "all" : "all"}
                       onValueChange={(value) => {
                         if (value === "all") {
                           if (filter.label === "Sport") setSport(undefined);
@@ -728,6 +618,11 @@ export default function CategoryPage() {
                           else if (filter.label === "Signed") setSigned(undefined);
                            else if (filter.label === "Facsimile") setFacsimile(undefined);
                            else if (filter.label === "Rarity") setRarity(undefined);
+                           else if (filter.label === "System") setKeyword("");
+                           else if (filter.label === "Region") setTeam("");
+                           else if (filter.label === "Country") setManufacturer("");
+                           else if (filter.label === "Format") setKeyword("");
+                           else if (filter.label === "Medium") setKeyword("");
                         } else {
                           if (filter.label === "Sport") setSport(value);
                           else if (filter.label === "Grading service") setGradingService(value);
@@ -740,6 +635,11 @@ export default function CategoryPage() {
                           else if (filter.label === "Signed") setSigned(value);
                            else if (filter.label === "Facsimile") setFacsimile(value);
                            else if (filter.label === "Rarity") setRarity(value);
+                           else if (filter.label === "System") setKeyword(value);
+                           else if (filter.label === "Region") setTeam(value);
+                           else if (filter.label === "Country") setManufacturer(value);
+                           else if (filter.label === "Format") setKeyword(value);
+                           else if (filter.label === "Medium") setKeyword(value);
                         }
                       }}
                     >
@@ -787,22 +687,13 @@ export default function CategoryPage() {
                         {filter.label === "Region" && videoGameRegionOptions.map(option => (
                           <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
                         ))}
-                        {filter.label === "Genre" && vintageToysGenreOptions.map(option => (
-                          <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
-                        ))}
-                        {filter.label === "Country" && stampsCountryOptions.map(option => (
-                          <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
-                        ))}
-                        {filter.label === "Denomination" && coinsDenominationOptions.map(option => (
+                        {filter.label === "Country" && countryOptions.map(option => (
                           <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
                         ))}
                         {filter.label === "Format" && moviesFormatOptions.map(option => (
                           <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
                         ))}
                         {filter.label === "Medium" && autographsMediumOptions.map(option => (
-                          <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
-                        ))}
-                        {filter.label === "Series" && disneyPinsSeriesOptions.map(option => (
                           <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
                         ))}
 
@@ -938,8 +829,62 @@ export default function CategoryPage() {
                       onKeyDown={(e) => e.key === "Enter" && handleSubmitFilters()}
                       className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black`}
                     />
+                  ) : filter.label === "Denomination" ? (
+                    <FilterInput 
+                      placeholder={filter.placeholder}
+                      value={team}
+                      onChange={(e) => setTeam(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && handleSubmitFilters()}
+                      className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black`}
+                    />
+                  ) : filter.label === "Series" ? (
+                    <FilterInput 
+                      placeholder={filter.placeholder}
+                      value={series}
+                      onChange={(e) => setSeries(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && handleSubmitFilters()}
+                      className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black`}
+                    />
+                  ) : filter.label === "Set" ? (
+                    <FilterInput 
+                      placeholder={filter.placeholder}
+                      value={series}
+                      onChange={(e) => setSeries(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && handleSubmitFilters()}
+                      className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black`}
+                    />
+                  ) : filter.label === "Edition" ? (
+                    <FilterInput 
+                      placeholder={filter.placeholder}
+                      value={team}
+                      onChange={(e) => setTeam(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && handleSubmitFilters()}
+                      className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black`}
+                    />
+                  ) : filter.label === "Park or event" ? (
+                    <FilterInput 
+                      placeholder={filter.placeholder}
+                      value={manufacturer}
+                      onChange={(e) => setManufacturer(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && handleSubmitFilters()}
+                      className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black`}
+                    />
+                  ) : filter.label === "Year" ? (
+                    <FilterInput 
+                      placeholder={filter.placeholder}
+                      value={year}
+                      onChange={(e) => setYear(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && handleSubmitFilters()}
+                      className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black`}
+                    />
                   ) : (
-                    <Input placeholder={filter.placeholder} className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black`} />
+                    <FilterInput
+                      placeholder={filter.placeholder}
+                      value={keyword}
+                      onChange={(e) => setKeyword(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && handleSubmitFilters()}
+                      className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black`}
+                    />
                   )
                 }
                 </div>

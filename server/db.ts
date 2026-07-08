@@ -339,8 +339,9 @@ export async function getMarketplaceFeed(
     whereClauses.push(sql`(${jsonLike("issueNumber", filters.issueNumber)})`);
   }
   if (filters.manufacturer?.trim()) {
-    // Form stores manufacturer, with customManufacturer as free-text fallback
-    whereClauses.push(sql`(${jsonLikeAny(["manufacturer", "customManufacturer"], filters.manufacturer)})`);
+    // Multi-category channel: manufacturer/customManufacturer (sports cards),
+    // country (stamps/coins — the Issuer/Country filters), pinTradingEvent (disney pins Park or event)
+    whereClauses.push(sql`(${jsonLikeAny(["manufacturer", "customManufacturer", "country", "pinTradingEvent"], filters.manufacturer)})`);
   }
   if (filters.year?.trim()) {
     // Year is stored under different keys depending on category/item type:
@@ -349,12 +350,14 @@ export async function getMarketplaceFeed(
     whereClauses.push(sql`(${jsonLikeAny(["year", "releaseYear", "publicationYear", "yearsIncluded"], filters.year)})`);
   }
   if (filters.team?.trim()) {
-    // No dedicated team field in the new form; match against player and title/description via keyword-style search
-    whereClauses.push(sql`(${jsonLike("player", filters.team)} OR ${like(listings.title, `%${filters.team.trim()}%`)} OR ${like(listings.description, `%${filters.team.trim()}%`)})`);
+    // Multi-category channel: player/title/description (sports cards Team),
+    // mintMark + denomination (coins), region (video games), limitedEdition context (disney pins Edition)
+    whereClauses.push(sql`(${jsonLikeAny(["player", "mintMark", "denomination", "region"], filters.team)} OR ${like(listings.title, `%${filters.team.trim()}%`)} OR ${like(listings.description, `%${filters.team.trim()}%`)})`);
   }
   if (filters.series?.trim()) {
-    // Form stores set name under setName (sports_cards, pokemon)
-    whereClauses.push(sql`(${jsonLikeAny(["setName", "set"], filters.series)})`);
+    // Multi-category channel: setName/set (sports cards, pokemon),
+    // series (disney pins), franchise (vintage toys, movies, autographs)
+    whereClauses.push(sql`(${jsonLikeAny(["setName", "set", "series", "franchise"], filters.series)})`);
   }
   if (filters.sport?.trim()) {
     whereClauses.push(sql`(${jsonLike("sport", filters.sport)})`);
