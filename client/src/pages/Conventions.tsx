@@ -54,7 +54,7 @@ export default function Conventions() {
 
   // Form state
   const [form, setForm] = useState({
-    name: "", category: "all", startDate: "", endDate: "",
+    name: "", categories: [] as string[], startDate: "", endDate: "",
     city: "", state: "", country: "United States",
     venue: "", website: "", admission: "", description: "",
   });
@@ -69,7 +69,7 @@ export default function Conventions() {
     onSuccess: () => {
       toast.success("Convention submitted! It will appear after admin approval.");
       setShowSubmitModal(false);
-      setForm({ name: "", category: "all", startDate: "", endDate: "", city: "", state: "", country: "United States", venue: "", website: "", admission: "", description: "" });
+      setForm({ name: "", categories: [], startDate: "", endDate: "", city: "", state: "", country: "United States", venue: "", website: "", admission: "", description: "" });
     },
     onError: (e) => toast.error(e.message),
   });
@@ -98,9 +98,14 @@ export default function Conventions() {
       toast.error("Name, start date, and country are required.");
       return;
     }
+    if (form.categories.length === 0) {
+      toast.error("Please select at least one category.");
+      return;
+    }
     submitMutation.mutate({
       name: form.name,
-      category: form.category,
+      category: form.categories[0], // primary category
+      categories: form.categories,
       startDate: form.startDate,
       endDate: form.endDate || undefined,
       city: form.city || undefined,
@@ -208,16 +213,26 @@ export default function Conventions() {
                     <Label>Convention Name *</Label>
                     <Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g., New York Comic Con" required />
                   </div>
-                  <div>
-                    <Label>Category</Label>
-                    <Select value={form.category} onValueChange={v => setForm(f => ({ ...f, category: v }))}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {CATEGORY_OPTIONS.map(opt => (
-                          <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                  <div className="col-span-2">
+                    <Label>Categories * <span className="text-xs font-normal text-gray-400">(select all that apply)</span></Label>
+                    <div className="grid grid-cols-2 gap-2 mt-2">
+                      {CATEGORY_OPTIONS.filter(o => o.value !== "all").map(opt => (
+                        <label key={opt.value} className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={form.categories.includes(opt.value)}
+                            onChange={e => setForm(f => ({
+                              ...f,
+                              categories: e.target.checked
+                                ? [...f.categories, opt.value]
+                                : f.categories.filter(c => c !== opt.value)
+                            }))}
+                            className="w-4 h-4 rounded border-gray-300 text-cyan-500"
+                          />
+                          <span className="text-sm text-gray-700">{opt.label}</span>
+                        </label>
+                      ))}
+                    </div>
                   </div>
                   <div>
                     <Label>Country *</Label>
@@ -319,9 +334,13 @@ export default function Conventions() {
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1">
                           <h3 className="font-bold text-gray-900 text-base leading-tight">{convention.name}</h3>
-                          <Badge variant="outline" className="mt-1.5 text-[0.65rem] px-2 py-0 rounded-full border-cyan-300 text-cyan-700 bg-cyan-50">
-                            {convention.category === "all" ? "All Categories" : getTradebiliaCategoryLabel(convention.category as any)}
-                          </Badge>
+                          <div className="flex flex-wrap gap-1 mt-1.5">
+                            {((convention as any).categories || [convention.category]).map((cat: string) => (
+                              <Badge key={cat} variant="outline" className="text-[0.65rem] px-2 py-0 rounded-full border-cyan-300 text-cyan-700 bg-cyan-50">
+                                {cat === "all" ? "All Categories" : getTradebiliaCategoryLabel(cat as any)}
+                              </Badge>
+                            ))}
+                          </div>
                         </div>
                         {convention.website && (
                           <a href={convention.website} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-cyan-500 transition flex-shrink-0">

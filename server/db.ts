@@ -3479,26 +3479,30 @@ export async function getConventions(filters: {
   state?: string;
 }) {
   const db = await requireDb();
-  const { conventions, users } = await import("../drizzle/schema");
-  const { eq, and, gte, asc, or } = await import("drizzle-orm");
+  const { conventions, conventionCategories } = await import("../drizzle/schema");
+  const { eq, and, gte, asc, inArray, sql } = await import("drizzle-orm");
 
-  const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+  const today = new Date().toISOString().split("T")[0];
 
-  const whereClauses: any[] = [
+  // Base filters on the conventions table
+  const baseClauses: any[] = [
     eq(conventions.status, "approved"),
     gte(conventions.startDate, today),
   ];
+  if (filters.country) baseClauses.push(eq(conventions.country, filters.country));
+  if (filters.state) baseClauses.push(eq(conventions.state, filters.state));
 
+  let conventionIds: number[] | null = null;
+
+  // If a specific category is selected, find convention IDs that have that category
   if (filters.category && filters.category !== "all") {
-    whereClauses.push(
-      or(eq(conventions.category, filters.category as any), eq(conventions.category, "all"))
-    );
-  }
-  if (filters.country) {
-    whereClauses.push(eq(conventions.country, filters.country));
-  }
-  if (filters.state) {
-    whereClauses.push(eq(conventions.state, filters.state));
+    const catRows = await db
+      .select({ conventionId: conventionCategories.conventionId })
+      .from(conventionCategories)
+      .where(eq(conventionCategories.category, filters.category as any));
+    conventionIds = catRows.map(r => r.conventionId);
+    if (conventionIds.length === 0) return []; // No matches
+    baseClauses.push(inArray(conventions.id, conventionIds));
   }
 
   const rows = await db
@@ -3519,11 +3523,26 @@ export async function getConventions(filters: {
       createdAt: conventions.createdAt,
     })
     .from(conventions)
-    .where(and(...whereClauses))
+    .where(and(...baseClauses))
     .orderBy(asc(conventions.startDate))
     .limit(500);
 
-  return rows;
+  // Attach all categories for each convention from the junction table
+  if (rows.length > 0) {
+    const ids = rows.map(r => r.id);
+    const catRows = await db
+      .select({ conventionId: conventionCategories.conventionId, category: conventionCategories.category })
+      .from(conventionCategories)
+      .where(inArray(conventionCategories.conventionId, ids));
+    const catMap = new Map<number, string[]>();
+    for (const cr of catRows) {
+      if (!catMap.has(cr.conventionId)) catMap.set(cr.conventionId, []);
+      catMap.get(cr.conventionId)!.push(cr.category);
+    }
+    return rows.map(r => ({ ...r, categories: catMap.get(r.id) || [r.category] }));
+  }
+
+  return rows.map(r => ({ ...r, categories: [r.category] }));
 }
 
 export async function getUpcomingConventions(limit = 3) {
@@ -3553,6 +3572,7 @@ export async function getUpcomingConventions(limit = 3) {
 export async function submitConvention(data: {
   name: string;
   category: string;
+  categories?: string[]; // multi-category support
   startDate: string;
   endDate?: string;
   city?: string;
@@ -3565,7 +3585,7 @@ export async function submitConvention(data: {
   submittedBy?: number;
 }) {
   const db = await requireDb();
-  const { conventions } = await import("../drizzle/schema");
+  const { conventions, conventionCategories } = await import("../drizzle/schema");
 
   const result = await db.insert(conventions).values({
     name: data.name,
@@ -3584,7 +3604,19 @@ export async function submitConvention(data: {
     submittedBy: data.submittedBy ?? null,
   });
 
-  return { id: Number(result[0].insertId) };
+  const newId = Number(result[0].insertId);
+
+  // Write categories to junction table
+  const categoriesToInsert = data.categories && data.categories.length > 0
+    ? data.categories
+    : [data.category];
+  for (const cat of categoriesToInsert) {
+    try {
+      await db.insert(conventionCategories).values({ conventionId: newId, category: cat as any });
+    } catch {}
+  }
+
+  return { id: newId };
 }
 
 export async function getPendingConventions() {
@@ -3619,10 +3651,19 @@ export async function getPendingConventions() {
 
 export async function approveConvention(id: number, adminId: number) {
   const db = await requireDb();
-  const { conventions } = await import("../drizzle/schema");
+  const { conventions, conventionCategories } = await import("../drizzle/schema");
   const { eq } = await import("drizzle-orm");
 
   await db.update(conventions).set({ status: "approved", approvedBy: adminId }).where(eq(conventions.id, id));
+
+  // Ensure junction table entry exists for this convention
+  const [conv] = await db.select({ category: conventions.category }).from(conventions).where(eq(conventions.id, id));
+  if (conv) {
+    try {
+      await db.insert(conventionCategories).values({ conventionId: id, category: conv.category as any });
+    } catch {} // Ignore if already exists
+  }
+
   return { success: true };
 }
 

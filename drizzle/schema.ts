@@ -432,6 +432,16 @@ export const watchlistEntries = mysqlTable("watchlistEntries", {
 	index("watchlistEntries_listing_idx").on(table.listingId),
 ]);
 
+export const conventionCategories = mysqlTable("conventionCategories", {
+	id: int().autoincrement().notNull(),
+	conventionId: int().notNull(),
+	category: mysqlEnum(['comics','sports_cards','vintage_toys','video_games','stamps','coins','pokemon','movies','autographs','disney_pins','all']).notNull(),
+},
+(table) => [
+	index("cc_convention_idx").on(table.conventionId),
+	index("cc_category_idx").on(table.category),
+]);
+
 export const conventions = mysqlTable("conventions", {
 	id: int().autoincrement().notNull(),
 	name: varchar({ length: 255 }).notNull(),

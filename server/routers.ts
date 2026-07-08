@@ -1677,6 +1677,7 @@ export const appRouter = router({
       .input(z.object({
         name: z.string().min(2).max(255),
         category: z.string().min(1),
+        categories: z.array(z.string()).optional(), // multi-category support
         startDate: z.string().min(8).max(20),
         endDate: z.string().max(20).optional(),
         city: z.string().max(100).optional(),
