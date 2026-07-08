@@ -1,0 +1,58 @@
+[
+  {
+    "name": "CA – Absolute Green Arrow #1 Signing | July 18th",
+    "category": "all",
+    "startDate": "2026-07-08",
+    "endDate": null,
+    "city": null,
+    "state": null,
+    "country": "United States",
+    "venue": null,
+    "website": "https://www.conventionscene.com",
+    "admission": null,
+    "description": null,
+    "status": "approved"
+  },
+  {
+    "name": "NJ – Vampirella Summer Special Signing | July 11th",
+    "category": "all",
+    "startDate": "2026-07-08",
+    "endDate": null,
+    "city": null,
+    "state": null,
+    "country": "United States",
+    "venue": null,
+    "website": "https://www.conventionscene.com",
+    "admission": null,
+    "description": null,
+    "status": "approved"
+  },
+  {
+    "name": "November 18-19, 2026 | Warren, MI",
+    "category": "coins",
+    "startDate": "2026-11-20",
+    "endDate": "2026-11-22",
+    "city": null,
+    "state": null,
+    "country": "United States",
+    "venue": null,
+    "website": "https://www.money.org/events/",
+    "admission": null,
+    "description": null,
+    "status": "approved"
+  },
+  {
+    "name": "The Hollywood Show",
+    "category": "movies",
+    "startDate": "2026-10-09",
+    "endDate": null,
+    "city": "Los Angeles",
+    "state": "California",
+    "country": "United States",
+    "venue": null,
+    "website": "https://www.hollywoodshow.com",
+    "admission": null,
+    "description": "Celebrity autograph and memorabilia show",
+    "status": "approved"
+  }
+]
