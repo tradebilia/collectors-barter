@@ -134,11 +134,12 @@ export default function Conventions() {
           opacity: 0.35,
         }} />
         <div className="container relative flex h-64 items-center justify-center sm:h-72 lg:h-80">
-          <div className="text-center">
-            <p className="text-sm font-semibold uppercase tracking-[0.3em] text-cyan-400 mb-3">Tradebilia</p>
-            <h1 className="text-5xl font-bold tracking-tight sm:text-6xl lg:text-7xl">
-              Conventions
-            </h1>
+          <div className="flex flex-col items-center">
+            <img
+              src="/images/conventions-title.webp"
+              alt="Tradebilia Conventions"
+              className="w-auto max-h-36 sm:max-h-44 lg:max-h-52 object-contain"
+            />
             <p className="mt-4 text-lg text-gray-300">Upcoming collector shows, expos & conventions</p>
           </div>
         </div>
