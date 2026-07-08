@@ -334,12 +334,17 @@ export default function ItemDetail() {
                 </div>
                 <h1 className="mt-6 text-5xl font-semibold leading-[1.05] tracking-tight text-gray-900">{listing.title}</h1>
                 <div className="mt-6 grid gap-4 text-lg text-gray-700 sm:grid-cols-2">
-                  {listing.grade && listing.grade !== '0' && listing.grade !== 'ungraded' && (
+                  {listing.grade && listing.grade !== 'ungraded' && parseFloat(listing.grade) > 0 ? (
                     <div>
                       <p className="text-base font-bold uppercase tracking-[0.25em] text-gray-800">Grade</p>
                       <p className="mt-2 text-sm font-medium text-gray-500">{formatGrade(listing.grade)}</p>
                     </div>
-                  )}
+                  ) : listing.condition ? (
+                    <div>
+                      <p className="text-base font-bold uppercase tracking-[0.25em] text-gray-800">Condition</p>
+                      <p className="mt-2 text-sm font-medium text-gray-500">{getConditionDisplayName(listing.condition)}</p>
+                    </div>
+                  ) : null}
                   {listing.certificationCompany && (
                     <div>
                       <p className="text-base font-bold uppercase tracking-[0.25em] text-gray-800">Grading Company</p>
@@ -503,10 +508,11 @@ export default function ItemDetail() {
                 'certificationCompany', 'shippingAvailable', 'additionalNotes',   // camelCase (actual stored keys)
                 'description',                                                     // shown in its own section
               ]);
-              const allFields: { label: string; value: string }[] = [];
-
+                            const allFields: { label: string; value: string }[] = [];
+              const isGradedListing = Boolean(listing.grade && listing.grade !== 'ungraded' && parseFloat(listing.grade) > 0);
               // Core fields first
               allFields.push({ label: 'Category', value: getTradebiliaCategoryLabel(listing.category) });
+              if (!isGradedListing && listing.condition) allFields.push({ label: 'Condition', value: getConditionDisplayName(listing.condition) });
               if (listing.certificationCompany) allFields.push({ label: 'Grading Company', value: listing.certificationCompany });
               if (listing.estimatedValue) allFields.push({ label: 'Estimated Value', value: `$${listing.estimatedValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` });
               if (listing.itemType) allFields.push({ label: 'Item Type', value: listing.itemType.replace(/_/g, ' ').split(' ').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') });
