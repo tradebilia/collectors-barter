@@ -3545,28 +3545,82 @@ export async function getConventions(filters: {
   return rows.map(r => ({ ...r, categories: [r.category] }));
 }
 
-export async function getUpcomingConventions(limit = 3) {
+export async function getUpcomingConventions(limit = 3, userLocation?: { state?: string | null; country?: string | null }) {
   const db = await requireDb();
   const { conventions } = await import("../drizzle/schema");
   const { eq, gte, asc, and } = await import("drizzle-orm");
 
   const today = new Date().toISOString().split("T")[0];
 
-  return db
-    .select({
-      id: conventions.id,
-      name: conventions.name,
-      category: conventions.category,
-      startDate: conventions.startDate,
-      endDate: conventions.endDate,
-      city: conventions.city,
-      state: conventions.state,
-      country: conventions.country,
-    })
-    .from(conventions)
-    .where(and(eq(conventions.status, "approved"), gte(conventions.startDate, today)))
-    .orderBy(asc(conventions.startDate))
-    .limit(limit);
+  const baseWhere = and(eq(conventions.status, "approved"), gte(conventions.startDate, today));
+
+  // If user has a state, try to find conventions in their state first
+  if (userLocation?.state) {
+    const stateMatches = await db
+      .select({
+        id: conventions.id,
+        name: conventions.name,
+        category: conventions.category,
+        startDate: conventions.startDate,
+        endDate: conventions.endDate,
+        city: conventions.city,
+        state: conventions.state,
+        country: conventions.country,
+      })
+      .from(conventions)
+      .where(and(baseWhere, eq(conventions.state, userLocation.state)))
+      .orderBy(asc(conventions.startDate))
+      .limit(limit);
+
+    if (stateMatches.length >= limit) return stateMatches;
+
+    // Not enough in state — fill remainder with same country
+    const stateIds = stateMatches.map(r => r.id);
+    const { notInArray } = await import("drizzle-orm");
+    const countryMatches = await db
+      .select({
+        id: conventions.id,
+        name: conventions.name,
+        category: conventions.category,
+        startDate: conventions.startDate,
+        endDate: conventions.endDate,
+        city: conventions.city,
+        state: conventions.state,
+        country: conventions.country,
+      })
+      .from(conventions)
+      .where(and(
+        baseWhere,
+        eq(conventions.country, userLocation.country || "United States"),
+        stateIds.length > 0 ? notInArray(conventions.id, stateIds) : undefined as any,
+      ))
+      .orderBy(asc(conventions.startDate))
+      .limit(limit - stateMatches.length);
+
+    return [...stateMatches, ...countryMatches].slice(0, limit);
+  }
+
+  // If user has only a country (no state), filter by country
+  if (userLocation?.country) {
+    return db
+      .select({
+        id: conventions.id,
+        name: conventions.name,
+        category: conventions.category,
+        startDate: conventions.startDate,
+        endDate: conventions.endDate,
+        city: conventions.city,
+        state: conventions.state,
+        country: conventions.country,
+      })
+      .from(conventions)
+      .where(and(baseWhere, eq(conventions.country, userLocation.country)))
+      .orderBy(asc(conventions.startDate))
+      .limit(limit);
+  }
+
+  // No location — return empty (caller decides what to show)
+  return [];
 }
 
 export async function submitConvention(data: {

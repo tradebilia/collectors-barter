@@ -1671,7 +1671,22 @@ export const appRouter = router({
 
     upcoming: publicProcedure
       .input(z.object({ limit: z.number().min(1).max(10).optional() }).optional())
-      .query(({ input }) => getUpcomingConventions(input?.limit ?? 3)),
+      .query(async ({ ctx, input }) => {
+        // Only return conventions if the user is logged in
+        if (!ctx.user) return [];
+        // Get user's location from their profile
+        const { userProfiles } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        const db = await (await import("./db")).requireDb();
+        const [profile] = await db
+          .select({ state: userProfiles.contactState, country: userProfiles.contactCountry })
+          .from(userProfiles)
+          .where(eq(userProfiles.userId, ctx.user.id));
+        const userLocation = profile
+          ? { state: profile.state || null, country: profile.country || null }
+          : {};
+        return getUpcomingConventions(input?.limit ?? 3, userLocation);
+      }),
 
     submit: publicProcedure
       .input(z.object({
