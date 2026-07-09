@@ -184,7 +184,9 @@ export default function AddInventory() {
         console.log('[DEBUG] itemDetails found, loading fields:', Object.keys(listing.itemDetails));
         Object.entries(listing.itemDetails).forEach(([key, value]) => {
           // Skip fields that are already loaded separately at the top level
-          if (key !== "title" && key !== "estimatedValue" && key !== "shipping") {
+          // Note: "title" in itemDetails is a category-specific field (e.g., movie title, comic title)
+          // and should NOT be skipped — it maps to the form's title field for that category
+          if (key !== "estimatedValue" && key !== "shipping") {
             console.log('[DEBUG] updateField:', key, '=', value);
             // Handle signatures as an array
             if (key === 'signatures' && typeof value === 'string') {
