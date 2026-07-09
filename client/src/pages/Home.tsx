@@ -1348,40 +1348,6 @@ export default function Home() {
               </TabsContent>
             </Tabs>
           </section>
-        ) : (
-          <section className="container pt-8">
-            <Card className="surface-card overflow-hidden bg-card/90">
-              <CardContent className="grid gap-8 p-8 lg:grid-cols-[0.8fr_1.2fr] lg:p-10">
-                <div className="space-y-4">
-                  <Badge variant="secondary" className="w-fit rounded-full px-4 py-1.5">Subscriber access</Badge>
-                  <h3 className="section-heading">Sign in to unlock the trading workspace</h3>
-                  <p className="text-base leading-8 text-muted-foreground">
-                    Subscriber accounts activate your profile, Trade Proposals, messaging, Watchlist, Trade History, and Ratings and Reviews dashboard.
-                  </p>
-                  <Button className="rounded-full px-6" onClick={() => (window.location.href = getLoginUrl())}>
-                    Continue to subscriber sign in
-                  </Button>
-                </div>
-                <div className="grid gap-4 md:grid-cols-2">
-                  {[
-                    [Clock3, "Trade History", "Follow each exchange from the first message through completion."],
-                    [Heart, "Watchlist", "Save rare finds and revisit them later with context."],
-                    [MessageSquareText, "Messaging system", "Clarify condition, provenance, and shipping expectations."],
-                    [Star, "Ratings and Reviews", "Build community trust after every completed trade."],
-                  ].map(([Icon, title, body]) => {
-                    const RenderIcon = Icon as typeof Clock3;
-                    return (
-                      <div key={title as string} className="rounded-[1.75rem] border border-border/70 bg-background/70 p-5">
-                        <RenderIcon className="h-5 w-5 text-primary" />
-                        <h4 className="mt-4 text-2xl font-semibold text-foreground">{title as string}</h4>
-                        <p className="mt-2 text-sm leading-7 text-muted-foreground">{body as string}</p>
-                      </div>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
-          </section>
         )}
       </main>
     </div>
