@@ -1041,30 +1041,7 @@ export default function CategoryPage() {
         {/* Right side content area */}
         <div className="flex-1 py-8 lg:py-10 px-6">
           <section className="space-y-6">
-            {/* Filter summary bar */}
-            {(keyword || condition || sportsCardsConditionText) && (
-              <div className="flex flex-wrap gap-2 items-center pb-3">
-                <span className="text-xs font-medium opacity-70">Active filters:</span>
-                {keyword && (
-                  <div className="inline-flex items-center gap-1 bg-blue-600/20 text-blue-600 px-2 py-1 rounded text-xs">
-                    {keyword}
-                    <button onClick={() => setKeyword("")} className="ml-1 hover:opacity-70">×</button>
-                  </div>
-                )}
-                {condition && (
-                  <div className="inline-flex items-center gap-1 bg-blue-600/20 text-blue-600 px-2 py-1 rounded text-xs">
-                    {condition}
-                    <button onClick={() => setCondition(undefined)} className="ml-1 hover:opacity-70">×</button>
-                  </div>
-                )}
-                {sportsCardsConditionText && (
-                  <div className="inline-flex items-center gap-1 bg-blue-600/20 text-blue-600 px-2 py-1 rounded text-xs">
-                    {sportsCardsConditionText}
-                    <button onClick={() => setSportsCardsConditionText("")} className="ml-1 hover:opacity-70">×</button>
-                  </div>
-                )}
-              </div>
-            )}
+            {/* Filter summary bar removed */}
 
             {/* Sorting bar - always visible */}
             <div className="pb-4 border-b border-current/10">
