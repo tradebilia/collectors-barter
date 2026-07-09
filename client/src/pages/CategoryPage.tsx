@@ -1094,17 +1094,7 @@ export default function CategoryPage() {
                   </div>
                 </div>
               </div>
-                            {/* Clear filters button */}
-              {(keyword || condition || sportsCardsConditionText) && (
-                <div className="flex items-center justify-end mt-3">
-                  <button
-                    onClick={handleClearFilters}
-                    className="text-xs font-medium text-blue-600 hover:underline"
-                  >
-                    Clear all filters
-                  </button>
-                </div>
-              )}
+                            {/* Clear filters button removed */}
             </div>
 
 
