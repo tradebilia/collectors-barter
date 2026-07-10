@@ -1,105 +1,94 @@
-# Trade Flow — Open Questions
+# Trade Flow — Open Questions & Answers
 
-**Version:** 1.0  
+**Version:** 2.0  
 **Date:** July 10, 2026  
-**Status:** Pending Rich's Decisions
-
-These questions need to be answered before or during implementation. They are not blockers for starting Stage 1, but they must be resolved before Stage 2 and beyond.
+**Status:** ✅ All Questions Answered — Ready for Implementation
 
 ---
 
-## 🔴 High Priority (Needed for Stage 1 or 2)
-
-### Q1: What happens to the existing Messages page trade threads?
-The current `/messages` page shows trade proposals as threaded conversations. When we move trade alerts to the new `/trade-alerts` page, do we:
-- (A) Leave existing trade threads in Messages as-is (legacy), and only new trades go to Trade Alerts?
-- (B) Migrate all existing trade threads to the new Trade Alerts page?
-- (C) Simply remove the trade folder from Messages and let the new page handle everything from day one?
-
-**My recommendation:** Option C — clean break. Since there are no real completed trades yet, there's nothing to migrate.
+## Q1: What happens to the existing Messages page trade threads?
+**Answer:** ✅ **Clean break.** Remove trade proposal logic from Messages entirely from day one. The new `/trade-alerts` page handles all trade activity. Messages is for direct human communication only.
 
 ---
 
-### Q2: Can a user have multiple active trade proposals for the same item?
-Example: User A has a Wayne Gretzky card listed. Can User B AND User C both send a trade proposal for it at the same time?
-
-- If **yes**: The item owner (User A) sees multiple pending proposals and can choose which one to proceed with. The others are automatically declined when one is accepted.
-- If **no**: Once a trade proposal is `initiated` for an item, the item is "locked" and no other proposals can be sent until that trade is resolved.
-
-**My recommendation:** Allow multiple proposals (yes), but when one is accepted, automatically decline the rest with a system message: "This item has been accepted for trade with another collector."
+## Q2: Can a user have multiple active trade proposals for the same item?
+**Answer:** ✅ **Yes — multiple proposals are allowed.** When one proposal is accepted, all other pending proposals for the same item are automatically declined with a system message: *"This item has been accepted for trade with another collector."*
 
 ---
 
-### Q3: What happens to an item's listing status during an active trade?
-When a trade is in `negotiating` or `accepted` status, should the item:
-- (A) Stay visible in the marketplace (others can still see it and send proposals)
-- (B) Be hidden from the marketplace (marked as "In Trade")
-- (C) Show a badge/label "In Trade" but remain visible
-
-**My recommendation:** Option C — show an "In Trade" badge but keep it visible. This is more transparent and lets other collectors know the item may become available again if the trade falls through.
+## Q3: What happens to an item's listing status during an active trade?
+**Answer:** ✅ **Item remains visible in the marketplace** while a trade is in `negotiating` status. The item is only removed from the marketplace (status changes to `traded`) when **both users have formally agreed** (trade moves to `accepted` status). An "In Trade" badge should be displayed on the listing card while in `negotiating` status so other collectors are aware.
 
 ---
 
-### Q4: Cash-Only Trade Handling
-The spec allows "Cash-Only" trades where User B proposes cash instead of items. Since Tradebilia has no payment processor, how should this be handled in the UI?
+## Q4: Cash-Only Trade Handling
+**Answer:** ✅ **Cash trades are allowed.** Tradebilia does not act as a middleman — both users are responsible for arranging how cash is sent and received (Venmo, Zelle, PayPal, etc.).
 
-**My recommendation:** Allow cash amounts to be entered in the proposal form, but display a clear disclaimer: *"Tradebilia does not process payments. Cash arrangements must be made directly between traders (e.g., Venmo, Zelle, PayPal). Tradebilia is not responsible for cash transactions."*
+**Required Disclosure (must appear on every trade):**
+> *"Tradebilia is a marketplace that brings collectors together. We are not liable for any trades, items, or cash transactions that go wrong. All trades are conducted at the sole risk of the participating collectors."*
 
-Do you want to include this disclaimer, or do you want to disable cash-only trades entirely for now?
-
----
-
-## 🟡 Medium Priority (Needed for Stage 3 — Shipping)
-
-### Q5: Who pays for shipping?
-The spec does not define who is responsible for shipping costs. Should the UI:
-- (A) State a platform rule: "Each trader is responsible for their own shipping costs"
-- (B) Allow shipping cost to be negotiated in the proposal (added to the cash fields)
-- (C) Leave it entirely up to the traders to figure out
-
-**My recommendation:** Option A — state a clear platform rule to avoid disputes.
+This disclosure must appear:
+- On the trade proposal confirmation screen
+- On the Trade Alerts page (trade detail view)
+- In the trade thread at the top of every conversation
 
 ---
 
-### Q6: What if only one person submits a tracking number?
-If User A ships their item and submits a tracking number, but User B never ships and never submits a tracking number — what happens?
-
-**My recommendation:** The daily cron job sends reminders to User B at 5 days and 10 days. At 15 days with no tracking from User B, the trade is automatically moved to `disputed` status and an admin alert is generated.
+## Q5: Who pays for shipping?
+**Answer:** ✅ **Each trader pays their own shipping costs.** This is a platform rule, not a negotiable field. Display clearly in the shipping stage: *"Each collector is responsible for their own shipping costs."*
 
 ---
 
-### Q7: International Shipping
-The spec only lists US carriers (USPS, UPS, FedEx, DHL). Should we support international carriers (Canada Post, Royal Mail, etc.)?
+## Q6: What if only one person submits a tracking number?
+**Answer:** ✅ **Auto-escalate to disputed after 15 days.** If only one user submits a tracking number and 15 days pass with no tracking from the other user, the trade is automatically moved to `disputed` status and an admin alert is generated.
 
-**My recommendation:** Add an "Other" option with a free-text carrier field for international trades. We can expand the carrier list later.
-
----
-
-## 🟢 Low Priority (Needed for Stage 4 — Feedback)
-
-### Q8: Can a user edit their review after submitting?
-Once a trade review is submitted, can the reviewer edit it?
-
-**My recommendation:** No edits after submission. Reviews are permanent to maintain integrity. If there's a dispute about a review, it goes through admin.
+**Exception:** If **both** users have clicked "I received my item" (receipt confirmation), the trade completes normally regardless of tracking status.
 
 ---
 
-### Q9: Should reviews be public or private?
-Should trade reviews be visible on the reviewer's public profile, or only visible to the person being reviewed?
+## Q7: International Shipping
+**Answer:** ✅ **Add an "Other" carrier option** with a free-text field for carrier name. This covers international carriers (Canada Post, Royal Mail, etc.) without needing to enumerate every carrier upfront. The carrier list can be expanded later.
 
-**My recommendation:** Public — visible on the reviewee's public profile page. This is the core trust-building mechanism of the platform.
-
----
-
-### Q10: Minimum trade count before ratings appear?
-Should a user's star rating be shown publicly only after they have a minimum number of completed trades (e.g., at least 3)?
-
-**My recommendation:** Yes — show "No ratings yet" until a user has at least 3 completed trade reviews. This prevents a single 5-star self-review from dominating.
+**Carrier options:**
+- USPS
+- UPS
+- FedEx
+- DHL
+- Other (free text)
 
 ---
 
-## Notes
+## Q8: Can a user edit their review after submitting?
+**Answer:** ✅ **No edits to written review text after submission.** Reviews are permanent to maintain integrity.
 
-- Questions Q1–Q4 should be answered before we begin Stage 1 implementation.
-- Questions Q5–Q7 should be answered before Stage 3.
-- Questions Q8–Q10 should be answered before Stage 4.
+**Exception — Photos only:**
+- Reviewers can **add** photos to their review after submission (e.g., evidence of item condition)
+- Only an **admin** can add OR remove photos from a review
+- No other fields can be modified after submission
+
+---
+
+## Q9: Should reviews be public?
+**Answer:** ✅ **Yes — reviews are public** and visible on the reviewee's public profile page. This is the core trust-building mechanism of the platform.
+
+---
+
+## Q10: Minimum trade count before ratings appear publicly?
+**Answer:** ✅ **Minimum of 2 completed trade reviews** before a star rating is shown publicly. Before that threshold, the profile shows *"No ratings yet."*
+
+---
+
+## Summary Table
+
+| # | Question | Decision |
+|---|---|---|
+| Q1 | Messages clean break? | ✅ Yes — clean break |
+| Q2 | Multiple proposals per item? | ✅ Yes — auto-decline others on acceptance |
+| Q3 | Item visibility during trade? | ✅ Visible with "In Trade" badge; removed only on acceptance |
+| Q4 | Cash trades allowed? | ✅ Yes — with mandatory platform disclaimer |
+| Q5 | Who pays shipping? | ✅ Each trader pays their own |
+| Q6 | One-sided tracking after 15 days? | ✅ Auto-escalate to disputed (unless both confirmed receipt) |
+| Q7 | International carriers? | ✅ Add "Other" free-text option |
+| Q8 | Review edits? | ✅ No edits; photos can be added by reviewer, removed by admin only |
+| Q9 | Reviews public? | ✅ Yes |
+| Q10 | Minimum trades for rating? | ✅ 2 completed reviews |
