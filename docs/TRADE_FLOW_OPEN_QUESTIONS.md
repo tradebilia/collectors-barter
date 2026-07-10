@@ -154,3 +154,75 @@ This disclosure must appear:
 - Neither review is visible to anyone (including the reviewer) until both are submitted OR the 7-day window closes
 - Once both are submitted (or window expires), both reviews are published simultaneously
 - If only one user submits within 7 days, their review is published; the other slot shows "No review submitted"
+
+---
+
+## Q19: Trade proposal message character limit
+**Answer:** ✅ **Unlimited.** No character limit on the optional message sent with a trade proposal.
+
+---
+
+## Q20: Who can file a complaint?
+**Answer:** ✅ **One complaint per trade — filed by either party.** Both parties' grievances are handled within the same complaint thread so the admin sees the full picture in one place.
+
+---
+
+## Q21: What does "resolving" a complaint do to trade status?
+**Answer:** ✅ **Option C — admin chooses the outcome.** When resolving a complaint, the admin selects either:
+- Move trade to `completed` (dispute resolved, trade stands)
+- Move trade to `cancelled` (trade voided — e.g., fraud confirmed)
+
+The admin must select one of these outcomes before the complaint can be marked resolved.
+
+---
+
+## Q22: Can admins see the full trade message thread?
+**Answer:** ✅ **Yes.** Admins have full read access to all messages in a trade thread when viewing a complaint. This is essential for fair dispute resolution.
+
+---
+
+## Q23: What if a user deletes their account mid-trade?
+**Answer:** ✅ **Block account deletion if active trades exist.** If a user attempts to delete their account while they have any trade in `negotiating`, `accepted`, or `disputed` status, the deletion is blocked with the message: *"You cannot delete your account while you have active trades. Please resolve or cancel all active trades first."*
+
+---
+
+## Q24: What happens to trades when a user is suspended?
+**Answer:** ✅ **Trades are frozen, not cancelled.**
+
+**Rules:**
+- All trades involving a suspended user are frozen — they cannot move forward (no messages, no counter-proposals, no status changes)
+- Suspended users **cannot send messages** to other users in any trade thread
+- The other party in a frozen trade may still cancel their side if they choose to trade their item elsewhere — if they do, that trade moves to `cancelled` because the item is no longer available
+- When the suspension is lifted, all frozen trades resume from exactly where they left off
+- Trades already in `accepted` status (items potentially in transit) are flagged for admin review rather than frozen, since cancelling them could harm an innocent party whose item is already shipped
+
+---
+
+## Summary Table (Updated)
+
+| # | Question | Decision |
+|---|---|---|
+| Q1 | Messages clean break? | ✅ Yes — clean break |
+| Q2 | Multiple proposals per item? | ✅ Yes — auto-decline others on acceptance |
+| Q3 | Item visibility during trade? | ✅ Visible with "In Trade" badge; removed only on acceptance |
+| Q4 | Cash trades allowed? | ✅ Yes — with mandatory platform disclaimer |
+| Q5 | Who pays shipping? | ✅ Each trader pays their own |
+| Q6 | One-sided tracking after 15 days? | ✅ Auto-escalate to disputed (unless both confirmed receipt) |
+| Q7 | International carriers? | ✅ Add "Other" free-text option |
+| Q8 | Review edits? | ✅ No edits; photos can be added by reviewer, removed by admin only |
+| Q9 | Reviews public? | ✅ Yes |
+| Q10 | Minimum trades for rating? | ✅ 2 completed reviews |
+| Q11 | Either party cancel while negotiating? | ✅ Yes — either party can cancel at any time |
+| Q12 | Auto-cancel clock starts when? | ✅ From last message or action |
+| Q13 | Counter-proposal limit? | ✅ Indefinite — until one side cancels |
+| Q14 | Offer items already in another trade? | ✅ Yes — first acceptance wins; others auto-cancel when item is traded |
+| Q15 | Damaged item on receipt? | ✅ "Received but damaged" button triggers complaint |
+| Q16 | Receipt confirmation window? | ✅ 15 days after tracking submitted |
+| Q17 | Feedback mandatory? | ✅ Yes — required to fully close a trade |
+| Q18 | Blind review? | ✅ Yes — hidden until both submit or 7 days pass |
+| Q19 | Message character limit? | ✅ Unlimited |
+| Q20 | Who files complaints? | ✅ One complaint per trade, either party |
+| Q21 | Resolving complaint outcome? | ✅ Admin chooses: completed or cancelled |
+| Q22 | Admin sees trade messages? | ✅ Yes — full read access |
+| Q23 | Account deletion mid-trade? | ✅ Blocked until all active trades resolved |
+| Q24 | Suspension mid-trade? | ✅ Trades frozen; resume when suspension lifted; accepted trades flagged for admin |
