@@ -92,3 +92,65 @@ This disclosure must appear:
 | Q8 | Review edits? | ✅ No edits; photos can be added by reviewer, removed by admin only |
 | Q9 | Reviews public? | ✅ Yes |
 | Q10 | Minimum trades for rating? | ✅ 2 completed reviews |
+| Q11 | Either party cancel while negotiating? | ✅ Yes — either party can cancel at any time during negotiation |
+| Q12 | Auto-cancel clock starts when? | ✅ From last message or action in the thread |
+| Q13 | Counter-proposal limit? | ✅ Indefinite — until one side cancels |
+| Q14 | Offer items already in another trade? | ✅ Yes — first acceptance wins; others auto-cancel when item is traded |
+| Q15 | Damaged item on receipt? | ✅ Option B — "Received but damaged" triggers complaint; Tradebilia can only suspend if user doesn't make it right |
+| Q16 | Receipt confirmation window? | ✅ 15 days after tracking submitted before auto-complete |
+| Q17 | Feedback mandatory? | ✅ Yes — required to fully close a trade |
+| Q18 | Blind review? | ✅ Yes — both reviews hidden until both submit or 7 days pass |
+
+---
+
+## Q11: Can a user cancel a trade they initiated?
+**Answer:** ✅ **Either party can cancel at any time while the trade is in `negotiating` status.** Once a trade moves to `accepted` (both sides agreed), cancellation requires a different flow (complaint/dispute).
+
+---
+
+## Q12: What is the "no activity" auto-cancel window?
+**Answer:** ✅ **The 30-day auto-cancel clock resets on every message or action** (counter-proposal, message sent, status change). If 30 days pass with zero activity from either party, the trade is automatically cancelled and both users are notified.
+
+---
+
+## Q13: Counter-proposal limit
+**Answer:** ✅ **No limit — counter-proposals can go back and forth indefinitely.** The trade only ends when one party accepts, cancels, or the 30-day inactivity auto-cancel triggers.
+
+---
+
+## Q14: Can User B offer items already in another active trade?
+**Answer:** ✅ **Yes — items can be offered in multiple simultaneous trade negotiations.** When an item is formally traded (status becomes `traded`), all other active trade negotiations that included that item are automatically cancelled, with a system message: *"One or more items in this trade are no longer available."*
+
+---
+
+## Q15: What if an item arrives damaged?
+**Answer:** ✅ **Option B — "Received but damaged" button.** When confirming receipt, the user has two options:
+- "I received my item" — normal completion
+- "I received my item — but it arrived damaged" — triggers a complaint record tied to the trade
+
+**Important:** Tradebilia cannot intervene in the physical dispute. The platform's only enforcement tool is user suspension if the responsible party refuses to make it right. This must be communicated clearly in the complaint UI.
+
+---
+
+## Q16: Receipt confirmation window
+**Answer:** ✅ **15 days after a tracking number is submitted.** If the recipient has not clicked "I received my item" within 15 days of the other party submitting tracking, the system auto-completes the trade on their behalf. A reminder alert is sent at 10 days and 13 days.
+
+**Exception:** If both users have already clicked receipt confirmation, the trade completes immediately regardless of the 15-day window.
+
+---
+
+## Q17: Is feedback mandatory?
+**Answer:** ✅ **Yes — feedback is required to fully close a trade.** After both parties confirm receipt, the trade enters a `feedback_pending` sub-state. The trade is not marked `completed` until both reviews are submitted (or the 7-day blind review window expires — see Q18).
+
+**Implementation note:** If the 7-day window expires and a user has not submitted their review, their review slot is marked as "skipped" and the trade completes. The other party's review (if submitted) is published. A user who repeatedly skips reviews may receive a warning.
+
+---
+
+## Q18: Blind review system
+**Answer:** ✅ **Blind review — both reviews are hidden until both are submitted, or 7 days pass (whichever comes first).** This prevents retaliation and "I'll give you 5 stars if you give me 5 stars" gaming.
+
+**Rules:**
+- After receipt confirmation, both users have 7 days to submit their review
+- Neither review is visible to anyone (including the reviewer) until both are submitted OR the 7-day window closes
+- Once both are submitted (or window expires), both reviews are published simultaneously
+- If only one user submits within 7 days, their review is published; the other slot shows "No review submitted"
