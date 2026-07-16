@@ -58,7 +58,8 @@ const conditionLabels: Record<(typeof itemConditions)[number], string> = {
 type PhotoUploadInput = {
   name: string;
   type: string;
-  contentBase64: string;
+  contentBase64?: string;
+  imageUrl?: string;
 };
 
 type AvatarUploadInput = {
@@ -1972,6 +1973,33 @@ export async function updateListing(
     throw new Error("Unauthorized: You can only edit your own listings");
   }
 
+  // Get user role to check if they can delete photos
+  const userRecord = await db
+    .select({ role: users.role })
+    .from(users)
+    .where(eq(users.id, user.id))
+    .limit(1);
+  const isAdmin = userRecord[0]?.role === 'admin';
+
+  // If not admin, ensure all photos are either new uploads or existing ones (no deletion)
+  if (!isAdmin) {
+    // Get existing photos for this listing
+    const existingPhotos = await db
+      .select({ imageUrl: listingPhotos.imageUrl })
+      .from(listingPhotos)
+      .where(eq(listingPhotos.listingId, input.listingId));
+
+    const existingUrls = new Set(existingPhotos.map(p => p.imageUrl));
+    const incomingUrls = new Set(input.photos.map(p => p.imageUrl).filter(Boolean));
+
+    // Check if any existing photos are missing from the incoming photos
+    for (const url of existingUrls) {
+      if (!incomingUrls.has(url)) {
+        throw new Error("Unauthorized: Only admins can delete photos from listings");
+      }
+    }
+  }
+
   // Update listing
   await db
     .update(listings)
@@ -1988,30 +2016,57 @@ export async function updateListing(
     })
     .where(eq(listings.id, input.listingId));
 
-  // Only update photos if new ones are provided
-  if (input.photos.length > 0) {
-    // Get existing photos to preserve them
-    const existingPhotos = await db
-      .select()
-      .from(listingPhotos)
-      .where(eq(listingPhotos.listingId, input.listingId))
-      .orderBy(asc(listingPhotos.sortOrder));
+  // Synchronize photos: replace existing set with the provided set
+  await db.transaction(async tx => {
+    // 1. Delete all existing photos for this listing (only if admin or all photos are new)
+    if (isAdmin) {
+      await tx.delete(listingPhotos).where(eq(listingPhotos.listingId, input.listingId));
+    } else {
+      // For non-admins, only delete photos that are being replaced with new uploads
+      // This is already validated above, so we just delete the ones being re-uploaded
+      const photosToDelete = input.photos
+        .filter(p => p.contentBase64) // New uploads
+        .map(p => p.imageUrl)
+        .filter(Boolean);
 
-    // Upload new photos and add them after existing ones
+      if (photosToDelete.length > 0) {
+        await tx.delete(listingPhotos).where(
+          and(
+            eq(listingPhotos.listingId, input.listingId),
+            inArray(listingPhotos.imageUrl, photosToDelete)
+          )
+        );
+      }
+    }
+
+    // 2. Re-insert/Upload photos in the new order
     for (let index = 0; index < input.photos.length; index += 1) {
       const photo = input.photos[index]!;
-      const uploaded = await uploadImage("listings", user.id, photo);
-      const newSortOrder = existingPhotos.length + index;
-      await db.insert(listingPhotos).values({
-        listingId: input.listingId,
-        fileKey: uploaded.key,
-        imageUrl: uploaded.url,
-        altText: `${input.title.trim()} photo ${newSortOrder + 1}`,
-        sortOrder: newSortOrder,
-      });
+      let imageUrl = photo.imageUrl;
+      let fileKey = "existing";
+
+      // If it's a new upload (has contentBase64), upload it
+      if (photo.contentBase64) {
+        const uploaded = await uploadImage("listings", user.id, {
+          name: photo.name,
+          type: photo.type,
+          contentBase64: photo.contentBase64
+        });
+        imageUrl = uploaded.url;
+        fileKey = uploaded.key;
+      }
+
+      if (imageUrl) {
+        await tx.insert(listingPhotos).values({
+          listingId: input.listingId,
+          fileKey: fileKey,
+          imageUrl: imageUrl,
+          altText: `${input.title.trim()} photo ${index + 1}`,
+          sortOrder: index,
+        });
+      }
     }
-  }
-  // If no new photos provided, keep existing photos
+  });
 
   return getDashboardData(user);
 }
@@ -3737,4 +3792,40 @@ export async function deleteConvention(id: number) {
 
   await db.delete(conventions).where(eq(conventions.id, id));
   return { success: true };
+}
+
+export async function suspendUser(userId: number) {
+  const db = await requireDb();
+  await db.update(users).set({ 
+    isSuspended: 1, 
+    suspendedAt: mysqlNow() 
+  }).where(eq(users.id, userId));
+  return { success: true };
+}
+
+export async function unsuspendUser(userId: number) {
+  const db = await requireDb();
+  await db.update(users).set({ 
+    isSuspended: 0, 
+    suspendedAt: null 
+  }).where(eq(users.id, userId));
+  return { success: true };
+}
+
+export async function getSuspendedUsers() {
+  const db = await requireDb();
+  const suspendedUsers = await db
+    .select({
+      id: users.id,
+      username: users.username,
+      displayName: users.displayName,
+      email: users.email,
+      suspendedAt: users.suspendedAt,
+      role: users.role,
+    })
+    .from(users)
+    .where(eq(users.isSuspended, 1))
+    .orderBy(desc(users.suspendedAt));
+  
+  return suspendedUsers;
 }

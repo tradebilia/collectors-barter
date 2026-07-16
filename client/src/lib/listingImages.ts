@@ -62,6 +62,10 @@ const keywordImageMap: Array<{ keywords: string[]; imageUrl: string }> = [
     keywords: ["ken griffey jr", "griffey rookie"],
     imageUrl: "/images/1989-Ken-Griffey-Jr.jpg",
   },
+  {
+    keywords: ["wayne gretzky", "gretzky rookie"],
+    imageUrl: "/images/1979 Wayne Gretzky Rookie.jpg",
+  },
 ];
 
 function normalizeListingImageUrl(url: string) {

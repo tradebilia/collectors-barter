@@ -1,11 +1,5 @@
 var __defProp = Object.defineProperty;
 var __getOwnPropNames = Object.getOwnPropertyNames;
-var __require = /* @__PURE__ */ ((x) => typeof require !== "undefined" ? require : typeof Proxy !== "undefined" ? new Proxy(x, {
-  get: (a, b) => (typeof require !== "undefined" ? require : a)[b]
-}) : x)(function(x) {
-  if (typeof require !== "undefined") return require.apply(this, arguments);
-  throw Error('Dynamic require of "' + x + '" is not supported');
-});
 var __esm = (fn, res) => function __init() {
   return fn && (res = (0, fn[__getOwnPropNames(fn)[0]])(fn = 0)), res;
 };
@@ -30,6 +24,8 @@ var init_const = __esm({
 // drizzle/schema.ts
 var schema_exports = {};
 __export(schema_exports, {
+  conventionCategories: () => conventionCategories,
+  conventions: () => conventions,
   deletedAccounts: () => deletedAccounts,
   draftListings: () => draftListings,
   ebayFeedbackHistory: () => ebayFeedbackHistory,
@@ -55,7 +51,7 @@ __export(schema_exports, {
   watchlistEntries: () => watchlistEntries
 });
 import { mysqlTable, index, int, varchar, text, timestamp, mysqlEnum, decimal, tinyint } from "drizzle-orm/mysql-core";
-var deletedAccounts, draftListings, ebayFeedbackHistory, emailVerificationOtps, favorites, forumPosts, forumReplies, inquiryReplies, itemInquiries, listingPhotos, listings, lowFeedbackFlags, passwordResetTokens, phoneVerificationOtps, referralRequests, tradeMessages, tradeProposalItems, tradeProposals, tradeReviews, userProfiles, userReports, users, watchlistEntries;
+var deletedAccounts, draftListings, ebayFeedbackHistory, emailVerificationOtps, favorites, forumPosts, forumReplies, inquiryReplies, itemInquiries, listingPhotos, listings, lowFeedbackFlags, passwordResetTokens, phoneVerificationOtps, referralRequests, tradeMessages, tradeProposalItems, tradeProposals, tradeReviews, userProfiles, userReports, users, watchlistEntries, conventionCategories, conventions;
 var init_schema = __esm({
   "drizzle/schema.ts"() {
     "use strict";
@@ -515,7 +511,9 @@ var init_schema = __esm({
         ebayConnectedAt: timestamp({ mode: "string" }),
         ebayAccessToken: text(),
         ebayRefreshToken: text(),
-        ebayTokenExpiresAt: timestamp({ mode: "string" })
+        ebayTokenExpiresAt: timestamp({ mode: "string" }),
+        isSuspended: tinyint().default(0).notNull(),
+        suspendedAt: timestamp({ mode: "string" })
       },
       (table) => [
         index("users_openId_unique").on(table.openId),
@@ -536,6 +534,47 @@ var init_schema = __esm({
         index("watchlistEntries_listing_idx").on(table.listingId)
       ]
     );
+    conventionCategories = mysqlTable(
+      "conventionCategories",
+      {
+        id: int().autoincrement().notNull(),
+        conventionId: int().notNull(),
+        category: mysqlEnum(["comics", "sports_cards", "vintage_toys", "video_games", "stamps", "coins", "pokemon", "movies", "autographs", "disney_pins", "all"]).notNull()
+      },
+      (table) => [
+        index("cc_convention_idx").on(table.conventionId),
+        index("cc_category_idx").on(table.category)
+      ]
+    );
+    conventions = mysqlTable(
+      "conventions",
+      {
+        id: int().autoincrement().notNull(),
+        name: varchar({ length: 255 }).notNull(),
+        category: mysqlEnum(["comics", "sports_cards", "vintage_toys", "video_games", "stamps", "coins", "pokemon", "movies", "autographs", "disney_pins", "all"]).notNull().default("all"),
+        startDate: varchar({ length: 20 }).notNull(),
+        endDate: varchar({ length: 20 }),
+        city: varchar({ length: 100 }),
+        state: varchar({ length: 100 }),
+        country: varchar({ length: 100 }).notNull().default("United States"),
+        venue: varchar({ length: 255 }),
+        website: varchar({ length: 500 }),
+        admission: varchar({ length: 100 }),
+        description: text(),
+        source: varchar({ length: 100 }).default("user"),
+        status: mysqlEnum(["pending", "approved", "rejected"]).notNull().default("pending"),
+        submittedBy: int().references(() => users.id),
+        approvedBy: int().references(() => users.id),
+        createdAt: timestamp({ mode: "string" }).default("CURRENT_TIMESTAMP").notNull(),
+        updatedAt: timestamp({ mode: "string" }).defaultNow().onUpdateNow().notNull()
+      },
+      (table) => [
+        index("conventions_category_idx").on(table.category),
+        index("conventions_startDate_idx").on(table.startDate),
+        index("conventions_status_idx").on(table.status),
+        index("conventions_country_idx").on(table.country)
+      ]
+    );
   }
 });
 
@@ -545,18 +584,42 @@ var init_env = __esm({
   "server/_core/env.ts"() {
     "use strict";
     ENV = {
-      appId: process.env.VITE_APP_ID ?? "",
-      cookieSecret: process.env.JWT_SECRET ?? "",
-      jwtSecret: process.env.JWT_SECRET ?? "",
-      databaseUrl: process.env.DATABASE_URL ?? "",
-      oAuthServerUrl: process.env.OAUTH_SERVER_URL ?? "",
-      ownerOpenId: process.env.OWNER_OPEN_ID ?? "",
-      isProduction: process.env.NODE_ENV === "production",
-      forgeApiUrl: process.env.BUILT_IN_FORGE_API_URL ?? "",
-      forgeApiKey: process.env.BUILT_IN_FORGE_API_KEY ?? "",
-      ebayClientId: process.env.EBAY_CLIENT_ID ?? "",
-      ebayClientSecret: process.env.EBAY_CLIENT_SECRET ?? "",
-      ebayRedirectUri: process.env.EBAY_REDIRECT_URI ?? "http://localhost:3000/api/ebay/callback"
+      get appId() {
+        return process.env.VITE_APP_ID ?? "";
+      },
+      get cookieSecret() {
+        return process.env.JWT_SECRET ?? "";
+      },
+      get jwtSecret() {
+        return process.env.JWT_SECRET ?? "";
+      },
+      get databaseUrl() {
+        return process.env.DATABASE_URL ?? "";
+      },
+      get oAuthServerUrl() {
+        return process.env.OAUTH_SERVER_URL ?? "https://api.manus.im";
+      },
+      get ownerOpenId() {
+        return process.env.OWNER_OPEN_ID ?? "";
+      },
+      get isProduction() {
+        return process.env.NODE_ENV === "production";
+      },
+      get forgeApiUrl() {
+        return process.env.BUILT_IN_FORGE_API_URL ?? "";
+      },
+      get forgeApiKey() {
+        return process.env.BUILT_IN_FORGE_API_KEY ?? "";
+      },
+      get ebayClientId() {
+        return process.env.EBAY_CLIENT_ID ?? "";
+      },
+      get ebayClientSecret() {
+        return process.env.EBAY_CLIENT_SECRET ?? "";
+      },
+      get ebayRedirectUri() {
+        return process.env.EBAY_REDIRECT_URI ?? "http://localhost:3000/api/ebay/callback";
+      }
     };
     EBAY_CLIENT_ID = ENV.ebayClientId;
     EBAY_CLIENT_SECRET = ENV.ebayClientSecret;
@@ -625,9 +688,11 @@ __export(db_exports, {
   addToFavorites: () => addToFavorites,
   adminBulkDeleteListings: () => adminBulkDeleteListings,
   adminDeleteListing: () => adminDeleteListing,
+  approveConvention: () => approveConvention,
   bulkDeleteListings: () => bulkDeleteListings,
   bulkUpdateListingStatus: () => bulkUpdateListingStatus,
   checkDuplicateAccountInfo: () => checkDuplicateAccountInfo,
+  closeDb: () => closeDb,
   collectibleCategories: () => collectibleCategories,
   createEmailOtp: () => createEmailOtp,
   createForumPost: () => createForumPost,
@@ -637,6 +702,7 @@ __export(db_exports, {
   createReferralRequest: () => createReferralRequest,
   createTradeProposal: () => createTradeProposal,
   createUser: () => createUser,
+  deleteConvention: () => deleteConvention,
   deleteDraft: () => deleteDraft,
   deleteDraftsOlderThan: () => deleteDraftsOlderThan,
   deleteEmailOtp: () => deleteEmailOtp,
@@ -647,6 +713,7 @@ __export(db_exports, {
   flagLowFeedback: () => flagLowFeedback,
   generateReportId: () => generateReportId,
   getAllReferralRequests: () => getAllReferralRequests,
+  getConventions: () => getConventions,
   getDashboardData: () => getDashboardData,
   getDeletedInquiries: () => getDeletedInquiries,
   getDraftById: () => getDraftById,
@@ -660,10 +727,12 @@ __export(db_exports, {
   getLowFeedbackFlags: () => getLowFeedbackFlags,
   getMarketplaceFeed: () => getMarketplaceFeed,
   getPasswordResetToken: () => getPasswordResetToken,
+  getPendingConventions: () => getPendingConventions,
   getPhoneOtp: () => getPhoneOtp,
   getReferralsByIds: () => getReferralsByIds,
   getRepliesByInquiry: () => getRepliesByInquiry,
   getSiteStatistics: () => getSiteStatistics,
+  getSuspendedUsers: () => getSuspendedUsers,
   getTopHighestValueItems: () => getTopHighestValueItems,
   getTopMostFavoritedItems: () => getTopMostFavoritedItems,
   getTopMostViewedItems: () => getTopMostViewedItems,
@@ -671,6 +740,7 @@ __export(db_exports, {
   getUnreadMessageCount: () => getUnreadMessageCount,
   getUnreadNotificationCount: () => getUnreadNotificationCount,
   getUnsentReferrals: () => getUnsentReferrals,
+  getUpcomingConventions: () => getUpcomingConventions,
   getUserById: () => getUserById,
   getUserByOpenId: () => getUserByOpenId,
   getUserByUsername: () => getUserByUsername,
@@ -686,6 +756,8 @@ __export(db_exports, {
   markInquiryAsRead: () => markInquiryAsRead,
   markReferralAsJoined: () => markReferralAsJoined,
   markReferralsAsEmailed: () => markReferralsAsEmailed,
+  mysqlNow: () => mysqlNow,
+  rejectConvention: () => rejectConvention,
   removeFromFavorites: () => removeFromFavorites,
   removeReferral: () => removeReferral,
   requireDb: () => requireDb,
@@ -698,10 +770,14 @@ __export(db_exports, {
   sendItemInquiry: () => sendItemInquiry,
   sendTradeMessage: () => sendTradeMessage,
   storeEbayFeedback: () => storeEbayFeedback,
+  submitConvention: () => submitConvention,
   submitUserReport: () => submitUserReport,
+  suspendUser: () => suspendUser,
+  toMysqlDateTime: () => toMysqlDateTime,
   toggleListingStatus: () => toggleListingStatus,
   toggleWatchlist: () => toggleWatchlist,
   trackListingView: () => trackListingView,
+  unsuspendUser: () => unsuspendUser,
   updateDraft: () => updateDraft,
   updateListing: () => updateListing,
   updateProfile: () => updateProfile,
@@ -713,9 +789,35 @@ __export(db_exports, {
 });
 import { and, asc, desc, eq, inArray, isNotNull, like, ne, or, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
+function toMysqlDateTime(date) {
+  return date.toISOString().slice(0, 19).replace("T", " ");
+}
+function mysqlNow() {
+  return toMysqlDateTime(/* @__PURE__ */ new Date());
+}
+function safeJsonParse(raw, fallback) {
+  if (!raw) return fallback;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    console.error("[safeJsonParse] Malformed JSON in database column; using fallback.");
+    return fallback;
+  }
+}
+async function closeDb() {
+  if (_db) {
+    try {
+      const client = _db.$client;
+      if (client?.end) await client.end();
+    } finally {
+      _db = null;
+    }
+  }
+}
 async function requireDb() {
   if (!_db) {
-    const url = new URL(ENV.databaseUrl);
+    const dbUrl = process.env.DATABASE_URL || ENV.databaseUrl;
+    const url = new URL(dbUrl);
     const sslParam = url.searchParams.get("ssl");
     if (sslParam) {
       try {
@@ -729,10 +831,10 @@ async function requireDb() {
         });
       } catch (e) {
         console.error("[requireDb] Failed to parse SSL config, falling back to default:", e);
-        _db = drizzle(ENV.databaseUrl);
+        _db = drizzle(dbUrl);
       }
     } else {
-      _db = drizzle(ENV.databaseUrl);
+      _db = drizzle(dbUrl);
     }
   }
   return _db;
@@ -852,7 +954,9 @@ async function getMarketplaceFeed(filters, viewerId) {
     whereClauses.push(eq(listings.category, filters.category));
   }
   if (filters.condition) {
-    whereClauses.push(eq(listings.condition, filters.condition));
+    whereClauses.push(
+      sql`(${eq(listings.condition, filters.condition)} OR ${listings.grade} > 0)`
+    );
   }
   const keyword = filters.keyword?.trim();
   if (keyword) {
@@ -860,41 +964,95 @@ async function getMarketplaceFeed(filters, viewerId) {
       like(listings.title, `%${keyword}%`),
       like(listings.description, `%${keyword}%`),
       like(listings.certificationCompany, `%${keyword}%`),
-      sql`${listings.itemDetails} LIKE ${`%${keyword}%`}`
+      sql`${listings.itemDetails} LIKE ${`%${keyword}%`}`,
+      sql`CAST(${listings.grade} AS CHAR) LIKE ${`%${keyword}%`}`,
+      like(listings.certificationNumber, `%${keyword}%`)
     );
     if (searchCondition !== void 0) {
       whereClauses.push(searchCondition);
     }
   }
+  const jsonLike = (key, value) => sql`JSON_UNQUOTE(JSON_EXTRACT(${listings.itemDetails}, ${`$.${key}`})) LIKE ${`%${value.trim()}%`}`;
+  const jsonLikeAny = (keys, value) => {
+    const conditions = keys.map((key) => jsonLike(key, value));
+    return sql.join(conditions, sql` OR `);
+  };
   if (filters.issueNumber?.trim()) {
-    whereClauses.push(sql`JSON_CONTAINS(${listings.itemDetails}, JSON_OBJECT('issueNumber', ${filters.issueNumber}))`);
+    whereClauses.push(sql`(${jsonLike("issueNumber", filters.issueNumber)})`);
   }
   if (filters.manufacturer?.trim()) {
-    whereClauses.push(sql`JSON_CONTAINS(${listings.itemDetails}, JSON_OBJECT('manufacturer', ${filters.manufacturer}))`);
+    whereClauses.push(sql`(${jsonLikeAny(["manufacturer", "customManufacturer"], filters.manufacturer)})`);
   }
   if (filters.year?.trim()) {
-    whereClauses.push(sql`JSON_CONTAINS(${listings.itemDetails}, JSON_OBJECT('year', ${filters.year}))`);
+    whereClauses.push(sql`(${jsonLikeAny(["year", "releaseYear", "publicationYear", "yearsIncluded"], filters.year)})`);
   }
   if (filters.team?.trim()) {
-    whereClauses.push(sql`JSON_CONTAINS(${listings.itemDetails}, JSON_OBJECT('team', ${filters.team}))`);
+    whereClauses.push(sql`(${jsonLike("player", filters.team)} OR ${like(listings.title, `%${filters.team.trim()}%`)} OR ${like(listings.description, `%${filters.team.trim()}%`)})`);
   }
   if (filters.series?.trim()) {
-    whereClauses.push(sql`JSON_CONTAINS(${listings.itemDetails}, JSON_OBJECT('set', ${filters.series}))`);
+    whereClauses.push(sql`(${jsonLikeAny(["setName", "set", "series"], filters.series)})`);
+  }
+  if (filters.title?.trim()) {
+    whereClauses.push(sql`(${jsonLikeAny(["comicTitle", "gameTitle", "title"], filters.title)} OR ${like(listings.title, `%${filters.title.trim()}%`)})`);
+  }
+  if (filters.system?.trim()) {
+    whereClauses.push(sql`(${jsonLike("platform", filters.system)})`);
+  }
+  if (filters.region?.trim()) {
+    whereClauses.push(sql`(${jsonLike("region", filters.region)})`);
+  }
+  if (filters.country?.trim()) {
+    whereClauses.push(sql`(${jsonLikeAny(["country", "countriesIncluded"], filters.country)})`);
+  }
+  if (filters.format?.trim()) {
+    whereClauses.push(sql`(${jsonLike("format", filters.format)})`);
+  }
+  if (filters.medium?.trim()) {
+    whereClauses.push(sql`(${jsonLikeAny(["signedItemType", "autographCategory"], filters.medium)})`);
+  }
+  if (filters.denomination?.trim()) {
+    whereClauses.push(sql`(${jsonLike("denomination", filters.denomination)})`);
+  }
+  if (filters.mintMark?.trim()) {
+    whereClauses.push(sql`(${jsonLike("mintMark", filters.mintMark)})`);
+  }
+  if (filters.issuer?.trim()) {
+    whereClauses.push(sql`(${jsonLike("country", filters.issuer)} OR ${like(listings.title, `%${filters.issuer.trim()}%`)} OR ${like(listings.description, `%${filters.issuer.trim()}%`)})`);
+  }
+  if (filters.edition?.trim()) {
+    whereClauses.push(sql`(${jsonLikeAny(["limitedEdition", "openEdition", "backstampInformation"], filters.edition)} OR ${like(listings.title, `%${filters.edition.trim()}%`)} OR ${like(listings.description, `%${filters.edition.trim()}%`)})`);
+  }
+  if (filters.parkOrEvent?.trim()) {
+    whereClauses.push(sql`(${jsonLike("pinTradingEvent", filters.parkOrEvent)})`);
+  }
+  if (filters.franchise?.trim()) {
+    whereClauses.push(sql`(${jsonLikeAny(["franchise", "series"], filters.franchise)} OR ${like(listings.title, `%${filters.franchise.trim()}%`)} OR ${like(listings.description, `%${filters.franchise.trim()}%`)})`);
+  }
+  if (filters.rarity?.trim()) {
+    whereClauses.push(sql`(${jsonLikeAny(["rarity", "customRarity"], filters.rarity)})`);
   }
   if (filters.sport?.trim()) {
-    whereClauses.push(sql`JSON_CONTAINS(${listings.itemDetails}, JSON_OBJECT('sport', ${filters.sport}))`);
+    whereClauses.push(sql`(${jsonLike("sport", filters.sport)})`);
   }
+  const jsonBoolMatch = (keys, value) => {
+    const lowered = value.trim().toLowerCase();
+    const synonyms = lowered === "yes" || lowered === "true" ? ["yes", "true"] : lowered === "no" || lowered === "false" ? ["no", "false"] : [lowered];
+    const conditions = keys.flatMap(
+      (key) => synonyms.map((v) => sql`LOWER(JSON_UNQUOTE(JSON_EXTRACT(${listings.itemDetails}, ${`$.${key}`}))) = ${v}`)
+    );
+    return sql.join(conditions, sql` OR `);
+  };
   if (filters.rookie?.trim() && filters.rookie !== "All") {
-    whereClauses.push(sql`JSON_CONTAINS(${listings.itemDetails}, JSON_OBJECT('rookie', ${filters.rookie}))`);
+    whereClauses.push(sql`(${jsonBoolMatch(["rookieCard", "rookie"], filters.rookie)})`);
   }
   if (filters.autographed?.trim() && filters.autographed !== "All") {
-    whereClauses.push(sql`JSON_CONTAINS(${listings.itemDetails}, JSON_OBJECT('autographed', ${filters.autographed}))`);
+    whereClauses.push(sql`(${jsonBoolMatch(["autograph", "autographed"], filters.autographed)})`);
   }
   if (filters.signed?.trim() && filters.signed !== "All") {
-    whereClauses.push(sql`JSON_CONTAINS(${listings.itemDetails}, JSON_OBJECT('signed', ${filters.signed}))`);
+    whereClauses.push(sql`(${jsonBoolMatch(["signed"], filters.signed)})`);
   }
   if (filters.facsimile?.trim() && filters.facsimile !== "All") {
-    whereClauses.push(sql`JSON_CONTAINS(${listings.itemDetails}, JSON_OBJECT('facsimile', ${filters.facsimile}))`);
+    whereClauses.push(sql`(${jsonBoolMatch(["facsimile"], filters.facsimile)} OR ${sql`${listings.signatures} LIKE ${`%facsimile%`}`})`);
   }
   if (filters.gradingService) {
     whereClauses.push(like(listings.certificationCompany, `%${filters.gradingService}%`));
@@ -1128,8 +1286,8 @@ async function getListingDetail(listingId, viewerId) {
     certificationNumber: detailCard[0].certificationNumber,
     estimatedValue: detailCard[0].estimatedValue ? Number(detailCard[0].estimatedValue) : null,
     description: detailCard[0].description,
-    itemDetails: detailCard[0].itemDetails ? JSON.parse(detailCard[0].itemDetails) : null,
-    signatures: detailCard[0].signatures ? JSON.parse(detailCard[0].signatures) : null,
+    itemDetails: safeJsonParse(detailCard[0].itemDetails, null),
+    signatures: safeJsonParse(detailCard[0].signatures, null),
     status: detailCard[0].status,
     featured: detailCard[0].featured,
     isActive: detailCard[0].isActive,
@@ -1187,20 +1345,26 @@ async function selectTradeProposalItems(user, input) {
   if (proposal[0].status !== "pending") {
     throw new Error("You can only select items for pending proposals.");
   }
-  await db.delete(tradeProposalItems).where(eq(tradeProposalItems.proposalId, input.proposalId));
-  for (const listingId of input.selectedListingIds) {
-    const listing = await db.select().from(listings).where(eq(listings.id, listingId)).limit(1);
-    if (!listing[0]) {
-      throw new Error(`Listing ${listingId} not found.`);
+  if (input.selectedListingIds.length > 0) {
+    const ownedRows = await db.select({ id: listings.id, ownerId: listings.ownerId }).from(listings).where(inArray(listings.id, input.selectedListingIds));
+    const ownedMap = new Map(ownedRows.map((r) => [r.id, r.ownerId]));
+    for (const listingId of input.selectedListingIds) {
+      const ownerId = ownedMap.get(listingId);
+      if (ownerId === void 0) throw new Error(`Listing ${listingId} not found.`);
+      if (ownerId !== user.id) throw new Error(`You don't own listing ${listingId}.`);
     }
-    if (listing[0].ownerId !== user.id) {
-      throw new Error(`You don't own listing ${listingId}.`);
-    }
-    await db.insert(tradeProposalItems).values({
-      proposalId: input.proposalId,
-      offeredListingId: listingId
-    });
   }
+  await db.transaction(async (tx) => {
+    await tx.delete(tradeProposalItems).where(eq(tradeProposalItems.proposalId, input.proposalId));
+    if (input.selectedListingIds.length > 0) {
+      await tx.insert(tradeProposalItems).values(
+        input.selectedListingIds.map((listingId) => ({
+          proposalId: input.proposalId,
+          offeredListingId: listingId
+        }))
+      );
+    }
+  });
   return { success: true };
 }
 async function respondToTradeProposal(user, input) {
@@ -1216,16 +1380,18 @@ async function respondToTradeProposal(user, input) {
     throw new Error("This proposal has already been responded to.");
   }
   const newStatus = input.response === "accepted" ? "accepted" : "declined";
-  await db.update(tradeProposals).set({
-    status: newStatus,
-    respondedAt: /* @__PURE__ */ new Date()
-  }).where(eq(tradeProposals.id, input.proposalId));
-  if (input.response === "accepted") {
-    const proposalItems = await db.select().from(tradeProposalItems).where(eq(tradeProposalItems.proposalId, input.proposalId));
-    const listingIds = proposalItems.map((item) => item.offeredListingId);
-    listingIds.push(proposal[0].requestedListingId);
-    await db.update(listings).set({ status: "traded" }).where(inArray(listings.id, listingIds));
-  }
+  await db.transaction(async (tx) => {
+    await tx.update(tradeProposals).set({
+      status: newStatus,
+      respondedAt: mysqlNow()
+    }).where(eq(tradeProposals.id, input.proposalId));
+    if (input.response === "accepted") {
+      const proposalItems = await tx.select().from(tradeProposalItems).where(eq(tradeProposalItems.proposalId, input.proposalId));
+      const listingIds = proposalItems.map((item) => item.offeredListingId);
+      listingIds.push(proposal[0].requestedListingId);
+      await tx.update(listings).set({ status: "traded" }).where(inArray(listings.id, listingIds));
+    }
+  });
   return { success: true };
 }
 async function toggleWatchlist(userId, listingId) {
@@ -1390,8 +1556,10 @@ async function bulkDeleteListings(user, input) {
       throw new Error("You can only delete your own listings.");
     }
   }
-  await db.delete(listingPhotos).where(inArray(listingPhotos.listingId, input.listingIds));
-  await db.delete(listings).where(inArray(listings.id, input.listingIds));
+  await db.transaction(async (tx) => {
+    await tx.delete(listingPhotos).where(inArray(listingPhotos.listingId, input.listingIds));
+    await tx.delete(listings).where(inArray(listings.id, input.listingIds));
+  });
   return getDashboardData(user);
 }
 async function restoreDeletedListings(user, input) {
@@ -1483,7 +1651,7 @@ async function getDrafts(user) {
     graderCompany: d.graderCompany,
     certificationNumber: d.certificationNumber,
     estimatedValue: d.estimatedValue ? Number(d.estimatedValue) : null,
-    categoryFields: d.categoryFields ? JSON.parse(d.categoryFields) : {},
+    categoryFields: safeJsonParse(d.categoryFields, {}),
     additionalNotes: d.additionalNotes,
     photos: photoMap.get(d.id) ?? [],
     createdAt: new Date(d.createdAt).getTime()
@@ -1525,7 +1693,7 @@ async function getDraftById(user, draftId) {
     graderCompany: draft.graderCompany,
     certificationNumber: draft.certificationNumber,
     estimatedValue: draft.estimatedValue ? Number(draft.estimatedValue) : null,
-    categoryFields: draft.categoryFields ? JSON.parse(draft.categoryFields) : {},
+    categoryFields: safeJsonParse(draft.categoryFields, {}),
     additionalNotes: draft.additionalNotes,
     photos: photoRows.map((p) => ({
       imageUrl: p.imageUrl,
@@ -1552,7 +1720,7 @@ async function updateDraft(user, input) {
     estimatedValue: input.estimatedValue ? String(parseFloat(String(input.estimatedValue))) : null,
     categoryFields: input.categoryFields ? JSON.stringify(input.categoryFields) : null,
     additionalNotes: input.additionalNotes || null,
-    updatedAt: /* @__PURE__ */ new Date()
+    updatedAt: mysqlNow()
   }).where(eq(draftListings.id, input.draftId));
   await db.delete(listingPhotos).where(eq(listingPhotos.listingId, input.draftId));
   for (let index2 = 0; index2 < input.photos.length; index2 += 1) {
@@ -1823,6 +1991,18 @@ async function updateListing(user, input) {
   if (!listing[0] || listing[0].ownerId !== user.id) {
     throw new Error("Unauthorized: You can only edit your own listings");
   }
+  const userRecord = await db.select({ role: users.role }).from(users).where(eq(users.id, user.id)).limit(1);
+  const isAdmin = userRecord[0]?.role === "admin";
+  if (!isAdmin) {
+    const existingPhotos = await db.select({ imageUrl: listingPhotos.imageUrl }).from(listingPhotos).where(eq(listingPhotos.listingId, input.listingId));
+    const existingUrls = new Set(existingPhotos.map((p) => p.imageUrl));
+    const incomingUrls = new Set(input.photos.map((p) => p.imageUrl).filter(Boolean));
+    for (const url of existingUrls) {
+      if (!incomingUrls.has(url)) {
+        throw new Error("Unauthorized: Only admins can delete photos from listings");
+      }
+    }
+  }
   await db.update(listings).set({
     title: input.title.trim(),
     category: input.category,
@@ -1834,21 +2014,44 @@ async function updateListing(user, input) {
     certificationNumber: input.certificationNumber || null,
     grade: input.grade && input.grade !== "ungraded" && input.grade.trim() ? String(input.grade) : "0"
   }).where(eq(listings.id, input.listingId));
-  if (input.photos.length > 0) {
-    const existingPhotos = await db.select().from(listingPhotos).where(eq(listingPhotos.listingId, input.listingId)).orderBy(asc(listingPhotos.sortOrder));
+  await db.transaction(async (tx) => {
+    if (isAdmin) {
+      await tx.delete(listingPhotos).where(eq(listingPhotos.listingId, input.listingId));
+    } else {
+      const photosToDelete = input.photos.filter((p) => p.contentBase64).map((p) => p.imageUrl).filter(Boolean);
+      if (photosToDelete.length > 0) {
+        await tx.delete(listingPhotos).where(
+          and(
+            eq(listingPhotos.listingId, input.listingId),
+            inArray(listingPhotos.imageUrl, photosToDelete)
+          )
+        );
+      }
+    }
     for (let index2 = 0; index2 < input.photos.length; index2 += 1) {
       const photo = input.photos[index2];
-      const uploaded = await uploadImage("listings", user.id, photo);
-      const newSortOrder = existingPhotos.length + index2;
-      await db.insert(listingPhotos).values({
-        listingId: input.listingId,
-        fileKey: uploaded.key,
-        imageUrl: uploaded.url,
-        altText: `${input.title.trim()} photo ${newSortOrder + 1}`,
-        sortOrder: newSortOrder
-      });
+      let imageUrl = photo.imageUrl;
+      let fileKey = "existing";
+      if (photo.contentBase64) {
+        const uploaded = await uploadImage("listings", user.id, {
+          name: photo.name,
+          type: photo.type,
+          contentBase64: photo.contentBase64
+        });
+        imageUrl = uploaded.url;
+        fileKey = uploaded.key;
+      }
+      if (imageUrl) {
+        await tx.insert(listingPhotos).values({
+          listingId: input.listingId,
+          fileKey,
+          imageUrl,
+          altText: `${input.title.trim()} photo ${index2 + 1}`,
+          sortOrder: index2
+        });
+      }
     }
-  }
+  });
   return getDashboardData(user);
 }
 async function upsertUser(input) {
@@ -1859,7 +2062,9 @@ async function upsertUser(input) {
       name: input.name,
       email: input.email,
       loginMethod: input.loginMethod,
-      lastSignedIn: typeof input.lastSignedIn === "string" ? new Date(input.lastSignedIn) : input.lastSignedIn || /* @__PURE__ */ new Date()
+      lastSignedIn: toMysqlDateTime(
+        typeof input.lastSignedIn === "string" ? new Date(input.lastSignedIn) : input.lastSignedIn || /* @__PURE__ */ new Date()
+      )
     }).where(eq(users.openId, input.openId));
     return existing[0].id;
   } else {
@@ -1868,7 +2073,9 @@ async function upsertUser(input) {
       name: input.name,
       email: input.email,
       loginMethod: input.loginMethod,
-      lastSignedIn: input.lastSignedIn
+      lastSignedIn: input.lastSignedIn ? toMysqlDateTime(
+        typeof input.lastSignedIn === "string" ? new Date(input.lastSignedIn) : input.lastSignedIn
+      ) : void 0
     });
     return getInsertId(result);
   }
@@ -1904,7 +2111,7 @@ async function createPasswordResetToken(userId, token, expiresAt) {
   return db.insert(passwordResetTokens).values({
     userId,
     token,
-    expiresAt
+    expiresAt: toMysqlDateTime(expiresAt)
   });
 }
 async function getPasswordResetToken(token) {
@@ -1926,7 +2133,7 @@ async function createEmailOtp(email, otp, expiresAt) {
   return db.insert(emailVerificationOtps).values({
     email,
     otp,
-    expiresAt
+    expiresAt: toMysqlDateTime(expiresAt)
   });
 }
 async function createPhoneOtp(phone, otp, expiresAt) {
@@ -1935,7 +2142,7 @@ async function createPhoneOtp(phone, otp, expiresAt) {
   return db.insert(phoneVerificationOtps).values({
     phone,
     otp,
-    expiresAt
+    expiresAt: toMysqlDateTime(expiresAt)
   });
 }
 async function getEmailOtp(email) {
@@ -2076,9 +2283,9 @@ async function getUserReportDetails(reportId) {
     evidence: report[0].evidence ?? void 0,
     status: report[0].status,
     adminNotes: report[0].adminNotes ?? void 0,
-    createdAt: report[0].createdAt,
-    updatedAt: report[0].updatedAt,
-    reviewedAt: report[0].reviewedAt ?? void 0,
+    createdAt: new Date(report[0].createdAt),
+    updatedAt: new Date(report[0].updatedAt),
+    reviewedAt: report[0].reviewedAt ? new Date(report[0].reviewedAt) : void 0,
     reviewedBy: report[0].reviewedBy ?? void 0,
     reviewedByName: reviewedByUser?.username ?? void 0
   };
@@ -2088,7 +2295,7 @@ async function updateReportStatus(input) {
   await db.update(userReports).set({
     status: input.status,
     adminNotes: input.adminNotes,
-    reviewedAt: /* @__PURE__ */ new Date(),
+    reviewedAt: mysqlNow(),
     reviewedBy: input.reviewedBy
   }).where(eq(userReports.reportId, input.reportId));
 }
@@ -2099,11 +2306,11 @@ async function updateUserEbayInfo(input) {
     ebayUserId: input.ebayUserId,
     ebayFeedbackScore: input.ebayFeedbackScore,
     ebayFeedbackPercentage: input.ebayFeedbackPercentage.toString(),
-    ebayMemberSince: input.ebayMemberSince,
-    ebayConnectedAt: /* @__PURE__ */ new Date(),
+    ebayMemberSince: input.ebayMemberSince ? toMysqlDateTime(input.ebayMemberSince) : void 0,
+    ebayConnectedAt: mysqlNow(),
     ebayAccessToken: input.ebayAccessToken,
     ebayRefreshToken: input.ebayRefreshToken,
-    ebayTokenExpiresAt: input.ebayTokenExpiresAt
+    ebayTokenExpiresAt: input.ebayTokenExpiresAt ? toMysqlDateTime(input.ebayTokenExpiresAt) : void 0
   }).where(eq(users.id, input.userId));
 }
 async function getUserEbayInfo(userId) {
@@ -2119,12 +2326,19 @@ async function getUserEbayInfo(userId) {
   if (!user[0]) return null;
   return {
     ...user[0],
-    ebayFeedbackPercentage: user[0].ebayFeedbackPercentage ? parseFloat(user[0].ebayFeedbackPercentage) : null
+    ebayFeedbackPercentage: user[0].ebayFeedbackPercentage ? parseFloat(user[0].ebayFeedbackPercentage) : null,
+    // Timestamp columns are string-mode; convert at the boundary to keep the
+    // declared Date-based API contract.
+    ebayMemberSince: user[0].ebayMemberSince ? new Date(user[0].ebayMemberSince) : null,
+    ebayConnectedAt: user[0].ebayConnectedAt ? new Date(user[0].ebayConnectedAt) : null
   };
 }
 async function storeEbayFeedback(input) {
   const db = await requireDb();
-  await db.insert(ebayFeedbackHistory).values(input);
+  await db.insert(ebayFeedbackHistory).values({
+    ...input,
+    feedbackDate: toMysqlDateTime(input.feedbackDate)
+  });
 }
 async function getUserEbayFeedback(userId) {
   const db = await requireDb();
@@ -2174,7 +2388,7 @@ async function sendItemInquiry(user, input) {
     subject: input.subject.trim(),
     message: input.message.trim(),
     isRead: 0,
-    createdAt: /* @__PURE__ */ new Date()
+    createdAt: mysqlNow()
   });
   return { id: getInsertId(result), success: true };
 }
@@ -2256,7 +2470,7 @@ async function deleteInquiry(inquiryId, userId) {
   if (!inquiry[0] || inquiry[0].recipientId !== userId) {
     throw new Error("Unauthorized: You can only delete your own inquiries");
   }
-  await db.update(itemInquiries).set({ deletedAt: /* @__PURE__ */ new Date() }).where(eq(itemInquiries.id, inquiryId));
+  await db.update(itemInquiries).set({ deletedAt: mysqlNow() }).where(eq(itemInquiries.id, inquiryId));
 }
 async function getDeletedInquiries(userId) {
   const db = await requireDb();
@@ -2320,7 +2534,7 @@ async function updateReferralRequestStatus(id, status, adminNotes, reviewedBy) {
     status,
     adminNotes,
     reviewedBy,
-    reviewedAt: /* @__PURE__ */ new Date()
+    reviewedAt: mysqlNow()
   }).where(eq(referralRequests.id, id));
 }
 async function getUnsentReferrals() {
@@ -2333,14 +2547,14 @@ async function markReferralsAsEmailed(ids) {
   if (ids.length === 0) return;
   await db.update(referralRequests).set({
     emailSent: 1,
-    emailSentAt: /* @__PURE__ */ new Date()
+    emailSentAt: mysqlNow()
   }).where(inArray(referralRequests.id, ids));
 }
 async function markReferralAsJoined(id, userId) {
   const db = await requireDb();
   await db.update(referralRequests).set({
     hasJoined: 1,
-    joinedAt: /* @__PURE__ */ new Date(),
+    joinedAt: mysqlNow(),
     joinedUserId: userId
   }).where(eq(referralRequests.id, id));
 }
@@ -2518,18 +2732,20 @@ async function adminDeleteListing(admin, input) {
   if (!listing[0]) {
     throw new Error("Listing not found.");
   }
-  await db.delete(tradeProposalItems).where(eq(tradeProposalItems.offeredListingId, input.listingId));
-  await db.delete(tradeProposals).where(eq(tradeProposals.requestedListingId, input.listingId));
-  await db.delete(watchlistEntries).where(eq(watchlistEntries.listingId, input.listingId));
-  const inquiryIds = await db.select({ id: itemInquiries.id }).from(itemInquiries).where(eq(itemInquiries.listingId, input.listingId));
-  if (inquiryIds.length > 0) {
-    const ids = inquiryIds.map((i) => i.id);
-    await db.delete(inquiryReplies).where(inArray(inquiryReplies.inquiryId, ids));
-  }
-  await db.delete(itemInquiries).where(eq(itemInquiries.listingId, input.listingId));
-  await db.delete(favorites).where(eq(favorites.listingId, input.listingId));
-  await db.delete(listingPhotos).where(eq(listingPhotos.listingId, input.listingId));
-  await db.delete(listings).where(eq(listings.id, input.listingId));
+  await db.transaction(async (tx) => {
+    await tx.delete(tradeProposalItems).where(eq(tradeProposalItems.offeredListingId, input.listingId));
+    await tx.delete(tradeProposals).where(eq(tradeProposals.requestedListingId, input.listingId));
+    await tx.delete(watchlistEntries).where(eq(watchlistEntries.listingId, input.listingId));
+    const inquiryIds = await tx.select({ id: itemInquiries.id }).from(itemInquiries).where(eq(itemInquiries.listingId, input.listingId));
+    if (inquiryIds.length > 0) {
+      const ids = inquiryIds.map((i) => i.id);
+      await tx.delete(inquiryReplies).where(inArray(inquiryReplies.inquiryId, ids));
+    }
+    await tx.delete(itemInquiries).where(eq(itemInquiries.listingId, input.listingId));
+    await tx.delete(favorites).where(eq(favorites.listingId, input.listingId));
+    await tx.delete(listingPhotos).where(eq(listingPhotos.listingId, input.listingId));
+    await tx.delete(listings).where(eq(listings.id, input.listingId));
+  });
   return {
     success: true,
     deletedListingId: input.listingId,
@@ -2550,18 +2766,20 @@ async function adminBulkDeleteListings(admin, input) {
   if (listings_to_delete.length === 0) {
     throw new Error("No listings found.");
   }
-  await db.delete(tradeProposalItems).where(inArray(tradeProposalItems.offeredListingId, input.listingIds));
-  await db.delete(tradeProposals).where(inArray(tradeProposals.requestedListingId, input.listingIds));
-  await db.delete(watchlistEntries).where(inArray(watchlistEntries.listingId, input.listingIds));
-  const inquiryIds = await db.select({ id: itemInquiries.id }).from(itemInquiries).where(inArray(itemInquiries.listingId, input.listingIds));
-  if (inquiryIds.length > 0) {
-    const ids = inquiryIds.map((i) => i.id);
-    await db.delete(inquiryReplies).where(inArray(inquiryReplies.inquiryId, ids));
-  }
-  await db.delete(itemInquiries).where(inArray(itemInquiries.listingId, input.listingIds));
-  await db.delete(favorites).where(inArray(favorites.listingId, input.listingIds));
-  await db.delete(listingPhotos).where(inArray(listingPhotos.listingId, input.listingIds));
-  await db.delete(listings).where(inArray(listings.id, input.listingIds));
+  await db.transaction(async (tx) => {
+    await tx.delete(tradeProposalItems).where(inArray(tradeProposalItems.offeredListingId, input.listingIds));
+    await tx.delete(tradeProposals).where(inArray(tradeProposals.requestedListingId, input.listingIds));
+    await tx.delete(watchlistEntries).where(inArray(watchlistEntries.listingId, input.listingIds));
+    const inquiryIds = await tx.select({ id: itemInquiries.id }).from(itemInquiries).where(inArray(itemInquiries.listingId, input.listingIds));
+    if (inquiryIds.length > 0) {
+      const ids = inquiryIds.map((i) => i.id);
+      await tx.delete(inquiryReplies).where(inArray(inquiryReplies.inquiryId, ids));
+    }
+    await tx.delete(itemInquiries).where(inArray(itemInquiries.listingId, input.listingIds));
+    await tx.delete(favorites).where(inArray(favorites.listingId, input.listingIds));
+    await tx.delete(listingPhotos).where(inArray(listingPhotos.listingId, input.listingIds));
+    await tx.delete(listings).where(inArray(listings.id, input.listingIds));
+  });
   return {
     success: true,
     deletedCount: listings_to_delete.length,
@@ -2571,7 +2789,7 @@ async function adminBulkDeleteListings(admin, input) {
 async function deleteDraftsOlderThan(db, cutoffDate) {
   const { draftListings: draftListings2, listingPhotos: listingPhotos2 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
   const { lt } = await import("drizzle-orm");
-  const oldDrafts = await db.select({ id: draftListings2.id }).from(draftListings2).where(lt(draftListings2.createdAt, cutoffDate));
+  const oldDrafts = await db.select({ id: draftListings2.id }).from(draftListings2).where(lt(draftListings2.createdAt, toMysqlDateTime(cutoffDate)));
   if (oldDrafts.length === 0) {
     return 0;
   }
@@ -2635,8 +2853,8 @@ async function getForumPosts(category, sortBy = "newest") {
 async function getForumPostById(postId) {
   const db = await requireDb();
   const { forumPosts: forumPosts2, users: users2 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
-  const { eq: eq3, sql: sql3 } = await import("drizzle-orm");
-  await db.update(forumPosts2).set({ viewCount: sql3`viewCount + 1` }).where(eq3(forumPosts2.id, postId));
+  const { eq: eq3, sql: sql4 } = await import("drizzle-orm");
+  await db.update(forumPosts2).set({ viewCount: sql4`viewCount + 1` }).where(eq3(forumPosts2.id, postId));
   const result = await db.select({
     id: forumPosts2.id,
     userId: forumPosts2.userId,
@@ -2667,8 +2885,8 @@ async function addForumReply(user, input) {
     userId: user.id,
     content: input.content.trim()
   });
-  const { sql: sql3 } = await import("drizzle-orm");
-  await db.update(forumPosts2).set({ replyCount: sql3`replyCount + 1` }).where(eq3(forumPosts2.id, input.postId));
+  const { sql: sql4 } = await import("drizzle-orm");
+  await db.update(forumPosts2).set({ replyCount: sql4`replyCount + 1` }).where(eq3(forumPosts2.id, input.postId));
   return { replyId: getInsertId(result) };
 }
 async function getForumReplies(postId) {
@@ -2688,6 +2906,210 @@ async function getForumReplies(postId) {
       avatarUrl: users2.avatarUrl
     }
   }).from(forumReplies2).leftJoin(users2, eq3(forumReplies2.userId, users2.id)).where(eq3(forumReplies2.postId, postId)).orderBy(asc(forumReplies2.createdAt));
+}
+async function getConventions(filters) {
+  const db = await requireDb();
+  const { conventions: conventions2, conventionCategories: conventionCategories2 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
+  const { eq: eq3, and: and2, gte: gte3, asc: asc2, inArray: inArray3, sql: sql4 } = await import("drizzle-orm");
+  const today = (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
+  const baseClauses = [
+    eq3(conventions2.status, "approved"),
+    gte3(conventions2.startDate, today)
+  ];
+  if (filters.country) baseClauses.push(eq3(conventions2.country, filters.country));
+  if (filters.state) baseClauses.push(eq3(conventions2.state, filters.state));
+  let conventionIds = null;
+  if (filters.category && filters.category !== "all") {
+    const catRows = await db.select({ conventionId: conventionCategories2.conventionId }).from(conventionCategories2).where(eq3(conventionCategories2.category, filters.category));
+    conventionIds = catRows.map((r) => r.conventionId);
+    if (conventionIds.length === 0) return [];
+    baseClauses.push(inArray3(conventions2.id, conventionIds));
+  }
+  const rows = await db.select({
+    id: conventions2.id,
+    name: conventions2.name,
+    category: conventions2.category,
+    startDate: conventions2.startDate,
+    endDate: conventions2.endDate,
+    city: conventions2.city,
+    state: conventions2.state,
+    country: conventions2.country,
+    venue: conventions2.venue,
+    website: conventions2.website,
+    admission: conventions2.admission,
+    description: conventions2.description,
+    source: conventions2.source,
+    createdAt: conventions2.createdAt
+  }).from(conventions2).where(and2(...baseClauses)).orderBy(asc2(conventions2.startDate)).limit(500);
+  if (rows.length > 0) {
+    const ids = rows.map((r) => r.id);
+    const catRows = await db.select({ conventionId: conventionCategories2.conventionId, category: conventionCategories2.category }).from(conventionCategories2).where(inArray3(conventionCategories2.conventionId, ids));
+    const catMap = /* @__PURE__ */ new Map();
+    for (const cr of catRows) {
+      if (!catMap.has(cr.conventionId)) catMap.set(cr.conventionId, []);
+      catMap.get(cr.conventionId).push(cr.category);
+    }
+    return rows.map((r) => ({ ...r, categories: catMap.get(r.id) || [r.category] }));
+  }
+  return rows.map((r) => ({ ...r, categories: [r.category] }));
+}
+async function getUpcomingConventions(limit = 3, userLocation) {
+  const db = await requireDb();
+  const { conventions: conventions2 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
+  const { eq: eq3, gte: gte3, asc: asc2, and: and2 } = await import("drizzle-orm");
+  const today = (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
+  const baseWhere = and2(eq3(conventions2.status, "approved"), gte3(conventions2.startDate, today));
+  if (userLocation?.state) {
+    const stateMatches = await db.select({
+      id: conventions2.id,
+      name: conventions2.name,
+      category: conventions2.category,
+      startDate: conventions2.startDate,
+      endDate: conventions2.endDate,
+      city: conventions2.city,
+      state: conventions2.state,
+      country: conventions2.country
+    }).from(conventions2).where(and2(baseWhere, eq3(conventions2.state, userLocation.state))).orderBy(asc2(conventions2.startDate)).limit(limit);
+    if (stateMatches.length >= limit) return stateMatches;
+    const stateIds = stateMatches.map((r) => r.id);
+    const { notInArray } = await import("drizzle-orm");
+    const countryMatches = await db.select({
+      id: conventions2.id,
+      name: conventions2.name,
+      category: conventions2.category,
+      startDate: conventions2.startDate,
+      endDate: conventions2.endDate,
+      city: conventions2.city,
+      state: conventions2.state,
+      country: conventions2.country
+    }).from(conventions2).where(and2(
+      baseWhere,
+      eq3(conventions2.country, userLocation.country || "United States"),
+      stateIds.length > 0 ? notInArray(conventions2.id, stateIds) : void 0
+    )).orderBy(asc2(conventions2.startDate)).limit(limit - stateMatches.length);
+    return [...stateMatches, ...countryMatches].slice(0, limit);
+  }
+  if (userLocation?.country) {
+    return db.select({
+      id: conventions2.id,
+      name: conventions2.name,
+      category: conventions2.category,
+      startDate: conventions2.startDate,
+      endDate: conventions2.endDate,
+      city: conventions2.city,
+      state: conventions2.state,
+      country: conventions2.country
+    }).from(conventions2).where(and2(baseWhere, eq3(conventions2.country, userLocation.country))).orderBy(asc2(conventions2.startDate)).limit(limit);
+  }
+  return [];
+}
+async function submitConvention(data) {
+  const db = await requireDb();
+  const { conventions: conventions2, conventionCategories: conventionCategories2 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
+  const result = await db.insert(conventions2).values({
+    name: data.name,
+    category: data.category,
+    startDate: data.startDate,
+    endDate: data.endDate ?? null,
+    city: data.city ?? null,
+    state: data.state ?? null,
+    country: data.country,
+    venue: data.venue ?? null,
+    website: data.website ?? null,
+    admission: data.admission ?? null,
+    description: data.description ?? null,
+    source: "user",
+    status: "pending",
+    submittedBy: data.submittedBy ?? null
+  });
+  const newId = Number(result[0].insertId);
+  const categoriesToInsert = data.categories && data.categories.length > 0 ? data.categories : [data.category];
+  for (const cat of categoriesToInsert) {
+    try {
+      await db.insert(conventionCategories2).values({ conventionId: newId, category: cat });
+    } catch {
+    }
+  }
+  return { id: newId };
+}
+async function getPendingConventions() {
+  const db = await requireDb();
+  const { conventions: conventions2, users: users2 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
+  const { eq: eq3, desc: desc4 } = await import("drizzle-orm");
+  return db.select({
+    id: conventions2.id,
+    name: conventions2.name,
+    category: conventions2.category,
+    startDate: conventions2.startDate,
+    endDate: conventions2.endDate,
+    city: conventions2.city,
+    state: conventions2.state,
+    country: conventions2.country,
+    venue: conventions2.venue,
+    website: conventions2.website,
+    admission: conventions2.admission,
+    description: conventions2.description,
+    source: conventions2.source,
+    status: conventions2.status,
+    createdAt: conventions2.createdAt,
+    submittedByName: users2.displayName
+  }).from(conventions2).leftJoin(users2, eq3(conventions2.submittedBy, users2.id)).where(eq3(conventions2.status, "pending")).orderBy(desc4(conventions2.createdAt));
+}
+async function approveConvention(id, adminId) {
+  const db = await requireDb();
+  const { conventions: conventions2, conventionCategories: conventionCategories2 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
+  const { eq: eq3 } = await import("drizzle-orm");
+  await db.update(conventions2).set({ status: "approved", approvedBy: adminId }).where(eq3(conventions2.id, id));
+  const [conv] = await db.select({ category: conventions2.category }).from(conventions2).where(eq3(conventions2.id, id));
+  if (conv) {
+    try {
+      await db.insert(conventionCategories2).values({ conventionId: id, category: conv.category });
+    } catch {
+    }
+  }
+  return { success: true };
+}
+async function rejectConvention(id, adminId) {
+  const db = await requireDb();
+  const { conventions: conventions2 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
+  const { eq: eq3 } = await import("drizzle-orm");
+  await db.update(conventions2).set({ status: "rejected", approvedBy: adminId }).where(eq3(conventions2.id, id));
+  return { success: true };
+}
+async function deleteConvention(id) {
+  const db = await requireDb();
+  const { conventions: conventions2 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
+  const { eq: eq3 } = await import("drizzle-orm");
+  await db.delete(conventions2).where(eq3(conventions2.id, id));
+  return { success: true };
+}
+async function suspendUser(userId) {
+  const db = await requireDb();
+  await db.update(users).set({
+    isSuspended: 1,
+    suspendedAt: mysqlNow()
+  }).where(eq(users.id, userId));
+  return { success: true };
+}
+async function unsuspendUser(userId) {
+  const db = await requireDb();
+  await db.update(users).set({
+    isSuspended: 0,
+    suspendedAt: null
+  }).where(eq(users.id, userId));
+  return { success: true };
+}
+async function getSuspendedUsers() {
+  const db = await requireDb();
+  const suspendedUsers = await db.select({
+    id: users.id,
+    username: users.username,
+    displayName: users.displayName,
+    email: users.email,
+    suspendedAt: users.suspendedAt,
+    role: users.role
+  }).from(users).where(eq(users.isSuspended, 1)).orderBy(desc(users.suspendedAt));
+  return suspendedUsers;
 }
 var collectibleCategories, itemConditions, _db, categoryLabels, conditionLabels;
 var init_db = __esm({
@@ -2814,10 +3236,563 @@ var init_customAuth = __esm({
   }
 });
 
+// server/conventionScraper.ts
+var conventionScraper_exports = {};
+__export(conventionScraper_exports, {
+  runConventionScraper: () => runConventionScraper
+});
+import { JSDOM } from "jsdom";
+function expandState(abbr) {
+  if (!abbr) return null;
+  return US_STATE_ABBR[abbr.trim().toUpperCase()] || abbr.trim();
+}
+function parseDate(text2) {
+  const m = text2.match(/([A-Za-z]+)\.?\s+(\d{1,2})(?:st|nd|rd|th)?(?:\s*[-–]\s*(?:[A-Za-z]+\.?\s+)?(\d{1,2})(?:st|nd|rd|th)?)?,?\s+(\d{4})/);
+  if (!m) return null;
+  const month = MONTH_MAP[m[1].toLowerCase()];
+  if (!month) return null;
+  const year = m[4];
+  const startDate = `${year}-${month}-${m[2].padStart(2, "0")}`;
+  const endDate = m[3] ? `${year}-${month}-${m[3].padStart(2, "0")}` : null;
+  if (startDate < TODAY()) return null;
+  return { startDate, endDate };
+}
+async function fetchHtml(url) {
+  const res = await fetch(url, {
+    headers: { "User-Agent": "curl/7.88.1", "Accept": "*/*" }
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
+  return res.text();
+}
+async function scrapeCardShowHub() {
+  const events = [];
+  const monthMap = {
+    Jan: "01",
+    Feb: "02",
+    Mar: "03",
+    Apr: "04",
+    May: "05",
+    Jun: "06",
+    Jul: "07",
+    Aug: "08",
+    Sep: "09",
+    Oct: "10",
+    Nov: "11",
+    Dec: "12"
+  };
+  for (let page = 1; page <= 3; page++) {
+    try {
+      const url = page === 1 ? "https://cardshowhub.com/events" : `https://cardshowhub.com/events?page=${page}`;
+      const html = await fetchHtml(url);
+      const doc = new JSDOM(html).window.document;
+      const cards = doc.querySelectorAll("a[href^='/events/']");
+      let found = 0;
+      for (const card of Array.from(cards)) {
+        const h3 = card.querySelector("h3");
+        if (!h3) continue;
+        const name = h3.textContent?.trim();
+        if (!name) continue;
+        const allText = [];
+        Array.from(card.querySelectorAll("*")).forEach((el) => {
+          el.childNodes.forEach((n) => {
+            if (n.nodeType === 3 && n.textContent?.trim()) allText.push(n.textContent.trim());
+          });
+        });
+        const dateText = allText.find((t2) => /^[A-Z][a-z]{2}\s+\d/.test(t2));
+        if (!dateText) continue;
+        const dm = dateText.match(/^([A-Z][a-z]{2})\s+(\d{1,2})(?:[–\-](\d{1,2}))?/);
+        if (!dm) continue;
+        const month = monthMap[dm[1]];
+        if (!month) continue;
+        const now = /* @__PURE__ */ new Date();
+        let year = YEAR;
+        if (parseInt(month) < now.getMonth() + 1) year = NEXT_YEAR;
+        const startDate = `${year}-${month}-${dm[2].padStart(2, "0")}`;
+        if (startDate < TODAY()) continue;
+        const endDate = dm[3] ? `${year}-${month}-${dm[3].padStart(2, "0")}` : null;
+        const locText = allText.find((t2) => /^[A-Za-z\s]+,\s+[A-Za-z\s]+$/.test(t2) && !t2.includes("Entry"));
+        let city = null, state = null;
+        if (locText) {
+          const parts = locText.split(",").map((p) => p.trim());
+          city = parts[0];
+          state = parts[1];
+        }
+        const admText = allText.find((t2) => /free entry|^\$\d|free$/i.test(t2));
+        const admission = admText ? admText.toLowerCase().includes("free") ? "Free" : admText.match(/\$[\d.]+/)?.[0] || null : null;
+        events.push({
+          name,
+          category: "sports_cards",
+          startDate,
+          endDate,
+          city,
+          state,
+          country: "United States",
+          venue: null,
+          website: `https://cardshowhub.com${card.getAttribute("href")}`,
+          admission,
+          description: null
+        });
+        found++;
+      }
+      if (found < 10) break;
+      await new Promise((r) => setTimeout(r, 1e3));
+    } catch (e) {
+      break;
+    }
+  }
+  return events;
+}
+async function scrapeToyConsPage(url, category) {
+  const events = [];
+  try {
+    const html = await fetchHtml(url);
+    const doc = new JSDOM(html).window.document;
+    const text2 = doc.body.textContent || "";
+    const lines = text2.split("\n").map((l) => l.trim()).filter((l) => l.length > 2);
+    for (let i = 0; i < lines.length; i++) {
+      const dateResult = parseDate(lines[i]);
+      if (!dateResult) continue;
+      const prevLine = lines[i - 1] || "";
+      if (/^(Cancelled|Postponed|Rescheduled)$/i.test(prevLine)) continue;
+      let name = "";
+      for (let back = 1; back <= 3; back++) {
+        const prev = lines[i - back] || "";
+        if (/^(Cancelled|Postponed|Rescheduled|TBD|Date|Location|Convention|Name)$/i.test(prev)) continue;
+        if (prev.length > 3 && !/^\d/.test(prev) && !/^[A-Z]{2}$/.test(prev) && !parseDate(prev)) {
+          name = prev;
+          break;
+        }
+      }
+      if (!name || name.length < 3) continue;
+      const venueLine = lines[i + 1] || "";
+      if (!venueLine || parseDate(venueLine)) continue;
+      const locMatch = venueLine.match(/([A-Za-z][A-Za-z\s.]+),\s+([A-Z]{2})$/);
+      if (!locMatch) continue;
+      const city = locMatch[1].trim();
+      const state = expandState(locMatch[2]);
+      const venueOnly = venueLine.substring(0, venueLine.lastIndexOf(locMatch[0])).trim() || null;
+      const cleanName = name.replace(/\s*\(?\d{4}\)?$/, "").trim();
+      if (!cleanName || cleanName.length < 3) continue;
+      events.push({
+        name: cleanName,
+        category,
+        ...dateResult,
+        city,
+        state,
+        country: "United States",
+        venue: venueOnly && venueOnly.length > 2 ? venueOnly : null,
+        website: url,
+        admission: null,
+        description: null
+      });
+    }
+  } catch {
+  }
+  return events;
+}
+async function scrapePopverse() {
+  const events = [];
+  const US_STATES = new Set(Object.values(US_STATE_ABBR));
+  try {
+    const html = await fetchHtml("https://www.thepopverse.com/comics-conventions-cons-con-near-me-nycc-san-diego-anime-tickets");
+    const doc = new JSDOM(html).window.document;
+    const text2 = doc.body.textContent || "";
+    const lines = text2.split("\n").map((l) => l.trim()).filter((l) => l.length > 2);
+    for (let i = 0; i < lines.length - 2; i++) {
+      const dateResult = parseDate(lines[i]);
+      if (!dateResult) continue;
+      const name = lines[i + 1];
+      if (!name || name.length < 3 || /^[A-Z][a-z]+ \d/.test(name) || /^\d{4}/.test(name)) continue;
+      const locationText = lines[i + 2];
+      if (!locationText || /^[A-Z][a-z]+ \d/.test(locationText)) continue;
+      const parts = locationText.split(",").map((p) => p.trim());
+      const city = parts[0];
+      const state = parts[parts.length - 1];
+      if (state && !US_STATES.has(state)) continue;
+      events.push({
+        name: name.trim(),
+        category: "comics",
+        ...dateResult,
+        city,
+        state,
+        country: "United States",
+        venue: null,
+        website: "https://www.thepopverse.com/comics-conventions-cons-con-near-me-nycc-san-diego-anime-tickets",
+        admission: null,
+        description: null
+      });
+      i += 2;
+    }
+  } catch {
+  }
+  return events;
+}
+async function scrapeNumismaticNews() {
+  const events = [];
+  try {
+    const html = await fetchHtml("https://www.numismaticnews.net/events/show-calendar");
+    const doc = new JSDOM(html).window.document;
+    const text2 = doc.body.textContent || "";
+    const lines = text2.split("\n").map((l) => l.trim()).filter((l) => l.length > 3);
+    for (const line of lines) {
+      const m = line.match(/^([A-Z][a-z]{2})\s+(\d{1,2})(?:-(\d{1,2}))?\s+([A-Z]{2}),\s+([^.]+)\.\s+([^.]+)/);
+      if (!m) continue;
+      const month = MONTH_MAP[m[1].toLowerCase()];
+      if (!month) continue;
+      const now = /* @__PURE__ */ new Date();
+      let year = YEAR;
+      if (parseInt(month) < now.getMonth() + 1) year = NEXT_YEAR;
+      const startDate = `${year}-${month}-${m[2].padStart(2, "0")}`;
+      if (startDate < TODAY()) continue;
+      const endDate = m[3] ? `${year}-${month}-${m[3].padStart(2, "0")}` : null;
+      const state = US_STATE_ABBR[m[4]] || m[4];
+      const city = m[5].trim();
+      const name = m[6].trim();
+      if (!name || name.length < 3) continue;
+      const admMatch = line.match(/\bA:\s*([^.]+?)(?:\.|T:|F:|SP:|SH:|$)/);
+      const admission = admMatch ? admMatch[1].trim() : null;
+      events.push({
+        name,
+        category: "coins",
+        startDate,
+        endDate,
+        city,
+        state,
+        country: "United States",
+        venue: null,
+        website: "https://www.numismaticnews.net/events/show-calendar",
+        admission: admission === "Free" ? "Free" : admission,
+        description: null
+      });
+    }
+  } catch {
+  }
+  return events;
+}
+async function scrapeAmericanStampDealer() {
+  const events = [];
+  try {
+    const html = await fetchHtml("https://www.americanstampdealer.com/Show_Calendar.aspx");
+    const doc = new JSDOM(html).window.document;
+    const rows = Array.from(doc.querySelectorAll("table tr"));
+    for (const row of rows) {
+      const cells = Array.from(row.querySelectorAll("td"));
+      if (cells.length < 2) continue;
+      const dateText = cells[0]?.textContent?.trim() || "";
+      const dateResult = parseDate(dateText);
+      if (!dateResult) continue;
+      const name = cells[1]?.textContent?.trim();
+      if (!name || name.length < 3) continue;
+      const locText = cells[2]?.textContent?.trim() || cells[3]?.textContent?.trim() || "";
+      const locMatch = locText.match(/([A-Za-z][A-Za-z\s.]+),\s+([A-Z]{2})/);
+      events.push({
+        name,
+        category: "stamps",
+        ...dateResult,
+        city: locMatch ? locMatch[1].trim() : null,
+        state: locMatch ? expandState(locMatch[2]) : null,
+        country: "United States",
+        venue: null,
+        website: "https://www.americanstampdealer.com/Show_Calendar.aspx",
+        admission: null,
+        description: null
+      });
+    }
+  } catch {
+  }
+  return events;
+}
+async function scrapeWFSCStamps() {
+  const events = [];
+  try {
+    const html = await fetchHtml("https://www.wfscstamps.org/Shows/");
+    const doc = new JSDOM(html).window.document;
+    const text2 = doc.body.textContent || "";
+    const lines = text2.split("\n").map((l) => l.trim()).filter((l) => l.length > 5);
+    for (const line of lines) {
+      const dateResult = parseDate(line);
+      if (!dateResult) continue;
+      const dashIdx = line.indexOf(" - ", line.search(/\d{4}/));
+      const name = dashIdx > 0 ? line.substring(dashIdx + 3).trim() : "";
+      if (!name || name.length < 3) continue;
+      const locMatch = line.match(/([A-Za-z][A-Za-z\s.]+),\s+([A-Z]{2})/);
+      events.push({
+        name,
+        category: "stamps",
+        ...dateResult,
+        city: locMatch ? locMatch[1].trim() : null,
+        state: locMatch ? expandState(locMatch[2]) : null,
+        country: "United States",
+        venue: null,
+        website: "https://www.wfscstamps.org/Shows/",
+        admission: null,
+        description: null
+      });
+    }
+  } catch {
+  }
+  return events;
+}
+async function scrapeHallOfFameSignings() {
+  const events = [];
+  try {
+    const html = await fetchHtml("https://halloffamesignings.com/");
+    const doc = new JSDOM(html).window.document;
+    const text2 = doc.body.textContent || "";
+    const lines = text2.split("\n").map((l) => l.trim()).filter((l) => l.length > 5);
+    for (let i = 0; i < lines.length; i++) {
+      const dateResult = parseDate(lines[i]);
+      if (!dateResult) continue;
+      const name = lines[i - 1] || "";
+      if (!name || name.length < 3 || name === "Hall of Fame Signings") continue;
+      const locMatch = lines[i + 1]?.match(/([A-Za-z][A-Za-z\s.]+),\s+([A-Z]{2})/) || lines[i].match(/([A-Za-z][A-Za-z\s.]+),\s+([A-Z]{2})/);
+      events.push({
+        name: name.trim(),
+        category: "autographs",
+        ...dateResult,
+        city: locMatch ? locMatch[1].trim() : null,
+        state: locMatch ? expandState(locMatch[2]) : null,
+        country: "United States",
+        venue: null,
+        website: "https://halloffamesignings.com",
+        admission: null,
+        description: null
+      });
+    }
+  } catch {
+  }
+  return events;
+}
+async function scrapeCreationEnt() {
+  const events = [];
+  try {
+    const html = await fetchHtml("https://www.creationent.com/calendar.htm");
+    const doc = new JSDOM(html).window.document;
+    const paras = Array.from(doc.querySelectorAll("p"));
+    for (const p of paras) {
+      const strong = p.querySelector("strong");
+      const dateLink = p.querySelector("a.small1, a");
+      if (!strong || !dateLink) continue;
+      const locationText = strong.textContent?.trim() || "";
+      const dateText = dateLink.textContent?.trim() || "";
+      const dateResult = parseDate(dateText);
+      if (!dateResult) continue;
+      const locMatch = locationText.match(/([A-Za-z][A-Za-z\s.]+),\s+([A-Z]{2})/);
+      const name = `Creation Entertainment \u2014 ${locationText}`;
+      events.push({
+        name,
+        category: "autographs",
+        ...dateResult,
+        city: locMatch ? locMatch[1].trim() : null,
+        state: locMatch ? expandState(locMatch[2]) : null,
+        country: "United States",
+        venue: null,
+        website: "https://www.creationent.com/calendar.htm",
+        admission: null,
+        description: "Celebrity autograph convention"
+      });
+    }
+  } catch {
+  }
+  return events;
+}
+async function scrapeD23() {
+  const events = [];
+  try {
+    const html = await fetchHtml("https://d23.com/events");
+    const doc = new JSDOM(html).window.document;
+    const articles = Array.from(doc.querySelectorAll("article, .event-item"));
+    for (const article of articles) {
+      const name = article.querySelector("a, h2, h3")?.getAttribute("title") || article.querySelector("a, h2, h3")?.textContent?.trim() || "";
+      if (!name || name.length < 3) continue;
+      const dateText = article.querySelector(".d23-events-meta-text, time, .event-date")?.textContent?.trim() || article.textContent || "";
+      const dateResult = parseDate(dateText);
+      if (!dateResult) continue;
+      const locMatch = dateText.match(/([A-Za-z][A-Za-z\s.]+),\s+([A-Z]{2})/);
+      events.push({
+        name,
+        category: "disney_pins",
+        ...dateResult,
+        city: locMatch ? locMatch[1].trim() : null,
+        state: locMatch ? expandState(locMatch[2]) : null,
+        country: "United States",
+        venue: null,
+        website: "https://d23.com/events",
+        admission: null,
+        description: null
+      });
+    }
+  } catch {
+  }
+  return events;
+}
+async function scrapeVideoGameCons2026() {
+  const allEvents = await scrapeToyConsPage("https://videogamecons.com/calendar/calendar.php?year=2026", "video_games");
+  return allEvents.map((e) => ({
+    ...e,
+    category: /pokemon|poke|tcg|trading card/i.test(e.name) ? "pokemon" : e.category
+  }));
+}
+async function runConventionScraper() {
+  const db = await requireDb();
+  const existing = await db.select({ name: conventions.name, startDate: conventions.startDate }).from(conventions);
+  const existingSet = new Set(existing.map((r) => `${r.name.substring(0, 50)}||${r.startDate}`));
+  const allEvents = [];
+  const scrapers = [
+    // Sports Cards
+    { name: "CardShowHub", fn: scrapeCardShowHub },
+    // Vintage Toys
+    { name: "ToysCons", fn: () => scrapeToyConsPage("https://toycons.com/calendar/calendar.php?year=2026&loc=us", "vintage_toys") },
+    { name: "ToyConsFuture", fn: () => scrapeToyConsPage("https://toycons.com/calendar/", "vintage_toys") },
+    // Video Games + Pokemon/TCG
+    { name: "VideoGameCons", fn: () => scrapeToyConsPage("https://videogamecons.com/calendar/", "video_games") },
+    { name: "VideoGameCons2026", fn: scrapeVideoGameCons2026 },
+    // Comics
+    { name: "Popverse", fn: scrapePopverse },
+    // Coins
+    { name: "NumismaticNews", fn: scrapeNumismaticNews },
+    // Stamps
+    { name: "AmericanStampDealer", fn: scrapeAmericanStampDealer },
+    { name: "WFSCStamps", fn: scrapeWFSCStamps },
+    // Autographs
+    { name: "HallOfFameSignings", fn: scrapeHallOfFameSignings },
+    { name: "CreationEnt", fn: scrapeCreationEnt },
+    // Disney Pins
+    { name: "D23", fn: scrapeD23 }
+  ];
+  for (const { name, fn } of scrapers) {
+    try {
+      const events = await fn();
+      allEvents.push(...events);
+      await new Promise((r) => setTimeout(r, 1e3));
+    } catch (e) {
+      console.error(`Scraper ${name} failed:`, e.message);
+    }
+  }
+  const seen = /* @__PURE__ */ new Set();
+  const deduped = allEvents.filter((e) => {
+    if (!e.name || !e.startDate) return false;
+    const key = `${e.name.substring(0, 50)}||${e.startDate}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+  let inserted = 0, skipped = 0, errors = 0;
+  const byCategory = {};
+  for (const e of deduped) {
+    const key = `${e.name.substring(0, 50)}||${e.startDate}`;
+    if (existingSet.has(key)) {
+      skipped++;
+      continue;
+    }
+    try {
+      await db.insert(conventions).values({
+        name: e.name,
+        category: e.category,
+        startDate: e.startDate,
+        endDate: e.endDate ?? null,
+        city: e.city ?? null,
+        state: e.state ?? null,
+        country: e.country,
+        venue: e.venue ?? null,
+        website: e.website ?? null,
+        admission: e.admission ?? null,
+        description: e.description ?? null,
+        source: "scraper",
+        status: "approved"
+      });
+      inserted++;
+      existingSet.add(key);
+      byCategory[e.category] = (byCategory[e.category] || 0) + 1;
+    } catch (err) {
+      errors++;
+    }
+  }
+  return { inserted, skipped, errors, byCategory };
+}
+var TODAY, YEAR, NEXT_YEAR, MONTH_MAP, US_STATE_ABBR;
+var init_conventionScraper = __esm({
+  "server/conventionScraper.ts"() {
+    "use strict";
+    init_db();
+    init_schema();
+    TODAY = () => (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
+    YEAR = (/* @__PURE__ */ new Date()).getFullYear();
+    NEXT_YEAR = YEAR + 1;
+    MONTH_MAP = {
+      january: "01",
+      february: "02",
+      march: "03",
+      april: "04",
+      may: "05",
+      june: "06",
+      july: "07",
+      august: "08",
+      september: "09",
+      october: "10",
+      november: "11",
+      december: "12"
+    };
+    US_STATE_ABBR = {
+      AL: "Alabama",
+      AK: "Alaska",
+      AZ: "Arizona",
+      AR: "Arkansas",
+      CA: "California",
+      CO: "Colorado",
+      CT: "Connecticut",
+      DE: "Delaware",
+      FL: "Florida",
+      GA: "Georgia",
+      HI: "Hawaii",
+      ID: "Idaho",
+      IL: "Illinois",
+      IN: "Indiana",
+      IA: "Iowa",
+      KS: "Kansas",
+      KY: "Kentucky",
+      LA: "Louisiana",
+      ME: "Maine",
+      MD: "Maryland",
+      MA: "Massachusetts",
+      MI: "Michigan",
+      MN: "Minnesota",
+      MS: "Mississippi",
+      MO: "Missouri",
+      MT: "Montana",
+      NE: "Nebraska",
+      NV: "Nevada",
+      NH: "New Hampshire",
+      NJ: "New Jersey",
+      NM: "New Mexico",
+      NY: "New York",
+      NC: "North Carolina",
+      ND: "North Dakota",
+      OH: "Ohio",
+      OK: "Oklahoma",
+      OR: "Oregon",
+      PA: "Pennsylvania",
+      RI: "Rhode Island",
+      SC: "South Carolina",
+      SD: "South Dakota",
+      TN: "Tennessee",
+      TX: "Texas",
+      UT: "Utah",
+      VT: "Vermont",
+      VA: "Virginia",
+      WA: "Washington",
+      WV: "West Virginia",
+      WI: "Wisconsin",
+      WY: "Wyoming",
+      DC: "Washington D.C."
+    };
+  }
+});
+
 // server/_core/index.ts
+import dotenv from "dotenv";
 import express2 from "express";
 import { createServer } from "http";
-import net from "net";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 
 // server/_core/oauth.ts
@@ -3081,7 +4056,7 @@ var SDKServer = class {
 };
 var CRON_OPEN_ID_PREFIX = "cron_";
 function buildCronUser(userInfo) {
-  const now = /* @__PURE__ */ new Date();
+  const now = (/* @__PURE__ */ new Date()).toISOString().slice(0, 19).replace("T", " ");
   return {
     id: -1,
     openId: userInfo.openId,
@@ -3940,11 +4915,11 @@ var systemRouter = router({
 // server/_core/auth.ts
 import bcrypt from "bcrypt";
 function hashPassword(password) {
-  return bcrypt.hashSync(password, 10);
+  return bcrypt.hash(password, 10);
 }
-function verifyPassword(password, hash) {
+async function verifyPassword(password, hash) {
   try {
-    return bcrypt.compareSync(password, hash);
+    return await bcrypt.compare(password, hash);
   } catch (error) {
     return false;
   }
@@ -4053,9 +5028,14 @@ init_const();
 import { eq as eq2, sql as sql2, desc as desc2, or as or2, inArray as inArray2 } from "drizzle-orm";
 import { TRPCError as TRPCError3 } from "@trpc/server";
 var uploadedImageSchema = z2.object({
-  name: z2.string().min(1).max(200),
-  type: z2.string().min(1).max(120),
-  contentBase64: z2.string().min(1)
+  name: z2.string().max(200).optional().default(""),
+  type: z2.string().max(120).optional().default(""),
+  contentBase64: z2.string().min(1).optional(),
+  // Optional: only present for new uploads
+  imageUrl: z2.string().optional(),
+  // Optional: present for existing photos
+  previewUrl: z2.string().optional()
+  // Optional: frontend preview URL
 });
 var listingFiltersSchema = z2.object({
   category: z2.enum(collectibleCategories).optional(),
@@ -4074,7 +5054,21 @@ var listingFiltersSchema = z2.object({
   rookie: z2.string().max(10).optional(),
   autographed: z2.string().max(10).optional(),
   signed: z2.string().max(10).optional(),
-  facsimile: z2.string().max(10).optional()
+  facsimile: z2.string().max(10).optional(),
+  // Dedicated per-filter parameters (each filter owns its own channel)
+  title: z2.string().max(160).optional(),
+  system: z2.string().max(60).optional(),
+  region: z2.string().max(60).optional(),
+  country: z2.string().max(100).optional(),
+  format: z2.string().max(60).optional(),
+  medium: z2.string().max(60).optional(),
+  denomination: z2.string().max(60).optional(),
+  mintMark: z2.string().max(20).optional(),
+  issuer: z2.string().max(100).optional(),
+  edition: z2.string().max(60).optional(),
+  parkOrEvent: z2.string().max(100).optional(),
+  franchise: z2.string().max(100).optional(),
+  rarity: z2.string().max(60).optional()
 });
 var memberSearchSchema = z2.object({
   query: z2.string().max(120).optional(),
@@ -4107,10 +5101,8 @@ var appRouter = router({
   system: systemRouter,
   auth: router({
     me: publicProcedure.query(async (opts) => {
-      console.log("[auth.me] Called, user:", opts.ctx.user?.username);
       const user = opts.ctx.user;
       if (!user) {
-        console.log("[auth.me] No user found, returning null");
         return null;
       }
       const db = await requireDb();
@@ -4134,7 +5126,6 @@ var appRouter = router({
         email: z2.string().email().optional()
       })
     ).mutation(async ({ input, ctx }) => {
-      console.log("[signup] Called with username:", input.username);
       if (!isValidUsername(input.username)) {
         throw new Error("Username must be 3-32 characters, alphanumeric with underscores/hyphens");
       }
@@ -4148,7 +5139,7 @@ var appRouter = router({
       if (existing) {
         throw new Error("Username already taken");
       }
-      const passwordHash = hashPassword(input.password);
+      const passwordHash = await hashPassword(input.password);
       const userId = await createUser({
         username: input.username,
         passwordHash,
@@ -4171,21 +5162,12 @@ var appRouter = router({
         password: z2.string()
       })
     ).mutation(async ({ input, ctx }) => {
-      console.log("[signin] Called with username:", input.username);
       const user = await getUserByUsername(input.username);
-      console.log("[signin] User found:", user ? `ID ${user.id}` : "null");
       if (!user || !user.passwordHash) {
-        console.log("[signin] User not found or no password hash");
         throw new Error("Invalid username or password");
       }
-      console.log("[signin] User password hash type:", typeof user.passwordHash);
-      console.log("[signin] User password hash length:", user.passwordHash?.length);
-      console.log("[signin] User password hash starts with:", user.passwordHash?.substring(0, 10));
-      console.log("[signin] Input password length:", input.password.length);
-      const passwordMatch = verifyPassword(input.password, user.passwordHash);
-      console.log("[signin] Password match:", passwordMatch);
+      const passwordMatch = await verifyPassword(input.password, user.passwordHash);
       if (!passwordMatch) {
-        console.log("[signin] Password mismatch");
         throw new Error("Invalid username or password");
       }
       const { customAuth: customAuth2 } = await Promise.resolve().then(() => (init_customAuth(), customAuth_exports));
@@ -4202,7 +5184,7 @@ var appRouter = router({
     logout: protectedProcedure.mutation(async ({ ctx }) => {
       const db = await requireDb();
       if (ctx.user?.id) {
-        const offlineTime = /* @__PURE__ */ new Date("1970-01-02T00:00:00Z");
+        const offlineTime = toMysqlDateTime(/* @__PURE__ */ new Date("1970-01-02T00:00:00Z"));
         await db.update(users).set({ lastActivityAt: offlineTime }).where(eq2(users.id, ctx.user.id));
       }
       const cookieOptions = getSessionCookieOptions(ctx.req);
@@ -4276,8 +5258,12 @@ var appRouter = router({
       const detail = await getListingDetail(input.listingId, ctx.user?.id ?? null);
       return { listing: detail };
     }),
-    saveProfile: publicProcedure.input(
+    saveProfile: protectedProcedure.input(
       z2.object({
+        // DEPRECATED: retained for client compatibility but IGNORED server-side.
+        // The authenticated session (ctx.user.id) is the only trusted identity.
+        // Previously this public procedure trusted a client-supplied userId,
+        // letting anonymous visitors overwrite any user's profile.
         userId: z2.union([z2.string(), z2.number()]).optional(),
         displayName: z2.string().min(2).max(120),
         bio: z2.string().max(500).optional(),
@@ -4307,16 +5293,12 @@ var appRouter = router({
         phoneVerified: z2.boolean().optional()
       })
     ).mutation(async ({ ctx, input }) => {
-      console.log("[saveProfile] Called with input:", input);
-      const userId = ctx.user?.id || input.userId;
-      if (!userId) {
-        throw new TRPCError3({
-          code: "UNAUTHORIZED",
-          message: "Please login to save profile"
-        });
-      }
-      const isAdmin = ctx.user?.role === "admin";
-      if (!isAdmin) {
+      const userId = ctx.user.id;
+      const isAdmin = ctx.user.role === "admin";
+      const db0 = await requireDb();
+      const existingProfile = await db0.select({ acceptedTerms: userProfiles.acceptedTerms }).from(userProfiles).where(eq2(userProfiles.userId, userId)).limit(1);
+      const isFirstTimeSetup = !existingProfile[0] || !existingProfile[0].acceptedTerms;
+      if (!isAdmin && !isFirstTimeSetup) {
         const identityFieldsAttempted = [];
         if (input.firstName !== void 0 && input.firstName) identityFieldsAttempted.push("firstName");
         if (input.lastName !== void 0 && input.lastName) identityFieldsAttempted.push("lastName");
@@ -4339,21 +5321,22 @@ var appRouter = router({
           });
         }
       }
+      const canWriteIdentity = isAdmin || isFirstTimeSetup;
       return updateProfile(
-        { id: typeof userId === "string" ? parseInt(userId, 10) : userId, name: input.displayName },
+        { id: userId, name: input.displayName },
         {
           displayName: input.displayName,
           bio: input.bio,
-          contactFullName: isAdmin ? input.contactFullName : void 0,
-          contactEmail: isAdmin ? input.contactEmail : void 0,
-          contactPhone: isAdmin ? input.contactPhone : void 0,
-          contactAddress: isAdmin ? input.contactAddress : void 0,
-          contactTown: isAdmin ? input.contactTown : void 0,
-          contactState: isAdmin ? input.contactState : void 0,
-          contactZipCode: isAdmin ? input.contactZipCode : void 0,
-          contactCountry: isAdmin ? input.contactCountry : void 0,
-          firstName: isAdmin ? input.firstName : void 0,
-          lastName: isAdmin ? input.lastName : void 0,
+          contactFullName: canWriteIdentity ? input.contactFullName : void 0,
+          contactEmail: canWriteIdentity ? input.contactEmail : void 0,
+          contactPhone: canWriteIdentity ? input.contactPhone : void 0,
+          contactAddress: canWriteIdentity ? input.contactAddress : void 0,
+          contactTown: canWriteIdentity ? input.contactTown : void 0,
+          contactState: canWriteIdentity ? input.contactState : void 0,
+          contactZipCode: canWriteIdentity ? input.contactZipCode : void 0,
+          contactCountry: canWriteIdentity ? input.contactCountry : void 0,
+          firstName: canWriteIdentity ? input.firstName : void 0,
+          lastName: canWriteIdentity ? input.lastName : void 0,
           avatar: input.avatar ?? null,
           acceptedTerms: input.acceptedTerms,
           isMerchant: input.isMerchant,
@@ -4391,11 +5374,11 @@ var appRouter = router({
       if (!user || !user.passwordHash) {
         throw new TRPCError3({ code: "UNAUTHORIZED" });
       }
-      const isValid = verifyPassword(input.currentPassword, user.passwordHash);
+      const isValid = await verifyPassword(input.currentPassword, user.passwordHash);
       if (!isValid) {
         throw new TRPCError3({ code: "UNAUTHORIZED", message: "Current password is incorrect" });
       }
-      const newHash = hashPassword(input.newPassword);
+      const newHash = await hashPassword(input.newPassword);
       await db.update(users).set({
         passwordHash: newHash
       }).where(eq2(users.id, ctx.user.id));
@@ -5028,6 +6011,8 @@ var appRouter = router({
         role: users.role,
         createdAt: users.createdAt,
         lastActivityAt: users.lastActivityAt,
+        isSuspended: users.isSuspended,
+        suspendedAt: users.suspendedAt,
         contactFullName: userProfiles.contactFullName,
         contactEmail: userProfiles.contactEmail,
         contactPhone: userProfiles.contactPhone,
@@ -5267,6 +6252,20 @@ var appRouter = router({
       const db = await requireDb();
       await db.delete(referralRequests).where(inArray2(referralRequests.id, input.referralIds));
       return { success: true, deletedCount: input.referralIds.length };
+    }),
+    // User suspension management
+    getSuspendedUsers: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user.role !== "admin") throw new TRPCError3({ code: "FORBIDDEN" });
+      return await getSuspendedUsers();
+    }),
+    suspendUser: protectedProcedure.input(z2.object({ userId: z2.number().int().positive() })).mutation(async ({ ctx, input }) => {
+      if (ctx.user.role !== "admin") throw new TRPCError3({ code: "FORBIDDEN" });
+      if (input.userId === ctx.user.id) throw new TRPCError3({ code: "BAD_REQUEST", message: "Cannot suspend yourself" });
+      return await suspendUser(input.userId);
+    }),
+    unsuspendUser: protectedProcedure.input(z2.object({ userId: z2.number().int().positive() })).mutation(async ({ ctx, input }) => {
+      if (ctx.user.role !== "admin") throw new TRPCError3({ code: "FORBIDDEN" });
+      return await unsuspendUser(input.userId);
     })
   }),
   // Online status procedures
@@ -5300,7 +6299,7 @@ var appRouter = router({
     updateActivity: protectedProcedure.mutation(async ({ ctx }) => {
       const db = await requireDb();
       if (ctx.user?.id) {
-        await db.update(users).set({ lastActivityAt: /* @__PURE__ */ new Date() }).where(eq2(users.id, ctx.user.id));
+        await db.update(users).set({ lastActivityAt: mysqlNow() }).where(eq2(users.id, ctx.user.id));
       }
       return { success: true };
     }),
@@ -5313,8 +6312,72 @@ var appRouter = router({
       const timeSinceActivity = now.getTime() - new Date(lastActivity).getTime();
       const ONLINE_STATUS_TIMEOUT_MS = 5 * 60 * 1e3;
       const isOnline = timeSinceActivity < ONLINE_STATUS_TIMEOUT_MS;
-      console.log(`[getSellerOnlineStatus] User: ${seller[0].name} (ID: ${seller[0].id}), lastActivityAt: ${lastActivity}, now: ${now}, timeSinceActivity: ${timeSinceActivity}ms, isOnline: ${isOnline}`);
       return { isOnline, lastActivityAt: lastActivity };
+    }),
+    getMultipleSellerOnlineStatus: publicProcedure.input(z2.object({ sellerIds: z2.array(z2.number().int().positive()) })).query(async ({ input }) => {
+      if (!input.sellerIds.length) return {};
+      const db = await requireDb();
+      const sellers = await db.select({ id: users.id, lastActivityAt: users.lastActivityAt }).from(users).where(inArray2(users.id, input.sellerIds));
+      const ONLINE_STATUS_TIMEOUT_MS = 5 * 60 * 1e3;
+      const now = /* @__PURE__ */ new Date();
+      const result = {};
+      sellers.forEach((seller) => {
+        const timeSinceActivity = now.getTime() - new Date(seller.lastActivityAt).getTime();
+        result[seller.id] = {
+          isOnline: timeSinceActivity < ONLINE_STATUS_TIMEOUT_MS,
+          lastActivityAt: seller.lastActivityAt
+        };
+      });
+      return result;
+    })
+  }),
+  conventions: router({
+    list: publicProcedure.input(z2.object({
+      category: z2.string().optional(),
+      country: z2.string().optional(),
+      state: z2.string().optional()
+    }).optional()).query(({ input }) => getConventions(input ?? {})),
+    upcoming: publicProcedure.input(z2.object({ limit: z2.number().min(1).max(10).optional() }).optional()).query(async ({ ctx, input }) => {
+      if (!ctx.user) return [];
+      const { userProfiles: userProfiles2 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
+      const { eq: eq3 } = await import("drizzle-orm");
+      const db = await (await Promise.resolve().then(() => (init_db(), db_exports))).requireDb();
+      const [profile] = await db.select({ state: userProfiles2.contactState, country: userProfiles2.contactCountry }).from(userProfiles2).where(eq3(userProfiles2.userId, ctx.user.id));
+      const userLocation = profile ? { state: profile.state || null, country: profile.country || null } : {};
+      return getUpcomingConventions(input?.limit ?? 3, userLocation);
+    }),
+    submit: publicProcedure.input(z2.object({
+      name: z2.string().min(2).max(255),
+      category: z2.string().min(1),
+      categories: z2.array(z2.string()).optional(),
+      // multi-category support
+      startDate: z2.string().min(8).max(20),
+      endDate: z2.string().max(20).optional(),
+      city: z2.string().max(100).optional(),
+      state: z2.string().max(100).optional(),
+      country: z2.string().min(2).max(100),
+      venue: z2.string().max(255).optional(),
+      website: z2.string().max(500).optional(),
+      admission: z2.string().max(100).optional(),
+      description: z2.string().max(2e3).optional()
+    })).mutation(({ ctx, input }) => submitConvention({ ...input, submittedBy: ctx.user?.id })),
+    pending: publicProcedure.query(() => getPendingConventions()),
+    approve: publicProcedure.input(z2.object({ id: z2.number() })).mutation(({ ctx, input }) => {
+      if (ctx.user?.role !== "admin") throw new TRPCError3({ code: "FORBIDDEN" });
+      return approveConvention(input.id, ctx.user.id);
+    }),
+    reject: publicProcedure.input(z2.object({ id: z2.number() })).mutation(({ ctx, input }) => {
+      if (ctx.user?.role !== "admin") throw new TRPCError3({ code: "FORBIDDEN" });
+      return rejectConvention(input.id, ctx.user.id);
+    }),
+    delete: publicProcedure.input(z2.object({ id: z2.number() })).mutation(({ ctx, input }) => {
+      if (ctx.user?.role !== "admin") throw new TRPCError3({ code: "FORBIDDEN" });
+      return deleteConvention(input.id);
+    }),
+    scrape: publicProcedure.mutation(async ({ ctx }) => {
+      if (ctx.user?.role !== "admin") throw new TRPCError3({ code: "FORBIDDEN" });
+      const { runConventionScraper: runConventionScraper2 } = await Promise.resolve().then(() => (init_conventionScraper(), conventionScraper_exports));
+      return runConventionScraper2();
     })
   })
 });
@@ -5352,7 +6415,6 @@ async function createContext(opts) {
 // server/_core/vite.ts
 import express from "express";
 import fs2 from "fs";
-import { nanoid } from "nanoid";
 import path2 from "path";
 import { createServer as createViteServer } from "vite";
 
@@ -5409,7 +6471,7 @@ function vitePluginManusDebugCollector() {
   return {
     name: "manus-debug-collector",
     transformIndexHtml(html) {
-      if (process.env.NODE_ENV === "production") {
+      if (process.env.NODE_ENV === "production" || process.env.ENABLE_DEBUG_COLLECTOR !== "true") {
         return html;
       }
       return {
@@ -5520,63 +6582,127 @@ async function setupVite(app, server) {
     appType: "custom"
   });
   app.use(vite.middlewares);
+  const clientTemplate = path2.resolve(
+    import.meta.dirname,
+    "../..",
+    "client",
+    "index.html"
+  );
+  let cachedTemplate = null;
   app.use("*", async (req, res, next) => {
     const url = req.originalUrl;
     try {
-      const clientTemplate = path2.resolve(
-        import.meta.dirname,
-        "../..",
-        "client",
-        "index.html"
-      );
-      let template = await fs2.promises.readFile(clientTemplate, "utf-8");
-      template = template.replace(
-        `src="/src/main.tsx"`,
-        `src="/src/main.tsx?v=${nanoid()}"`
-      );
-      const page = await vite.transformIndexHtml(url, template);
+      if (!cachedTemplate) {
+        cachedTemplate = await fs2.promises.readFile(clientTemplate, "utf-8");
+      }
+      const page = await vite.transformIndexHtml(url, cachedTemplate);
       res.status(200).set({ "Content-Type": "text/html" }).end(page);
     } catch (e) {
+      cachedTemplate = null;
       vite.ssrFixStacktrace(e);
       next(e);
     }
   });
 }
-function serveStatic(app) {
-  const distPath = process.env.NODE_ENV === "development" ? path2.resolve(import.meta.dirname, "../..", "dist", "public") : path2.resolve(import.meta.dirname, "public");
-  if (!fs2.existsSync(distPath)) {
-    console.error(
-      `Could not find the build directory: ${distPath}, make sure to build the client first`
+
+// server/_core/index.ts
+init_schema();
+import { desc as desc3, gte as gte2 } from "drizzle-orm";
+
+// server/_core/startupChecks.ts
+import { sql as sql3 } from "drizzle-orm";
+var REQUIRED_ENV_VARS = [
+  "DATABASE_URL",
+  "JWT_SECRET",
+  "VITE_APP_ID",
+  "BUILT_IN_FORGE_API_URL",
+  "BUILT_IN_FORGE_API_KEY"
+];
+function validateEnvironment() {
+  const missing = REQUIRED_ENV_VARS.filter((name) => !process.env[name]);
+  if (missing.length > 0) {
+    console.error("========================================================");
+    console.error("STARTUP CHECK FAILED: missing required environment vars:");
+    for (const name of missing) console.error(`  - ${name}`);
+    console.error("Check that the .env file exists in the project root and");
+    console.error("contains all required values, then restart the server.");
+    console.error("========================================================");
+    throw new Error(`Missing required environment variables: ${missing.join(", ")}`);
+  }
+  try {
+    new URL(process.env.DATABASE_URL);
+  } catch {
+    throw new Error(
+      "DATABASE_URL is set but is not a valid URL. Check the .env file for quoting/formatting errors."
     );
   }
-  app.use(express.static(distPath));
-  app.use("*", (_req, res) => {
-    res.sendFile(path2.resolve(distPath, "index.html"));
-  });
+  console.log("[startup] Environment check: PASS (all required variables present)");
+}
+async function validateDatabaseConnection() {
+  const { requireDb: requireDb2 } = await Promise.resolve().then(() => (init_db(), db_exports));
+  try {
+    const db = await requireDb2();
+    await db.execute(sql3`select 1`);
+    console.log("[startup] Database check: PASS (connection verified)");
+  } catch (error) {
+    console.error("========================================================");
+    console.error("STARTUP CHECK FAILED: cannot connect to the database.");
+    console.error("Verify DATABASE_URL credentials and network access.");
+    console.error("========================================================");
+    throw error;
+  }
 }
 
 // server/_core/index.ts
-import { desc as desc3, gte as gte2 } from "drizzle-orm";
-function isPortAvailable(port) {
-  return new Promise((resolve) => {
-    const server = net.createServer();
-    server.listen(port, () => {
-      server.close(() => resolve(true));
-    });
-    server.on("error", () => resolve(false));
+dotenv.config();
+function listenOnPort(server, port) {
+  return new Promise((resolve, reject) => {
+    const onError = (err) => {
+      server.removeListener("listening", onListening);
+      reject(err);
+    };
+    const onListening = () => {
+      server.removeListener("error", onError);
+      resolve();
+    };
+    server.once("error", onError);
+    server.once("listening", onListening);
+    server.listen(port);
   });
 }
-async function findAvailablePort(startPort = 3e3) {
-  for (let port = startPort; port < startPort + 20; port++) {
-    if (await isPortAvailable(port)) {
-      return port;
+async function listenWithRetry(server, port, attempts = 5, delayMs = 500) {
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    try {
+      await listenOnPort(server, port);
+      return;
+    } catch (err) {
+      if (err?.code === "EADDRINUSE" && attempt < attempts) {
+        console.warn(
+          `[startup] Port ${port} busy (attempt ${attempt}/${attempts}), retrying in ${delayMs}ms...`
+        );
+        await new Promise((r) => setTimeout(r, delayMs));
+        continue;
+      }
+      throw err;
     }
   }
-  throw new Error(`No available port found starting from ${startPort}`);
 }
 async function startServer() {
+  validateEnvironment();
+  await validateDatabaseConnection();
   const app = express2();
   const server = createServer(app);
+  app.get("/health", async (_req, res) => {
+    try {
+      const { requireDb: requireDb2 } = await Promise.resolve().then(() => (init_db(), db_exports));
+      const db = await requireDb2();
+      const { sql: sql4 } = await import("drizzle-orm");
+      await db.execute(sql4`select 1`);
+      res.json({ status: "ok", database: "connected", timestamp: (/* @__PURE__ */ new Date()).toISOString() });
+    } catch {
+      res.status(503).json({ status: "degraded", database: "unreachable", timestamp: (/* @__PURE__ */ new Date()).toISOString() });
+    }
+  });
   app.use(express2.json({ limit: "50mb" }));
   app.use(express2.urlencoded({ limit: "50mb", extended: true }));
   registerStorageProxy(app);
@@ -5616,9 +6742,8 @@ async function startServer() {
       }
       const { requireDb: requireDb2 } = await Promise.resolve().then(() => (init_db(), db_exports));
       const db = await requireDb2();
-      const { referralRequests: referralRequests2 } = __require("../drizzle/schema");
-      const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1e3);
-      const pendingReferrals = await db.select().from(referralRequests2).where(gte2(referralRequests2.createdAt, threeDaysAgo)).orderBy(desc3(referralRequests2.createdAt));
+      const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1e3).toISOString().slice(0, 19).replace("T", " ");
+      const pendingReferrals = await db.select().from(referralRequests).where(gte2(referralRequests.createdAt, threeDaysAgo)).orderBy(desc3(referralRequests.createdAt));
       if (pendingReferrals.length === 0) {
         return res.json({ ok: true, skipped: "no-referrals" });
       }
@@ -5645,16 +6770,32 @@ async function startServer() {
   });
   if (process.env.NODE_ENV === "development") {
     await setupVite(app, server);
-  } else {
-    serveStatic(app);
   }
-  const preferredPort = parseInt(process.env.PORT || "3000");
-  const port = await findAvailablePort(preferredPort);
-  if (port !== preferredPort) {
-    console.log(`Port ${preferredPort} is busy, using port ${port} instead`);
-  }
-  server.listen(port, () => {
-    console.log(`Server running on http://localhost:${port}/`);
-  });
+  const port = parseInt(process.env.PORT || "3000", 10);
+  await listenWithRetry(server, port);
+  console.log(`[startup] Port check: PASS (bound to ${port})`);
+  console.log(`Server running on http://localhost:${port}/`);
+  let shuttingDown = false;
+  const shutdown = async (signal) => {
+    if (shuttingDown) return;
+    shuttingDown = true;
+    console.log(`[shutdown] Received ${signal}, closing server...`);
+    server.closeAllConnections?.();
+    server.close(async () => {
+      try {
+        const { closeDb: closeDb2 } = await Promise.resolve().then(() => (init_db(), db_exports));
+        await closeDb2();
+      } catch {
+      }
+      console.log("[shutdown] Clean exit.");
+      process.exit(0);
+    });
+    setTimeout(() => process.exit(1), 2e3).unref();
+  };
+  process.on("SIGTERM", () => void shutdown("SIGTERM"));
+  process.on("SIGINT", () => void shutdown("SIGINT"));
 }
-startServer().catch(console.error);
+startServer().catch((err) => {
+  console.error("[startup] FATAL: server failed to start:", err?.message ?? err);
+  process.exit(1);
+});

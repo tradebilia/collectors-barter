@@ -63,7 +63,7 @@ const readFiles = async (fileList: FileList | null): Promise<UploadedImage[]> =>
 };
 
 export default function AddInventory() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const [photos, setPhotos] = useState<UploadedImage[]>([]);
   const [primaryPhotoIndex, setPrimaryPhotoIndex] = useState<number>(0);
   const params = useParams<{ listingId?: string }>();
@@ -338,7 +338,14 @@ export default function AddInventory() {
           return;
         }
       } else if (isEditMode && params.listingId && !isDraftMode) {
-        const newPhotos = reorderedPhotos.filter(p => p.contentBase64);
+        // When editing, send ALL photos (existing ones have previewUrl as the source)
+        const allPhotos = reorderedPhotos.map(p => ({
+          name: p.name,
+          type: p.type,
+          contentBase64: p.contentBase64 || undefined,
+          imageUrl: !p.contentBase64 ? p.previewUrl : undefined,
+        }));
+
         if (formData.category) {
           // Only include condition if it should be shown (not hidden by isGraded = Yes)
           const conditionField = currentFields.find(f => f.name === 'condition');
@@ -351,7 +358,7 @@ export default function AddInventory() {
             condition: shouldIncludeCondition ? (formData.condition || "mint") : "mint", // Always provide a valid condition
             description: formData.description,
             estimatedValue: formData.tradeValue ? parseFloat(formData.tradeValue) : 0,
-            photos: newPhotos,
+            photos: allPhotos,
             itemDetails: getItemDetails(),
             certificationCompany: formData.gradingCompany && formData.gradingCompany !== 'Raw' ? formData.gradingCompany : undefined,
             certificationNumber: formData.certificationNumber || undefined,
@@ -743,17 +750,19 @@ export default function AddInventory() {
                       >
                         <img src={photo.previewUrl} alt={`Photo ${index + 1}`} className="h-24 w-full object-cover" />
                         {index === primaryPhotoIndex && <div className="absolute inset-0 bg-yellow-400/10" />}
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeletePhoto(index);
-                          }}
-                          className="absolute top-1 right-1 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white hover:bg-red-600 transition-colors"
-                          title="Delete photo"
-                        >
-                          ✕
-                        </button>
+                        {user?.role === 'admin' && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeletePhoto(index);
+                            }}
+                            className="absolute top-1 right-1 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white hover:bg-red-600 transition-colors"
+                            title="Delete photo"
+                          >
+                            ✕
+                          </button>
+                        )}
                       </div>
                     ))}
                   </div>

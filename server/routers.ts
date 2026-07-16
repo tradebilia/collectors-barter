@@ -76,6 +76,9 @@ import {
   approveConvention,
   rejectConvention,
   deleteConvention,
+  suspendUser,
+  unsuspendUser,
+  getSuspendedUsers,
 } from "./db";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -92,9 +95,11 @@ import { TRPCError } from "@trpc/server";
 import { ONE_YEAR_MS } from "@shared/const";
 
 const uploadedImageSchema = z.object({
-  name: z.string().min(1).max(200),
-  type: z.string().min(1).max(120),
-  contentBase64: z.string().min(1),
+  name: z.string().max(200).optional().default(''),
+  type: z.string().max(120).optional().default(''),
+  contentBase64: z.string().min(1).optional(), // Optional: only present for new uploads
+  imageUrl: z.string().optional(), // Optional: present for existing photos
+  previewUrl: z.string().optional(), // Optional: frontend preview URL
 });
 
 const listingFiltersSchema = z.object({
@@ -1247,6 +1252,8 @@ export const appRouter = router({
         role: users.role,
         createdAt: users.createdAt,
         lastActivityAt: users.lastActivityAt,
+        isSuspended: users.isSuspended,
+        suspendedAt: users.suspendedAt,
         contactFullName: userProfiles.contactFullName,
         contactEmail: userProfiles.contactEmail,
         contactPhone: userProfiles.contactPhone,
@@ -1267,6 +1274,8 @@ export const appRouter = router({
         // Schema timestamps are string-mode
         createdAt: string;
         lastActivityAt: string;
+        isSuspended: number;
+        suspendedAt: string | null;
         contactFullName: string | null;
         contactEmail: string | null;
         contactPhone: string | null;
@@ -1581,6 +1590,24 @@ export const appRouter = router({
         const db = await requireDb();
         await db.delete(referralRequests).where(inArray(referralRequests.id, input.referralIds));
         return { success: true, deletedCount: input.referralIds.length };
+      }),
+    // User suspension management
+    getSuspendedUsers: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      return await getSuspendedUsers();
+    }),
+    suspendUser: protectedProcedure
+      .input(z.object({ userId: z.number().int().positive() }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+        if (input.userId === ctx.user.id) throw new TRPCError({ code: 'BAD_REQUEST', message: 'Cannot suspend yourself' });
+        return await suspendUser(input.userId);
+      }),
+    unsuspendUser: protectedProcedure
+      .input(z.object({ userId: z.number().int().positive() }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+        return await unsuspendUser(input.userId);
       }),
   }),
   // Online status procedures

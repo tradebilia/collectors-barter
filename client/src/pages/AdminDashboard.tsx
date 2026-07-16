@@ -356,16 +356,23 @@ export default function AdminDashboard() {
     enabled: user?.role === "admin",
     refetchOnWindowFocus: true,
   });
+  const suspendedUsersQuery = trpc.admin.getSuspendedUsers.useQuery(undefined, {
+    enabled: user?.role === "admin",
+    refetchOnWindowFocus: true,
+  });
   const deleteUserMutation = trpc.admin.deleteUser.useMutation();
   const updateReportStatusMutation = trpc.admin.updateReportStatus.useMutation();
   const updateUserMutation = trpc.admin.updateUser.useMutation();
   const updateReferralStatusMutation = trpc.admin.updateReferralStatus.useMutation();
+  const suspendUserMutation = trpc.admin.suspendUser.useMutation();
+  const unsuspendUserMutation = trpc.admin.unsuspendUser.useMutation();
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<any>(null);
   const [selectedReferral, setSelectedReferral] = useState<any>(null);
   const [referralStatusDialogOpen, setReferralStatusDialogOpen] = useState(false);
   const [referralStatus, setReferralStatus] = useState<string>("pending");
   const [referralNotes, setReferralNotes] = useState<string>("");
+  const [selectedSuspendedUser, setSelectedSuspendedUser] = useState<any>(null);
 
   const handleDeleteUser = async () => {
     console.log('[handleDeleteUser] Starting delete, userToDelete:', userToDelete);
@@ -418,6 +425,28 @@ export default function AdminDashboard() {
       reportsQuery.refetch();
     } catch (error) {
       console.error('[handleUpdateReportStatus] Failed to update report status', error);
+    }
+  };
+
+  const handleSuspendUser = async (userId: number) => {
+    try {
+      await suspendUserMutation.mutateAsync({ userId });
+      suspendedUsersQuery.refetch();
+      usersQuery.refetch();
+      setSelectedSuspendedUser(null);
+    } catch (error) {
+      console.error('[handleSuspendUser] Failed to suspend user', error);
+    }
+  };
+
+  const handleUnsuspendUser = async (userId: number) => {
+    try {
+      await unsuspendUserMutation.mutateAsync({ userId });
+      suspendedUsersQuery.refetch();
+      usersQuery.refetch();
+      setSelectedSuspendedUser(null);
+    } catch (error) {
+      console.error('[handleUnsuspendUser] Failed to unsuspend user', error);
     }
   };
 
@@ -505,6 +534,10 @@ export default function AdminDashboard() {
             <TabsTrigger value="conventions" className="flex items-center gap-1.5 text-sm px-4 py-2 whitespace-nowrap">
               <Calendar className="h-4 w-4" />
               Conventions
+            </TabsTrigger>
+            <TabsTrigger value="suspended" className="flex items-center gap-1.5 text-sm px-4 py-2 whitespace-nowrap">
+              <Users className="h-4 w-4" />
+              Suspended
             </TabsTrigger>
           </TabsList>
           </div>
@@ -865,6 +898,61 @@ export default function AdminDashboard() {
           </TabsContent>
           <TabsContent value="conventions" className="space-y-4 mt-6">
             <ConventionsAdminTab />
+          </TabsContent>
+
+          {/* Suspended Users Tab */}
+          <TabsContent value="suspended" className="space-y-4 mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Suspended Users</CardTitle>
+                <CardDescription>
+                  Manage suspended user accounts
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {suspendedUsersQuery.isLoading ? (
+                  <div className="text-sm text-muted-foreground">Loading suspended users...</div>
+                ) : suspendedUsersQuery.data && suspendedUsersQuery.data.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b">
+                          <th className="text-left py-3 px-4 font-semibold">Username</th>
+                          <th className="text-left py-3 px-4 font-semibold">Email</th>
+                          <th className="text-left py-3 px-4 font-semibold">Role</th>
+                          <th className="text-left py-3 px-4 font-semibold">Suspended At</th>
+                          <th className="text-right py-3 px-4 font-semibold">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {suspendedUsersQuery.data.map((user: any) => (
+                          <tr key={user.id} className="border-b hover:bg-muted/50">
+                            <td className="py-3 px-4">{user.username}</td>
+                            <td className="py-3 px-4">{user.email || '-'}</td>
+                            <td className="py-3 px-4 capitalize">{user.role}</td>
+                            <td className="py-3 px-4">
+                              {user.suspendedAt ? new Date(user.suspendedAt).toLocaleDateString() : '-'}
+                            </td>
+                            <td className="py-3 px-4 text-right">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleUnsuspendUser(user.id)}
+                                disabled={unsuspendUserMutation.isPending}
+                              >
+                                Unsuspend
+                              </Button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div className="text-sm text-muted-foreground">No suspended users</div>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>

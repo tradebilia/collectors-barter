@@ -658,6 +658,13 @@ export default function Home() {
                     }} className="w-full px-3 py-2 rounded bg-white/10 hover:bg-white/20 transition text-white text-sm font-medium text-left flex items-center gap-2"><Package className="w-4 h-4 flex-shrink-0" /> My Inventory</button>
                     <button onClick={() => {
                       if (!isAuthenticated) {
+                        toast.error('Members only - Please sign in to view your trades');
+                      } else {
+                        setLocation('/messages'); // Temporarily using messages until dedicated trade page is built
+                      }
+                    }} className="w-full px-3 py-2 rounded bg-white/10 hover:bg-white/20 transition text-white text-sm font-medium text-left flex items-center gap-2"><ArrowRightLeft className="w-4 h-4 flex-shrink-0" /> My Trades</button>
+                    <button onClick={() => {
+                      if (!isAuthenticated) {
                         toast.error('Members only - Please sign in to report a user');
                       } else {
                         setLocation('/report-user');
@@ -1348,7 +1355,7 @@ export default function Home() {
               </TabsContent>
             </Tabs>
           </section>
-        )}
+        ) : null}
       </main>
     </div>
   );
