@@ -103,7 +103,8 @@ export default function TradeHub() {
               <img
                 src={TRADE_HUB_LOGO_URL}
                 alt="Trade Hub"
-                className="h-auto w-full max-w-md"
+                className="h-auto w-full"
+                style={{ maxWidth: '1000px' }}
               />
             </div>
           </div>
