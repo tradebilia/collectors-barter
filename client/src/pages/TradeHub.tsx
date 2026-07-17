@@ -99,12 +99,12 @@ export default function TradeHub() {
           backgroundRepeat: 'no-repeat',
         }}>
           <div className="container relative flex h-48 items-center justify-center py-0 sm:h-56 lg:h-64">
-            <div className="flex w-full max-w-3xl items-center justify-center">
+            <div className="flex w-full items-center justify-center" style={{ maxWidth: '1200px' }}>
               <img
                 src={TRADE_HUB_LOGO_URL}
                 alt="Trade Hub"
                 className="h-auto w-full"
-                style={{ maxWidth: '1000px' }}
+                style={{ maxWidth: '1100px' }}
               />
             </div>
           </div>
