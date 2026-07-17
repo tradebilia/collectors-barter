@@ -167,7 +167,7 @@ async function ensureUserProfileRecord(user: Pick<User, "id" | "name">) {
 
 async function uploadImage(folder: string, userId: number, input: PhotoUploadInput | AvatarUploadInput) {
   try {
-    const buffer = Buffer.from(input.contentBase64, "base64");
+    const buffer = Buffer.from(input.contentBase64!, "base64");
     console.log(`[uploadImage] Starting upload: name=${input.name}, size=${buffer.length} bytes, type=${input.type}`);
     const timestamp = Date.now();
     const randomId = Math.random().toString(36).substring(2, 8);
@@ -1993,7 +1993,7 @@ export async function updateListing(
     const incomingUrls = new Set(input.photos.map(p => p.imageUrl).filter(Boolean));
 
     // Check if any existing photos are missing from the incoming photos
-    for (const url of existingUrls) {
+    for (const url of Array.from(existingUrls)) {
       if (!incomingUrls.has(url)) {
         throw new Error("Unauthorized: Only admins can delete photos from listings");
       }
@@ -2027,7 +2027,7 @@ export async function updateListing(
       const photosToDelete = input.photos
         .filter(p => p.contentBase64) // New uploads
         .map(p => p.imageUrl)
-        .filter(Boolean);
+        .filter((url): url is string => Boolean(url));
 
       if (photosToDelete.length > 0) {
         await tx.delete(listingPhotos).where(

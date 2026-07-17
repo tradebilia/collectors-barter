@@ -457,7 +457,7 @@ export const appRouter = router({
             contactCountry: canWriteIdentity ? input.contactCountry : undefined,
             firstName: canWriteIdentity ? input.firstName : undefined,
             lastName: canWriteIdentity ? input.lastName : undefined,
-            avatar: input.avatar ?? null,
+            avatar: input.avatar ? { name: input.avatar.name, type: input.avatar.type, contentBase64: input.avatar.contentBase64! } : null,
             acceptedTerms: input.acceptedTerms,
             isMerchant: input.isMerchant,
             securityQuestion: input.securityQuestion,

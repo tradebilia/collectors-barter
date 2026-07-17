@@ -338,12 +338,12 @@ export default function AddInventory() {
           return;
         }
       } else if (isEditMode && params.listingId && !isDraftMode) {
-        // When editing, send ALL photos (existing ones have previewUrl as the source)
-        const allPhotos = reorderedPhotos.map(p => ({
+        // When editing, send ALL photos (existing ones have imageUrl as the source)
+        const allPhotos = reorderedPhotos.map((p, i) => ({
           name: p.name,
           type: p.type,
           contentBase64: p.contentBase64 || undefined,
-          imageUrl: !p.contentBase64 ? p.previewUrl : undefined,
+          imageUrl: !p.contentBase64 ? (p as any).imageUrl || photos[i]?.previewUrl : undefined,
         }));
 
         if (formData.category) {
