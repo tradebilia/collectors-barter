@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { Bell, Mail, Cog, Shield } from "lucide-react";
+import { Bell, Mail, Cog, Shield, ArrowRightLeft } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
@@ -19,6 +19,31 @@ const mailFlashStyle = `
     animation: mailFlash 1s ease-in-out infinite;
   }
 `;
+
+// Trade Bell Icon — Turns solid yellow and flashes when there are unread trade alerts
+function TradeBellIcon({ iconColor }: { iconColor: string }) {
+  const { user } = useAuth();
+  const tradeUnreadQuery = trpc.tradeFlow.getUnreadTradeAlertCount.useQuery(undefined, {
+    enabled: !!user,
+    refetchInterval: 15000,
+    staleTime: 10000,
+  });
+
+  const unreadTradeAlerts = tradeUnreadQuery.data?.count || 0;
+
+  return (
+    <Link href="/trade-hub" className="relative transition hover:opacity-80" title="Trade Alerts">
+      {unreadTradeAlerts > 0 ? (
+        <div className="flex items-center gap-1">
+          <ArrowRightLeft className="h-5 w-5 text-yellow-400 mail-icon-flash" />
+          <span className="text-xs font-bold text-yellow-400">{unreadTradeAlerts > 99 ? "99+" : unreadTradeAlerts}</span>
+        </div>
+      ) : (
+        <ArrowRightLeft className={`h-5 w-5 ${iconColor}`} />
+      )}
+    </Link>
+  );
+}
 
 export function TopRightIcons({ className = "flex items-center gap-3 md:gap-4", iconColor = "text-[#d4e86d]" }: TopRightIconsProps) {
   const { user } = useAuth();
@@ -70,6 +95,9 @@ export function TopRightIcons({ className = "flex items-center gap-3 md:gap-4", 
               <Shield className="h-5 w-5 text-white" />
             </Link>
           )}
+
+          {/* Trade Bell — Dedicated trade alert icon (per Decision 2) */}
+          <TradeBellIcon iconColor={iconColor} />
 
           {/* Notifications Bell */}
           <Link href="/notifications" className="relative transition hover:opacity-80" title="Notifications">

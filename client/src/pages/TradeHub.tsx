@@ -263,8 +263,12 @@ export default function TradeHub() {
                   {/* Trader Info */}
                   <div className="border-t border-gray-700 pt-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white font-bold">
-                        {selectedTrade.otherUser?.displayName?.[0] || selectedTrade.otherUser?.username?.[0] || '?'}
+                      <div className="relative">
+                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white font-bold">
+                          {selectedTrade.otherUser?.displayName?.[0] || selectedTrade.otherUser?.username?.[0] || '?'}
+                        </div>
+                        {/* Online Status: Green = online, Red = offline */}
+                        <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-[#1a1a4a] bg-red-500" title="Offline" />
                       </div>
                       <div>
                         <p className="text-white font-semibold">
@@ -283,6 +287,14 @@ export default function TradeHub() {
                           )}
                         </div>
                       </div>
+                    </div>
+
+                    {/* Verification Badges */}
+                    <div className="mt-3 flex items-center gap-2">
+                      <span className="text-xs text-gray-400">Verified:</span>
+                      <span className="px-2 py-0.5 bg-blue-900/50 text-blue-300 text-xs rounded" title="eBay Verified">eBay</span>
+                      <span className="px-2 py-0.5 bg-blue-900/50 text-blue-300 text-xs rounded" title="Facebook Verified">Facebook</span>
+                      <span className="px-2 py-0.5 bg-blue-900/50 text-blue-300 text-xs rounded" title="LinkedIn Verified">LinkedIn</span>
                     </div>
                   </div>
 

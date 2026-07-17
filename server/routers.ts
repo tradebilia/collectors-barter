@@ -715,6 +715,8 @@ export const appRouter = router({
         }),
       )
       .mutation(({ ctx, input }) => {
+        // DEPRECATED: Use tradeFlow.initiateTradeProposal instead
+        // Kept for backward compatibility with existing frontend code
         return createTradeProposal(
           { id: ctx.user.id, name: ctx.user.name },
           {

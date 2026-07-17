@@ -165,9 +165,9 @@ export default function ItemDetail() {
     { enabled: Number.isFinite(listingId) && listingId > 0 },
   );
 
-  const createProposalMutation = trpc.market.createTradeProposal.useMutation({
-    onSuccess: async () => {
-      toast.success("Trade Proposal sent.");
+  const createProposalMutation = trpc.tradeFlow.initiateTradeProposal.useMutation({
+    onSuccess: async (data) => {
+      toast.success(`Trade Proposal sent! Reference: ${data.tradeReferenceNumber}`);
       await Promise.all([
         utils.market.listingDetail.invalidate({ listingId }),
         utils.market.dashboard.invalidate(),
@@ -208,9 +208,14 @@ export default function ItemDetail() {
       window.location.href = getLoginUrl();
       return;
     }
+    // Confirmation popup per spec
+    const confirmed = window.confirm(
+      `Send a trade proposal for "${listing.title}"?\n\nThis will notify the owner that you are interested in trading for this item.`
+    );
+    if (!confirmed) return;
     createProposalMutation.mutate({
-      requestedListingId: listing.id,
-      note: `I am interested in your ${listing.title} and would like to review a possible trade.`,
+      listingId: listing.id,
+      message: `I am interested in your ${listing.title} and would like to review a possible trade.`,
     });
   };
 
@@ -422,9 +427,17 @@ export default function ItemDetail() {
                 </div>
 
                 <div className="mt-8 grid gap-4 sm:grid-cols-3">
-                  <Button onClick={startTradeProposal} className="h-12 rounded-[1rem] bg-teal-600 text-sm font-semibold text-white hover:bg-teal-700">
+                  <Button 
+                    onClick={startTradeProposal} 
+                    disabled={createProposalMutation.isPending}
+                    className={`h-12 rounded-[1rem] text-sm font-semibold text-white ${
+                      createProposalMutation.isSuccess 
+                        ? 'bg-yellow-600 hover:bg-yellow-700 cursor-default' 
+                        : 'bg-teal-600 hover:bg-teal-700'
+                    }`}
+                  >
                     <MessageCircleMore className="mr-0.5 h-4 w-4" />
-                    Trade Proposal
+                    {createProposalMutation.isSuccess ? 'Negotiating in Process' : createProposalMutation.isPending ? 'Sending...' : 'Trade Proposal'}
                   </Button>
                   <Button onClick={() => setIsEmailModalOpen(true)} className="h-12 rounded-[1rem] bg-blue-600 text-sm font-semibold text-white hover:bg-blue-700">
                     <MessageCircleMore className="mr-0.5 h-4 w-4" />

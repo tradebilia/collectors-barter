@@ -161,19 +161,34 @@ export const tradeFlowRouter = router({
       const db = await requireDb();
       const userId = ctx.user.id;
 
-      // 1. Validate listing exists
-      const [listing] = await db.select().from(listings).where(eq(listings.id, input.listingId)).limit(1);
-      if (!listing) throw new TRPCError({ code: 'NOT_FOUND', message: 'Listing not found' });
-
-      // 2. No self-trade
-      if (listing.ownerId === userId) {
-        throw new TRPCError({ code: 'BAD_REQUEST', message: 'Cannot trade with yourself' });
+      // 1. Check if initiator is suspended
+      const [initiator] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+      if ((initiator as any)?.isSuspended) {
+        throw new TRPCError({ code: 'FORBIDDEN', message: 'Trading is disabled for suspended accounts' });
       }
 
-      // 3. Generate trade reference number
+      // 2. Validate listing exists AND is active
+      const [listing] = await db.select().from(listings).where(eq(listings.id, input.listingId)).limit(1);
+      if (!listing) throw new TRPCError({ code: 'NOT_FOUND', message: 'Listing not found' });
+      if (!listing.isActive || listing.status !== 'active') {
+        throw new TRPCError({ code: 'BAD_REQUEST', message: 'This listing is no longer available for trading' });
+      }
+
+      // 3. No self-trade
+      if (listing.ownerId === userId) {
+        throw new TRPCError({ code: 'BAD_REQUEST', message: 'You cannot trade with yourself' });
+      }
+
+      // 4. Check if recipient (listing owner) is suspended
+      const [recipient] = await db.select().from(users).where(eq(users.id, listing.ownerId)).limit(1);
+      if ((recipient as any)?.isSuspended) {
+        throw new TRPCError({ code: 'FORBIDDEN', message: 'This user\'s account is currently suspended' });
+      }
+
+      // 5. Generate trade reference number
       const tradeRef = await generateTradeRefNumber();
 
-      // 4. Create trade proposal
+      // 6. Create trade proposal
       const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
       await db.insert(tradeProposals).values({
         requesterId: userId,
@@ -189,14 +204,21 @@ export const tradeFlowRouter = router({
       const [inserted] = await db.execute(sql`SELECT LAST_INSERT_ID() as id`);
       const proposalId = (inserted as any)?.[0]?.id;
 
-      // 5. Set trade reference number and lastActivityAt
+      // 7. Set trade reference number, initiatorMessage, and lastActivityAt
       await db.execute(
-        sql`UPDATE tradeProposals SET tradeReferenceNumber = ${tradeRef}, lastActivityAt = ${now} WHERE id = ${proposalId}`
+        sql`UPDATE tradeProposals SET tradeReferenceNumber = ${tradeRef}, initiatorMessage = ${input.message || null}, lastActivityAt = ${now} WHERE id = ${proposalId}`
       );
 
-      // 6. Create trade alert for recipient
+      // 8. Create structured trade alert for recipient
+      const alertMessage = JSON.stringify({
+        text: `${ctx.user.name || initiator?.username || 'A user'} is interested in your item`,
+        itemName: listing.title,
+        itemId: listing.id,
+        tradeRef: tradeRef,
+        initiatorMessage: input.message || null,
+      });
       await db.execute(
-        sql`INSERT INTO tradeAlerts (proposalId, recipientUserId, alertType, message, createdAt) VALUES (${proposalId}, ${listing.ownerId}, 'initiated', ${`${ctx.user.name || 'A user'} is interested in your item`}, ${now})`
+        sql`INSERT INTO tradeAlerts (proposalId, recipientUserId, alertType, message, createdAt) VALUES (${proposalId}, ${listing.ownerId}, 'initiated', ${alertMessage}, ${now})`
       );
 
       // 7. Log to admin log
@@ -363,20 +385,53 @@ export const tradeFlowRouter = router({
       }
 
       const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
-      await db.execute(
-        sql`UPDATE tradeProposals SET status = 'accepted', acceptedAt = ${now}, lastActivityAt = ${now}, updatedAt = ${now} WHERE id = ${input.proposalId}`
-      );
-
       const otherUserId = proposal.requesterId === userId ? proposal.recipientId : proposal.requesterId;
-      await db.execute(
-        sql`INSERT INTO tradeAlerts (proposalId, recipientUserId, alertType, message, createdAt) VALUES (${input.proposalId}, ${otherUserId}, 'accepted', 'Trade has been accepted! Time to ship.', ${now})`
-      );
 
-      await db.execute(
-        sql`INSERT INTO tradeAdminLog (proposalId, eventType, actorUserId, details, createdAt) VALUES (${input.proposalId}, 'accepted', ${userId}, 'Trade accepted', ${now})`
+      // 72-hour mutual acceptance: Check if the other party has already accepted
+      const [existingAcceptance] = await db.execute(
+        sql`SELECT id FROM tradeReceiptConfirmation WHERE proposalId = ${input.proposalId} AND userId = ${otherUserId} AND confirmationType = 'accepted'`
       );
+      const otherHasAccepted = ((existingAcceptance as unknown as any[])?.length || 0) > 0;
 
-      return { success: true };
+      if (otherHasAccepted) {
+        // Both have now accepted — move to 'accepted' status and lock items
+        await db.execute(
+          sql`UPDATE tradeProposals SET status = 'accepted', acceptedAt = ${now}, lastActivityAt = ${now}, updatedAt = ${now} WHERE id = ${input.proposalId}`
+        );
+        // Lock all items in this trade (mark as 'traded' in listings)
+        await db.execute(
+          sql`UPDATE listings SET status = 'traded' WHERE id IN (SELECT offeredListingId FROM tradeProposalItems WHERE proposalId = ${input.proposalId})`
+        );
+        await db.execute(
+          sql`UPDATE listings SET status = 'traded' WHERE id = ${proposal.requestedListingId}`
+        );
+        await db.execute(
+          sql`INSERT INTO tradeAlerts (proposalId, recipientUserId, alertType, message, createdAt) VALUES (${input.proposalId}, ${otherUserId}, 'accepted', 'Both parties have accepted! Trade is now locked. Time to ship.', ${now})`
+        );
+        await db.execute(
+          sql`INSERT INTO tradeAdminLog (proposalId, eventType, actorUserId, details, createdAt) VALUES (${input.proposalId}, 'accepted', ${userId}, 'Mutual acceptance — trade locked', ${now})`
+        );
+        // Clean up the acceptance records
+        await db.execute(
+          sql`DELETE FROM tradeReceiptConfirmation WHERE proposalId = ${input.proposalId} AND confirmationType = 'accepted'`
+        );
+        return { success: true, mutualAcceptance: true };
+      } else {
+        // First acceptance — record it and notify other party (72-hour window)
+        await db.execute(
+          sql`INSERT INTO tradeReceiptConfirmation (proposalId, userId, confirmationType, confirmedAt) VALUES (${input.proposalId}, ${userId}, 'accepted', ${now})`
+        );
+        await db.execute(
+          sql`UPDATE tradeProposals SET lastActivityAt = ${now}, updatedAt = ${now} WHERE id = ${input.proposalId}`
+        );
+        await db.execute(
+          sql`INSERT INTO tradeAlerts (proposalId, recipientUserId, alertType, message, createdAt) VALUES (${input.proposalId}, ${otherUserId}, 'accepted', 'Your trade partner has accepted! You have 72 hours to confirm.', ${now})`
+        );
+        await db.execute(
+          sql`INSERT INTO tradeAdminLog (proposalId, eventType, actorUserId, details, createdAt) VALUES (${input.proposalId}, 'accepted', ${userId}, 'First acceptance — awaiting mutual confirmation', ${now})`
+        );
+        return { success: true, mutualAcceptance: false };
+      }
     }),
 
   rejectTradeProposal: protectedProcedure
