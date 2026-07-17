@@ -40,6 +40,9 @@ import { ForumTopic } from "./pages/ForumTopic";
 import { TradeFlowMockup } from "./pages/TradeFlowMockup";
 import { TradeFlowMockupV2 } from "./pages/TradeFlowMockupV2";
 import { TradeNegotiationMockup } from "./pages/TradeNegotiationMockup";
+import TradeHub from "./pages/TradeHub";
+import WarRoom from "./pages/WarRoom";
+import TradeVoting from "./pages/TradeVoting";
 import {
   AllMostViewedRankings,
   AllMostFavoritedRankings,
@@ -132,6 +135,17 @@ function Router() {
       <Route path="/trade-flow-mockup-v2" component={TradeFlowMockupV2} />
       <Route path="/trade-negotiation-mockup" component={TradeNegotiationMockup} />
 
+      <Route path="/trade-hub">
+        <ProtectedRoute>
+          <TradeHub />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/war-room/:proposalId">
+        <ProtectedRoute>
+          <WarRoom />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/trade-vote/:token" component={TradeVoting} />
       <Route path="/conventions" component={Conventions} />
       <Route path="/rankings/most-viewed" component={AllMostViewedRankings} />
       <Route path="/rankings/most-favorited" component={AllMostFavoritedRankings} />
