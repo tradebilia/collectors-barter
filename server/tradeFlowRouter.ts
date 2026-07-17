@@ -542,9 +542,9 @@ export const tradeFlowRouter = router({
         sql`INSERT INTO tradeReceiptConfirmation (proposalId, userId, confirmationType, confirmedAt) VALUES (${input.proposalId}, ${userId}, ${input.confirmationType}, ${now})`
       );
 
-      // Check if both confirmed
+      // Check if both confirmed receipt (exclude 'accepted' type which is used for mutual acceptance)
       const [confirmCounts] = await db.execute(
-        sql`SELECT COUNT(DISTINCT userId) as userCount FROM tradeReceiptConfirmation WHERE proposalId = ${input.proposalId}`
+        sql`SELECT COUNT(DISTINCT userId) as userCount FROM tradeReceiptConfirmation WHERE proposalId = ${input.proposalId} AND confirmationType IN ('received', 'damaged')`
       );
       const bothConfirmed = (confirmCounts as any)?.[0]?.userCount >= 2;
 
@@ -1018,6 +1018,24 @@ export const tradeFlowRouter = router({
       const link = (links as any)?.[0];
       if (!link) throw new TRPCError({ code: 'NOT_FOUND', message: 'Voting link not found' });
 
+      // Get anonymous trade details for the comparison
+      const [proposals] = await db.execute(
+        sql`SELECT tp.requestedListingId, tp.cashFromRequester, tp.cashFromRecipient,
+          l.title as requestedTitle, l.estimatedValue as requestedValue, l.category as requestedCategory
+        FROM tradeProposals tp
+        LEFT JOIN listings l ON l.id = tp.requestedListingId
+        WHERE tp.id = ${link.proposalId}`
+      );
+      const proposalData = (proposals as unknown as any[])?.[0];
+
+      // Get offered items (Trader A's side)
+      const [offeredItems] = await db.execute(
+        sql`SELECT l.title, l.estimatedValue, l.category
+        FROM tradeProposalItems tpi
+        JOIN listings l ON l.id = tpi.offeredListingId
+        WHERE tpi.proposalId = ${link.proposalId}`
+      );
+
       const [votes] = await db.execute(
         sql`SELECT verdict, comment, createdAt FROM tradeVotes WHERE votingLinkId = ${link.id} ORDER BY createdAt DESC`
       );
@@ -1034,6 +1052,17 @@ export const tradeFlowRouter = router({
         fair: { count: fair, percentage: total > 0 ? Math.round((fair / total) * 100) : 0 },
         pass: { count: pass, percentage: total > 0 ? Math.round((pass / total) * 100) : 0 },
         comments: voteList.filter(v => v.comment).map(v => ({ verdict: v.verdict, comment: v.comment, createdAt: v.createdAt })),
+        // Anonymous trade details (no usernames)
+        tradeDetails: {
+          traderA: {
+            items: (offeredItems as unknown as any[]).map((i: any) => ({ title: i.title, value: i.estimatedValue, category: i.category })),
+            cash: proposalData?.cashFromRequester || 0,
+          },
+          traderB: {
+            items: proposalData ? [{ title: proposalData.requestedTitle, value: proposalData.requestedValue, category: proposalData.requestedCategory }] : [],
+            cash: proposalData?.cashFromRecipient || 0,
+          },
+        },
       };
     }),
 

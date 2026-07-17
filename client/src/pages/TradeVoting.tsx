@@ -110,20 +110,48 @@ export default function TradeVoting() {
                   <p className="text-gray-400 text-sm">Help the community by evaluating this trade proposal. All identities are anonymous.</p>
                 </div>
 
-                {/* Anonymous Comparison */}
+                {/* Anonymous Side-by-Side Comparison */}
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-[#1a1a4a] rounded-lg p-5 text-center">
-                    <h3 className="text-blue-400 font-semibold text-sm uppercase mb-3">Trader A Offers</h3>
-                    <div className="text-gray-300 text-sm">
-                      <p className="text-white text-lg font-bold">Items + Cash</p>
-                      <p className="text-gray-500 mt-1">(Details hidden for anonymity)</p>
+                  <div className="bg-[#1a1a4a] rounded-lg p-5">
+                    <h3 className="text-blue-400 font-semibold text-sm uppercase mb-3 text-center">Trader A Offers</h3>
+                    <div className="space-y-2">
+                      {results.tradeDetails?.traderA?.items?.length > 0 ? (
+                        results.tradeDetails.traderA.items.map((item: any, i: number) => (
+                          <div key={i} className="bg-[#0a0a2a] rounded p-2 flex items-center justify-between">
+                            <span className="text-white text-sm truncate">{item.title}</span>
+                            <span className="text-green-400 text-xs font-medium">${parseFloat(item.value || '0').toLocaleString()}</span>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-gray-500 text-sm text-center">No items</p>
+                      )}
+                      {results.tradeDetails?.traderA?.cash > 0 && (
+                        <div className="bg-[#0a0a2a] rounded p-2 flex items-center justify-between">
+                          <span className="text-white text-sm">Cash</span>
+                          <span className="text-green-400 text-xs font-medium">${parseFloat(results.tradeDetails.traderA.cash).toLocaleString()}</span>
+                        </div>
+                      )}
                     </div>
                   </div>
-                  <div className="bg-[#1a1a4a] rounded-lg p-5 text-center">
-                    <h3 className="text-orange-400 font-semibold text-sm uppercase mb-3">Trader B Offers</h3>
-                    <div className="text-gray-300 text-sm">
-                      <p className="text-white text-lg font-bold">Items + Cash</p>
-                      <p className="text-gray-500 mt-1">(Details hidden for anonymity)</p>
+                  <div className="bg-[#1a1a4a] rounded-lg p-5">
+                    <h3 className="text-orange-400 font-semibold text-sm uppercase mb-3 text-center">Trader B Offers</h3>
+                    <div className="space-y-2">
+                      {results.tradeDetails?.traderB?.items?.length > 0 ? (
+                        results.tradeDetails.traderB.items.map((item: any, i: number) => (
+                          <div key={i} className="bg-[#0a0a2a] rounded p-2 flex items-center justify-between">
+                            <span className="text-white text-sm truncate">{item.title}</span>
+                            <span className="text-green-400 text-xs font-medium">${parseFloat(item.value || '0').toLocaleString()}</span>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-gray-500 text-sm text-center">No items</p>
+                      )}
+                      {results.tradeDetails?.traderB?.cash > 0 && (
+                        <div className="bg-[#0a0a2a] rounded p-2 flex items-center justify-between">
+                          <span className="text-white text-sm">Cash</span>
+                          <span className="text-green-400 text-xs font-medium">${parseFloat(results.tradeDetails.traderB.cash).toLocaleString()}</span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
