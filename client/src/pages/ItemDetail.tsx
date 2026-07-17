@@ -166,8 +166,8 @@ export default function ItemDetail() {
   );
 
   const createProposalMutation = trpc.tradeFlow.initiateTradeProposal.useMutation({
-    onSuccess: async (data) => {
-      toast.success(`Trade Proposal sent! Reference: ${data.tradeReferenceNumber}`);
+    onSuccess: async () => {
+      toast.success('Trade inquiry sent! The owner has been notified.');
       await Promise.all([
         utils.market.listingDetail.invalidate({ listingId }),
         utils.market.dashboard.invalidate(),
@@ -208,11 +208,6 @@ export default function ItemDetail() {
       window.location.href = getLoginUrl();
       return;
     }
-    // Confirmation popup per spec
-    const confirmed = window.confirm(
-      `Send a trade proposal for "${listing.title}"?\n\nThis will notify the owner that you are interested in trading for this item.`
-    );
-    if (!confirmed) return;
     createProposalMutation.mutate({
       listingId: listing.id,
       message: `I am interested in your ${listing.title} and would like to review a possible trade.`,
