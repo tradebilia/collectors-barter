@@ -155,3 +155,42 @@ Per Q24, trades are frozen (not cancelled) when a user is suspended. They resume
 
 ### Item Deletion Mid-Trade
 Per Q33, users can delete items during negotiation (which auto-cancels the trade with a system message). Deletion is blocked during accepted trades.
+
+
+---
+
+## Backend & Admin Rules (From Open Questions Audit)
+
+The following rules do not affect page layouts but are critical for implementation logic. Each is sourced from `TRADE_FLOW_OPEN_QUESTIONS.md`.
+
+### Marketplace Listing Behavior
+
+Items that are in an active negotiation remain visible in the marketplace but display an **"In Trade"** badge. The item is only removed from the marketplace (status changed to `traded`) when both users formally accept the trade and it moves to the `accepted` stage. This allows multiple users to express interest in the same item simultaneously (per Q3).
+
+### Item Editing Restrictions Mid-Trade
+
+Once a listing is created, the title, description, and category are permanently locked. Only **photos** and **value** can be edited by the owner at any time. If the value is changed mid-negotiation, the Trade Summary in the War Room reflects the updated value in real-time. The other party will see the new value (per Q34).
+
+### Profile & Rating Display Rules
+
+All user profiles are always public and cannot be hidden (per Q29). A user's star rating only appears on their profile after they have at least **1 completed trade review** (per Q10). Before that, the profile shows "No ratings yet" (per Q28).
+
+### Account Deletion Restriction
+
+A user cannot delete their account while they have any active trades (status: `negotiating`, `accepted`, or `shipped`). The system blocks the deletion request and displays a message: "Please resolve all active trades before deleting your account" (per Q23).
+
+### Suspended User Marketplace Visibility
+
+When a user is suspended, all of their listings are **hidden from the marketplace** and search results. They reappear automatically when the suspension is lifted (per Q32).
+
+### Admin Powers
+
+Admins have the following capabilities during trade oversight:
+
+- **Full Message Access**: Admins can read the complete trade message thread for any trade, including during complaint review (per Q22).
+- **Force Status Override**: Admins can manually set any trade's status to `completed` or `cancelled` from the Admin Dashboard at any time, even without a formal complaint (per Q31).
+- **Complaint Resolution**: When resolving a complaint, the admin chooses the final outcome — either `completed` (trade stands) or `cancelled` (trade voided). If cancelled, associated reviews are removed (per Q21).
+
+### Review Persistence After Complaints
+
+If a complaint is filed after a trade is completed, the existing reviews remain published and visible. Reviews are only removed if the admin decides to **cancel/void** the trade as part of the complaint resolution (per Q30).
