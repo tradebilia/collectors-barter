@@ -339,23 +339,31 @@ export default function WarRoom() {
                         )}
                         <p className="text-white text-xs truncate">{item.title}</p>
                         <p className="text-green-400 text-xs">${parseFloat(item.estimatedValue || '0').toLocaleString()}</p>
-                        <button onClick={() => handleRemoveItemFromTrade(item.id)} className="absolute top-1 right-1 w-5 h-5 bg-red-600 text-white text-xs rounded-full opacity-0 group-hover:opacity-100 transition">×</button>
+                        {currentStage !== 'accepted' && currentStage !== 'shipped' && currentStage !== 'completed' && (
+                          <button onClick={() => handleRemoveItemFromTrade(item.id)} className="absolute top-1 right-1 w-5 h-5 bg-red-600 text-white text-xs rounded-full opacity-0 group-hover:opacity-100 transition">×</button>
+                        )}
                       </div>
                     ))}
                   </div>
                 )}
               </div>
 
-              {/* Fairness Meter (Center) */}
-              <div className="col-span-1 flex flex-col items-center justify-center">
+              {/* Fairness Meter (Center) — grayed out until items on both sides */}
+              <div className={`col-span-1 flex flex-col items-center justify-center ${(myItems.length === 0 && selectedItemIds.length === 0) || theirTotalValue === 0 ? 'opacity-30' : ''}`}>
                 <div className="w-2 h-32 bg-gray-700 rounded-full relative overflow-hidden">
-                  <div
-                    className={`absolute bottom-0 w-full rounded-full transition-all ${fairnessPercent > 55 ? 'bg-green-500' : fairnessPercent < 45 ? 'bg-red-500' : 'bg-yellow-500'}`}
-                    style={{ height: `${fairnessPercent}%` }}
-                  />
+                  {(myItems.length > 0 || selectedItemIds.length > 0) && theirTotalValue > 0 ? (
+                    <div
+                      className={`absolute bottom-0 w-full rounded-full transition-all ${fairnessPercent > 55 ? 'bg-green-500' : fairnessPercent < 45 ? 'bg-red-500' : 'bg-yellow-500'}`}
+                      style={{ height: `${fairnessPercent}%` }}
+                    />
+                  ) : null}
                 </div>
-                <span className="text-xs text-gray-400 mt-2">{fairnessPercent}%</span>
-                <span className="text-[10px] text-gray-500">Fair</span>
+                <span className="text-xs text-gray-400 mt-2">
+                  {(myItems.length > 0 || selectedItemIds.length > 0) && theirTotalValue > 0 ? `${fairnessPercent}%` : '—'}
+                </span>
+                <span className="text-[10px] text-gray-500">
+                  {(myItems.length > 0 || selectedItemIds.length > 0) && theirTotalValue > 0 ? 'Fair' : 'Add items'}
+                </span>
               </div>
 
               {/* Their Side */}
@@ -461,6 +469,18 @@ export default function WarRoom() {
             />
             <span>Middle Man Service</span>
           </label>
+          {/* Show Approve button if the OTHER party requested it */}
+          {trade?.proposal?.middleManRequested && !trade?.proposal?.middleManApproved && trade?.proposal?.middleManRequestedBy !== (isRequester ? trade.proposal.requesterId : trade.proposal.recipientId) && (
+            <button
+              onClick={() => middleManMutation.mutate({ proposalId, action: 'approve' })}
+              className="px-3 py-1 rounded bg-green-600 text-white text-xs font-medium hover:bg-green-700 transition"
+            >
+              ✅ Approve Middle Man
+            </button>
+          )}
+          {trade?.proposal?.middleManApproved && (
+            <span className="text-green-400 text-xs font-medium">✅ Both Agreed</span>
+          )}
           <span className="text-gray-600">|</span>
           <span className="px-2 py-0.5 bg-blue-900/50 text-blue-300 text-xs rounded">eBay ✓</span>
           <span className="px-2 py-0.5 bg-blue-900/50 text-blue-300 text-xs rounded">Facebook ✓</span>

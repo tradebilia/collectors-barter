@@ -1325,6 +1325,14 @@ export const appRouter = router({
         const userProfile = await db.select().from(userProfiles).where(eq(userProfiles.userId, input.userId)).limit(1);
         
         if (!userToDelete.length) throw new TRPCError({ code: 'NOT_FOUND', message: 'User not found' });
+
+        // Q23: Block deletion if user has active trades
+        const [activeTrades] = await db.execute(
+          sql`SELECT COUNT(*) as cnt FROM tradeProposals WHERE (requesterId = ${input.userId} OR recipientId = ${input.userId}) AND status IN ('pending', 'negotiating', 'accepted', 'shipped')`
+        );
+        if ((activeTrades as any)?.[0]?.cnt > 0) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Cannot delete account: user has active trades. Please resolve all active trades first.' });
+        }
         
         const user = userToDelete[0];
         const profile = userProfile[0];

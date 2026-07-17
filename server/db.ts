@@ -1264,6 +1264,30 @@ export async function bulkDeleteListings(
     }
   }
 
+  // Q33: Check if any listing is in an accepted trade (block deletion)
+  for (const listing of listings_to_delete) {
+    const [acceptedTrades] = await db.execute(
+      sql`SELECT COUNT(*) as cnt FROM tradeProposals WHERE requestedListingId = ${listing.id} AND status IN ('accepted', 'shipped')`
+    );
+    const [acceptedOffered] = await db.execute(
+      sql`SELECT COUNT(*) as cnt FROM tradeProposalItems tpi JOIN tradeProposals tp ON tp.id = tpi.proposalId WHERE tpi.offeredListingId = ${listing.id} AND tp.status IN ('accepted', 'shipped')`
+    );
+    if ((acceptedTrades as any)?.[0]?.cnt > 0 || (acceptedOffered as any)?.[0]?.cnt > 0) {
+      throw new Error(`Cannot delete item "${listing.id}": it is part of an accepted trade. Cancel the trade first.`);
+    }
+  }
+
+  // Q33: Auto-cancel any negotiating trades involving these items
+  const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
+  for (const listing of listings_to_delete) {
+    await db.execute(
+      sql`UPDATE tradeProposals SET status = 'cancelled', declineReason = 'Trade cancelled: Item is no longer available.', updatedAt = ${now} WHERE requestedListingId = ${listing.id} AND status IN ('pending', 'negotiating')`
+    );
+    await db.execute(
+      sql`UPDATE tradeProposals SET status = 'cancelled', declineReason = 'Trade cancelled: An offered item is no longer available.', updatedAt = ${now} WHERE status IN ('pending', 'negotiating') AND id IN (SELECT proposalId FROM tradeProposalItems WHERE offeredListingId = ${listing.id})`
+    );
+  }
+
     // Atomic delete: photos + listings together. Without a transaction, a
   // failure between the two deletes left listings with missing photos or
   // half-deleted state.
