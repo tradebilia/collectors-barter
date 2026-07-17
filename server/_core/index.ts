@@ -205,7 +205,7 @@ async function startServer() {
       const [pendingAcceptances] = await db.execute(
         sql`SELECT proposalId FROM tradeReceiptConfirmation WHERE confirmationType = 'accepted' AND confirmedAt < ${threeDaysAgo}`
       );
-      for (const row of (pendingAcceptances as any[] || [])) {
+      for (const row of (pendingAcceptances as unknown as any[] || [])) {
         await db.execute(
           sql`UPDATE tradeProposals SET status = 'cancelled', declineReason = 'Auto-cancelled: 72-hour acceptance window expired', updatedAt = ${now} WHERE id = ${row.proposalId} AND status = 'negotiating'`
         );
@@ -220,7 +220,7 @@ async function startServer() {
       const [overdueShipments] = await db.execute(
         sql`SELECT DISTINCT proposalId FROM tradeTrackingNumbers WHERE submittedAt < ${fifteenDaysAgo} AND proposalId NOT IN (SELECT proposalId FROM tradeReceiptConfirmation WHERE confirmationType = 'received') AND proposalId IN (SELECT id FROM tradeProposals WHERE status IN ('accepted', 'shipped'))`
       );
-      for (const row of (overdueShipments as any[] || [])) {
+      for (const row of (overdueShipments as unknown as any[] || [])) {
         await db.execute(
           sql`UPDATE tradeProposals SET status = 'disputed', declineReason = 'Auto-escalated: Receipt not confirmed within 15 days', updatedAt = ${now} WHERE id = ${row.proposalId}`
         );

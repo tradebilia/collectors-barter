@@ -167,9 +167,8 @@ export default function Messages() {
     if (folder === "inquiries") return [];
     return allThreads.filter(thread => {
       if (folder === "direct") return thread.kind === "direct";
-      if (folder === "trade") return thread.kind === "trade";
       if (folder === "unread") return thread.unread;
-      if (folder === "accepted") return thread.kind === "trade" && thread.accepted;
+      // Trade folders removed per Decision 2 — trade activity is in Trade Hub
       return true;
     });
   }, [allThreads, folder]);
@@ -287,13 +286,11 @@ export default function Messages() {
                     ? inquiries.length
                     : item.value === "direct"
                       ? allThreads.filter(thread => thread.kind === "direct").length
-                      : item.value === "trade"
-                        ? allThreads.filter(thread => thread.kind === "trade").length
-                        : item.value === "unread"
-                          ? allThreads.filter(thread => thread.unread).length + inquiries.filter(i => !i.isRead).length
-                          : item.value === "deleted"
-                            ? (deletedInquiriesQuery.data ?? []).length
-                            : allThreads.filter(thread => thread.kind === "trade" && thread.accepted).length;
+                      : item.value === "unread"
+                        ? allThreads.filter(thread => thread.unread).length + inquiries.filter(i => !i.isRead).length
+                        : item.value === "deleted"
+                          ? (deletedInquiriesQuery.data ?? []).length
+                          : allThreads.length;
                 return (
                   <button
                     key={item.value}
