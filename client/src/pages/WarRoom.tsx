@@ -41,6 +41,10 @@ export default function WarRoom() {
   const [cashPay, setCashPay] = useState('');
   const [declineReason, setDeclineReason] = useState('');
   const [showDeclineModal, setShowDeclineModal] = useState(false);
+  const [showContractModal, setShowContractModal] = useState(false);
+  const [contractCheckbox, setContractCheckbox] = useState(false);
+  const [inventorySearch, setInventorySearch] = useState('');
+  const [selectedItemIds, setSelectedItemIds] = useState<number[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // tRPC queries
@@ -57,6 +61,11 @@ export default function WarRoom() {
   const privateNoteQuery = trpc.tradeFlow.getPrivateNote.useQuery(
     { proposalId },
     { enabled: proposalId > 0 }
+  );
+
+  const inventoryQuery = trpc.tradeFlow.getOtherUserInventory.useQuery(
+    { proposalId, search: inventorySearch || undefined },
+    { enabled: proposalId > 0 && isInventoryOpen }
   );
 
   // tRPC mutations
@@ -150,10 +159,17 @@ export default function WarRoom() {
   };
 
   const handleAccept = () => {
-    const confirmed = window.confirm(
-      'Are you sure you want to accept this trade?\n\nBy accepting, you are locking in your commitment. The other party will have 72 hours to also confirm.'
-    );
-    if (confirmed) acceptMutation.mutate({ proposalId });
+    setShowContractModal(true);
+    setContractCheckbox(false);
+  };
+
+  const confirmAccept = () => {
+    if (!contractCheckbox) {
+      toast.error('You must check the confirmation box before proceeding.');
+      return;
+    }
+    setShowContractModal(false);
+    acceptMutation.mutate({ proposalId });
   };
 
   const handleDecline = () => {
@@ -167,6 +183,32 @@ export default function WarRoom() {
 
   const handleSaveNote = () => {
     saveNoteMutation.mutate({ proposalId, noteContent: noteInput });
+  };
+
+  const handleAddItemToTrade = (itemId: number) => {
+    if (selectedItemIds.includes(itemId)) {
+      toast.error('Item already added to trade');
+      return;
+    }
+    setSelectedItemIds(prev => [...prev, itemId]);
+    toast.success('Item added to trade table!');
+  };
+
+  const handleRemoveItemFromTrade = (itemId: number) => {
+    setSelectedItemIds(prev => prev.filter(id => id !== itemId));
+  };
+
+  const handleUpdateProposal = () => {
+    if (selectedItemIds.length === 0 && !cashPay && !cashReceive) {
+      toast.error('Please add at least one item or cash amount to your proposal.');
+      return;
+    }
+    sendProposalMutation.mutate({
+      proposalId,
+      offeredListingIds: selectedItemIds,
+      cashFromProposer: cashPay ? parseFloat(cashPay) : undefined,
+      cashFromRecipient: cashReceive ? parseFloat(cashReceive) : undefined,
+    });
   };
 
   if (tradeDetailsQuery.isLoading) {
@@ -470,10 +512,11 @@ export default function WarRoom() {
               ❌ Decline
             </button>
             <button
-              onClick={() => toast.success('Proposal updated!')}
-              className="px-4 py-2 rounded bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition"
+              onClick={handleUpdateProposal}
+              disabled={sendProposalMutation.isPending || (selectedItemIds.length === 0 && !cashPay && !cashReceive)}
+              className="px-4 py-2 rounded bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              💾 Update Proposal
+              {sendProposalMutation.isPending ? 'Saving...' : '💾 Update Proposal'}
             </button>
             <button
               onClick={handleAccept}
@@ -485,6 +528,72 @@ export default function WarRoom() {
           </div>
         </div>
       </footer>
+
+      {/* Trade Contract Modal */}
+      {showContractModal && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+          <div className="bg-[#1a1a4a] rounded-lg p-6 max-w-lg w-full mx-4 border border-purple-500/30">
+            <h3 className="text-white font-bold text-xl mb-4 text-center">Trade Contract</h3>
+            <p className="text-gray-300 text-sm mb-4 text-center">Please verify the final terms of this trade:</p>
+
+            {/* Summary */}
+            <div className="bg-[#0a0a2a] rounded-lg p-4 mb-4 space-y-3">
+              <div>
+                <span className="text-blue-400 text-xs font-semibold uppercase">You Give:</span>
+                <div className="text-white text-sm mt-1">
+                  {selectedItemIds.length > 0 ? `${selectedItemIds.length} item(s)` : 'No items'}
+                  {cashPay && ` + $${parseFloat(cashPay).toLocaleString()} cash`}
+                </div>
+              </div>
+              <div>
+                <span className="text-orange-400 text-xs font-semibold uppercase">You Receive:</span>
+                <div className="text-white text-sm mt-1">
+                  {requestedListing?.title || 'Requested item'}
+                  {theirItems.length > 0 && ` + ${theirItems.length} more item(s)`}
+                  {cashReceive && ` + $${parseFloat(cashReceive).toLocaleString()} cash`}
+                </div>
+              </div>
+            </div>
+
+            {/* Cash disclaimer */}
+            {(cashPay || cashReceive) && (
+              <p className="text-yellow-500 text-xs italic mb-4">
+                Tradebilia is a marketplace that brings collectors together. We are not liable for any trades, items, or cash transactions that go wrong. All trades are conducted at the sole risk of the participating collectors.
+              </p>
+            )}
+
+            {/* Confirmation checkbox */}
+            <label className="flex items-start gap-3 mb-4 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={contractCheckbox}
+                onChange={(e) => setContractCheckbox(e.target.checked)}
+                className="mt-0.5 rounded border-gray-500"
+              />
+              <span className="text-gray-300 text-sm">
+                I understand that by confirming, I am locking in this trade. Items will be reserved and I commit to shipping within the agreed timeframe.
+              </span>
+            </label>
+
+            {/* Actions */}
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setShowContractModal(false)}
+                className="px-4 py-2 rounded bg-gray-700 text-gray-300 text-sm"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmAccept}
+                disabled={!contractCheckbox || acceptMutation.isPending}
+                className="px-6 py-2 rounded bg-green-600 text-white text-sm font-bold hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+              >
+                {acceptMutation.isPending ? 'Processing...' : 'Confirm & Lock Trade'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Decline Modal */}
       {showDeclineModal && (
@@ -541,9 +650,65 @@ export default function WarRoom() {
             <h3 className="text-white font-semibold">🔍 Their Inventory</h3>
             <button onClick={() => setIsInventoryOpen(false)} className="text-gray-400 hover:text-white">✕</button>
           </div>
-          <div className="flex-1 p-4 overflow-y-auto">
+          {/* Search */}
+          <div className="p-3 border-b border-gray-700">
+            <input
+              type="text"
+              value={inventorySearch}
+              onChange={(e) => setInventorySearch(e.target.value)}
+              placeholder="Search items..."
+              className="w-full bg-[#0a0a2a] border border-gray-600 rounded-lg px-3 py-2 text-white placeholder-gray-400 text-sm"
+            />
+          </div>
+          {/* Items */}
+          <div className="flex-1 p-3 overflow-y-auto">
             <p className="text-xs text-gray-500 mb-3">Click items to add them to the trade table.</p>
-            <p className="text-gray-400 text-sm text-center py-8">Loading inventory...</p>
+            {inventoryQuery.isLoading ? (
+              <div className="text-center py-8">
+                <div className="animate-spin inline-block w-5 h-5 border-2 border-purple-500 border-t-transparent rounded-full"></div>
+                <p className="text-gray-400 text-sm mt-2">Loading inventory...</p>
+              </div>
+            ) : (inventoryQuery.data?.items?.length || 0) === 0 ? (
+              <p className="text-gray-400 text-sm text-center py-8">No items found in their inventory.</p>
+            ) : (
+              <div className="space-y-2">
+                {(inventoryQuery.data?.items || []).map((item: any) => {
+                  const isAlreadyAdded = selectedItemIds.includes(item.id);
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => handleAddItemToTrade(item.id)}
+                      disabled={isAlreadyAdded}
+                      className={`w-full text-left flex items-center gap-3 p-2 rounded-lg transition ${
+                        isAlreadyAdded
+                          ? 'bg-green-900/30 border border-green-600 cursor-default'
+                          : 'bg-[#0a0a2a] hover:bg-[#2a2a5a] border border-gray-700 hover:border-purple-500 cursor-pointer'
+                      }`}
+                    >
+                      {item.primaryImage ? (
+                        <img src={item.primaryImage} alt={item.title} className="w-12 h-12 object-contain rounded flex-shrink-0" />
+                      ) : (
+                        <div className="w-12 h-12 bg-gray-700 rounded flex items-center justify-center flex-shrink-0">
+                          <span className="text-gray-500 text-xs">No img</span>
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-white text-sm truncate">{item.title}</p>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <span className="text-green-400 text-xs font-medium">
+                            ${parseFloat(item.estimatedValue || '0').toLocaleString()}
+                          </span>
+                          <span className="text-gray-500 text-xs capitalize">{item.category?.replace('_', ' ')}</span>
+                        </div>
+                      </div>
+                      {isAlreadyAdded && (
+                        <span className="text-green-400 text-xs font-medium flex-shrink-0">✓ Added</span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
       )}
