@@ -415,6 +415,17 @@ export const tradeFlowRouter = router({
         await db.execute(
           sql`DELETE FROM tradeReceiptConfirmation WHERE proposalId = ${input.proposalId} AND confirmationType = 'accepted'`
         );
+
+        // Q2 + Q14: Auto-cancel all other pending/negotiating proposals involving these items
+        // Cancel proposals where the requestedListingId is now traded
+        await db.execute(
+          sql`UPDATE tradeProposals SET status = 'cancelled', declineReason = 'Item is no longer available (traded in another proposal)', updatedAt = ${now} WHERE id != ${input.proposalId} AND requestedListingId = ${proposal.requestedListingId} AND status IN ('pending', 'negotiating')`
+        );
+        // Cancel proposals where any offered item is now traded
+        await db.execute(
+          sql`UPDATE tradeProposals SET status = 'cancelled', declineReason = 'An item in this proposal is no longer available', updatedAt = ${now} WHERE id != ${input.proposalId} AND status IN ('pending', 'negotiating') AND id IN (SELECT proposalId FROM tradeProposalItems WHERE offeredListingId IN (SELECT offeredListingId FROM tradeProposalItems WHERE proposalId = ${input.proposalId}))`
+        );
+
         return { success: true, mutualAcceptance: true };
       } else {
         // First acceptance — record it and notify other party (72-hour window)
