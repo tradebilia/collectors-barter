@@ -88,6 +88,7 @@ import { hashPassword, verifyPassword, isValidUsername, isValidPassword, isValid
 import { getUserByUsername, createUser, requireDb } from "./db";
 import { getEbayAuthUrl, exchangeCodeForToken, getUserInfo, getUserFeedback, refreshAccessToken } from "./_core/ebay";
 import { sdk } from "./_core/sdk";
+import { tradeFlowRouter } from "./tradeFlowRouter";
 import { customAuth } from "./_core/customAuth";
 import { users, userProfiles, listings, deletedAccounts, tradeProposals, tradeMessages, tradeReviews, watchlistEntries, draftListings, passwordResetTokens, referralRequests } from "../drizzle/schema";
 import { eq, sql, desc, or, inArray } from "drizzle-orm";
@@ -168,6 +169,7 @@ const referralRequestSchema = z.object({
 
 export const appRouter = router({
   system: systemRouter,
+  tradeFlow: tradeFlowRouter,
   auth: router({
     me: publicProcedure.query(async opts => {
       const user = opts.ctx.user;
