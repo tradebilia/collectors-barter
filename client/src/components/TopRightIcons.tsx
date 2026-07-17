@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { Bell, Mail, Cog, Shield, ArrowRightLeft } from "lucide-react";
+import { Bell, Mail, Cog, Shield } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
@@ -20,46 +20,22 @@ const mailFlashStyle = `
   }
 `;
 
-// Trade Bell Icon — Turns solid yellow and flashes when there are unread trade alerts
-function TradeBellIcon({ iconColor }: { iconColor: string }) {
-  const { user } = useAuth();
-  const tradeUnreadQuery = trpc.tradeFlow.getUnreadTradeAlertCount.useQuery(undefined, {
-    enabled: !!user,
-    refetchInterval: 15000,
-    staleTime: 10000,
-  });
-
-  const unreadTradeAlerts = tradeUnreadQuery.data?.count || 0;
-
-  return (
-    <Link href="/trade-hub" className="relative transition hover:opacity-80" title="Trade Alerts">
-      {unreadTradeAlerts > 0 ? (
-        <div className="flex items-center gap-1">
-          <ArrowRightLeft className="h-5 w-5 text-yellow-400 mail-icon-flash" />
-          <span className="text-xs font-bold text-yellow-400">{unreadTradeAlerts > 99 ? "99+" : unreadTradeAlerts}</span>
-        </div>
-      ) : (
-        <ArrowRightLeft className={`h-5 w-5 ${iconColor}`} />
-      )}
-    </Link>
-  );
-}
-
 export function TopRightIcons({ className = "flex items-center gap-3 md:gap-4", iconColor = "text-[#d4e86d]" }: TopRightIconsProps) {
   const { user } = useAuth();
   const unreadQuery = trpc.auth.unreadCounts.useQuery(undefined, {
     enabled: !!user,
     refetchOnMount: true,
-    // 30s polling with matching staleTime: previously 5s + staleTime 0,
-    // which generated 12 requests/min (2 DB queries each) per logged-in user.
     refetchInterval: 30000,
     staleTime: 15000,
+  });
+  const tradeUnreadQuery = trpc.tradeFlow.getUnreadTradeAlertCount.useQuery(undefined, {
+    enabled: !!user,
+    refetchInterval: 15000,
+    staleTime: 10000,
   });
   const dashboardQuery = trpc.market.dashboard.useQuery(undefined, {
     enabled: !!user,
     refetchOnMount: true,
-    // Dashboard drives only the avatar fallback here; 60s freshness is ample
-    // (previously staleTime 0 re-ran one of the heaviest queries per mount).
     staleTime: 60000,
   });
 
@@ -68,7 +44,7 @@ export function TopRightIcons({ className = "flex items-center gap-3 md:gap-4", 
   }
 
   const unreadMessages = typeof unreadQuery.data?.unreadMessages === 'number' ? unreadQuery.data.unreadMessages : 0;
-  const unreadNotifications = typeof unreadQuery.data?.unreadNotifications === 'number' ? unreadQuery.data.unreadNotifications : 0;
+  const unreadTradeAlerts = tradeUnreadQuery.data?.count || 0;
   const userAvatarUrl = user?.avatarUrl || dashboardQuery.data?.profile?.avatarUrl || undefined;
 
   return (
@@ -96,16 +72,15 @@ export function TopRightIcons({ className = "flex items-center gap-3 md:gap-4", 
             </Link>
           )}
 
-          {/* Trade Bell — Dedicated trade alert icon (per Decision 2) */}
-          <TradeBellIcon iconColor={iconColor} />
-
-          {/* Notifications Bell */}
-          <Link href="/notifications" className="relative transition hover:opacity-80" title="Notifications">
-            <Bell className="h-5 w-5" />
-            {unreadNotifications > 0 && (
-              <span className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
-                {unreadNotifications > 99 ? "99+" : unreadNotifications}
-              </span>
+          {/* Trade Alerts Bell — Links to Trade Hub, flashes yellow when unread */}
+          <Link href="/trade-hub" className="relative transition hover:opacity-80" title="Trade Alerts">
+            {unreadTradeAlerts > 0 ? (
+              <div className="flex items-center gap-0.5">
+                <Bell className="h-5 w-5 text-yellow-400 fill-yellow-400 mail-icon-flash" />
+                <span className="text-xs font-bold text-yellow-400">{unreadTradeAlerts > 99 ? "99+" : unreadTradeAlerts}</span>
+              </div>
+            ) : (
+              <Bell className="h-5 w-5" />
             )}
           </Link>
 

@@ -91,9 +91,12 @@ export default function TradeHub() {
       <TopBar logoUrl="/images/tradebilia-logo.svg" searchPlaceholder="Search Tradebilia..." />
 
       <main className="pb-24">
-        {/* Hero Section */}
+        {/* Hero Section — same background as main page */}
         <section className="relative z-0 w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden text-white" style={{
-          background: 'linear-gradient(135deg, #0a0a2a 0%, #1a1a4a 50%, #2a2a6a 100%)',
+          backgroundImage: 'url(/images/Mainpage.webp)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
         }}>
           <div className="container relative flex h-48 items-center justify-center py-0 sm:h-56 lg:h-64">
             <div className="flex w-full max-w-3xl items-center justify-center">
