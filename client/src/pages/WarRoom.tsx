@@ -45,6 +45,10 @@ export default function WarRoom() {
   const [contractCheckbox, setContractCheckbox] = useState(false);
   const [inventorySearch, setInventorySearch] = useState('');
   const [selectedItemIds, setSelectedItemIds] = useState<number[]>([]);
+  const [trackingCarrier, setTrackingCarrier] = useState<string>('USPS');
+  const [trackingCarrierOther, setTrackingCarrierOther] = useState('');
+  const [trackingNumber, setTrackingNumber] = useState('');
+  const [middleManRequested, setMiddleManRequested] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // tRPC queries
@@ -108,6 +112,35 @@ export default function WarRoom() {
 
   const enterWarRoomMutation = trpc.tradeFlow.enterWarRoom.useMutation({
     onSuccess: () => utils.tradeFlow.getTradeDetails.invalidate({ proposalId }),
+  });
+
+  const submitTrackingMutation = trpc.tradeFlow.submitTrackingNumbers.useMutation({
+    onSuccess: () => { toast.success('Tracking number submitted!'); setTrackingNumber(''); utils.tradeFlow.getTradeDetails.invalidate({ proposalId }); },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const confirmReceiptMutation = trpc.tradeFlow.confirmItemsReceived.useMutation({
+    onSuccess: () => { toast.success('Receipt confirmed!'); utils.tradeFlow.getTradeDetails.invalidate({ proposalId }); },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const fileComplaintMutation = trpc.tradeFlow.fileComplaint.useMutation({
+    onSuccess: () => { toast.success('Complaint filed. Admin will review.'); utils.tradeFlow.getTradeDetails.invalidate({ proposalId }); },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const middleManMutation = trpc.tradeFlow.middleManService.useMutation({
+    onSuccess: () => { toast.success('Middle Man preference updated!'); utils.tradeFlow.getTradeDetails.invalidate({ proposalId }); },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const generateVotingLinkMutation = trpc.tradeFlow.generateVotingLink.useMutation({
+    onSuccess: (data) => {
+      const url = `${window.location.origin}/trade-vote/${data.token}`;
+      navigator.clipboard.writeText(url);
+      toast.success('Voting link copied to clipboard! Share it with the community.');
+    },
+    onError: (err) => toast.error(err.message),
   });
 
   // Enter war room on first load (transitions pending → negotiating)
@@ -306,7 +339,7 @@ export default function WarRoom() {
                         )}
                         <p className="text-white text-xs truncate">{item.title}</p>
                         <p className="text-green-400 text-xs">${parseFloat(item.estimatedValue || '0').toLocaleString()}</p>
-                        <button className="absolute top-1 right-1 w-5 h-5 bg-red-600 text-white text-xs rounded-full opacity-0 group-hover:opacity-100 transition">×</button>
+                        <button onClick={() => handleRemoveItemFromTrade(item.id)} className="absolute top-1 right-1 w-5 h-5 bg-red-600 text-white text-xs rounded-full opacity-0 group-hover:opacity-100 transition">×</button>
                       </div>
                     ))}
                   </div>
@@ -414,7 +447,18 @@ export default function WarRoom() {
         {/* Service & Trust Bar */}
         <section className="bg-[#1a1a4a] rounded-lg p-3 flex items-center gap-4 flex-wrap">
           <label className="flex items-center gap-2 text-gray-300 text-sm cursor-pointer">
-            <input type="checkbox" className="rounded border-gray-500" />
+            <input
+              type="checkbox"
+              checked={middleManRequested}
+              onChange={(e) => {
+                setMiddleManRequested(e.target.checked);
+                middleManMutation.mutate({
+                  proposalId,
+                  action: e.target.checked ? 'request' : 'deselect',
+                });
+              }}
+              className="rounded border-gray-500"
+            />
             <span>Middle Man Service</span>
           </label>
           <span className="text-gray-600">|</span>
@@ -491,41 +535,146 @@ export default function WarRoom() {
         </section>
       </div>
 
-      {/* Footer Actions */}
+      {/* Shipping Stage Section — only visible when status is accepted or shipped */}
+      {(currentStage === 'accepted' || currentStage === 'shipped') && (
+        <div className="max-w-7xl mx-auto w-full px-6 pb-4">
+          <section className="bg-[#1a1a4a] rounded-lg p-6">
+            <h3 className="text-white font-semibold text-lg mb-4">📦 Shipping & Tracking</h3>
+            <p className="text-gray-400 text-sm mb-4">Each trader pays their own shipping. Submit your tracking number below.</p>
+
+            {/* Tracking Input */}
+            <div className="grid grid-cols-12 gap-3 mb-4">
+              <div className="col-span-3">
+                <label className="text-gray-400 text-xs">Carrier</label>
+                <select
+                  value={trackingCarrier}
+                  onChange={(e) => setTrackingCarrier(e.target.value)}
+                  className="w-full bg-[#0a0a2a] border border-gray-600 rounded px-3 py-2 text-white text-sm mt-1"
+                >
+                  <option value="USPS">USPS</option>
+                  <option value="UPS">UPS</option>
+                  <option value="FedEx">FedEx</option>
+                  <option value="DHL">DHL</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+              {trackingCarrier === 'Other' && (
+                <div className="col-span-3">
+                  <label className="text-gray-400 text-xs">Carrier Name</label>
+                  <input
+                    type="text"
+                    value={trackingCarrierOther}
+                    onChange={(e) => setTrackingCarrierOther(e.target.value)}
+                    placeholder="Enter carrier name"
+                    className="w-full bg-[#0a0a2a] border border-gray-600 rounded px-3 py-2 text-white text-sm mt-1"
+                  />
+                </div>
+              )}
+              <div className={trackingCarrier === 'Other' ? 'col-span-4' : 'col-span-7'}>
+                <label className="text-gray-400 text-xs">Tracking Number</label>
+                <input
+                  type="text"
+                  value={trackingNumber}
+                  onChange={(e) => setTrackingNumber(e.target.value)}
+                  placeholder="Enter tracking number"
+                  className="w-full bg-[#0a0a2a] border border-gray-600 rounded px-3 py-2 text-white text-sm mt-1"
+                />
+              </div>
+              <div className="col-span-2 flex items-end">
+                <button
+                  onClick={() => {
+                    if (!trackingNumber.trim()) { toast.error('Please enter a tracking number'); return; }
+                    submitTrackingMutation.mutate({
+                      proposalId,
+                      trackingNumbers: [{
+                        listingId: requestedListing?.id || 0,
+                        carrier: trackingCarrier as any,
+                        carrierOther: trackingCarrier === 'Other' ? trackingCarrierOther : undefined,
+                        trackingNumber: trackingNumber.trim(),
+                      }],
+                    });
+                  }}
+                  disabled={submitTrackingMutation.isPending || !trackingNumber.trim()}
+                  className="w-full px-3 py-2 rounded bg-purple-600 text-white text-sm font-medium hover:bg-purple-700 disabled:opacity-50 transition"
+                >
+                  {submitTrackingMutation.isPending ? 'Submitting...' : 'Submit'}
+                </button>
+              </div>
+            </div>
+          </section>
+        </div>
+      )}
+
+      {/* Footer Actions — Changes based on stage */}
       <footer className="bg-[#1a1a4a] border-t border-gray-700 px-6 py-3 sticky bottom-0">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <button
-            className={`px-4 py-2 rounded text-sm font-medium ${
-              myItems.length > 0 && (theirItems.length > 0 || requestedListing)
-                ? 'bg-gray-700 text-white hover:bg-gray-600'
-                : 'bg-gray-800 text-gray-500 cursor-not-allowed'
-            }`}
-            disabled={myItems.length === 0 || (!theirItems.length && !requestedListing)}
-          >
-            📢 Get Community Opinion
-          </button>
-          <div className="flex gap-3">
-            <button
-              onClick={handleDecline}
-              className="px-4 py-2 rounded bg-red-600/80 text-white text-sm font-medium hover:bg-red-600 transition"
-            >
-              ❌ Decline
-            </button>
-            <button
-              onClick={handleUpdateProposal}
-              disabled={sendProposalMutation.isPending || (selectedItemIds.length === 0 && !cashPay && !cashReceive)}
-              className="px-4 py-2 rounded bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {sendProposalMutation.isPending ? 'Saving...' : '💾 Update Proposal'}
-            </button>
-            <button
-              onClick={handleAccept}
-              disabled={acceptMutation.isPending}
-              className="px-5 py-2 rounded bg-green-600 text-white text-sm font-bold hover:bg-green-700 transition disabled:opacity-50"
-            >
-              ✅ Accept Trade
-            </button>
-          </div>
+          {(currentStage === 'accepted' || currentStage === 'shipped') ? (
+            /* Shipping Stage Footer */
+            <>
+              <button
+                onClick={() => confirmReceiptMutation.mutate({ proposalId, confirmationType: 'received' })}
+                disabled={confirmReceiptMutation.isPending}
+                className="px-5 py-2 rounded bg-green-600 text-white text-sm font-bold hover:bg-green-700 disabled:opacity-50 transition"
+              >
+                ✅ Items Received
+              </button>
+              <div className="flex gap-3 items-center">
+                <button
+                  onClick={() => confirmReceiptMutation.mutate({ proposalId, confirmationType: 'damaged' })}
+                  disabled={confirmReceiptMutation.isPending}
+                  className="px-4 py-2 rounded bg-yellow-600 text-white text-sm font-medium hover:bg-yellow-700 disabled:opacity-50 transition"
+                >
+                  ⚠️ Received but Damaged
+                </button>
+                <button
+                  onClick={() => {
+                    const desc = window.prompt('Describe the issue:');
+                    if (desc) fileComplaintMutation.mutate({ proposalId, description: desc, complaintType: 'other' });
+                  }}
+                  className="text-gray-400 text-sm underline hover:text-white transition"
+                >
+                  File Complaint
+                </button>
+              </div>
+            </>
+          ) : (
+            /* Negotiation Stage Footer */
+            <>
+              <button
+                onClick={() => generateVotingLinkMutation.mutate({ proposalId })}
+                disabled={generateVotingLinkMutation.isPending || (myItems.length === 0 && selectedItemIds.length === 0)}
+                className={`px-4 py-2 rounded text-sm font-medium ${
+                  (myItems.length > 0 || selectedItemIds.length > 0) && (theirItems.length > 0 || requestedListing)
+                    ? 'bg-gray-700 text-white hover:bg-gray-600'
+                    : 'bg-gray-800 text-gray-500 cursor-not-allowed'
+                }`}
+              >
+                {generateVotingLinkMutation.isPending ? 'Generating...' : '📢 Get Community Opinion'}
+              </button>
+              <div className="flex gap-3">
+                <button
+                  onClick={handleDecline}
+                  className="px-4 py-2 rounded bg-red-600/80 text-white text-sm font-medium hover:bg-red-600 transition"
+                >
+                  ❌ Decline
+                </button>
+                <button
+                  onClick={handleUpdateProposal}
+                  disabled={sendProposalMutation.isPending || (selectedItemIds.length === 0 && !cashPay && !cashReceive)}
+                  className="px-4 py-2 rounded bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {sendProposalMutation.isPending ? 'Saving...' : '💾 Update Proposal'}
+                </button>
+                <button
+                  onClick={handleAccept}
+                  disabled={acceptMutation.isPending}
+                  className="px-5 py-2 rounded bg-green-600 text-white text-sm font-bold hover:bg-green-700 transition disabled:opacity-50"
+                >
+                  ✅ Accept Trade
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </footer>
 
