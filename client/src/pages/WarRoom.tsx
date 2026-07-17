@@ -49,6 +49,9 @@ export default function WarRoom() {
   const [trackingCarrierOther, setTrackingCarrierOther] = useState('');
   const [trackingNumber, setTrackingNumber] = useState('');
   const [middleManRequested, setMiddleManRequested] = useState(false);
+  const [reviewRatings, setReviewRatings] = useState({ tradeExperience: 0, itemCondition: 0, communication: 0, shippingSpeed: 0 });
+  const [reviewText, setReviewText] = useState('');
+  const [reviewSubmitted, setReviewSubmitted] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // tRPC queries
@@ -131,6 +134,11 @@ export default function WarRoom() {
 
   const middleManMutation = trpc.tradeFlow.middleManService.useMutation({
     onSuccess: () => { toast.success('Middle Man preference updated!'); utils.tradeFlow.getTradeDetails.invalidate({ proposalId }); },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const leaveReviewMutation = trpc.tradeFlow.leaveTradeReview.useMutation({
+    onSuccess: () => { toast.success('Review submitted! It will be visible once both parties have reviewed.'); setReviewSubmitted(true); },
     onError: (err) => toast.error(err.message),
   });
 
@@ -554,6 +562,84 @@ export default function WarRoom() {
           </div>
         </section>
       </div>
+
+      {/* Feedback Form — only visible when trade is completed */}
+      {currentStage === 'completed' && !reviewSubmitted && (
+        <div className="max-w-7xl mx-auto w-full px-6 pb-4">
+          <section className="bg-[#1a1a4a] rounded-lg p-6">
+            <h3 className="text-white font-semibold text-lg mb-2">⭐ Leave Your Review</h3>
+            <p className="text-gray-400 text-sm mb-4">Rate your trade experience. Reviews are hidden until both parties submit (blind review).</p>
+
+            {/* 4-Category Star Ratings */}
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              {[
+                { key: 'tradeExperience', label: 'Trade Experience' },
+                { key: 'itemCondition', label: 'Item Condition' },
+                { key: 'communication', label: 'Communication' },
+                { key: 'shippingSpeed', label: 'Shipping Speed' },
+              ].map(({ key, label }) => (
+                <div key={key} className="bg-[#0a0a2a] rounded-lg p-3">
+                  <label className="text-gray-300 text-sm font-medium block mb-2">{label}</label>
+                  <div className="flex gap-1">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        onClick={() => setReviewRatings(prev => ({ ...prev, [key]: star }))}
+                        className={`text-2xl transition ${
+                          star <= (reviewRatings as any)[key] ? 'text-yellow-400' : 'text-gray-600'
+                        } hover:text-yellow-300`}
+                      >
+                        ★
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Written Review */}
+            <div className="mb-4">
+              <label className="text-gray-300 text-sm font-medium block mb-2">Written Review (optional)</label>
+              <textarea
+                value={reviewText}
+                onChange={(e) => setReviewText(e.target.value)}
+                placeholder="Share your experience with this trade..."
+                className="w-full bg-[#0a0a2a] border border-gray-600 rounded-lg px-4 py-3 text-white placeholder-gray-400 text-sm h-24 resize-none"
+              />
+            </div>
+
+            {/* Submit */}
+            <button
+              onClick={() => {
+                if (Object.values(reviewRatings).some(r => r === 0)) {
+                  toast.error('Please rate all 4 categories before submitting.');
+                  return;
+                }
+                leaveReviewMutation.mutate({
+                  proposalId,
+                  tradeExperienceRating: reviewRatings.tradeExperience,
+                  itemConditionRating: reviewRatings.itemCondition,
+                  communicationRating: reviewRatings.communication,
+                  shippingSpeedRating: reviewRatings.shippingSpeed,
+                  review: reviewText || undefined,
+                });
+              }}
+              disabled={leaveReviewMutation.isPending}
+              className="w-full px-6 py-3 rounded-lg bg-purple-600 text-white font-bold hover:bg-purple-700 disabled:opacity-50 transition"
+            >
+              {leaveReviewMutation.isPending ? 'Submitting...' : 'Submit Review'}
+            </button>
+          </section>
+        </div>
+      )}
+      {currentStage === 'completed' && reviewSubmitted && (
+        <div className="max-w-7xl mx-auto w-full px-6 pb-4">
+          <section className="bg-[#1a1a4a] rounded-lg p-6 text-center">
+            <p className="text-green-400 text-lg font-semibold">✅ Review Submitted!</p>
+            <p className="text-gray-400 text-sm mt-2">Your review will be visible once both parties have submitted their reviews (or after 7 days).</p>
+          </section>
+        </div>
+      )}
 
       {/* Shipping Stage Section — only visible when status is accepted or shipped */}
       {(currentStage === 'accepted' || currentStage === 'shipped') && (

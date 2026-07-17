@@ -21,10 +21,9 @@ const folders = [
   { value: "all", label: "All Messages" },
   { value: "inquiries", label: "Item Inquiries" },
   { value: "direct", label: "Direct Messages" },
-  { value: "trade", label: "Trade-related" },
   { value: "unread", label: "Unread" },
-  { value: "accepted", label: "Accepted Trades" },
   { value: "deleted", label: "Deleted" },
+  // Trade-related folders removed per Decision 2 — trade activity is now in the Trade Hub
 ] as const;
 
 function initials(name: string) {

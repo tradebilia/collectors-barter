@@ -177,6 +177,66 @@ async function startServer() {
     }
   });
 
+  // Scheduled trade reminders endpoint — handles all trade timers
+  app.post("/api/scheduled/tradeReminders", async (req, res) => {
+    try {
+      const user = await sdk.authenticateRequest(req);
+      if (!user.isCron) {
+        return res.status(403).json({ error: "cron-only" });
+      }
+
+      const { requireDb } = await import("../db");
+      const db = await requireDb();
+      const { sql } = await import("drizzle-orm");
+      const now = new Date().toISOString().slice(0, 19).replace("T", " ");
+      let autoCancelled = 0;
+      let acceptanceTimedOut = 0;
+      let receiptEscalated = 0;
+
+      // 1. 30-day auto-cancel: Trades in negotiating with no activity for 30 days
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 19).replace("T", " ");
+      const [staleResult] = await db.execute(
+        sql`UPDATE tradeProposals SET status = 'cancelled', declineReason = 'Auto-cancelled: 30 days of no activity', updatedAt = ${now} WHERE status IN ('pending', 'negotiating') AND lastActivityAt IS NOT NULL AND lastActivityAt < ${thirtyDaysAgo}`
+      );
+      autoCancelled = (staleResult as any)?.affectedRows || 0;
+
+      // 2. 72-hour acceptance timeout: First acceptance recorded but other party hasn't confirmed in 3 days
+      const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString().slice(0, 19).replace("T", " ");
+      const [pendingAcceptances] = await db.execute(
+        sql`SELECT proposalId FROM tradeReceiptConfirmation WHERE confirmationType = 'accepted' AND confirmedAt < ${threeDaysAgo}`
+      );
+      for (const row of (pendingAcceptances as any[] || [])) {
+        await db.execute(
+          sql`UPDATE tradeProposals SET status = 'cancelled', declineReason = 'Auto-cancelled: 72-hour acceptance window expired', updatedAt = ${now} WHERE id = ${row.proposalId} AND status = 'negotiating'`
+        );
+        await db.execute(
+          sql`DELETE FROM tradeReceiptConfirmation WHERE proposalId = ${row.proposalId} AND confirmationType = 'accepted'`
+        );
+        acceptanceTimedOut++;
+      }
+
+      // 3. 15-day receipt timeout: Tracking submitted but no receipt confirmation in 15 days
+      const fifteenDaysAgo = new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString().slice(0, 19).replace("T", " ");
+      const [overdueShipments] = await db.execute(
+        sql`SELECT DISTINCT proposalId FROM tradeTrackingNumbers WHERE submittedAt < ${fifteenDaysAgo} AND proposalId NOT IN (SELECT proposalId FROM tradeReceiptConfirmation WHERE confirmationType = 'received') AND proposalId IN (SELECT id FROM tradeProposals WHERE status IN ('accepted', 'shipped'))`
+      );
+      for (const row of (overdueShipments as any[] || [])) {
+        await db.execute(
+          sql`UPDATE tradeProposals SET status = 'disputed', declineReason = 'Auto-escalated: Receipt not confirmed within 15 days', updatedAt = ${now} WHERE id = ${row.proposalId}`
+        );
+        await db.execute(
+          sql`INSERT INTO tradeAdminLog (proposalId, eventType, details, createdAt) VALUES (${row.proposalId}, 'disputed', 'Auto-escalated: 15-day receipt timeout', ${now})`
+        );
+        receiptEscalated++;
+      }
+
+      res.json({ ok: true, autoCancelled, acceptanceTimedOut, receiptEscalated, timestamp: now });
+    } catch (error: any) {
+      console.error("[tradeReminders] Error:", error);
+      res.status(500).json({ error: error.message, timestamp: new Date().toISOString() });
+    }
+  });
+
   // development mode uses Vite, production mode uses static files
   if (process.env.NODE_ENV === "development") {
     await setupVite(app, server);
