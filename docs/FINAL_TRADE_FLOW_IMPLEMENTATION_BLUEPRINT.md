@@ -20,7 +20,9 @@ The Trade Hub is the central "Inbox" for all trade activity. It is accessed via 
 
 ### Layout Structure
 
-The page uses a 3-column Master-Detail layout. The right panel stays empty until a card in the center is clicked.
+The Trade Hub follows the same global page structure as the main home page. The top of the page includes the **Global Top Bar** (logo, search, My Tradebilia, bell icon, messages icon), a **Hero Section** ("Trade Hub" banner with a short tagline, styled consistently with other page heroes), and the **Category Bar** (Comics, Sports Cards, Vintage Toys, etc.). Below these three global elements, the trade-specific 3-column interface begins.
+
+The 3-column Master-Detail layout has the right panel staying empty until a card in the center is clicked.
 
 | Column | Width | Content |
 |--------|-------|---------|

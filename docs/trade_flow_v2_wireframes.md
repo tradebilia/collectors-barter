@@ -8,11 +8,18 @@
 
 ## 1. The Trade Hub (The Dashboard)
 
-The central command center for all trade activities. Uses a 3-column layout: Sidebar (folders), Center (inbox feed), and Right (preview panel that stays empty until a card is clicked).
+The central command center for all trade activities. The page follows the same global layout as the main home page — top bar, hero section, and category bar — before the 3-column trade interface begins.
 
 ```text
 __________________________________________________________________________________________
-[ TOP BAR: Search by User or TR#... [🔍] | [Filter: All | Unread | High Value] | [Bulk Actions] ]
+[ GLOBAL TOP BAR: [Logo] Search... [🔍] | My TRADEBILIA | [Bell 🔔] | [Messages ✉️]       ]
+__________________________________________________________________________________________
+[ HERO SECTION: "Trade Hub" banner (same style as homepage hero)                         ]
+[ Tagline: "Manage all your active trades in one place"                                  ]
+__________________________________________________________________________________________
+[ CATEGORY BAR: Comics | Sports Cards | Vintage Toys | Video Games | Stamps | Pokemon... ]
+__________________________________________________________________________________________
+[ TRADE HUB TOOLBAR: Search by User or TR#... [🔍] | [Filter: All | Unread | High Value] | [Bulk Actions] ]
 __________________________________________________________________________________________
 [ SIDEBAR (20%)   ] [ CENTER: INBOX (40%)              ] [ RIGHT: PREVIEW (40%)          ]
 [                 ] [                                  ] [                               ]
