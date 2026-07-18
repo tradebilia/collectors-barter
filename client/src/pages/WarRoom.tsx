@@ -257,6 +257,7 @@ export default function WarRoom() {
   const messages = (messagesQuery.data?.messages || []) as any[];
   const myUserId = trade ? (isRequester ? trade.proposal.requesterId : trade.proposal.recipientId) : null;
   const partnerHasAccepted = (trade as any)?.partnerHasAccepted ?? false;
+  const myHasAccepted = (trade as any)?.myHasAccepted ?? false;
 
   // Can only accept if the OTHER person sent the last proposal (not yourself)
   const lastProposedBy = (trade?.proposal as any)?.lastProposedBy;
@@ -957,7 +958,18 @@ export default function WarRoom() {
                 <div className="col-span-3 flex flex-col gap-4 overflow-hidden">
                   {/* Fairness Meter */}
                   <div className="bg-[#0f0f1a] border border-gray-600 rounded-xl p-5 text-center flex-1 flex flex-col justify-center">
-                    {partnerHasAccepted && currentStage === 'negotiating' && (
+                    {myHasAccepted && currentStage === 'negotiating' && (
+                      <div className="mb-4 px-3 py-3 rounded-lg flex flex-col items-center justify-center gap-1 bg-blue-500/15 border border-blue-400/50 text-blue-300 shadow-[0_0_20px_rgba(59,130,246,0.2)] animate-pulse">
+                        <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider">
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                          </svg>
+                          Waiting for their confirmation
+                        </div>
+                        <p className="text-[10px] text-blue-400/70">You accepted — awaiting partner</p>
+                      </div>
+                    )}
+                    {partnerHasAccepted && !myHasAccepted && currentStage === 'negotiating' && (
                       <div className="mb-4 px-3 py-3 rounded-lg flex flex-col items-center justify-center gap-1 bg-green-500/15 border border-green-400/50 text-green-300 shadow-[0_0_20px_rgba(34,197,94,0.2)] animate-pulse">
                         <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider">
                           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4">
@@ -968,7 +980,7 @@ export default function WarRoom() {
                         <p className="text-[10px] text-green-400/70">Click Accept Trade below to confirm</p>
                       </div>
                     )}
-                    {!partnerHasAccepted && currentStage === 'negotiating' && (
+                    {!partnerHasAccepted && !myHasAccepted && currentStage === 'negotiating' && (
                       <div className={`mb-4 px-3 py-2 rounded-lg flex items-center justify-center gap-2 text-[10px] font-bold uppercase tracking-wider animate-pulse ${
                         iCanAccept
                           ? 'bg-green-500/10 border border-green-500/30 text-green-400 shadow-[0_0_15px_rgba(34,197,94,0.1)]'
@@ -1314,7 +1326,7 @@ export default function WarRoom() {
                 </svg>
                 {currentStage === 'proposed' ? 'Send Proposal' : 'Counter Offer'}
               </button>
-              {(iCanAccept || partnerHasAccepted) && (
+              {(iCanAccept || partnerHasAccepted) && !myHasAccepted && (
                 <button
                   onClick={handleAccept}
                   className={`px-8 py-3 rounded-lg font-semibold transition flex items-center gap-2 ${
