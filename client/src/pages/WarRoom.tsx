@@ -418,7 +418,7 @@ export default function WarRoom() {
   if (tradeDetailsQuery.isLoading) {
     return (
       <div className="min-h-screen bg-[#0f0f1a] flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full" />
+        <div className="animate-spin w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full" />
       </div>
     );
   }
@@ -429,7 +429,7 @@ export default function WarRoom() {
         <div className="text-center">
           <p className="text-red-400 text-lg">Error loading trade</p>
           <p className="text-gray-400 mt-2">{tradeDetailsQuery.error.message}</p>
-          <button onClick={() => navigate('/trade-hub')} className="mt-4 px-4 py-2 bg-purple-600 rounded">
+          <button onClick={() => navigate('/trade-hub')} className="mt-4 px-4 py-2 bg-blue-600 rounded">
             Back to Trade Hub
           </button>
         </div>
@@ -461,7 +461,7 @@ export default function WarRoom() {
                 <div className="flex items-center gap-2">
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
                     i === currentStageIndex
-                      ? 'bg-purple-600 text-white shadow-[0_0_12px_rgba(147,51,234,0.6)]'
+                      ? 'bg-blue-600 text-white shadow-[0_0_12px_rgba(59,130,246,0.6)]'
                       : i < currentStageIndex
                         ? 'bg-gray-600 text-gray-300'
                         : 'bg-gray-800 text-gray-600'
@@ -471,7 +471,7 @@ export default function WarRoom() {
                       i === currentStageIndex ? 'text-white' : i < currentStageIndex ? 'text-gray-400' : 'text-gray-600'
                     }`}>{stage.label}</p>
                     <p className={`text-[10px] leading-tight ${
-                      i === currentStageIndex ? 'text-purple-300' : 'text-gray-600'
+                      i === currentStageIndex ? 'text-blue-300' : 'text-gray-600'
                     }`}>{stage.sub}</p>
                   </div>
                 </div>
@@ -543,14 +543,14 @@ export default function WarRoom() {
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     {/* Your Side */}
-                    <div className="bg-[#0f0f1a] border border-purple-500/20 rounded-xl p-4">
+                    <div className="bg-[#0f0f1a] border border-blue-500/20 rounded-xl p-4">
                       <div className="flex items-center gap-2 mb-3">
-                        {myAvatarUrl ? <img src={myAvatarUrl} className="w-7 h-7 rounded-full object-cover" alt="" /> : <div className="w-7 h-7 rounded-full bg-purple-600 flex items-center justify-center text-white text-xs font-bold">{myInitial}</div>}
+                        {myAvatarUrl ? <img src={myAvatarUrl} className="w-7 h-7 rounded-full object-cover" alt="" /> : <div className="w-7 h-7 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-bold">{myInitial}</div>}
                         <div>
                           <p className="text-white text-sm font-bold">{myDisplayName}</p>
-                          <p className="text-purple-400 text-[10px] uppercase">Your Side</p>
+                          <p className="text-blue-400 text-[10px] uppercase">Your Side</p>
                         </div>
-                        <p className="ml-auto text-purple-400 font-bold">${myTotalValue.toLocaleString()}</p>
+                        <p className="ml-auto text-blue-400 font-bold">${myTotalValue.toLocaleString()}</p>
                       </div>
                       <div className="space-y-2">
                         {myItems.map((item: any) => (
@@ -558,7 +558,7 @@ export default function WarRoom() {
                             {item.photos?.[0]?.imageUrl && <img src={item.photos[0].imageUrl} className="w-10 h-10 object-contain rounded bg-[#16213e]" alt="" />}
                             <div className="flex-1 min-w-0">
                               <p className="text-white text-xs font-medium truncate">{item.title}</p>
-                              <p className="text-purple-400 text-xs">${parseFloat(item.estimatedValue || '0').toLocaleString()}</p>
+                              <p className="text-blue-400 text-xs">${parseFloat(item.estimatedValue || '0').toLocaleString()}</p>
                             </div>
                           </div>
                         ))}
@@ -696,7 +696,7 @@ export default function WarRoom() {
                                   const existing = prev.filter(t => t.listingId !== item.id);
                                   return [...existing, { ...input, carrier: e.target.value }];
                                 })}
-                                className="bg-[#16213e] border border-gray-600 text-white text-xs rounded px-2 py-1.5 focus:outline-none focus:border-purple-500"
+                                className="bg-[#16213e] border border-gray-600 text-white text-xs rounded px-2 py-1.5 focus:outline-none focus:border-blue-500"
                               >
                                 {['USPS', 'UPS', 'FedEx', 'DHL', 'Other'].map(c => <option key={c} value={c}>{c}</option>)}
                               </select>
@@ -708,7 +708,7 @@ export default function WarRoom() {
                                   const existing = prev.filter(t => t.listingId !== item.id);
                                   return [...existing, { ...input, trackingNumber: e.target.value }];
                                 })}
-                                className="flex-1 bg-[#16213e] border border-gray-600 text-white text-xs rounded px-3 py-1.5 focus:outline-none focus:border-purple-500 font-mono"
+                                className="flex-1 bg-[#16213e] border border-gray-600 text-white text-xs rounded px-3 py-1.5 focus:outline-none focus:border-blue-500 font-mono"
                               />
                             </div>
                           </div>
@@ -752,7 +752,7 @@ export default function WarRoom() {
                         placeholder="Write a review (optional)..."
                         value={reviewText}
                         onChange={(e) => setReviewText(e.target.value)}
-                        className="w-full mt-2 bg-[#0f0f1a] border border-gray-600 text-white text-xs rounded-lg p-3 focus:outline-none focus:border-purple-500 resize-none"
+                        className="w-full mt-2 bg-[#0f0f1a] border border-gray-600 text-white text-xs rounded-lg p-3 focus:outline-none focus:border-blue-500 resize-none"
                         rows={3}
                       />
                     </div>
@@ -767,8 +767,8 @@ export default function WarRoom() {
             {(currentStage === 'proposed' || currentStage === 'negotiating') && <div className="bg-[#16213e] border border-gray-600 rounded-xl p-5 shadow-xl flex flex-col flex-1">
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-lg bg-purple-900/30 border border-purple-500/20 flex items-center justify-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-purple-400">
+                  <div className="w-9 h-9 rounded-lg bg-blue-900/30 border border-blue-500/20 flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-blue-400">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z" />
                     </svg>
                   </div>
@@ -801,21 +801,21 @@ export default function WarRoom() {
                     <div className="flex items-center gap-2">
                       {/* Avatar */}
                       {myAvatarUrl ? (
-                        <img src={myAvatarUrl} alt={myDisplayName} className="w-8 h-8 rounded-full object-cover border border-purple-500/40" />
+                        <img src={myAvatarUrl} alt={myDisplayName} className="w-8 h-8 rounded-full object-cover border border-blue-500/40" />
                       ) : (
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-600 to-indigo-600 flex items-center justify-center text-white text-xs font-bold border border-purple-500/40">{myInitial}</div>
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white text-xs font-bold border border-blue-500/40">{myInitial}</div>
                       )}
                       <div>
                         <div className="flex items-center gap-1.5">
                           <p className="text-white text-sm font-bold leading-tight">{myDisplayName}</p>
                           {myUserId && <OnlineIndicator sellerId={myUserId} className="scale-75 origin-left" />}
                         </div>
-                        <p className="text-purple-400 text-[10px] uppercase tracking-wide">Your Side</p>
+                        <p className="text-blue-400 text-[10px] uppercase tracking-wide">Your Side</p>
                       </div>
                     </div>
                     <div className="text-right">
                       <p className="text-white text-2xl font-black tracking-tight leading-none">${myTotalValue.toLocaleString()}</p>
-                      <p className="text-purple-400/60 text-[10px] font-bold uppercase tracking-widest mt-1">Total Value</p>
+                      <p className="text-blue-400/60 text-[10px] font-bold uppercase tracking-widest mt-1">Total Value</p>
                     </div>
                   </div>
 
@@ -826,9 +826,9 @@ export default function WarRoom() {
                       {myItems.map((item: any) => {
                         const isLocked = item.id === requestedListing?.id;
                         return (
-                        <div key={item.id} className={`bg-[#0f3460] border rounded-lg p-2.5 relative group ${isLocked ? 'border-purple-500/40' : 'border-gray-600'}`}>
+                        <div key={item.id} className={`bg-[#0f3460] border rounded-lg p-2.5 relative group ${isLocked ? 'border-blue-500/40' : 'border-gray-600'}`}>
                           {isLocked && (
-                            <div className="absolute top-1.5 left-1.5 bg-purple-600/80 text-white text-[9px] font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5 z-10">
+                            <div className="absolute top-1.5 left-1.5 bg-blue-600/80 text-white text-[9px] font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5 z-10">
                               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-2.5 h-2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" /></svg>
                               Locked
                             </div>
@@ -839,7 +839,7 @@ export default function WarRoom() {
                             <div className={`w-full ${getImgHeight(myItems.length)} bg-gray-800 rounded mb-2 flex items-center justify-center text-gray-600 text-xs`}>No Image</div>
                           )}
                           <p className="text-white text-[11px] font-medium line-clamp-2 leading-tight">{item.title}</p>
-                          <p className="text-purple-400 text-sm font-bold mt-1">${parseFloat(item.estimatedValue || '0').toLocaleString()}</p>
+                          <p className="text-blue-400 text-sm font-bold mt-1">${parseFloat(item.estimatedValue || '0').toLocaleString()}</p>
                           {!isLocked && (currentStage === 'proposed' || currentStage === 'negotiating') && (
                             <button
                               onClick={() => handleRemoveItemFromTrade(item.id)}
@@ -876,7 +876,7 @@ export default function WarRoom() {
                     <div className="flex gap-2 mt-4">
                       <button
                         onClick={() => { setInventorySearch(''); setIsMyInventoryOpen(true); }}
-                        className="flex-1 py-2.5 border border-dashed border-gray-700 rounded-lg text-purple-400 hover:text-purple-300 hover:border-purple-500 transition text-sm flex items-center justify-center gap-2"
+                        className="flex-1 py-2.5 border border-dashed border-gray-700 rounded-lg text-blue-400 hover:text-blue-300 hover:border-blue-500 transition text-sm flex items-center justify-center gap-2"
                       >
                         + Add Item
                       </button>
@@ -917,14 +917,14 @@ export default function WarRoom() {
                       <>
                         {/* Percentage display — show the dominant side's share */}
                         {/* e.g. You give $8100, receive $1650 → myShareOfTotal=83% → show 83% In their favor */}
-                        <p className="text-5xl font-bold text-purple-400 mb-1">
+                        <p className="text-5xl font-bold text-blue-400 mb-1">
                           {Math.max(myShareOfTotal, theirSharePercent)}%
                         </p>
 
                         {/* Label */}
                         <p className={`text-sm font-semibold mb-5 ${
                           myShareOfTotal > 55 ? 'text-red-400' :
-                          myShareOfTotal < 45 ? 'text-green-400' : 'text-purple-400'
+                          myShareOfTotal < 45 ? 'text-green-400' : 'text-blue-400'
                         }`}>{fairnessLabel}</p>
 
                         {/* Gradient slider bar */}
@@ -944,7 +944,7 @@ export default function WarRoom() {
                         <div className="flex justify-between text-xs border-t border-gray-800 pt-3">
                           <div className="text-left">
                             <p className="text-gray-500 text-[10px] mb-0.5">You Give</p>
-                            <p className="text-purple-400 font-bold">${myTotalValue.toLocaleString()}</p>
+                            <p className="text-blue-400 font-bold">${myTotalValue.toLocaleString()}</p>
                           </div>
                           <div className="text-right">
                             <p className="text-gray-500 text-[10px] mb-0.5">You Receive</p>
@@ -957,14 +957,14 @@ export default function WarRoom() {
 
                   {/* AI Analyzer */}
                   <div className="bg-[#0f0f1a] border border-gray-600 rounded-xl p-5 text-center flex-1 flex flex-col justify-center items-center">
-                    <div className="w-12 h-12 rounded-full bg-purple-900/30 border border-purple-500/20 flex items-center justify-center mb-3">
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 text-purple-400">
+                    <div className="w-12 h-12 rounded-full bg-blue-900/30 border border-blue-500/20 flex items-center justify-center mb-3">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 text-blue-400">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z" />
                       </svg>
                     </div>
                     <p className="text-white text-xs font-bold uppercase tracking-widest mb-1">AI ANALYZER</p>
                     <p className="text-gray-500 text-[10px] mb-4 px-2">Get AI insights, market data, and negotiation tips.</p>
-                    <button className="w-full py-2.5 bg-purple-600/20 text-purple-400 border border-purple-500/30 rounded-lg text-xs font-bold hover:bg-purple-600 hover:text-white transition flex items-center justify-center gap-2">
+                    <button className="w-full py-2.5 bg-blue-600/20 text-blue-400 border border-blue-500/30 rounded-lg text-xs font-bold hover:bg-blue-600 hover:text-white transition flex items-center justify-center gap-2">
                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" />
                       </svg>
@@ -993,7 +993,7 @@ export default function WarRoom() {
                     </div>
                     <div className="text-right">
                       <p className="text-white text-2xl font-black tracking-tight leading-none">${theirTotalValue.toLocaleString()}</p>
-                      <p className="text-purple-400/60 text-[10px] font-bold uppercase tracking-widest mt-1">Total Value</p>
+                      <p className="text-blue-400/60 text-[10px] font-bold uppercase tracking-widest mt-1">Total Value</p>
                     </div>
                   </div>
 
@@ -1017,7 +1017,7 @@ export default function WarRoom() {
                             <div className={`w-full ${getImgHeight(theirItems.length)} bg-gray-800 rounded mb-2 flex items-center justify-center text-gray-600 text-xs`}>No Image</div>
                           )}
                           <p className="text-white text-[11px] font-medium line-clamp-2 leading-tight">{item.title}</p>
-                          <p className="text-purple-400 text-sm font-bold mt-1">${parseFloat(item.estimatedValue || '0').toLocaleString()}</p>
+                          <p className="text-blue-400 text-sm font-bold mt-1">${parseFloat(item.estimatedValue || '0').toLocaleString()}</p>
                           {!isLocked && (currentStage === 'proposed' || currentStage === 'negotiating') && (
                             <button
                               onClick={() => handleRemoveItemFromTrade(item.id)}
@@ -1083,11 +1083,11 @@ export default function WarRoom() {
           <div className="flex border-b border-gray-600 rounded-t-xl overflow-hidden">
             <button
               onClick={() => setActiveTab('chat')}
-              className={`flex-1 py-3.5 text-sm font-semibold transition ${activeTab === 'chat' ? 'text-purple-400 border-b-2 border-purple-500 bg-[#16213e]' : 'text-gray-500 hover:text-gray-300'}`}
+              className={`flex-1 py-3.5 text-sm font-semibold transition ${activeTab === 'chat' ? 'text-blue-400 border-b-2 border-blue-500 bg-[#16213e]' : 'text-gray-500 hover:text-gray-300'}`}
             >Chat</button>
             <button
               onClick={() => setActiveTab('timeline')}
-              className={`flex-1 py-3.5 text-sm font-semibold transition ${activeTab === 'timeline' ? 'text-purple-400 border-b-2 border-purple-500 bg-[#16213e]' : 'text-gray-500 hover:text-gray-300'}`}
+              className={`flex-1 py-3.5 text-sm font-semibold transition ${activeTab === 'timeline' ? 'text-blue-400 border-b-2 border-blue-500 bg-[#16213e]' : 'text-gray-500 hover:text-gray-300'}`}
             >Timeline</button>
           </div>
 
@@ -1166,7 +1166,7 @@ export default function WarRoom() {
                   <button
                     onClick={handleSendMessage}
                     disabled={sendMessageMutation.isPending}
-                    className="w-7 h-7 rounded-full bg-purple-600 flex items-center justify-center text-white hover:bg-purple-700 transition disabled:opacity-50 shrink-0"
+                    className="w-7 h-7 rounded-full bg-blue-600 flex items-center justify-center text-white hover:bg-blue-700 transition disabled:opacity-50 shrink-0"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-3.5 h-3.5 ml-0.5">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" />
@@ -1185,7 +1185,7 @@ export default function WarRoom() {
               </div>
               <div className="space-y-4">
                 {[
-                  { color: 'bg-purple-500', text: 'Trade created', time: trade?.proposal?.createdAt },
+                  { color: 'bg-blue-500', text: 'Trade created', time: trade?.proposal?.createdAt },
                   { color: 'bg-blue-500', text: 'Partner joined the war room', time: trade?.proposal?.negotiatingAt },
                   { color: 'bg-green-500', text: 'Items added to both sides', time: null },
                   { color: 'bg-orange-500', text: 'Offer proposed', time: trade?.proposal?.lastActivityAt },
@@ -1227,7 +1227,7 @@ export default function WarRoom() {
               </button>
               <button
                 onClick={handleUpdateProposal}
-                className="px-14 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-lg font-bold transition flex items-center gap-2 shadow-[0_0_15px_rgba(147,51,234,0.4)]"
+                className="px-14 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg font-bold transition flex items-center gap-2 shadow-[0_0_15px_rgba(59,130,246,0.4)]"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" />
@@ -1254,7 +1254,7 @@ export default function WarRoom() {
                 disabled={!hasLocalChanges}
                 className={`px-14 py-3 rounded-lg font-bold transition flex items-center gap-2 ${
                   hasLocalChanges
-                    ? 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white shadow-[0_0_15px_rgba(147,51,234,0.4)]'
+                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-[0_0_15px_rgba(59,130,246,0.4)]'
                     : 'bg-gray-700 text-gray-500 cursor-not-allowed border border-gray-600'
                 }`}
               >
@@ -1456,7 +1456,7 @@ export default function WarRoom() {
                     onClick={() => setInventoryCategory(cat)}
                     className={`px-5 py-3 text-sm font-semibold whitespace-nowrap transition flex-shrink-0 border-b-2 ${
                       inventoryCategory === cat
-                        ? 'text-purple-400 border-purple-500 bg-[#16213e]'
+                        ? 'text-blue-400 border-blue-500 bg-[#16213e]'
                         : 'text-gray-500 border-transparent hover:text-gray-300'
                     }`}
                   >
@@ -1470,7 +1470,7 @@ export default function WarRoom() {
                 <input
                   type="text"
                   placeholder={`Search ${theirDisplayName}'s inventory...`}
-                  className="w-full px-4 py-2.5 rounded-lg bg-[#0f0f1a] text-white border border-gray-700 focus:border-purple-500 focus:outline-none text-sm"
+                  className="w-full px-4 py-2.5 rounded-lg bg-[#0f0f1a] text-white border border-gray-700 focus:border-blue-500 focus:outline-none text-sm"
                   value={inventorySearch}
                   onChange={(e) => setInventorySearch(e.target.value)}
                 />
@@ -1491,7 +1491,7 @@ export default function WarRoom() {
                           key={item.id}
                           className={`bg-[#0f0f1a] border-2 rounded-xl p-3 flex flex-col transition ${
                             isSelected
-                              ? 'border-purple-500 shadow-[0_0_10px_rgba(147,51,234,0.4)]'
+                              ? 'border-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.4)]'
                               : quickViewItemId === item.id
                                 ? 'border-blue-500'
                                 : 'border-gray-700 hover:border-gray-500'
@@ -1502,7 +1502,7 @@ export default function WarRoom() {
                             <div
                               onClick={(e) => { e.stopPropagation(); toggleItem(item.id); }}
                               className={`w-5 h-5 rounded border-2 flex items-center justify-center cursor-pointer transition ${
-                                isSelected ? 'bg-purple-600 border-purple-500' : 'border-gray-600 bg-transparent hover:border-gray-400'
+                                isSelected ? 'bg-blue-600 border-blue-500' : 'border-gray-600 bg-transparent hover:border-gray-400'
                               }`}
                             >
                               {isSelected && (
@@ -1531,7 +1531,7 @@ export default function WarRoom() {
                           {/* Title */}
                           <p className="text-white text-xs font-semibold line-clamp-2 leading-tight mb-1">{item.title}</p>
                           {/* Value */}
-                          <p className="text-purple-400 text-sm font-bold mt-auto">${parseFloat(item.estimatedValue || '0').toLocaleString()}</p>
+                          <p className="text-blue-400 text-sm font-bold mt-auto">${parseFloat(item.estimatedValue || '0').toLocaleString()}</p>
                         </div>
                       );
                     })}
@@ -1543,7 +1543,7 @@ export default function WarRoom() {
               <div className="px-6 py-4 border-t border-gray-700 flex-shrink-0 flex items-center justify-between bg-[#0f0f1a]">
                 <p className="text-gray-400 text-sm">
                   {selectedInventoryItems.length > 0
-                    ? <span className="text-purple-400 font-semibold">{selectedInventoryItems.length} item{selectedInventoryItems.length > 1 ? 's' : ''} selected</span>
+                    ? <span className="text-blue-400 font-semibold">{selectedInventoryItems.length} item{selectedInventoryItems.length > 1 ? 's' : ''} selected</span>
                     : 'Click items to select them'}
                 </p>
                 <div className="flex gap-3">
@@ -1558,7 +1558,7 @@ export default function WarRoom() {
                     disabled={selectedInventoryItems.length === 0}
                     className={`px-8 py-2 rounded-lg text-sm font-bold transition flex items-center gap-2 ${
                       selectedInventoryItems.length > 0
-                        ? 'bg-purple-600 text-white hover:bg-purple-700 shadow-[0_0_10px_rgba(147,51,234,0.4)]'
+                        ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-[0_0_10px_rgba(59,130,246,0.4)]'
                         : 'bg-gray-700 text-gray-500 cursor-not-allowed'
                     }`}
                   >
@@ -1652,9 +1652,9 @@ export default function WarRoom() {
               <div className="flex items-center justify-between px-6 py-4 border-b border-gray-700 flex-shrink-0">
                 <div className="flex items-center gap-3">
                   {myAvatarUrl ? (
-                    <img src={myAvatarUrl} alt={myDisplayName} className="w-10 h-10 rounded-full object-cover border border-purple-500/40" />
+                    <img src={myAvatarUrl} alt={myDisplayName} className="w-10 h-10 rounded-full object-cover border border-blue-500/40" />
                   ) : (
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-600 to-indigo-600 flex items-center justify-center text-white text-sm font-bold">{myInitial}</div>
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white text-sm font-bold">{myInitial}</div>
                   )}
                   <div>
                     <h2 className="text-white text-lg font-bold">Your Inventory</h2>
@@ -1679,7 +1679,7 @@ export default function WarRoom() {
                     onClick={() => setInventoryCategory(cat)}
                     className={`px-5 py-3 text-sm font-semibold whitespace-nowrap transition flex-shrink-0 border-b-2 ${
                       inventoryCategory === cat
-                        ? 'text-purple-400 border-purple-500 bg-[#16213e]'
+                        ? 'text-blue-400 border-blue-500 bg-[#16213e]'
                         : 'text-gray-500 border-transparent hover:text-gray-300'
                     }`}
                   >
@@ -1693,7 +1693,7 @@ export default function WarRoom() {
                 <input
                   type="text"
                   placeholder="Search your inventory..."
-                  className="w-full px-4 py-2.5 rounded-lg bg-[#0f0f1a] text-white border border-gray-700 focus:border-purple-500 focus:outline-none text-sm"
+                  className="w-full px-4 py-2.5 rounded-lg bg-[#0f0f1a] text-white border border-gray-700 focus:border-blue-500 focus:outline-none text-sm"
                   value={inventorySearch}
                   onChange={(e) => setInventorySearch(e.target.value)}
                 />
@@ -1714,7 +1714,7 @@ export default function WarRoom() {
                           key={item.id}
                           className={`bg-[#0f0f1a] border-2 rounded-xl p-3 flex flex-col transition ${
                             isSelected
-                              ? 'border-purple-500 shadow-[0_0_10px_rgba(147,51,234,0.4)]'
+                              ? 'border-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.4)]'
                               : quickViewItemId === item.id
                                 ? 'border-blue-500'
                                 : 'border-gray-700 hover:border-gray-500'
@@ -1725,7 +1725,7 @@ export default function WarRoom() {
                             <div
                               onClick={(e) => { e.stopPropagation(); toggleMyItem(item.id); }}
                               className={`w-5 h-5 rounded border-2 flex items-center justify-center cursor-pointer transition ${
-                                isSelected ? 'bg-purple-600 border-purple-500' : 'border-gray-600 bg-transparent hover:border-gray-400'
+                                isSelected ? 'bg-blue-600 border-blue-500' : 'border-gray-600 bg-transparent hover:border-gray-400'
                               }`}
                             >
                               {isSelected && (
@@ -1753,7 +1753,7 @@ export default function WarRoom() {
                           {/* Title */}
                           <p className="text-white text-xs font-semibold line-clamp-2 leading-tight mb-1">{item.title}</p>
                           {/* Value */}
-                          <p className="text-purple-400 text-sm font-bold mt-auto">${parseFloat(item.estimatedValue || '0').toLocaleString()}</p>
+                          <p className="text-blue-400 text-sm font-bold mt-auto">${parseFloat(item.estimatedValue || '0').toLocaleString()}</p>
                         </div>
                       );
                     })}
@@ -1765,7 +1765,7 @@ export default function WarRoom() {
               <div className="px-6 py-4 border-t border-gray-700 flex-shrink-0 flex items-center justify-between bg-[#0f0f1a]">
                 <p className="text-gray-400 text-sm">
                   {selectedInventoryItems.length > 0
-                    ? <span className="text-purple-400 font-semibold">{selectedInventoryItems.length} item{selectedInventoryItems.length > 1 ? 's' : ''} selected</span>
+                    ? <span className="text-blue-400 font-semibold">{selectedInventoryItems.length} item{selectedInventoryItems.length > 1 ? 's' : ''} selected</span>
                     : 'Click items to select them'}
                 </p>
                 <div className="flex gap-3">
@@ -1780,7 +1780,7 @@ export default function WarRoom() {
                     disabled={selectedInventoryItems.length === 0}
                     className={`px-8 py-2 rounded-lg text-sm font-bold transition flex items-center gap-2 ${
                       selectedInventoryItems.length > 0
-                        ? 'bg-purple-600 text-white hover:bg-purple-700 shadow-[0_0_10px_rgba(147,51,234,0.4)]'
+                        ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-[0_0_10px_rgba(59,130,246,0.4)]'
                         : 'bg-gray-700 text-gray-500 cursor-not-allowed'
                     }`}
                   >
@@ -1905,7 +1905,7 @@ export default function WarRoom() {
             <h2 className="text-white text-xl font-bold mb-2">Decline Trade</h2>
             <p className="text-gray-400 text-sm mb-5">Are you sure? You can optionally provide a reason.</p>
             <textarea
-              className="w-full p-3 rounded-lg bg-[#0f0f1a] text-white border border-gray-700 mb-5 focus:border-purple-500 focus:outline-none text-sm resize-none"
+              className="w-full p-3 rounded-lg bg-[#0f0f1a] text-white border border-gray-700 mb-5 focus:border-blue-500 focus:outline-none text-sm resize-none"
               rows={3}
               placeholder="Reason for declining (optional)"
               value={declineReason}
@@ -1924,8 +1924,8 @@ export default function WarRoom() {
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-[#16213e] border border-gray-700 rounded-xl p-8 w-11/12 max-w-3xl max-h-[90vh] overflow-y-auto custom-scrollbar shadow-2xl">
             <div className="flex items-center gap-3 mb-6 pb-4 border-b border-gray-700">
-              <div className="w-10 h-10 rounded-lg bg-purple-900/30 flex items-center justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 text-purple-400">
+              <div className="w-10 h-10 rounded-lg bg-blue-900/30 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 text-blue-400">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
                 </svg>
               </div>
@@ -1940,11 +1940,11 @@ export default function WarRoom() {
               <p><strong>5. Mutual Acceptance:</strong> This contract becomes binding upon mutual acceptance by both parties. Items will be locked from further modification.</p>
               <p><strong>6. Disputes:</strong> Any disputes will be handled through Tradebilia's dispute resolution process.</p>
             </div>
-            <div className="flex items-center mb-6 bg-purple-900/10 p-4 rounded-lg border border-purple-900/30">
+            <div className="flex items-center mb-6 bg-blue-900/10 p-4 rounded-lg border border-blue-900/30">
               <input
                 type="checkbox"
                 id="contract-checkbox"
-                className="h-5 w-5 text-purple-600 rounded border-gray-600 bg-[#0f0f1a] focus:ring-purple-500"
+                className="h-5 w-5 text-blue-600 rounded border-gray-600 bg-[#0f0f1a] focus:ring-blue-500"
                 checked={contractCheckbox}
                 onChange={(e) => setContractCheckbox(e.target.checked)}
               />
