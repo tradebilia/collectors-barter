@@ -869,12 +869,12 @@ export const tradeFlowRouter = router({
       if (['accepted', 'shipped', 'completed', 'disputed'].includes(proposal.status)) {
         const [myContact] = await db.execute(
           sql`SELECT u.name, up.contactFullName, up.contactEmail, up.contactPhone,
-            up.addressStreet, up.addressCity, up.addressState, up.addressZip, up.addressCountry
+            up.contactAddress, up.contactTown, up.contactState, up.contactZipCode, up.contactCountry
           FROM users u LEFT JOIN userProfiles up ON up.userId = u.id WHERE u.id = ${userId}`
         );
         const [theirContact] = await db.execute(
           sql`SELECT u.name, up.contactFullName, up.contactEmail, up.contactPhone,
-            up.addressStreet, up.addressCity, up.addressState, up.addressZip, up.addressCountry
+            up.contactAddress, up.contactTown, up.contactState, up.contactZipCode, up.contactCountry
           FROM users u LEFT JOIN userProfiles up ON up.userId = u.id WHERE u.id = ${otherUserId}`
         );
         myContactInfo = (myContact as any)?.[0] || null;
