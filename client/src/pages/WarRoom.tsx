@@ -1129,9 +1129,11 @@ export default function WarRoom() {
                   return (
                     <div key={msg.id} className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
                       <div className={`max-w-[85%] p-3 rounded-xl text-sm leading-relaxed ${
-                        isMine ? 'bg-purple-600 text-white rounded-tr-sm' : 'bg-[#0f3460] text-gray-100 border border-gray-600 rounded-xl rounded-tl-sm'
+                        isMine 
+                          ? 'bg-blue-600/10 text-white border border-blue-500/30 rounded-tr-sm' 
+                          : 'bg-white/5 text-gray-100 border border-white/10 rounded-xl rounded-tl-sm'
                       }`}>
-                        <p className={`text-[10px] mb-1 ${isMine ? 'text-purple-200' : 'text-gray-500'}`}>{time}</p>
+                        <p className={`text-[10px] mb-1 ${isMine ? 'text-blue-300/60' : 'text-gray-500'}`}>{time}</p>
                         <p>{msg.message || msg.content}</p>
                       </div>
                     </div>
