@@ -34,6 +34,61 @@ const stages: { key: TradeStage; label: string; sub: string }[] = [
   { key: 'completed',   label: 'Complete', sub: 'Trade & Ship'    },
 ];
 
+// ── Event type config ────────────────────────────────────────────────────────
+const eventConfig: Record<string, { color: string; icon: string; label: string }> = {
+  trade_created:      { color: 'bg-blue-500',   icon: '🤝', label: 'Trade Created' },
+  partner_joined:     { color: 'bg-indigo-500', icon: '🚪', label: 'Entered War Room' },
+  item_added:         { color: 'bg-green-500',  icon: '➕', label: 'Item Added' },
+  item_removed:       { color: 'bg-red-500',    icon: '➖', label: 'Item Removed' },
+  cash_added:         { color: 'bg-emerald-500',icon: '💵', label: 'Cash Added' },
+  cash_removed:       { color: 'bg-orange-500', icon: '💸', label: 'Cash Removed' },
+  proposal_sent:      { color: 'bg-blue-400',   icon: '📤', label: 'Counter Offer Sent' },
+  proposal_accepted:  { color: 'bg-green-400',  icon: '✅', label: 'Proposal Accepted' },
+  proposal_declined:  { color: 'bg-red-400',    icon: '❌', label: 'Proposal Declined' },
+  trade_cancelled:    { color: 'bg-gray-500',   icon: '🚫', label: 'Trade Cancelled' },
+  tracking_submitted: { color: 'bg-yellow-500', icon: '📦', label: 'Tracking Submitted' },
+  items_received:     { color: 'bg-teal-500',   icon: '📬', label: 'Items Received' },
+  trade_completed:    { color: 'bg-purple-500', icon: '🏆', label: 'Trade Completed' },
+};
+
+function TimelineTab({ proposalId }: { proposalId: number }) {
+  const timelineQuery = trpc.tradeFlow.getTimeline.useQuery(
+    { proposalId },
+    { enabled: proposalId > 0, refetchInterval: 10000 }
+  );
+  const events: any[] = timelineQuery.data?.events || [];
+
+  return (
+    <div className="flex-1 overflow-y-auto custom-scrollbar p-4">
+      <h3 className="text-white text-sm font-semibold mb-4">Trade Timeline</h3>
+      {timelineQuery.isLoading && (
+        <p className="text-gray-500 text-xs text-center py-4">Loading timeline...</p>
+      )}
+      {!timelineQuery.isLoading && events.length === 0 && (
+        <p className="text-gray-600 text-xs text-center py-8">No activity yet. Start negotiating!</p>
+      )}
+      <div className="space-y-4">
+        {events.map((event: any, i: number) => {
+          const cfg = eventConfig[event.eventType] || { color: 'bg-gray-500', icon: '•', label: event.eventType };
+          const time = event.createdAt
+            ? new Date(event.createdAt).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+            : '';
+          return (
+            <div key={event.id || i} className="flex items-start gap-3">
+              <div className={`w-2 h-2 rounded-full ${cfg.color} mt-1.5 shrink-0`} />
+              <div className="flex-1 min-w-0">
+                <p className="text-white text-xs font-semibold">{event.actorName}</p>
+                <p className="text-gray-300 text-xs">{event.details || cfg.label}</p>
+                <p className="text-gray-600 text-[10px] mt-0.5">{time}</p>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export default function WarRoom() {
   const params = useParams<{ proposalId: string }>();
   const [, navigate] = useLocation();
@@ -1178,32 +1233,7 @@ export default function WarRoom() {
           )}
 
           {activeTab === 'timeline' && (
-            <div className="flex-1 overflow-y-auto custom-scrollbar p-4">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-white text-sm font-semibold">Trade Timeline</h3>
-                <button className="text-gray-500 text-xs hover:text-white">View All</button>
-              </div>
-              <div className="space-y-4">
-                {[
-                  { color: 'bg-blue-500', text: 'Trade created', time: trade?.proposal?.createdAt },
-                  { color: 'bg-blue-500', text: 'Partner joined the war room', time: trade?.proposal?.negotiatingAt },
-                  { color: 'bg-green-500', text: 'Items added to both sides', time: null },
-                  { color: 'bg-orange-500', text: 'Offer proposed', time: trade?.proposal?.lastActivityAt },
-                ].filter(e => e.text).map((event, i) => (
-                  <div key={i} className="flex items-start gap-3">
-                    <div className={`w-2 h-2 rounded-full ${event.color} mt-1.5 shrink-0`} />
-                    <div className="flex-1">
-                      <p className="text-gray-300 text-xs">{event.text}</p>
-                      {event.time && (
-                        <p className="text-gray-600 text-[10px] mt-0.5">
-                          {new Date(event.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <TimelineTab proposalId={proposalId} />
           )}
           </div>
         </div>

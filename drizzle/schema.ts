@@ -314,6 +314,21 @@ export const tradeProposals = mysqlTable("tradeProposals", {
 	index("tradeProposals_status_idx").on(table.status),
 ]);
 
+export const tradeActivityLog = mysqlTable("tradeActivityLog", {
+	id: int().autoincrement().notNull(),
+	proposalId: int().notNull().references(() => tradeProposals.id),
+	actorId: int().notNull().references(() => users.id),
+	actorName: varchar({ length: 255 }).notNull(),
+	eventType: mysqlEnum(['trade_created','partner_joined','item_added','item_removed','cash_added','cash_removed','proposal_sent','proposal_accepted','proposal_declined','trade_cancelled','tracking_submitted','items_received','trade_completed']).notNull(),
+	details: text(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+},
+(table) => [
+	index("tradeActivityLog_proposal_idx").on(table.proposalId),
+	index("tradeActivityLog_actor_idx").on(table.actorId),
+	index("tradeActivityLog_createdAt_idx").on(table.createdAt),
+]);
+
 export const tradeReviews = mysqlTable("tradeReviews", {
 	id: int().autoincrement().notNull(),
 	proposalId: int().notNull().references(() => tradeProposals.id),

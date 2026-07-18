@@ -18,6 +18,7 @@ import {
   tradeProposalItems,
   tradeMessages,
   tradeReviews,
+  tradeActivityLog,
 } from "../drizzle/schema";
 import { eq, sql, desc, or, and, inArray, asc } from "drizzle-orm";
 
@@ -227,6 +228,12 @@ export const tradeFlowRouter = router({
         sql`INSERT INTO tradeAdminLog (proposalId, eventType, actorUserId, details, createdAt) VALUES (${proposalId}, 'initiated', ${userId}, ${'Trade initiated'}, ${now})`
       );
 
+      // 8. Log to activity log
+      const initiatorName = (initiator as any)?.displayName || (initiator as any)?.username || 'Unknown';
+      await db.execute(
+        sql`INSERT INTO tradeActivityLog (proposalId, actorId, actorName, eventType, details, createdAt) VALUES (${proposalId}, ${userId}, ${initiatorName}, 'trade_created', ${`Trade created for item: ${listing.title}`}, ${now})`
+      );
+
       return { proposalId, tradeReferenceNumber: tradeRef };
     }),
 
@@ -252,6 +259,13 @@ export const tradeFlowRouter = router({
       const otherUserId = proposal.requesterId === userId ? proposal.recipientId : proposal.requesterId;
       await db.execute(
         sql`INSERT INTO tradeAlerts (proposalId, recipientUserId, alertType, message, createdAt) VALUES (${input.proposalId}, ${otherUserId}, 'declined', 'Trade has been declined', ${now})`
+      );
+
+      // Log to activity log
+      const [decliner] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+      const declinerName = (decliner as any)?.displayName || (decliner as any)?.username || 'Unknown';
+      await db.execute(
+        sql`INSERT INTO tradeActivityLog (proposalId, actorId, actorName, eventType, details, createdAt) VALUES (${input.proposalId}, ${userId}, ${declinerName}, 'proposal_declined', 'Trade declined', ${now})`
       );
 
       return { success: true };
@@ -282,6 +296,13 @@ export const tradeFlowRouter = router({
         sql`INSERT INTO tradeAlerts (proposalId, recipientUserId, alertType, message, createdAt) VALUES (${input.proposalId}, ${otherUserId}, 'cancelled', 'Trade has been cancelled', ${now})`
       );
 
+      // Log to activity log
+      const [canceller] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+      const cancellerName = (canceller as any)?.displayName || (canceller as any)?.username || 'Unknown';
+      await db.execute(
+        sql`INSERT INTO tradeActivityLog (proposalId, actorId, actorName, eventType, details, createdAt) VALUES (${input.proposalId}, ${userId}, ${cancellerName}, 'trade_cancelled', 'Trade cancelled', ${now})`
+      );
+
       return { success: true };
     }),
 
@@ -306,6 +327,12 @@ export const tradeFlowRouter = router({
         const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
         await db.execute(
           sql`UPDATE tradeProposals SET status = 'negotiating', negotiatingAt = ${now}, lastActivityAt = ${now}, updatedAt = ${now} WHERE id = ${input.proposalId}`
+        );
+        // Log to activity log
+        const [joiner] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+        const joinerName = (joiner as any)?.displayName || (joiner as any)?.username || 'Unknown';
+        await db.execute(
+          sql`INSERT INTO tradeActivityLog (proposalId, actorId, actorName, eventType, details, createdAt) VALUES (${input.proposalId}, ${userId}, ${joinerName}, 'partner_joined', 'Entered the War Room', ${now})`
         );
       }
 
@@ -365,6 +392,37 @@ export const tradeFlowRouter = router({
       const otherUserId = proposal.requesterId === userId ? proposal.recipientId : proposal.requesterId;
       await db.execute(
         sql`INSERT INTO tradeAlerts (proposalId, recipientUserId, alertType, message, createdAt) VALUES (${input.proposalId}, ${otherUserId}, 'counterProposal', 'A new proposal has been submitted', ${now})`
+      );
+
+      // Log to activity log — fetch actor name and item titles
+      const [actor] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+      const actorName = (actor as any)?.displayName || (actor as any)?.username || 'Unknown';
+
+      // Log each item added
+      if (input.offeredListingIds.length > 0) {
+        const itemRows = await db.select({ title: listings.title }).from(listings).where(inArray(listings.id, input.offeredListingIds));
+        for (const item of itemRows) {
+          await db.execute(
+            sql`INSERT INTO tradeActivityLog (proposalId, actorId, actorName, eventType, details, createdAt) VALUES (${input.proposalId}, ${userId}, ${actorName}, 'item_added', ${`Added: ${item.title}`}, ${now})`
+          );
+        }
+      }
+
+      // Log cash if added
+      if (input.cashFromProposer && input.cashFromProposer > 0) {
+        await db.execute(
+          sql`INSERT INTO tradeActivityLog (proposalId, actorId, actorName, eventType, details, createdAt) VALUES (${input.proposalId}, ${userId}, ${actorName}, 'cash_added', ${`Added $${input.cashFromProposer} cash`}, ${now})`
+        );
+      }
+      if (input.cashFromRecipient && input.cashFromRecipient > 0) {
+        await db.execute(
+          sql`INSERT INTO tradeActivityLog (proposalId, actorId, actorName, eventType, details, createdAt) VALUES (${input.proposalId}, ${userId}, ${actorName}, 'cash_added', ${`Added $${input.cashFromRecipient} cash`}, ${now})`
+        );
+      }
+
+      // Log proposal sent
+      await db.execute(
+        sql`INSERT INTO tradeActivityLog (proposalId, actorId, actorName, eventType, details, createdAt) VALUES (${input.proposalId}, ${userId}, ${actorName}, 'proposal_sent', 'Counter offer submitted', ${now})`
       );
 
       return { success: true };
@@ -427,6 +485,12 @@ export const tradeFlowRouter = router({
           sql`UPDATE tradeProposals SET status = 'cancelled', declineReason = 'An item in this proposal is no longer available', updatedAt = ${now} WHERE id != ${input.proposalId} AND status IN ('pending', 'negotiating') AND id IN (SELECT proposalId FROM tradeProposalItems WHERE offeredListingId IN (SELECT offeredListingId FROM tradeProposalItems WHERE proposalId = ${input.proposalId}))`
         );
 
+        // Log mutual acceptance to activity log
+        const [acceptor2] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+        const acceptorName2 = (acceptor2 as any)?.displayName || (acceptor2 as any)?.username || 'Unknown';
+        await db.execute(
+          sql`INSERT INTO tradeActivityLog (proposalId, actorId, actorName, eventType, details, createdAt) VALUES (${input.proposalId}, ${userId}, ${acceptorName2}, 'proposal_accepted', 'Both parties accepted — trade locked!', ${now})`
+        );
         return { success: true, mutualAcceptance: true };
       } else {
         // First acceptance — record it and notify other party (72-hour window)
@@ -441,6 +505,12 @@ export const tradeFlowRouter = router({
         );
         await db.execute(
           sql`INSERT INTO tradeAdminLog (proposalId, eventType, actorUserId, details, createdAt) VALUES (${input.proposalId}, 'accepted', ${userId}, 'First acceptance — awaiting mutual confirmation', ${now})`
+        );
+        // Log first acceptance to activity log
+        const [acceptor1] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+        const acceptorName1 = (acceptor1 as any)?.displayName || (acceptor1 as any)?.username || 'Unknown';
+        await db.execute(
+          sql`INSERT INTO tradeActivityLog (proposalId, actorId, actorName, eventType, details, createdAt) VALUES (${input.proposalId}, ${userId}, ${acceptorName1}, 'proposal_accepted', 'Accepted the proposal — awaiting partner confirmation', ${now})`
         );
         return { success: true, mutualAcceptance: false };
       }
@@ -931,6 +1001,32 @@ export const tradeFlowRouter = router({
         trackingNumbers: (tracking as unknown as any[]),
         receipts: (receipts as unknown as any[]),
       };
+    }),
+
+  // ==========================================================================
+  // TIMELINE
+  // ==========================================================================
+
+  getTimeline: protectedProcedure
+    .input(z.object({ proposalId: z.number().int().positive() }))
+    .query(async ({ ctx, input }) => {
+      const db = await requireDb();
+      const userId = ctx.user.id;
+
+      const [proposal] = await db.select().from(tradeProposals).where(eq(tradeProposals.id, input.proposalId)).limit(1);
+      if (!proposal) throw new TRPCError({ code: 'NOT_FOUND', message: 'Trade not found' });
+      if (proposal.recipientId !== userId && proposal.requesterId !== userId) {
+        throw new TRPCError({ code: 'FORBIDDEN', message: 'Not authorized' });
+      }
+
+      const [events] = await db.execute(
+        sql`SELECT id, actorId, actorName, eventType, details, createdAt
+            FROM tradeActivityLog
+            WHERE proposalId = ${input.proposalId}
+            ORDER BY createdAt ASC`
+      );
+
+      return { events: (events as unknown as any[]) || [] };
     }),
 
   // ==========================================================================
