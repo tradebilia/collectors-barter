@@ -630,66 +630,50 @@ export default function WarRoom() {
                     <h2 className="text-white font-bold text-lg">Items Being Traded</h2>
                     <span className="px-3 py-1 bg-green-900/30 border border-green-500/30 text-green-400 text-xs font-bold rounded-full">LOCKED</span>
                   </div>
-                  <div className="flex gap-4 items-start">
+                  <div className="flex gap-6 items-start">
                     {/* Your Items */}
-                    <div className="flex-1">
+                    <div className="flex-1 space-y-2">
                       <div className="flex items-center gap-2 mb-3">
                         {myAvatarUrl ? <img src={myAvatarUrl} className="w-6 h-6 rounded-full object-cover" alt="" /> : <div className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center text-white text-[10px] font-bold">{myInitial}</div>}
                         <p className="text-blue-400 text-xs font-bold uppercase tracking-wide">{myDisplayName}</p>
                       </div>
-                      <div className="grid grid-cols-2 gap-3">
-                        {myItems.map((item: any) => (
-                          <div key={item.id} className="bg-[#0f0f1a] border border-gray-700 rounded-xl overflow-hidden">
-                            {item.photos?.[0]?.imageUrl
-                              ? <img src={item.photos[0].imageUrl} className="w-full aspect-square object-contain bg-[#0a0a1a]" alt={item.title} />
-                              : <div className="w-full aspect-square bg-[#0a0a1a] flex items-center justify-center text-gray-600 text-xs">No image</div>
-                            }
-                            <div className="p-2">
-                              <p className="text-white text-xs font-semibold leading-tight line-clamp-2">{item.title}</p>
-                            </div>
-                          </div>
-                        ))}
-                        {myCash > 0 && (
-                          <div className="bg-green-900/20 border border-green-500/30 rounded-xl p-3 flex flex-col items-center justify-center aspect-square">
-                            <span className="text-2xl mb-1">💵</span>
-                            <p className="text-green-400 font-bold text-sm">${myCash.toLocaleString()}</p>
-                            <p className="text-green-400/60 text-[10px]">Cash</p>
-                          </div>
-                        )}
-                      </div>
+                      {myItems.map((item: any) => (
+                        <div key={item.id} className="flex items-center gap-3 bg-[#0f0f1a] border border-gray-700 rounded-lg p-2">
+                          {item.photos?.[0]?.imageUrl
+                            ? <img src={item.photos[0].imageUrl} className="w-14 h-14 object-contain rounded-lg bg-[#0a0a1a] shrink-0" alt={item.title} />
+                            : <div className="w-14 h-14 bg-[#0a0a1a] rounded-lg flex items-center justify-center text-gray-600 text-xs shrink-0">No image</div>
+                          }
+                          <p className="text-white text-xs font-semibold leading-tight">{item.title}</p>
+                        </div>
+                      ))}
+                      {myCash > 0 && (
+                        <p className="text-green-400 text-sm font-bold pl-2">+ ${myCash.toLocaleString()} Cash</p>
+                      )}
                     </div>
                     {/* Exchange Arrow */}
-                    <div className="flex flex-col items-center justify-center pt-8 shrink-0">
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-8 h-8 text-gray-500">
+                    <div className="flex items-center justify-center pt-10 shrink-0">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6 text-gray-500">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 21 3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
                       </svg>
                     </div>
                     {/* Their Items */}
-                    <div className="flex-1">
+                    <div className="flex-1 space-y-2">
                       <div className="flex items-center gap-2 mb-3">
                         {theirAvatarUrl ? <img src={theirAvatarUrl} className="w-6 h-6 rounded-full object-cover" alt="" /> : <div className="w-6 h-6 rounded-full bg-gray-600 flex items-center justify-center text-white text-[10px] font-bold">{theirInitial}</div>}
                         <p className="text-gray-300 text-xs font-bold uppercase tracking-wide">{theirDisplayName}</p>
                       </div>
-                      <div className="grid grid-cols-2 gap-3">
-                        {theirItems.map((item: any) => (
-                          <div key={item.id} className="bg-[#0f0f1a] border border-gray-700 rounded-xl overflow-hidden">
-                            {item.photos?.[0]?.imageUrl
-                              ? <img src={item.photos[0].imageUrl} className="w-full aspect-square object-contain bg-[#0a0a1a]" alt={item.title} />
-                              : <div className="w-full aspect-square bg-[#0a0a1a] flex items-center justify-center text-gray-600 text-xs">No image</div>
-                            }
-                            <div className="p-2">
-                              <p className="text-white text-xs font-semibold leading-tight line-clamp-2">{item.title}</p>
-                            </div>
-                          </div>
-                        ))}
-                        {theirCash > 0 && (
-                          <div className="bg-green-900/20 border border-green-500/30 rounded-xl p-3 flex flex-col items-center justify-center aspect-square">
-                            <span className="text-2xl mb-1">💵</span>
-                            <p className="text-green-400 font-bold text-sm">${theirCash.toLocaleString()}</p>
-                            <p className="text-green-400/60 text-[10px]">Cash</p>
-                          </div>
-                        )}
-                      </div>
+                      {theirItems.map((item: any) => (
+                        <div key={item.id} className="flex items-center gap-3 bg-[#0f0f1a] border border-gray-700 rounded-lg p-2">
+                          {item.photos?.[0]?.imageUrl
+                            ? <img src={item.photos[0].imageUrl} className="w-14 h-14 object-contain rounded-lg bg-[#0a0a1a] shrink-0" alt={item.title} />
+                            : <div className="w-14 h-14 bg-[#0a0a1a] rounded-lg flex items-center justify-center text-gray-600 text-xs shrink-0">No image</div>
+                          }
+                          <p className="text-white text-xs font-semibold leading-tight">{item.title}</p>
+                        </div>
+                      ))}
+                      {theirCash > 0 && (
+                        <p className="text-green-400 text-sm font-bold pl-2">+ ${theirCash.toLocaleString()} Cash</p>
+                      )}
                     </div>
                   </div>
                 </div>
