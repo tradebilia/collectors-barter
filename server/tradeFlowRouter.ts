@@ -896,7 +896,7 @@ export const tradeFlowRouter = router({
       // Check if partner has already accepted (first acceptance — waiting for mutual confirmation)
       let partnerHasAccepted = false;
       let myHasAccepted = false;
-      if (proposal.status === 'negotiating') {
+      if ((proposal.status as string) === 'negotiating') {
         const [pendingAccept] = await db.execute(
           sql`SELECT id FROM tradeReceiptConfirmation WHERE proposalId = ${input.proposalId} AND userId = ${otherUserId} AND confirmationType = 'accepted'`
         );
