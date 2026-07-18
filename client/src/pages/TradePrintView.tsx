@@ -64,23 +64,23 @@ export default function TradePrintView() {
 
   const ContactBlock = ({ contact, name }: { contact: any; name: string }) => (
     <div className="text-center">
-      <p className="font-bold text-lg text-gray-900">{contact?.contactFullName || name}</p>
-      {(contact as any)?.username && <p className="text-gray-500 text-sm">@{(contact as any).username}</p>}
+      <p className="font-black text-2xl text-gray-900">{contact?.contactFullName || name}</p>
+      {(contact as any)?.username && <p className="text-gray-500 text-base">@{(contact as any).username}</p>}
       {contact?.contactAddress && (
-        <div className="mt-2 text-gray-700 text-sm leading-relaxed">
+        <div className="mt-2 text-gray-700 text-base leading-relaxed">
           <p>{contact.contactAddress}</p>
           <p>{[contact.contactTown, contact.contactState, contact.contactZipCode].filter(Boolean).join(', ')}</p>
           {contact.contactCountry && <p>{contact.contactCountry}</p>}
         </div>
       )}
-      {contact?.contactEmail && <p className="text-gray-700 text-sm mt-1">{contact.contactEmail}</p>}
-      {contact?.contactPhone && <p className="text-gray-700 text-sm">{contact.contactPhone}</p>}
+      {contact?.contactEmail && <p className="text-gray-700 text-base mt-1">{contact.contactEmail}</p>}
+      {contact?.contactPhone && <p className="text-gray-700 text-base">{contact.contactPhone}</p>}
     </div>
   );
 
   const ItemCard = ({ item }: { item: any }) => (
     <div className="text-center">
-      <div className="w-full bg-gray-100 rounded-lg overflow-hidden mb-2 border border-gray-200" style={{ height: '160px' }}>
+      <div className="w-full bg-gray-100 rounded-lg overflow-hidden mb-2 border border-gray-200" style={{ height: '200px' }}>
         {item?.photos?.[0]?.imageUrl
           ? <img src={item.photos[0].imageUrl} className="w-full h-full object-contain" alt={item.title} />
           : <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">No image</div>
@@ -149,7 +149,7 @@ export default function TradePrintView() {
               {myItems.map((item: any) => item && <ItemCard key={item.id} item={item} />)}
               {serverMyCash > 0 && (
                 <div className="text-center">
-                  <p className="text-green-700 font-bold text-sm mt-2">+ ${serverMyCash.toLocaleString()} Cash</p>
+                  <p className="text-green-700 font-extrabold text-lg mt-2">+ ${serverMyCash.toLocaleString()} Cash</p>
                 </div>
               )}
             </div>
@@ -166,7 +166,7 @@ export default function TradePrintView() {
               {theirItems.map((item: any) => item && <ItemCard key={item.id} item={item} />)}
               {serverTheirCash > 0 && (
                 <div className="text-center">
-                  <p className="text-green-700 font-bold text-sm mt-2">+ ${serverTheirCash.toLocaleString()} Cash</p>
+                  <p className="text-green-700 font-extrabold text-lg mt-2">+ ${serverTheirCash.toLocaleString()} Cash</p>
                 </div>
               )}
             </div>
