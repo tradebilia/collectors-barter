@@ -268,11 +268,14 @@ export default function WarRoom() {
   const serverMyCash = parseFloat((trade?.proposal as any)?.cashFromRequester || '0') || 0;
   const serverTheirCash = parseFloat((trade?.proposal as any)?.cashFromRecipient || '0') || 0;
   // Local pending cash (entered but not yet submitted)
-  const localMyCash = parseFloat(cashPay) || 0;
-  const localTheirCash = parseFloat(cashReceive) || 0;
-  // Use local if set, otherwise fall back to server value
-  const myCash = localMyCash > 0 ? localMyCash : serverMyCash;
-  const theirCash = localTheirCash > 0 ? localTheirCash : serverTheirCash;
+  // cashPay/cashReceive = '' means "not touched"; '0' means "user explicitly cleared it"
+  const cashPayTouched = cashPay !== '';
+  const cashReceiveTouched = cashReceive !== '';
+  const localMyCash = cashPayTouched ? (parseFloat(cashPay) || 0) : serverMyCash;
+  const localTheirCash = cashReceiveTouched ? (parseFloat(cashReceive) || 0) : serverTheirCash;
+  // Use local if touched, otherwise fall back to server value
+  const myCash = cashPayTouched ? localMyCash : serverMyCash;
+  const theirCash = cashReceiveTouched ? localTheirCash : serverTheirCash;
 
   // Detect if the user has made ANY local modifications to the trade
   // (adding/removing items, changing cash) — if so, they can't accept the current proposal
@@ -280,8 +283,8 @@ export default function WarRoom() {
     pendingMyItems.length > 0 ||
     pendingTheirItems.length > 0 ||
     removedItemIds.length > 0 ||
-    (localMyCash > 0 && localMyCash !== serverMyCash) ||
-    (localTheirCash > 0 && localTheirCash !== serverTheirCash)
+    (cashPayTouched && localMyCash !== serverMyCash) ||
+    (cashReceiveTouched && localTheirCash !== serverTheirCash)
   );
 
   // Can only accept if: other party proposed AND you haven't modified anything
