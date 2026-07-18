@@ -894,11 +894,11 @@ export default function WarRoom() {
                   {/* Fairness Meter */}
                   <div className="bg-[#0a0a2a] border border-gray-600 rounded-xl p-5 text-center flex-1 flex flex-col justify-center">
                     {!iCanAccept && currentStage === 'negotiating' && (
-                      <div className="mb-4 px-3 py-1.5 bg-gray-900/50 border border-gray-700 rounded-lg flex items-center justify-center gap-2 text-gray-400 text-[10px] font-bold uppercase tracking-wider">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3.5 h-3.5 text-gray-500">
+                      <div className="mb-4 px-3 py-2 bg-amber-500/10 border border-amber-500/30 rounded-lg flex items-center justify-center gap-2 text-amber-400 text-[10px] font-bold uppercase tracking-wider shadow-[0_0_15px_rgba(245,158,11,0.1)] animate-pulse">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-3.5 h-3.5">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
                         </svg>
-                        Awaiting Response
+                        Awaiting Their Response
                       </div>
                     )}
                     <p className="text-gray-400 text-[10px] font-bold uppercase tracking-widest mb-3 flex items-center justify-center gap-1">
