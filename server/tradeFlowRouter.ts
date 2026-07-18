@@ -893,6 +893,15 @@ export const tradeFlowRouter = router({
         trackingNumbers = (trackingResult as any) || [];
       }
 
+      // Check if partner has already accepted (first acceptance — waiting for mutual confirmation)
+      let partnerHasAccepted = false;
+      if (proposal.status === 'negotiating') {
+        const [pendingAccept] = await db.execute(
+          sql`SELECT id FROM tradeReceiptConfirmation WHERE proposalId = ${input.proposalId} AND userId = ${otherUserId} AND confirmationType = 'accepted'`
+        );
+        partnerHasAccepted = ((pendingAccept as unknown as any[])?.length || 0) > 0;
+      }
+
       // Check if current user has confirmed receipt
       let myReceiptConfirmed = false;
       let theirReceiptConfirmed = false;
@@ -930,6 +939,7 @@ export const tradeFlowRouter = router({
         trackingNumbers,
         myReceiptConfirmed,
         theirReceiptConfirmed,
+        partnerHasAccepted,
       };
     }),
 
