@@ -1246,7 +1246,12 @@ export default function WarRoom() {
               </button>
               <button
                 onClick={handleUpdateProposal}
-                className="px-14 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-lg font-bold transition flex items-center gap-2 shadow-[0_0_15px_rgba(147,51,234,0.4)]"
+                disabled={!hasLocalChanges}
+                className={`px-14 py-3 rounded-lg font-bold transition flex items-center gap-2 ${
+                  hasLocalChanges
+                    ? 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white shadow-[0_0_15px_rgba(147,51,234,0.4)]'
+                    : 'bg-gray-700 text-gray-500 cursor-not-allowed border border-gray-600'
+                }`}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" />
