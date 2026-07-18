@@ -646,12 +646,7 @@ export default function WarRoom() {
                           <div className="flex-1 min-w-0">
                             <p className="text-white text-xs font-semibold leading-tight">{item.title}</p>
                             <p className="text-gray-500 text-[10px] font-mono mt-0.5">Ref # {String(item.id).padStart(5, '0')}</p>
-                            {item.certificationCompany && item.grade && parseFloat(item.grade) > 0 && (
-                              <p className="text-blue-400 text-[10px] mt-0.5">{item.certificationCompany} {parseFloat(item.grade).toFixed(1)}</p>
-                            )}
-                            {item.certificationNumber && (
-                              <p className="text-gray-500 text-[10px] font-mono">Cert # {item.certificationNumber}</p>
-                            )}
+
                           </div>
                         </div>
                       ))}
@@ -680,12 +675,7 @@ export default function WarRoom() {
                           <div className="flex-1 min-w-0">
                             <p className="text-white text-xs font-semibold leading-tight">{item.title}</p>
                             <p className="text-gray-500 text-[10px] font-mono mt-0.5">Ref # {String(item.id).padStart(5, '0')}</p>
-                            {item.certificationCompany && item.grade && parseFloat(item.grade) > 0 && (
-                              <p className="text-blue-400 text-[10px] mt-0.5">{item.certificationCompany} {parseFloat(item.grade).toFixed(1)}</p>
-                            )}
-                            {item.certificationNumber && (
-                              <p className="text-gray-500 text-[10px] font-mono">Cert # {item.certificationNumber}</p>
-                            )}
+
                           </div>
                         </div>
                       ))}
