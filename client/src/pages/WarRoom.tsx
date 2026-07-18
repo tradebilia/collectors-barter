@@ -28,7 +28,7 @@ function getStageFromStatus(status: string): TradeStage {
 
 const stages: { key: TradeStage; label: string; sub: string }[] = [
   { key: 'proposed',    label: 'Propose',  sub: 'Trade Created'  },
-  { key: 'negotiating', label: 'War Room', sub: 'Negotiate'       },
+  { key: 'negotiating', label: 'Negotiate', sub: 'Counter Offers'    },
   { key: 'accepted',    label: 'Review',   sub: 'Finalize Terms'  },
   { key: 'shipped',     label: 'Confirm',  sub: 'Both Parties'    },
   { key: 'completed',   label: 'Complete', sub: 'Trade & Ship'    },
