@@ -626,63 +626,69 @@ export default function WarRoom() {
 
                 {/* Trade Summary Card */}
                 <div className="bg-[#16213e] border border-gray-600 rounded-xl p-5 shadow-xl">
-                  <div className="flex items-center gap-3 mb-5">
-                    <div className="w-9 h-9 rounded-lg bg-green-900/30 border border-green-500/20 flex items-center justify-center">
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-green-400">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                  <div className="flex items-center justify-between mb-5">
+                    <h2 className="text-white font-bold text-lg">Items Being Traded</h2>
+                    <span className="px-3 py-1 bg-green-900/30 border border-green-500/30 text-green-400 text-xs font-bold rounded-full">LOCKED</span>
+                  </div>
+                  <div className="flex gap-4 items-start">
+                    {/* Your Items */}
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-3">
+                        {myAvatarUrl ? <img src={myAvatarUrl} className="w-6 h-6 rounded-full object-cover" alt="" /> : <div className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center text-white text-[10px] font-bold">{myInitial}</div>}
+                        <p className="text-blue-400 text-xs font-bold uppercase tracking-wide">{myDisplayName}</p>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        {myItems.map((item: any) => (
+                          <div key={item.id} className="bg-[#0f0f1a] border border-gray-700 rounded-xl overflow-hidden">
+                            {item.photos?.[0]?.imageUrl
+                              ? <img src={item.photos[0].imageUrl} className="w-full aspect-square object-contain bg-[#0a0a1a]" alt={item.title} />
+                              : <div className="w-full aspect-square bg-[#0a0a1a] flex items-center justify-center text-gray-600 text-xs">No image</div>
+                            }
+                            <div className="p-2">
+                              <p className="text-white text-xs font-semibold leading-tight line-clamp-2">{item.title}</p>
+                            </div>
+                          </div>
+                        ))}
+                        {myCash > 0 && (
+                          <div className="bg-green-900/20 border border-green-500/30 rounded-xl p-3 flex flex-col items-center justify-center aspect-square">
+                            <span className="text-2xl mb-1">💵</span>
+                            <p className="text-green-400 font-bold text-sm">${myCash.toLocaleString()}</p>
+                            <p className="text-green-400/60 text-[10px]">Cash</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    {/* Exchange Arrow */}
+                    <div className="flex flex-col items-center justify-center pt-8 shrink-0">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-8 h-8 text-gray-500">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 21 3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
                       </svg>
                     </div>
-                    <div>
-                      <h2 className="text-white font-bold text-lg">Trade Summary</h2>
-                      <p className="text-gray-400 text-xs">Both parties have accepted. This trade is locked.</p>
-                    </div>
-                    <span className="ml-auto px-3 py-1 bg-green-900/30 border border-green-500/30 text-green-400 text-xs font-bold rounded-full">LOCKED</span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    {/* Your Side */}
-                    <div className="bg-[#0f0f1a] border border-blue-500/20 rounded-xl p-4">
+                    {/* Their Items */}
+                    <div className="flex-1">
                       <div className="flex items-center gap-2 mb-3">
-                        {myAvatarUrl ? <img src={myAvatarUrl} className="w-7 h-7 rounded-full object-cover" alt="" /> : <div className="w-7 h-7 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-bold">{myInitial}</div>}
-                        <div>
-                          <p className="text-white text-sm font-bold">{myDisplayName}</p>
-                          <p className="text-blue-400 text-[10px] uppercase">Your Side</p>
-                        </div>
-                        <p className="ml-auto text-blue-400 font-bold">${myTotalValue.toLocaleString()}</p>
+                        {theirAvatarUrl ? <img src={theirAvatarUrl} className="w-6 h-6 rounded-full object-cover" alt="" /> : <div className="w-6 h-6 rounded-full bg-gray-600 flex items-center justify-center text-white text-[10px] font-bold">{theirInitial}</div>}
+                        <p className="text-gray-300 text-xs font-bold uppercase tracking-wide">{theirDisplayName}</p>
                       </div>
-                      <div className="space-y-2">
-                        {myItems.map((item: any) => (
-                          <div key={item.id} className="flex items-center gap-3">
-                            {item.photos?.[0]?.imageUrl && <img src={item.photos[0].imageUrl} className="w-16 h-16 object-contain rounded-lg bg-[#0f0f1a] border border-gray-700 shrink-0" alt="" />}
-                            <div className="flex-1 min-w-0">
-                              <p className="text-white text-sm font-medium truncate">{item.title}</p>
-                              <p className="text-blue-400 text-sm font-bold">${parseFloat(item.estimatedValue || '0').toLocaleString()}</p>
-                            </div>
-                          </div>
-                        ))}
-                        {myCash > 0 && <div className="flex items-center gap-2 text-green-400 text-xs font-bold"><span>💵</span>+ ${myCash.toLocaleString()} Cash</div>}
-                      </div>
-                    </div>
-                    {/* Their Side */}
-                    <div className="bg-[#0f0f1a] border border-blue-500/20 rounded-xl p-4">
-                      <div className="flex items-center gap-2 mb-3">
-                        {theirAvatarUrl ? <img src={theirAvatarUrl} className="w-7 h-7 rounded-full object-cover" alt="" /> : <div className="w-7 h-7 rounded-full bg-gray-600 flex items-center justify-center text-white text-xs font-bold">{theirInitial}</div>}
-                        <div>
-                          <p className="text-white text-sm font-bold">{theirDisplayName}</p>
-                          <p className="text-blue-400 text-[10px] uppercase">Their Side</p>
-                        </div>
-                        <p className="ml-auto text-blue-400 font-bold">${theirTotalValue.toLocaleString()}</p>
-                      </div>
-                      <div className="space-y-2">
+                      <div className="grid grid-cols-2 gap-3">
                         {theirItems.map((item: any) => (
-                          <div key={item.id} className="flex items-center gap-3">
-                            {item.photos?.[0]?.imageUrl && <img src={item.photos[0].imageUrl} className="w-16 h-16 object-contain rounded-lg bg-[#0f0f1a] border border-gray-700 shrink-0" alt="" />}
-                            <div className="flex-1 min-w-0">
-                              <p className="text-white text-sm font-medium truncate">{item.title}</p>
-                              <p className="text-blue-400 text-sm font-bold">${parseFloat(item.estimatedValue || '0').toLocaleString()}</p>
+                          <div key={item.id} className="bg-[#0f0f1a] border border-gray-700 rounded-xl overflow-hidden">
+                            {item.photos?.[0]?.imageUrl
+                              ? <img src={item.photos[0].imageUrl} className="w-full aspect-square object-contain bg-[#0a0a1a]" alt={item.title} />
+                              : <div className="w-full aspect-square bg-[#0a0a1a] flex items-center justify-center text-gray-600 text-xs">No image</div>
+                            }
+                            <div className="p-2">
+                              <p className="text-white text-xs font-semibold leading-tight line-clamp-2">{item.title}</p>
                             </div>
                           </div>
                         ))}
-                        {theirCash > 0 && <div className="flex items-center gap-2 text-green-400 text-xs font-bold"><span>💵</span>+ ${theirCash.toLocaleString()} Cash</div>}
+                        {theirCash > 0 && (
+                          <div className="bg-green-900/20 border border-green-500/30 rounded-xl p-3 flex flex-col items-center justify-center aspect-square">
+                            <span className="text-2xl mb-1">💵</span>
+                            <p className="text-green-400 font-bold text-sm">${theirCash.toLocaleString()}</p>
+                            <p className="text-green-400/60 text-[10px]">Cash</p>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -1417,9 +1423,19 @@ export default function WarRoom() {
             </>
           )}
 
-          {/* Stage 3: Review (accepted) — confirm and proceed to shipping */}
+          {/* Stage 3: Review (accepted) — print + confirm and proceed to shipping */}
           {currentStage === 'accepted' && (
-            <button
+            <>
+              <button
+                onClick={() => window.open(`/trade-print/${proposalId}`, '_blank')}
+                className="px-6 py-3 border border-gray-600 text-gray-300 rounded-lg font-semibold hover:bg-gray-800 transition flex items-center gap-2"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0 1 10.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0 .229 2.523a1.125 1.125 0 0 1-1.12 1.227H7.231c-.662 0-1.18-.568-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0 0 21 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.055 48.055 0 0 0-1.913-.247M6.34 18H5.25A2.25 2.25 0 0 1 3 15.75V9.456c0-1.081.768-2.015 1.837-2.175a48.056 48.056 0 0 1 1.913-.247m10.5 0a48.536 48.536 0 0 0-10.5 0m10.5 0V3.375c0-.621-.504-1.125-1.125-1.125h-8.25c-.621 0-1.125.504-1.125 1.125v3.659M18 10.5h.008v.008H18V10.5Zm-3 0h.008v.008H15V10.5Z" />
+                </svg>
+                Print Confirmation
+              </button>
+              <button
               onClick={() => {
                 proceedToShippingMutation.mutate({ proposalId });
               }}
@@ -1431,6 +1447,7 @@ export default function WarRoom() {
               </svg>
               {proceedToShippingMutation.isPending ? 'Processing...' : 'Confirm & Proceed to Shipping'}
             </button>
+            </>
           )}
 
           {/* Stage 4: Shipping — submit tracking */}

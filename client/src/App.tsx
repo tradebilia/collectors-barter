@@ -42,6 +42,7 @@ import { TradeFlowMockupV2 } from "./pages/TradeFlowMockupV2";
 import { TradeNegotiationMockup } from "./pages/TradeNegotiationMockup";
 import TradeHub from "./pages/TradeHub";
 import WarRoom from "./pages/WarRoom";
+import TradePrintView from "./pages/TradePrintView";
 import TradeVoting from "./pages/TradeVoting";
 import {
   AllMostViewedRankings,
@@ -143,6 +144,11 @@ function Router() {
       <Route path="/war-room/:proposalId">
         <ProtectedRoute>
           <WarRoom />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/trade-print/:id">
+        <ProtectedRoute>
+          <TradePrintView />
         </ProtectedRoute>
       </Route>
       <Route path="/trade-vote/:token" component={TradeVoting} />
