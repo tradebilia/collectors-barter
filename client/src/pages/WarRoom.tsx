@@ -951,12 +951,16 @@ export default function WarRoom() {
                 <div className="col-span-3 flex flex-col gap-4 overflow-hidden">
                   {/* Fairness Meter */}
                   <div className="bg-[#0f0f1a] border border-gray-600 rounded-xl p-5 text-center flex-1 flex flex-col justify-center">
-                    {!iCanAccept && currentStage === 'negotiating' && (
-                      <div className="mb-4 px-3 py-2 bg-amber-500/10 border border-amber-500/30 rounded-lg flex items-center justify-center gap-2 text-amber-400 text-[10px] font-bold uppercase tracking-wider shadow-[0_0_15px_rgba(245,158,11,0.1)] animate-pulse">
+                    {currentStage === 'negotiating' && (
+                      <div className={`mb-4 px-3 py-2 rounded-lg flex items-center justify-center gap-2 text-[10px] font-bold uppercase tracking-wider animate-pulse ${
+                        iCanAccept
+                          ? 'bg-green-500/10 border border-green-500/30 text-green-400 shadow-[0_0_15px_rgba(34,197,94,0.1)]'
+                          : 'bg-amber-500/10 border border-amber-500/30 text-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.1)]'
+                      }`}>
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-3.5 h-3.5">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
                         </svg>
-                        Awaiting Their Response
+                        {iCanAccept ? 'Your Turn to Respond' : 'Awaiting Their Response'}
                       </div>
                     )}
                     <p className="text-gray-400 text-[10px] font-bold uppercase tracking-widest mb-3 flex items-center justify-center gap-1">
@@ -1291,7 +1295,7 @@ export default function WarRoom() {
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" />
                 </svg>
-                Counter Offer
+                {currentStage === 'proposed' ? 'Send Proposal' : 'Counter Offer'}
               </button>
               {iCanAccept && (
                 <button
