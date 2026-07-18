@@ -417,7 +417,7 @@ export default function WarRoom() {
   // ── Loading / Error states ────────────────────────────────────────────────
   if (tradeDetailsQuery.isLoading) {
     return (
-      <div className="min-h-screen bg-[#0a0a2a] flex items-center justify-center">
+      <div className="min-h-screen bg-[#0f0f1a] flex items-center justify-center">
         <div className="animate-spin w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full" />
       </div>
     );
@@ -425,7 +425,7 @@ export default function WarRoom() {
 
   if (tradeDetailsQuery.error) {
     return (
-      <div className="min-h-screen bg-[#0a0a2a] flex items-center justify-center text-white">
+      <div className="min-h-screen bg-[#0f0f1a] flex items-center justify-center text-white">
         <div className="text-center">
           <p className="text-red-400 text-lg">Error loading trade</p>
           <p className="text-gray-400 mt-2">{tradeDetailsQuery.error.message}</p>
@@ -439,12 +439,12 @@ export default function WarRoom() {
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <div className="h-screen bg-[#0a0a2a] flex flex-col overflow-hidden">
+    <div className="h-screen bg-[#0f0f1a] flex flex-col overflow-hidden">
       {/* Top Bar — compact mode (no search) */}
       <TopBar hideSearch />
 
       {/* Progress Tracker Header */}
-      <header className="bg-[#1a1a4a] border-b border-gray-600 px-6 py-3">
+      <header className="bg-[#16213e] border-b border-gray-600 px-6 py-3">
         <div className="max-w-[1600px] mx-auto flex items-center justify-between">
           {/* Left: Trade ID */}
           <div className="flex items-center gap-3 min-w-[200px]">
@@ -528,7 +528,7 @@ export default function WarRoom() {
               <div className="flex flex-col gap-4 flex-1">
 
                 {/* Trade Summary Card */}
-                <div className="bg-[#1a1a4a] border border-gray-600 rounded-xl p-5 shadow-xl">
+                <div className="bg-[#16213e] border border-gray-600 rounded-xl p-5 shadow-xl">
                   <div className="flex items-center gap-3 mb-5">
                     <div className="w-9 h-9 rounded-lg bg-green-900/30 border border-green-500/20 flex items-center justify-center">
                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-green-400">
@@ -543,7 +543,7 @@ export default function WarRoom() {
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     {/* Your Side */}
-                    <div className="bg-[#0a0a2a] border border-purple-500/20 rounded-xl p-4">
+                    <div className="bg-[#0f0f1a] border border-purple-500/20 rounded-xl p-4">
                       <div className="flex items-center gap-2 mb-3">
                         {myAvatarUrl ? <img src={myAvatarUrl} className="w-7 h-7 rounded-full object-cover" alt="" /> : <div className="w-7 h-7 rounded-full bg-purple-600 flex items-center justify-center text-white text-xs font-bold">{myInitial}</div>}
                         <div>
@@ -555,7 +555,7 @@ export default function WarRoom() {
                       <div className="space-y-2">
                         {myItems.map((item: any) => (
                           <div key={item.id} className="flex items-center gap-2">
-                            {item.photos?.[0]?.imageUrl && <img src={item.photos[0].imageUrl} className="w-10 h-10 object-contain rounded bg-[#1a1a4a]" alt="" />}
+                            {item.photos?.[0]?.imageUrl && <img src={item.photos[0].imageUrl} className="w-10 h-10 object-contain rounded bg-[#16213e]" alt="" />}
                             <div className="flex-1 min-w-0">
                               <p className="text-white text-xs font-medium truncate">{item.title}</p>
                               <p className="text-purple-400 text-xs">${parseFloat(item.estimatedValue || '0').toLocaleString()}</p>
@@ -566,7 +566,7 @@ export default function WarRoom() {
                       </div>
                     </div>
                     {/* Their Side */}
-                    <div className="bg-[#0a0a2a] border border-blue-500/20 rounded-xl p-4">
+                    <div className="bg-[#0f0f1a] border border-blue-500/20 rounded-xl p-4">
                       <div className="flex items-center gap-2 mb-3">
                         {theirAvatarUrl ? <img src={theirAvatarUrl} className="w-7 h-7 rounded-full object-cover" alt="" /> : <div className="w-7 h-7 rounded-full bg-gray-600 flex items-center justify-center text-white text-xs font-bold">{theirInitial}</div>}
                         <div>
@@ -578,7 +578,7 @@ export default function WarRoom() {
                       <div className="space-y-2">
                         {theirItems.map((item: any) => (
                           <div key={item.id} className="flex items-center gap-2">
-                            {item.photos?.[0]?.imageUrl && <img src={item.photos[0].imageUrl} className="w-10 h-10 object-contain rounded bg-[#1a1a4a]" alt="" />}
+                            {item.photos?.[0]?.imageUrl && <img src={item.photos[0].imageUrl} className="w-10 h-10 object-contain rounded bg-[#16213e]" alt="" />}
                             <div className="flex-1 min-w-0">
                               <p className="text-white text-xs font-medium truncate">{item.title}</p>
                               <p className="text-blue-400 text-xs">${parseFloat(item.estimatedValue || '0').toLocaleString()}</p>
@@ -592,7 +592,7 @@ export default function WarRoom() {
                 </div>
 
                 {/* Contact Info Card */}
-                <div className="bg-[#1a1a4a] border border-gray-600 rounded-xl p-5 shadow-xl">
+                <div className="bg-[#16213e] border border-gray-600 rounded-xl p-5 shadow-xl">
                   <div className="flex items-center gap-3 mb-4">
                     <div className="w-9 h-9 rounded-lg bg-blue-900/30 border border-blue-500/20 flex items-center justify-center">
                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-blue-400">
@@ -606,7 +606,7 @@ export default function WarRoom() {
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     {[{ label: 'Your Info', contact: myContact, color: 'purple' }, { label: `${theirDisplayName}'s Info`, contact: theirContact, color: 'blue' }].map(({ label, contact, color }) => (
-                      <div key={label} className={`bg-[#0a0a2a] border border-${color}-500/20 rounded-xl p-4`}>
+                      <div key={label} className={`bg-[#0f0f1a] border border-${color}-500/20 rounded-xl p-4`}>
                         <p className={`text-${color}-400 text-xs font-bold uppercase tracking-wide mb-3`}>{label}</p>
                         {contact ? (
                           <div className="space-y-1.5 text-sm">
@@ -633,7 +633,7 @@ export default function WarRoom() {
                 </div>
 
                 {/* Tracking Numbers Card */}
-                <div className="bg-[#1a1a4a] border border-gray-600 rounded-xl p-5 shadow-xl">
+                <div className="bg-[#16213e] border border-gray-600 rounded-xl p-5 shadow-xl">
                   <div className="flex items-center gap-3 mb-4">
                     <div className="w-9 h-9 rounded-lg bg-orange-900/30 border border-orange-500/20 flex items-center justify-center">
                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-orange-400">
@@ -687,7 +687,7 @@ export default function WarRoom() {
                       {allItems.filter((item: any) => item.ownerId === myUserId || (isRequester ? false : item.id === requestedListing?.id)).map((item: any) => {
                         const input = trackingInputs.find(t => t.listingId === item.id) || { listingId: item.id, carrier: 'USPS', trackingNumber: '' };
                         return (
-                          <div key={item.id} className="bg-[#0a0a2a] border border-gray-700 rounded-lg p-3">
+                          <div key={item.id} className="bg-[#0f0f1a] border border-gray-700 rounded-lg p-3">
                             <p className="text-white text-xs font-medium mb-2">{item.title}</p>
                             <div className="flex gap-2">
                               <select
@@ -696,7 +696,7 @@ export default function WarRoom() {
                                   const existing = prev.filter(t => t.listingId !== item.id);
                                   return [...existing, { ...input, carrier: e.target.value }];
                                 })}
-                                className="bg-[#1a1a4a] border border-gray-600 text-white text-xs rounded px-2 py-1.5 focus:outline-none focus:border-purple-500"
+                                className="bg-[#16213e] border border-gray-600 text-white text-xs rounded px-2 py-1.5 focus:outline-none focus:border-purple-500"
                               >
                                 {['USPS', 'UPS', 'FedEx', 'DHL', 'Other'].map(c => <option key={c} value={c}>{c}</option>)}
                               </select>
@@ -708,7 +708,7 @@ export default function WarRoom() {
                                   const existing = prev.filter(t => t.listingId !== item.id);
                                   return [...existing, { ...input, trackingNumber: e.target.value }];
                                 })}
-                                className="flex-1 bg-[#1a1a4a] border border-gray-600 text-white text-xs rounded px-3 py-1.5 focus:outline-none focus:border-purple-500 font-mono"
+                                className="flex-1 bg-[#16213e] border border-gray-600 text-white text-xs rounded px-3 py-1.5 focus:outline-none focus:border-purple-500 font-mono"
                               />
                             </div>
                           </div>
@@ -752,7 +752,7 @@ export default function WarRoom() {
                         placeholder="Write a review (optional)..."
                         value={reviewText}
                         onChange={(e) => setReviewText(e.target.value)}
-                        className="w-full mt-2 bg-[#0a0a2a] border border-gray-600 text-white text-xs rounded-lg p-3 focus:outline-none focus:border-purple-500 resize-none"
+                        className="w-full mt-2 bg-[#0f0f1a] border border-gray-600 text-white text-xs rounded-lg p-3 focus:outline-none focus:border-purple-500 resize-none"
                         rows={3}
                       />
                     </div>
@@ -764,7 +764,7 @@ export default function WarRoom() {
           })()}
 
             {/* Trade Table Card — stretches to fill available height */}
-            {(currentStage === 'proposed' || currentStage === 'negotiating') && <div className="bg-[#1a1a4a] border border-gray-600 rounded-xl p-5 shadow-xl flex flex-col flex-1">
+            {(currentStage === 'proposed' || currentStage === 'negotiating') && <div className="bg-[#16213e] border border-gray-600 rounded-xl p-5 shadow-xl flex flex-col flex-1">
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-lg bg-purple-900/30 border border-purple-500/20 flex items-center justify-center">
@@ -796,7 +796,7 @@ export default function WarRoom() {
               <div className="grid grid-cols-11 gap-5 flex-1 min-h-0">
 
                 {/* ── YOUR SIDE ── */}
-                <div className="col-span-4 bg-[#0a0a2a] border border-gray-600 rounded-xl p-4 flex flex-col overflow-hidden">
+                <div className="col-span-4 bg-[#0f0f1a] border border-gray-600 rounded-xl p-4 flex flex-col overflow-hidden">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
                       {/* Avatar */}
@@ -826,7 +826,7 @@ export default function WarRoom() {
                       {myItems.map((item: any) => {
                         const isLocked = item.id === requestedListing?.id;
                         return (
-                        <div key={item.id} className={`bg-[#2a2a5a] border rounded-lg p-2.5 relative group ${isLocked ? 'border-purple-500/40' : 'border-gray-600'}`}>
+                        <div key={item.id} className={`bg-[#0f3460] border rounded-lg p-2.5 relative group ${isLocked ? 'border-purple-500/40' : 'border-gray-600'}`}>
                           {isLocked && (
                             <div className="absolute top-1.5 left-1.5 bg-purple-600/80 text-white text-[9px] font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5 z-10">
                               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-2.5 h-2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" /></svg>
@@ -834,7 +834,7 @@ export default function WarRoom() {
                             </div>
                           )}
                           {item.photos?.[0]?.imageUrl ? (
-                            <img src={item.photos[0].imageUrl} alt={item.title} className={`w-full ${getImgHeight(myItems.length)} object-contain rounded mb-2 bg-[#0a0a2a]`} />
+                            <img src={item.photos[0].imageUrl} alt={item.title} className={`w-full ${getImgHeight(myItems.length)} object-contain rounded mb-2 bg-[#0f0f1a]`} />
                           ) : (
                             <div className={`w-full ${getImgHeight(myItems.length)} bg-gray-800 rounded mb-2 flex items-center justify-center text-gray-600 text-xs`}>No Image</div>
                           )}
@@ -895,7 +895,7 @@ export default function WarRoom() {
                 {/* ── MIDDLE: Fairness Meter + AI Analyzer ── */}
                 <div className="col-span-3 flex flex-col gap-4 overflow-hidden">
                   {/* Fairness Meter */}
-                  <div className="bg-[#0a0a2a] border border-gray-600 rounded-xl p-5 text-center flex-1 flex flex-col justify-center">
+                  <div className="bg-[#0f0f1a] border border-gray-600 rounded-xl p-5 text-center flex-1 flex flex-col justify-center">
                     {!iCanAccept && currentStage === 'negotiating' && (
                       <div className="mb-4 px-3 py-2 bg-amber-500/10 border border-amber-500/30 rounded-lg flex items-center justify-center gap-2 text-amber-400 text-[10px] font-bold uppercase tracking-wider shadow-[0_0_15px_rgba(245,158,11,0.1)] animate-pulse">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-3.5 h-3.5">
@@ -956,7 +956,7 @@ export default function WarRoom() {
                   </div>
 
                   {/* AI Analyzer */}
-                  <div className="bg-[#0a0a2a] border border-gray-600 rounded-xl p-5 text-center flex-1 flex flex-col justify-center items-center">
+                  <div className="bg-[#0f0f1a] border border-gray-600 rounded-xl p-5 text-center flex-1 flex flex-col justify-center items-center">
                     <div className="w-12 h-12 rounded-full bg-purple-900/30 border border-purple-500/20 flex items-center justify-center mb-3">
                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 text-purple-400">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z" />
@@ -974,7 +974,7 @@ export default function WarRoom() {
                 </div>
 
                 {/* ── THEIR SIDE ── */}
-                <div className="col-span-4 bg-[#0a0a2a] border border-gray-600 rounded-xl p-4 flex flex-col overflow-hidden">
+                <div className="col-span-4 bg-[#0f0f1a] border border-gray-600 rounded-xl p-4 flex flex-col overflow-hidden">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
                       {/* Avatar */}
@@ -1004,7 +1004,7 @@ export default function WarRoom() {
                       {theirItems.map((item: any) => {
                         const isLocked = item.id === requestedListing?.id;
                         return (
-                        <div key={item.id} className={`bg-[#2a2a5a] border rounded-lg p-2.5 relative group ${isLocked ? 'border-blue-500/40' : 'border-gray-600'}`}>
+                        <div key={item.id} className={`bg-[#0f3460] border rounded-lg p-2.5 relative group ${isLocked ? 'border-blue-500/40' : 'border-gray-600'}`}>
                           {isLocked && (
                             <div className="absolute top-1.5 left-1.5 bg-blue-600/80 text-white text-[9px] font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5 z-10">
                               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-2.5 h-2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" /></svg>
@@ -1012,7 +1012,7 @@ export default function WarRoom() {
                             </div>
                           )}
                           {item.photos?.[0]?.imageUrl ? (
-                            <img src={item.photos[0].imageUrl} alt={item.title} className={`w-full ${getImgHeight(theirItems.length)} object-contain rounded mb-2 bg-[#0a0a2a]`} />
+                            <img src={item.photos[0].imageUrl} alt={item.title} className={`w-full ${getImgHeight(theirItems.length)} object-contain rounded mb-2 bg-[#0f0f1a]`} />
                           ) : (
                             <div className={`w-full ${getImgHeight(theirItems.length)} bg-gray-800 rounded mb-2 flex items-center justify-center text-gray-600 text-xs`}>No Image</div>
                           )}
@@ -1078,16 +1078,16 @@ export default function WarRoom() {
 
         {/* Right Column: Chat + Timeline as a card */}
         <div className="w-[340px] flex-shrink-0 p-4 flex flex-col">
-          <div className="bg-[#1a1a4a] border border-gray-600 rounded-xl flex flex-col flex-1 overflow-hidden shadow-xl">
+          <div className="bg-[#16213e] border border-gray-600 rounded-xl flex flex-col flex-1 overflow-hidden shadow-xl">
           {/* Tabs */}
           <div className="flex border-b border-gray-600 rounded-t-xl overflow-hidden">
             <button
               onClick={() => setActiveTab('chat')}
-              className={`flex-1 py-3.5 text-sm font-semibold transition ${activeTab === 'chat' ? 'text-purple-400 border-b-2 border-purple-500 bg-[#1a1a4a]' : 'text-gray-500 hover:text-gray-300'}`}
+              className={`flex-1 py-3.5 text-sm font-semibold transition ${activeTab === 'chat' ? 'text-purple-400 border-b-2 border-purple-500 bg-[#16213e]' : 'text-gray-500 hover:text-gray-300'}`}
             >Chat</button>
             <button
               onClick={() => setActiveTab('timeline')}
-              className={`flex-1 py-3.5 text-sm font-semibold transition ${activeTab === 'timeline' ? 'text-purple-400 border-b-2 border-purple-500 bg-[#1a1a4a]' : 'text-gray-500 hover:text-gray-300'}`}
+              className={`flex-1 py-3.5 text-sm font-semibold transition ${activeTab === 'timeline' ? 'text-purple-400 border-b-2 border-purple-500 bg-[#16213e]' : 'text-gray-500 hover:text-gray-300'}`}
             >Timeline</button>
           </div>
 
@@ -1129,7 +1129,7 @@ export default function WarRoom() {
                   return (
                     <div key={msg.id} className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
                       <div className={`max-w-[85%] p-3 rounded-xl text-sm leading-relaxed ${
-                        isMine ? 'bg-purple-600 text-white rounded-tr-sm' : 'bg-[#2a2a5a] text-gray-100 border border-gray-600 rounded-xl rounded-tl-sm'
+                        isMine ? 'bg-purple-600 text-white rounded-tr-sm' : 'bg-[#0f3460] text-gray-100 border border-gray-600 rounded-xl rounded-tl-sm'
                       }`}>
                         <p className={`text-[10px] mb-1 ${isMine ? 'text-purple-200' : 'text-gray-500'}`}>{time}</p>
                         <p>{msg.message || msg.content}</p>
@@ -1142,7 +1142,7 @@ export default function WarRoom() {
 
               {/* Input */}
               <div className="p-3 border-t border-gray-600">
-                <div className="flex items-center gap-2 bg-[#1a1a4a] border border-gray-700 rounded-full px-3 py-1.5">
+                <div className="flex items-center gap-2 bg-[#16213e] border border-gray-700 rounded-full px-3 py-1.5">
                   <input
                     type="text"
                     placeholder="Type a message..."
@@ -1208,7 +1208,7 @@ export default function WarRoom() {
       </div>
 
       {/* Sticky Footer Action Bar */}
-      <div className="sticky bottom-0 z-30 bg-[#0a0a2a] border-t border-gray-700 px-6 py-4">
+      <div className="sticky bottom-0 z-30 bg-[#0f0f1a] border-t border-gray-700 px-6 py-4">
         <div className="flex items-center justify-center gap-4">
 
           {/* Stage 1: Propose — only Decline + Send Proposal */}
@@ -1418,7 +1418,7 @@ export default function WarRoom() {
 
         return (
           <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
-            <div className="bg-[#1a1a4a] border border-gray-600 rounded-xl w-11/12 max-w-6xl shadow-2xl flex overflow-hidden" style={{ height: '85vh' }}>
+            <div className="bg-[#16213e] border border-gray-600 rounded-xl w-11/12 max-w-6xl shadow-2xl flex overflow-hidden" style={{ height: '85vh' }}>
 
               {/* Main inventory browser */}
               <div className="flex flex-col flex-1 min-w-0">
@@ -1447,14 +1447,14 @@ export default function WarRoom() {
               </div>
 
               {/* Category Tabs — always all visible, click to filter in-place */}
-              <div className="flex flex-wrap border-b border-gray-700 flex-shrink-0 bg-[#0a0a2a]">
+              <div className="flex flex-wrap border-b border-gray-700 flex-shrink-0 bg-[#0f0f1a]">
                 {categories.map(cat => (
                   <button
                     key={cat}
                     onClick={() => setInventoryCategory(cat)}
                     className={`px-5 py-3 text-sm font-semibold whitespace-nowrap transition flex-shrink-0 border-b-2 ${
                       inventoryCategory === cat
-                        ? 'text-purple-400 border-purple-500 bg-[#1a1a4a]'
+                        ? 'text-purple-400 border-purple-500 bg-[#16213e]'
                         : 'text-gray-500 border-transparent hover:text-gray-300'
                     }`}
                   >
@@ -1468,7 +1468,7 @@ export default function WarRoom() {
                 <input
                   type="text"
                   placeholder={`Search ${theirDisplayName}'s inventory...`}
-                  className="w-full px-4 py-2.5 rounded-lg bg-[#0a0a2a] text-white border border-gray-700 focus:border-purple-500 focus:outline-none text-sm"
+                  className="w-full px-4 py-2.5 rounded-lg bg-[#0f0f1a] text-white border border-gray-700 focus:border-purple-500 focus:outline-none text-sm"
                   value={inventorySearch}
                   onChange={(e) => setInventorySearch(e.target.value)}
                 />
@@ -1487,7 +1487,7 @@ export default function WarRoom() {
                       return (
                         <div
                           key={item.id}
-                          className={`bg-[#0a0a2a] border-2 rounded-xl p-3 flex flex-col transition ${
+                          className={`bg-[#0f0f1a] border-2 rounded-xl p-3 flex flex-col transition ${
                             isSelected
                               ? 'border-purple-500 shadow-[0_0_10px_rgba(147,51,234,0.4)]'
                               : quickViewItemId === item.id
@@ -1517,7 +1517,7 @@ export default function WarRoom() {
                             title="Click to view item details"
                           >
                             {item.primaryImage ? (
-                              <img src={item.primaryImage} alt={item.title} className="w-full h-28 object-contain rounded mb-3 bg-[#1a1a4a] group-hover/img:opacity-80 transition" />
+                              <img src={item.primaryImage} alt={item.title} className="w-full h-28 object-contain rounded mb-3 bg-[#16213e] group-hover/img:opacity-80 transition" />
                             ) : (
                               <div className="w-full h-28 bg-gray-800 rounded mb-3 flex items-center justify-center text-gray-600 text-xs group-hover/img:bg-gray-700 transition">No Image</div>
                             )}
@@ -1538,7 +1538,7 @@ export default function WarRoom() {
               </div>
 
               {/* Footer: Add To Trade button */}
-              <div className="px-6 py-4 border-t border-gray-700 flex-shrink-0 flex items-center justify-between bg-[#0a0a2a]">
+              <div className="px-6 py-4 border-t border-gray-700 flex-shrink-0 flex items-center justify-between bg-[#0f0f1a]">
                 <p className="text-gray-400 text-sm">
                   {selectedInventoryItems.length > 0
                     ? <span className="text-purple-400 font-semibold">{selectedInventoryItems.length} item{selectedInventoryItems.length > 1 ? 's' : ''} selected</span>
@@ -1644,7 +1644,7 @@ export default function WarRoom() {
 
         return (
           <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
-            <div className="bg-[#1a1a4a] border border-gray-600 rounded-xl w-11/12 max-w-6xl shadow-2xl flex flex-col" style={{ height: '85vh' }}>
+            <div className="bg-[#16213e] border border-gray-600 rounded-xl w-11/12 max-w-6xl shadow-2xl flex flex-col" style={{ height: '85vh' }}>
 
               {/* Header */}
               <div className="flex items-center justify-between px-6 py-4 border-b border-gray-700 flex-shrink-0">
@@ -1670,14 +1670,14 @@ export default function WarRoom() {
               </div>
 
               {/* Category Tabs */}
-              <div className="flex flex-wrap border-b border-gray-700 flex-shrink-0 bg-[#0a0a2a]">
+              <div className="flex flex-wrap border-b border-gray-700 flex-shrink-0 bg-[#0f0f1a]">
                 {myCategories.map(cat => (
                   <button
                     key={cat}
                     onClick={() => setInventoryCategory(cat)}
                     className={`px-5 py-3 text-sm font-semibold whitespace-nowrap transition flex-shrink-0 border-b-2 ${
                       inventoryCategory === cat
-                        ? 'text-purple-400 border-purple-500 bg-[#1a1a4a]'
+                        ? 'text-purple-400 border-purple-500 bg-[#16213e]'
                         : 'text-gray-500 border-transparent hover:text-gray-300'
                     }`}
                   >
@@ -1691,7 +1691,7 @@ export default function WarRoom() {
                 <input
                   type="text"
                   placeholder="Search your inventory..."
-                  className="w-full px-4 py-2.5 rounded-lg bg-[#0a0a2a] text-white border border-gray-700 focus:border-purple-500 focus:outline-none text-sm"
+                  className="w-full px-4 py-2.5 rounded-lg bg-[#0f0f1a] text-white border border-gray-700 focus:border-purple-500 focus:outline-none text-sm"
                   value={inventorySearch}
                   onChange={(e) => setInventorySearch(e.target.value)}
                 />
@@ -1710,7 +1710,7 @@ export default function WarRoom() {
                       return (
                         <div
                           key={item.id}
-                          className={`bg-[#0a0a2a] border-2 rounded-xl p-3 flex flex-col transition ${
+                          className={`bg-[#0f0f1a] border-2 rounded-xl p-3 flex flex-col transition ${
                             isSelected
                               ? 'border-purple-500 shadow-[0_0_10px_rgba(147,51,234,0.4)]'
                               : quickViewItemId === item.id
@@ -1740,7 +1740,7 @@ export default function WarRoom() {
                             title="Click to view item details"
                           >
                             {item.photos?.[0]?.imageUrl ? (
-                              <img src={item.photos[0].imageUrl} alt={item.title} className="w-full h-28 object-contain rounded mb-3 bg-[#1a1a4a] group-hover/img:opacity-80 transition" />
+                              <img src={item.photos[0].imageUrl} alt={item.title} className="w-full h-28 object-contain rounded mb-3 bg-[#16213e] group-hover/img:opacity-80 transition" />
                             ) : (
                               <div className="w-full h-28 bg-gray-800 rounded mb-3 flex items-center justify-center text-gray-600 text-xs group-hover/img:bg-gray-700 transition">No Image</div>
                             )}
@@ -1760,7 +1760,7 @@ export default function WarRoom() {
               </div>
 
               {/* Footer: Add To Trade button */}
-              <div className="px-6 py-4 border-t border-gray-700 flex-shrink-0 flex items-center justify-between bg-[#0a0a2a]">
+              <div className="px-6 py-4 border-t border-gray-700 flex-shrink-0 flex items-center justify-between bg-[#0f0f1a]">
                 <p className="text-gray-400 text-sm">
                   {selectedInventoryItems.length > 0
                     ? <span className="text-purple-400 font-semibold">{selectedInventoryItems.length} item{selectedInventoryItems.length > 1 ? 's' : ''} selected</span>
@@ -1798,7 +1798,7 @@ export default function WarRoom() {
       {/* Add Cash Modal */}
       {showCashModal !== null && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[60]">
-          <div className="bg-[#1a1a4a] border border-gray-600 rounded-xl p-6 w-11/12 max-w-sm shadow-2xl">
+          <div className="bg-[#16213e] border border-gray-600 rounded-xl p-6 w-11/12 max-w-sm shadow-2xl">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <span className="text-2xl">💵</span>
@@ -1829,7 +1829,7 @@ export default function WarRoom() {
                 placeholder="0"
                 value={cashInput}
                 onChange={(e) => setCashInput(e.target.value)}
-                className="w-full pl-7 pr-4 py-3 bg-[#0a0a2a] border border-gray-600 rounded-lg text-white text-lg font-bold focus:border-green-500 focus:outline-none"
+                className="w-full pl-7 pr-4 py-3 bg-[#0f0f1a] border border-gray-600 rounded-lg text-white text-lg font-bold focus:border-green-500 focus:outline-none"
                 autoFocus
               />
             </div>
@@ -1874,7 +1874,7 @@ export default function WarRoom() {
       {/* Video Chat Modal */}
       {showVideoChatModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-[#1a1a4a] border border-gray-700 rounded-xl p-8 w-11/12 max-w-md shadow-2xl text-center">
+          <div className="bg-[#16213e] border border-gray-700 rounded-xl p-8 w-11/12 max-w-md shadow-2xl text-center">
             <div className="w-16 h-16 rounded-full bg-blue-900/30 border border-blue-500/30 flex items-center justify-center mx-auto mb-4">
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8 text-blue-400">
                 <path strokeLinecap="round" strokeLinejoin="round" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z" />
@@ -1899,11 +1899,11 @@ export default function WarRoom() {
       {/* Decline Modal */}
       {showDeclineModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-[#1a1a4a] border border-gray-700 rounded-xl p-6 w-11/12 max-w-md shadow-2xl">
+          <div className="bg-[#16213e] border border-gray-700 rounded-xl p-6 w-11/12 max-w-md shadow-2xl">
             <h2 className="text-white text-xl font-bold mb-2">Decline Trade</h2>
             <p className="text-gray-400 text-sm mb-5">Are you sure? You can optionally provide a reason.</p>
             <textarea
-              className="w-full p-3 rounded-lg bg-[#0a0a2a] text-white border border-gray-700 mb-5 focus:border-purple-500 focus:outline-none text-sm resize-none"
+              className="w-full p-3 rounded-lg bg-[#0f0f1a] text-white border border-gray-700 mb-5 focus:border-purple-500 focus:outline-none text-sm resize-none"
               rows={3}
               placeholder="Reason for declining (optional)"
               value={declineReason}
@@ -1920,7 +1920,7 @@ export default function WarRoom() {
       {/* Trade Contract Modal */}
       {showContractModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-[#1a1a4a] border border-gray-700 rounded-xl p-8 w-11/12 max-w-3xl max-h-[90vh] overflow-y-auto custom-scrollbar shadow-2xl">
+          <div className="bg-[#16213e] border border-gray-700 rounded-xl p-8 w-11/12 max-w-3xl max-h-[90vh] overflow-y-auto custom-scrollbar shadow-2xl">
             <div className="flex items-center gap-3 mb-6 pb-4 border-b border-gray-700">
               <div className="w-10 h-10 rounded-lg bg-purple-900/30 flex items-center justify-center">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 text-purple-400">
@@ -1929,7 +1929,7 @@ export default function WarRoom() {
               </div>
               <h2 className="text-white text-2xl font-bold">Trade Contract</h2>
             </div>
-            <div className="bg-[#0a0a2a] rounded-lg p-5 border border-gray-700 text-gray-300 text-sm space-y-3 mb-6 h-56 overflow-y-auto custom-scrollbar">
+            <div className="bg-[#0f0f1a] rounded-lg p-5 border border-gray-700 text-gray-300 text-sm space-y-3 mb-6 h-56 overflow-y-auto custom-scrollbar">
               <p>This Trade Contract is entered into by and between the Proposer and the Recipient, effective upon mutual acceptance.</p>
               <p><strong>1. Agreement to Exchange:</strong> Both parties agree to exchange the items as detailed in the Trade Table. Each party warrants they are the rightful owner of the items they are offering.</p>
               <p><strong>2. Item Condition:</strong> All items are exchanged "as is." Both parties acknowledge they have reviewed item descriptions and images.</p>
@@ -1942,7 +1942,7 @@ export default function WarRoom() {
               <input
                 type="checkbox"
                 id="contract-checkbox"
-                className="h-5 w-5 text-purple-600 rounded border-gray-600 bg-[#0a0a2a] focus:ring-purple-500"
+                className="h-5 w-5 text-purple-600 rounded border-gray-600 bg-[#0f0f1a] focus:ring-purple-500"
                 checked={contractCheckbox}
                 onChange={(e) => setContractCheckbox(e.target.checked)}
               />
