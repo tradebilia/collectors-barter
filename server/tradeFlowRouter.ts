@@ -606,8 +606,9 @@ export const tradeFlowRouter = router({
       const otherUserId = proposal.requesterId === userId ? proposal.recipientId : proposal.requesterId;
       const [actor] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
       const actorName = (actor as any)?.displayName || (actor as any)?.username || 'Unknown';
+      const trackingAlertMsg = `${actorName} has submitted their tracking number`;
       await db.execute(
-        sql`INSERT INTO tradeAlerts (proposalId, recipientUserId, alertType, message, createdAt) VALUES (${input.proposalId}, ${otherUserId}, 'shipped', '${actorName} has submitted their tracking number', ${now})`
+        sql`INSERT INTO tradeAlerts (proposalId, recipientUserId, alertType, message, createdAt) VALUES (${input.proposalId}, ${otherUserId}, 'shipped', ${trackingAlertMsg}, ${now})`
       );
       await db.execute(
         sql`INSERT INTO tradeActivityLog (proposalId, actorId, actorName, eventType, details, createdAt) VALUES (${input.proposalId}, ${userId}, ${actorName}, 'tracking_submitted', 'Tracking number submitted', ${now})`
