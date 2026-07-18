@@ -423,12 +423,7 @@ export default function WarRoom() {
               </svg>
               Leave War Room
             </button>
-            <button className="p-2 border border-gray-700 text-gray-400 rounded-lg hover:bg-gray-800 transition">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M10.343 3.94c.09-.542.56-.94 1.11-.94h1.093c.55 0 1.02.398 1.11.94l.17.992c.086.493.36.92.702 1.252l.87.87c.332.342.759.616 1.252.702l.992.17c.542.09.94.56.94 1.11v1.094c0 .55-.398 1.02-.94 1.11l-.992.17c-.493.086-.92.36-1.252.702l-.87.87c-.342.332-.616.759-.702 1.252l-.17.992c-.09.542-.56.94-1.11.94h-1.094c-.55 0-1.02-.398-1.11-.94l-.17-.992c-.086-.493-.36-.92-.702-1.252l-.87-.87c-.332-.342-.759-.616-1.252-.702l-.992-.17c-.542-.09-.94-.56-.94-1.11V12.05c0-.55.398-1.02.94-1.11l.992-.17c.493-.086.92-.36 1.252-.702l.87-.87c.342-.332.616-.759.702-1.252l.17-.992Z" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
-              </svg>
-            </button>
+
           </div>
         </div>
       </header>
