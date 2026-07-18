@@ -814,8 +814,8 @@ export default function WarRoom() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-gray-500 text-[10px] uppercase">Total Value</p>
-                      <p className="text-purple-400 font-bold text-base">${myTotalValue.toLocaleString()}</p>
+                      <p className="text-white text-2xl font-black tracking-tight leading-none">${myTotalValue.toLocaleString()}</p>
+                      <p className="text-purple-400/60 text-[10px] font-bold uppercase tracking-widest mt-1">Total Value</p>
                     </div>
                   </div>
 
@@ -992,8 +992,8 @@ export default function WarRoom() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-gray-500 text-[10px] uppercase">Total Value</p>
-                      <p className="text-purple-400 font-bold text-base">${theirTotalValue.toLocaleString()}</p>
+                      <p className="text-white text-2xl font-black tracking-tight leading-none">${theirTotalValue.toLocaleString()}</p>
+                      <p className="text-purple-400/60 text-[10px] font-bold uppercase tracking-widest mt-1">Total Value</p>
                     </div>
                   </div>
 
