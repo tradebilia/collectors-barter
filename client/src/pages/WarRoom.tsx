@@ -320,8 +320,13 @@ export default function WarRoom() {
   ];
 
   // Cash sweeteners — from server (already submitted) + local pending (not yet submitted)
-  const serverMyCash = parseFloat((trade?.proposal as any)?.cashFromRequester || '0') || 0;
-  const serverTheirCash = parseFloat((trade?.proposal as any)?.cashFromRecipient || '0') || 0;
+  // Perspective-aware: if I am the requester, MY cash = cashFromRequester; if I am the recipient, MY cash = cashFromRecipient
+  const serverMyCash = isRequester
+    ? parseFloat((trade?.proposal as any)?.cashFromRequester || '0') || 0
+    : parseFloat((trade?.proposal as any)?.cashFromRecipient || '0') || 0;
+  const serverTheirCash = isRequester
+    ? parseFloat((trade?.proposal as any)?.cashFromRecipient || '0') || 0
+    : parseFloat((trade?.proposal as any)?.cashFromRequester || '0') || 0;
   // Local pending cash (entered but not yet submitted)
   // cashPay/cashReceive = '' means "not touched"; '0' means "user explicitly cleared it"
   const cashPayTouched = cashPay !== '';

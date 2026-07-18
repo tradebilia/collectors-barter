@@ -368,9 +368,19 @@ export const tradeFlowRouter = router({
       }
 
       // Update status to 'negotiating', record who sent the last proposal, and update cash fields
+      // Perspective-aware: cashFromProposer = MY cash, cashFromRecipient = THEIR cash
+      // Map to the correct DB columns based on whether sender is the requester or recipient
+      const senderIsRequester = proposal.requesterId === userId;
+      const newCashFromRequester = senderIsRequester
+        ? (input.cashFromProposer ?? 0)
+        : (input.cashFromRecipient ?? 0);
+      const newCashFromRecipient = senderIsRequester
+        ? (input.cashFromRecipient ?? 0)
+        : (input.cashFromProposer ?? 0);
+
       if (input.cashFromProposer !== undefined || input.cashFromRecipient !== undefined) {
         await db.execute(
-          sql`UPDATE tradeProposals SET status = 'negotiating', cashFromRequester = ${input.cashFromProposer || 0}, cashFromRecipient = ${input.cashFromRecipient || 0}, lastProposedBy = ${userId}, lastActivityAt = ${now}, updatedAt = ${now} WHERE id = ${input.proposalId}`
+          sql`UPDATE tradeProposals SET status = 'negotiating', cashFromRequester = ${newCashFromRequester}, cashFromRecipient = ${newCashFromRecipient}, lastProposedBy = ${userId}, lastActivityAt = ${now}, updatedAt = ${now} WHERE id = ${input.proposalId}`
         );
       } else {
         await db.execute(
