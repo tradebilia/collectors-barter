@@ -340,14 +340,14 @@ export const tradeFlowRouter = router({
         });
       }
 
-      // Update cash fields and record who sent the last proposal
+      // Update status to 'negotiating', record who sent the last proposal, and update cash fields
       if (input.cashFromProposer !== undefined || input.cashFromRecipient !== undefined) {
         await db.execute(
-          sql`UPDATE tradeProposals SET cashFromRequester = ${input.cashFromProposer || 0}, cashFromRecipient = ${input.cashFromRecipient || 0}, lastProposedBy = ${userId}, lastActivityAt = ${now}, updatedAt = ${now} WHERE id = ${input.proposalId}`
+          sql`UPDATE tradeProposals SET status = 'negotiating', cashFromRequester = ${input.cashFromProposer || 0}, cashFromRecipient = ${input.cashFromRecipient || 0}, lastProposedBy = ${userId}, lastActivityAt = ${now}, updatedAt = ${now} WHERE id = ${input.proposalId}`
         );
       } else {
         await db.execute(
-          sql`UPDATE tradeProposals SET lastProposedBy = ${userId}, lastActivityAt = ${now}, updatedAt = ${now} WHERE id = ${input.proposalId}`
+          sql`UPDATE tradeProposals SET status = 'negotiating', lastProposedBy = ${userId}, lastActivityAt = ${now}, updatedAt = ${now} WHERE id = ${input.proposalId}`
         );
       }
 

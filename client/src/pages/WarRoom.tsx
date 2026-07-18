@@ -15,11 +15,10 @@ import { toast } from "sonner";
 
 type TradeStage = 'proposed' | 'negotiating' | 'accepted' | 'shipped' | 'completed';
 
-function getStageFromStatus(status: string, hasOfferedItems: boolean = false): TradeStage {
+function getStageFromStatus(status: string): TradeStage {
   switch (status) {
-    case 'pending': return 'proposed';
-    // 'negotiating' = Stage 2 only if items have been offered; otherwise still Stage 1
-    case 'negotiating': return hasOfferedItems ? 'negotiating' : 'proposed';
+    case 'pending': return 'proposed';    // Stage 1: initial inquiry, no proposal submitted yet
+    case 'negotiating': return 'negotiating'; // Stage 2: at least one proposal has been submitted
     case 'accepted': return 'accepted';
     case 'shipped': return 'shipped';
     case 'completed': return 'completed';
@@ -161,7 +160,7 @@ export default function WarRoom() {
   const { user: currentUser } = useAuth();
   const trade = tradeDetailsQuery.data;
   const hasOfferedItems = (trade?.offeredListings?.length ?? 0) > 0;
-  const currentStage = trade ? getStageFromStatus(trade.proposal.status, hasOfferedItems) : 'proposed';
+  const currentStage = trade ? getStageFromStatus(trade.proposal.status) : 'proposed';
   const currentStageIndex = stages.findIndex(s => s.key === currentStage);
   const isRequester = trade?.isRequester ?? false;
   const otherUser = trade?.otherUser;

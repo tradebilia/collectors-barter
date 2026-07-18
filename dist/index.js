@@ -5287,11 +5287,11 @@ var tradeFlowRouter = router({
     }
     if (input.cashFromProposer !== void 0 || input.cashFromRecipient !== void 0) {
       await db.execute(
-        sql2`UPDATE tradeProposals SET cashFromRequester = ${input.cashFromProposer || 0}, cashFromRecipient = ${input.cashFromRecipient || 0}, lastProposedBy = ${userId}, lastActivityAt = ${now}, updatedAt = ${now} WHERE id = ${input.proposalId}`
+        sql2`UPDATE tradeProposals SET status = 'negotiating', cashFromRequester = ${input.cashFromProposer || 0}, cashFromRecipient = ${input.cashFromRecipient || 0}, lastProposedBy = ${userId}, lastActivityAt = ${now}, updatedAt = ${now} WHERE id = ${input.proposalId}`
       );
     } else {
       await db.execute(
-        sql2`UPDATE tradeProposals SET lastProposedBy = ${userId}, lastActivityAt = ${now}, updatedAt = ${now} WHERE id = ${input.proposalId}`
+        sql2`UPDATE tradeProposals SET status = 'negotiating', lastProposedBy = ${userId}, lastActivityAt = ${now}, updatedAt = ${now} WHERE id = ${input.proposalId}`
       );
     }
     if (input.message) {
