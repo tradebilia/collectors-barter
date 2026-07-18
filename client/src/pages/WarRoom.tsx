@@ -837,10 +837,31 @@ export default function WarRoom() {
                                 type="text"
                                 placeholder="Tracking number"
                                 value={input.trackingNumber}
-                                onChange={(e) => setTrackingInputs(prev => {
-                                  const existing = prev.filter(t => t.listingId !== item.id);
-                                  return [...existing, { ...input, trackingNumber: e.target.value }];
-                                })}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  let detectedCarrier = input.carrier;
+                                  
+                                  // Simple auto-detect logic based on common tracking number formats
+                                  const cleanVal = val.replace(/\s/g, '').toUpperCase();
+                                  if (cleanVal.startsWith('1Z') && cleanVal.length === 18) {
+                                    detectedCarrier = 'UPS';
+                                  } else if ((cleanVal.length === 22 && cleanVal.startsWith('9')) || (cleanVal.length === 20 && cleanVal.startsWith('4'))) {
+                                    detectedCarrier = 'USPS';
+                                  } else if (cleanVal.length === 12 || cleanVal.length === 15 || cleanVal.length === 20) {
+                                    // FedEx is often 12, 15, or 20 digits. USPS can also be 20, but we checked USPS 4... above.
+                                    // This is a basic fallback, FedEx numbers don't have a single universal prefix like UPS 1Z.
+                                    if (!cleanVal.startsWith('4') && !cleanVal.startsWith('9')) {
+                                       detectedCarrier = 'FedEx';
+                                    }
+                                  } else if (cleanVal.length === 10) {
+                                    detectedCarrier = 'DHL';
+                                  }
+
+                                  setTrackingInputs(prev => {
+                                    const existing = prev.filter(t => t.listingId !== item.id);
+                                    return [...existing, { ...input, trackingNumber: val, carrier: detectedCarrier }];
+                                  });
+                                }}
                                 className="flex-1 bg-[#16213e] border border-gray-600 text-white text-xs rounded px-3 py-1.5 focus:outline-none focus:border-blue-500 font-mono"
                               />
                             </div>
