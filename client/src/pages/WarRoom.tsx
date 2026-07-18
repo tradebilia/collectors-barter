@@ -178,17 +178,7 @@ export default function WarRoom() {
       : isRequester // fallback: if null, requester gets to accept first
   );
 
-  // Detect if the user has made ANY local modifications to the trade
-  // (adding/removing items, changing cash) — if so, they can't accept the current proposal
-  const hasLocalChanges = (
-    pendingMyItems.length > 0 ||
-    pendingTheirItems.length > 0 ||
-    (localMyCash > 0 && localMyCash !== serverMyCash) ||
-    (localTheirCash > 0 && localTheirCash !== serverTheirCash)
-  );
-
-  // Can only accept if: other party proposed AND you haven't modified anything
-  const iCanAccept = otherPartyProposed && !hasLocalChanges;
+  // hasLocalChanges and iCanAccept are computed below (after cash variables are defined)
 
   // Current user display info
   const myDisplayName = (currentUser as any)?.displayName || currentUser?.name || currentUser?.username || 'You';
@@ -244,6 +234,18 @@ export default function WarRoom() {
   // Use local if set, otherwise fall back to server value
   const myCash = localMyCash > 0 ? localMyCash : serverMyCash;
   const theirCash = localTheirCash > 0 ? localTheirCash : serverTheirCash;
+
+  // Detect if the user has made ANY local modifications to the trade
+  // (adding/removing items, changing cash) — if so, they can't accept the current proposal
+  const hasLocalChanges = (
+    pendingMyItems.length > 0 ||
+    pendingTheirItems.length > 0 ||
+    (localMyCash > 0 && localMyCash !== serverMyCash) ||
+    (localTheirCash > 0 && localTheirCash !== serverTheirCash)
+  );
+
+  // Can only accept if: other party proposed AND you haven't modified anything
+  const iCanAccept = otherPartyProposed && !hasLocalChanges;
 
   // Calculate total values (items + cash)
   const myItemsValue = myItems.reduce((sum: number, l: any) => sum + parseFloat(l?.estimatedValue || '0'), 0);
