@@ -1057,7 +1057,7 @@ export default function WarRoom() {
                         onClick={() => { setInventorySearch(''); setInventoryCategory('All'); setIsTheirInventoryOpen(true); }}
                         className="flex-1 py-2.5 border border-dashed border-gray-700 rounded-lg text-blue-400 hover:text-blue-300 hover:border-blue-500 transition text-sm flex items-center justify-center gap-2"
                       >
-                        + Browse Items
+                        + Browse User Items
                       </button>
                       {theirCash === 0 && (
                         <button
