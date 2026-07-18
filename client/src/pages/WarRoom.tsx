@@ -624,8 +624,8 @@ export default function WarRoom() {
                   </div>
                 </div>
 
-                {/* Trade Summary Card */}
-                <div className="bg-[#16213e] border border-gray-600 rounded-xl p-5 shadow-xl">
+                {/* Trade Summary Card — hidden on Shipping stage */}
+                {currentStage !== 'shipping' && <div className="bg-[#16213e] border border-gray-600 rounded-xl p-5 shadow-xl">
                   <div className="flex items-center justify-between mb-5">
                     <h2 className="text-white font-bold text-lg">Items Being Traded</h2>
                     <span className="px-3 py-1 bg-green-900/30 border border-green-500/30 text-green-400 text-xs font-bold rounded-full">LOCKED</span>
@@ -684,10 +684,10 @@ export default function WarRoom() {
                       )}
                     </div>
                   </div>
-                </div>
+                </div>}
 
-                {/* Contact Info Card */}
-                <div className="bg-[#16213e] border border-gray-600 rounded-xl p-5 shadow-xl">
+                {/* Contact Info Card — hidden on Shipping stage */}
+                {currentStage !== 'shipping' && <div className="bg-[#16213e] border border-gray-600 rounded-xl p-5 shadow-xl">
                   <div className="flex items-center gap-3 mb-4">
                     <div className="w-9 h-9 rounded-lg bg-blue-900/30 border border-blue-500/20 flex items-center justify-center">
                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-blue-400">
@@ -751,7 +751,7 @@ export default function WarRoom() {
                       </div>
                     ))}
                   </div>
-                </div>
+                </div>}
 
                 {/* ── SHIPPING STAGE: Focused two-column tracking layout ── */}
                 {currentStage === 'shipping' && (() => {
