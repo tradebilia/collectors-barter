@@ -48,6 +48,8 @@ export default function WarRoom() {
   // Pending items added locally before proposal is submitted
   const [pendingTheirItems, setPendingTheirItems] = useState<any[]>([]);
   const [pendingMyItems, setPendingMyItems] = useState<any[]>([]);
+  // Track server-persisted items that the user has removed locally (before submitting)
+  const [removedItemIds, setRemovedItemIds] = useState<number[]>([]);
   const [messageInput, setMessageInput] = useState('');
   const [declineReason, setDeclineReason] = useState('');
   const [showDeclineModal, setShowDeclineModal] = useState(false);
@@ -107,9 +109,12 @@ export default function WarRoom() {
     onSuccess: () => {
       toast.success('Proposal sent!');
       utils.tradeFlow.getTradeDetails.invalidate({ proposalId });
-      // Clear pending items — they'll now come from the server
+      // Clear pending/removed items — they'll now come from the server
       setPendingMyItems([]);
       setPendingTheirItems([]);
+      setRemovedItemIds([]);
+      setCashPay('');
+      setCashReceive('');
     },
     onError: (err) => toast.error(err.message),
   });
@@ -206,13 +211,17 @@ export default function WarRoom() {
 
   // Build the full "my side" and "their side" arrays
   // Merge server items with locally pending items (added but not yet submitted)
-  const serverMyItems: any[] = isRequester
+  // Also filter out items the user has locally removed (before submitting counter offer)
+  const removedSet = new Set(removedItemIds);
+  const serverMyItems: any[] = (isRequester
     ? myOfferedItems
-    : [requestedListing, ...myOfferedItems].filter(Boolean);
+    : [requestedListing, ...myOfferedItems].filter(Boolean)
+  ).filter((i: any) => i?.id === requestedListing?.id || !removedSet.has(i?.id));
 
-  const serverTheirItems: any[] = isRequester
+  const serverTheirItems: any[] = (isRequester
     ? [requestedListing, ...theirOfferedItems].filter(Boolean)
-    : theirOfferedItems;
+    : theirOfferedItems
+  ).filter((i: any) => i?.id === requestedListing?.id || !removedSet.has(i?.id));
 
   // Merge pending items (deduplicate by id)
   const existingIds = new Set([...serverMyItems, ...serverTheirItems].map((i: any) => i?.id).filter(Boolean));
@@ -240,6 +249,7 @@ export default function WarRoom() {
   const hasLocalChanges = (
     pendingMyItems.length > 0 ||
     pendingTheirItems.length > 0 ||
+    removedItemIds.length > 0 ||
     (localMyCash > 0 && localMyCash !== serverMyCash) ||
     (localTheirCash > 0 && localTheirCash !== serverTheirCash)
   );
@@ -341,12 +351,21 @@ export default function WarRoom() {
     setSelectedItemIds(prev => prev.filter(id => id !== itemId));
     setPendingMyItems(prev => prev.filter(i => i.id !== itemId));
     setPendingTheirItems(prev => prev.filter(i => i.id !== itemId));
+    // If this is a server-persisted item, track it as removed so it's excluded on submit
+    const isServerItem = (trade?.offeredListings || []).some((l: any) => l.id === itemId);
+    if (isServerItem) {
+      setRemovedItemIds(prev => [...prev, itemId]);
+    }
   };
 
   const handleUpdateProposal = () => {
     // Build the full list of ALL item IDs currently on the trade table:
-    // server-persisted items (from offeredListings) + newly pending items
-    const serverItemIds = (trade?.offeredListings || []).map((l: any) => l.id);
+    // server-persisted offered items (excluding requestedListing which is not an offeredItem)
+    // + newly pending items, minus any items the user removed locally
+    const removedIds = new Set(removedItemIds);
+    const serverItemIds = (trade?.offeredListings || [])
+      .map((l: any) => l.id)
+      .filter((id: number) => !removedIds.has(id));
     const pendingItemIds = [...pendingMyItems, ...pendingTheirItems].map(i => i.id);
     const allItemIds = Array.from(new Set([...serverItemIds, ...pendingItemIds]));
 
@@ -516,8 +535,16 @@ export default function WarRoom() {
                     <p className="text-gray-600 text-sm py-8 text-center">No items on your side yet.</p>
                   ) : (
                     <div className={`grid ${getGridCols(myItems.length)} gap-3 flex-1 content-start ${myItems.length >= 7 ? 'overflow-y-auto custom-scrollbar' : ''}`}>
-                      {myItems.map((item: any) => (
-                        <div key={item.id} className="bg-[#2a2a5a] border border-gray-600 rounded-lg p-2.5 relative group">
+                      {myItems.map((item: any) => {
+                        const isLocked = item.id === requestedListing?.id;
+                        return (
+                        <div key={item.id} className={`bg-[#2a2a5a] border rounded-lg p-2.5 relative group ${isLocked ? 'border-purple-500/40' : 'border-gray-600'}`}>
+                          {isLocked && (
+                            <div className="absolute top-1.5 left-1.5 bg-purple-600/80 text-white text-[9px] font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5 z-10">
+                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-2.5 h-2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" /></svg>
+                              Locked
+                            </div>
+                          )}
                           {item.photos?.[0]?.imageUrl ? (
                             <img src={item.photos[0].imageUrl} alt={item.title} className={`w-full ${getImgHeight(myItems.length)} object-contain rounded mb-2 bg-[#0a0a2a]`} />
                           ) : (
@@ -525,14 +552,15 @@ export default function WarRoom() {
                           )}
                           <p className="text-white text-[11px] font-medium line-clamp-2 leading-tight">{item.title}</p>
                           <p className="text-purple-400 text-sm font-bold mt-1">${parseFloat(item.estimatedValue || '0').toLocaleString()}</p>
-                          {(currentStage === 'proposed' || currentStage === 'negotiating') && (
+                          {!isLocked && (currentStage === 'proposed' || currentStage === 'negotiating') && (
                             <button
                               onClick={() => handleRemoveItemFromTrade(item.id)}
                               className="absolute -top-1.5 -right-1.5 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
                             >×</button>
                           )}
                         </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
 
@@ -677,8 +705,16 @@ export default function WarRoom() {
                     <p className="text-gray-600 text-sm py-8 text-center">No items on their side yet.</p>
                   ) : (
                     <div className={`grid ${getGridCols(theirItems.length)} gap-3 flex-1 content-start ${theirItems.length >= 7 ? 'overflow-y-auto custom-scrollbar' : ''}`}>
-                      {theirItems.map((item: any) => (
-                        <div key={item.id} className="bg-[#2a2a5a] border border-gray-600 rounded-lg p-2.5 relative group">
+                      {theirItems.map((item: any) => {
+                        const isLocked = item.id === requestedListing?.id;
+                        return (
+                        <div key={item.id} className={`bg-[#2a2a5a] border rounded-lg p-2.5 relative group ${isLocked ? 'border-blue-500/40' : 'border-gray-600'}`}>
+                          {isLocked && (
+                            <div className="absolute top-1.5 left-1.5 bg-blue-600/80 text-white text-[9px] font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5 z-10">
+                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-2.5 h-2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" /></svg>
+                              Requested
+                            </div>
+                          )}
                           {item.photos?.[0]?.imageUrl ? (
                             <img src={item.photos[0].imageUrl} alt={item.title} className={`w-full ${getImgHeight(theirItems.length)} object-contain rounded mb-2 bg-[#0a0a2a]`} />
                           ) : (
@@ -686,7 +722,7 @@ export default function WarRoom() {
                           )}
                           <p className="text-white text-[11px] font-medium line-clamp-2 leading-tight">{item.title}</p>
                           <p className="text-purple-400 text-sm font-bold mt-1">${parseFloat(item.estimatedValue || '0').toLocaleString()}</p>
-                          {(currentStage === 'proposed' || currentStage === 'negotiating') && (
+                          {!isLocked && (currentStage === 'proposed' || currentStage === 'negotiating') && (
                             <button
                               onClick={() => handleRemoveItemFromTrade(item.id)}
                               className="absolute -top-1.5 -right-1.5 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
@@ -694,7 +730,8 @@ export default function WarRoom() {
                             >×</button>
                           )}
                         </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
 
