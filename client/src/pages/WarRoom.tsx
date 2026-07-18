@@ -169,7 +169,14 @@ export default function WarRoom() {
 
   // Can only accept if the OTHER person sent the last proposal (not yourself)
   const lastProposedBy = (trade?.proposal as any)?.lastProposedBy;
-  const iCanAccept = lastProposedBy !== null && lastProposedBy !== undefined && lastProposedBy !== myUserId;
+  // If lastProposedBy is set: accept only if they sent it (not you)
+  // If lastProposedBy is null but status is 'negotiating': the trade was transitioned by the other party
+  // so we fall back to: requester can accept (recipient acted to get it to negotiating), recipient cannot yet
+  const iCanAccept = currentStage === 'negotiating' && (
+    lastProposedBy !== null && lastProposedBy !== undefined
+      ? lastProposedBy !== myUserId
+      : isRequester // fallback: if null, requester gets to accept first
+  );
 
   // Current user display info
   const myDisplayName = (currentUser as any)?.displayName || currentUser?.name || currentUser?.username || 'You';
