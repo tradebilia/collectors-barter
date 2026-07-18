@@ -149,11 +149,7 @@ export default function TradePrintView() {
               {myItems.map((item: any) => item && <ItemCard key={item.id} item={item} />)}
               {serverMyCash > 0 && (
                 <div className="text-center">
-                  <div className="w-full aspect-square bg-green-50 rounded-lg border border-green-200 flex flex-col items-center justify-center mb-2">
-                    <span className="text-3xl">💵</span>
-                    <p className="text-green-700 font-bold">${serverMyCash.toLocaleString()}</p>
-                  </div>
-                  <p className="text-gray-600 text-xs font-semibold">Cash Added</p>
+                  <p className="text-green-700 font-bold text-sm mt-2">+ ${serverMyCash.toLocaleString()} Cash</p>
                 </div>
               )}
             </div>
@@ -170,11 +166,7 @@ export default function TradePrintView() {
               {theirItems.map((item: any) => item && <ItemCard key={item.id} item={item} />)}
               {serverTheirCash > 0 && (
                 <div className="text-center">
-                  <div className="w-full aspect-square bg-green-50 rounded-lg border border-green-200 flex flex-col items-center justify-center mb-2">
-                    <span className="text-3xl">💵</span>
-                    <p className="text-green-700 font-bold">${serverTheirCash.toLocaleString()}</p>
-                  </div>
-                  <p className="text-gray-600 text-xs font-semibold">Cash Added</p>
+                  <p className="text-green-700 font-bold text-sm mt-2">+ ${serverTheirCash.toLocaleString()} Cash</p>
                 </div>
               )}
             </div>
