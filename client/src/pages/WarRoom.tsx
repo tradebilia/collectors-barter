@@ -59,6 +59,9 @@ export default function WarRoom() {
   const [selectedItemIds, setSelectedItemIds] = useState<number[]>([]);
   const [cashPay, setCashPay] = useState('');
   const [cashReceive, setCashReceive] = useState('');
+  // Cash sweetener modal state
+  const [showCashModal, setShowCashModal] = useState<'my' | 'their' | null>(null);
+  const [cashInput, setCashInput] = useState('');
   const [activeTab, setActiveTab] = useState<'chat' | 'timeline'>('chat');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -214,16 +217,28 @@ export default function WarRoom() {
     ...pendingTheirItems.filter(i => !existingIds.has(i.id)),
   ];
 
-  // Calculate total values
-  const myTotalValue = myItems.reduce((sum: number, l: any) => sum + parseFloat(l?.estimatedValue || '0'), 0);
-  const theirTotalValue = theirItems.reduce((sum: number, l: any) => sum + parseFloat(l?.estimatedValue || '0'), 0);
+  // Cash sweeteners — from server (already submitted) + local pending (not yet submitted)
+  const serverMyCash = parseFloat((trade?.proposal as any)?.cashFromRequester || '0') || 0;
+  const serverTheirCash = parseFloat((trade?.proposal as any)?.cashFromRecipient || '0') || 0;
+  // Local pending cash (entered but not yet submitted)
+  const localMyCash = parseFloat(cashPay) || 0;
+  const localTheirCash = parseFloat(cashReceive) || 0;
+  // Use local if set, otherwise fall back to server value
+  const myCash = localMyCash > 0 ? localMyCash : serverMyCash;
+  const theirCash = localTheirCash > 0 ? localTheirCash : serverTheirCash;
+
+  // Calculate total values (items + cash)
+  const myItemsValue = myItems.reduce((sum: number, l: any) => sum + parseFloat(l?.estimatedValue || '0'), 0);
+  const theirItemsValue = theirItems.reduce((sum: number, l: any) => sum + parseFloat(l?.estimatedValue || '0'), 0);
+  const myTotalValue = myItemsValue + myCash;
+  const theirTotalValue = theirItemsValue + theirCash;
 
   // Fairness calculation
   // "In your favor" = you RECEIVE more than you GIVE (their side is worth more)
   // Meter: LEFT = You Favor, CENTER = Fair, RIGHT = They Favor
   // Slider moves LEFT when their side is worth more (you get the better deal)
   const totalValue = myTotalValue + theirTotalValue;
-  const bothSidesHaveItems = myTotalValue > 0 && theirTotalValue > 0;
+  const bothSidesHaveItems = myTotalValue > 0 && theirTotalValue > 0; // includes cash
   // theirSharePercent: % of total value on their side (= what you receive)
   const theirSharePercent = bothSidesHaveItems ? Math.round((theirTotalValue / totalValue) * 100) : 50;
   // sliderPos: 0% = far left (You Favor), 100% = far right (They Favor)
@@ -500,13 +515,43 @@ export default function WarRoom() {
                     </div>
                   )}
 
+                  {/* Cash sweetener line item */}
+                  {myCash > 0 && (
+                    <div className="mt-3 flex items-center justify-between bg-green-900/20 border border-green-500/30 rounded-lg px-3 py-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-green-400 text-lg">💵</span>
+                        <div>
+                          <p className="text-green-400 text-xs font-bold">+ ${myCash.toLocaleString()} Cash</p>
+                          <p className="text-gray-500 text-[10px]">Added to sweeten the deal</p>
+                        </div>
+                      </div>
+                      {(currentStage === 'proposed' || currentStage === 'negotiating') && (
+                        <button
+                          onClick={() => { setCashInput(String(myCash)); setShowCashModal('my'); }}
+                          className="text-gray-500 hover:text-white text-xs transition"
+                          title="Edit cash amount"
+                        >Edit</button>
+                      )}
+                    </div>
+                  )}
+
                   {(currentStage === 'proposed' || currentStage === 'negotiating') && (
-                    <button
-                      onClick={() => { setInventorySearch(''); setIsMyInventoryOpen(true); }}
-                      className="w-full mt-4 py-2.5 border border-dashed border-gray-700 rounded-lg text-purple-400 hover:text-purple-300 hover:border-purple-500 transition text-sm flex items-center justify-center gap-2"
-                    >
-                      + Add Item from Your Inventory
-                    </button>
+                    <div className="flex gap-2 mt-4">
+                      <button
+                        onClick={() => { setInventorySearch(''); setIsMyInventoryOpen(true); }}
+                        className="flex-1 py-2.5 border border-dashed border-gray-700 rounded-lg text-purple-400 hover:text-purple-300 hover:border-purple-500 transition text-sm flex items-center justify-center gap-2"
+                      >
+                        + Add Item
+                      </button>
+                      {myCash === 0 && (
+                        <button
+                          onClick={() => { setCashInput(''); setShowCashModal('my'); }}
+                          className="flex-1 py-2.5 border border-dashed border-green-700/50 rounded-lg text-green-500 hover:text-green-400 hover:border-green-500 transition text-sm flex items-center justify-center gap-2"
+                        >
+                          💵 Add Cash
+                        </button>
+                      )}
+                    </div>
                   )}
                 </div>
 
@@ -632,13 +677,43 @@ export default function WarRoom() {
                     </div>
                   )}
 
+                  {/* Cash sweetener line item */}
+                  {theirCash > 0 && (
+                    <div className="mt-3 flex items-center justify-between bg-green-900/20 border border-green-500/30 rounded-lg px-3 py-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-green-400 text-lg">💵</span>
+                        <div>
+                          <p className="text-green-400 text-xs font-bold">+ ${theirCash.toLocaleString()} Cash</p>
+                          <p className="text-gray-500 text-[10px]">Added to sweeten the deal</p>
+                        </div>
+                      </div>
+                      {(currentStage === 'proposed' || currentStage === 'negotiating') && (
+                        <button
+                          onClick={() => { setCashInput(String(theirCash)); setShowCashModal('their'); }}
+                          className="text-gray-500 hover:text-white text-xs transition"
+                          title="Edit cash amount"
+                        >Edit</button>
+                      )}
+                    </div>
+                  )}
+
                   {(currentStage === 'proposed' || currentStage === 'negotiating') && (
-                    <button
-                      onClick={() => { setInventorySearch(''); setInventoryCategory('All'); setIsTheirInventoryOpen(true); }}
-                      className="w-full mt-4 py-2.5 border border-dashed border-gray-700 rounded-lg text-blue-400 hover:text-blue-300 hover:border-blue-500 transition text-sm flex items-center justify-center gap-2"
-                    >
-                      + Browse Their Inventory
-                    </button>
+                    <div className="flex gap-2 mt-4">
+                      <button
+                        onClick={() => { setInventorySearch(''); setInventoryCategory('All'); setIsTheirInventoryOpen(true); }}
+                        className="flex-1 py-2.5 border border-dashed border-gray-700 rounded-lg text-blue-400 hover:text-blue-300 hover:border-blue-500 transition text-sm flex items-center justify-center gap-2"
+                      >
+                        + Browse Items
+                      </button>
+                      {theirCash === 0 && (
+                        <button
+                          onClick={() => { setCashInput(''); setShowCashModal('their'); }}
+                          className="flex-1 py-2.5 border border-dashed border-green-700/50 rounded-lg text-green-500 hover:text-green-400 hover:border-green-500 transition text-sm flex items-center justify-center gap-2"
+                        >
+                          💵 Add Cash
+                        </button>
+                      )}
+                    </div>
                   )}
                 </div>
               </div>
@@ -1290,6 +1365,82 @@ export default function WarRoom() {
           </div>
         );
       })()}
+
+      {/* Add Cash Modal */}
+      {showCashModal !== null && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[60]">
+          <div className="bg-[#1a1a4a] border border-gray-600 rounded-xl p-6 w-11/12 max-w-sm shadow-2xl">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <span className="text-2xl">💵</span>
+                <div>
+                  <h2 className="text-white text-lg font-bold">
+                    {showCashModal === 'my' ? 'Add Cash to Your Side' : 'Add Cash to Their Side'}
+                  </h2>
+                  <p className="text-gray-400 text-xs">
+                    {showCashModal === 'my'
+                      ? 'Sweeten the deal by adding cash to your offer'
+                      : 'Request cash from them to balance the trade'}
+                  </p>
+                </div>
+              </div>
+              <button onClick={() => setShowCashModal(null)} className="text-gray-400 hover:text-white transition">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="relative mb-5">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-sm">$</span>
+              <input
+                type="number"
+                min="0"
+                step="1"
+                placeholder="0"
+                value={cashInput}
+                onChange={(e) => setCashInput(e.target.value)}
+                className="w-full pl-7 pr-4 py-3 bg-[#0a0a2a] border border-gray-600 rounded-lg text-white text-lg font-bold focus:border-green-500 focus:outline-none"
+                autoFocus
+              />
+            </div>
+
+            <div className="flex gap-3">
+              {/* Remove cash button */}
+              {((showCashModal === 'my' && myCash > 0) || (showCashModal === 'their' && theirCash > 0)) && (
+                <button
+                  onClick={() => {
+                    if (showCashModal === 'my') setCashPay('0');
+                    else setCashReceive('0');
+                    setShowCashModal(null);
+                    setCashInput('');
+                  }}
+                  className="px-4 py-2.5 border border-red-700/50 text-red-400 rounded-lg text-sm hover:bg-red-900/20 transition"
+                >Remove</button>
+              )}
+              <button
+                onClick={() => setShowCashModal(null)}
+                className="flex-1 px-4 py-2.5 border border-gray-700 text-gray-400 rounded-lg text-sm hover:bg-gray-800 transition"
+              >Cancel</button>
+              <button
+                onClick={() => {
+                  const amount = parseFloat(cashInput);
+                  if (isNaN(amount) || amount < 0) {
+                    toast.error('Please enter a valid amount.');
+                    return;
+                  }
+                  if (showCashModal === 'my') setCashPay(String(amount));
+                  else setCashReceive(String(amount));
+                  setShowCashModal(null);
+                  setCashInput('');
+                  toast.success(`$${amount.toLocaleString()} cash added to the trade.`);
+                }}
+                className="flex-1 px-4 py-2.5 bg-green-600 text-white rounded-lg text-sm font-bold hover:bg-green-700 transition"
+              >Confirm</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Video Chat Modal */}
       {showVideoChatModal && (
