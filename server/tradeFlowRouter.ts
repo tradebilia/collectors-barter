@@ -907,7 +907,7 @@ export const tradeFlowRouter = router({
       // Check if partner has already accepted (first acceptance — waiting for mutual confirmation)
       let partnerHasAccepted = false;
       let myHasAccepted = false;
-      if ((proposal.status as string) === 'negotiating') {
+      if ((proposal.status as string) === 'negotiating' || (proposal.status as string) === 'accepted') {
         const [pendingAccept] = await db.execute(
           sql`SELECT id FROM tradeReceiptConfirmation WHERE proposalId = ${input.proposalId} AND userId = ${otherUserId} AND confirmationType = 'accepted'`
         );
@@ -1084,20 +1084,50 @@ export const tradeFlowRouter = router({
       const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
       const otherUserId = proposal.requesterId === userId ? proposal.recipientId : proposal.requesterId;
 
-      await db.execute(
-        sql`UPDATE tradeProposals SET status = 'shipping', shippingAt = ${now}, lastActivityAt = ${now}, updatedAt = ${now} WHERE id = ${input.proposalId}`
+      // Check if the other party has already confirmed proceeding to shipping
+      const [existingConfirmation] = await db.execute(
+        sql`SELECT id FROM tradeReceiptConfirmation WHERE proposalId = ${input.proposalId} AND userId = ${otherUserId} AND confirmationType = 'accepted'`
       );
-      await db.execute(
-        sql`INSERT INTO tradeAlerts (proposalId, recipientUserId, alertType, message, createdAt) VALUES (${input.proposalId}, ${otherUserId}, 'shipped', 'Your trade partner has confirmed and is ready to ship. Please enter your tracking number.', ${now})`
-      );
+      const otherHasConfirmed = ((existingConfirmation as unknown as any[])?.length || 0) > 0;
 
       const [actor] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
       const actorName = (actor as any)?.displayName || (actor as any)?.username || 'Unknown';
-      await db.execute(
-        sql`INSERT INTO tradeActivityLog (proposalId, actorId, actorName, eventType, details, createdAt) VALUES (${input.proposalId}, ${userId}, ${actorName}, 'proposal_accepted', 'Confirmed review and proceeded to Shipping stage', ${now})`
-      );
 
-      return { success: true };
+      if (otherHasConfirmed) {
+        // Both have now confirmed — move to 'shipping' status
+        await db.execute(
+          sql`UPDATE tradeProposals SET status = 'shipping', shippingAt = ${now}, lastActivityAt = ${now}, updatedAt = ${now} WHERE id = ${input.proposalId}`
+        );
+        await db.execute(
+          sql`INSERT INTO tradeAlerts (proposalId, recipientUserId, alertType, message, createdAt) VALUES (${input.proposalId}, ${otherUserId}, 'shipped', 'Both parties have confirmed the review! Please enter your tracking number.', ${now})`
+        );
+        await db.execute(
+          sql`INSERT INTO tradeActivityLog (proposalId, actorId, actorName, eventType, details, createdAt) VALUES (${input.proposalId}, ${userId}, ${actorName}, 'proposal_accepted', 'Confirmed review. Both parties confirmed, proceeding to Shipping stage.', ${now})`
+        );
+        
+        // Clean up the confirmation records
+        await db.execute(
+          sql`DELETE FROM tradeReceiptConfirmation WHERE proposalId = ${input.proposalId} AND confirmationType = 'accepted'`
+        );
+        
+        return { success: true, mutualConfirmation: true };
+      } else {
+        // First confirmation — record it and notify other party
+        await db.execute(
+          sql`INSERT INTO tradeReceiptConfirmation (proposalId, userId, confirmationType, confirmedAt) VALUES (${input.proposalId}, ${userId}, 'accepted', ${now})`
+        );
+        await db.execute(
+          sql`UPDATE tradeProposals SET lastActivityAt = ${now}, updatedAt = ${now} WHERE id = ${input.proposalId}`
+        );
+        await db.execute(
+          sql`INSERT INTO tradeAlerts (proposalId, recipientUserId, alertType, message, createdAt) VALUES (${input.proposalId}, ${otherUserId}, 'shipped', 'Your trade partner has confirmed the review and is ready to ship. Please confirm to proceed.', ${now})`
+        );
+        await db.execute(
+          sql`INSERT INTO tradeActivityLog (proposalId, actorId, actorName, eventType, details, createdAt) VALUES (${input.proposalId}, ${userId}, ${actorName}, 'proposal_accepted', 'Confirmed review — awaiting partner confirmation to proceed to Shipping.', ${now})`
+        );
+        
+        return { success: true, mutualConfirmation: false };
+      }
     }),
 
   // ==========================================================================
