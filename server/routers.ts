@@ -324,10 +324,41 @@ export const appRouter = router({
         }
         const profile = await db.select().from(userProfiles).where(eq(userProfiles.userId, input.userId)).limit(1);
         const userListings = await db.select().from(listings).where(eq(listings.ownerId, input.userId)).limit(100);
+        
+        // Fetch real stats
+        const [statsResult] = await db.execute(
+          sql`SELECT 
+            (SELECT COUNT(*) FROM listings WHERE ownerId = ${input.userId} AND status = 'active' AND isActive = 1) as itemsListed,
+            (SELECT COUNT(*) FROM tradeProposals WHERE (requesterId = ${input.userId} OR recipientId = ${input.userId}) AND status = 'completed') as completedTrades,
+            (SELECT AVG(overallRating) FROM tradeReviews WHERE revieweeId = ${input.userId} AND isVisible = 1) as avgRating
+          `
+        );
+        const stats = (statsResult as any)?.[0] || { itemsListed: 0, completedTrades: 0, avgRating: 0 };
+
+        // Fetch reviews
+        const [reviewsResult] = await db.execute(
+          sql`SELECT 
+            tr.id, tr.overallRating, tr.review, tr.createdAt, 
+            up.displayName as reviewerName, up.avatarUrl as reviewerAvatar, u.username as reviewerUsername
+          FROM tradeReviews tr
+          LEFT JOIN users u ON u.id = tr.reviewerId
+          LEFT JOIN userProfiles up ON up.userId = tr.reviewerId
+          WHERE tr.revieweeId = ${input.userId} AND tr.isVisible = 1 AND tr.review IS NOT NULL AND tr.review != ''
+          ORDER BY tr.createdAt DESC
+          LIMIT 20`
+        );
+        const reviews = (reviewsResult as any) || [];
+
         return {
           user: user[0],
           profile: profile[0] || null,
           listings: userListings,
+          stats: {
+            itemsListed: stats.itemsListed || 0,
+            completedTrades: stats.completedTrades || 0,
+            avgRating: parseFloat(stats.avgRating || '0').toFixed(1),
+          },
+          reviews,
         };
       }),
     search: publicProcedure

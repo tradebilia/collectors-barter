@@ -145,7 +145,7 @@ export default function PublicProfile() {
             <Card className="rounded-[1.5rem] border-slate-200 bg-white shadow-sm">
               <CardContent className="pt-6">
                 <div className="text-center">
-                  <p className="text-3xl font-bold text-blue-600">127</p>
+                  <p className="text-3xl font-bold text-blue-600">{(userProfileQuery.data as any)?.stats?.itemsListed || 0}</p>
                   <p className="mt-2 text-sm text-slate-600">Items Listed</p>
                 </div>
               </CardContent>
@@ -154,7 +154,7 @@ export default function PublicProfile() {
             <Card className="rounded-[1.5rem] border-slate-200 bg-white shadow-sm">
               <CardContent className="pt-6">
                 <div className="text-center">
-                  <p className="text-3xl font-bold text-green-600">45</p>
+                  <p className="text-3xl font-bold text-green-600">{(userProfileQuery.data as any)?.stats?.completedTrades || 0}</p>
                   <p className="mt-2 text-sm text-slate-600">Completed Trades</p>
                 </div>
               </CardContent>
@@ -164,7 +164,7 @@ export default function PublicProfile() {
               <CardContent className="pt-6">
                 <div className="text-center">
                   <div className="flex items-center justify-center gap-1">
-                    <span className="text-3xl font-bold text-yellow-500">4.8</span>
+                    <span className="text-3xl font-bold text-yellow-500">{(userProfileQuery.data as any)?.stats?.avgRating || '0.0'}</span>
                     <Star className="h-6 w-6 fill-yellow-500 text-yellow-500" />
                   </div>
                   <p className="mt-2 text-sm text-slate-600">Average Rating</p>
@@ -180,31 +180,39 @@ export default function PublicProfile() {
               <CardDescription>What other collectors say about trading with this member</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="border-b border-slate-200 pb-4 last:border-b-0">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium text-slate-950">Collector {i}</span>
-                        <div className="flex gap-0.5">
-                          {[...Array(5)].map((_, j) => (
-                            <Star
-                              key={j}
-                              className={`h-4 w-4 ${
-                                j < 5 ? "fill-yellow-500 text-yellow-500" : "text-slate-300"
-                              }`}
-                            />
-                          ))}
+              {((userProfileQuery.data as any)?.reviews || []).length > 0 ? (
+                ((userProfileQuery.data as any)?.reviews || []).map((review: any) => (
+                  <div key={review.id} className="border-b border-slate-200 pb-4 last:border-b-0">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-slate-950">{review.reviewerName || review.reviewerUsername || 'Collector'}</span>
+                          <div className="flex gap-0.5">
+                            {[...Array(5)].map((_, j) => (
+                              <Star
+                                key={j}
+                                className={`h-4 w-4 ${
+                                  j < Math.round(review.overallRating || 0) ? "fill-yellow-500 text-yellow-500" : "text-slate-300"
+                                }`}
+                              />
+                            ))}
+                          </div>
                         </div>
+                        <p className="mt-2 text-sm text-slate-700">
+                          {review.review || "No written feedback provided."}
+                        </p>
                       </div>
-                      <p className="mt-2 text-sm text-slate-700">
-                        Great trader! Fast shipping and items arrived in perfect condition. Would trade again!
-                      </p>
-                      <p className="mt-1 text-xs text-slate-500">2 weeks ago</p>
+                      <span className="text-xs text-slate-500">
+                        {new Date(review.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                      </span>
                     </div>
                   </div>
+                ))
+              ) : (
+                <div className="text-center py-8 text-slate-500">
+                  <p>No feedback available yet.</p>
                 </div>
-              ))}
+              )}
             </CardContent>
           </Card>
 
