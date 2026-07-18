@@ -344,15 +344,21 @@ export default function WarRoom() {
   };
 
   const handleUpdateProposal = () => {
-    if (selectedItemIds.length === 0 && !cashPay && !cashReceive) {
+    // Build the full list of ALL item IDs currently on the trade table:
+    // server-persisted items (from offeredListings) + newly pending items
+    const serverItemIds = (trade?.offeredListings || []).map((l: any) => l.id);
+    const pendingItemIds = [...pendingMyItems, ...pendingTheirItems].map(i => i.id);
+    const allItemIds = Array.from(new Set([...serverItemIds, ...pendingItemIds]));
+
+    if (allItemIds.length === 0 && !cashPay && !cashReceive && serverMyCash === 0 && serverTheirCash === 0) {
       toast.error('Please add at least one item or cash amount to your proposal.');
       return;
     }
     sendProposalMutation.mutate({
       proposalId,
-      offeredListingIds: selectedItemIds,
-      cashFromProposer: cashPay ? parseFloat(cashPay) : undefined,
-      cashFromRecipient: cashReceive ? parseFloat(cashReceive) : undefined,
+      offeredListingIds: allItemIds,
+      cashFromProposer: cashPay ? parseFloat(cashPay) : (serverMyCash > 0 ? serverMyCash : undefined),
+      cashFromRecipient: cashReceive ? parseFloat(cashReceive) : (serverTheirCash > 0 ? serverTheirCash : undefined),
     });
   };
 
