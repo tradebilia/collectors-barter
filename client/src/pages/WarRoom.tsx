@@ -588,8 +588,33 @@ export default function WarRoom() {
               return null;
             };
 
+            const acceptedAt = (trade?.proposal as any)?.acceptedAt;
+            const acceptedDate = acceptedAt ? new Date(acceptedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : null;
+            const tradeRef = (trade?.proposal as any)?.tradeReferenceNumber || `#TB-${String(proposalId).padStart(5, '0')}`;
+
             return (
               <div className="flex flex-col gap-4 flex-1">
+
+                {/* TRADE ACCEPTED Banner */}
+                <div className="bg-gradient-to-r from-green-900/40 to-emerald-900/30 border border-green-500/40 rounded-xl p-5 shadow-[0_0_30px_rgba(34,197,94,0.15)]">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-full bg-green-500/20 border-2 border-green-400 flex items-center justify-center shadow-[0_0_15px_rgba(34,197,94,0.4)]">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-6 h-6 text-green-400">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                        </svg>
+                      </div>
+                      <div>
+                        <h1 className="text-green-300 text-xl font-black uppercase tracking-widest">Trade Accepted</h1>
+                        <p className="text-green-400/70 text-xs mt-0.5">Both parties have agreed. Items are locked.</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-white font-mono font-bold text-lg">{tradeRef}</p>
+                      {acceptedDate && <p className="text-gray-400 text-xs mt-0.5">Accepted on {acceptedDate}</p>}
+                    </div>
+                  </div>
+                </div>
 
                 {/* Trade Summary Card */}
                 <div className="bg-[#16213e] border border-gray-600 rounded-xl p-5 shadow-xl">
