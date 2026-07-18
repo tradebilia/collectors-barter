@@ -753,165 +753,268 @@ export default function WarRoom() {
                   </div>
                 </div>
 
-                {/* Tracking Numbers Card — only show on Shipping stage and beyond */}
-                {(currentStage === 'shipping' || currentStage === 'shipped' || currentStage === 'completed') && <div className={`border rounded-xl p-5 shadow-xl ${
-                  currentStage === 'shipping' ? 'bg-[#16213e] border-orange-500/40 shadow-[0_0_20px_rgba(249,115,22,0.1)]' : 'bg-[#16213e] border-gray-600'
-                }`}>
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${
-                      currentStage === 'shipping' ? 'bg-orange-500/20 border border-orange-500/40' : 'bg-orange-900/30 border border-orange-500/20'
-                    }`}>
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-orange-400">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 18.75a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 0 1-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 0 0-3.213-9.193 2.056 2.056 0 0 0-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 0 0-10.026 0 1.106 1.106 0 0 0-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12" />
-                      </svg>
-                    </div>
-                    <div>
-                      <h2 className="text-white font-bold text-lg">Shipping</h2>
-                      <p className="text-gray-400 text-xs">
-                        {currentStage === 'shipping' ? 'Enter your tracking number below. Both parties must ship.' : 'Tracking numbers submitted.'}
-                      </p>
-                    </div>
-                    {currentStage === 'shipping' && (
-                      <span className="ml-auto px-3 py-1 bg-orange-500/20 border border-orange-500/40 text-orange-300 text-xs font-bold rounded-full animate-pulse">ACTION REQUIRED</span>
-                    )}
-                    {currentStage === 'shipped' && (
-                      <span className="ml-auto px-3 py-1 bg-green-500/20 border border-green-500/30 text-green-400 text-xs font-bold rounded-full">BOTH SHIPPED</span>
-                    )}
-                  </div>
-
-                  {/* Existing tracking numbers */}
-                  {myTracking.length > 0 && (
-                    <div className="mb-4">
-                      <p className="text-green-400 text-xs font-bold mb-2">✓ Your Tracking Submitted</p>
-                      {myTracking.map((t: any, i: number) => {
-                        const url = getTrackingUrl(t.carrier, t.trackingNumber);
-                        return (
-                          <div key={i} className="flex items-center gap-3 bg-green-900/10 border border-green-500/20 rounded-lg px-3 py-2 mb-1">
-                            <span className="text-green-400 text-xs font-bold">{t.carrier}</span>
-                            <span className="text-gray-300 text-xs font-mono">{t.trackingNumber}</span>
-                            {t.itemTitle && <span className="text-gray-500 text-xs">({t.itemTitle})</span>}
-                            {url && <a href={url} target="_blank" rel="noopener noreferrer" className="ml-auto text-blue-400 text-xs hover:underline">Track →</a>}
+                {/* ── SHIPPING STAGE: Focused two-column tracking layout ── */}
+                {currentStage === 'shipping' && (() => {
+                  const myShippingItems = allItems.filter((item: any) => item.ownerId === myUserId || (isRequester ? false : item.id === requestedListing?.id));
+                  const hasNewTracking = trackingInputs.some(t => t.trackingNumber.trim().length > 0);
+                  return (
+                    <div className="bg-[#16213e] border border-orange-500/40 rounded-xl shadow-[0_0_30px_rgba(249,115,22,0.1)] overflow-hidden">
+                      {/* Header */}
+                      <div className="flex items-center justify-between px-6 py-4 border-b border-orange-500/20">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-lg bg-orange-500/20 border border-orange-500/40 flex items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-orange-400">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 18.75a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 0 1-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 0 0-3.213-9.193 2.056 2.056 0 0 0-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 0 0-10.026 0 1.106 1.106 0 0 0-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12" />
+                            </svg>
                           </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                  {theirTracking.length > 0 && (
-                    <div className="mb-4">
-                      <p className="text-blue-400 text-xs font-bold mb-2">✓ {theirDisplayName}'s Tracking Submitted</p>
-                      {theirTracking.map((t: any, i: number) => {
-                        const url = getTrackingUrl(t.carrier, t.trackingNumber);
-                        return (
-                          <div key={i} className="flex items-center gap-3 bg-blue-900/10 border border-blue-500/20 rounded-lg px-3 py-2 mb-1">
-                            <span className="text-blue-400 text-xs font-bold">{t.carrier}</span>
-                            <span className="text-gray-300 text-xs font-mono">{t.trackingNumber}</span>
-                            {t.itemTitle && <span className="text-gray-500 text-xs">({t.itemTitle})</span>}
-                            {url && <a href={url} target="_blank" rel="noopener noreferrer" className="ml-auto text-blue-400 text-xs hover:underline">Track →</a>}
+                          <div>
+                            <h2 className="text-white font-bold text-lg">Shipping Stage</h2>
+                            <p className="text-gray-400 text-xs">Enter your tracking info. Both parties must ship to proceed.</p>
                           </div>
-                        );
-                      })}
-                    </div>
-                  )}
-
-                  {/* Add tracking inputs */}
-                  {myTracking.length === 0 && (
-                    <div className="space-y-3">
-                      <p className="text-gray-400 text-xs mb-2">Add tracking for each item you are shipping:</p>
-                      {allItems.filter((item: any) => item.ownerId === myUserId || (isRequester ? false : item.id === requestedListing?.id)).map((item: any) => {
-                        const input = trackingInputs.find(t => t.listingId === item.id) || { listingId: item.id, carrier: 'USPS', trackingNumber: '' };
-                        return (
-                          <div key={item.id} className="bg-[#0f0f1a] border border-gray-700 rounded-lg p-3">
-                            <p className="text-white text-xs font-medium mb-2">{item.title}</p>
-                            <div className="flex gap-2">
-                              <select
-                                value={input.carrier}
-                                onChange={(e) => setTrackingInputs(prev => {
-                                  const existing = prev.filter(t => t.listingId !== item.id);
-                                  return [...existing, { ...input, carrier: e.target.value }];
-                                })}
-                                className="bg-[#16213e] border border-gray-600 text-white text-xs rounded px-2 py-1.5 focus:outline-none focus:border-blue-500"
-                              >
-                                {['USPS', 'UPS', 'FedEx', 'DHL', 'Other'].map(c => <option key={c} value={c}>{c}</option>)}
-                              </select>
-                              <input
-                                type="text"
-                                placeholder="Tracking number"
-                                value={input.trackingNumber}
-                                onChange={(e) => {
-                                  const val = e.target.value;
-                                  let detectedCarrier = input.carrier;
-                                  
-                                  // Simple auto-detect logic based on common tracking number formats
-                                  const cleanVal = val.replace(/\s/g, '').toUpperCase();
-                                  if (cleanVal.startsWith('1Z') && cleanVal.length === 18) {
-                                    detectedCarrier = 'UPS';
-                                  } else if ((cleanVal.length === 22 && cleanVal.startsWith('9')) || (cleanVal.length === 20 && cleanVal.startsWith('4'))) {
-                                    detectedCarrier = 'USPS';
-                                  } else if (cleanVal.length === 12 || cleanVal.length === 15 || cleanVal.length === 20) {
-                                    // FedEx is often 12, 15, or 20 digits. USPS can also be 20, but we checked USPS 4... above.
-                                    // This is a basic fallback, FedEx numbers don't have a single universal prefix like UPS 1Z.
-                                    if (!cleanVal.startsWith('4') && !cleanVal.startsWith('9')) {
-                                       detectedCarrier = 'FedEx';
-                                    }
-                                  } else if (cleanVal.length === 10) {
-                                    detectedCarrier = 'DHL';
-                                  }
-
-                                  setTrackingInputs(prev => {
-                                    const existing = prev.filter(t => t.listingId !== item.id);
-                                    return [...existing, { ...input, trackingNumber: val, carrier: detectedCarrier }];
-                                  });
-                                }}
-                                className="flex-1 bg-[#16213e] border border-gray-600 text-white text-xs rounded px-3 py-1.5 focus:outline-none focus:border-blue-500 font-mono"
-                              />
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-
-                  {/* Receipt confirmation */}
-                  {(currentStage === 'shipped') && (
-                    <div className="mt-4 pt-4 border-t border-gray-700">
-                      <p className="text-white text-sm font-bold mb-2">Items Received?</p>
-                      <p className="text-gray-400 text-xs mb-3">Once you confirm receipt, the trade moves to completion.</p>
-                      <div className="flex gap-3">
-                        <div className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs ${myReceiptConfirmed ? 'bg-green-900/20 border border-green-500/30 text-green-400' : 'bg-gray-800 border border-gray-700 text-gray-500'}`}>
-                          {myReceiptConfirmed ? '✓' : '○'} {myDisplayName} {myReceiptConfirmed ? 'confirmed' : 'not confirmed'}
                         </div>
-                        <div className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs ${theirReceiptConfirmed ? 'bg-green-900/20 border border-green-500/30 text-green-400' : 'bg-gray-800 border border-gray-700 text-gray-500'}`}>
-                          {theirReceiptConfirmed ? '✓' : '○'} {theirDisplayName} {theirReceiptConfirmed ? 'confirmed' : 'not confirmed'}
+                        <span className="px-3 py-1 bg-orange-500/20 border border-orange-500/40 text-orange-300 text-xs font-bold rounded-full animate-pulse">ACTION REQUIRED</span>
+                      </div>
+
+                      {/* Two-column tracking area */}
+                      <div className="grid grid-cols-2 divide-x divide-gray-700">
+
+                        {/* LEFT: Your shipment */}
+                        <div className="p-5">
+                          <div className="flex items-center gap-2 mb-4">
+                            {myAvatarUrl ? <img src={myAvatarUrl} className="w-6 h-6 rounded-full object-cover" alt="" /> : <div className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center text-white text-[10px] font-bold">{myInitial}</div>}
+                            <p className="text-blue-400 text-xs font-bold uppercase tracking-wide">You — {myDisplayName}</p>
+                            {myTracking.length > 0 && <span className="ml-auto text-green-400 text-xs font-bold">✓ Shipped</span>}
+                          </div>
+
+                          {myTracking.length > 0 ? (
+                            // Already submitted — show submitted tracking
+                            <div className="space-y-2">
+                              {myTracking.map((t: any, i: number) => {
+                                const url = getTrackingUrl(t.carrier, t.trackingNumber);
+                                return (
+                                  <div key={i} className="bg-green-900/10 border border-green-500/20 rounded-lg p-3">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <span className="px-2 py-0.5 bg-green-900/40 text-green-400 text-[10px] font-bold rounded">{t.carrier}</span>
+                                      {t.itemTitle && <span className="text-gray-400 text-xs truncate">{t.itemTitle}</span>}
+                                    </div>
+                                    <p className="text-white text-xs font-mono mb-2">{t.trackingNumber}</p>
+                                    {url && (
+                                      <a href={url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-blue-400 text-xs hover:underline">
+                                        Track on {t.carrier} →
+                                      </a>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          ) : (
+                            // Not yet submitted — show input form
+                            <div className="space-y-3">
+                              {myShippingItems.map((item: any) => {
+                                const inp = trackingInputs.find(t => t.listingId === item.id) || { listingId: item.id, carrier: 'USPS', trackingNumber: '' };
+                                return (
+                                  <div key={item.id} className="bg-[#0f0f1a] border border-gray-700 rounded-lg p-3">
+                                    <div className="flex items-center gap-2 mb-2">
+                                      {item.photos?.[0]?.imageUrl
+                                        ? <img src={item.photos[0].imageUrl} className="w-8 h-8 object-contain rounded bg-[#0a0a1a]" alt={item.title} />
+                                        : <div className="w-8 h-8 bg-[#0a0a1a] rounded flex items-center justify-center text-gray-600 text-[10px]">?</div>
+                                      }
+                                      <p className="text-white text-xs font-medium leading-tight flex-1 min-w-0 truncate">{item.title}</p>
+                                    </div>
+                                    <div className="flex gap-2">
+                                      <select
+                                        value={inp.carrier}
+                                        onChange={(e) => setTrackingInputs(prev => {
+                                          const existing = prev.filter(t => t.listingId !== item.id);
+                                          return [...existing, { ...inp, carrier: e.target.value }];
+                                        })}
+                                        className="bg-[#16213e] border border-gray-600 text-white text-xs rounded px-2 py-1.5 focus:outline-none focus:border-blue-500 shrink-0"
+                                      >
+                                        {['USPS', 'UPS', 'FedEx', 'DHL', 'Other'].map(c => <option key={c} value={c}>{c}</option>)}
+                                      </select>
+                                      <input
+                                        type="text"
+                                        placeholder="Paste tracking #"
+                                        value={inp.trackingNumber}
+                                        onChange={(e) => {
+                                          const val = e.target.value;
+                                          let detectedCarrier = inp.carrier;
+                                          const cleanVal = val.replace(/\s/g, '').toUpperCase();
+                                          if (cleanVal.startsWith('1Z') && cleanVal.length === 18) detectedCarrier = 'UPS';
+                                          else if ((cleanVal.length === 22 && cleanVal.startsWith('9')) || (cleanVal.length === 20 && cleanVal.startsWith('4'))) detectedCarrier = 'USPS';
+                                          else if ((cleanVal.length === 12 || cleanVal.length === 15) && !cleanVal.startsWith('4') && !cleanVal.startsWith('9')) detectedCarrier = 'FedEx';
+                                          else if (cleanVal.length === 10) detectedCarrier = 'DHL';
+                                          setTrackingInputs(prev => {
+                                            const existing = prev.filter(t => t.listingId !== item.id);
+                                            return [...existing, { ...inp, trackingNumber: val, carrier: detectedCarrier }];
+                                          });
+                                        }}
+                                        className="flex-1 bg-[#16213e] border border-gray-600 text-white text-xs rounded px-3 py-1.5 focus:outline-none focus:border-blue-500 font-mono"
+                                      />
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* RIGHT: Their shipment */}
+                        <div className="p-5">
+                          <div className="flex items-center gap-2 mb-4">
+                            {theirAvatarUrl ? <img src={theirAvatarUrl} className="w-6 h-6 rounded-full object-cover" alt="" /> : <div className="w-6 h-6 rounded-full bg-gray-600 flex items-center justify-center text-white text-[10px] font-bold">{theirInitial}</div>}
+                            <p className="text-gray-300 text-xs font-bold uppercase tracking-wide">{theirDisplayName}</p>
+                            {theirTracking.length > 0 && <span className="ml-auto text-green-400 text-xs font-bold">✓ Shipped</span>}
+                          </div>
+
+                          {theirTracking.length > 0 ? (
+                            <div className="space-y-2">
+                              {theirTracking.map((t: any, i: number) => {
+                                const url = getTrackingUrl(t.carrier, t.trackingNumber);
+                                return (
+                                  <div key={i} className="bg-blue-900/10 border border-blue-500/20 rounded-lg p-3">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <span className="px-2 py-0.5 bg-blue-900/40 text-blue-400 text-[10px] font-bold rounded">{t.carrier}</span>
+                                      {t.itemTitle && <span className="text-gray-400 text-xs truncate">{t.itemTitle}</span>}
+                                    </div>
+                                    <p className="text-white text-xs font-mono mb-2">{t.trackingNumber}</p>
+                                    {url && (
+                                      <a href={url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-blue-400 text-xs hover:underline">
+                                        Track on {t.carrier} →
+                                      </a>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          ) : (
+                            <div className="flex flex-col items-center justify-center h-32 text-center">
+                              <svg className="animate-spin w-6 h-6 text-gray-600 mb-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                              </svg>
+                              <p className="text-gray-500 text-xs">Waiting for {theirDisplayName}</p>
+                              <p className="text-gray-600 text-[10px] mt-1">to submit their tracking number</p>
+                            </div>
+                          )}
                         </div>
                       </div>
-                    </div>
-                  )}
 
-                  {/* Completed — leave review */}
-                  {currentStage === 'completed' && (
-                    <div className="mt-4 pt-4 border-t border-gray-700">
-                      <p className="text-white text-sm font-bold mb-3">Leave a Review for {theirDisplayName}</p>
-                      {(['tradeExperience', 'itemCondition', 'communication', 'shippingSpeed'] as const).map(key => (
-                        <div key={key} className="flex items-center justify-between mb-2">
-                          <p className="text-gray-400 text-xs capitalize">{key.replace(/([A-Z])/g, ' $1')}</p>
-                          <div className="flex gap-1">
-                            {[1,2,3,4,5].map(star => (
-                              <button key={star} onClick={() => setReviewRatings(r => ({...r, [key]: star}))}
-                                className={`text-lg ${reviewRatings[key] >= star ? 'text-yellow-400' : 'text-gray-600'}`}>★</button>
-                            ))}
+                      {/* Status bar */}
+                      <div className="flex items-center gap-3 px-6 py-3 bg-[#0f0f1a] border-t border-gray-700">
+                        <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold ${
+                          myTracking.length > 0 ? 'bg-green-900/20 border border-green-500/30 text-green-400' : 'bg-orange-900/20 border border-orange-500/30 text-orange-400'
+                        }`}>
+                          {myTracking.length > 0 ? '✓' : '⏳'} {myDisplayName}: {myTracking.length > 0 ? 'Shipped' : 'Awaiting shipment'}
+                        </div>
+                        <div className="w-px h-4 bg-gray-700" />
+                        <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold ${
+                          theirTracking.length > 0 ? 'bg-green-900/20 border border-green-500/30 text-green-400' : 'bg-gray-800 border border-gray-700 text-gray-500'
+                        }`}>
+                          {theirTracking.length > 0 ? '✓' : '○'} {theirDisplayName}: {theirTracking.length > 0 ? 'Shipped' : 'Not yet shipped'}
+                        </div>
+                        {myTracking.length > 0 && theirTracking.length > 0 && (
+                          <p className="ml-auto text-green-400 text-xs font-bold">🚚 Both packages on the way!</p>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* ── SHIPPED / COMPLETED: Compact tracking summary + receipt confirmation ── */}
+                {(currentStage === 'shipped' || currentStage === 'completed') && (
+                  <div className="bg-[#16213e] border border-gray-600 rounded-xl p-5 shadow-xl">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-9 h-9 rounded-lg bg-green-900/30 border border-green-500/20 flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-green-400">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 18.75a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 0 1-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 0 0-3.213-9.193 2.056 2.056 0 0 0-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 0 0-10.026 0 1.106 1.106 0 0 0-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12" />
+                        </svg>
+                      </div>
+                      <div>
+                        <h2 className="text-white font-bold text-lg">Tracking</h2>
+                        <p className="text-gray-400 text-xs">Both packages are on the way.</p>
+                      </div>
+                      <span className="ml-auto px-3 py-1 bg-green-500/20 border border-green-500/30 text-green-400 text-xs font-bold rounded-full">BOTH SHIPPED</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4 mb-4">
+                      <div>
+                        <p className="text-blue-400 text-xs font-bold mb-2">Your Tracking</p>
+                        {myTracking.map((t: any, i: number) => {
+                          const url = getTrackingUrl(t.carrier, t.trackingNumber);
+                          return (
+                            <div key={i} className="bg-green-900/10 border border-green-500/20 rounded-lg p-2 mb-1">
+                              <div className="flex items-center gap-2">
+                                <span className="text-green-400 text-[10px] font-bold">{t.carrier}</span>
+                                <span className="text-gray-300 text-xs font-mono flex-1 truncate">{t.trackingNumber}</span>
+                                {url && <a href={url} target="_blank" rel="noopener noreferrer" className="text-blue-400 text-xs hover:underline shrink-0">Track →</a>}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      <div>
+                        <p className="text-gray-300 text-xs font-bold mb-2">{theirDisplayName}'s Tracking</p>
+                        {theirTracking.map((t: any, i: number) => {
+                          const url = getTrackingUrl(t.carrier, t.trackingNumber);
+                          return (
+                            <div key={i} className="bg-blue-900/10 border border-blue-500/20 rounded-lg p-2 mb-1">
+                              <div className="flex items-center gap-2">
+                                <span className="text-blue-400 text-[10px] font-bold">{t.carrier}</span>
+                                <span className="text-gray-300 text-xs font-mono flex-1 truncate">{t.trackingNumber}</span>
+                                {url && <a href={url} target="_blank" rel="noopener noreferrer" className="text-blue-400 text-xs hover:underline shrink-0">Track →</a>}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Receipt confirmation */}
+                    {currentStage === 'shipped' && (
+                      <div className="pt-4 border-t border-gray-700">
+                        <p className="text-white text-sm font-bold mb-1">Confirm Receipt</p>
+                        <p className="text-gray-400 text-xs mb-3">Once both parties confirm they received their items, the trade is complete.</p>
+                        <div className="flex gap-3">
+                          <div className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold ${
+                            myReceiptConfirmed ? 'bg-green-900/20 border border-green-500/30 text-green-400' : 'bg-gray-800 border border-gray-700 text-gray-500'
+                          }`}>
+                            {myReceiptConfirmed ? '✓' : '○'} {myDisplayName}: {myReceiptConfirmed ? 'Received' : 'Pending'}
+                          </div>
+                          <div className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold ${
+                            theirReceiptConfirmed ? 'bg-green-900/20 border border-green-500/30 text-green-400' : 'bg-gray-800 border border-gray-700 text-gray-500'
+                          }`}>
+                            {theirReceiptConfirmed ? '✓' : '○'} {theirDisplayName}: {theirReceiptConfirmed ? 'Received' : 'Pending'}
                           </div>
                         </div>
-                      ))}
-                      <textarea
-                        placeholder="Write a review (optional)..."
-                        value={reviewText}
-                        onChange={(e) => setReviewText(e.target.value)}
-                        className="w-full mt-2 bg-[#0f0f1a] border border-gray-600 text-white text-xs rounded-lg p-3 focus:outline-none focus:border-blue-500 resize-none"
-                        rows={3}
-                      />
-                    </div>
-                  )}
-                </div>}
+                      </div>
+                    )}
+
+                    {/* Completed — leave review */}
+                    {currentStage === 'completed' && (
+                      <div className="pt-4 border-t border-gray-700">
+                        <p className="text-white text-sm font-bold mb-3">Leave a Review for {theirDisplayName}</p>
+                        {(['tradeExperience', 'itemCondition', 'communication', 'shippingSpeed'] as const).map(key => (
+                          <div key={key} className="flex items-center justify-between mb-2">
+                            <p className="text-gray-400 text-xs capitalize">{key.replace(/([A-Z])/g, ' $1')}</p>
+                            <div className="flex gap-1">
+                              {[1,2,3,4,5].map(star => (
+                                <button key={star} onClick={() => setReviewRatings(r => ({...r, [key]: star}))}
+                                  className={`text-lg ${reviewRatings[key] >= star ? 'text-yellow-400' : 'text-gray-600'}`}>★</button>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                        <textarea
+                          placeholder="Write a review (optional)..."
+                          value={reviewText}
+                          onChange={(e) => setReviewText(e.target.value)}
+                          className="w-full mt-2 bg-[#0f0f1a] border border-gray-600 text-white text-xs rounded-lg p-3 focus:outline-none focus:border-blue-500 resize-none"
+                          rows={3}
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
 
               </div>
             );
