@@ -877,7 +877,7 @@ export const tradeFlowRouter = router({
       // For accepted/shipped/completed stages, also fetch contact info for both parties
       let myContactInfo: any = null;
       let theirContactInfo: any = null;
-      if (['accepted', 'shipped', 'completed', 'disputed'].includes(proposal.status)) {
+      if (['accepted', 'shipping', 'shipped', 'completed', 'disputed'].includes(proposal.status as string)) {
         const [myContact] = await db.execute(
           sql`SELECT u.name, up.contactFullName, up.contactEmail, up.contactPhone,
             up.contactAddress, up.contactTown, up.contactState, up.contactZipCode, up.contactCountry
@@ -892,9 +892,9 @@ export const tradeFlowRouter = router({
         theirContactInfo = (theirContact as any)?.[0] || null;
       }
 
-      // Fetch tracking numbers for accepted/shipped/completed trades
+      // Fetch tracking numbers for shipping/shipped/completed trades
       let trackingNumbers: any[] = [];
-      if (['accepted', 'shipped', 'completed', 'disputed'].includes(proposal.status)) {
+      if (['accepted', 'shipping', 'shipped', 'completed', 'disputed'].includes(proposal.status as string)) {
         const [trackingResult] = await db.execute(
           sql`SELECT ttn.*, l.title as itemTitle FROM tradeTrackingNumbers ttn
             LEFT JOIN listings l ON l.id = ttn.listingId

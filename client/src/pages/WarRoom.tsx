@@ -722,8 +722,8 @@ export default function WarRoom() {
                   </div>
                 </div>
 
-                {/* Tracking Numbers Card */}
-                <div className={`border rounded-xl p-5 shadow-xl ${
+                {/* Tracking Numbers Card — only show on Shipping stage and beyond */}
+                {(currentStage === 'shipping' || currentStage === 'shipped' || currentStage === 'completed') && <div className={`border rounded-xl p-5 shadow-xl ${
                   currentStage === 'shipping' ? 'bg-[#16213e] border-orange-500/40 shadow-[0_0_20px_rgba(249,115,22,0.1)]' : 'bg-[#16213e] border-gray-600'
                 }`}>
                   <div className="flex items-center gap-3 mb-4">
@@ -859,7 +859,7 @@ export default function WarRoom() {
                       />
                     </div>
                   )}
-                </div>
+                </div>}
 
               </div>
             );
@@ -1385,7 +1385,7 @@ export default function WarRoom() {
           )}
 
           {/* Stage 4: Shipping — submit tracking */}
-          {(currentStage === 'shipping' || currentStage === 'accepted') && (() => {
+          {currentStage === 'shipping' && (() => {
             const myTracking = (trade?.trackingNumbers || []).filter((t: any) => t.userId === myUserId);
             const hasNewTracking = trackingInputs.some(t => t.trackingNumber.trim().length > 0);
             return (
