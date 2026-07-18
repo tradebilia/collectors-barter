@@ -463,9 +463,9 @@ export const tradeFlowRouter = router({
       const otherHasAccepted = ((existingAcceptance as unknown as any[])?.length || 0) > 0;
 
       if (otherHasAccepted) {
-        // Both have now accepted — move to 'accepted' status and lock items
+        // Both have now accepted — move to 'shipping' status and lock items
         await db.execute(
-          sql`UPDATE tradeProposals SET status = 'accepted', acceptedAt = ${now}, lastActivityAt = ${now}, updatedAt = ${now} WHERE id = ${input.proposalId}`
+          sql`UPDATE tradeProposals SET status = 'shipping', acceptedAt = ${now}, shippingAt = ${now}, lastActivityAt = ${now}, updatedAt = ${now} WHERE id = ${input.proposalId}`
         );
         // Lock all items in this trade (mark as 'traded' in listings)
         await db.execute(
@@ -475,22 +475,20 @@ export const tradeFlowRouter = router({
           sql`UPDATE listings SET status = 'traded' WHERE id = ${proposal.requestedListingId}`
         );
         await db.execute(
-          sql`INSERT INTO tradeAlerts (proposalId, recipientUserId, alertType, message, createdAt) VALUES (${input.proposalId}, ${otherUserId}, 'accepted', 'Both parties have accepted! Trade is now locked. Time to ship.', ${now})`
+          sql`INSERT INTO tradeAlerts (proposalId, recipientUserId, alertType, message, createdAt) VALUES (${input.proposalId}, ${otherUserId}, 'accepted', 'Both parties have accepted! Trade is locked — please enter your tracking number.', ${now})`
         );
         await db.execute(
-          sql`INSERT INTO tradeAdminLog (proposalId, eventType, actorUserId, details, createdAt) VALUES (${input.proposalId}, 'accepted', ${userId}, 'Mutual acceptance — trade locked', ${now})`
+          sql`INSERT INTO tradeAdminLog (proposalId, eventType, actorUserId, details, createdAt) VALUES (${input.proposalId}, 'accepted', ${userId}, 'Mutual acceptance — trade locked, entering shipping stage', ${now})`
         );
         // Clean up the acceptance records
         await db.execute(
           sql`DELETE FROM tradeReceiptConfirmation WHERE proposalId = ${input.proposalId} AND confirmationType = 'accepted'`
         );
 
-        // Q2 + Q14: Auto-cancel all other pending/negotiating proposals involving these items
-        // Cancel proposals where the requestedListingId is now traded
+        // Auto-cancel all other pending/negotiating proposals involving these items
         await db.execute(
           sql`UPDATE tradeProposals SET status = 'cancelled', declineReason = 'Item is no longer available (traded in another proposal)', updatedAt = ${now} WHERE id != ${input.proposalId} AND requestedListingId = ${proposal.requestedListingId} AND status IN ('pending', 'negotiating')`
         );
-        // Cancel proposals where any offered item is now traded
         await db.execute(
           sql`UPDATE tradeProposals SET status = 'cancelled', declineReason = 'An item in this proposal is no longer available', updatedAt = ${now} WHERE id != ${input.proposalId} AND status IN ('pending', 'negotiating') AND id IN (SELECT proposalId FROM tradeProposalItems WHERE offeredListingId IN (SELECT offeredListingId FROM tradeProposalItems WHERE proposalId = ${input.proposalId}))`
         );
@@ -499,7 +497,7 @@ export const tradeFlowRouter = router({
         const [acceptor2] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
         const acceptorName2 = (acceptor2 as any)?.displayName || (acceptor2 as any)?.username || 'Unknown';
         await db.execute(
-          sql`INSERT INTO tradeActivityLog (proposalId, actorId, actorName, eventType, details, createdAt) VALUES (${input.proposalId}, ${userId}, ${acceptorName2}, 'proposal_accepted', 'Both parties accepted — trade locked!', ${now})`
+          sql`INSERT INTO tradeActivityLog (proposalId, actorId, actorName, eventType, details, createdAt) VALUES (${input.proposalId}, ${userId}, ${acceptorName2}, 'proposal_accepted', 'Both parties accepted — trade locked! Entering shipping stage.', ${now})`
         );
         return { success: true, mutualAcceptance: true };
       } else {
@@ -572,8 +570,16 @@ export const tradeFlowRouter = router({
       if (proposal.recipientId !== userId && proposal.requesterId !== userId) {
         throw new TRPCError({ code: 'FORBIDDEN', message: 'Not authorized' });
       }
+      if (!['shipping', 'shipped', 'accepted'].includes(proposal.status as string)) {
+        throw new TRPCError({ code: 'BAD_REQUEST', message: 'Trade must be in shipping stage to submit tracking' });
+      }
 
       const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
+
+      // Delete existing tracking for this user and re-insert (allows updating)
+      await db.execute(
+        sql`DELETE FROM tradeTrackingNumbers WHERE proposalId = ${input.proposalId} AND userId = ${userId}`
+      );
 
       for (const tracking of input.trackingNumbers) {
         await db.execute(
@@ -598,11 +604,16 @@ export const tradeFlowRouter = router({
       }
 
       const otherUserId = proposal.requesterId === userId ? proposal.recipientId : proposal.requesterId;
+      const [actor] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+      const actorName = (actor as any)?.displayName || (actor as any)?.username || 'Unknown';
       await db.execute(
-        sql`INSERT INTO tradeAlerts (proposalId, recipientUserId, alertType, message, createdAt) VALUES (${input.proposalId}, ${otherUserId}, 'shipped', 'Tracking number submitted', ${now})`
+        sql`INSERT INTO tradeAlerts (proposalId, recipientUserId, alertType, message, createdAt) VALUES (${input.proposalId}, ${otherUserId}, 'shipped', '${actorName} has submitted their tracking number', ${now})`
+      );
+      await db.execute(
+        sql`INSERT INTO tradeActivityLog (proposalId, actorId, actorName, eventType, details, createdAt) VALUES (${input.proposalId}, ${userId}, ${actorName}, 'tracking_submitted', 'Tracking number submitted', ${now})`
       );
 
-      return { success: true };
+      return { success: true, bothShipped };
     }),
 
   confirmItemsReceived: protectedProcedure

@@ -13,25 +13,27 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { OnlineIndicator } from "@/components/OnlineIndicator";
 import { toast } from "sonner";
 
-type TradeStage = 'proposed' | 'negotiating' | 'accepted' | 'shipped' | 'completed';
+type TradeStage = 'proposed' | 'negotiating' | 'accepted' | 'shipping' | 'shipped' | 'completed';
 
 function getStageFromStatus(status: string): TradeStage {
   switch (status) {
-    case 'pending': return 'proposed';    // Stage 1: initial inquiry, no proposal submitted yet
-    case 'negotiating': return 'negotiating'; // Stage 2: at least one proposal has been submitted
-    case 'accepted': return 'accepted';
-    case 'shipped': return 'shipped';
-    case 'completed': return 'completed';
+    case 'pending': return 'proposed';       // Stage 1: initial inquiry
+    case 'negotiating': return 'negotiating'; // Stage 2: proposals being exchanged
+    case 'accepted': return 'accepted';       // Stage 3: review & finalize
+    case 'shipping': return 'shipping';       // Stage 4: enter tracking numbers
+    case 'shipped': return 'shipped';         // Stage 5: confirm receipt
+    case 'completed': return 'completed';     // Stage 6: trade complete
     default: return 'proposed';
   }
 }
 
 const stages: { key: TradeStage; label: string; sub: string }[] = [
-  { key: 'proposed',    label: 'Propose',  sub: 'Trade Created'  },
-  { key: 'negotiating', label: 'Negotiate', sub: 'Refine Details'    },
-  { key: 'accepted',    label: 'Review',   sub: 'Finalize Terms'  },
-  { key: 'shipped',     label: 'Confirm',  sub: 'Both Parties'    },
-  { key: 'completed',   label: 'Complete', sub: 'Trade & Ship'    },
+  { key: 'proposed',    label: 'Propose',   sub: 'Trade Created'   },
+  { key: 'negotiating', label: 'Negotiate', sub: 'Refine Details'  },
+  { key: 'accepted',    label: 'Review',    sub: 'Finalize Terms'  },
+  { key: 'shipping',    label: 'Shipping',  sub: 'Track Packages'  },
+  { key: 'shipped',     label: 'Confirm',   sub: 'Confirm Receipt' },
+  { key: 'completed',   label: 'Complete',  sub: 'Trade Complete'  },
 ];
 
 // ── Event type config ────────────────────────────────────────────────────────
@@ -568,8 +570,8 @@ export default function WarRoom() {
         {/* Center: Trade Table or Post-Acceptance View */}
         <div className="flex-1 overflow-y-auto custom-scrollbar p-4 flex flex-col">
 
-          {/* ── STAGE 3+: Review / Shipping / Completed ── */}
-          {(currentStage === 'accepted' || currentStage === 'shipped' || currentStage === 'completed') && (() => {
+          {/* ── STAGE 3+: Review / Shipping / Confirm / Completed ── */}
+          {(currentStage === 'accepted' || currentStage === 'shipping' || currentStage === 'shipped' || currentStage === 'completed') && (() => {
             const allItems = [...myItems, ...theirItems];
             const myTracking = (trade?.trackingNumbers || []).filter((t: any) => t.userId === myUserId);
             const theirTracking = (trade?.trackingNumbers || []).filter((t: any) => t.userId !== myUserId);
@@ -695,17 +697,29 @@ export default function WarRoom() {
                 </div>
 
                 {/* Tracking Numbers Card */}
-                <div className="bg-[#16213e] border border-gray-600 rounded-xl p-5 shadow-xl">
+                <div className={`border rounded-xl p-5 shadow-xl ${
+                  currentStage === 'shipping' ? 'bg-[#16213e] border-orange-500/40 shadow-[0_0_20px_rgba(249,115,22,0.1)]' : 'bg-[#16213e] border-gray-600'
+                }`}>
                   <div className="flex items-center gap-3 mb-4">
-                    <div className="w-9 h-9 rounded-lg bg-orange-900/30 border border-orange-500/20 flex items-center justify-center">
+                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${
+                      currentStage === 'shipping' ? 'bg-orange-500/20 border border-orange-500/40' : 'bg-orange-900/30 border border-orange-500/20'
+                    }`}>
                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-orange-400">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 18.75a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 0 1-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 0 0-3.213-9.193 2.056 2.056 0 0 0-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 0 0-10.026 0 1.106 1.106 0 0 0-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12" />
                       </svg>
                     </div>
                     <div>
-                      <h2 className="text-white font-bold text-lg">Tracking Numbers</h2>
-                      <p className="text-gray-400 text-xs">Submit tracking info for each item you are shipping.</p>
+                      <h2 className="text-white font-bold text-lg">Shipping</h2>
+                      <p className="text-gray-400 text-xs">
+                        {currentStage === 'shipping' ? 'Enter your tracking number below. Both parties must ship.' : 'Tracking numbers submitted.'}
+                      </p>
                     </div>
+                    {currentStage === 'shipping' && (
+                      <span className="ml-auto px-3 py-1 bg-orange-500/20 border border-orange-500/40 text-orange-300 text-xs font-bold rounded-full animate-pulse">ACTION REQUIRED</span>
+                    )}
+                    {currentStage === 'shipped' && (
+                      <span className="ml-auto px-3 py-1 bg-green-500/20 border border-green-500/30 text-green-400 text-xs font-bold rounded-full">BOTH SHIPPED</span>
+                    )}
                   </div>
 
                   {/* Existing tracking numbers */}
@@ -1344,17 +1358,17 @@ export default function WarRoom() {
             </>
           )}
 
-          {/* Stage 3: Accepted — submit tracking */}
-          {currentStage === 'accepted' && (() => {
+          {/* Stage 4: Shipping — submit tracking */}
+          {(currentStage === 'shipping' || currentStage === 'accepted') && (() => {
             const myTracking = (trade?.trackingNumbers || []).filter((t: any) => t.userId === myUserId);
             const hasNewTracking = trackingInputs.some(t => t.trackingNumber.trim().length > 0);
             return (
               <>
-                <p className="text-gray-400 text-sm flex items-center gap-2">
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-green-500">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                <p className="text-orange-300 text-sm flex items-center gap-2 font-semibold">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-orange-400">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 18.75a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 0 1-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 0 0-3.213-9.193 2.056 2.056 0 0 0-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 0 0-10.026 0 1.106 1.106 0 0 0-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12" />
                   </svg>
-                  Trade locked — ship your items and submit tracking
+                  {myTracking.length > 0 ? 'Tracking submitted — waiting for partner to ship' : 'Ship your items and enter your tracking number above'}
                 </p>
                 {myTracking.length === 0 && (
                   <button
