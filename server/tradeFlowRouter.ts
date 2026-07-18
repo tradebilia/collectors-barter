@@ -1066,6 +1066,40 @@ export const tradeFlowRouter = router({
       return { events: (events as unknown as any[]) || [] };
     }),
 
+  proceedToShipping: protectedProcedure
+    .input(z.object({ proposalId: z.number().int().positive() }))
+    .mutation(async ({ ctx, input }) => {
+      const db = await requireDb();
+      const userId = ctx.user.id;
+
+      const [proposal] = await db.select().from(tradeProposals).where(eq(tradeProposals.id, input.proposalId)).limit(1);
+      if (!proposal) throw new TRPCError({ code: 'NOT_FOUND', message: 'Trade not found' });
+      if (proposal.recipientId !== userId && proposal.requesterId !== userId) {
+        throw new TRPCError({ code: 'FORBIDDEN', message: 'Not authorized' });
+      }
+      if ((proposal.status as string) !== 'accepted') {
+        throw new TRPCError({ code: 'BAD_REQUEST', message: 'Trade must be in accepted (Review) stage to proceed to shipping' });
+      }
+
+      const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
+      const otherUserId = proposal.requesterId === userId ? proposal.recipientId : proposal.requesterId;
+
+      await db.execute(
+        sql`UPDATE tradeProposals SET status = 'shipping', shippingAt = ${now}, lastActivityAt = ${now}, updatedAt = ${now} WHERE id = ${input.proposalId}`
+      );
+      await db.execute(
+        sql`INSERT INTO tradeAlerts (proposalId, recipientUserId, alertType, message, createdAt) VALUES (${input.proposalId}, ${otherUserId}, 'shipped', 'Your trade partner has confirmed and is ready to ship. Please enter your tracking number.', ${now})`
+      );
+
+      const [actor] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+      const actorName = (actor as any)?.displayName || (actor as any)?.username || 'Unknown';
+      await db.execute(
+        sql`INSERT INTO tradeActivityLog (proposalId, actorId, actorName, eventType, details, createdAt) VALUES (${input.proposalId}, ${userId}, ${actorName}, 'proposal_accepted', 'Confirmed review and proceeded to Shipping stage', ${now})`
+      );
+
+      return { success: true };
+    }),
+
   // ==========================================================================
   // COMMUNICATION
   // ==========================================================================
