@@ -785,9 +785,7 @@ export default function WarRoom() {
                     </svg>
                     Video Chat
                   </button>
-                  <div className="text-gray-500 text-xs">
-                    Trade ID: <span className="text-gray-300 font-mono">{trade?.proposal?.tradeReferenceNumber || `#TB-${String(proposalId).padStart(5, '0')}`}</span>
-                  </div>
+
                 </div>
               </div>
 
