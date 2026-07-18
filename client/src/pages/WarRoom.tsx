@@ -893,6 +893,14 @@ export default function WarRoom() {
                 <div className="col-span-3 flex flex-col gap-4 overflow-hidden">
                   {/* Fairness Meter */}
                   <div className="bg-[#0a0a2a] border border-gray-600 rounded-xl p-5 text-center flex-1 flex flex-col justify-center">
+                    {!iCanAccept && currentStage === 'negotiating' && (
+                      <div className="mb-4 px-3 py-1.5 bg-gray-900/50 border border-gray-700 rounded-lg flex items-center justify-center gap-2 text-gray-400 text-[10px] font-bold uppercase tracking-wider">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3.5 h-3.5 text-gray-500">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                        </svg>
+                        Awaiting Response
+                      </div>
+                    )}
                     <p className="text-gray-400 text-[10px] font-bold uppercase tracking-widest mb-3 flex items-center justify-center gap-1">
                       FAIRNESS METER
                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-3.5 h-3.5">
@@ -1245,7 +1253,7 @@ export default function WarRoom() {
                 </svg>
                 Counter Offer
               </button>
-              {iCanAccept ? (
+              {iCanAccept && (
                 <button
                   onClick={handleAccept}
                   className="px-8 py-3 border border-green-700 text-green-400 rounded-lg font-semibold hover:bg-green-900/20 transition flex items-center gap-2"
@@ -1255,13 +1263,6 @@ export default function WarRoom() {
                   </svg>
                   Accept Trade
                 </button>
-              ) : (
-                <div className="px-8 py-3 border border-gray-700 text-gray-500 rounded-lg font-semibold flex items-center gap-2 cursor-not-allowed" title="Waiting for the other party to respond">
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-                  </svg>
-                  Awaiting Response
-                </div>
               )}
             </>
           )}
