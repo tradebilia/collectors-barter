@@ -1136,7 +1136,7 @@ export default function WarRoom() {
         </div>
 
         {/* Right Column: Chat + Timeline as a card */}
-        <div className="w-[340px] flex-shrink-0 p-4 flex flex-col">
+        <div className="w-[360px] flex-shrink-0 p-4 flex flex-col">
           <div className="bg-[#16213e] border border-gray-600 rounded-xl flex flex-col flex-1 overflow-hidden shadow-xl">
           {/* Tabs */}
           <div className="flex border-b border-gray-600 rounded-t-xl overflow-hidden">
@@ -1203,7 +1203,7 @@ export default function WarRoom() {
 
               {/* Input */}
               <div className="px-3 pb-4 pt-3 border-t border-gray-600 shrink-0">
-                <div className="flex items-center gap-2 bg-[#16213e] border border-gray-700 rounded-xl px-3 py-2">
+                <div className="flex items-center gap-2 bg-[#0f0f1a] border border-gray-700 rounded-xl px-3 py-2 pr-2">
                   <input
                     type="text"
                     placeholder="Type a message..."
