@@ -137,10 +137,10 @@ async function generateTradeRefNumber(): Promise<string> {
 
 function getFolderStatusFilter(folder: string): string[] {
   switch (folder) {
-    case 'proposal': return ['pending'];       // Initial inquiry, no items yet
-    case 'negotiating': return ['negotiating']; // Active negotiation with items
-    case 'accepted': return ['accepted'];
-    case 'shipped': return ['shipped'];
+    case 'proposal': return ['pending'];                    // Stage 1: initial inquiry
+    case 'negotiating': return ['negotiating'];             // Stage 2: active negotiation
+    case 'accepted': return ['accepted', 'shipping'];       // Stage 3 + 4: review & shipping
+    case 'shipped': return ['shipped'];                     // Stage 5: confirm receipt
     case 'declined': return ['declined', 'cancelled'];
     case 'completed': return ['completed'];
     default: return ['pending'];
