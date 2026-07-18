@@ -172,11 +172,23 @@ export default function WarRoom() {
   // If lastProposedBy is set: accept only if they sent it (not you)
   // If lastProposedBy is null but status is 'negotiating': the trade was transitioned by the other party
   // so we fall back to: requester can accept (recipient acted to get it to negotiating), recipient cannot yet
-  const iCanAccept = currentStage === 'negotiating' && (
+  const otherPartyProposed = currentStage === 'negotiating' && (
     lastProposedBy !== null && lastProposedBy !== undefined
       ? lastProposedBy !== myUserId
       : isRequester // fallback: if null, requester gets to accept first
   );
+
+  // Detect if the user has made ANY local modifications to the trade
+  // (adding/removing items, changing cash) — if so, they can't accept the current proposal
+  const hasLocalChanges = (
+    pendingMyItems.length > 0 ||
+    pendingTheirItems.length > 0 ||
+    (localMyCash > 0 && localMyCash !== serverMyCash) ||
+    (localTheirCash > 0 && localTheirCash !== serverTheirCash)
+  );
+
+  // Can only accept if: other party proposed AND you haven't modified anything
+  const iCanAccept = otherPartyProposed && !hasLocalChanges;
 
   // Current user display info
   const myDisplayName = (currentUser as any)?.displayName || currentUser?.name || currentUser?.username || 'You';
