@@ -640,10 +640,19 @@ export default function WarRoom() {
                       {myItems.map((item: any) => (
                         <div key={item.id} className="flex items-center gap-3 bg-[#0f0f1a] border border-gray-700 rounded-lg p-2">
                           {item.photos?.[0]?.imageUrl
-                            ? <img src={item.photos[0].imageUrl} className="w-14 h-14 object-contain rounded-lg bg-[#0a0a1a] shrink-0" alt={item.title} />
-                            : <div className="w-14 h-14 bg-[#0a0a1a] rounded-lg flex items-center justify-center text-gray-600 text-xs shrink-0">No image</div>
+                            ? <img src={item.photos[0].imageUrl} className="w-28 h-28 object-contain rounded-lg bg-[#0a0a1a] shrink-0" alt={item.title} />
+                            : <div className="w-28 h-28 bg-[#0a0a1a] rounded-lg flex items-center justify-center text-gray-600 text-xs shrink-0">No image</div>
                           }
-                          <p className="text-white text-xs font-semibold leading-tight">{item.title}</p>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-white text-xs font-semibold leading-tight">{item.title}</p>
+                            <p className="text-gray-500 text-[10px] font-mono mt-0.5">Ref # {String(item.id).padStart(5, '0')}</p>
+                            {item.certificationCompany && item.grade && parseFloat(item.grade) > 0 && (
+                              <p className="text-blue-400 text-[10px] mt-0.5">{item.certificationCompany} {parseFloat(item.grade).toFixed(1)}</p>
+                            )}
+                            {item.certificationNumber && (
+                              <p className="text-gray-500 text-[10px] font-mono">Cert # {item.certificationNumber}</p>
+                            )}
+                          </div>
                         </div>
                       ))}
                       {myCash > 0 && (
@@ -665,10 +674,19 @@ export default function WarRoom() {
                       {theirItems.map((item: any) => (
                         <div key={item.id} className="flex items-center gap-3 bg-[#0f0f1a] border border-gray-700 rounded-lg p-2">
                           {item.photos?.[0]?.imageUrl
-                            ? <img src={item.photos[0].imageUrl} className="w-14 h-14 object-contain rounded-lg bg-[#0a0a1a] shrink-0" alt={item.title} />
-                            : <div className="w-14 h-14 bg-[#0a0a1a] rounded-lg flex items-center justify-center text-gray-600 text-xs shrink-0">No image</div>
+                            ? <img src={item.photos[0].imageUrl} className="w-28 h-28 object-contain rounded-lg bg-[#0a0a1a] shrink-0" alt={item.title} />
+                            : <div className="w-28 h-28 bg-[#0a0a1a] rounded-lg flex items-center justify-center text-gray-600 text-xs shrink-0">No image</div>
                           }
-                          <p className="text-white text-xs font-semibold leading-tight">{item.title}</p>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-white text-xs font-semibold leading-tight">{item.title}</p>
+                            <p className="text-gray-500 text-[10px] font-mono mt-0.5">Ref # {String(item.id).padStart(5, '0')}</p>
+                            {item.certificationCompany && item.grade && parseFloat(item.grade) > 0 && (
+                              <p className="text-blue-400 text-[10px] mt-0.5">{item.certificationCompany} {parseFloat(item.grade).toFixed(1)}</p>
+                            )}
+                            {item.certificationNumber && (
+                              <p className="text-gray-500 text-[10px] font-mono">Cert # {item.certificationNumber}</p>
+                            )}
+                          </div>
                         </div>
                       ))}
                       {theirCash > 0 && (

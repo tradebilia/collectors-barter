@@ -80,13 +80,20 @@ export default function TradePrintView() {
 
   const ItemCard = ({ item }: { item: any }) => (
     <div className="text-center">
-      <div className="w-full aspect-square bg-gray-100 rounded-lg overflow-hidden mb-2 border border-gray-200">
+      <div className="w-full bg-gray-100 rounded-lg overflow-hidden mb-2 border border-gray-200" style={{ height: '160px' }}>
         {item?.photos?.[0]?.imageUrl
           ? <img src={item.photos[0].imageUrl} className="w-full h-full object-contain" alt={item.title} />
           : <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">No image</div>
         }
       </div>
       <p className="text-gray-900 font-semibold text-xs leading-tight">{item?.title}</p>
+      <p className="text-gray-400 text-[10px] font-mono mt-0.5">Ref # {String(item?.id || '').padStart(5, '0')}</p>
+      {item?.certificationCompany && item?.grade && parseFloat(item.grade) > 0 && (
+        <p className="text-gray-500 text-[10px] mt-0.5">{item.certificationCompany} {parseFloat(item.grade).toFixed(1)}</p>
+      )}
+      {item?.certificationNumber && (
+        <p className="text-gray-400 text-[10px] font-mono">Cert # {item.certificationNumber}</p>
+      )}
     </div>
   );
 
