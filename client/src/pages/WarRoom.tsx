@@ -230,8 +230,9 @@ export default function WarRoom() {
 
   const leaveReviewMutation = trpc.tradeFlow.leaveTradeReview.useMutation({
     onSuccess: () => {
-      toast.success('Review submitted! Thank you.');
+      toast.success('Review submitted! Thank you. Redirecting to Trade Hub...');
       utils.tradeFlow.getTradeDetails.invalidate({ proposalId });
+      setTimeout(() => navigate('/trade-hub'), 1500);
     },
     onError: (err) => toast.error(err.message),
   });
