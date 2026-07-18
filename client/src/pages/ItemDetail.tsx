@@ -287,7 +287,7 @@ export default function ItemDetail() {
               <span>Back to {getTradebiliaCategoryLabel(listing.category)}</span>
             </button>
           </div>
-          <div className="mx-auto grid max-w-6xl gap-8 xl:grid-cols-[1.02fr_0.98fr]">
+          <div className="mx-auto grid max-w-7xl gap-8 xl:grid-cols-[0.9fr_1.1fr]">
             {/* Photo column */}
             <div className="flex flex-col gap-4">
               {/* Photo + thumbnails */}

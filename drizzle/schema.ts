@@ -301,6 +301,7 @@ export const tradeProposals = mysqlTable("tradeProposals", {
 	requestedListingId: int().notNull().references(() => listings.id),
 	note: text(),
 	status: mysqlEnum(['pending','accepted','declined','completed','cancelled']).default('pending').notNull(),
+	lastProposedBy: int().references(() => users.id), // userId of whoever sent the most recent proposal
 	respondedAt: timestamp({ mode: 'string' }),
 	completedAt: timestamp({ mode: 'string' }),
 	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),

@@ -9,14 +9,17 @@ import { useState, useRef, useEffect } from "react";
 import { useParams, useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { TopBar } from "@/components/TopBar";
+import { useAuth } from "@/_core/hooks/useAuth";
+import { OnlineIndicator } from "@/components/OnlineIndicator";
 import { toast } from "sonner";
 
 type TradeStage = 'proposed' | 'negotiating' | 'accepted' | 'shipped' | 'completed';
 
-function getStageFromStatus(status: string): TradeStage {
+function getStageFromStatus(status: string, hasOfferedItems: boolean = false): TradeStage {
   switch (status) {
     case 'pending': return 'proposed';
-    case 'negotiating': return 'negotiating';
+    // 'negotiating' = Stage 2 only if items have been offered; otherwise still Stage 1
+    case 'negotiating': return hasOfferedItems ? 'negotiating' : 'proposed';
     case 'accepted': return 'accepted';
     case 'shipped': return 'shipped';
     case 'completed': return 'completed';
@@ -24,7 +27,13 @@ function getStageFromStatus(status: string): TradeStage {
   }
 }
 
-const stages: TradeStage[] = ['proposed', 'negotiating', 'accepted', 'shipped', 'completed'];
+const stages: { key: TradeStage; label: string; sub: string }[] = [
+  { key: 'proposed',    label: 'Propose',  sub: 'Trade Created'  },
+  { key: 'negotiating', label: 'War Room', sub: 'Negotiate'       },
+  { key: 'accepted',    label: 'Review',   sub: 'Finalize Terms'  },
+  { key: 'shipped',     label: 'Confirm',  sub: 'Both Parties'    },
+  { key: 'completed',   label: 'Complete', sub: 'Trade & Ship'    },
+];
 
 export default function WarRoom() {
   const params = useParams<{ proposalId: string }>();
@@ -32,29 +41,28 @@ export default function WarRoom() {
   const proposalId = Number(params.proposalId);
   const utils = trpc.useUtils();
 
-  const [isInventoryOpen, setIsInventoryOpen] = useState(false);
-  const [isNotesOpen, setIsNotesOpen] = useState(false);
-  const [isTableCollapsed, setIsTableCollapsed] = useState(false);
+  const [isTheirInventoryOpen, setIsTheirInventoryOpen] = useState(false);
+  const [isMyInventoryOpen, setIsMyInventoryOpen] = useState(false);
+  const [inventoryCategory, setInventoryCategory] = useState<string>('All');
+  const [selectedInventoryItems, setSelectedInventoryItems] = useState<number[]>([]);
+  const [quickViewItemId, setQuickViewItemId] = useState<number | null>(null);
+  // Pending items added locally before proposal is submitted
+  const [pendingTheirItems, setPendingTheirItems] = useState<any[]>([]);
+  const [pendingMyItems, setPendingMyItems] = useState<any[]>([]);
   const [messageInput, setMessageInput] = useState('');
-  const [noteInput, setNoteInput] = useState('');
-  const [cashReceive, setCashReceive] = useState('');
-  const [cashPay, setCashPay] = useState('');
   const [declineReason, setDeclineReason] = useState('');
   const [showDeclineModal, setShowDeclineModal] = useState(false);
   const [showContractModal, setShowContractModal] = useState(false);
+  const [showVideoChatModal, setShowVideoChatModal] = useState(false);
   const [contractCheckbox, setContractCheckbox] = useState(false);
   const [inventorySearch, setInventorySearch] = useState('');
   const [selectedItemIds, setSelectedItemIds] = useState<number[]>([]);
-  const [trackingCarrier, setTrackingCarrier] = useState<string>('USPS');
-  const [trackingCarrierOther, setTrackingCarrierOther] = useState('');
-  const [trackingNumber, setTrackingNumber] = useState('');
-  const [middleManRequested, setMiddleManRequested] = useState(false);
-  const [reviewRatings, setReviewRatings] = useState({ tradeExperience: 0, itemCondition: 0, communication: 0, shippingSpeed: 0 });
-  const [reviewText, setReviewText] = useState('');
-  const [reviewSubmitted, setReviewSubmitted] = useState(false);
+  const [cashPay, setCashPay] = useState('');
+  const [cashReceive, setCashReceive] = useState('');
+  const [activeTab, setActiveTab] = useState<'chat' | 'timeline'>('chat');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // tRPC queries
+  // ── tRPC queries ──────────────────────────────────────────────────────────
   const tradeDetailsQuery = trpc.tradeFlow.getTradeDetails.useQuery(
     { proposalId },
     { enabled: proposalId > 0, refetchInterval: 10000 }
@@ -65,24 +73,42 @@ export default function WarRoom() {
     { enabled: proposalId > 0, refetchInterval: 5000 }
   );
 
-  const privateNoteQuery = trpc.tradeFlow.getPrivateNote.useQuery(
+  // Their inventory (browse what they have to request)
+  // Always fetch ALL items — category/search filtering is done client-side
+  const theirInventoryQuery = trpc.tradeFlow.getOtherUserInventory.useQuery(
     { proposalId },
-    { enabled: proposalId > 0 }
+    { enabled: proposalId > 0 && isTheirInventoryOpen }
   );
 
-  const inventoryQuery = trpc.tradeFlow.getOtherUserInventory.useQuery(
-    { proposalId, search: inventorySearch || undefined },
-    { enabled: proposalId > 0 && isInventoryOpen }
+  // My own inventory for the "Add from Your Inventory" modal
+  const myDashboardQuery = trpc.market.dashboard.useQuery(undefined, {
+    enabled: isMyInventoryOpen,
+    staleTime: 30000,
+  });
+
+  // Quick View: fetch full listing detail for the selected item
+  const quickViewQuery = trpc.market.listingDetail.useQuery(
+    { listingId: quickViewItemId! },
+    { enabled: quickViewItemId !== null, staleTime: 60000 }
   );
 
-  // tRPC mutations
+  // ── tRPC mutations ────────────────────────────────────────────────────────
   const sendMessageMutation = trpc.tradeFlow.sendMessage.useMutation({
-    onSuccess: () => { setMessageInput(''); utils.tradeFlow.getMessages.invalidate({ proposalId }); },
+    onSuccess: () => {
+      setMessageInput('');
+      utils.tradeFlow.getMessages.invalidate({ proposalId });
+    },
     onError: (err) => toast.error(err.message),
   });
 
   const sendProposalMutation = trpc.tradeFlow.sendTradeProposal.useMutation({
-    onSuccess: () => { toast.success('Proposal updated!'); utils.tradeFlow.getTradeDetails.invalidate({ proposalId }); },
+    onSuccess: () => {
+      toast.success('Proposal sent!');
+      utils.tradeFlow.getTradeDetails.invalidate({ proposalId });
+      // Clear pending items — they'll now come from the server
+      setPendingMyItems([]);
+      setPendingTheirItems([]);
+    },
     onError: (err) => toast.error(err.message),
   });
 
@@ -108,92 +134,131 @@ export default function WarRoom() {
     onError: (err) => toast.error(err.message),
   });
 
-  const saveNoteMutation = trpc.tradeFlow.savePrivateNote.useMutation({
-    onSuccess: () => toast.success('Note saved!'),
-    onError: (err) => toast.error(err.message),
-  });
-
-  const enterWarRoomMutation = trpc.tradeFlow.enterWarRoom.useMutation({
-    onSuccess: () => utils.tradeFlow.getTradeDetails.invalidate({ proposalId }),
-  });
-
-  const submitTrackingMutation = trpc.tradeFlow.submitTrackingNumbers.useMutation({
-    onSuccess: () => { toast.success('Tracking number submitted!'); setTrackingNumber(''); utils.tradeFlow.getTradeDetails.invalidate({ proposalId }); },
-    onError: (err) => toast.error(err.message),
-  });
-
-  const confirmReceiptMutation = trpc.tradeFlow.confirmItemsReceived.useMutation({
-    onSuccess: () => { toast.success('Receipt confirmed!'); utils.tradeFlow.getTradeDetails.invalidate({ proposalId }); },
-    onError: (err) => toast.error(err.message),
-  });
-
-  const fileComplaintMutation = trpc.tradeFlow.fileComplaint.useMutation({
-    onSuccess: () => { toast.success('Complaint filed. Admin will review.'); utils.tradeFlow.getTradeDetails.invalidate({ proposalId }); },
-    onError: (err) => toast.error(err.message),
-  });
-
-  const middleManMutation = trpc.tradeFlow.middleManService.useMutation({
-    onSuccess: () => { toast.success('Middle Man preference updated!'); utils.tradeFlow.getTradeDetails.invalidate({ proposalId }); },
-    onError: (err) => toast.error(err.message),
-  });
-
-  const leaveReviewMutation = trpc.tradeFlow.leaveTradeReview.useMutation({
-    onSuccess: () => { toast.success('Review submitted! It will be visible once both parties have reviewed.'); setReviewSubmitted(true); },
-    onError: (err) => toast.error(err.message),
-  });
-
-  const generateVotingLinkMutation = trpc.tradeFlow.generateVotingLink.useMutation({
-    onSuccess: (data) => {
-      const url = `${window.location.origin}/trade-vote/${data.token}`;
-      navigator.clipboard.writeText(url);
-      toast.success('Voting link copied to clipboard! Share it with the community.');
+  const markAlertsAsReadMutation = trpc.tradeFlow.markAlertsAsRead.useMutation({
+    onSuccess: () => {
+      // Invalidate the unread count so the bell badge updates immediately
+      utils.tradeFlow.getUnreadTradeAlertCount.invalidate();
     },
-    onError: (err) => toast.error(err.message),
   });
 
-  // Enter war room on first load (transitions pending → negotiating)
+  // ── Effects ───────────────────────────────────────────────────────────────
+  // Mark alerts as read when entering the War Room; do NOT auto-transition stage
   useEffect(() => {
     if (proposalId > 0) {
-      enterWarRoomMutation.mutate({ proposalId });
+      markAlertsAsReadMutation.mutate({ proposalId });
     }
   }, [proposalId]);
-
-  // Load private note into state
-  useEffect(() => {
-    if (privateNoteQuery.data?.noteContent) {
-      setNoteInput(privateNoteQuery.data.noteContent);
-    }
-  }, [privateNoteQuery.data]);
 
   // Auto-scroll messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messagesQuery.data]);
 
-  // Derived data
+  // ── Derived data ──────────────────────────────────────────────────────────
+  const { user: currentUser } = useAuth();
   const trade = tradeDetailsQuery.data;
-  const currentStage = trade ? getStageFromStatus(trade.proposal.status) : 'proposed';
-  const currentStageIndex = stages.indexOf(currentStage);
+  const hasOfferedItems = (trade?.offeredListings?.length ?? 0) > 0;
+  const currentStage = trade ? getStageFromStatus(trade.proposal.status, hasOfferedItems) : 'proposed';
+  const currentStageIndex = stages.findIndex(s => s.key === currentStage);
   const isRequester = trade?.isRequester ?? false;
   const otherUser = trade?.otherUser;
-  const messages = messagesQuery.data?.messages || [];
+  const messages = (messagesQuery.data?.messages || []) as any[];
+  const myUserId = trade ? (isRequester ? trade.proposal.requesterId : trade.proposal.recipientId) : null;
 
-  // Separate items by owner
-  const myItems = trade?.offeredListings?.filter((l: any) => l.ownerId === (isRequester ? trade.proposal.requesterId : trade.proposal.recipientId)) || [];
-  const theirItems = trade?.offeredListings?.filter((l: any) => l.ownerId === (isRequester ? trade.proposal.recipientId : trade.proposal.requesterId)) || [];
+  // Can only accept if the OTHER person sent the last proposal (not yourself)
+  const lastProposedBy = (trade?.proposal as any)?.lastProposedBy;
+  const iCanAccept = lastProposedBy !== null && lastProposedBy !== undefined && lastProposedBy !== myUserId;
 
-  // The requested listing (the item that started the trade)
+  // Current user display info
+  const myDisplayName = (currentUser as any)?.displayName || currentUser?.name || currentUser?.username || 'You';
+  const myAvatarUrl = (currentUser as any)?.avatarUrl || null;
+  const myInitial = myDisplayName.charAt(0).toUpperCase();
+
+  // Other user display info
+  const theirDisplayName = otherUser?.displayName || otherUser?.username || 'Trade Partner';
+  const theirAvatarUrl = otherUser?.avatarUrl || null;
+  const theirInitial = theirDisplayName.charAt(0).toUpperCase();
+
+  // ── Sides logic ───────────────────────────────────────────────────────────
+  // requestedListing = the item that was originally requested (owned by recipient)
+  // If I am the requester:  requestedListing → Their Side (they own it)
+  // If I am the recipient:  requestedListing → My Side (I own it)
   const requestedListing = trade?.requestedListing;
 
+  // offeredListings are items added to the trade by both parties
+  const myOfferedItems = trade?.offeredListings?.filter(
+    (l: any) => l.ownerId === myUserId
+  ) || [];
+  const theirOfferedItems = trade?.offeredListings?.filter(
+    (l: any) => l.ownerId !== myUserId
+  ) || [];
+
+  // Build the full "my side" and "their side" arrays
+  // Merge server items with locally pending items (added but not yet submitted)
+  const serverMyItems: any[] = isRequester
+    ? myOfferedItems
+    : [requestedListing, ...myOfferedItems].filter(Boolean);
+
+  const serverTheirItems: any[] = isRequester
+    ? [requestedListing, ...theirOfferedItems].filter(Boolean)
+    : theirOfferedItems;
+
+  // Merge pending items (deduplicate by id)
+  const existingIds = new Set([...serverMyItems, ...serverTheirItems].map((i: any) => i?.id).filter(Boolean));
+  const myItems: any[] = [
+    ...serverMyItems,
+    ...pendingMyItems.filter(i => !existingIds.has(i.id)),
+  ];
+  const theirItems: any[] = [
+    ...serverTheirItems,
+    ...pendingTheirItems.filter(i => !existingIds.has(i.id)),
+  ];
+
   // Calculate total values
-  const myTotalValue = myItems.reduce((sum: number, l: any) => sum + parseFloat(l.estimatedValue || '0'), 0);
-  const theirTotalValue = theirItems.reduce((sum: number, l: any) => sum + parseFloat(l.estimatedValue || '0'), 0) + parseFloat(requestedListing?.estimatedValue || '0');
+  const myTotalValue = myItems.reduce((sum: number, l: any) => sum + parseFloat(l?.estimatedValue || '0'), 0);
+  const theirTotalValue = theirItems.reduce((sum: number, l: any) => sum + parseFloat(l?.estimatedValue || '0'), 0);
 
   // Fairness calculation
+  // "In your favor" = you RECEIVE more than you GIVE (their side is worth more)
+  // Meter: LEFT = You Favor, CENTER = Fair, RIGHT = They Favor
+  // Slider moves LEFT when their side is worth more (you get the better deal)
   const totalValue = myTotalValue + theirTotalValue;
-  const fairnessPercent = totalValue > 0 ? Math.round((myTotalValue / totalValue) * 100) : 50;
+  const bothSidesHaveItems = myTotalValue > 0 && theirTotalValue > 0;
+  // theirSharePercent: % of total value on their side (= what you receive)
+  const theirSharePercent = bothSidesHaveItems ? Math.round((theirTotalValue / totalValue) * 100) : 50;
+  // sliderPos: 0% = far left (You Favor), 100% = far right (They Favor)
+  // Their share high → you favor → slider LEFT → sliderPos = 100 - theirShare
+  const sliderPos = 100 - theirSharePercent;
+  // Display percentage = what % of total value you are RECEIVING
+  const displayPercent = theirSharePercent;
+  // imbalancePercent = how far the deal is from 50/50, from the perspective of who benefits
+  // e.g. you give $8100, receive $1650 → myShare=83%, imbalance=83% in their favor
+  const myShareOfTotal = 100 - theirSharePercent; // % of total value YOU give away
+  const imbalancePercent = Math.abs(myShareOfTotal - 50) + 50; // how dominant the bigger side is
+  const fairnessLabel = !bothSidesHaveItems ? 'Add items to both sides to calculate' :
+                        myShareOfTotal > 55 ? `In their favor` :
+                        myShareOfTotal < 45 ? `In your favor` : 'Roughly fair';
 
-  // Handlers
+  // ── Dynamic item layout helpers ──────────────────────────────────────────
+  // Returns Tailwind grid-cols class based on item count
+  const getGridCols = (count: number) => {
+    if (count === 1) return 'grid-cols-1';
+    if (count <= 4) return 'grid-cols-2';
+    if (count <= 6) return 'grid-cols-3';
+    return 'grid-cols-3';
+  };
+
+  // Returns Tailwind image height class based on item count
+  // 1 item = very tall, more items = progressively shorter
+  const getImgHeight = (count: number) => {
+    if (count === 1) return 'h-72';   // ~288px - nearly full panel
+    if (count === 2) return 'h-48';   // ~192px
+    if (count <= 4) return 'h-36';   // ~144px
+    if (count <= 6) return 'h-28';   // ~112px
+    return 'h-20';                    // ~80px for 7+
+  };
+
+  // ── Handlers ──────────────────────────────────────────────────────────────
   const handleSendMessage = () => {
     if (!messageInput.trim()) return;
     sendMessageMutation.mutate({ proposalId, message: messageInput.trim() });
@@ -213,30 +278,34 @@ export default function WarRoom() {
     acceptMutation.mutate({ proposalId });
   };
 
-  const handleDecline = () => {
-    setShowDeclineModal(true);
-  };
-
   const confirmDecline = () => {
     declineMutation.mutate({ proposalId, reason: declineReason || undefined });
     setShowDeclineModal(false);
   };
 
-  const handleSaveNote = () => {
-    saveNoteMutation.mutate({ proposalId, noteContent: noteInput });
-  };
-
-  const handleAddItemToTrade = (itemId: number) => {
+  const handleAddItemToTrade = (itemId: number, itemData?: any) => {
     if (selectedItemIds.includes(itemId)) {
-      toast.error('Item already added to trade');
+      toast.error('Item already in trade');
       return;
     }
     setSelectedItemIds(prev => [...prev, itemId]);
+    // Add to pending display immediately so it appears in the trade table
+    if (itemData) {
+      // Determine which side based on item ownership
+      const isMyItem = itemData.ownerId === myUserId;
+      if (isMyItem) {
+        setPendingMyItems(prev => [...prev.filter(i => i.id !== itemId), itemData]);
+      } else {
+        setPendingTheirItems(prev => [...prev.filter(i => i.id !== itemId), itemData]);
+      }
+    }
     toast.success('Item added to trade table!');
   };
 
   const handleRemoveItemFromTrade = (itemId: number) => {
     setSelectedItemIds(prev => prev.filter(id => id !== itemId));
+    setPendingMyItems(prev => prev.filter(i => i.id !== itemId));
+    setPendingTheirItems(prev => prev.filter(i => i.id !== itemId));
   };
 
   const handleUpdateProposal = () => {
@@ -252,10 +321,11 @@ export default function WarRoom() {
     });
   };
 
+  // ── Loading / Error states ────────────────────────────────────────────────
   if (tradeDetailsQuery.isLoading) {
     return (
       <div className="min-h-screen bg-[#0a0a2a] flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full"></div>
+        <div className="animate-spin w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full" />
       </div>
     );
   }
@@ -266,585 +336,981 @@ export default function WarRoom() {
         <div className="text-center">
           <p className="text-red-400 text-lg">Error loading trade</p>
           <p className="text-gray-400 mt-2">{tradeDetailsQuery.error.message}</p>
-          <button onClick={() => navigate('/trade-hub')} className="mt-4 px-4 py-2 bg-purple-600 rounded">Back to Trade Hub</button>
+          <button onClick={() => navigate('/trade-hub')} className="mt-4 px-4 py-2 bg-purple-600 rounded">
+            Back to Trade Hub
+          </button>
         </div>
       </div>
     );
   }
 
+  // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-[#0a0a2a] flex flex-col">
-      {/* Global Top Bar */}
-      <TopBar logoUrl="/images/tradebilia-logo.svg" searchPlaceholder="Search Tradebilia..." />
+    <div className="h-screen bg-[#0a0a2a] flex flex-col overflow-hidden">
+      {/* Top Bar — compact mode (no search) */}
+      <TopBar hideSearch />
 
-      {/* Header: Progress Tracker */}
-      <header className="bg-[#1a1a4a] border-b border-gray-700 px-6 py-3">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <button onClick={() => navigate('/trade-hub')} className="text-purple-400 hover:text-purple-300 text-sm">
-              ← Back to Trade Hub
-            </button>
-            <span className="text-white font-mono font-bold">
-              {trade?.proposal?.tradeReferenceNumber || `TR-${String(proposalId).padStart(6, '0')}`}
+      {/* Progress Tracker Header */}
+      <header className="bg-[#1a1a4a] border-b border-gray-600 px-6 py-3">
+        <div className="max-w-[1600px] mx-auto flex items-center justify-between">
+          {/* Left: Trade ID */}
+          <div className="flex items-center gap-3 min-w-[200px]">
+            <span className="text-gray-400 text-sm">Trade ID:</span>
+            <span className="text-white font-mono text-sm font-bold">
+              {trade?.proposal?.tradeReferenceNumber || `#TB-${String(proposalId).padStart(5, '0')}`}
             </span>
           </div>
-          
-          {/* 5-Stage Progress Tracker */}
-          <div className="flex items-center gap-1">
+
+          {/* Center: 5-stage progress tracker */}
+          <div className="flex items-center">
             {stages.map((stage, i) => (
-              <div key={stage} className="flex items-center gap-1">
-                <div className={`w-3 h-3 rounded-full ${
-                  i === currentStageIndex ? 'bg-purple-500 ring-2 ring-purple-300' :
-                  i < currentStageIndex ? 'bg-green-500' : 'bg-gray-600'
-                }`} />
-                <span className={`text-xs capitalize ${
-                  i === currentStageIndex ? 'text-purple-300 font-medium' : i < currentStageIndex ? 'text-green-400' : 'text-gray-500'
-                }`}>{stage}</span>
-                {i < 4 && <span className="text-gray-600 mx-1">→</span>}
+              <div key={stage.key} className="flex items-center">
+                <div className="flex items-center gap-2">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
+                    i === currentStageIndex
+                      ? 'bg-purple-600 text-white shadow-[0_0_12px_rgba(147,51,234,0.6)]'
+                      : i < currentStageIndex
+                        ? 'bg-gray-600 text-gray-300'
+                        : 'bg-gray-800 text-gray-600'
+                  }`}>{i + 1}</div>
+                  <div>
+                    <p className={`text-sm font-semibold leading-tight ${
+                      i === currentStageIndex ? 'text-white' : i < currentStageIndex ? 'text-gray-400' : 'text-gray-600'
+                    }`}>{stage.label}</p>
+                    <p className={`text-[10px] leading-tight ${
+                      i === currentStageIndex ? 'text-purple-300' : 'text-gray-600'
+                    }`}>{stage.sub}</p>
+                  </div>
+                </div>
+                {i < stages.length - 1 && (
+                  <div className={`w-12 h-px mx-3 border-t border-dashed ${
+                    i < currentStageIndex ? 'border-gray-500' : 'border-gray-700'
+                  }`} />
+                )}
               </div>
             ))}
           </div>
 
-          {/* Other user's online status */}
-          <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-red-500" />
-            <span className="text-gray-300 text-sm">{otherUser?.displayName || otherUser?.username || 'Trade Partner'}</span>
+          {/* Right: Leave + Settings */}
+          <div className="flex items-center gap-3 min-w-[200px] justify-end">
+            <button
+              onClick={() => navigate('/trade-hub')}
+              className="px-4 py-2 border border-gray-700 text-gray-300 rounded-lg hover:bg-gray-800 transition text-sm flex items-center gap-2"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9" />
+              </svg>
+              Leave War Room
+            </button>
+            <button className="p-2 border border-gray-700 text-gray-400 rounded-lg hover:bg-gray-800 transition">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M10.343 3.94c.09-.542.56-.94 1.11-.94h1.093c.55 0 1.02.398 1.11.94l.17.992c.086.493.36.92.702 1.252l.87.87c.332.342.759.616 1.252.702l.992.17c.542.09.94.56.94 1.11v1.094c0 .55-.398 1.02-.94 1.11l-.992.17c-.493.086-.92.36-1.252.702l-.87.87c-.342.332-.616.759-.702 1.252l-.17.992c-.09.542-.56.94-1.11.94h-1.094c-.55 0-1.02-.398-1.11-.94l-.17-.992c-.086-.493-.36-.92-.702-1.252l-.87-.87c-.332-.342-.759-.616-1.252-.702l-.992-.17c-.542-.09-.94-.56-.94-1.11V12.05c0-.55.398-1.02.94-1.11l.992-.17c.493-.086.92-.36 1.252-.702l.87-.87c.342-.332.616-.759.702-1.252l.17-.992Z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+              </svg>
+            </button>
           </div>
         </div>
       </header>
 
-      {/* Main Content — Full Width (no sidebar per our discussion) */}
-      <div className="flex-1 max-w-7xl mx-auto w-full px-6 py-4 space-y-4">
+      {/* Main Layout: Trade Table (left) + Chat/Timeline (right) */}
+      <div className="flex-1 flex overflow-hidden min-h-0">
 
-        {/* Trade Table (Collapsible) */}
-        <section className="bg-[#1a1a4a] rounded-lg p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-white font-semibold text-lg">Trade Table</h2>
+        {/* Center: Trade Table */}
+        <div className="flex-1 overflow-y-auto custom-scrollbar p-4 flex flex-col">
+
+            {/* Trade Table Card — stretches to fill available height */}
+            <div className="bg-[#1a1a4a] border border-gray-600 rounded-xl p-5 shadow-xl flex flex-col flex-1">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-lg bg-purple-900/30 border border-purple-500/20 flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-purple-400">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h2 className="text-white font-bold text-lg">Trade Table</h2>
+                    <p className="text-gray-400 text-xs">Negotiate fairly and close with confidence.</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  {/* Video Chat Button */}
+                  <button
+                    onClick={() => setShowVideoChatModal(true)}
+                    className="px-4 py-2 bg-blue-600/20 text-blue-400 border border-blue-500/30 rounded-lg hover:bg-blue-600 hover:text-white transition text-sm flex items-center gap-2 font-medium"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z" />
+                    </svg>
+                    Video Chat
+                  </button>
+                  <div className="text-gray-500 text-xs">
+                    Trade ID: <span className="text-gray-300 font-mono">{trade?.proposal?.tradeReferenceNumber || `#TB-${String(proposalId).padStart(5, '0')}`}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Three-column layout: Your Side | Fairness + AI | Their Side */}
+              <div className="grid grid-cols-11 gap-5 flex-1 min-h-0">
+
+                {/* ── YOUR SIDE ── */}
+                <div className="col-span-4 bg-[#0a0a2a] border border-gray-600 rounded-xl p-4 flex flex-col overflow-hidden">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      {/* Avatar */}
+                      {myAvatarUrl ? (
+                        <img src={myAvatarUrl} alt={myDisplayName} className="w-8 h-8 rounded-full object-cover border border-purple-500/40" />
+                      ) : (
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-600 to-indigo-600 flex items-center justify-center text-white text-xs font-bold border border-purple-500/40">{myInitial}</div>
+                      )}
+                      <div>
+                        <div className="flex items-center gap-1.5">
+                          <p className="text-white text-sm font-bold leading-tight">{myDisplayName}</p>
+                          {myUserId && <OnlineIndicator sellerId={myUserId} className="scale-75 origin-left" />}
+                        </div>
+                        <p className="text-purple-400 text-[10px] uppercase tracking-wide">Your Side</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-gray-500 text-[10px] uppercase">Total Value</p>
+                      <p className="text-purple-400 font-bold text-base">${myTotalValue.toLocaleString()}</p>
+                    </div>
+                  </div>
+
+                  {myItems.length === 0 ? (
+                    <p className="text-gray-600 text-sm py-8 text-center">No items on your side yet.</p>
+                  ) : (
+                    <div className={`grid ${getGridCols(myItems.length)} gap-3 flex-1 content-start ${myItems.length >= 7 ? 'overflow-y-auto custom-scrollbar' : ''}`}>
+                      {myItems.map((item: any) => (
+                        <div key={item.id} className="bg-[#2a2a5a] border border-gray-600 rounded-lg p-2.5 relative group">
+                          {item.photos?.[0]?.imageUrl ? (
+                            <img src={item.photos[0].imageUrl} alt={item.title} className={`w-full ${getImgHeight(myItems.length)} object-contain rounded mb-2 bg-[#0a0a2a]`} />
+                          ) : (
+                            <div className={`w-full ${getImgHeight(myItems.length)} bg-gray-800 rounded mb-2 flex items-center justify-center text-gray-600 text-xs`}>No Image</div>
+                          )}
+                          <p className="text-white text-[11px] font-medium line-clamp-2 leading-tight">{item.title}</p>
+                          <p className="text-purple-400 text-sm font-bold mt-1">${parseFloat(item.estimatedValue || '0').toLocaleString()}</p>
+                          {(currentStage === 'proposed' || currentStage === 'negotiating') && (
+                            <button
+                              onClick={() => handleRemoveItemFromTrade(item.id)}
+                              className="absolute -top-1.5 -right-1.5 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+                            >×</button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {(currentStage === 'proposed' || currentStage === 'negotiating') && (
+                    <button
+                      onClick={() => { setInventorySearch(''); setIsMyInventoryOpen(true); }}
+                      className="w-full mt-4 py-2.5 border border-dashed border-gray-700 rounded-lg text-purple-400 hover:text-purple-300 hover:border-purple-500 transition text-sm flex items-center justify-center gap-2"
+                    >
+                      + Add Item from Your Inventory
+                    </button>
+                  )}
+                </div>
+
+                {/* ── MIDDLE: Fairness Meter + AI Analyzer ── */}
+                <div className="col-span-3 flex flex-col gap-4 overflow-hidden">
+                  {/* Fairness Meter */}
+                  <div className="bg-[#0a0a2a] border border-gray-600 rounded-xl p-5 text-center flex-1 flex flex-col justify-center">
+                    <p className="text-gray-400 text-[10px] font-bold uppercase tracking-widest mb-3 flex items-center justify-center gap-1">
+                      FAIRNESS METER
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-3.5 h-3.5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" />
+                      </svg>
+                    </p>
+
+                    {!bothSidesHaveItems ? (
+                      <p className="text-gray-500 text-xs px-2">Add items to both sides to calculate fairness</p>
+                    ) : (
+                      <>
+                        {/* Percentage display — show the dominant side's share */}
+                        {/* e.g. You give $8100, receive $1650 → myShareOfTotal=83% → show 83% In their favor */}
+                        <p className="text-5xl font-bold text-purple-400 mb-1">
+                          {Math.max(myShareOfTotal, theirSharePercent)}%
+                        </p>
+
+                        {/* Label */}
+                        <p className={`text-sm font-semibold mb-5 ${
+                          myShareOfTotal > 55 ? 'text-red-400' :
+                          myShareOfTotal < 45 ? 'text-green-400' : 'text-purple-400'
+                        }`}>{fairnessLabel}</p>
+
+                        {/* Gradient slider bar */}
+                        <div className="w-full h-2.5 rounded-full relative" style={{ background: 'linear-gradient(to right, #ec4899, #a855f7, #3b82f6)' }}>
+                          <div
+                            className="absolute top-1/2 -translate-y-1/2 w-1.5 h-5 bg-white rounded-full shadow-[0_0_8px_rgba(255,255,255,0.9)] transition-all"
+                            style={{ left: `calc(${sliderPos}% - 3px)` }}
+                          />
+                        </div>
+                        <div className="flex justify-between text-gray-600 text-[10px] mt-2 mb-4">
+                          <span>You Favor</span>
+                          <span>Fair</span>
+                          <span>They Favor</span>
+                        </div>
+
+                        {/* Value amounts */}
+                        <div className="flex justify-between text-xs border-t border-gray-800 pt-3">
+                          <div className="text-left">
+                            <p className="text-gray-500 text-[10px] mb-0.5">You Give</p>
+                            <p className="text-purple-400 font-bold">${myTotalValue.toLocaleString()}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-gray-500 text-[10px] mb-0.5">You Receive</p>
+                            <p className="text-blue-400 font-bold">${theirTotalValue.toLocaleString()}</p>
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </div>
+
+                  {/* AI Analyzer */}
+                  <div className="bg-[#0a0a2a] border border-gray-600 rounded-xl p-5 text-center flex-1 flex flex-col justify-center items-center">
+                    <div className="w-12 h-12 rounded-full bg-purple-900/30 border border-purple-500/20 flex items-center justify-center mb-3">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 text-purple-400">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z" />
+                      </svg>
+                    </div>
+                    <p className="text-white text-xs font-bold uppercase tracking-widest mb-1">AI ANALYZER</p>
+                    <p className="text-gray-500 text-[10px] mb-4 px-2">Get AI insights, market data, and negotiation tips.</p>
+                    <button className="w-full py-2.5 bg-purple-600/20 text-purple-400 border border-purple-500/30 rounded-lg text-xs font-bold hover:bg-purple-600 hover:text-white transition flex items-center justify-center gap-2">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" />
+                      </svg>
+                      Analyze Trade
+                    </button>
+                  </div>
+                </div>
+
+                {/* ── THEIR SIDE ── */}
+                <div className="col-span-4 bg-[#0a0a2a] border border-gray-600 rounded-xl p-4 flex flex-col overflow-hidden">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      {/* Avatar */}
+                      {theirAvatarUrl ? (
+                        <img src={theirAvatarUrl} alt={theirDisplayName} className="w-8 h-8 rounded-full object-cover border border-gray-600" />
+                      ) : (
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-gray-600 to-gray-700 flex items-center justify-center text-white text-xs font-bold border border-gray-600">{theirInitial}</div>
+                      )}
+                      <div>
+                        <div className="flex items-center gap-1.5">
+                          <p className="text-white text-sm font-bold leading-tight">{theirDisplayName}</p>
+                          {otherUser?.id && <OnlineIndicator sellerId={otherUser.id} className="scale-75 origin-left" />}
+                        </div>
+                        <p className="text-gray-400 text-[10px] uppercase tracking-wide">Their Side</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-gray-500 text-[10px] uppercase">Total Value</p>
+                      <p className="text-purple-400 font-bold text-base">${theirTotalValue.toLocaleString()}</p>
+                    </div>
+                  </div>
+
+                  {theirItems.length === 0 ? (
+                    <p className="text-gray-600 text-sm py-8 text-center">No items on their side yet.</p>
+                  ) : (
+                    <div className={`grid ${getGridCols(theirItems.length)} gap-3 flex-1 content-start ${theirItems.length >= 7 ? 'overflow-y-auto custom-scrollbar' : ''}`}>
+                      {theirItems.map((item: any) => (
+                        <div key={item.id} className="bg-[#2a2a5a] border border-gray-600 rounded-lg p-2.5 relative group">
+                          {item.photos?.[0]?.imageUrl ? (
+                            <img src={item.photos[0].imageUrl} alt={item.title} className={`w-full ${getImgHeight(theirItems.length)} object-contain rounded mb-2 bg-[#0a0a2a]`} />
+                          ) : (
+                            <div className={`w-full ${getImgHeight(theirItems.length)} bg-gray-800 rounded mb-2 flex items-center justify-center text-gray-600 text-xs`}>No Image</div>
+                          )}
+                          <p className="text-white text-[11px] font-medium line-clamp-2 leading-tight">{item.title}</p>
+                          <p className="text-purple-400 text-sm font-bold mt-1">${parseFloat(item.estimatedValue || '0').toLocaleString()}</p>
+                          {(currentStage === 'proposed' || currentStage === 'negotiating') && (
+                            <button
+                              onClick={() => handleRemoveItemFromTrade(item.id)}
+                              className="absolute -top-1.5 -right-1.5 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+                              title="Remove from trade"
+                            >×</button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {(currentStage === 'proposed' || currentStage === 'negotiating') && (
+                    <button
+                      onClick={() => { setInventorySearch(''); setInventoryCategory('All'); setIsTheirInventoryOpen(true); }}
+                      className="w-full mt-4 py-2.5 border border-dashed border-gray-700 rounded-lg text-blue-400 hover:text-blue-300 hover:border-blue-500 transition text-sm flex items-center justify-center gap-2"
+                    >
+                      + Browse Their Inventory
+                    </button>
+                  )}
+                </div>
+              </div>
+
+            </div>
+
+        </div>
+
+        {/* Right Column: Chat + Timeline as a card */}
+        <div className="w-[340px] flex-shrink-0 p-4 flex flex-col">
+          <div className="bg-[#1a1a4a] border border-gray-600 rounded-xl flex flex-col flex-1 overflow-hidden shadow-xl">
+          {/* Tabs */}
+          <div className="flex border-b border-gray-600 rounded-t-xl overflow-hidden">
             <button
-              onClick={() => setIsTableCollapsed(!isTableCollapsed)}
-              className="text-gray-400 text-sm hover:text-white transition"
-            >
-              {isTableCollapsed ? '▼ Expand' : '▲ Collapse'}
-            </button>
+              onClick={() => setActiveTab('chat')}
+              className={`flex-1 py-3.5 text-sm font-semibold transition ${activeTab === 'chat' ? 'text-purple-400 border-b-2 border-purple-500 bg-[#1a1a4a]' : 'text-gray-500 hover:text-gray-300'}`}
+            >Chat</button>
+            <button
+              onClick={() => setActiveTab('timeline')}
+              className={`flex-1 py-3.5 text-sm font-semibold transition ${activeTab === 'timeline' ? 'text-purple-400 border-b-2 border-purple-500 bg-[#1a1a4a]' : 'text-gray-500 hover:text-gray-300'}`}
+            >Timeline</button>
           </div>
 
-          {!isTableCollapsed && (
-            <div className="grid grid-cols-11 gap-4">
-              {/* Your Side */}
-              <div className="col-span-5 border border-gray-600 rounded-lg p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-blue-400 text-sm font-semibold uppercase">Your Side</h3>
-                  <span className="text-green-400 font-bold">${myTotalValue.toLocaleString()}</span>
+          {activeTab === 'chat' && (
+            <>
+              {/* Partner header */}
+              <div className="p-4 border-b border-gray-600 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  {theirAvatarUrl ? (
+                    <img src={theirAvatarUrl} alt={theirDisplayName} className="w-9 h-9 rounded-full object-cover border border-gray-600" />
+                  ) : (
+                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-gray-600 to-gray-700 flex items-center justify-center text-white text-sm font-bold">
+                      {theirInitial}
+                    </div>
+                  )}
+                  <div>
+                    <p className="text-white text-sm font-semibold">{theirDisplayName}</p>
+                    {otherUser?.id && <OnlineIndicator sellerId={otherUser.id} />}
+                  </div>
                 </div>
-                {myItems.length === 0 ? (
-                  <p className="text-gray-500 text-sm py-4 text-center">No items offered yet. Browse their inventory to add items.</p>
-                ) : (
-                  <div className="grid grid-cols-2 gap-2">
-                    {myItems.map((item: any) => (
-                      <div key={item.id} className="bg-[#0a0a2a] rounded p-2 relative group">
-                        {item.photos?.[0]?.imageUrl && (
-                          <img src={item.photos[0].imageUrl} alt={item.title} className="w-full h-20 object-contain rounded mb-1" />
-                        )}
-                        <p className="text-white text-xs truncate">{item.title}</p>
-                        <p className="text-green-400 text-xs">${parseFloat(item.estimatedValue || '0').toLocaleString()}</p>
-                        {currentStage !== 'accepted' && currentStage !== 'shipped' && currentStage !== 'completed' && (
-                          <button onClick={() => handleRemoveItemFromTrade(item.id)} className="absolute top-1 right-1 w-5 h-5 bg-red-600 text-white text-xs rounded-full opacity-0 group-hover:opacity-100 transition">×</button>
-                        )}
+                <button className="text-gray-500 hover:text-white">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM12.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM18.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Messages */}
+              <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-3">
+                {messagesQuery.isLoading && (
+                  <p className="text-gray-500 text-sm text-center py-4">Loading messages...</p>
+                )}
+                {messages.length === 0 && !messagesQuery.isLoading && (
+                  <p className="text-gray-600 text-sm text-center py-8">No messages yet. Start the conversation!</p>
+                )}
+                {messages.map((msg: any) => {
+                  const isMine = msg.senderId === myUserId;
+                  const time = msg.createdAt ? new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+                  return (
+                    <div key={msg.id} className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
+                      <div className={`max-w-[85%] p-3 rounded-xl text-sm leading-relaxed ${
+                        isMine ? 'bg-purple-600 text-white rounded-tr-sm' : 'bg-[#2a2a5a] text-gray-100 border border-gray-600 rounded-xl rounded-tl-sm'
+                      }`}>
+                        <p className={`text-[10px] mb-1 ${isMine ? 'text-purple-200' : 'text-gray-500'}`}>{time}</p>
+                        <p>{msg.message || msg.content}</p>
                       </div>
-                    ))}
+                    </div>
+                  );
+                })}
+                <div ref={messagesEndRef} />
+              </div>
+
+              {/* Input */}
+              <div className="p-3 border-t border-gray-600">
+                <div className="flex items-center gap-2 bg-[#1a1a4a] border border-gray-700 rounded-full px-3 py-1.5">
+                  <input
+                    type="text"
+                    placeholder="Type a message..."
+                    className="flex-1 bg-transparent text-white text-sm focus:outline-none"
+                    value={messageInput}
+                    onChange={(e) => setMessageInput(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') handleSendMessage(); }}
+                  />
+                  <button className="text-gray-500 hover:text-white p-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15.182 15.182a4.5 4.5 0 0 1-6.364 0M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0ZM9.75 9.75c0 .414-.168.75-.375.75S9 10.164 9 9.75 9.168 9 9.375 9s.375.336.375.75Zm-.375 0h.008v.015h-.008V9.75Zm5.625 0c0 .414-.168.75-.375.75s-.375-.336-.375-.75.168-.75.375-.75.375.336.375.75Zm-.375 0h.008v.015h-.008V9.75Z" />
+                    </svg>
+                  </button>
+                  <button className="text-gray-500 hover:text-white p-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="m18.375 12.739-7.693 7.693a4.5 4.5 0 0 1-6.364-6.364l10.94-10.94A3 3 0 1 1 19.5 7.372L8.552 18.32m.009-.01-.01.01m5.699-9.941-7.81 7.81a1.5 1.5 0 0 0 2.112 2.13" />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={handleSendMessage}
+                    disabled={sendMessageMutation.isPending}
+                    className="w-7 h-7 rounded-full bg-purple-600 flex items-center justify-center text-white hover:bg-purple-700 transition disabled:opacity-50 shrink-0"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-3.5 h-3.5 ml-0.5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
+
+          {activeTab === 'timeline' && (
+            <div className="flex-1 overflow-y-auto custom-scrollbar p-4">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-white text-sm font-semibold">Trade Timeline</h3>
+                <button className="text-gray-500 text-xs hover:text-white">View All</button>
+              </div>
+              <div className="space-y-4">
+                {[
+                  { color: 'bg-purple-500', text: 'Trade created', time: trade?.proposal?.createdAt },
+                  { color: 'bg-blue-500', text: 'Partner joined the war room', time: trade?.proposal?.negotiatingAt },
+                  { color: 'bg-green-500', text: 'Items added to both sides', time: null },
+                  { color: 'bg-orange-500', text: 'Offer proposed', time: trade?.proposal?.lastActivityAt },
+                ].filter(e => e.text).map((event, i) => (
+                  <div key={i} className="flex items-start gap-3">
+                    <div className={`w-2 h-2 rounded-full ${event.color} mt-1.5 shrink-0`} />
+                    <div className="flex-1">
+                      <p className="text-gray-300 text-xs">{event.text}</p>
+                      {event.time && (
+                        <p className="text-gray-600 text-[10px] mt-0.5">
+                          {new Date(event.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          </div>
+        </div>
+      </div>
+
+      {/* Sticky Footer Action Bar */}
+      <div className="sticky bottom-0 z-30 bg-[#0a0a2a] border-t border-gray-700 px-6 py-4">
+        <div className="flex items-center justify-center gap-4">
+
+          {/* Stage 1: Propose — only Decline + Send Proposal */}
+          {currentStage === 'proposed' && (
+            <>
+              <button
+                onClick={() => setShowDeclineModal(true)}
+                className="px-8 py-3 border border-gray-700 text-gray-400 rounded-lg font-semibold hover:bg-red-900/20 hover:border-red-700 hover:text-red-400 transition flex items-center gap-2"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+                </svg>
+                Decline
+              </button>
+              <button
+                onClick={handleUpdateProposal}
+                className="px-14 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-lg font-bold transition flex items-center gap-2 shadow-[0_0_15px_rgba(147,51,234,0.4)]"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" />
+                </svg>
+                Send Proposal
+              </button>
+            </>
+          )}
+
+          {/* Stage 2: Negotiating */}
+          {currentStage === 'negotiating' && (
+            <>
+              <button
+                onClick={() => setShowDeclineModal(true)}
+                className="px-8 py-3 border border-gray-700 text-gray-400 rounded-lg font-semibold hover:bg-red-900/20 hover:border-red-700 hover:text-red-400 transition flex items-center gap-2"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+                </svg>
+                Decline
+              </button>
+              <button
+                onClick={handleUpdateProposal}
+                className="px-14 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-lg font-bold transition flex items-center gap-2 shadow-[0_0_15px_rgba(147,51,234,0.4)]"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" />
+                </svg>
+                Counter Offer
+              </button>
+              {iCanAccept ? (
+                <button
+                  onClick={handleAccept}
+                  className="px-8 py-3 border border-green-700 text-green-400 rounded-lg font-semibold hover:bg-green-900/20 transition flex items-center gap-2"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                  </svg>
+                  Accept Trade
+                </button>
+              ) : (
+                <div className="px-8 py-3 border border-gray-700 text-gray-500 rounded-lg font-semibold flex items-center gap-2 cursor-not-allowed" title="Waiting for the other party to respond">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                  </svg>
+                  Awaiting Response
+                </div>
+              )}
+            </>
+          )}
+
+          {/* Stage 3+: Accepted / Shipped / Completed — no editing */}
+          {(currentStage === 'accepted' || currentStage === 'shipped' || currentStage === 'completed') && (
+            <p className="text-gray-400 text-sm flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-green-500">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
+              </svg>
+              Trade is locked — both parties have accepted
+            </p>
+          )}
+
+        </div>
+        <p className="text-center mt-2 text-gray-600 text-xs flex items-center justify-center gap-1.5">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-3.5 h-3.5 text-green-500">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+          </svg>
+          Secure War Room • All data is encrypted end-to-end
+        </p>
+      </div>
+
+      {/* MODALS */}
+
+      {/* Their Inventory Modal — browse partner's items by category with checkboxes */}
+      {isTheirInventoryOpen && (() => {
+        // Helper: format category slug to Title Case
+        const formatCat = (cat: string) =>
+          cat.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+
+        const allItems: any[] = theirInventoryQuery.data?.items || [];
+
+        // Build category list from ALL items (regardless of current filter)
+        const rawCategories = Array.from(new Set(allItems.map((i: any) => i.category).filter(Boolean))) as string[];
+        const categories = ['All', ...rawCategories];
+
+        // Client-side filter by selected category + search
+        const visibleItems = allItems.filter((item: any) => {
+          const matchesCat = inventoryCategory === 'All' || item.category === inventoryCategory;
+          const matchesSearch = !inventorySearch || item.title?.toLowerCase().includes(inventorySearch.toLowerCase());
+          return matchesCat && matchesSearch;
+        });
+
+        const toggleItem = (id: number) => {
+          setSelectedInventoryItems(prev =>
+            prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+          );
+        };
+
+        const handleAddSelected = () => {
+          if (selectedInventoryItems.length === 0) {
+            toast.error('Please select at least one item.');
+            return;
+          }
+          selectedInventoryItems.forEach(id => {
+            // Full item data now includes photos array from backend
+            const itemData = allItems.find((i: any) => i.id === id);
+            handleAddItemToTrade(id, itemData);
+          });
+          setSelectedInventoryItems([]);
+          setIsTheirInventoryOpen(false);
+          setInventorySearch('');
+          setInventoryCategory('All');
+        };
+
+        const qvItem = quickViewItemId !== null ? allItems.find((i: any) => i.id === quickViewItemId) : null;
+
+        return (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
+            <div className="bg-[#1a1a4a] border border-gray-600 rounded-xl w-11/12 max-w-6xl shadow-2xl flex overflow-hidden" style={{ height: '85vh' }}>
+
+              {/* Main inventory browser */}
+              <div className="flex flex-col flex-1 min-w-0">
+
+              {/* Header */}
+              <div className="flex items-center justify-between px-6 py-4 border-b border-gray-700 flex-shrink-0">
+                <div className="flex items-center gap-3">
+                  {theirAvatarUrl ? (
+                    <img src={theirAvatarUrl} alt={theirDisplayName} className="w-10 h-10 rounded-full object-cover border border-gray-600" />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gray-600 to-gray-700 flex items-center justify-center text-white text-sm font-bold">{theirInitial}</div>
+                  )}
+                  <div>
+                    <h2 className="text-white text-lg font-bold">{theirDisplayName}'s Inventory</h2>
+                    <p className="text-gray-400 text-xs mt-0.5">Select items you want, then click "Add To Trade"</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => { setIsTheirInventoryOpen(false); setInventorySearch(''); setInventoryCategory('All'); setSelectedInventoryItems([]); }}
+                  className="text-gray-400 hover:text-white transition"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Category Tabs — always all visible, click to filter in-place */}
+              <div className="flex flex-wrap border-b border-gray-700 flex-shrink-0 bg-[#0a0a2a]">
+                {categories.map(cat => (
+                  <button
+                    key={cat}
+                    onClick={() => setInventoryCategory(cat)}
+                    className={`px-5 py-3 text-sm font-semibold whitespace-nowrap transition flex-shrink-0 border-b-2 ${
+                      inventoryCategory === cat
+                        ? 'text-purple-400 border-purple-500 bg-[#1a1a4a]'
+                        : 'text-gray-500 border-transparent hover:text-gray-300'
+                    }`}
+                  >
+                    {formatCat(cat)}
+                  </button>
+                ))}
+              </div>
+
+              {/* Search */}
+              <div className="px-4 py-3 border-b border-gray-700 flex-shrink-0">
+                <input
+                  type="text"
+                  placeholder={`Search ${theirDisplayName}'s inventory...`}
+                  className="w-full px-4 py-2.5 rounded-lg bg-[#0a0a2a] text-white border border-gray-700 focus:border-purple-500 focus:outline-none text-sm"
+                  value={inventorySearch}
+                  onChange={(e) => setInventorySearch(e.target.value)}
+                />
+              </div>
+
+              {/* Items Grid */}
+              <div className="p-4 overflow-y-auto custom-scrollbar flex-1">
+                {theirInventoryQuery.isLoading ? (
+                  <p className="text-gray-500 text-sm text-center py-12">Loading inventory...</p>
+                ) : visibleItems.length === 0 ? (
+                  <p className="text-gray-500 text-sm text-center py-12">No items found.</p>
+                ) : (
+                  <div className="grid grid-cols-5 gap-4">
+                    {visibleItems.map((item: any) => {
+                      const isSelected = selectedInventoryItems.includes(item.id);
+                      return (
+                        <div
+                          key={item.id}
+                          className={`bg-[#0a0a2a] border-2 rounded-xl p-3 flex flex-col transition ${
+                            isSelected
+                              ? 'border-purple-500 shadow-[0_0_10px_rgba(147,51,234,0.4)]'
+                              : quickViewItemId === item.id
+                                ? 'border-blue-500'
+                                : 'border-gray-700 hover:border-gray-500'
+                          }`}
+                        >
+                          {/* Checkbox top-right */}
+                          <div className="flex justify-end mb-1">
+                            <div
+                              onClick={(e) => { e.stopPropagation(); toggleItem(item.id); }}
+                              className={`w-5 h-5 rounded border-2 flex items-center justify-center cursor-pointer transition ${
+                                isSelected ? 'bg-purple-600 border-purple-500' : 'border-gray-600 bg-transparent hover:border-gray-400'
+                              }`}
+                            >
+                              {isSelected && (
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-3 h-3 text-white">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                                </svg>
+                              )}
+                            </div>
+                          </div>
+                          {/* Image — click to open item detail popup */}
+                          <div
+                            className="cursor-pointer group/img relative"
+                            onClick={(e) => { e.stopPropagation(); setQuickViewItemId(item.id); }}
+                            title="Click to view item details"
+                          >
+                            {item.primaryImage ? (
+                              <img src={item.primaryImage} alt={item.title} className="w-full h-28 object-contain rounded mb-3 bg-[#1a1a4a] group-hover/img:opacity-80 transition" />
+                            ) : (
+                              <div className="w-full h-28 bg-gray-800 rounded mb-3 flex items-center justify-center text-gray-600 text-xs group-hover/img:bg-gray-700 transition">No Image</div>
+                            )}
+                            {/* Hover overlay hint */}
+                            <div className="absolute inset-0 rounded mb-3 flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition bg-black/30">
+                              <span className="text-white text-[10px] font-semibold bg-black/60 px-2 py-1 rounded">View Details</span>
+                            </div>
+                          </div>
+                          {/* Title */}
+                          <p className="text-white text-xs font-semibold line-clamp-2 leading-tight mb-1">{item.title}</p>
+                          {/* Value */}
+                          <p className="text-purple-400 text-sm font-bold mt-auto">${parseFloat(item.estimatedValue || '0').toLocaleString()}</p>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>
 
-              {/* Fairness Meter (Center) — grayed out until items on both sides */}
-              <div className={`col-span-1 flex flex-col items-center justify-center ${(myItems.length === 0 && selectedItemIds.length === 0) || theirTotalValue === 0 ? 'opacity-30' : ''}`}>
-                <div className="w-2 h-32 bg-gray-700 rounded-full relative overflow-hidden">
-                  {(myItems.length > 0 || selectedItemIds.length > 0) && theirTotalValue > 0 ? (
-                    <div
-                      className={`absolute bottom-0 w-full rounded-full transition-all ${fairnessPercent > 55 ? 'bg-green-500' : fairnessPercent < 45 ? 'bg-red-500' : 'bg-yellow-500'}`}
-                      style={{ height: `${fairnessPercent}%` }}
-                    />
-                  ) : null}
-                </div>
-                <span className="text-xs text-gray-400 mt-2">
-                  {(myItems.length > 0 || selectedItemIds.length > 0) && theirTotalValue > 0 ? `${fairnessPercent}%` : '—'}
-                </span>
-                <span className="text-[10px] text-gray-500">
-                  {(myItems.length > 0 || selectedItemIds.length > 0) && theirTotalValue > 0 ? 'Fair' : 'Add items'}
-                </span>
-              </div>
-
-              {/* Their Side */}
-              <div className="col-span-5 border border-gray-600 rounded-lg p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-orange-400 text-sm font-semibold uppercase">Their Side</h3>
-                  <span className="text-green-400 font-bold">${theirTotalValue.toLocaleString()}</span>
-                </div>
-                {/* Always show the requested listing */}
-                <div className="grid grid-cols-2 gap-2">
-                  {requestedListing && (
-                    <div className="bg-[#0a0a2a] rounded p-2">
-                      {requestedListing.photos?.[0]?.imageUrl && (
-                        <img src={requestedListing.photos[0].imageUrl} alt={requestedListing.title} className="w-full h-20 object-contain rounded mb-1" />
-                      )}
-                      <p className="text-white text-xs truncate">{requestedListing.title}</p>
-                      <p className="text-green-400 text-xs">${parseFloat(requestedListing.estimatedValue || '0').toLocaleString()}</p>
-                    </div>
-                  )}
-                  {theirItems.map((item: any) => (
-                    <div key={item.id} className="bg-[#0a0a2a] rounded p-2">
-                      {item.photos?.[0]?.imageUrl && (
-                        <img src={item.photos[0].imageUrl} alt={item.title} className="w-full h-20 object-contain rounded mb-1" />
-                      )}
-                      <p className="text-white text-xs truncate">{item.title}</p>
-                      <p className="text-green-400 text-xs">${parseFloat(item.estimatedValue || '0').toLocaleString()}</p>
-                    </div>
-                  ))}
+              {/* Footer: Add To Trade button */}
+              <div className="px-6 py-4 border-t border-gray-700 flex-shrink-0 flex items-center justify-between bg-[#0a0a2a]">
+                <p className="text-gray-400 text-sm">
+                  {selectedInventoryItems.length > 0
+                    ? <span className="text-purple-400 font-semibold">{selectedInventoryItems.length} item{selectedInventoryItems.length > 1 ? 's' : ''} selected</span>
+                    : 'Click items to select them'}
+                </p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setSelectedInventoryItems([])}
+                    className="px-4 py-2 border border-gray-700 text-gray-400 rounded-lg text-sm hover:bg-gray-800 transition"
+                  >
+                    Clear
+                  </button>
+                  <button
+                    onClick={handleAddSelected}
+                    disabled={selectedInventoryItems.length === 0}
+                    className={`px-8 py-2 rounded-lg text-sm font-bold transition flex items-center gap-2 ${
+                      selectedInventoryItems.length > 0
+                        ? 'bg-purple-600 text-white hover:bg-purple-700 shadow-[0_0_10px_rgba(147,51,234,0.4)]'
+                        : 'bg-gray-700 text-gray-500 cursor-not-allowed'
+                    }`}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                    </svg>
+                    Add To Trade
+                  </button>
                 </div>
               </div>
-            </div>
-          )}
 
-          {/* Collapsed view — just totals */}
-          {isTableCollapsed && (
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-blue-400">Your Side: <span className="text-green-400 font-bold">${myTotalValue.toLocaleString()}</span></span>
-              <span className="text-gray-500">vs</span>
-              <span className="text-orange-400">Their Side: <span className="text-green-400 font-bold">${theirTotalValue.toLocaleString()}</span></span>
-            </div>
-          )}
+              </div>{/* end main browser */}
 
-          {/* Cash Fields */}
-          <div className="grid grid-cols-2 gap-8 mt-4">
-            <div>
-              <label className="text-green-400 text-xs font-medium">Cash You Receive</label>
-              <input
-                type="number"
-                value={cashReceive}
-                onChange={(e) => setCashReceive(e.target.value)}
-                className="w-full bg-[#0a0a2a] border border-gray-600 rounded px-3 py-1.5 text-white mt-1 text-sm"
-                placeholder="$0"
-                min="0"
-              />
-            </div>
-            <div>
-              <label className="text-red-400 text-xs font-medium">Cash You Pay</label>
-              <input
-                type="number"
-                value={cashPay}
-                onChange={(e) => setCashPay(e.target.value)}
-                className="w-full bg-[#0a0a2a] border border-gray-600 rounded px-3 py-1.5 text-white mt-1 text-sm"
-                placeholder="$0"
-                min="0"
-              />
             </div>
           </div>
-          {(cashReceive || cashPay) && (
-            <p className="text-[10px] text-yellow-500 mt-2 italic">
-              Tradebilia is a marketplace that brings collectors together. We are not liable for any cash transactions.
-            </p>
-          )}
+        );
+      })()}
 
-          {/* AI Analyze Button */}
-          <div className="mt-3 flex justify-end">
-            <button
-              className={`px-4 py-1.5 rounded text-sm font-medium ${
-                myItems.length > 0 || theirItems.length > 0
-                  ? 'bg-purple-600 text-white hover:bg-purple-700'
-                  : 'bg-gray-700 text-gray-500 cursor-not-allowed'
-              }`}
-              disabled={myItems.length === 0 && theirItems.length === 0}
-            >
-              ✨ AI Analyze Trade
-            </button>
-          </div>
-        </section>
-
-        {/* Service & Trust Bar */}
-        <section className="bg-[#1a1a4a] rounded-lg p-3 flex items-center gap-4 flex-wrap">
-          <label className="flex items-center gap-2 text-gray-300 text-sm cursor-pointer">
-            <input
-              type="checkbox"
-              checked={middleManRequested}
-              onChange={(e) => {
-                setMiddleManRequested(e.target.checked);
-                middleManMutation.mutate({
-                  proposalId,
-                  action: e.target.checked ? 'request' : 'deselect',
-                });
-              }}
-              className="rounded border-gray-500"
+      {/* Item Detail Popup Modal — opens when clicking an item image in the inventory browser */}
+      {quickViewItemId !== null && (
+        <div className="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center z-[60]">
+          <div className="bg-white rounded-xl w-11/12 max-w-5xl shadow-2xl overflow-hidden flex flex-col" style={{ height: '90vh' }}>
+            {/* Modal header bar */}
+            <div className="flex items-center justify-between px-5 py-3 bg-gray-900 border-b border-gray-700 flex-shrink-0">
+              <p className="text-white text-sm font-semibold">Item Detail</p>
+              <button
+                onClick={() => setQuickViewItemId(null)}
+                className="text-gray-400 hover:text-white transition"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            {/* Iframe rendering the actual item detail page */}
+            <iframe
+              src={`/listings/${quickViewItemId}`}
+              className="flex-1 w-full border-0"
+              title="Item Detail"
             />
-            <span>Middle Man Service</span>
-          </label>
-          {/* Show Approve button if the OTHER party requested it */}
-          {trade?.proposal?.middleManRequested && !trade?.proposal?.middleManApproved && trade?.proposal?.middleManRequestedBy !== (isRequester ? trade.proposal.requesterId : trade.proposal.recipientId) && (
-            <button
-              onClick={() => middleManMutation.mutate({ proposalId, action: 'approve' })}
-              className="px-3 py-1 rounded bg-green-600 text-white text-xs font-medium hover:bg-green-700 transition"
-            >
-              ✅ Approve Middle Man
-            </button>
-          )}
-          {trade?.proposal?.middleManApproved && (
-            <span className="text-green-400 text-xs font-medium">✅ Both Agreed</span>
-          )}
-          <span className="text-gray-600">|</span>
-          <span className="px-2 py-0.5 bg-blue-900/50 text-blue-300 text-xs rounded">eBay ✓</span>
-          <span className="px-2 py-0.5 bg-blue-900/50 text-blue-300 text-xs rounded">Facebook ✓</span>
-          <span className="px-2 py-0.5 bg-blue-900/50 text-blue-300 text-xs rounded">LinkedIn ✓</span>
-          <button
-            onClick={() => setIsInventoryOpen(!isInventoryOpen)}
-            className="ml-auto px-3 py-1.5 rounded bg-indigo-600 text-white text-sm hover:bg-indigo-700 transition"
-          >
-            🔍 Browse Inventory
-          </button>
-        </section>
-
-        {/* Chat & Timeline */}
-        <section className="bg-[#1a1a4a] rounded-lg p-4">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-white font-semibold text-sm">Chat & Timeline</h3>
-            <button
-              onClick={() => setIsNotesOpen(!isNotesOpen)}
-              className="px-3 py-1 rounded bg-gray-700 text-gray-300 text-sm hover:bg-gray-600 transition"
-            >
-              📝 Private Notes
-            </button>
           </div>
-          
-          {/* Messages Area */}
-          <div className="h-64 overflow-y-auto border border-gray-700 rounded-lg p-3 mb-3 space-y-2">
-            {messages.length === 0 ? (
-              <p className="text-gray-500 text-sm text-center py-8">No messages yet. Start the conversation!</p>
-            ) : (
-              messages.map((msg: any) => (
-                <div key={msg.id} className={`flex ${msg.messageType === 'system' ? 'justify-center' : ''}`}>
-                  {msg.messageType === 'system' ? (
-                    <span className="text-xs text-gray-500 bg-gray-800 px-3 py-1 rounded-full">{msg.message}</span>
+        </div>
+      )}
+
+      {/* My Inventory Modal — same format as Their Inventory Modal */}
+      {isMyInventoryOpen && (() => {
+        const formatCat = (cat: string) =>
+          cat.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+
+        const allMyItems: any[] = (myDashboardQuery.data?.ownListings || []).filter(
+          (l: any) => l.status === 'active' || l.isActive
+        );
+
+        // Build category list from all my items
+        const myRawCategories = Array.from(new Set(allMyItems.map((i: any) => i.category).filter(Boolean))) as string[];
+        const myCategories = ['All', ...myRawCategories];
+
+        // Client-side filter by selected category + search
+        const myVisibleItems = allMyItems.filter((item: any) => {
+          const matchesCat = inventoryCategory !== 'All' ? item.category === inventoryCategory : true;
+          const matchesSearch = !inventorySearch || item.title?.toLowerCase().includes(inventorySearch.toLowerCase());
+          return matchesCat && matchesSearch;
+        });
+
+        const toggleMyItem = (id: number) => {
+          setSelectedInventoryItems(prev =>
+            prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+          );
+        };
+
+        const handleAddMySelected = () => {
+          if (selectedInventoryItems.length === 0) {
+            toast.error('Please select at least one item.');
+            return;
+          }
+          selectedInventoryItems.forEach(id => {
+            const itemData = allMyItems.find((i: any) => i.id === id);
+            handleAddItemToTrade(id, itemData);
+          });
+          setSelectedInventoryItems([]);
+          setIsMyInventoryOpen(false);
+          setInventorySearch('');
+          setInventoryCategory('All');
+        };
+
+        return (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
+            <div className="bg-[#1a1a4a] border border-gray-600 rounded-xl w-11/12 max-w-6xl shadow-2xl flex flex-col" style={{ height: '85vh' }}>
+
+              {/* Header */}
+              <div className="flex items-center justify-between px-6 py-4 border-b border-gray-700 flex-shrink-0">
+                <div className="flex items-center gap-3">
+                  {myAvatarUrl ? (
+                    <img src={myAvatarUrl} alt={myDisplayName} className="w-10 h-10 rounded-full object-cover border border-purple-500/40" />
                   ) : (
-                    <div className={`max-w-[70%] ${msg.senderId === (isRequester ? trade?.proposal.requesterId : trade?.proposal.recipientId) ? 'ml-auto' : ''}`}>
-                      <div className={`rounded-lg px-3 py-2 ${
-                        msg.senderId === (isRequester ? trade?.proposal.requesterId : trade?.proposal.recipientId)
-                          ? 'bg-purple-600 text-white'
-                          : 'bg-gray-700 text-gray-200'
-                      }`}>
-                        <p className="text-sm">{msg.message}</p>
-                      </div>
-                      <p className="text-[10px] text-gray-500 mt-0.5 px-1">
-                        {msg.senderDisplayName || msg.senderUsername} · {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </p>
-                    </div>
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-600 to-indigo-600 flex items-center justify-center text-white text-sm font-bold">{myInitial}</div>
                   )}
-                </div>
-              ))
-            )}
-            <div ref={messagesEndRef} />
-          </div>
-
-          {/* Message Input */}
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={messageInput}
-              onChange={(e) => setMessageInput(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-              placeholder="Type a message..."
-              className="flex-1 bg-[#0a0a2a] border border-gray-600 rounded-lg px-4 py-2 text-white placeholder-gray-400 text-sm focus:outline-none focus:border-purple-500"
-            />
-            <button
-              onClick={handleSendMessage}
-              disabled={!messageInput.trim() || sendMessageMutation.isPending}
-              className="px-4 py-2 rounded-lg bg-purple-600 text-white text-sm font-medium hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
-            >
-              Send
-            </button>
-          </div>
-        </section>
-      </div>
-
-      {/* Feedback Form — only visible when trade is completed */}
-      {currentStage === 'completed' && !reviewSubmitted && (
-        <div className="max-w-7xl mx-auto w-full px-6 pb-4">
-          <section className="bg-[#1a1a4a] rounded-lg p-6">
-            <h3 className="text-white font-semibold text-lg mb-2">⭐ Leave Your Review</h3>
-            <p className="text-gray-400 text-sm mb-4">Rate your trade experience. Reviews are hidden until both parties submit (blind review).</p>
-
-            {/* 4-Category Star Ratings */}
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              {[
-                { key: 'tradeExperience', label: 'Trade Experience' },
-                { key: 'itemCondition', label: 'Item Condition' },
-                { key: 'communication', label: 'Communication' },
-                { key: 'shippingSpeed', label: 'Shipping Speed' },
-              ].map(({ key, label }) => (
-                <div key={key} className="bg-[#0a0a2a] rounded-lg p-3">
-                  <label className="text-gray-300 text-sm font-medium block mb-2">{label}</label>
-                  <div className="flex gap-1">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <button
-                        key={star}
-                        onClick={() => setReviewRatings(prev => ({ ...prev, [key]: star }))}
-                        className={`text-2xl transition ${
-                          star <= (reviewRatings as any)[key] ? 'text-yellow-400' : 'text-gray-600'
-                        } hover:text-yellow-300`}
-                      >
-                        ★
-                      </button>
-                    ))}
+                  <div>
+                    <h2 className="text-white text-lg font-bold">Your Inventory</h2>
+                    <p className="text-gray-400 text-xs mt-0.5">Select items you want to offer — they will appear on Your Side</p>
                   </div>
                 </div>
-              ))}
-            </div>
-
-            {/* Written Review */}
-            <div className="mb-4">
-              <label className="text-gray-300 text-sm font-medium block mb-2">Written Review (optional)</label>
-              <textarea
-                value={reviewText}
-                onChange={(e) => setReviewText(e.target.value)}
-                placeholder="Share your experience with this trade..."
-                className="w-full bg-[#0a0a2a] border border-gray-600 rounded-lg px-4 py-3 text-white placeholder-gray-400 text-sm h-24 resize-none"
-              />
-            </div>
-
-            {/* Submit */}
-            <button
-              onClick={() => {
-                if (Object.values(reviewRatings).some(r => r === 0)) {
-                  toast.error('Please rate all 4 categories before submitting.');
-                  return;
-                }
-                leaveReviewMutation.mutate({
-                  proposalId,
-                  tradeExperienceRating: reviewRatings.tradeExperience,
-                  itemConditionRating: reviewRatings.itemCondition,
-                  communicationRating: reviewRatings.communication,
-                  shippingSpeedRating: reviewRatings.shippingSpeed,
-                  review: reviewText || undefined,
-                });
-              }}
-              disabled={leaveReviewMutation.isPending}
-              className="w-full px-6 py-3 rounded-lg bg-purple-600 text-white font-bold hover:bg-purple-700 disabled:opacity-50 transition"
-            >
-              {leaveReviewMutation.isPending ? 'Submitting...' : 'Submit Review'}
-            </button>
-          </section>
-        </div>
-      )}
-      {currentStage === 'completed' && reviewSubmitted && (
-        <div className="max-w-7xl mx-auto w-full px-6 pb-4">
-          <section className="bg-[#1a1a4a] rounded-lg p-6 text-center">
-            <p className="text-green-400 text-lg font-semibold">✅ Review Submitted!</p>
-            <p className="text-gray-400 text-sm mt-2">Your review will be visible once both parties have submitted their reviews (or after 7 days).</p>
-          </section>
-        </div>
-      )}
-
-      {/* Shipping Stage Section — only visible when status is accepted or shipped */}
-      {(currentStage === 'accepted' || currentStage === 'shipped') && (
-        <div className="max-w-7xl mx-auto w-full px-6 pb-4">
-          <section className="bg-[#1a1a4a] rounded-lg p-6">
-            <h3 className="text-white font-semibold text-lg mb-4">📦 Shipping & Tracking</h3>
-            <p className="text-gray-400 text-sm mb-4">Each trader pays their own shipping. Submit your tracking number below.</p>
-
-            {/* Tracking Input */}
-            <div className="grid grid-cols-12 gap-3 mb-4">
-              <div className="col-span-3">
-                <label className="text-gray-400 text-xs">Carrier</label>
-                <select
-                  value={trackingCarrier}
-                  onChange={(e) => setTrackingCarrier(e.target.value)}
-                  className="w-full bg-[#0a0a2a] border border-gray-600 rounded px-3 py-2 text-white text-sm mt-1"
+                <button
+                  onClick={() => { setIsMyInventoryOpen(false); setInventorySearch(''); setInventoryCategory('All'); setSelectedInventoryItems([]); }}
+                  className="text-gray-400 hover:text-white transition"
                 >
-                  <option value="USPS">USPS</option>
-                  <option value="UPS">UPS</option>
-                  <option value="FedEx">FedEx</option>
-                  <option value="DHL">DHL</option>
-                  <option value="Other">Other</option>
-                </select>
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+                  </svg>
+                </button>
               </div>
-              {trackingCarrier === 'Other' && (
-                <div className="col-span-3">
-                  <label className="text-gray-400 text-xs">Carrier Name</label>
-                  <input
-                    type="text"
-                    value={trackingCarrierOther}
-                    onChange={(e) => setTrackingCarrierOther(e.target.value)}
-                    placeholder="Enter carrier name"
-                    className="w-full bg-[#0a0a2a] border border-gray-600 rounded px-3 py-2 text-white text-sm mt-1"
-                  />
-                </div>
-              )}
-              <div className={trackingCarrier === 'Other' ? 'col-span-4' : 'col-span-7'}>
-                <label className="text-gray-400 text-xs">Tracking Number</label>
+
+              {/* Category Tabs */}
+              <div className="flex flex-wrap border-b border-gray-700 flex-shrink-0 bg-[#0a0a2a]">
+                {myCategories.map(cat => (
+                  <button
+                    key={cat}
+                    onClick={() => setInventoryCategory(cat)}
+                    className={`px-5 py-3 text-sm font-semibold whitespace-nowrap transition flex-shrink-0 border-b-2 ${
+                      inventoryCategory === cat
+                        ? 'text-purple-400 border-purple-500 bg-[#1a1a4a]'
+                        : 'text-gray-500 border-transparent hover:text-gray-300'
+                    }`}
+                  >
+                    {formatCat(cat)}
+                  </button>
+                ))}
+              </div>
+
+              {/* Search */}
+              <div className="px-4 py-3 border-b border-gray-700 flex-shrink-0">
                 <input
                   type="text"
-                  value={trackingNumber}
-                  onChange={(e) => setTrackingNumber(e.target.value)}
-                  placeholder="Enter tracking number"
-                  className="w-full bg-[#0a0a2a] border border-gray-600 rounded px-3 py-2 text-white text-sm mt-1"
+                  placeholder="Search your inventory..."
+                  className="w-full px-4 py-2.5 rounded-lg bg-[#0a0a2a] text-white border border-gray-700 focus:border-purple-500 focus:outline-none text-sm"
+                  value={inventorySearch}
+                  onChange={(e) => setInventorySearch(e.target.value)}
                 />
               </div>
-              <div className="col-span-2 flex items-end">
-                <button
-                  onClick={() => {
-                    if (!trackingNumber.trim()) { toast.error('Please enter a tracking number'); return; }
-                    submitTrackingMutation.mutate({
-                      proposalId,
-                      trackingNumbers: [{
-                        listingId: requestedListing?.id || 0,
-                        carrier: trackingCarrier as any,
-                        carrierOther: trackingCarrier === 'Other' ? trackingCarrierOther : undefined,
-                        trackingNumber: trackingNumber.trim(),
-                      }],
-                    });
-                  }}
-                  disabled={submitTrackingMutation.isPending || !trackingNumber.trim()}
-                  className="w-full px-3 py-2 rounded bg-purple-600 text-white text-sm font-medium hover:bg-purple-700 disabled:opacity-50 transition"
-                >
-                  {submitTrackingMutation.isPending ? 'Submitting...' : 'Submit'}
-                </button>
-              </div>
-            </div>
-          </section>
-        </div>
-      )}
 
-      {/* Footer Actions — Changes based on stage */}
-      <footer className="bg-[#1a1a4a] border-t border-gray-700 px-6 py-3 sticky bottom-0">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          {(currentStage === 'accepted' || currentStage === 'shipped') ? (
-            /* Shipping Stage Footer */
-            <>
-              <button
-                onClick={() => confirmReceiptMutation.mutate({ proposalId, confirmationType: 'received' })}
-                disabled={confirmReceiptMutation.isPending}
-                className="px-5 py-2 rounded bg-green-600 text-white text-sm font-bold hover:bg-green-700 disabled:opacity-50 transition"
-              >
-                ✅ Items Received
-              </button>
-              <div className="flex gap-3 items-center">
-                <button
-                  onClick={() => confirmReceiptMutation.mutate({ proposalId, confirmationType: 'damaged' })}
-                  disabled={confirmReceiptMutation.isPending}
-                  className="px-4 py-2 rounded bg-yellow-600 text-white text-sm font-medium hover:bg-yellow-700 disabled:opacity-50 transition"
-                >
-                  ⚠️ Received but Damaged
-                </button>
-                <button
-                  onClick={() => {
-                    const desc = window.prompt('Describe the issue:');
-                    if (desc) fileComplaintMutation.mutate({ proposalId, description: desc, complaintType: 'other' });
-                  }}
-                  className="text-gray-400 text-sm underline hover:text-white transition"
-                >
-                  File Complaint
-                </button>
+              {/* Items Grid */}
+              <div className="p-4 overflow-y-auto custom-scrollbar flex-1">
+                {myDashboardQuery.isLoading ? (
+                  <p className="text-gray-500 text-sm text-center py-12">Loading your inventory...</p>
+                ) : myVisibleItems.length === 0 ? (
+                  <p className="text-gray-500 text-sm text-center py-12">No items found.</p>
+                ) : (
+                  <div className="grid grid-cols-5 gap-4">
+                    {myVisibleItems.map((item: any) => {
+                      const isSelected = selectedInventoryItems.includes(item.id);
+                      return (
+                        <div
+                          key={item.id}
+                          className={`bg-[#0a0a2a] border-2 rounded-xl p-3 flex flex-col transition ${
+                            isSelected
+                              ? 'border-purple-500 shadow-[0_0_10px_rgba(147,51,234,0.4)]'
+                              : quickViewItemId === item.id
+                                ? 'border-blue-500'
+                                : 'border-gray-700 hover:border-gray-500'
+                          }`}
+                        >
+                          {/* Checkbox top-right */}
+                          <div className="flex justify-end mb-1">
+                            <div
+                              onClick={(e) => { e.stopPropagation(); toggleMyItem(item.id); }}
+                              className={`w-5 h-5 rounded border-2 flex items-center justify-center cursor-pointer transition ${
+                                isSelected ? 'bg-purple-600 border-purple-500' : 'border-gray-600 bg-transparent hover:border-gray-400'
+                              }`}
+                            >
+                              {isSelected && (
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-3 h-3 text-white">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                                </svg>
+                              )}
+                            </div>
+                          </div>
+                          {/* Image — click to open item detail popup */}
+                          <div
+                            className="cursor-pointer group/img relative"
+                            onClick={(e) => { e.stopPropagation(); setQuickViewItemId(item.id); }}
+                            title="Click to view item details"
+                          >
+                            {item.photos?.[0]?.imageUrl ? (
+                              <img src={item.photos[0].imageUrl} alt={item.title} className="w-full h-28 object-contain rounded mb-3 bg-[#1a1a4a] group-hover/img:opacity-80 transition" />
+                            ) : (
+                              <div className="w-full h-28 bg-gray-800 rounded mb-3 flex items-center justify-center text-gray-600 text-xs group-hover/img:bg-gray-700 transition">No Image</div>
+                            )}
+                            <div className="absolute inset-0 rounded mb-3 flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition bg-black/30">
+                              <span className="text-white text-[10px] font-semibold bg-black/60 px-2 py-1 rounded">View Details</span>
+                            </div>
+                          </div>
+                          {/* Title */}
+                          <p className="text-white text-xs font-semibold line-clamp-2 leading-tight mb-1">{item.title}</p>
+                          {/* Value */}
+                          <p className="text-purple-400 text-sm font-bold mt-auto">${parseFloat(item.estimatedValue || '0').toLocaleString()}</p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
-            </>
-          ) : (
-            /* Negotiation Stage Footer */
-            <>
-              <button
-                onClick={() => generateVotingLinkMutation.mutate({ proposalId })}
-                disabled={generateVotingLinkMutation.isPending || (myItems.length === 0 && selectedItemIds.length === 0)}
-                className={`px-4 py-2 rounded text-sm font-medium ${
-                  (myItems.length > 0 || selectedItemIds.length > 0) && (theirItems.length > 0 || requestedListing)
-                    ? 'bg-gray-700 text-white hover:bg-gray-600'
-                    : 'bg-gray-800 text-gray-500 cursor-not-allowed'
-                }`}
-              >
-                {generateVotingLinkMutation.isPending ? 'Generating...' : '📢 Get Community Opinion'}
-              </button>
-              <div className="flex gap-3">
-                <button
-                  onClick={handleDecline}
-                  className="px-4 py-2 rounded bg-red-600/80 text-white text-sm font-medium hover:bg-red-600 transition"
-                >
-                  ❌ Decline
-                </button>
-                <button
-                  onClick={handleUpdateProposal}
-                  disabled={sendProposalMutation.isPending || (selectedItemIds.length === 0 && !cashPay && !cashReceive)}
-                  className="px-4 py-2 rounded bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {sendProposalMutation.isPending ? 'Saving...' : '💾 Update Proposal'}
-                </button>
-                <button
-                  onClick={handleAccept}
-                  disabled={acceptMutation.isPending}
-                  className="px-5 py-2 rounded bg-green-600 text-white text-sm font-bold hover:bg-green-700 transition disabled:opacity-50"
-                >
-                  ✅ Accept Trade
-                </button>
-              </div>
-            </>
-          )}
-        </div>
-      </footer>
 
-      {/* Trade Contract Modal */}
-      {showContractModal && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-          <div className="bg-[#1a1a4a] rounded-lg p-6 max-w-lg w-full mx-4 border border-purple-500/30">
-            <h3 className="text-white font-bold text-xl mb-4 text-center">Trade Contract</h3>
-            <p className="text-gray-300 text-sm mb-4 text-center">Please verify the final terms of this trade:</p>
-
-            {/* Summary */}
-            <div className="bg-[#0a0a2a] rounded-lg p-4 mb-4 space-y-3">
-              <div>
-                <span className="text-blue-400 text-xs font-semibold uppercase">You Give:</span>
-                <div className="text-white text-sm mt-1">
-                  {selectedItemIds.length > 0 ? `${selectedItemIds.length} item(s)` : 'No items'}
-                  {cashPay && ` + $${parseFloat(cashPay).toLocaleString()} cash`}
+              {/* Footer: Add To Trade button */}
+              <div className="px-6 py-4 border-t border-gray-700 flex-shrink-0 flex items-center justify-between bg-[#0a0a2a]">
+                <p className="text-gray-400 text-sm">
+                  {selectedInventoryItems.length > 0
+                    ? <span className="text-purple-400 font-semibold">{selectedInventoryItems.length} item{selectedInventoryItems.length > 1 ? 's' : ''} selected</span>
+                    : 'Click items to select them'}
+                </p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setSelectedInventoryItems([])}
+                    className="px-4 py-2 border border-gray-700 text-gray-400 rounded-lg text-sm hover:bg-gray-800 transition"
+                  >
+                    Clear
+                  </button>
+                  <button
+                    onClick={handleAddMySelected}
+                    disabled={selectedInventoryItems.length === 0}
+                    className={`px-8 py-2 rounded-lg text-sm font-bold transition flex items-center gap-2 ${
+                      selectedInventoryItems.length > 0
+                        ? 'bg-purple-600 text-white hover:bg-purple-700 shadow-[0_0_10px_rgba(147,51,234,0.4)]'
+                        : 'bg-gray-700 text-gray-500 cursor-not-allowed'
+                    }`}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                    </svg>
+                    Add To Trade
+                  </button>
                 </div>
               </div>
-              <div>
-                <span className="text-orange-400 text-xs font-semibold uppercase">You Receive:</span>
-                <div className="text-white text-sm mt-1">
-                  {requestedListing?.title || 'Requested item'}
-                  {theirItems.length > 0 && ` + ${theirItems.length} more item(s)`}
-                  {cashReceive && ` + $${parseFloat(cashReceive).toLocaleString()} cash`}
-                </div>
-              </div>
+
             </div>
+          </div>
+        );
+      })()}
 
-            {/* Cash disclaimer */}
-            {(cashPay || cashReceive) && (
-              <p className="text-yellow-500 text-xs italic mb-4">
-                Tradebilia is a marketplace that brings collectors together. We are not liable for any trades, items, or cash transactions that go wrong. All trades are conducted at the sole risk of the participating collectors.
-              </p>
-            )}
-
-            {/* Confirmation checkbox */}
-            <label className="flex items-start gap-3 mb-4 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={contractCheckbox}
-                onChange={(e) => setContractCheckbox(e.target.checked)}
-                className="mt-0.5 rounded border-gray-500"
-              />
-              <span className="text-gray-300 text-sm">
-                I understand that by confirming, I am locking in this trade. Items will be reserved and I commit to shipping within the agreed timeframe.
-              </span>
-            </label>
-
-            {/* Actions */}
-            <div className="flex gap-3 justify-end">
+      {/* Video Chat Modal */}
+      {showVideoChatModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-[#1a1a4a] border border-gray-700 rounded-xl p-8 w-11/12 max-w-md shadow-2xl text-center">
+            <div className="w-16 h-16 rounded-full bg-blue-900/30 border border-blue-500/30 flex items-center justify-center mx-auto mb-4">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8 text-blue-400">
+                <path strokeLinecap="round" strokeLinejoin="round" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z" />
+              </svg>
+            </div>
+            <h2 className="text-white text-xl font-bold mb-2">Video Chat</h2>
+            <p className="text-gray-400 text-sm mb-6">Live video chat with your trade partner is coming soon. This feature will allow you to inspect items in real-time before finalizing your trade.</p>
+            <div className="flex gap-3 justify-center">
               <button
-                onClick={() => setShowContractModal(false)}
-                className="px-4 py-2 rounded bg-gray-700 text-gray-300 text-sm"
-              >
-                Cancel
-              </button>
+                onClick={() => setShowVideoChatModal(false)}
+                className="px-6 py-2.5 border border-gray-600 text-gray-300 rounded-lg hover:bg-gray-800 transition font-medium text-sm"
+              >Close</button>
               <button
-                onClick={confirmAccept}
-                disabled={!contractCheckbox || acceptMutation.isPending}
-                className="px-6 py-2 rounded bg-green-600 text-white text-sm font-bold hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
-              >
-                {acceptMutation.isPending ? 'Processing...' : 'Confirm & Lock Trade'}
-              </button>
+                className="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium text-sm"
+                onClick={() => toast.info('Video chat coming soon!')}
+              >Notify Me</button>
             </div>
           </div>
         </div>
@@ -852,121 +1318,77 @@ export default function WarRoom() {
 
       {/* Decline Modal */}
       {showDeclineModal && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-          <div className="bg-[#1a1a4a] rounded-lg p-6 max-w-md w-full mx-4">
-            <h3 className="text-white font-bold text-lg mb-3">Decline Trade</h3>
-            <p className="text-gray-400 text-sm mb-4">Are you sure you want to decline this trade? You can optionally provide a reason.</p>
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-[#1a1a4a] border border-gray-700 rounded-xl p-6 w-11/12 max-w-md shadow-2xl">
+            <h2 className="text-white text-xl font-bold mb-2">Decline Trade</h2>
+            <p className="text-gray-400 text-sm mb-5">Are you sure? You can optionally provide a reason.</p>
             <textarea
+              className="w-full p-3 rounded-lg bg-[#0a0a2a] text-white border border-gray-700 mb-5 focus:border-purple-500 focus:outline-none text-sm resize-none"
+              rows={3}
+              placeholder="Reason for declining (optional)"
               value={declineReason}
               onChange={(e) => setDeclineReason(e.target.value)}
-              placeholder="Reason for declining (optional)..."
-              className="w-full bg-[#0a0a2a] border border-gray-600 rounded-lg px-4 py-3 text-white placeholder-gray-400 text-sm mb-4 h-24 resize-none"
             />
-            <div className="flex gap-3 justify-end">
-              <button onClick={() => setShowDeclineModal(false)} className="px-4 py-2 rounded bg-gray-700 text-gray-300 text-sm">Cancel</button>
-              <button onClick={confirmDecline} className="px-4 py-2 rounded bg-red-600 text-white text-sm font-medium">Confirm Decline</button>
+            <div className="flex justify-end gap-3">
+              <button onClick={() => setShowDeclineModal(false)} className="px-5 py-2.5 border border-gray-600 text-gray-300 rounded-lg hover:bg-gray-800 transition text-sm font-medium">Cancel</button>
+              <button onClick={confirmDecline} className="px-5 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-sm font-medium">Decline Trade</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Private Notes Slide-out Drawer */}
-      {isNotesOpen && (
-        <div className="fixed top-0 right-0 h-full w-80 bg-[#1a1a4a] border-l border-gray-700 z-40 shadow-2xl flex flex-col">
-          <div className="flex items-center justify-between p-4 border-b border-gray-700">
-            <h3 className="text-white font-semibold">📝 Private Notes</h3>
-            <button onClick={() => setIsNotesOpen(false)} className="text-gray-400 hover:text-white">✕</button>
-          </div>
-          <div className="flex-1 p-4">
-            <p className="text-xs text-gray-500 mb-3">Only you can see these notes. Use them to plan your negotiation strategy.</p>
-            <textarea
-              value={noteInput}
-              onChange={(e) => setNoteInput(e.target.value)}
-              placeholder="Write your private notes here..."
-              className="w-full h-64 bg-[#0a0a2a] border border-gray-600 rounded-lg px-4 py-3 text-white placeholder-gray-400 text-sm resize-none"
-            />
-          </div>
-          <div className="p-4 border-t border-gray-700">
-            <button
-              onClick={handleSaveNote}
-              disabled={saveNoteMutation.isPending}
-              className="w-full px-4 py-2 rounded bg-purple-600 text-white text-sm font-medium hover:bg-purple-700 disabled:opacity-50 transition"
-            >
-              {saveNoteMutation.isPending ? 'Saving...' : 'Save Notes'}
-            </button>
+      {/* Trade Contract Modal */}
+      {showContractModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-[#1a1a4a] border border-gray-700 rounded-xl p-8 w-11/12 max-w-3xl max-h-[90vh] overflow-y-auto custom-scrollbar shadow-2xl">
+            <div className="flex items-center gap-3 mb-6 pb-4 border-b border-gray-700">
+              <div className="w-10 h-10 rounded-lg bg-purple-900/30 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 text-purple-400">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+                </svg>
+              </div>
+              <h2 className="text-white text-2xl font-bold">Trade Contract</h2>
+            </div>
+            <div className="bg-[#0a0a2a] rounded-lg p-5 border border-gray-700 text-gray-300 text-sm space-y-3 mb-6 h-56 overflow-y-auto custom-scrollbar">
+              <p>This Trade Contract is entered into by and between the Proposer and the Recipient, effective upon mutual acceptance.</p>
+              <p><strong>1. Agreement to Exchange:</strong> Both parties agree to exchange the items as detailed in the Trade Table. Each party warrants they are the rightful owner of the items they are offering.</p>
+              <p><strong>2. Item Condition:</strong> All items are exchanged "as is." Both parties acknowledge they have reviewed item descriptions and images.</p>
+              <p><strong>3. Shipping:</strong> Both parties agree to ship their respective items within 3 business days of mutual acceptance. Tracking information must be shared promptly.</p>
+              <p><strong>4. Valuation:</strong> Estimated values are for informational purposes only and do not constitute a guarantee of market value.</p>
+              <p><strong>5. Mutual Acceptance:</strong> This contract becomes binding upon mutual acceptance by both parties. Items will be locked from further modification.</p>
+              <p><strong>6. Disputes:</strong> Any disputes will be handled through Tradebilia's dispute resolution process.</p>
+            </div>
+            <div className="flex items-center mb-6 bg-purple-900/10 p-4 rounded-lg border border-purple-900/30">
+              <input
+                type="checkbox"
+                id="contract-checkbox"
+                className="h-5 w-5 text-purple-600 rounded border-gray-600 bg-[#0a0a2a] focus:ring-purple-500"
+                checked={contractCheckbox}
+                onChange={(e) => setContractCheckbox(e.target.checked)}
+              />
+              <label htmlFor="contract-checkbox" className="ml-3 text-white text-sm font-medium cursor-pointer">
+                I have read and agree to the terms of the Trade Contract.
+              </label>
+            </div>
+            <div className="flex justify-end gap-4">
+              <button onClick={() => setShowContractModal(false)} className="px-6 py-3 border border-gray-600 text-gray-300 rounded-lg hover:bg-gray-800 transition font-medium text-sm">Cancel</button>
+              <button
+                onClick={confirmAccept}
+                disabled={!contractCheckbox}
+                className={`px-8 py-3 rounded-lg font-bold transition text-sm flex items-center gap-2 ${
+                  contractCheckbox ? 'bg-green-600 text-white hover:bg-green-700 shadow-[0_0_15px_rgba(22,163,74,0.4)]' : 'bg-gray-700 text-gray-500 cursor-not-allowed'
+                }`}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                </svg>
+                Sign & Accept
+              </button>
+            </div>
           </div>
         </div>
       )}
 
-      {/* Inventory Browser Slide-out */}
-      {isInventoryOpen && (
-        <div className="fixed top-0 left-0 h-full w-96 bg-[#1a1a4a] border-r border-gray-700 z-40 shadow-2xl flex flex-col">
-          <div className="flex items-center justify-between p-4 border-b border-gray-700">
-            <h3 className="text-white font-semibold">🔍 Their Inventory</h3>
-            <button onClick={() => setIsInventoryOpen(false)} className="text-gray-400 hover:text-white">✕</button>
-          </div>
-          {/* Search */}
-          <div className="p-3 border-b border-gray-700">
-            <input
-              type="text"
-              value={inventorySearch}
-              onChange={(e) => setInventorySearch(e.target.value)}
-              placeholder="Search items..."
-              className="w-full bg-[#0a0a2a] border border-gray-600 rounded-lg px-3 py-2 text-white placeholder-gray-400 text-sm"
-            />
-          </div>
-          {/* Items */}
-          <div className="flex-1 p-3 overflow-y-auto">
-            <p className="text-xs text-gray-500 mb-3">Click items to add them to the trade table.</p>
-            {inventoryQuery.isLoading ? (
-              <div className="text-center py-8">
-                <div className="animate-spin inline-block w-5 h-5 border-2 border-purple-500 border-t-transparent rounded-full"></div>
-                <p className="text-gray-400 text-sm mt-2">Loading inventory...</p>
-              </div>
-            ) : (inventoryQuery.data?.items?.length || 0) === 0 ? (
-              <p className="text-gray-400 text-sm text-center py-8">No items found in their inventory.</p>
-            ) : (
-              <div className="space-y-2">
-                {(inventoryQuery.data?.items || []).map((item: any) => {
-                  const isAlreadyAdded = selectedItemIds.includes(item.id);
-                  return (
-                    <button
-                      key={item.id}
-                      onClick={() => handleAddItemToTrade(item.id)}
-                      disabled={isAlreadyAdded}
-                      className={`w-full text-left flex items-center gap-3 p-2 rounded-lg transition ${
-                        isAlreadyAdded
-                          ? 'bg-green-900/30 border border-green-600 cursor-default'
-                          : 'bg-[#0a0a2a] hover:bg-[#2a2a5a] border border-gray-700 hover:border-purple-500 cursor-pointer'
-                      }`}
-                    >
-                      {item.primaryImage ? (
-                        <img src={item.primaryImage} alt={item.title} className="w-12 h-12 object-contain rounded flex-shrink-0" />
-                      ) : (
-                        <div className="w-12 h-12 bg-gray-700 rounded flex items-center justify-center flex-shrink-0">
-                          <span className="text-gray-500 text-xs">No img</span>
-                        </div>
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <p className="text-white text-sm truncate">{item.title}</p>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          <span className="text-green-400 text-xs font-medium">
-                            ${parseFloat(item.estimatedValue || '0').toLocaleString()}
-                          </span>
-                          <span className="text-gray-500 text-xs capitalize">{item.category?.replace('_', ' ')}</span>
-                        </div>
-                      </div>
-                      {isAlreadyAdded && (
-                        <span className="text-green-400 text-xs font-medium flex-shrink-0">✓ Added</span>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

@@ -12,12 +12,14 @@ interface TopBarProps {
   logoUrl?: string;
   searchPlaceholder?: string;
   onSearchChange?: (value: string) => void;
+  hideSearch?: boolean;
 }
 
 export function TopBar({
   logoUrl = "/images/tradebilia-logo.svg",
   searchPlaceholder = "Search...",
   onSearchChange,
+  hideSearch = false,
 }: TopBarProps) {
   const { isAuthenticated, logout, user } = useAuth();
   const [showSignInModal, setShowSignInModal] = useState(false);
@@ -47,6 +49,51 @@ export function TopBar({
       setLocation(`/search?q=${encodeURIComponent(searchQuery)}`);
     }
   };
+
+  if (hideSearch) {
+    // Compact top bar for pages like War Room — no search, just logo + icons
+    return (
+      <div className="border-b border-white/10 bg-black relative z-0">
+        <div className="flex items-center justify-between pl-2 pr-4 py-2 relative" style={{ minHeight: '52px' }}>
+          {/* Logo — same size as full TopBar */}
+          <div className="h-16 flex items-center" style={{ width: '650px', marginTop: '-10px' }}>
+            <a href="/" className="flex items-center hover:opacity-80 transition h-full w-full">
+              <div className="h-16 w-full flex items-center">
+                <AnimatedLogoSmall70 />
+              </div>
+            </a>
+          </div>
+
+          {/* Icons and Auth on right */}
+          <div className="flex items-center gap-3 md:gap-4 flex-shrink-0">
+            <TopRightIcons iconColor="text-white/70" />
+            {isAuthenticated ? (
+              <Button
+                onClick={logout}
+                variant="ghost"
+                size="sm"
+                className="text-white/70 hover:text-white hover:bg-white/10"
+              >
+                <LogOut className="h-4 w-4 mr-2" />
+                Log Out
+              </Button>
+            ) : (
+              <>
+                <Button
+                  onClick={() => setShowSignInModal(true)}
+                  size="sm"
+                  className="bg-white/20 text-white hover:bg-white/30"
+                >
+                  Sign In
+                </Button>
+                <SignInModal isOpen={showSignInModal} onClose={() => setShowSignInModal(false)} />
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="border-b border-white/10 bg-black relative z-0">

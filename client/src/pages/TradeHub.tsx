@@ -17,9 +17,10 @@ import { CategoryBar } from "@/components/CategoryBar";
 
 const TRADE_HUB_LOGO_URL = "/images/TradeHub.svg";
 
-type TradeFolder = 'negotiating' | 'accepted' | 'shipped' | 'declined' | 'completed';
+type TradeFolder = 'proposal' | 'negotiating' | 'accepted' | 'shipped' | 'declined' | 'completed';
 
 const folderLabels: Record<TradeFolder, string> = {
+  proposal: 'Proposals',
   negotiating: 'Negotiating',
   accepted: 'Accepted',
   shipped: 'Shipped',
@@ -28,6 +29,7 @@ const folderLabels: Record<TradeFolder, string> = {
 };
 
 const folderIcons: Record<TradeFolder, string> = {
+  proposal: '📨',
   negotiating: '💬',
   accepted: '✅',
   shipped: '📦',
@@ -52,7 +54,7 @@ function timeAgo(dateStr: string | null): string {
 
 export default function TradeHub() {
   const [, navigate] = useLocation();
-  const [activeFolder, setActiveFolder] = useState<TradeFolder>('negotiating');
+  const [activeFolder, setActiveFolder] = useState<TradeFolder>('proposal');
   const [selectedTradeId, setSelectedTradeId] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -302,6 +304,19 @@ export default function TradeHub() {
                     </div>
                   </div>
 
+                  {/* Initial message — shown for Proposals */}
+                  {activeFolder === 'proposal' && selectedTrade.note && (
+                    <div className="bg-[#0a0a2a] rounded-lg p-4 border border-purple-900/40">
+                      <p className="text-gray-400 text-xs uppercase tracking-wider mb-2 flex items-center gap-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-3.5 h-3.5">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 0 1 .865-.501 48.172 48.172 0 0 0 3.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z" />
+                        </svg>
+                        Initial Message
+                      </p>
+                      <p className="text-gray-200 text-sm leading-relaxed italic">"{selectedTrade.note}"</p>
+                    </div>
+                  )}
+
                   {/* Status Info */}
                   <div className="bg-[#0a0a2a] rounded-lg p-3">
                     <div className="grid grid-cols-2 gap-2 text-sm">
@@ -329,9 +344,11 @@ export default function TradeHub() {
                     onClick={() => handleEnterWarRoom(selectedTrade.id)}
                     className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold py-3 px-6 rounded-lg transition-all shadow-lg hover:shadow-purple-500/25 text-center"
                   >
-                    ⚔️ Enter War Room
+                    {activeFolder === 'proposal' ? '📨 View Proposal' : '⚔️ Enter War Room'}
                   </button>
-                  <p className="text-center text-xs text-gray-500">Secure negotiation space</p>
+                  <p className="text-center text-xs text-gray-500">
+                    {activeFolder === 'proposal' ? 'Review and respond to this trade proposal' : 'Secure negotiation space'}
+                  </p>
                 </div>
               )}
             </aside>

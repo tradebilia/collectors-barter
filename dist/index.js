@@ -391,6 +391,8 @@ var init_schema = __esm({
         requestedListingId: int().notNull().references(() => listings.id),
         note: text(),
         status: mysqlEnum(["pending", "accepted", "declined", "completed", "cancelled"]).default("pending").notNull(),
+        lastProposedBy: int().references(() => users.id),
+        // userId of whoever sent the most recent proposal
         respondedAt: timestamp({ mode: "string" }),
         completedAt: timestamp({ mode: "string" }),
         createdAt: timestamp({ mode: "string" }).default("CURRENT_TIMESTAMP").notNull(),
@@ -1556,6 +1558,26 @@ async function bulkDeleteListings(user, input) {
       throw new Error("You can only delete your own listings.");
     }
   }
+  for (const listing of listings_to_delete) {
+    const [acceptedTrades] = await db.execute(
+      sql`SELECT COUNT(*) as cnt FROM tradeProposals WHERE requestedListingId = ${listing.id} AND status IN ('accepted', 'shipped')`
+    );
+    const [acceptedOffered] = await db.execute(
+      sql`SELECT COUNT(*) as cnt FROM tradeProposalItems tpi JOIN tradeProposals tp ON tp.id = tpi.proposalId WHERE tpi.offeredListingId = ${listing.id} AND tp.status IN ('accepted', 'shipped')`
+    );
+    if (acceptedTrades?.[0]?.cnt > 0 || acceptedOffered?.[0]?.cnt > 0) {
+      throw new Error(`Cannot delete item "${listing.id}": it is part of an accepted trade. Cancel the trade first.`);
+    }
+  }
+  const now = (/* @__PURE__ */ new Date()).toISOString().slice(0, 19).replace("T", " ");
+  for (const listing of listings_to_delete) {
+    await db.execute(
+      sql`UPDATE tradeProposals SET status = 'cancelled', declineReason = 'Trade cancelled: Item is no longer available.', updatedAt = ${now} WHERE requestedListingId = ${listing.id} AND status IN ('pending', 'negotiating')`
+    );
+    await db.execute(
+      sql`UPDATE tradeProposals SET status = 'cancelled', declineReason = 'Trade cancelled: An offered item is no longer available.', updatedAt = ${now} WHERE status IN ('pending', 'negotiating') AND id IN (SELECT proposalId FROM tradeProposalItems WHERE offeredListingId = ${listing.id})`
+    );
+  }
   await db.transaction(async (tx) => {
     await tx.delete(listingPhotos).where(inArray(listingPhotos.listingId, input.listingIds));
     await tx.delete(listings).where(inArray(listings.id, input.listingIds));
@@ -1997,7 +2019,7 @@ async function updateListing(user, input) {
     const existingPhotos = await db.select({ imageUrl: listingPhotos.imageUrl }).from(listingPhotos).where(eq(listingPhotos.listingId, input.listingId));
     const existingUrls = new Set(existingPhotos.map((p) => p.imageUrl));
     const incomingUrls = new Set(input.photos.map((p) => p.imageUrl).filter(Boolean));
-    for (const url of existingUrls) {
+    for (const url of Array.from(existingUrls)) {
       if (!incomingUrls.has(url)) {
         throw new Error("Unauthorized: Only admins can delete photos from listings");
       }
@@ -2018,7 +2040,7 @@ async function updateListing(user, input) {
     if (isAdmin) {
       await tx.delete(listingPhotos).where(eq(listingPhotos.listingId, input.listingId));
     } else {
-      const photosToDelete = input.photos.filter((p) => p.contentBase64).map((p) => p.imageUrl).filter(Boolean);
+      const photosToDelete = input.photos.filter((p) => p.contentBase64).map((p) => p.imageUrl).filter((url) => Boolean(url));
       if (photosToDelete.length > 0) {
         await tx.delete(listingPhotos).where(
           and(
@@ -2812,7 +2834,7 @@ async function createForumPost(user, input) {
 async function getForumPosts(category, sortBy = "newest") {
   const db = await requireDb();
   const { forumPosts: forumPosts2, users: users2 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
-  const { eq: eq3, desc: desc4 } = await import("drizzle-orm");
+  const { eq: eq4, desc: desc5 } = await import("drizzle-orm");
   const baseQuery = db.select({
     id: forumPosts2.id,
     userId: forumPosts2.userId,
@@ -2831,30 +2853,30 @@ async function getForumPosts(category, sortBy = "newest") {
       name: users2.displayName,
       avatarUrl: users2.avatarUrl
     }
-  }).from(forumPosts2).leftJoin(users2, eq3(forumPosts2.userId, users2.id));
+  }).from(forumPosts2).leftJoin(users2, eq4(forumPosts2.userId, users2.id));
   if (category) {
     if (sortBy === "newest") {
-      return baseQuery.where(eq3(forumPosts2.category, category)).orderBy(desc4(forumPosts2.isPinned), desc4(forumPosts2.createdAt));
+      return baseQuery.where(eq4(forumPosts2.category, category)).orderBy(desc5(forumPosts2.isPinned), desc5(forumPosts2.createdAt));
     } else if (sortBy === "popular") {
-      return baseQuery.where(eq3(forumPosts2.category, category)).orderBy(desc4(forumPosts2.isPinned), desc4(forumPosts2.viewCount));
+      return baseQuery.where(eq4(forumPosts2.category, category)).orderBy(desc5(forumPosts2.isPinned), desc5(forumPosts2.viewCount));
     } else {
-      return baseQuery.where(eq3(forumPosts2.category, category)).orderBy(desc4(forumPosts2.isPinned), desc4(forumPosts2.replyCount));
+      return baseQuery.where(eq4(forumPosts2.category, category)).orderBy(desc5(forumPosts2.isPinned), desc5(forumPosts2.replyCount));
     }
   } else {
     if (sortBy === "newest") {
-      return baseQuery.orderBy(desc4(forumPosts2.isPinned), desc4(forumPosts2.createdAt));
+      return baseQuery.orderBy(desc5(forumPosts2.isPinned), desc5(forumPosts2.createdAt));
     } else if (sortBy === "popular") {
-      return baseQuery.orderBy(desc4(forumPosts2.isPinned), desc4(forumPosts2.viewCount));
+      return baseQuery.orderBy(desc5(forumPosts2.isPinned), desc5(forumPosts2.viewCount));
     } else {
-      return baseQuery.orderBy(desc4(forumPosts2.isPinned), desc4(forumPosts2.replyCount));
+      return baseQuery.orderBy(desc5(forumPosts2.isPinned), desc5(forumPosts2.replyCount));
     }
   }
 }
 async function getForumPostById(postId) {
   const db = await requireDb();
   const { forumPosts: forumPosts2, users: users2 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
-  const { eq: eq3, sql: sql4 } = await import("drizzle-orm");
-  await db.update(forumPosts2).set({ viewCount: sql4`viewCount + 1` }).where(eq3(forumPosts2.id, postId));
+  const { eq: eq4, sql: sql5 } = await import("drizzle-orm");
+  await db.update(forumPosts2).set({ viewCount: sql5`viewCount + 1` }).where(eq4(forumPosts2.id, postId));
   const result = await db.select({
     id: forumPosts2.id,
     userId: forumPosts2.userId,
@@ -2873,26 +2895,26 @@ async function getForumPostById(postId) {
       name: users2.displayName,
       avatarUrl: users2.avatarUrl
     }
-  }).from(forumPosts2).leftJoin(users2, eq3(forumPosts2.userId, users2.id)).where(eq3(forumPosts2.id, postId)).limit(1);
+  }).from(forumPosts2).leftJoin(users2, eq4(forumPosts2.userId, users2.id)).where(eq4(forumPosts2.id, postId)).limit(1);
   return result[0] || null;
 }
 async function addForumReply(user, input) {
   const db = await requireDb();
   const { forumReplies: forumReplies2, forumPosts: forumPosts2 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
-  const { eq: eq3 } = await import("drizzle-orm");
+  const { eq: eq4 } = await import("drizzle-orm");
   const result = await db.insert(forumReplies2).values({
     postId: input.postId,
     userId: user.id,
     content: input.content.trim()
   });
-  const { sql: sql4 } = await import("drizzle-orm");
-  await db.update(forumPosts2).set({ replyCount: sql4`replyCount + 1` }).where(eq3(forumPosts2.id, input.postId));
+  const { sql: sql5 } = await import("drizzle-orm");
+  await db.update(forumPosts2).set({ replyCount: sql5`replyCount + 1` }).where(eq4(forumPosts2.id, input.postId));
   return { replyId: getInsertId(result) };
 }
 async function getForumReplies(postId) {
   const db = await requireDb();
   const { forumReplies: forumReplies2, users: users2 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
-  const { eq: eq3 } = await import("drizzle-orm");
+  const { eq: eq4 } = await import("drizzle-orm");
   return db.select({
     id: forumReplies2.id,
     postId: forumReplies2.postId,
@@ -2905,25 +2927,25 @@ async function getForumReplies(postId) {
       name: users2.displayName,
       avatarUrl: users2.avatarUrl
     }
-  }).from(forumReplies2).leftJoin(users2, eq3(forumReplies2.userId, users2.id)).where(eq3(forumReplies2.postId, postId)).orderBy(asc(forumReplies2.createdAt));
+  }).from(forumReplies2).leftJoin(users2, eq4(forumReplies2.userId, users2.id)).where(eq4(forumReplies2.postId, postId)).orderBy(asc(forumReplies2.createdAt));
 }
 async function getConventions(filters) {
   const db = await requireDb();
   const { conventions: conventions2, conventionCategories: conventionCategories2 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
-  const { eq: eq3, and: and2, gte: gte3, asc: asc2, inArray: inArray3, sql: sql4 } = await import("drizzle-orm");
+  const { eq: eq4, and: and3, gte: gte3, asc: asc3, inArray: inArray4, sql: sql5 } = await import("drizzle-orm");
   const today = (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
   const baseClauses = [
-    eq3(conventions2.status, "approved"),
+    eq4(conventions2.status, "approved"),
     gte3(conventions2.startDate, today)
   ];
-  if (filters.country) baseClauses.push(eq3(conventions2.country, filters.country));
-  if (filters.state) baseClauses.push(eq3(conventions2.state, filters.state));
+  if (filters.country) baseClauses.push(eq4(conventions2.country, filters.country));
+  if (filters.state) baseClauses.push(eq4(conventions2.state, filters.state));
   let conventionIds = null;
   if (filters.category && filters.category !== "all") {
-    const catRows = await db.select({ conventionId: conventionCategories2.conventionId }).from(conventionCategories2).where(eq3(conventionCategories2.category, filters.category));
+    const catRows = await db.select({ conventionId: conventionCategories2.conventionId }).from(conventionCategories2).where(eq4(conventionCategories2.category, filters.category));
     conventionIds = catRows.map((r) => r.conventionId);
     if (conventionIds.length === 0) return [];
-    baseClauses.push(inArray3(conventions2.id, conventionIds));
+    baseClauses.push(inArray4(conventions2.id, conventionIds));
   }
   const rows = await db.select({
     id: conventions2.id,
@@ -2940,10 +2962,10 @@ async function getConventions(filters) {
     description: conventions2.description,
     source: conventions2.source,
     createdAt: conventions2.createdAt
-  }).from(conventions2).where(and2(...baseClauses)).orderBy(asc2(conventions2.startDate)).limit(500);
+  }).from(conventions2).where(and3(...baseClauses)).orderBy(asc3(conventions2.startDate)).limit(500);
   if (rows.length > 0) {
     const ids = rows.map((r) => r.id);
-    const catRows = await db.select({ conventionId: conventionCategories2.conventionId, category: conventionCategories2.category }).from(conventionCategories2).where(inArray3(conventionCategories2.conventionId, ids));
+    const catRows = await db.select({ conventionId: conventionCategories2.conventionId, category: conventionCategories2.category }).from(conventionCategories2).where(inArray4(conventionCategories2.conventionId, ids));
     const catMap = /* @__PURE__ */ new Map();
     for (const cr of catRows) {
       if (!catMap.has(cr.conventionId)) catMap.set(cr.conventionId, []);
@@ -2956,9 +2978,9 @@ async function getConventions(filters) {
 async function getUpcomingConventions(limit = 3, userLocation) {
   const db = await requireDb();
   const { conventions: conventions2 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
-  const { eq: eq3, gte: gte3, asc: asc2, and: and2 } = await import("drizzle-orm");
+  const { eq: eq4, gte: gte3, asc: asc3, and: and3 } = await import("drizzle-orm");
   const today = (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
-  const baseWhere = and2(eq3(conventions2.status, "approved"), gte3(conventions2.startDate, today));
+  const baseWhere = and3(eq4(conventions2.status, "approved"), gte3(conventions2.startDate, today));
   if (userLocation?.state) {
     const stateMatches = await db.select({
       id: conventions2.id,
@@ -2969,7 +2991,7 @@ async function getUpcomingConventions(limit = 3, userLocation) {
       city: conventions2.city,
       state: conventions2.state,
       country: conventions2.country
-    }).from(conventions2).where(and2(baseWhere, eq3(conventions2.state, userLocation.state))).orderBy(asc2(conventions2.startDate)).limit(limit);
+    }).from(conventions2).where(and3(baseWhere, eq4(conventions2.state, userLocation.state))).orderBy(asc3(conventions2.startDate)).limit(limit);
     if (stateMatches.length >= limit) return stateMatches;
     const stateIds = stateMatches.map((r) => r.id);
     const { notInArray } = await import("drizzle-orm");
@@ -2982,11 +3004,11 @@ async function getUpcomingConventions(limit = 3, userLocation) {
       city: conventions2.city,
       state: conventions2.state,
       country: conventions2.country
-    }).from(conventions2).where(and2(
+    }).from(conventions2).where(and3(
       baseWhere,
-      eq3(conventions2.country, userLocation.country || "United States"),
+      eq4(conventions2.country, userLocation.country || "United States"),
       stateIds.length > 0 ? notInArray(conventions2.id, stateIds) : void 0
-    )).orderBy(asc2(conventions2.startDate)).limit(limit - stateMatches.length);
+    )).orderBy(asc3(conventions2.startDate)).limit(limit - stateMatches.length);
     return [...stateMatches, ...countryMatches].slice(0, limit);
   }
   if (userLocation?.country) {
@@ -2999,7 +3021,7 @@ async function getUpcomingConventions(limit = 3, userLocation) {
       city: conventions2.city,
       state: conventions2.state,
       country: conventions2.country
-    }).from(conventions2).where(and2(baseWhere, eq3(conventions2.country, userLocation.country))).orderBy(asc2(conventions2.startDate)).limit(limit);
+    }).from(conventions2).where(and3(baseWhere, eq4(conventions2.country, userLocation.country))).orderBy(asc3(conventions2.startDate)).limit(limit);
   }
   return [];
 }
@@ -3035,7 +3057,7 @@ async function submitConvention(data) {
 async function getPendingConventions() {
   const db = await requireDb();
   const { conventions: conventions2, users: users2 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
-  const { eq: eq3, desc: desc4 } = await import("drizzle-orm");
+  const { eq: eq4, desc: desc5 } = await import("drizzle-orm");
   return db.select({
     id: conventions2.id,
     name: conventions2.name,
@@ -3053,14 +3075,14 @@ async function getPendingConventions() {
     status: conventions2.status,
     createdAt: conventions2.createdAt,
     submittedByName: users2.displayName
-  }).from(conventions2).leftJoin(users2, eq3(conventions2.submittedBy, users2.id)).where(eq3(conventions2.status, "pending")).orderBy(desc4(conventions2.createdAt));
+  }).from(conventions2).leftJoin(users2, eq4(conventions2.submittedBy, users2.id)).where(eq4(conventions2.status, "pending")).orderBy(desc5(conventions2.createdAt));
 }
 async function approveConvention(id, adminId) {
   const db = await requireDb();
   const { conventions: conventions2, conventionCategories: conventionCategories2 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
-  const { eq: eq3 } = await import("drizzle-orm");
-  await db.update(conventions2).set({ status: "approved", approvedBy: adminId }).where(eq3(conventions2.id, id));
-  const [conv] = await db.select({ category: conventions2.category }).from(conventions2).where(eq3(conventions2.id, id));
+  const { eq: eq4 } = await import("drizzle-orm");
+  await db.update(conventions2).set({ status: "approved", approvedBy: adminId }).where(eq4(conventions2.id, id));
+  const [conv] = await db.select({ category: conventions2.category }).from(conventions2).where(eq4(conventions2.id, id));
   if (conv) {
     try {
       await db.insert(conventionCategories2).values({ conventionId: id, category: conv.category });
@@ -3072,15 +3094,15 @@ async function approveConvention(id, adminId) {
 async function rejectConvention(id, adminId) {
   const db = await requireDb();
   const { conventions: conventions2 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
-  const { eq: eq3 } = await import("drizzle-orm");
-  await db.update(conventions2).set({ status: "rejected", approvedBy: adminId }).where(eq3(conventions2.id, id));
+  const { eq: eq4 } = await import("drizzle-orm");
+  await db.update(conventions2).set({ status: "rejected", approvedBy: adminId }).where(eq4(conventions2.id, id));
   return { success: true };
 }
 async function deleteConvention(id) {
   const db = await requireDb();
   const { conventions: conventions2 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
-  const { eq: eq3 } = await import("drizzle-orm");
-  await db.delete(conventions2).where(eq3(conventions2.id, id));
+  const { eq: eq4 } = await import("drizzle-orm");
+  await db.delete(conventions2).where(eq4(conventions2.id, id));
   return { success: true };
 }
 async function suspendUser(userId) {
@@ -4171,7 +4193,7 @@ function registerStorageProxy(app) {
 // server/routers.ts
 init_const();
 init_db();
-import { z as z2 } from "zod";
+import { z as z3 } from "zod";
 
 // shared/gradingCompanyConfig.ts
 var gradingCompanyConfigs = [
@@ -5021,64 +5043,898 @@ async function getUserFeedback(accessToken, ebayUserId) {
   }));
 }
 
+// server/tradeFlowRouter.ts
+import { z as z2 } from "zod";
+init_db();
+init_schema();
+import { TRPCError as TRPCError3 } from "@trpc/server";
+import { eq as eq2, sql as sql2, inArray as inArray2, asc as asc2 } from "drizzle-orm";
+var initiateTradeSchema = z2.object({
+  listingId: z2.number().int().positive(),
+  message: z2.string().optional()
+});
+var declineTradeSchema = z2.object({
+  proposalId: z2.number().int().positive(),
+  reason: z2.string().optional()
+});
+var sendProposalSchema = z2.object({
+  proposalId: z2.number().int().positive(),
+  offeredListingIds: z2.array(z2.number().int().positive()),
+  cashFromProposer: z2.number().min(0).optional(),
+  cashFromRecipient: z2.number().min(0).optional(),
+  message: z2.string().optional()
+});
+var acceptProposalSchema = z2.object({
+  proposalId: z2.number().int().positive()
+});
+var rejectProposalSchema = z2.object({
+  proposalId: z2.number().int().positive(),
+  reason: z2.string().optional()
+});
+var submitTrackingSchema = z2.object({
+  proposalId: z2.number().int().positive(),
+  trackingNumbers: z2.array(z2.object({
+    listingId: z2.number().int().positive(),
+    carrier: z2.enum(["USPS", "UPS", "FedEx", "DHL", "Other"]),
+    carrierOther: z2.string().max(100).optional(),
+    trackingNumber: z2.string().min(1).max(50)
+  }))
+});
+var confirmReceiptSchema = z2.object({
+  proposalId: z2.number().int().positive(),
+  confirmationType: z2.enum(["received", "damaged"]).default("received")
+});
+var fileComplaintSchema = z2.object({
+  proposalId: z2.number().int().positive(),
+  description: z2.string().min(1),
+  complaintType: z2.enum(["damaged", "missing", "notAsDescribed", "other"]),
+  photoUrls: z2.array(z2.string()).max(5).optional()
+});
+var leaveReviewSchema = z2.object({
+  proposalId: z2.number().int().positive(),
+  tradeExperienceRating: z2.number().int().min(0).max(5),
+  itemConditionRating: z2.number().int().min(0).max(5),
+  communicationRating: z2.number().int().min(0).max(5),
+  shippingSpeedRating: z2.number().int().min(0).max(5),
+  review: z2.string().optional(),
+  photoUrls: z2.array(z2.string()).max(5).optional()
+});
+var getTradeAlertsSchema = z2.object({
+  folder: z2.enum(["proposal", "negotiating", "accepted", "shipped", "declined", "completed"]),
+  limit: z2.number().int().min(1).max(50).default(20),
+  offset: z2.number().int().min(0).default(0),
+  search: z2.string().optional()
+});
+var middleManRequestSchema = z2.object({
+  proposalId: z2.number().int().positive(),
+  action: z2.enum(["request", "approve", "deselect"])
+});
+var generateVotingLinkSchema = z2.object({
+  proposalId: z2.number().int().positive()
+});
+var castVoteSchema = z2.object({
+  linkToken: z2.string().min(1),
+  verdict: z2.enum(["steal", "fair", "pass"]),
+  comment: z2.string().optional()
+});
+var savePrivateNoteSchema = z2.object({
+  proposalId: z2.number().int().positive(),
+  noteContent: z2.string()
+});
+var sendTradeMessageSchema = z2.object({
+  proposalId: z2.number().int().positive(),
+  message: z2.string().min(1)
+});
+async function generateTradeRefNumber() {
+  const db = await requireDb();
+  const [result] = await db.execute(
+    sql2`SELECT MAX(CAST(SUBSTRING(tradeReferenceNumber, 4) AS UNSIGNED)) as maxNum FROM tradeProposals WHERE tradeReferenceNumber IS NOT NULL`
+  );
+  const maxNum = result?.[0]?.maxNum ?? 0;
+  const nextNum = maxNum + 1;
+  return `TR-${String(nextNum).padStart(6, "0")}`;
+}
+function getFolderStatusFilter(folder) {
+  switch (folder) {
+    case "proposal":
+      return ["pending"];
+    // Initial inquiry, no items yet
+    case "negotiating":
+      return ["negotiating"];
+    // Active negotiation with items
+    case "accepted":
+      return ["accepted"];
+    case "shipped":
+      return ["shipped"];
+    case "declined":
+      return ["declined", "cancelled"];
+    case "completed":
+      return ["completed"];
+    default:
+      return ["pending"];
+  }
+}
+var tradeFlowRouter = router({
+  // ==========================================================================
+  // STAGE 1: TRADE INITIATION
+  // ==========================================================================
+  initiateTradeProposal: protectedProcedure.input(initiateTradeSchema).mutation(async ({ ctx, input }) => {
+    const db = await requireDb();
+    const userId = ctx.user.id;
+    const [initiator] = await db.select().from(users).where(eq2(users.id, userId)).limit(1);
+    if (initiator?.isSuspended) {
+      throw new TRPCError3({ code: "FORBIDDEN", message: "Trading is disabled for suspended accounts" });
+    }
+    const [listing] = await db.select().from(listings).where(eq2(listings.id, input.listingId)).limit(1);
+    if (!listing) throw new TRPCError3({ code: "NOT_FOUND", message: "Listing not found" });
+    if (!listing.isActive || listing.status !== "active") {
+      throw new TRPCError3({ code: "BAD_REQUEST", message: "This listing is no longer available for trading" });
+    }
+    if (listing.ownerId === userId) {
+      throw new TRPCError3({ code: "BAD_REQUEST", message: "You cannot trade with yourself" });
+    }
+    const [recipient] = await db.select().from(users).where(eq2(users.id, listing.ownerId)).limit(1);
+    if (recipient?.isSuspended) {
+      throw new TRPCError3({ code: "FORBIDDEN", message: "This user's account is currently suspended" });
+    }
+    const tradeRef = await generateTradeRefNumber();
+    const now = (/* @__PURE__ */ new Date()).toISOString().slice(0, 19).replace("T", " ");
+    await db.insert(tradeProposals).values({
+      requesterId: userId,
+      recipientId: listing.ownerId,
+      requestedListingId: input.listingId,
+      note: input.message || null,
+      status: "pending",
+      createdAt: now,
+      updatedAt: now
+    });
+    const [inserted] = await db.execute(sql2`SELECT LAST_INSERT_ID() as id`);
+    const proposalId = inserted?.[0]?.id;
+    await db.execute(
+      sql2`UPDATE tradeProposals SET tradeReferenceNumber = ${tradeRef}, initiatorMessage = ${input.message || null}, lastActivityAt = ${now} WHERE id = ${proposalId}`
+    );
+    const alertMessage = JSON.stringify({
+      text: `${ctx.user.name || initiator?.username || "A user"} is interested in your item`,
+      itemName: listing.title,
+      itemId: listing.id,
+      tradeRef,
+      initiatorMessage: input.message || null
+    });
+    await db.execute(
+      sql2`INSERT INTO tradeAlerts (proposalId, recipientUserId, alertType, message, createdAt) VALUES (${proposalId}, ${listing.ownerId}, 'initiated', ${alertMessage}, ${now})`
+    );
+    await db.execute(
+      sql2`INSERT INTO tradeAdminLog (proposalId, eventType, actorUserId, details, createdAt) VALUES (${proposalId}, 'initiated', ${userId}, ${"Trade initiated"}, ${now})`
+    );
+    return { proposalId, tradeReferenceNumber: tradeRef };
+  }),
+  declineTradeProposal: protectedProcedure.input(declineTradeSchema).mutation(async ({ ctx, input }) => {
+    const db = await requireDb();
+    const userId = ctx.user.id;
+    const [proposal] = await db.select().from(tradeProposals).where(eq2(tradeProposals.id, input.proposalId)).limit(1);
+    if (!proposal) throw new TRPCError3({ code: "NOT_FOUND", message: "Trade not found" });
+    if (proposal.recipientId !== userId && proposal.requesterId !== userId) {
+      throw new TRPCError3({ code: "FORBIDDEN", message: "Not authorized" });
+    }
+    const now = (/* @__PURE__ */ new Date()).toISOString().slice(0, 19).replace("T", " ");
+    await db.execute(
+      sql2`UPDATE tradeProposals SET status = 'declined', declineReason = ${input.reason || null}, lastActivityAt = ${now}, updatedAt = ${now} WHERE id = ${input.proposalId}`
+    );
+    const otherUserId = proposal.requesterId === userId ? proposal.recipientId : proposal.requesterId;
+    await db.execute(
+      sql2`INSERT INTO tradeAlerts (proposalId, recipientUserId, alertType, message, createdAt) VALUES (${input.proposalId}, ${otherUserId}, 'declined', 'Trade has been declined', ${now})`
+    );
+    return { success: true };
+  }),
+  cancelTrade: protectedProcedure.input(z2.object({ proposalId: z2.number().int().positive() })).mutation(async ({ ctx, input }) => {
+    const db = await requireDb();
+    const userId = ctx.user.id;
+    const [proposal] = await db.select().from(tradeProposals).where(eq2(tradeProposals.id, input.proposalId)).limit(1);
+    if (!proposal) throw new TRPCError3({ code: "NOT_FOUND", message: "Trade not found" });
+    if (proposal.recipientId !== userId && proposal.requesterId !== userId) {
+      throw new TRPCError3({ code: "FORBIDDEN", message: "Not authorized" });
+    }
+    if (!["pending", "negotiating"].includes(proposal.status)) {
+      throw new TRPCError3({ code: "BAD_REQUEST", message: "Can only cancel trades in pending or negotiating status" });
+    }
+    const now = (/* @__PURE__ */ new Date()).toISOString().slice(0, 19).replace("T", " ");
+    await db.execute(
+      sql2`UPDATE tradeProposals SET status = 'cancelled', lastActivityAt = ${now}, updatedAt = ${now} WHERE id = ${input.proposalId}`
+    );
+    const otherUserId = proposal.requesterId === userId ? proposal.recipientId : proposal.requesterId;
+    await db.execute(
+      sql2`INSERT INTO tradeAlerts (proposalId, recipientUserId, alertType, message, createdAt) VALUES (${input.proposalId}, ${otherUserId}, 'cancelled', 'Trade has been cancelled', ${now})`
+    );
+    return { success: true };
+  }),
+  // ==========================================================================
+  // STAGE 2: NEGOTIATION
+  // ==========================================================================
+  enterWarRoom: protectedProcedure.input(z2.object({ proposalId: z2.number().int().positive() })).mutation(async ({ ctx, input }) => {
+    const db = await requireDb();
+    const userId = ctx.user.id;
+    const [proposal] = await db.select().from(tradeProposals).where(eq2(tradeProposals.id, input.proposalId)).limit(1);
+    if (!proposal) throw new TRPCError3({ code: "NOT_FOUND", message: "Trade not found" });
+    if (proposal.recipientId !== userId && proposal.requesterId !== userId) {
+      throw new TRPCError3({ code: "FORBIDDEN", message: "Not authorized" });
+    }
+    if (proposal.status === "pending") {
+      const now = (/* @__PURE__ */ new Date()).toISOString().slice(0, 19).replace("T", " ");
+      await db.execute(
+        sql2`UPDATE tradeProposals SET status = 'negotiating', negotiatingAt = ${now}, lastActivityAt = ${now}, updatedAt = ${now} WHERE id = ${input.proposalId}`
+      );
+    }
+    return { success: true };
+  }),
+  sendTradeProposal: protectedProcedure.input(sendProposalSchema).mutation(async ({ ctx, input }) => {
+    const db = await requireDb();
+    const userId = ctx.user.id;
+    const [proposal] = await db.select().from(tradeProposals).where(eq2(tradeProposals.id, input.proposalId)).limit(1);
+    if (!proposal) throw new TRPCError3({ code: "NOT_FOUND", message: "Trade not found" });
+    if (proposal.recipientId !== userId && proposal.requesterId !== userId) {
+      throw new TRPCError3({ code: "FORBIDDEN", message: "Not authorized" });
+    }
+    const now = (/* @__PURE__ */ new Date()).toISOString().slice(0, 19).replace("T", " ");
+    await db.execute(
+      sql2`DELETE FROM tradeProposalItems WHERE proposalId = ${input.proposalId} AND offeredListingId IN (SELECT id FROM listings WHERE ownerId = ${userId})`
+    );
+    for (const listingId of input.offeredListingIds) {
+      await db.insert(tradeProposalItems).values({
+        proposalId: input.proposalId,
+        offeredListingId: listingId,
+        createdAt: now
+      });
+    }
+    if (input.cashFromProposer !== void 0 || input.cashFromRecipient !== void 0) {
+      await db.execute(
+        sql2`UPDATE tradeProposals SET cashFromRequester = ${input.cashFromProposer || 0}, cashFromRecipient = ${input.cashFromRecipient || 0}, lastProposedBy = ${userId}, lastActivityAt = ${now}, updatedAt = ${now} WHERE id = ${input.proposalId}`
+      );
+    } else {
+      await db.execute(
+        sql2`UPDATE tradeProposals SET lastProposedBy = ${userId}, lastActivityAt = ${now}, updatedAt = ${now} WHERE id = ${input.proposalId}`
+      );
+    }
+    if (input.message) {
+      await db.insert(tradeMessages).values({
+        proposalId: input.proposalId,
+        senderId: userId,
+        message: input.message,
+        createdAt: now
+      });
+    }
+    const otherUserId = proposal.requesterId === userId ? proposal.recipientId : proposal.requesterId;
+    await db.execute(
+      sql2`INSERT INTO tradeAlerts (proposalId, recipientUserId, alertType, message, createdAt) VALUES (${input.proposalId}, ${otherUserId}, 'counterProposal', 'A new proposal has been submitted', ${now})`
+    );
+    return { success: true };
+  }),
+  acceptTradeProposal: protectedProcedure.input(acceptProposalSchema).mutation(async ({ ctx, input }) => {
+    const db = await requireDb();
+    const userId = ctx.user.id;
+    const [proposal] = await db.select().from(tradeProposals).where(eq2(tradeProposals.id, input.proposalId)).limit(1);
+    if (!proposal) throw new TRPCError3({ code: "NOT_FOUND", message: "Trade not found" });
+    if (proposal.recipientId !== userId && proposal.requesterId !== userId) {
+      throw new TRPCError3({ code: "FORBIDDEN", message: "Not authorized" });
+    }
+    if (!["negotiating"].includes(proposal.status)) {
+      throw new TRPCError3({ code: "BAD_REQUEST", message: "Trade must be in negotiating status to accept" });
+    }
+    const now = (/* @__PURE__ */ new Date()).toISOString().slice(0, 19).replace("T", " ");
+    const otherUserId = proposal.requesterId === userId ? proposal.recipientId : proposal.requesterId;
+    const [existingAcceptance] = await db.execute(
+      sql2`SELECT id FROM tradeReceiptConfirmation WHERE proposalId = ${input.proposalId} AND userId = ${otherUserId} AND confirmationType = 'accepted'`
+    );
+    const otherHasAccepted = (existingAcceptance?.length || 0) > 0;
+    if (otherHasAccepted) {
+      await db.execute(
+        sql2`UPDATE tradeProposals SET status = 'accepted', acceptedAt = ${now}, lastActivityAt = ${now}, updatedAt = ${now} WHERE id = ${input.proposalId}`
+      );
+      await db.execute(
+        sql2`UPDATE listings SET status = 'traded' WHERE id IN (SELECT offeredListingId FROM tradeProposalItems WHERE proposalId = ${input.proposalId})`
+      );
+      await db.execute(
+        sql2`UPDATE listings SET status = 'traded' WHERE id = ${proposal.requestedListingId}`
+      );
+      await db.execute(
+        sql2`INSERT INTO tradeAlerts (proposalId, recipientUserId, alertType, message, createdAt) VALUES (${input.proposalId}, ${otherUserId}, 'accepted', 'Both parties have accepted! Trade is now locked. Time to ship.', ${now})`
+      );
+      await db.execute(
+        sql2`INSERT INTO tradeAdminLog (proposalId, eventType, actorUserId, details, createdAt) VALUES (${input.proposalId}, 'accepted', ${userId}, 'Mutual acceptance — trade locked', ${now})`
+      );
+      await db.execute(
+        sql2`DELETE FROM tradeReceiptConfirmation WHERE proposalId = ${input.proposalId} AND confirmationType = 'accepted'`
+      );
+      await db.execute(
+        sql2`UPDATE tradeProposals SET status = 'cancelled', declineReason = 'Item is no longer available (traded in another proposal)', updatedAt = ${now} WHERE id != ${input.proposalId} AND requestedListingId = ${proposal.requestedListingId} AND status IN ('pending', 'negotiating')`
+      );
+      await db.execute(
+        sql2`UPDATE tradeProposals SET status = 'cancelled', declineReason = 'An item in this proposal is no longer available', updatedAt = ${now} WHERE id != ${input.proposalId} AND status IN ('pending', 'negotiating') AND id IN (SELECT proposalId FROM tradeProposalItems WHERE offeredListingId IN (SELECT offeredListingId FROM tradeProposalItems WHERE proposalId = ${input.proposalId}))`
+      );
+      return { success: true, mutualAcceptance: true };
+    } else {
+      await db.execute(
+        sql2`INSERT INTO tradeReceiptConfirmation (proposalId, userId, confirmationType, confirmedAt) VALUES (${input.proposalId}, ${userId}, 'accepted', ${now})`
+      );
+      await db.execute(
+        sql2`UPDATE tradeProposals SET lastActivityAt = ${now}, updatedAt = ${now} WHERE id = ${input.proposalId}`
+      );
+      await db.execute(
+        sql2`INSERT INTO tradeAlerts (proposalId, recipientUserId, alertType, message, createdAt) VALUES (${input.proposalId}, ${otherUserId}, 'accepted', 'Your trade partner has accepted! You have 72 hours to confirm.', ${now})`
+      );
+      await db.execute(
+        sql2`INSERT INTO tradeAdminLog (proposalId, eventType, actorUserId, details, createdAt) VALUES (${input.proposalId}, 'accepted', ${userId}, 'First acceptance — awaiting mutual confirmation', ${now})`
+      );
+      return { success: true, mutualAcceptance: false };
+    }
+  }),
+  rejectTradeProposal: protectedProcedure.input(rejectProposalSchema).mutation(async ({ ctx, input }) => {
+    const db = await requireDb();
+    const userId = ctx.user.id;
+    const [proposal] = await db.select().from(tradeProposals).where(eq2(tradeProposals.id, input.proposalId)).limit(1);
+    if (!proposal) throw new TRPCError3({ code: "NOT_FOUND", message: "Trade not found" });
+    if (proposal.recipientId !== userId && proposal.requesterId !== userId) {
+      throw new TRPCError3({ code: "FORBIDDEN", message: "Not authorized" });
+    }
+    const now = (/* @__PURE__ */ new Date()).toISOString().slice(0, 19).replace("T", " ");
+    await db.insert(tradeMessages).values({
+      proposalId: input.proposalId,
+      senderId: userId,
+      message: input.reason || "Proposal rejected",
+      createdAt: now
+    });
+    await db.execute(sql2`UPDATE tradeMessages SET messageType = 'rejection' WHERE proposalId = ${input.proposalId} AND senderId = ${userId} ORDER BY id DESC LIMIT 1`);
+    await db.execute(
+      sql2`UPDATE tradeProposals SET lastActivityAt = ${now}, updatedAt = ${now} WHERE id = ${input.proposalId}`
+    );
+    return { success: true };
+  }),
+  // ==========================================================================
+  // STAGE 3: SHIPPING & VERIFICATION
+  // ==========================================================================
+  submitTrackingNumbers: protectedProcedure.input(submitTrackingSchema).mutation(async ({ ctx, input }) => {
+    const db = await requireDb();
+    const userId = ctx.user.id;
+    const [proposal] = await db.select().from(tradeProposals).where(eq2(tradeProposals.id, input.proposalId)).limit(1);
+    if (!proposal) throw new TRPCError3({ code: "NOT_FOUND", message: "Trade not found" });
+    if (proposal.recipientId !== userId && proposal.requesterId !== userId) {
+      throw new TRPCError3({ code: "FORBIDDEN", message: "Not authorized" });
+    }
+    const now = (/* @__PURE__ */ new Date()).toISOString().slice(0, 19).replace("T", " ");
+    for (const tracking of input.trackingNumbers) {
+      await db.execute(
+        sql2`INSERT INTO tradeTrackingNumbers (proposalId, userId, listingId, carrier, carrierOther, trackingNumber, submittedAt) VALUES (${input.proposalId}, ${userId}, ${tracking.listingId}, ${tracking.carrier}, ${tracking.carrierOther || null}, ${tracking.trackingNumber}, ${now})`
+      );
+    }
+    const [trackingCounts] = await db.execute(
+      sql2`SELECT COUNT(DISTINCT userId) as userCount FROM tradeTrackingNumbers WHERE proposalId = ${input.proposalId}`
+    );
+    const bothShipped = trackingCounts?.[0]?.userCount >= 2;
+    if (bothShipped) {
+      await db.execute(
+        sql2`UPDATE tradeProposals SET status = 'shipped', shippedAt = ${now}, lastActivityAt = ${now}, updatedAt = ${now} WHERE id = ${input.proposalId}`
+      );
+    } else {
+      await db.execute(
+        sql2`UPDATE tradeProposals SET lastActivityAt = ${now}, updatedAt = ${now} WHERE id = ${input.proposalId}`
+      );
+    }
+    const otherUserId = proposal.requesterId === userId ? proposal.recipientId : proposal.requesterId;
+    await db.execute(
+      sql2`INSERT INTO tradeAlerts (proposalId, recipientUserId, alertType, message, createdAt) VALUES (${input.proposalId}, ${otherUserId}, 'shipped', 'Tracking number submitted', ${now})`
+    );
+    return { success: true };
+  }),
+  confirmItemsReceived: protectedProcedure.input(confirmReceiptSchema).mutation(async ({ ctx, input }) => {
+    const db = await requireDb();
+    const userId = ctx.user.id;
+    const [proposal] = await db.select().from(tradeProposals).where(eq2(tradeProposals.id, input.proposalId)).limit(1);
+    if (!proposal) throw new TRPCError3({ code: "NOT_FOUND", message: "Trade not found" });
+    if (proposal.recipientId !== userId && proposal.requesterId !== userId) {
+      throw new TRPCError3({ code: "FORBIDDEN", message: "Not authorized" });
+    }
+    const now = (/* @__PURE__ */ new Date()).toISOString().slice(0, 19).replace("T", " ");
+    await db.execute(
+      sql2`INSERT INTO tradeReceiptConfirmation (proposalId, userId, confirmationType, confirmedAt) VALUES (${input.proposalId}, ${userId}, ${input.confirmationType}, ${now})`
+    );
+    const [confirmCounts] = await db.execute(
+      sql2`SELECT COUNT(DISTINCT userId) as userCount FROM tradeReceiptConfirmation WHERE proposalId = ${input.proposalId} AND confirmationType IN ('received', 'damaged')`
+    );
+    const bothConfirmed = confirmCounts?.[0]?.userCount >= 2;
+    if (bothConfirmed) {
+      await db.execute(
+        sql2`UPDATE tradeProposals SET status = 'completed', completedAt = ${now}, lastActivityAt = ${now}, updatedAt = ${now} WHERE id = ${input.proposalId}`
+      );
+    }
+    const otherUserId = proposal.requesterId === userId ? proposal.recipientId : proposal.requesterId;
+    await db.execute(
+      sql2`INSERT INTO tradeAlerts (proposalId, recipientUserId, alertType, message, createdAt) VALUES (${input.proposalId}, ${otherUserId}, 'received', 'Items have been confirmed received', ${now})`
+    );
+    return { success: true };
+  }),
+  fileComplaint: protectedProcedure.input(fileComplaintSchema).mutation(async ({ ctx, input }) => {
+    const db = await requireDb();
+    const userId = ctx.user.id;
+    const now = (/* @__PURE__ */ new Date()).toISOString().slice(0, 19).replace("T", " ");
+    await db.execute(
+      sql2`INSERT INTO tradeComplaints (proposalId, complaintUserId, description, complaintType, photos, createdAt) VALUES (${input.proposalId}, ${userId}, ${input.description}, ${input.complaintType}, ${JSON.stringify(input.photoUrls || [])}, ${now})`
+    );
+    await db.execute(
+      sql2`UPDATE tradeProposals SET status = 'disputed', lastActivityAt = ${now}, updatedAt = ${now} WHERE id = ${input.proposalId}`
+    );
+    return { success: true };
+  }),
+  // ==========================================================================
+  // STAGE 4: FEEDBACK & RATINGS
+  // ==========================================================================
+  leaveTradeReview: protectedProcedure.input(leaveReviewSchema).mutation(async ({ ctx, input }) => {
+    const db = await requireDb();
+    const userId = ctx.user.id;
+    const [proposal] = await db.select().from(tradeProposals).where(eq2(tradeProposals.id, input.proposalId)).limit(1);
+    if (!proposal) throw new TRPCError3({ code: "NOT_FOUND", message: "Trade not found" });
+    const revieweeId = proposal.requesterId === userId ? proposal.recipientId : proposal.requesterId;
+    const overallRating = ((input.tradeExperienceRating + input.itemConditionRating + input.communicationRating + input.shippingSpeedRating) / 4).toFixed(1);
+    const now = (/* @__PURE__ */ new Date()).toISOString().slice(0, 19).replace("T", " ");
+    await db.insert(tradeReviews).values({
+      proposalId: input.proposalId,
+      reviewerId: userId,
+      revieweeId,
+      rating: Math.round(parseFloat(overallRating)),
+      review: input.review || null,
+      createdAt: now
+    });
+    await db.execute(
+      sql2`UPDATE tradeReviews SET tradeExperienceRating = ${input.tradeExperienceRating}, itemConditionRating = ${input.itemConditionRating}, communicationRating = ${input.communicationRating}, shippingSpeedRating = ${input.shippingSpeedRating}, overallRating = ${overallRating}, isVisible = 0 WHERE proposalId = ${input.proposalId} AND reviewerId = ${userId}`
+    );
+    const [reviewCounts] = await db.execute(
+      sql2`SELECT COUNT(*) as cnt FROM tradeReviews WHERE proposalId = ${input.proposalId}`
+    );
+    if (reviewCounts?.[0]?.cnt >= 2) {
+      await db.execute(
+        sql2`UPDATE tradeReviews SET isVisible = 1 WHERE proposalId = ${input.proposalId}`
+      );
+    }
+    return { success: true };
+  }),
+  // ==========================================================================
+  // QUERIES: TRADE HUB & WAR ROOM DATA
+  // ==========================================================================
+  getTradeAlerts: protectedProcedure.input(getTradeAlertsSchema).query(async ({ ctx, input }) => {
+    const db = await requireDb();
+    const userId = ctx.user.id;
+    const statuses = getFolderStatusFilter(input.folder);
+    const statusPlaceholders = statuses.map((s) => `'${s}'`).join(",");
+    const trades = await db.execute(
+      sql2`SELECT 
+          tp.id,
+          tp.requesterId,
+          tp.recipientId,
+          tp.requestedListingId,
+          tp.status,
+          tp.tradeReferenceNumber,
+          tp.lastActivityAt,
+          tp.cashFromRequester,
+          tp.cashFromRecipient,
+          tp.createdAt,
+          tp.note,
+          l.title as listingTitle,
+          l.estimatedValue as listingValue,
+          l.category as listingCategory,
+          (SELECT imageUrl FROM listingPhotos WHERE listingId = l.id ORDER BY sortOrder ASC LIMIT 1) as listingImage,
+          CASE WHEN tp.requesterId = ${userId} THEN tp.recipientId ELSE tp.requesterId END as otherUserId,
+          CASE WHEN tp.requesterId = ${userId} THEN 'sent' ELSE 'received' END as direction,
+          (SELECT COUNT(*) FROM tradeAlerts WHERE proposalId = tp.id AND recipientUserId = ${userId} AND isRead = 0) as unreadCount
+        FROM tradeProposals tp
+        LEFT JOIN listings l ON l.id = tp.requestedListingId
+        WHERE (tp.requesterId = ${userId} OR tp.recipientId = ${userId})
+          AND tp.status IN (${sql2.raw(statusPlaceholders)})
+        ORDER BY tp.lastActivityAt DESC, tp.createdAt DESC
+        LIMIT ${input.limit} OFFSET ${input.offset}`
+    );
+    const tradeList = trades?.[0] || [];
+    const otherUserIds = Array.from(new Set(tradeList.map((t2) => t2.otherUserId))).filter(Boolean);
+    let userMap = {};
+    if (otherUserIds.length > 0) {
+      const userIds = otherUserIds.map((id) => `${id}`).join(",");
+      const [usersResult] = await db.execute(
+        sql2`SELECT u.id, u.username, u.name, up.displayName, up.avatarUrl,
+            (SELECT AVG(rating) FROM tradeReviews WHERE revieweeId = u.id) as avgRating,
+            (SELECT COUNT(*) FROM tradeReviews WHERE revieweeId = u.id) as reviewCount
+          FROM users u
+          LEFT JOIN userProfiles up ON up.userId = u.id
+          WHERE u.id IN (${sql2.raw(userIds)})`
+      );
+      for (const user of usersResult) {
+        userMap[user.id] = user;
+      }
+    }
+    const proposalIds = tradeList.map((t2) => t2.id);
+    let itemCountMap = {};
+    if (proposalIds.length > 0) {
+      const pIds = proposalIds.join(",");
+      const [itemCounts] = await db.execute(
+        sql2`SELECT proposalId, COUNT(*) as itemCount FROM tradeProposalItems WHERE proposalId IN (${sql2.raw(pIds)}) GROUP BY proposalId`
+      );
+      for (const ic of itemCounts) {
+        itemCountMap[ic.proposalId] = ic.itemCount;
+      }
+    }
+    return {
+      trades: tradeList.map((t2) => ({
+        id: t2.id,
+        tradeReferenceNumber: t2.tradeReferenceNumber,
+        status: t2.status,
+        direction: t2.direction,
+        lastActivityAt: t2.lastActivityAt,
+        createdAt: t2.createdAt,
+        unreadCount: t2.unreadCount || 0,
+        cashFromRequester: t2.cashFromRequester,
+        cashFromRecipient: t2.cashFromRecipient,
+        note: t2.note,
+        listing: {
+          id: t2.requestedListingId,
+          title: t2.listingTitle,
+          value: t2.listingValue,
+          category: t2.listingCategory,
+          image: t2.listingImage
+        },
+        otherUser: userMap[t2.otherUserId] || null,
+        itemCount: itemCountMap[t2.id] || 0
+      })),
+      total: tradeList.length
+    };
+  }),
+  getUnreadTradeAlertCount: protectedProcedure.query(async ({ ctx }) => {
+    const db = await requireDb();
+    const userId = ctx.user.id;
+    const [result] = await db.execute(
+      sql2`SELECT COUNT(*) as count FROM tradeAlerts WHERE recipientUserId = ${userId} AND isRead = 0`
+    );
+    return { count: result?.[0]?.count || 0 };
+  }),
+  getTradeDetails: protectedProcedure.input(z2.object({ proposalId: z2.number().int().positive() })).query(async ({ ctx, input }) => {
+    const db = await requireDb();
+    const userId = ctx.user.id;
+    const [proposal] = await db.select().from(tradeProposals).where(eq2(tradeProposals.id, input.proposalId)).limit(1);
+    if (!proposal) throw new TRPCError3({ code: "NOT_FOUND", message: "Trade not found" });
+    if (proposal.recipientId !== userId && proposal.requesterId !== userId) {
+      throw new TRPCError3({ code: "FORBIDDEN", message: "Not authorized" });
+    }
+    const [requestedListing] = await db.select().from(listings).where(eq2(listings.id, proposal.requestedListingId)).limit(1);
+    const requestedPhotos = await db.select().from(listingPhotos).where(eq2(listingPhotos.listingId, proposal.requestedListingId)).orderBy(asc2(listingPhotos.sortOrder));
+    const proposalItems = await db.select().from(tradeProposalItems).where(eq2(tradeProposalItems.proposalId, input.proposalId));
+    const offeredListingIds = proposalItems.map((pi) => pi.offeredListingId);
+    let offeredListings = [];
+    if (offeredListingIds.length > 0) {
+      offeredListings = await db.select().from(listings).where(inArray2(listings.id, offeredListingIds));
+      for (const listing of offeredListings) {
+        const photos = await db.select().from(listingPhotos).where(eq2(listingPhotos.listingId, listing.id)).orderBy(asc2(listingPhotos.sortOrder));
+        listing.photos = photos;
+      }
+    }
+    const otherUserId = proposal.requesterId === userId ? proposal.recipientId : proposal.requesterId;
+    const [otherUserResult] = await db.execute(
+      sql2`SELECT u.id, u.username, u.name, up.displayName, up.avatarUrl, up.bio,
+          (SELECT AVG(rating) FROM tradeReviews WHERE revieweeId = u.id) as avgRating,
+          (SELECT COUNT(*) FROM tradeReviews WHERE revieweeId = u.id) as reviewCount
+        FROM users u
+        LEFT JOIN userProfiles up ON up.userId = u.id
+        WHERE u.id = ${otherUserId}`
+    );
+    const [tradeExtra] = await db.execute(
+      sql2`SELECT tradeReferenceNumber, negotiatingAt, acceptedAt, shippedAt, lastActivityAt, cashFromRequester, cashFromRecipient, middleManRequested, middleManApproved, declineReason, lastProposedBy FROM tradeProposals WHERE id = ${input.proposalId}`
+    );
+    return {
+      proposal: {
+        ...proposal,
+        ...tradeExtra?.[0]
+      },
+      requestedListing: {
+        ...requestedListing,
+        photos: requestedPhotos
+      },
+      offeredListings: offeredListings.map((l) => ({
+        ...l,
+        ownerId: l.ownerId
+      })),
+      otherUser: otherUserResult?.[0] || null,
+      isRequester: proposal.requesterId === userId
+    };
+  }),
+  getOtherUserInventory: protectedProcedure.input(z2.object({
+    proposalId: z2.number().int().positive(),
+    category: z2.string().optional(),
+    search: z2.string().optional()
+  })).query(async ({ ctx, input }) => {
+    const db = await requireDb();
+    const userId = ctx.user.id;
+    const [proposal] = await db.select().from(tradeProposals).where(eq2(tradeProposals.id, input.proposalId)).limit(1);
+    if (!proposal) throw new TRPCError3({ code: "NOT_FOUND", message: "Trade not found" });
+    const otherUserId = proposal.requesterId === userId ? proposal.recipientId : proposal.requesterId;
+    let query = sql2`SELECT l.id, l.ownerId, l.title, l.category, l.itemType, l.estimatedValue,
+        l.condition, l.grade, l.certificationCompany, l.certificationNumber,
+        l.description, l.itemDetails, l.signatures, l.status, l.isActive, l.createdAt,
+        (SELECT imageUrl FROM listingPhotos WHERE listingId = l.id ORDER BY sortOrder ASC LIMIT 1) as primaryImage
+      FROM listings l
+      WHERE l.ownerId = ${otherUserId} AND l.isActive = 1 AND l.status = 'active'`;
+    if (input.category) {
+      query = sql2`${query} AND l.category = ${input.category}`;
+    }
+    if (input.search) {
+      query = sql2`${query} AND l.title LIKE ${`%${input.search}%`}`;
+    }
+    query = sql2`${query} ORDER BY l.createdAt DESC LIMIT 50`;
+    const [items] = await db.execute(query);
+    const itemList = items;
+    const itemIds = itemList.map((i) => i.id);
+    let allPhotos = [];
+    if (itemIds.length > 0) {
+      const [photoRows] = await db.execute(
+        sql2`SELECT listingId, imageUrl, sortOrder FROM listingPhotos WHERE listingId IN (${sql2.raw(itemIds.join(","))}) ORDER BY sortOrder ASC`
+      );
+      allPhotos = photoRows;
+    }
+    const itemsWithPhotos = itemList.map((item) => ({
+      ...item,
+      photos: allPhotos.filter((p) => p.listingId === item.id).map((p) => ({ imageUrl: p.imageUrl, sortOrder: p.sortOrder }))
+    }));
+    return { items: itemsWithPhotos };
+  }),
+  getShippingInfo: protectedProcedure.input(z2.object({ proposalId: z2.number().int().positive() })).query(async ({ ctx, input }) => {
+    const db = await requireDb();
+    const userId = ctx.user.id;
+    const [proposal] = await db.select().from(tradeProposals).where(eq2(tradeProposals.id, input.proposalId)).limit(1);
+    if (!proposal) throw new TRPCError3({ code: "NOT_FOUND", message: "Trade not found" });
+    if (proposal.recipientId !== userId && proposal.requesterId !== userId) {
+      throw new TRPCError3({ code: "FORBIDDEN", message: "Not authorized" });
+    }
+    const [tracking] = await db.execute(
+      sql2`SELECT * FROM tradeTrackingNumbers WHERE proposalId = ${input.proposalId}`
+    );
+    const [receipts] = await db.execute(
+      sql2`SELECT * FROM tradeReceiptConfirmation WHERE proposalId = ${input.proposalId}`
+    );
+    return {
+      trackingNumbers: tracking,
+      receipts
+    };
+  }),
+  // ==========================================================================
+  // COMMUNICATION
+  // ==========================================================================
+  sendMessage: protectedProcedure.input(sendTradeMessageSchema).mutation(async ({ ctx, input }) => {
+    const db = await requireDb();
+    const userId = ctx.user.id;
+    const [proposal] = await db.select().from(tradeProposals).where(eq2(tradeProposals.id, input.proposalId)).limit(1);
+    if (!proposal) throw new TRPCError3({ code: "NOT_FOUND", message: "Trade not found" });
+    if (proposal.recipientId !== userId && proposal.requesterId !== userId) {
+      throw new TRPCError3({ code: "FORBIDDEN", message: "Not authorized" });
+    }
+    const now = (/* @__PURE__ */ new Date()).toISOString().slice(0, 19).replace("T", " ");
+    await db.insert(tradeMessages).values({
+      proposalId: input.proposalId,
+      senderId: userId,
+      message: input.message,
+      createdAt: now
+    });
+    await db.execute(
+      sql2`UPDATE tradeProposals SET lastActivityAt = ${now}, updatedAt = ${now} WHERE id = ${input.proposalId}`
+    );
+    const otherUserId = proposal.requesterId === userId ? proposal.recipientId : proposal.requesterId;
+    await db.execute(
+      sql2`INSERT INTO tradeAlerts (proposalId, recipientUserId, alertType, message, isRead, createdAt) VALUES (${input.proposalId}, ${otherUserId}, 'initiated', 'New message in trade', 0, ${now})`
+    );
+    return { success: true };
+  }),
+  getMessages: protectedProcedure.input(z2.object({
+    proposalId: z2.number().int().positive(),
+    limit: z2.number().int().min(1).max(100).default(50),
+    offset: z2.number().int().min(0).default(0)
+  })).query(async ({ ctx, input }) => {
+    const db = await requireDb();
+    const userId = ctx.user.id;
+    const [proposal] = await db.select().from(tradeProposals).where(eq2(tradeProposals.id, input.proposalId)).limit(1);
+    if (!proposal) throw new TRPCError3({ code: "NOT_FOUND", message: "Trade not found" });
+    if (proposal.recipientId !== userId && proposal.requesterId !== userId) {
+      throw new TRPCError3({ code: "FORBIDDEN", message: "Not authorized" });
+    }
+    const [messages] = await db.execute(
+      sql2`SELECT tm.id, tm.senderId, tm.message, tm.messageType, tm.metadata, tm.createdAt,
+          u.username as senderUsername, up.displayName as senderDisplayName, up.avatarUrl as senderAvatar
+        FROM tradeMessages tm
+        LEFT JOIN users u ON u.id = tm.senderId
+        LEFT JOIN userProfiles up ON up.userId = tm.senderId
+        WHERE tm.proposalId = ${input.proposalId}
+        ORDER BY tm.createdAt ASC
+        LIMIT ${input.limit} OFFSET ${input.offset}`
+    );
+    return { messages };
+  }),
+  // ==========================================================================
+  // PRO FEATURES
+  // ==========================================================================
+  middleManService: protectedProcedure.input(middleManRequestSchema).mutation(async ({ ctx, input }) => {
+    const db = await requireDb();
+    const userId = ctx.user.id;
+    const now = (/* @__PURE__ */ new Date()).toISOString().slice(0, 19).replace("T", " ");
+    if (input.action === "request") {
+      await db.execute(
+        sql2`UPDATE tradeProposals SET middleManRequested = 1, middleManRequestedBy = ${userId}, updatedAt = ${now} WHERE id = ${input.proposalId}`
+      );
+    } else if (input.action === "approve") {
+      await db.execute(
+        sql2`UPDATE tradeProposals SET middleManApproved = 1, updatedAt = ${now} WHERE id = ${input.proposalId}`
+      );
+    } else if (input.action === "deselect") {
+      await db.execute(
+        sql2`UPDATE tradeProposals SET middleManRequested = 0, middleManApproved = 0, middleManRequestedBy = NULL, updatedAt = ${now} WHERE id = ${input.proposalId}`
+      );
+    }
+    return { success: true };
+  }),
+  generateVotingLink: protectedProcedure.input(generateVotingLinkSchema).mutation(async ({ ctx, input }) => {
+    const db = await requireDb();
+    const userId = ctx.user.id;
+    const now = (/* @__PURE__ */ new Date()).toISOString().slice(0, 19).replace("T", " ");
+    const token = Array.from({ length: 32 }, () => Math.random().toString(36)[2]).join("");
+    const expiresAt = new Date(Date.now() + 3 * 24 * 60 * 60 * 1e3).toISOString().slice(0, 19).replace("T", " ");
+    await db.execute(
+      sql2`INSERT INTO tradeVotingLinks (proposalId, generatedByUserId, linkToken, expiresAt, createdAt) VALUES (${input.proposalId}, ${userId}, ${token}, ${expiresAt}, ${now})`
+    );
+    return { token, expiresAt };
+  }),
+  castVote: protectedProcedure.input(castVoteSchema).mutation(async ({ ctx, input }) => {
+    const db = await requireDb();
+    const userId = ctx.user.id;
+    const now = (/* @__PURE__ */ new Date()).toISOString().slice(0, 19).replace("T", " ");
+    const [links] = await db.execute(
+      sql2`SELECT id, proposalId, expiresAt FROM tradeVotingLinks WHERE linkToken = ${input.linkToken}`
+    );
+    const link = links?.[0];
+    if (!link) throw new TRPCError3({ code: "NOT_FOUND", message: "Voting link not found" });
+    if (new Date(link.expiresAt) < /* @__PURE__ */ new Date()) throw new TRPCError3({ code: "BAD_REQUEST", message: "Voting link has expired" });
+    const [proposal] = await db.select().from(tradeProposals).where(eq2(tradeProposals.id, link.proposalId)).limit(1);
+    if (proposal && (proposal.requesterId === userId || proposal.recipientId === userId)) {
+      throw new TRPCError3({ code: "BAD_REQUEST", message: "Cannot vote on your own trade" });
+    }
+    await db.execute(
+      sql2`INSERT INTO tradeVotes (votingLinkId, voterUserId, verdict, comment, createdAt) VALUES (${link.id}, ${userId}, ${input.verdict}, ${input.comment || null}, ${now})`
+    );
+    return { success: true };
+  }),
+  getVotingResults: protectedProcedure.input(z2.object({ linkToken: z2.string().min(1) })).query(async ({ ctx, input }) => {
+    const db = await requireDb();
+    const [links] = await db.execute(
+      sql2`SELECT id, proposalId FROM tradeVotingLinks WHERE linkToken = ${input.linkToken}`
+    );
+    const link = links?.[0];
+    if (!link) throw new TRPCError3({ code: "NOT_FOUND", message: "Voting link not found" });
+    const [proposals] = await db.execute(
+      sql2`SELECT tp.requestedListingId, tp.cashFromRequester, tp.cashFromRecipient,
+          l.title as requestedTitle, l.estimatedValue as requestedValue, l.category as requestedCategory
+        FROM tradeProposals tp
+        LEFT JOIN listings l ON l.id = tp.requestedListingId
+        WHERE tp.id = ${link.proposalId}`
+    );
+    const proposalData = proposals?.[0];
+    const [offeredItems] = await db.execute(
+      sql2`SELECT l.title, l.estimatedValue, l.category
+        FROM tradeProposalItems tpi
+        JOIN listings l ON l.id = tpi.offeredListingId
+        WHERE tpi.proposalId = ${link.proposalId}`
+    );
+    const [votes] = await db.execute(
+      sql2`SELECT verdict, comment, createdAt FROM tradeVotes WHERE votingLinkId = ${link.id} ORDER BY createdAt DESC`
+    );
+    const voteList = votes;
+    const total = voteList.length;
+    const steal = voteList.filter((v) => v.verdict === "steal").length;
+    const fair = voteList.filter((v) => v.verdict === "fair").length;
+    const pass = voteList.filter((v) => v.verdict === "pass").length;
+    return {
+      total,
+      steal: { count: steal, percentage: total > 0 ? Math.round(steal / total * 100) : 0 },
+      fair: { count: fair, percentage: total > 0 ? Math.round(fair / total * 100) : 0 },
+      pass: { count: pass, percentage: total > 0 ? Math.round(pass / total * 100) : 0 },
+      comments: voteList.filter((v) => v.comment).map((v) => ({ verdict: v.verdict, comment: v.comment, createdAt: v.createdAt })),
+      // Anonymous trade details (no usernames)
+      tradeDetails: {
+        traderA: {
+          items: offeredItems.map((i) => ({ title: i.title, value: i.estimatedValue, category: i.category })),
+          cash: proposalData?.cashFromRequester || 0
+        },
+        traderB: {
+          items: proposalData ? [{ title: proposalData.requestedTitle, value: proposalData.requestedValue, category: proposalData.requestedCategory }] : [],
+          cash: proposalData?.cashFromRecipient || 0
+        }
+      }
+    };
+  }),
+  savePrivateNote: protectedProcedure.input(savePrivateNoteSchema).mutation(async ({ ctx, input }) => {
+    const db = await requireDb();
+    const userId = ctx.user.id;
+    const now = (/* @__PURE__ */ new Date()).toISOString().slice(0, 19).replace("T", " ");
+    await db.execute(
+      sql2`INSERT INTO tradePrivateNotes (proposalId, userId, noteContent, createdAt, updatedAt) VALUES (${input.proposalId}, ${userId}, ${input.noteContent}, ${now}, ${now}) ON DUPLICATE KEY UPDATE noteContent = ${input.noteContent}, updatedAt = ${now}`
+    );
+    return { success: true };
+  }),
+  getPrivateNote: protectedProcedure.input(z2.object({ proposalId: z2.number().int().positive() })).query(async ({ ctx, input }) => {
+    const db = await requireDb();
+    const userId = ctx.user.id;
+    const [notes] = await db.execute(
+      sql2`SELECT noteContent, updatedAt FROM tradePrivateNotes WHERE proposalId = ${input.proposalId} AND userId = ${userId}`
+    );
+    const note = notes?.[0];
+    return { noteContent: note?.noteContent || "", updatedAt: note?.updatedAt || null };
+  }),
+  markAlertsAsRead: protectedProcedure.input(z2.object({ proposalId: z2.number().int().positive() })).mutation(async ({ ctx, input }) => {
+    const db = await requireDb();
+    const userId = ctx.user.id;
+    await db.execute(
+      sql2`UPDATE tradeAlerts SET isRead = 1 WHERE proposalId = ${input.proposalId} AND recipientUserId = ${userId}`
+    );
+    return { success: true };
+  })
+});
+
 // server/routers.ts
 init_customAuth();
 init_schema();
 init_const();
-import { eq as eq2, sql as sql2, desc as desc2, or as or2, inArray as inArray2 } from "drizzle-orm";
-import { TRPCError as TRPCError3 } from "@trpc/server";
-var uploadedImageSchema = z2.object({
-  name: z2.string().max(200).optional().default(""),
-  type: z2.string().max(120).optional().default(""),
-  contentBase64: z2.string().min(1).optional(),
+import { eq as eq3, sql as sql3, desc as desc3, or as or3, inArray as inArray3 } from "drizzle-orm";
+import { TRPCError as TRPCError4 } from "@trpc/server";
+var uploadedImageSchema = z3.object({
+  name: z3.string().max(200).optional().default(""),
+  type: z3.string().max(120).optional().default(""),
+  contentBase64: z3.string().min(1).optional(),
   // Optional: only present for new uploads
-  imageUrl: z2.string().optional(),
+  imageUrl: z3.string().optional(),
   // Optional: present for existing photos
-  previewUrl: z2.string().optional()
+  previewUrl: z3.string().optional()
   // Optional: frontend preview URL
 });
-var listingFiltersSchema = z2.object({
-  category: z2.enum(collectibleCategories).optional(),
-  condition: z2.enum(itemConditions).optional(),
-  keyword: z2.string().max(100).optional(),
-  issueNumber: z2.string().max(50).optional(),
-  manufacturer: z2.string().max(100).optional(),
-  year: z2.string().max(50).optional(),
-  team: z2.string().max(100).optional(),
-  series: z2.string().max(100).optional(),
-  sport: z2.string().max(50).optional(),
-  gradingService: z2.string().max(100).optional(),
-  grade: z2.string().max(10).optional(),
-  valueMin: z2.number().optional(),
-  valueMax: z2.number().optional(),
-  rookie: z2.string().max(10).optional(),
-  autographed: z2.string().max(10).optional(),
-  signed: z2.string().max(10).optional(),
-  facsimile: z2.string().max(10).optional(),
+var listingFiltersSchema = z3.object({
+  category: z3.enum(collectibleCategories).optional(),
+  condition: z3.enum(itemConditions).optional(),
+  keyword: z3.string().max(100).optional(),
+  issueNumber: z3.string().max(50).optional(),
+  manufacturer: z3.string().max(100).optional(),
+  year: z3.string().max(50).optional(),
+  team: z3.string().max(100).optional(),
+  series: z3.string().max(100).optional(),
+  sport: z3.string().max(50).optional(),
+  gradingService: z3.string().max(100).optional(),
+  grade: z3.string().max(10).optional(),
+  valueMin: z3.number().optional(),
+  valueMax: z3.number().optional(),
+  rookie: z3.string().max(10).optional(),
+  autographed: z3.string().max(10).optional(),
+  signed: z3.string().max(10).optional(),
+  facsimile: z3.string().max(10).optional(),
   // Dedicated per-filter parameters (each filter owns its own channel)
-  title: z2.string().max(160).optional(),
-  system: z2.string().max(60).optional(),
-  region: z2.string().max(60).optional(),
-  country: z2.string().max(100).optional(),
-  format: z2.string().max(60).optional(),
-  medium: z2.string().max(60).optional(),
-  denomination: z2.string().max(60).optional(),
-  mintMark: z2.string().max(20).optional(),
-  issuer: z2.string().max(100).optional(),
-  edition: z2.string().max(60).optional(),
-  parkOrEvent: z2.string().max(100).optional(),
-  franchise: z2.string().max(100).optional(),
-  rarity: z2.string().max(60).optional()
+  title: z3.string().max(160).optional(),
+  system: z3.string().max(60).optional(),
+  region: z3.string().max(60).optional(),
+  country: z3.string().max(100).optional(),
+  format: z3.string().max(60).optional(),
+  medium: z3.string().max(60).optional(),
+  denomination: z3.string().max(60).optional(),
+  mintMark: z3.string().max(20).optional(),
+  issuer: z3.string().max(100).optional(),
+  edition: z3.string().max(60).optional(),
+  parkOrEvent: z3.string().max(100).optional(),
+  franchise: z3.string().max(100).optional(),
+  rarity: z3.string().max(60).optional()
 });
-var memberSearchSchema = z2.object({
-  query: z2.string().max(120).optional(),
-  region: z2.string().max(120).optional(),
-  verification: z2.enum(["all", "verified", "established", "rising"]).optional()
+var memberSearchSchema = z3.object({
+  query: z3.string().max(120).optional(),
+  region: z3.string().max(120).optional(),
+  verification: z3.enum(["all", "verified", "established", "rising"]).optional()
 });
-var reportUserSchema = z2.object({
-  reportedMember: z2.string().min(2).max(160),
-  listingReference: z2.string().max(240).optional(),
-  concernType: z2.enum([
+var reportUserSchema = z3.object({
+  reportedMember: z3.string().min(2).max(160),
+  listingReference: z3.string().max(240).optional(),
+  concernType: z3.enum([
     "Counterfeit or inaccurate item description",
     "Harassment or abusive conduct",
     "Spam, solicitation, or scam activity",
@@ -5086,19 +5942,20 @@ var reportUserSchema = z2.object({
     "Unauthorized contact information sharing",
     "Other community concern"
   ]),
-  contactEmail: z2.string().email().max(320),
-  details: z2.string().min(20).max(3e3),
-  supportingNotes: z2.string().max(2e3).optional()
+  contactEmail: z3.string().email().max(320),
+  details: z3.string().min(20).max(3e3),
+  supportingNotes: z3.string().max(2e3).optional()
 });
-var referralRequestSchema = z2.object({
-  friendName: z2.string().min(2).max(160),
-  friendEmail: z2.string().email().max(320),
-  collectorFocus: z2.string().min(2).max(200),
-  isMerchant: z2.boolean().default(false),
-  message: z2.string().min(20).max(2e3)
+var referralRequestSchema = z3.object({
+  friendName: z3.string().min(2).max(160),
+  friendEmail: z3.string().email().max(320),
+  collectorFocus: z3.string().min(2).max(200),
+  isMerchant: z3.boolean().default(false),
+  message: z3.string().min(20).max(2e3)
 });
 var appRouter = router({
   system: systemRouter,
+  tradeFlow: tradeFlowRouter,
   auth: router({
     me: publicProcedure.query(async (opts) => {
       const user = opts.ctx.user;
@@ -5110,7 +5967,7 @@ var appRouter = router({
         firstName: userProfiles.firstName,
         lastName: userProfiles.lastName,
         avatarUrl: userProfiles.avatarUrl
-      }).from(userProfiles).where(eq2(userProfiles.userId, user.id)).limit(1);
+      }).from(userProfiles).where(eq3(userProfiles.userId, user.id)).limit(1);
       return {
         ...user,
         firstName: profile[0]?.firstName ?? null,
@@ -5119,11 +5976,11 @@ var appRouter = router({
       };
     }),
     signup: publicProcedure.input(
-      z2.object({
-        username: z2.string().min(3).max(32),
-        password: z2.string().min(8),
-        displayName: z2.string().min(1).max(255),
-        email: z2.string().email().optional()
+      z3.object({
+        username: z3.string().min(3).max(32),
+        password: z3.string().min(8),
+        displayName: z3.string().min(1).max(255),
+        email: z3.string().email().optional()
       })
     ).mutation(async ({ input, ctx }) => {
       if (!isValidUsername(input.username)) {
@@ -5157,9 +6014,9 @@ var appRouter = router({
       return { success: true, userId };
     }),
     signin: publicProcedure.input(
-      z2.object({
-        username: z2.string(),
-        password: z2.string()
+      z3.object({
+        username: z3.string(),
+        password: z3.string()
       })
     ).mutation(async ({ input, ctx }) => {
       const user = await getUserByUsername(input.username);
@@ -5185,7 +6042,7 @@ var appRouter = router({
       const db = await requireDb();
       if (ctx.user?.id) {
         const offlineTime = toMysqlDateTime(/* @__PURE__ */ new Date("1970-01-02T00:00:00Z"));
-        await db.update(users).set({ lastActivityAt: offlineTime }).where(eq2(users.id, ctx.user.id));
+        await db.update(users).set({ lastActivityAt: offlineTime }).where(eq3(users.id, ctx.user.id));
       }
       const cookieOptions = getSessionCookieOptions(ctx.req);
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
@@ -5217,14 +6074,14 @@ var appRouter = router({
     topHighestValueItems: publicProcedure.query(({ ctx }) => {
       return getTopHighestValueItems(ctx.user?.id ?? null);
     }),
-    getUserProfile: publicProcedure.input(z2.object({ userId: z2.number().int().positive() })).query(async ({ input, ctx }) => {
+    getUserProfile: publicProcedure.input(z3.object({ userId: z3.number().int().positive() })).query(async ({ input, ctx }) => {
       const db = await requireDb();
-      const user = await db.select().from(users).where(eq2(users.id, input.userId)).limit(1);
+      const user = await db.select().from(users).where(eq3(users.id, input.userId)).limit(1);
       if (!user.length) {
-        throw new TRPCError3({ code: "NOT_FOUND", message: "User not found" });
+        throw new TRPCError4({ code: "NOT_FOUND", message: "User not found" });
       }
-      const profile = await db.select().from(userProfiles).where(eq2(userProfiles.userId, input.userId)).limit(1);
-      const userListings = await db.select().from(listings).where(eq2(listings.ownerId, input.userId)).limit(100);
+      const profile = await db.select().from(userProfiles).where(eq3(userProfiles.userId, input.userId)).limit(1);
+      const userListings = await db.select().from(listings).where(eq3(listings.ownerId, input.userId)).limit(100);
       return {
         user: user[0],
         profile: profile[0] || null,
@@ -5232,10 +6089,10 @@ var appRouter = router({
       };
     }),
     search: publicProcedure.input(
-      z2.object({
-        query: z2.string().max(100),
-        category: z2.enum(collectibleCategories).optional(),
-        condition: z2.enum(itemConditions).optional()
+      z3.object({
+        query: z3.string().max(100),
+        category: z3.enum(collectibleCategories).optional(),
+        condition: z3.enum(itemConditions).optional()
       })
     ).query(({ ctx, input }) => {
       return getMarketplaceFeed(
@@ -5251,52 +6108,52 @@ var appRouter = router({
       return getDashboardData({ id: ctx.user.id, name: ctx.user.name });
     }),
     listingDetail: publicProcedure.input(
-      z2.object({
-        listingId: z2.number().int().positive()
+      z3.object({
+        listingId: z3.number().int().positive()
       })
     ).query(async ({ ctx, input }) => {
       const detail = await getListingDetail(input.listingId, ctx.user?.id ?? null);
       return { listing: detail };
     }),
     saveProfile: protectedProcedure.input(
-      z2.object({
+      z3.object({
         // DEPRECATED: retained for client compatibility but IGNORED server-side.
         // The authenticated session (ctx.user.id) is the only trusted identity.
         // Previously this public procedure trusted a client-supplied userId,
         // letting anonymous visitors overwrite any user's profile.
-        userId: z2.union([z2.string(), z2.number()]).optional(),
-        displayName: z2.string().min(2).max(120),
-        bio: z2.string().max(500).optional(),
-        contactFullName: z2.string().max(160).optional(),
-        contactEmail: z2.string().email().max(320).optional().or(z2.literal("")),
-        contactPhone: z2.string().max(40).optional(),
-        contactAddress: z2.string().max(320).optional(),
-        contactTown: z2.string().max(100).optional(),
-        contactState: z2.string().max(100).optional(),
-        contactZipCode: z2.string().max(20).optional(),
-        contactCountry: z2.string().max(100).optional(),
-        firstName: z2.string().max(100).optional(),
-        lastName: z2.string().max(100).optional(),
+        userId: z3.union([z3.string(), z3.number()]).optional(),
+        displayName: z3.string().min(2).max(120),
+        bio: z3.string().max(500).optional(),
+        contactFullName: z3.string().max(160).optional(),
+        contactEmail: z3.string().email().max(320).optional().or(z3.literal("")),
+        contactPhone: z3.string().max(40).optional(),
+        contactAddress: z3.string().max(320).optional(),
+        contactTown: z3.string().max(100).optional(),
+        contactState: z3.string().max(100).optional(),
+        contactZipCode: z3.string().max(20).optional(),
+        contactCountry: z3.string().max(100).optional(),
+        firstName: z3.string().max(100).optional(),
+        lastName: z3.string().max(100).optional(),
         avatar: uploadedImageSchema.nullable().optional(),
-        acceptedTerms: z2.boolean().optional(),
-        isMerchant: z2.boolean().optional(),
-        securityQuestion: z2.string().max(255).optional(),
-        securityAnswer: z2.string().max(255).optional(),
-        preferredCategories: z2.array(z2.enum(collectibleCategories)).optional(),
-        notificationPreferences: z2.object({
-          tradeRequests: z2.boolean().optional(),
-          messages: z2.boolean().optional(),
-          feedback: z2.boolean().optional(),
-          systemUpdates: z2.boolean().optional()
+        acceptedTerms: z3.boolean().optional(),
+        isMerchant: z3.boolean().optional(),
+        securityQuestion: z3.string().max(255).optional(),
+        securityAnswer: z3.string().max(255).optional(),
+        preferredCategories: z3.array(z3.enum(collectibleCategories)).optional(),
+        notificationPreferences: z3.object({
+          tradeRequests: z3.boolean().optional(),
+          messages: z3.boolean().optional(),
+          feedback: z3.boolean().optional(),
+          systemUpdates: z3.boolean().optional()
         }).optional(),
-        emailVerified: z2.boolean().optional(),
-        phoneVerified: z2.boolean().optional()
+        emailVerified: z3.boolean().optional(),
+        phoneVerified: z3.boolean().optional()
       })
     ).mutation(async ({ ctx, input }) => {
       const userId = ctx.user.id;
       const isAdmin = ctx.user.role === "admin";
       const db0 = await requireDb();
-      const existingProfile = await db0.select({ acceptedTerms: userProfiles.acceptedTerms }).from(userProfiles).where(eq2(userProfiles.userId, userId)).limit(1);
+      const existingProfile = await db0.select({ acceptedTerms: userProfiles.acceptedTerms }).from(userProfiles).where(eq3(userProfiles.userId, userId)).limit(1);
       const isFirstTimeSetup = !existingProfile[0] || !existingProfile[0].acceptedTerms;
       if (!isAdmin && !isFirstTimeSetup) {
         const identityFieldsAttempted = [];
@@ -5315,7 +6172,7 @@ var appRouter = router({
             `[saveProfile] Non-admin user ${userId} attempted to modify identity fields:`,
             identityFieldsAttempted
           );
-          throw new TRPCError3({
+          throw new TRPCError4({
             code: "FORBIDDEN",
             message: "Identity fields cannot be modified. These fields were verified during account setup and can only be changed by administrators. Contact support if you need to update them."
           });
@@ -5337,7 +6194,7 @@ var appRouter = router({
           contactCountry: canWriteIdentity ? input.contactCountry : void 0,
           firstName: canWriteIdentity ? input.firstName : void 0,
           lastName: canWriteIdentity ? input.lastName : void 0,
-          avatar: input.avatar ?? null,
+          avatar: input.avatar ? { name: input.avatar.name, type: input.avatar.type, contentBase64: input.avatar.contentBase64 } : null,
           acceptedTerms: input.acceptedTerms,
           isMerchant: input.isMerchant,
           securityQuestion: input.securityQuestion,
@@ -5350,62 +6207,62 @@ var appRouter = router({
       );
     }),
     saveSecurityQuestion: protectedProcedure.input(
-      z2.object({
-        securityQuestion: z2.string().max(255),
-        securityAnswer: z2.string().max(255)
+      z3.object({
+        securityQuestion: z3.string().max(255),
+        securityAnswer: z3.string().max(255)
       })
     ).mutation(async ({ ctx, input }) => {
       const db = await requireDb();
       await db.update(userProfiles).set({
         securityQuestion: input.securityQuestion,
         securityAnswer: input.securityAnswer
-      }).where(eq2(userProfiles.userId, ctx.user.id));
+      }).where(eq3(userProfiles.userId, ctx.user.id));
       return { success: true };
     }),
     changePassword: protectedProcedure.input(
-      z2.object({
-        currentPassword: z2.string(),
-        newPassword: z2.string().min(8)
+      z3.object({
+        currentPassword: z3.string(),
+        newPassword: z3.string().min(8)
       })
     ).mutation(async ({ ctx, input }) => {
       const db = await requireDb();
-      const users_result = await db.select().from(users).where(eq2(users.id, ctx.user.id)).limit(1);
+      const users_result = await db.select().from(users).where(eq3(users.id, ctx.user.id)).limit(1);
       const user = users_result[0];
       if (!user || !user.passwordHash) {
-        throw new TRPCError3({ code: "UNAUTHORIZED" });
+        throw new TRPCError4({ code: "UNAUTHORIZED" });
       }
       const isValid = await verifyPassword(input.currentPassword, user.passwordHash);
       if (!isValid) {
-        throw new TRPCError3({ code: "UNAUTHORIZED", message: "Current password is incorrect" });
+        throw new TRPCError4({ code: "UNAUTHORIZED", message: "Current password is incorrect" });
       }
       const newHash = await hashPassword(input.newPassword);
       await db.update(users).set({
         passwordHash: newHash
-      }).where(eq2(users.id, ctx.user.id));
+      }).where(eq3(users.id, ctx.user.id));
       return { success: true };
     }),
     saveIntegrations: protectedProcedure.input(
-      z2.object({
-        connectedAccounts: z2.array(z2.enum(["ebay", "paypal", "facebook"]))
+      z3.object({
+        connectedAccounts: z3.array(z3.enum(["ebay", "paypal", "facebook"]))
       })
     ).mutation(async ({ ctx, input }) => {
       const db = await requireDb();
       await db.update(userProfiles).set({
         connectedAccounts: JSON.stringify(input.connectedAccounts)
-      }).where(eq2(userProfiles.userId, ctx.user.id));
+      }).where(eq3(userProfiles.userId, ctx.user.id));
       return { success: true };
     }),
     saveCommunications: protectedProcedure.input(
-      z2.object({
-        tradeInitiated: z2.object({ email: z2.boolean(), text: z2.boolean() }),
-        counterProposal: z2.object({ email: z2.boolean(), text: z2.boolean() }),
-        proposalAccepted: z2.object({ email: z2.boolean(), text: z2.boolean() }),
-        proposalRejected: z2.object({ email: z2.boolean(), text: z2.boolean() }),
-        itemsShipped: z2.object({ email: z2.boolean(), text: z2.boolean() }),
-        itemsReceived: z2.object({ email: z2.boolean(), text: z2.boolean() }),
-        feedbackReceived: z2.object({ email: z2.boolean(), text: z2.boolean() }),
-        systemUpdates: z2.object({ email: z2.boolean(), text: z2.boolean() }),
-        marketingEmails: z2.object({ email: z2.boolean(), text: z2.boolean() })
+      z3.object({
+        tradeInitiated: z3.object({ email: z3.boolean(), text: z3.boolean() }),
+        counterProposal: z3.object({ email: z3.boolean(), text: z3.boolean() }),
+        proposalAccepted: z3.object({ email: z3.boolean(), text: z3.boolean() }),
+        proposalRejected: z3.object({ email: z3.boolean(), text: z3.boolean() }),
+        itemsShipped: z3.object({ email: z3.boolean(), text: z3.boolean() }),
+        itemsReceived: z3.object({ email: z3.boolean(), text: z3.boolean() }),
+        feedbackReceived: z3.object({ email: z3.boolean(), text: z3.boolean() }),
+        systemUpdates: z3.object({ email: z3.boolean(), text: z3.boolean() }),
+        marketingEmails: z3.object({ email: z3.boolean(), text: z3.boolean() })
       })
     ).mutation(async ({ ctx, input }) => {
       const db = await requireDb();
@@ -5421,15 +6278,15 @@ var appRouter = router({
           systemUpdates: input.systemUpdates,
           marketingEmails: input.marketingEmails
         })
-      }).where(eq2(userProfiles.userId, ctx.user.id));
+      }).where(eq3(userProfiles.userId, ctx.user.id));
       return { success: true };
     }),
     savePreferences: protectedProcedure.input(
-      z2.object({
-        preferredCategories: z2.array(z2.enum(collectibleCategories)),
-        showProfile: z2.boolean(),
-        hideInventoryValue: z2.boolean(),
-        receiveContactRequests: z2.boolean()
+      z3.object({
+        preferredCategories: z3.array(z3.enum(collectibleCategories)),
+        showProfile: z3.boolean(),
+        hideInventoryValue: z3.boolean(),
+        receiveContactRequests: z3.boolean()
       })
     ).mutation(async ({ ctx, input }) => {
       const db = await requireDb();
@@ -5440,23 +6297,23 @@ var appRouter = router({
         showProfile: input.showProfile ? 1 : 0,
         hideInventoryValue: input.hideInventoryValue ? 1 : 0,
         receiveContactRequests: input.receiveContactRequests ? 1 : 0
-      }).where(eq2(userProfiles.userId, ctx.user.id));
+      }).where(eq3(userProfiles.userId, ctx.user.id));
       console.log("[savePreferences] Update result:", result);
       return { success: true };
     }),
     createListing: protectedProcedure.input(
-      z2.object({
-        title: z2.string().min(3).max(160),
-        category: z2.enum(collectibleCategories),
-        itemType: z2.string().min(1).max(50),
-        condition: z2.enum(itemConditions),
-        description: z2.string().max(4e3),
-        estimatedValue: z2.number().nonnegative().optional(),
-        photos: z2.array(uploadedImageSchema).max(6),
-        itemDetails: z2.record(z2.string(), z2.string()).optional(),
-        certificationCompany: z2.string().optional(),
-        certificationNumber: z2.string().optional(),
-        grade: z2.string().optional()
+      z3.object({
+        title: z3.string().min(3).max(160),
+        category: z3.enum(collectibleCategories),
+        itemType: z3.string().min(1).max(50),
+        condition: z3.enum(itemConditions),
+        description: z3.string().max(4e3),
+        estimatedValue: z3.number().nonnegative().optional(),
+        photos: z3.array(uploadedImageSchema).max(6),
+        itemDetails: z3.record(z3.string(), z3.string()).optional(),
+        certificationCompany: z3.string().optional(),
+        certificationNumber: z3.string().optional(),
+        grade: z3.string().optional()
       })
     ).mutation(({ ctx, input }) => {
       const descriptionLines = input.description.split("\n");
@@ -5472,13 +6329,13 @@ var appRouter = router({
       if (graderCompany) {
         const company = getGradingCompanyByName(graderCompany);
         if (company && !company.categories.includes(input.category)) {
-          throw new TRPCError3({
+          throw new TRPCError4({
             code: "BAD_REQUEST",
             message: `${graderCompany} does not grade ${input.category} items.`
           });
         }
         if (company && grade && grade !== "ungraded" && grade !== "raw" && !isValidGradeForCompany(graderCompany, grade)) {
-          throw new TRPCError3({
+          throw new TRPCError4({
             code: "BAD_REQUEST",
             message: `Grade ${grade} is not valid for ${graderCompany}. Valid grades: ${company.validGrades.join(", ")}.`
           });
@@ -5502,18 +6359,18 @@ var appRouter = router({
       );
     }),
     updateListing: protectedProcedure.input(
-      z2.object({
-        listingId: z2.number().int().positive(),
-        title: z2.string().min(3).max(160),
-        category: z2.enum(collectibleCategories),
-        condition: z2.enum(itemConditions),
-        description: z2.string().max(4e3),
-        estimatedValue: z2.number().nonnegative().optional(),
-        photos: z2.array(uploadedImageSchema).max(6),
-        itemDetails: z2.record(z2.string(), z2.string()).optional(),
-        certificationCompany: z2.string().optional(),
-        certificationNumber: z2.string().optional(),
-        grade: z2.string().optional()
+      z3.object({
+        listingId: z3.number().int().positive(),
+        title: z3.string().min(3).max(160),
+        category: z3.enum(collectibleCategories),
+        condition: z3.enum(itemConditions),
+        description: z3.string().max(4e3),
+        estimatedValue: z3.number().nonnegative().optional(),
+        photos: z3.array(uploadedImageSchema).max(6),
+        itemDetails: z3.record(z3.string(), z3.string()).optional(),
+        certificationCompany: z3.string().optional(),
+        certificationNumber: z3.string().optional(),
+        grade: z3.string().optional()
       })
     ).mutation(({ ctx, input }) => {
       const descriptionLines = input.description.split("\n");
@@ -5529,13 +6386,13 @@ var appRouter = router({
       if (graderCompany) {
         const company = getGradingCompanyByName(graderCompany);
         if (company && !company.categories.includes(input.category)) {
-          throw new TRPCError3({
+          throw new TRPCError4({
             code: "BAD_REQUEST",
             message: `${graderCompany} does not grade ${input.category} items.`
           });
         }
         if (company && grade && grade !== "ungraded" && grade !== "raw" && !isValidGradeForCompany(graderCompany, grade)) {
-          throw new TRPCError3({
+          throw new TRPCError4({
             code: "BAD_REQUEST",
             message: `Grade ${grade} is not valid for ${graderCompany}. Valid grades: ${company.validGrades.join(", ")}.`
           });
@@ -5559,9 +6416,9 @@ var appRouter = router({
       );
     }),
     createTradeProposal: protectedProcedure.input(
-      z2.object({
-        requestedListingId: z2.number().int().positive(),
-        note: z2.string().max(1500).optional()
+      z3.object({
+        requestedListingId: z3.number().int().positive(),
+        note: z3.string().max(1500).optional()
       })
     ).mutation(({ ctx, input }) => {
       return createTradeProposal(
@@ -5573,10 +6430,10 @@ var appRouter = router({
       );
     }),
     selectTradeProposalItems: protectedProcedure.input(
-      z2.object({
-        proposalId: z2.number().int().positive(),
-        offeredListingIds: z2.array(z2.number().int().positive()).min(1).max(5),
-        note: z2.string().max(1500).optional()
+      z3.object({
+        proposalId: z3.number().int().positive(),
+        offeredListingIds: z3.array(z3.number().int().positive()).min(1).max(5),
+        note: z3.string().max(1500).optional()
       })
     ).mutation(async ({ ctx, input }) => {
       await selectTradeProposalItems({ id: ctx.user.id, name: ctx.user.name }, {
@@ -5586,10 +6443,10 @@ var appRouter = router({
       return getDashboardData({ id: ctx.user.id, name: ctx.user.name });
     }),
     respondToTradeProposal: protectedProcedure.input(
-      z2.object({
-        proposalId: z2.number().int().positive(),
-        action: z2.enum(["accept", "refuse", "counter", "complete", "cancel"]),
-        note: z2.string().max(1500).optional()
+      z3.object({
+        proposalId: z3.number().int().positive(),
+        action: z3.enum(["accept", "refuse", "counter", "complete", "cancel"]),
+        note: z3.string().max(1500).optional()
       })
     ).mutation(async ({ ctx, input }) => {
       await respondToTradeProposal({ id: ctx.user.id, name: ctx.user.name }, {
@@ -5599,33 +6456,33 @@ var appRouter = router({
       return getDashboardData({ id: ctx.user.id, name: ctx.user.name });
     }),
     sendTradeMessage: protectedProcedure.input(
-      z2.object({
-        proposalId: z2.number().int().positive(),
-        message: z2.string().min(1).max(1200)
+      z3.object({
+        proposalId: z3.number().int().positive(),
+        message: z3.string().min(1).max(1200)
       })
     ).mutation(async ({ ctx, input }) => {
       await sendTradeMessage({ id: ctx.user.id, name: ctx.user.name }, { proposalId: input.proposalId, message: input.message });
       return getDashboardData({ id: ctx.user.id, name: ctx.user.name });
     }),
     toggleWatchlist: protectedProcedure.input(
-      z2.object({
-        listingId: z2.number().int().positive()
+      z3.object({
+        listingId: z3.number().int().positive()
       })
     ).mutation(({ ctx, input }) => {
       return toggleWatchlist(ctx.user.id, input.listingId);
     }),
     toggleListingStatus: protectedProcedure.input(
-      z2.object({
-        listingId: z2.number().int().positive(),
-        isActive: z2.boolean()
+      z3.object({
+        listingId: z3.number().int().positive(),
+        isActive: z3.boolean()
       })
     ).mutation(({ ctx, input }) => {
       return toggleListingStatus({ id: ctx.user.id, name: ctx.user.name }, { listingId: input.listingId, isActive: input.isActive });
     }),
     bulkUpdateListingStatus: protectedProcedure.input(
-      z2.object({
-        listingIds: z2.array(z2.number().int().positive()),
-        newStatus: z2.boolean()
+      z3.object({
+        listingIds: z3.array(z3.number().int().positive()),
+        newStatus: z3.boolean()
       })
     ).mutation(async ({ ctx, input }) => {
       try {
@@ -5634,7 +6491,7 @@ var appRouter = router({
       } catch (error) {
         console.error("[bulkUpdateListingStatus mutation] Error:", error);
         if (error instanceof Error) {
-          throw new TRPCError3({
+          throw new TRPCError4({
             code: "INTERNAL_SERVER_ERROR",
             message: error.message
           });
@@ -5643,8 +6500,8 @@ var appRouter = router({
       }
     }),
     bulkDeleteListings: protectedProcedure.input(
-      z2.object({
-        listingIds: z2.array(z2.number().int().positive())
+      z3.object({
+        listingIds: z3.array(z3.number().int().positive())
       })
     ).mutation(async ({ ctx, input }) => {
       const result = await bulkDeleteListings({ id: ctx.user.id, name: ctx.user.name }, { listingIds: input.listingIds });
@@ -5654,37 +6511,37 @@ var appRouter = router({
       };
     }),
     restoreDeletedListings: protectedProcedure.input(
-      z2.object({
-        deletedListings: z2.array(z2.any()),
-        deletedPhotos: z2.array(z2.any())
+      z3.object({
+        deletedListings: z3.array(z3.any()),
+        deletedPhotos: z3.array(z3.any())
       })
     ).mutation(async ({ ctx, input }) => {
       await restoreDeletedListings({ id: ctx.user.id, name: ctx.user.name }, { listingIds: input.deletedListings });
       return getDashboardData({ id: ctx.user.id, name: ctx.user.name });
     }),
     adminDeleteListing: protectedProcedure.input(
-      z2.object({
-        listingId: z2.number().int().positive(),
-        deletionReason: z2.string().max(500).optional()
+      z3.object({
+        listingId: z3.number().int().positive(),
+        deletionReason: z3.string().max(500).optional()
       })
     ).mutation(async ({ ctx, input }) => {
-      if (ctx.user.role !== "admin") throw new TRPCError3({ code: "FORBIDDEN", message: "Only admins can delete listings" });
+      if (ctx.user.role !== "admin") throw new TRPCError4({ code: "FORBIDDEN", message: "Only admins can delete listings" });
       return adminDeleteListing({ id: ctx.user.id, name: ctx.user.name }, input);
     }),
     adminBulkDeleteListings: protectedProcedure.input(
-      z2.object({
-        listingIds: z2.array(z2.number().int().positive()),
-        deletionReason: z2.string().max(500).optional()
+      z3.object({
+        listingIds: z3.array(z3.number().int().positive()),
+        deletionReason: z3.string().max(500).optional()
       })
     ).mutation(async ({ ctx, input }) => {
-      if (ctx.user.role !== "admin") throw new TRPCError3({ code: "FORBIDDEN", message: "Only admins can delete listings" });
+      if (ctx.user.role !== "admin") throw new TRPCError4({ code: "FORBIDDEN", message: "Only admins can delete listings" });
       return adminBulkDeleteListings({ id: ctx.user.id, name: ctx.user.name }, input);
     }),
     leaveTradeReview: protectedProcedure.input(
-      z2.object({
-        proposalId: z2.number().int().positive(),
-        rating: z2.number().min(1).max(5),
-        review: z2.string().max(1500).optional()
+      z3.object({
+        proposalId: z3.number().int().positive(),
+        rating: z3.number().min(1).max(5),
+        review: z3.string().max(1500).optional()
       })
     ).mutation(async ({ ctx, input }) => {
       await leaveTradeReview({ id: ctx.user.id, name: ctx.user.name }, input);
@@ -5740,27 +6597,27 @@ var appRouter = router({
       }
     }),
     saveDraft: protectedProcedure.input(
-      z2.object({
-        title: z2.string().min(0).max(160).optional().default(""),
-        category: z2.enum(collectibleCategories),
-        grade: z2.string().max(10),
-        graderCompany: z2.string().max(100),
-        certificationNumber: z2.string().max(100).optional(),
-        estimatedValue: z2.number().nonnegative().optional(),
-        categoryFields: z2.record(z2.string(), z2.string()).optional().default({}),
-        additionalNotes: z2.string().max(4e3).optional(),
-        photos: z2.array(uploadedImageSchema).optional().default([])
+      z3.object({
+        title: z3.string().min(0).max(160).optional().default(""),
+        category: z3.enum(collectibleCategories),
+        grade: z3.string().max(10),
+        graderCompany: z3.string().max(100),
+        certificationNumber: z3.string().max(100).optional(),
+        estimatedValue: z3.number().nonnegative().optional(),
+        categoryFields: z3.record(z3.string(), z3.string()).optional().default({}),
+        additionalNotes: z3.string().max(4e3).optional(),
+        photos: z3.array(uploadedImageSchema).optional().default([])
       })
     ).mutation(({ ctx, input }) => {
       const company = getGradingCompanyByName(input.graderCompany);
       if (company && !company.categories.includes(input.category)) {
-        throw new TRPCError3({
+        throw new TRPCError4({
           code: "BAD_REQUEST",
           message: `${input.graderCompany} does not grade ${input.category} items.`
         });
       }
       if (company && input.grade !== "ungraded" && input.grade !== "raw" && !isValidGradeForCompany(input.graderCompany, input.grade)) {
-        throw new TRPCError3({
+        throw new TRPCError4({
           code: "BAD_REQUEST",
           message: `Grade ${input.grade} is not valid for ${input.graderCompany}. Valid grades: ${company.validGrades.join(", ")}.`
         });
@@ -5781,21 +6638,21 @@ var appRouter = router({
     getDrafts: protectedProcedure.query(({ ctx }) => {
       return getDrafts({ id: ctx.user.id, name: ctx.user.name });
     }),
-    getDraftById: protectedProcedure.input(z2.object({ draftId: z2.number().int().positive() })).query(({ ctx, input }) => {
+    getDraftById: protectedProcedure.input(z3.object({ draftId: z3.number().int().positive() })).query(({ ctx, input }) => {
       return getDraftById({ id: ctx.user.id, name: ctx.user.name }, input.draftId);
     }),
     updateDraft: protectedProcedure.input(
-      z2.object({
-        draftId: z2.number().int().positive(),
-        title: z2.string().min(1).max(160),
-        category: z2.enum(collectibleCategories),
-        condition: z2.enum(itemConditions),
-        description: z2.string(),
-        grade: z2.number().optional(),
-        graderCompany: z2.string().optional(),
-        certificationNumber: z2.string().optional(),
-        estimatedValue: z2.number().optional(),
-        photos: z2.array(z2.object({ name: z2.string(), type: z2.string(), contentBase64: z2.string() }))
+      z3.object({
+        draftId: z3.number().int().positive(),
+        title: z3.string().min(1).max(160),
+        category: z3.enum(collectibleCategories),
+        condition: z3.enum(itemConditions),
+        description: z3.string(),
+        grade: z3.number().optional(),
+        graderCompany: z3.string().optional(),
+        certificationNumber: z3.string().optional(),
+        estimatedValue: z3.number().optional(),
+        photos: z3.array(z3.object({ name: z3.string(), type: z3.string(), contentBase64: z3.string() }))
       })
     ).mutation(({ ctx, input }) => {
       return updateDraft({ id: ctx.user.id, name: ctx.user.name }, {
@@ -5812,53 +6669,53 @@ var appRouter = router({
       });
     }),
     deleteDraft: protectedProcedure.input(
-      z2.object({
-        draftId: z2.number().int().positive()
+      z3.object({
+        draftId: z3.number().int().positive()
       })
     ).mutation(({ ctx, input }) => {
       return deleteDraft({ id: ctx.user.id, name: ctx.user.name }, { draftId: input.draftId });
     }),
     createForumPost: protectedProcedure.input(
-      z2.object({
-        category: z2.string().min(1).max(64),
-        title: z2.string().min(3).max(255),
-        content: z2.string().min(10).max(5e3)
+      z3.object({
+        category: z3.string().min(1).max(64),
+        title: z3.string().min(3).max(255),
+        content: z3.string().min(10).max(5e3)
       })
     ).mutation(({ ctx, input }) => {
       return createForumPost({ id: ctx.user.id, name: ctx.user.name }, input);
     }),
     getForumPosts: publicProcedure.input(
-      z2.object({
-        category: z2.string().optional(),
-        sortBy: z2.enum(["newest", "popular", "replies"]).default("newest")
+      z3.object({
+        category: z3.string().optional(),
+        sortBy: z3.enum(["newest", "popular", "replies"]).default("newest")
       })
     ).query(({ input }) => {
       return getForumPosts(input.category, input.sortBy);
     }),
-    getForumPostDetail: publicProcedure.input(z2.object({ postId: z2.number().int().positive() })).query(({ input }) => {
+    getForumPostDetail: publicProcedure.input(z3.object({ postId: z3.number().int().positive() })).query(({ input }) => {
       return getForumPostById(input.postId);
     }),
-    getForumReplies: publicProcedure.input(z2.object({ postId: z2.number().int().positive() })).query(({ input }) => {
+    getForumReplies: publicProcedure.input(z3.object({ postId: z3.number().int().positive() })).query(({ input }) => {
       return getForumReplies(input.postId);
     }),
     addForumReply: protectedProcedure.input(
-      z2.object({
-        postId: z2.number().int().positive(),
-        content: z2.string().min(1).max(2e3)
+      z3.object({
+        postId: z3.number().int().positive(),
+        content: z3.string().min(1).max(2e3)
       })
     ).mutation(({ ctx, input }) => {
       return addForumReply({ id: ctx.user.id, name: ctx.user.name }, input);
     }),
     submitReport: protectedProcedure.input(
-      z2.object({
-        reportedUserId: z2.number().int().positive(),
-        reason: z2.string().min(1).max(100),
-        description: z2.string().min(10).max(2e3),
-        evidence: z2.string().max(500).optional()
+      z3.object({
+        reportedUserId: z3.number().int().positive(),
+        reason: z3.string().min(1).max(100),
+        description: z3.string().min(10).max(2e3),
+        evidence: z3.string().max(500).optional()
       })
     ).mutation(async ({ ctx, input }) => {
       if (input.reportedUserId === ctx.user.id) {
-        throw new TRPCError3({ code: "BAD_REQUEST", message: "You cannot report yourself" });
+        throw new TRPCError4({ code: "BAD_REQUEST", message: "You cannot report yourself" });
       }
       return submitUserReport({
         reportedUserId: input.reportedUserId,
@@ -5869,11 +6726,11 @@ var appRouter = router({
       });
     }),
     sendInquiry: protectedProcedure.input(
-      z2.object({
-        listingId: z2.number().int().positive(),
-        recipientId: z2.number().int().positive(),
-        subject: z2.string().min(1).max(255),
-        message: z2.string().min(1).max(5e3)
+      z3.object({
+        listingId: z3.number().int().positive(),
+        recipientId: z3.number().int().positive(),
+        subject: z3.string().min(1).max(255),
+        message: z3.string().min(1).max(5e3)
       })
     ).mutation(async ({ ctx, input }) => {
       return sendItemInquiry({ id: ctx.user.id, name: ctx.user.name }, input);
@@ -5882,23 +6739,23 @@ var appRouter = router({
       return getUnreadInquiries(ctx.user.id);
     }),
     getInquiries: protectedProcedure.input(
-      z2.object({
-        limit: z2.number().int().positive().default(50),
-        offset: z2.number().int().nonnegative().default(0)
+      z3.object({
+        limit: z3.number().int().positive().default(50),
+        offset: z3.number().int().nonnegative().default(0)
       })
     ).query(async ({ ctx, input }) => {
       return getInquiriesByUser(ctx.user.id, input.limit, input.offset);
     }),
-    markInquiryAsRead: protectedProcedure.input(z2.object({ inquiryId: z2.number().int().positive() })).mutation(async ({ ctx, input }) => {
+    markInquiryAsRead: protectedProcedure.input(z3.object({ inquiryId: z3.number().int().positive() })).mutation(async ({ ctx, input }) => {
       return markInquiryAsRead(input.inquiryId, ctx.user.id);
     }),
-    sendReply: protectedProcedure.input(z2.object({ inquiryId: z2.number().int().positive(), message: z2.string().min(1).max(5e3) })).mutation(async ({ ctx, input }) => {
+    sendReply: protectedProcedure.input(z3.object({ inquiryId: z3.number().int().positive(), message: z3.string().min(1).max(5e3) })).mutation(async ({ ctx, input }) => {
       return sendInquiryReply(input.inquiryId, ctx.user.id, input.message);
     }),
-    getReplies: protectedProcedure.input(z2.object({ inquiryId: z2.number().int().positive() })).query(async ({ input }) => {
+    getReplies: protectedProcedure.input(z3.object({ inquiryId: z3.number().int().positive() })).query(async ({ input }) => {
       return getRepliesByInquiry(input.inquiryId);
     }),
-    deleteInquiry: protectedProcedure.input(z2.object({ inquiryId: z2.number().int().positive() })).mutation(async ({ input, ctx }) => {
+    deleteInquiry: protectedProcedure.input(z3.object({ inquiryId: z3.number().int().positive() })).mutation(async ({ input, ctx }) => {
       await deleteInquiry(input.inquiryId, ctx.user.id);
       return { success: true };
     }),
@@ -5911,10 +6768,10 @@ var appRouter = router({
     })
   }),
   ebay: router({
-    getAuthUrl: protectedProcedure.input(z2.object({ state: z2.string() })).query(({ input }) => {
+    getAuthUrl: protectedProcedure.input(z3.object({ state: z3.string() })).query(({ input }) => {
       return getEbayAuthUrl(input.state);
     }),
-    connectAccount: protectedProcedure.input(z2.object({ code: z2.string() })).mutation(async ({ ctx, input }) => {
+    connectAccount: protectedProcedure.input(z3.object({ code: z3.string() })).mutation(async ({ ctx, input }) => {
       try {
         const tokenData = await exchangeCodeForToken(input.code);
         const userInfo = await getUserInfo(tokenData.access_token);
@@ -5953,7 +6810,7 @@ var appRouter = router({
         };
       } catch (error) {
         console.error("eBay connection error:", error);
-        throw new TRPCError3({
+        throw new TRPCError4({
           code: "INTERNAL_SERVER_ERROR",
           message: "Failed to connect eBay account"
         });
@@ -5977,19 +6834,19 @@ var appRouter = router({
         ebayAccessToken: null,
         ebayRefreshToken: null,
         ebayTokenExpiresAt: null
-      }).where(eq2(users.id, ctx.user.id));
+      }).where(eq3(users.id, ctx.user.id));
       return { success: true };
     })
   }),
   admin: router({
     // Platform statistics
     getPlatformStatistics: protectedProcedure.query(async ({ ctx }) => {
-      if (ctx.user.role !== "admin") throw new TRPCError3({ code: "FORBIDDEN" });
+      if (ctx.user.role !== "admin") throw new TRPCError4({ code: "FORBIDDEN" });
       const db = await requireDb();
-      const memberCount = await db.select({ count: sql2`count(*)` }).from(users);
-      const listingCount = await db.select({ count: sql2`count(*)` }).from(listings);
-      const tradeCount = await db.select({ count: sql2`count(*)` }).from(tradeProposals);
-      const totalValue = await db.select({ total: sql2`sum(${listings.estimatedValue})` }).from(listings);
+      const memberCount = await db.select({ count: sql3`count(*)` }).from(users);
+      const listingCount = await db.select({ count: sql3`count(*)` }).from(listings);
+      const tradeCount = await db.select({ count: sql3`count(*)` }).from(tradeProposals);
+      const totalValue = await db.select({ total: sql3`sum(${listings.estimatedValue})` }).from(listings);
       return {
         totalMembers: Number(memberCount[0]?.count || 0),
         totalListings: Number(listingCount[0]?.count || 0),
@@ -5999,7 +6856,7 @@ var appRouter = router({
     }),
     // User management
     getAllUsers: protectedProcedure.query(async ({ ctx }) => {
-      if (ctx.user.role !== "admin") throw new TRPCError3({ code: "FORBIDDEN" });
+      if (ctx.user.role !== "admin") throw new TRPCError4({ code: "FORBIDDEN" });
       const db = await requireDb();
       const allUsers = await db.select({
         id: users.id,
@@ -6021,11 +6878,11 @@ var appRouter = router({
         contactState: userProfiles.contactState,
         contactZipCode: userProfiles.contactZipCode,
         contactCountry: userProfiles.contactCountry
-      }).from(users).leftJoin(userProfiles, eq2(users.id, userProfiles.userId));
+      }).from(users).leftJoin(userProfiles, eq3(users.id, userProfiles.userId));
       const listingCounts = await db.select({
         userId: listings.ownerId,
-        count: sql2`COUNT(*)`
-      }).from(listings).where(eq2(listings.status, "active")).groupBy(listings.ownerId);
+        count: sql3`COUNT(*)`
+      }).from(listings).where(eq3(listings.status, "active")).groupBy(listings.ownerId);
       const countMap = new Map(listingCounts.map((lc) => [lc.userId, lc.count]));
       const ONLINE_TIMEOUT = 5 * 60 * 1e3;
       const now = Date.now();
@@ -6035,37 +6892,43 @@ var appRouter = router({
         isOnline: now - new Date(user.lastActivityAt).getTime() < ONLINE_TIMEOUT
       }));
     }),
-    deleteUser: protectedProcedure.input(z2.object({ userId: z2.number().int().positive() })).mutation(async ({ ctx, input }) => {
+    deleteUser: protectedProcedure.input(z3.object({ userId: z3.number().int().positive() })).mutation(async ({ ctx, input }) => {
       console.log(`[deleteUser] Starting deletion for userId: ${input.userId}`);
-      if (ctx.user.role !== "admin") throw new TRPCError3({ code: "FORBIDDEN" });
-      if (input.userId === ctx.user.id) throw new TRPCError3({ code: "BAD_REQUEST", message: "Cannot delete yourself" });
+      if (ctx.user.role !== "admin") throw new TRPCError4({ code: "FORBIDDEN" });
+      if (input.userId === ctx.user.id) throw new TRPCError4({ code: "BAD_REQUEST", message: "Cannot delete yourself" });
       const db = await requireDb();
-      const userToDelete = await db.select().from(users).where(eq2(users.id, input.userId)).limit(1);
-      const userProfile = await db.select().from(userProfiles).where(eq2(userProfiles.userId, input.userId)).limit(1);
-      if (!userToDelete.length) throw new TRPCError3({ code: "NOT_FOUND", message: "User not found" });
+      const userToDelete = await db.select().from(users).where(eq3(users.id, input.userId)).limit(1);
+      const userProfile = await db.select().from(userProfiles).where(eq3(userProfiles.userId, input.userId)).limit(1);
+      if (!userToDelete.length) throw new TRPCError4({ code: "NOT_FOUND", message: "User not found" });
+      const [activeTrades] = await db.execute(
+        sql3`SELECT COUNT(*) as cnt FROM tradeProposals WHERE (requesterId = ${input.userId} OR recipientId = ${input.userId}) AND status IN ('pending', 'negotiating', 'accepted', 'shipped')`
+      );
+      if (activeTrades?.[0]?.cnt > 0) {
+        throw new TRPCError4({ code: "BAD_REQUEST", message: "Cannot delete account: user has active trades. Please resolve all active trades first." });
+      }
       const user = userToDelete[0];
       const profile = userProfile[0];
       console.log(`[deleteUser] Found user: ${user.username}, profile exists: ${!!profile}`);
       console.log(`[deleteUser] Deleting trade messages...`);
-      await db.delete(tradeMessages).where(eq2(tradeMessages.senderId, input.userId));
+      await db.delete(tradeMessages).where(eq3(tradeMessages.senderId, input.userId));
       console.log(`[deleteUser] Deleting trade reviews...`);
-      await db.delete(tradeReviews).where(or2(
-        eq2(tradeReviews.reviewerId, input.userId),
-        eq2(tradeReviews.revieweeId, input.userId)
+      await db.delete(tradeReviews).where(or3(
+        eq3(tradeReviews.reviewerId, input.userId),
+        eq3(tradeReviews.revieweeId, input.userId)
       ));
       console.log(`[deleteUser] Deleting trade proposals...`);
-      await db.delete(tradeProposals).where(or2(
-        eq2(tradeProposals.requesterId, input.userId),
-        eq2(tradeProposals.recipientId, input.userId)
+      await db.delete(tradeProposals).where(or3(
+        eq3(tradeProposals.requesterId, input.userId),
+        eq3(tradeProposals.recipientId, input.userId)
       ));
       console.log(`[deleteUser] Deleting watchlist entries...`);
-      await db.delete(watchlistEntries).where(eq2(watchlistEntries.userId, input.userId));
+      await db.delete(watchlistEntries).where(eq3(watchlistEntries.userId, input.userId));
       console.log(`[deleteUser] Deleting draft listings...`);
-      await db.delete(draftListings).where(eq2(draftListings.userId, input.userId));
+      await db.delete(draftListings).where(eq3(draftListings.userId, input.userId));
       console.log(`[deleteUser] Deleting password reset tokens...`);
-      await db.delete(passwordResetTokens).where(eq2(passwordResetTokens.userId, input.userId));
+      await db.delete(passwordResetTokens).where(eq3(passwordResetTokens.userId, input.userId));
       console.log(`[deleteUser] Deleting listings...`);
-      const listingsDeleted = await db.delete(listings).where(eq2(listings.ownerId, input.userId));
+      const listingsDeleted = await db.delete(listings).where(eq3(listings.ownerId, input.userId));
       console.log(`[deleteUser] Deleted listings, result:`, listingsDeleted);
       console.log(`[deleteUser] Inserting into deletedAccounts...`);
       try {
@@ -6084,34 +6947,34 @@ var appRouter = router({
         throw err;
       }
       console.log(`[deleteUser] Deleting profile...`);
-      const profileDeleted = await db.delete(userProfiles).where(eq2(userProfiles.userId, input.userId));
+      const profileDeleted = await db.delete(userProfiles).where(eq3(userProfiles.userId, input.userId));
       console.log(`[deleteUser] Deleted profile, result:`, profileDeleted);
       console.log(`[deleteUser] Deleting user...`);
-      const deleteResult = await db.delete(users).where(eq2(users.id, input.userId));
+      const deleteResult = await db.delete(users).where(eq3(users.id, input.userId));
       console.log(`[deleteUser] Deleted user ${input.userId}, result:`, deleteResult);
       return { success: true };
     }),
-    updateUserRole: protectedProcedure.input(z2.object({ userId: z2.number().int().positive(), role: z2.enum(["user", "admin"]) })).mutation(async ({ ctx, input }) => {
-      if (ctx.user.role !== "admin") throw new TRPCError3({ code: "FORBIDDEN" });
+    updateUserRole: protectedProcedure.input(z3.object({ userId: z3.number().int().positive(), role: z3.enum(["user", "admin"]) })).mutation(async ({ ctx, input }) => {
+      if (ctx.user.role !== "admin") throw new TRPCError4({ code: "FORBIDDEN" });
       const db = await requireDb();
-      await db.update(users).set({ role: input.role }).where(eq2(users.id, input.userId));
+      await db.update(users).set({ role: input.role }).where(eq3(users.id, input.userId));
       return { success: true };
     }),
-    updateUser: protectedProcedure.input(z2.object({
-      userId: z2.number().int().positive(),
-      firstName: z2.string().max(100).optional(),
-      lastName: z2.string().max(100).optional(),
-      displayName: z2.string().max(100).optional(),
-      contactFullName: z2.string().max(200).optional(),
-      contactPhone: z2.string().max(20).optional(),
-      contactEmail: z2.string().email().optional(),
-      contactAddress: z2.string().max(255).optional(),
-      contactTown: z2.string().max(100).optional(),
-      contactState: z2.string().max(100).optional(),
-      contactZipCode: z2.string().max(20).optional(),
-      contactCountry: z2.string().max(100).optional()
+    updateUser: protectedProcedure.input(z3.object({
+      userId: z3.number().int().positive(),
+      firstName: z3.string().max(100).optional(),
+      lastName: z3.string().max(100).optional(),
+      displayName: z3.string().max(100).optional(),
+      contactFullName: z3.string().max(200).optional(),
+      contactPhone: z3.string().max(20).optional(),
+      contactEmail: z3.string().email().optional(),
+      contactAddress: z3.string().max(255).optional(),
+      contactTown: z3.string().max(100).optional(),
+      contactState: z3.string().max(100).optional(),
+      contactZipCode: z3.string().max(20).optional(),
+      contactCountry: z3.string().max(100).optional()
     })).mutation(async ({ ctx, input }) => {
-      if (ctx.user.role !== "admin") throw new TRPCError3({ code: "FORBIDDEN" });
+      if (ctx.user.role !== "admin") throw new TRPCError4({ code: "FORBIDDEN" });
       const db = await requireDb();
       const { userId, ...updateData } = input;
       const usersTableFields = {};
@@ -6127,23 +6990,23 @@ var appRouter = router({
         }
       });
       if (Object.keys(usersTableFields).length > 0) {
-        await db.update(users).set(usersTableFields).where(eq2(users.id, userId));
+        await db.update(users).set(usersTableFields).where(eq3(users.id, userId));
       }
       if (Object.keys(userProfilesTableFields).length > 0) {
-        await db.update(userProfiles).set(userProfilesTableFields).where(eq2(userProfiles.userId, userId));
+        await db.update(userProfiles).set(userProfilesTableFields).where(eq3(userProfiles.userId, userId));
       }
       return { success: true };
     }),
     // Deleted accounts management
     getDeletedAccounts: protectedProcedure.query(async ({ ctx }) => {
-      if (ctx.user.role !== "admin") throw new TRPCError3({ code: "FORBIDDEN" });
+      if (ctx.user.role !== "admin") throw new TRPCError4({ code: "FORBIDDEN" });
       const db = await requireDb();
       const deleted = await db.select().from(deletedAccounts).orderBy((t2) => t2.deletedAt);
       return deleted;
     }),
     // Listings management
     getAllListings: protectedProcedure.query(async ({ ctx }) => {
-      if (ctx.user.role !== "admin") throw new TRPCError3({ code: "FORBIDDEN" });
+      if (ctx.user.role !== "admin") throw new TRPCError4({ code: "FORBIDDEN" });
       const db = await requireDb();
       const allListings = await db.select({
         id: listings.id,
@@ -6159,11 +7022,11 @@ var appRouter = router({
           firstName: userProfiles.firstName,
           lastName: userProfiles.lastName
         }
-      }).from(listings).leftJoin(userProfiles, eq2(listings.ownerId, userProfiles.userId)).orderBy(desc2(listings.createdAt));
+      }).from(listings).leftJoin(userProfiles, eq3(listings.ownerId, userProfiles.userId)).orderBy(desc3(listings.createdAt));
       return allListings;
     }),
     getAllTrades: protectedProcedure.query(async ({ ctx }) => {
-      if (ctx.user.role !== "admin") throw new TRPCError3({ code: "FORBIDDEN" });
+      if (ctx.user.role !== "admin") throw new TRPCError4({ code: "FORBIDDEN" });
       const db = await requireDb();
       const allTrades = await db.select({
         id: tradeProposals.id,
@@ -6177,36 +7040,36 @@ var appRouter = router({
         createdAt: tradeProposals.createdAt,
         respondedAt: tradeProposals.respondedAt,
         completedAt: tradeProposals.completedAt
-      }).from(tradeProposals).leftJoin(users, eq2(tradeProposals.requesterId, users.id)).leftJoin(listings, eq2(tradeProposals.requestedListingId, listings.id)).orderBy(desc2(tradeProposals.createdAt));
+      }).from(tradeProposals).leftJoin(users, eq3(tradeProposals.requesterId, users.id)).leftJoin(listings, eq3(tradeProposals.requestedListingId, listings.id)).orderBy(desc3(tradeProposals.createdAt));
       return allTrades;
     }),
     // Reported users management
     getReportedUsers: protectedProcedure.input(
-      z2.object({
-        status: z2.enum(["pending", "reviewed", "dismissed", "action_taken"]).optional(),
-        limit: z2.number().int().positive().default(50),
-        offset: z2.number().int().nonnegative().default(0)
+      z3.object({
+        status: z3.enum(["pending", "reviewed", "dismissed", "action_taken"]).optional(),
+        limit: z3.number().int().positive().default(50),
+        offset: z3.number().int().nonnegative().default(0)
       })
     ).query(async ({ ctx, input }) => {
-      if (ctx.user.role !== "admin") throw new TRPCError3({ code: "FORBIDDEN" });
+      if (ctx.user.role !== "admin") throw new TRPCError4({ code: "FORBIDDEN" });
       return getUserReports({
         status: input.status,
         limit: input.limit,
         offset: input.offset
       });
     }),
-    getReportDetails: protectedProcedure.input(z2.object({ reportId: z2.string() })).query(async ({ ctx, input }) => {
-      if (ctx.user.role !== "admin") throw new TRPCError3({ code: "FORBIDDEN" });
+    getReportDetails: protectedProcedure.input(z3.object({ reportId: z3.string() })).query(async ({ ctx, input }) => {
+      if (ctx.user.role !== "admin") throw new TRPCError4({ code: "FORBIDDEN" });
       return getUserReportDetails(input.reportId);
     }),
     updateReportStatus: protectedProcedure.input(
-      z2.object({
-        reportId: z2.string(),
-        status: z2.enum(["pending", "reviewed", "dismissed", "action_taken"]),
-        adminNotes: z2.string().max(2e3).optional()
+      z3.object({
+        reportId: z3.string(),
+        status: z3.enum(["pending", "reviewed", "dismissed", "action_taken"]),
+        adminNotes: z3.string().max(2e3).optional()
       })
     ).mutation(async ({ ctx, input }) => {
-      if (ctx.user.role !== "admin") throw new TRPCError3({ code: "FORBIDDEN" });
+      if (ctx.user.role !== "admin") throw new TRPCError4({ code: "FORBIDDEN" });
       await updateReportStatus({
         reportId: input.reportId,
         status: input.status,
@@ -6217,72 +7080,72 @@ var appRouter = router({
     }),
     // Referral management
     getAllReferrals: protectedProcedure.query(async ({ ctx }) => {
-      if (ctx.user.role !== "admin") throw new TRPCError3({ code: "FORBIDDEN" });
+      if (ctx.user.role !== "admin") throw new TRPCError4({ code: "FORBIDDEN" });
       return await getAllReferralRequests();
     }),
-    updateReferralStatus: protectedProcedure.input(z2.object({
-      referralId: z2.number(),
-      status: z2.enum(["pending", "reviewed", "approved", "rejected"]),
-      adminNotes: z2.string().optional()
+    updateReferralStatus: protectedProcedure.input(z3.object({
+      referralId: z3.number(),
+      status: z3.enum(["pending", "reviewed", "approved", "rejected"]),
+      adminNotes: z3.string().optional()
     })).mutation(async ({ ctx, input }) => {
-      if (ctx.user.role !== "admin") throw new TRPCError3({ code: "FORBIDDEN" });
+      if (ctx.user.role !== "admin") throw new TRPCError4({ code: "FORBIDDEN" });
       await updateReferralRequestStatus(input.referralId, input.status, input.adminNotes, ctx.user.id);
       return { success: true };
     }),
-    sendBulkEmailToReferrals: protectedProcedure.input(z2.object({ referralIds: z2.array(z2.number()), subject: z2.string().min(1), message: z2.string().min(1) })).mutation(async ({ ctx, input }) => {
-      if (ctx.user.role !== "admin") throw new TRPCError3({ code: "FORBIDDEN" });
+    sendBulkEmailToReferrals: protectedProcedure.input(z3.object({ referralIds: z3.array(z3.number()), subject: z3.string().min(1), message: z3.string().min(1) })).mutation(async ({ ctx, input }) => {
+      if (ctx.user.role !== "admin") throw new TRPCError4({ code: "FORBIDDEN" });
       const referrals = await getReferralsByIds(input.referralIds);
-      if (referrals.length === 0) throw new TRPCError3({ code: "NOT_FOUND" });
+      if (referrals.length === 0) throw new TRPCError4({ code: "NOT_FOUND" });
       await markReferralsAsEmailed(input.referralIds);
       return { success: true, emailsSent: referrals.length };
     }),
-    removeReferralByEmail: protectedProcedure.input(z2.object({ referralId: z2.number(), userId: z2.number() })).mutation(async ({ ctx, input }) => {
-      if (ctx.user.role !== "admin") throw new TRPCError3({ code: "FORBIDDEN" });
+    removeReferralByEmail: protectedProcedure.input(z3.object({ referralId: z3.number(), userId: z3.number() })).mutation(async ({ ctx, input }) => {
+      if (ctx.user.role !== "admin") throw new TRPCError4({ code: "FORBIDDEN" });
       await markReferralAsJoined(input.referralId, input.userId);
       return { success: true };
     }),
-    deleteReferral: protectedProcedure.input(z2.object({ referralId: z2.number() })).mutation(async ({ ctx, input }) => {
-      if (ctx.user.role !== "admin") throw new TRPCError3({ code: "FORBIDDEN" });
+    deleteReferral: protectedProcedure.input(z3.object({ referralId: z3.number() })).mutation(async ({ ctx, input }) => {
+      if (ctx.user.role !== "admin") throw new TRPCError4({ code: "FORBIDDEN" });
       await removeReferral(input.referralId);
       return { success: true };
     }),
-    bulkDeleteReferrals: protectedProcedure.input(z2.object({ referralIds: z2.array(z2.number()) })).mutation(async ({ ctx, input }) => {
-      if (ctx.user.role !== "admin") throw new TRPCError3({ code: "FORBIDDEN" });
-      if (input.referralIds.length === 0) throw new TRPCError3({ code: "BAD_REQUEST", message: "No referrals selected" });
+    bulkDeleteReferrals: protectedProcedure.input(z3.object({ referralIds: z3.array(z3.number()) })).mutation(async ({ ctx, input }) => {
+      if (ctx.user.role !== "admin") throw new TRPCError4({ code: "FORBIDDEN" });
+      if (input.referralIds.length === 0) throw new TRPCError4({ code: "BAD_REQUEST", message: "No referrals selected" });
       const db = await requireDb();
-      await db.delete(referralRequests).where(inArray2(referralRequests.id, input.referralIds));
+      await db.delete(referralRequests).where(inArray3(referralRequests.id, input.referralIds));
       return { success: true, deletedCount: input.referralIds.length };
     }),
     // User suspension management
     getSuspendedUsers: protectedProcedure.query(async ({ ctx }) => {
-      if (ctx.user.role !== "admin") throw new TRPCError3({ code: "FORBIDDEN" });
+      if (ctx.user.role !== "admin") throw new TRPCError4({ code: "FORBIDDEN" });
       return await getSuspendedUsers();
     }),
-    suspendUser: protectedProcedure.input(z2.object({ userId: z2.number().int().positive() })).mutation(async ({ ctx, input }) => {
-      if (ctx.user.role !== "admin") throw new TRPCError3({ code: "FORBIDDEN" });
-      if (input.userId === ctx.user.id) throw new TRPCError3({ code: "BAD_REQUEST", message: "Cannot suspend yourself" });
+    suspendUser: protectedProcedure.input(z3.object({ userId: z3.number().int().positive() })).mutation(async ({ ctx, input }) => {
+      if (ctx.user.role !== "admin") throw new TRPCError4({ code: "FORBIDDEN" });
+      if (input.userId === ctx.user.id) throw new TRPCError4({ code: "BAD_REQUEST", message: "Cannot suspend yourself" });
       return await suspendUser(input.userId);
     }),
-    unsuspendUser: protectedProcedure.input(z2.object({ userId: z2.number().int().positive() })).mutation(async ({ ctx, input }) => {
-      if (ctx.user.role !== "admin") throw new TRPCError3({ code: "FORBIDDEN" });
+    unsuspendUser: protectedProcedure.input(z3.object({ userId: z3.number().int().positive() })).mutation(async ({ ctx, input }) => {
+      if (ctx.user.role !== "admin") throw new TRPCError4({ code: "FORBIDDEN" });
       return await unsuspendUser(input.userId);
     })
   }),
   // Online status procedures
   favorites: router({
-    trackView: publicProcedure.input(z2.object({ listingId: z2.number().int().positive() })).mutation(async ({ input }) => {
+    trackView: publicProcedure.input(z3.object({ listingId: z3.number().int().positive() })).mutation(async ({ input }) => {
       await trackListingView(input.listingId);
       return { success: true };
     }),
-    addToFavorites: protectedProcedure.input(z2.object({ listingId: z2.number().int().positive() })).mutation(async ({ ctx, input }) => {
+    addToFavorites: protectedProcedure.input(z3.object({ listingId: z3.number().int().positive() })).mutation(async ({ ctx, input }) => {
       const success = await addToFavorites(ctx.user.id, input.listingId);
       return { success };
     }),
-    removeFromFavorites: protectedProcedure.input(z2.object({ listingId: z2.number().int().positive() })).mutation(async ({ ctx, input }) => {
+    removeFromFavorites: protectedProcedure.input(z3.object({ listingId: z3.number().int().positive() })).mutation(async ({ ctx, input }) => {
       const success = await removeFromFavorites(ctx.user.id, input.listingId);
       return { success };
     }),
-    isFavorited: protectedProcedure.input(z2.object({ listingId: z2.number().int().positive() })).query(async ({ ctx, input }) => {
+    isFavorited: protectedProcedure.input(z3.object({ listingId: z3.number().int().positive() })).query(async ({ ctx, input }) => {
       const favorited = await isFavorited(ctx.user.id, input.listingId);
       return { favorited };
     }),
@@ -6299,13 +7162,13 @@ var appRouter = router({
     updateActivity: protectedProcedure.mutation(async ({ ctx }) => {
       const db = await requireDb();
       if (ctx.user?.id) {
-        await db.update(users).set({ lastActivityAt: mysqlNow() }).where(eq2(users.id, ctx.user.id));
+        await db.update(users).set({ lastActivityAt: mysqlNow() }).where(eq3(users.id, ctx.user.id));
       }
       return { success: true };
     }),
-    getSellerOnlineStatus: publicProcedure.input(z2.object({ sellerId: z2.number().int().positive() })).query(async ({ input }) => {
+    getSellerOnlineStatus: publicProcedure.input(z3.object({ sellerId: z3.number().int().positive() })).query(async ({ input }) => {
       const db = await requireDb();
-      const seller = await db.select({ lastActivityAt: users.lastActivityAt, id: users.id, name: users.name }).from(users).where(eq2(users.id, input.sellerId)).limit(1);
+      const seller = await db.select({ lastActivityAt: users.lastActivityAt, id: users.id, name: users.name }).from(users).where(eq3(users.id, input.sellerId)).limit(1);
       if (!seller.length) return { isOnline: false };
       const lastActivity = seller[0].lastActivityAt;
       const now = /* @__PURE__ */ new Date();
@@ -6314,10 +7177,10 @@ var appRouter = router({
       const isOnline = timeSinceActivity < ONLINE_STATUS_TIMEOUT_MS;
       return { isOnline, lastActivityAt: lastActivity };
     }),
-    getMultipleSellerOnlineStatus: publicProcedure.input(z2.object({ sellerIds: z2.array(z2.number().int().positive()) })).query(async ({ input }) => {
+    getMultipleSellerOnlineStatus: publicProcedure.input(z3.object({ sellerIds: z3.array(z3.number().int().positive()) })).query(async ({ input }) => {
       if (!input.sellerIds.length) return {};
       const db = await requireDb();
-      const sellers = await db.select({ id: users.id, lastActivityAt: users.lastActivityAt }).from(users).where(inArray2(users.id, input.sellerIds));
+      const sellers = await db.select({ id: users.id, lastActivityAt: users.lastActivityAt }).from(users).where(inArray3(users.id, input.sellerIds));
       const ONLINE_STATUS_TIMEOUT_MS = 5 * 60 * 1e3;
       const now = /* @__PURE__ */ new Date();
       const result = {};
@@ -6332,50 +7195,50 @@ var appRouter = router({
     })
   }),
   conventions: router({
-    list: publicProcedure.input(z2.object({
-      category: z2.string().optional(),
-      country: z2.string().optional(),
-      state: z2.string().optional()
+    list: publicProcedure.input(z3.object({
+      category: z3.string().optional(),
+      country: z3.string().optional(),
+      state: z3.string().optional()
     }).optional()).query(({ input }) => getConventions(input ?? {})),
-    upcoming: publicProcedure.input(z2.object({ limit: z2.number().min(1).max(10).optional() }).optional()).query(async ({ ctx, input }) => {
+    upcoming: publicProcedure.input(z3.object({ limit: z3.number().min(1).max(10).optional() }).optional()).query(async ({ ctx, input }) => {
       if (!ctx.user) return [];
-      const { userProfiles: userProfiles2 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
-      const { eq: eq3 } = await import("drizzle-orm");
+      const { userProfiles: userProfiles3 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
+      const { eq: eq4 } = await import("drizzle-orm");
       const db = await (await Promise.resolve().then(() => (init_db(), db_exports))).requireDb();
-      const [profile] = await db.select({ state: userProfiles2.contactState, country: userProfiles2.contactCountry }).from(userProfiles2).where(eq3(userProfiles2.userId, ctx.user.id));
+      const [profile] = await db.select({ state: userProfiles3.contactState, country: userProfiles3.contactCountry }).from(userProfiles3).where(eq4(userProfiles3.userId, ctx.user.id));
       const userLocation = profile ? { state: profile.state || null, country: profile.country || null } : {};
       return getUpcomingConventions(input?.limit ?? 3, userLocation);
     }),
-    submit: publicProcedure.input(z2.object({
-      name: z2.string().min(2).max(255),
-      category: z2.string().min(1),
-      categories: z2.array(z2.string()).optional(),
+    submit: publicProcedure.input(z3.object({
+      name: z3.string().min(2).max(255),
+      category: z3.string().min(1),
+      categories: z3.array(z3.string()).optional(),
       // multi-category support
-      startDate: z2.string().min(8).max(20),
-      endDate: z2.string().max(20).optional(),
-      city: z2.string().max(100).optional(),
-      state: z2.string().max(100).optional(),
-      country: z2.string().min(2).max(100),
-      venue: z2.string().max(255).optional(),
-      website: z2.string().max(500).optional(),
-      admission: z2.string().max(100).optional(),
-      description: z2.string().max(2e3).optional()
+      startDate: z3.string().min(8).max(20),
+      endDate: z3.string().max(20).optional(),
+      city: z3.string().max(100).optional(),
+      state: z3.string().max(100).optional(),
+      country: z3.string().min(2).max(100),
+      venue: z3.string().max(255).optional(),
+      website: z3.string().max(500).optional(),
+      admission: z3.string().max(100).optional(),
+      description: z3.string().max(2e3).optional()
     })).mutation(({ ctx, input }) => submitConvention({ ...input, submittedBy: ctx.user?.id })),
     pending: publicProcedure.query(() => getPendingConventions()),
-    approve: publicProcedure.input(z2.object({ id: z2.number() })).mutation(({ ctx, input }) => {
-      if (ctx.user?.role !== "admin") throw new TRPCError3({ code: "FORBIDDEN" });
+    approve: publicProcedure.input(z3.object({ id: z3.number() })).mutation(({ ctx, input }) => {
+      if (ctx.user?.role !== "admin") throw new TRPCError4({ code: "FORBIDDEN" });
       return approveConvention(input.id, ctx.user.id);
     }),
-    reject: publicProcedure.input(z2.object({ id: z2.number() })).mutation(({ ctx, input }) => {
-      if (ctx.user?.role !== "admin") throw new TRPCError3({ code: "FORBIDDEN" });
+    reject: publicProcedure.input(z3.object({ id: z3.number() })).mutation(({ ctx, input }) => {
+      if (ctx.user?.role !== "admin") throw new TRPCError4({ code: "FORBIDDEN" });
       return rejectConvention(input.id, ctx.user.id);
     }),
-    delete: publicProcedure.input(z2.object({ id: z2.number() })).mutation(({ ctx, input }) => {
-      if (ctx.user?.role !== "admin") throw new TRPCError3({ code: "FORBIDDEN" });
+    delete: publicProcedure.input(z3.object({ id: z3.number() })).mutation(({ ctx, input }) => {
+      if (ctx.user?.role !== "admin") throw new TRPCError4({ code: "FORBIDDEN" });
       return deleteConvention(input.id);
     }),
     scrape: publicProcedure.mutation(async ({ ctx }) => {
-      if (ctx.user?.role !== "admin") throw new TRPCError3({ code: "FORBIDDEN" });
+      if (ctx.user?.role !== "admin") throw new TRPCError4({ code: "FORBIDDEN" });
       const { runConventionScraper: runConventionScraper2 } = await Promise.resolve().then(() => (init_conventionScraper(), conventionScraper_exports));
       return runConventionScraper2();
     })
@@ -6607,10 +7470,10 @@ async function setupVite(app, server) {
 
 // server/_core/index.ts
 init_schema();
-import { desc as desc3, gte as gte2 } from "drizzle-orm";
+import { desc as desc4, gte as gte2 } from "drizzle-orm";
 
 // server/_core/startupChecks.ts
-import { sql as sql3 } from "drizzle-orm";
+import { sql as sql4 } from "drizzle-orm";
 var REQUIRED_ENV_VARS = [
   "DATABASE_URL",
   "JWT_SECRET",
@@ -6642,7 +7505,7 @@ async function validateDatabaseConnection() {
   const { requireDb: requireDb2 } = await Promise.resolve().then(() => (init_db(), db_exports));
   try {
     const db = await requireDb2();
-    await db.execute(sql3`select 1`);
+    await db.execute(sql4`select 1`);
     console.log("[startup] Database check: PASS (connection verified)");
   } catch (error) {
     console.error("========================================================");
@@ -6696,8 +7559,8 @@ async function startServer() {
     try {
       const { requireDb: requireDb2 } = await Promise.resolve().then(() => (init_db(), db_exports));
       const db = await requireDb2();
-      const { sql: sql4 } = await import("drizzle-orm");
-      await db.execute(sql4`select 1`);
+      const { sql: sql5 } = await import("drizzle-orm");
+      await db.execute(sql5`select 1`);
       res.json({ status: "ok", database: "connected", timestamp: (/* @__PURE__ */ new Date()).toISOString() });
     } catch {
       res.status(503).json({ status: "degraded", database: "unreachable", timestamp: (/* @__PURE__ */ new Date()).toISOString() });
@@ -6743,7 +7606,7 @@ async function startServer() {
       const { requireDb: requireDb2 } = await Promise.resolve().then(() => (init_db(), db_exports));
       const db = await requireDb2();
       const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1e3).toISOString().slice(0, 19).replace("T", " ");
-      const pendingReferrals = await db.select().from(referralRequests).where(gte2(referralRequests.createdAt, threeDaysAgo)).orderBy(desc3(referralRequests.createdAt));
+      const pendingReferrals = await db.select().from(referralRequests).where(gte2(referralRequests.createdAt, threeDaysAgo)).orderBy(desc4(referralRequests.createdAt));
       if (pendingReferrals.length === 0) {
         return res.json({ ok: true, skipped: "no-referrals" });
       }
@@ -6766,6 +7629,56 @@ async function startServer() {
         stack: error.stack,
         timestamp: (/* @__PURE__ */ new Date()).toISOString()
       });
+    }
+  });
+  app.post("/api/scheduled/tradeReminders", async (req, res) => {
+    try {
+      const user = await sdk.authenticateRequest(req);
+      if (!user.isCron) {
+        return res.status(403).json({ error: "cron-only" });
+      }
+      const { requireDb: requireDb2 } = await Promise.resolve().then(() => (init_db(), db_exports));
+      const db = await requireDb2();
+      const { sql: sql5 } = await import("drizzle-orm");
+      const now = (/* @__PURE__ */ new Date()).toISOString().slice(0, 19).replace("T", " ");
+      let autoCancelled = 0;
+      let acceptanceTimedOut = 0;
+      let receiptEscalated = 0;
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1e3).toISOString().slice(0, 19).replace("T", " ");
+      const [staleResult] = await db.execute(
+        sql5`UPDATE tradeProposals SET status = 'cancelled', declineReason = 'Auto-cancelled: 30 days of no activity', updatedAt = ${now} WHERE status IN ('pending', 'negotiating') AND lastActivityAt IS NOT NULL AND lastActivityAt < ${thirtyDaysAgo}`
+      );
+      autoCancelled = staleResult?.affectedRows || 0;
+      const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1e3).toISOString().slice(0, 19).replace("T", " ");
+      const [pendingAcceptances] = await db.execute(
+        sql5`SELECT proposalId FROM tradeReceiptConfirmation WHERE confirmationType = 'accepted' AND confirmedAt < ${threeDaysAgo}`
+      );
+      for (const row of pendingAcceptances || []) {
+        await db.execute(
+          sql5`UPDATE tradeProposals SET status = 'cancelled', declineReason = 'Auto-cancelled: 72-hour acceptance window expired', updatedAt = ${now} WHERE id = ${row.proposalId} AND status = 'negotiating'`
+        );
+        await db.execute(
+          sql5`DELETE FROM tradeReceiptConfirmation WHERE proposalId = ${row.proposalId} AND confirmationType = 'accepted'`
+        );
+        acceptanceTimedOut++;
+      }
+      const fifteenDaysAgo = new Date(Date.now() - 15 * 24 * 60 * 60 * 1e3).toISOString().slice(0, 19).replace("T", " ");
+      const [overdueShipments] = await db.execute(
+        sql5`SELECT DISTINCT proposalId FROM tradeTrackingNumbers WHERE submittedAt < ${fifteenDaysAgo} AND proposalId NOT IN (SELECT proposalId FROM tradeReceiptConfirmation WHERE confirmationType = 'received') AND proposalId IN (SELECT id FROM tradeProposals WHERE status IN ('accepted', 'shipped'))`
+      );
+      for (const row of overdueShipments || []) {
+        await db.execute(
+          sql5`UPDATE tradeProposals SET status = 'disputed', declineReason = 'Auto-escalated: Receipt not confirmed within 15 days', updatedAt = ${now} WHERE id = ${row.proposalId}`
+        );
+        await db.execute(
+          sql5`INSERT INTO tradeAdminLog (proposalId, eventType, details, createdAt) VALUES (${row.proposalId}, 'disputed', 'Auto-escalated: 15-day receipt timeout', ${now})`
+        );
+        receiptEscalated++;
+      }
+      res.json({ ok: true, autoCancelled, acceptanceTimedOut, receiptEscalated, timestamp: now });
+    } catch (error) {
+      console.error("[tradeReminders] Error:", error);
+      res.status(500).json({ error: error.message, timestamp: (/* @__PURE__ */ new Date()).toISOString() });
     }
   });
   if (process.env.NODE_ENV === "development") {

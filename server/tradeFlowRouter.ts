@@ -85,7 +85,7 @@ const leaveReviewSchema = z.object({
 });
 
 const getTradeAlertsSchema = z.object({
-  folder: z.enum(['negotiating', 'accepted', 'shipped', 'declined', 'completed']),
+  folder: z.enum(['proposal', 'negotiating', 'accepted', 'shipped', 'declined', 'completed']),
   limit: z.number().int().min(1).max(50).default(20),
   offset: z.number().int().min(0).default(0),
   search: z.string().optional(),
@@ -136,12 +136,13 @@ async function generateTradeRefNumber(): Promise<string> {
 
 function getFolderStatusFilter(folder: string): string[] {
   switch (folder) {
-    case 'negotiating': return ['pending', 'negotiating'];
+    case 'proposal': return ['pending'];       // Initial inquiry, no items yet
+    case 'negotiating': return ['negotiating']; // Active negotiation with items
     case 'accepted': return ['accepted'];
     case 'shipped': return ['shipped'];
     case 'declined': return ['declined', 'cancelled'];
     case 'completed': return ['completed'];
-    default: return ['pending', 'negotiating'];
+    default: return ['pending'];
   }
 }
 
@@ -339,14 +340,14 @@ export const tradeFlowRouter = router({
         });
       }
 
-      // Update cash fields
+      // Update cash fields and record who sent the last proposal
       if (input.cashFromProposer !== undefined || input.cashFromRecipient !== undefined) {
         await db.execute(
-          sql`UPDATE tradeProposals SET cashFromRequester = ${input.cashFromProposer || 0}, cashFromRecipient = ${input.cashFromRecipient || 0}, lastActivityAt = ${now}, updatedAt = ${now} WHERE id = ${input.proposalId}`
+          sql`UPDATE tradeProposals SET cashFromRequester = ${input.cashFromProposer || 0}, cashFromRecipient = ${input.cashFromRecipient || 0}, lastProposedBy = ${userId}, lastActivityAt = ${now}, updatedAt = ${now} WHERE id = ${input.proposalId}`
         );
       } else {
         await db.execute(
-          sql`UPDATE tradeProposals SET lastActivityAt = ${now}, updatedAt = ${now} WHERE id = ${input.proposalId}`
+          sql`UPDATE tradeProposals SET lastProposedBy = ${userId}, lastActivityAt = ${now}, updatedAt = ${now} WHERE id = ${input.proposalId}`
         );
       }
 
@@ -784,7 +785,7 @@ export const tradeFlowRouter = router({
 
       // Get trade reference number and other new fields via raw SQL
       const [tradeExtra] = await db.execute(
-        sql`SELECT tradeReferenceNumber, negotiatingAt, acceptedAt, shippedAt, lastActivityAt, cashFromRequester, cashFromRecipient, middleManRequested, middleManApproved, declineReason FROM tradeProposals WHERE id = ${input.proposalId}`
+        sql`SELECT tradeReferenceNumber, negotiatingAt, acceptedAt, shippedAt, lastActivityAt, cashFromRequester, cashFromRecipient, middleManRequested, middleManApproved, declineReason, lastProposedBy FROM tradeProposals WHERE id = ${input.proposalId}`
       );
 
       return {
@@ -820,7 +821,9 @@ export const tradeFlowRouter = router({
 
       const otherUserId = proposal.requesterId === userId ? proposal.recipientId : proposal.requesterId;
 
-      let query = sql`SELECT l.id, l.title, l.category, l.estimatedValue, l.condition, l.grade, l.certificationCompany,
+      let query = sql`SELECT l.id, l.ownerId, l.title, l.category, l.itemType, l.estimatedValue,
+        l.condition, l.grade, l.certificationCompany, l.certificationNumber,
+        l.description, l.itemDetails, l.signatures, l.status, l.isActive, l.createdAt,
         (SELECT imageUrl FROM listingPhotos WHERE listingId = l.id ORDER BY sortOrder ASC LIMIT 1) as primaryImage
       FROM listings l
       WHERE l.ownerId = ${otherUserId} AND l.isActive = 1 AND l.status = 'active'`;
@@ -835,7 +838,27 @@ export const tradeFlowRouter = router({
       query = sql`${query} ORDER BY l.createdAt DESC LIMIT 50`;
 
       const [items] = await db.execute(query);
-      return { items: (items as unknown as any[]) };
+      const itemList = items as unknown as any[];
+
+      // Fetch ALL photos for each item (not just primary)
+      const itemIds = itemList.map((i: any) => i.id);
+      let allPhotos: any[] = [];
+      if (itemIds.length > 0) {
+        const [photoRows] = await db.execute(
+          sql`SELECT listingId, imageUrl, sortOrder FROM listingPhotos WHERE listingId IN (${sql.raw(itemIds.join(','))}) ORDER BY sortOrder ASC`
+        );
+        allPhotos = photoRows as unknown as any[];
+      }
+
+      // Attach photos array to each item
+      const itemsWithPhotos = itemList.map((item: any) => ({
+        ...item,
+        photos: allPhotos
+          .filter((p: any) => p.listingId === item.id)
+          .map((p: any) => ({ imageUrl: p.imageUrl, sortOrder: p.sortOrder })),
+      }));
+
+      return { items: itemsWithPhotos };
     }),
 
   getShippingInfo: protectedProcedure
