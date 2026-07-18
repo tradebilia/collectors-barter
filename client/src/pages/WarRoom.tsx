@@ -1202,8 +1202,8 @@ export default function WarRoom() {
               </div>
 
               {/* Input */}
-              <div className="p-3 border-t border-gray-600">
-                <div className="flex items-center gap-2 bg-[#16213e] border border-gray-700 rounded-full px-3 py-1.5">
+              <div className="p-3 border-t border-gray-600 shrink-0">
+                <div className="flex items-center gap-2 bg-[#16213e] border border-gray-700 rounded-full px-4 py-2">
                   <input
                     type="text"
                     placeholder="Type a message..."
