@@ -783,6 +783,48 @@ export const tradeFlowRouter = router({
         WHERE u.id = ${otherUserId}`
       );
 
+      // For accepted/shipped/completed stages, also fetch contact info for both parties
+      let myContactInfo: any = null;
+      let theirContactInfo: any = null;
+      if (['accepted', 'shipped', 'completed', 'disputed'].includes(proposal.status)) {
+        const [myContact] = await db.execute(
+          sql`SELECT u.name, up.contactFullName, up.contactEmail, up.contactPhone,
+            up.addressStreet, up.addressCity, up.addressState, up.addressZip, up.addressCountry
+          FROM users u LEFT JOIN userProfiles up ON up.userId = u.id WHERE u.id = ${userId}`
+        );
+        const [theirContact] = await db.execute(
+          sql`SELECT u.name, up.contactFullName, up.contactEmail, up.contactPhone,
+            up.addressStreet, up.addressCity, up.addressState, up.addressZip, up.addressCountry
+          FROM users u LEFT JOIN userProfiles up ON up.userId = u.id WHERE u.id = ${otherUserId}`
+        );
+        myContactInfo = (myContact as any)?.[0] || null;
+        theirContactInfo = (theirContact as any)?.[0] || null;
+      }
+
+      // Fetch tracking numbers for accepted/shipped/completed trades
+      let trackingNumbers: any[] = [];
+      if (['accepted', 'shipped', 'completed', 'disputed'].includes(proposal.status)) {
+        const [trackingResult] = await db.execute(
+          sql`SELECT ttn.*, l.title as itemTitle FROM tradeTrackingNumbers ttn
+            LEFT JOIN listings l ON l.id = ttn.listingId
+            WHERE ttn.proposalId = ${input.proposalId}
+            ORDER BY ttn.submittedAt ASC`
+        );
+        trackingNumbers = (trackingResult as any) || [];
+      }
+
+      // Check if current user has confirmed receipt
+      let myReceiptConfirmed = false;
+      let theirReceiptConfirmed = false;
+      if (['shipped', 'completed'].includes(proposal.status)) {
+        const [receiptResult] = await db.execute(
+          sql`SELECT userId FROM tradeReceiptConfirmation WHERE proposalId = ${input.proposalId} AND confirmationType IN ('received', 'damaged')`
+        );
+        const confirmedUserIds = ((receiptResult as any) || []).map((r: any) => r.userId);
+        myReceiptConfirmed = confirmedUserIds.includes(userId);
+        theirReceiptConfirmed = confirmedUserIds.includes(otherUserId);
+      }
+
       // Get trade reference number and other new fields via raw SQL
       const [tradeExtra] = await db.execute(
         sql`SELECT tradeReferenceNumber, negotiatingAt, acceptedAt, shippedAt, lastActivityAt, cashFromRequester, cashFromRecipient, middleManRequested, middleManApproved, declineReason, lastProposedBy FROM tradeProposals WHERE id = ${input.proposalId}`
@@ -803,6 +845,11 @@ export const tradeFlowRouter = router({
         })),
         otherUser: (otherUserResult as any)?.[0] || null,
         isRequester: proposal.requesterId === userId,
+        myContactInfo,
+        theirContactInfo,
+        trackingNumbers,
+        myReceiptConfirmed,
+        theirReceiptConfirmed,
       };
     }),
 

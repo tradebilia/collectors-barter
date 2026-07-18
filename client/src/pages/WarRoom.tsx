@@ -50,6 +50,11 @@ export default function WarRoom() {
   const [pendingMyItems, setPendingMyItems] = useState<any[]>([]);
   // Track server-persisted items that the user has removed locally (before submitting)
   const [removedItemIds, setRemovedItemIds] = useState<number[]>([]);
+  // Tracking number inputs for Stage 3
+  const [trackingInputs, setTrackingInputs] = useState<{listingId: number; carrier: string; trackingNumber: string}[]>([]);
+  // Review/rating form for Stage 5
+  const [reviewRatings, setReviewRatings] = useState({ tradeExperience: 0, itemCondition: 0, communication: 0, shippingSpeed: 0 });
+  const [reviewText, setReviewText] = useState('');
   const [messageInput, setMessageInput] = useState('');
   const [declineReason, setDeclineReason] = useState('');
   const [showDeclineModal, setShowDeclineModal] = useState(false);
@@ -138,6 +143,31 @@ export default function WarRoom() {
 
   const cancelMutation = trpc.tradeFlow.cancelTrade.useMutation({
     onSuccess: () => { toast.success('Trade cancelled.'); navigate('/trade-hub'); },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const submitTrackingMutation = trpc.tradeFlow.submitTrackingNumbers.useMutation({
+    onSuccess: () => {
+      toast.success('Tracking information submitted!');
+      utils.tradeFlow.getTradeDetails.invalidate({ proposalId });
+      setTrackingInputs([]);
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const confirmReceiptMutation = trpc.tradeFlow.confirmItemsReceived.useMutation({
+    onSuccess: () => {
+      toast.success('Receipt confirmed!');
+      utils.tradeFlow.getTradeDetails.invalidate({ proposalId });
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const leaveReviewMutation = trpc.tradeFlow.leaveTradeReview.useMutation({
+    onSuccess: () => {
+      toast.success('Review submitted! Thank you.');
+      utils.tradeFlow.getTradeDetails.invalidate({ proposalId });
+    },
     onError: (err) => toast.error(err.message),
   });
 
@@ -470,11 +500,268 @@ export default function WarRoom() {
       {/* Main Layout: Trade Table (left) + Chat/Timeline (right) */}
       <div className="flex-1 flex overflow-hidden min-h-0">
 
-        {/* Center: Trade Table */}
+        {/* Center: Trade Table or Post-Acceptance View */}
         <div className="flex-1 overflow-y-auto custom-scrollbar p-4 flex flex-col">
 
+          {/* ── STAGE 3+: Review / Shipping / Completed ── */}
+          {(currentStage === 'accepted' || currentStage === 'shipped' || currentStage === 'completed') && (() => {
+            const allItems = [...myItems, ...theirItems];
+            const myTracking = (trade?.trackingNumbers || []).filter((t: any) => t.userId === myUserId);
+            const theirTracking = (trade?.trackingNumbers || []).filter((t: any) => t.userId !== myUserId);
+            const myContact = (trade as any)?.myContactInfo;
+            const theirContact = (trade as any)?.theirContactInfo;
+            const myReceiptConfirmed = (trade as any)?.myReceiptConfirmed;
+            const theirReceiptConfirmed = (trade as any)?.theirReceiptConfirmed;
+
+            const getTrackingUrl = (carrier: string, number: string) => {
+              if (carrier === 'USPS') return `https://tools.usps.com/go/TrackConfirmAction?tLabels=${number}`;
+              if (carrier === 'UPS') return `https://www.ups.com/track?tracknum=${number}`;
+              if (carrier === 'FedEx') return `https://www.fedex.com/fedextrack/?trknbr=${number}`;
+              if (carrier === 'DHL') return `https://www.dhl.com/us-en/home/tracking.html?tracking-id=${number}`;
+              return null;
+            };
+
+            return (
+              <div className="flex flex-col gap-4 flex-1">
+
+                {/* Trade Summary Card */}
+                <div className="bg-[#1a1a4a] border border-gray-600 rounded-xl p-5 shadow-xl">
+                  <div className="flex items-center gap-3 mb-5">
+                    <div className="w-9 h-9 rounded-lg bg-green-900/30 border border-green-500/20 flex items-center justify-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-green-400">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h2 className="text-white font-bold text-lg">Trade Summary</h2>
+                      <p className="text-gray-400 text-xs">Both parties have accepted. This trade is locked.</p>
+                    </div>
+                    <span className="ml-auto px-3 py-1 bg-green-900/30 border border-green-500/30 text-green-400 text-xs font-bold rounded-full">LOCKED</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    {/* Your Side */}
+                    <div className="bg-[#0a0a2a] border border-purple-500/20 rounded-xl p-4">
+                      <div className="flex items-center gap-2 mb-3">
+                        {myAvatarUrl ? <img src={myAvatarUrl} className="w-7 h-7 rounded-full object-cover" alt="" /> : <div className="w-7 h-7 rounded-full bg-purple-600 flex items-center justify-center text-white text-xs font-bold">{myInitial}</div>}
+                        <div>
+                          <p className="text-white text-sm font-bold">{myDisplayName}</p>
+                          <p className="text-purple-400 text-[10px] uppercase">Your Side</p>
+                        </div>
+                        <p className="ml-auto text-purple-400 font-bold">${myTotalValue.toLocaleString()}</p>
+                      </div>
+                      <div className="space-y-2">
+                        {myItems.map((item: any) => (
+                          <div key={item.id} className="flex items-center gap-2">
+                            {item.photos?.[0]?.imageUrl && <img src={item.photos[0].imageUrl} className="w-10 h-10 object-contain rounded bg-[#1a1a4a]" alt="" />}
+                            <div className="flex-1 min-w-0">
+                              <p className="text-white text-xs font-medium truncate">{item.title}</p>
+                              <p className="text-purple-400 text-xs">${parseFloat(item.estimatedValue || '0').toLocaleString()}</p>
+                            </div>
+                          </div>
+                        ))}
+                        {myCash > 0 && <div className="flex items-center gap-2 text-green-400 text-xs font-bold"><span>💵</span>+ ${myCash.toLocaleString()} Cash</div>}
+                      </div>
+                    </div>
+                    {/* Their Side */}
+                    <div className="bg-[#0a0a2a] border border-blue-500/20 rounded-xl p-4">
+                      <div className="flex items-center gap-2 mb-3">
+                        {theirAvatarUrl ? <img src={theirAvatarUrl} className="w-7 h-7 rounded-full object-cover" alt="" /> : <div className="w-7 h-7 rounded-full bg-gray-600 flex items-center justify-center text-white text-xs font-bold">{theirInitial}</div>}
+                        <div>
+                          <p className="text-white text-sm font-bold">{theirDisplayName}</p>
+                          <p className="text-blue-400 text-[10px] uppercase">Their Side</p>
+                        </div>
+                        <p className="ml-auto text-blue-400 font-bold">${theirTotalValue.toLocaleString()}</p>
+                      </div>
+                      <div className="space-y-2">
+                        {theirItems.map((item: any) => (
+                          <div key={item.id} className="flex items-center gap-2">
+                            {item.photos?.[0]?.imageUrl && <img src={item.photos[0].imageUrl} className="w-10 h-10 object-contain rounded bg-[#1a1a4a]" alt="" />}
+                            <div className="flex-1 min-w-0">
+                              <p className="text-white text-xs font-medium truncate">{item.title}</p>
+                              <p className="text-blue-400 text-xs">${parseFloat(item.estimatedValue || '0').toLocaleString()}</p>
+                            </div>
+                          </div>
+                        ))}
+                        {theirCash > 0 && <div className="flex items-center gap-2 text-green-400 text-xs font-bold"><span>💵</span>+ ${theirCash.toLocaleString()} Cash</div>}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Contact Info Card */}
+                <div className="bg-[#1a1a4a] border border-gray-600 rounded-xl p-5 shadow-xl">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-9 h-9 rounded-lg bg-blue-900/30 border border-blue-500/20 flex items-center justify-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-blue-400">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 9h3.75M15 12h3.75M15 15h3.75M4.5 19.5h15a2.25 2.25 0 0 0 2.25-2.25V6.75A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25v10.5A2.25 2.25 0 0 0 4.5 19.5Zm6-10.125a1.875 1.875 0 1 1-3.75 0 1.875 1.875 0 0 1 3.75 0Zm1.294 6.336a6.721 6.721 0 0 1-3.17.789 6.721 6.721 0 0 1-3.168-.789 3.376 3.376 0 0 1 6.338 0Z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h2 className="text-white font-bold text-lg">Shipping Information</h2>
+                      <p className="text-gray-400 text-xs">Contact details for arranging shipment. Keep this information confidential.</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    {[{ label: 'Your Info', contact: myContact, color: 'purple' }, { label: `${theirDisplayName}'s Info`, contact: theirContact, color: 'blue' }].map(({ label, contact, color }) => (
+                      <div key={label} className={`bg-[#0a0a2a] border border-${color}-500/20 rounded-xl p-4`}>
+                        <p className={`text-${color}-400 text-xs font-bold uppercase tracking-wide mb-3`}>{label}</p>
+                        {contact ? (
+                          <div className="space-y-1.5 text-sm">
+                            <p className="text-white font-medium">{contact.contactFullName || contact.name || '—'}</p>
+                            {contact.contactEmail && <p className="text-gray-400 text-xs">{contact.contactEmail}</p>}
+                            {contact.contactPhone && <p className="text-gray-400 text-xs">{contact.contactPhone}</p>}
+                            {contact.addressStreet && (
+                              <div className="text-gray-400 text-xs mt-1">
+                                <p>{contact.addressStreet}</p>
+                                <p>{[contact.addressCity, contact.addressState, contact.addressZip].filter(Boolean).join(', ')}</p>
+                                {contact.addressCountry && <p>{contact.addressCountry}</p>}
+                              </div>
+                            )}
+                            {!contact.contactEmail && !contact.addressStreet && (
+                              <p className="text-gray-600 text-xs italic">Contact info not filled in on profile</p>
+                            )}
+                          </div>
+                        ) : (
+                          <p className="text-gray-600 text-xs italic">Loading contact info...</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Tracking Numbers Card */}
+                <div className="bg-[#1a1a4a] border border-gray-600 rounded-xl p-5 shadow-xl">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-9 h-9 rounded-lg bg-orange-900/30 border border-orange-500/20 flex items-center justify-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-orange-400">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 18.75a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 0 1-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 0 0-3.213-9.193 2.056 2.056 0 0 0-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 0 0-10.026 0 1.106 1.106 0 0 0-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h2 className="text-white font-bold text-lg">Tracking Numbers</h2>
+                      <p className="text-gray-400 text-xs">Submit tracking info for each item you are shipping.</p>
+                    </div>
+                  </div>
+
+                  {/* Existing tracking numbers */}
+                  {myTracking.length > 0 && (
+                    <div className="mb-4">
+                      <p className="text-green-400 text-xs font-bold mb-2">✓ Your Tracking Submitted</p>
+                      {myTracking.map((t: any, i: number) => {
+                        const url = getTrackingUrl(t.carrier, t.trackingNumber);
+                        return (
+                          <div key={i} className="flex items-center gap-3 bg-green-900/10 border border-green-500/20 rounded-lg px-3 py-2 mb-1">
+                            <span className="text-green-400 text-xs font-bold">{t.carrier}</span>
+                            <span className="text-gray-300 text-xs font-mono">{t.trackingNumber}</span>
+                            {t.itemTitle && <span className="text-gray-500 text-xs">({t.itemTitle})</span>}
+                            {url && <a href={url} target="_blank" rel="noopener noreferrer" className="ml-auto text-blue-400 text-xs hover:underline">Track →</a>}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                  {theirTracking.length > 0 && (
+                    <div className="mb-4">
+                      <p className="text-blue-400 text-xs font-bold mb-2">✓ {theirDisplayName}'s Tracking Submitted</p>
+                      {theirTracking.map((t: any, i: number) => {
+                        const url = getTrackingUrl(t.carrier, t.trackingNumber);
+                        return (
+                          <div key={i} className="flex items-center gap-3 bg-blue-900/10 border border-blue-500/20 rounded-lg px-3 py-2 mb-1">
+                            <span className="text-blue-400 text-xs font-bold">{t.carrier}</span>
+                            <span className="text-gray-300 text-xs font-mono">{t.trackingNumber}</span>
+                            {t.itemTitle && <span className="text-gray-500 text-xs">({t.itemTitle})</span>}
+                            {url && <a href={url} target="_blank" rel="noopener noreferrer" className="ml-auto text-blue-400 text-xs hover:underline">Track →</a>}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* Add tracking inputs */}
+                  {myTracking.length === 0 && (
+                    <div className="space-y-3">
+                      <p className="text-gray-400 text-xs mb-2">Add tracking for each item you are shipping:</p>
+                      {allItems.filter((item: any) => item.ownerId === myUserId || (isRequester ? false : item.id === requestedListing?.id)).map((item: any) => {
+                        const input = trackingInputs.find(t => t.listingId === item.id) || { listingId: item.id, carrier: 'USPS', trackingNumber: '' };
+                        return (
+                          <div key={item.id} className="bg-[#0a0a2a] border border-gray-700 rounded-lg p-3">
+                            <p className="text-white text-xs font-medium mb-2">{item.title}</p>
+                            <div className="flex gap-2">
+                              <select
+                                value={input.carrier}
+                                onChange={(e) => setTrackingInputs(prev => {
+                                  const existing = prev.filter(t => t.listingId !== item.id);
+                                  return [...existing, { ...input, carrier: e.target.value }];
+                                })}
+                                className="bg-[#1a1a4a] border border-gray-600 text-white text-xs rounded px-2 py-1.5 focus:outline-none focus:border-purple-500"
+                              >
+                                {['USPS', 'UPS', 'FedEx', 'DHL', 'Other'].map(c => <option key={c} value={c}>{c}</option>)}
+                              </select>
+                              <input
+                                type="text"
+                                placeholder="Tracking number"
+                                value={input.trackingNumber}
+                                onChange={(e) => setTrackingInputs(prev => {
+                                  const existing = prev.filter(t => t.listingId !== item.id);
+                                  return [...existing, { ...input, trackingNumber: e.target.value }];
+                                })}
+                                className="flex-1 bg-[#1a1a4a] border border-gray-600 text-white text-xs rounded px-3 py-1.5 focus:outline-none focus:border-purple-500 font-mono"
+                              />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* Receipt confirmation */}
+                  {(currentStage === 'shipped') && (
+                    <div className="mt-4 pt-4 border-t border-gray-700">
+                      <p className="text-white text-sm font-bold mb-2">Items Received?</p>
+                      <p className="text-gray-400 text-xs mb-3">Once you confirm receipt, the trade moves to completion.</p>
+                      <div className="flex gap-3">
+                        <div className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs ${myReceiptConfirmed ? 'bg-green-900/20 border border-green-500/30 text-green-400' : 'bg-gray-800 border border-gray-700 text-gray-500'}`}>
+                          {myReceiptConfirmed ? '✓' : '○'} {myDisplayName} {myReceiptConfirmed ? 'confirmed' : 'not confirmed'}
+                        </div>
+                        <div className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs ${theirReceiptConfirmed ? 'bg-green-900/20 border border-green-500/30 text-green-400' : 'bg-gray-800 border border-gray-700 text-gray-500'}`}>
+                          {theirReceiptConfirmed ? '✓' : '○'} {theirDisplayName} {theirReceiptConfirmed ? 'confirmed' : 'not confirmed'}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Completed — leave review */}
+                  {currentStage === 'completed' && (
+                    <div className="mt-4 pt-4 border-t border-gray-700">
+                      <p className="text-white text-sm font-bold mb-3">Leave a Review for {theirDisplayName}</p>
+                      {(['tradeExperience', 'itemCondition', 'communication', 'shippingSpeed'] as const).map(key => (
+                        <div key={key} className="flex items-center justify-between mb-2">
+                          <p className="text-gray-400 text-xs capitalize">{key.replace(/([A-Z])/g, ' $1')}</p>
+                          <div className="flex gap-1">
+                            {[1,2,3,4,5].map(star => (
+                              <button key={star} onClick={() => setReviewRatings(r => ({...r, [key]: star}))}
+                                className={`text-lg ${reviewRatings[key] >= star ? 'text-yellow-400' : 'text-gray-600'}`}>★</button>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                      <textarea
+                        placeholder="Write a review (optional)..."
+                        value={reviewText}
+                        onChange={(e) => setReviewText(e.target.value)}
+                        className="w-full mt-2 bg-[#0a0a2a] border border-gray-600 text-white text-xs rounded-lg p-3 focus:outline-none focus:border-purple-500 resize-none"
+                        rows={3}
+                      />
+                    </div>
+                  )}
+                </div>
+
+              </div>
+            );
+          })()}
+
             {/* Trade Table Card — stretches to fill available height */}
-            <div className="bg-[#1a1a4a] border border-gray-600 rounded-xl p-5 shadow-xl flex flex-col flex-1">
+            {(currentStage === 'proposed' || currentStage === 'negotiating') && <div className="bg-[#1a1a4a] border border-gray-600 rounded-xl p-5 shadow-xl flex flex-col flex-1">
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-lg bg-purple-900/30 border border-purple-500/20 flex items-center justify-center">
@@ -776,7 +1063,7 @@ export default function WarRoom() {
                 </div>
               </div>
 
-            </div>
+            </div>}
 
         </div>
 
@@ -981,14 +1268,91 @@ export default function WarRoom() {
             </>
           )}
 
-          {/* Stage 3+: Accepted / Shipped / Completed — no editing */}
-          {(currentStage === 'accepted' || currentStage === 'shipped' || currentStage === 'completed') && (
-            <p className="text-gray-400 text-sm flex items-center gap-2">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-green-500">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
-              </svg>
-              Trade is locked — both parties have accepted
-            </p>
+          {/* Stage 3: Accepted — submit tracking */}
+          {currentStage === 'accepted' && (() => {
+            const myTracking = (trade?.trackingNumbers || []).filter((t: any) => t.userId === myUserId);
+            const hasNewTracking = trackingInputs.some(t => t.trackingNumber.trim().length > 0);
+            return (
+              <>
+                <p className="text-gray-400 text-sm flex items-center gap-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-green-500">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                  </svg>
+                  Trade locked — ship your items and submit tracking
+                </p>
+                {myTracking.length === 0 && (
+                  <button
+                    onClick={() => {
+                      const validTracking = trackingInputs.filter(t => t.trackingNumber.trim().length > 0);
+                      if (validTracking.length === 0) { toast.error('Please enter at least one tracking number.'); return; }
+                      submitTrackingMutation.mutate({ proposalId, trackingNumbers: validTracking.map(t => ({ listingId: t.listingId, carrier: t.carrier as any, trackingNumber: t.trackingNumber })) });
+                    }}
+                    disabled={!hasNewTracking || submitTrackingMutation.isPending}
+                    className="px-8 py-3 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-bold transition disabled:opacity-50 flex items-center gap-2"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 18.75a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 0 1-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 0 0-3.213-9.193 2.056 2.056 0 0 0-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 0 0-10.026 0 1.106 1.106 0 0 0-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12" />
+                    </svg>
+                    Submit Tracking
+                  </button>
+                )}
+              </>
+            );
+          })()}
+
+          {/* Stage 4: Shipped — confirm receipt */}
+          {currentStage === 'shipped' && (() => {
+            const myReceiptConfirmed = (trade as any)?.myReceiptConfirmed;
+            return (
+              <>
+                <p className="text-gray-400 text-sm flex items-center gap-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-orange-400">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 18.75a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 0 1-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 0 0-3.213-9.193 2.056 2.056 0 0 0-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 0 0-10.026 0 1.106 1.106 0 0 0-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12" />
+                  </svg>
+                  Both parties have shipped — confirm when you receive your items
+                </p>
+                {!myReceiptConfirmed ? (
+                  <button
+                    onClick={() => confirmReceiptMutation.mutate({ proposalId, confirmationType: 'received' })}
+                    disabled={confirmReceiptMutation.isPending}
+                    className="px-8 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-bold transition disabled:opacity-50 flex items-center gap-2"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                    </svg>
+                    I Received My Items
+                  </button>
+                ) : (
+                  <p className="text-green-400 text-sm flex items-center gap-2">✓ You confirmed receipt — waiting for {theirDisplayName}</p>
+                )}
+              </>
+            );
+          })()}
+
+          {/* Stage 5: Completed — leave review */}
+          {currentStage === 'completed' && (
+            <>
+              <p className="text-green-400 text-sm flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                </svg>
+                Trade completed!
+              </p>
+              <button
+                onClick={() => leaveReviewMutation.mutate({
+                  proposalId,
+                  tradeExperienceRating: reviewRatings.tradeExperience,
+                  itemConditionRating: reviewRatings.itemCondition,
+                  communicationRating: reviewRatings.communication,
+                  shippingSpeedRating: reviewRatings.shippingSpeed,
+                  review: reviewText || undefined,
+                })}
+                disabled={leaveReviewMutation.isPending || Object.values(reviewRatings).every(v => v === 0)}
+                className="px-8 py-3 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg font-bold transition disabled:opacity-50 flex items-center gap-2"
+              >
+                ★ Submit Review
+              </button>
+            </>
           )}
 
         </div>

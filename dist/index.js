@@ -5620,6 +5620,42 @@ var tradeFlowRouter = router({
         LEFT JOIN userProfiles up ON up.userId = u.id
         WHERE u.id = ${otherUserId}`
     );
+    let myContactInfo = null;
+    let theirContactInfo = null;
+    if (["accepted", "shipped", "completed", "disputed"].includes(proposal.status)) {
+      const [myContact] = await db.execute(
+        sql2`SELECT u.name, up.contactFullName, up.contactEmail, up.contactPhone,
+            up.addressStreet, up.addressCity, up.addressState, up.addressZip, up.addressCountry
+          FROM users u LEFT JOIN userProfiles up ON up.userId = u.id WHERE u.id = ${userId}`
+      );
+      const [theirContact] = await db.execute(
+        sql2`SELECT u.name, up.contactFullName, up.contactEmail, up.contactPhone,
+            up.addressStreet, up.addressCity, up.addressState, up.addressZip, up.addressCountry
+          FROM users u LEFT JOIN userProfiles up ON up.userId = u.id WHERE u.id = ${otherUserId}`
+      );
+      myContactInfo = myContact?.[0] || null;
+      theirContactInfo = theirContact?.[0] || null;
+    }
+    let trackingNumbers = [];
+    if (["accepted", "shipped", "completed", "disputed"].includes(proposal.status)) {
+      const [trackingResult] = await db.execute(
+        sql2`SELECT ttn.*, l.title as itemTitle FROM tradeTrackingNumbers ttn
+            LEFT JOIN listings l ON l.id = ttn.listingId
+            WHERE ttn.proposalId = ${input.proposalId}
+            ORDER BY ttn.submittedAt ASC`
+      );
+      trackingNumbers = trackingResult || [];
+    }
+    let myReceiptConfirmed = false;
+    let theirReceiptConfirmed = false;
+    if (["shipped", "completed"].includes(proposal.status)) {
+      const [receiptResult] = await db.execute(
+        sql2`SELECT userId FROM tradeReceiptConfirmation WHERE proposalId = ${input.proposalId} AND confirmationType IN ('received', 'damaged')`
+      );
+      const confirmedUserIds = (receiptResult || []).map((r) => r.userId);
+      myReceiptConfirmed = confirmedUserIds.includes(userId);
+      theirReceiptConfirmed = confirmedUserIds.includes(otherUserId);
+    }
     const [tradeExtra] = await db.execute(
       sql2`SELECT tradeReferenceNumber, negotiatingAt, acceptedAt, shippedAt, lastActivityAt, cashFromRequester, cashFromRecipient, middleManRequested, middleManApproved, declineReason, lastProposedBy FROM tradeProposals WHERE id = ${input.proposalId}`
     );
@@ -5637,7 +5673,12 @@ var tradeFlowRouter = router({
         ownerId: l.ownerId
       })),
       otherUser: otherUserResult?.[0] || null,
-      isRequester: proposal.requesterId === userId
+      isRequester: proposal.requesterId === userId,
+      myContactInfo,
+      theirContactInfo,
+      trackingNumbers,
+      myReceiptConfirmed,
+      theirReceiptConfirmed
     };
   }),
   getOtherUserInventory: protectedProcedure.input(z2.object({
