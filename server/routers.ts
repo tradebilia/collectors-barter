@@ -1052,6 +1052,15 @@ export const appRouter = router({
       .mutation(({ ctx, input }) => {
         return addForumReply({ id: ctx.user.id, name: ctx.user.name }, input);
       }),
+    lookupUserByUsername: publicProcedure
+      .input(z.object({ username: z.string().min(1).max(64) }))
+      .query(async ({ input }) => {
+        const db = await requireDb();
+        const [found] = await db.select({ id: users.id, username: users.username }).from(users).where(eq(users.username, input.username)).limit(1);
+        if (!found) throw new TRPCError({ code: 'NOT_FOUND', message: 'User not found' });
+        return { userId: found.id, username: found.username };
+      }),
+
     submitReport: protectedProcedure
       .input(
         z.object({

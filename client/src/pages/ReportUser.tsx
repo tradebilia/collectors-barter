@@ -59,6 +59,31 @@ export default function ReportUser() {
   const [contactEmail, setContactEmail] = useState(user?.email ?? "");
   const [supportingNotes, setSupportingNotes] = useState("");
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+  const [isLookingUp, setIsLookingUp] = useState(false);
+  const [resolvedUserId, setResolvedUserId] = useState<number | null>(null);
+  const [usernameError, setUsernameError] = useState<string | null>(null);
+
+  const utils = trpc.useUtils();
+
+  // Lookup user ID when username field loses focus
+  const handleUsernameBlur = async () => {
+    if (!reportedMember.trim()) {
+      setResolvedUserId(null);
+      setUsernameError(null);
+      return;
+    }
+    setIsLookingUp(true);
+    setUsernameError(null);
+    try {
+      const result = await utils.market.lookupUserByUsername.fetch({ username: reportedMember.trim() });
+      setResolvedUserId(result.userId);
+    } catch {
+      setResolvedUserId(null);
+      setUsernameError('Username not found. Please check the spelling.');
+    } finally {
+      setIsLookingUp(false);
+    }
+  };
 
   const memberName = useMemo(() => user?.name || user?.email || "Subscriber", [user?.email, user?.name]);
 
@@ -117,10 +142,13 @@ export default function ReportUser() {
       return;
     }
 
-    // TODO: Look up user ID from reportedMember username
-    // For now, we'll use a placeholder - this should be replaced with actual user lookup
+    if (!resolvedUserId) {
+      toast.error('Please enter a valid username and wait for it to be verified.');
+      return;
+    }
+
     reportMutation.mutate({
-      reportedUserId: 1,
+      reportedUserId: resolvedUserId,
       reason: concernType,
       description: details,
       evidence: supportingNotes || undefined,
@@ -178,7 +206,19 @@ export default function ReportUser() {
                 <div className="grid gap-5 md:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor="reported-member" className="text-white/80">Member username</Label>
-                    <Input id="reported-member" value={reportedMember} onChange={event => setReportedMember(event.target.value)} className="h-12 rounded-[1rem] border-white/10 bg-white/5 text-white" placeholder="Username of member to report" />
+                    <div className="relative">
+                      <Input
+                        id="reported-member"
+                        value={reportedMember}
+                        onChange={event => { setReportedMember(event.target.value); setResolvedUserId(null); setUsernameError(null); }}
+                        onBlur={handleUsernameBlur}
+                        className={`h-12 rounded-[1rem] border-white/10 bg-white/5 text-white pr-10 ${usernameError ? 'border-red-500/60' : resolvedUserId ? 'border-green-500/60' : ''}`}
+                        placeholder="Username of member to report"
+                      />
+                      {isLookingUp && <span className="absolute right-3 top-3.5 text-gray-400 text-xs">Checking...</span>}
+                      {resolvedUserId && !isLookingUp && <span className="absolute right-3 top-3.5 text-green-400 text-xs">✓ Found</span>}
+                    </div>
+                    {usernameError && <p className="text-red-400 text-xs mt-1">{usernameError}</p>}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="listing-reference" className="text-white/80">Listing or trade reference</Label>
