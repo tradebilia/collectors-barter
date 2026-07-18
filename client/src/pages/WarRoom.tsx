@@ -1151,7 +1151,7 @@ export default function WarRoom() {
           </div>
 
           {activeTab === 'chat' && (
-            <>
+            <div className="flex flex-col flex-1 min-h-0">
               {/* Partner header */}
               <div className="p-4 border-b border-gray-600 flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -1233,7 +1233,7 @@ export default function WarRoom() {
                   </button>
                 </div>
               </div>
-            </>
+            </div>
           )}
 
           {activeTab === 'timeline' && (
