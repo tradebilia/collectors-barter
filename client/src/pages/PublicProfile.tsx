@@ -100,6 +100,11 @@ export default function PublicProfile() {
 
                 <div className="flex-1 text-center sm:text-left">
                   <h1 className="text-3xl font-semibold text-slate-950">{profile.displayName}</h1>
+                  {userProfileQuery.data?.user?.createdAt && (
+                    <p className="mt-1 text-sm text-slate-500">
+                      Member since {new Date(userProfileQuery.data.user.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long' })}
+                    </p>
+                  )}
 
                   <div className="mt-4 flex flex-wrap justify-center gap-2 sm:justify-start">
                     <Badge className="bg-green-100 text-green-800">Active Member</Badge>
