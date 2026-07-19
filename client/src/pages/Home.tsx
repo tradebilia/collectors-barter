@@ -169,24 +169,24 @@ function RankingListingItem({ item, index, imageUrl, metricsType, metrics }: { i
   };
 
   const getRankingBadge = () => {
-    if (index === 0) return { bg: '', text: 'text-yellow-400 font-bold text-[28px]', label: '🥇' };
-    if (index === 1) return { bg: '', text: 'text-gray-300 font-bold text-[28px]', label: '🥈' };
-    if (index === 2) return { bg: '', text: 'text-orange-400 font-bold text-[28px]', label: '🥉' };
-    return { bg: '', text: 'text-white/60', label: `${index + 1}` };
+    if (index === 0) return { bg: '', text: 'text-yellow-400 font-bold', label: '🥇' };
+    if (index === 1) return { bg: '', text: 'text-gray-300 font-bold', label: '🥈' };
+    if (index === 2) return { bg: '', text: 'text-orange-400 font-bold', label: '🥉' };
+    return { bg: '', text: 'text-white/60 font-medium', label: `${index + 1}` };
   };
 
   const badge = getRankingBadge();
 
   return (
     <>
-      <div className={`flex items-center gap-3 rounded-md px-3 py-3 transition-all hover:bg-white/10 cursor-pointer border border-white/5 hover:border-white/10`} ref={containerRef} onMouseMove={handleMouseMove}>
-        <div className={`min-w-[48px] h-12 flex items-center justify-center rounded-full font-bold text-[22px] ${badge.text}`}>
-          <span className={badge.label.match(/[🥇🥈🥉]/) ? 'text-[28px]' : ''}>{badge.label}</span>
+      <div className={`flex items-center gap-3 px-3 py-2.5 transition-all hover:bg-white/10 cursor-pointer border-b border-white/5 last:border-b-0`} ref={containerRef} onMouseMove={handleMouseMove}>
+        <div className={`min-w-[40px] h-10 flex items-center justify-center font-bold text-[18px] ${badge.text}`}>
+          <span className={badge.label.match(/[🥇🥈🥉]/) ? 'text-[24px]' : 'text-[16px]'}>{badge.label}</span>
         </div>
         <div onMouseEnter={() => setShowPreview(true)} className="relative">
         <Dialog open={showPreview} onOpenChange={setShowPreview}>
           <div onClick={handleImageClick} className="cursor-pointer">
-            <img src={imageUrl} alt={item.title} className="h-16 w-16 object-contain rounded flex-shrink-0 hover:opacity-80 transition-opacity" />
+            <img src={imageUrl} alt={item.title} className="h-10 w-10 object-contain rounded flex-shrink-0 hover:opacity-80 transition-opacity border border-white/10" />
           </div>
           <DialogContent className="max-w-md">
             <DialogHeader>
@@ -198,24 +198,25 @@ function RankingListingItem({ item, index, imageUrl, metricsType, metrics }: { i
             <div className="flex justify-center">
               <img src={imageUrl} alt={item.title} className="max-h-96 w-auto object-contain" />
             </div>
-            <div className="text-center text-sm font-semibold">
+            <div className="mt-4 text-center font-semibold">
               Estimated Value: ${item.estimatedValue?.toFixed(0) ?? 'N/A'}
             </div>
           </DialogContent>
         </Dialog>
       </div>
-        <div className="flex-1 min-w-0">
-          <span onClick={handleImageClick} className="truncate hover:text-white/100 transition-colors text-[10px] block">{item.title}</span>
+        <div className="flex-1 min-w-0 ml-1">
+          <span onClick={handleImageClick} className="truncate hover:text-white/100 transition-colors text-[11px] font-semibold block text-white/90">{item.title}</span>
         </div>
-        <div className="flex items-center gap-2 text-white/60 text-[9px] flex-shrink-0">
+        <div className="flex items-center gap-2 text-white/90 text-[11px] font-bold flex-shrink-0">
           {metrics !== undefined && metrics !== null && (
-            <span className="flex items-center gap-1.5 whitespace-nowrap">
-              <span>{metricsType === 'views' ? '👁️' : metricsType === 'value' ? '$' : '❤️'}</span>
-              <span>{metricsType === 'value' ? `${metrics}` : metrics}</span>
-            </span>
+            <div className="flex items-center gap-2 whitespace-nowrap min-w-[60px] justify-end">
+              <span className={metricsType === 'views' ? 'text-blue-400' : metricsType === 'value' ? 'text-emerald-400' : 'text-pink-400'}>
+                {metricsType === 'views' ? <TrendingUp className="w-3.5 h-3.5" /> : metricsType === 'value' ? '$' : <Heart className="w-3.5 h-3.5 fill-current" />}
+              </span>
+              <span>{metricsType === 'value' ? `${Number(metrics).toLocaleString()}` : Number(metrics).toLocaleString()}</span>
+            </div>
           )}
         </div>
-        <span className="text-white/40 text-[16px]">&gt;</span>
       </div>
     </>
   );
@@ -742,98 +743,150 @@ export default function Home() {
                 </div>
 
                 <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4 lg:col-start-2">
-                <Card className="overflow-hidden rounded-lg border border-white/20 bg-[radial-gradient(circle_at_top,rgba(48,149,255,0.5),transparent_40%),linear-gradient(135deg,#05204f_0%,#0d2d68_100%)] text-white shadow-lg hover:shadow-xl hover:border-white/40 transition-all">
-                  <CardHeader className="pb-3 pt-5 text-center">
-                    <CardTitle className="font-['Oswald'] text-[1.25rem] font-bold uppercase tracking-[0.25em] text-white">👀 Top 10 Most Viewed</CardTitle>
+                {/* Most Viewed */}
+                <Card className="overflow-hidden rounded-2xl border border-white/10 bg-[#0d152b] text-white shadow-2xl hover:border-white/20 transition-all flex flex-col">
+                  <CardHeader className="pb-4 pt-7 px-6 relative">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2.5 rounded-xl bg-blue-500/20 text-blue-400">
+                        <TrendingUp className="w-5 h-5" />
+                      </div>
+                      <div className="flex-1">
+                        <CardTitle className="font-['Oswald'] text-[1.3rem] font-bold uppercase tracking-wider text-white">Top 10 Most Viewed</CardTitle>
+                        <p className="text-[11px] text-white/40 font-medium mt-0.5">Items getting the most attention</p>
+                      </div>
+                      <div className="absolute top-7 right-6 text-white/20 hover:text-white/40 transition-colors cursor-help">
+                        <div className="w-4 h-4 rounded-full border border-current flex items-center justify-center text-[10px] font-bold">i</div>
+                      </div>
+                    </div>
                   </CardHeader>
-                  <CardContent className="space-y-2 pb-4 text-[9px] leading-5 text-white/90">
-                      {mostViewedItemsData.map((item, index) => {
-                        const imageUrl = resolveTradebiliaListingImage({ title: item.title, category: item.category, primaryPhotoUrl: item.primaryPhotoUrl });
-                        return (
-                          <div key={`${item.id}-${index}`}>
-                            <RankingListingItem item={item} index={index} imageUrl={imageUrl} metricsType="views" metrics={item.viewCount} />
-                          </div>
-                        );
-                      })}
-                      <Link href="/rankings/most-viewed" className="block mt-3 pt-3 border-t border-white/10 text-center text-[9px] font-semibold uppercase tracking-wider text-white/60 hover:text-white/90 transition-colors">
-                        View All Rankings →
-                      </Link>
+                  <CardContent className="flex-1 px-2 pb-2">
+                      <div className="space-y-0">
+                        {mostViewedItemsData.map((item, index) => {
+                          const imageUrl = resolveTradebiliaListingImage({ title: item.title, category: item.category, primaryPhotoUrl: item.primaryPhotoUrl });
+                          return <RankingListingItem key={`${item.id}-${index}`} item={item} index={index} imageUrl={imageUrl} metricsType="views" metrics={item.viewCount} />;
+                        })}
+                      </div>
                   </CardContent>
+                  <div className="p-5 pt-0">
+                    <Link href="/rankings/most-viewed" className="flex items-center justify-center w-full py-3 rounded-xl bg-white/5 border border-white/10 text-[11px] font-bold uppercase tracking-[0.15em] text-blue-400/80 hover:bg-white/10 hover:text-blue-400 transition-all">
+                      View All Most Viewed →
+                    </Link>
+                  </div>
                 </Card>
-                <Card className="overflow-hidden rounded-lg border border-white/20 bg-[linear-gradient(135deg,#090b10_0%,#262937_100%)] text-white shadow-lg hover:shadow-xl hover:border-white/40 transition-all">
-                  <CardHeader className="pb-3 pt-5 text-center">
-                    <CardTitle className="font-['Oswald'] text-[1.25rem] font-bold uppercase tracking-[0.25em] text-white">❤️ Top 10 Most Favorited</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-2 pb-4 text-[9px] leading-5 text-white/90">
-                      {mostRequestedItemsData.map((item, index) => {
-                        const imageUrl = resolveTradebiliaListingImage({ title: item.title, category: item.category, primaryPhotoUrl: item.primaryPhotoUrl });
-                        return (
-                          <div key={`${item.id}-${index}`}>
-                            <RankingListingItem item={item} index={index} imageUrl={imageUrl} metricsType="favorites" metrics={item.favoriteCount} />
-                          </div>
-                        );
-                      })}
-                      <Link href="/rankings/most-favorited" className="block mt-3 pt-3 border-t border-white/10 text-center text-[9px] font-semibold uppercase tracking-wider text-white/60 hover:text-white/90 transition-colors">
-                        View All Rankings →
-                      </Link>
-                  </CardContent>
-                </Card>
-                <Card className="overflow-hidden rounded-lg border border-white/20 bg-[linear-gradient(135deg,#1a2847_0%,#2d3e5f_100%)] text-white shadow-lg hover:shadow-xl hover:border-white/40 transition-all">
-                  <CardHeader className="pb-3 pt-5 text-center">
-                    <CardTitle className="font-['Oswald'] text-[1.25rem] font-bold uppercase tracking-[0.25em] text-white">👑 Top 10 Rated Traders</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-2 pb-4 text-[9px] leading-5 text-white/90">
-                      {topTraderItemsData.map((owner, index) => {
-                        const avatarUrl = owner.avatarUrl;
-                        const initials = getAvatarInitials({ firstName: (owner as any).firstName, lastName: (owner as any).lastName, displayName: owner.displayName });
-                        const getRankingBadge = () => {
-                          if (index === 0) return { bg: '', text: 'text-yellow-400 font-bold text-[28px]', label: '🥇' };
-                          if (index === 1) return { bg: '', text: 'text-gray-300 font-bold text-[28px]', label: '🥈' };
-                          if (index === 2) return { bg: '', text: 'text-orange-400 font-bold text-[28px]', label: '🥉' };
-                          return { bg: '', text: 'text-white/60', label: `${index + 1}` };
-                        };
-                        const badge = getRankingBadge();
-                        return (
-                          <Link key={`trader-${index}`} href={`/profile/${owner.id}`}>
-                            <div className={`flex items-center gap-3 rounded-md px-3 py-3 transition-all hover:bg-white/10 cursor-pointer border border-white/5 hover:border-white/10`}>
-                              <div className={`min-w-[48px] h-12 flex items-center justify-center rounded-full font-bold ${badge.label.match(/[🥇🥈🥉]/) ? 'text-[28px]' : 'text-[22px]'} ${badge.text}`}>
-                                {badge.label}
-                              </div>
-                              <Avatar className="h-16 w-16 flex-shrink-0 border border-white/30">
-                                <AvatarImage src={avatarUrl || undefined} alt={owner.displayName} />
-                                <AvatarFallback className="bg-[#7f31ff] text-white text-sm font-semibold">
-                                  {initials}
-                                </AvatarFallback>
-                              </Avatar>
-                              <span className="truncate hover:text-white/100 transition-colors text-[10px] flex-1">{owner.displayName}</span>
-                              <span className="text-white/40 text-[16px]">&gt;</span>
-                            </div>
-                          </Link>
-                        );
-                      })}
-                      <Link href="/rankings/top-rated-traders" className="block mt-3 pt-3 border-t border-white/10 text-center text-[9px] font-semibold uppercase tracking-wider text-white/60 hover:text-white/90 transition-colors">
-                        View All Rankings →
-                      </Link>
-                  </CardContent>
-                </Card>
-                <Card className="overflow-hidden rounded-lg border border-white/20 bg-[radial-gradient(circle_at_top,rgba(18,222,255,0.35),transparent_35%),linear-gradient(135deg,#00477b_0%,#0a86b4_100%)] text-white shadow-lg hover:shadow-xl hover:border-white/40 transition-all">
-                  <CardHeader className="pb-3 pt-5 text-center">
-                    <CardTitle className="font-['Oswald'] text-[1.25rem] font-bold uppercase tracking-[0.25em] text-white">🏆 Top 10 Highest Trade Values</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-2 pb-4 text-[9px] leading-5 text-white/90">
-                      {(highestTradeValueItems ?? []).map((item, index) => {
-                        const imageUrl = resolveTradebiliaListingImage({ title: item.title, category: item.category, primaryPhotoUrl: item.primaryPhotoUrl });
-                        return (
-                          <div key={`${item.id}-${index}`}>
-                            <RankingListingItem item={item} index={index} imageUrl={imageUrl} metricsType="value" metrics={item.estimatedValue} />
-                          </div>
-                        );
-                      })}
 
-                      <Link href="/rankings/top-trade-values" className="block mt-3 pt-3 border-t border-white/10 text-center text-[9px] font-semibold uppercase tracking-wider text-white/60 hover:text-white/90 transition-colors">
-                        View All Rankings →
-                      </Link>
+                {/* Most Favorited */}
+                <Card className="overflow-hidden rounded-2xl border border-white/10 bg-[#1a0d14] text-white shadow-2xl hover:border-white/20 transition-all flex flex-col">
+                  <CardHeader className="pb-4 pt-7 px-6 relative">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2.5 rounded-xl bg-pink-500/20 text-pink-400">
+                        <Heart className="w-5 h-5 fill-current" />
+                      </div>
+                      <div className="flex-1">
+                        <CardTitle className="font-['Oswald'] text-[1.3rem] font-bold uppercase tracking-wider text-white">Top 10 Most Favorited</CardTitle>
+                        <p className="text-[11px] text-white/40 font-medium mt-0.5">Items collectors love most</p>
+                      </div>
+                      <div className="absolute top-7 right-6 text-white/20 hover:text-white/40 transition-colors cursor-help">
+                        <div className="w-4 h-4 rounded-full border border-current flex items-center justify-center text-[10px] font-bold">i</div>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="flex-1 px-2 pb-2">
+                      <div className="space-y-0">
+                        {mostRequestedItemsData.map((item, index) => {
+                          const imageUrl = resolveTradebiliaListingImage({ title: item.title, category: item.category, primaryPhotoUrl: item.primaryPhotoUrl });
+                          return <RankingListingItem key={`${item.id}-${index}`} item={item} index={index} imageUrl={imageUrl} metricsType="favorites" metrics={item.favoriteCount} />;
+                        })}
+                      </div>
                   </CardContent>
+                  <div className="p-5 pt-0">
+                    <Link href="/rankings/most-favorited" className="flex items-center justify-center w-full py-3 rounded-xl bg-white/5 border border-white/10 text-[11px] font-bold uppercase tracking-[0.15em] text-pink-400/80 hover:bg-white/10 hover:text-pink-400 transition-all">
+                      View All Most Favorited →
+                    </Link>
+                  </div>
+                </Card>
+
+                {/* Rated Traders */}
+                <Card className="overflow-hidden rounded-2xl border border-white/10 bg-[#130d1a] text-white shadow-2xl hover:border-white/20 transition-all flex flex-col">
+                  <CardHeader className="pb-4 pt-7 px-6 relative">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2.5 rounded-xl bg-indigo-500/20 text-indigo-400">
+                        <Star className="w-5 h-5 fill-current" />
+                      </div>
+                      <div className="flex-1">
+                        <CardTitle className="font-['Oswald'] text-[1.3rem] font-bold uppercase tracking-wider text-white">Top 10 Rated Traders</CardTitle>
+                        <p className="text-[11px] text-white/40 font-medium mt-0.5">Highest rated by the community</p>
+                      </div>
+                      <div className="absolute top-7 right-6 text-white/20 hover:text-white/40 transition-colors cursor-help">
+                        <div className="w-4 h-4 rounded-full border border-current flex items-center justify-center text-[10px] font-bold">i</div>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="flex-1 px-2 pb-2">
+                      <div className="space-y-0">
+                        {topTraderItemsData.map((owner, index) => {
+                          const initials = getAvatarInitials({ firstName: (owner as any).firstName, lastName: (owner as any).lastName, displayName: owner.displayName });
+                          const badge = index === 0 ? { text: 'text-yellow-400', label: '🥇' } : index === 1 ? { text: 'text-gray-300', label: '🥈' } : index === 2 ? { text: 'text-orange-400', label: '🥉' } : { text: 'text-white/60', label: `${index + 1}` };
+                          return (
+                            <Link key={`trader-${index}`} href={`/profile/${owner.id}`}>
+                              <div className="flex items-center gap-3 px-3 py-2.5 transition-all hover:bg-white/10 cursor-pointer border-b border-white/5 last:border-b-0">
+                                <div className={`min-w-[40px] h-10 flex items-center justify-center font-bold text-[18px] ${badge.text}`}>
+                                  <span className={badge.label.match(/[🥇🥈🥉]/) ? 'text-[24px]' : 'text-[16px]'}>{badge.label}</span>
+                                </div>
+                                <Avatar className="h-10 w-10 flex-shrink-0 border border-white/10">
+                                  <AvatarImage src={owner.avatarUrl || undefined} alt={owner.displayName} />
+                                  <AvatarFallback className="bg-[#7f31ff] text-white text-[10px] font-bold">{initials}</AvatarFallback>
+                                </Avatar>
+                                <div className="flex-1 min-w-0 ml-1">
+                                  <span className="truncate text-[11px] font-semibold block text-white/90">{owner.displayName}</span>
+                                  <div className="flex items-center gap-0.5 mt-0.5">
+                                    {[...Array(5)].map((_, i) => (
+                                      <Star key={i} className={`w-2.5 h-2.5 ${i < 4 ? 'fill-yellow-400 text-yellow-400' : 'fill-white/10 text-white/10'}`} />
+                                    ))}
+                                  </div>
+                                </div>
+                                <div className="text-white/90 text-[11px] font-bold min-w-[30px] text-right">5.0</div>
+                              </div>
+                            </Link>
+                          );
+                        })}
+                      </div>
+                  </CardContent>
+                  <div className="p-5 pt-0">
+                    <Link href="/rankings/top-rated-traders" className="flex items-center justify-center w-full py-3 rounded-xl bg-white/5 border border-white/10 text-[11px] font-bold uppercase tracking-[0.15em] text-indigo-400/80 hover:bg-white/10 hover:text-indigo-400 transition-all">
+                      View All Rated Traders →
+                    </Link>
+                  </div>
+                </Card>
+
+                {/* Highest Trade Values */}
+                <Card className="overflow-hidden rounded-2xl border border-white/10 bg-[#0d1a18] text-white shadow-2xl hover:border-white/20 transition-all flex flex-col">
+                  <CardHeader className="pb-4 pt-7 px-6 relative">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2.5 rounded-xl bg-emerald-500/20 text-emerald-400">
+                        <DollarSign className="w-5 h-5" />
+                      </div>
+                      <div className="flex-1">
+                        <CardTitle className="font-['Oswald'] text-[1.3rem] font-bold uppercase tracking-wider text-white">Top 10 Highest Values</CardTitle>
+                        <p className="text-[11px] text-white/40 font-medium mt-0.5">Highest value items traded</p>
+                      </div>
+                      <div className="absolute top-7 right-6 text-white/20 hover:text-white/40 transition-colors cursor-help">
+                        <div className="w-4 h-4 rounded-full border border-current flex items-center justify-center text-[10px] font-bold">i</div>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="flex-1 px-2 pb-2">
+                      <div className="space-y-0">
+                        {(highestTradeValueItems ?? []).map((item, index) => {
+                          const imageUrl = resolveTradebiliaListingImage({ title: item.title, category: item.category, primaryPhotoUrl: item.primaryPhotoUrl });
+                          return <RankingListingItem key={`${item.id}-${index}`} item={item} index={index} imageUrl={imageUrl} metricsType="value" metrics={item.estimatedValue} />;
+                        })}
+                      </div>
+                  </CardContent>
+                  <div className="p-5 pt-0">
+                    <Link href="/rankings/top-trade-values" className="flex items-center justify-center w-full py-3 rounded-xl bg-white/5 border border-white/10 text-[11px] font-bold uppercase tracking-[0.15em] text-emerald-400/80 hover:bg-white/10 hover:text-emerald-400 transition-all">
+                      View All Highest Values →
+                    </Link>
+                  </div>
                 </Card>
                 </div>
               </div>
