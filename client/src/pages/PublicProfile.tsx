@@ -63,7 +63,7 @@ const PLATFORMS = [
 // ── Main Component ────────────────────────────────────────────────────────────
 export default function PublicProfile() {
   const { userId } = useParams<{ userId: string }>();
-  const [activeTab, setActiveTab] = useState<"overview" | "listings" | "reviews" | "about">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "listings" | "reviews">("overview");
 
   const userProfileQuery = trpc.market.getUserProfile.useQuery(
     { userId: userId ? parseInt(userId, 10) : 0 },
@@ -126,7 +126,6 @@ export default function PublicProfile() {
     { id: "overview", label: "Overview" },
     { id: "listings", label: `Listings (${stats?.itemsListed || 0})` },
     { id: "reviews", label: `Reviews (${totalReviews})` },
-    { id: "about", label: "About" },
   ] as const;
 
   return (
@@ -487,17 +486,7 @@ export default function PublicProfile() {
           </div>
         )}
 
-        {/* ── ABOUT TAB ── */}
-        {activeTab === "about" && (
-          <div className="rounded-2xl border border-slate-200 bg-white shadow-sm p-6 max-w-2xl">
-            <h2 className="text-base font-semibold text-slate-950 mb-3">About {displayName}</h2>
-            {bio ? (
-              <p className="text-slate-700 leading-relaxed">{bio}</p>
-            ) : (
-              <p className="text-sm text-slate-400 italic">This member hasn't added a bio yet.</p>
-            )}
-          </div>
-        )}
+
 
       </main>
     </div>
