@@ -66,6 +66,10 @@ async function startServer() {
   await validateDatabaseConnection();
 
   const app = express();
+  // Trust proxy is required for the session cookie to be set correctly behind 
+  // the Manus proxy (handles HTTPS termination). Without this, req.secure is 
+  // false, and the 'secure: true' cookie is rejected by the browser.
+  app.set('trust proxy', true);
   const server = createServer(app);
 
   // Health endpoint: lets tooling (and humans) verify the server AND its
