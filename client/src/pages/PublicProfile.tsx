@@ -218,15 +218,6 @@ export default function PublicProfile() {
             </CardContent>
           </Card>
 
-          {/* Member Since */}
-          <Card className="rounded-[1.5rem] border-slate-200 bg-white shadow-sm">
-            <CardContent className="pt-6">
-              <div className="text-center">
-                <p className="text-sm text-slate-600">Member Since</p>
-                <p className="mt-2 text-lg font-semibold text-slate-950">January 15, 2023</p>
-              </div>
-            </CardContent>
-          </Card>
         </div>
       </main>
     </div>
