@@ -347,7 +347,7 @@ export const appRouter = router({
         );
 
         const [recentListings] = await db.execute(
-          sql`SELECT id, title, imageUrl FROM listings WHERE ownerId = ${input.userId} AND status = 'active' ORDER BY createdAt DESC LIMIT 6`
+          sql`SELECT l.id, l.title, (SELECT lp.imageUrl FROM listingPhotos lp WHERE lp.listingId = l.id ORDER BY lp.sortOrder ASC LIMIT 1) as imageUrl FROM listings l WHERE l.ownerId = ${input.userId} AND l.status = 'active' ORDER BY l.createdAt DESC LIMIT 6`
         );
         
         // Fetch real stats
