@@ -107,8 +107,17 @@ export default function PublicProfile() {
                   )}
 
                   <div className="mt-4 flex flex-wrap justify-center gap-2 sm:justify-start">
-                    <Badge className="bg-green-100 text-green-800">Active Member</Badge>
+                    {userProfileQuery.data?.user?.lastActivityAt && (
+                      <Badge className="bg-gray-100 text-gray-800">
+                        Last seen: {new Date(userProfileQuery.data.user.lastActivityAt).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })}
+                      </Badge>
+                    )}
                     <Badge className="bg-blue-100 text-blue-800">Verified</Badge>
+                    {userProfileQuery.data?.user?.ebayUsername && (
+                      <Badge className="bg-yellow-100 text-yellow-800">
+                        eBay: {userProfileQuery.data.user.ebayUsername} ({userProfileQuery.data.user.ebayFeedbackScore})
+                      </Badge>
+                    )}
                   </div>
 
                   <div className="mt-6 flex flex-wrap justify-center gap-3 sm:justify-start">
@@ -116,31 +125,68 @@ export default function PublicProfile() {
                       <MessageSquare className="mr-2 h-4 w-4" />
                       Send Message
                     </Button>
-                    <Button variant="outline" className="rounded-lg">
-                      <Heart className="mr-2 h-4 w-4" />
-                      Add to Favorites
-                    </Button>
-                    <Button variant="outline" className="rounded-lg">
-                      <Share2 className="mr-2 h-4 w-4" />
-                      Share Profile
-                    </Button>
+
                   </div>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* About Section */}
-          {profile.bio && (
+          {/* About & Reviews Section */}
+          <div className="grid gap-4 md:grid-cols-2">
+            {profile.bio && (
+              <Card className="rounded-[1.5rem] border-slate-200 bg-white shadow-sm">
+                <CardHeader>
+                  <CardTitle>About</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-slate-700">{profile.bio}</p>
+                </CardContent>
+              </Card>
+            )}
+
             <Card className="rounded-[1.5rem] border-slate-200 bg-white shadow-sm">
               <CardHeader>
-                <CardTitle>About</CardTitle>
+                <CardTitle>Recent Feedback</CardTitle>
+                <CardDescription>What other collectors say about trading with this member</CardDescription>
               </CardHeader>
-              <CardContent>
-                <p className="text-slate-700">{profile.bio}</p>
+              <CardContent className="space-y-4">
+                {((userProfileQuery.data as any)?.reviews || []).length > 0 ? (
+                  ((userProfileQuery.data as any)?.reviews || []).map((review: any) => (
+                    <div key={review.id} className="border-b border-slate-200 pb-4 last:border-b-0">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium text-slate-950">{review.reviewerName || review.reviewerUsername || 'Collector'}</span>
+                            <div className="flex gap-0.5">
+                              {[...Array(5)].map((_, j) => (
+                                <Star
+                                  key={j}
+                                  className={`h-4 w-4 ${
+                                    j < Math.round(review.overallRating || 0) ? "fill-yellow-500 text-yellow-500" : "text-slate-300"
+                                  }`}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                          <p className="mt-2 text-sm text-slate-700">
+                            {review.review || "No written feedback provided."}
+                          </p>
+                        </div>
+                        <span className="text-xs text-slate-500">
+                          {new Date(review.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                        </span>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-8 text-slate-500">
+                    <p>No feedback available yet.</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
-          )}
+          </div>
 
           {/* Stats Section */}
           <div className="grid gap-4 sm:grid-cols-3">
@@ -175,50 +221,33 @@ export default function PublicProfile() {
             </Card>
           </div>
 
-          {/* Ratings and Reviews */}
-          <Card className="rounded-[1.5rem] border-slate-200 bg-white shadow-sm">
-            <CardHeader>
-              <CardTitle>Recent Feedback</CardTitle>
-              <CardDescription>What other collectors say about trading with this member</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {((userProfileQuery.data as any)?.reviews || []).length > 0 ? (
-                ((userProfileQuery.data as any)?.reviews || []).map((review: any) => (
-                  <div key={review.id} className="border-b border-slate-200 pb-4 last:border-b-0">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium text-slate-950">{review.reviewerName || review.reviewerUsername || 'Collector'}</span>
-                          <div className="flex gap-0.5">
-                            {[...Array(5)].map((_, j) => (
-                              <Star
-                                key={j}
-                                className={`h-4 w-4 ${
-                                  j < Math.round(review.overallRating || 0) ? "fill-yellow-500 text-yellow-500" : "text-slate-300"
-                                }`}
-                              />
-                            ))}
-                          </div>
-                        </div>
-                        <p className="mt-2 text-sm text-slate-700">
-                          {review.review || "No written feedback provided."}
-                        </p>
-                      </div>
-                      <span className="text-xs text-slate-500">
-                        {new Date(review.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
-                      </span>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="text-center py-8 text-slate-500">
-                  <p>No feedback available yet.</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+
 
         </div>
+
+        {/* Recently Listed Items */}
+        {userProfileQuery.data?.recentListings && userProfileQuery.data.recentListings.length > 0 && (
+          <Card className="rounded-[1.5rem] border-slate-200 bg-white shadow-sm">
+            <CardHeader>
+              <CardTitle>Recently Listed Items</CardTitle>
+              <CardDescription>Items this member currently has listed for trade</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                {userProfileQuery.data.recentListings.map((listing: any) => (
+                  <Link key={listing.id} href={`/listing/${listing.id}`}>
+                    <a className="block group">
+                      <div className="relative w-full h-32 bg-gray-100 rounded-lg overflow-hidden">
+                        <img src={listing.imageUrl} alt={listing.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200" />
+                      </div>
+                      <p className="mt-2 text-sm font-medium text-slate-950 group-hover:text-blue-600 truncate">{listing.title}</p>
+                    </a>
+                  </Link>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </main>
     </div>
   );

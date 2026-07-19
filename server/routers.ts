@@ -318,12 +318,37 @@ export const appRouter = router({
       .input(z.object({ userId: z.number().int().positive() }))
       .query(async ({ input, ctx }) => {
         const db = await requireDb();
-        const user = await db.select().from(users).where(eq(users.id, input.userId)).limit(1);
-        if (!user.length) {
+        const [user] = await db.execute(
+          sql`SELECT
+            u.id,
+            u.username,
+            u.email,
+            u.displayName,
+            u.avatarUrl,
+            u.role,
+            u.createdAt,
+            u.lastSignedIn,
+            u.lastActivityAt,
+            u.ebayUsername,
+            u.ebayFeedbackScore,
+            u.ebayFeedbackPercentage,
+            u.ebayMemberSince,
+            u.ebayConnectedAt
+          FROM users u
+          WHERE u.id = ${input.userId}`
+        );
+
+        if (!user) {
           throw new TRPCError({ code: 'NOT_FOUND', message: 'User not found' });
         }
-        const profile = await db.select().from(userProfiles).where(eq(userProfiles.userId, input.userId)).limit(1);
-        const userListings = await db.select().from(listings).where(eq(listings.ownerId, input.userId)).limit(100);
+
+        const [profile] = await db.execute(
+          sql`SELECT * FROM userProfiles WHERE userId = ${input.userId}`
+        );
+
+        const [recentListings] = await db.execute(
+          sql`SELECT id, title, imageUrl FROM listings WHERE ownerId = ${input.userId} AND status = 'active' ORDER BY createdAt DESC LIMIT 6`
+        );
         
         // Fetch real stats
         const [statsResult] = await db.execute(
@@ -350,15 +375,15 @@ export const appRouter = router({
         const reviews = (reviewsResult as any) || [];
 
         return {
-          user: user[0],
-          profile: profile[0] || null,
-          listings: userListings,
+          user: user,
+          profile: profile || null,
           stats: {
             itemsListed: stats.itemsListed || 0,
             completedTrades: stats.completedTrades || 0,
             avgRating: parseFloat(stats.avgRating || '0').toFixed(1),
           },
           reviews,
+          recentListings: recentListings || [],
         };
       }),
     search: publicProcedure
