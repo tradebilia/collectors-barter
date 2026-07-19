@@ -2,8 +2,10 @@ import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
-import { getAvatarInitials } from "@/lib/tradebilia";
+import { getAvatarInitials, formatGrade, tradebiliaConditionOptions } from "@/lib/tradebilia";
+import { resolveTradebiliaListingImage } from "@/lib/listingImages";
 import { MessageSquare, Star, Loader2, CalendarDays, Activity, ShoppingBag, CheckCircle2, MapPin } from "lucide-react";
 import { TopBar } from "@/components/TopBar";
 import { CategoryBar } from "@/components/CategoryBar";
@@ -348,32 +350,60 @@ export default function PublicProfile() {
 
         {/* ── LISTINGS TAB ── */}
         {activeTab === "listings" && (
-          <div className="rounded-2xl border border-slate-200 bg-white shadow-sm p-6">
-            <h2 className="text-base font-semibold text-slate-950 mb-4 flex items-center gap-2">
+          <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-2">
               <ShoppingBag className="h-5 w-5 text-slate-500" />
-              Currently Listed for Trade
-            </h2>
+              <h2 className="text-base font-semibold text-slate-950">Currently Listed for Trade ({recentListings.length})</h2>
+            </div>
             {recentListings.length > 0 ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-                {recentListings.map((listing: any) => (
-                  <Link key={listing.id} href={`/listing/${listing.id}`}>
-                    <div className="group cursor-pointer">
-                      <div className="relative w-full aspect-square bg-slate-100 rounded-xl overflow-hidden border border-slate-200 group-hover:border-blue-400 transition-colors">
-                        {listing.imageUrl ? (
-                          <img src={listing.imageUrl} alt={listing.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200" />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-slate-300">
-                            <ShoppingBag className="h-8 w-8" />
-                          </div>
+              <div className="divide-y divide-slate-100">
+                {recentListings.map((listing: any) => {
+                  const conditionLabel = tradebiliaConditionOptions.find((c: any) => c.value === listing.condition)?.label || listing.condition;
+                  const hasGrade = listing.grade && parseFloat(String(listing.grade)) > 0;
+                  return (
+                    <div key={listing.id} className="flex gap-4 p-4 hover:bg-slate-50 transition-colors">
+                      {/* Image */}
+                      <Link href={`/listings/${listing.id}`}>
+                        <div className="w-24 h-28 flex-shrink-0 bg-white border border-slate-200 rounded-lg overflow-hidden cursor-pointer hover:opacity-90 transition">
+                          <img
+                            src={resolveTradebiliaListingImage({ title: listing.title, category: listing.category, primaryPhotoUrl: listing.primaryPhotoUrl })}
+                            alt={listing.title}
+                            className="w-full h-full object-contain"
+                          />
+                        </div>
+                      </Link>
+                      {/* Details */}
+                      <div className="flex-1 min-w-0 flex flex-col justify-center">
+                        <Link href={`/listings/${listing.id}`}>
+                          <span className="font-bold text-slate-950 hover:text-blue-600 transition-colors leading-tight block truncate">{listing.title}</span>
+                        </Link>
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-600 mt-1">
+                          <span>
+                            <span className="font-semibold">{hasGrade ? 'Grade:' : 'Condition:'}</span>{' '}
+                            {hasGrade
+                              ? `${listing.certificationCompany ? `${listing.certificationCompany} ` : ''}${formatGrade(listing.grade)}`
+                              : conditionLabel}
+                          </span>
+                          {listing.estimatedValue && (
+                            <span>
+                              <span className="font-semibold">Value:</span>{' '}
+                              ${parseFloat(listing.estimatedValue).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </span>
+                          )}
+                        </div>
+                        {listing.description && (
+                          <p className="text-xs text-slate-500 mt-1 line-clamp-1 leading-relaxed">{listing.description}</p>
                         )}
                       </div>
-                      <p className="mt-2 text-xs font-medium text-slate-700 group-hover:text-blue-600 truncate">{listing.title}</p>
                     </div>
-                  </Link>
-                ))}
+                  );
+                })}
               </div>
             ) : (
-              <p className="text-sm text-slate-400 italic text-center py-8">No active listings at this time.</p>
+              <div className="py-12 text-center text-slate-400">
+                <ShoppingBag className="h-8 w-8 mx-auto mb-2 text-slate-300" />
+                <p className="text-sm">No active listings at this time.</p>
+              </div>
             )}
           </div>
         )}

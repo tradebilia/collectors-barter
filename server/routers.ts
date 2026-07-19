@@ -351,7 +351,12 @@ export const appRouter = router({
         const profileRow = Array.isArray(profileRows) ? (profileRows as any[])[0] : profileRows;
 
         const [recentListingsRows] = await db.execute(
-          sql`SELECT l.id, l.title, (SELECT lp.imageUrl FROM listingPhotos lp WHERE lp.listingId = l.id ORDER BY lp.sortOrder ASC LIMIT 1) as imageUrl FROM listings l WHERE l.ownerId = ${input.userId} AND l.status = 'active' ORDER BY l.createdAt DESC LIMIT 6`
+          sql`SELECT 
+            l.id, l.title, l.category, l.condition, l.grade, l.certificationCompany, l.estimatedValue, l.description, l.itemType,
+            (SELECT lp.imageUrl FROM listingPhotos lp WHERE lp.listingId = l.id ORDER BY lp.sortOrder ASC LIMIT 1) as primaryPhotoUrl
+          FROM listings l 
+          WHERE l.ownerId = ${input.userId} AND l.status = 'active' AND l.isActive = 1
+          ORDER BY l.createdAt DESC LIMIT 24`
         );
         const recentListingsArr = Array.isArray(recentListingsRows) ? recentListingsRows : [];
         
