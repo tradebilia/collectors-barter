@@ -741,12 +741,12 @@ export default function Home() {
                   />
                 </div>
 
-                <div className="grid gap-0 md:grid-cols-2 xl:grid-cols-4 lg:col-start-2 divide-x divide-white/10">
-                <Card className="overflow-hidden rounded-none border-0 bg-[radial-gradient(circle_at_top,rgba(48,149,255,0.5),transparent_40%),linear-gradient(135deg,#05204f_0%,#0d2d68_100%)] text-white shadow-none border-l border-white/10">
-                  <CardHeader className="pb-2 pt-4 text-center">
-                    <CardTitle className="font-['Oswald'] text-[1.1rem] uppercase tracking-[0.22em] text-white/90">👀 Top 10 Most Viewed</CardTitle>
+                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4 lg:col-start-2">
+                <Card className="overflow-hidden rounded-lg border border-white/20 bg-[radial-gradient(circle_at_top,rgba(48,149,255,0.5),transparent_40%),linear-gradient(135deg,#05204f_0%,#0d2d68_100%)] text-white shadow-lg hover:shadow-xl hover:border-white/40 transition-all">
+                  <CardHeader className="pb-3 pt-5 text-center">
+                    <CardTitle className="font-['Oswald'] text-[1.25rem] font-bold uppercase tracking-[0.25em] text-white">👀 Top 10 Most Viewed</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-2 pb-4 text-[8.5px] leading-4 text-white/85">
+                  <CardContent className="space-y-2 pb-4 text-[9px] leading-5 text-white/90">
                       {mostViewedItemsData.map((item, index) => {
                         const imageUrl = resolveTradebiliaListingImage({ title: item.title, category: item.category, primaryPhotoUrl: item.primaryPhotoUrl });
                         return (
@@ -760,11 +760,11 @@ export default function Home() {
                       </Link>
                   </CardContent>
                 </Card>
-                <Card className="overflow-hidden rounded-none border-0 bg-[linear-gradient(135deg,#090b10_0%,#262937_100%)] text-white shadow-none border-l border-white/10">
-                  <CardHeader className="pb-2 pt-4 text-center">
-                    <CardTitle className="font-['Oswald'] text-[1.1rem] uppercase tracking-[0.22em] text-white/90">❤️ Top 10 Most Favorited</CardTitle>
+                <Card className="overflow-hidden rounded-lg border border-white/20 bg-[linear-gradient(135deg,#090b10_0%,#262937_100%)] text-white shadow-lg hover:shadow-xl hover:border-white/40 transition-all">
+                  <CardHeader className="pb-3 pt-5 text-center">
+                    <CardTitle className="font-['Oswald'] text-[1.25rem] font-bold uppercase tracking-[0.25em] text-white">❤️ Top 10 Most Favorited</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-2 pb-4 text-[8.5px] leading-4 text-white/85">
+                  <CardContent className="space-y-2 pb-4 text-[9px] leading-5 text-white/90">
                       {mostRequestedItemsData.map((item, index) => {
                         const imageUrl = resolveTradebiliaListingImage({ title: item.title, category: item.category, primaryPhotoUrl: item.primaryPhotoUrl });
                         return (
@@ -778,11 +778,11 @@ export default function Home() {
                       </Link>
                   </CardContent>
                 </Card>
-                <Card className="overflow-hidden rounded-none border-0 bg-[linear-gradient(135deg,#1a2847_0%,#2d3e5f_100%)] text-white shadow-none border-l border-white/10">
-                  <CardHeader className="pb-2 pt-4 text-center">
-                    <CardTitle className="font-['Oswald'] text-[1.1rem] uppercase tracking-[0.22em] text-white/90">👑 Top 10 Rated Traders</CardTitle>
+                <Card className="overflow-hidden rounded-lg border border-white/20 bg-[linear-gradient(135deg,#1a2847_0%,#2d3e5f_100%)] text-white shadow-lg hover:shadow-xl hover:border-white/40 transition-all">
+                  <CardHeader className="pb-3 pt-5 text-center">
+                    <CardTitle className="font-['Oswald'] text-[1.25rem] font-bold uppercase tracking-[0.25em] text-white">👑 Top 10 Rated Traders</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-2 pb-4 text-[8.5px] leading-4 text-white/85">
+                  <CardContent className="space-y-2 pb-4 text-[9px] leading-5 text-white/90">
                       {topTraderItemsData.map((owner, index) => {
                         const avatarUrl = owner.avatarUrl;
                         const initials = getAvatarInitials({ firstName: (owner as any).firstName, lastName: (owner as any).lastName, displayName: owner.displayName });
@@ -816,11 +816,11 @@ export default function Home() {
                       </Link>
                   </CardContent>
                 </Card>
-                <Card className="overflow-hidden rounded-none border-0 bg-[radial-gradient(circle_at_top,rgba(18,222,255,0.35),transparent_35%),linear-gradient(135deg,#00477b_0%,#0a86b4_100%)] text-white shadow-none border-l border-white/10">
-                  <CardHeader className="pb-2 pt-4 text-center">
-                    <CardTitle className="font-['Oswald'] text-[1.1rem] uppercase tracking-[0.22em] text-white/90">🏆 Top 10 Highest Trade Values</CardTitle>
+                <Card className="overflow-hidden rounded-lg border border-white/20 bg-[radial-gradient(circle_at_top,rgba(18,222,255,0.35),transparent_35%),linear-gradient(135deg,#00477b_0%,#0a86b4_100%)] text-white shadow-lg hover:shadow-xl hover:border-white/40 transition-all">
+                  <CardHeader className="pb-3 pt-5 text-center">
+                    <CardTitle className="font-['Oswald'] text-[1.25rem] font-bold uppercase tracking-[0.25em] text-white">🏆 Top 10 Highest Trade Values</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-2 pb-4 text-[8.5px] leading-4 text-white/85">
+                  <CardContent className="space-y-2 pb-4 text-[9px] leading-5 text-white/90">
                       {(highestTradeValueItems ?? []).map((item, index) => {
                         const imageUrl = resolveTradebiliaListingImage({ title: item.title, category: item.category, primaryPhotoUrl: item.primaryPhotoUrl });
                         return (
