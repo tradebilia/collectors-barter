@@ -723,7 +723,7 @@ export default function Home() {
 
                 </aside>
 
-                <div className="px-3 py-3 lg:px-6 lg:py-3 col-start-2 row-start-1">
+                <div className="py-3 col-start-2 row-start-1">
                   <h2 className="text-center font-serif text-[2.45rem] font-medium tracking-[-0.035em] text-[#2d241e] sm:text-[2.8rem]">Recently Added</h2>
                   <RecentlyAddedCarousel
                     items={recentShelfItems}

@@ -171,9 +171,7 @@ export function RecentlyAddedCarousel({
         ))}
       </div>
 
-      {/* Gradient Overlays for Fade Effect */}
-      <div className="absolute inset-y-0 left-0 w-20 bg-gradient-to-r from-white to-transparent pointer-events-none z-10" />
-      <div className="absolute inset-y-0 right-0 w-20 bg-gradient-to-l from-white to-transparent pointer-events-none z-10" />
+      {/* Removed gradient overlays for true edge-to-edge look */}
     </div>
   );
 }
