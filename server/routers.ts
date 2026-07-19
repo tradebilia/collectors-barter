@@ -338,30 +338,35 @@ export const appRouter = router({
           WHERE u.id = ${input.userId}`
         );
 
-        if (!user) {
+        // db.execute returns [rows, fields] — rows is the array of results
+        const userRow = Array.isArray(user) ? (user as any[])[0] : user;
+
+        if (!userRow) {
           throw new TRPCError({ code: 'NOT_FOUND', message: 'User not found' });
         }
 
-        const [profile] = await db.execute(
+        const [profileRows] = await db.execute(
           sql`SELECT * FROM userProfiles WHERE userId = ${input.userId}`
         );
+        const profileRow = Array.isArray(profileRows) ? (profileRows as any[])[0] : profileRows;
 
-        const [recentListings] = await db.execute(
+        const [recentListingsRows] = await db.execute(
           sql`SELECT l.id, l.title, (SELECT lp.imageUrl FROM listingPhotos lp WHERE lp.listingId = l.id ORDER BY lp.sortOrder ASC LIMIT 1) as imageUrl FROM listings l WHERE l.ownerId = ${input.userId} AND l.status = 'active' ORDER BY l.createdAt DESC LIMIT 6`
         );
+        const recentListingsArr = Array.isArray(recentListingsRows) ? recentListingsRows : [];
         
         // Fetch real stats
-        const [statsResult] = await db.execute(
+        const [statsRows] = await db.execute(
           sql`SELECT 
             (SELECT COUNT(*) FROM listings WHERE ownerId = ${input.userId} AND status = 'active' AND isActive = 1) as itemsListed,
             (SELECT COUNT(*) FROM tradeProposals WHERE (requesterId = ${input.userId} OR recipientId = ${input.userId}) AND status = 'completed') as completedTrades,
             (SELECT AVG(overallRating) FROM tradeReviews WHERE revieweeId = ${input.userId} AND isVisible = 1) as avgRating
           `
         );
-        const stats = (statsResult as any)?.[0] || { itemsListed: 0, completedTrades: 0, avgRating: 0 };
+        const stats = Array.isArray(statsRows) ? (statsRows as any[])[0] : (statsRows as any) || { itemsListed: 0, completedTrades: 0, avgRating: 0 };
 
         // Fetch reviews
-        const [reviewsResult] = await db.execute(
+        const [reviewsRows] = await db.execute(
           sql`SELECT 
             tr.id, tr.overallRating, tr.review, tr.createdAt, 
             up.displayName as reviewerName, up.avatarUrl as reviewerAvatar, u.username as reviewerUsername
@@ -372,18 +377,18 @@ export const appRouter = router({
           ORDER BY tr.createdAt DESC
           LIMIT 20`
         );
-        const reviews = (reviewsResult as any) || [];
+        const reviews = Array.isArray(reviewsRows) ? reviewsRows : [];
 
         return {
-          user: user,
-          profile: profile || null,
+          user: userRow,
+          profile: profileRow || null,
           stats: {
             itemsListed: stats.itemsListed || 0,
             completedTrades: stats.completedTrades || 0,
             avgRating: parseFloat(stats.avgRating || '0').toFixed(1),
           },
           reviews,
-          recentListings: recentListings || [],
+          recentListings: recentListingsArr,
         };
       }),
     search: publicProcedure
