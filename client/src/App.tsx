@@ -70,6 +70,7 @@ function Router() {
           <AddInventory />
         </ProtectedRoute>
       </Route>
+      <Route path="/profile/:userId" component={PublicProfile} />
       <Route path="/profile">
         <ProtectedRoute>
           <Profile />
@@ -81,7 +82,6 @@ function Router() {
           <AccountSettings />
         </ProtectedRoute>
       </Route>
-      <Route path="/profile/:userId" component={PublicProfile} />
       <Route path="/messages">
         <ProtectedRoute>
           <Messages />
