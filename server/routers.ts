@@ -1284,6 +1284,43 @@ export const appRouter = router({
         );
         return Array.isArray(rows) ? rows : [];
       }),
+
+    getRecentTrades: publicProcedure
+      .input(z.object({ limit: z.number().min(1).max(20).default(8) }).optional())
+      .query(async ({ input }) => {
+        const db = await requireDb();
+        const limit = input?.limit ?? 8;
+
+        // Fetch the most recent completed trades with both sides' item info
+        const [rows] = await db.execute(
+          sql`SELECT
+            tp.id as tradeId,
+            tp.referenceNumber,
+            tp.completedAt,
+            -- Requester side: the item they offered (from tradeProposalItems)
+            req_item.id as requesterItemId,
+            req_item.title as requesterItemTitle,
+            req_item.category as requesterItemCategory,
+            (SELECT lp.imageUrl FROM listingPhotos lp WHERE lp.listingId = req_item.id ORDER BY lp.sortOrder ASC LIMIT 1) as requesterItemPhoto,
+            -- Recipient side: the item that was requested
+            rec_item.id as recipientItemId,
+            rec_item.title as recipientItemTitle,
+            rec_item.category as recipientItemCategory,
+            (SELECT lp.imageUrl FROM listingPhotos lp WHERE lp.listingId = rec_item.id ORDER BY lp.sortOrder ASC LIMIT 1) as recipientItemPhoto
+          FROM tradeProposals tp
+          -- Get the item the requester offered
+          LEFT JOIN tradeProposalItems tpi ON tpi.proposalId = tp.id
+          LEFT JOIN listings req_item ON req_item.id = tpi.offeredListingId
+          -- Get the item the recipient put up (the requestedListing)
+          LEFT JOIN listings rec_item ON rec_item.id = tp.requestedListingId
+          WHERE tp.status = 'completed'
+            AND tp.completedAt IS NOT NULL
+            AND req_item.id IS NOT NULL
+          ORDER BY tp.completedAt DESC
+          LIMIT ${limit}`
+        );
+        return Array.isArray(rows) ? rows : [];
+      }),
   }),
   ebay: router({
     getAuthUrl: protectedProcedure

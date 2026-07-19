@@ -304,6 +304,7 @@ export const tradeProposals = mysqlTable("tradeProposals", {
 	lastProposedBy: int().references(() => users.id), // userId of whoever sent the most recent proposal
 	respondedAt: timestamp({ mode: 'string' }),
 	completedAt: timestamp({ mode: 'string' }),
+	referenceNumber: varchar({ length: 20 }), // e.g. TR-00001
 	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
 	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
 },
