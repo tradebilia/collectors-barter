@@ -1407,12 +1407,27 @@ export default function WarRoom() {
                 {messages.length === 0 && !messagesQuery.isLoading && (
                   <p className="text-gray-600 text-sm text-center py-8">No messages yet. Start the conversation!</p>
                 )}
-                {messages.map((msg: any) => {
+                {messages.map((msg: any, idx: number) => {
                   const isMine = msg.senderId === myUserId;
                   const time = msg.createdAt ? new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+                  // Only show avatar on the last consecutive message from the same sender
+                  const nextMsg = messages[idx + 1];
+                  const isLastInGroup = !nextMsg || nextMsg.senderId !== msg.senderId;
                   return (
-                    <div key={msg.id} className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
-                      <div className={`max-w-[85%] p-3 rounded-xl text-sm leading-relaxed ${
+                    <div key={msg.id} className={`flex items-end gap-2 ${isMine ? 'justify-end' : 'justify-start'}`}>
+                      {/* Their avatar — left side */}
+                      {!isMine && (
+                        <div className="w-7 h-7 flex-shrink-0 mb-0.5">
+                          {isLastInGroup ? (
+                            theirAvatarUrl
+                              ? <img src={theirAvatarUrl} alt={theirDisplayName} className="w-7 h-7 rounded-full object-cover border border-gray-600" />
+                              : <div className="w-7 h-7 rounded-full bg-gray-600 flex items-center justify-center text-white text-[10px] font-bold border border-gray-500">{theirInitial}</div>
+                          ) : (
+                            <div className="w-7 h-7" /> /* spacer to keep alignment */
+                          )}
+                        </div>
+                      )}
+                      <div className={`max-w-[80%] p-3 rounded-xl text-sm leading-relaxed ${
                         isMine 
                           ? 'bg-blue-600 text-white border border-blue-500 rounded-tr-sm shadow-[0_2px_8px_rgba(37,99,235,0.3)]' 
                           : 'bg-white text-gray-900 border border-gray-200 rounded-xl rounded-tl-sm shadow-[0_2px_8px_rgba(0,0,0,0.2)]'
@@ -1420,6 +1435,18 @@ export default function WarRoom() {
                         <p className={`text-[10px] mb-1 font-semibold ${isMine ? 'text-blue-100' : 'text-gray-500'}`}>{time}</p>
                         <p className="font-medium">{msg.message || msg.content}</p>
                       </div>
+                      {/* My avatar — right side */}
+                      {isMine && (
+                        <div className="w-7 h-7 flex-shrink-0 mb-0.5">
+                          {isLastInGroup ? (
+                            myAvatarUrl
+                              ? <img src={myAvatarUrl} alt={myDisplayName} className="w-7 h-7 rounded-full object-cover border border-blue-500/60" />
+                              : <div className="w-7 h-7 rounded-full bg-blue-600 flex items-center justify-center text-white text-[10px] font-bold border border-blue-500/60">{myInitial}</div>
+                          ) : (
+                            <div className="w-7 h-7" /> /* spacer */
+                          )}
+                        </div>
+                      )}
                     </div>
                   );
                 })}
