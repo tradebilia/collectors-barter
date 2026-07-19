@@ -180,3 +180,5 @@ Server running on http://localhost:3000/
 6:49:41 PM [vite] (client) hmr update /src/pages/Home.tsx, /src/index.css
 6:51:24 PM [vite] (client) hmr update /src/index.css, /src/components/RecentlyAddedCarousel.tsx
 6:51:27 PM [vite] (client) hmr update /src/pages/Home.tsx, /src/index.css
+6:52:59 PM [vite] (client) hmr update /src/index.css, /src/components/RecentlyAddedCarousel.tsx
+6:53:01 PM [vite] (client) hmr update /src/index.css, /src/components/RecentlyAddedCarousel.tsx

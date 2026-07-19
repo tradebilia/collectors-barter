@@ -56,9 +56,9 @@ export function RecentlyAddedCarousel({
   const displayItems = [...items, ...items];
 
   return (
-    <div className="mt-4 relative overflow-hidden group">
+    <div className="mt-1 relative overflow-hidden group">
       {/* Marquee Container */}
-      <div className="flex gap-4 animate-scroll whitespace-nowrap py-4">
+      <div className="flex gap-4 animate-scroll whitespace-nowrap py-2">
         {displayItems.map((item, index) => (
           <div 
             key={`${item.id}-${index}`} 
