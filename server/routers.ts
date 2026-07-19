@@ -90,8 +90,8 @@ import { getEbayAuthUrl, exchangeCodeForToken, getUserInfo, getUserFeedback, ref
 import { sdk } from "./_core/sdk";
 import { tradeFlowRouter } from "./tradeFlowRouter";
 import { customAuth } from "./_core/customAuth";
-import { users, userProfiles, listings, deletedAccounts, tradeProposals, tradeMessages, tradeReviews, watchlistEntries, draftListings, passwordResetTokens, referralRequests } from "../drizzle/schema";
-import { eq, sql, desc, or, inArray } from "drizzle-orm";
+import { users, userProfiles, listings, deletedAccounts, tradeProposals, tradeMessages, tradeReviews, watchlistEntries, draftListings, passwordResetTokens, referralRequests, userFollows } from "../drizzle/schema";
+import { eq, sql, desc, or, inArray, and } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { ONE_YEAR_MS } from "@shared/const";
 
@@ -1221,7 +1221,68 @@ export const appRouter = router({
     emptyDeleted: protectedProcedure
       .mutation(async ({ ctx }) => {
         await emptyDeletedInquiries(ctx.user.id);
-        return { success: true };
+                return { success: true };
+      }),
+
+    // ── User Follow / Save Trader ──────────────────────────────────────────
+    toggleFollowUser: protectedProcedure
+      .input(z.object({ followingId: z.number().int().positive() }))
+      .mutation(async ({ ctx, input }) => {
+        const db = await requireDb();
+        if (ctx.user.id === input.followingId) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'You cannot follow yourself.' });
+        }
+        const existing = await db
+          .select({ id: userFollows.id })
+          .from(userFollows)
+          .where(and(eq(userFollows.followerId, ctx.user.id), eq(userFollows.followingId, input.followingId)))
+          .limit(1);
+        if (existing.length > 0) {
+          await db.delete(userFollows).where(eq(userFollows.id, existing[0].id));
+          return { following: false };
+        } else {
+          await db.insert(userFollows).values({ followerId: ctx.user.id, followingId: input.followingId });
+          return { following: true };
+        }
+      }),
+
+    isFollowingUser: publicProcedure
+      .input(z.object({ followingId: z.number().int().positive() }))
+      .query(async ({ ctx, input }) => {
+        if (!ctx.user?.id) return { following: false };
+        const db = await requireDb();
+        const existing = await db
+          .select({ id: userFollows.id })
+          .from(userFollows)
+          .where(and(eq(userFollows.followerId, ctx.user.id), eq(userFollows.followingId, input.followingId)))
+          .limit(1);
+        return { following: existing.length > 0 };
+      }),
+
+    getFollowedUsers: protectedProcedure
+      .query(async ({ ctx }) => {
+        const db = await requireDb();
+        const [rows] = await db.execute(
+          sql`SELECT 
+            uf.id as followId,
+            uf.createdAt as followedAt,
+            u.id as userId,
+            up.displayName,
+            up.avatarUrl,
+            up.contactTown,
+            up.contactState,
+            u.createdAt as memberSince,
+            (SELECT COUNT(*) FROM listings l WHERE l.ownerId = u.id AND l.status = 'active' AND l.isActive = 1) as itemsListed,
+            (SELECT COUNT(*) FROM tradeProposals tp WHERE (tp.requesterId = u.id OR tp.recipientId = u.id) AND tp.status = 'completed') as completedTrades,
+            (SELECT ROUND(AVG(tr.overallRating), 1) FROM tradeReviews tr WHERE tr.revieweeId = u.id AND tr.isVisible = 1) as avgRating,
+            (SELECT COUNT(*) FROM tradeReviews tr WHERE tr.revieweeId = u.id AND tr.isVisible = 1) as reviewCount
+          FROM userFollows uf
+          JOIN users u ON u.id = uf.followingId
+          LEFT JOIN userProfiles up ON up.userId = u.id
+          WHERE uf.followerId = ${ctx.user.id}
+          ORDER BY uf.createdAt DESC`
+        );
+        return Array.isArray(rows) ? rows : [];
       }),
   }),
   ebay: router({

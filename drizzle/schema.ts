@@ -487,6 +487,18 @@ export const conventions = mysqlTable("conventions", {
 	index("conventions_country_idx").on(table.country),
 ]);
 
+export const userFollows = mysqlTable("userFollows", {
+	id: int().autoincrement().notNull(),
+	followerId: int().notNull().references(() => users.id),
+	followingId: int().notNull().references(() => users.id),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+},
+(table) => [
+	index("userFollows_follower_idx").on(table.followerId),
+	index("userFollows_following_idx").on(table.followingId),
+	index("userFollows_unique").on(table.followerId, table.followingId),
+]);
+
 // ---------------------------------------------------------------------------
 // Inferred row types.
 // IMPORTANT: these exports are consumed across the server (db.ts, customAuth,

@@ -6,10 +6,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
 import { getAvatarInitials, formatGrade, tradebiliaConditionOptions } from "@/lib/tradebilia";
 import { resolveTradebiliaListingImage } from "@/lib/listingImages";
-import { MessageSquare, Star, Loader2, CalendarDays, Activity, ShoppingBag, CheckCircle2, MapPin } from "lucide-react";
+import { MessageSquare, Star, Loader2, CalendarDays, Activity, ShoppingBag, CheckCircle2, MapPin, UserPlus, UserCheck } from "lucide-react";
 import { TopBar } from "@/components/TopBar";
 import { CategoryBar } from "@/components/CategoryBar";
 import { useParams, Link } from "wouter";
+import { useAuth } from "@/_core/hooks/useAuth";
+import { toast } from "sonner";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 function StarRow({ value, max = 5 }: { value: number; max?: number }) {
@@ -64,6 +66,21 @@ const PLATFORMS = [
 export default function PublicProfile() {
   const { userId } = useParams<{ userId: string }>();
   const [activeTab, setActiveTab] = useState<"overview" | "listings" | "reviews">("overview");
+  const { isAuthenticated, user: currentUser } = useAuth();
+  const utils = trpc.useUtils();
+
+  const isFollowingQuery = trpc.market.isFollowingUser.useQuery(
+    { followingId: userId ? parseInt(userId, 10) : 0 },
+    { enabled: !!userId && isAuthenticated }
+  );
+  const toggleFollowMutation = trpc.market.toggleFollowUser.useMutation({
+    onSuccess: async (data) => {
+      toast.success(data.following ? "Trader saved to your Watchlist!" : "Trader removed from Watchlist.");
+      await utils.market.isFollowingUser.invalidate();
+      await utils.market.getFollowedUsers.invalidate();
+    },
+    onError: (err) => toast.error(err.message),
+  });
 
   const userProfileQuery = trpc.market.getUserProfile.useQuery(
     { userId: userId ? parseInt(userId, 10) : 0 },
@@ -205,7 +222,25 @@ export default function PublicProfile() {
               </div>
             </div>
 
-            <div className="flex-shrink-0">
+            <div className="flex-shrink-0 flex items-center gap-2">
+              {isAuthenticated && currentUser?.id !== parseInt(userId ?? '0', 10) && (
+                <Button
+                  variant="outline"
+                  className={`rounded-lg text-sm border ${
+                    isFollowingQuery.data?.following
+                      ? 'border-green-500 text-green-700 bg-green-50 hover:bg-red-50 hover:text-red-600 hover:border-red-400'
+                      : 'border-slate-300 text-slate-700 hover:border-blue-400 hover:text-blue-600'
+                  }`}
+                  disabled={toggleFollowMutation.isPending}
+                  onClick={() => toggleFollowMutation.mutate({ followingId: parseInt(userId!, 10) })}
+                >
+                  {isFollowingQuery.data?.following ? (
+                    <><UserCheck className="mr-2 h-4 w-4" />Saved</>
+                  ) : (
+                    <><UserPlus className="mr-2 h-4 w-4" />Save Trader</>
+                  )}
+                </Button>
+              )}
               <Button className="rounded-lg bg-blue-600 hover:bg-blue-700 text-sm">
                 <MessageSquare className="mr-2 h-4 w-4" />
                 Message
