@@ -90,7 +90,10 @@ export class CustomAuthService {
 
     try {
       const user = await db.getUserById(session.userId);
-      return user || null;
+      if (!user) return null;
+      // Banned users cannot have an active session
+      if ((user as any).isBanned === 1) return null;
+      return user;
     } catch (error) {
       console.error("[CustomAuth] Failed to get user from session:", error);
       return null;

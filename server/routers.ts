@@ -1321,6 +1321,19 @@ export const appRouter = router({
         );
         return Array.isArray(rows) ? rows : [];
       }),
+
+    getMyWarnings: protectedProcedure
+      .query(async ({ ctx }) => {
+        const db = await requireDb();
+        const [rows] = await db.execute(
+          sql`SELECT uw.id, uw.message, uw.createdAt
+              FROM userWarnings uw
+              WHERE uw.userId = ${ctx.user.id}
+              ORDER BY uw.createdAt DESC
+              LIMIT 10`
+        );
+        return Array.isArray(rows) ? rows : [];
+      }),
   }),
   ebay: router({
     getAuthUrl: protectedProcedure

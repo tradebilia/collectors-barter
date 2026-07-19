@@ -385,6 +385,12 @@ export default function Home() {
 
   const dashboard = dashboardQuery.data;
 
+  const warningsQuery = trpc.market.getMyWarnings.useQuery(undefined, {
+    enabled: isAuthenticated,
+  });
+  const [dismissedWarnings, setDismissedWarnings] = useState<number[]>([]);
+  const activeWarnings = (warningsQuery.data as any[] ?? []).filter((w: any) => !dismissedWarnings.includes(w.id));
+
   const ownActiveListings = useMemo(
     () => dashboard?.ownListings.filter(listing => listing.status === "active") ?? [],
     [dashboard?.ownListings],
@@ -893,6 +899,35 @@ export default function Home() {
             </div>
           )}
         </section>
+
+        {/* Warning Banner — shown to users who have received admin warnings */}
+        {isAuthenticated && activeWarnings.length > 0 && (
+          <div className="container pt-4">
+            {activeWarnings.map((warning: any) => (
+              <div key={warning.id} className="mb-3 flex items-start gap-3 rounded-xl border border-yellow-400/40 bg-yellow-50 px-5 py-4 shadow-sm">
+                <div className="mt-0.5 flex-shrink-0 text-yellow-500">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+                  </svg>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-yellow-800">Official Warning from Tradebilia</p>
+                  <p className="text-sm text-yellow-700 mt-0.5 leading-relaxed">{warning.message}</p>
+                  <p className="text-xs text-yellow-500 mt-1">{warning.createdAt ? new Date(warning.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : ''}</p>
+                </div>
+                <button
+                  onClick={() => setDismissedWarnings(prev => [...prev, warning.id])}
+                  className="flex-shrink-0 text-yellow-400 hover:text-yellow-600 transition-colors"
+                  aria-label="Dismiss warning"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
 
         {isAuthenticated && dashboard ? (
           <section className="container pt-8">

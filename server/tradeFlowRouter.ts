@@ -163,8 +163,11 @@ export const tradeFlowRouter = router({
       const db = await requireDb();
       const userId = ctx.user.id;
 
-      // 1. Check if initiator is suspended
+      // 1. Check if initiator is suspended or banned
       const [initiator] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+      if ((initiator as any)?.isBanned) {
+        throw new TRPCError({ code: 'FORBIDDEN', message: 'Your account has been permanently banned' });
+      }
       if ((initiator as any)?.isSuspended) {
         throw new TRPCError({ code: 'FORBIDDEN', message: 'Trading is disabled for suspended accounts' });
       }
@@ -181,8 +184,11 @@ export const tradeFlowRouter = router({
         throw new TRPCError({ code: 'BAD_REQUEST', message: 'You cannot trade with yourself' });
       }
 
-      // 4. Check if recipient (listing owner) is suspended
+      // 4. Check if recipient (listing owner) is suspended or banned
       const [recipient] = await db.select().from(users).where(eq(users.id, listing.ownerId)).limit(1);
+      if ((recipient as any)?.isBanned) {
+        throw new TRPCError({ code: 'FORBIDDEN', message: 'This user\'s account is no longer available' });
+      }
       if ((recipient as any)?.isSuspended) {
         throw new TRPCError({ code: 'FORBIDDEN', message: 'This user\'s account is currently suspended' });
       }
