@@ -343,7 +343,7 @@ export const appRouter = router({
           FROM tradeReviews tr
           LEFT JOIN users u ON u.id = tr.reviewerId
           LEFT JOIN userProfiles up ON up.userId = tr.reviewerId
-          WHERE tr.revieweeId = ${input.userId} AND tr.isVisible = 1 AND tr.review IS NOT NULL AND tr.review != ''
+          WHERE tr.revieweeId = ${input.userId} AND tr.isVisible = 1
           ORDER BY tr.createdAt DESC
           LIMIT 20`
         );

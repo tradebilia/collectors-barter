@@ -12,3 +12,12 @@ Server running on http://localhost:3000/
 [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
 3:02:19 AM [vite] (client) hmr update /src/pages/PublicProfile.tsx, /src/index.css
 3:03:00 AM [vite] (client) hmr update /src/index.css
+1:29:51 PM [tsx] change in ./server/routers.ts Restarting...
+[shutdown] Received SIGTERM, closing server...
+c[OAuth] Initialized with baseURL: https://api.manus.im
+[dotenv@17.2.3] injecting env (12) from .env -- tip: ⚙️  suppress all logs with { quiet: true }
+[startup] Environment check: PASS (all required variables present)
+[startup] Database check: PASS (connection verified)
+[startup] Port check: PASS (bound to 3000)
+Server running on http://localhost:3000/
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
