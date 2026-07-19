@@ -355,12 +355,21 @@ export const appRouter = router({
         );
         const recentListingsArr = Array.isArray(recentListingsRows) ? recentListingsRows : [];
         
-        // Fetch real stats
+        // Fetch real stats + per-category rating averages
         const [statsRows] = await db.execute(
           sql`SELECT 
             (SELECT COUNT(*) FROM listings WHERE ownerId = ${input.userId} AND status = 'active' AND isActive = 1) as itemsListed,
             (SELECT COUNT(*) FROM tradeProposals WHERE (requesterId = ${input.userId} OR recipientId = ${input.userId}) AND status = 'completed') as completedTrades,
-            (SELECT AVG(overallRating) FROM tradeReviews WHERE revieweeId = ${input.userId} AND isVisible = 1) as avgRating
+            (SELECT AVG(overallRating) FROM tradeReviews WHERE revieweeId = ${input.userId} AND isVisible = 1) as avgRating,
+            (SELECT AVG(tradeExperienceRating) FROM tradeReviews WHERE revieweeId = ${input.userId} AND isVisible = 1 AND tradeExperienceRating IS NOT NULL) as avgTradeExperience,
+            (SELECT AVG(itemConditionRating) FROM tradeReviews WHERE revieweeId = ${input.userId} AND isVisible = 1 AND itemConditionRating IS NOT NULL) as avgItemCondition,
+            (SELECT AVG(communicationRating) FROM tradeReviews WHERE revieweeId = ${input.userId} AND isVisible = 1 AND communicationRating IS NOT NULL) as avgCommunication,
+            (SELECT AVG(shippingSpeedRating) FROM tradeReviews WHERE revieweeId = ${input.userId} AND isVisible = 1 AND shippingSpeedRating IS NOT NULL) as avgShippingSpeed,
+            (SELECT COUNT(*) FROM tradeReviews WHERE revieweeId = ${input.userId} AND isVisible = 1 AND overallRating >= 4.5) as fiveStar,
+            (SELECT COUNT(*) FROM tradeReviews WHERE revieweeId = ${input.userId} AND isVisible = 1 AND overallRating >= 3.5 AND overallRating < 4.5) as fourStar,
+            (SELECT COUNT(*) FROM tradeReviews WHERE revieweeId = ${input.userId} AND isVisible = 1 AND overallRating >= 2.5 AND overallRating < 3.5) as threeStar,
+            (SELECT COUNT(*) FROM tradeReviews WHERE revieweeId = ${input.userId} AND isVisible = 1 AND overallRating >= 1.5 AND overallRating < 2.5) as twoStar,
+            (SELECT COUNT(*) FROM tradeReviews WHERE revieweeId = ${input.userId} AND isVisible = 1 AND overallRating < 1.5) as oneStar
           `
         );
         const stats = Array.isArray(statsRows) ? (statsRows as any[])[0] : (statsRows as any) || { itemsListed: 0, completedTrades: 0, avgRating: 0 };
@@ -386,6 +395,17 @@ export const appRouter = router({
             itemsListed: stats.itemsListed || 0,
             completedTrades: stats.completedTrades || 0,
             avgRating: parseFloat(stats.avgRating || '0').toFixed(1),
+            avgTradeExperience: parseFloat(stats.avgTradeExperience || '0').toFixed(1),
+            avgItemCondition: parseFloat(stats.avgItemCondition || '0').toFixed(1),
+            avgCommunication: parseFloat(stats.avgCommunication || '0').toFixed(1),
+            avgShippingSpeed: parseFloat(stats.avgShippingSpeed || '0').toFixed(1),
+            histogram: {
+              five: parseInt(stats.fiveStar || '0'),
+              four: parseInt(stats.fourStar || '0'),
+              three: parseInt(stats.threeStar || '0'),
+              two: parseInt(stats.twoStar || '0'),
+              one: parseInt(stats.oneStar || '0'),
+            },
           },
           reviews,
           recentListings: recentListingsArr,

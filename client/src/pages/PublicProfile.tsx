@@ -1,16 +1,68 @@
+import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
 import { getAvatarInitials } from "@/lib/tradebilia";
-import { MessageSquare, Star, Loader2, CalendarDays, Activity, ShoppingBag } from "lucide-react";
+import { MessageSquare, Star, Loader2, CalendarDays, Activity, ShoppingBag, CheckCircle2, MapPin } from "lucide-react";
 import { TopBar } from "@/components/TopBar";
 import { CategoryBar } from "@/components/CategoryBar";
 import { useParams, Link } from "wouter";
 
+// ── Helpers ──────────────────────────────────────────────────────────────────
+function StarRow({ value, max = 5 }: { value: number; max?: number }) {
+  return (
+    <div className="flex gap-0.5">
+      {[...Array(max)].map((_, i) => (
+        <Star
+          key={i}
+          className={`h-4 w-4 ${i < Math.round(value) ? "fill-yellow-400 text-yellow-400" : "text-slate-300"}`}
+        />
+      ))}
+    </div>
+  );
+}
+
+function RatingBar({ label, value }: { label: string; value: number }) {
+  const pct = Math.round((value / 5) * 100);
+  return (
+    <div className="flex items-center gap-3">
+      <span className="w-36 text-sm text-slate-600 flex-shrink-0">{label}</span>
+      <div className="flex-1 h-2 bg-slate-200 rounded-full overflow-hidden">
+        <div className="h-full bg-yellow-400 rounded-full" style={{ width: `${pct}%` }} />
+      </div>
+      <span className="w-8 text-sm font-semibold text-slate-800 text-right">{value > 0 ? value : "—"}</span>
+    </div>
+  );
+}
+
+function HistogramRow({ stars, count, total }: { stars: number; count: number; total: number }) {
+  const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+  return (
+    <div className="flex items-center gap-2">
+      <span className="w-12 text-xs text-slate-500 text-right">{stars} Stars</span>
+      <div className="flex-1 h-2 bg-slate-200 rounded-full overflow-hidden">
+        <div className="h-full bg-yellow-400 rounded-full" style={{ width: `${pct}%` }} />
+      </div>
+      <span className="w-6 text-xs text-slate-500">{count}</span>
+    </div>
+  );
+}
+
+// ── Platform verification config ─────────────────────────────────────────────
+const PLATFORMS = [
+  { key: "ebay", label: "eBay", color: "bg-yellow-50 border-yellow-300 text-yellow-800" },
+  { key: "facebook", label: "Facebook", color: "bg-blue-50 border-blue-300 text-blue-800" },
+  { key: "paypal", label: "PayPal", color: "bg-sky-50 border-sky-300 text-sky-800" },
+  { key: "instagram", label: "Instagram", color: "bg-pink-50 border-pink-300 text-pink-800" },
+  { key: "twitter", label: "X / Twitter", color: "bg-slate-50 border-slate-300 text-slate-800" },
+];
+
+// ── Main Component ────────────────────────────────────────────────────────────
 export default function PublicProfile() {
   const { userId } = useParams<{ userId: string }>();
+  const [activeTab, setActiveTab] = useState<"overview" | "listings" | "reviews" | "about">("overview");
+
   const userProfileQuery = trpc.market.getUserProfile.useQuery(
     { userId: userId ? parseInt(userId, 10) : 0 },
     { enabled: !!userId }
@@ -21,10 +73,7 @@ export default function PublicProfile() {
       <div className="flex min-h-screen items-center justify-center bg-[#f5f5f3]">
         <div className="text-center">
           <h1 className="text-2xl font-semibold text-slate-950">Profile not found</h1>
-          <p className="mt-2 text-slate-600">The user profile you're looking for doesn't exist.</p>
-          <Button asChild className="mt-4 rounded-lg">
-            <Link href="/">Back to Home</Link>
-          </Button>
+          <Button asChild className="mt-4 rounded-lg"><Link href="/">Back to Home</Link></Button>
         </div>
       </div>
     );
@@ -38,7 +87,7 @@ export default function PublicProfile() {
     );
   }
 
-  const profile = userProfileQuery.data?.profile;
+  const profile = userProfileQuery.data?.profile as any;
   const user = userProfileQuery.data?.user as any;
   const stats = (userProfileQuery.data as any)?.stats;
   const reviews = (userProfileQuery.data as any)?.reviews || [];
@@ -49,27 +98,40 @@ export default function PublicProfile() {
       <div className="flex min-h-screen items-center justify-center bg-[#f5f5f3]">
         <div className="text-center">
           <h1 className="text-2xl font-semibold text-slate-950">Profile not found</h1>
-          <p className="mt-2 text-slate-600">The user profile you're looking for doesn't exist.</p>
-          <Button asChild className="mt-4 rounded-lg">
-            <Link href="/">Back to Home</Link>
-          </Button>
+          <Button asChild className="mt-4 rounded-lg"><Link href="/">Back to Home</Link></Button>
         </div>
       </div>
     );
   }
 
-  const displayName = (profile as any).displayName || user?.displayName || "Collector";
-  const avatarUrl = (profile as any).avatarUrl || user?.avatarUrl;
-  const bio = (profile as any).bio;
-  const memberSince = user?.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long' }) : null;
+  const displayName = profile.displayName || user?.displayName || "Collector";
+  const avatarUrl = profile.avatarUrl || user?.avatarUrl;
+  const bio = profile.bio;
+  const memberSince = user?.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short' }) : null;
   const lastSeen = user?.lastActivityAt ? new Date(user.lastActivityAt) : null;
   const isRecentlyActive = lastSeen && (Date.now() - lastSeen.getTime()) < 7 * 24 * 60 * 60 * 1000;
+  const totalReviews = reviews.length;
+  const histogram = stats?.histogram || { five: 0, four: 0, three: 0, two: 0, one: 0 };
+  const totalHistogram = histogram.five + histogram.four + histogram.three + histogram.two + histogram.one;
+
+  // Connected platforms — check ebayUsername as proxy; others are placeholders for now
+  const connectedPlatforms = PLATFORMS.filter(p => {
+    if (p.key === "ebay") return !!user?.ebayUsername;
+    return false; // other platforms not yet connected
+  });
+
+  const TABS = [
+    { id: "overview", label: "Overview" },
+    { id: "listings", label: `Listings (${stats?.itemsListed || 0})` },
+    { id: "reviews", label: `Reviews (${totalReviews})` },
+    { id: "about", label: "About" },
+  ] as const;
 
   return (
     <div className="min-h-screen bg-[#f5f5f3] text-slate-950">
       <TopBar />
 
-      {/* Hero Section */}
+      {/* Hero Section — unchanged */}
       <section className="relative z-0 w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden text-white" style={{
         backgroundImage: 'url(/images/Mainpage.jpg)',
         backgroundSize: 'cover',
@@ -85,181 +147,320 @@ export default function PublicProfile() {
 
       <CategoryBar />
 
-      <main className="px-4 py-8 lg:px-8">
-        <div className="mx-auto max-w-5xl space-y-6">
+      {/* ── Everything below the category bar ── */}
+      <div className="bg-white border-b border-slate-200 shadow-sm">
+        <div className="mx-auto max-w-5xl px-4 lg:px-8">
 
-          {/* ── Profile Header Card ── */}
-          <Card className="rounded-[1.5rem] border-slate-200 bg-white shadow-sm">
-            <CardContent className="pt-8 pb-6">
-              <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-start">
-                {/* Avatar */}
-                <Avatar className="h-28 w-28 flex-shrink-0 border-4 border-slate-200">
-                  <AvatarImage src={avatarUrl ?? undefined} alt={displayName} />
-                  <AvatarFallback className="bg-[#7f31ff] text-3xl font-semibold text-white">
-                    {getAvatarInitials({ firstName: (profile as any).firstName, lastName: (profile as any).lastName, displayName })}
-                  </AvatarFallback>
-                </Avatar>
+          {/* Profile identity row */}
+          <div className="flex flex-col sm:flex-row items-start gap-5 pt-6 pb-4">
+            <Avatar className="h-20 w-20 flex-shrink-0 border-4 border-white shadow-md -mt-2">
+              <AvatarImage src={avatarUrl ?? undefined} alt={displayName} />
+              <AvatarFallback className="bg-[#7f31ff] text-2xl font-bold text-white">
+                {getAvatarInitials({ firstName: profile.firstName, lastName: profile.lastName, displayName })}
+              </AvatarFallback>
+            </Avatar>
 
-                {/* Name + badges + action */}
-                <div className="flex-1 text-center sm:text-left">
-                  <h1 className="text-3xl font-bold text-slate-950">{displayName}</h1>
+            <div className="flex-1 min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <h1 className="text-2xl font-bold text-slate-950">{displayName}</h1>
+                <CheckCircle2 className="h-5 w-5 text-blue-500 flex-shrink-0" />
+                {isRecentlyActive && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
+                    🟢 Active Trader
+                  </span>
+                )}
+              </div>
 
-                  <div className="mt-1 flex flex-wrap justify-center gap-x-4 gap-y-1 text-sm text-slate-500 sm:justify-start">
-                    {memberSince && (
-                      <span className="flex items-center gap-1">
-                        <CalendarDays className="h-3.5 w-3.5" />
-                        Member since {memberSince}
-                      </span>
-                    )}
-                    {lastSeen && (
-                      <span className="flex items-center gap-1">
-                        <Activity className="h-3.5 w-3.5" />
-                        {isRecentlyActive ? "Active this week" : `Last seen ${lastSeen.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`}
-                      </span>
-                    )}
-                  </div>
+              <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-500">
+                {memberSince && (
+                  <span className="flex items-center gap-1">
+                    <CalendarDays className="h-3.5 w-3.5" />
+                    Member since {memberSince}
+                  </span>
+                )}
+                {profile.contactTown && profile.contactState && (
+                  <span className="flex items-center gap-1">
+                    <MapPin className="h-3.5 w-3.5" />
+                    {profile.contactTown}, {profile.contactState}
+                  </span>
+                )}
+                {lastSeen && (
+                  <span className="flex items-center gap-1">
+                    <Activity className="h-3.5 w-3.5" />
+                    {isRecentlyActive ? "Active this week" : `Last seen ${lastSeen.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`}
+                  </span>
+                )}
+              </div>
 
-                  {/* Trust badges */}
-                  <div className="mt-3 flex flex-wrap justify-center gap-2 sm:justify-start">
-                    <Badge className="bg-blue-100 text-blue-800 border-0">✓ Verified Member</Badge>
-                    {isRecentlyActive && (
-                      <Badge className="bg-green-100 text-green-800 border-0">🟢 Active Trader</Badge>
-                    )}
-                    {user?.ebayUsername && (
-                      <Badge className="bg-yellow-100 text-yellow-800 border-0">
-                        eBay Verified — {user.ebayUsername} ({user.ebayFeedbackScore} feedback)
-                      </Badge>
-                    )}
-                  </div>
+              {/* Stats summary */}
+              <div className="mt-2 flex flex-wrap gap-x-6 gap-y-1 text-sm">
+                <span><span className="font-bold text-slate-950">{stats?.itemsListed || 0}</span> <span className="text-slate-500">Items Listed</span></span>
+                <span><span className="font-bold text-slate-950">{stats?.completedTrades || 0}</span> <span className="text-slate-500">Completed Trades</span></span>
+                <span className="flex items-center gap-1">
+                  <span className="font-bold text-slate-950">{stats?.avgRating || '0.0'}</span>
+                  <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
+                  <span className="text-slate-500">({totalReviews} reviews)</span>
+                </span>
+              </div>
+            </div>
 
-                  {/* Action button */}
-                  <div className="mt-5">
-                    <Button className="rounded-lg bg-blue-600 hover:bg-blue-700">
-                      <MessageSquare className="mr-2 h-4 w-4" />
-                      Send Message
-                    </Button>
+            <div className="flex-shrink-0">
+              <Button className="rounded-lg bg-blue-600 hover:bg-blue-700 text-sm">
+                <MessageSquare className="mr-2 h-4 w-4" />
+                Message
+              </Button>
+            </div>
+          </div>
+
+          {/* Tab navigation */}
+          <div className="flex gap-1 border-t border-slate-100 pt-1">
+            {TABS.map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
+                  activeTab === tab.id
+                    ? "border-blue-600 text-blue-600"
+                    : "border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Tab content ── */}
+      <main className="mx-auto max-w-5xl px-4 py-8 lg:px-8">
+
+        {/* ── OVERVIEW TAB ── */}
+        {activeTab === "overview" && (
+          <div className="grid gap-6 lg:grid-cols-3">
+
+            {/* Left column: Rating summary + platform verifications */}
+            <div className="space-y-6">
+
+              {/* Trader Rating card */}
+              <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                <h2 className="text-base font-semibold text-slate-950 mb-4">Trader Rating</h2>
+                <div className="flex items-end gap-3 mb-4">
+                  <span className="text-5xl font-black text-slate-950">{stats?.avgRating || '0.0'}</span>
+                  <div className="pb-1">
+                    <StarRow value={parseFloat(stats?.avgRating || '0')} />
+                    <p className="text-xs text-slate-500 mt-1">Based on {totalReviews} review{totalReviews !== 1 ? 's' : ''}</p>
                   </div>
                 </div>
 
-                {/* Stats summary on right */}
-                <div className="flex flex-row gap-6 sm:flex-col sm:items-end sm:gap-3 text-center sm:text-right">
-                  <div>
-                    <p className="text-3xl font-bold text-blue-600">{stats?.itemsListed || 0}</p>
-                    <p className="text-xs text-slate-500">Items Listed</p>
+                {/* Histogram */}
+                <div className="space-y-1.5 mb-5">
+                  <HistogramRow stars={5} count={histogram.five} total={totalHistogram} />
+                  <HistogramRow stars={4} count={histogram.four} total={totalHistogram} />
+                  <HistogramRow stars={3} count={histogram.three} total={totalHistogram} />
+                  <HistogramRow stars={2} count={histogram.two} total={totalHistogram} />
+                  <HistogramRow stars={1} count={histogram.one} total={totalHistogram} />
+                </div>
+
+                {/* Category breakdown */}
+                {totalReviews > 0 && (
+                  <div className="border-t border-slate-100 pt-4 space-y-2.5">
+                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Rating Highlights</p>
+                    <RatingBar label="Trade Experience" value={parseFloat(stats?.avgTradeExperience || '0')} />
+                    <RatingBar label="Item as Described" value={parseFloat(stats?.avgItemCondition || '0')} />
+                    <RatingBar label="Communication" value={parseFloat(stats?.avgCommunication || '0')} />
+                    <RatingBar label="Shipping Speed" value={parseFloat(stats?.avgShippingSpeed || '0')} />
                   </div>
-                  <div>
-                    <p className="text-3xl font-bold text-green-600">{stats?.completedTrades || 0}</p>
-                    <p className="text-xs text-slate-500">Completed Trades</p>
+                )}
+              </div>
+
+              {/* Verified Platforms card */}
+              <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                <h2 className="text-base font-semibold text-slate-950 mb-3">Verified Platforms</h2>
+                {connectedPlatforms.length > 0 ? (
+                  <div className="space-y-2">
+                    {connectedPlatforms.map(p => (
+                      <div key={p.key} className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium ${p.color}`}>
+                        <CheckCircle2 className="h-4 w-4 flex-shrink-0" />
+                        {p.label}
+                        {p.key === "ebay" && user?.ebayUsername && (
+                          <span className="ml-auto text-xs opacity-70">{user.ebayUsername} · {user.ebayFeedbackScore} feedback</span>
+                        )}
+                      </div>
+                    ))}
                   </div>
-                  <div>
-                    <div className="flex items-center justify-center gap-1 sm:justify-end">
-                      <span className="text-3xl font-bold text-yellow-500">{stats?.avgRating || '0.0'}</span>
-                      <Star className="h-5 w-5 fill-yellow-500 text-yellow-500" />
+                ) : (
+                  <p className="text-sm text-slate-400 italic">No external platforms verified yet.</p>
+                )}
+              </div>
+
+            </div>
+
+            {/* Right column: Recent reviews */}
+            <div className="lg:col-span-2">
+              <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+                <div className="flex items-center justify-between px-6 pt-5 pb-3 border-b border-slate-100">
+                  <h2 className="text-base font-semibold text-slate-950">Collector Reviews ({totalReviews})</h2>
+                </div>
+                <div className="divide-y divide-slate-100">
+                  {reviews.length > 0 ? (
+                    reviews.slice(0, 5).map((review: any) => (
+                      <div key={review.id} className="px-6 py-4">
+                        <div className="flex items-start gap-3">
+                          <div className="h-9 w-9 rounded-full bg-[#7f31ff] flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+                            {(review.reviewerName || review.reviewerUsername || "C").charAt(0).toUpperCase()}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-2 flex-wrap">
+                              <div className="flex items-center gap-2">
+                                <span className="font-semibold text-sm text-slate-950">{review.reviewerName || review.reviewerUsername || 'Collector'}</span>
+                                <span className="text-xs bg-green-100 text-green-700 rounded-full px-2 py-0.5 font-medium">Verified Trader</span>
+                              </div>
+                              <span className="text-xs text-slate-400 flex-shrink-0">
+                                {new Date(review.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                              </span>
+                            </div>
+                            <StarRow value={Math.round(review.overallRating || 0)} />
+                            <p className="mt-1.5 text-sm text-slate-600">
+                              {review.review || <span className="italic text-slate-400">No written feedback provided.</span>}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="px-6 py-12 text-center text-slate-400">
+                      <Star className="h-8 w-8 mx-auto mb-2 text-slate-300" />
+                      <p className="text-sm">No reviews yet. Be the first to trade with this member!</p>
                     </div>
-                    <p className="text-xs text-slate-500">Avg Rating</p>
+                  )}
+                </div>
+                {reviews.length > 5 && (
+                  <div className="px-6 py-3 border-t border-slate-100">
+                    <button onClick={() => setActiveTab("reviews")} className="text-sm text-blue-600 hover:underline">
+                      View all {totalReviews} reviews →
+                    </button>
                   </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── LISTINGS TAB ── */}
+        {activeTab === "listings" && (
+          <div className="rounded-2xl border border-slate-200 bg-white shadow-sm p-6">
+            <h2 className="text-base font-semibold text-slate-950 mb-4 flex items-center gap-2">
+              <ShoppingBag className="h-5 w-5 text-slate-500" />
+              Currently Listed for Trade
+            </h2>
+            {recentListings.length > 0 ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                {recentListings.map((listing: any) => (
+                  <Link key={listing.id} href={`/listing/${listing.id}`}>
+                    <div className="group cursor-pointer">
+                      <div className="relative w-full aspect-square bg-slate-100 rounded-xl overflow-hidden border border-slate-200 group-hover:border-blue-400 transition-colors">
+                        {listing.imageUrl ? (
+                          <img src={listing.imageUrl} alt={listing.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-slate-300">
+                            <ShoppingBag className="h-8 w-8" />
+                          </div>
+                        )}
+                      </div>
+                      <p className="mt-2 text-xs font-medium text-slate-700 group-hover:text-blue-600 truncate">{listing.title}</p>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-slate-400 italic text-center py-8">No active listings at this time.</p>
+            )}
+          </div>
+        )}
+
+        {/* ── REVIEWS TAB ── */}
+        {activeTab === "reviews" && (
+          <div className="grid gap-6 lg:grid-cols-3">
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm h-fit">
+              <h2 className="text-base font-semibold text-slate-950 mb-4">Trader Rating</h2>
+              <div className="flex items-end gap-3 mb-4">
+                <span className="text-5xl font-black text-slate-950">{stats?.avgRating || '0.0'}</span>
+                <div className="pb-1">
+                  <StarRow value={parseFloat(stats?.avgRating || '0')} />
+                  <p className="text-xs text-slate-500 mt-1">Based on {totalReviews} review{totalReviews !== 1 ? 's' : ''}</p>
                 </div>
               </div>
-            </CardContent>
-          </Card>
+              <div className="space-y-1.5 mb-5">
+                <HistogramRow stars={5} count={histogram.five} total={totalHistogram} />
+                <HistogramRow stars={4} count={histogram.four} total={totalHistogram} />
+                <HistogramRow stars={3} count={histogram.three} total={totalHistogram} />
+                <HistogramRow stars={2} count={histogram.two} total={totalHistogram} />
+                <HistogramRow stars={1} count={histogram.one} total={totalHistogram} />
+              </div>
+              {totalReviews > 0 && (
+                <div className="border-t border-slate-100 pt-4 space-y-2.5">
+                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Rating Highlights</p>
+                  <RatingBar label="Trade Experience" value={parseFloat(stats?.avgTradeExperience || '0')} />
+                  <RatingBar label="Item as Described" value={parseFloat(stats?.avgItemCondition || '0')} />
+                  <RatingBar label="Communication" value={parseFloat(stats?.avgCommunication || '0')} />
+                  <RatingBar label="Shipping Speed" value={parseFloat(stats?.avgShippingSpeed || '0')} />
+                </div>
+              )}
+            </div>
 
-          {/* ── About + Reviews (two columns) ── */}
-          <div className="grid gap-6 lg:grid-cols-2">
-            {/* About */}
-            {bio && (
-              <Card className="rounded-[1.5rem] border-slate-200 bg-white shadow-sm">
-                <CardHeader>
-                  <CardTitle>About</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-slate-700 leading-relaxed">{bio}</p>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Reviews */}
-            <Card className={`rounded-[1.5rem] border-slate-200 bg-white shadow-sm ${!bio ? 'lg:col-span-2' : ''}`}>
-              <CardHeader>
-                <CardTitle>Collector Feedback</CardTitle>
-                <CardDescription>What other collectors say about trading with this member</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
+            <div className="lg:col-span-2 rounded-2xl border border-slate-200 bg-white shadow-sm">
+              <div className="px-6 pt-5 pb-3 border-b border-slate-100">
+                <h2 className="text-base font-semibold text-slate-950">All Reviews ({totalReviews})</h2>
+              </div>
+              <div className="divide-y divide-slate-100">
                 {reviews.length > 0 ? (
                   reviews.map((review: any) => (
-                    <div key={review.id} className="border-b border-slate-100 pb-4 last:border-b-0 last:pb-0">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="font-semibold text-slate-950">{review.reviewerName || review.reviewerUsername || 'Collector'}</span>
-                            <div className="flex gap-0.5">
-                              {[...Array(5)].map((_, j) => (
-                                <Star
-                                  key={j}
-                                  className={`h-4 w-4 ${j < Math.round(review.overallRating || 0) ? "fill-yellow-500 text-yellow-500" : "text-slate-300"}`}
-                                />
-                              ))}
+                    <div key={review.id} className="px-6 py-4">
+                      <div className="flex items-start gap-3">
+                        <div className="h-9 w-9 rounded-full bg-[#7f31ff] flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+                          {(review.reviewerName || review.reviewerUsername || "C").charAt(0).toUpperCase()}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-2 flex-wrap">
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold text-sm text-slate-950">{review.reviewerName || review.reviewerUsername || 'Collector'}</span>
+                              <span className="text-xs bg-green-100 text-green-700 rounded-full px-2 py-0.5 font-medium">Verified Trader</span>
                             </div>
+                            <span className="text-xs text-slate-400 flex-shrink-0">
+                              {new Date(review.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                            </span>
                           </div>
+                          <StarRow value={Math.round(review.overallRating || 0)} />
                           <p className="mt-1.5 text-sm text-slate-600">
                             {review.review || <span className="italic text-slate-400">No written feedback provided.</span>}
                           </p>
                         </div>
-                        <span className="flex-shrink-0 text-xs text-slate-400">
-                          {new Date(review.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
-                        </span>
                       </div>
                     </div>
                   ))
                 ) : (
-                  <div className="text-center py-8 text-slate-400">
+                  <div className="px-6 py-12 text-center text-slate-400">
                     <Star className="h-8 w-8 mx-auto mb-2 text-slate-300" />
-                    <p>No feedback yet. Be the first to trade with this member!</p>
+                    <p className="text-sm">No reviews yet.</p>
                   </div>
                 )}
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </div>
+        )}
 
-          {/* ── Recently Listed Items ── */}
-          {recentListings.length > 0 && (
-            <Card className="rounded-[1.5rem] border-slate-200 bg-white shadow-sm">
-              <CardHeader>
-                <div className="flex items-center gap-2">
-                  <ShoppingBag className="h-5 w-5 text-slate-600" />
-                  <div>
-                    <CardTitle>Currently Listed for Trade</CardTitle>
-                    <CardDescription className="mt-0.5">Items this member has available right now</CardDescription>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-                  {recentListings.map((listing: any) => (
-                    <Link key={listing.id} href={`/listing/${listing.id}`}>
-                      <div className="group cursor-pointer">
-                        <div className="relative w-full aspect-square bg-slate-100 rounded-xl overflow-hidden border border-slate-200 group-hover:border-blue-400 transition-colors">
-                          {listing.imageUrl ? (
-                            <img
-                              src={listing.imageUrl}
-                              alt={listing.title}
-                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center text-slate-300">
-                              <ShoppingBag className="h-8 w-8" />
-                            </div>
-                          )}
-                        </div>
-                        <p className="mt-2 text-xs font-medium text-slate-700 group-hover:text-blue-600 truncate leading-tight">{listing.title}</p>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
+        {/* ── ABOUT TAB ── */}
+        {activeTab === "about" && (
+          <div className="rounded-2xl border border-slate-200 bg-white shadow-sm p-6 max-w-2xl">
+            <h2 className="text-base font-semibold text-slate-950 mb-3">About {displayName}</h2>
+            {bio ? (
+              <p className="text-slate-700 leading-relaxed">{bio}</p>
+            ) : (
+              <p className="text-sm text-slate-400 italic">This member hasn't added a bio yet.</p>
+            )}
+          </div>
+        )}
 
-        </div>
       </main>
     </div>
   );
