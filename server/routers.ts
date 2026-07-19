@@ -1451,6 +1451,11 @@ export const appRouter = router({
         lastActivityAt: users.lastActivityAt,
         isSuspended: users.isSuspended,
         suspendedAt: users.suspendedAt,
+        isBanned: users.isBanned,
+        bannedAt: users.bannedAt,
+        banReason: users.banReason,
+        warnCount: users.warnCount,
+        lastWarnedAt: users.lastWarnedAt,
         contactFullName: userProfiles.contactFullName,
         contactEmail: userProfiles.contactEmail,
         contactPhone: userProfiles.contactPhone,
@@ -1812,7 +1817,120 @@ export const appRouter = router({
       .input(z.object({ userId: z.number().int().positive() }))
       .mutation(async ({ ctx, input }) => {
         if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
-        return await unsuspendUser(input.userId);
+        const db = await requireDb();
+        await unsuspendUser(input.userId);
+        await db.execute(
+          sql`INSERT INTO moderationLog (adminId, targetUserId, action, reason, createdAt) VALUES (${ctx.user.id}, ${input.userId}, 'unsuspend', NULL, NOW())`
+        );
+        return { success: true };
+      }),
+
+    // Warn user
+    warnUser: protectedProcedure
+      .input(z.object({ userId: z.number().int().positive(), message: z.string().min(1).max(2000) }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+        if (input.userId === ctx.user.id) throw new TRPCError({ code: 'BAD_REQUEST', message: 'Cannot warn yourself' });
+        const db = await requireDb();
+        const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
+        // Insert warning record
+        await db.execute(
+          sql`INSERT INTO userWarnings (userId, adminId, message, createdAt) VALUES (${input.userId}, ${ctx.user.id}, ${input.message}, ${now})`
+        );
+        // Increment warn count and update lastWarnedAt
+        await db.execute(
+          sql`UPDATE users SET warnCount = warnCount + 1, lastWarnedAt = ${now} WHERE id = ${input.userId}`
+        );
+        // Log to moderation log
+        await db.execute(
+          sql`INSERT INTO moderationLog (adminId, targetUserId, action, reason, createdAt) VALUES (${ctx.user.id}, ${input.userId}, 'warn', ${input.message}, ${now})`
+        );
+        return { success: true };
+      }),
+
+    // Get user warnings
+    getUserWarnings: protectedProcedure
+      .input(z.object({ userId: z.number().int().positive() }))
+      .query(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+        const db = await requireDb();
+        const [rows] = await db.execute(
+          sql`SELECT uw.id, uw.message, uw.createdAt, u.displayName as adminName
+              FROM userWarnings uw
+              LEFT JOIN users u ON u.id = uw.adminId
+              WHERE uw.userId = ${input.userId}
+              ORDER BY uw.createdAt DESC`
+        );
+        return Array.isArray(rows) ? rows : [];
+      }),
+
+    // Ban user permanently
+    banUser: protectedProcedure
+      .input(z.object({ userId: z.number().int().positive(), reason: z.string().min(1).max(2000) }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+        if (input.userId === ctx.user.id) throw new TRPCError({ code: 'BAD_REQUEST', message: 'Cannot ban yourself' });
+        const db = await requireDb();
+        const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
+        await db.execute(
+          sql`UPDATE users SET isBanned = 1, bannedAt = ${now}, banReason = ${input.reason}, isSuspended = 0 WHERE id = ${input.userId}`
+        );
+        await db.execute(
+          sql`INSERT INTO moderationLog (adminId, targetUserId, action, reason, createdAt) VALUES (${ctx.user.id}, ${input.userId}, 'ban', ${input.reason}, ${now})`
+        );
+        return { success: true };
+      }),
+
+    // Unban user
+    unbanUser: protectedProcedure
+      .input(z.object({ userId: z.number().int().positive() }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+        const db = await requireDb();
+        const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
+        await db.execute(
+          sql`UPDATE users SET isBanned = 0, bannedAt = NULL, banReason = NULL WHERE id = ${input.userId}`
+        );
+        await db.execute(
+          sql`INSERT INTO moderationLog (adminId, targetUserId, action, reason, createdAt) VALUES (${ctx.user.id}, ${input.userId}, 'unban', NULL, ${now})`
+        );
+        return { success: true };
+      }),
+
+    // Get banned users
+    getBannedUsers: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      const db = await requireDb();
+      const [rows] = await db.execute(
+        sql`SELECT u.id, u.username, u.displayName, u.email, u.bannedAt, u.banReason,
+                   up.avatarUrl, up.firstName, up.lastName
+            FROM users u
+            LEFT JOIN userProfiles up ON up.userId = u.id
+            WHERE u.isBanned = 1
+            ORDER BY u.bannedAt DESC`
+      );
+      return Array.isArray(rows) ? rows : [];
+    }),
+
+    // Get moderation audit log
+    getModerationLog: protectedProcedure
+      .input(z.object({ limit: z.number().min(1).max(100).default(50), offset: z.number().min(0).default(0) }).optional())
+      .query(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+        const db = await requireDb();
+        const limit = input?.limit ?? 50;
+        const offset = input?.offset ?? 0;
+        const [rows] = await db.execute(
+          sql`SELECT ml.id, ml.action, ml.reason, ml.createdAt,
+                     admin.displayName as adminName, admin.username as adminUsername,
+                     target.displayName as targetName, target.username as targetUsername, ml.targetUserId
+              FROM moderationLog ml
+              LEFT JOIN users admin ON admin.id = ml.adminId
+              LEFT JOIN users target ON target.id = ml.targetUserId
+              ORDER BY ml.createdAt DESC
+              LIMIT ${limit} OFFSET ${offset}`
+        );
+        return Array.isArray(rows) ? rows : [];
       }),
   }),
   // Online status procedures

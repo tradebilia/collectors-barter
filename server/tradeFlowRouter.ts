@@ -642,8 +642,10 @@ export const tradeFlowRouter = router({
       const bothConfirmed = (confirmCounts as any)?.[0]?.userCount >= 2;
 
       if (bothConfirmed) {
+        // Generate a unique reference number: TR-XXXXX (zero-padded proposal ID)
+        const refNumber = `TR-${String(input.proposalId).padStart(5, '0')}`;
         await db.execute(
-          sql`UPDATE tradeProposals SET status = 'completed', completedAt = ${now}, lastActivityAt = ${now}, updatedAt = ${now} WHERE id = ${input.proposalId}`
+          sql`UPDATE tradeProposals SET status = 'completed', completedAt = ${now}, referenceNumber = ${refNumber}, lastActivityAt = ${now}, updatedAt = ${now} WHERE id = ${input.proposalId}`
         );
       }
 

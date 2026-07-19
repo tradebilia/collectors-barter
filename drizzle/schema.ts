@@ -433,6 +433,11 @@ export const users = mysqlTable("users", {
 		ebayTokenExpiresAt: timestamp({ mode: 'string' }),
 		isSuspended: tinyint().default(0).notNull(),
 		suspendedAt: timestamp({ mode: 'string' }),
+		isBanned: tinyint().default(0).notNull(),
+		bannedAt: timestamp({ mode: 'string' }),
+		banReason: text(),
+		warnCount: int().default(0).notNull(),
+		lastWarnedAt: timestamp({ mode: 'string' }),
 	},
 (table) => [
 	index("users_openId_unique").on(table.openId),
@@ -498,6 +503,33 @@ export const userFollows = mysqlTable("userFollows", {
 	index("userFollows_follower_idx").on(table.followerId),
 	index("userFollows_following_idx").on(table.followingId),
 	index("userFollows_unique").on(table.followerId, table.followingId),
+]);
+
+export const moderationLog = mysqlTable("moderationLog", {
+	id: int().autoincrement().notNull(),
+	adminId: int().notNull().references(() => users.id),
+	targetUserId: int().notNull().references(() => users.id),
+	action: mysqlEnum(['warn','ban','unban','suspend','unsuspend','delete']).notNull(),
+	reason: text(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+},
+(table) => [
+	index("moderationLog_admin_idx").on(table.adminId),
+	index("moderationLog_target_idx").on(table.targetUserId),
+	index("moderationLog_action_idx").on(table.action),
+	index("moderationLog_createdAt_idx").on(table.createdAt),
+]);
+
+export const userWarnings = mysqlTable("userWarnings", {
+	id: int().autoincrement().notNull(),
+	userId: int().notNull().references(() => users.id),
+	adminId: int().notNull().references(() => users.id),
+	message: text().notNull(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+},
+(table) => [
+	index("userWarnings_user_idx").on(table.userId),
+	index("userWarnings_admin_idx").on(table.adminId),
 ]);
 
 // ---------------------------------------------------------------------------

@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { BarChart3, Users, Package, Settings, Trash2, Flag, Mail, Search, ArrowUpDown, Calendar, ExternalLink, CheckCircle, XCircle } from "lucide-react";
+import { BarChart3, Users, Package, Settings, Trash2, Flag, Mail, Search, ArrowUpDown, Calendar, ExternalLink, CheckCircle, XCircle, AlertTriangle, Ban, ShieldOff, ClipboardList } from "lucide-react";
 import { getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
 import { TopBar } from "@/components/TopBar";
@@ -366,6 +366,11 @@ export default function AdminDashboard() {
   const updateReferralStatusMutation = trpc.admin.updateReferralStatus.useMutation();
   const suspendUserMutation = trpc.admin.suspendUser.useMutation();
   const unsuspendUserMutation = trpc.admin.unsuspendUser.useMutation();
+  const warnUserMutation = trpc.admin.warnUser.useMutation();
+  const banUserMutation = trpc.admin.banUser.useMutation();
+  const unbanUserMutation = trpc.admin.unbanUser.useMutation();
+  const bannedUsersQuery = trpc.admin.getBannedUsers.useQuery(undefined, { enabled: user?.role === 'admin' });
+  const moderationLogQuery = trpc.admin.getModerationLog.useQuery(undefined, { enabled: user?.role === 'admin' });
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<any>(null);
   const [selectedReferral, setSelectedReferral] = useState<any>(null);
@@ -373,6 +378,11 @@ export default function AdminDashboard() {
   const [referralStatus, setReferralStatus] = useState<string>("pending");
   const [referralNotes, setReferralNotes] = useState<string>("");
   const [selectedSuspendedUser, setSelectedSuspendedUser] = useState<any>(null);
+  const [warnDialogOpen, setWarnDialogOpen] = useState(false);
+  const [warnMessage, setWarnMessage] = useState("");
+  const [banDialogOpen, setBanDialogOpen] = useState(false);
+  const [banReason, setBanReason] = useState("");
+  const [userToAction, setUserToAction] = useState<any>(null);
 
   const handleDeleteUser = async () => {
     console.log('[handleDeleteUser] Starting delete, userToDelete:', userToDelete);
@@ -538,6 +548,14 @@ export default function AdminDashboard() {
             <TabsTrigger value="suspended" className="flex items-center gap-1.5 text-sm px-4 py-2 whitespace-nowrap">
               <Users className="h-4 w-4" />
               Suspended
+            </TabsTrigger>
+            <TabsTrigger value="banned" className="flex items-center gap-1.5 text-sm px-4 py-2 whitespace-nowrap">
+              <Ban className="h-4 w-4" />
+              Banned
+            </TabsTrigger>
+            <TabsTrigger value="modlog" className="flex items-center gap-1.5 text-sm px-4 py-2 whitespace-nowrap">
+              <ClipboardList className="h-4 w-4" />
+              Mod Log
             </TabsTrigger>
           </TabsList>
           </div>
@@ -954,6 +972,107 @@ export default function AdminDashboard() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {/* Banned Users Tab */}
+          <TabsContent value="banned" className="space-y-4 mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Permanently Banned Users</CardTitle>
+                <CardDescription>Users who have been permanently banned from the platform</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {bannedUsersQuery.isLoading ? (
+                  <div className="text-sm text-muted-foreground">Loading...</div>
+                ) : bannedUsersQuery.data && bannedUsersQuery.data.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b">
+                          <th className="text-left py-3 px-4 font-semibold">Username</th>
+                          <th className="text-left py-3 px-4 font-semibold">Display Name</th>
+                          <th className="text-left py-3 px-4 font-semibold">Email</th>
+                          <th className="text-left py-3 px-4 font-semibold">Banned At</th>
+                          <th className="text-left py-3 px-4 font-semibold">Reason</th>
+                          <th className="text-right py-3 px-4 font-semibold">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(bannedUsersQuery.data as any[]).map((u: any) => (
+                          <tr key={u.id} className="border-b hover:bg-muted/50">
+                            <td className="py-3 px-4 font-mono text-xs">{u.username}</td>
+                            <td className="py-3 px-4">{u.displayName || '-'}</td>
+                            <td className="py-3 px-4">{u.email || '-'}</td>
+                            <td className="py-3 px-4 text-xs">{u.bannedAt ? new Date(u.bannedAt).toLocaleDateString() : '-'}</td>
+                            <td className="py-3 px-4 text-xs max-w-[200px] truncate">{u.banReason || '-'}</td>
+                            <td className="py-3 px-4 text-right">
+                              <Button size="sm" variant="outline" className="border-green-500 text-green-600"
+                                onClick={() => unbanUserMutation.mutate({ userId: u.id }, { onSuccess: () => { bannedUsersQuery.refetch(); usersQuery.refetch(); } })}
+                                disabled={unbanUserMutation.isPending}
+                              >
+                                Remove Ban
+                              </Button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div className="text-sm text-muted-foreground">No banned users</div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Moderation Log Tab */}
+          <TabsContent value="modlog" className="space-y-4 mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Moderation Audit Log</CardTitle>
+                <CardDescription>A complete record of all moderation actions taken by admins</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {moderationLogQuery.isLoading ? (
+                  <div className="text-sm text-muted-foreground">Loading...</div>
+                ) : moderationLogQuery.data && moderationLogQuery.data.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b">
+                          <th className="text-left py-3 px-4 font-semibold">Date</th>
+                          <th className="text-left py-3 px-4 font-semibold">Admin</th>
+                          <th className="text-left py-3 px-4 font-semibold">Action</th>
+                          <th className="text-left py-3 px-4 font-semibold">Target User</th>
+                          <th className="text-left py-3 px-4 font-semibold">Reason</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(moderationLogQuery.data as any[]).map((log: any) => (
+                          <tr key={log.id} className="border-b hover:bg-muted/50">
+                            <td className="py-3 px-4 text-xs text-muted-foreground whitespace-nowrap">{new Date(log.createdAt).toLocaleString()}</td>
+                            <td className="py-3 px-4 font-medium">{log.adminName || log.adminUsername || '-'}</td>
+                            <td className="py-3 px-4">
+                              <span className={`px-2 py-0.5 rounded text-xs font-bold uppercase ${
+                                log.action === 'ban' ? 'bg-red-100 text-red-700' :
+                                log.action === 'warn' ? 'bg-yellow-100 text-yellow-700' :
+                                log.action === 'suspend' ? 'bg-orange-100 text-orange-700' :
+                                log.action === 'delete' ? 'bg-red-200 text-red-800' :
+                                'bg-green-100 text-green-700'
+                              }`}>{log.action}</span>
+                            </td>
+                            <td className="py-3 px-4">{log.targetName || log.targetUsername || `#${log.targetUserId}`}</td>
+                            <td className="py-3 px-4 text-xs text-muted-foreground max-w-[250px] truncate">{log.reason || '-'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div className="text-sm text-muted-foreground">No moderation actions recorded yet</div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs>
       </div>
 
@@ -1175,20 +1294,122 @@ export default function AdminDashboard() {
                 <div className="grid grid-cols-3 gap-4">
                   <div className="bg-accent/50 p-3 rounded">
                     <p className="text-xs text-muted-foreground">Total Items</p>
-                    <p className="text-lg font-semibold">0</p>
+                    <p className="text-lg font-semibold">{selectedUser.itemsListed ?? 0}</p>
                   </div>
                   <div className="bg-accent/50 p-3 rounded">
-                    <p className="text-xs text-muted-foreground">Completed Trades</p>
-                    <p className="text-lg font-semibold">0</p>
+                    <p className="text-xs text-muted-foreground">Warnings</p>
+                    <p className="text-lg font-semibold">{selectedUser.warnCount ?? 0}</p>
                   </div>
                   <div className="bg-accent/50 p-3 rounded">
-                    <p className="text-xs text-muted-foreground">Rating</p>
-                    <p className="text-lg font-semibold">-</p>
+                    <p className="text-xs text-muted-foreground">Status</p>
+                    <p className="text-sm font-semibold">
+                      {selectedUser.isBanned ? <span className="text-red-600">Banned</span> : selectedUser.isSuspended ? <span className="text-orange-500">Suspended</span> : <span className="text-green-600">Active</span>}
+                    </p>
                   </div>
+                </div>
+              </div>
+
+              {/* Moderation Actions */}
+              <div className="border-t border-border pt-4">
+                <h3 className="font-semibold mb-3">Moderation Actions</h3>
+                <div className="flex flex-wrap gap-2">
+                  <Button size="sm" variant="outline" className="border-yellow-500 text-yellow-600 hover:bg-yellow-50"
+                    onClick={() => { setUserToAction(selectedUser); setWarnDialogOpen(true); }}
+                  >
+                    <AlertTriangle className="h-3.5 w-3.5 mr-1" /> Warn
+                  </Button>
+                  {!selectedUser.isSuspended ? (
+                    <Button size="sm" variant="outline" className="border-orange-500 text-orange-600 hover:bg-orange-50"
+                      onClick={() => { suspendUserMutation.mutate({ userId: selectedUser.id }, { onSuccess: () => { usersQuery.refetch(); suspendedUsersQuery.refetch(); setSelectedUser((u: any) => ({ ...u, isSuspended: 1 })); } }); }}
+                    >
+                      <ShieldOff className="h-3.5 w-3.5 mr-1" /> Suspend
+                    </Button>
+                  ) : (
+                    <Button size="sm" variant="outline" className="border-green-500 text-green-600 hover:bg-green-50"
+                      onClick={() => { unsuspendUserMutation.mutate({ userId: selectedUser.id }, { onSuccess: () => { usersQuery.refetch(); suspendedUsersQuery.refetch(); setSelectedUser((u: any) => ({ ...u, isSuspended: 0 })); } }); }}
+                    >
+                      <CheckCircle className="h-3.5 w-3.5 mr-1" /> Unsuspend
+                    </Button>
+                  )}
+                  {!selectedUser.isBanned ? (
+                    <Button size="sm" variant="outline" className="border-red-600 text-red-700 hover:bg-red-50"
+                      onClick={() => { setUserToAction(selectedUser); setBanDialogOpen(true); }}
+                    >
+                      <Ban className="h-3.5 w-3.5 mr-1" /> Permanent Ban
+                    </Button>
+                  ) : (
+                    <Button size="sm" variant="outline" className="border-green-600 text-green-700 hover:bg-green-50"
+                      onClick={() => { unbanUserMutation.mutate({ userId: selectedUser.id }, { onSuccess: () => { usersQuery.refetch(); bannedUsersQuery.refetch(); setSelectedUser((u: any) => ({ ...u, isBanned: 0 })); } }); }}
+                    >
+                      <CheckCircle className="h-3.5 w-3.5 mr-1" /> Remove Ban
+                    </Button>
+                  )}
                 </div>
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Warn User Dialog */}
+      <Dialog open={warnDialogOpen} onOpenChange={setWarnDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Warn {userToAction?.displayName || userToAction?.username}</DialogTitle>
+            <DialogDescription>This warning will be recorded and visible in the moderation log.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 pt-2">
+            <textarea
+              className="w-full border border-border rounded-lg p-3 text-sm min-h-[100px] resize-none"
+              placeholder="Describe the reason for this warning..."
+              value={warnMessage}
+              onChange={(e) => setWarnMessage(e.target.value)}
+            />
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" onClick={() => { setWarnDialogOpen(false); setWarnMessage(""); }}>Cancel</Button>
+              <Button className="bg-yellow-500 hover:bg-yellow-600 text-white" disabled={!warnMessage.trim() || warnUserMutation.isPending}
+                onClick={() => {
+                  if (!userToAction || !warnMessage.trim()) return;
+                  warnUserMutation.mutate({ userId: userToAction.id, message: warnMessage.trim() }, {
+                    onSuccess: () => { setWarnDialogOpen(false); setWarnMessage(""); usersQuery.refetch(); moderationLogQuery.refetch(); }
+                  });
+                }}
+              >
+                Send Warning
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Ban User Dialog */}
+      <Dialog open={banDialogOpen} onOpenChange={setBanDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-red-600">Permanently Ban {userToAction?.displayName || userToAction?.username}</DialogTitle>
+            <DialogDescription>This action will permanently ban the user. They will not be able to log in.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 pt-2">
+            <textarea
+              className="w-full border border-red-300 rounded-lg p-3 text-sm min-h-[100px] resize-none"
+              placeholder="Reason for permanent ban..."
+              value={banReason}
+              onChange={(e) => setBanReason(e.target.value)}
+            />
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" onClick={() => { setBanDialogOpen(false); setBanReason(""); }}>Cancel</Button>
+              <Button variant="destructive" disabled={!banReason.trim() || banUserMutation.isPending}
+                onClick={() => {
+                  if (!userToAction || !banReason.trim()) return;
+                  banUserMutation.mutate({ userId: userToAction.id, reason: banReason.trim() }, {
+                    onSuccess: () => { setBanDialogOpen(false); setBanReason(""); usersQuery.refetch(); bannedUsersQuery.refetch(); moderationLogQuery.refetch(); }
+                  });
+                }}
+              >
+                Confirm Permanent Ban
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
 
