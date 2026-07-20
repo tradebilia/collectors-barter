@@ -534,21 +534,11 @@ export default function AccountSettings() {
 
   const handleSavePreferences = async () => {
     try {
-      // Read checkbox states directly from the DOM since onChange handlers aren't firing
-      const checkedCategories: string[] = [];
-      const categoryCheckboxes = document.querySelectorAll('input[id^="category-"]');
-      categoryCheckboxes.forEach((checkbox: any) => {
-        if (checkbox.checked) {
-          const categoryValue = checkbox.id.replace('category-', '');
-          checkedCategories.push(categoryValue);
-        }
-      });
-      
+      // Checkboxes are now fully controlled via React state — read directly from preferences
       const prefsToSave = {
         ...preferences,
-        preferredCategories: checkedCategories as ("comics" | "sports_cards" | "vintage_toys" | "video_games" | "stamps" | "coins" | "pokemon" | "movies" | "autographs" | "disney_pins")[],
       };
-      console.log('[handleSavePreferences] Categories from DOM:', checkedCategories);
+      console.log('[handleSavePreferences] Categories from state:', preferences.preferredCategories);
       await savePreferencesMutation.mutateAsync(prefsToSave);
       setConfirmationDialog({
         isOpen: true,
@@ -1231,22 +1221,26 @@ export default function AccountSettings() {
                     <div className="grid grid-cols-2 gap-3">
                       {categoryOptions.map((cat) => {
                         const checkboxId = `category-${cat.value}`;
-                        // Only set defaultChecked on first render to initialize the checkbox
-                        const isChecked = !preferencesInitializedRef.current ? preferences.preferredCategories.includes(cat.value) : undefined;
+                        const isChecked = preferences.preferredCategories.includes(cat.value as any);
                         return (
-                          <div key={cat.value} className="flex items-center gap-2 px-3 py-2 rounded-lg border-2 border-slate-200 cursor-pointer hover:border-blue-400 transition-colors">
+                          <div
+                            key={cat.value}
+                            className={`flex items-center gap-2 px-3 py-2 rounded-lg border-2 cursor-pointer transition-colors ${
+                              isChecked ? 'border-blue-500 bg-blue-50' : 'border-slate-200 hover:border-blue-400'
+                            }`}
+                            onClick={() => handleCategoryToggle(cat.value)}
+                          >
                             <input
                               id={checkboxId}
                               type="checkbox"
-                              defaultChecked={isChecked}
+                              checked={isChecked}
+                              onChange={() => handleCategoryToggle(cat.value)}
                               className="h-4 w-4 rounded accent-blue-600 cursor-pointer"
-                              style={{ pointerEvents: 'auto', cursor: 'pointer' }}
+                              style={{ pointerEvents: 'none' }}
                             />
                             <label 
                               htmlFor={checkboxId}
-                              className="text-sm text-slate-700 cursor-pointer flex-1"
-                              style={{ pointerEvents: 'auto', cursor: 'pointer' }}
-                              data-manus-no-intercept="true"
+                              className="text-sm text-slate-700 cursor-pointer flex-1 pointer-events-none"
                             >
                               {cat.label}
                             </label>

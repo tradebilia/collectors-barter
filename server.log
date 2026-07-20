@@ -300,3 +300,24 @@ Server running on http://localhost:3000/
 [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
 12:12:10 AM [vite] (client) hmr update /src/pages/AccountSettings.tsx, /src/index.css
 12:12:58 AM [vite] (client) hmr update /src/pages/PublicProfile.tsx, /src/index.css
+[savePreferences] Input: {
+  preferredCategories: [ 'comics', 'sports_cards' ],
+  showProfile: true,
+  hideInventoryValue: false,
+  receiveContactRequests: true
+}
+[savePreferences] User ID: 1
+[savePreferences] Update result: [
+  ResultSetHeader {
+    fieldCount: 0,
+    affectedRows: 1,
+    insertId: 0,
+    info: '(Rows matched: 1  Changed: 1  Warnings: 0',
+    serverStatus: 2,
+    warningStatus: 0,
+    changedRows: 1
+  },
+  undefined
+]
+12:16:36 AM [vite] (client) hmr update /src/pages/AccountSettings.tsx, /src/index.css
+12:16:44 AM [vite] (client) hmr update /src/pages/AccountSettings.tsx, /src/index.css
