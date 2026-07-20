@@ -599,7 +599,7 @@ export const appRouter = router({
     saveIntegrations: protectedProcedure
       .input(
         z.object({
-          connectedAccounts: z.array(z.enum(["ebay", "paypal", "facebook"])),
+          connectedAccounts: z.array(z.enum(["ebay", "paypal", "facebook", "linkedin", "whatnot"])),
         }),
       )
       .mutation(async ({ ctx, input }) => {
