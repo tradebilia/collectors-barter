@@ -140,11 +140,10 @@ export async function getUserInfo(accessToken: string): Promise<EbayUserInfo> {
   let memberSince = new Date();
 
   try {
+    // Note: With OAuth tokens, use X-EBAY-API-IAF-TOKEN header instead of
+    // embedding the token in the XML body's RequesterCredentials.
     const getUserXml = `<?xml version="1.0" encoding="utf-8"?>
 <GetUserRequest xmlns="urn:ebay:apis:eBLBaseComponents">
-  <RequesterCredentials>
-    <eBayAuthToken>${accessToken}</eBayAuthToken>
-  </RequesterCredentials>
   <DetailLevel>ReturnAll</DetailLevel>
 </GetUserRequest>`;
 
@@ -155,7 +154,7 @@ export async function getUserInfo(accessToken: string): Promise<EbayUserInfo> {
         "X-EBAY-API-COMPATIBILITY-LEVEL": "967",
         "X-EBAY-API-CALL-NAME": "GetUser",
         "X-EBAY-API-SITEID": "0",
-        "X-EBAY-API-APP-NAME": ENV.ebayClientId,
+        "X-EBAY-API-IAF-TOKEN": accessToken,
       },
       body: getUserXml,
     });
@@ -196,11 +195,10 @@ export async function getUserInfo(accessToken: string): Promise<EbayUserInfo> {
 export async function getUserFeedback(accessToken: string, ebayUserId: string): Promise<EbayFeedback[]> {
   if (!ENV.ebayClientId) return [];
 
+  // Note: With OAuth tokens, use X-EBAY-API-IAF-TOKEN header instead of
+  // embedding the token in the XML body's RequesterCredentials.
   const xmlBody = `<?xml version="1.0" encoding="utf-8"?>
 <GetFeedbackRequest xmlns="urn:ebay:apis:eBLBaseComponents">
-  <RequesterCredentials>
-    <eBayAuthToken>${accessToken}</eBayAuthToken>
-  </RequesterCredentials>
   <UserID>${ebayUserId}</UserID>
   <FeedbackType>FeedbackReceivedAsSeller</FeedbackType>
   <DetailLevel>ReturnAll</DetailLevel>
@@ -218,7 +216,7 @@ export async function getUserFeedback(accessToken: string, ebayUserId: string): 
         "X-EBAY-API-COMPATIBILITY-LEVEL": "967",
         "X-EBAY-API-CALL-NAME": "GetFeedback",
         "X-EBAY-API-SITEID": "0",
-        "X-EBAY-API-APP-NAME": ENV.ebayClientId,
+        "X-EBAY-API-IAF-TOKEN": accessToken,
       },
       body: xmlBody,
     });

@@ -386,3 +386,12 @@ Server running on http://localhost:3000/
 [startup] Database check: PASS (connection verified)
 [startup] Port check: PASS (bound to 3000)
 Server running on http://localhost:3000/
+5:51:51 PM [tsx] change in ./server/_core/ebay.ts Restarting...
+[shutdown] Received SIGTERM, closing server...
+[shutdown] Clean exit.
+c[OAuth] Initialized with baseURL: https://api.manus.im
+[dotenv@17.2.3] injecting env (12) from .env -- tip: ⚙️  write to custom object with { processEnv: myObject }
+[startup] Environment check: PASS (all required variables present)
+[startup] Database check: PASS (connection verified)
+[startup] Port check: PASS (bound to 3000)
+Server running on http://localhost:3000/
