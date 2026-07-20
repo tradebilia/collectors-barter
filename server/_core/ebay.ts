@@ -110,34 +110,80 @@ export async function refreshAccessToken(refreshToken: string): Promise<EbayToke
 }
 
 /**
- * Get authenticated user info via the Commerce Identity API.
- * Returns username, userId, feedbackScore, feedbackPercentage, memberSince.
- * Requires scope: commerce.identity.readonly
+ * Get authenticated user info.
+ * 
+ * Strategy: Use the Identity API for username/userId, then use the Trading API
+ * GetUser call for feedbackScore and positiveFeedbackPercent (since the Identity
+ * API does NOT return feedback data).
  */
 export async function getUserInfo(accessToken: string): Promise<EbayUserInfo> {
-  const response = await fetch(EBAY_IDENTITY_URL, {
+  // Step 1: Get username and userId from the Identity API
+  const identityResponse = await fetch(EBAY_IDENTITY_URL, {
     headers: {
       Authorization: `Bearer ${accessToken}`,
       "Content-Type": "application/json",
     },
   });
 
-  if (!response.ok) {
-    const body = await response.text();
-    throw new Error(`Failed to fetch eBay user info (${response.status}): ${body}`);
+  if (!identityResponse.ok) {
+    const body = await identityResponse.text();
+    throw new Error(`Failed to fetch eBay user info (${identityResponse.status}): ${body}`);
   }
 
-  const data = await response.json();
+  const identityData = await identityResponse.json();
+  const username = identityData.username || identityData.userId;
+  const userId = identityData.userId;
 
-  // The Identity API returns: userId, username, accountType, userMarketplaces,
-  // registrationMarketplaceId, status, contact (name, email, phone, address)
-  // feedbackScore and positiveFeedbackPercent are also included in the response.
+  // Step 2: Get feedbackScore and positiveFeedbackPercent via Trading API GetUser
+  let feedbackScore = 0;
+  let feedbackPercentage = 0;
+  let memberSince = new Date();
+
+  try {
+    const getUserXml = `<?xml version="1.0" encoding="utf-8"?>
+<GetUserRequest xmlns="urn:ebay:apis:eBLBaseComponents">
+  <RequesterCredentials>
+    <eBayAuthToken>${accessToken}</eBayAuthToken>
+  </RequesterCredentials>
+  <DetailLevel>ReturnAll</DetailLevel>
+</GetUserRequest>`;
+
+    const tradingResponse = await fetch(EBAY_TRADING_API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "text/xml",
+        "X-EBAY-API-COMPATIBILITY-LEVEL": "967",
+        "X-EBAY-API-CALL-NAME": "GetUser",
+        "X-EBAY-API-SITEID": "0",
+        "X-EBAY-API-APP-NAME": ENV.ebayClientId,
+      },
+      body: getUserXml,
+    });
+
+    if (tradingResponse.ok) {
+      const xmlText = await tradingResponse.text();
+      const getXmlVal = (tag: string) => {
+        const m = xmlText.match(new RegExp(`<${tag}>(.*?)</${tag}>`));
+        return m ? m[1] : undefined;
+      };
+
+      feedbackScore = parseInt(getXmlVal("FeedbackScore") || "0", 10);
+      feedbackPercentage = parseFloat(getXmlVal("PositiveFeedbackPercent") || "0");
+      const regDateStr = getXmlVal("RegistrationDate");
+      if (regDateStr) memberSince = new Date(regDateStr);
+    } else {
+      console.error("Trading API GetUser failed, using defaults for feedback");
+    }
+  } catch (err) {
+    console.error("Failed to fetch Trading API user data:", err);
+  }
+
   return {
-    username: data.username || data.userId,
-    userId: data.userId,
-    feedbackScore: data.feedbackScore || 0,
-    feedbackPercentage: data.positiveFeedbackPercent || 0,
-    memberSince: data.registrationDate ? new Date(data.registrationDate) : new Date(),
+    username,
+    userId,
+    feedbackScore,
+    feedbackPercentage,
+    memberSince,
   };
 }
 
