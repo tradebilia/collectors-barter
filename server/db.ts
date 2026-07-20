@@ -507,7 +507,19 @@ export async function getMarketplaceFeed(
       .select({ value: sql<number>`count(distinct ${listings.ownerId})` })
       .from(listings)
       .where(and(...whereClauses)),
-    db.select({ value: sql<number>`count(*)` }).from(tradeProposals).where(eq(tradeProposals.status, "completed")),
+    // Count completed trades where ANY item on either side belongs to the filtered category
+    filters.category
+      ? db.select({ value: sql<number>`count(distinct ${tradeProposals.id})` })
+          .from(tradeProposals)
+          .innerJoin(listings, sql`(
+            ${listings.id} = ${tradeProposals.requestedListingId}
+            OR ${listings.id} IN (SELECT offeredListingId FROM tradeProposalItems WHERE proposalId = ${tradeProposals.id})
+          )`)
+          .where(and(
+            eq(tradeProposals.status, "completed"),
+            eq(listings.category, filters.category as any)
+          ))
+      : db.select({ value: sql<number>`count(*)` }).from(tradeProposals).where(eq(tradeProposals.status, "completed")),
   ]);
 
   return {
