@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -9,23 +9,53 @@ export function EbayConnection() {
   const [isConnecting, setIsConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
+
   const ebayInfo = trpc.ebay.getInfo.useQuery();
-  const disconnectMutation = trpc.ebay.disconnect.useMutation();
+  const disconnectMutation = trpc.ebay.disconnect.useMutation({
+    onSuccess: () => ebayInfo.refetch(),
+    onError: () => setError("Failed to disconnect eBay account"),
+  });
+
+  // Imperatively fetch the auth URL (correct pattern — can't call useQuery inside a handler)
+  const utils = trpc.useUtils();
+
+  // Handle post-redirect success/error messages from URL params
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const ebayStatus = params.get("ebay");
+    if (ebayStatus === "connected") {
+      setSuccessMsg("eBay account connected successfully!");
+      ebayInfo.refetch();
+      const url = new URL(window.location.href);
+      url.searchParams.delete("ebay");
+      url.searchParams.delete("reason");
+      window.history.replaceState({}, "", url.toString());
+    } else if (ebayStatus === "error") {
+      const reason = params.get("reason") || "unknown";
+      setError(`eBay connection failed (${reason}). Please try again.`);
+      const url = new URL(window.location.href);
+      url.searchParams.delete("ebay");
+      url.searchParams.delete("reason");
+      window.history.replaceState({}, "", url.toString());
+    }
+  }, []);
 
   const handleConnect = async () => {
     try {
       setIsConnecting(true);
       setError(null);
+      setSuccessMsg(null);
 
-      // Get auth URL
       const state = Math.random().toString(36).substring(7);
       sessionStorage.setItem("ebayOAuthState", state);
 
-      const { data: authUrlResponse } = await trpc.ebay.getAuthUrl.useQuery({ state });
-      
-      // Redirect to eBay OAuth
-      if (authUrlResponse) {
-        window.location.href = authUrlResponse;
+      // Fetch the auth URL imperatively (not via useQuery hook)
+      const authUrl = await utils.ebay.getAuthUrl.fetch({ state });
+      if (authUrl) {
+        window.location.href = authUrl;
+      } else {
+        throw new Error("No auth URL returned");
       }
     } catch (err) {
       setError("Failed to start eBay connection. Please try again.");
@@ -33,14 +63,7 @@ export function EbayConnection() {
     }
   };
 
-  const handleDisconnect = async () => {
-    try {
-      await disconnectMutation.mutateAsync();
-      ebayInfo.refetch();
-    } catch (err) {
-      setError("Failed to disconnect eBay account");
-    }
-  };
+  const handleDisconnect = () => disconnectMutation.mutate();
 
   const isConnected = !!ebayInfo.data?.ebayUsername;
   const feedbackPercentage = ebayInfo.data?.ebayFeedbackPercentage;
@@ -52,6 +75,12 @@ export function EbayConnection() {
         <Alert variant="destructive" className="rounded-lg">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+      {successMsg && (
+        <Alert className="rounded-lg border-green-200 bg-green-50">
+          <CheckCircle2 className="h-4 w-4 text-green-600" />
+          <AlertDescription className="text-green-800">{successMsg}</AlertDescription>
         </Alert>
       )}
 
@@ -72,8 +101,8 @@ export function EbayConnection() {
               )}
             </div>
             <p className="text-xs text-slate-600">
-              {isConnected 
-                ? `${ebayInfo.data?.ebayUsername} (${ebayInfo.data?.ebayFeedbackScore} feedback, ${feedbackPercentage?.toFixed(1)}% positive)`
+              {isConnected
+                ? `${ebayInfo.data?.ebayUsername} · ${ebayInfo.data?.ebayFeedbackScore} feedback · ${feedbackPercentage?.toFixed(1)}% positive`
                 : "Not connected"}
             </p>
           </div>

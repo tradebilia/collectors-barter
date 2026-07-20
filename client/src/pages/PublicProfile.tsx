@@ -9,6 +9,7 @@ import { resolveTradebiliaListingImage } from "@/lib/listingImages";
 import { MessageSquare, Star, Loader2, CalendarDays, Activity, ShoppingBag, CheckCircle2, MapPin, UserPlus, UserCheck } from "lucide-react";
 import { TopBar } from "@/components/TopBar";
 import { CategoryBar } from "@/components/CategoryBar";
+import { EbayProfileBadge } from "@/components/EbayProfileBadge";
 import { useParams, Link } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { toast } from "sonner";
@@ -335,10 +336,20 @@ export default function PublicProfile() {
                   <div className="space-y-2">
                     {connectedPlatforms.map(p => (
                       <div key={p.key} className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium ${p.color}`}>
-                        <CheckCircle2 className="h-4 w-4 flex-shrink-0" />
-                        {p.label}
-                        {p.key === "ebay" && user?.ebayUsername && (
-                          <span className="ml-auto text-xs opacity-70">{user.ebayUsername} · {user.ebayFeedbackScore} feedback</span>
+                        {p.key === "ebay" && user?.ebayUsername ? (
+                          <EbayProfileBadge
+                            userId={user.id}
+                            ebayUsername={user.ebayUsername}
+                            ebayFeedbackScore={user.ebayFeedbackScore ?? null}
+                            ebayFeedbackPercentage={user.ebayFeedbackPercentage != null ? Number(user.ebayFeedbackPercentage) : null}
+                            ebayMemberSince={user.ebayMemberSince ?? null}
+                            ebayConnectedAt={user.ebayConnectedAt ?? null}
+                          />
+                        ) : (
+                          <>
+                            <CheckCircle2 className="h-4 w-4 flex-shrink-0" />
+                            {p.label}
+                          </>
                         )}
                       </div>
                     ))}

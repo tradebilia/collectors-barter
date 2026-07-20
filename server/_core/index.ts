@@ -90,6 +90,36 @@ async function startServer() {
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
   registerStorageProxy(app);
   registerOAuthRoutes(app);
+
+  // eBay OAuth callback — handles redirect from eBay after user authorizes
+  app.get("/api/ebay/callback", async (req: any, res: any) => {
+    const code = req.query.code as string | undefined;
+    const state = req.query.state as string | undefined;
+
+    if (!code) {
+      return res.redirect(302, "/account?ebay=error&reason=no_code");
+    }
+
+    try {
+      // Identify the logged-in user from session cookie
+      const { customAuth } = await import("./customAuth");
+      const sessionCookie = req.cookies?.["session"] || req.headers?.cookie?.split("session=")?.[1]?.split(";")?.[0];
+      const user = await customAuth.getUserFromSession(sessionCookie);
+
+      if (!user) {
+        return res.redirect(302, "/account?ebay=error&reason=not_logged_in");
+      }
+
+      const { handleEbayCallback } = await import("./ebayCallback");
+      await handleEbayCallback(code, user.id);
+
+      return res.redirect(302, "/account?ebay=connected&tab=integrations");
+    } catch (error) {
+      console.error("[eBay Callback] Error:", error);
+      return res.redirect(302, "/account?ebay=error&reason=callback_failed");
+    }
+  });
+
   // tRPC API
   app.use(
     "/api/trpc",
