@@ -2621,6 +2621,16 @@ export async function storeEbayFeedback(input: {
   feedbackDate: Date;
 }): Promise<void> {
   const db = await requireDb();
+  // Prevent duplicates on reconnect — skip if this feedbackId already stored for this user
+  const [existing] = await db
+    .select({ id: ebayFeedbackHistory.id })
+    .from(ebayFeedbackHistory)
+    .where(and(
+      eq(ebayFeedbackHistory.userId, input.userId),
+      eq(ebayFeedbackHistory.feedbackId, input.feedbackId)
+    ))
+    .limit(1);
+  if (existing) return;
   await db.insert(ebayFeedbackHistory).values({
     ...input,
     feedbackDate: toMysqlDateTime(input.feedbackDate),

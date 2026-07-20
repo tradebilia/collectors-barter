@@ -24,7 +24,7 @@ VITE_OAUTH_PORTAL_URL=https://oauth.manus.im
 # eBay Integration (Optional)
 EBAY_CLIENT_ID=your_ebay_client_id
 EBAY_CLIENT_SECRET=your_ebay_client_secret
-EBAY_REDIRECT_URI=http://localhost:3000/api/oauth/ebay/callback
+EBAY_REDIRECT_URI=http://localhost:3000/api/ebay/callback
 
 # Manus APIs
 BUILT_IN_FORGE_API_URL=https://api.manus.im
