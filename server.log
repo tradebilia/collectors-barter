@@ -368,3 +368,12 @@ Server running on http://localhost:3000/
 [startup] Database check: PASS (connection verified)
 [startup] Port check: PASS (bound to 3000)
 Server running on http://localhost:3000/
+5:40:44 PM [tsx] change in ./server/_core/index.ts Restarting...
+[shutdown] Received SIGTERM, closing server...
+[shutdown] Clean exit.
+c[OAuth] Initialized with baseURL: https://api.manus.im
+[dotenv@17.2.3] injecting env (12) from .env -- tip: 🛠️  run anywhere with `dotenvx run -- yourcommand`
+[startup] Environment check: PASS (all required variables present)
+[startup] Database check: PASS (connection verified)
+[startup] Port check: PASS (bound to 3000)
+Server running on http://localhost:3000/

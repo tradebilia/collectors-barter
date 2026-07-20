@@ -66,7 +66,11 @@ export default function AccountSettings() {
   const saveCommunicationsMutation = trpc.market.saveCommunications.useMutation();
   const savePreferencesMutation = trpc.market.savePreferences.useMutation();
 
-  const [activeTab, setActiveTab] = useState<"profile" | "security" | "integrations" | "communications" | "preferences">("profile");
+  // Read ?tab= from URL to support redirects (e.g., from eBay OAuth callback)
+  const validTabs = ["profile", "security", "integrations", "communications", "preferences"] as const;
+  const urlTab = new URLSearchParams(window.location.search).get("tab");
+  const initialTab = validTabs.includes(urlTab as any) ? (urlTab as typeof validTabs[number]) : "profile";
+  const [activeTab, setActiveTab] = useState<"profile" | "security" | "integrations" | "communications" | "preferences">(initialTab);
   
   // Profile Form State
   const [confirmationDialog, setConfirmationDialog] = useState<{

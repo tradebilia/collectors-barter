@@ -97,7 +97,7 @@ async function startServer() {
     const state = req.query.state as string | undefined;
 
     if (!code) {
-      return res.redirect(302, "/account?ebay=error&reason=no_code");
+      return res.redirect(302, "/account-settings?ebay=error&reason=no_code");
     }
 
     try {
@@ -115,16 +115,16 @@ async function startServer() {
       const user = await customAuth.getUserFromSession(sessionCookie);
 
       if (!user) {
-        return res.redirect(302, "/account?ebay=error&reason=not_logged_in");
+        return res.redirect(302, "/account-settings?ebay=error&reason=not_logged_in");
       }
 
       const { handleEbayCallback } = await import("./ebayCallback");
       await handleEbayCallback(code, user.id);
 
-      return res.redirect(302, "/account?ebay=connected&tab=integrations");
+      return res.redirect(302, "/account-settings?ebay=connected&tab=integrations");
     } catch (error) {
       console.error("[eBay Callback] Error:", error);
-      return res.redirect(302, "/account?ebay=error&reason=callback_failed");
+      return res.redirect(302, "/account-settings?ebay=error&reason=callback_failed");
     }
   });
 
