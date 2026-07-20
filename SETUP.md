@@ -203,6 +203,72 @@ Logos are stored in S3 and referenced in `CategoryPage.tsx`
 
 ---
 
+## Pre-Launch Checklist (Before Going Live)
+
+This section documents everything that must be addressed before Tradebilia is launched to the public.
+
+---
+
+### eBay Integration: Switch from Sandbox to Production
+
+The eBay integration is currently configured for the **Sandbox** (testing) environment. Before going live, every item below must be updated.
+
+#### 1. eBay Developer Portal
+
+| Item | Action Required |
+|---|---|
+| **App ID (Client ID)** | Replace Sandbox App ID with your Production App ID |
+| **Cert ID (Client Secret)** | Replace Sandbox Cert ID with your Production Cert ID |
+| **Auth Accepted URL** | Update to `https://yourdomain.com/api/ebay/callback` |
+| **Auth Declined URL** | Update to `https://yourdomain.com/api/ebay/callback` |
+| **RuName** | Register a new Production RuName and note it down |
+| **Application Review** | Submit your app for eBay's production approval process (required for full API access) |
+
+#### 2. `.env` File (Server Environment Variables)
+
+Update the following three variables with your Production credentials:
+
+```env
+EBAY_CLIENT_ID=your_production_app_id
+EBAY_CLIENT_SECRET=your_production_cert_id
+EBAY_REDIRECT_URI=https://yourdomain.com/api/ebay/callback
+```
+
+#### 3. Code Changes in `server/_core/ebay.ts`
+
+Switch all eBay API URLs from Sandbox to Production:
+
+| Current (Sandbox) | Replace With (Production) |
+|---|---|
+| `https://auth.sandbox.ebay.com/oauth2/authorize` | `https://auth.ebay.com/oauth2/authorize` |
+| `https://api.sandbox.ebay.com/identity/v1/oauth2/token` | `https://api.ebay.com/identity/v1/oauth2/token` |
+| `https://apiz.sandbox.ebay.com/commerce/identity/v1/user/` | `https://apiz.ebay.com/commerce/identity/v1/user/` |
+| `https://api.sandbox.ebay.com/ws/api.dll` | `https://api.ebay.com/ws/api.dll` |
+
+Also update the hardcoded `redirect_uri` RuName in `getEbayAuthUrl()` to your Production RuName.
+
+---
+
+### Other Pre-Launch Items
+
+| Item | Status | Notes |
+|---|---|---|
+| **Custom Domain** | Pending | Register and configure `tradebilia.com` |
+| **SSL Certificate** | Pending | Required for all OAuth redirects (must be `https://`) |
+| **PayPal Integration** | Not started | Connect button exists but is not functional |
+| **Facebook Integration** | Not started | Connect button exists but is not functional |
+| **LinkedIn Integration** | Not started | Connect button exists but is not functional |
+| **Whatnot Integration** | Not started | Connect button exists but is not functional |
+| **Email/SMS OTP** | Deferred | Needs API keys (e.g., Twilio, SendGrid) |
+| **Analytics** | Pending | Update `VITE_ANALYTICS_ENDPOINT` and `VITE_ANALYTICS_WEBSITE_ID` with real values |
+| **Privacy Policy URL** | Pending | Required by eBay and other integrations; create a `/privacy` page |
+| **Terms of Service** | Pending | Required before public launch |
+| **TypeScript Errors** | ~40 remaining | Run `pnpm tsc --noEmit` and resolve all errors |
+| **Admin Account** | Pending | Set `OWNER_OPEN_ID` in `.env` to the correct admin user ID |
+| **Remove Sandbox Data** | Pending | Clear all test users and test listings from the database before launch |
+
+---
+
 ## Deployment
 
 ### Manus Hosting (Recommended)

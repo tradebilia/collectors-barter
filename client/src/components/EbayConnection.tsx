@@ -67,7 +67,7 @@ export function EbayConnection() {
 
   const isConnected = !!ebayInfo.data?.ebayUsername;
   const feedbackPercentage = ebayInfo.data?.ebayFeedbackPercentage;
-  const isLowFeedback = feedbackPercentage && feedbackPercentage < 95;
+  const isLowFeedback = feedbackPercentage != null && feedbackPercentage < 95;
 
   return (
     <div className="space-y-3">
