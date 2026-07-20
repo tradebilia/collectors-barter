@@ -133,10 +133,17 @@ export default function PublicProfile() {
   if (preferredCategoriesRaw && preferredCategoriesRaw !== 'NULL') {
     try { preferredCategories = JSON.parse(preferredCategoriesRaw); } catch { preferredCategories = []; }
   }
-  const categoryLabels: Record<string, string> = {
-    comics: 'Comics', sports_cards: 'Sports Cards', vintage_toys: 'Vintage Toys',
-    video_games: 'Video Games', stamps: 'Stamps', coins: 'Coins',
-    pokemon: 'Pokémon', movies: 'Movies', autographs: 'Autographs', disney_pins: 'Disney Pins',
+  const categoryMeta: Record<string, { label: string; bg: string; text: string; border: string }> = {
+    comics:       { label: 'Comics',       bg: 'bg-rose-950/10',    text: 'text-rose-700',    border: 'border-rose-300' },
+    sports_cards: { label: 'Sports Cards', bg: 'bg-teal-50',        text: 'text-[#0e5766]',   border: 'border-[#0e5766]/30' },
+    vintage_toys: { label: 'Vintage Toys', bg: 'bg-[#556a4d]/10',   text: 'text-[#3d5237]',   border: 'border-[#556a4d]/40' },
+    video_games:  { label: 'Video Games',  bg: 'bg-green-950/10',   text: 'text-[#3a9e1c]',   border: 'border-[#68dc43]/40' },
+    stamps:       { label: 'Stamps',       bg: 'bg-purple-50',      text: 'text-[#5d3e79]',   border: 'border-[#5d3e79]/30' },
+    coins:        { label: 'Coins',        bg: 'bg-amber-50',       text: 'text-[#86663b]',   border: 'border-[#86663b]/30' },
+    pokemon:      { label: 'Pokémon',      bg: 'bg-yellow-50',      text: 'text-[#1f4ca4]',   border: 'border-[#1f4ca4]/30' },
+    movies:       { label: 'Movies',       bg: 'bg-red-50',         text: 'text-[#8a2d24]',   border: 'border-[#8a2d24]/30' },
+    autographs:   { label: 'Autographs',   bg: 'bg-stone-100',      text: 'text-[#6a5744]',   border: 'border-[#6a5744]/30' },
+    disney_pins:  { label: 'Disney Pins',  bg: 'bg-pink-50',        text: 'text-[#6a3fa6]',   border: 'border-[#6a3fa6]/30' },
   };
   const memberSince = user?.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short' }) : null;
   const lastSeen = user?.lastActivityAt ? new Date(user.lastActivityAt) : null;
@@ -347,22 +354,26 @@ export default function PublicProfile() {
             <div className="lg:col-span-2 space-y-6">
               {/* Bio card */}
               {(bio || preferredCategories.length > 0) && (
-                <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
+                <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-5">
                   {bio && (
                     <div>
-                      <h2 className="text-base font-semibold text-slate-950 mb-2">About {displayName}</h2>
+                      <h2 className="text-xl font-bold text-slate-950 mb-2">About {displayName}</h2>
                       <p className="text-slate-700 leading-relaxed text-sm">{bio}</p>
                     </div>
                   )}
                   {preferredCategories.length > 0 && (
                     <div>
-                      <h2 className="text-base font-semibold text-slate-950 mb-2">Collecting Interests</h2>
+                      <h2 className="text-xl font-bold text-slate-950 mb-3">Collecting Interests</h2>
                       <div className="flex flex-wrap gap-2">
-                        {preferredCategories.map((cat) => (
-                          <span key={cat} className="inline-flex items-center rounded-full bg-[#7f31ff]/10 px-3 py-1 text-xs font-semibold text-[#7f31ff] border border-[#7f31ff]/20">
-                            {categoryLabels[cat] || cat}
-                          </span>
-                        ))}
+                        {preferredCategories.map((cat) => {
+                          const meta = categoryMeta[cat];
+                          if (!meta) return null;
+                          return (
+                            <span key={cat} className={`inline-flex items-center rounded-full px-3 py-1.5 text-xs font-bold border ${meta.bg} ${meta.text} ${meta.border}`}>
+                              {meta.label}
+                            </span>
+                          );
+                        })}
                       </div>
                     </div>
                   )}

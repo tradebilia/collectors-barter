@@ -321,3 +321,5 @@ Server running on http://localhost:3000/
 ]
 12:16:36 AM [vite] (client) hmr update /src/pages/AccountSettings.tsx, /src/index.css
 12:16:44 AM [vite] (client) hmr update /src/pages/AccountSettings.tsx, /src/index.css
+12:19:00 AM [vite] (client) hmr update /src/pages/PublicProfile.tsx, /src/index.css
+12:19:12 AM [vite] (client) hmr update /src/pages/PublicProfile.tsx, /src/index.css
