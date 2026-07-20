@@ -134,16 +134,16 @@ export default function PublicProfile() {
     try { preferredCategories = JSON.parse(preferredCategoriesRaw); } catch { preferredCategories = []; }
   }
   const categoryMeta: Record<string, { label: string; bg: string; text: string; border: string }> = {
-    comics:       { label: 'Comics',       bg: 'bg-rose-950/10',    text: 'text-rose-700',    border: 'border-rose-300' },
-    sports_cards: { label: 'Sports Cards', bg: 'bg-teal-50',        text: 'text-[#0e5766]',   border: 'border-[#0e5766]/30' },
-    vintage_toys: { label: 'Vintage Toys', bg: 'bg-[#556a4d]/10',   text: 'text-[#3d5237]',   border: 'border-[#556a4d]/40' },
-    video_games:  { label: 'Video Games',  bg: 'bg-green-950/10',   text: 'text-[#3a9e1c]',   border: 'border-[#68dc43]/40' },
-    stamps:       { label: 'Stamps',       bg: 'bg-purple-50',      text: 'text-[#5d3e79]',   border: 'border-[#5d3e79]/30' },
-    coins:        { label: 'Coins',        bg: 'bg-amber-50',       text: 'text-[#86663b]',   border: 'border-[#86663b]/30' },
-    pokemon:      { label: 'Pokémon',      bg: 'bg-yellow-50',      text: 'text-[#1f4ca4]',   border: 'border-[#1f4ca4]/30' },
-    movies:       { label: 'Movies',       bg: 'bg-red-50',         text: 'text-[#8a2d24]',   border: 'border-[#8a2d24]/30' },
-    autographs:   { label: 'Autographs',   bg: 'bg-stone-100',      text: 'text-[#6a5744]',   border: 'border-[#6a5744]/30' },
-    disney_pins:  { label: 'Disney Pins',  bg: 'bg-pink-50',        text: 'text-[#6a3fa6]',   border: 'border-[#6a3fa6]/30' },
+    comics:       { label: 'Comics',       bg: 'bg-rose-100',       text: 'text-slate-950', border: 'border-slate-950' },
+    sports_cards: { label: 'Sports Cards', bg: 'bg-teal-100',       text: 'text-slate-950', border: 'border-slate-950' },
+    vintage_toys: { label: 'Vintage Toys', bg: 'bg-[#d4e0ce]',      text: 'text-slate-950', border: 'border-slate-950' },
+    video_games:  { label: 'Video Games',  bg: 'bg-green-100',      text: 'text-slate-950', border: 'border-slate-950' },
+    stamps:       { label: 'Stamps',       bg: 'bg-purple-100',     text: 'text-slate-950', border: 'border-slate-950' },
+    coins:        { label: 'Coins',        bg: 'bg-amber-100',      text: 'text-slate-950', border: 'border-slate-950' },
+    pokemon:      { label: 'Pokémon',      bg: 'bg-yellow-100',     text: 'text-slate-950', border: 'border-slate-950' },
+    movies:       { label: 'Movies',       bg: 'bg-red-100',        text: 'text-slate-950', border: 'border-slate-950' },
+    autographs:   { label: 'Autographs',   bg: 'bg-stone-200',      text: 'text-slate-950', border: 'border-slate-950' },
+    disney_pins:  { label: 'Disney Pins',  bg: 'bg-pink-100',       text: 'text-slate-950', border: 'border-slate-950' },
   };
   const memberSince = user?.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short' }) : null;
   const lastSeen = user?.lastActivityAt ? new Date(user.lastActivityAt) : null;
