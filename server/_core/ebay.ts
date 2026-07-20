@@ -240,7 +240,6 @@ export async function getUserFeedback(accessToken: string, ebayUserId: string): 
         return m ? m[1] : undefined;
       };
 
-      const ratingStr = (get("Role") || "").toLowerCase();
       const commentTypeStr = (get("CommentType") || "").toLowerCase();
       const rating: 'positive' | 'neutral' | 'negative' =
         commentTypeStr === "positive" ? "positive" :
