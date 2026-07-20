@@ -1401,6 +1401,11 @@ export const appRouter = router({
     getFeedback: protectedProcedure.query(async ({ ctx }) => {
       return await getUserEbayFeedback(ctx.user.id);
     }),
+    getPublicFeedback: publicProcedure
+      .input(z.object({ userId: z.number().int().positive() }))
+      .query(async ({ input }) => {
+        return await getUserEbayFeedback(input.userId);
+      }),
 
     disconnect: protectedProcedure.mutation(async ({ ctx }) => {
       const db = await requireDb();

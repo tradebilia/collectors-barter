@@ -341,3 +341,30 @@ Server running on http://localhost:3000/
 [startup] Database check: PASS (connection verified)
 [startup] Port check: PASS (bound to 3000)
 Server running on http://localhost:3000/
+5:22:25 PM [tsx] change in ./server/_core/ebay.ts Restarting...
+[shutdown] Received SIGTERM, closing server...
+[shutdown] Clean exit.
+c[OAuth] Initialized with baseURL: https://api.manus.im
+[dotenv@17.2.3] injecting env (12) from .env -- tip: 🔐 encrypt with Dotenvx: https://dotenvx.com
+[startup] Environment check: PASS (all required variables present)
+[startup] Database check: PASS (connection verified)
+[startup] Port check: PASS (bound to 3000)
+Server running on http://localhost:3000/
+5:22:44 PM [tsx] change in ./server/_core/index.ts Restarting...
+[shutdown] Received SIGTERM, closing server...
+[shutdown] Clean exit.
+c[OAuth] Initialized with baseURL: https://api.manus.im
+[dotenv@17.2.3] injecting env (12) from .env -- tip: ⚙️  specify custom .env file path with { path: '/custom/path/.env' }
+[startup] Environment check: PASS (all required variables present)
+[startup] Database check: PASS (connection verified)
+[startup] Port check: PASS (bound to 3000)
+Server running on http://localhost:3000/
+5:24:22 PM [tsx] change in ./server/routers.ts Restarting...
+[shutdown] Received SIGTERM, closing server...
+[shutdown] Clean exit.
+c[OAuth] Initialized with baseURL: https://api.manus.im
+[dotenv@17.2.3] injecting env (12) from .env -- tip: 🔐 prevent committing .env to code: https://dotenvx.com/precommit
+[startup] Environment check: PASS (all required variables present)
+[startup] Database check: PASS (connection verified)
+[startup] Port check: PASS (bound to 3000)
+Server running on http://localhost:3000/

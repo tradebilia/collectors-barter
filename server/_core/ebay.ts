@@ -1,8 +1,11 @@
 import { ENV } from "./env";
 
-const EBAY_API_BASE = "https://api.ebay.com";
 const EBAY_AUTH_URL = "https://auth.ebay.com/oauth2/authorize";
 const EBAY_TOKEN_URL = "https://api.ebay.com/identity/v1/oauth2/token";
+// Commerce Identity API — correct endpoint for authenticated user info
+const EBAY_IDENTITY_URL = "https://apiz.ebay.com/commerce/identity/v1/user/";
+// Trading API — XML-based, the only way to get individual feedback entries
+const EBAY_TRADING_API_URL = "https://api.ebay.com/ws/api.dll";
 
 export interface EbayTokenResponse {
   access_token: string;
@@ -30,14 +33,19 @@ export interface EbayFeedback {
 }
 
 /**
- * Generate eBay OAuth authorization URL
+ * Generate eBay OAuth authorization URL.
+ * Scopes:
+ *   - commerce.identity.readonly: get username, member since, feedback score
  */
 export function getEbayAuthUrl(state: string): string {
   const params = new URLSearchParams({
     client_id: ENV.ebayClientId,
     response_type: "code",
     redirect_uri: ENV.ebayRedirectUri,
-    scope: "https://api.ebay.com/oauth/api_scope https://api.ebay.com/oauth/api_scope/sell.account.readonly",
+    scope: [
+      "https://api.ebay.com/oauth/api_scope",
+      "https://api.ebay.com/oauth/api_scope/commerce.identity.readonly",
+    ].join(" "),
     state,
   });
 
@@ -45,7 +53,7 @@ export function getEbayAuthUrl(state: string): string {
 }
 
 /**
- * Exchange authorization code for access token
+ * Exchange authorization code for access + refresh tokens.
  */
 export async function exchangeCodeForToken(code: string): Promise<EbayTokenResponse> {
   const params = new URLSearchParams({
@@ -64,19 +72,24 @@ export async function exchangeCodeForToken(code: string): Promise<EbayTokenRespo
   });
 
   if (!response.ok) {
-    throw new Error(`eBay token exchange failed: ${response.statusText}`);
+    const body = await response.text();
+    throw new Error(`eBay token exchange failed (${response.status}): ${body}`);
   }
 
   return response.json();
 }
 
 /**
- * Refresh access token using refresh token
+ * Refresh access token using refresh token.
  */
 export async function refreshAccessToken(refreshToken: string): Promise<EbayTokenResponse> {
   const params = new URLSearchParams({
     grant_type: "refresh_token",
     refresh_token: refreshToken,
+    scope: [
+      "https://api.ebay.com/oauth/api_scope",
+      "https://api.ebay.com/oauth/api_scope/commerce.identity.readonly",
+    ].join(" "),
   });
 
   const response = await fetch(EBAY_TOKEN_URL, {
@@ -89,17 +102,20 @@ export async function refreshAccessToken(refreshToken: string): Promise<EbayToke
   });
 
   if (!response.ok) {
-    throw new Error(`eBay token refresh failed: ${response.statusText}`);
+    const body = await response.text();
+    throw new Error(`eBay token refresh failed (${response.status}): ${body}`);
   }
 
   return response.json();
 }
 
 /**
- * Get user info from eBay (requires access token)
+ * Get authenticated user info via the Commerce Identity API.
+ * Returns username, userId, feedbackScore, feedbackPercentage, memberSince.
+ * Requires scope: commerce.identity.readonly
  */
 export async function getUserInfo(accessToken: string): Promise<EbayUserInfo> {
-  const response = await fetch(`${EBAY_API_BASE}/sell/account/v1/user`, {
+  const response = await fetch(EBAY_IDENTITY_URL, {
     headers: {
       Authorization: `Bearer ${accessToken}`,
       "Content-Type": "application/json",
@@ -107,55 +123,108 @@ export async function getUserInfo(accessToken: string): Promise<EbayUserInfo> {
   });
 
   if (!response.ok) {
-    throw new Error(`Failed to fetch eBay user info: ${response.statusText}`);
+    const body = await response.text();
+    throw new Error(`Failed to fetch eBay user info (${response.status}): ${body}`);
   }
 
   const data = await response.json();
 
+  // The Identity API returns: userId, username, accountType, userMarketplaces,
+  // registrationMarketplaceId, status, contact (name, email, phone, address)
+  // feedbackScore and positiveFeedbackPercent are also included in the response.
   return {
-    username: data.username,
+    username: data.username || data.userId,
     userId: data.userId,
     feedbackScore: data.feedbackScore || 0,
     feedbackPercentage: data.positiveFeedbackPercent || 0,
-    memberSince: new Date(data.memberSince),
+    memberSince: data.registrationDate ? new Date(data.registrationDate) : new Date(),
   };
 }
 
 /**
- * Get user feedback from eBay (last 3 years)
+ * Get individual feedback entries via the eBay Trading API (XML).
+ * The REST Sell Feedback API only covers feedback sellers give to buyers —
+ * to read feedback RECEIVED by a user, the Trading API (GetFeedback) is required.
+ * Returns up to 200 most recent feedback entries.
  */
 export async function getUserFeedback(accessToken: string, ebayUserId: string): Promise<EbayFeedback[]> {
-  // eBay Feedback API endpoint
-  const threeYearsAgo = new Date();
-  threeYearsAgo.setFullYear(threeYearsAgo.getFullYear() - 3);
+  if (!ENV.ebayClientId) return [];
 
-  const params = new URLSearchParams({
-    filter: `feedbackDateFrom:${threeYearsAgo.toISOString()}`,
-    limit: "200", // Max feedback items to fetch
-  });
+  const xmlBody = `<?xml version="1.0" encoding="utf-8"?>
+<GetFeedbackRequest xmlns="urn:ebay:apis:eBLBaseComponents">
+  <RequesterCredentials>
+    <eBayAuthToken>${accessToken}</eBayAuthToken>
+  </RequesterCredentials>
+  <UserID>${ebayUserId}</UserID>
+  <FeedbackType>FeedbackReceivedAsSeller</FeedbackType>
+  <DetailLevel>ReturnAll</DetailLevel>
+  <Pagination>
+    <EntriesPerPage>200</EntriesPerPage>
+    <PageNumber>1</PageNumber>
+  </Pagination>
+</GetFeedbackRequest>`;
 
-  const response = await fetch(`${EBAY_API_BASE}/sell/feedback/v1/get_feedback_for_target?${params}`, {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      "Content-Type": "application/json",
-    },
-  });
+  try {
+    const response = await fetch(EBAY_TRADING_API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "text/xml",
+        "X-EBAY-API-COMPATIBILITY-LEVEL": "967",
+        "X-EBAY-API-CALL-NAME": "GetFeedback",
+        "X-EBAY-API-SITEID": "0",
+        "X-EBAY-API-APP-NAME": ENV.ebayClientId,
+      },
+      body: xmlBody,
+    });
 
-  if (!response.ok) {
-    console.error(`Failed to fetch eBay feedback: ${response.statusText}`);
+    if (!response.ok) {
+      console.error(`eBay Trading API feedback request failed: ${response.status}`);
+      return [];
+    }
+
+    const xmlText = await response.text();
+
+    // Parse feedback entries from XML response
+    const feedbackEntries: EbayFeedback[] = [];
+    const entryRegex = /<FeedbackDetail>([\s\S]*?)<\/FeedbackDetail>/g;
+    let match;
+
+    while ((match = entryRegex.exec(xmlText)) !== null) {
+      const entry = match[1];
+      const get = (tag: string) => {
+        const m = entry.match(new RegExp(`<${tag}>(.*?)<\/${tag}>`));
+        return m ? m[1] : undefined;
+      };
+
+      const ratingStr = (get("Role") || "").toLowerCase();
+      const commentTypeStr = (get("CommentType") || "").toLowerCase();
+      const rating: 'positive' | 'neutral' | 'negative' =
+        commentTypeStr === "positive" ? "positive" :
+        commentTypeStr === "negative" ? "negative" : "neutral";
+
+      const feedbackId = get("FeedbackID");
+      const commentText = get("CommentText");
+      const from = get("CommentingUser") || "Unknown";
+      const itemId = get("ItemID");
+      const itemTitle = get("ItemTitle");
+      const dateStr = get("CommentTime");
+
+      if (feedbackId && dateStr) {
+        feedbackEntries.push({
+          feedbackId,
+          rating,
+          comment: commentText,
+          from,
+          itemId,
+          itemTitle,
+          feedbackDate: new Date(dateStr),
+        });
+      }
+    }
+
+    return feedbackEntries;
+  } catch (error) {
+    console.error("Failed to fetch eBay feedback via Trading API:", error);
     return [];
   }
-
-  const data = await response.json();
-  const feedbackRecords = data.feedbackRecords || [];
-
-  return feedbackRecords.map((record: any) => ({
-    feedbackId: record.feedbackId,
-    rating: record.rating?.toLowerCase() as 'positive' | 'neutral' | 'negative',
-    comment: record.comment,
-    from: record.from?.username || "Unknown",
-    itemId: record.itemId,
-    itemTitle: record.itemTitle,
-    feedbackDate: new Date(record.feedbackDate),
-  }));
 }

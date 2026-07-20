@@ -103,7 +103,15 @@ async function startServer() {
     try {
       // Identify the logged-in user from session cookie
       const { customAuth } = await import("./customAuth");
-      const sessionCookie = req.cookies?.["session"] || req.headers?.cookie?.split("session=")?.[1]?.split(";")?.[0];
+      const COOKIE_NAME = "app_session_id";
+      // Parse cookie header manually (cookie-parser not installed)
+      const cookieHeader = req.headers?.cookie || "";
+      const cookies = new Map<string, string>();
+      cookieHeader.split(";").forEach((part: string) => {
+        const [k, ...v] = part.trim().split("=");
+        if (k) cookies.set(k.trim(), decodeURIComponent(v.join("=").trim()));
+      });
+      const sessionCookie = cookies.get(COOKIE_NAME);
       const user = await customAuth.getUserFromSession(sessionCookie);
 
       if (!user) {

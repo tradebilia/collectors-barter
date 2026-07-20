@@ -31,9 +31,11 @@ export function EbayProfileBadge({
   ebayConnectedAt,
 }: EbayProfileBadgeProps) {
   const [showDetails, setShowDetails] = useState(false);
-  const feedbackQuery = trpc.ebay.getFeedback.useQuery(undefined, {
-    enabled: showDetails && !!ebayUsername,
-  });
+  // Use the public endpoint so feedback is visible on any collector's public profile
+  const feedbackQuery = trpc.ebay.getPublicFeedback.useQuery(
+    { userId },
+    { enabled: showDetails && !!ebayUsername },
+  );
 
   if (!ebayUsername) {
     return null;
