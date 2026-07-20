@@ -211,9 +211,9 @@ export default function AccountSettings() {
         }
         setPreferences({
           preferredCategories: preferredCategoriesArray,
-          showProfile: (profile as any).showProfile ?? true,
-          hideInventoryValue: (profile as any).hideInventoryValue ?? false,
-          receiveContactRequests: (profile as any).receiveContactRequests ?? true,
+          showProfile: Boolean((profile as any).showProfile ?? 1),
+          hideInventoryValue: Boolean((profile as any).hideInventoryValue ?? 0),
+          receiveContactRequests: Boolean((profile as any).receiveContactRequests ?? 1),
         });
         preferencesInitializedRef.current = true;
       }

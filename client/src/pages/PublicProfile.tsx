@@ -126,6 +126,18 @@ export default function PublicProfile() {
   const displayName = profile.displayName || user?.displayName || "Collector";
   const avatarUrl = profile.avatarUrl || user?.avatarUrl;
   const bio = profile.bio;
+
+  // Parse preferred collecting categories
+  const preferredCategoriesRaw = (profile as any)?.preferredCategories;
+  let preferredCategories: string[] = [];
+  if (preferredCategoriesRaw && preferredCategoriesRaw !== 'NULL') {
+    try { preferredCategories = JSON.parse(preferredCategoriesRaw); } catch { preferredCategories = []; }
+  }
+  const categoryLabels: Record<string, string> = {
+    comics: 'Comics', sports_cards: 'Sports Cards', vintage_toys: 'Vintage Toys',
+    video_games: 'Video Games', stamps: 'Stamps', coins: 'Coins',
+    pokemon: 'Pokémon', movies: 'Movies', autographs: 'Autographs', disney_pins: 'Disney Pins',
+  };
   const memberSince = user?.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short' }) : null;
   const lastSeen = user?.lastActivityAt ? new Date(user.lastActivityAt) : null;
   const isRecentlyActive = lastSeen && (Date.now() - lastSeen.getTime()) < 7 * 24 * 60 * 60 * 1000;
@@ -334,10 +346,26 @@ export default function PublicProfile() {
             {/* Right column: Bio + Recent reviews */}
             <div className="lg:col-span-2 space-y-6">
               {/* Bio card */}
-              {bio && (
-                <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                  <h2 className="text-base font-semibold text-slate-950 mb-3">About {displayName}</h2>
-                  <p className="text-slate-700 leading-relaxed text-sm">{bio}</p>
+              {(bio || preferredCategories.length > 0) && (
+                <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
+                  {bio && (
+                    <div>
+                      <h2 className="text-base font-semibold text-slate-950 mb-2">About {displayName}</h2>
+                      <p className="text-slate-700 leading-relaxed text-sm">{bio}</p>
+                    </div>
+                  )}
+                  {preferredCategories.length > 0 && (
+                    <div>
+                      <h2 className="text-base font-semibold text-slate-950 mb-2">Collecting Interests</h2>
+                      <div className="flex flex-wrap gap-2">
+                        {preferredCategories.map((cat) => (
+                          <span key={cat} className="inline-flex items-center rounded-full bg-[#7f31ff]/10 px-3 py-1 text-xs font-semibold text-[#7f31ff] border border-[#7f31ff]/20">
+                            {categoryLabels[cat] || cat}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
               

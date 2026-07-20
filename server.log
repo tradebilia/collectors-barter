@@ -298,3 +298,5 @@ Server running on http://localhost:3000/
 [startup] Port check: PASS (bound to 3000)
 Server running on http://localhost:3000/
 [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+12:12:10 AM [vite] (client) hmr update /src/pages/AccountSettings.tsx, /src/index.css
+12:12:58 AM [vite] (client) hmr update /src/pages/PublicProfile.tsx, /src/index.css
