@@ -27,6 +27,7 @@ import {
 import { ENV } from "./_core/env";
 import { storagePut } from "./storage";
 import bcrypt from 'bcrypt';
+import { encrypt } from "./_core/crypto";
 
 export const collectibleCategories = ['comics', 'sports_cards', 'vintage_toys', 'video_games', 'stamps', 'coins', 'pokemon', 'movies', 'autographs', 'disney_pins'] as const;
 export const itemConditions = ['mint', 'near_mint', 'excellent', 'very_good', 'good', 'fair', 'poor'] as const;
@@ -2590,8 +2591,8 @@ export async function updateUserEbayInfo(input: {
       ebayNegative12mo: input.ebayNegative12mo,
       ebayIsStoreOwner: input.ebayIsStoreOwner ? 1 : 0,
       ebayConnectedAt: mysqlNow(),
-      ebayAccessToken: input.ebayAccessToken,
-      ebayRefreshToken: input.ebayRefreshToken,
+      ebayAccessToken: encrypt(input.ebayAccessToken),
+      ebayRefreshToken: encrypt(input.ebayRefreshToken),
       ebayTokenExpiresAt: input.ebayTokenExpiresAt ? toMysqlDateTime(input.ebayTokenExpiresAt) : undefined,
     })
     .where(eq(users.id, input.userId));

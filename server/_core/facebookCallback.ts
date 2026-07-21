@@ -8,6 +8,7 @@ import { requireDb } from "../db";
 import { users } from "../../drizzle/schema";
 import { eq } from "drizzle-orm";
 import { mysqlNow } from "../db";
+import { encrypt } from "./crypto";
 
 export async function handleFacebookCallback(code: string, userId: number): Promise<{
   success: true;
@@ -30,7 +31,7 @@ export async function handleFacebookCallback(code: string, userId: number): Prom
       facebookName: userInfo.name,
       facebookVerified: userInfo.verified ? 1 : 0,
       facebookConnectedAt: mysqlNow(),
-      facebookAccessToken: tokenData.access_token,
+      facebookAccessToken: encrypt(tokenData.access_token),
       facebookEmail: userInfo.email ?? null,
       facebookPicture: userInfo.picture ?? null,
       facebookLocation: userInfo.location ?? null,
