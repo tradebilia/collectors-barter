@@ -86,6 +86,7 @@ import { systemRouter } from "./_core/systemRouter";
 import { notifyOwner } from "./_core/notification";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { hashPassword, verifyPassword, isValidUsername, isValidPassword, isValidEmail } from "./_core/auth";
+import bcrypt from 'bcrypt';
 import { getUserByUsername, createUser, requireDb } from "./db";
 import { getEbayAuthUrl, exchangeCodeForToken, getUserInfo, getUserFeedback, refreshAccessToken } from "./_core/ebay";
 import { sdk } from "./_core/sdk";
@@ -583,9 +584,11 @@ export const appRouter = router({
       )
       .mutation(async ({ ctx, input }) => {
         const db = await requireDb();
+        // Hash the answer before storing — never save security answers as plain text
+        const hashedAnswer = await bcrypt.hash(input.securityAnswer.trim().toLowerCase(), 10);
         await db.update(userProfiles).set({
           securityQuestion: input.securityQuestion,
-          securityAnswer: input.securityAnswer,
+          securityAnswer: hashedAnswer,
         }).where(eq(userProfiles.userId, ctx.user.id));
         return { success: true };
       }),

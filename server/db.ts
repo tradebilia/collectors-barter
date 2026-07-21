@@ -26,6 +26,7 @@ import {
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 import { storagePut } from "./storage";
+import bcrypt from 'bcrypt';
 
 export const collectibleCategories = ['comics', 'sports_cards', 'vintage_toys', 'video_games', 'stamps', 'coins', 'pokemon', 'movies', 'autographs', 'disney_pins'] as const;
 export const itemConditions = ['mint', 'near_mint', 'excellent', 'very_good', 'good', 'fair', 'poor'] as const;
@@ -1906,7 +1907,12 @@ export async function updateProfile(
     updateSet.securityQuestion = input.securityQuestion?.trim() ? input.securityQuestion.trim().slice(0, 255) : null;
   }
   if (input.securityAnswer !== undefined) {
-    updateSet.securityAnswer = input.securityAnswer?.trim() ? input.securityAnswer.trim().slice(0, 255) : null;
+    // Hash the answer before storing — never save security answers as plain text
+    if (input.securityAnswer?.trim()) {
+      updateSet.securityAnswer = await bcrypt.hash(input.securityAnswer.trim().toLowerCase(), 10);
+    } else {
+      updateSet.securityAnswer = null;
+    }
   }
   if (input.preferredCategories !== undefined) {
     updateSet.preferredCategories = input.preferredCategories ? JSON.stringify(input.preferredCategories) : null;
