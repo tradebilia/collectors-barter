@@ -514,7 +514,7 @@ export default function PublicProfile() {
                       <img src="https://upload.wikimedia.org/wikipedia/commons/0/05/Facebook_Logo_(2019).png" alt="Facebook" className="h-5" />
                       <div className="flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-[9px] font-black text-blue-700 uppercase tracking-tight">
                         <CheckCircle2 className="h-2.5 w-2.5" />
-                        Verified
+                        Verified User
                       </div>
                     </div>
 
