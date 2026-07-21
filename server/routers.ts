@@ -341,7 +341,16 @@ export const appRouter = router({
             u.ebay_positive_12mo as ebayPositive12mo,
             u.ebay_neutral_12mo as ebayNeutral12mo,
             u.ebay_negative_12mo as ebayNegative12mo,
-            u.ebay_is_store_owner as ebayIsStoreOwner
+            u.ebay_is_store_owner as ebayIsStoreOwner,
+            u.facebookId,
+            u.facebookName,
+            u.facebookVerified,
+            u.facebookConnectedAt,
+            u.facebookEmail,
+            u.facebookPicture,
+            u.facebookLocation,
+            u.facebookLink,
+            u.facebookLikes
           FROM users u
           WHERE u.id = ${input.userId}`
         );
@@ -1506,6 +1515,11 @@ export const appRouter = router({
           facebookVerified: 0,
           facebookConnectedAt: null,
           facebookAccessToken: null,
+          facebookEmail: null,
+          facebookPicture: null,
+          facebookLocation: null,
+          facebookLink: null,
+          facebookLikes: null,
         })
         .where(eq(users.id, ctx.user.id));
       return { success: true };

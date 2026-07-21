@@ -22,7 +22,6 @@ export async function handleFacebookCallback(code: string, userId: number): Prom
   const userInfo = await getFacebookUserInfo(tokenData.access_token);
 
   // Step 3: Persist to database using Drizzle ORM
-  // Column names match the database exactly (verified in SHOW COLUMNS)
   const db = await requireDb();
   await db
     .update(users)
@@ -32,6 +31,11 @@ export async function handleFacebookCallback(code: string, userId: number): Prom
       facebookVerified: userInfo.verified ? 1 : 0,
       facebookConnectedAt: mysqlNow(),
       facebookAccessToken: tokenData.access_token,
+      facebookEmail: userInfo.email ?? null,
+      facebookPicture: userInfo.picture ?? null,
+      facebookLocation: userInfo.location ?? null,
+      facebookLink: userInfo.link ?? null,
+      facebookLikes: userInfo.likes ? JSON.stringify(userInfo.likes) : null,
     })
     .where(eq(users.id, userId));
 

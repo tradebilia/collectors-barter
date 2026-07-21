@@ -2756,6 +2756,11 @@ export async function getUserFacebookInfo(userId: number): Promise<{
   facebookName: string | null;
   facebookVerified: boolean;
   facebookConnectedAt: Date | null;
+  facebookEmail: string | null;
+  facebookPicture: string | null;
+  facebookLocation: string | null;
+  facebookLink: string | null;
+  facebookLikes: Array<{ id: string; name: string }> | null;
 } | null> {
   const db = await requireDb();
   const result = await db
@@ -2764,16 +2769,34 @@ export async function getUserFacebookInfo(userId: number): Promise<{
       facebookName: users.facebookName,
       facebookVerified: users.facebookVerified,
       facebookConnectedAt: users.facebookConnectedAt,
+      facebookEmail: users.facebookEmail,
+      facebookPicture: users.facebookPicture,
+      facebookLocation: users.facebookLocation,
+      facebookLink: users.facebookLink,
+      facebookLikes: users.facebookLikes,
     })
     .from(users)
     .where(eq(users.id, userId))
     .limit(1);
   if (!result[0]) return null;
+  let parsedLikes: Array<{ id: string; name: string }> | null = null;
+  if (result[0].facebookLikes) {
+    try {
+      parsedLikes = typeof result[0].facebookLikes === 'string'
+        ? JSON.parse(result[0].facebookLikes)
+        : result[0].facebookLikes as Array<{ id: string; name: string }>;
+    } catch { parsedLikes = null; }
+  }
   return {
     facebookId: result[0].facebookId ?? null,
     facebookName: result[0].facebookName ?? null,
     facebookVerified: result[0].facebookVerified === 1,
     facebookConnectedAt: result[0].facebookConnectedAt ? new Date(result[0].facebookConnectedAt) : null,
+    facebookEmail: result[0].facebookEmail ?? null,
+    facebookPicture: result[0].facebookPicture ?? null,
+    facebookLocation: result[0].facebookLocation ?? null,
+    facebookLink: result[0].facebookLink ?? null,
+    facebookLikes: parsedLikes,
   };
 }
 

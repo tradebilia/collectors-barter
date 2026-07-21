@@ -236,10 +236,12 @@ export default function PublicProfile() {
         {/* Profile Header Card */}
         <div className="bg-white rounded-3xl p-6 lg:p-8 shadow-sm border border-slate-100">
           <div className="flex flex-col md:flex-row gap-6 items-start md:items-end">
-            {/* Avatar */}
+            {/* Avatar — falls back to Facebook picture if no Tradebilia avatar */}
             <div className="h-28 w-28 rounded-3xl bg-slate-100 border-4 border-white shadow-md overflow-hidden shrink-0 flex items-center justify-center">
               {profile?.avatarUrl ? (
                 <img src={profile.avatarUrl} alt={displayName} className="h-full w-full object-cover" />
+              ) : user.facebookPicture ? (
+                <img src={user.facebookPicture} alt={displayName} className="h-full w-full object-cover" />
               ) : (
                 <User className="h-12 w-12 text-slate-300" />
               )}
@@ -252,10 +254,10 @@ export default function PublicProfile() {
                 {user.ebayIdVerified === 1 && <BadgeCheck className="h-5 w-5 text-blue-500" />}
               </div>
               <div className="flex flex-wrap items-center gap-y-1 gap-x-4 text-slate-500 text-sm font-medium">
-                {profile?.location && (
+                {(profile?.location || user.facebookLocation) && (
                   <div className="flex items-center gap-1.5">
                     <MapPin className="h-3.5 w-3.5" />
-                    <span>{profile.location}</span>
+                    <span>{profile?.location || user.facebookLocation}</span>
                   </div>
                 )}
                 <div className="flex items-center gap-1.5">
@@ -434,7 +436,7 @@ export default function PublicProfile() {
                         <div className="flex items-center gap-2">
                           <span className="text-sm font-black text-slate-900 tracking-tight">{user.ebayUsername}</span>
                           {user.ebayIdVerified === 1 && (
-                            <ShieldCheck className="h-3.5 w-3.5 text-blue-500" title="ID Verified" />
+                            <ShieldCheck className="h-3.5 w-3.5 text-blue-500" aria-label="ID Verified" />
                           )}
                         </div>
                         {user.ebayMemberSince && (
@@ -504,18 +506,92 @@ export default function PublicProfile() {
                   </div>
                 )}
 
-                {/* Other Verifications */}
-                <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                  <h2 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Other Verifications</h2>
-                  <div className="grid grid-cols-2 gap-3">
-                    {PLATFORMS.map(p => (
-                      <div key={p.key} className="flex flex-col items-center justify-center p-3 rounded-xl border border-slate-100 bg-slate-50/30 grayscale opacity-40">
-                        <img src={p.logo} alt={p.label} className="h-6 mb-1 object-contain" />
-                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-tighter">Pending</p>
+                {/* Facebook Card — shown only if connected */}
+                {user.facebookId && (
+                  <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-sm">
+                    {/* Header */}
+                    <div className="bg-[#1877F2]/5 border-b border-[#1877F2]/10 px-5 py-3 flex items-center justify-between">
+                      <img src="https://upload.wikimedia.org/wikipedia/commons/0/05/Facebook_Logo_(2019).png" alt="Facebook" className="h-5" />
+                      <div className="flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-[9px] font-black text-blue-700 uppercase tracking-tight">
+                        <CheckCircle2 className="h-2.5 w-2.5" />
+                        Verified
                       </div>
-                    ))}
+                    </div>
+
+                    <div className="p-4 space-y-3">
+                      {/* Name + picture */}
+                      <div className="flex items-center gap-3">
+                        {user.facebookPicture && (
+                          <img src={user.facebookPicture} alt={user.facebookName} className="h-10 w-10 rounded-full object-cover border-2 border-white shadow-sm" />
+                        )}
+                        <div className="min-w-0">
+                          <p className="text-sm font-black text-slate-900 tracking-tight truncate">{user.facebookName}</p>
+                          {user.facebookEmail && (
+                            <p className="text-[10px] text-slate-400 font-medium truncate">{user.facebookEmail}</p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Location */}
+                      {user.facebookLocation && (
+                        <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-medium">
+                          <MapPin className="h-3 w-3 text-slate-400" />
+                          <span>{user.facebookLocation}</span>
+                        </div>
+                      )}
+
+                      {/* Likes */}
+                      {user.facebookLikes && (() => {
+                        let likes: Array<{ id: string; name: string }> = [];
+                        try { likes = typeof user.facebookLikes === 'string' ? JSON.parse(user.facebookLikes) : user.facebookLikes; } catch {}
+                        return likes.length > 0 ? (
+                          <div>
+                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Interests</p>
+                            <div className="flex flex-wrap gap-1">
+                              {likes.slice(0, 8).map((l) => (
+                                <span key={l.id} className="text-[9px] font-bold bg-blue-50 text-blue-600 rounded-full px-2 py-0.5 border border-blue-100">{l.name}</span>
+                              ))}
+                              {likes.length > 8 && (
+                                <span className="text-[9px] font-bold bg-slate-50 text-slate-400 rounded-full px-2 py-0.5 border border-slate-100">+{likes.length - 8} more</span>
+                              )}
+                            </div>
+                          </div>
+                        ) : null;
+                      })()}
+
+                      {/* Link to Facebook profile */}
+                      {user.facebookLink && (
+                        <Button
+                          variant="outline"
+                          className="w-full h-8 rounded-lg text-[10px] font-bold border-slate-200 text-slate-500 hover:bg-slate-50"
+                          onClick={() => window.open(user.facebookLink, '_blank')}
+                        >
+                          <ExternalLink className="mr-2 h-3 w-3" />
+                          View Facebook Profile
+                        </Button>
+                      )}
+                    </div>
                   </div>
-                </div>
+                )}
+
+                {/* Other Verifications — only shows platforms not yet connected */}
+                {(['paypal', 'instagram', 'twitter'] as const).length > 0 && (
+                  <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                    <h2 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Other Verifications</h2>
+                    <div className="grid grid-cols-3 gap-3">
+                      {[
+                        { key: 'paypal', label: 'PayPal', logo: 'https://upload.wikimedia.org/wikipedia/commons/b/b5/PayPal.svg' },
+                        { key: 'instagram', label: 'Instagram', logo: 'https://upload.wikimedia.org/wikipedia/commons/e/e7/Instagram_logo_2016.svg' },
+                        { key: 'twitter', label: 'X / Twitter', logo: 'https://upload.wikimedia.org/wikipedia/commons/5/57/X_logo_2023_(white).svg' },
+                      ].map(p => (
+                        <div key={p.key} className="flex flex-col items-center justify-center p-3 rounded-xl border border-slate-100 bg-slate-50/30 grayscale opacity-40">
+                          <img src={p.logo} alt={p.label} className="h-6 mb-1 object-contain" />
+                          <p className="text-[8px] font-black text-slate-400 uppercase tracking-tighter">Pending</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}

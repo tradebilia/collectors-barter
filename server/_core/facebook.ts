@@ -15,13 +15,25 @@ const FACEBOOK_AUTH_URL = "https://www.facebook.com/v19.0/dialog/oauth";
 const FACEBOOK_TOKEN_URL = "https://graph.facebook.com/v19.0/oauth/access_token";
 const FACEBOOK_GRAPH_URL = "https://graph.facebook.com/v19.0/me";
 
-// Scopes we request — only basic public_profile and email (no app review needed)
-const FACEBOOK_SCOPES = ["public_profile", "email"].join(",");
+// Scopes we request.
+// NOTE: user_likes and user_location require App Review before going live.
+// In Development Mode they work for the app owner and testers.
+const FACEBOOK_SCOPES = [
+  "public_profile",
+  "email",
+  "user_location",
+  "user_likes",
+].join(",");
 
 export interface FacebookTokenData {
   access_token: string;
   token_type: string;
   expires_in?: number;
+}
+
+export interface FacebookLike {
+  id: string;
+  name: string;
 }
 
 export interface FacebookUserInfo {
@@ -30,6 +42,9 @@ export interface FacebookUserInfo {
   email?: string;
   verified?: boolean;
   picture?: string;
+  location?: string;
+  link?: string;
+  likes?: FacebookLike[];
 }
 
 /**
@@ -78,11 +93,13 @@ export async function exchangeFacebookCode(code: string): Promise<FacebookTokenD
 }
 
 /**
- * Fetch the user's basic profile info from the Facebook Graph API.
- * Returns id, name, email (if granted), verified status, and profile picture URL.
+ * Fetch the user's extended profile from the Facebook Graph API.
+ * Returns id, name, email, verified status, profile picture, location,
+ * profile link, and page likes.
  */
 export async function getFacebookUserInfo(accessToken: string): Promise<FacebookUserInfo> {
-  const fields = "id,name,email,verified,picture.type(large)";
+  // Fetch core profile fields
+  const fields = "id,name,email,verified,picture.type(large),location,link";
   const params = new URLSearchParams({
     fields,
     access_token: accessToken,
@@ -103,11 +120,36 @@ export async function getFacebookUserInfo(accessToken: string): Promise<Facebook
     throw new Error(data.error.message || "Facebook Graph API failed");
   }
 
+  // Fetch page likes separately (paged endpoint)
+  let likes: FacebookLike[] = [];
+  try {
+    const likesParams = new URLSearchParams({
+      fields: "id,name",
+      limit: "50",
+      access_token: accessToken,
+    });
+    const likesResponse = await fetch(
+      `https://graph.facebook.com/v19.0/me/likes?${likesParams.toString()}`
+    );
+    if (likesResponse.ok) {
+      const likesData = await likesResponse.json();
+      if (likesData.data && Array.isArray(likesData.data)) {
+        likes = likesData.data.map((l: any) => ({ id: l.id, name: l.name }));
+      }
+    }
+  } catch (e) {
+    // Likes are optional — don't fail the whole connection if this errors
+    console.warn("[Facebook] Could not fetch likes:", e);
+  }
+
   return {
     id: data.id,
     name: data.name,
     email: data.email,
     verified: data.verified === true,
     picture: data.picture?.data?.url,
+    location: data.location?.name ?? undefined,
+    link: data.link ?? undefined,
+    likes: likes.length > 0 ? likes : undefined,
   };
 }

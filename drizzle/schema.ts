@@ -1,4 +1,4 @@
-import { mysqlTable, mysqlSchema, AnyMySqlColumn, index, int, mysqlEnum, varchar, text, timestamp, foreignKey, decimal, datetime, tinyint } from "drizzle-orm/mysql-core"
+import { mysqlTable, mysqlSchema, AnyMySqlColumn, index, int, mysqlEnum, varchar, text, timestamp, foreignKey, decimal, datetime, tinyint, json } from "drizzle-orm/mysql-core"
 import { sql } from "drizzle-orm"
 
 export const conventionCategories = mysqlTable("conventionCategories", {
@@ -694,6 +694,11 @@ export const users = mysqlTable("users", {
 	facebookVerified: tinyint().default(0),
 	facebookConnectedAt: timestamp({ mode: 'string' }),
 	facebookAccessToken: text(),
+	facebookEmail: varchar({ length: 255 }),
+	facebookPicture: text(),
+	facebookLocation: varchar({ length: 255 }),
+	facebookLink: varchar({ length: 512 }),
+	facebookLikes: json(),
 	isSuspended: tinyint().default(0).notNull(),
 	suspendedAt: datetime({ mode: 'string'}),
 	isBanned: tinyint().default(0).notNull(),
