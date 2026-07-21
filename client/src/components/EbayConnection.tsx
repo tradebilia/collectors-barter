@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
+import { AlertCircle, CheckCircle2, Loader2, ShieldCheck, Star, Calendar } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 
 export function EbayConnection() {
@@ -68,6 +68,9 @@ export function EbayConnection() {
   const isConnected = !!ebayInfo.data?.ebayUsername;
   const feedbackPercentage = ebayInfo.data?.ebayFeedbackPercentage;
   const isLowFeedback = feedbackPercentage != null && feedbackPercentage < 95;
+  const memberSince = ebayInfo.data?.ebayMemberSince ? new Date(ebayInfo.data.ebayMemberSince) : null;
+  const sellerLevel = ebayInfo.data?.ebaySellerLevel;
+  const idVerified = ebayInfo.data?.ebayIdVerified;
 
   return (
     <div className="space-y-3">
@@ -100,11 +103,35 @@ export function EbayConnection() {
                 </Badge>
               )}
             </div>
-            <p className="text-xs text-slate-600">
-              {isConnected
-                ? `${ebayInfo.data?.ebayUsername} · ${ebayInfo.data?.ebayFeedbackScore} feedback · ${feedbackPercentage?.toFixed(1)}% positive`
-                : "Not connected"}
-            </p>
+            <div className="flex flex-col gap-0.5">
+              <p className="text-xs text-slate-600">
+                {isConnected
+                  ? `${ebayInfo.data?.ebayUsername} · ${ebayInfo.data?.ebayFeedbackScore} feedback · ${feedbackPercentage?.toFixed(1)}% positive`
+                  : "Not connected"}
+              </p>
+              {isConnected && (
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-0.5">
+                  {memberSince && (
+                    <div className="flex items-center gap-1 text-[10px] text-slate-500">
+                      <Calendar className="h-3 w-3" />
+                      Member since {memberSince.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                    </div>
+                  )}
+                  {sellerLevel && (
+                    <div className="flex items-center gap-1 text-[10px] text-amber-600 font-medium">
+                      <Star className="h-3 w-3 fill-amber-600" />
+                      {sellerLevel.replace(/([A-Z])/g, ' $1').trim()}
+                    </div>
+                  )}
+                  {idVerified && (
+                    <div className="flex items-center gap-1 text-[10px] text-blue-600 font-medium">
+                      <ShieldCheck className="h-3 w-3" />
+                      ID Verified
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
         <Button

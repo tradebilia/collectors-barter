@@ -10,7 +10,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { CheckCircle2, AlertCircle, ExternalLink } from "lucide-react";
+import { CheckCircle2, AlertCircle, ExternalLink, Star, ShieldCheck } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 
 interface EbayProfileBadgeProps {
@@ -19,6 +19,8 @@ interface EbayProfileBadgeProps {
   ebayFeedbackScore?: number | null;
   ebayFeedbackPercentage?: number | null;
   ebayMemberSince?: Date | null;
+  ebaySellerLevel?: string | null;
+  ebayIdVerified?: boolean | null;
   ebayConnectedAt?: Date | null;
 }
 
@@ -28,6 +30,8 @@ export function EbayProfileBadge({
   ebayFeedbackScore,
   ebayFeedbackPercentage,
   ebayMemberSince,
+  ebaySellerLevel,
+  ebayIdVerified,
   ebayConnectedAt,
 }: EbayProfileBadgeProps) {
   const [showDetails, setShowDetails] = useState(false);
@@ -53,7 +57,7 @@ export function EbayProfileBadge({
             className={isExcellent ? "bg-green-600" : ""}
           >
             <CheckCircle2 className="mr-1 h-3 w-3" />
-            eBay Verified
+            {ebayIdVerified ? "eBay ID Verified" : "eBay Verified"}
           </Badge>
           <span className="text-sm font-medium text-gray-700">{ebayUsername}</span>
         </div>
@@ -91,6 +95,23 @@ export function EbayProfileBadge({
               </p>
             </div>
           </div>
+
+          {(ebaySellerLevel || ebayIdVerified) && (
+            <div className="flex gap-2">
+              {ebaySellerLevel && (
+                <div className="flex flex-1 items-center gap-2 rounded-lg bg-amber-50 p-3 text-amber-700">
+                  <Star className="h-4 w-4 fill-amber-600" />
+                  <span className="text-xs font-medium">{ebaySellerLevel.replace(/([A-Z])/g, ' $1').trim()}</span>
+                </div>
+              )}
+              {ebayIdVerified && (
+                <div className="flex flex-1 items-center gap-2 rounded-lg bg-blue-50 p-3 text-blue-700">
+                  <ShieldCheck className="h-4 w-4" />
+                  <span className="text-xs font-medium">ID Verified</span>
+                </div>
+              )}
+            </div>
+          )}
 
           {ebayMemberSince && (
             <div className="text-sm text-gray-600">

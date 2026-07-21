@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm/relations";
-import { users, deletedAccounts, draftListings, ebayFeedbackHistory, favorites, listings, forumPosts, forumReplies, itemInquiries, inquiryReplies, listingPhotos, lowFeedbackFlags, passwordResetTokens, referralRequests, tradeProposals, tradeMessages, tradeProposalItems, tradeReviews, userProfiles, userReports, watchlistEntries } from "./schema";
+import { users, deletedAccounts, draftListings, ebayFeedbackHistory, favorites, listings, forumPosts, forumReplies, itemInquiries, inquiryReplies, listingPhotos, lowFeedbackFlags, passwordResetTokens, tradeProposals, proposalReadStatus, referralRequests, tradeActivityLog, tradeAdminLog, tradeAlerts, tradeComplaints, tradeMessages, tradePrivateNotes, tradeProposalItems, tradeReceiptConfirmation, tradeReviews, tradeTrackingNumbers, tradeVotingLinks, tradeVotes, userProfiles, userRatingSummary, userReports, watchlistEntries } from "./schema";
 
 export const deletedAccountsRelations = relations(deletedAccounts, ({one}) => ({
 	user: one(users, {
@@ -30,6 +30,7 @@ export const usersRelations = relations(users, ({many}) => ({
 		relationName: "lowFeedbackFlags_reviewedBy_users_id"
 	}),
 	passwordResetTokens: many(passwordResetTokens),
+	proposalReadStatuses: many(proposalReadStatus),
 	referralRequests_referrerId: many(referralRequests, {
 		relationName: "referralRequests_referrerId_users_id"
 	}),
@@ -39,20 +40,29 @@ export const usersRelations = relations(users, ({many}) => ({
 	referralRequests_joinedUserId: many(referralRequests, {
 		relationName: "referralRequests_joinedUserId_users_id"
 	}),
+	tradeActivityLogs: many(tradeActivityLog),
+	tradeAlerts: many(tradeAlerts),
+	tradeComplaints: many(tradeComplaints),
 	tradeMessages: many(tradeMessages),
+	tradePrivateNotes: many(tradePrivateNotes),
 	tradeProposals_requesterId: many(tradeProposals, {
 		relationName: "tradeProposals_requesterId_users_id"
 	}),
 	tradeProposals_recipientId: many(tradeProposals, {
 		relationName: "tradeProposals_recipientId_users_id"
 	}),
+	tradeReceiptConfirmations: many(tradeReceiptConfirmation),
 	tradeReviews_reviewerId: many(tradeReviews, {
 		relationName: "tradeReviews_reviewerId_users_id"
 	}),
 	tradeReviews_revieweeId: many(tradeReviews, {
 		relationName: "tradeReviews_revieweeId_users_id"
 	}),
+	tradeTrackingNumbers: many(tradeTrackingNumbers),
+	tradeVotes: many(tradeVotes),
+	tradeVotingLinks: many(tradeVotingLinks),
 	userProfiles: many(userProfiles),
+	userRatingSummaries: many(userRatingSummary),
 	userReports_reportedUserId: many(userReports, {
 		relationName: "userReports_reportedUserId_users_id"
 	}),
@@ -100,6 +110,7 @@ export const listingsRelations = relations(listings, ({one, many}) => ({
 	}),
 	tradeProposalItems: many(tradeProposalItems),
 	tradeProposals: many(tradeProposals),
+	tradeTrackingNumbers: many(tradeTrackingNumbers),
 	watchlistEntries: many(watchlistEntries),
 }));
 
@@ -178,6 +189,46 @@ export const passwordResetTokensRelations = relations(passwordResetTokens, ({one
 	}),
 }));
 
+export const proposalReadStatusRelations = relations(proposalReadStatus, ({one}) => ({
+	tradeProposal: one(tradeProposals, {
+		fields: [proposalReadStatus.proposalId],
+		references: [tradeProposals.id]
+	}),
+	user: one(users, {
+		fields: [proposalReadStatus.userId],
+		references: [users.id]
+	}),
+}));
+
+export const tradeProposalsRelations = relations(tradeProposals, ({one, many}) => ({
+	proposalReadStatuses: many(proposalReadStatus),
+	tradeActivityLogs: many(tradeActivityLog),
+	tradeAdminLogs: many(tradeAdminLog),
+	tradeAlerts: many(tradeAlerts),
+	tradeComplaints: many(tradeComplaints),
+	tradeMessages: many(tradeMessages),
+	tradePrivateNotes: many(tradePrivateNotes),
+	tradeProposalItems: many(tradeProposalItems),
+	user_requesterId: one(users, {
+		fields: [tradeProposals.requesterId],
+		references: [users.id],
+		relationName: "tradeProposals_requesterId_users_id"
+	}),
+	user_recipientId: one(users, {
+		fields: [tradeProposals.recipientId],
+		references: [users.id],
+		relationName: "tradeProposals_recipientId_users_id"
+	}),
+	listing: one(listings, {
+		fields: [tradeProposals.requestedListingId],
+		references: [listings.id]
+	}),
+	tradeReceiptConfirmations: many(tradeReceiptConfirmation),
+	tradeReviews: many(tradeReviews),
+	tradeTrackingNumbers: many(tradeTrackingNumbers),
+	tradeVotingLinks: many(tradeVotingLinks),
+}));
+
 export const referralRequestsRelations = relations(referralRequests, ({one}) => ({
 	user_referrerId: one(users, {
 		fields: [referralRequests.referrerId],
@@ -196,6 +247,46 @@ export const referralRequestsRelations = relations(referralRequests, ({one}) => 
 	}),
 }));
 
+export const tradeActivityLogRelations = relations(tradeActivityLog, ({one}) => ({
+	tradeProposal: one(tradeProposals, {
+		fields: [tradeActivityLog.proposalId],
+		references: [tradeProposals.id]
+	}),
+	user: one(users, {
+		fields: [tradeActivityLog.actorId],
+		references: [users.id]
+	}),
+}));
+
+export const tradeAdminLogRelations = relations(tradeAdminLog, ({one}) => ({
+	tradeProposal: one(tradeProposals, {
+		fields: [tradeAdminLog.proposalId],
+		references: [tradeProposals.id]
+	}),
+}));
+
+export const tradeAlertsRelations = relations(tradeAlerts, ({one}) => ({
+	tradeProposal: one(tradeProposals, {
+		fields: [tradeAlerts.proposalId],
+		references: [tradeProposals.id]
+	}),
+	user: one(users, {
+		fields: [tradeAlerts.recipientUserId],
+		references: [users.id]
+	}),
+}));
+
+export const tradeComplaintsRelations = relations(tradeComplaints, ({one}) => ({
+	tradeProposal: one(tradeProposals, {
+		fields: [tradeComplaints.proposalId],
+		references: [tradeProposals.id]
+	}),
+	user: one(users, {
+		fields: [tradeComplaints.complaintUserId],
+		references: [users.id]
+	}),
+}));
+
 export const tradeMessagesRelations = relations(tradeMessages, ({one}) => ({
 	tradeProposal: one(tradeProposals, {
 		fields: [tradeMessages.proposalId],
@@ -207,24 +298,15 @@ export const tradeMessagesRelations = relations(tradeMessages, ({one}) => ({
 	}),
 }));
 
-export const tradeProposalsRelations = relations(tradeProposals, ({one, many}) => ({
-	tradeMessages: many(tradeMessages),
-	tradeProposalItems: many(tradeProposalItems),
-	user_requesterId: one(users, {
-		fields: [tradeProposals.requesterId],
-		references: [users.id],
-		relationName: "tradeProposals_requesterId_users_id"
+export const tradePrivateNotesRelations = relations(tradePrivateNotes, ({one}) => ({
+	tradeProposal: one(tradeProposals, {
+		fields: [tradePrivateNotes.proposalId],
+		references: [tradeProposals.id]
 	}),
-	user_recipientId: one(users, {
-		fields: [tradeProposals.recipientId],
-		references: [users.id],
-		relationName: "tradeProposals_recipientId_users_id"
+	user: one(users, {
+		fields: [tradePrivateNotes.userId],
+		references: [users.id]
 	}),
-	listing: one(listings, {
-		fields: [tradeProposals.requestedListingId],
-		references: [listings.id]
-	}),
-	tradeReviews: many(tradeReviews),
 }));
 
 export const tradeProposalItemsRelations = relations(tradeProposalItems, ({one}) => ({
@@ -235,6 +317,17 @@ export const tradeProposalItemsRelations = relations(tradeProposalItems, ({one})
 	listing: one(listings, {
 		fields: [tradeProposalItems.offeredListingId],
 		references: [listings.id]
+	}),
+}));
+
+export const tradeReceiptConfirmationRelations = relations(tradeReceiptConfirmation, ({one}) => ({
+	tradeProposal: one(tradeProposals, {
+		fields: [tradeReceiptConfirmation.proposalId],
+		references: [tradeProposals.id]
+	}),
+	user: one(users, {
+		fields: [tradeReceiptConfirmation.userId],
+		references: [users.id]
 	}),
 }));
 
@@ -255,9 +348,54 @@ export const tradeReviewsRelations = relations(tradeReviews, ({one}) => ({
 	}),
 }));
 
+export const tradeTrackingNumbersRelations = relations(tradeTrackingNumbers, ({one}) => ({
+	tradeProposal: one(tradeProposals, {
+		fields: [tradeTrackingNumbers.proposalId],
+		references: [tradeProposals.id]
+	}),
+	user: one(users, {
+		fields: [tradeTrackingNumbers.userId],
+		references: [users.id]
+	}),
+	listing: one(listings, {
+		fields: [tradeTrackingNumbers.listingId],
+		references: [listings.id]
+	}),
+}));
+
+export const tradeVotesRelations = relations(tradeVotes, ({one}) => ({
+	tradeVotingLink: one(tradeVotingLinks, {
+		fields: [tradeVotes.votingLinkId],
+		references: [tradeVotingLinks.id]
+	}),
+	user: one(users, {
+		fields: [tradeVotes.voterUserId],
+		references: [users.id]
+	}),
+}));
+
+export const tradeVotingLinksRelations = relations(tradeVotingLinks, ({one, many}) => ({
+	tradeVotes: many(tradeVotes),
+	tradeProposal: one(tradeProposals, {
+		fields: [tradeVotingLinks.proposalId],
+		references: [tradeProposals.id]
+	}),
+	user: one(users, {
+		fields: [tradeVotingLinks.generatedByUserId],
+		references: [users.id]
+	}),
+}));
+
 export const userProfilesRelations = relations(userProfiles, ({one}) => ({
 	user: one(users, {
 		fields: [userProfiles.userId],
+		references: [users.id]
+	}),
+}));
+
+export const userRatingSummaryRelations = relations(userRatingSummary, ({one}) => ({
+	user: one(users, {
+		fields: [userRatingSummary.userId],
 		references: [users.id]
 	}),
 }));

@@ -2556,6 +2556,13 @@ export async function updateUserEbayInfo(input: {
   ebayFeedbackScore: number;
   ebayFeedbackPercentage: number;
   ebayMemberSince: Date;
+  ebaySellerLevel?: string;
+  ebayIdVerified: boolean;
+  ebayStar?: string;
+  ebayPositive12mo?: number;
+  ebayNeutral12mo?: number;
+  ebayNegative12mo?: number;
+  ebayIsStoreOwner?: boolean;
   ebayAccessToken: string;
   ebayRefreshToken: string;
   ebayTokenExpiresAt: Date;
@@ -2569,6 +2576,13 @@ export async function updateUserEbayInfo(input: {
       ebayFeedbackScore: input.ebayFeedbackScore,
       ebayFeedbackPercentage: input.ebayFeedbackPercentage.toString(),
       ebayMemberSince: input.ebayMemberSince ? toMysqlDateTime(input.ebayMemberSince) : undefined,
+      ebaySellerLevel: input.ebaySellerLevel,
+      ebayIdVerified: input.ebayIdVerified ? 1 : 0,
+      ebayStar: input.ebayStar,
+      ebayPositive12mo: input.ebayPositive12mo,
+      ebayNeutral12mo: input.ebayNeutral12mo,
+      ebayNegative12mo: input.ebayNegative12mo,
+      ebayIsStoreOwner: input.ebayIsStoreOwner ? 1 : 0,
       ebayConnectedAt: mysqlNow(),
       ebayAccessToken: input.ebayAccessToken,
       ebayRefreshToken: input.ebayRefreshToken,
@@ -2583,6 +2597,13 @@ export async function getUserEbayInfo(userId: number): Promise<{
   ebayFeedbackScore?: number | null;
   ebayFeedbackPercentage?: number | null;
   ebayMemberSince?: Date | null;
+  ebaySellerLevel?: string | null;
+  ebayIdVerified?: boolean | null;
+  ebayStar?: string | null;
+  ebayPositive12mo?: number | null;
+  ebayNeutral12mo?: number | null;
+  ebayNegative12mo?: number | null;
+  ebayIsStoreOwner?: boolean | null;
   ebayConnectedAt?: Date | null;
 } | null> {
   const db = await requireDb();
@@ -2593,6 +2614,13 @@ export async function getUserEbayInfo(userId: number): Promise<{
       ebayFeedbackScore: users.ebayFeedbackScore,
       ebayFeedbackPercentage: users.ebayFeedbackPercentage,
       ebayMemberSince: users.ebayMemberSince,
+      ebaySellerLevel: users.ebaySellerLevel,
+      ebayIdVerified: users.ebayIdVerified,
+      ebayStar: users.ebayStar,
+      ebayPositive12mo: users.ebayPositive12mo,
+      ebayNeutral12mo: users.ebayNeutral12mo,
+      ebayNegative12mo: users.ebayNegative12mo,
+      ebayIsStoreOwner: users.ebayIsStoreOwner,
       ebayConnectedAt: users.ebayConnectedAt,
     })
     .from(users)
@@ -2603,6 +2631,8 @@ export async function getUserEbayInfo(userId: number): Promise<{
   return {
     ...user[0],
     ebayFeedbackPercentage: user[0].ebayFeedbackPercentage ? parseFloat(user[0].ebayFeedbackPercentage) : null,
+    ebayIdVerified: user[0].ebayIdVerified === 1,
+    ebayIsStoreOwner: user[0].ebayIsStoreOwner === 1,
     // Timestamp columns are string-mode; convert at the boundary to keep the
     // declared Date-based API contract.
     ebayMemberSince: user[0].ebayMemberSince ? new Date(user[0].ebayMemberSince) : null,

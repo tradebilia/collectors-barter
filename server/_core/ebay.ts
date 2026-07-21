@@ -20,6 +20,13 @@ export interface EbayUserInfo {
   feedbackScore: number;
   feedbackPercentage: number;
   memberSince: Date;
+  sellerLevel?: string;
+  idVerified: boolean;
+  star?: string;
+  positive12mo?: number;
+  neutral12mo?: number;
+  negative12mo?: number;
+  isStoreOwner?: boolean;
 }
 
 export interface EbayFeedback {
@@ -41,7 +48,7 @@ export function getEbayAuthUrl(state: string): string {
   const params = new URLSearchParams({
     client_id: ENV.ebayClientId,
     response_type: "code",
-    redirect_uri: "Rich_Tavani-RichTava-Tradeb-zeivknqjk", // Using the RuName from the screenshot
+    redirect_uri: "Rich_Tavani-RichTava-Tradeb-jvtyatuw", // Using the RuName from the screenshot
     scope: [
       "https://api.ebay.com/oauth/api_scope",
       "https://api.ebay.com/oauth/api_scope/commerce.identity.readonly",
@@ -59,7 +66,7 @@ export async function exchangeCodeForToken(code: string): Promise<EbayTokenRespo
   const params = new URLSearchParams({
     grant_type: "authorization_code",
     code,
-    redirect_uri: ENV.ebayRedirectUri,
+    redirect_uri: "Rich_Tavani-RichTava-Tradeb-jvtyatuw", // Must match the RuName used in the auth URL
   });
 
   const response = await fetch(EBAY_TOKEN_URL, {
@@ -134,12 +141,19 @@ export async function getUserInfo(accessToken: string): Promise<EbayUserInfo> {
   const username = identityData.username || identityData.userId;
   const userId = identityData.userId;
 
-  // Step 2: Get feedbackScore and positiveFeedbackPercent via Trading API GetUser
+  // Step 2: Get feedbackScore, positiveFeedbackPercent, etc. via Trading API GetUser
   let feedbackScore = 0;
   let feedbackPercentage = 0;
   let memberSince = new Date();
-
-  try {
+	  let sellerLevel: string | undefined = undefined;
+	  let idVerified = false;
+	  let star: string | undefined = undefined;
+	  let positive12mo = 0;
+	  let neutral12mo = 0;
+	  let negative12mo = 0;
+	  let isStoreOwner = false;
+	
+	  try {
     // Note: With OAuth tokens, use X-EBAY-API-IAF-TOKEN header instead of
     // embedding the token in the XML body's RequesterCredentials.
     const getUserXml = `<?xml version="1.0" encoding="utf-8"?>
@@ -170,7 +184,15 @@ export async function getUserInfo(accessToken: string): Promise<EbayUserInfo> {
       feedbackPercentage = parseFloat(getXmlVal("PositiveFeedbackPercent") || "0");
       const regDateStr = getXmlVal("RegistrationDate");
       if (regDateStr) memberSince = new Date(regDateStr);
-    } else {
+      
+	      sellerLevel = getXmlVal("SellerLevel");
+	      idVerified = getXmlVal("IDVerified") === "true";
+	      star = getXmlVal("FeedbackRatingStar");
+	      positive12mo = parseInt(getXmlVal("PositiveFeedbackRating") || "0", 10);
+	      neutral12mo = parseInt(getXmlVal("NeutralFeedbackRating") || "0", 10);
+	      negative12mo = parseInt(getXmlVal("NegativeFeedbackRating") || "0", 10);
+	      isStoreOwner = getXmlVal("StoreOwner") === "true";
+	    } else {
       console.error("Trading API GetUser failed, using defaults for feedback");
     }
   } catch (err) {
@@ -182,9 +204,16 @@ export async function getUserInfo(accessToken: string): Promise<EbayUserInfo> {
     userId,
     feedbackScore,
     feedbackPercentage,
-    memberSince,
-  };
-}
+	    memberSince,
+	    sellerLevel,
+	    idVerified,
+	    star,
+	    positive12mo,
+	    neutral12mo,
+	    negative12mo,
+	    isStoreOwner,
+	  };
+	}
 
 /**
  * Get individual feedback entries via the eBay Trading API (XML).

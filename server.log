@@ -4,412 +4,680 @@
 > NODE_ENV=development tsx watch server/_core/index.ts
 
 [OAuth] Initialized with baseURL: https://api.manus.im
-[dotenv@17.2.3] injecting env (12) from .env -- tip: ✅ audit secrets and track compliance: https://dotenvx.com/ops
+[dotenv@17.2.3] injecting env (15) from .env -- tip: 🔑 add access controls to secrets: https://dotenvx.com/ops
 [startup] Environment check: PASS (all required variables present)
 [startup] Database check: PASS (connection verified)
 [startup] Port check: PASS (bound to 3000)
 Server running on http://localhost:3000/
 [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
-3:02:19 AM [vite] (client) hmr update /src/pages/PublicProfile.tsx, /src/index.css
-3:03:00 AM [vite] (client) hmr update /src/index.css
-1:29:51 PM [tsx] change in ./server/routers.ts Restarting...
+1:14:19 AM [vite] (client) hmr update /src/pages/PublicProfile.tsx, /src/index.css
+1:17:44 AM [vite] (client) hmr update /src/pages/PublicProfile.tsx, /src/index.css
+1:19:59 AM [tsx] change in ./drizzle/schema.ts Restarting...
 [shutdown] Received SIGTERM, closing server...
 c[OAuth] Initialized with baseURL: https://api.manus.im
-[dotenv@17.2.3] injecting env (12) from .env -- tip: ⚙️  suppress all logs with { quiet: true }
+[dotenv@17.2.3] injecting env (15) from .env -- tip: ⚙️  specify custom .env file path with { path: '/custom/path/.env' }
 [startup] Environment check: PASS (all required variables present)
 [startup] Database check: PASS (connection verified)
 [startup] Port check: PASS (bound to 3000)
 Server running on http://localhost:3000/
 [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
-1:34:29 PM [vite] (client) hmr update /src/pages/PublicProfile.tsx, /src/index.css
-1:35:24 PM [vite] (client) hmr update /src/pages/PublicProfile.tsx, /src/index.css
-1:43:55 PM [vite] (client) hmr update /src/pages/PublicProfile.tsx, /src/index.css
-1:45:30 PM [tsx] change in ./server/routers.ts Restarting...
-[shutdown] Received SIGTERM, closing server...
-c[OAuth] Initialized with baseURL: https://api.manus.im
-[dotenv@17.2.3] injecting env (12) from .env -- tip: ⚙️  enable debug logging with { debug: true }
-[startup] Environment check: PASS (all required variables present)
-[startup] Database check: PASS (connection verified)
-[startup] Port check: PASS (bound to 3000)
-Server running on http://localhost:3000/
-[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
-1:50:03 PM [vite] (client) hmr update /src/pages/PublicProfile.tsx, /src/index.css
-2:14:34 PM [vite] (client) hmr update /src/App.tsx, /src/index.css
-2:19:43 PM [tsx] change in ./server/routers.ts Restarting...
-[shutdown] Received SIGTERM, closing server...
-c[OAuth] Initialized with baseURL: https://api.manus.im
-[dotenv@17.2.3] injecting env (12) from .env -- tip: 🔄 add secrets lifecycle management: https://dotenvx.com/ops
-[startup] Environment check: PASS (all required variables present)
-[startup] Database check: PASS (connection verified)
-[startup] Port check: PASS (bound to 3000)
-Server running on http://localhost:3000/
-[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
-2:22:58 PM [vite] (client) hmr update /src/pages/PublicProfile.tsx, /src/index.css
-2:23:42 PM [tsx] change in ./server/routers.ts Restarting...
-[shutdown] Received SIGTERM, closing server...
-c[OAuth] Initialized with baseURL: https://api.manus.im
-[dotenv@17.2.3] injecting env (12) from .env -- tip: ⚙️  suppress all logs with { quiet: true }
-[startup] Environment check: PASS (all required variables present)
-[startup] Database check: PASS (connection verified)
-[startup] Port check: PASS (bound to 3000)
-Server running on http://localhost:3000/
-[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
-2:23:58 PM [tsx] change in ./server/routers.ts Restarting...
-[shutdown] Received SIGTERM, closing server...
-c[OAuth] Initialized with baseURL: https://api.manus.im
-[dotenv@17.2.3] injecting env (12) from .env -- tip: ⚙️  write to custom object with { processEnv: myObject }
-[startup] Environment check: PASS (all required variables present)
-[startup] Database check: PASS (connection verified)
-[startup] Port check: PASS (bound to 3000)
-Server running on http://localhost:3000/
-[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
-2:42:21 PM [tsx] change in ./server/routers.ts Restarting...
-[shutdown] Received SIGTERM, closing server...
-c[OAuth] Initialized with baseURL: https://api.manus.im
-[dotenv@17.2.3] injecting env (12) from .env -- tip: 📡 add observability to secrets: https://dotenvx.com/ops
-[startup] Environment check: PASS (all required variables present)
-[startup] Database check: PASS (connection verified)
-[startup] Port check: PASS (bound to 3000)
-Server running on http://localhost:3000/
-[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
-2:42:28 PM [tsx] change in ./server/routers.ts Restarting...
-[shutdown] Received SIGTERM, closing server...
-c[OAuth] Initialized with baseURL: https://api.manus.im
-[dotenv@17.2.3] injecting env (12) from .env -- tip: 🗂️ backup and recover secrets: https://dotenvx.com/ops
-[startup] Environment check: PASS (all required variables present)
-[startup] Database check: PASS (connection verified)
-[startup] Port check: PASS (bound to 3000)
-Server running on http://localhost:3000/
-[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
-2:43:47 PM [vite] (client) hmr update /src/pages/PublicProfile.tsx, /src/index.css
-2:44:18 PM [vite] (client) hmr update /src/pages/PublicProfile.tsx, /src/index.css
-2:46:34 PM [tsx] change in ./server/routers.ts Restarting...
-[shutdown] Received SIGTERM, closing server...
-c[OAuth] Initialized with baseURL: https://api.manus.im
-[dotenv@17.2.3] injecting env (12) from .env -- tip: ✅ audit secrets and track compliance: https://dotenvx.com/ops
-[startup] Environment check: PASS (all required variables present)
-[startup] Database check: PASS (connection verified)
-[startup] Port check: PASS (bound to 3000)
-Server running on http://localhost:3000/
-[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
-2:47:08 PM [vite] (client) hmr update /src/pages/PublicProfile.tsx, /src/index.css
-2:58:33 PM [vite] (client) hmr update /src/pages/PublicProfile.tsx, /src/index.css
-2:59:03 PM [vite] (client) hmr update /src/pages/PublicProfile.tsx, /src/index.css
-3:04:05 PM [tsx] change in ./drizzle/schema.ts Restarting...
-[shutdown] Received SIGTERM, closing server...
-c[OAuth] Initialized with baseURL: https://api.manus.im
-[dotenv@17.2.3] injecting env (12) from .env -- tip: 🔑 add access controls to secrets: https://dotenvx.com/ops
-[startup] Environment check: PASS (all required variables present)
-[startup] Database check: PASS (connection verified)
-[startup] Port check: PASS (bound to 3000)
-Server running on http://localhost:3000/
-[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
-3:09:51 PM [tsx] change in ./server/routers.ts Restarting...
-[shutdown] Received SIGTERM, closing server...
-c[OAuth] Initialized with baseURL: https://api.manus.im
-[dotenv@17.2.3] injecting env (12) from .env -- tip: 🔐 prevent committing .env to code: https://dotenvx.com/precommit
-[startup] Environment check: PASS (all required variables present)
-3:09:55 PM [tsx] change in ./server/routers.ts Restarting...
-c[OAuth] Initialized with baseURL: https://api.manus.im
-[dotenv@17.2.3] injecting env (12) from .env -- tip: ⚙️  specify custom .env file path with { path: '/custom/path/.env' }
-[startup] Environment check: PASS (all required variables present)
-[startup] Database check: PASS (connection verified)
-[startup] Port check: PASS (bound to 3000)
-Server running on http://localhost:3000/
-[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
-3:10:09 PM [tsx] change in ./server/routers.ts Restarting...
-[shutdown] Received SIGTERM, closing server...
-c[OAuth] Initialized with baseURL: https://api.manus.im
-[dotenv@17.2.3] injecting env (12) from .env -- tip: ⚙️  enable debug logging with { debug: true }
-[startup] Environment check: PASS (all required variables present)
-[startup] Database check: PASS (connection verified)
-[startup] Port check: PASS (bound to 3000)
-Server running on http://localhost:3000/
-[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
-3:10:28 PM [vite] (client) hmr update /src/pages/PublicProfile.tsx, /src/index.css
-3:11:25 PM [vite] (client) hmr update /src/pages/Watchlist.tsx, /src/index.css
-3:13:41 PM [tsx] change in ./server/routers.ts Restarting...
-[shutdown] Received SIGTERM, closing server...
-c[OAuth] Initialized with baseURL: https://api.manus.im
-[dotenv@17.2.3] injecting env (12) from .env -- tip: 🔑 add access controls to secrets: https://dotenvx.com/ops
-[startup] Environment check: PASS (all required variables present)
-[startup] Database check: PASS (connection verified)
-[startup] Port check: PASS (bound to 3000)
-Server running on http://localhost:3000/
-[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
-3:13:58 PM [tsx] change in ./server/routers.ts Restarting...
-[shutdown] Received SIGTERM, closing server...
-c[OAuth] Initialized with baseURL: https://api.manus.im
-[dotenv@17.2.3] injecting env (12) from .env -- tip: 🔐 prevent committing .env to code: https://dotenvx.com/precommit
-[startup] Environment check: PASS (all required variables present)
-[startup] Database check: PASS (connection verified)
-[startup] Port check: PASS (bound to 3000)
-Server running on http://localhost:3000/
-[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
-3:15:01 PM [tsx] change in ./server/routers.ts Restarting...
-[shutdown] Received SIGTERM, closing server...
-c[OAuth] Initialized with baseURL: https://api.manus.im
-[dotenv@17.2.3] injecting env (12) from .env -- tip: ✅ audit secrets and track compliance: https://dotenvx.com/ops
-[startup] Environment check: PASS (all required variables present)
-[startup] Database check: PASS (connection verified)
-[startup] Port check: PASS (bound to 3000)
-Server running on http://localhost:3000/
-[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
-3:15:47 PM [tsx] change in ./server/routers.ts Restarting...
-[shutdown] Received SIGTERM, closing server...
-c[OAuth] Initialized with baseURL: https://api.manus.im
-[dotenv@17.2.3] injecting env (12) from .env -- tip: 🔐 prevent building .env in docker: https://dotenvx.com/prebuild
-[startup] Environment check: PASS (all required variables present)
-[startup] Database check: PASS (connection verified)
-[startup] Port check: PASS (bound to 3000)
-Server running on http://localhost:3000/
-[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
-3:17:30 PM [tsx] change in ./server/routers.ts Restarting...
-[shutdown] Received SIGTERM, closing server...
-c[OAuth] Initialized with baseURL: https://api.manus.im
-[dotenv@17.2.3] injecting env (12) from .env -- tip: ⚙️  suppress all logs with { quiet: true }
-[startup] Environment check: PASS (all required variables present)
-[startup] Database check: PASS (connection verified)
-[startup] Port check: PASS (bound to 3000)
-Server running on http://localhost:3000/
-[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
-6:29:38 PM [vite] (client) hmr update /src/pages/Home.tsx, /src/index.css
-6:35:53 PM [vite] (client) hmr update /src/pages/Home.tsx, /src/index.css
-6:36:32 PM [vite] (client) hmr update /src/pages/Home.tsx, /src/index.css
-6:43:36 PM [vite] (client) hmr update /src/pages/Home.tsx, /src/index.css
-6:49:41 PM [vite] (client) hmr update /src/pages/Home.tsx, /src/index.css
-6:51:24 PM [vite] (client) hmr update /src/index.css, /src/components/RecentlyAddedCarousel.tsx
-6:51:27 PM [vite] (client) hmr update /src/pages/Home.tsx, /src/index.css
-6:52:59 PM [vite] (client) hmr update /src/index.css, /src/components/RecentlyAddedCarousel.tsx
-6:53:01 PM [vite] (client) hmr update /src/index.css, /src/components/RecentlyAddedCarousel.tsx
-7:06:06 PM [tsx] change in ./drizzle/schema.ts Restarting...
-[shutdown] Received SIGTERM, closing server...
-c[OAuth] Initialized with baseURL: https://api.manus.im
-[dotenv@17.2.3] injecting env (12) from .env -- tip: ⚙️  override existing env vars with { override: true }
-[startup] Environment check: PASS (all required variables present)
-[startup] Database check: PASS (connection verified)
-[startup] Port check: PASS (bound to 3000)
-Server running on http://localhost:3000/
-[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
-7:07:13 PM [tsx] change in ./server/routers.ts Restarting...
-[shutdown] Received SIGTERM, closing server...
-c[OAuth] Initialized with baseURL: https://api.manus.im
-[dotenv@17.2.3] injecting env (12) from .env -- tip: ⚙️  write to custom object with { processEnv: myObject }
-[startup] Environment check: PASS (all required variables present)
-[startup] Database check: PASS (connection verified)
-[startup] Port check: PASS (bound to 3000)
-Server running on http://localhost:3000/
-[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
-7:07:37 PM [tsx] change in ./server/routers.ts Restarting...
-[shutdown] Received SIGTERM, closing server...
-c[OAuth] Initialized with baseURL: https://api.manus.im
-[dotenv@17.2.3] injecting env (12) from .env -- tip: 🗂️ backup and recover secrets: https://dotenvx.com/ops
-[startup] Environment check: PASS (all required variables present)
-[startup] Database check: PASS (connection verified)
-[startup] Port check: PASS (bound to 3000)
-Server running on http://localhost:3000/
-[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
-10:11:46 PM [vite] (client) hmr update /src/pages/WarRoom.tsx, /src/index.css
-10:16:02 PM [tsx] change in ./drizzle/schema.ts Restarting...
-[shutdown] Received SIGTERM, closing server...
-c[OAuth] Initialized with baseURL: https://api.manus.im
-[dotenv@17.2.3] injecting env (12) from .env -- tip: 🔐 prevent committing .env to code: https://dotenvx.com/precommit
-[startup] Environment check: PASS (all required variables present)
-[startup] Database check: PASS (connection verified)
-[startup] Port check: PASS (bound to 3000)
-Server running on http://localhost:3000/
-10:16:13 PM [tsx] change in ./drizzle/schema.ts Restarting...
-[shutdown] Received SIGTERM, closing server...
-[shutdown] Clean exit.
-c[OAuth] Initialized with baseURL: https://api.manus.im
-[dotenv@17.2.3] injecting env (12) from .env -- tip: ✅ audit secrets and track compliance: https://dotenvx.com/ops
-[startup] Environment check: PASS (all required variables present)
-[startup] Database check: PASS (connection verified)
-[startup] Port check: PASS (bound to 3000)
-Server running on http://localhost:3000/
-[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
-10:17:35 PM [tsx] change in ./server/routers.ts Restarting...
-[shutdown] Received SIGTERM, closing server...
-c[OAuth] Initialized with baseURL: https://api.manus.im
-[dotenv@17.2.3] injecting env (12) from .env -- tip: ✅ audit secrets and track compliance: https://dotenvx.com/ops
-[startup] Environment check: PASS (all required variables present)
-[startup] Database check: PASS (connection verified)
-[startup] Port check: PASS (bound to 3000)
-Server running on http://localhost:3000/
-10:17:45 PM [tsx] change in ./server/tradeFlowRouter.ts Restarting...
-[shutdown] Received SIGTERM, closing server...
-[shutdown] Clean exit.
-c[OAuth] Initialized with baseURL: https://api.manus.im
-[dotenv@17.2.3] injecting env (12) from .env -- tip: ⚙️  override existing env vars with { override: true }
-[startup] Environment check: PASS (all required variables present)
-[startup] Database check: PASS (connection verified)
-[startup] Port check: PASS (bound to 3000)
-Server running on http://localhost:3000/
-[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
-10:19:10 PM [tsx] change in ./server/routers.ts Restarting...
-[shutdown] Received SIGTERM, closing server...
-c[OAuth] Initialized with baseURL: https://api.manus.im
-[dotenv@17.2.3] injecting env (12) from .env -- tip: 👥 sync secrets across teammates & machines: https://dotenvx.com/ops
-[startup] Environment check: PASS (all required variables present)
-[startup] Database check: PASS (connection verified)
-[startup] Port check: PASS (bound to 3000)
-Server running on http://localhost:3000/
-[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
-10:19:51 PM [vite] (client) hmr update /src/pages/AdminDashboard.tsx, /src/index.css
-10:20:21 PM [vite] (client) hmr update /src/pages/AdminDashboard.tsx, /src/index.css
-10:45:23 PM [tsx] change in ./server/_core/customAuth.ts Restarting...
-[shutdown] Received SIGTERM, closing server...
-c[OAuth] Initialized with baseURL: https://api.manus.im
-[dotenv@17.2.3] injecting env (12) from .env -- tip: 🔐 prevent committing .env to code: https://dotenvx.com/precommit
-[startup] Environment check: PASS (all required variables present)
-[startup] Database check: PASS (connection verified)
-[startup] Port check: PASS (bound to 3000)
-Server running on http://localhost:3000/
-10:45:34 PM [tsx] change in ./server/tradeFlowRouter.ts Restarting...
-[shutdown] Received SIGTERM, closing server...
-[shutdown] Clean exit.
-c[OAuth] Initialized with baseURL: https://api.manus.im
-[dotenv@17.2.3] injecting env (12) from .env -- tip: ⚙️  load multiple .env files with { path: ['.env.local', '.env'] }
-[startup] Environment check: PASS (all required variables present)
-[startup] Database check: PASS (connection verified)
-[startup] Port check: PASS (bound to 3000)
-Server running on http://localhost:3000/
-10:45:48 PM [tsx] change in ./server/routers.ts Restarting...
-[shutdown] Received SIGTERM, closing server...
-[shutdown] Clean exit.
-c[OAuth] Initialized with baseURL: https://api.manus.im
-[dotenv@17.2.3] injecting env (12) from .env -- tip: 🛠️  run anywhere with `dotenvx run -- yourcommand`
-[startup] Environment check: PASS (all required variables present)
-[startup] Database check: PASS (connection verified)
-[startup] Port check: PASS (bound to 3000)
-Server running on http://localhost:3000/
-[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
-10:46:25 PM [vite] (client) hmr update /src/pages/Home.tsx, /src/index.css
-[updateProfile] Updating database...
-[updateProfile] Database updated, calling getDashboardData...
-[updateProfile] getDashboardData completed, returning result
-12:06:10 AM [vite] (client) hmr update /src/pages/AccountSettings.tsx, /src/index.css
-12:06:21 AM [tsx] change in ./server/routers.ts Restarting...
-[shutdown] Received SIGTERM, closing server...
-c[OAuth] Initialized with baseURL: https://api.manus.im
-[dotenv@17.2.3] injecting env (12) from .env -- tip: 🔑 add access controls to secrets: https://dotenvx.com/ops
-[startup] Environment check: PASS (all required variables present)
-[startup] Database check: PASS (connection verified)
-[startup] Port check: PASS (bound to 3000)
-Server running on http://localhost:3000/
-[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
-12:12:10 AM [vite] (client) hmr update /src/pages/AccountSettings.tsx, /src/index.css
-12:12:58 AM [vite] (client) hmr update /src/pages/PublicProfile.tsx, /src/index.css
-[savePreferences] Input: {
-  preferredCategories: [ 'comics', 'sports_cards' ],
-  showProfile: true,
-  hideInventoryValue: false,
-  receiveContactRequests: true
+[CustomAuth] Failed to get user from session: DrizzleQueryError: Failed query: select `id`, `openId`, `username`, `passwordHash`, `name`, `email`, `displayName`, `avatarUrl`, `loginMethod`, `role`, `securityQuestion`, `securityAnswerHash`, `createdAt`, `updatedAt`, `lastSignedIn`, `lastActivityAt`, `ebayUsername`, `ebayUserId`, `ebayFeedbackScore`, `ebayFeedbackPercentage`, `ebayMemberSince`, `ebaySellerLevel`, `ebayIdVerified`, `ebayStar`, `ebayPositive12mo`, `ebayNeutral12mo`, `ebayNegative12mo`, `ebayIsStoreOwner`, `ebayConnectedAt`, `ebayAccessToken`, `ebayRefreshToken`, `ebayTokenExpiresAt`, `isSuspended`, `suspendedAt`, `isBanned`, `bannedAt`, `banReason`, `warnCount`, `lastWarnedAt` from `users` where `users`.`id` = ? limit ?
+params: 1,1
+    at MySql2PreparedQuery.queryWithCache (/home/ubuntu/collectors-barter/node_modules/.pnpm/drizzle-orm@0.44.6_mysql2@3.15.1/node_modules/src/mysql-core/session.ts:79:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async MySql2PreparedQuery.execute (/home/ubuntu/collectors-barter/node_modules/.pnpm/drizzle-orm@0.44.6_mysql2@3.15.1/node_modules/src/mysql2/session.ts:132:18)
+    at async Module.getUserById (/home/ubuntu/collectors-barter/server/db.ts:2161:18)
+    at async CustomAuthService.getUserFromSession (/home/ubuntu/collectors-barter/server/_core/customAuth.ts:92:20)
+    at async Object.createContext (/home/ubuntu/collectors-barter/server/_core/context.ts:35:14)
+    at async Object.createContext (/home/ubuntu/collectors-barter/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/adapters/node-http/nodeHTTPRequestHandler.ts:94:18)
+    at async Object.create (/home/ubuntu/collectors-barter/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:272:23)
+    at async resolveResponse (/home/ubuntu/collectors-barter/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:311:5)
+    at async <anonymous> (/home/ubuntu/collectors-barter/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/adapters/node-http/nodeHTTPRequestHandler.ts:100:26) {
+  query: 'select `id`, `openId`, `username`, `passwordHash`, `name`, `email`, `displayName`, `avatarUrl`, `loginMethod`, `role`, `securityQuestion`, `securityAnswerHash`, `createdAt`, `updatedAt`, `lastSignedIn`, `lastActivityAt`, `ebayUsername`, `ebayUserId`, `ebayFeedbackScore`, `ebayFeedbackPercentage`, `ebayMemberSince`, `ebaySellerLevel`, `ebayIdVerified`, `ebayStar`, `ebayPositive12mo`, `ebayNeutral12mo`, `ebayNegative12mo`, `ebayIsStoreOwner`, `ebayConnectedAt`, `ebayAccessToken`, `ebayRefreshToken`, `ebayTokenExpiresAt`, `isSuspended`, `suspendedAt`, `isBanned`, `bannedAt`, `banReason`, `warnCount`, `lastWarnedAt` from `users` where `users`.`id` = ? limit ?',
+  params: [ 1, 1 ],
+  cause: Error: Unknown column 'ebaystar' in 'field list'
+      at PromisePool.query (/home/ubuntu/collectors-barter/node_modules/.pnpm/mysql2@3.15.1/node_modules/mysql2/lib/promise/pool.js:36:22)
+      at <anonymous> (/home/ubuntu/collectors-barter/node_modules/.pnpm/drizzle-orm@0.44.6_mysql2@3.15.1/node_modules/src/mysql2/session.ts:133:24)
+      at MySql2PreparedQuery.queryWithCache (/home/ubuntu/collectors-barter/node_modules/.pnpm/drizzle-orm@0.44.6_mysql2@3.15.1/node_modules/src/mysql-core/session.ts:77:18)
+      at MySql2PreparedQuery.execute (/home/ubuntu/collectors-barter/node_modules/.pnpm/drizzle-orm@0.44.6_mysql2@3.15.1/node_modules/src/mysql2/session.ts:132:29)
+      at MySqlSelectBase.execute (/home/ubuntu/collectors-barter/node_modules/.pnpm/drizzle-orm@0.44.6_mysql2@3.15.1/node_modules/src/mysql-core/query-builders/select.ts:1145:25)
+      at MySqlSelectBase.then (/home/ubuntu/collectors-barter/node_modules/.pnpm/drizzle-orm@0.44.6_mysql2@3.15.1/node_modules/src/query-promise.ts:31:15) {
+    code: 'ER_BAD_FIELD_ERROR',
+    errno: 1054,
+    sql: 'select `id`, `openId`, `username`, `passwordHash`, `name`, `email`, `displayName`, `avatarUrl`, `loginMethod`, `role`, `securityQuestion`, `securityAnswerHash`, `createdAt`, `updatedAt`, `lastSignedIn`, `lastActivityAt`, `ebayUsername`, `ebayUserId`, `ebayFeedbackScore`, `ebayFeedbackPercentage`, `ebayMemberSince`, `ebaySellerLevel`, `ebayIdVerified`, `ebayStar`, `ebayPositive12mo`, `ebayNeutral12mo`, `ebayNegative12mo`, `ebayIsStoreOwner`, `ebayConnectedAt`, `ebayAccessToken`, `ebayRefreshToken`, `ebayTokenExpiresAt`, `isSuspended`, `suspendedAt`, `isBanned`, `bannedAt`, `banReason`, `warnCount`, `lastWarnedAt` from `users` where `users`.`id` = 1 limit 1',
+    sqlState: '42S22',
+    sqlMessage: "Unknown column 'ebaystar' in 'field list'"
+  }
 }
-[savePreferences] User ID: 1
-[savePreferences] Update result: [
-  ResultSetHeader {
-    fieldCount: 0,
-    affectedRows: 1,
-    insertId: 0,
-    info: '(Rows matched: 1  Changed: 1  Warnings: 0',
-    serverStatus: 2,
-    warningStatus: 0,
-    changedRows: 1
-  },
-  undefined
-]
-12:16:36 AM [vite] (client) hmr update /src/pages/AccountSettings.tsx, /src/index.css
-12:16:44 AM [vite] (client) hmr update /src/pages/AccountSettings.tsx, /src/index.css
-12:19:00 AM [vite] (client) hmr update /src/pages/PublicProfile.tsx, /src/index.css
-12:19:12 AM [vite] (client) hmr update /src/pages/PublicProfile.tsx, /src/index.css
-12:20:23 AM [vite] (client) hmr update /src/pages/PublicProfile.tsx, /src/index.css
-12:26:03 AM [tsx] change in ./server/db.ts Restarting...
+[CustomAuth] Failed to get user from session: DrizzleQueryError: Failed query: select `id`, `openId`, `username`, `passwordHash`, `name`, `email`, `displayName`, `avatarUrl`, `loginMethod`, `role`, `securityQuestion`, `securityAnswerHash`, `createdAt`, `updatedAt`, `lastSignedIn`, `lastActivityAt`, `ebayUsername`, `ebayUserId`, `ebayFeedbackScore`, `ebayFeedbackPercentage`, `ebayMemberSince`, `ebaySellerLevel`, `ebayIdVerified`, `ebayStar`, `ebayPositive12mo`, `ebayNeutral12mo`, `ebayNegative12mo`, `ebayIsStoreOwner`, `ebayConnectedAt`, `ebayAccessToken`, `ebayRefreshToken`, `ebayTokenExpiresAt`, `isSuspended`, `suspendedAt`, `isBanned`, `bannedAt`, `banReason`, `warnCount`, `lastWarnedAt` from `users` where `users`.`id` = ? limit ?
+params: 1,1
+    at MySql2PreparedQuery.queryWithCache (/home/ubuntu/collectors-barter/node_modules/.pnpm/drizzle-orm@0.44.6_mysql2@3.15.1/node_modules/src/mysql-core/session.ts:79:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async MySql2PreparedQuery.execute (/home/ubuntu/collectors-barter/node_modules/.pnpm/drizzle-orm@0.44.6_mysql2@3.15.1/node_modules/src/mysql2/session.ts:132:18)
+    at async Module.getUserById (/home/ubuntu/collectors-barter/server/db.ts:2161:18)
+    at async CustomAuthService.getUserFromSession (/home/ubuntu/collectors-barter/server/_core/customAuth.ts:92:20)
+    at async Object.createContext (/home/ubuntu/collectors-barter/server/_core/context.ts:35:14)
+    at async Object.createContext (/home/ubuntu/collectors-barter/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/adapters/node-http/nodeHTTPRequestHandler.ts:94:18)
+    at async Object.create (/home/ubuntu/collectors-barter/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:272:23)
+    at async resolveResponse (/home/ubuntu/collectors-barter/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:311:5)
+    at async <anonymous> (/home/ubuntu/collectors-barter/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/adapters/node-http/nodeHTTPRequestHandler.ts:100:26) {
+  query: 'select `id`, `openId`, `username`, `passwordHash`, `name`, `email`, `displayName`, `avatarUrl`, `loginMethod`, `role`, `securityQuestion`, `securityAnswerHash`, `createdAt`, `updatedAt`, `lastSignedIn`, `lastActivityAt`, `ebayUsername`, `ebayUserId`, `ebayFeedbackScore`, `ebayFeedbackPercentage`, `ebayMemberSince`, `ebaySellerLevel`, `ebayIdVerified`, `ebayStar`, `ebayPositive12mo`, `ebayNeutral12mo`, `ebayNegative12mo`, `ebayIsStoreOwner`, `ebayConnectedAt`, `ebayAccessToken`, `ebayRefreshToken`, `ebayTokenExpiresAt`, `isSuspended`, `suspendedAt`, `isBanned`, `bannedAt`, `banReason`, `warnCount`, `lastWarnedAt` from `users` where `users`.`id` = ? limit ?',
+  params: [ 1, 1 ],
+  cause: Error: Unknown column 'ebaystar' in 'field list'
+      at PromisePool.query (/home/ubuntu/collectors-barter/node_modules/.pnpm/mysql2@3.15.1/node_modules/mysql2/lib/promise/pool.js:36:22)
+      at <anonymous> (/home/ubuntu/collectors-barter/node_modules/.pnpm/drizzle-orm@0.44.6_mysql2@3.15.1/node_modules/src/mysql2/session.ts:133:24)
+      at MySql2PreparedQuery.queryWithCache (/home/ubuntu/collectors-barter/node_modules/.pnpm/drizzle-orm@0.44.6_mysql2@3.15.1/node_modules/src/mysql-core/session.ts:77:18)
+      at MySql2PreparedQuery.execute (/home/ubuntu/collectors-barter/node_modules/.pnpm/drizzle-orm@0.44.6_mysql2@3.15.1/node_modules/src/mysql2/session.ts:132:29)
+      at MySqlSelectBase.execute (/home/ubuntu/collectors-barter/node_modules/.pnpm/drizzle-orm@0.44.6_mysql2@3.15.1/node_modules/src/mysql-core/query-builders/select.ts:1145:25)
+      at MySqlSelectBase.then (/home/ubuntu/collectors-barter/node_modules/.pnpm/drizzle-orm@0.44.6_mysql2@3.15.1/node_modules/src/query-promise.ts:31:15) {
+    code: 'ER_BAD_FIELD_ERROR',
+    errno: 1054,
+    sql: 'select `id`, `openId`, `username`, `passwordHash`, `name`, `email`, `displayName`, `avatarUrl`, `loginMethod`, `role`, `securityQuestion`, `securityAnswerHash`, `createdAt`, `updatedAt`, `lastSignedIn`, `lastActivityAt`, `ebayUsername`, `ebayUserId`, `ebayFeedbackScore`, `ebayFeedbackPercentage`, `ebayMemberSince`, `ebaySellerLevel`, `ebayIdVerified`, `ebayStar`, `ebayPositive12mo`, `ebayNeutral12mo`, `ebayNegative12mo`, `ebayIsStoreOwner`, `ebayConnectedAt`, `ebayAccessToken`, `ebayRefreshToken`, `ebayTokenExpiresAt`, `isSuspended`, `suspendedAt`, `isBanned`, `bannedAt`, `banReason`, `warnCount`, `lastWarnedAt` from `users` where `users`.`id` = 1 limit 1',
+    sqlState: '42S22',
+    sqlMessage: "Unknown column 'ebaystar' in 'field list'"
+  }
+}
+[CustomAuth] Failed to get user from session: DrizzleQueryError: Failed query: select `id`, `openId`, `username`, `passwordHash`, `name`, `email`, `displayName`, `avatarUrl`, `loginMethod`, `role`, `securityQuestion`, `securityAnswerHash`, `createdAt`, `updatedAt`, `lastSignedIn`, `lastActivityAt`, `ebayUsername`, `ebayUserId`, `ebayFeedbackScore`, `ebayFeedbackPercentage`, `ebayMemberSince`, `ebaySellerLevel`, `ebayIdVerified`, `ebayStar`, `ebayPositive12mo`, `ebayNeutral12mo`, `ebayNegative12mo`, `ebayIsStoreOwner`, `ebayConnectedAt`, `ebayAccessToken`, `ebayRefreshToken`, `ebayTokenExpiresAt`, `isSuspended`, `suspendedAt`, `isBanned`, `bannedAt`, `banReason`, `warnCount`, `lastWarnedAt` from `users` where `users`.`id` = ? limit ?
+params: 1,1
+    at MySql2PreparedQuery.queryWithCache (/home/ubuntu/collectors-barter/node_modules/.pnpm/drizzle-orm@0.44.6_mysql2@3.15.1/node_modules/src/mysql-core/session.ts:79:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async MySql2PreparedQuery.execute (/home/ubuntu/collectors-barter/node_modules/.pnpm/drizzle-orm@0.44.6_mysql2@3.15.1/node_modules/src/mysql2/session.ts:132:18)
+    at async Module.getUserById (/home/ubuntu/collectors-barter/server/db.ts:2161:18)
+    at async CustomAuthService.getUserFromSession (/home/ubuntu/collectors-barter/server/_core/customAuth.ts:92:20)
+    at async Object.createContext (/home/ubuntu/collectors-barter/server/_core/context.ts:35:14)
+    at async Object.createContext (/home/ubuntu/collectors-barter/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/adapters/node-http/nodeHTTPRequestHandler.ts:94:18)
+    at async Object.create (/home/ubuntu/collectors-barter/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:272:23)
+    at async resolveResponse (/home/ubuntu/collectors-barter/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:311:5)
+    at async <anonymous> (/home/ubuntu/collectors-barter/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/adapters/node-http/nodeHTTPRequestHandler.ts:100:26) {
+  query: 'select `id`, `openId`, `username`, `passwordHash`, `name`, `email`, `displayName`, `avatarUrl`, `loginMethod`, `role`, `securityQuestion`, `securityAnswerHash`, `createdAt`, `updatedAt`, `lastSignedIn`, `lastActivityAt`, `ebayUsername`, `ebayUserId`, `ebayFeedbackScore`, `ebayFeedbackPercentage`, `ebayMemberSince`, `ebaySellerLevel`, `ebayIdVerified`, `ebayStar`, `ebayPositive12mo`, `ebayNeutral12mo`, `ebayNegative12mo`, `ebayIsStoreOwner`, `ebayConnectedAt`, `ebayAccessToken`, `ebayRefreshToken`, `ebayTokenExpiresAt`, `isSuspended`, `suspendedAt`, `isBanned`, `bannedAt`, `banReason`, `warnCount`, `lastWarnedAt` from `users` where `users`.`id` = ? limit ?',
+  params: [ 1, 1 ],
+  cause: Error: Unknown column 'ebaystar' in 'field list'
+      at PromisePool.query (/home/ubuntu/collectors-barter/node_modules/.pnpm/mysql2@3.15.1/node_modules/mysql2/lib/promise/pool.js:36:22)
+      at <anonymous> (/home/ubuntu/collectors-barter/node_modules/.pnpm/drizzle-orm@0.44.6_mysql2@3.15.1/node_modules/src/mysql2/session.ts:133:24)
+      at MySql2PreparedQuery.queryWithCache (/home/ubuntu/collectors-barter/node_modules/.pnpm/drizzle-orm@0.44.6_mysql2@3.15.1/node_modules/src/mysql-core/session.ts:77:18)
+      at MySql2PreparedQuery.execute (/home/ubuntu/collectors-barter/node_modules/.pnpm/drizzle-orm@0.44.6_mysql2@3.15.1/node_modules/src/mysql2/session.ts:132:29)
+      at MySqlSelectBase.execute (/home/ubuntu/collectors-barter/node_modules/.pnpm/drizzle-orm@0.44.6_mysql2@3.15.1/node_modules/src/mysql-core/query-builders/select.ts:1145:25)
+      at MySqlSelectBase.then (/home/ubuntu/collectors-barter/node_modules/.pnpm/drizzle-orm@0.44.6_mysql2@3.15.1/node_modules/src/query-promise.ts:31:15) {
+    code: 'ER_BAD_FIELD_ERROR',
+    errno: 1054,
+    sql: 'select `id`, `openId`, `username`, `passwordHash`, `name`, `email`, `displayName`, `avatarUrl`, `loginMethod`, `role`, `securityQuestion`, `securityAnswerHash`, `createdAt`, `updatedAt`, `lastSignedIn`, `lastActivityAt`, `ebayUsername`, `ebayUserId`, `ebayFeedbackScore`, `ebayFeedbackPercentage`, `ebayMemberSince`, `ebaySellerLevel`, `ebayIdVerified`, `ebayStar`, `ebayPositive12mo`, `ebayNeutral12mo`, `ebayNegative12mo`, `ebayIsStoreOwner`, `ebayConnectedAt`, `ebayAccessToken`, `ebayRefreshToken`, `ebayTokenExpiresAt`, `isSuspended`, `suspendedAt`, `isBanned`, `bannedAt`, `banReason`, `warnCount`, `lastWarnedAt` from `users` where `users`.`id` = 1 limit 1',
+    sqlState: '42S22',
+    sqlMessage: "Unknown column 'ebaystar' in 'field list'"
+  }
+}
+[CustomAuth] Failed to get user from session: DrizzleQueryError: Failed query: select `id`, `openId`, `username`, `passwordHash`, `name`, `email`, `displayName`, `avatarUrl`, `loginMethod`, `role`, `securityQuestion`, `securityAnswerHash`, `createdAt`, `updatedAt`, `lastSignedIn`, `lastActivityAt`, `ebayUsername`, `ebayUserId`, `ebayFeedbackScore`, `ebayFeedbackPercentage`, `ebayMemberSince`, `ebaySellerLevel`, `ebayIdVerified`, `ebayStar`, `ebayPositive12mo`, `ebayNeutral12mo`, `ebayNegative12mo`, `ebayIsStoreOwner`, `ebayConnectedAt`, `ebayAccessToken`, `ebayRefreshToken`, `ebayTokenExpiresAt`, `isSuspended`, `suspendedAt`, `isBanned`, `bannedAt`, `banReason`, `warnCount`, `lastWarnedAt` from `users` where `users`.`id` = ? limit ?
+params: 1,1
+    at MySql2PreparedQuery.queryWithCache (/home/ubuntu/collectors-barter/node_modules/.pnpm/drizzle-orm@0.44.6_mysql2@3.15.1/node_modules/src/mysql-core/session.ts:79:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async MySql2PreparedQuery.execute (/home/ubuntu/collectors-barter/node_modules/.pnpm/drizzle-orm@0.44.6_mysql2@3.15.1/node_modules/src/mysql2/session.ts:132:18)
+    at async Module.getUserById (/home/ubuntu/collectors-barter/server/db.ts:2161:18)
+    at async CustomAuthService.getUserFromSession (/home/ubuntu/collectors-barter/server/_core/customAuth.ts:92:20)
+    at async Object.createContext (/home/ubuntu/collectors-barter/server/_core/context.ts:35:14)
+    at async Object.createContext (/home/ubuntu/collectors-barter/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/adapters/node-http/nodeHTTPRequestHandler.ts:94:18)
+    at async Object.create (/home/ubuntu/collectors-barter/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:272:23)
+    at async resolveResponse (/home/ubuntu/collectors-barter/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:311:5)
+    at async <anonymous> (/home/ubuntu/collectors-barter/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/adapters/node-http/nodeHTTPRequestHandler.ts:100:26) {
+  query: 'select `id`, `openId`, `username`, `passwordHash`, `name`, `email`, `displayName`, `avatarUrl`, `loginMethod`, `role`, `securityQuestion`, `securityAnswerHash`, `createdAt`, `updatedAt`, `lastSignedIn`, `lastActivityAt`, `ebayUsername`, `ebayUserId`, `ebayFeedbackScore`, `ebayFeedbackPercentage`, `ebayMemberSince`, `ebaySellerLevel`, `ebayIdVerified`, `ebayStar`, `ebayPositive12mo`, `ebayNeutral12mo`, `ebayNegative12mo`, `ebayIsStoreOwner`, `ebayConnectedAt`, `ebayAccessToken`, `ebayRefreshToken`, `ebayTokenExpiresAt`, `isSuspended`, `suspendedAt`, `isBanned`, `bannedAt`, `banReason`, `warnCount`, `lastWarnedAt` from `users` where `users`.`id` = ? limit ?',
+  params: [ 1, 1 ],
+  cause: Error: Unknown column 'ebaystar' in 'field list'
+      at PromisePool.query (/home/ubuntu/collectors-barter/node_modules/.pnpm/mysql2@3.15.1/node_modules/mysql2/lib/promise/pool.js:36:22)
+      at <anonymous> (/home/ubuntu/collectors-barter/node_modules/.pnpm/drizzle-orm@0.44.6_mysql2@3.15.1/node_modules/src/mysql2/session.ts:133:24)
+      at MySql2PreparedQuery.queryWithCache (/home/ubuntu/collectors-barter/node_modules/.pnpm/drizzle-orm@0.44.6_mysql2@3.15.1/node_modules/src/mysql-core/session.ts:77:18)
+      at MySql2PreparedQuery.execute (/home/ubuntu/collectors-barter/node_modules/.pnpm/drizzle-orm@0.44.6_mysql2@3.15.1/node_modules/src/mysql2/session.ts:132:29)
+      at MySqlSelectBase.execute (/home/ubuntu/collectors-barter/node_modules/.pnpm/drizzle-orm@0.44.6_mysql2@3.15.1/node_modules/src/mysql-core/query-builders/select.ts:1145:25)
+      at MySqlSelectBase.then (/home/ubuntu/collectors-barter/node_modules/.pnpm/drizzle-orm@0.44.6_mysql2@3.15.1/node_modules/src/query-promise.ts:31:15) {
+    code: 'ER_BAD_FIELD_ERROR',
+    errno: 1054,
+    sql: 'select `id`, `openId`, `username`, `passwordHash`, `name`, `email`, `displayName`, `avatarUrl`, `loginMethod`, `role`, `securityQuestion`, `securityAnswerHash`, `createdAt`, `updatedAt`, `lastSignedIn`, `lastActivityAt`, `ebayUsername`, `ebayUserId`, `ebayFeedbackScore`, `ebayFeedbackPercentage`, `ebayMemberSince`, `ebaySellerLevel`, `ebayIdVerified`, `ebayStar`, `ebayPositive12mo`, `ebayNeutral12mo`, `ebayNegative12mo`, `ebayIsStoreOwner`, `ebayConnectedAt`, `ebayAccessToken`, `ebayRefreshToken`, `ebayTokenExpiresAt`, `isSuspended`, `suspendedAt`, `isBanned`, `bannedAt`, `banReason`, `warnCount`, `lastWarnedAt` from `users` where `users`.`id` = 1 limit 1',
+    sqlState: '42S22',
+    sqlMessage: "Unknown column 'ebaystar' in 'field list'"
+  }
+}
+1:20:22 AM [tsx] change in ./server/_core/ebay.ts Restarting...
 [shutdown] Received SIGTERM, closing server...
 c[OAuth] Initialized with baseURL: https://api.manus.im
-[dotenv@17.2.3] injecting env (12) from .env -- tip: ⚙️  specify custom .env file path with { path: '/custom/path/.env' }
+[dotenv@17.2.3] injecting env (15) from .env -- tip: 🔑 add access controls to secrets: https://dotenvx.com/ops
 [startup] Environment check: PASS (all required variables present)
 [startup] Database check: PASS (connection verified)
 [startup] Port check: PASS (bound to 3000)
 Server running on http://localhost:3000/
 [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
-1:58:54 PM [tsx] change in ./server/_core/index.ts Restarting...
+[CustomAuth] Failed to get user from session: DrizzleQueryError: Failed query: select `id`, `openId`, `username`, `passwordHash`, `name`, `email`, `displayName`, `avatarUrl`, `loginMethod`, `role`, `securityQuestion`, `securityAnswerHash`, `createdAt`, `updatedAt`, `lastSignedIn`, `lastActivityAt`, `ebayUsername`, `ebayUserId`, `ebayFeedbackScore`, `ebayFeedbackPercentage`, `ebayMemberSince`, `ebaySellerLevel`, `ebayIdVerified`, `ebayStar`, `ebayPositive12mo`, `ebayNeutral12mo`, `ebayNegative12mo`, `ebayIsStoreOwner`, `ebayConnectedAt`, `ebayAccessToken`, `ebayRefreshToken`, `ebayTokenExpiresAt`, `isSuspended`, `suspendedAt`, `isBanned`, `bannedAt`, `banReason`, `warnCount`, `lastWarnedAt` from `users` where `users`.`id` = ? limit ?
+params: 1,1
+    at MySql2PreparedQuery.queryWithCache (/home/ubuntu/collectors-barter/node_modules/.pnpm/drizzle-orm@0.44.6_mysql2@3.15.1/node_modules/src/mysql-core/session.ts:79:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async MySql2PreparedQuery.execute (/home/ubuntu/collectors-barter/node_modules/.pnpm/drizzle-orm@0.44.6_mysql2@3.15.1/node_modules/src/mysql2/session.ts:132:18)
+    at async Module.getUserById (/home/ubuntu/collectors-barter/server/db.ts:2161:18)
+    at async CustomAuthService.getUserFromSession (/home/ubuntu/collectors-barter/server/_core/customAuth.ts:92:20)
+    at async Object.createContext (/home/ubuntu/collectors-barter/server/_core/context.ts:35:14)
+    at async Object.createContext (/home/ubuntu/collectors-barter/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/adapters/node-http/nodeHTTPRequestHandler.ts:94:18)
+    at async Object.create (/home/ubuntu/collectors-barter/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:272:23)
+    at async resolveResponse (/home/ubuntu/collectors-barter/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:311:5)
+    at async <anonymous> (/home/ubuntu/collectors-barter/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/adapters/node-http/nodeHTTPRequestHandler.ts:100:26) {
+  query: 'select `id`, `openId`, `username`, `passwordHash`, `name`, `email`, `displayName`, `avatarUrl`, `loginMethod`, `role`, `securityQuestion`, `securityAnswerHash`, `createdAt`, `updatedAt`, `lastSignedIn`, `lastActivityAt`, `ebayUsername`, `ebayUserId`, `ebayFeedbackScore`, `ebayFeedbackPercentage`, `ebayMemberSince`, `ebaySellerLevel`, `ebayIdVerified`, `ebayStar`, `ebayPositive12mo`, `ebayNeutral12mo`, `ebayNegative12mo`, `ebayIsStoreOwner`, `ebayConnectedAt`, `ebayAccessToken`, `ebayRefreshToken`, `ebayTokenExpiresAt`, `isSuspended`, `suspendedAt`, `isBanned`, `bannedAt`, `banReason`, `warnCount`, `lastWarnedAt` from `users` where `users`.`id` = ? limit ?',
+  params: [ 1, 1 ],
+  cause: Error: Unknown column 'ebaystar' in 'field list'
+      at PromisePool.query (/home/ubuntu/collectors-barter/node_modules/.pnpm/mysql2@3.15.1/node_modules/mysql2/lib/promise/pool.js:36:22)
+      at <anonymous> (/home/ubuntu/collectors-barter/node_modules/.pnpm/drizzle-orm@0.44.6_mysql2@3.15.1/node_modules/src/mysql2/session.ts:133:24)
+      at MySql2PreparedQuery.queryWithCache (/home/ubuntu/collectors-barter/node_modules/.pnpm/drizzle-orm@0.44.6_mysql2@3.15.1/node_modules/src/mysql-core/session.ts:77:18)
+      at MySql2PreparedQuery.execute (/home/ubuntu/collectors-barter/node_modules/.pnpm/drizzle-orm@0.44.6_mysql2@3.15.1/node_modules/src/mysql2/session.ts:132:29)
+      at MySqlSelectBase.execute (/home/ubuntu/collectors-barter/node_modules/.pnpm/drizzle-orm@0.44.6_mysql2@3.15.1/node_modules/src/mysql-core/query-builders/select.ts:1145:25)
+      at MySqlSelectBase.then (/home/ubuntu/collectors-barter/node_modules/.pnpm/drizzle-orm@0.44.6_mysql2@3.15.1/node_modules/src/query-promise.ts:31:15) {
+    code: 'ER_BAD_FIELD_ERROR',
+    errno: 1054,
+    sql: 'select `id`, `openId`, `username`, `passwordHash`, `name`, `email`, `displayName`, `avatarUrl`, `loginMethod`, `role`, `securityQuestion`, `securityAnswerHash`, `createdAt`, `updatedAt`, `lastSignedIn`, `lastActivityAt`, `ebayUsername`, `ebayUserId`, `ebayFeedbackScore`, `ebayFeedbackPercentage`, `ebayMemberSince`, `ebaySellerLevel`, `ebayIdVerified`, `ebayStar`, `ebayPositive12mo`, `ebayNeutral12mo`, `ebayNegative12mo`, `ebayIsStoreOwner`, `ebayConnectedAt`, `ebayAccessToken`, `ebayRefreshToken`, `ebayTokenExpiresAt`, `isSuspended`, `suspendedAt`, `isBanned`, `bannedAt`, `banReason`, `warnCount`, `lastWarnedAt` from `users` where `users`.`id` = 1 limit 1',
+    sqlState: '42S22',
+    sqlMessage: "Unknown column 'ebaystar' in 'field list'"
+  }
+}
+[CustomAuth] Failed to get user from session: DrizzleQueryError: Failed query: select `id`, `openId`, `username`, `passwordHash`, `name`, `email`, `displayName`, `avatarUrl`, `loginMethod`, `role`, `securityQuestion`, `securityAnswerHash`, `createdAt`, `updatedAt`, `lastSignedIn`, `lastActivityAt`, `ebayUsername`, `ebayUserId`, `ebayFeedbackScore`, `ebayFeedbackPercentage`, `ebayMemberSince`, `ebaySellerLevel`, `ebayIdVerified`, `ebayStar`, `ebayPositive12mo`, `ebayNeutral12mo`, `ebayNegative12mo`, `ebayIsStoreOwner`, `ebayConnectedAt`, `ebayAccessToken`, `ebayRefreshToken`, `ebayTokenExpiresAt`, `isSuspended`, `suspendedAt`, `isBanned`, `bannedAt`, `banReason`, `warnCount`, `lastWarnedAt` from `users` where `users`.`id` = ? limit ?
+params: 1,1
+    at MySql2PreparedQuery.queryWithCache (/home/ubuntu/collectors-barter/node_modules/.pnpm/drizzle-orm@0.44.6_mysql2@3.15.1/node_modules/src/mysql-core/session.ts:79:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async MySql2PreparedQuery.execute (/home/ubuntu/collectors-barter/node_modules/.pnpm/drizzle-orm@0.44.6_mysql2@3.15.1/node_modules/src/mysql2/session.ts:132:18)
+    at async Module.getUserById (/home/ubuntu/collectors-barter/server/db.ts:2161:18)
+    at async CustomAuthService.getUserFromSession (/home/ubuntu/collectors-barter/server/_core/customAuth.ts:92:20)
+    at async Object.createContext (/home/ubuntu/collectors-barter/server/_core/context.ts:35:14)
+    at async Object.createContext (/home/ubuntu/collectors-barter/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/adapters/node-http/nodeHTTPRequestHandler.ts:94:18)
+    at async Object.create (/home/ubuntu/collectors-barter/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:272:23)
+    at async resolveResponse (/home/ubuntu/collectors-barter/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:311:5)
+    at async <anonymous> (/home/ubuntu/collectors-barter/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/adapters/node-http/nodeHTTPRequestHandler.ts:100:26) {
+  query: 'select `id`, `openId`, `username`, `passwordHash`, `name`, `email`, `displayName`, `avatarUrl`, `loginMethod`, `role`, `securityQuestion`, `securityAnswerHash`, `createdAt`, `updatedAt`, `lastSignedIn`, `lastActivityAt`, `ebayUsername`, `ebayUserId`, `ebayFeedbackScore`, `ebayFeedbackPercentage`, `ebayMemberSince`, `ebaySellerLevel`, `ebayIdVerified`, `ebayStar`, `ebayPositive12mo`, `ebayNeutral12mo`, `ebayNegative12mo`, `ebayIsStoreOwner`, `ebayConnectedAt`, `ebayAccessToken`, `ebayRefreshToken`, `ebayTokenExpiresAt`, `isSuspended`, `suspendedAt`, `isBanned`, `bannedAt`, `banReason`, `warnCount`, `lastWarnedAt` from `users` where `users`.`id` = ? limit ?',
+  params: [ 1, 1 ],
+  cause: Error: Unknown column 'ebaystar' in 'field list'
+      at PromisePool.query (/home/ubuntu/collectors-barter/node_modules/.pnpm/mysql2@3.15.1/node_modules/mysql2/lib/promise/pool.js:36:22)
+      at <anonymous> (/home/ubuntu/collectors-barter/node_modules/.pnpm/drizzle-orm@0.44.6_mysql2@3.15.1/node_modules/src/mysql2/session.ts:1:20:43 AM [tsx] change in ./server/db.ts Process hasn't exited. Killing process...
+node_modules/.pnpm/drizzle-orm@0.44.6_mysql2@3.15.1/node_modules/src/mysql-core/session.ts:77:18)
+      at MySql2PreparedQuery.execute (/home/ubuntu/collectors-barter/node_modules/.pnpm/drizzle-orm@0.44.6_mysql2@3.15.1/node_modules/src/mysql2/session.ts:132:29)
+      at MySqlSelectBase.execute (/home/ubuntu/collectors-barter/node_modules/.pnpm/drizzle-orm@0.44.6_mysql2@3.15.1/node_modules/src/mysql-core/query-builders/select.ts:1145:25)
+      at MySqlSelectBase.then (/home/ubuntu/collectors-barter/node_modules/.pnpm/drizzle-orm@0.44.6_mysql2@3.15.1/node_modules/src/query-promise.ts:31:15) {
+    code: 'ER_BAD_FIELD_ERROR',
+    errno: 1054,
+    sql: 'select `id`, `openId`, `username`, `passwordHash`, `name`, `email`, `displayName`, `avatarUrl`, `loginMethod`, `role`, `securityQuestion`, `securityAnswerHash`, `createdAt`, `updatedAt`, `lastSignedIn`, `lastActivityAt`, `ebayUsername`, `ebayUserId`, `ebayFeedbackScore`, `ebayFeedbackPercentage`, `ebayMemberSince`, `ebaySellerLevel`, `ebayIdVerified`, `ebayStar`, `ebayPositive12mo`, `ebayNeutral12mo`, `ebayNegative12mo`, `ebayIsStoreOwner`, `ebayConnectedAt`, `ebayAccessToken`, `ebayRefreshToken`, `ebayTokenExpiresAt`, `isSuspended`, `suspendedAt`, `isBanned`, `bannedAt`, `banReason`, `warnCount`, `lastWarnedAt` from `users` where `users`.`id` = 1 limit 1',
+    sqlState: '42S22',
+    sqlMessage: "Unknown column 'ebaystar' in 'field list'"
+  }
+}
+1:20:43 AM [tsx] change in ./server/db.ts Restarting...
 [shutdown] Received SIGTERM, closing server...
 c[OAuth] Initialized with baseURL: https://api.manus.im
-[dotenv@17.2.3] injecting env (12) from .env -- tip: ✅ audit secrets and track compliance: https://dotenvx.com/ops
+[dotenv@17.2.3] injecting env (15) from .env -- tip: 📡 add observability to secrets: https://dotenvx.com/ops
 [startup] Environment check: PASS (all required variables present)
 [startup] Database check: PASS (connection verified)
 [startup] Port check: PASS (bound to 3000)
 Server running on http://localhost:3000/
-5:22:25 PM [tsx] change in ./server/_core/ebay.ts Restarting...
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+[CustomAuth] Failed to get user from session: DrizzleQueryError: Failed query: select `id`, `openId`, `username`, `passwordHash`, `name`, `email`, `displayName`, `avatarUrl`, `loginMethod`, `role`, `securityQuestion`, `securityAnswerHash`, `createdAt`, `updatedAt`, `lastSignedIn`, `lastActivityAt`, `ebayUsername`, `ebayUserId`, `ebayFeedbackScore`, `ebayFeedbackPercentage`, `ebayMemberSince`, `ebaySellerLevel`, `ebayIdVerified`, `ebayStar`, `ebayPositive12mo`, `ebayNeutral12mo`, `ebayNegative12mo`, `ebayIsStoreOwner`, `ebayConnectedAt`, `ebayAccessToken`, `ebayRefreshToken`, `ebayTokenExpiresAt`, `isSuspended`, `suspendedAt`, `isBanned`, `bannedAt`, `banReason`, `warnCount`, `lastWarnedAt` from `users` where `users`.`id` = ? limit ?
+params: 1,1
+    at MySql2PreparedQuery.queryWithCache (/home/ubuntu/collectors-barter/node_modules/.pnpm/drizzle-orm@0.44.6_mysql2@3.15.1/node_modules/src/mysql-core/session.ts:79:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async MySql2PreparedQuery.execute (/home/ubuntu/collectors-barter/node_modules/.pnpm/drizzle-orm@0.44.6_mysql2@3.15.1/node_modules/src/mysql2/session.ts:132:18)
+    at async Module.getUserById (/home/ubuntu/collectors-barter/server/db.ts:2161:18)
+    at async CustomAuthService.getUserFromSession (/home/ubuntu/collectors-barter/server/_core/customAuth.ts:92:20)
+    at async Object.createContext (/home/ubuntu/collectors-barter/server/_core/context.ts:35:14)
+    at async Object.createContext (/home/ubuntu/collectors-barter/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/adapters/node-http/nodeHTTPRequestHandler.ts:94:18)
+    at async Object.create (/home/ubuntu/collectors-barter/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:272:23)
+    at async resolveResponse (/home/ubuntu/collectors-barter/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:311:5)
+    at async <anonymous> (/home/ubuntu/collectors-barter/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/adapters/node-http/nodeHTTPRequestHandler.ts:100:26) {
+  query: 'select `id`, `openId`, `username`, `passwordHash`, `name`, `email`, `displayName`, `avatarUrl`, `loginMethod`, `role`, `securityQuestion`, `securityAnswerHash`, `createdAt`, `updatedAt`, `lastSignedIn`, `lastActivityAt`, `ebayUsername`, `ebayUserId`, `ebayFeedbackScore`, `ebayFeedbackPercentage`, `ebayMemberSince`, `ebaySellerLevel`, `ebayIdVerified`, `ebayStar`, `ebayPositive12mo`, `ebayNeutral12mo`, `ebayNegative12mo`, `ebayIsStoreOwner`, `ebayConnectedAt`, `ebayAccessToken`, `ebayRefreshToken`, `ebayTokenExpiresAt`, `isSuspended`, `suspendedAt`, `isBanned`, `bannedAt`, `banReason`, `warnCount`, `lastWarnedAt` from `users` where `users`.`id` = ? limit ?',
+  params: [ 1, 1 ],
+  cause: Error: Unknown column 'ebaystar' in 'field list'
+      at PromisePool.query (/home/ubuntu/collectors-barter/node_modules/.pnpm/mysql2@3.15.1/node_modules/mysql2/lib/promise/pool.js:36:22)
+      at <anonymous> (/home/ubuntu/collectors-barter/node_modules/.pnpm/drizzle-orm@0.44.6_mysql2@3.15.1/node_modules/src/mysql2/session.ts:133:24)
+      at MySql2PreparedQuery.queryWithCache (/home/ubuntu/collectors-barter/node_modules/.pnpm/drizzle-orm@0.44.6_mysql2@3.15.1/node_modules/src/mysql-core/session.ts:77:18)
+      at MySql2PreparedQuery.execute (/home/ubuntu/collectors-barter/node_modules/.pnpm/drizzle-orm@0.44.6_mysql2@3.15.1/node_modules/src/mysql2/session.ts:132:29)
+      at MySqlSelectBase.execute (/home/ubuntu/collectors-barter/node_modules/.pnpm/drizzle-orm@0.44.6_mysql2@3.15.1/node_modules/src/mysql-core/query-builders/select.ts:1145:25)
+      at MySqlSelectBase.then (/home/ubuntu/collectors-barter/node_modules/.pnpm/drizzle-orm@0.44.6_mysql2@3.15.1/node_modules/src/query-promise.ts:31:15) {
+    code: 'ER_BAD_FIELD_ERROR',
+    errno: 1054,
+    sql: 'select `id`, `openId`, `username`, `passwordHash`, `name`, `email`, `displayName`, `avatarUrl`, `loginMethod`, `role`, `securityQuestion`, `securityAnswerHash`, `createdAt`, `updatedAt`, `lastSignedIn`, `lastActivityAt`, `ebayUsername`, `ebayUserId`, `ebayFeedbackScore`, `ebayFeedbackPercentage`, `ebayMemberSince`, `ebaySellerLevel`, `ebayIdVerified`, `ebayStar`, `ebayPositive12mo`, `ebayNeutral12mo`, `ebayNegative12mo`, `ebayIsStoreOwner`, `ebayConnectedAt`, `ebayAccessToken`, `ebayRefreshToken`, `ebayTokenExpiresAt`, `isSuspended`, `suspendedAt`, `isBanned`, `bannedAt`, `banReason`, `warnCount`, `lastWarnedAt` from `users` where `users`.`id` = 1 limit 1',
+    sqlState: '42S22',
+    sqlMessage: "Unknown column 'ebaystar' in 'field list'"
+  }
+}
+[CustomAuth] Failed to get user from session: DrizzleQueryError: Failed query: select `id`, `openId`, `username`, `passwordHash`, `name`, `email`, `displayName`, `avatarUrl`, `loginMethod`, `role`, `securityQuestion`, `securityAnswerHash`, `createdAt`, `updatedAt`, `lastSignedIn`, `lastActivityAt`, `ebayUsername`, `ebayUserId`, `ebayFeedbackScore`, `ebayFeedbackPercentage`, `ebayMemberSince`, `ebaySellerLevel`, `ebayIdVerified`, `ebayStar`, `ebayPositive12mo`, `ebayNeutral12mo`, `ebayNegative12mo`, `ebayIsStoreOwner`, `ebayConnectedAt`, `ebayAccessToken`, `ebayRefreshToken`, `ebayTokenExpiresAt`, `isSuspended`, `suspendedAt`, `isBanned`, `bannedAt`, `banReason`, `warnCount`, `lastWarnedAt` from `users` where `users`.`id` = ? limit ?
+params: 1,1
+    at MySql2PreparedQuery.queryWithCache (/home/ubuntu/collectors-barter/node_modules/.pnpm/drizzle-orm@0.44.6_mysql2@3.15.1/node_modules/src/mysql-core/session.ts:79:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async MySql2PreparedQuery.execute (/home/ubuntu/collectors-barter/node_modules/.pnpm/drizzle-orm@0.44.6_mysql2@3.15.1/node_modules/src/mysql2/session.ts:132:18)
+    at async Module.getUserById (/home/ubuntu/collectors-barter/server/db.ts:2161:18)
+    at async CustomAuthService.getUserFromSession (/home/ubuntu/collectors-barter/server/_core/customAuth.ts:92:20)
+    at async Object.createContext (/home/ubuntu/collectors-barter/server/_core/context.ts:35:14)
+    at async Object.createContext (/home/ubuntu/collectors-barter/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/adapters/node-http/nodeHTTPRequestHandler.ts:94:18)
+    at async Object.create (/home/ubuntu/collectors-barter/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:272:23)
+    at async resolveResponse (/home/ubuntu/collectors-barter/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:311:5)
+    at async <anonymous> (/home/ubuntu/collectors-barter/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/adapters/node-http/nodeHTTPRequestHandler.ts:100:26) {
+  query: 'select `id`, `openId`, `username`, `passwordHash`, `name`, `email`, `displayName`, `avatarUrl`, `loginMethod`, `role`, `securityQuestion`, `securityAnswerHash`, `createdAt`, `updatedAt`, `lastSignedIn`, `lastActivityAt`, `ebayUsername`, `ebayUserId`, `ebayFeedbackScore`, `ebayFeedbackPercentage`, `ebayMemberSince`, `ebaySellerLevel`, `ebayIdVerified`, `ebayStar`, `ebayPositive12mo`, `ebayNeutral12mo`, `ebayNegative12mo`, `ebayIsStoreOwner`, `ebayConnectedAt`, `ebayAccessToken`, `ebayRefreshToken`, `ebayTokenExpiresAt`, `isSuspended`, `suspendedAt`, `isBanned`, `bannedAt`, `banReason`, `warnCount`, `lastWarnedAt` from `users` where `users`.`id` = ? limit ?',
+  params: [ 1, 1 ],
+  cause: Error: Unknown column 'ebaystar' in 'field list'
+      at PromisePool.query (/home/ubuntu/collectors-barter/node_modules/.pnpm/mysql2@3.15.1/node_modules/mysql2/lib/promise/pool.js:36:22)
+      at <anonymous> (/home/ubuntu/collectors-barter/node_modules/.pnpm/drizzle-orm@0.44.6_mysql2@3.15.1/node_modules/src/mysql2/session.ts:133:24)
+      at MySql2PreparedQuery.queryWithCache (/home/ubuntu/collectors-barter/node_modules/.pnpm/drizzle-orm@0.44.6_mysql2@3.15.1/node_modules/src/mysql-core/session.ts:77:18)
+      at MySql2PreparedQuery.execute (/home/ubuntu/collectors-barter/node_modules/.pnpm/drizzle-orm@0.44.6_mysql2@3.15.1/node_modules/src/mysql2/session.ts:132:29)
+      at MySqlSelectBase.execute (/home/ubuntu/collectors-barter/node_modules/.pnpm/drizzle-orm@0.44.6_mysql2@3.15.1/node_modules/src/mysql-core/query-builders/select.ts:1145:25)
+      at MySqlSelectBase.then (/home/ubuntu/collectors-barter/node_modules/.pnpm/drizzle-orm@0.44.6_mysql2@3.15.1/node_modules/src/query-promise.ts:31:15) {
+    code: 'ER_BAD_FIELD_ERROR',
+    errno: 1054,
+    sql: 'select `id`, `openId`, `username`, `passwordHash`, `name`, `email`, `displayName`, `avatarUrl`, `loginMethod`, `role`, `securityQuestion`, `securityAnswerHash`, `createdAt`, `updatedAt`, `lastSignedIn`, `lastActivityAt`, `ebayUsername`, `ebayUserId`, `ebayFeedbackScore`, `ebayFeedbackPercentage`, `ebayMemberSince`, `ebaySellerLevel`, `ebayIdVerified`, `ebayStar`, `ebayPositive12mo`, `ebayNeutral12mo`, `ebayNegative12mo`, `ebayIsStoreOwner`, `ebayConnectedAt`, `ebayAccessToken`, `ebayRefreshToken`, `ebayTokenExpiresAt`, `isSuspended`, `suspendedAt`, `isBanned`, `bannedAt`, `banReason`, `warnCount`, `lastWarnedAt` from `users` where `users`.`id` = 1 limit 1',
+    sqlState: '42S22',
+    sqlMessage: "Unknown column 'ebaystar' in 'field list'"
+  }
+}
+1:20:51 AM [tsx] change in ./server/_core/ebayCallback.ts Restarting...
 [shutdown] Received SIGTERM, closing server...
-[shutdown] Clean exit.
 c[OAuth] Initialized with baseURL: https://api.manus.im
-[dotenv@17.2.3] injecting env (12) from .env -- tip: 🔐 encrypt with Dotenvx: https://dotenvx.com
+[dotenv@17.2.3] injecting env (15) from .env -- tip: ⚙️  enable debug logging with { debug: true }
 [startup] Environment check: PASS (all required variables present)
 [startup] Database check: PASS (connection verified)
 [startup] Port check: PASS (bound to 3000)
 Server running on http://localhost:3000/
-5:22:44 PM [tsx] change in ./server/_core/index.ts Restarting...
-[shutdown] Received SIGTERM, closing server...
-[shutdown] Clean exit.
-c[OAuth] Initialized with baseURL: https://api.manus.im
-[dotenv@17.2.3] injecting env (12) from .env -- tip: ⚙️  specify custom .env file path with { path: '/custom/path/.env' }
-[startup] Environment check: PASS (all required variables present)
-[startup] Database check: PASS (connection verified)
-[startup] Port check: PASS (bound to 3000)
-Server running on http://localhost:3000/
-5:24:22 PM [tsx] change in ./server/routers.ts Restarting...
-[shutdown] Received SIGTERM, closing server...
-[shutdown] Clean exit.
-c[OAuth] Initialized with baseURL: https://api.manus.im
-[dotenv@17.2.3] injecting env (12) from .env -- tip: 🔐 prevent committing .env to code: https://dotenvx.com/precommit
-[startup] Environment check: PASS (all required variables present)
-[startup] Database check: PASS (connection verified)
-[startup] Port check: PASS (bound to 3000)
-Server running on http://localhost:3000/
-5:40:44 PM [tsx] change in ./server/_core/index.ts Restarting...
-[shutdown] Received SIGTERM, closing server...
-[shutdown] Clean exit.
-c[OAuth] Initialized with baseURL: https://api.manus.im
-[dotenv@17.2.3] injecting env (12) from .env -- tip: 🛠️  run anywhere with `dotenvx run -- yourcommand`
-[startup] Environment check: PASS (all required variables present)
-[startup] Database check: PASS (connection verified)
-[startup] Port check: PASS (bound to 3000)
-Server running on http://localhost:3000/
-5:46:14 PM [tsx] change in ./server/_core/ebay.ts Restarting...
-[shutdown] Received SIGTERM, closing server...
-[shutdown] Clean exit.
-c[OAuth] Initialized with baseURL: https://api.manus.im
-[dotenv@17.2.3] injecting env (12) from .env -- tip: 🔑 add access controls to secrets: https://dotenvx.com/ops
-[startup] Environment check: PASS (all required variables present)
-[startup] Database check: PASS (connection verified)
-[startup] Port check: PASS (bound to 3000)
-Server running on http://localhost:3000/
-5:51:51 PM [tsx] change in ./server/_core/ebay.ts Restarting...
-[shutdown] Received SIGTERM, closing server...
-[shutdown] Clean exit.
-c[OAuth] Initialized with baseURL: https://api.manus.im
-[dotenv@17.2.3] injecting env (12) from .env -- tip: ⚙️  write to custom object with { processEnv: myObject }
-[startup] Environment check: PASS (all required variables present)
-[startup] Database check: PASS (connection verified)
-[startup] Port check: PASS (bound to 3000)
-Server running on http://localhost:3000/
-5:56:59 PM [tsx] change in ./server/db.ts Restarting...
-[shutdown] Received SIGTERM, closing server...
-[shutdown] Clean exit.
-c[OAuth] Initialized with baseURL: https://api.manus.im
-[dotenv@17.2.3] injecting env (12) from .env -- tip: 🗂️ backup and recover secrets: https://dotenvx.com/ops
-[startup] Environment check: PASS (all required variables present)
-[startup] Database check: PASS (connection verified)
-[startup] Port check: PASS (bound to 3000)
-Server running on http://localhost:3000/
-6:00:38 PM [tsx] change in ./server/_core/ebay.ts Restarting...
-[shutdown] Received SIGTERM, closing server...
-[shutdown] Clean exit.
-c[OAuth] Initialized with baseURL: https://api.manus.im
-[dotenv@17.2.3] injecting env (12) from .env -- tip: 🔄 add secrets lifecycle management: https://dotenvx.com/ops
-[startup] Environment check: PASS (all required variables present)
-[startup] Database check: PASS (connection verified)
-[startup] Port check: PASS (bound to 3000)
-Server running on http://localhost:3000/
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+1:20:58 AM [vite] (client) hmr update /src/index.css
+[CustomAuth] Failed to get user from session: DrizzleQueryError: Failed query: select `id`, `openId`, `username`, `passwordHash`, `name`, `email`, `displayName`, `avatarUrl`, `loginMethod`, `role`, `securityQuestion`, `securityAnswerHash`, `createdAt`, `updatedAt`, `lastSignedIn`, `lastActivityAt`, `ebayUsername`, `ebayUserId`, `ebayFeedbackScore`, `ebayFeedbackPercentage`, `ebayMemberSince`, `ebaySellerLevel`, `ebayIdVerified`, `ebayStar`, `ebayPositive12mo`, `ebayNeutral12mo`, `ebayNegative12mo`, `ebayIsStoreOwner`, `ebayConnectedAt`, `ebayAccessToken`, `ebayRefreshToken`, `ebayTokenExpiresAt`, `isSuspended`, `suspendedAt`, `isBanned`, `bannedAt`, `banReason`, `warnCount`, `lastWarnedAt` from `users` where `users`.`id` = ? limit ?
+params: 1,1
+    at MySql2PreparedQuery.queryWithCache (/home/ubuntu/collectors-barter/node_modules/.pnpm/drizzle-orm@0.44.6_mysql2@3.15.1/node_modules/src/mysql-core/session.ts:79:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async MySql2PreparedQuery.execute (/home/ubuntu/collectors-barter/node_modules/.pnpm/drizzle-orm@0.44.6_mysql2@3.15.1/node_modules/src/mysql2/session.ts:132:18)
+    at async Module.getUserById (/home/ubuntu/collectors-barter/server/db.ts:2161:18)
+    at async CustomAuthService.getUserFromSession (/home/ubuntu/collectors-barter/server/_core/customAuth.ts:92:20)
+    at async Object.createContext (/home/ubuntu/collectors-barter/server/_core/context.ts:35:14)
+    at async Object.createContext (/home/ubuntu/collectors-barter/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/adapters/node-http/nodeHTTPRequestHandler.ts:94:18)
+    at async Object.create (/home/ubuntu/collectors-barter/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:272:23)
+    at async resolveResponse (/home/ubuntu/collectors-barter/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:311:5)
+    at async <anonymous> (/home/ubuntu/collectors-barter/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/adapters/node-http/nodeHTTPRequestHandler.ts:100:26) {
+  query: 'select `id`, `openId`, `username`, `passwordHash`, `name`, `email`, `displayName`, `avatarUrl`, `loginMethod`, `role`, `securityQuestion`, `securityAnswerHash`, `createdAt`, `updatedAt`, `lastSignedIn`, `lastActivityAt`, `ebayUsername`, `ebayUserId`, `ebayFeedbackScore`, `ebayFeedbackPercentage`, `ebayMemberSince`, `ebaySellerLevel`, `ebayIdVerified`, `ebayStar`, `ebayPositive12mo`, `ebayNeutral12mo`, `ebayNegative12mo`, `ebayIsStoreOwner`, `ebayConnectedAt`, `ebayAccessToken`, `ebayRefreshToken`, `ebayTokenExpiresAt`, `isSuspended`, `suspendedAt`, `isBanned`, `bannedAt`, `banReason`, `warnCount`, `lastWarnedAt` from `users` where `users`.`id` = ? limit ?',
+  params: [ 1, 1 ],
+  cause: Error: Unknown column 'ebaystar' in 'field list'
+      at PromisePool.query (/home/ubuntu/collectors-barter/node_modules/.pnpm/mysql2@3.15.1/node_modules/mysql2/lib/promise/pool.js:36:22)
+      at <anonymous> (/home/ubuntu/collectors-barter/node_modules/.pnpm/drizzle-orm@0.44.6_mysql2@3.15.1/node_modules/src/mysql2/session.ts:133:24)
+      at MySql2PreparedQuery.queryWithCache (/home/ubuntu/collectors-barter/node_modules/.pnpm/drizzle-orm@0.44.6_mysql2@3.15.1/node_modules/src/mysql-core/session.ts:77:18)
+      at MySql2PreparedQuery.execute (/home/ubuntu/collectors-barter/node_modules/.pnpm/drizzle-orm@0.44.6_mysql2@3.15.1/node_modules/src/mysql2/session.ts:132:29)
+      at MySqlSelectBase.execute (/home/ubuntu/collectors-barter/node_modules/.pnpm/drizzle-orm@0.44.6_mysql2@3.15.1/node_modules/src/mysql-core/query-builders/select.ts:1145:25)
+      at MySqlSelectBase.then (/home/ubuntu/collectors-barter/node_modules/.pnpm/drizzle-orm@0.44.6_mysql2@3.15.1/node_modules/src/query-promise.ts:31:15) {
+    code: 'ER_BAD_FIELD_ERROR',
+    errno: 1054,
+    sql: 'select `id`, `openId`, `username`, `passwordHash`, `name`, `email`, `displayName`, `avatarUrl`, `loginMethod`, `role`, `securityQuestion`, `securityAnswerHash`, `createdAt`, `updatedAt`, `lastSignedIn`, `lastActivityAt`, `ebayUsername`, `ebayUserId`, `ebayFeedbackScore`, `ebayFeedbackPercentage`, `ebayMemberSince`, `ebaySellerLevel`, `ebayIdVerified`, `ebayStar`, `ebayPositive12mo`, `ebayNeutral12mo`, `ebayNegative12mo`, `ebayIsStoreOwner`, `ebayConnectedAt`, `ebayAccessToken`, `ebayRefreshToken`, `ebayTokenExpiresAt`, `isSuspended`, `suspendedAt`, `isBanned`, `bannedAt`, `banReason`, `warnCount`, `lastWarnedAt` from `users` where `users`.`id` = 1 limit 1',
+    sqlState: '42S22',
+    sqlMessage: "Unknown column 'ebaystar' in 'field list'"
+  }
+}
+[CustomAuth] Failed to get user from session: DrizzleQueryError: Failed query: select `id`, `openId`, `username`, `passwordHash`, `name`, `email`, `displayName`, `avatarUrl`, `loginMethod`, `role`, `securityQuestion`, `securityAnswerHash`, `createdAt`, `updatedAt`, `lastSignedIn`, `lastActivityAt`, `ebayUsername`, `ebayUserId`, `ebayFeedbackScore`, `ebayFeedbackPercentage`, `ebayMemberSince`, `ebaySellerLevel`, `ebayIdVerified`, `ebayStar`, `ebayPositive12mo`, `ebayNeutral12mo`, `ebayNegative12mo`, `ebayIsStoreOwner`, `ebayConnectedAt`, `ebayAccessToken`, `ebayRefreshToken`, `ebayTokenExpiresAt`, `isSuspended`, `suspendedAt`, `isBanned`, `bannedAt`, `banReason`, `warnCount`, `lastWarnedAt` from `users` where `users`.`id` = ? limit ?
+params: 1,1
+    at MySql2PreparedQuery.queryWithCache (/home/ubuntu/collectors-barter/node_modules/.pnpm/drizzle-orm@0.44.6_mysql2@3.15.1/node_modules/src/mysql-core/session.ts:79:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async MySql2PreparedQuery.execute (/home/ubuntu/collectors-barter/node_modules/.pnpm/drizzle-orm@0.44.6_mysql2@3.15.1/node_modules/src/mysql2/session.ts:132:18)
+    at async Module.getUserById (/home/ubuntu/collectors-barter/server/db.ts:2161:18)
+    at async CustomAuthService.getUserFromSession (/home/ubuntu/collectors-barter/server/_core/customAuth.ts:92:20)
+    at async Object.createContext (/home/ubuntu/collectors-barter/server/_core/context.ts:35:14)
+    at async Object.createContext (/home/ubuntu/collectors-barter/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/adapters/node-http/nodeHTTPRequestHandler.ts:94:18)
+    at async Object.create (/home/ubuntu/collectors-barter/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:272:23)
+    at async resolveResponse (/home/ubuntu/collectors-barter/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:311:5)
+    at async <anonymous> (/home/ubuntu/collectors-barter/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/adapters/node-http/nodeHTTPRequestHandler.ts:100:26) {
+  query: 'select `id`, `openId`, `username`, `passwordHash`, `name`, `email`, `displayName`, `avatarUrl`, `loginMethod`, `role`, `securityQuestion`, `securityAnswerHash`, `createdAt`, `updatedAt`, `lastSignedIn`, `lastActivityAt`, `ebayUsername`, `ebayUserId`, `ebayFeedbackScore`, `ebayFeedbackPercentage`, `ebayMemberSince`, `ebaySellerLevel`, `ebayIdVerified`, `ebayStar`, `ebayPositive12mo`, `ebayNeutral12mo`, `ebayNegative12mo`, `ebayIsStoreOwner`, `ebayConnectedAt`, `ebayAccessToken`, `ebayRefreshToken`, `ebayTokenExpiresAt`, `isSuspended`, `suspendedAt`, `isBanned`, `bannedAt`, `banReason`, `warnCount`, `lastWarnedAt` from `users` where `users`.`id` = ? limit ?',
+  params: [ 1, 1 ],
+  cause: Error: Unknown column 'ebaystar' in 'field list'
+      at PromisePool.query (/home/ubuntu/collectors-barter/node_modules/.pnpm/mysql2@3.15.1/node_modules/mysql2/lib/promise/pool.js:36:22)
+      at <anonymous> (/home/ubuntu/collectors-barter/node_modules/.pnpm/drizzle-orm@0.44.6_mysql2@3.15.1/node_modules/src/mysql2/session.ts:133:24)
+      at MySql2PreparedQuery.queryWithCache (/home/ubuntu/collectors-barter/node_modules/.pnpm/drizzle-orm@0.44.6_mysql2@3.15.1/node_modules/src/mysql-core/session.ts:77:18)
+      at MySql2PreparedQuery.execute (/home/ubuntu/collectors-barter/node_modules/.pnpm/drizzle-orm@0.44.6_mysql2@3.15.1/node_modules/src/mysql2/session.ts:132:29)
+      at MySqlSelectBase.execute (/home/ubuntu/collectors-barter/node_modules/.pnpm/drizzle-orm@0.44.6_mysql2@3.15.1/node_modules/src/mysql-core/query-builders/select.ts:1145:25)
+      at MySqlSelectBase.then (/home/ubuntu/collectors-barter/node_modules/.pnpm/drizzle-orm@0.44.6_mysql2@3.15.1/node_modules/src/query-promise.ts:31:15) {
+    code: 'ER_BAD_FIELD_ERROR',
+    errno: 1054,
+    sql: 'select `id`, `openId`, `username`, `passwordHash`, `name`, `email`, `displayName`, `avatarUrl`, `loginMethod`, `role`, `securityQuestion`, `securityAnswerHash`, `createdAt`, `updatedAt`, `lastSignedIn`, `lastActivityAt`, `ebayUsername`, `ebayUserId`, `ebayFeedbackScore`, `ebayFeedbackPercentage`, `ebayMemberSince`, `ebaySellerLevel`, `ebayIdVerified`, `ebayStar`, `ebayPositive12mo`, `ebayNeutral12mo`, `ebayNegative12mo`, `ebayIsStoreOwner`, `ebayConnectedAt`, `ebayAccessToken`, `ebayRefreshToken`, `ebayTokenExpiresAt`, `isSuspended`, `suspendedAt`, `isBanned`, `bannedAt`, `banReason`, `warnCount`, `lastWarnedAt` from `users` where `users`.`id` = 1 limit 1',
+    sqlState: '42S22',
+    sqlMessage: "Unknown column 'ebaystar' in 'field list'"
+  }
+}
+1:22:33 AM [vite] (client) hmr update /src/pages/PublicProfile.tsx, /src/index.css
+[CustomAuth] Failed to get user from session: DrizzleQueryError: Failed query: select `id`, `openId`, `username`, `passwordHash`, `name`, `email`, `displayName`, `avatarUrl`, `loginMethod`, `role`, `securityQuestion`, `securityAnswerHash`, `createdAt`, `updatedAt`, `lastSignedIn`, `lastActivityAt`, `ebayUsername`, `ebayUserId`, `ebayFeedbackScore`, `ebayFeedbackPercentage`, `ebayMemberSince`, `ebaySellerLevel`, `ebayIdVerified`, `ebayStar`, `ebayPositive12mo`, `ebayNeutral12mo`, `ebayNegative12mo`, `ebayIsStoreOwner`, `ebayConnectedAt`, `ebayAccessToken`, `ebayRefreshToken`, `ebayTokenExpiresAt`, `isSuspended`, `suspendedAt`, `isBanned`, `bannedAt`, `banReason`, `warnCount`, `lastWarnedAt` from `users` where `users`.`id` = ? limit ?
+params: 1,1
+    at MySql2PreparedQuery.queryWithCache (/home/ubuntu/collectors-barter/node_modules/.pnpm/drizzle-orm@0.44.6_mysql2@3.15.1/node_modules/src/mysql-core/session.ts:79:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async MySql2PreparedQuery.execute (/home/ubuntu/collectors-barter/node_modules/.pnpm/drizzle-orm@0.44.6_mysql2@3.15.1/node_modules/src/mysql2/session.ts:132:18)
+    at async Module.getUserById (/home/ubuntu/collectors-barter/server/db.ts:2161:18)
+    at async CustomAuthService.getUserFromSession (/home/ubuntu/collectors-barter/server/_core/customAuth.ts:92:20)
+    at async Object.createContext (/home/ubuntu/collectors-barter/server/_core/context.ts:35:14)
+    at async Object.createContext (/home/ubuntu/collectors-barter/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/adapters/node-http/nodeHTTPRequestHandler.ts:94:18)
+    at async Object.create (/home/ubuntu/collectors-barter/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:272:23)
+    at async resolveResponse (/home/ubuntu/collectors-barter/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:311:5)
+    at async <anonymous> (/home/ubuntu/collectors-barter/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/adapters/node-http/nodeHTTPRequestHandler.ts:100:26) {
+  query: 'select `id`, `openId`, `username`, `passwordHash`, `name`, `email`, `displayName`, `avatarUrl`, `loginMethod`, `role`, `securityQuestion`, `securityAnswerHash`, `createdAt`, `updatedAt`, `lastSignedIn`, `lastActivityAt`, `ebayUsername`, `ebayUserId`, `ebayFeedbackScore`, `ebayFeedbackPercentage`, `ebayMemberSince`, `ebaySellerLevel`, `ebayIdVerified`, `ebayStar`, `ebayPositive12mo`, `ebayNeutral12mo`, `ebayNegative12mo`, `ebayIsStoreOwner`, `ebayConnectedAt`, `ebayAccessToken`, `ebayRefreshToken`, `ebayTokenExpiresAt`, `isSuspended`, `suspendedAt`, `isBanned`, `bannedAt`, `banReason`, `warnCount`, `lastWarnedAt` from `users` where `users`.`id` = ? limit ?',
+  params: [ 1, 1 ],
+  cause: Error: Unknown column 'ebaystar' in 'field list'
+      at PromisePool.query (/home/ubuntu/collectors-barter/node_modules/.pnpm/mysql2@3.15.1/node_modules/mysql2/lib/promise/pool.js:36:22)
+      at <anonymous> (/home/ubuntu/collectors-barter/node_modules/.pnpm/drizzle-orm@0.44.6_mysql2@3.15.1/node_modules/src/mysql2/session.ts:133:24)
+      at MySql2PreparedQuery.queryWithCache (/home/ubuntu/collectors-barter/node_modules/.pnpm/drizzle-orm@0.44.6_mysql2@3.15.1/node_modules/src/mysql-core/session.ts:77:18)
+      at MySql2PreparedQuery.execute (/home/ubuntu/collectors-barter/node_modules/.pnpm/drizzle-orm@0.44.6_mysql2@3.15.1/node_modules/src/mysql2/session.ts:132:29)
+      at MySqlSelectBase.execute (/home/ubuntu/collectors-barter/node_modules/.pnpm/drizzle-orm@0.44.6_mysql2@3.15.1/node_modules/src/mysql-core/query-builders/select.ts:1145:25)
+      at MySqlSelectBase.then (/home/ubuntu/collectors-barter/node_modules/.pnpm/drizzle-orm@0.44.6_mysql2@3.15.1/node_modules/src/query-promise.ts:31:15) {
+    code: 'ER_BAD_FIELD_ERROR',
+    errno: 1054,
+    sql: 'select `id`, `openId`, `username`, `passwordHash`, `name`, `email`, `displayName`, `avatarUrl`, `loginMethod`, `role`, `securityQuestion`, `securityAnswerHash`, `createdAt`, `updatedAt`, `lastSignedIn`, `lastActivityAt`, `ebayUsername`, `ebayUserId`, `ebayFeedbackScore`, `ebayFeedbackPercentage`, `ebayMemberSince`, `ebaySellerLevel`, `ebayIdVerified`, `ebayStar`, `ebayPositive12mo`, `ebayNeutral12mo`, `ebayNegative12mo`, `ebayIsStoreOwner`, `ebayConnectedAt`, `ebayAccessToken`, `ebayRefreshToken`, `ebayTokenExpiresAt`, `isSuspended`, `suspendedAt`, `isBanned`, `bannedAt`, `banReason`, `warnCount`, `lastWarnedAt` from `users` where `users`.`id` = 1 limit 1',
+    sqlState: '42S22',
+    sqlMessage: "Unknown column 'ebaystar' in 'field list'"
+  }
+}
+1:22:43 AM [vite] (client) hmr update /src/pages/PublicProfile.tsx, /src/index.css
+[CustomAuth] Failed to get user from session: DrizzleQueryError: Failed query: select `id`, `openId`, `username`, `passwordHash`, `name`, `email`, `displayName`, `avatarUrl`, `loginMethod`, `role`, `securityQuestion`, `securityAnswerHash`, `createdAt`, `updatedAt`, `lastSignedIn`, `lastActivityAt`, `ebayUsername`, `ebayUserId`, `ebayFeedbackScore`, `ebayFeedbackPercentage`, `ebayMemberSince`, `ebaySellerLevel`, `ebayIdVerified`, `ebayStar`, `ebayPositive12mo`, `ebayNeutral12mo`, `ebayNegative12mo`, `ebayIsStoreOwner`, `ebayConnectedAt`, `ebayAccessToken`, `ebayRefreshToken`, `ebayTokenExpiresAt`, `isSuspended`, `suspendedAt`, `isBanned`, `bannedAt`, `banReason`, `warnCount`, `lastWarnedAt` from `users` where `users`.`id` = ? limit ?
+params: 1,1
+    at MySql2PreparedQuery.queryWithCache (/home/ubuntu/collectors-barter/node_modules/.pnpm/drizzle-orm@0.44.6_mysql2@3.15.1/node_modules/src/mysql-core/session.ts:79:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async MySql2PreparedQuery.execute (/home/ubuntu/collectors-barter/node_modules/.pnpm/drizzle-orm@0.44.6_mysql2@3.15.1/node_modules/src/mysql2/session.ts:132:18)
+    at async Module.getUserById (/home/ubuntu/collectors-barter/server/db.ts:2161:18)
+    at async CustomAuthService.getUserFromSession (/home/ubuntu/collectors-barter/server/_core/customAuth.ts:92:20)
+    at async Object.createContext (/home/ubuntu/collectors-barter/server/_core/context.ts:35:14)
+    at async Object.createContext (/home/ubuntu/collectors-barter/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/adapters/node-http/nodeHTTPRequestHandler.ts:94:18)
+    at async Object.create (/home/ubuntu/collectors-barter/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:272:23)
+    at async resolveResponse (/home/ubuntu/collectors-barter/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:311:5)
+    at async <anonymous> (/home/ubuntu/collectors-barter/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/adapters/node-http/nodeHTTPRequestHandler.ts:100:26) {
+  query: 'select `id`, `openId`, `username`, `passwordHash`, `name`, `email`, `displayName`, `avatarUrl`, `loginMethod`, `role`, `securityQuestion`, `securityAnswerHash`, `createdAt`, `updatedAt`, `lastSignedIn`, `lastActivityAt`, `ebayUsername`, `ebayUserId`, `ebayFeedbackScore`, `ebayFeedbackPercentage`, `ebayMemberSince`, `ebaySellerLevel`, `ebayIdVerified`, `ebayStar`, `ebayPositive12mo`, `ebayNeutral12mo`, `ebayNegative12mo`, `ebayIsStoreOwner`, `ebayConnectedAt`, `ebayAccessToken`, `ebayRefreshToken`, `ebayTokenExpiresAt`, `isSuspended`, `suspendedAt`, `isBanned`, `bannedAt`, `banReason`, `warnCount`, `lastWarnedAt` from `users` where `users`.`id` = ? limit ?',
+  params: [ 1, 1 ],
+  cause: Error: Unknown column 'ebaystar' in 'field list'
+      at PromisePool.query (/home/ubuntu/collectors-barter/node_modules/.pnpm/mysql2@3.15.1/node_modules/mysql2/lib/promise/pool.js:36:22)
+      at <anonymous> (/home/ubuntu/collectors-barter/node_modules/.pnpm/drizzle-orm@0.44.6_mysql2@3.15.1/node_modules/src/mysql2/session.ts:133:24)
+      at MySql2PreparedQuery.queryWithCache (/home/ubuntu/collectors-barter/node_modules/.pnpm/drizzle-orm@0.44.6_mysql2@3.15.1/node_modules/src/mysql-core/session.ts:77:18)
+      at MySql2PreparedQuery.execute (/home/ubuntu/collectors-barter/node_modules/.pnpm/drizzle-orm@0.44.6_mysql2@3.15.1/node_modules/src/mysql2/session.ts:132:29)
+      at MySqlSelectBase.execute (/home/ubuntu/collectors-barter/node_modules/.pnpm/drizzle-orm@0.44.6_mysql2@3.15.1/node_modules/src/mysql-core/query-builders/select.ts:1145:25)
+      at MySqlSelectBase.then (/home/ubuntu/collectors-barter/node_modules/.pnpm/drizzle-orm@0.44.6_mysql2@3.15.1/node_modules/src/query-promise.ts:31:15) {
+    code: 'ER_BAD_FIELD_ERROR',
+    errno: 1054,
+    sql: 'select `id`, `openId`, `username`, `passwordHash`, `name`, `email`, `displayName`, `avatarUrl`, `loginMethod`, `role`, `securityQuestion`, `securityAnswerHash`, `createdAt`, `updatedAt`, `lastSignedIn`, `lastActivityAt`, `ebayUsername`, `ebayUserId`, `ebayFeedbackScore`, `ebayFeedbackPercentage`, `ebayMemberSince`, `ebaySellerLevel`, `ebayIdVerified`, `ebayStar`, `ebayPositive12mo`, `ebayNeutral12mo`, `ebayNegative12mo`, `ebayIsStoreOwner`, `ebayConnectedAt`, `ebayAccessToken`, `ebayRefreshToken`, `ebayTokenExpiresAt`, `isSuspended`, `suspendedAt`, `isBanned`, `bannedAt`, `banReason`, `warnCount`, `lastWarnedAt` from `users` where `users`.`id` = 1 limit 1',
+    sqlState: '42S22',
+    sqlMessage: "Unknown column 'ebaystar' in 'field list'"
+  }
+}
+1:25:03 AM [vite] (client) hmr update /src/pages/PublicProfile.tsx, /src/index.css
+1:25:03 AM [vite] Internal server error: /home/ubuntu/collectors-barter/client/src/pages/PublicProfile.tsx: Expected corresponding JSX closing tag for <div>. (576:6)
+
+  574 |
+  575 |
+> 576 |       </main>
+      |       ^
+  577 |     </div>
+  578 |   );
+  579 | }
+  Plugin: vite:react-babel
+  File: /home/ubuntu/collectors-barter/client/src/pages/PublicProfile.tsx:576:6
+  574 |  
+  575 |  
+  576 |        </main>
+      |        ^
+  577 |      </div>
+  578 |    );
+      at toParseError (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/parse-error.ts:95:45)
+      at raise (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/tokenizer/index.ts:1503:19)
+      at jsxParseElementAt (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/plugins/jsx/index.ts:527:18)
+      at jsxParseElement (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/plugins/jsx/index.ts:559:19)
+      at parseExprAtom (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/plugins/jsx/index.ts:573:21)
+      at parseExprSubscripts (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/parser/expression.ts:734:23)
+      at parseUpdate (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/parser/expression.ts:713:21)
+      at parseMaybeUnary (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/parser/expression.ts:675:23)
+      at parseMaybeUnary (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/plugins/typescript/index.ts:3855:20)
+      at parseMaybeUnaryOrPrivate (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/parser/expression.ts:409:14)
+      at parseExprOps (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/parser/expression.ts:421:23)
+      at parseMaybeConditional (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/parser/expression.ts:376:23)
+      at parseMaybeAssign (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/parser/expression.ts:301:21)
+      at fn (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/plugins/typescript/index.ts:3708:23)
+      at tryParse (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/parser/util.ts:174:20)
+      at parseMaybeAssign (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/plugins/typescript/index.ts:3707:20)
+      at callback (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/parser/expression.ts:257:12)
+      at allowInAnd (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/parser/expression.ts:3192:12)
+      at parseMaybeAssignAllowIn (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/parser/expression.ts:256:17)
+      at parseMaybeAssignAllowInOrVoidPattern (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/parser/expression.ts:3306:17)
+      at parseParenAndDistinguishExpression (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/parser/expression.ts:1813:16)
+      at parseExprAtom (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/parser/expression.ts:1162:21)
+      at parseExprAtom (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/plugins/jsx/index.ts:583:22)
+      at parseExprSubscripts (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/parser/expression.ts:734:23)
+      at parseUpdate (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/parser/expression.ts:713:21)
+      at parseMaybeUnary (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/parser/expression.ts:675:23)
+      at parseMaybeUnary (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/plugins/typescript/index.ts:3855:20)
+      at parseMaybeUnaryOrPrivate (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/parser/expression.ts:409:14)
+      at parseExprOpBaseRightExpr (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/parser/expression.ts:589:12)
+      at parseExprOpRightExpr (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/parser/expression.ts:574:21)
+      at parseExprOp (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/parser/expression.ts:505:27)
+      at parseExprOp (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/plugins/typescript/index.ts:2913:20)
+      at parseExprOp (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/parser/expression.ts:526:21)
+      at parseExprOp (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/plugins/typescript/index.ts:2913:20)
+      at parseExprOps (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/parser/expression.ts:427:17)
+      at parseMaybeConditional (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/parser/expression.ts:376:23)
+      at parseMaybeAssign (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/parser/expression.ts:301:21)
+      at parseMaybeAssign (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/plugins/typescript/index.ts:3727:22)
+      at parseExpressionBase (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/parser/expression.ts:226:23)
+      at callback (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/parser/expression.ts:217:39)
+      at allowInAnd (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/parser/expression.ts:3192:12)
+      at parseExpression (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/parser/expression.ts:217:17)
+      at jsxParseExpressionContainer (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/plugins/jsx/index.ts:376:33)
+      at jsxParseElementAt (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/plugins/jsx/index.ts:500:24)
+      at jsxParseElementAt (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/plugins/jsx/index.ts:483:34)
+      at jsxParseElement (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/plugins/jsx/index.ts:559:19)
+      at parseExprAtom (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/plugins/jsx/index.ts:573:21)
+      at parseExprSubscripts (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/parser/expression.ts:734:23)
+      at parseUpdate (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/parser/expression.ts:713:21)
+      at parseMaybeUnary (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/parser/expression.ts:675:23)
+1:25:03 AM [vite] (client) Pre-transform error: /home/ubuntu/collectors-barter/client/src/pages/PublicProfile.tsx: Expected corresponding JSX closing tag for <div>. (576:6)
+
+  574 |
+  575 |
+> 576 |       </main>
+      |       ^
+  577 |     </div>
+  578 |   );
+  579 | }
+  Plugin: vite:react-babel
+  File: /home/ubuntu/collectors-barter/client/src/pages/PublicProfile.tsx:576:6
+  574 |  
+  575 |  
+  576 |        </main>
+      |        ^
+  577 |      </div>
+  578 |    );
+1:25:23 AM [vite] (client) hmr update /src/pages/PublicProfile.tsx, /src/index.css
+1:25:23 AM [vite] Internal server error: /home/ubuntu/collectors-barter/client/src/pages/PublicProfile.tsx: Expected corresponding JSX closing tag for <div>. (694:6)
+
+  692 |
+  693 |
+> 694 |       </main>
+      |       ^
+  695 |     </div>
+  696 |   );
+  697 | }
+  Plugin: vite:react-babel
+  File: /home/ubuntu/collectors-barter/client/src/pages/PublicProfile.tsx:694:6
+  692 |  
+  693 |  
+  694 |        </main>
+      |        ^
+  695 |      </div>
+  696 |    );
+      at toParseError (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/parse-error.ts:95:45)
+      at raise (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/tokenizer/index.ts:1503:19)
+      at jsxParseElementAt (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/plugins/jsx/index.ts:527:18)
+      at jsxParseElement (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/plugins/jsx/index.ts:559:19)
+      at parseExprAtom (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/plugins/jsx/index.ts:573:21)
+      at parseExprSubscripts (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/parser/expression.ts:734:23)
+      at parseUpdate (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/parser/expression.ts:713:21)
+      at parseMaybeUnary (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/parser/expression.ts:675:23)
+      at parseMaybeUnary (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/plugins/typescript/index.ts:3855:20)
+      at parseMaybeUnaryOrPrivate (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/parser/expression.ts:409:14)
+      at parseExprOps (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/parser/expression.ts:421:23)
+      at parseMaybeConditional (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/parser/expression.ts:376:23)
+      at parseMaybeAssign (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/parser/expression.ts:301:21)
+      at fn (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/plugins/typescript/index.ts:3708:23)
+      at tryParse (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/parser/util.ts:174:20)
+      at parseMaybeAssign (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/plugins/typescript/index.ts:3707:20)
+      at callback (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/parser/expression.ts:257:12)
+      at allowInAnd (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/parser/expression.ts:3192:12)
+      at parseMaybeAssignAllowIn (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/parser/expression.ts:256:17)
+      at parseMaybeAssignAllowInOrVoidPattern (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/parser/expression.ts:3306:17)
+      at parseParenAndDistinguishExpression (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/parser/expression.ts:1813:16)
+      at parseExprAtom (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/parser/expression.ts:1162:21)
+      at parseExprAtom (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/plugins/jsx/index.ts:583:22)
+      at parseExprSubscripts (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/parser/expression.ts:734:23)
+      at parseUpdate (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/parser/expression.ts:713:21)
+      at parseMaybeUnary (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/parser/expression.ts:675:23)
+      at parseMaybeUnary (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/plugins/typescript/index.ts:3855:20)
+      at parseMaybeUnaryOrPrivate (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/parser/expression.ts:409:14)
+      at parseExprOpBaseRightExpr (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/parser/expression.ts:589:12)
+      at parseExprOpRightExpr (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/parser/expression.ts:574:21)
+      at parseExprOp (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/parser/expression.ts:505:27)
+      at parseExprOp (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/plugins/typescript/index.ts:2913:20)
+      at parseExprOp (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/parser/expression.ts:526:21)
+      at parseExprOp (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/plugins/typescript/index.ts:2913:20)
+      at parseExprOps (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/parser/expression.ts:427:17)
+      at parseMaybeConditional (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/parser/expression.ts:376:23)
+      at parseMaybeAssign (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/parser/expression.ts:301:21)
+      at parseMaybeAssign (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/plugins/typescript/index.ts:3727:22)
+      at parseExpressionBase (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/parser/expression.ts:226:23)
+      at callback (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/parser/expression.ts:217:39)
+      at allowInAnd (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/parser/expression.ts:3192:12)
+      at parseExpression (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/parser/expression.ts:217:17)
+      at jsxParseExpressionContainer (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/plugins/jsx/index.ts:376:33)
+      at jsxParseElementAt (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/plugins/jsx/index.ts:500:24)
+      at jsxParseElementAt (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/plugins/jsx/index.ts:483:34)
+      at jsxParseElement (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/plugins/jsx/index.ts:559:19)
+      at parseExprAtom (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/plugins/jsx/index.ts:573:21)
+      at parseExprSubscripts (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/parser/expression.ts:734:23)
+      at parseUpdate (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/parser/expression.ts:713:21)
+      at parseMaybeUnary (/home/ubuntu/collectors-barter/node_modules/.pnpm/@babel+parser@7.28.4/node_modules/@babel/parser/src/parser/expression.ts:675:23)
+1:25:23 AM [vite] (client) Pre-transform error: /home/ubuntu/collectors-barter/client/src/pages/PublicProfile.tsx: Expected corresponding JSX closing tag for <div>. (694:6)
+
+  692 |
+  693 |
+> 694 |       </main>
+      |       ^
+  695 |     </div>
+  696 |   );
+  697 | }
+  Plugin: vite:react-babel
+  File: /home/ubuntu/collectors-barter/client/src/pages/PublicProfile.tsx:694:6
+  692 |  
+  693 |  
+  694 |        </main>
+      |        ^
+  695 |      </div>
+  696 |    );
+1:29:40 AM [vite] (client) hmr update /src/pages/PublicProfile.tsx, /src/index.css
+1:29:41 AM [vite] Internal server error: Failed to resolve import "react-router-dom" from "client/src/pages/PublicProfile.tsx". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /home/ubuntu/collectors-barter/client/src/pages/PublicProfile.tsx:2:39
+  2  |  var _s = $RefreshSig$();
+  3  |  import { useState } from "react";
+  4  |  import { useParams, useNavigate } from "react-router-dom";
+     |                                          ^
+  5  |  import {
+  6  |    User,
+      at TransformPluginContext._formatLog (/home/ubuntu/collectors-barter/node_modules/.pnpm/vite@7.1.9_@types+node@24.7.0_jiti@2.6.1_lightningcss@1.30.1_tsx@4.20.6/node_modules/vite/dist/node/chunks/dep-Chhhsdoe.js:31219:43)
+      at TransformPluginContext.error (/home/ubuntu/collectors-barter/node_modules/.pnpm/vite@7.1.9_@types+node@24.7.0_jiti@2.6.1_lightningcss@1.30.1_tsx@4.20.6/node_modules/vite/dist/node/chunks/dep-Chhhsdoe.js:31216:14)
+      at normalizeUrl (/home/ubuntu/collectors-barter/node_modules/.pnpm/vite@7.1.9_@types+node@24.7.0_jiti@2.6.1_lightningcss@1.30.1_tsx@4.20.6/node_modules/vite/dist/node/chunks/dep-Chhhsdoe.js:29699:18)
+      at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+      at async <anonymous> (/home/ubuntu/collectors-barter/node_modules/.pnpm/vite@7.1.9_@types+node@24.7.0_jiti@2.6.1_lightningcss@1.30.1_tsx@4.20.6/node_modules/vite/dist/node/chunks/dep-Chhhsdoe.js:29757:32)
+      at async Promise.all (index 2)
+      at async TransformPluginContext.transform (/home/ubuntu/collectors-barter/node_modules/.pnpm/vite@7.1.9_@types+node@24.7.0_jiti@2.6.1_lightningcss@1.30.1_tsx@4.20.6/node_modules/vite/dist/node/chunks/dep-Chhhsdoe.js:29725:4)
+      at async EnvironmentPluginContainer.transform (/home/ubuntu/collectors-barter/node_modules/.pnpm/vite@7.1.9_@types+node@24.7.0_jiti@2.6.1_lightningcss@1.30.1_tsx@4.20.6/node_modules/vite/dist/node/chunks/dep-Chhhsdoe.js:31018:14)
+      at async loadAndTransform (/home/ubuntu/collectors-barter/node_modules/.pnpm/vite@7.1.9_@types+node@24.7.0_jiti@2.6.1_lightningcss@1.30.1_tsx@4.20.6/node_modules/vite/dist/node/chunks/dep-Chhhsdoe.js:26143:26)
+      at async viteTransformMiddleware (/home/ubuntu/collectors-barter/node_modules/.pnpm/vite@7.1.9_@types+node@24.7.0_jiti@2.6.1_lightningcss@1.30.1_tsx@4.20.6/node_modules/vite/dist/node/chunks/dep-Chhhsdoe.js:27221:20)
+1:29:41 AM [vite] (client) Pre-transform error: Failed to resolve import "react-router-dom" from "client/src/pages/PublicProfile.tsx". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /home/ubuntu/collectors-barter/client/src/pages/PublicProfile.tsx:2:39
+  2  |  var _s = $RefreshSig$();
+  3  |  import { useState } from "react";
+  4  |  import { useParams, useNavigate } from "react-router-dom";
+     |                                          ^
+  5  |  import {
+  6  |    User,
+1:30:13 AM [vite] Internal server error: Failed to resolve import "react-router-dom" from "client/src/pages/PublicProfile.tsx". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /home/ubuntu/collectors-barter/client/src/pages/PublicProfile.tsx:2:39
+  2  |  var _s = $RefreshSig$();
+  3  |  import { useState } from "react";
+  4  |  import { useParams, useNavigate } from "react-router-dom";
+     |                                          ^
+  5  |  import {
+  6  |    User,
+      at TransformPluginContext._formatLog (/home/ubuntu/collectors-barter/node_modules/.pnpm/vite@7.1.9_@types+node@24.7.0_jiti@2.6.1_lightningcss@1.30.1_tsx@4.20.6/node_modules/vite/dist/node/chunks/dep-Chhhsdoe.js:31219:43)
+      at TransformPluginContext.error (/home/ubuntu/collectors-barter/node_modules/.pnpm/vite@7.1.9_@types+node@24.7.0_jiti@2.6.1_lightningcss@1.30.1_tsx@4.20.6/node_modules/vite/dist/node/chunks/dep-Chhhsdoe.js:31216:14)
+      at normalizeUrl (/home/ubuntu/collectors-barter/node_modules/.pnpm/vite@7.1.9_@types+node@24.7.0_jiti@2.6.1_lightningcss@1.30.1_tsx@4.20.6/node_modules/vite/dist/node/chunks/dep-Chhhsdoe.js:29699:18)
+      at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+      at async <anonymous> (/home/ubuntu/collectors-barter/node_modules/.pnpm/vite@7.1.9_@types+node@24.7.0_jiti@2.6.1_lightningcss@1.30.1_tsx@4.20.6/node_modules/vite/dist/node/chunks/dep-Chhhsdoe.js:29757:32)
+      at async Promise.all (index 2)
+      at async TransformPluginContext.transform (/home/ubuntu/collectors-barter/node_modules/.pnpm/vite@7.1.9_@types+node@24.7.0_jiti@2.6.1_lightningcss@1.30.1_tsx@4.20.6/node_modules/vite/dist/node/chunks/dep-Chhhsdoe.js:29725:4)
+      at async EnvironmentPluginContainer.transform (/home/ubuntu/collectors-barter/node_modules/.pnpm/vite@7.1.9_@types+node@24.7.0_jiti@2.6.1_lightningcss@1.30.1_tsx@4.20.6/node_modules/vite/dist/node/chunks/dep-Chhhsdoe.js:31018:14)
+      at async loadAndTransform (/home/ubuntu/collectors-barter/node_modules/.pnpm/vite@7.1.9_@types+node@24.7.0_jiti@2.6.1_lightningcss@1.30.1_tsx@4.20.6/node_modules/vite/dist/node/chunks/dep-Chhhsdoe.js:26143:26)
+      at async viteTransformMiddleware (/home/ubuntu/collectors-barter/node_modules/.pnpm/vite@7.1.9_@types+node@24.7.0_jiti@2.6.1_lightningcss@1.30.1_tsx@4.20.6/node_modules/vite/dist/node/chunks/dep-Chhhsdoe.js:27221:20)
+1:30:58 AM [vite] (client) hmr update /src/App.tsx, /src/index.css
+1:30:58 AM [vite] (client) Pre-transform error: Failed to resolve import "@/utils/trpc" from "client/src/pages/PublicProfile.tsx". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /home/ubuntu/collectors-barter/client/src/pages/PublicProfile.tsx:28:21
+  21 |  import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+  22 |  import { Skeleton } from "@/components/ui/skeleton";
+  23 |  import { trpc } from "@/utils/trpc";
+     |                        ^
+  24 |  import { useAuth } from "@/hooks/useAuth";
+  25 |  import { EbayFeedbackPreview } from "@/components/EbayFeedbackPreview";
+1:30:58 AM [vite] Internal server error: Failed to resolve import "@/utils/trpc" from "client/src/pages/PublicProfile.tsx". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /home/ubuntu/collectors-barter/client/src/pages/PublicProfile.tsx:28:21
+  21 |  import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+  22 |  import { Skeleton } from "@/components/ui/skeleton";
+  23 |  import { trpc } from "@/utils/trpc";
+     |                        ^
+  24 |  import { useAuth } from "@/hooks/useAuth";
+  25 |  import { EbayFeedbackPreview } from "@/components/EbayFeedbackPreview";
+      at TransformPluginContext._formatLog (/home/ubuntu/collectors-barter/node_modules/.pnpm/vite@7.1.9_@types+node@24.7.0_jiti@2.6.1_lightningcss@1.30.1_tsx@4.20.6/node_modules/vite/dist/node/chunks/dep-Chhhsdoe.js:31219:43)
+      at TransformPluginContext.error (/home/ubuntu/collectors-barter/node_modules/.pnpm/vite@7.1.9_@types+node@24.7.0_jiti@2.6.1_lightningcss@1.30.1_tsx@4.20.6/node_modules/vite/dist/node/chunks/dep-Chhhsdoe.js:31216:14)
+      at normalizeUrl (/home/ubuntu/collectors-barter/node_modules/.pnpm/vite@7.1.9_@types+node@24.7.0_jiti@2.6.1_lightningcss@1.30.1_tsx@4.20.6/node_modules/vite/dist/node/chunks/dep-Chhhsdoe.js:29699:18)
+      at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+      at async <anonymous> (/home/ubuntu/collectors-barter/node_modules/.pnpm/vite@7.1.9_@types+node@24.7.0_jiti@2.6.1_lightningcss@1.30.1_tsx@4.20.6/node_modules/vite/dist/node/chunks/dep-Chhhsdoe.js:29757:32)
+      at async Promise.all (index 7)
+      at async TransformPluginContext.transform (/home/ubuntu/collectors-barter/node_modules/.pnpm/vite@7.1.9_@types+node@24.7.0_jiti@2.6.1_lightningcss@1.30.1_tsx@4.20.6/node_modules/vite/dist/node/chunks/dep-Chhhsdoe.js:29725:4)
+      at async EnvironmentPluginContainer.transform (/home/ubuntu/collectors-barter/node_modules/.pnpm/vite@7.1.9_@types+node@24.7.0_jiti@2.6.1_lightningcss@1.30.1_tsx@4.20.6/node_modules/vite/dist/node/chunks/dep-Chhhsdoe.js:31018:14)
+      at async loadAndTransform (/home/ubuntu/collectors-barter/node_modules/.pnpm/vite@7.1.9_@types+node@24.7.0_jiti@2.6.1_lightningcss@1.30.1_tsx@4.20.6/node_modules/vite/dist/node/chunks/dep-Chhhsdoe.js:26143:26)
+      at async viteTransformMiddleware (/home/ubuntu/collectors-barter/node_modules/.pnpm/vite@7.1.9_@types+node@24.7.0_jiti@2.6.1_lightningcss@1.30.1_tsx@4.20.6/node_modules/vite/dist/node/chunks/dep-Chhhsdoe.js:27221:20)
+1:31:08 AM [vite] (client) hmr update /src/App.tsx
+1:31:08 AM [vite] (client) Pre-transform error: Failed to resolve import "@/utils/trpc" from "client/src/pages/PublicProfile.tsx". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /home/ubuntu/collectors-barter/client/src/pages/PublicProfile.tsx:28:21
+  21 |  import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+  22 |  import { Skeleton } from "@/components/ui/skeleton";
+  23 |  import { trpc } from "@/utils/trpc";
+     |                        ^
+  24 |  import { useAuth } from "@/hooks/useAuth";
+  25 |  import { EbayFeedbackPreview } from "@/components/EbayFeedbackPreview";
+1:31:08 AM [vite] (client) Pre-transform error: Failed to resolve import "@/utils/trpc" from "client/src/components/EbayFeedbackPreview.tsx". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /home/ubuntu/collectors-barter/client/src/components/EbayFeedbackPreview.tsx:2:21
+  1  |  import { jsxDEV } from "react/jsx-dev-runtime";
+  2  |  var _s = $RefreshSig$();
+  3  |  import { trpc } from "@/utils/trpc";
+     |                        ^
+  4  |  import { Star } from "lucide-react";
+  5  |  export const EbayFeedbackPreview = ({ userId }) => {
+1:31:08 AM [vite] Internal server error: Failed to resolve import "@/utils/trpc" from "client/src/pages/PublicProfile.tsx". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /home/ubuntu/collectors-barter/client/src/pages/PublicProfile.tsx:28:21
+  21 |  import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+  22 |  import { Skeleton } from "@/components/ui/skeleton";
+  23 |  import { trpc } from "@/utils/trpc";
+     |                        ^
+  24 |  import { useAuth } from "@/hooks/useAuth";
+  25 |  import { EbayFeedbackPreview } from "@/components/EbayFeedbackPreview";
+      at TransformPluginContext._formatLog (/home/ubuntu/collectors-barter/node_modules/.pnpm/vite@7.1.9_@types+node@24.7.0_jiti@2.6.1_lightningcss@1.30.1_tsx@4.20.6/node_modules/vite/dist/node/chunks/dep-Chhhsdoe.js:31219:43)
+      at TransformPluginContext.error (/home/ubuntu/collectors-barter/node_modules/.pnpm/vite@7.1.9_@types+node@24.7.0_jiti@2.6.1_lightningcss@1.30.1_tsx@4.20.6/node_modules/vite/dist/node/chunks/dep-Chhhsdoe.js:31216:14)
+      at normalizeUrl (/home/ubuntu/collectors-barter/node_modules/.pnpm/vite@7.1.9_@types+node@24.7.0_jiti@2.6.1_lightningcss@1.30.1_tsx@4.20.6/node_modules/vite/dist/node/chunks/dep-Chhhsdoe.js:29699:18)
+      at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+      at async <anonymous> (/home/ubuntu/collectors-barter/node_modules/.pnpm/vite@7.1.9_@types+node@24.7.0_jiti@2.6.1_lightningcss@1.30.1_tsx@4.20.6/node_modules/vite/dist/node/chunks/dep-Chhhsdoe.js:29757:32)
+      at async Promise.all (index 7)
+      at async TransformPluginContext.transform (/home/ubuntu/collectors-barter/node_modules/.pnpm/vite@7.1.9_@types+node@24.7.0_jiti@2.6.1_lightningcss@1.30.1_tsx@4.20.6/node_modules/vite/dist/node/chunks/dep-Chhhsdoe.js:29725:4)
+      at async EnvironmentPluginContainer.transform (/home/ubuntu/collectors-barter/node_modules/.pnpm/vite@7.1.9_@types+node@24.7.0_jiti@2.6.1_lightningcss@1.30.1_tsx@4.20.6/node_modules/vite/dist/node/chunks/dep-Chhhsdoe.js:31018:14)
+      at async loadAndTransform (/home/ubuntu/collectors-barter/node_modules/.pnpm/vite@7.1.9_@types+node@24.7.0_jiti@2.6.1_lightningcss@1.30.1_tsx@4.20.6/node_modules/vite/dist/node/chunks/dep-Chhhsdoe.js:26143:26)
+      at async viteTransformMiddleware (/home/ubuntu/collectors-barter/node_modules/.pnpm/vite@7.1.9_@types+node@24.7.0_jiti@2.6.1_lightningcss@1.30.1_tsx@4.20.6/node_modules/vite/dist/node/chunks/dep-Chhhsdoe.js:27221:20)
+1:31:08 AM [vite] (client) Pre-transform error: Failed to resolve import "@/utils/trpc" from "client/src/components/EbayFeedbackPreview.tsx". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /home/ubuntu/collectors-barter/client/src/components/EbayFeedbackPreview.tsx:2:21
+  1  |  import { jsxDEV } from "react/jsx-dev-runtime";
+  2  |  var _s = $RefreshSig$();
+  3  |  import { trpc } from "@/utils/trpc";
+     |                        ^
+  4  |  import { Star } from "lucide-react";
+  5  |  export const EbayFeedbackPreview = ({ userId }) => {
