@@ -802,7 +802,7 @@ export default function AccountSetup() {
                         className="h-4 w-4 mt-1"
                       />
                       <span className="text-sm text-slate-700">
-                        I agree to the <a href="#" className="text-blue-600 hover:underline font-medium">Terms & Conditions</a> and <a href="#" className="text-blue-600 hover:underline font-medium">Privacy Policy</a> *
+                        I agree to the <Link href="/terms" className="text-blue-600 hover:underline font-medium">Terms & Conditions</Link> and <Link href="/privacy" className="text-blue-600 hover:underline font-medium">Privacy Policy</Link> *
                       </span>
                     </label>
                   </div>

@@ -41,6 +41,7 @@ import { TradeFlowMockup } from "./pages/TradeFlowMockup";
 import { TradeFlowMockupV2 } from "./pages/TradeFlowMockupV2";
 import { TradeNegotiationMockup } from "./pages/TradeNegotiationMockup";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsOfService from "./pages/TermsOfService";
 import TradeHub from "./pages/TradeHub";
 import WarRoom from "./pages/WarRoom";
 import TradePrintView from "./pages/TradePrintView";
@@ -127,6 +128,7 @@ function Router() {
       </Route>
       <Route path="/contact" component={Contact} />
       <Route path="/privacy" component={PrivacyPolicy} />
+      <Route path="/terms" component={TermsOfService} />
       <Route path="/forum" component={Forum} />
       <Route path="/forum/:postId" component={ForumTopic} />
       <Route path="/category/:slug" component={CategoryPage} />
