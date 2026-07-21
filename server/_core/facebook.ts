@@ -16,12 +16,13 @@ const FACEBOOK_TOKEN_URL = "https://graph.facebook.com/v19.0/oauth/access_token"
 const FACEBOOK_GRAPH_URL = "https://graph.facebook.com/v19.0/me";
 
 // Scopes we request.
-// NOTE: user_likes and user_location require App Review before going live.
-// In Development Mode they work for the app owner and testers.
+// NOTE: user_likes requires App Review before going live to the general public.
+// In Development Mode it works for the app owner and added Testers.
+// user_location was deprecated by Meta — location is read from the Graph API
+// 'location' field directly (no separate scope needed).
 const FACEBOOK_SCOPES = [
   "public_profile",
   "email",
-  "user_location",
   "user_likes",
 ].join(",");
 
