@@ -12,6 +12,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EbayConnection } from "@/components/EbayConnection";
+import { FacebookConnection } from "@/components/FacebookConnection";
 import { trpc } from "@/lib/trpc";
 import { Bell, Lock, Mail, Loader2, Save, Shield, Link as LinkIcon, Upload, Eye, EyeOff, Cog } from "lucide-react";
 import { FormEvent, useEffect, useState, useRef } from "react";
@@ -44,7 +45,6 @@ const categoryOptions = [
 
 const accountSources = [
   { value: "paypal", label: "PayPal", logo: "/manus-storage/Paypal_450afefe.png" },
-  { value: "facebook", label: "Facebook", logo: "/manus-storage/Facebooklogo_0161d1e3.png" },
   { value: "linkedin", label: "LinkedIn", logo: "/images/linkedin-logo.png" },
   { value: "whatnot", label: "Whatnot", logo: "/images/whatnot-logo.png" },
 ] as const;
@@ -939,6 +939,7 @@ export default function AccountSettings() {
 
                   <div className="space-y-3">
                     <EbayConnection />
+                    <FacebookConnection />
                     {accountSources.map((source) => (
                       <div
                         key={source.value}

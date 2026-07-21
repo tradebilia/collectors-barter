@@ -47,6 +47,15 @@ export const ENV = {
   get ebayRedirectUri() {
     return process.env.EBAY_REDIRECT_URI ?? "http://localhost:3000/api/ebay/callback";
   },
+  get facebookAppId() {
+    return process.env.FACEBOOK_APP_ID ?? "";
+  },
+  get facebookAppSecret() {
+    return process.env.FACEBOOK_APP_SECRET ?? "";
+  },
+  get facebookRedirectUri() {
+    return process.env.FACEBOOK_REDIRECT_URI ?? "http://localhost:3000/api/facebook/callback";
+  },
 };
 
 // Aliases for backward compatibility.

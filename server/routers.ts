@@ -38,6 +38,7 @@ import {
   storeEbayFeedback,
   getUserEbayFeedback,
   flagLowFeedback,
+  getUserFacebookInfo,
   getLowFeedbackFlags,
   sendItemInquiry,
   getUnreadInquiries,
@@ -333,7 +334,14 @@ export const appRouter = router({
             u.ebayFeedbackScore,
             u.ebayFeedbackPercentage,
             u.ebayMemberSince,
-            u.ebayConnectedAt
+            u.ebayConnectedAt,
+            u.ebaySellerLevel,
+            u.ebayIdVerified,
+            u.ebay_star as ebayStar,
+            u.ebay_positive_12mo as ebayPositive12mo,
+            u.ebay_neutral_12mo as ebayNeutral12mo,
+            u.ebay_negative_12mo as ebayNegative12mo,
+            u.ebay_is_store_owner as ebayIsStoreOwner
           FROM users u
           WHERE u.id = ${input.userId}`
         );
@@ -1285,6 +1293,51 @@ export const appRouter = router({
         return Array.isArray(rows) ? rows : [];
       }),
 
+    getUserTrades: publicProcedure
+      .input(z.object({ userId: z.number().int().positive(), limit: z.number().min(1).max(50).default(20) }))
+      .query(async ({ input }) => {
+        const db = await requireDb();
+        const [rows] = await db.execute(
+          sql`SELECT
+            tp.id as tradeId,
+            tp.referenceNumber,
+            tp.completedAt,
+            tp.requesterId,
+            tp.recipientId,
+            -- Requester info
+            req_u.username as requesterUsername,
+            req_up.displayName as requesterDisplayName,
+            req_up.avatarUrl as requesterAvatar,
+            -- Recipient info
+            rec_u.username as recipientUsername,
+            rec_up.displayName as recipientDisplayName,
+            rec_up.avatarUrl as recipientAvatar,
+            -- Requester item (what they offered)
+            req_item.id as requesterItemId,
+            req_item.title as requesterItemTitle,
+            req_item.category as requesterItemCategory,
+            (SELECT lp.imageUrl FROM listingPhotos lp WHERE lp.listingId = req_item.id ORDER BY lp.sortOrder ASC LIMIT 1) as requesterItemPhoto,
+            -- Recipient item (what was requested)
+            rec_item.id as recipientItemId,
+            rec_item.title as recipientItemTitle,
+            rec_item.category as recipientItemCategory,
+            (SELECT lp.imageUrl FROM listingPhotos lp WHERE lp.listingId = rec_item.id ORDER BY lp.sortOrder ASC LIMIT 1) as recipientItemPhoto
+          FROM tradeProposals tp
+          LEFT JOIN users req_u ON req_u.id = tp.requesterId
+          LEFT JOIN userProfiles req_up ON req_up.userId = tp.requesterId
+          LEFT JOIN users rec_u ON rec_u.id = tp.recipientId
+          LEFT JOIN userProfiles rec_up ON rec_up.userId = tp.recipientId
+          LEFT JOIN tradeProposalItems tpi ON tpi.proposalId = tp.id
+          LEFT JOIN listings req_item ON req_item.id = tpi.offeredListingId
+          LEFT JOIN listings rec_item ON rec_item.id = tp.requestedListingId
+          WHERE tp.status = 'completed'
+            AND tp.completedAt IS NOT NULL
+            AND (tp.requesterId = ${input.userId} OR tp.recipientId = ${input.userId})
+          ORDER BY tp.completedAt DESC
+          LIMIT ${input.limit}`
+        );
+        return Array.isArray(rows) ? rows : [];
+      }),
     getRecentTrades: publicProcedure
       .input(z.object({ limit: z.number().min(1).max(20).default(8) }).optional())
       .query(async ({ input }) => {
@@ -1426,6 +1479,39 @@ export const appRouter = router({
       return { success: true };
     }),
   }),
+
+  // ─── Facebook Router ────────────────────────────────────────────────
+  facebook: router({
+    // Returns the Facebook OAuth login URL for the frontend to redirect to
+    getAuthUrl: protectedProcedure
+      .input(z.object({ state: z.string() }))
+      .query(async ({ input }) => {
+        const { getFacebookAuthUrl } = await import('./_core/facebook');
+        return getFacebookAuthUrl(input.state) as string;
+      }),
+
+    // Returns the current user's connected Facebook info
+    getInfo: protectedProcedure.query(async ({ ctx }) => {
+      return await getUserFacebookInfo(ctx.user.id);
+    }),
+
+    // Disconnects the user's Facebook account
+    disconnect: protectedProcedure.mutation(async ({ ctx }) => {
+      const db = await requireDb();
+      await db
+        .update(users)
+        .set({
+          facebookId: null,
+          facebookName: null,
+          facebookVerified: 0,
+          facebookConnectedAt: null,
+          facebookAccessToken: null,
+        })
+        .where(eq(users.id, ctx.user.id));
+      return { success: true };
+    }),
+  }),
+
   admin: router({
     // Platform statistics
     getPlatformStatistics: protectedProcedure.query(async ({ ctx }) => {

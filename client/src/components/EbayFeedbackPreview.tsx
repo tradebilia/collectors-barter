@@ -1,5 +1,5 @@
 import React from "react";
-import { trpc } from "@/utils/trpc";
+import { trpc } from "@/lib/trpc";
 import { Star } from "lucide-react";
 
 interface EbayFeedbackPreviewProps {
@@ -7,7 +7,7 @@ interface EbayFeedbackPreviewProps {
 }
 
 export const EbayFeedbackPreview: React.FC<EbayFeedbackPreviewProps> = ({ userId }) => {
-  const { data: feedback, isLoading } = trpc.getUserEbayFeedback.useQuery({ userId });
+  const { data: feedback, isLoading } = trpc.ebay.getPublicFeedback.useQuery({ userId: parseInt(userId) });
 
   if (isLoading) {
     return (

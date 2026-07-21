@@ -2730,6 +2730,53 @@ export async function getLowFeedbackFlags(): Promise<Array<{
 }
 
 
+// ─── Facebook OAuth Functions ────────────────────────────────────────────────
+export async function updateUserFacebookInfo(input: {
+  userId: number;
+  facebookId: string;
+  facebookName: string;
+  facebookVerified: boolean;
+  facebookAccessToken: string;
+}): Promise<void> {
+  const db = await requireDb();
+  await db
+    .update(users)
+    .set({
+      facebookId: input.facebookId,
+      facebookName: input.facebookName,
+      facebookVerified: input.facebookVerified ? 1 : 0,
+      facebookConnectedAt: mysqlNow(),
+      facebookAccessToken: input.facebookAccessToken,
+    })
+    .where(eq(users.id, input.userId));
+}
+
+export async function getUserFacebookInfo(userId: number): Promise<{
+  facebookId: string | null;
+  facebookName: string | null;
+  facebookVerified: boolean;
+  facebookConnectedAt: Date | null;
+} | null> {
+  const db = await requireDb();
+  const result = await db
+    .select({
+      facebookId: users.facebookId,
+      facebookName: users.facebookName,
+      facebookVerified: users.facebookVerified,
+      facebookConnectedAt: users.facebookConnectedAt,
+    })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+  if (!result[0]) return null;
+  return {
+    facebookId: result[0].facebookId ?? null,
+    facebookName: result[0].facebookName ?? null,
+    facebookVerified: result[0].facebookVerified === 1,
+    facebookConnectedAt: result[0].facebookConnectedAt ? new Date(result[0].facebookConnectedAt) : null,
+  };
+}
+
 // Item Inquiry Functions
 export async function sendItemInquiry(
   user: Pick<User, "id" | "name">,
