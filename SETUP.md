@@ -222,6 +222,8 @@ The eBay integration is currently configured for the **Sandbox** (testing) envir
 | **Auth Accepted URL** | Update to `https://yourdomain.com/api/ebay/callback` |
 | **Auth Declined URL** | Update to `https://yourdomain.com/api/ebay/callback` |
 | **RuName** | Register a new Production RuName and note it down |
+| **eBay Seller Level** | (New) Displays "Top Rated", "Above Standard", etc. |
+| **eBay ID Verified** | (New) Shows "eBay ID Verified" badge for trusted sellers |
 | **Application Review** | Submit your app for eBay's production approval process (required for full API access) |
 
 #### 2. `.env` File (Server Environment Variables)
