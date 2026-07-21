@@ -723,3 +723,10 @@ export const watchlistEntries = mysqlTable("watchlistEntries", {
 	index("watchlistEntries_user_idx").on(table.userId),
 	index("watchlistEntries_listing_idx").on(table.listingId),
 ]);
+
+// ─── Convenience type aliases ─────────────────────────────────────────────────
+// These are used throughout the server codebase (context.ts, customAuth.ts,
+// sdk.ts, db.ts) and must be exported from here.
+import type { InferSelectModel, InferInsertModel } from "drizzle-orm";
+export type User = InferSelectModel<typeof users>;
+export type InsertUser = InferInsertModel<typeof users>;
