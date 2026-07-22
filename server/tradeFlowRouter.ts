@@ -1457,16 +1457,10 @@ export const tradeFlowRouter = router({
       const dismisserName = dismisser?.displayName || dismisser?.username || 'Your trade partner';
       const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
 
-      // Post a system message in the trade chat
+      // Post a system message in the trade chat only (no trade alert)
       await db.execute(
         sql`INSERT INTO tradeMessages (proposalId, senderId, message, isSystemMessage, createdAt)
             VALUES (${input.proposalId}, ${userId}, ${`📵 ${dismisserName} declined the video call.`}, 1, ${now})`
-      );
-
-      // Send a trade alert to the caller
-      await db.execute(
-        sql`INSERT INTO tradeAlerts (proposalId, recipientUserId, alertType, message, isRead, createdAt)
-            VALUES (${input.proposalId}, ${callerId}, 'initiated', ${`${dismisserName} declined your video call on trade #${input.proposalId}.`}, 0, ${now})`
       );
 
       return { success: true };
