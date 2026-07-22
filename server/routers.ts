@@ -187,6 +187,7 @@ export const appRouter = router({
           firstName: userProfiles.firstName,
           lastName: userProfiles.lastName,
           avatarUrl: userProfiles.avatarUrl,
+          displayName: userProfiles.displayName,
         })
         .from(userProfiles)
         .where(eq(userProfiles.userId, user.id))
@@ -197,6 +198,7 @@ export const appRouter = router({
         firstName: profile[0]?.firstName ?? null,
         lastName: profile[0]?.lastName ?? null,
         avatarUrl: profile[0]?.avatarUrl ?? null,
+        displayName: profile[0]?.displayName ?? (user as any).displayName ?? null,
       };
     }),
     signup: publicProcedure

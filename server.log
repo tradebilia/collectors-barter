@@ -190,3 +190,12 @@ Server running on http://localhost:3000/
 11:27:34 PM [vite] (client) hmr update /src/pages/WarRoom.tsx, /src/index.css
 11:35:58 PM [vite] (client) hmr update /src/index.css, /src/components/VideoChatPanel.tsx
 11:36:05 PM [vite] (client) hmr update /src/pages/WarRoom.tsx, /src/index.css
+11:43:38 PM [tsx] change in ./server/routers.ts Restarting...
+[shutdown] Received SIGTERM, closing server...
+c[OAuth] Initialized with baseURL: https://api.manus.im
+[dotenv@17.2.3] injecting env (23) from .env -- tip: ⚙️  enable debug logging with { debug: true }
+[startup] Environment check: PASS (all required variables present)
+[startup] Database check: PASS (connection verified)
+[startup] Port check: PASS (bound to 3000)
+Server running on http://localhost:3000/
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
