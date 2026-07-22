@@ -1384,7 +1384,7 @@ export const tradeFlowRouter = router({
         const callerName2 = caller2?.displayName || caller2?.username || 'Your trade partner';
         await db.execute(
           sql`INSERT INTO tradeMessages (proposalId, senderId, message, messageType, createdAt)
-              VALUES (${input.proposalId}, ${userId}, ${`📹 ${callerName2} has started a video call. Click "Video Chat" to join.`}, 'system', ${now})`
+              VALUES (${input.proposalId}, ${userId}, ${`📹 ${callerName2} has started a video call. Click "Join Video Chat" to join.`}, 'system', ${now})`
         );
         return { roomUrl: resolvedTrade.dailyRoomUrl as string, roomName: resolvedTrade.dailyRoomName as string };
       }
@@ -1437,6 +1437,33 @@ export const tradeFlowRouter = router({
       return { roomUrl: data.url as string, roomName: data.name as string };
     }),
 
+  joinVideoCall: protectedProcedure
+    .input(z.object({ proposalId: z.number().int().positive() }))
+    .mutation(async ({ ctx, input }) => {
+      const db = await requireDb();
+      const userId = ctx.user.id;
+
+      const [rows] = await db.execute(
+        sql`SELECT id, requesterId, recipientId FROM tradeProposals
+            WHERE id = ${input.proposalId}
+              AND (requesterId = ${userId} OR recipientId = ${userId})
+            LIMIT 1`
+      );
+      if (!(rows as any)?.[0]) throw new TRPCError({ code: 'NOT_FOUND', message: 'Trade not found or access denied' });
+
+      const [joinerRows] = await db.execute(sql`SELECT displayName, username FROM users WHERE id = ${userId} LIMIT 1`);
+      const joiner = (joinerRows as any)?.[0];
+      const joinerName = joiner?.displayName || joiner?.username || 'Your trade partner';
+      const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
+
+      await db.execute(
+        sql`INSERT INTO tradeMessages (proposalId, senderId, message, messageType, createdAt)
+            VALUES (${input.proposalId}, ${userId}, ${`📹 ${joinerName} has joined the video call.`}, 'system', ${now})`
+      );
+
+      return { success: true };
+    }),
+
   endVideoCall: protectedProcedure
     .input(z.object({ proposalId: z.number().int().positive() }))
     .mutation(async ({ ctx, input }) => {
@@ -1455,6 +1482,16 @@ export const tradeFlowRouter = router({
       // Clear the caller so buttons reset for both users
       await db.execute(
         sql`UPDATE tradeProposals SET dailyRoomStartedBy = NULL WHERE id = ${input.proposalId}`
+      );
+
+      // Post a system message that the call was ended
+      const [enderRows] = await db.execute(sql`SELECT displayName, username FROM users WHERE id = ${userId} LIMIT 1`);
+      const ender = (enderRows as any)?.[0];
+      const enderName = ender?.displayName || ender?.username || 'A participant';
+      const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
+      await db.execute(
+        sql`INSERT INTO tradeMessages (proposalId, senderId, message, messageType, createdAt)
+            VALUES (${input.proposalId}, ${userId}, ${`📵 ${enderName} has ended the video call.`}, 'system', ${now})`
       );
 
       return { success: true };

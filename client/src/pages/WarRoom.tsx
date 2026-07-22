@@ -252,6 +252,7 @@ export default function WarRoom() {
   const getOrCreateVideoRoomMutation = trpc.tradeFlow.getOrCreateVideoRoom.useMutation();
   const dismissVideoCallMutation = trpc.tradeFlow.dismissVideoCall.useMutation();
   const endVideoCallMutation = trpc.tradeFlow.endVideoCall.useMutation();
+  const joinVideoCallMutation = trpc.tradeFlow.joinVideoCall.useMutation();
 
   // ── Effects ───────────────────────────────────────────────────────────────
   // Mark alerts as read when entering the War Room; do NOT auto-transition stage
@@ -1094,6 +1095,12 @@ export default function WarRoom() {
                         const result = await getOrCreateVideoRoomMutation.mutateAsync({ proposalId });
                         setVideoRoomUrl(result.roomUrl);
                         setShowVideoChatModal(true);
+                        // If this user is joining (not starting), post a joined message
+                        const isJoining = !!(trade?.proposal as any)?.dailyRoomUrl &&
+                          (trade?.proposal as any)?.dailyRoomStartedBy !== myUserId;
+                        if (isJoining) {
+                          try { await joinVideoCallMutation.mutateAsync({ proposalId }); } catch (_) {}
+                        }
                       } catch (err: any) {
                         toast.error(err.message || 'Failed to start video chat');
                       } finally {
