@@ -278,7 +278,11 @@ export default function WarRoom() {
   // Reset dismissed state when a new call is started (dailyRoomStartedBy changes)
   const dailyRoomStartedBy = (trade?.proposal as any)?.dailyRoomStartedBy;
   useEffect(() => {
-    if (dailyRoomStartedBy && dailyRoomStartedBy !== myUserId) {
+    if (!dailyRoomStartedBy) {
+      // Call was dismissed or ended — reset buttons for everyone
+      setVideoBannerDismissed(true);
+    } else if (dailyRoomStartedBy !== myUserId) {
+      // A new call was started by the other user — show the join buttons
       setVideoBannerDismissed(false);
     }
   }, [dailyRoomStartedBy]);
