@@ -758,36 +758,40 @@ export default function AdminDashboard() {
                             <td className="py-2 px-4">
                               <div className="flex flex-wrap gap-1">
                                 <Button size="sm" variant="outline" onClick={() => setSelectedUser(u)}>Edit</Button>
-                                {accountStatus !== 'banned' && (
-                                  accountStatus === 'suspended' ? (
-                                    <Button size="sm" variant="outline" className="border-yellow-400 text-yellow-700 hover:bg-yellow-50"
-                                      onClick={() => handleUnsuspendUser(u.id)}
-                                      disabled={unsuspendUserMutation.isPending}>
-                                      Unsuspend
+                                {u.role !== 'admin' && (
+                                  <>
+                                    {accountStatus !== 'banned' && (
+                                      accountStatus === 'suspended' ? (
+                                        <Button size="sm" variant="outline" className="border-yellow-400 text-yellow-700 hover:bg-yellow-50"
+                                          onClick={() => handleUnsuspendUser(u.id)}
+                                          disabled={unsuspendUserMutation.isPending}>
+                                          Unsuspend
+                                        </Button>
+                                      ) : (
+                                        <Button size="sm" variant="outline" className="border-orange-400 text-orange-700 hover:bg-orange-50"
+                                          onClick={() => { setUserToAction(u); setSuspendDialogOpen(true); }}>
+                                          Suspend
+                                        </Button>
+                                      )
+                                    )}
+                                    {accountStatus === 'banned' ? (
+                                      <Button size="sm" variant="outline" className="border-green-500 text-green-700 hover:bg-green-50"
+                                        onClick={() => handleUnbanUser(u.id)}
+                                        disabled={unbanUserMutation.isPending}>
+                                        Unban
+                                      </Button>
+                                    ) : (
+                                      <Button size="sm" variant="destructive"
+                                        onClick={() => { setUserToAction(u); setBanDialogOpen(true); }}>
+                                        Ban
+                                      </Button>
+                                    )}
+                                    <Button size="sm" variant="destructive" className="bg-gray-700 hover:bg-gray-800"
+                                      onClick={() => { setUserToDelete(u); setDeleteConfirmOpen(true); }}>
+                                      Delete
                                     </Button>
-                                  ) : (
-                                    <Button size="sm" variant="outline" className="border-orange-400 text-orange-700 hover:bg-orange-50"
-                                      onClick={() => { setUserToAction(u); setSuspendDialogOpen(true); }}>
-                                      Suspend
-                                    </Button>
-                                  )
+                                  </>
                                 )}
-                                {accountStatus === 'banned' ? (
-                                  <Button size="sm" variant="outline" className="border-green-500 text-green-700 hover:bg-green-50"
-                                    onClick={() => handleUnbanUser(u.id)}
-                                    disabled={unbanUserMutation.isPending}>
-                                    Unban
-                                  </Button>
-                                ) : (
-                                  <Button size="sm" variant="destructive"
-                                    onClick={() => { setUserToAction(u); setBanDialogOpen(true); }}>
-                                    Ban
-                                  </Button>
-                                )}
-                                <Button size="sm" variant="destructive" className="bg-gray-700 hover:bg-gray-800"
-                                  onClick={() => { setUserToDelete(u); setDeleteConfirmOpen(true); }}>
-                                  Delete
-                                </Button>
                               </div>
                             </td>
                           </tr>
@@ -1411,6 +1415,9 @@ export default function AdminDashboard() {
               {/* Moderation Actions */}
               <div className="border-t border-border pt-4">
                 <h3 className="font-semibold mb-3">Moderation Actions</h3>
+                {selectedUser.role === 'admin' ? (
+                  <p className="text-sm text-muted-foreground italic">Moderation actions cannot be applied to admin accounts.</p>
+                ) : (
                 <div className="flex flex-wrap gap-2">
                   <Button size="sm" variant="outline" className="border-yellow-500 text-yellow-600 hover:bg-yellow-50"
                     onClick={() => { setUserToAction(selectedUser); setWarnDialogOpen(true); }}
@@ -1444,6 +1451,7 @@ export default function AdminDashboard() {
                     </Button>
                   )}
                 </div>
+                )}
               </div>
             </div>
           )}

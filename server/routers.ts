@@ -1996,6 +1996,9 @@ export const appRouter = router({
         if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
         if (input.userId === ctx.user.id) throw new TRPCError({ code: 'BAD_REQUEST', message: 'Cannot suspend yourself' });
         const db = await requireDb();
+        // Block suspending admin accounts
+        const [targetUser] = await db.select({ role: users.role }).from(users).where(eq(users.id, input.userId)).limit(1);
+        if ((targetUser as any)?.role === 'admin') throw new TRPCError({ code: 'BAD_REQUEST', message: 'Cannot suspend an admin account' });
         const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
 
         // 1. Suspend the user
@@ -2131,6 +2134,9 @@ export const appRouter = router({
         if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
         if (input.userId === ctx.user.id) throw new TRPCError({ code: 'BAD_REQUEST', message: 'Cannot ban yourself' });
         const db = await requireDb();
+        // Block banning admin accounts
+        const [targetUser] = await db.select({ role: users.role }).from(users).where(eq(users.id, input.userId)).limit(1);
+        if ((targetUser as any)?.role === 'admin') throw new TRPCError({ code: 'BAD_REQUEST', message: 'Cannot ban an admin account' });
         const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
 
         // 1. Ban the user (also clear any suspension)
