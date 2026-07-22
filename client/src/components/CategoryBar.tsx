@@ -52,9 +52,7 @@ export function CategoryBar() {
                 <img
                   src={titleImg}
                   alt={category.label}
-                  className={`h-8 w-auto object-contain max-w-[110px] ${
-                    isActive ? "brightness-0" : "brightness-0 invert"
-                  }`}
+                  className="h-8 w-auto object-contain max-w-[110px]"
                 />
               ) : (
                 <span
