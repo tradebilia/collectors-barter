@@ -559,12 +559,12 @@ export default function PublicProfile() {
                         ) : null;
                       })()}
 
-                      {/* Link to Facebook profile */}
-                      {user.facebookLink && (
+                      {/* Link to Facebook profile — constructed from facebookId since facebookLink requires App Review */}
+                      {user.facebookId && (
                         <Button
                           variant="outline"
-                          className="w-full h-8 rounded-lg text-[10px] font-bold border-slate-200 text-slate-500 hover:bg-slate-50"
-                          onClick={() => window.open(user.facebookLink, '_blank')}
+                          className="w-full h-8 rounded-lg text-[10px] font-bold border-[#1877F2]/20 text-[#1877F2] hover:bg-[#1877F2]/5"
+                          onClick={() => window.open(`https://www.facebook.com/profile.php?id=${user.facebookId}`, '_blank')}
                         >
                           <ExternalLink className="mr-2 h-3 w-3" />
                           View Facebook Profile
@@ -597,9 +597,7 @@ export default function PublicProfile() {
                         )}
                         <div className="min-w-0 flex-1">
                           <p className="text-sm font-black text-slate-900 tracking-tight truncate">{user.linkedinName}</p>
-                          {user.linkedinHeadline && (
-                            <p className="text-[10px] text-slate-500 font-medium leading-tight mt-0.5 line-clamp-2">{user.linkedinHeadline}</p>
-                          )}
+
                         </div>
                       </div>
                       {/* Email */}
@@ -616,12 +614,17 @@ export default function PublicProfile() {
                           <span>Connected {new Date(user.linkedinConnectedAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</span>
                         </div>
                       )}
-                      {/* View Profile Button */}
-                      {user.linkedinProfileUrl && (
+                      {/* View Profile Button — use stored vanity URL or fall back to name search */}
+                      {user.linkedinId && (
                         <Button
                           variant="outline"
                           className="w-full h-8 rounded-lg text-[10px] font-bold border-[#0A66C2]/20 text-[#0A66C2] hover:bg-[#0A66C2]/5"
-                          onClick={() => window.open(user.linkedinProfileUrl, '_blank')}
+                          onClick={() => window.open(
+                            user.linkedinProfileUrl
+                              ? user.linkedinProfileUrl
+                              : `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(user.linkedinName || '')}`,
+                            '_blank'
+                          )}
                         >
                           <ExternalLink className="mr-2 h-3 w-3" />
                           View LinkedIn Profile
