@@ -412,9 +412,35 @@ export default function ItemDetail() {
                       <Star className="h-5 w-5 fill-current" />
                       <span className="text-2xl font-semibold">{listing.ownerRating.averageRating.toFixed(1)}</span>
                     </div>
-                    <p className="text-sm text-gray-500">{listing.ownerRating.reviewCount} Ratings and Reviews</p>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mt-0.5">Tradebilia Rating</p>
+                    <p className="text-sm text-gray-500">{listing.ownerRating.reviewCount} Reviews</p>
                   </div>
                 </div>
+
+                {/* Verified Platforms */}
+                {(listing.ownerProfile.ebayVerified || listing.ownerProfile.facebookVerified || listing.ownerProfile.linkedinVerified) && (
+                  <div className="flex items-center gap-2 mt-4">
+                    <span className="text-xs font-semibold uppercase tracking-wider text-gray-400">Verified on:</span>
+                    {listing.ownerProfile.ebayVerified && (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#e53238]/10 text-[#e53238] text-xs font-bold border border-[#e53238]/20">
+                        <svg className="h-3 w-3" viewBox="0 0 24 24" fill="currentColor"><path d="M3.5 10.5c0-1.7 1.3-3 3-3s3 1.3 3 3v.5H4v.5c0 1.4 1.1 2.5 2.5 2.5.9 0 1.7-.5 2.1-1.2l1.3.8C9.3 14.6 8 15.5 6.5 15.5c-2.8 0-5-2.2-5-5zm1.6-.5h2.8c-.2-.8-.9-1.4-1.7-1.4s-1.5.6-1.7 1.4h.6zm5.4-3h1.5v1.2c.5-.8 1.4-1.4 2.5-1.4 1.9 0 3.5 1.6 3.5 3.5v.5c0 1.9-1.6 3.5-3.5 3.5-1.1 0-2-.6-2.5-1.4V18H10.5V7zm1.5 3.5c0 1.1.9 2 2 2s2-.9 2-2-.9-2-2-2-2 .9-2 2zm5.5-3h1.5v1.2c.5-.8 1.4-1.4 2.5-1.4 1.9 0 3.5 1.6 3.5 3.5v.5c0 1.9-1.6 3.5-3.5 3.5-1.1 0-2-.6-2.5-1.4V18H17.5V7zm1.5 3.5c0 1.1.9 2 2 2s2-.9 2-2-.9-2-2-2-2 .9-2 2z"/></svg>
+                        eBay
+                      </span>
+                    )}
+                    {listing.ownerProfile.facebookVerified && (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#1877F2]/10 text-[#1877F2] text-xs font-bold border border-[#1877F2]/20">
+                        <svg className="h-3 w-3" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                        Facebook
+                      </span>
+                    )}
+                    {listing.ownerProfile.linkedinVerified && (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#0A66C2]/10 text-[#0A66C2] text-xs font-bold border border-[#0A66C2]/20">
+                        <svg className="h-3 w-3" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+                        LinkedIn
+                      </span>
+                    )}
+                  </div>
+                )}
 
                 <div className="flex items-center gap-3 mt-4">
                   <span className="text-lg font-medium text-gray-700">Member Status:</span>

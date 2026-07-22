@@ -719,6 +719,17 @@ export async function getListingDetail(listingId: number, viewerId: number | nul
     .where(eq(userProfiles.userId, detailCard[0].ownerId))
     .limit(1);
 
+  // Fetch owner verification status from users table
+  const ownerUserRows = await db
+    .select({
+      ebayIdVerified: users.ebayIdVerified,
+      facebookVerified: users.facebookVerified,
+      linkedinId: users.linkedinId,
+    })
+    .from(users)
+    .where(eq(users.id, detailCard[0].ownerId))
+    .limit(1);
+
   const similarRows = await db
     .select({
       id: listings.id,
@@ -808,6 +819,9 @@ export async function getListingDetail(listingId: number, viewerId: number | nul
       displayName: ownerProfileRows[0]?.displayName ?? `Collector ${detailCard[0].ownerId}`,
       bio: ownerProfileRows[0]?.bio ?? "Open to thoughtful, collector-to-collector trades.",
       avatarUrl: ownerProfileRows[0]?.avatarUrl ?? null,
+      ebayVerified: ownerUserRows[0]?.ebayIdVerified === 1,
+      facebookVerified: ownerUserRows[0]?.facebookVerified === 1,
+      linkedinVerified: !!(ownerUserRows[0]?.linkedinId),
     },
     ownerRating,
     photos: photoRows.map(p => ({
