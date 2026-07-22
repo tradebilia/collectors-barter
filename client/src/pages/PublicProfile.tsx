@@ -559,17 +559,7 @@ export default function PublicProfile() {
                         ) : null;
                       })()}
 
-                      {/* Link to Facebook profile — constructed from facebookId since facebookLink requires App Review */}
-                      {user.facebookId && (
-                        <Button
-                          variant="outline"
-                          className="w-full h-8 rounded-lg text-[10px] font-bold border-[#1877F2]/20 text-[#1877F2] hover:bg-[#1877F2]/5"
-                          onClick={() => window.open(`https://www.facebook.com/profile.php?id=${user.facebookId}`, '_blank')}
-                        >
-                          <ExternalLink className="mr-2 h-3 w-3" />
-                          View Facebook Profile
-                        </Button>
-                      )}
+
                     </div>
                   </div>
                 )}
@@ -614,22 +604,7 @@ export default function PublicProfile() {
                           <span>Connected {new Date(user.linkedinConnectedAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</span>
                         </div>
                       )}
-                      {/* View Profile Button — use stored vanity URL or fall back to name search */}
-                      {user.linkedinId && (
-                        <Button
-                          variant="outline"
-                          className="w-full h-8 rounded-lg text-[10px] font-bold border-[#0A66C2]/20 text-[#0A66C2] hover:bg-[#0A66C2]/5"
-                          onClick={() => window.open(
-                            user.linkedinProfileUrl
-                              ? user.linkedinProfileUrl
-                              : `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(user.linkedinName || '')}`,
-                            '_blank'
-                          )}
-                        >
-                          <ExternalLink className="mr-2 h-3 w-3" />
-                          View LinkedIn Profile
-                        </Button>
-                      )}
+
                     </div>
                   </div>
                 )}
