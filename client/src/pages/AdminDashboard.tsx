@@ -507,8 +507,7 @@ export default function AdminDashboard() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <div className="overflow-x-auto">
-          <TabsList className="flex w-max gap-1 h-auto p-1">
+          <TabsList className="flex flex-wrap w-full gap-1 h-auto p-1">
             <TabsTrigger value="statistics" className="flex items-center gap-1.5 text-sm px-4 py-2 whitespace-nowrap">
               <BarChart3 className="h-4 w-4" />
               Stats
@@ -558,7 +557,6 @@ export default function AdminDashboard() {
               Mod Log
             </TabsTrigger>
           </TabsList>
-          </div>
 
           {/* Statistics Tab */}
           <TabsContent value="statistics" className="space-y-4 mt-6">
