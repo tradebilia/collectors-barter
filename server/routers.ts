@@ -2260,6 +2260,30 @@ export const appRouter = router({
       const items = await getTopMostViewedItems(ctx.user?.id ?? null);
       return { items };
     }),
+    getTopRatedTraders: publicProcedure
+      .input(z.object({ limit: z.number().min(1).max(50).default(10) }).optional())
+      .query(async ({ input }) => {
+        const db = await requireDb();
+        const limit = input?.limit ?? 10;
+        const [rows] = await db.execute(
+          sql`SELECT
+            u.id,
+            up.displayName,
+            up.avatarUrl,
+            ROUND(AVG(tr.overallRating), 1) as averageRating,
+            COUNT(tr.id) as reviewCount,
+            (SELECT COUNT(*) FROM tradeProposals tp WHERE (tp.requesterId = u.id OR tp.recipientId = u.id) AND tp.status = 'completed') as completedTrades
+          FROM users u
+          LEFT JOIN userProfiles up ON up.userId = u.id
+          INNER JOIN tradeReviews tr ON tr.revieweeId = u.id AND tr.isVisible = 1
+          WHERE u.isBanned = 0 AND u.isSuspended = 0
+          GROUP BY u.id, up.displayName, up.avatarUrl
+          HAVING COUNT(tr.id) > 0
+          ORDER BY averageRating DESC, reviewCount DESC
+          LIMIT ${limit}`
+        );
+        return { traders: (rows as unknown as any[]) || [] };
+      }),
   }),
   onlineStatus: router({
     updateActivity: protectedProcedure.mutation(async ({ ctx }) => {

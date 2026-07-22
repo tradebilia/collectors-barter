@@ -305,6 +305,9 @@ export default function Home() {
   const topMostViewedQuery = trpc.favorites.getTopMostViewed.useQuery(undefined, {
     refetchInterval: 300000, // Refetch every 5 minutes
   });
+  const topRatedTradersQuery = trpc.favorites.getTopRatedTraders.useQuery(undefined, {
+    refetchInterval: 300000, // Refetch every 5 minutes
+  });
   const dashboardQuery = trpc.market.dashboard.useQuery(undefined, {
     enabled: isAuthenticated,
   });
@@ -458,19 +461,7 @@ export default function Home() {
     ? (topMostFavoritedQuery.data?.items ?? []).slice(0, 10)
     : [];
 
-  const topTraderItemsData = (marketplaceQuery.data?.listings ?? []).length
-    ? (() => {
-        const seen = new Set<number>();
-        const traders = [];
-        for (const listing of (marketplaceQuery.data?.listings ?? [])) {
-          if (!seen.has(listing.owner.id) && traders.length < 10) {
-            seen.add(listing.owner.id);
-            traders.push(listing.owner);
-          }
-        }
-        return traders;
-      })()
-    : [];
+  const topTraderItemsData = (topRatedTradersQuery.data?.traders ?? []).slice(0, 10);
 
   const mostViewedItems = mostViewedItemsData.map(listing => listing.title);
   const mostRequestedItems = mostRequestedItemsData.map(listing => listing.title);
@@ -845,12 +836,14 @@ export default function Home() {
                                 <div className="flex-1 min-w-0 ml-1">
                                   <span className="truncate text-[11px] font-semibold block text-white/90">{owner.displayName}</span>
                                   <div className="flex items-center gap-0.5 mt-0.5">
-                                    {[...Array(5)].map((_, i) => (
-                                      <Star key={i} className={`w-2.5 h-2.5 ${i < 4 ? 'fill-yellow-400 text-yellow-400' : 'fill-white/10 text-white/10'}`} />
-                                    ))}
+                                    {[...Array(5)].map((_, i) => {
+                                      const rating = Number(owner.averageRating) || 0;
+                                      return <Star key={i} className={`w-2.5 h-2.5 ${i < Math.round(rating) ? 'fill-yellow-400 text-yellow-400' : 'fill-white/10 text-white/10'}`} />;
+                                    })}
                                   </div>
+                                  <span className="text-[9px] text-white/40">{owner.reviewCount || 0} review{Number(owner.reviewCount) !== 1 ? 's' : ''}</span>
                                 </div>
-                                <div className="text-white/90 text-[11px] font-bold min-w-[30px] text-right">5.0</div>
+                                <div className="text-white/90 text-[11px] font-bold min-w-[30px] text-right">{Number(owner.averageRating) > 0 ? Number(owner.averageRating).toFixed(1) : 'N/A'}</div>
                               </div>
                             </Link>
                           );

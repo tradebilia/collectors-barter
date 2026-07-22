@@ -160,16 +160,9 @@ export function AllMostFavoritedRankings() {
 
 export function AllRatedTradersRankings() {
   const [, setLocation] = useLocation();
-  const marketplaceQuery = trpc.market.feed.useQuery({});
+  const topRatedQuery = trpc.favorites.getTopRatedTraders.useQuery({ limit: 50 });
 
-  const topTraderItemsData = (marketplaceQuery.data?.listings ?? []).length
-    ? (marketplaceQuery.data?.listings ?? []).map((listing: any) => listing.owner)
-    : [] as any[];
-
-  // Remove duplicates and sort by trade count
-  const uniqueTraders = Array.from(
-    new Map(topTraderItemsData.map((trader: any) => [trader.id, trader])).values()
-  ).sort((a: any, b: any) => (b.tradeCount || 0) - (a.tradeCount || 0));
+  const uniqueTraders = topRatedQuery.data?.traders ?? [];
 
   return (
     <div className="min-h-screen bg-white">
@@ -185,7 +178,7 @@ export function AllRatedTradersRankings() {
           <p className="text-gray-600">Browse all traders ranked by trade activity</p>
         </div>
 
-        {marketplaceQuery.isLoading ? (
+        {topRatedQuery.isLoading ? (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
@@ -229,11 +222,12 @@ export function AllRatedTradersRankings() {
                     </Avatar>
                     <div className="flex-1">
                       <h3 className="text-lg font-semibold text-[#2d241e]">{trader.displayName}</h3>
-                      <p className="text-sm text-gray-600">{trader.tradeCount || 0} trades completed</p>
+                      <p className="text-sm text-gray-600">{trader.completedTrades || 0} trades completed</p>
+                      <p className="text-xs text-gray-400">{trader.reviewCount || 0} review{Number(trader.reviewCount) !== 1 ? 's' : ''}</p>
                     </div>
                     <div className="text-right">
-                      <div className="text-2xl font-bold text-gray-300">⭐ {(trader.averageRating || 0).toFixed(1)}</div>
-                      <div className="text-xs text-gray-500">rating</div>
+                      <div className="text-2xl font-bold text-amber-500">⭐ {Number(trader.averageRating) > 0 ? Number(trader.averageRating).toFixed(1) : 'N/A'}</div>
+                      <div className="text-xs text-gray-500">Tradebilia Rating</div>
                     </div>
                   </div>
                 </button>
