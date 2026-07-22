@@ -1136,14 +1136,21 @@ export default function WarRoom() {
                     className={`px-4 py-2 border rounded-lg transition text-sm flex items-center gap-2 font-medium ${
                       showVideoChatModal && videoRoomUrl
                         ? 'bg-red-600/20 text-red-400 border-red-500/30 hover:bg-red-600 hover:text-white'
-                        : 'bg-blue-600/20 text-blue-400 border-blue-500/30 hover:bg-blue-600 hover:text-white'
+                        : (trade?.proposal as any)?.dailyRoomUrl && !showVideoChatModal && (trade?.proposal as any)?.dailyRoomStartedBy !== myUserId
+                          ? 'bg-green-600/20 text-green-400 border-green-500/30 hover:bg-green-600 hover:text-white animate-pulse'
+                          : 'bg-blue-600/20 text-blue-400 border-blue-500/30 hover:bg-blue-600 hover:text-white'
                     }`}
                     disabled={videoRoomLoading}
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
                       <path strokeLinecap="round" strokeLinejoin="round" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z" />
                     </svg>
-                    {showVideoChatModal && videoRoomUrl ? 'End Video' : 'Video Chat'}
+                    {showVideoChatModal && videoRoomUrl
+                      ? 'End Video'
+                      : (trade?.proposal as any)?.dailyRoomUrl && (trade?.proposal as any)?.dailyRoomStartedBy !== myUserId
+                        ? 'Join Video Chat'
+                        : 'Video Chat'
+                    }
                   </button>
 
                 </div>
