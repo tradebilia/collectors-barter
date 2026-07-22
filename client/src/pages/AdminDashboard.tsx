@@ -704,7 +704,7 @@ export default function AdminDashboard() {
                           <SortHeader col="id" label="User ID" />
                           <th className="text-left py-2 px-4">First Name</th>
                           <th className="text-left py-2 px-4">Last Name</th>
-                          <SortHeader col="username" label="Username" />
+                          <SortHeader col="username" label="Display Name" />
                           <th className="text-left py-2 px-4">Email</th>
                           <SortHeader col="joined" label="Joined" />
                           <SortHeader col="items" label="Items" />
@@ -732,7 +732,7 @@ export default function AdminDashboard() {
                                 {u.lastName || "-"}
                               </button>
                             </td>
-                            <td className="py-2 px-4 font-medium">{u.username}</td>
+                            <td className="py-2 px-4 font-medium">{u.displayName || u.username || '-'}</td>
                             <td className="py-2 px-4 text-xs">{u.contactEmail || "-"}</td>
                             <td className="py-2 px-4 text-xs">{u.createdAt ? new Date(u.createdAt).toLocaleDateString() : "-"}</td>
                             <td className="py-2 px-4 text-center font-semibold">{u.itemsListed || 0}</td>
