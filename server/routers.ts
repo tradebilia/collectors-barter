@@ -39,6 +39,7 @@ import {
   getUserEbayFeedback,
   flagLowFeedback,
   getUserFacebookInfo,
+  getUserLinkedInInfo,
   getLowFeedbackFlags,
   sendItemInquiry,
   getUnreadInquiries,
@@ -1536,6 +1537,37 @@ export const appRouter = router({
     }),
   }),
 
+  linkedin: router({
+    // Returns the LinkedIn OAuth login URL for the frontend to redirect to
+    getAuthUrl: protectedProcedure
+      .input(z.object({ state: z.string() }))
+      .query(async ({ input }) => {
+        const { getLinkedInAuthUrl } = await import('./_core/linkedin');
+        return getLinkedInAuthUrl(input.state) as string;
+      }),
+    // Returns the current user's connected LinkedIn info
+    getInfo: protectedProcedure.query(async ({ ctx }) => {
+      return await getUserLinkedInInfo(ctx.user.id);
+    }),
+    // Disconnects the user's LinkedIn account
+    disconnect: protectedProcedure.mutation(async ({ ctx }) => {
+      const db = await requireDb();
+      await db
+        .update(users)
+        .set({
+          linkedinId: null,
+          linkedinName: null,
+          linkedinEmail: null,
+          linkedinPicture: null,
+          linkedinHeadline: null,
+          linkedinProfileUrl: null,
+          linkedinAccessToken: null,
+          linkedinConnectedAt: null,
+        })
+        .where(eq(users.id, ctx.user.id));
+      return { success: true };
+    }),
+  }),
   admin: router({
     // Platform statistics
     getPlatformStatistics: protectedProcedure.query(async ({ ctx }) => {

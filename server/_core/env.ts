@@ -56,6 +56,15 @@ export const ENV = {
   get facebookRedirectUri() {
     return process.env.FACEBOOK_REDIRECT_URI ?? "http://localhost:3000/api/facebook/callback";
   },
+  get linkedinClientId() {
+    return process.env.LINKEDIN_CLIENT_ID ?? "";
+  },
+  get linkedinClientSecret() {
+    return process.env.LINKEDIN_CLIENT_SECRET ?? "";
+  },
+  get linkedinRedirectUri() {
+    return process.env.LINKEDIN_REDIRECT_URI ?? "http://localhost:3000/api/linkedin/callback";
+  },
 };
 
 // Aliases for backward compatibility.

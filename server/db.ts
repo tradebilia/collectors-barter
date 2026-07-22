@@ -2807,6 +2807,41 @@ export async function getUserFacebookInfo(userId: number): Promise<{
   };
 }
 
+export async function getUserLinkedInInfo(userId: number): Promise<{
+  linkedinId: string | null;
+  linkedinName: string | null;
+  linkedinEmail: string | null;
+  linkedinPicture: string | null;
+  linkedinHeadline: string | null;
+  linkedinProfileUrl: string | null;
+  linkedinConnectedAt: Date | null;
+} | null> {
+  const db = await requireDb();
+  const result = await db
+    .select({
+      linkedinId: users.linkedinId,
+      linkedinName: users.linkedinName,
+      linkedinEmail: users.linkedinEmail,
+      linkedinPicture: users.linkedinPicture,
+      linkedinHeadline: users.linkedinHeadline,
+      linkedinProfileUrl: users.linkedinProfileUrl,
+      linkedinConnectedAt: users.linkedinConnectedAt,
+    })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+  if (!result[0]) return null;
+  return {
+    linkedinId: result[0].linkedinId ?? null,
+    linkedinName: result[0].linkedinName ?? null,
+    linkedinEmail: result[0].linkedinEmail ?? null,
+    linkedinPicture: result[0].linkedinPicture ?? null,
+    linkedinHeadline: result[0].linkedinHeadline ?? null,
+    linkedinProfileUrl: result[0].linkedinProfileUrl ?? null,
+    linkedinConnectedAt: result[0].linkedinConnectedAt ? new Date(result[0].linkedinConnectedAt) : null,
+  };
+}
+
 // Item Inquiry Functions
 export async function sendItemInquiry(
   user: Pick<User, "id" | "name">,

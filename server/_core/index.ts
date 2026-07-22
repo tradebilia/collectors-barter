@@ -168,6 +168,46 @@ async function startServer() {
     }
   });
 
+  // LinkedIn OAuth callback — handles redirect from LinkedIn after user authorizes
+  app.get("/api/linkedin/callback", async (req: any, res: any) => {
+    const code = req.query.code as string | undefined;
+    const error = req.query.error as string | undefined;
+
+    // User denied access on LinkedIn
+    if (error) {
+      return res.redirect(302, "/account-settings?linkedin=error&reason=access_denied&tab=integrations");
+    }
+
+    if (!code) {
+      return res.redirect(302, "/account-settings?linkedin=error&reason=no_code&tab=integrations");
+    }
+
+    try {
+      // Identify the logged-in user from session cookie (same pattern as Facebook/eBay)
+      const { customAuth } = await import("./customAuth");
+      const COOKIE_NAME = "app_session_id";
+      const cookieHeader = req.headers?.cookie || "";
+      const cookies = new Map<string, string>();
+      cookieHeader.split(";").forEach((part: string) => {
+        const [k, ...v] = part.trim().split("=");
+        if (k) cookies.set(k.trim(), decodeURIComponent(v.join("=").trim()));
+      });
+      const sessionCookie = cookies.get(COOKIE_NAME);
+      const user = await customAuth.getUserFromSession(sessionCookie);
+
+      if (!user) {
+        return res.redirect(302, "/account-settings?linkedin=error&reason=not_logged_in&tab=integrations");
+      }
+
+      const { handleLinkedInCallback } = await import("./linkedinCallback");
+      await handleLinkedInCallback(code, user.id);
+      return res.redirect(302, "/account-settings?linkedin=connected&tab=integrations");
+    } catch (err) {
+      console.error("[LinkedIn Callback] Error:", err);
+      return res.redirect(302, "/account-settings?linkedin=error&reason=callback_failed&tab=integrations");
+    }
+  });
+
   // tRPC API
   app.use(
     "/api/trpc",
