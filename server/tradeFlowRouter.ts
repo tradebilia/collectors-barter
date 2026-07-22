@@ -1370,8 +1370,22 @@ export const tradeFlowRouter = router({
       const resolvedTrade = (rows as any)?.[0];
       if (!resolvedTrade) throw new TRPCError({ code: 'NOT_FOUND', message: 'Trade not found or access denied' });
 
-      // Return existing room if already created
+      // If room already exists, update the caller and send invite message again
       if (resolvedTrade.dailyRoomName && resolvedTrade.dailyRoomUrl) {
+        const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
+        // Update who started the call (caller may have changed)
+        await db.execute(
+          sql`UPDATE tradeProposals SET dailyRoomStartedBy = ${userId} WHERE id = ${input.proposalId}`
+        );
+        // Notify the other trader
+        const otherUserId2 = resolvedTrade.requesterId === userId ? resolvedTrade.recipientId : resolvedTrade.requesterId;
+        const [callerRows2] = await db.execute(sql`SELECT displayName, username FROM users WHERE id = ${userId} LIMIT 1`);
+        const caller2 = (callerRows2 as any)?.[0];
+        const callerName2 = caller2?.displayName || caller2?.username || 'Your trade partner';
+        await db.execute(
+          sql`INSERT INTO tradeMessages (proposalId, senderId, message, isSystemMessage, createdAt)
+              VALUES (${input.proposalId}, ${userId}, ${`📹 ${callerName2} has started a video call. Click "Video Chat" to join.`}, 1, ${now})`
+        );
         return { roomUrl: resolvedTrade.dailyRoomUrl as string, roomName: resolvedTrade.dailyRoomName as string };
       }
 
