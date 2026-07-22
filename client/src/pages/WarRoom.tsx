@@ -251,6 +251,7 @@ export default function WarRoom() {
 
   const getOrCreateVideoRoomMutation = trpc.tradeFlow.getOrCreateVideoRoom.useMutation();
   const dismissVideoCallMutation = trpc.tradeFlow.dismissVideoCall.useMutation();
+  const endVideoCallMutation = trpc.tradeFlow.endVideoCall.useMutation();
 
   // ── Effects ───────────────────────────────────────────────────────────────
   // Mark alerts as read when entering the War Room; do NOT auto-transition stage
@@ -1082,9 +1083,10 @@ export default function WarRoom() {
                   <button
                     onClick={async () => {
                       if (showVideoChatModal && videoRoomUrl) {
-                        // Toggle off if already open
+                        // End the call — close panel and clear state in DB for both users
                         setShowVideoChatModal(false);
                         setVideoRoomUrl(null);
+                        try { await endVideoCallMutation.mutateAsync({ proposalId }); } catch (_) {}
                         return;
                       }
                       setVideoRoomLoading(true);

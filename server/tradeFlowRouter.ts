@@ -1437,6 +1437,29 @@ export const tradeFlowRouter = router({
       return { roomUrl: data.url as string, roomName: data.name as string };
     }),
 
+  endVideoCall: protectedProcedure
+    .input(z.object({ proposalId: z.number().int().positive() }))
+    .mutation(async ({ ctx, input }) => {
+      const db = await requireDb();
+      const userId = ctx.user.id;
+
+      // Verify user is a participant
+      const [rows] = await db.execute(
+        sql`SELECT id, requesterId, recipientId FROM tradeProposals
+            WHERE id = ${input.proposalId}
+              AND (requesterId = ${userId} OR recipientId = ${userId})
+            LIMIT 1`
+      );
+      if (!(rows as any)?.[0]) throw new TRPCError({ code: 'NOT_FOUND', message: 'Trade not found or access denied' });
+
+      // Clear the caller so buttons reset for both users
+      await db.execute(
+        sql`UPDATE tradeProposals SET dailyRoomStartedBy = NULL WHERE id = ${input.proposalId}`
+      );
+
+      return { success: true };
+    }),
+
   dismissVideoCall: protectedProcedure
     .input(z.object({ proposalId: z.number().int().positive() }))
     .mutation(async ({ ctx, input }) => {
