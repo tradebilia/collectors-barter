@@ -279,8 +279,10 @@ export default function WarRoom() {
   const dailyRoomStartedBy = (trade?.proposal as any)?.dailyRoomStartedBy;
   useEffect(() => {
     if (!dailyRoomStartedBy) {
-      // Call was dismissed or ended — reset buttons for everyone
+      // Call was dismissed or ended — reset buttons and close panel for everyone
       setVideoBannerDismissed(true);
+      setShowVideoChatModal(false);
+      setVideoRoomUrl(null);
     } else if (dailyRoomStartedBy !== myUserId) {
       // A new call was started by the other user — show the join buttons
       setVideoBannerDismissed(false);
