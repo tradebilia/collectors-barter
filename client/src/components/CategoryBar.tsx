@@ -52,7 +52,7 @@ export function CategoryBar() {
                 <img
                   src={titleImg}
                   alt={category.label}
-                  className="h-16 w-auto object-contain max-w-[180px]"
+                  className="w-full max-h-[36px] object-contain"
                 />
               ) : (
                 <span
