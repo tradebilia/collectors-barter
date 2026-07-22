@@ -1104,6 +1104,20 @@ export default function WarRoom() {
                     }
                   </button>
 
+                  {/* Dismiss button — only shown to the non-caller when a call is active */}
+                  {(trade?.proposal as any)?.dailyRoomUrl && !showVideoChatModal && (trade?.proposal as any)?.dailyRoomStartedBy !== myUserId && (
+                    <button
+                      onClick={async () => {
+                        try {
+                          await dismissVideoCallMutation.mutateAsync({ proposalId });
+                        } catch (_) {}
+                      }}
+                      className="px-4 py-2 bg-red-600/20 text-red-400 border border-red-500/30 hover:bg-red-600 hover:text-white rounded-lg transition text-sm font-medium"
+                    >
+                      Dismiss
+                    </button>
+                  )}
+
                 </div>
               </div>
 
