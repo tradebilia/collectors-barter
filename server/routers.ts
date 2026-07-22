@@ -264,6 +264,14 @@ export const appRouter = router({
           throw new Error("Invalid username or password");
         }
 
+        // Block banned users from logging in
+        if ((user as any).isBanned === 1) {
+          throw new TRPCError({
+            code: 'FORBIDDEN',
+            message: 'Your account has been permanently banned. If you believe this is an error, please contact support.',
+          });
+        }
+
         const { customAuth } = await import("./_core/customAuth");
         const sessionToken = await customAuth.createSessionToken(
           user.id,
@@ -709,6 +717,10 @@ export const appRouter = router({
         }),
       )
       .mutation(({ ctx, input }) => {
+        // Block suspended users from publishing live listings
+        if ((ctx.user as any).isSuspended === 1) {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Your account is suspended. Listings cannot be published while suspended.' });
+        }
         // Validate grading company and grade from description if present
         const descriptionLines = input.description.split('\n');
         let graderCompany = '';
@@ -828,6 +840,9 @@ export const appRouter = router({
         }),
       )
       .mutation(({ ctx, input }) => {
+        if ((ctx.user as any).isSuspended === 1) {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Your account is suspended. You cannot initiate trades while suspended.' });
+        }
         // DEPRECATED: Use tradeFlow.initiateTradeProposal instead
         // Kept for backward compatibility with existing frontend code
         return createTradeProposal(
@@ -876,6 +891,9 @@ export const appRouter = router({
         }),
       )
       .mutation(async ({ ctx, input }) => {
+        if ((ctx.user as any).isSuspended === 1) {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Your account is suspended. You cannot send messages while suspended.' });
+        }
         await sendTradeMessage({ id: ctx.user.id, name: ctx.user.name }, { proposalId: input.proposalId, message: input.message });
         return getDashboardData({ id: ctx.user.id, name: ctx.user.name });
       }),
@@ -1973,21 +1991,97 @@ export const appRouter = router({
       return await getSuspendedUsers();
     }),
     suspendUser: protectedProcedure
-      .input(z.object({ userId: z.number().int().positive() }))
+      .input(z.object({ userId: z.number().int().positive(), reason: z.string().min(1).max(2000) }))
       .mutation(async ({ ctx, input }) => {
         if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
         if (input.userId === ctx.user.id) throw new TRPCError({ code: 'BAD_REQUEST', message: 'Cannot suspend yourself' });
-        return await suspendUser(input.userId);
+        const db = await requireDb();
+        const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
+
+        // 1. Suspend the user
+        await db.execute(
+          sql`UPDATE users SET isSuspended = 1, suspendedAt = ${now}, suspensionReason = ${input.reason}, suspendedBy = ${ctx.user.id} WHERE id = ${input.userId}`
+        );
+
+        // 2. Deactivate all their active listings
+        await db.execute(
+          sql`UPDATE listings SET isActive = 0 WHERE ownerId = ${input.userId} AND isActive = 1`
+        );
+
+        // 3. Freeze all active trades (save pre-freeze status)
+        await db.execute(
+          sql`UPDATE tradeProposals SET preFreezStatus = status, status = 'frozen', frozenAt = ${now}, frozenReason = 'User suspended', lastActivityAt = ${now}, updatedAt = ${now}
+              WHERE (requesterId = ${input.userId} OR recipientId = ${input.userId})
+              AND status IN ('pending','negotiating','accepted','shipping')`
+        );
+
+        // 4. Notify the other parties in frozen trades
+        const [frozenTrades] = await db.execute(
+          sql`SELECT id, requesterId, recipientId, tradeReferenceNumber FROM tradeProposals
+              WHERE (requesterId = ${input.userId} OR recipientId = ${input.userId})
+              AND status = 'frozen' AND frozenAt = ${now}`
+        );
+        for (const trade of (frozenTrades as unknown as any[]) || []) {
+          const otherId = trade.requesterId === input.userId ? trade.recipientId : trade.requesterId;
+          await db.execute(
+            sql`INSERT INTO tradeAlerts (proposalId, recipientUserId, alertType, message, isRead, createdAt)
+                VALUES (${trade.id}, ${otherId}, 'cancelled', ${'This trade has been paused because one of the participants has been suspended. It will resume if the suspension is lifted. You may cancel if you wish to move on.'}, 0, ${now})`
+          );
+        }
+
+        // 5. Log to moderation log
+        await db.execute(
+          sql`INSERT INTO moderationLog (adminId, targetUserId, action, reason, createdAt) VALUES (${ctx.user.id}, ${input.userId}, 'suspend', ${input.reason}, ${now})`
+        );
+
+        return { success: true };
       }),
     unsuspendUser: protectedProcedure
       .input(z.object({ userId: z.number().int().positive() }))
       .mutation(async ({ ctx, input }) => {
         if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
         const db = await requireDb();
-        await unsuspendUser(input.userId);
+        const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
+
+        // 1. Unsuspend the user
         await db.execute(
-          sql`INSERT INTO moderationLog (adminId, targetUserId, action, reason, createdAt) VALUES (${ctx.user.id}, ${input.userId}, 'unsuspend', NULL, NOW())`
+          sql`UPDATE users SET isSuspended = 0, suspendedAt = NULL, suspensionReason = NULL, suspendedBy = NULL WHERE id = ${input.userId}`
         );
+
+        // 2. Re-activate their listings
+        await db.execute(
+          sql`UPDATE listings SET isActive = 1 WHERE ownerId = ${input.userId} AND isActive = 0 AND status = 'active'`
+        );
+
+        // 3. Unfreeze their frozen trades (restore pre-freeze status)
+        const [frozenTrades] = await db.execute(
+          sql`SELECT id, requesterId, recipientId, tradeReferenceNumber, preFreezStatus FROM tradeProposals
+              WHERE (requesterId = ${input.userId} OR recipientId = ${input.userId})
+              AND status = 'frozen'`
+        );
+        for (const trade of (frozenTrades as unknown as any[]) || []) {
+          const restoreStatus = trade.preFreezStatus || 'negotiating';
+          await db.execute(
+            sql`UPDATE tradeProposals SET status = ${restoreStatus}, preFreezStatus = NULL, frozenAt = NULL, frozenReason = NULL, lastActivityAt = ${now}, updatedAt = ${now}
+                WHERE id = ${trade.id}`
+          );
+          // Notify both parties
+          const otherId = trade.requesterId === input.userId ? trade.recipientId : trade.requesterId;
+          await db.execute(
+            sql`INSERT INTO tradeAlerts (proposalId, recipientUserId, alertType, message, isRead, createdAt)
+                VALUES (${trade.id}, ${otherId}, 'initiated', ${'The suspension has been lifted. Your trade can now continue.'}, 0, ${now})`
+          );
+          await db.execute(
+            sql`INSERT INTO tradeAlerts (proposalId, recipientUserId, alertType, message, isRead, createdAt)
+                VALUES (${trade.id}, ${input.userId}, 'initiated', ${'Your suspension has been lifted. Your trade can now continue.'}, 0, ${now})`
+          );
+        }
+
+        // 4. Log to moderation log
+        await db.execute(
+          sql`INSERT INTO moderationLog (adminId, targetUserId, action, reason, createdAt) VALUES (${ctx.user.id}, ${input.userId}, 'unsuspend', NULL, ${now})`
+        );
+
         return { success: true };
       }),
 
@@ -2038,12 +2132,39 @@ export const appRouter = router({
         if (input.userId === ctx.user.id) throw new TRPCError({ code: 'BAD_REQUEST', message: 'Cannot ban yourself' });
         const db = await requireDb();
         const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
+
+        // 1. Ban the user (also clear any suspension)
         await db.execute(
-          sql`UPDATE users SET isBanned = 1, bannedAt = ${now}, banReason = ${input.reason}, isSuspended = 0 WHERE id = ${input.userId}`
+          sql`UPDATE users SET isBanned = 1, bannedAt = ${now}, banReason = ${input.reason}, bannedBy = ${ctx.user.id}, isSuspended = 0, suspendedAt = NULL, suspensionReason = NULL WHERE id = ${input.userId}`
         );
+
+        // 2. Permanently delete all their listings
+        await db.execute(
+          sql`DELETE FROM listings WHERE ownerId = ${input.userId}`
+        );
+
+        // 3. Auto-cancel all active trades and notify other parties
+        const [activeTrades] = await db.execute(
+          sql`SELECT id, requesterId, recipientId, tradeReferenceNumber FROM tradeProposals
+              WHERE (requesterId = ${input.userId} OR recipientId = ${input.userId})
+              AND status IN ('pending','negotiating','accepted','shipping','frozen')`
+        );
+        for (const trade of (activeTrades as unknown as any[]) || []) {
+          await db.execute(
+            sql`UPDATE tradeProposals SET status = 'cancelled', declineReason = 'Trade cancelled: user account permanently banned', lastActivityAt = ${now}, updatedAt = ${now} WHERE id = ${trade.id}`
+          );
+          const otherId = trade.requesterId === input.userId ? trade.recipientId : trade.requesterId;
+          await db.execute(
+            sql`INSERT INTO tradeAlerts (proposalId, recipientUserId, alertType, message, isRead, createdAt)
+                VALUES (${trade.id}, ${otherId}, 'cancelled', ${'This trade has been cancelled because the other participant\'s account has been permanently banned.'}, 0, ${now})`
+          );
+        }
+
+        // 4. Log to moderation log
         await db.execute(
           sql`INSERT INTO moderationLog (adminId, targetUserId, action, reason, createdAt) VALUES (${ctx.user.id}, ${input.userId}, 'ban', ${input.reason}, ${now})`
         );
+
         return { success: true };
       }),
 
@@ -2055,7 +2176,7 @@ export const appRouter = router({
         const db = await requireDb();
         const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
         await db.execute(
-          sql`UPDATE users SET isBanned = 0, bannedAt = NULL, banReason = NULL WHERE id = ${input.userId}`
+          sql`UPDATE users SET isBanned = 0, bannedAt = NULL, banReason = NULL, bannedBy = NULL WHERE id = ${input.userId}`
         );
         await db.execute(
           sql`INSERT INTO moderationLog (adminId, targetUserId, action, reason, createdAt) VALUES (${ctx.user.id}, ${input.userId}, 'unban', NULL, ${now})`

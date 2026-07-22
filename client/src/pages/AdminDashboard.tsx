@@ -382,7 +382,13 @@ export default function AdminDashboard() {
   const [warnMessage, setWarnMessage] = useState("");
   const [banDialogOpen, setBanDialogOpen] = useState(false);
   const [banReason, setBanReason] = useState("");
+  const [suspendDialogOpen, setSuspendDialogOpen] = useState(false);
+  const [suspendReason, setSuspendReason] = useState("");
   const [userToAction, setUserToAction] = useState<any>(null);
+  const [userStatusFilter, setUserStatusFilter] = useState<'all' | 'active' | 'suspended' | 'banned'>('all');
+  const [userSortBy, setUserSortBy] = useState<'id' | 'username' | 'joined' | 'items' | 'status'>('id');
+  const [userSortOrder, setUserSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [userSearch, setUserSearch] = useState('');
 
   const handleDeleteUser = async () => {
     console.log('[handleDeleteUser] Starting delete, userToDelete:', userToDelete);
@@ -438,12 +444,14 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleSuspendUser = async (userId: number) => {
+  const handleSuspendUser = async (userId: number, reason: string) => {
     try {
-      await suspendUserMutation.mutateAsync({ userId });
+      await suspendUserMutation.mutateAsync({ userId, reason });
       suspendedUsersQuery.refetch();
       usersQuery.refetch();
-      setSelectedSuspendedUser(null);
+      setSuspendDialogOpen(false);
+      setSuspendReason('');
+      setUserToAction(null);
     } catch (error) {
       console.error('[handleSuspendUser] Failed to suspend user', error);
     }
@@ -457,6 +465,29 @@ export default function AdminDashboard() {
       setSelectedSuspendedUser(null);
     } catch (error) {
       console.error('[handleUnsuspendUser] Failed to unsuspend user', error);
+    }
+  };
+
+  const handleBanUser = async (userId: number, reason: string) => {
+    try {
+      await banUserMutation.mutateAsync({ userId, reason });
+      bannedUsersQuery.refetch();
+      usersQuery.refetch();
+      setBanDialogOpen(false);
+      setBanReason('');
+      setUserToAction(null);
+    } catch (error) {
+      console.error('[handleBanUser] Failed to ban user', error);
+    }
+  };
+
+  const handleUnbanUser = async (userId: number) => {
+    try {
+      await unbanUserMutation.mutateAsync({ userId });
+      bannedUsersQuery.refetch();
+      usersQuery.refetch();
+    } catch (error) {
+      console.error('[handleUnbanUser] Failed to unban user', error);
     }
   };
 
@@ -507,7 +538,7 @@ export default function AdminDashboard() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid grid-cols-12 w-full h-auto p-1.5 gap-1">
+          <TabsList className="grid grid-cols-10 w-full h-auto p-1.5 gap-1">
             <TabsTrigger value="statistics" className="flex items-center justify-center gap-1.5 text-xs font-medium py-2.5 whitespace-nowrap">
               <BarChart3 className="h-4 w-4" />
               Stats
@@ -543,14 +574,6 @@ export default function AdminDashboard() {
             <TabsTrigger value="conventions" className="flex items-center justify-center gap-1.5 text-xs font-medium py-2.5 whitespace-nowrap">
               <Calendar className="h-4 w-4" />
               Conventions
-            </TabsTrigger>
-            <TabsTrigger value="suspended" className="flex items-center justify-center gap-1.5 text-xs font-medium py-2.5 whitespace-nowrap">
-              <Users className="h-4 w-4" />
-              Suspended
-            </TabsTrigger>
-            <TabsTrigger value="banned" className="flex items-center justify-center gap-1.5 text-xs font-medium py-2.5 whitespace-nowrap">
-              <Ban className="h-4 w-4" />
-              Banned
             </TabsTrigger>
             <TabsTrigger value="modlog" className="flex items-center justify-center gap-1.5 text-xs font-medium py-2.5 whitespace-nowrap">
               <ClipboardList className="h-4 w-4" />
@@ -605,98 +628,176 @@ export default function AdminDashboard() {
           <TabsContent value="users" className="space-y-4 mt-6">
             <Card>
               <CardHeader>
-                <CardTitle>User Management</CardTitle>
-                <CardDescription>
-                  View and manage user accounts. Click on a name to see full profile details.
-                </CardDescription>
+                <div className="flex flex-wrap items-center justify-between gap-4">
+                  <div>
+                    <CardTitle>User Management</CardTitle>
+                    <CardDescription>View and manage all user accounts including suspended and banned users.</CardDescription>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {/* Search */}
+                    <div className="relative">
+                      <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                      <input
+                        type="text"
+                        placeholder="Search users..."
+                        value={userSearch}
+                        onChange={e => setUserSearch(e.target.value)}
+                        className="pl-8 pr-3 py-2 text-sm border border-border rounded-md bg-background w-48"
+                      />
+                    </div>
+                    {/* Status Filter */}
+                    <select
+                      value={userStatusFilter}
+                      onChange={e => setUserStatusFilter(e.target.value as any)}
+                      className="text-sm border border-border rounded-md px-3 py-2 bg-background"
+                    >
+                      <option value="all">All Statuses</option>
+                      <option value="active">Active</option>
+                      <option value="suspended">Suspended</option>
+                      <option value="banned">Banned</option>
+                    </select>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent>
                 {usersQuery.isLoading ? (
                   <div className="text-sm text-muted-foreground">Loading users...</div>
-                ) : usersQuery.data && usersQuery.data.length > 0 ? (
+                ) : usersQuery.data && usersQuery.data.length > 0 ? (() => {
+                  const filtered = (usersQuery.data as any[]).filter((u: any) => {
+                    const matchSearch = !userSearch || [
+                      u.id?.toString(), u.username, u.firstName, u.lastName, u.contactEmail
+                    ].some(f => f?.toLowerCase().includes(userSearch.toLowerCase()));
+                    const accountStatus = u.isBanned ? 'banned' : u.isSuspended ? 'suspended' : 'active';
+                    const matchStatus = userStatusFilter === 'all' || accountStatus === userStatusFilter;
+                    return matchSearch && matchStatus;
+                  });
+                  const sorted = [...filtered].sort((a: any, b: any) => {
+                    let aVal: any, bVal: any;
+                    if (userSortBy === 'id') { aVal = a.id; bVal = b.id; }
+                    else if (userSortBy === 'username') { aVal = a.username?.toLowerCase(); bVal = b.username?.toLowerCase(); }
+                    else if (userSortBy === 'joined') { aVal = a.createdAt; bVal = b.createdAt; }
+                    else if (userSortBy === 'items') { aVal = a.itemsListed || 0; bVal = b.itemsListed || 0; }
+                    else if (userSortBy === 'status') {
+                      const order = { active: 0, suspended: 1, banned: 2 };
+                      aVal = order[a.isBanned ? 'banned' : a.isSuspended ? 'suspended' : 'active'];
+                      bVal = order[b.isBanned ? 'banned' : b.isSuspended ? 'suspended' : 'active'];
+                    }
+                    if (aVal < bVal) return userSortOrder === 'asc' ? -1 : 1;
+                    if (aVal > bVal) return userSortOrder === 'asc' ? 1 : -1;
+                    return 0;
+                  });
+                  const toggleSort = (col: typeof userSortBy) => {
+                    if (userSortBy === col) setUserSortOrder(o => o === 'asc' ? 'desc' : 'asc');
+                    else { setUserSortBy(col); setUserSortOrder('asc'); }
+                  };
+                  const SortHeader = ({ col, label }: { col: typeof userSortBy, label: string }) => (
+                    <th className="text-left py-2 px-4 cursor-pointer select-none hover:bg-accent/50" onClick={() => toggleSort(col)}>
+                      <div className="flex items-center gap-1">{label}<ArrowUpDown className="h-3 w-3 opacity-50" /></div>
+                    </th>
+                  );
+                  return (
                   <div className="overflow-x-auto">
+                    <div className="text-xs text-muted-foreground mb-2">{sorted.length} user{sorted.length !== 1 ? 's' : ''} shown</div>
                     <table className="w-full text-sm">
                       <thead className="border-b border-border">
                         <tr>
-                          <th className="text-left py-2 px-4">User ID</th>
+                          <SortHeader col="id" label="User ID" />
                           <th className="text-left py-2 px-4">First Name</th>
                           <th className="text-left py-2 px-4">Last Name</th>
-                          <th className="text-left py-2 px-4">Username</th>
+                          <SortHeader col="username" label="Username" />
                           <th className="text-left py-2 px-4">Email</th>
-                          <th className="text-left py-2 px-4">Joined</th>
-                          <th className="text-left py-2 px-4">Items Listed</th>
-                          <th className="text-left py-2 px-4">Online Status</th>
+                          <SortHeader col="joined" label="Joined" />
+                          <SortHeader col="items" label="Items" />
+                          <th className="text-left py-2 px-4">Online</th>
                           <th className="text-left py-2 px-4">Role</th>
+                          <SortHeader col="status" label="Status" />
                           <th className="text-left py-2 px-4">Actions</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {usersQuery.data.map((u: any) => (
-                          <tr key={u.id} className="border-b border-border hover:bg-accent/50">
+                        {sorted.map((u: any) => {
+                          const accountStatus = u.isBanned ? 'banned' : u.isSuspended ? 'suspended' : 'active';
+                          return (
+                          <tr key={u.id} className={`border-b border-border hover:bg-accent/50 ${
+                            accountStatus === 'banned' ? 'bg-red-50/50' : accountStatus === 'suspended' ? 'bg-yellow-50/50' : ''
+                          }`}>
                             <td className="py-2 px-4 font-mono text-xs">{u.id}</td>
                             <td className="py-2 px-4">
-                              <button
-                                onClick={() => setSelectedUser(u)}
-                                className="text-blue-600 hover:underline cursor-pointer"
-                              >
+                              <button onClick={() => setSelectedUser(u)} className="text-blue-600 hover:underline cursor-pointer">
                                 {u.firstName || "-"}
                               </button>
                             </td>
                             <td className="py-2 px-4">
-                              <button
-                                onClick={() => setSelectedUser(u)}
-                                className="text-blue-600 hover:underline cursor-pointer"
-                              >
+                              <button onClick={() => setSelectedUser(u)} className="text-blue-600 hover:underline cursor-pointer">
                                 {u.lastName || "-"}
                               </button>
                             </td>
-                            <td className="py-2 px-4">{u.username}</td>
-                            <td className="py-2 px-4">{u.contactEmail || "-"}</td>
-                            <td className="py-2 px-4 text-xs">
-                              {u.createdAt ? new Date(u.createdAt).toLocaleDateString() : "-"}
-                            </td>
-                            <td className="py-2 px-4 text-center font-semibold">
-                              {u.itemsListed || 0}
-                            </td>
+                            <td className="py-2 px-4 font-medium">{u.username}</td>
+                            <td className="py-2 px-4 text-xs">{u.contactEmail || "-"}</td>
+                            <td className="py-2 px-4 text-xs">{u.createdAt ? new Date(u.createdAt).toLocaleDateString() : "-"}</td>
+                            <td className="py-2 px-4 text-center font-semibold">{u.itemsListed || 0}</td>
                             <td className="py-2 px-4">
                               <span className={`px-2 py-1 rounded text-xs font-semibold ${
                                 u.isOnline ? 'bg-green-500/20 text-green-700' : 'bg-gray-500/20 text-gray-700'
-                              }`}>
-                                {u.isOnline ? 'Online' : 'Offline'}
-                              </span>
+                              }`}>{u.isOnline ? 'Online' : 'Offline'}</span>
                             </td>
                             <td className="py-2 px-4">
                               <span className={`px-2 py-1 rounded text-xs font-semibold ${
                                 u.role === 'admin' ? 'bg-red-500/20 text-red-700' : 'bg-blue-500/20 text-blue-700'
+                              }`}>{u.role}</span>
+                            </td>
+                            <td className="py-2 px-4">
+                              <span className={`px-2 py-1 rounded text-xs font-bold ${
+                                accountStatus === 'banned' ? 'bg-red-100 text-red-700 border border-red-200' :
+                                accountStatus === 'suspended' ? 'bg-yellow-100 text-yellow-700 border border-yellow-200' :
+                                'bg-green-100 text-green-700 border border-green-200'
                               }`}>
-                                {u.role}
+                                {accountStatus === 'banned' ? '🚫 Banned' : accountStatus === 'suspended' ? '⏸ Suspended' : '✅ Active'}
                               </span>
                             </td>
-                            <td className="py-2 px-4 text-xs flex gap-2">
-                              <Button 
-                                size="sm" 
-                                variant="outline"
-                                onClick={() => setSelectedUser(u)}
-                              >
-                                Edit
-                              </Button>
-                              <Button 
-                                size="sm" 
-                                variant="destructive"
-                                onClick={() => {
-                                  setUserToDelete(u);
-                                  setDeleteConfirmOpen(true);
-                                }}
-                              >
-                                Delete
-                              </Button>
+                            <td className="py-2 px-4">
+                              <div className="flex flex-wrap gap-1">
+                                <Button size="sm" variant="outline" onClick={() => setSelectedUser(u)}>Edit</Button>
+                                {accountStatus !== 'banned' && (
+                                  accountStatus === 'suspended' ? (
+                                    <Button size="sm" variant="outline" className="border-yellow-400 text-yellow-700 hover:bg-yellow-50"
+                                      onClick={() => handleUnsuspendUser(u.id)}
+                                      disabled={unsuspendUserMutation.isPending}>
+                                      Unsuspend
+                                    </Button>
+                                  ) : (
+                                    <Button size="sm" variant="outline" className="border-orange-400 text-orange-700 hover:bg-orange-50"
+                                      onClick={() => { setUserToAction(u); setSuspendDialogOpen(true); }}>
+                                      Suspend
+                                    </Button>
+                                  )
+                                )}
+                                {accountStatus === 'banned' ? (
+                                  <Button size="sm" variant="outline" className="border-green-500 text-green-700 hover:bg-green-50"
+                                    onClick={() => handleUnbanUser(u.id)}
+                                    disabled={unbanUserMutation.isPending}>
+                                    Unban
+                                  </Button>
+                                ) : (
+                                  <Button size="sm" variant="destructive"
+                                    onClick={() => { setUserToAction(u); setBanDialogOpen(true); }}>
+                                    Ban
+                                  </Button>
+                                )}
+                                <Button size="sm" variant="destructive" className="bg-gray-700 hover:bg-gray-800"
+                                  onClick={() => { setUserToDelete(u); setDeleteConfirmOpen(true); }}>
+                                  Delete
+                                </Button>
+                              </div>
                             </td>
                           </tr>
-                        ))}
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>
-                ) : (
+                  );
+                })() : (
                   <div className="text-sm text-muted-foreground">No users found</div>
                 )}
               </CardContent>
@@ -1318,7 +1419,7 @@ export default function AdminDashboard() {
                   </Button>
                   {!selectedUser.isSuspended ? (
                     <Button size="sm" variant="outline" className="border-orange-500 text-orange-600 hover:bg-orange-50"
-                      onClick={() => { suspendUserMutation.mutate({ userId: selectedUser.id }, { onSuccess: () => { usersQuery.refetch(); suspendedUsersQuery.refetch(); setSelectedUser((u: any) => ({ ...u, isSuspended: 1 })); } }); }}
+                      onClick={() => { setUserToAction(selectedUser); setSuspendDialogOpen(true); }}
                     >
                       <ShieldOff className="h-3.5 w-3.5 mr-1" /> Suspend
                     </Button>
@@ -1399,12 +1500,41 @@ export default function AdminDashboard() {
               <Button variant="destructive" disabled={!banReason.trim() || banUserMutation.isPending}
                 onClick={() => {
                   if (!userToAction || !banReason.trim()) return;
-                  banUserMutation.mutate({ userId: userToAction.id, reason: banReason.trim() }, {
-                    onSuccess: () => { setBanDialogOpen(false); setBanReason(""); usersQuery.refetch(); bannedUsersQuery.refetch(); moderationLogQuery.refetch(); }
-                  });
+                  handleBanUser(userToAction.id, banReason.trim());
+                  moderationLogQuery.refetch();
                 }}
               >
                 Confirm Permanent Ban
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Suspend User Dialog */}
+      <Dialog open={suspendDialogOpen} onOpenChange={setSuspendDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-orange-600">Suspend {userToAction?.displayName || userToAction?.username}</DialogTitle>
+            <DialogDescription>The user's account will be suspended until manually lifted. Their listings will be deactivated and active trades will be frozen.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 pt-2">
+            <textarea
+              className="w-full border border-orange-300 rounded-lg p-3 text-sm min-h-[100px] resize-none"
+              placeholder="Reason for suspension..."
+              value={suspendReason}
+              onChange={(e) => setSuspendReason(e.target.value)}
+            />
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" onClick={() => { setSuspendDialogOpen(false); setSuspendReason(''); }}>Cancel</Button>
+              <Button className="bg-orange-500 hover:bg-orange-600 text-white" disabled={!suspendReason.trim() || suspendUserMutation.isPending}
+                onClick={() => {
+                  if (!userToAction || !suspendReason.trim()) return;
+                  handleSuspendUser(userToAction.id, suspendReason.trim());
+                  moderationLogQuery.refetch();
+                }}
+              >
+                Confirm Suspension
               </Button>
             </div>
           </div>
