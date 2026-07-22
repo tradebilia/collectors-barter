@@ -708,7 +708,94 @@ export const tradeFlowRouter = router({
   // QUERIES: TRADE HUB & WAR ROOM DATA
   // ==========================================================================
 
+  getTradeAlerts: protectedProcedure
+    .input(z.object({
+      folder: z.enum(['proposal', 'negotiating', 'accepted', 'shipped', 'declined', 'completed']),
+      limit: z.number().int().min(1).max(100).default(20),
+      offset: z.number().int().min(0).default(0),
+    }))
+    .query(async ({ ctx, input }) => {
+      const db = await requireDb();
+      const userId = ctx.user.id;
 
+      // Map Trade Hub folders to proposal statuses
+      const folderStatusMap: Record<string, string[]> = {
+        proposal: ['pending'],
+        negotiating: ['negotiating'],
+        accepted: ['accepted', 'shipping'],
+        shipped: ['shipped'],
+        declined: ['declined', 'cancelled'],
+        completed: ['completed'],
+      };
+      const statuses = folderStatusMap[input.folder] || ['pending'];
+      const statusList = statuses.map(s => `'${s}'`).join(',');
+
+      const [rows] = await db.execute(
+        sql`SELECT
+          tp.id,
+          tp.status,
+          tp.tradeReferenceNumber,
+          tp.note,
+          tp.createdAt,
+          tp.lastActivityAt,
+          tp.requesterId,
+          tp.recipientId,
+          tp.requestedListingId,
+          -- Other user info
+          CASE WHEN tp.requesterId = ${userId} THEN tp.recipientId ELSE tp.requesterId END as otherUserId,
+          ou.username as otherUsername,
+          oup.displayName as otherDisplayName,
+          -- Requested listing info
+          l.title as listingTitle,
+          l.estimatedValue as listingValue,
+          l.category as listingCategory,
+          (SELECT imageUrl FROM listingPhotos WHERE listingId = l.id ORDER BY sortOrder ASC LIMIT 1) as listingImage,
+          -- Unread alert count for this trade
+          (SELECT COUNT(*) FROM tradeAlerts WHERE proposalId = tp.id AND recipientUserId = ${userId} AND isRead = 0) as unreadCount,
+          -- Item count offered by both sides
+          (SELECT COUNT(*) FROM tradeProposalItems WHERE proposalId = tp.id) as itemCount,
+          -- Direction: incoming = other user initiated, outgoing = current user initiated
+          CASE WHEN tp.requesterId = ${userId} THEN 'outgoing' ELSE 'incoming' END as direction,
+          -- Ratings
+          (SELECT AVG(rating) FROM tradeReviews WHERE revieweeId = CASE WHEN tp.requesterId = ${userId} THEN tp.recipientId ELSE tp.requesterId END) as otherAvgRating,
+          (SELECT COUNT(*) FROM tradeReviews WHERE revieweeId = CASE WHEN tp.requesterId = ${userId} THEN tp.recipientId ELSE tp.requesterId END) as otherReviewCount
+        FROM tradeProposals tp
+        LEFT JOIN users ou ON ou.id = CASE WHEN tp.requesterId = ${userId} THEN tp.recipientId ELSE tp.requesterId END
+        LEFT JOIN userProfiles oup ON oup.userId = ou.id
+        LEFT JOIN listings l ON l.id = tp.requestedListingId
+        WHERE (tp.requesterId = ${userId} OR tp.recipientId = ${userId})
+          AND tp.status IN (${sql.raw(statusList)})
+        ORDER BY COALESCE(tp.lastActivityAt, tp.createdAt) DESC
+        LIMIT ${input.limit} OFFSET ${input.offset}`
+      );
+
+      const trades = ((rows as unknown as any[]) || []).map((row: any) => ({
+        id: row.id,
+        status: row.status,
+        tradeReferenceNumber: row.tradeReferenceNumber,
+        note: row.note,
+        createdAt: row.createdAt,
+        lastActivityAt: row.lastActivityAt,
+        direction: row.direction,
+        itemCount: Number(row.itemCount) || 0,
+        unreadCount: Number(row.unreadCount) || 0,
+        otherUser: {
+          id: row.otherUserId,
+          username: row.otherUsername,
+          displayName: row.otherDisplayName || row.otherUsername,
+          avgRating: row.otherAvgRating ? String(row.otherAvgRating) : null,
+          reviewCount: Number(row.otherReviewCount) || 0,
+        },
+        listing: {
+          title: row.listingTitle,
+          image: row.listingImage,
+          value: row.listingValue ? String(row.listingValue) : '0',
+          category: row.listingCategory,
+        },
+      }));
+
+      return { trades };
+    }),
 
   getUnreadTradeAlertCount: protectedProcedure
     .query(async ({ ctx }) => {
