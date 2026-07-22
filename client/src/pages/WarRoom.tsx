@@ -1047,55 +1047,6 @@ export default function WarRoom() {
 
             {/* Trade Table Card — stretches to fill available height */}
             {(currentStage === 'proposed' || currentStage === 'negotiating') && <div className="bg-[#16213e] border border-gray-600 rounded-xl p-5 shadow-xl flex flex-col flex-1">
-              {/* Video call invite banner — shown to the OTHER trader when a room is active */}
-              {(trade?.proposal as any)?.dailyRoomUrl && !showVideoChatModal && !videoBannerDismissed && (trade?.proposal as any)?.dailyRoomStartedBy !== myUserId && (
-                <div className="mb-4 flex items-center justify-between gap-3 rounded-lg border border-blue-500/40 bg-blue-900/20 px-4 py-3">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 animate-pulse">
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 text-white">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z" />
-                      </svg>
-                    </div>
-                    <div>
-                      <p className="text-white text-sm font-semibold">{theirDisplayName} has started a video call</p>
-                      <p className="text-blue-300 text-xs">Click Join to open the live video chat</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    <button
-                      onClick={async () => {
-                        setVideoRoomLoading(true);
-                        try {
-                          const result = await getOrCreateVideoRoomMutation.mutateAsync({ proposalId });
-                          setVideoRoomUrl(result.roomUrl);
-                          setShowVideoChatModal(true);
-                        } catch (err: any) {
-                          toast.error(err.message || 'Failed to join video call');
-                        } finally {
-                          setVideoRoomLoading(false);
-                        }
-                      }}
-                      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition"
-                      disabled={videoRoomLoading}
-                    >
-                      Join Call
-                    </button>
-                    <button
-                      onClick={async () => {
-                        setVideoBannerDismissed(true);
-                        try {
-                          await dismissVideoCallMutation.mutateAsync({ proposalId });
-                        } catch (_) {
-                          // Dismiss silently even if the notification fails
-                        }
-                      }}
-                      className="px-4 py-2 border border-gray-600 text-gray-400 hover:text-white hover:border-gray-400 rounded-lg text-sm font-semibold transition"
-                    >
-                      Dismiss
-                    </button>
-                  </div>
-                </div>
-              )}
 
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-3">
