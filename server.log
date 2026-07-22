@@ -85,3 +85,4 @@ Server running on http://localhost:3000/
 Server running on http://localhost:3000/
 [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
 9:57:15 PM [vite] (client) hmr update /src/index.css
+9:57:55 PM [vite] (client) hmr update /src/pages/WarRoom.tsx, /src/index.css
