@@ -1361,24 +1361,13 @@ export const tradeFlowRouter = router({
 
       // Verify user is a participant in this trade
       const [rows] = await db.execute(
-        sql`SELECT id, proposerId, recipientId, dailyRoomName, dailyRoomUrl
-            FROM tradeProposals
-            WHERE id = ${input.proposalId}
-              AND (proposerId = ${userId} OR recipientId = ${userId})
-            LIMIT 1`
-      );
-      const trade = (rows as any)?.[0];
-
-      // Fall back to requesterId/recipientId column names if proposerId not found
-      const [rows2] = await db.execute(
         sql`SELECT id, requesterId, recipientId, dailyRoomName, dailyRoomUrl
             FROM tradeProposals
             WHERE id = ${input.proposalId}
               AND (requesterId = ${userId} OR recipientId = ${userId})
             LIMIT 1`
       );
-      const trade2 = (rows2 as any)?.[0];
-      const resolvedTrade = trade || trade2;
+      const resolvedTrade = (rows as any)?.[0];
       if (!resolvedTrade) throw new TRPCError({ code: 'NOT_FOUND', message: 'Trade not found or access denied' });
 
       // Return existing room if already created
