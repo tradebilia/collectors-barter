@@ -1029,7 +1029,7 @@ export default function WarRoom() {
             {/* Trade Table Card — stretches to fill available height */}
             {(currentStage === 'proposed' || currentStage === 'negotiating') && <div className="bg-[#16213e] border border-gray-600 rounded-xl p-5 shadow-xl flex flex-col flex-1">
               {/* Video call invite banner — shown to the OTHER trader when a room is active */}
-              {(trade?.proposal as any)?.dailyRoomUrl && !showVideoChatModal && (
+              {(trade?.proposal as any)?.dailyRoomUrl && !showVideoChatModal && (trade?.proposal as any)?.dailyRoomStartedBy !== myUserId && (
                 <div className="mb-4 flex items-center justify-between gap-3 rounded-lg border border-blue-500/40 bg-blue-900/20 px-4 py-3">
                   <div className="flex items-center gap-3">
                     <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 animate-pulse">

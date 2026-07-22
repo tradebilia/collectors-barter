@@ -911,7 +911,7 @@ export const tradeFlowRouter = router({
 
       // Get trade reference number and other new fields via raw SQL
       const [tradeExtra] = await db.execute(
-        sql`SELECT tradeReferenceNumber, negotiatingAt, acceptedAt, shippedAt, lastActivityAt, cashFromRequester, cashFromRecipient, middleManRequested, middleManApproved, declineReason, lastProposedBy, dailyRoomName, dailyRoomUrl FROM tradeProposals WHERE id = ${input.proposalId}`
+        sql`SELECT tradeReferenceNumber, negotiatingAt, acceptedAt, shippedAt, lastActivityAt, cashFromRequester, cashFromRecipient, middleManRequested, middleManApproved, declineReason, lastProposedBy, dailyRoomName, dailyRoomUrl, dailyRoomStartedBy FROM tradeProposals WHERE id = ${input.proposalId}`
       );
 
       return {
@@ -1404,9 +1404,9 @@ export const tradeFlowRouter = router({
       const data = await response.json() as any;
       if (!response.ok) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: data.info || 'Failed to create video room' });
 
-      // Save room info to the trade
+      // Save room info to the trade (including who started it)
       await db.execute(
-        sql`UPDATE tradeProposals SET dailyRoomName = ${data.name}, dailyRoomUrl = ${data.url} WHERE id = ${input.proposalId}`
+        sql`UPDATE tradeProposals SET dailyRoomName = ${data.name}, dailyRoomUrl = ${data.url}, dailyRoomStartedBy = ${userId} WHERE id = ${input.proposalId}`
       );
 
       // Notify the other trader via a trade message and a trade alert
