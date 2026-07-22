@@ -281,7 +281,7 @@ export default function WarRoom() {
     if (!messages.length) return;
     const lastMsg = messages[messages.length - 1];
     if (
-      lastMsg?.isSystemMessage &&
+      lastMsg?.messageType === 'system' &&
       typeof lastMsg?.message === 'string' &&
       lastMsg.message.includes('declined the video call')
     ) {

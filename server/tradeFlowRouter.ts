@@ -1383,8 +1383,8 @@ export const tradeFlowRouter = router({
         const caller2 = (callerRows2 as any)?.[0];
         const callerName2 = caller2?.displayName || caller2?.username || 'Your trade partner';
         await db.execute(
-          sql`INSERT INTO tradeMessages (proposalId, senderId, message, isSystemMessage, createdAt)
-              VALUES (${input.proposalId}, ${userId}, ${`📹 ${callerName2} has started a video call. Click "Video Chat" to join.`}, 1, ${now})`
+          sql`INSERT INTO tradeMessages (proposalId, senderId, message, messageType, createdAt)
+              VALUES (${input.proposalId}, ${userId}, ${`📹 ${callerName2} has started a video call. Click "Video Chat" to join.`}, 'system', ${now})`
         );
         return { roomUrl: resolvedTrade.dailyRoomUrl as string, roomName: resolvedTrade.dailyRoomName as string };
       }
@@ -1432,8 +1432,8 @@ export const tradeFlowRouter = router({
 
       // Insert a system trade message so it appears in the chat
       await db.execute(
-        sql`INSERT INTO tradeMessages (proposalId, senderId, message, isSystemMessage, createdAt)
-            VALUES (${input.proposalId}, ${userId}, ${`📹 ${callerName} has started a video call. Click "Video Chat" to join.`}, 1, ${now})`
+        sql`INSERT INTO tradeMessages (proposalId, senderId, message, messageType, createdAt)
+            VALUES (${input.proposalId}, ${userId}, ${`📹 ${callerName} has started a video call. Click "Video Chat" to join.`}, 'system', ${now})`
       );
 
       // Insert a trade alert so the other trader sees it in the Trade Hub
@@ -1473,8 +1473,8 @@ export const tradeFlowRouter = router({
 
       // Post a system message in the trade chat only (no trade alert)
       await db.execute(
-        sql`INSERT INTO tradeMessages (proposalId, senderId, message, isSystemMessage, createdAt)
-            VALUES (${input.proposalId}, ${userId}, ${`📵 ${dismisserName} declined the video call.`}, 1, ${now})`
+        sql`INSERT INTO tradeMessages (proposalId, senderId, message, messageType, createdAt)
+            VALUES (${input.proposalId}, ${userId}, ${`📵 ${dismisserName} declined the video call.`}, 'system', ${now})`
       );
 
       return { success: true };
