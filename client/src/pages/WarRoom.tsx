@@ -12,6 +12,7 @@ import { TopBar } from "@/components/TopBar";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { OnlineIndicator } from "@/components/OnlineIndicator";
 import { toast } from "sonner";
+import { VideoChatPanel } from "@/components/VideoChatPanel";
 
 type TradeStage = 'proposed' | 'negotiating' | 'accepted' | 'shipping' | 'shipped' | 'completed';
 
@@ -117,6 +118,8 @@ export default function WarRoom() {
   const [showDeclineModal, setShowDeclineModal] = useState(false);
   const [showContractModal, setShowContractModal] = useState(false);
   const [showVideoChatModal, setShowVideoChatModal] = useState(false);
+  const [videoRoomUrl, setVideoRoomUrl] = useState<string | null>(null);
+  const [videoRoomLoading, setVideoRoomLoading] = useState(false);
   const [contractCheckbox, setContractCheckbox] = useState(false);
   const [inventorySearch, setInventorySearch] = useState('');
   const [selectedItemIds, setSelectedItemIds] = useState<number[]>([]);
@@ -243,6 +246,8 @@ export default function WarRoom() {
       utils.tradeFlow.getUnreadTradeAlertCount.invalidate();
     },
   });
+
+  const getOrCreateVideoRoomMutation = trpc.tradeFlow.getOrCreateVideoRoom.useMutation();
 
   // ── Effects ───────────────────────────────────────────────────────────────
   // Mark alerts as read when entering the War Room; do NOT auto-transition stage
@@ -1038,13 +1043,35 @@ export default function WarRoom() {
                 <div className="flex items-center gap-3">
                   {/* Video Chat Button */}
                   <button
-                    onClick={() => setShowVideoChatModal(true)}
-                    className="px-4 py-2 bg-blue-600/20 text-blue-400 border border-blue-500/30 rounded-lg hover:bg-blue-600 hover:text-white transition text-sm flex items-center gap-2 font-medium"
+                    onClick={async () => {
+                      if (showVideoChatModal && videoRoomUrl) {
+                        // Toggle off if already open
+                        setShowVideoChatModal(false);
+                        setVideoRoomUrl(null);
+                        return;
+                      }
+                      setVideoRoomLoading(true);
+                      try {
+                        const result = await getOrCreateVideoRoomMutation.mutateAsync({ proposalId });
+                        setVideoRoomUrl(result.roomUrl);
+                        setShowVideoChatModal(true);
+                      } catch (err: any) {
+                        toast.error(err.message || 'Failed to start video chat');
+                      } finally {
+                        setVideoRoomLoading(false);
+                      }
+                    }}
+                    className={`px-4 py-2 border rounded-lg transition text-sm flex items-center gap-2 font-medium ${
+                      showVideoChatModal && videoRoomUrl
+                        ? 'bg-red-600/20 text-red-400 border-red-500/30 hover:bg-red-600 hover:text-white'
+                        : 'bg-blue-600/20 text-blue-400 border-blue-500/30 hover:bg-blue-600 hover:text-white'
+                    }`}
+                    disabled={videoRoomLoading}
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
                       <path strokeLinecap="round" strokeLinejoin="round" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z" />
                     </svg>
-                    Video Chat
+                    {showVideoChatModal && videoRoomUrl ? 'End Video' : 'Video Chat'}
                   </button>
 
                 </div>
@@ -2204,27 +2231,24 @@ export default function WarRoom() {
         </div>
       )}
 
-      {/* Video Chat Modal */}
-      {showVideoChatModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-[#16213e] border border-gray-700 rounded-xl p-8 w-11/12 max-w-md shadow-2xl text-center">
-            <div className="w-16 h-16 rounded-full bg-blue-900/30 border border-blue-500/30 flex items-center justify-center mx-auto mb-4">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8 text-blue-400">
-                <path strokeLinecap="round" strokeLinejoin="round" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z" />
-              </svg>
-            </div>
-            <h2 className="text-white text-xl font-bold mb-2">Video Chat</h2>
-            <p className="text-gray-400 text-sm mb-6">Live video chat with your trade partner is coming soon. This feature will allow you to inspect items in real-time before finalizing your trade.</p>
-            <div className="flex gap-3 justify-center">
-              <button
-                onClick={() => setShowVideoChatModal(false)}
-                className="px-6 py-2.5 border border-gray-600 text-gray-300 rounded-lg hover:bg-gray-800 transition font-medium text-sm"
-              >Close</button>
-              <button
-                className="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium text-sm"
-                onClick={() => toast.info('Video chat coming soon!')}
-              >Notify Me</button>
-            </div>
+      {/* Video Chat Panel — inline overlay at bottom of page */}
+      {showVideoChatModal && videoRoomUrl && (
+        <div className="fixed bottom-0 right-0 z-50 w-full max-w-2xl h-[520px] p-3">
+          <VideoChatPanel
+            roomUrl={videoRoomUrl}
+            displayName={myDisplayName}
+            onClose={() => { setShowVideoChatModal(false); setVideoRoomUrl(null); }}
+          />
+        </div>
+      )}
+
+      {/* Video Room Loading Overlay */}
+      {videoRoomLoading && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-[#16213e] border border-gray-700 rounded-xl p-8 text-center">
+            <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+            <p className="text-white font-semibold">Starting video room...</p>
+            <p className="text-gray-400 text-sm mt-1">This only takes a moment</p>
           </div>
         </div>
       )}

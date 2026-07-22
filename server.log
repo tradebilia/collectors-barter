@@ -32,3 +32,17 @@ Server running on http://localhost:3000/
 9:23:36 PM [vite] (client) hmr update /src/index.css
 9:24:36 PM [vite] (client) hmr update /src/index.css
 9:24:39 PM [vite] (client) hmr update /src/pages/Conventions.tsx, /src/index.css
+9:33:53 PM [vite] .env changed, restarting server...
+9:33:53 PM [vite] server restarted.
+9:35:33 PM [tsx] change in ./server/tradeFlowRouter.ts Restarting...
+[shutdown] Received SIGTERM, closing server...
+c[OAuth] Initialized with baseURL: https://api.manus.im
+[dotenv@17.2.3] injecting env (23) from .env -- tip: 🔐 encrypt with Dotenvx: https://dotenvx.com
+[startup] Environment check: PASS (all required variables present)
+[startup] Database check: PASS (connection verified)
+[startup] Port check: PASS (bound to 3000)
+Server running on http://localhost:3000/
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+9:38:13 PM [vite] (client) hmr update /src/pages/WarRoom.tsx, /src/index.css
+9:38:31 PM [vite] (client) hmr update /src/pages/WarRoom.tsx, /src/index.css
+9:38:49 PM [vite] (client) hmr update /src/pages/WarRoom.tsx, /src/index.css

@@ -1352,4 +1352,74 @@ export const tradeFlowRouter = router({
 
       return { success: true };
     }),
+
+  getOrCreateVideoRoom: protectedProcedure
+    .input(z.object({ proposalId: z.number().int().positive() }))
+    .mutation(async ({ ctx, input }) => {
+      const db = await requireDb();
+      const userId = ctx.user.id;
+
+      // Verify user is a participant in this trade
+      const [rows] = await db.execute(
+        sql`SELECT id, proposerId, recipientId, dailyRoomName, dailyRoomUrl
+            FROM tradeProposals
+            WHERE id = ${input.proposalId}
+              AND (proposerId = ${userId} OR recipientId = ${userId})
+            LIMIT 1`
+      );
+      const trade = (rows as any)?.[0];
+
+      // Fall back to requesterId/recipientId column names if proposerId not found
+      const [rows2] = await db.execute(
+        sql`SELECT id, requesterId, recipientId, dailyRoomName, dailyRoomUrl
+            FROM tradeProposals
+            WHERE id = ${input.proposalId}
+              AND (requesterId = ${userId} OR recipientId = ${userId})
+            LIMIT 1`
+      );
+      const trade2 = (rows2 as any)?.[0];
+      const resolvedTrade = trade || trade2;
+      if (!resolvedTrade) throw new TRPCError({ code: 'NOT_FOUND', message: 'Trade not found or access denied' });
+
+      // Return existing room if already created
+      if (resolvedTrade.dailyRoomName && resolvedTrade.dailyRoomUrl) {
+        return { roomUrl: resolvedTrade.dailyRoomUrl as string, roomName: resolvedTrade.dailyRoomName as string };
+      }
+
+      // Create a new Daily.co room for this trade
+      const apiKey = process.env.DAILY_API_KEY;
+      if (!apiKey) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Video chat is not configured' });
+
+      const roomName = `trade-${input.proposalId}-${Date.now()}`;
+      const exp = Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 30; // 30 days
+
+      const response = await fetch('https://api.daily.co/v1/rooms', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          name: roomName,
+          properties: {
+            exp,
+            max_participants: 2,
+            enable_chat: false,
+            enable_screenshare: false,
+            start_video_off: false,
+            start_audio_off: false,
+          },
+        }),
+      });
+
+      const data = await response.json() as any;
+      if (!response.ok) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: data.info || 'Failed to create video room' });
+
+      // Save room info to the trade
+      await db.execute(
+        sql`UPDATE tradeProposals SET dailyRoomName = ${data.name}, dailyRoomUrl = ${data.url} WHERE id = ${input.proposalId}`
+      );
+
+      return { roomUrl: data.url as string, roomName: data.name as string };
+    }),
 });
