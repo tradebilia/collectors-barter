@@ -574,6 +574,62 @@ export default function PublicProfile() {
                   </div>
                 )}
 
+                {/* LinkedIn Card — shown only if connected */}
+                {user.linkedinId && (
+                  <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-sm">
+                    {/* Header */}
+                    <div className="bg-[#0A66C2]/5 border-b border-[#0A66C2]/10 px-5 py-3 flex items-center justify-between">
+                      <img src="/images/linkedin-logo.png" alt="LinkedIn" className="h-5 object-contain" />
+                      <div className="flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-[9px] font-black text-blue-700 uppercase tracking-tight">
+                        <CheckCircle2 className="h-2.5 w-2.5" />
+                        Verified Professional
+                      </div>
+                    </div>
+                    <div className="p-4 space-y-3">
+                      {/* Picture + Name + Headline */}
+                      <div className="flex items-center gap-3">
+                        {user.linkedinPicture ? (
+                          <img src={user.linkedinPicture} alt={user.linkedinName} className="h-12 w-12 rounded-full object-cover border-2 border-white shadow-sm" />
+                        ) : (
+                          <div className="h-12 w-12 rounded-full bg-[#0A66C2]/10 flex items-center justify-center">
+                            <span className="text-[#0A66C2] font-black text-lg">{user.linkedinName?.charAt(0) ?? 'L'}</span>
+                          </div>
+                        )}
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-black text-slate-900 tracking-tight truncate">{user.linkedinName}</p>
+                          {user.linkedinHeadline && (
+                            <p className="text-[10px] text-slate-500 font-medium leading-tight mt-0.5 line-clamp-2">{user.linkedinHeadline}</p>
+                          )}
+                        </div>
+                      </div>
+                      {/* Email */}
+                      {user.linkedinEmail && (
+                        <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-medium">
+                          <svg className="h-3 w-3 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                          <span className="truncate">{user.linkedinEmail}</span>
+                        </div>
+                      )}
+                      {/* Connected since */}
+                      {user.linkedinConnectedAt && (
+                        <div className="flex items-center gap-1.5 text-[10px] text-slate-400 font-medium">
+                          <CheckCircle2 className="h-3 w-3 text-green-500" />
+                          <span>Connected {new Date(user.linkedinConnectedAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</span>
+                        </div>
+                      )}
+                      {/* View Profile Button */}
+                      {user.linkedinProfileUrl && (
+                        <Button
+                          variant="outline"
+                          className="w-full h-8 rounded-lg text-[10px] font-bold border-[#0A66C2]/20 text-[#0A66C2] hover:bg-[#0A66C2]/5"
+                          onClick={() => window.open(user.linkedinProfileUrl, '_blank')}
+                        >
+                          <ExternalLink className="mr-2 h-3 w-3" />
+                          View LinkedIn Profile
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                )}
                 {/* Other Verifications — only shows platforms not yet connected */}
                 {(['paypal', 'instagram', 'twitter'] as const).length > 0 && (
                   <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">

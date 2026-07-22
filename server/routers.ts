@@ -352,7 +352,14 @@ export const appRouter = router({
             u.facebookPicture,
             u.facebookLocation,
             u.facebookLink,
-            u.facebookLikes
+            u.facebookLikes,
+            u.linkedinId,
+            u.linkedinName,
+            u.linkedinEmail,
+            u.linkedinPicture,
+            u.linkedinHeadline,
+            u.linkedinProfileUrl,
+            u.linkedinConnectedAt
           FROM users u
           WHERE u.id = ${input.userId}`
         );
