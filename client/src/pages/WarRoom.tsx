@@ -1087,7 +1087,7 @@ export default function WarRoom() {
                     className={`px-4 py-2 border rounded-lg transition text-sm flex items-center gap-2 font-medium ${
                       showVideoChatModal && videoRoomUrl
                         ? 'bg-red-600/20 text-red-400 border-red-500/30 hover:bg-red-600 hover:text-white'
-                        : (trade?.proposal as any)?.dailyRoomUrl && !showVideoChatModal && (trade?.proposal as any)?.dailyRoomStartedBy !== myUserId
+                        : (trade?.proposal as any)?.dailyRoomUrl && !showVideoChatModal && !videoBannerDismissed && (trade?.proposal as any)?.dailyRoomStartedBy !== myUserId
                           ? 'bg-green-600/20 text-green-400 border-green-500/30 hover:bg-green-600 hover:text-white animate-pulse'
                           : 'bg-blue-600/20 text-blue-400 border-blue-500/30 hover:bg-blue-600 hover:text-white'
                     }`}
@@ -1098,16 +1098,17 @@ export default function WarRoom() {
                     </svg>
                     {showVideoChatModal && videoRoomUrl
                       ? 'End Video'
-                      : (trade?.proposal as any)?.dailyRoomUrl && (trade?.proposal as any)?.dailyRoomStartedBy !== myUserId
+                      : (trade?.proposal as any)?.dailyRoomUrl && !videoBannerDismissed && (trade?.proposal as any)?.dailyRoomStartedBy !== myUserId
                         ? 'Join Video Chat'
                         : 'Video Chat'
                     }
                   </button>
 
-                  {/* Dismiss button — only shown to the non-caller when a call is active */}
-                  {(trade?.proposal as any)?.dailyRoomUrl && !showVideoChatModal && (trade?.proposal as any)?.dailyRoomStartedBy !== myUserId && (
+                  {/* Dismiss button — only shown to the non-caller when a call is active and not yet dismissed */}
+                  {(trade?.proposal as any)?.dailyRoomUrl && !showVideoChatModal && !videoBannerDismissed && (trade?.proposal as any)?.dailyRoomStartedBy !== myUserId && (
                     <button
                       onClick={async () => {
+                        setVideoBannerDismissed(true);
                         try {
                           await dismissVideoCallMutation.mutateAsync({ proposalId });
                         } catch (_) {}
