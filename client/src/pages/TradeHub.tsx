@@ -295,13 +295,21 @@ export default function TradeHub() {
                       </div>
                     </div>
 
-                    {/* Verification Badges */}
-                    <div className="mt-3 flex items-center gap-2">
-                      <span className="text-xs text-gray-400">Verified:</span>
-                      <span className="px-2 py-0.5 bg-blue-900/50 text-blue-300 text-xs rounded" title="eBay Verified">eBay</span>
-                      <span className="px-2 py-0.5 bg-blue-900/50 text-blue-300 text-xs rounded" title="Facebook Verified">Facebook</span>
-                      <span className="px-2 py-0.5 bg-blue-900/50 text-blue-300 text-xs rounded" title="LinkedIn Verified">LinkedIn</span>
-                    </div>
+                    {/* Verification Badges — only show platforms the user has actually verified */}
+                    {(selectedTrade.otherUser?.ebayVerified || selectedTrade.otherUser?.facebookVerified || selectedTrade.otherUser?.linkedinVerified) && (
+                      <div className="mt-3 flex items-center gap-2 flex-wrap">
+                        <span className="text-xs text-gray-400">Verified on:</span>
+                        {selectedTrade.otherUser?.ebayVerified && (
+                          <span className="px-2 py-0.5 bg-red-900/50 text-red-300 text-xs rounded font-semibold" title="eBay Verified">eBay</span>
+                        )}
+                        {selectedTrade.otherUser?.facebookVerified && (
+                          <span className="px-2 py-0.5 bg-blue-900/50 text-blue-300 text-xs rounded font-semibold" title="Facebook Verified">Facebook</span>
+                        )}
+                        {selectedTrade.otherUser?.linkedinVerified && (
+                          <span className="px-2 py-0.5 bg-sky-900/50 text-sky-300 text-xs rounded font-semibold" title="LinkedIn Verified">LinkedIn</span>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   {/* Initial message — shown for Proposals */}

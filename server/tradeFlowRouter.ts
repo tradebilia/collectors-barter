@@ -757,8 +757,12 @@ export const tradeFlowRouter = router({
           -- Direction: incoming = other user initiated, outgoing = current user initiated
           CASE WHEN tp.requesterId = ${userId} THEN 'outgoing' ELSE 'incoming' END as direction,
           -- Ratings
-          (SELECT AVG(rating) FROM tradeReviews WHERE revieweeId = CASE WHEN tp.requesterId = ${userId} THEN tp.recipientId ELSE tp.requesterId END) as otherAvgRating,
-          (SELECT COUNT(*) FROM tradeReviews WHERE revieweeId = CASE WHEN tp.requesterId = ${userId} THEN tp.recipientId ELSE tp.requesterId END) as otherReviewCount
+          (SELECT AVG(COALESCE(overallRating, (tradeExperienceRating + itemConditionRating + communicationRating + shippingSpeedRating) / 4.0)) FROM tradeReviews WHERE revieweeId = CASE WHEN tp.requesterId = ${userId} THEN tp.recipientId ELSE tp.requesterId END) as otherAvgRating,
+          (SELECT COUNT(*) FROM tradeReviews WHERE revieweeId = CASE WHEN tp.requesterId = ${userId} THEN tp.recipientId ELSE tp.requesterId END) as otherReviewCount,
+          -- Verification
+          ou.ebayIdVerified as otherEbayVerified,
+          ou.facebookId as otherFacebookId,
+          ou.linkedinId as otherLinkedinId
         FROM tradeProposals tp
         LEFT JOIN users ou ON ou.id = CASE WHEN tp.requesterId = ${userId} THEN tp.recipientId ELSE tp.requesterId END
         LEFT JOIN userProfiles oup ON oup.userId = ou.id
@@ -785,6 +789,9 @@ export const tradeFlowRouter = router({
           displayName: row.otherDisplayName || row.otherUsername,
           avgRating: row.otherAvgRating ? String(row.otherAvgRating) : null,
           reviewCount: Number(row.otherReviewCount) || 0,
+          ebayVerified: !!row.otherEbayVerified,
+          facebookVerified: !!row.otherFacebookId,
+          linkedinVerified: !!row.otherLinkedinId,
         },
         listing: {
           title: row.listingTitle,
