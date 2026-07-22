@@ -121,6 +121,7 @@ export default function WarRoom() {
   const [videoRoomUrl, setVideoRoomUrl] = useState<string | null>(null);
   const [videoRoomLoading, setVideoRoomLoading] = useState(false);
   const [videoBannerDismissed, setVideoBannerDismissed] = useState(false);
+  const [videoStatusMessage, setVideoStatusMessage] = useState<string | null>(null);
   const [contractCheckbox, setContractCheckbox] = useState(false);
   const [inventorySearch, setInventorySearch] = useState('');
   const [selectedItemIds, setSelectedItemIds] = useState<number[]>([]);
@@ -252,6 +253,21 @@ export default function WarRoom() {
   const dismissVideoCallMutation = trpc.tradeFlow.dismissVideoCall.useMutation();
 
   // ── Effects ───────────────────────────────────────────────────────────────
+  // Watch messages for a video call decline and show it next to the Video Chat button
+  useEffect(() => {
+    if (!messages.length) return;
+    const lastMsg = messages[messages.length - 1];
+    if (
+      lastMsg?.isSystemMessage &&
+      typeof lastMsg?.message === 'string' &&
+      lastMsg.message.includes('declined the video call')
+    ) {
+      setVideoStatusMessage('Call declined');
+      const timer = setTimeout(() => setVideoStatusMessage(null), 8000);
+      return () => clearTimeout(timer);
+    }
+  }, [messages]);
+
   // Mark alerts as read when entering the War Room; do NOT auto-transition stage
   useEffect(() => {
     if (proposalId > 0) {
@@ -1093,7 +1109,10 @@ export default function WarRoom() {
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  {/* Video Chat Button */}
+                  {/* Video status message — shown to the left of the Video Chat button */}
+                  {videoStatusMessage && (
+                    <span className="text-xs text-red-400 font-medium animate-pulse">{videoStatusMessage}</span>
+                  )}
                   <button
                     onClick={async () => {
                       if (showVideoChatModal && videoRoomUrl) {
