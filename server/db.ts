@@ -509,13 +509,16 @@ export async function getMarketplaceFeed(
       .select({ value: sql<number>`count(distinct ${listings.ownerId})` })
       .from(listings)
       .where(and(...whereClauses)),
-    // Count completed trades where ANY item on either side belongs to the filtered category
+    // Count completed trades where ANY item on either side belongs to the filtered category.
+    // TiDB does not support subqueries inside JOIN ON clauses, so we LEFT JOIN
+    // tradeProposalItems first, then join listings on either the requested or offered listing id.
     filters.category
       ? db.select({ value: sql<number>`count(distinct ${tradeProposals.id})` })
           .from(tradeProposals)
+          .leftJoin(tradeProposalItems, eq(tradeProposalItems.proposalId, tradeProposals.id))
           .innerJoin(listings, sql`(
             ${listings.id} = ${tradeProposals.requestedListingId}
-            OR ${listings.id} IN (SELECT offeredListingId FROM tradeProposalItems WHERE proposalId = ${tradeProposals.id})
+            OR ${listings.id} = ${tradeProposalItems.offeredListingId}
           )`)
           .where(and(
             eq(tradeProposals.status, "completed"),
