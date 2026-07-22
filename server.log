@@ -188,3 +188,5 @@ Server running on http://localhost:3000/
 [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
 11:25:33 PM [vite] (client) hmr update /src/pages/WarRoom.tsx, /src/index.css
 11:27:34 PM [vite] (client) hmr update /src/pages/WarRoom.tsx, /src/index.css
+11:35:58 PM [vite] (client) hmr update /src/index.css, /src/components/VideoChatPanel.tsx
+11:36:05 PM [vite] (client) hmr update /src/pages/WarRoom.tsx, /src/index.css

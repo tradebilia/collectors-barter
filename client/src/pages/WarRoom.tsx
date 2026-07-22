@@ -2302,13 +2302,11 @@ export default function WarRoom() {
 
       {/* Video Chat Panel — inline overlay at bottom of page */}
       {showVideoChatModal && videoRoomUrl && (
-        <div className="fixed bottom-0 right-0 z-50 w-full max-w-2xl h-[520px] p-3">
-          <VideoChatPanel
-            roomUrl={videoRoomUrl}
-            displayName={myDisplayName}
-            onClose={() => { setShowVideoChatModal(false); setVideoRoomUrl(null); }}
-          />
-        </div>
+        <VideoChatPanel
+          roomUrl={videoRoomUrl}
+          displayName={myDisplayName}
+          onClose={() => { setShowVideoChatModal(false); setVideoRoomUrl(null); }}
+        />
       )}
 
       {/* Video Room Loading Overlay */}
