@@ -27,3 +27,4 @@ Server running on http://localhost:3000/
 9:19:18 PM [vite] (client) Pre-transform error: Failed to load url /src/pages/TradeNegotiationMockup.tsx (resolved id: /home/ubuntu/collectors-barter/client/src/pages/TradeNegotiationMockup.tsx) in /home/ubuntu/collectors-barter/client/src/App.tsx. Does the file exist?
 9:19:23 PM [vite] (client) hmr update /src/App.tsx, /src/index.css
 9:20:35 PM [vite] (client) hmr update /src/pages/Conventions.tsx, /src/index.css
+9:21:24 PM [vite] (client) hmr update /src/index.css
