@@ -1423,23 +1423,15 @@ export const tradeFlowRouter = router({
         sql`UPDATE tradeProposals SET dailyRoomName = ${data.name}, dailyRoomUrl = ${data.url}, dailyRoomStartedBy = ${userId} WHERE id = ${input.proposalId}`
       );
 
-      // Notify the other trader via a trade message and a trade alert
-      const otherUserId = resolvedTrade.requesterId === userId ? resolvedTrade.recipientId : resolvedTrade.requesterId;
+      // Notify the other trader via War Room chat only (no trade hub alert)
       const [callerRows] = await db.execute(sql`SELECT displayName, username FROM users WHERE id = ${userId} LIMIT 1`);
       const caller = (callerRows as any)?.[0];
       const callerName = caller?.displayName || caller?.username || 'Your trade partner';
       const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
 
-      // Insert a system trade message so it appears in the chat
       await db.execute(
         sql`INSERT INTO tradeMessages (proposalId, senderId, message, messageType, createdAt)
-            VALUES (${input.proposalId}, ${userId}, ${`📹 ${callerName} has started a video call. Click "Video Chat" to join.`}, 'system', ${now})`
-      );
-
-      // Insert a trade alert so the other trader sees it in the Trade Hub
-      await db.execute(
-        sql`INSERT INTO tradeAlerts (proposalId, recipientUserId, alertType, message, isRead, createdAt)
-            VALUES (${input.proposalId}, ${otherUserId}, 'initiated', ${`${callerName} is calling you on trade #${input.proposalId}. Open the War Room to join.`}, 0, ${now})`
+            VALUES (${input.proposalId}, ${userId}, ${`📹 ${callerName} has started a video call. Click "Join Video Chat" to join.`}, 'system', ${now})`
       );
 
       return { roomUrl: data.url as string, roomName: data.name as string };

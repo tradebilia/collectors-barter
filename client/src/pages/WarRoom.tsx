@@ -275,6 +275,14 @@ export default function WarRoom() {
   const otherUser = trade?.otherUser;
   const messages = (messagesQuery.data?.messages || []) as any[];
 
+  // Reset dismissed state when a new call is started (dailyRoomStartedBy changes)
+  const dailyRoomStartedBy = (trade?.proposal as any)?.dailyRoomStartedBy;
+  useEffect(() => {
+    if (dailyRoomStartedBy && dailyRoomStartedBy !== myUserId) {
+      setVideoBannerDismissed(false);
+    }
+  }, [dailyRoomStartedBy]);
+
   // Watch messages for a video call decline and show it next to the Video Chat button
   // (must be after messages declaration)
   useEffect(() => {
