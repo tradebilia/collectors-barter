@@ -911,7 +911,7 @@ export const tradeFlowRouter = router({
 
       // Get trade reference number and other new fields via raw SQL
       const [tradeExtra] = await db.execute(
-        sql`SELECT tradeReferenceNumber, negotiatingAt, acceptedAt, shippedAt, lastActivityAt, cashFromRequester, cashFromRecipient, middleManRequested, middleManApproved, declineReason, lastProposedBy FROM tradeProposals WHERE id = ${input.proposalId}`
+        sql`SELECT tradeReferenceNumber, negotiatingAt, acceptedAt, shippedAt, lastActivityAt, cashFromRequester, cashFromRecipient, middleManRequested, middleManApproved, declineReason, lastProposedBy, dailyRoomName, dailyRoomUrl FROM tradeProposals WHERE id = ${input.proposalId}`
       );
 
       return {
@@ -1407,6 +1407,25 @@ export const tradeFlowRouter = router({
       // Save room info to the trade
       await db.execute(
         sql`UPDATE tradeProposals SET dailyRoomName = ${data.name}, dailyRoomUrl = ${data.url} WHERE id = ${input.proposalId}`
+      );
+
+      // Notify the other trader via a trade message and a trade alert
+      const otherUserId = resolvedTrade.requesterId === userId ? resolvedTrade.recipientId : resolvedTrade.requesterId;
+      const [callerRows] = await db.execute(sql`SELECT displayName, username FROM users WHERE id = ${userId} LIMIT 1`);
+      const caller = (callerRows as any)?.[0];
+      const callerName = caller?.displayName || caller?.username || 'Your trade partner';
+      const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
+
+      // Insert a system trade message so it appears in the chat
+      await db.execute(
+        sql`INSERT INTO tradeMessages (proposalId, senderId, message, isSystemMessage, createdAt)
+            VALUES (${input.proposalId}, ${userId}, ${`📹 ${callerName} has started a video call. Click "Video Chat" to join.`}, 1, ${now})`
+      );
+
+      // Insert a trade alert so the other trader sees it in the Trade Hub
+      await db.execute(
+        sql`INSERT INTO tradeAlerts (proposalId, recipientUserId, alertType, message, isRead, createdAt)
+            VALUES (${input.proposalId}, ${otherUserId}, 'initiated', ${`${callerName} is calling you on trade #${input.proposalId}. Open the War Room to join.`}, 0, ${now})`
       );
 
       return { roomUrl: data.url as string, roomName: data.name as string };
