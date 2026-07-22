@@ -249,6 +249,7 @@ export default function WarRoom() {
   });
 
   const getOrCreateVideoRoomMutation = trpc.tradeFlow.getOrCreateVideoRoom.useMutation();
+  const dismissVideoCallMutation = trpc.tradeFlow.dismissVideoCall.useMutation();
 
   // ── Effects ───────────────────────────────────────────────────────────────
   // Mark alerts as read when entering the War Room; do NOT auto-transition stage
@@ -1063,7 +1064,14 @@ export default function WarRoom() {
                       Join Call
                     </button>
                     <button
-                      onClick={() => setVideoBannerDismissed(true)}
+                      onClick={async () => {
+                        setVideoBannerDismissed(true);
+                        try {
+                          await dismissVideoCallMutation.mutateAsync({ proposalId });
+                        } catch (_) {
+                          // Dismiss silently even if the notification fails
+                        }
+                      }}
                       className="px-4 py-2 border border-gray-600 text-gray-400 hover:text-white hover:border-gray-400 rounded-lg text-sm font-semibold transition"
                     >
                       Dismiss

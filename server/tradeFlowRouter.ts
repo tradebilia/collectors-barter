@@ -1430,4 +1430,45 @@ export const tradeFlowRouter = router({
 
       return { roomUrl: data.url as string, roomName: data.name as string };
     }),
+
+  dismissVideoCall: protectedProcedure
+    .input(z.object({ proposalId: z.number().int().positive() }))
+    .mutation(async ({ ctx, input }) => {
+      const db = await requireDb();
+      const userId = ctx.user.id;
+
+      // Verify user is a participant
+      const [rows] = await db.execute(
+        sql`SELECT id, requesterId, recipientId, dailyRoomStartedBy
+            FROM tradeProposals
+            WHERE id = ${input.proposalId}
+              AND (requesterId = ${userId} OR recipientId = ${userId})
+            LIMIT 1`
+      );
+      const trade = (rows as any)?.[0];
+      if (!trade) throw new TRPCError({ code: 'NOT_FOUND', message: 'Trade not found or access denied' });
+
+      const callerId = trade.dailyRoomStartedBy;
+      if (!callerId || callerId === userId) return { success: true }; // nothing to notify
+
+      // Get dismisser's name
+      const [dismisserRows] = await db.execute(sql`SELECT displayName, username FROM users WHERE id = ${userId} LIMIT 1`);
+      const dismisser = (dismisserRows as any)?.[0];
+      const dismisserName = dismisser?.displayName || dismisser?.username || 'Your trade partner';
+      const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
+
+      // Post a system message in the trade chat
+      await db.execute(
+        sql`INSERT INTO tradeMessages (proposalId, senderId, message, isSystemMessage, createdAt)
+            VALUES (${input.proposalId}, ${userId}, ${`📵 ${dismisserName} declined the video call.`}, 1, ${now})`
+      );
+
+      // Send a trade alert to the caller
+      await db.execute(
+        sql`INSERT INTO tradeAlerts (proposalId, recipientUserId, alertType, message, isRead, createdAt)
+            VALUES (${input.proposalId}, ${callerId}, 'initiated', ${`${dismisserName} declined your video call on trade #${input.proposalId}.`}, 0, ${now})`
+      );
+
+      return { success: true };
+    }),
 });
