@@ -422,9 +422,8 @@ export default function ItemDetail() {
                   <div className="flex items-center gap-2 mt-4">
                     <span className="text-xs font-semibold uppercase tracking-wider text-gray-400">Verified on:</span>
                     {listing.ownerProfile.ebayVerified && (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#e53238]/10 text-[#e53238] text-xs font-bold border border-[#e53238]/20">
-                        <svg className="h-3 w-3" viewBox="0 0 24 24" fill="currentColor"><path d="M3.5 10.5c0-1.7 1.3-3 3-3s3 1.3 3 3v.5H4v.5c0 1.4 1.1 2.5 2.5 2.5.9 0 1.7-.5 2.1-1.2l1.3.8C9.3 14.6 8 15.5 6.5 15.5c-2.8 0-5-2.2-5-5zm1.6-.5h2.8c-.2-.8-.9-1.4-1.7-1.4s-1.5.6-1.7 1.4h.6zm5.4-3h1.5v1.2c.5-.8 1.4-1.4 2.5-1.4 1.9 0 3.5 1.6 3.5 3.5v.5c0 1.9-1.6 3.5-3.5 3.5-1.1 0-2-.6-2.5-1.4V18H10.5V7zm1.5 3.5c0 1.1.9 2 2 2s2-.9 2-2-.9-2-2-2-2 .9-2 2zm5.5-3h1.5v1.2c.5-.8 1.4-1.4 2.5-1.4 1.9 0 3.5 1.6 3.5 3.5v.5c0 1.9-1.6 3.5-3.5 3.5-1.1 0-2-.6-2.5-1.4V18H17.5V7zm1.5 3.5c0 1.1.9 2 2 2s2-.9 2-2-.9-2-2-2-2 .9-2 2z"/></svg>
-                        eBay
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white border border-gray-200 shadow-sm">
+                        <img src="/images/ebay-logo.svg" alt="eBay" className="h-3.5 w-auto" />
                       </span>
                     )}
                     {listing.ownerProfile.facebookVerified && (

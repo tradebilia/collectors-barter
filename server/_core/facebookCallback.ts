@@ -29,7 +29,7 @@ export async function handleFacebookCallback(code: string, userId: number): Prom
     .set({
       facebookId: userInfo.id,
       facebookName: userInfo.name,
-      facebookVerified: userInfo.verified ? 1 : 0,
+      facebookVerified: 1, // Successfully connected via OAuth = verified
       facebookConnectedAt: mysqlNow(),
       facebookAccessToken: encrypt(tokenData.access_token),
       facebookEmail: userInfo.email ?? null,

@@ -723,6 +723,7 @@ export async function getListingDetail(listingId: number, viewerId: number | nul
   const ownerUserRows = await db
     .select({
       ebayIdVerified: users.ebayIdVerified,
+      facebookId: users.facebookId,
       facebookVerified: users.facebookVerified,
       linkedinId: users.linkedinId,
     })
@@ -820,7 +821,7 @@ export async function getListingDetail(listingId: number, viewerId: number | nul
       bio: ownerProfileRows[0]?.bio ?? "Open to thoughtful, collector-to-collector trades.",
       avatarUrl: ownerProfileRows[0]?.avatarUrl ?? null,
       ebayVerified: ownerUserRows[0]?.ebayIdVerified === 1,
-      facebookVerified: ownerUserRows[0]?.facebookVerified === 1,
+      facebookVerified: !!(ownerUserRows[0]?.facebookId) || ownerUserRows[0]?.facebookVerified === 1,
       linkedinVerified: !!(ownerUserRows[0]?.linkedinId),
     },
     ownerRating,
