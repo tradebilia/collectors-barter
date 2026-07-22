@@ -73,7 +73,7 @@ export function RecentlyAddedCarousel({
                   <OnlineIndicator sellerId={item.ownerId} />
                 </div>
               )}
-              <div className="aspect-[0.75] overflow-hidden bg-slate-100 relative group/img">
+              <div className="aspect-[0.75] overflow-hidden bg-white relative group/img">
                 <img
                   src={item.imageUrl}
                   alt={item.title}
