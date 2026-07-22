@@ -739,3 +739,5 @@ export const watchlistEntries = mysqlTable("watchlistEntries", {
 import type { InferSelectModel, InferInsertModel } from "drizzle-orm";
 export type User = InferSelectModel<typeof users>;
 export type InsertUser = InferInsertModel<typeof users>;
+
+

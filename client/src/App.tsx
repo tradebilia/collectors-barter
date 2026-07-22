@@ -10,7 +10,6 @@ import Inventory from "./pages/Inventory";
 import AddInventory from "./pages/AddInventory";
 import Profile from "./pages/Profile";
 import Messages from "./pages/Messages";
-import Notifications from "./pages/Notifications";
 import MemberSearch from "./pages/MemberSearch";
 import CategoryPage from "./pages/CategoryPage";
 import ReportUser from "./pages/ReportUser";
@@ -87,11 +86,6 @@ function Router() {
       <Route path="/messages">
         <ProtectedRoute>
           <Messages />
-        </ProtectedRoute>
-      </Route>
-      <Route path="/notifications">
-        <ProtectedRoute>
-          <Notifications />
         </ProtectedRoute>
       </Route>
       <Route path="/members">

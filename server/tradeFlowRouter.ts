@@ -20,6 +20,7 @@ import {
   tradeReviews,
   tradeActivityLog,
 } from "../drizzle/schema";
+
 import { eq, sql, desc, or, and, inArray, asc } from "drizzle-orm";
 
 // ============================================================================
@@ -85,12 +86,7 @@ const leaveReviewSchema = z.object({
   photoUrls: z.array(z.string()).max(5).optional(),
 });
 
-const getTradeAlertsSchema = z.object({
-  folder: z.enum(['proposal', 'negotiating', 'accepted', 'shipped', 'declined', 'completed']),
-  limit: z.number().int().min(1).max(50).default(20),
-  offset: z.number().int().min(0).default(0),
-  search: z.string().optional(),
-});
+
 
 const middleManRequestSchema = z.object({
   proposalId: z.number().int().positive(),
@@ -135,17 +131,7 @@ async function generateTradeRefNumber(): Promise<string> {
 // HELPER: Get status mapping for folder queries
 // ============================================================================
 
-function getFolderStatusFilter(folder: string): string[] {
-  switch (folder) {
-    case 'proposal': return ['pending'];                    // Stage 1: initial inquiry
-    case 'negotiating': return ['negotiating'];             // Stage 2: active negotiation
-    case 'accepted': return ['accepted', 'shipping'];       // Stage 3 + 4: review & shipping
-    case 'shipped': return ['shipped'];                     // Stage 5: confirm receipt
-    case 'declined': return ['declined', 'cancelled'];
-    case 'completed': return ['completed'];
-    default: return ['pending'];
-  }
-}
+
 
 // ============================================================================
 // TRADE FLOW ROUTER
@@ -217,16 +203,9 @@ export const tradeFlowRouter = router({
         sql`UPDATE tradeProposals SET tradeReferenceNumber = ${tradeRef}, initiatorMessage = ${input.message || null}, lastActivityAt = ${now} WHERE id = ${proposalId}`
       );
 
-      // 8. Create structured trade alert for recipient
-      const alertMessage = JSON.stringify({
-        text: `${ctx.user.name || initiator?.username || 'A user'} is interested in your item`,
-        itemName: listing.title,
-        itemId: listing.id,
-        tradeRef: tradeRef,
-        initiatorMessage: input.message || null,
-      });
+      // 8. Create trade alert for recipient
       await db.execute(
-        sql`INSERT INTO tradeAlerts (proposalId, recipientUserId, alertType, message, createdAt) VALUES (${proposalId}, ${listing.ownerId}, 'initiated', ${alertMessage}, ${now})`
+        sql`INSERT INTO tradeAlerts (proposalId, recipientUserId, alertType, message, isRead, createdAt) VALUES (${proposalId}, ${listing.ownerId}, 'initiated', ${`${ctx.user.name || initiator?.username || 'A user'} sent you a trade proposal for: ${listing.title} (TR-${tradeRef})`}, 0, ${now})`
       );
 
       // 7. Log to admin log
@@ -264,7 +243,7 @@ export const tradeFlowRouter = router({
       // Alert the other party
       const otherUserId = proposal.requesterId === userId ? proposal.recipientId : proposal.requesterId;
       await db.execute(
-        sql`INSERT INTO tradeAlerts (proposalId, recipientUserId, alertType, message, createdAt) VALUES (${input.proposalId}, ${otherUserId}, 'declined', 'Trade has been declined', ${now})`
+        sql`INSERT INTO tradeAlerts (proposalId, recipientUserId, alertType, message, isRead, createdAt) VALUES (${input.proposalId}, ${otherUserId}, 'declined', ${`Your trade (TR-${proposal.tradeReferenceNumber}) has been declined.`}, 0, ${now})`
       );
 
       // Log to activity log
@@ -299,7 +278,7 @@ export const tradeFlowRouter = router({
 
       const otherUserId = proposal.requesterId === userId ? proposal.recipientId : proposal.requesterId;
       await db.execute(
-        sql`INSERT INTO tradeAlerts (proposalId, recipientUserId, alertType, message, createdAt) VALUES (${input.proposalId}, ${otherUserId}, 'cancelled', 'Trade has been cancelled', ${now})`
+        sql`INSERT INTO tradeAlerts (proposalId, recipientUserId, alertType, message, isRead, createdAt) VALUES (${input.proposalId}, ${otherUserId}, 'cancelled', ${`Your trade (TR-${proposal.tradeReferenceNumber}) has been cancelled.`}, 0, ${now})`
       );
 
       // Log to activity log
@@ -407,7 +386,7 @@ export const tradeFlowRouter = router({
       // Alert other party
       const otherUserId = proposal.requesterId === userId ? proposal.recipientId : proposal.requesterId;
       await db.execute(
-        sql`INSERT INTO tradeAlerts (proposalId, recipientUserId, alertType, message, createdAt) VALUES (${input.proposalId}, ${otherUserId}, 'counterProposal', 'A new proposal has been submitted', ${now})`
+        sql`INSERT INTO tradeAlerts (proposalId, recipientUserId, alertType, message, isRead, createdAt) VALUES (${input.proposalId}, ${otherUserId}, 'counterProposal', ${`A new counter proposal has been submitted for your trade (TR-${proposal.tradeReferenceNumber}).`}, 0, ${now})`
       );
 
       // Log to activity log — fetch actor name and item titles
@@ -481,7 +460,7 @@ export const tradeFlowRouter = router({
           sql`UPDATE listings SET status = 'traded' WHERE id = ${proposal.requestedListingId}`
         );
         await db.execute(
-          sql`INSERT INTO tradeAlerts (proposalId, recipientUserId, alertType, message, createdAt) VALUES (${input.proposalId}, ${otherUserId}, 'accepted', 'Both parties have accepted! Trade is locked — please enter your tracking number.', ${now})`
+          sql`INSERT INTO tradeAlerts (proposalId, recipientUserId, alertType, message, isRead, createdAt) VALUES (${input.proposalId}, ${otherUserId}, 'accepted', ${`Both parties have accepted trade (TR-${proposal.tradeReferenceNumber})! Please enter your tracking number.`}, 0, ${now})`
         );
         await db.execute(
           sql`INSERT INTO tradeAdminLog (proposalId, eventType, actorUserId, details, createdAt) VALUES (${input.proposalId}, 'accepted', ${userId}, 'Mutual acceptance — trade locked, entering shipping stage', ${now})`
@@ -515,7 +494,7 @@ export const tradeFlowRouter = router({
           sql`UPDATE tradeProposals SET lastActivityAt = ${now}, updatedAt = ${now} WHERE id = ${input.proposalId}`
         );
         await db.execute(
-          sql`INSERT INTO tradeAlerts (proposalId, recipientUserId, alertType, message, createdAt) VALUES (${input.proposalId}, ${otherUserId}, 'accepted', 'Your trade partner has accepted! You have 72 hours to confirm.', ${now})`
+          sql`INSERT INTO tradeAlerts (proposalId, recipientUserId, alertType, message, isRead, createdAt) VALUES (${input.proposalId}, ${otherUserId}, 'accepted', ${`Your trade partner has accepted trade (TR-${proposal.tradeReferenceNumber})! You have 72 hours to confirm.`}, 0, ${now})`
         );
         await db.execute(
           sql`INSERT INTO tradeAdminLog (proposalId, eventType, actorUserId, details, createdAt) VALUES (${input.proposalId}, 'accepted', ${userId}, 'First acceptance — awaiting mutual confirmation', ${now})`
@@ -614,7 +593,7 @@ export const tradeFlowRouter = router({
       const actorName = (actor as any)?.displayName || (actor as any)?.username || 'Unknown';
       const trackingAlertMsg = `${actorName} has submitted their tracking number`;
       await db.execute(
-        sql`INSERT INTO tradeAlerts (proposalId, recipientUserId, alertType, message, createdAt) VALUES (${input.proposalId}, ${otherUserId}, 'shipped', ${trackingAlertMsg}, ${now})`
+        sql`INSERT INTO tradeAlerts (proposalId, recipientUserId, alertType, message, isRead, createdAt) VALUES (${input.proposalId}, ${otherUserId}, 'shipped', ${`${actorName} has submitted tracking information for trade (TR-${proposal.tradeReferenceNumber}).`}, 0, ${now})`
       );
       await db.execute(
         sql`INSERT INTO tradeActivityLog (proposalId, actorId, actorName, eventType, details, createdAt) VALUES (${input.proposalId}, ${userId}, ${actorName}, 'tracking_submitted', 'Tracking number submitted', ${now})`
@@ -657,7 +636,7 @@ export const tradeFlowRouter = router({
 
       const otherUserId = proposal.requesterId === userId ? proposal.recipientId : proposal.requesterId;
       await db.execute(
-        sql`INSERT INTO tradeAlerts (proposalId, recipientUserId, alertType, message, createdAt) VALUES (${input.proposalId}, ${otherUserId}, 'received', 'Items have been confirmed received', ${now})`
+        sql`INSERT INTO tradeAlerts (proposalId, recipientUserId, alertType, message, isRead, createdAt) VALUES (${input.proposalId}, ${otherUserId}, 'received', ${`Your trade partner has confirmed receipt for trade (TR-${proposal.tradeReferenceNumber}).`}, 0, ${now})`
       );
 
       return { success: true };
@@ -729,103 +708,7 @@ export const tradeFlowRouter = router({
   // QUERIES: TRADE HUB & WAR ROOM DATA
   // ==========================================================================
 
-  getTradeAlerts: protectedProcedure
-    .input(getTradeAlertsSchema)
-    .query(async ({ ctx, input }) => {
-      const db = await requireDb();
-      const userId = ctx.user.id;
-      const statuses = getFolderStatusFilter(input.folder);
 
-      // Build the status filter SQL
-      const statusPlaceholders = statuses.map(s => `'${s}'`).join(',');
-
-      const trades = await db.execute(
-        sql`SELECT 
-          tp.id,
-          tp.requesterId,
-          tp.recipientId,
-          tp.requestedListingId,
-          tp.status,
-          tp.tradeReferenceNumber,
-          tp.lastActivityAt,
-          tp.cashFromRequester,
-          tp.cashFromRecipient,
-          tp.createdAt,
-          tp.note,
-          l.title as listingTitle,
-          l.estimatedValue as listingValue,
-          l.category as listingCategory,
-          (SELECT imageUrl FROM listingPhotos WHERE listingId = l.id ORDER BY sortOrder ASC LIMIT 1) as listingImage,
-          CASE WHEN tp.requesterId = ${userId} THEN tp.recipientId ELSE tp.requesterId END as otherUserId,
-          CASE WHEN tp.requesterId = ${userId} THEN 'sent' ELSE 'received' END as direction,
-          (SELECT COUNT(*) FROM tradeAlerts WHERE proposalId = tp.id AND recipientUserId = ${userId} AND isRead = 0) as unreadCount
-        FROM tradeProposals tp
-        LEFT JOIN listings l ON l.id = tp.requestedListingId
-        WHERE (tp.requesterId = ${userId} OR tp.recipientId = ${userId})
-          AND tp.status IN (${sql.raw(statusPlaceholders)})
-        ORDER BY tp.lastActivityAt DESC, tp.createdAt DESC
-        LIMIT ${input.limit} OFFSET ${input.offset}`
-      );
-
-      const tradeList = (trades as any)?.[0] || [];
-
-      // Get other user details for each trade
-      const otherUserIds = Array.from(new Set(tradeList.map((t: any) => t.otherUserId))).filter(Boolean);
-      let userMap: Record<number, any> = {};
-
-      if (otherUserIds.length > 0) {
-        const userIds = otherUserIds.map(id => `${id}`).join(',');
-        const [usersResult] = await db.execute(
-          sql`SELECT u.id, u.username, u.name, up.displayName, up.avatarUrl,
-            (SELECT AVG(rating) FROM tradeReviews WHERE revieweeId = u.id) as avgRating,
-            (SELECT COUNT(*) FROM tradeReviews WHERE revieweeId = u.id) as reviewCount
-          FROM users u
-          LEFT JOIN userProfiles up ON up.userId = u.id
-          WHERE u.id IN (${sql.raw(userIds)})`
-        );
-        for (const user of (usersResult as unknown as any[])) {
-          userMap[user.id] = user;
-        }
-      }
-
-      // Get item counts for each trade
-      const proposalIds = tradeList.map((t: any) => t.id);
-      let itemCountMap: Record<number, number> = {};
-      if (proposalIds.length > 0) {
-        const pIds = proposalIds.join(',');
-        const [itemCounts] = await db.execute(
-          sql`SELECT proposalId, COUNT(*) as itemCount FROM tradeProposalItems WHERE proposalId IN (${sql.raw(pIds)}) GROUP BY proposalId`
-        );
-        for (const ic of (itemCounts as unknown as any[])) {
-          itemCountMap[ic.proposalId] = ic.itemCount;
-        }
-      }
-
-      return {
-        trades: tradeList.map((t: any) => ({
-          id: t.id,
-          tradeReferenceNumber: t.tradeReferenceNumber,
-          status: t.status,
-          direction: t.direction,
-          lastActivityAt: t.lastActivityAt,
-          createdAt: t.createdAt,
-          unreadCount: t.unreadCount || 0,
-          cashFromRequester: t.cashFromRequester,
-          cashFromRecipient: t.cashFromRecipient,
-          note: t.note,
-          listing: {
-            id: t.requestedListingId,
-            title: t.listingTitle,
-            value: t.listingValue,
-            category: t.listingCategory,
-            image: t.listingImage,
-          },
-          otherUser: userMap[t.otherUserId] || null,
-          itemCount: itemCountMap[t.id] || 0,
-        })),
-        total: tradeList.length,
-      };
-    }),
 
   getUnreadTradeAlertCount: protectedProcedure
     .query(async ({ ctx }) => {
@@ -1108,7 +991,7 @@ export const tradeFlowRouter = router({
           sql`UPDATE tradeProposals SET status = 'shipping', shippingAt = ${now}, lastActivityAt = ${now}, updatedAt = ${now} WHERE id = ${input.proposalId}`
         );
         await db.execute(
-          sql`INSERT INTO tradeAlerts (proposalId, recipientUserId, alertType, message, createdAt) VALUES (${input.proposalId}, ${otherUserId}, 'shipped', 'Both parties have confirmed the review! Please enter your tracking number.', ${now})`
+          sql`INSERT INTO tradeAlerts (proposalId, recipientUserId, alertType, message, isRead, createdAt) VALUES (${input.proposalId}, ${otherUserId}, 'accepted', ${`Both parties confirmed review for trade (TR-${proposal.tradeReferenceNumber})! Please enter your tracking number.`}, 0, ${now})`
         );
         await db.execute(
           sql`INSERT INTO tradeActivityLog (proposalId, actorId, actorName, eventType, details, createdAt) VALUES (${input.proposalId}, ${userId}, ${actorName}, 'proposal_accepted', 'Confirmed review. Both parties confirmed, proceeding to Shipping stage.', ${now})`
@@ -1129,7 +1012,7 @@ export const tradeFlowRouter = router({
           sql`UPDATE tradeProposals SET lastActivityAt = ${now}, updatedAt = ${now} WHERE id = ${input.proposalId}`
         );
         await db.execute(
-          sql`INSERT INTO tradeAlerts (proposalId, recipientUserId, alertType, message, createdAt) VALUES (${input.proposalId}, ${otherUserId}, 'shipped', 'Your trade partner has confirmed the review and is ready to ship. Please confirm to proceed.', ${now})`
+          sql`INSERT INTO tradeAlerts (proposalId, recipientUserId, alertType, message, isRead, createdAt) VALUES (${input.proposalId}, ${otherUserId}, 'accepted', ${`Your trade partner confirmed the review for trade (TR-${proposal.tradeReferenceNumber}) and is ready to ship. Please confirm to proceed.`}, 0, ${now})`
         );
         await db.execute(
           sql`INSERT INTO tradeActivityLog (proposalId, actorId, actorName, eventType, details, createdAt) VALUES (${input.proposalId}, ${userId}, ${actorName}, 'proposal_accepted', 'Confirmed review — awaiting partner confirmation to proceed to Shipping.', ${now})`

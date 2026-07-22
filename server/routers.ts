@@ -20,7 +20,6 @@ import {
   bulkUpdateListingStatus,
   bulkDeleteListings,
   restoreDeletedListings,
-  getUnreadNotificationCount,
   getUnreadMessageCount,
   saveDraft,
   getDrafts,
@@ -294,14 +293,14 @@ export const appRouter = router({
       } as const;
     }),
     unreadCounts: protectedProcedure.query(async ({ ctx }) => {
-      const unreadNotificationsResult = await getUnreadNotificationCount(ctx.user.id);
       const unreadMessagesResult = await getUnreadMessageCount(ctx.user.id);
       return {
-        unreadNotifications: unreadNotificationsResult?.count ?? 0,
         unreadMessages: unreadMessagesResult?.count ?? 0,
       };
     }),
   }),
+
+
   members: router({
     search: publicProcedure.input(memberSearchSchema.optional()).query(({ input }) => {
       return searchMembers(input ?? {});

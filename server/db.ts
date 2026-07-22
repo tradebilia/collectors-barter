@@ -1343,10 +1343,7 @@ export async function restoreDeletedListings(
   return getDashboardData(user);
 }
 
-export async function getUnreadNotificationCount(userId: number) {
-  // Placeholder for notification system
-  return { count: 0 };
-}
+
 
 export async function getUnreadMessageCount(userId: number) {
   const db = await requireDb();
@@ -4020,3 +4017,4 @@ export async function getSuspendedUsers() {
   
   return suspendedUsers;
 }
+
