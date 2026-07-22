@@ -1096,8 +1096,9 @@ export default function WarRoom() {
                         setVideoRoomUrl(result.roomUrl);
                         setShowVideoChatModal(true);
                         // If this user is joining (not starting), post a joined message
-                        const isJoining = !!(trade?.proposal as any)?.dailyRoomUrl &&
-                          (trade?.proposal as any)?.dailyRoomStartedBy !== myUserId;
+                        // Must have an explicit non-null dailyRoomStartedBy that belongs to the OTHER user
+                        const existingStartedBy = (trade?.proposal as any)?.dailyRoomStartedBy;
+                        const isJoining = !!existingStartedBy && existingStartedBy !== myUserId;
                         if (isJoining) {
                           try { await joinVideoCallMutation.mutateAsync({ proposalId }); } catch (_) {}
                         }
