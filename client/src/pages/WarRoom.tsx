@@ -253,21 +253,6 @@ export default function WarRoom() {
   const dismissVideoCallMutation = trpc.tradeFlow.dismissVideoCall.useMutation();
 
   // ── Effects ───────────────────────────────────────────────────────────────
-  // Watch messages for a video call decline and show it next to the Video Chat button
-  useEffect(() => {
-    if (!messages.length) return;
-    const lastMsg = messages[messages.length - 1];
-    if (
-      lastMsg?.isSystemMessage &&
-      typeof lastMsg?.message === 'string' &&
-      lastMsg.message.includes('declined the video call')
-    ) {
-      setVideoStatusMessage('Call declined');
-      const timer = setTimeout(() => setVideoStatusMessage(null), 8000);
-      return () => clearTimeout(timer);
-    }
-  }, [messages]);
-
   // Mark alerts as read when entering the War Room; do NOT auto-transition stage
   useEffect(() => {
     if (proposalId > 0) {
@@ -289,6 +274,22 @@ export default function WarRoom() {
   const isRequester = trade?.isRequester ?? false;
   const otherUser = trade?.otherUser;
   const messages = (messagesQuery.data?.messages || []) as any[];
+
+  // Watch messages for a video call decline and show it next to the Video Chat button
+  // (must be after messages declaration)
+  useEffect(() => {
+    if (!messages.length) return;
+    const lastMsg = messages[messages.length - 1];
+    if (
+      lastMsg?.isSystemMessage &&
+      typeof lastMsg?.message === 'string' &&
+      lastMsg.message.includes('declined the video call')
+    ) {
+      setVideoStatusMessage('Call declined');
+      const timer = setTimeout(() => setVideoStatusMessage(null), 8000);
+      return () => clearTimeout(timer);
+    }
+  }, [messages]);
   const myUserId = trade ? (isRequester ? trade.proposal.requesterId : trade.proposal.recipientId) : null;
   const partnerHasAccepted = (trade as any)?.partnerHasAccepted ?? false;
   const myHasAccepted = (trade as any)?.myHasAccepted ?? false;
