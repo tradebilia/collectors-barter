@@ -1463,6 +1463,11 @@ export const tradeFlowRouter = router({
       const dismisserName = dismisser?.displayName || dismisser?.username || 'Your trade partner';
       const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
 
+      // Clear the caller so buttons reset for both users
+      await db.execute(
+        sql`UPDATE tradeProposals SET dailyRoomStartedBy = NULL WHERE id = ${input.proposalId}`
+      );
+
       // Post a system message in the trade chat only (no trade alert)
       await db.execute(
         sql`INSERT INTO tradeMessages (proposalId, senderId, message, messageType, createdAt)
