@@ -11,3 +11,18 @@
 Server running on http://localhost:3000/
 [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
 8:32:06 PM [vite] (client) hmr update /src/index.css, /src/components/RecentlyAddedCarousel.tsx
+9:19:18 PM [vite] (client) hmr update /src/pages/AnimatedDemo.tsx, /src/index.css
+9:19:18 PM [vite] (client) hmr update /src/pages/DetailsLayoutMockups.tsx, /src/index.css
+9:19:18 PM [vite] (client) hmr update /src/pages/HomepageLayoutMockups.tsx, /src/index.css
+9:19:18 PM [vite] (client) hmr update /src/pages/HomepageLayoutMockupsV2.tsx, /src/index.css
+9:19:18 PM [vite] (client) hmr update /src/pages/TradeFlowMockup.tsx, /src/index.css
+9:19:18 PM [vite] (client) hmr update /src/pages/TradeFlowMockupV2.tsx, /src/index.css
+9:19:18 PM [vite] (client) hmr update /src/pages/TradeNegotiationMockup.tsx, /src/index.css
+9:19:18 PM [vite] (client) Pre-transform error: Failed to load url /src/pages/AnimatedDemo.tsx (resolved id: /home/ubuntu/collectors-barter/client/src/pages/AnimatedDemo.tsx) in /home/ubuntu/collectors-barter/client/src/App.tsx. Does the file exist?
+9:19:18 PM [vite] (client) Pre-transform error: Failed to load url /src/pages/DetailsLayoutMockups.tsx (resolved id: /home/ubuntu/collectors-barter/client/src/pages/DetailsLayoutMockups.tsx) in /home/ubuntu/collectors-barter/client/src/App.tsx. Does the file exist?
+9:19:18 PM [vite] (client) Pre-transform error: Failed to load url /src/pages/HomepageLayoutMockups.tsx (resolved id: /home/ubuntu/collectors-barter/client/src/pages/HomepageLayoutMockups.tsx) in /home/ubuntu/collectors-barter/client/src/App.tsx. Does the file exist?
+9:19:18 PM [vite] (client) Pre-transform error: Failed to load url /src/pages/HomepageLayoutMockupsV2.tsx (resolved id: /home/ubuntu/collectors-barter/client/src/pages/HomepageLayoutMockupsV2.tsx) in /home/ubuntu/collectors-barter/client/src/App.tsx. Does the file exist?
+9:19:18 PM [vite] (client) Pre-transform error: Failed to load url /src/pages/TradeFlowMockup.tsx (resolved id: /home/ubuntu/collectors-barter/client/src/pages/TradeFlowMockup.tsx) in /home/ubuntu/collectors-barter/client/src/App.tsx. Does the file exist?
+9:19:18 PM [vite] (client) Pre-transform error: Failed to load url /src/pages/TradeFlowMockupV2.tsx (resolved id: /home/ubuntu/collectors-barter/client/src/pages/TradeFlowMockupV2.tsx) in /home/ubuntu/collectors-barter/client/src/App.tsx. Does the file exist?
+9:19:18 PM [vite] (client) Pre-transform error: Failed to load url /src/pages/TradeNegotiationMockup.tsx (resolved id: /home/ubuntu/collectors-barter/client/src/pages/TradeNegotiationMockup.tsx) in /home/ubuntu/collectors-barter/client/src/App.tsx. Does the file exist?
+9:19:23 PM [vite] (client) hmr update /src/App.tsx, /src/index.css

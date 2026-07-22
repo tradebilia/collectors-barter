@@ -27,18 +27,10 @@ import { ForgotPassword } from "./pages/ForgotPassword";
 import { ProfileCompletion } from "./pages/ProfileCompletion";
 import { SearchResults } from "./pages/SearchResults";
 import AdminDashboard from "./pages/AdminDashboard";
-import { AnimatedDemo } from "./pages/AnimatedDemo";
-
-import DetailsLayoutMockups from "./pages/DetailsLayoutMockups";
-import HomepageLayoutMockups from "./pages/HomepageLayoutMockups";
-import HomepageLayoutMockupsV2 from "./pages/HomepageLayoutMockupsV2";
 import Conventions from "./pages/Conventions";
 import Contact from "./pages/Contact";
 import { Forum } from "./pages/Forum";
 import { ForumTopic } from "./pages/ForumTopic";
-import { TradeFlowMockup } from "./pages/TradeFlowMockup";
-import { TradeFlowMockupV2 } from "./pages/TradeFlowMockupV2";
-import { TradeNegotiationMockup } from "./pages/TradeNegotiationMockup";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import TradeHub from "./pages/TradeHub";
@@ -126,13 +118,6 @@ function Router() {
       <Route path="/forum" component={Forum} />
       <Route path="/forum/:postId" component={ForumTopic} />
       <Route path="/category/:slug" component={CategoryPage} />
-      <Route path="/animated-demo" component={AnimatedDemo} />
-      <Route path="/details-mockups" component={DetailsLayoutMockups} />
-      <Route path="/homepage-mockups" component={HomepageLayoutMockups} />
-      <Route path="/homepage-mockups-v2" component={HomepageLayoutMockupsV2} />
-      <Route path="/trade-flow-mockup" component={TradeFlowMockup} />
-      <Route path="/trade-flow-mockup-v2" component={TradeFlowMockupV2} />
-      <Route path="/trade-negotiation-mockup" component={TradeNegotiationMockup} />
 
       <Route path="/trade-hub">
         <ProtectedRoute>
