@@ -507,52 +507,52 @@ export default function AdminDashboard() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="flex flex-wrap w-full gap-1 h-auto p-1">
-            <TabsTrigger value="statistics" className="flex items-center gap-1.5 text-sm px-4 py-2 whitespace-nowrap">
+          <TabsList className="flex flex-wrap w-full gap-2 h-auto p-2">
+            <TabsTrigger value="statistics" className="flex items-center gap-2 text-sm px-6 py-2.5 whitespace-nowrap flex-1 min-w-[100px] justify-center">
               <BarChart3 className="h-4 w-4" />
               Stats
             </TabsTrigger>
-            <TabsTrigger value="users" className="flex items-center gap-1.5 text-sm px-4 py-2 whitespace-nowrap">
+            <TabsTrigger value="users" className="flex items-center gap-2 text-sm px-6 py-2.5 whitespace-nowrap flex-1 min-w-[100px] justify-center">
               <Users className="h-4 w-4" />
               Users
             </TabsTrigger>
-            <TabsTrigger value="listings" className="flex items-center gap-1.5 text-sm px-4 py-2 whitespace-nowrap">
+            <TabsTrigger value="listings" className="flex items-center gap-2 text-sm px-6 py-2.5 whitespace-nowrap flex-1 min-w-[100px] justify-center">
               <Package className="h-4 w-4" />
               Listings
             </TabsTrigger>
-            <TabsTrigger value="trades" className="flex items-center gap-1.5 text-sm px-4 py-2 whitespace-nowrap">
+            <TabsTrigger value="trades" className="flex items-center gap-2 text-sm px-6 py-2.5 whitespace-nowrap flex-1 min-w-[100px] justify-center">
               <Package className="h-4 w-4" />
               Trades
             </TabsTrigger>
-            <TabsTrigger value="settings" className="flex items-center gap-1.5 text-sm px-4 py-2 whitespace-nowrap">
+            <TabsTrigger value="settings" className="flex items-center gap-2 text-sm px-6 py-2.5 whitespace-nowrap flex-1 min-w-[100px] justify-center">
               <Settings className="h-4 w-4" />
               Settings
             </TabsTrigger>
-            <TabsTrigger value="deleted" className="flex items-center gap-1.5 text-sm px-4 py-2 whitespace-nowrap">
+            <TabsTrigger value="deleted" className="flex items-center gap-2 text-sm px-6 py-2.5 whitespace-nowrap flex-1 min-w-[100px] justify-center">
               <Users className="h-4 w-4" />
               Deleted
             </TabsTrigger>
-            <TabsTrigger value="reports" className="flex items-center gap-1.5 text-sm px-4 py-2 whitespace-nowrap">
+            <TabsTrigger value="reports" className="flex items-center gap-2 text-sm px-6 py-2.5 whitespace-nowrap flex-1 min-w-[100px] justify-center">
               <Flag className="h-4 w-4" />
               Reports
             </TabsTrigger>
-            <TabsTrigger value="referrals" className="flex items-center gap-1.5 text-sm px-4 py-2 whitespace-nowrap">
+            <TabsTrigger value="referrals" className="flex items-center gap-2 text-sm px-6 py-2.5 whitespace-nowrap flex-1 min-w-[100px] justify-center">
               <Mail className="h-4 w-4" />
               Referrals
             </TabsTrigger>
-            <TabsTrigger value="conventions" className="flex items-center gap-1.5 text-sm px-4 py-2 whitespace-nowrap">
+            <TabsTrigger value="conventions" className="flex items-center gap-2 text-sm px-6 py-2.5 whitespace-nowrap flex-1 min-w-[100px] justify-center">
               <Calendar className="h-4 w-4" />
               Conventions
             </TabsTrigger>
-            <TabsTrigger value="suspended" className="flex items-center gap-1.5 text-sm px-4 py-2 whitespace-nowrap">
+            <TabsTrigger value="suspended" className="flex items-center gap-2 text-sm px-6 py-2.5 whitespace-nowrap flex-1 min-w-[100px] justify-center">
               <Users className="h-4 w-4" />
               Suspended
             </TabsTrigger>
-            <TabsTrigger value="banned" className="flex items-center gap-1.5 text-sm px-4 py-2 whitespace-nowrap">
+            <TabsTrigger value="banned" className="flex items-center gap-2 text-sm px-6 py-2.5 whitespace-nowrap flex-1 min-w-[100px] justify-center">
               <Ban className="h-4 w-4" />
               Banned
             </TabsTrigger>
-            <TabsTrigger value="modlog" className="flex items-center gap-1.5 text-sm px-4 py-2 whitespace-nowrap">
+            <TabsTrigger value="modlog" className="flex items-center gap-2 text-sm px-6 py-2.5 whitespace-nowrap flex-1 min-w-[100px] justify-center">
               <ClipboardList className="h-4 w-4" />
               Mod Log
             </TabsTrigger>
