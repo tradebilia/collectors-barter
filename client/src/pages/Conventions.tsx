@@ -125,13 +125,13 @@ export default function Conventions() {
       <TopBar />
 
       {/* Hero */}
-      <section className="relative w-full overflow-hidden bg-[#00143A] text-white">
+      <section className="relative w-full overflow-hidden bg-white text-white">
         <div className="absolute inset-0" style={{
           backgroundImage: "url(/images/Mainpage.jpg)",
           backgroundSize: "cover",
           backgroundPosition: "center",
           backgroundRepeat: "no-repeat",
-          opacity: 0.35,
+          opacity: 1,
         }} />
         <div className="container relative flex h-64 items-center justify-center sm:h-72 lg:h-80">
           <div className="flex w-full max-w-[1050px] items-center justify-center">
