@@ -507,52 +507,52 @@ export default function AdminDashboard() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="flex flex-wrap w-full gap-2 h-auto p-2">
-            <TabsTrigger value="statistics" className="flex items-center gap-2 text-sm px-6 py-2.5 whitespace-nowrap flex-1 min-w-[100px] justify-center">
+          <TabsList className="grid grid-cols-12 w-full h-auto p-1.5 gap-1">
+            <TabsTrigger value="statistics" className="flex items-center justify-center gap-1.5 text-xs font-medium py-2.5 whitespace-nowrap">
               <BarChart3 className="h-4 w-4" />
               Stats
             </TabsTrigger>
-            <TabsTrigger value="users" className="flex items-center gap-2 text-sm px-6 py-2.5 whitespace-nowrap flex-1 min-w-[100px] justify-center">
+            <TabsTrigger value="users" className="flex items-center justify-center gap-1.5 text-xs font-medium py-2.5 whitespace-nowrap">
               <Users className="h-4 w-4" />
               Users
             </TabsTrigger>
-            <TabsTrigger value="listings" className="flex items-center gap-2 text-sm px-6 py-2.5 whitespace-nowrap flex-1 min-w-[100px] justify-center">
+            <TabsTrigger value="listings" className="flex items-center justify-center gap-1.5 text-xs font-medium py-2.5 whitespace-nowrap">
               <Package className="h-4 w-4" />
               Listings
             </TabsTrigger>
-            <TabsTrigger value="trades" className="flex items-center gap-2 text-sm px-6 py-2.5 whitespace-nowrap flex-1 min-w-[100px] justify-center">
+            <TabsTrigger value="trades" className="flex items-center justify-center gap-1.5 text-xs font-medium py-2.5 whitespace-nowrap">
               <Package className="h-4 w-4" />
               Trades
             </TabsTrigger>
-            <TabsTrigger value="settings" className="flex items-center gap-2 text-sm px-6 py-2.5 whitespace-nowrap flex-1 min-w-[100px] justify-center">
+            <TabsTrigger value="settings" className="flex items-center justify-center gap-1.5 text-xs font-medium py-2.5 whitespace-nowrap">
               <Settings className="h-4 w-4" />
               Settings
             </TabsTrigger>
-            <TabsTrigger value="deleted" className="flex items-center gap-2 text-sm px-6 py-2.5 whitespace-nowrap flex-1 min-w-[100px] justify-center">
+            <TabsTrigger value="deleted" className="flex items-center justify-center gap-1.5 text-xs font-medium py-2.5 whitespace-nowrap">
               <Users className="h-4 w-4" />
               Deleted
             </TabsTrigger>
-            <TabsTrigger value="reports" className="flex items-center gap-2 text-sm px-6 py-2.5 whitespace-nowrap flex-1 min-w-[100px] justify-center">
+            <TabsTrigger value="reports" className="flex items-center justify-center gap-1.5 text-xs font-medium py-2.5 whitespace-nowrap">
               <Flag className="h-4 w-4" />
               Reports
             </TabsTrigger>
-            <TabsTrigger value="referrals" className="flex items-center gap-2 text-sm px-6 py-2.5 whitespace-nowrap flex-1 min-w-[100px] justify-center">
+            <TabsTrigger value="referrals" className="flex items-center justify-center gap-1.5 text-xs font-medium py-2.5 whitespace-nowrap">
               <Mail className="h-4 w-4" />
               Referrals
             </TabsTrigger>
-            <TabsTrigger value="conventions" className="flex items-center gap-2 text-sm px-6 py-2.5 whitespace-nowrap flex-1 min-w-[100px] justify-center">
+            <TabsTrigger value="conventions" className="flex items-center justify-center gap-1.5 text-xs font-medium py-2.5 whitespace-nowrap">
               <Calendar className="h-4 w-4" />
               Conventions
             </TabsTrigger>
-            <TabsTrigger value="suspended" className="flex items-center gap-2 text-sm px-6 py-2.5 whitespace-nowrap flex-1 min-w-[100px] justify-center">
+            <TabsTrigger value="suspended" className="flex items-center justify-center gap-1.5 text-xs font-medium py-2.5 whitespace-nowrap">
               <Users className="h-4 w-4" />
               Suspended
             </TabsTrigger>
-            <TabsTrigger value="banned" className="flex items-center gap-2 text-sm px-6 py-2.5 whitespace-nowrap flex-1 min-w-[100px] justify-center">
+            <TabsTrigger value="banned" className="flex items-center justify-center gap-1.5 text-xs font-medium py-2.5 whitespace-nowrap">
               <Ban className="h-4 w-4" />
               Banned
             </TabsTrigger>
-            <TabsTrigger value="modlog" className="flex items-center gap-2 text-sm px-6 py-2.5 whitespace-nowrap flex-1 min-w-[100px] justify-center">
+            <TabsTrigger value="modlog" className="flex items-center justify-center gap-1.5 text-xs font-medium py-2.5 whitespace-nowrap">
               <ClipboardList className="h-4 w-4" />
               Mod Log
             </TabsTrigger>
