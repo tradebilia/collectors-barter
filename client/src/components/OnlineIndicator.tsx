@@ -16,8 +16,8 @@ export function OnlineIndicator({ sellerId, className = '', size = 'small' }: On
     { sellerId },
     {
       enabled: !!sellerId,
-      refetchInterval: 0, // Disabled polling - status updates only on manual refetch or page reload
-      staleTime: 60000, // Consider data stale after 60 seconds to reduce redundant requests
+      refetchInterval: 30000, // Poll every 30 seconds to keep status accurate
+      staleTime: 25000,
     }
   );
 

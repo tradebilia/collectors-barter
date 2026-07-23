@@ -232,3 +232,4 @@ Server running on http://localhost:3000/
 [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
 1:03:00 AM [vite] (client) hmr update /src/pages/TradeHub.tsx, /src/index.css
 1:07:42 AM [vite] (client) hmr update /src/index.css, /src/components/TopBar.tsx
+1:08:58 AM [vite] (client) hmr update /src/index.css, /src/components/OnlineIndicator.tsx
