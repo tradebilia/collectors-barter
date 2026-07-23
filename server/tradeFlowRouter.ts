@@ -1628,10 +1628,94 @@ export const tradeFlowRouter = router({
         } catch (_) {}
       }
 
-      async function getEbayPrice(title: string, grade?: string | null): Promise<number | null> {
+      // Build a category-aware eBay search query for more accurate price results
+      function buildEbayQuery(item: any): string {
+        const details = item.itemDetails ? (() => { try { return JSON.parse(item.itemDetails); } catch { return {}; } })() : {};
+        const grade = parseFloat(item.grade || '0') > 0 ? item.grade : null;
+        const cert = details.certificationCompany || details.customGradingCompany || null;
+        const gradeStr = grade && cert ? `${cert} ${grade}` : grade ? `Grade ${grade}` : null;
+
+        switch (item.category) {
+          case 'sports_cards': {
+            const parts = [];
+            if (gradeStr) parts.push(gradeStr);
+            if (details.manufacturer) parts.push(details.manufacturer);
+            if (details.year || details.releaseYear) parts.push(details.year || details.releaseYear);
+            if (details.player) parts.push(details.player);
+            if (details.rookieCard === 'yes') parts.push('Rookie');
+            return parts.length > 1 ? parts.join(' ') : item.title;
+          }
+          case 'pokemon': {
+            const parts = [];
+            if (gradeStr) parts.push(gradeStr);
+            if (details.cardName || details.player) parts.push(details.cardName || details.player);
+            if (details.setName) parts.push(details.setName);
+            return parts.length > 1 ? parts.join(' ') : item.title;
+          }
+          case 'comics': {
+            const parts = [];
+            if (gradeStr) parts.push(gradeStr);
+            if (details.comicTitle) parts.push(details.comicTitle);
+            if (details.issueNumber) parts.push(`#${details.issueNumber}`);
+            if (details.publisher) parts.push(details.publisher);
+            return parts.length > 1 ? parts.join(' ') : item.title;
+          }
+          case 'video_games': {
+            const parts = [];
+            if (gradeStr) parts.push(gradeStr);
+            if (details.gameTitle) parts.push(details.gameTitle);
+            if (details.platform) parts.push(details.platform);
+            if (details.sealed === 'yes') parts.push('Sealed');
+            return parts.length > 1 ? parts.join(' ') : item.title;
+          }
+          case 'movies': {
+            const parts = [];
+            if (gradeStr) parts.push(gradeStr);
+            if (details.title) parts.push(details.title);
+            if (details.format) parts.push(details.format);
+            if (details.sealed === 'yes') parts.push('Sealed');
+            return parts.length > 1 ? parts.join(' ') : item.title;
+          }
+          case 'vintage_toys': {
+            const parts = [];
+            if (gradeStr) parts.push(gradeStr);
+            if (details.brand) parts.push(details.brand);
+            if (details.toyName) parts.push(details.toyName);
+            if (details.year) parts.push(details.year);
+            return parts.length > 1 ? parts.join(' ') : item.title;
+          }
+          case 'coins': {
+            const parts = [];
+            if (gradeStr) parts.push(gradeStr);
+            if (details.year) parts.push(details.year);
+            if (details.country) parts.push(details.country);
+            if (details.denomination) parts.push(details.denomination);
+            return parts.length > 1 ? parts.join(' ') : item.title;
+          }
+          case 'stamps': {
+            const parts = [];
+            if (gradeStr) parts.push(gradeStr);
+            if (details.year) parts.push(details.year);
+            if (details.country) parts.push(details.country);
+            if (details.denomination) parts.push(details.denomination);
+            return parts.length > 1 ? parts.join(' ') : item.title;
+          }
+          case 'autographs': {
+            const parts = [];
+            if (details.signedBy) parts.push(details.signedBy);
+            parts.push('autograph');
+            if (details.authenticationCompany && details.authenticationCompany !== 'Other') parts.push(details.authenticationCompany);
+            return parts.length > 1 ? parts.join(' ') : item.title;
+          }
+          default:
+            return gradeStr ? `${gradeStr} ${item.title}` : item.title;
+        }
+      }
+
+      async function getEbayPrice(item: any): Promise<number | null> {
         if (!ebayToken) return null;
         try {
-          const query = grade ? `${grade} ${title}` : title;
+          const query = buildEbayQuery(item);
           const res = await fetch(
             `https://api.ebay.com/buy/browse/v1/item_summary/search?q=${encodeURIComponent(query)}&limit=10&filter=buyingOptions%3A%7BFIXED_PRICE%7D`,
             { headers: { 'Authorization': `Bearer ${ebayToken}`, 'X-EBAY-C-MARKETPLACE-ID': 'EBAY_US' } }
@@ -1651,7 +1735,7 @@ export const tradeFlowRouter = router({
         const parts: string[] = [];
         for (const item of items) {
           const estimatedValue = parseFloat(item.estimatedValue || '0');
-          const ebayPrice = await getEbayPrice(item.title, item.grade);
+          const ebayPrice = await getEbayPrice(item);
           let line = `- ${item.title}`;
           if (item.category) line += ` (${item.category.replace(/_/g, ' ')})`;
           if (item.grade) line += ` | Grade: ${item.grade}`;
