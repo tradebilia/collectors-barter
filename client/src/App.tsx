@@ -124,7 +124,7 @@ function Router() {
           <TradeHub />
         </ProtectedRoute>
       </Route>
-      <Route path="/war-room/:proposalId">
+      <Route path="/trade-room/:proposalId">
         <ProtectedRoute>
           <WarRoom />
         </ProtectedRoute>

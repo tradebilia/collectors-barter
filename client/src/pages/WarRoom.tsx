@@ -1,5 +1,5 @@
 /**
- * War Room — The dedicated negotiation page for a single trade.
+ * Trade Room — The dedicated negotiation page for a single trade.
  * Full-width layout (no sidebar) per our discussion.
  * 
  * Reference: FINAL_TRADE_FLOW_IMPLEMENTATION_BLUEPRINT.md (Page 2)
@@ -40,7 +40,7 @@ const stages: { key: TradeStage; label: string; sub: string }[] = [
 // ── Event type config ────────────────────────────────────────────────────────
 const eventConfig: Record<string, { color: string; icon: string; label: string }> = {
   trade_created:      { color: 'bg-blue-500',   icon: '🤝', label: 'Trade Created' },
-  partner_joined:     { color: 'bg-indigo-500', icon: '🚪', label: 'Entered War Room' },
+  partner_joined:     { color: 'bg-indigo-500', icon: '🚪', label: 'Entered Trade Room' },
   item_added:         { color: 'bg-green-500',  icon: '➕', label: 'Item Added' },
   item_removed:       { color: 'bg-red-500',    icon: '➖', label: 'Item Removed' },
   cash_added:         { color: 'bg-emerald-500',icon: '💵', label: 'Cash Added' },
@@ -255,7 +255,7 @@ export default function WarRoom() {
   const joinVideoCallMutation = trpc.tradeFlow.joinVideoCall.useMutation();
 
   // ── Effects ───────────────────────────────────────────────────────────────
-  // Mark alerts as read when entering the War Room; do NOT auto-transition stage
+  // Mark alerts as read when entering the Trade Room; do NOT auto-transition stage
   useEffect(() => {
     if (proposalId > 0) {
       markAlertsAsReadMutation.mutate({ proposalId });
@@ -606,7 +606,7 @@ export default function WarRoom() {
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9" />
               </svg>
-              Leave War Room
+              Leave Trade Room
             </button>
 
           </div>
@@ -1796,7 +1796,7 @@ export default function WarRoom() {
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-3.5 h-3.5 text-green-500">
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
           </svg>
-          Secure War Room • All data is encrypted end-to-end
+          Secure Trade Room • All data is encrypted end-to-end
         </p>
       </div>
 

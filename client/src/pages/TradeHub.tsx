@@ -4,7 +4,7 @@
  * Layout: TopBar → Hero Section (TradeHub.svg) → CategoryBar → 3-Column Interface
  * - Sidebar (Left): 5 Folders (Negotiating, Accepted, Shipped, Declined, Completed)
  * - Inbox (Center): High-density card list with search/filters
- * - Preview (Right): Item image, trader reputation, "Enter War Room" button
+ * - Preview (Right): Item image, trader reputation, "Enter Trade Room" button
  * 
  * Reference: FINAL_TRADE_FLOW_IMPLEMENTATION_BLUEPRINT.md (Page 1)
  */
@@ -98,7 +98,7 @@ export default function TradeHub() {
   };
 
   const handleEnterWarRoom = (proposalId: number) => {
-    navigate(`/war-room/${proposalId}`);
+    navigate(`/trade-room/${proposalId}`);
   };
 
   return (
@@ -373,12 +373,12 @@ export default function TradeHub() {
                     </div>
                   </div>
 
-                  {/* Enter War Room Button */}
+                  {/* Enter Trade Room Button */}
                   <button
                     onClick={() => handleEnterWarRoom(selectedTrade.id)}
                     className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold py-3 px-6 rounded-lg transition-all shadow-lg hover:shadow-purple-500/25 text-center"
                   >
-                    {activeFolder === 'proposal' ? '📨 View Proposal' : '⚔️ Enter War Room'}
+                    {activeFolder === 'proposal' ? '📨 View Proposal' : '⚔️ Enter Trade Room'}
                   </button>
                   <p className="text-center text-xs text-gray-500">
                     {activeFolder === 'proposal' ? 'Review and respond to this trade proposal' : 'Secure negotiation space'}

@@ -60,7 +60,7 @@ export function TopBar({
   };
 
   if (hideSearch) {
-    // Compact top bar for pages like War Room — no search, just logo + icons
+    // Compact top bar for pages like Trade Room — no search, just logo + icons
     return (
       <div className="border-b border-white/10 bg-black relative z-0">
         <div className="flex items-center justify-between pl-2 pr-4 py-2 relative" style={{ minHeight: '52px' }}>

@@ -330,7 +330,7 @@ export const tradeFlowRouter = router({
         const [joiner] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
         const joinerName = (joiner as any)?.displayName || (joiner as any)?.username || 'Unknown';
         await db.execute(
-          sql`INSERT INTO tradeActivityLog (proposalId, actorId, actorName, eventType, details, createdAt) VALUES (${input.proposalId}, ${userId}, ${joinerName}, 'partner_joined', 'Entered the War Room', ${now})`
+          sql`INSERT INTO tradeActivityLog (proposalId, actorId, actorName, eventType, details, createdAt) VALUES (${input.proposalId}, ${userId}, ${joinerName}, 'partner_joined', 'Entered the Trade Room', ${now})`
         );
       }
 
@@ -1446,7 +1446,7 @@ export const tradeFlowRouter = router({
         sql`UPDATE tradeProposals SET dailyRoomName = ${data.name}, dailyRoomUrl = ${data.url}, dailyRoomStartedBy = ${userId} WHERE id = ${input.proposalId}`
       );
 
-      // Notify the other trader via War Room chat only (no trade hub alert)
+      // Notify the other trader via Trade Room chat only (no trade hub alert)
       const [callerRows] = await db.execute(sql`SELECT u.username, COALESCE(up.displayName, u.username) as displayName FROM users u LEFT JOIN userProfiles up ON up.userId = u.id WHERE u.id = ${userId} LIMIT 1`);
       const caller = (callerRows as any)?.[0];
       const callerName = caller?.displayName || caller?.username || 'Your trade partner';
