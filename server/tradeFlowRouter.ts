@@ -1780,11 +1780,11 @@ Provide your analysis in the following JSON format:
 
       const llmResult = await invokeLLM({
         messages: [
-          { role: 'system', content: 'You are a collectibles trade analyst. Always respond with valid JSON only, no markdown.' },
+          { role: 'system', content: 'You are a collectibles trade analyst. Always respond with valid JSON only, no markdown code blocks.' },
           { role: 'user', content: prompt },
         ],
         response_format: { type: 'json_object' },
-        maxTokens: 1000,
+        maxTokens: 2000,
       });
 
       const content = llmResult.choices[0]?.message?.content;
@@ -1797,7 +1797,14 @@ Provide your analysis in the following JSON format:
         .replace(/\s*```$/i, '')
         .trim();
 
-      const analysis = JSON.parse(cleanContent);
+      let analysis: any;
+      try {
+        analysis = JSON.parse(cleanContent);
+      } catch (parseErr) {
+        // Log the raw content for debugging and throw a user-friendly error
+        console.error('[AI Analyzer] JSON parse failed. Raw content:', cleanContent.slice(0, 500));
+        throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'AI analysis returned an invalid response. Please try again.' });
+      }
       return analysis;
     }),
 });
