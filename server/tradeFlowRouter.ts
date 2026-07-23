@@ -1780,10 +1780,9 @@ Provide your analysis in the following JSON format:
 
       const llmResult = await invokeLLM({
         messages: [
-          { role: 'system', content: 'You are a collectibles trade analyst. Always respond with valid JSON only, no markdown code blocks.' },
+          { role: 'system', content: 'You are a collectibles trade analyst. Always respond with valid JSON only. No markdown, no code blocks, no explanation — just the raw JSON object.' },
           { role: 'user', content: prompt },
         ],
-        response_format: { type: 'json_object' },
         maxTokens: 2000,
       });
 

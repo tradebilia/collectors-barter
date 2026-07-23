@@ -327,5 +327,13 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
     );
   }
 
-  return (await response.json()) as InvokeResult;
+  const result = (await response.json()) as InvokeResult;
+
+  // Safety check: ensure choices array exists
+  if (!result.choices || !result.choices.length) {
+    console.error('[invokeLLM] No choices in response:', JSON.stringify(result).slice(0, 300));
+    throw new Error('LLM returned no choices');
+  }
+
+  return result;
 }
