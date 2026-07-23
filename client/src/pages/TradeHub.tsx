@@ -338,6 +338,19 @@ export default function TradeHub() {
                     </div>
                   )}
 
+                  {/* Decline Reason — shown when trade is declined/cancelled and a reason was provided */}
+                  {selectedTrade.declineReason && (activeFolder === 'declined') && (
+                    <div className="bg-red-950/40 rounded-lg p-4 border border-red-800/40">
+                      <p className="text-red-400 text-xs uppercase tracking-wider mb-2 flex items-center gap-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-3.5 h-3.5">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+                        </svg>
+                        Decline Reason
+                      </p>
+                      <p className="text-red-200 text-sm leading-relaxed italic">"{selectedTrade.declineReason}"</p>
+                    </div>
+                  )}
+
                   {/* Status Info */}
                   <div className="bg-[#0a0a2a] rounded-lg p-3">
                     <div className="grid grid-cols-2 gap-2 text-sm">

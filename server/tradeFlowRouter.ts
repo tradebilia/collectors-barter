@@ -762,7 +762,9 @@ export const tradeFlowRouter = router({
           -- Verification
           ou.ebayIdVerified as otherEbayVerified,
           ou.facebookId as otherFacebookId,
-          ou.linkedinId as otherLinkedinId
+          ou.linkedinId as otherLinkedinId,
+          -- Decline reason
+          tp.declineReason
         FROM tradeProposals tp
         LEFT JOIN users ou ON ou.id = CASE WHEN tp.requesterId = ${userId} THEN tp.recipientId ELSE tp.requesterId END
         LEFT JOIN userProfiles oup ON oup.userId = ou.id
@@ -783,6 +785,7 @@ export const tradeFlowRouter = router({
         direction: row.direction,
         itemCount: Number(row.itemCount) || 0,
         unreadCount: Number(row.unreadCount) || 0,
+        declineReason: row.declineReason || null,
         otherUser: {
           id: row.otherUserId,
           username: row.otherUsername,
