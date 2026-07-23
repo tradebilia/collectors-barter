@@ -34,6 +34,7 @@ import { ForumTopic } from "./pages/ForumTopic";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import TradeHub from "./pages/TradeHub";
+import TradeShowcase from "./pages/TradeShowcase";
 import WarRoom from "./pages/WarRoom";
 import TradePrintView from "./pages/TradePrintView";
 import TradeVoting from "./pages/TradeVoting";
@@ -136,6 +137,7 @@ function Router() {
       </Route>
       <Route path="/trade-vote/:token" component={TradeVoting} />
       <Route path="/conventions" component={Conventions} />
+      <Route path="/trade-showcase" component={TradeShowcase} />
       <Route path="/rankings/most-viewed" component={AllMostViewedRankings} />
       <Route path="/rankings/most-favorited" component={AllMostFavoritedRankings} />
       <Route path="/rankings/top-rated-traders" component={AllRatedTradersRankings} />

@@ -2286,6 +2286,86 @@ export const appRouter = router({
         );
         return { traders: (rows as unknown as any[]) || [] };
       }),
+
+    getCompletedTrades: publicProcedure
+      .input(z.object({
+        category: z.string().optional(),
+        sortBy: z.enum(['recent', 'value', 'items']).default('recent'),
+        limit: z.number().min(1).max(100).default(20),
+        offset: z.number().min(0).default(0),
+      }).optional())
+      .query(async ({ input }) => {
+        const db = await requireDb();
+        const category = input?.category;
+        const sortBy = input?.sortBy ?? 'recent';
+        const limit = input?.limit ?? 20;
+        const offset = input?.offset ?? 0;
+
+        const orderClause = sortBy === 'value'
+          ? 'ORDER BY totalValue DESC'
+          : sortBy === 'items'
+          ? 'ORDER BY itemCount DESC'
+          : 'ORDER BY tp.completedAt DESC';
+
+        const categoryFilter = category && category !== 'all'
+          ? `AND (l.category = '${category}' OR EXISTS (SELECT 1 FROM listings ol JOIN tradeProposalItems tpi ON tpi.offeredListingId = ol.id WHERE tpi.proposalId = tp.id AND ol.category = '${category}'))`
+          : '';
+
+        const [rows] = await db.execute(
+          sql`SELECT
+            tp.id,
+            tp.tradeReferenceNumber,
+            tp.completedAt,
+            tp.requesterId,
+            tp.recipientId,
+            -- Requester info
+            req_up.displayName as requesterDisplayName,
+            req_up.avatarUrl as requesterAvatarUrl,
+            -- Recipient info
+            rec_up.displayName as recipientDisplayName,
+            rec_up.avatarUrl as recipientAvatarUrl,
+            -- Requested listing (the item that started the trade)
+            l.id as requestedListingId,
+            l.title as requestedListingTitle,
+            l.category as requestedListingCategory,
+            l.estimatedValue as requestedListingValue,
+            (SELECT imageUrl FROM listingPhotos WHERE listingId = l.id ORDER BY sortOrder ASC LIMIT 1) as requestedListingImage,
+            -- Item count and total value
+            (SELECT COUNT(*) FROM tradeProposalItems WHERE proposalId = tp.id) + 1 as itemCount,
+            (SELECT COALESCE(SUM(ol.estimatedValue), 0) FROM listings ol JOIN tradeProposalItems tpi ON tpi.offeredListingId = ol.id WHERE tpi.proposalId = tp.id) + COALESCE(l.estimatedValue, 0) as totalValue
+          FROM tradeProposals tp
+          LEFT JOIN users req_u ON req_u.id = tp.requesterId
+          LEFT JOIN userProfiles req_up ON req_up.userId = tp.requesterId
+          LEFT JOIN users rec_u ON rec_u.id = tp.recipientId
+          LEFT JOIN userProfiles rec_up ON rec_up.userId = tp.recipientId
+          LEFT JOIN listings l ON l.id = tp.requestedListingId
+          WHERE tp.status = 'completed'
+            AND tp.completedAt IS NOT NULL
+            ${sql.raw(categoryFilter)}
+          ${sql.raw(orderClause)}
+          LIMIT ${limit} OFFSET ${offset}`
+        );
+
+        const trades = (rows as unknown as any[]) || [];
+
+        // For each trade, also fetch the offered items (up to 4 for display)
+        const enriched = await Promise.all(trades.map(async (trade: any) => {
+          const [offeredRows] = await db.execute(
+            sql`SELECT ol.id, ol.title, ol.category, ol.estimatedValue,
+              (SELECT imageUrl FROM listingPhotos WHERE listingId = ol.id ORDER BY sortOrder ASC LIMIT 1) as imageUrl
+            FROM listings ol
+            JOIN tradeProposalItems tpi ON tpi.offeredListingId = ol.id
+            WHERE tpi.proposalId = ${trade.id}
+            LIMIT 4`
+          );
+          return {
+            ...trade,
+            offeredItems: (offeredRows as unknown as any[]) || [],
+          };
+        }));
+
+        return { trades: enriched };
+      }),
   }),
   onlineStatus: router({
     updateActivity: protectedProcedure.mutation(async ({ ctx }) => {

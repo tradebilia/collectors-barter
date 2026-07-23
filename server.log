@@ -323,3 +323,27 @@ Server running on http://localhost:3000/
 2:24:23 PM [vite] (client) hmr update /src/pages/WarRoom.tsx, /src/index.css
 2:24:31 PM [vite] (client) hmr update /src/pages/WarRoom.tsx, /src/index.css
 2:25:13 PM [vite] (client) hmr update /src/pages/WarRoom.tsx, /src/index.css
+Killed
+[WARN] The "pnpm" field in package.json is no longer read by pnpm. The following keys were ignored: "pnpm.patchedDependencies", "pnpm.overrides". See https://pnpm.io/settings for the new home of each setting.
+
+> collectors-barter@1.0.0 dev /home/ubuntu/collectors-barter
+> NODE_ENV=development tsx watch server/_core/index.ts
+
+[OAuth] Initialized with baseURL: https://api.manus.im
+[dotenv@17.2.3] injecting env (25) from .env -- tip: ⚙️  load multiple .env files with { path: ['.env.local', '.env'] }
+[startup] Environment check: PASS (all required variables present)
+[startup] Database check: PASS (connection verified)
+[startup] Port check: PASS (bound to 3000)
+Server running on http://localhost:3000/
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+4:40:31 PM [tsx] change in ./server/routers.ts Restarting...
+[shutdown] Received SIGTERM, closing server...
+c[OAuth] Initialized with baseURL: https://api.manus.im
+[dotenv@17.2.3] injecting env (25) from .env -- tip: ✅ audit secrets and track compliance: https://dotenvx.com/ops
+[startup] Environment check: PASS (all required variables present)
+[startup] Database check: PASS (connection verified)
+[startup] Port check: PASS (bound to 3000)
+Server running on http://localhost:3000/
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+4:42:08 PM [vite] (client) hmr update /src/App.tsx, /src/index.css
+4:42:51 PM [vite] (client) hmr update /src/pages/Home.tsx, /src/index.css

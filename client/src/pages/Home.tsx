@@ -688,6 +688,9 @@ export default function Home() {
                     <button onClick={() => {
                       setLocation('/forum');
                     }} className="w-full px-3 py-2 rounded bg-white/10 hover:bg-white/20 transition text-white text-sm font-medium text-left flex items-center gap-2"><MessagesSquare className="w-4 h-4 flex-shrink-0" /> Collector's Forum</button>
+                    <button onClick={() => {
+                      setLocation('/trade-showcase');
+                    }} className="w-full px-3 py-2 rounded bg-white/10 hover:bg-white/20 transition text-white text-sm font-medium text-left flex items-center gap-2"><Handshake className="w-4 h-4 flex-shrink-0" /> Trade Showcase</button>
                     <div className="pt-4 border-t border-white/20 space-y-3">
                       {isAuthenticated && (
                         <div>
