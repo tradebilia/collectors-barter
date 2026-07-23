@@ -1505,7 +1505,8 @@ export default function WarRoom() {
                 )}
                 {messages.map((msg: any, idx: number) => {
                   const isMine = msg.senderId === myUserId;
-                  const time = msg.createdAt ? new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+                  // Append 'Z' to treat the stored UTC timestamp correctly across all browsers
+                  const time = msg.createdAt ? new Date(msg.createdAt.endsWith('Z') ? msg.createdAt : msg.createdAt + 'Z').toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
                   // Only show avatar on the last consecutive message from the same sender
                   const nextMsg = messages[idx + 1];
                   const isLastInGroup = !nextMsg || nextMsg.senderId !== msg.senderId;
