@@ -1631,76 +1631,89 @@ export const tradeFlowRouter = router({
       // Build a category-aware eBay search query for more accurate price results
       function buildEbayQuery(item: any): string {
         const details = item.itemDetails ? (() => { try { return JSON.parse(item.itemDetails); } catch { return {}; } })() : {};
-        const grade = parseFloat(item.grade || '0') > 0 ? item.grade : null;
-        const cert = details.certificationCompany || details.customGradingCompany || null;
-        const gradeStr = grade && cert ? `${cert} ${grade}` : grade ? `Grade ${grade}` : null;
+        const rawGrade = parseFloat(item.grade || '0') > 0 ? item.grade : null;
+        // Format grade: remove trailing zeros (9.80 -> 9.8, 10.00 -> 10)
+        const grade = rawGrade ? String(parseFloat(rawGrade)) : null;
+        // Clean cert name: strip " Comics", " Cards", etc. for cleaner eBay searches
+        const rawCert = details.certificationCompany || details.customGradingCompany || null;
+        const cert = rawCert ? rawCert.replace(/\s*(Comics|Cards|Grading)$/i, '').trim() : null;
 
         switch (item.category) {
           case 'sports_cards': {
+            // Format: "[Year] [Manufacturer] [Player] [Rookie] [Cert] [Grade]"
             const parts = [];
-            if (gradeStr) parts.push(gradeStr);
-            if (details.manufacturer) parts.push(details.manufacturer);
             if (details.year || details.releaseYear) parts.push(details.year || details.releaseYear);
+            if (details.manufacturer) parts.push(details.manufacturer);
             if (details.player) parts.push(details.player);
             if (details.rookieCard === 'yes') parts.push('Rookie');
+            if (cert && grade) parts.push(`${cert} ${grade}`);
+            else if (grade) parts.push(`Grade ${grade}`);
             return parts.length > 1 ? parts.join(' ') : item.title;
           }
           case 'pokemon': {
+            // Format: "[CardName] [SetName] [Cert] [Grade]"
             const parts = [];
-            if (gradeStr) parts.push(gradeStr);
             if (details.cardName || details.player) parts.push(details.cardName || details.player);
             if (details.setName) parts.push(details.setName);
+            if (cert && grade) parts.push(`${cert} ${grade}`);
             return parts.length > 1 ? parts.join(' ') : item.title;
           }
           case 'comics': {
+            // Format: "[Title] [Issue] [Cert] [Grade]" e.g. "Daredevil 168 CGC 9.8"
             const parts = [];
-            if (gradeStr) parts.push(gradeStr);
             if (details.comicTitle) parts.push(details.comicTitle);
-            if (details.issueNumber) parts.push(`#${details.issueNumber}`);
-            if (details.publisher) parts.push(details.publisher);
+            if (details.issueNumber) parts.push(details.issueNumber); // no # prefix for eBay
+            if (cert && grade) parts.push(`${cert} ${grade}`);
+            else if (grade) parts.push(`Grade ${grade}`);
             return parts.length > 1 ? parts.join(' ') : item.title;
           }
           case 'video_games': {
+            // Format: "[GameTitle] [Platform] [Cert] [Grade] [Sealed]"
             const parts = [];
-            if (gradeStr) parts.push(gradeStr);
             if (details.gameTitle) parts.push(details.gameTitle);
             if (details.platform) parts.push(details.platform);
+            if (cert && grade) parts.push(`${cert} ${grade}`);
             if (details.sealed === 'yes') parts.push('Sealed');
             return parts.length > 1 ? parts.join(' ') : item.title;
           }
           case 'movies': {
+            // Format: "[Title] [Format] [Cert] [Grade] [Sealed]"
             const parts = [];
-            if (gradeStr) parts.push(gradeStr);
             if (details.title) parts.push(details.title);
             if (details.format) parts.push(details.format);
+            if (cert && grade) parts.push(`${cert} ${grade}`);
             if (details.sealed === 'yes') parts.push('Sealed');
             return parts.length > 1 ? parts.join(' ') : item.title;
           }
           case 'vintage_toys': {
+            // Format: "[Brand] [ToyName] [Year] [Cert] [Grade]"
             const parts = [];
-            if (gradeStr) parts.push(gradeStr);
             if (details.brand) parts.push(details.brand);
             if (details.toyName) parts.push(details.toyName);
             if (details.year) parts.push(details.year);
+            if (cert && grade) parts.push(`${cert} ${grade}`);
             return parts.length > 1 ? parts.join(' ') : item.title;
           }
           case 'coins': {
+            // Format: "[Year] [Country] [Denomination] [Cert] [Grade]"
             const parts = [];
-            if (gradeStr) parts.push(gradeStr);
             if (details.year) parts.push(details.year);
             if (details.country) parts.push(details.country);
             if (details.denomination) parts.push(details.denomination);
+            if (cert && grade) parts.push(`${cert} ${grade}`);
             return parts.length > 1 ? parts.join(' ') : item.title;
           }
           case 'stamps': {
+            // Format: "[Year] [Country] [Denomination] [Cert] [Grade]"
             const parts = [];
-            if (gradeStr) parts.push(gradeStr);
             if (details.year) parts.push(details.year);
             if (details.country) parts.push(details.country);
             if (details.denomination) parts.push(details.denomination);
+            if (cert && grade) parts.push(`${cert} ${grade}`);
             return parts.length > 1 ? parts.join(' ') : item.title;
           }
           case 'autographs': {
+            // Format: "[SignedBy] autograph [AuthCompany]"
             const parts = [];
             if (details.signedBy) parts.push(details.signedBy);
             parts.push('autograph');
@@ -1708,7 +1721,7 @@ export const tradeFlowRouter = router({
             return parts.length > 1 ? parts.join(' ') : item.title;
           }
           default:
-            return gradeStr ? `${gradeStr} ${item.title}` : item.title;
+            return cert && grade ? `${item.title} ${cert} ${grade}` : item.title;
         }
       }
 
