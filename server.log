@@ -384,3 +384,13 @@ Server running on http://localhost:3000/
 [startup] Port check: PASS (bound to 3000)
 Server running on http://localhost:3000/
 [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+[AI Analyzer] JSON parse failed. Raw content: 
+11:05:57 PM [tsx] change in ./server/_core/llm.ts Restarting...
+[shutdown] Received SIGTERM, closing server...
+c[OAuth] Initialized with baseURL: https://api.manus.im
+[dotenv@17.2.3] injecting env (25) from .env -- tip: ⚙️  specify custom .env file path with { path: '/custom/path/.env' }
+[startup] Environment check: PASS (all required variables present)
+[startup] Database check: PASS (connection verified)
+[startup] Port check: PASS (bound to 3000)
+Server running on http://localhost:3000/
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`

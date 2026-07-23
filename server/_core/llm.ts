@@ -280,7 +280,7 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
   } = params;
 
   const payload: Record<string, unknown> = {
-    model: "gemini-2.5-flash",
+    model: "gpt-5-mini",
     messages: messages.map(normalizeMessage),
   };
 
@@ -296,10 +296,9 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
     payload.tool_choice = normalizedToolChoice;
   }
 
-  payload.max_tokens = 32768
-  payload.thinking = {
-    "budget_tokens": 128
-  }
+  // Use max_completion_tokens for GPT models to leave reasoning unconstrained
+  const resolvedMaxTokens = params.maxTokens || params.max_tokens || 4096;
+  payload.max_completion_tokens = resolvedMaxTokens;
 
   const normalizedResponseFormat = normalizeResponseFormat({
     responseFormat,
