@@ -37,6 +37,26 @@ async function getUserDisplayName(db: any, userId: number): Promise<string> {
 }
 
 // ============================================================================
+// HELPER: Create a trade alert — enforces one unread alert per trade per recipient
+// ============================================================================
+async function createTradeAlert(db: any, proposalId: number, recipientUserId: number, alertType: string, message: string, now: string): Promise<void> {
+  // Only insert if no unread alert already exists for this trade for this recipient
+  const [existing] = await db.execute(
+    sql`SELECT COUNT(*) as cnt FROM tradeAlerts
+        WHERE proposalId = ${proposalId}
+          AND recipientUserId = ${recipientUserId}
+          AND isRead = 0`
+  );
+  const count = Number((existing as any)?.[0]?.cnt || 0);
+  if (count === 0) {
+    await db.execute(
+      sql`INSERT INTO tradeAlerts (proposalId, recipientUserId, alertType, message, isRead, createdAt)
+          VALUES (${proposalId}, ${recipientUserId}, ${alertType}, ${message}, 0, ${now})`
+    );
+  }
+}
+
+// ============================================================================
 // INPUT SCHEMAS
 // ============================================================================
 
@@ -216,10 +236,8 @@ export const tradeFlowRouter = router({
         sql`UPDATE tradeProposals SET tradeReferenceNumber = ${tradeRef}, initiatorMessage = ${input.message || null}, lastActivityAt = ${now} WHERE id = ${proposalId}`
       );
 
-      // 8. Create trade alert for recipient
-      await db.execute(
-        sql`INSERT INTO tradeAlerts (proposalId, recipientUserId, alertType, message, isRead, createdAt) VALUES (${proposalId}, ${listing.ownerId}, 'initiated', ${`${ctx.user.name || initiator?.username || 'A user'} sent you a trade proposal for: ${listing.title} (TR-${tradeRef})`}, 0, ${now})`
-      );
+      // 8. Create trade alert for recipient (one per trade while unread)
+      await createTradeAlert(db, proposalId, listing.ownerId, 'initiated', `${ctx.user.name || initiator?.username || 'A user'} sent you a trade proposal for: ${listing.title} (TR-${tradeRef})`, now);
 
       // 7. Log to admin log
       await db.execute(
@@ -255,9 +273,7 @@ export const tradeFlowRouter = router({
 
       // Alert the other party
       const otherUserId = proposal.requesterId === userId ? proposal.recipientId : proposal.requesterId;
-      await db.execute(
-        sql`INSERT INTO tradeAlerts (proposalId, recipientUserId, alertType, message, isRead, createdAt) VALUES (${input.proposalId}, ${otherUserId}, 'declined', ${`Your trade (TR-${proposal.tradeReferenceNumber}) has been declined.`}, 0, ${now})`
-      );
+      await createTradeAlert(db, input.proposalId, otherUserId, 'declined', `Your trade (TR-${proposal.tradeReferenceNumber}) has been declined.`, now);
 
       // Log to activity log
       const [decliner] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
@@ -290,9 +306,7 @@ export const tradeFlowRouter = router({
       );
 
       const otherUserId = proposal.requesterId === userId ? proposal.recipientId : proposal.requesterId;
-      await db.execute(
-        sql`INSERT INTO tradeAlerts (proposalId, recipientUserId, alertType, message, isRead, createdAt) VALUES (${input.proposalId}, ${otherUserId}, 'cancelled', ${`Your trade (TR-${proposal.tradeReferenceNumber}) has been cancelled.`}, 0, ${now})`
-      );
+      await createTradeAlert(db, input.proposalId, otherUserId, 'cancelled', `Your trade (TR-${proposal.tradeReferenceNumber}) has been cancelled.`, now);
 
       // Log to activity log
       const [canceller] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
@@ -398,9 +412,7 @@ export const tradeFlowRouter = router({
 
       // Alert other party
       const otherUserId = proposal.requesterId === userId ? proposal.recipientId : proposal.requesterId;
-      await db.execute(
-        sql`INSERT INTO tradeAlerts (proposalId, recipientUserId, alertType, message, isRead, createdAt) VALUES (${input.proposalId}, ${otherUserId}, 'counterProposal', ${`A new counter proposal has been submitted for your trade (TR-${proposal.tradeReferenceNumber}).`}, 0, ${now})`
-      );
+      await createTradeAlert(db, input.proposalId, otherUserId, 'counterProposal', `A new counter proposal has been submitted for your trade (TR-${proposal.tradeReferenceNumber}).`, now);
 
       // Log to activity log — fetch actor name and item titles
       const [actor] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
@@ -472,9 +484,7 @@ export const tradeFlowRouter = router({
         await db.execute(
           sql`UPDATE listings SET status = 'traded' WHERE id = ${proposal.requestedListingId}`
         );
-        await db.execute(
-          sql`INSERT INTO tradeAlerts (proposalId, recipientUserId, alertType, message, isRead, createdAt) VALUES (${input.proposalId}, ${otherUserId}, 'accepted', ${`Both parties have accepted trade (TR-${proposal.tradeReferenceNumber})! Please enter your tracking number.`}, 0, ${now})`
-        );
+          await createTradeAlert(db, input.proposalId, otherUserId, 'accepted', `Both parties have accepted trade (TR-${proposal.tradeReferenceNumber})! Please enter your tracking number.`, now);
         await db.execute(
           sql`INSERT INTO tradeAdminLog (proposalId, eventType, actorUserId, details, createdAt) VALUES (${input.proposalId}, 'accepted', ${userId}, 'Mutual acceptance — trade locked, entering shipping stage', ${now})`
         );
@@ -506,9 +516,7 @@ export const tradeFlowRouter = router({
         await db.execute(
           sql`UPDATE tradeProposals SET lastActivityAt = ${now}, updatedAt = ${now} WHERE id = ${input.proposalId}`
         );
-        await db.execute(
-          sql`INSERT INTO tradeAlerts (proposalId, recipientUserId, alertType, message, isRead, createdAt) VALUES (${input.proposalId}, ${otherUserId}, 'accepted', ${`Your trade partner has accepted trade (TR-${proposal.tradeReferenceNumber})! You have 72 hours to confirm.`}, 0, ${now})`
-        );
+          await createTradeAlert(db, input.proposalId, otherUserId, 'accepted', `Your trade partner has accepted trade (TR-${proposal.tradeReferenceNumber})! You have 72 hours to confirm.`, now);
         await db.execute(
           sql`INSERT INTO tradeAdminLog (proposalId, eventType, actorUserId, details, createdAt) VALUES (${input.proposalId}, 'accepted', ${userId}, 'First acceptance — awaiting mutual confirmation', ${now})`
         );
@@ -605,9 +613,7 @@ export const tradeFlowRouter = router({
       const [actor] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
       const actorName = await getUserDisplayName(db, userId);
       const trackingAlertMsg = `${actorName} has submitted their tracking number`;
-      await db.execute(
-        sql`INSERT INTO tradeAlerts (proposalId, recipientUserId, alertType, message, isRead, createdAt) VALUES (${input.proposalId}, ${otherUserId}, 'shipped', ${`${actorName} has submitted tracking information for trade (TR-${proposal.tradeReferenceNumber}).`}, 0, ${now})`
-      );
+      await createTradeAlert(db, input.proposalId, otherUserId, 'shipped', `${actorName} has submitted tracking information for trade (TR-${proposal.tradeReferenceNumber}).`, now);
       await db.execute(
         sql`INSERT INTO tradeActivityLog (proposalId, actorId, actorName, eventType, details, createdAt) VALUES (${input.proposalId}, ${userId}, ${actorName}, 'tracking_submitted', 'Tracking number submitted', ${now})`
       );
@@ -648,9 +654,7 @@ export const tradeFlowRouter = router({
       }
 
       const otherUserId = proposal.requesterId === userId ? proposal.recipientId : proposal.requesterId;
-      await db.execute(
-        sql`INSERT INTO tradeAlerts (proposalId, recipientUserId, alertType, message, isRead, createdAt) VALUES (${input.proposalId}, ${otherUserId}, 'received', ${`Your trade partner has confirmed receipt for trade (TR-${proposal.tradeReferenceNumber}).`}, 0, ${now})`
-      );
+      await createTradeAlert(db, input.proposalId, otherUserId, 'received', `Your trade partner has confirmed receipt for trade (TR-${proposal.tradeReferenceNumber}).`, now);
 
       return { success: true };
     }),
@@ -1100,9 +1104,7 @@ export const tradeFlowRouter = router({
         await db.execute(
           sql`UPDATE tradeProposals SET status = 'shipping', shippingAt = ${now}, lastActivityAt = ${now}, updatedAt = ${now} WHERE id = ${input.proposalId}`
         );
-        await db.execute(
-          sql`INSERT INTO tradeAlerts (proposalId, recipientUserId, alertType, message, isRead, createdAt) VALUES (${input.proposalId}, ${otherUserId}, 'accepted', ${`Both parties confirmed review for trade (TR-${proposal.tradeReferenceNumber})! Please enter your tracking number.`}, 0, ${now})`
-        );
+          await createTradeAlert(db, input.proposalId, otherUserId, 'accepted', `Both parties confirmed review for trade (TR-${proposal.tradeReferenceNumber})! Please enter your tracking number.`, now);
         await db.execute(
           sql`INSERT INTO tradeActivityLog (proposalId, actorId, actorName, eventType, details, createdAt) VALUES (${input.proposalId}, ${userId}, ${actorName}, 'proposal_accepted', 'Confirmed review. Both parties confirmed, proceeding to Shipping stage.', ${now})`
         );
@@ -1121,9 +1123,7 @@ export const tradeFlowRouter = router({
         await db.execute(
           sql`UPDATE tradeProposals SET lastActivityAt = ${now}, updatedAt = ${now} WHERE id = ${input.proposalId}`
         );
-        await db.execute(
-          sql`INSERT INTO tradeAlerts (proposalId, recipientUserId, alertType, message, isRead, createdAt) VALUES (${input.proposalId}, ${otherUserId}, 'accepted', ${`Your trade partner confirmed the review for trade (TR-${proposal.tradeReferenceNumber}) and is ready to ship. Please confirm to proceed.`}, 0, ${now})`
-        );
+          await createTradeAlert(db, input.proposalId, otherUserId, 'accepted', `Your trade partner confirmed the review for trade (TR-${proposal.tradeReferenceNumber}) and is ready to ship. Please confirm to proceed.`, now);
         await db.execute(
           sql`INSERT INTO tradeActivityLog (proposalId, actorId, actorName, eventType, details, createdAt) VALUES (${input.proposalId}, ${userId}, ${actorName}, 'proposal_accepted', 'Confirmed review — awaiting partner confirmation to proceed to Shipping.', ${now})`
         );
@@ -1161,22 +1161,9 @@ export const tradeFlowRouter = router({
         sql`UPDATE tradeProposals SET lastActivityAt = ${now}, updatedAt = ${now} WHERE id = ${input.proposalId}`
       );
 
-      // Alert other party — only if no unread alert already exists for this trade in the last 60 seconds
-      // (prevents double alerts when a counter offer + message are sent together)
+      // Alert other party — one alert per trade while unread
       const otherUserId = proposal.requesterId === userId ? proposal.recipientId : proposal.requesterId;
-      const [recentAlerts] = await db.execute(
-        sql`SELECT COUNT(*) as cnt FROM tradeAlerts
-            WHERE proposalId = ${input.proposalId}
-              AND recipientUserId = ${otherUserId}
-              AND isRead = 0
-              AND createdAt >= DATE_SUB(NOW(), INTERVAL 60 SECOND)`
-      );
-      const recentCount = Number((recentAlerts as any)?.[0]?.cnt || 0);
-      if (recentCount === 0) {
-        await db.execute(
-          sql`INSERT INTO tradeAlerts (proposalId, recipientUserId, alertType, message, isRead, createdAt) VALUES (${input.proposalId}, ${otherUserId}, 'initiated', 'New message in trade', 0, ${now})`
-        );
-      }
+      await createTradeAlert(db, input.proposalId, otherUserId, 'initiated', 'New message in trade', now);
 
       return { success: true };
     }),
