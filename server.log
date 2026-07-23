@@ -233,3 +233,38 @@ Server running on http://localhost:3000/
 1:03:00 AM [vite] (client) hmr update /src/pages/TradeHub.tsx, /src/index.css
 1:07:42 AM [vite] (client) hmr update /src/index.css, /src/components/TopBar.tsx
 1:08:58 AM [vite] (client) hmr update /src/index.css, /src/components/OnlineIndicator.tsx
+1:16:01 AM [tsx] change in ./server/tradeFlowRouter.ts Restarting...
+[shutdown] Received SIGTERM, closing server...
+c[OAuth] Initialized with baseURL: https://api.manus.im
+[dotenv@17.2.3] injecting env (23) from .env -- tip: 🔑 add access controls to secrets: https://dotenvx.com/ops
+[startup] Environment check: PASS (all required variables present)
+[startup] Database check: PASS (connection verified)
+[startup] Port check: PASS (bound to 3000)
+Server running on http://localhost:3000/
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+1:16:34 AM [tsx] change in ./server/tradeFlowRouter.ts Restarting...
+[shutdown] Received SIGTERM, closing server...
+c[OAuth] Initialized with baseURL: https://api.manus.im
+[dotenv@17.2.3] injecting env (23) from .env -- tip: 👥 sync secrets across teammates & machines: https://dotenvx.com/ops
+[startup] Environment check: PASS (all required variables present)
+[startup] Database check: PASS (connection verified)
+[startup] Port check: PASS (bound to 3000)
+Server running on http://localhost:3000/
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+[uploadImage] Starting upload: name=profile-avatar, size=394641 bytes, type=image/jpeg
+[uploadImage] File key: avatars/2/1784769423178-dtbtkv-profile-avatar
+[uploadImage] Original name: profile-avatar, Sanitized name: profile-avatar
+[storagePut] Upload successful, URL: /manus-storage/avatars/2/1784769423178-dtbtkv-profile-avatar_87d72c6f
+[uploadImage] Upload successful, URL: /manus-storage/avatars/2/1784769423178-dtbtkv-profile-avatar_87d72c6f
+[updateProfile] Updating database...
+[updateProfile] Database updated, calling getDashboardData...
+[updateProfile] getDashboardData completed, returning result
+1:17:44 AM [tsx] change in ./server/tradeFlowRouter.ts Restarting...
+[shutdown] Received SIGTERM, closing server...
+c[OAuth] Initialized with baseURL: https://api.manus.im
+[dotenv@17.2.3] injecting env (23) from .env -- tip: ⚙️  load multiple .env files with { path: ['.env.local', '.env'] }
+[startup] Environment check: PASS (all required variables present)
+[startup] Database check: PASS (connection verified)
+[startup] Port check: PASS (bound to 3000)
+Server running on http://localhost:3000/
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`

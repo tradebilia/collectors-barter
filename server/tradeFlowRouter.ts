@@ -24,6 +24,19 @@ import {
 import { eq, sql, desc, or, and, inArray, asc } from "drizzle-orm";
 
 // ============================================================================
+// HELPER: Get user's display name (from userProfiles, falls back to username)
+// ============================================================================
+async function getUserDisplayName(db: any, userId: number): Promise<string> {
+  const [rows] = await db.execute(
+    sql`SELECT u.username, COALESCE(up.displayName, u.username) as displayName
+        FROM users u LEFT JOIN userProfiles up ON up.userId = u.id
+        WHERE u.id = ${userId} LIMIT 1`
+  );
+  const row = (rows as any)?.[0];
+  return row?.displayName || row?.username || 'Unknown';
+}
+
+// ============================================================================
 // INPUT SCHEMAS
 // ============================================================================
 
@@ -391,7 +404,7 @@ export const tradeFlowRouter = router({
 
       // Log to activity log — fetch actor name and item titles
       const [actor] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
-      const actorName = (actor as any)?.displayName || (actor as any)?.username || 'Unknown';
+      const actorName = await getUserDisplayName(db, userId);
 
       // Log each item added
       if (input.offeredListingIds.length > 0) {
@@ -590,7 +603,7 @@ export const tradeFlowRouter = router({
 
       const otherUserId = proposal.requesterId === userId ? proposal.recipientId : proposal.requesterId;
       const [actor] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
-      const actorName = (actor as any)?.displayName || (actor as any)?.username || 'Unknown';
+      const actorName = await getUserDisplayName(db, userId);
       const trackingAlertMsg = `${actorName} has submitted their tracking number`;
       await db.execute(
         sql`INSERT INTO tradeAlerts (proposalId, recipientUserId, alertType, message, isRead, createdAt) VALUES (${input.proposalId}, ${otherUserId}, 'shipped', ${`${actorName} has submitted tracking information for trade (TR-${proposal.tradeReferenceNumber}).`}, 0, ${now})`
@@ -1080,7 +1093,7 @@ export const tradeFlowRouter = router({
       const otherHasConfirmed = ((existingConfirmation as unknown as any[])?.length || 0) > 0;
 
       const [actor] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
-      const actorName = (actor as any)?.displayName || (actor as any)?.username || 'Unknown';
+      const actorName = await getUserDisplayName(db, userId);
 
       if (otherHasConfirmed) {
         // Both have now confirmed — move to 'shipping' status
@@ -1389,7 +1402,7 @@ export const tradeFlowRouter = router({
         );
         // Notify the other trader
         const otherUserId2 = resolvedTrade.requesterId === userId ? resolvedTrade.recipientId : resolvedTrade.requesterId;
-        const [callerRows2] = await db.execute(sql`SELECT displayName, username FROM users WHERE id = ${userId} LIMIT 1`);
+        const [callerRows2] = await db.execute(sql`SELECT u.username, COALESCE(up.displayName, u.username) as displayName FROM users u LEFT JOIN userProfiles up ON up.userId = u.id WHERE u.id = ${userId} LIMIT 1`);
         const caller2 = (callerRows2 as any)?.[0];
         const callerName2 = caller2?.displayName || caller2?.username || 'Your trade partner';
         await db.execute(
@@ -1434,7 +1447,7 @@ export const tradeFlowRouter = router({
       );
 
       // Notify the other trader via War Room chat only (no trade hub alert)
-      const [callerRows] = await db.execute(sql`SELECT displayName, username FROM users WHERE id = ${userId} LIMIT 1`);
+      const [callerRows] = await db.execute(sql`SELECT u.username, COALESCE(up.displayName, u.username) as displayName FROM users u LEFT JOIN userProfiles up ON up.userId = u.id WHERE u.id = ${userId} LIMIT 1`);
       const caller = (callerRows as any)?.[0];
       const callerName = caller?.displayName || caller?.username || 'Your trade partner';
       const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
@@ -1461,7 +1474,7 @@ export const tradeFlowRouter = router({
       );
       if (!(rows as any)?.[0]) throw new TRPCError({ code: 'NOT_FOUND', message: 'Trade not found or access denied' });
 
-      const [joinerRows] = await db.execute(sql`SELECT displayName, username FROM users WHERE id = ${userId} LIMIT 1`);
+      const [joinerRows] = await db.execute(sql`SELECT u.username, COALESCE(up.displayName, u.username) as displayName FROM users u LEFT JOIN userProfiles up ON up.userId = u.id WHERE u.id = ${userId} LIMIT 1`);
       const joiner = (joinerRows as any)?.[0];
       const joinerName = joiner?.displayName || joiner?.username || 'Your trade partner';
       const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
@@ -1495,7 +1508,7 @@ export const tradeFlowRouter = router({
       );
 
       // Post a system message that the call was ended
-      const [enderRows] = await db.execute(sql`SELECT displayName, username FROM users WHERE id = ${userId} LIMIT 1`);
+      const [enderRows] = await db.execute(sql`SELECT u.username, COALESCE(up.displayName, u.username) as displayName FROM users u LEFT JOIN userProfiles up ON up.userId = u.id WHERE u.id = ${userId} LIMIT 1`);
       const ender = (enderRows as any)?.[0];
       const enderName = ender?.displayName || ender?.username || 'A participant';
       const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
@@ -1528,7 +1541,7 @@ export const tradeFlowRouter = router({
       if (!callerId || callerId === userId) return { success: true }; // nothing to notify
 
       // Get dismisser's name
-      const [dismisserRows] = await db.execute(sql`SELECT displayName, username FROM users WHERE id = ${userId} LIMIT 1`);
+      const [dismisserRows] = await db.execute(sql`SELECT u.username, COALESCE(up.displayName, u.username) as displayName FROM users u LEFT JOIN userProfiles up ON up.userId = u.id WHERE u.id = ${userId} LIMIT 1`);
       const dismisser = (dismisserRows as any)?.[0];
       const dismisserName = dismisser?.displayName || dismisser?.username || 'Your trade partner';
       const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
