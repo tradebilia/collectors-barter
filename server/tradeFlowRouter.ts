@@ -1790,7 +1790,14 @@ Provide your analysis in the following JSON format:
       const content = llmResult.choices[0]?.message?.content;
       if (!content) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'AI analysis failed' });
 
-      const analysis = JSON.parse(typeof content === 'string' ? content : JSON.stringify(content));
+      // Strip markdown code fences if the LLM wrapped the JSON in ```json ... ```
+      const rawContent = typeof content === 'string' ? content : JSON.stringify(content);
+      const cleanContent = rawContent
+        .replace(/^```(?:json)?\s*/i, '')
+        .replace(/\s*```$/i, '')
+        .trim();
+
+      const analysis = JSON.parse(cleanContent);
       return analysis;
     }),
 });
