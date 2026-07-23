@@ -122,6 +122,8 @@ export default function WarRoom() {
   const [videoRoomLoading, setVideoRoomLoading] = useState(false);
   const [videoBannerDismissed, setVideoBannerDismissed] = useState(false);
   const [videoStatusMessage, setVideoStatusMessage] = useState<string | null>(null);
+  const [aiAnalysis, setAiAnalysis] = useState<any | null>(null);
+  const [aiAnalysisLoading, setAiAnalysisLoading] = useState(false);
   const [contractCheckbox, setContractCheckbox] = useState(false);
   const [inventorySearch, setInventorySearch] = useState('');
   const [selectedItemIds, setSelectedItemIds] = useState<number[]>([]);
@@ -250,6 +252,7 @@ export default function WarRoom() {
   });
 
   const getOrCreateVideoRoomMutation = trpc.tradeFlow.getOrCreateVideoRoom.useMutation();
+  const analyzeTradeWithAIMutation = trpc.tradeFlow.analyzeTradeWithAI.useMutation();
   const dismissVideoCallMutation = trpc.tradeFlow.dismissVideoCall.useMutation();
   const endVideoCallMutation = trpc.tradeFlow.endVideoCall.useMutation();
   const joinVideoCallMutation = trpc.tradeFlow.joinVideoCall.useMutation();
@@ -1336,20 +1339,94 @@ export default function WarRoom() {
                   </div>
 
                   {/* AI Analyzer */}
-                  <div className="bg-[#0f0f1a] border border-gray-600 rounded-xl p-5 text-center flex-1 flex flex-col justify-center items-center">
-                    <div className="w-12 h-12 rounded-full bg-blue-900/30 border border-blue-500/20 flex items-center justify-center mb-3">
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 text-blue-400">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z" />
-                      </svg>
-                    </div>
-                    <p className="text-white text-xs font-bold uppercase tracking-widest mb-1">AI ANALYZER</p>
-                    <p className="text-gray-500 text-[10px] mb-4 px-2">Get AI insights, market data, and negotiation tips.</p>
-                    <button className="w-full py-2.5 bg-blue-600/20 text-blue-400 border border-blue-500/30 rounded-lg text-xs font-bold hover:bg-blue-600 hover:text-white transition flex items-center justify-center gap-2">
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" />
-                      </svg>
-                      Analyze Trade
-                    </button>
+                  <div className="bg-[#0f0f1a] border border-gray-600 rounded-xl p-4 flex-1 flex flex-col overflow-y-auto">
+                    {!aiAnalysis && !aiAnalysisLoading && (
+                      <div className="flex flex-col items-center justify-center h-full text-center">
+                        <div className="w-12 h-12 rounded-full bg-blue-900/30 border border-blue-500/20 flex items-center justify-center mb-3">
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 text-blue-400">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" />
+                          </svg>
+                        </div>
+                        <p className="text-white text-xs font-bold uppercase tracking-widest mb-1">AI ANALYZER</p>
+                        <p className="text-gray-500 text-[10px] mb-4 px-2">Get AI insights, real eBay market data, and negotiation tips.</p>
+                        <button
+                          onClick={async () => {
+                            setAiAnalysisLoading(true);
+                            setAiAnalysis(null);
+                            try {
+                              const result = await analyzeTradeWithAIMutation.mutateAsync({ proposalId });
+                              setAiAnalysis(result);
+                            } catch (err: any) {
+                              toast.error(err.message || 'AI analysis failed');
+                            } finally {
+                              setAiAnalysisLoading(false);
+                            }
+                          }}
+                          className="w-full py-2.5 bg-blue-600/20 text-blue-400 border border-blue-500/30 rounded-lg text-xs font-bold hover:bg-blue-600 hover:text-white transition flex items-center justify-center gap-2"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" />
+                          </svg>
+                          Analyze Trade
+                        </button>
+                      </div>
+                    )}
+
+                    {aiAnalysisLoading && (
+                      <div className="flex flex-col items-center justify-center h-full gap-3">
+                        <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                        <p className="text-gray-400 text-xs text-center">Fetching eBay market data<br/>and analyzing trade...</p>
+                      </div>
+                    )}
+
+                    {aiAnalysis && !aiAnalysisLoading && (
+                      <div className="space-y-3 text-xs">
+                        {/* Header */}
+                        <div className="flex items-center justify-between">
+                          <p className="text-white text-[10px] font-bold uppercase tracking-widest">AI ANALYSIS</p>
+                          <button
+                            onClick={() => setAiAnalysis(null)}
+                            className="text-gray-600 hover:text-gray-400 text-[10px]"
+                          >Re-analyze</button>
+                        </div>
+
+                        {/* Verdict badge */}
+                        <div className={`rounded-lg px-3 py-2 text-center font-bold text-sm ${
+                          aiAnalysis.fairnessScore >= 6 ? 'bg-green-900/40 text-green-300 border border-green-700/40' :
+                          aiAnalysis.fairnessScore <= 4 ? 'bg-red-900/40 text-red-300 border border-red-700/40' :
+                          'bg-blue-900/40 text-blue-300 border border-blue-700/40'
+                        }`}>
+                          {aiAnalysis.verdict}
+                          <span className="ml-2 text-[10px] font-normal opacity-70">({aiAnalysis.fairnessScore}/10)</span>
+                        </div>
+
+                        {/* Summary */}
+                        <p className="text-gray-300 leading-relaxed">{aiAnalysis.summary}</p>
+
+                        {/* My items insight */}
+                        <div className="bg-blue-900/20 rounded-lg p-2.5 border border-blue-800/30">
+                          <p className="text-blue-400 text-[10px] font-bold uppercase mb-1">Your Items</p>
+                          <p className="text-gray-300 leading-relaxed">{aiAnalysis.myItemInsights}</p>
+                        </div>
+
+                        {/* Their items insight */}
+                        <div className="bg-gray-800/40 rounded-lg p-2.5 border border-gray-700/30">
+                          <p className="text-gray-400 text-[10px] font-bold uppercase mb-1">Their Items</p>
+                          <p className="text-gray-300 leading-relaxed">{aiAnalysis.theirItemInsights}</p>
+                        </div>
+
+                        {/* Negotiation tip */}
+                        <div className="bg-yellow-900/20 rounded-lg p-2.5 border border-yellow-700/30">
+                          <p className="text-yellow-400 text-[10px] font-bold uppercase mb-1">💡 Tip</p>
+                          <p className="text-gray-300 leading-relaxed">{aiAnalysis.negotiationTip}</p>
+                        </div>
+
+                        {/* eBay data indicator */}
+                        <p className="text-gray-600 text-[9px] text-center">
+                          {aiAnalysis.ebayDataUsed ? '📊 Powered by live eBay market data' : '📊 Based on estimated values (eBay data unavailable)'}
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
 

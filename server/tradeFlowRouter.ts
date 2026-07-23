@@ -22,6 +22,7 @@ import {
 } from "../drizzle/schema";
 
 import { eq, sql, desc, or, and, inArray, asc } from "drizzle-orm";
+import { invokeLLM } from "./_core/llm";
 
 // ============================================================================
 // HELPER: Get user's display name (from userProfiles, falls back to username)
@@ -1556,5 +1557,156 @@ export const tradeFlowRouter = router({
       );
 
       return { success: true };
+    }),
+
+  analyzeTradeWithAI: protectedProcedure
+    .input(z.object({ proposalId: z.number().int().positive() }))
+    .mutation(async ({ ctx, input }) => {
+      const db = await requireDb();
+      const userId = ctx.user.id;
+
+      // Verify user is a participant
+      const [proposal] = await db.select().from(tradeProposals).where(eq(tradeProposals.id, input.proposalId)).limit(1);
+      if (!proposal) throw new TRPCError({ code: 'NOT_FOUND', message: 'Trade not found' });
+      if (proposal.requesterId !== userId && proposal.recipientId !== userId) {
+        throw new TRPCError({ code: 'FORBIDDEN', message: 'Not authorized' });
+      }
+
+      // Get all items on both sides
+      const isRequester = proposal.requesterId === userId;
+      const myUserId = userId;
+      const theirUserId = isRequester ? proposal.recipientId : proposal.requesterId;
+
+      // Get the requested listing (the item that was originally requested)
+      const [requestedListing] = await db.select().from(listings).where(eq(listings.id, proposal.requestedListingId)).limit(1);
+
+      // Get all offered items
+      const proposalItems = await db.select().from(tradeProposalItems).where(eq(tradeProposalItems.proposalId, input.proposalId));
+      const offeredIds = proposalItems.map(pi => pi.offeredListingId);
+      const offeredListings = offeredIds.length > 0
+        ? await db.select().from(listings).where(inArray(listings.id, offeredIds))
+        : [];
+
+      // Build item lists for each side
+      const myItems: any[] = [];
+      const theirItems: any[] = [];
+
+      // The requested listing belongs to the recipient (their side from requester's view)
+      if (requestedListing) {
+        const targetArray = isRequester ? theirItems : myItems;
+        targetArray.push(requestedListing);
+      }
+
+      for (const item of offeredListings) {
+        if (item.ownerId === myUserId) myItems.push(item);
+        else theirItems.push(item);
+      }
+
+      // Get cash amounts
+      const [cashRows] = await db.execute(
+        sql`SELECT cashFromRequester, cashFromRecipient FROM tradeProposals WHERE id = ${input.proposalId}`
+      );
+      const cashData = (cashRows as any)?.[0];
+      const myCash = isRequester ? Number(cashData?.cashFromRequester || 0) : Number(cashData?.cashFromRecipient || 0);
+      const theirCash = isRequester ? Number(cashData?.cashFromRecipient || 0) : Number(cashData?.cashFromRequester || 0);
+
+      // Fetch eBay market prices for each item
+      const ebayClientId = process.env.EBAY_PROD_CLIENT_ID;
+      const ebayClientSecret = process.env.EBAY_PROD_CLIENT_SECRET;
+      let ebayToken: string | null = null;
+
+      if (ebayClientId && ebayClientSecret) {
+        try {
+          const credentials = Buffer.from(`${ebayClientId}:${ebayClientSecret}`).toString('base64');
+          const tokenRes = await fetch('https://api.ebay.com/identity/v1/oauth2/token', {
+            method: 'POST',
+            headers: { 'Authorization': `Basic ${credentials}`, 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: 'grant_type=client_credentials&scope=https://api.ebay.com/oauth/api_scope',
+          });
+          const tokenData = await tokenRes.json() as any;
+          if (tokenRes.ok) ebayToken = tokenData.access_token;
+        } catch (_) {}
+      }
+
+      async function getEbayPrice(title: string, grade?: string | null): Promise<number | null> {
+        if (!ebayToken) return null;
+        try {
+          const query = grade ? `${grade} ${title}` : title;
+          const res = await fetch(
+            `https://api.ebay.com/buy/browse/v1/item_summary/search?q=${encodeURIComponent(query)}&limit=10&filter=buyingOptions%3A%7BFIXED_PRICE%7D`,
+            { headers: { 'Authorization': `Bearer ${ebayToken}`, 'X-EBAY-C-MARKETPLACE-ID': 'EBAY_US' } }
+          );
+          const data = await res.json() as any;
+          if (!data.itemSummaries?.length) return null;
+          const prices = data.itemSummaries
+            .map((i: any) => parseFloat(i.price?.value || '0'))
+            .filter((p: number) => p > 0);
+          if (!prices.length) return null;
+          return Math.round(prices.reduce((a: number, b: number) => a + b, 0) / prices.length);
+        } catch (_) { return null; }
+      }
+
+      // Build enriched item descriptions with eBay prices
+      async function enrichItems(items: any[]): Promise<string> {
+        const parts: string[] = [];
+        for (const item of items) {
+          const estimatedValue = parseFloat(item.estimatedValue || '0');
+          const ebayPrice = await getEbayPrice(item.title, item.grade);
+          let line = `- ${item.title}`;
+          if (item.category) line += ` (${item.category.replace(/_/g, ' ')})`;
+          if (item.grade) line += ` | Grade: ${item.grade}`;
+          if (item.condition) line += ` | Condition: ${item.condition}`;
+          line += ` | Estimated Value: $${estimatedValue.toLocaleString()}`;
+          if (ebayPrice) line += ` | eBay Market Price: ~$${ebayPrice.toLocaleString()}`;
+          parts.push(line);
+        }
+        if (myCash > 0 || theirCash > 0) {
+          // handled separately
+        }
+        return parts.join('\n') || 'No items added yet';
+      }
+
+      const mySide = await enrichItems(myItems);
+      const theirSide = await enrichItems(theirItems);
+
+      const myCashStr = myCash > 0 ? `\n- Cash sweetener: $${myCash.toLocaleString()}` : '';
+      const theirCashStr = theirCash > 0 ? `\n- Cash sweetener: $${theirCash.toLocaleString()}` : '';
+
+      // Call LLM for analysis
+      const prompt = `You are an expert collectibles trade analyst for Tradebilia, a platform where collectors trade items like sports cards, comics, coins, autographs, and memorabilia.
+
+Analyze this trade and provide a fair, balanced assessment.
+
+**MY SIDE (what I'm offering):**
+${mySide}${myCashStr}
+
+**THEIR SIDE (what I'm receiving):**
+${theirSide}${theirCashStr}
+
+Provide your analysis in the following JSON format:
+{
+  "fairnessScore": <number 1-10, where 5 is perfectly fair, 1 = heavily favors them, 10 = heavily favors me>,
+  "verdict": <"Strongly in Your Favor" | "In Your Favor" | "Roughly Fair" | "In Their Favor" | "Strongly in Their Favor">,
+  "summary": <2-3 sentence plain English summary of the trade fairness>,
+  "myItemInsights": <1-2 sentences about the items I'm offering — condition, market notes, any concerns>,
+  "theirItemInsights": <1-2 sentences about the items I'm receiving — condition, market notes, any concerns>,
+  "negotiationTip": <1 practical tip for the current user to improve their position or close the deal>,
+  "ebayDataUsed": <true if eBay market prices were available, false if only estimated values were used>
+}`;
+
+      const llmResult = await invokeLLM({
+        messages: [
+          { role: 'system', content: 'You are a collectibles trade analyst. Always respond with valid JSON only, no markdown.' },
+          { role: 'user', content: prompt },
+        ],
+        response_format: { type: 'json_object' },
+        maxTokens: 1000,
+      });
+
+      const content = llmResult.choices[0]?.message?.content;
+      if (!content) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'AI analysis failed' });
+
+      const analysis = JSON.parse(typeof content === 'string' ? content : JSON.stringify(content));
+      return analysis;
     }),
 });

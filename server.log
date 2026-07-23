@@ -318,3 +318,8 @@ Server running on http://localhost:3000/
 [startup] Port check: PASS (bound to 3000)
 Server running on http://localhost:3000/
 [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+2:18:16 PM [vite] .env changed, restarting server...
+2:18:16 PM [vite] server restarted.
+2:24:23 PM [vite] (client) hmr update /src/pages/WarRoom.tsx, /src/index.css
+2:24:31 PM [vite] (client) hmr update /src/pages/WarRoom.tsx, /src/index.css
+2:25:13 PM [vite] (client) hmr update /src/pages/WarRoom.tsx, /src/index.css
