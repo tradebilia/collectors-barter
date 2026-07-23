@@ -1759,7 +1759,13 @@ export const tradeFlowRouter = router({
       // Call LLM for analysis
       const prompt = `You are an expert collectibles trade analyst for Tradebilia, a platform where collectors trade items like sports cards, comics, coins, autographs, and memorabilia.
 
-Analyze this trade and provide a fair, balanced assessment.
+IMPORTANT RULES:
+1. Use ONLY the values provided below. Do NOT search the web or substitute your own price estimates.
+2. The "Estimated Value" field is the user-entered value. The "eBay Market Price" field (if present) is from the eBay Browse API. Trust these numbers.
+3. Do NOT include any URLs, citations, links, or references to external websites in your response.
+4. Fairness score: 10 = strongly favors ME (I receive more value than I give), 5 = perfectly fair, 1 = strongly favors THEM (I give more than I receive).
+
+Analyze this trade:
 
 **MY SIDE (what I'm offering):**
 ${mySide}${myCashStr}
@@ -1767,15 +1773,15 @@ ${mySide}${myCashStr}
 **THEIR SIDE (what I'm receiving):**
 ${theirSide}${theirCashStr}
 
-Provide your analysis in the following JSON format:
+Respond with ONLY this JSON object, no other text:
 {
-  "fairnessScore": <number 1-10, where 5 is perfectly fair, 1 = heavily favors them, 10 = heavily favors me>,
+  "fairnessScore": <number 1-10, where 10 = strongly favors ME, 5 = fair, 1 = strongly favors THEM>,
   "verdict": <"Strongly in Your Favor" | "In Your Favor" | "Roughly Fair" | "In Their Favor" | "Strongly in Their Favor">,
-  "summary": <2-3 sentence plain English summary of the trade fairness>,
-  "myItemInsights": <1-2 sentences about the items I'm offering — condition, market notes, any concerns>,
-  "theirItemInsights": <1-2 sentences about the items I'm receiving — condition, market notes, any concerns>,
-  "negotiationTip": <1 practical tip for the current user to improve their position or close the deal>,
-  "ebayDataUsed": <true if eBay market prices were available, false if only estimated values were used>
+  "summary": <2-3 sentence plain English summary using only the provided values>,
+  "myItemInsights": <1-2 sentences about the items I'm offering based on the provided data>,
+  "theirItemInsights": <1-2 sentences about the items I'm receiving based on the provided data>,
+  "negotiationTip": <1 practical tip based on the value difference>,
+  "ebayDataUsed": <true if any eBay Market Price fields were present, false otherwise>
 }`;
 
       const llmResult = await invokeLLM({
@@ -1804,6 +1810,19 @@ Provide your analysis in the following JSON format:
         console.error('[AI Analyzer] JSON parse failed. Raw content:', cleanContent.slice(0, 500));
         throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'AI analysis returned an invalid response. Please try again.' });
       }
+
+      // Strip any citation links the LLM may have included despite instructions
+      const stripCitations = (text: string): string =>
+        text
+          .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // [text](url) -> text
+          .replace(/https?:\/\/\S+/g, '')           // bare URLs
+          .trim();
+
+      if (analysis.summary) analysis.summary = stripCitations(analysis.summary);
+      if (analysis.myItemInsights) analysis.myItemInsights = stripCitations(analysis.myItemInsights);
+      if (analysis.theirItemInsights) analysis.theirItemInsights = stripCitations(analysis.theirItemInsights);
+      if (analysis.negotiationTip) analysis.negotiationTip = stripCitations(analysis.negotiationTip);
+
       return analysis;
     }),
 });
