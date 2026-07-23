@@ -1161,11 +1161,22 @@ export const tradeFlowRouter = router({
         sql`UPDATE tradeProposals SET lastActivityAt = ${now}, updatedAt = ${now} WHERE id = ${input.proposalId}`
       );
 
-      // Alert other party
+      // Alert other party — only if no unread alert already exists for this trade in the last 60 seconds
+      // (prevents double alerts when a counter offer + message are sent together)
       const otherUserId = proposal.requesterId === userId ? proposal.recipientId : proposal.requesterId;
-      await db.execute(
-        sql`INSERT INTO tradeAlerts (proposalId, recipientUserId, alertType, message, isRead, createdAt) VALUES (${input.proposalId}, ${otherUserId}, 'initiated', 'New message in trade', 0, ${now})`
+      const [recentAlerts] = await db.execute(
+        sql`SELECT COUNT(*) as cnt FROM tradeAlerts
+            WHERE proposalId = ${input.proposalId}
+              AND recipientUserId = ${otherUserId}
+              AND isRead = 0
+              AND createdAt >= DATE_SUB(NOW(), INTERVAL 60 SECOND)`
       );
+      const recentCount = Number((recentAlerts as any)?.[0]?.cnt || 0);
+      if (recentCount === 0) {
+        await db.execute(
+          sql`INSERT INTO tradeAlerts (proposalId, recipientUserId, alertType, message, isRead, createdAt) VALUES (${input.proposalId}, ${otherUserId}, 'initiated', 'New message in trade', 0, ${now})`
+        );
+      }
 
       return { success: true };
     }),
