@@ -84,6 +84,19 @@ export default function TradeHub() {
     );
   }) || [];
 
+  const markAlertsAsReadMutation = trpc.tradeFlow.markAlertsAsRead.useMutation({
+    onSuccess: () => {
+      tradeAlertsQuery.refetch();
+      unreadCountQuery.refetch();
+    },
+  });
+
+  const handleSelectTrade = (tradeId: number) => {
+    setSelectedTradeId(tradeId);
+    // Mark alerts as read when the preview is opened
+    markAlertsAsReadMutation.mutate({ proposalId: tradeId });
+  };
+
   const handleEnterWarRoom = (proposalId: number) => {
     navigate(`/war-room/${proposalId}`);
   };
@@ -185,7 +198,7 @@ export default function TradeHub() {
                   filteredTrades.map((trade: any) => (
                     <button
                       key={trade.id}
-                      onClick={() => setSelectedTradeId(trade.id)}
+                      onClick={() => handleSelectTrade(trade.id)}
                       className={`w-full text-left px-4 py-3 hover:bg-[#2a2a5a] transition-colors ${
                         selectedTradeId === trade.id ? 'bg-[#2a2a5a] border-l-4 border-purple-500' : ''
                       }`}
