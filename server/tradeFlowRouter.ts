@@ -1640,12 +1640,13 @@ export const tradeFlowRouter = router({
 
         switch (item.category) {
           case 'sports_cards': {
-            // Format: "[Year] [Manufacturer] [Player] [Rookie] [Cert] [Grade]"
+            // Format: "[Year] [Manufacturer] [Player] #[CardNumber] [Cert] [Grade]"
+            // e.g. "1996 Topps Kobe Bryant #138 PSA 10"
             const parts = [];
             if (details.year || details.releaseYear) parts.push(details.year || details.releaseYear);
             if (details.manufacturer) parts.push(details.manufacturer);
             if (details.player) parts.push(details.player);
-            if (details.rookieCard === 'yes') parts.push('Rookie');
+            if (details.cardNumber) parts.push(`#${details.cardNumber}`);
             if (cert && grade) parts.push(`${cert} ${grade}`);
             else if (grade) parts.push(`Grade ${grade}`);
             return parts.length > 1 ? parts.join(' ') : item.title;
