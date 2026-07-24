@@ -1785,25 +1785,50 @@ export const tradeFlowRouter = router({
       const theirCashStr = theirCash > 0 ? `\n- Cash sweetener: $${theirCash.toLocaleString()}` : '';
 
       // Call LLM for analysis
-      // Compute value totals to help the AI reason accurately
+      // Compute value totals (estimated) to help the AI reason accurately
       const myEstimatedTotal = myItems.reduce((sum: number, i: any) => sum + parseFloat(i.estimatedValue || '0'), 0) + myCash;
       const theirEstimatedTotal = theirItems.reduce((sum: number, i: any) => sum + parseFloat(i.estimatedValue || '0'), 0) + theirCash;
-      const valueDiff = theirEstimatedTotal - myEstimatedTotal;
-      const valueDiffStr = valueDiff >= 0 ? `+$${Math.abs(valueDiff).toLocaleString()} in your favor` : `-$${Math.abs(valueDiff).toLocaleString()} against you`;
+      const estimatedDiff = theirEstimatedTotal - myEstimatedTotal;
+      const valueDiffStr = estimatedDiff >= 0 ? `+$${Math.abs(estimatedDiff).toLocaleString()} in your favor (based on estimated values)` : `-$${Math.abs(estimatedDiff).toLocaleString()} against you (based on estimated values)`;
+
+      // Extract eBay prices from enriched item strings for pre-computed eBay gap
+      function extractEbayTotal(enrichedStr: string): number {
+        const matches = enrichedStr.match(/eBay Market Price: ~\$([\.\d,]+)/g) || [];
+        return matches.reduce((sum, m) => {
+          const val = parseFloat(m.replace(/[^\d.]/g, ''));
+          return sum + (isNaN(val) ? 0 : val);
+        }, 0);
+      }
+      const myEbayTotal = extractEbayTotal(mySide) + myCash;
+      const theirEbayTotal = extractEbayTotal(theirSide) + theirCash;
+      const ebayDiff = theirEbayTotal - myEbayTotal;
+      const ebayDiffStr = ebayDiff > 0
+        ? `+$${Math.abs(Math.round(ebayDiff)).toLocaleString()} IN YOUR FAVOR (you receive more eBay value than you give)`
+        : ebayDiff < 0
+        ? `-$${Math.abs(Math.round(ebayDiff)).toLocaleString()} AGAINST YOU (you give more eBay value than you receive)`
+        : `$0 — perfectly balanced on eBay prices`;
+      console.log(`[AI Analyzer] eBay gap: myTotal=$${myEbayTotal} theirTotal=$${theirEbayTotal} diff=${ebayDiffStr}`);
 
       const prompt = `You are a sharp, direct collectibles trade analyst for Tradebilia. Your job is to give the user a brutally honest, data-driven, investment-grade assessment of their trade — like a professional appraiser who knows the collectibles market deeply.
 
 CRITICAL RULES — FOLLOW EXACTLY:
 1. ALWAYS cite specific dollar amounts. Never say "high value" or "significant" — say "$3,500" or "$1,212".
-2. When eBay Market Price is present, treat it as the TRUE current market value. The Estimated Value is the user's opinion — it may be wrong. Base your fairness score on eBay prices.
+2. When eBay Market Price is present, treat it as the TRUE current market value. The Estimated Value is the user's opinion — it may be wrong.
 3. If eBay Market Price differs significantly from Estimated Value, CALL IT OUT explicitly.
 4. Be direct and specific. No vague language. No filler sentences.
 5. Do NOT include URLs, citations, or links.
-6. Fairness score: 10 = strongly favors YOU (you receive more than you give), 5 = fair, 1 = strongly favors THEM. Base this on eBay Market Prices when available.
+6. FAIRNESS SCORE RULE — READ CAREFULLY:
+   - The score is from YOUR perspective (the user reading this analysis).
+   - 10 = STRONGLY IN YOUR FAVOR = you are RECEIVING much more eBay value than you are GIVING AWAY.
+   - 5 = FAIR = both sides have roughly equal eBay value.
+   - 1 = STRONGLY IN THEIR FAVOR = you are GIVING AWAY much more eBay value than you are RECEIVING.
+   - Example: If you give away $1,212 eBay value and receive $3,399 eBay value — that is IN YOUR FAVOR, score 8-9.
+   - Example: If you give away $3,399 eBay value and receive $1,212 eBay value — that is IN THEIR FAVOR, score 1-2.
+   - BASE THE SCORE ON THE PRE-COMPUTED EBAY GAP PROVIDED BELOW. Do not recalculate.
 7. Explain WHY each item is valued the way it is — key issue status, first appearances, athlete legacy, rarity, grade significance, etc.
-8. For EVERY item, estimate POPULATION/RARITY at that specific grade or condition using your knowledge (e.g. "Fewer than 100 PSA 10 copies exist", "CGC 9.8 population is in the thousands", "Mint unplayed examples are extremely scarce").
-9. Provide BEAR/BASE/BULL price scenarios for each item over 5-10 years.
-10. Identify KEY CATALYSTS that could drive the item's value up or down (e.g. MCU announcements, athlete Hall of Fame, anniversaries, new grading submissions).
+8. For EVERY item, estimate POPULATION/RARITY at that specific grade or condition using your knowledge.
+9. Provide realistic BEAR/BASE/BULL price scenarios for each item over 5-10 years. Use your full market knowledge — do not be overly conservative. Reference historical peaks if relevant.
+10. Identify KEY CATALYSTS that could drive the item's value up or down.
 11. Give each item an INVESTMENT RATING from 1-10 (10 = exceptional long-term hold).
 12. List the top STRENGTHS and WEAKNESSES of each item as a collectible investment.
 
@@ -1815,7 +1840,9 @@ ${mySide}${myCashStr}
 **THEIR SIDE (what you are RECEIVING):**
 ${theirSide}${theirCashStr}
 
-Estimated value difference (based on user estimates): ${valueDiffStr}
+PRE-COMPUTED VALUE GAPS (use these for your fairness score — do not recalculate):
+- eBay Market Value gap: ${ebayDiffStr}
+- Estimated Value gap: ${valueDiffStr}
 
 Respond with ONLY this JSON object — no markdown, no code blocks, just raw JSON:
 {
