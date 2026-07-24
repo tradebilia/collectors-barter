@@ -1791,19 +1791,21 @@ export const tradeFlowRouter = router({
       const valueDiff = theirEstimatedTotal - myEstimatedTotal;
       const valueDiffStr = valueDiff >= 0 ? `+$${Math.abs(valueDiff).toLocaleString()} in your favor` : `-$${Math.abs(valueDiff).toLocaleString()} against you`;
 
-      const prompt = `You are a sharp, direct collectibles trade analyst for Tradebilia. Your job is to give the user a brutally honest, data-driven assessment of their trade — including current market value, why each item is priced the way it is, and future investment potential.
+      const prompt = `You are a sharp, direct collectibles trade analyst for Tradebilia. Your job is to give the user a brutally honest, data-driven, investment-grade assessment of their trade — like a professional appraiser who knows the collectibles market deeply.
 
 CRITICAL RULES — FOLLOW EXACTLY:
 1. ALWAYS cite specific dollar amounts. Never say "high value" or "significant" — say "$3,500" or "$1,212".
-2. When eBay Market Price is present, treat it as the TRUE market value. The Estimated Value is the user's opinion — it may be wrong.
-3. If eBay Market Price differs significantly from Estimated Value, CALL IT OUT explicitly (e.g. "You estimated $3,500 but eBay shows ~$1,212").
+2. When eBay Market Price is present, treat it as the TRUE current market value. The Estimated Value is the user's opinion — it may be wrong. Base your fairness score on eBay prices.
+3. If eBay Market Price differs significantly from Estimated Value, CALL IT OUT explicitly.
 4. Be direct and specific. No vague language. No filler sentences.
 5. Do NOT include URLs, citations, or links.
-6. Fairness score is based on eBay Market Prices when available, otherwise Estimated Values.
-   Score: 10 = strongly favors YOU (you receive more than you give), 5 = fair, 1 = strongly favors THEM.
-7. Use your knowledge of collectibles markets to explain WHY each item is valued the way it is (e.g. rarity, historical significance, athlete/character legacy, key issue status, etc.).
-8. Assess the FUTURE POTENTIAL of each item — is it likely to appreciate, hold steady, or decline? Why?
-9. For EVERY item, comment on POPULATION and RARITY at that specific grade/condition. Use your knowledge to estimate how many copies likely exist at that grade (e.g. "PSA 10 copies of this card are extremely scarce — typically fewer than 100 exist", "CGC 9.8 is the most common high grade for this issue with thousands in population", "Mint condition examples of this toy are rare as most were played with", "This coin in MS-65 has a small surviving population due to heavy circulation"). For ungraded items, comment on how condition affects rarity and value. Always relate population to why the item is priced the way it is.
+6. Fairness score: 10 = strongly favors YOU (you receive more than you give), 5 = fair, 1 = strongly favors THEM. Base this on eBay Market Prices when available.
+7. Explain WHY each item is valued the way it is — key issue status, first appearances, athlete legacy, rarity, grade significance, etc.
+8. For EVERY item, estimate POPULATION/RARITY at that specific grade or condition using your knowledge (e.g. "Fewer than 100 PSA 10 copies exist", "CGC 9.8 population is in the thousands", "Mint unplayed examples are extremely scarce").
+9. Provide BEAR/BASE/BULL price scenarios for each item over 5-10 years.
+10. Identify KEY CATALYSTS that could drive the item's value up or down (e.g. MCU announcements, athlete Hall of Fame, anniversaries, new grading submissions).
+11. Give each item an INVESTMENT RATING from 1-10 (10 = exceptional long-term hold).
+12. List the top STRENGTHS and WEAKNESSES of each item as a collectible investment.
 
 TRADE DATA:
 
@@ -1813,18 +1815,22 @@ ${mySide}${myCashStr}
 **THEIR SIDE (what you are RECEIVING):**
 ${theirSide}${theirCashStr}
 
-Estimated value difference: ${valueDiffStr}
+Estimated value difference (based on user estimates): ${valueDiffStr}
 
 Respond with ONLY this JSON object — no markdown, no code blocks, just raw JSON:
 {
-  "fairnessScore": <integer 1-10>,
+  "fairnessScore": <integer 1-10, based on eBay Market Prices>,
   "verdict": <"Strongly in Your Favor" | "In Your Favor" | "Roughly Fair" | "In Their Favor" | "Strongly in Their Favor">,
-  "summary": <2-3 sentences that MUST include specific dollar amounts. State the total value gap clearly based on eBay data.>,
-  "myItemInsights": <3-4 sentences about what you are giving away. Cite the specific estimated value AND eBay price. Explain WHY it is valued that way (rarity, grade, key issue, etc.). Include population/rarity context at this grade or condition — estimate how many copies likely exist and what that means for value. Flag any overvaluation or undervaluation vs eBay.>,
-  "myItemFuturePotential": <1-2 sentences on whether this item is likely to appreciate, hold, or decline in value and why — consider rarity, collector demand trends, and cultural relevance.>,
-  "theirItemInsights": <3-4 sentences about what you are receiving. Cite the specific estimated value AND eBay price. Explain WHY it is valued that way (player legacy, rookie card, graded pop, etc.). Include population/rarity context at this grade or condition — estimate how many copies likely exist and what that means for value. Flag any overvaluation or undervaluation vs eBay.>,
-  "theirItemFuturePotential": <1-2 sentences on whether this item is likely to appreciate, hold, or decline in value and why — consider rarity, collector demand trends, and cultural relevance.>,
-  "negotiationTip": <1 specific, actionable tip with dollar amounts. E.g. "Ask them to add $X cash to balance the $Y gap" or "Your item is overvalued by $Z vs eBay — adjust your ask.">,
+  "summary": <2-3 sentences. MUST cite specific eBay dollar amounts. State the true market value gap clearly. Note if estimated values differ significantly from eBay.>,
+  "myItemInsights": <3-4 sentences. Cite estimated value AND eBay price. Explain WHY it is valued that way. Include population/rarity context. Flag overvaluation or undervaluation.>,
+  "myItemFuturePotential": <2-3 sentences. Include bear/base/bull price scenarios with dollar ranges. Identify the biggest catalyst that could move the price. Give an investment rating X/10 and explain it.>,
+  "myItemStrengths": <array of 2-4 short strength strings, e.g. ["First appearance of Elektra", "Frank Miller key issue", "CGC 9.8 high grade"]>,
+  "myItemWeaknesses": <array of 1-3 short weakness strings, e.g. ["Comic market is cyclical", "Below 2022 peak of $7,800"]>,
+  "theirItemInsights": <3-4 sentences. Cite estimated value AND eBay price. Explain WHY it is valued that way. Include population/rarity context. Flag overvaluation or undervaluation.>,
+  "theirItemFuturePotential": <2-3 sentences. Include bear/base/bull price scenarios with dollar ranges. Identify the biggest catalyst that could move the price. Give an investment rating X/10 and explain it.>,
+  "theirItemStrengths": <array of 2-4 short strength strings, e.g. ["Kobe Bryant rookie card", "PSA 10 gem mint", "Global sports audience"]>,
+  "theirItemWeaknesses": <array of 1-3 short weakness strings, e.g. ["Sports card market peaked 2021", "High liquidity means many buyers AND sellers"]>,
+  "negotiationTip": <1 specific, actionable tip with dollar amounts based on the eBay value gap.>,
   "ebayDataUsed": <true if any eBay Market Price fields were present, false otherwise>
 }`;
 
@@ -1833,7 +1839,7 @@ Respond with ONLY this JSON object — no markdown, no code blocks, just raw JSO
           { role: 'system', content: 'You are a collectibles trade analyst. Always respond with valid JSON only. No markdown, no code blocks, no explanation — just the raw JSON object.' },
           { role: 'user', content: prompt },
         ],
-        maxTokens: 3000,
+        maxTokens: 4000,
       });
 
       const content = llmResult.choices[0]?.message?.content;
@@ -1871,6 +1877,11 @@ Respond with ONLY this JSON object — no markdown, no code blocks, just raw JSO
       if (analysis.theirItemInsights) analysis.theirItemInsights = stripCitations(analysis.theirItemInsights);
       if (analysis.theirItemFuturePotential) analysis.theirItemFuturePotential = stripCitations(analysis.theirItemFuturePotential);
       if (analysis.negotiationTip) analysis.negotiationTip = stripCitations(analysis.negotiationTip);
+      // Strip citations from strength/weakness arrays
+      if (Array.isArray(analysis.myItemStrengths)) analysis.myItemStrengths = analysis.myItemStrengths.map(stripCitations);
+      if (Array.isArray(analysis.myItemWeaknesses)) analysis.myItemWeaknesses = analysis.myItemWeaknesses.map(stripCitations);
+      if (Array.isArray(analysis.theirItemStrengths)) analysis.theirItemStrengths = analysis.theirItemStrengths.map(stripCitations);
+      if (Array.isArray(analysis.theirItemWeaknesses)) analysis.theirItemWeaknesses = analysis.theirItemWeaknesses.map(stripCitations);
 
       return analysis;
     }),

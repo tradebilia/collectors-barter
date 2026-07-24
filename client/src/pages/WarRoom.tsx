@@ -1423,6 +1423,31 @@ export default function WarRoom() {
                         <div className="bg-blue-900/20 rounded-lg p-2.5 border border-blue-800/30 space-y-2">
                           <p className="text-blue-400 text-[10px] font-bold uppercase">Your Items</p>
                           <p className="text-gray-300 leading-relaxed">{aiAnalysis.myItemInsights}</p>
+                          {/* Strengths & Weaknesses */}
+                          {(aiAnalysis.myItemStrengths?.length > 0 || aiAnalysis.myItemWeaknesses?.length > 0) && (
+                            <div className="pt-1 border-t border-blue-800/30 grid grid-cols-2 gap-2">
+                              {aiAnalysis.myItemStrengths?.length > 0 && (
+                                <div>
+                                  <p className="text-green-400 text-[9px] font-bold uppercase mb-1">✅ Strengths</p>
+                                  <ul className="space-y-0.5">
+                                    {aiAnalysis.myItemStrengths.map((s: string, i: number) => (
+                                      <li key={i} className="text-gray-400 text-[9px] leading-tight">• {s}</li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
+                              {aiAnalysis.myItemWeaknesses?.length > 0 && (
+                                <div>
+                                  <p className="text-red-400 text-[9px] font-bold uppercase mb-1">⚠️ Risks</p>
+                                  <ul className="space-y-0.5">
+                                    {aiAnalysis.myItemWeaknesses.map((w: string, i: number) => (
+                                      <li key={i} className="text-gray-400 text-[9px] leading-tight">• {w}</li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
+                            </div>
+                          )}
                           {aiAnalysis.myItemFuturePotential && (
                             <div className="pt-1 border-t border-blue-800/30">
                               <p className="text-blue-300 text-[10px] font-semibold uppercase mb-0.5">📈 Future Potential</p>
@@ -1435,6 +1460,31 @@ export default function WarRoom() {
                         <div className="bg-gray-800/40 rounded-lg p-2.5 border border-gray-700/30 space-y-2">
                           <p className="text-gray-400 text-[10px] font-bold uppercase">Their Items</p>
                           <p className="text-gray-300 leading-relaxed">{aiAnalysis.theirItemInsights}</p>
+                          {/* Strengths & Weaknesses */}
+                          {(aiAnalysis.theirItemStrengths?.length > 0 || aiAnalysis.theirItemWeaknesses?.length > 0) && (
+                            <div className="pt-1 border-t border-gray-700/30 grid grid-cols-2 gap-2">
+                              {aiAnalysis.theirItemStrengths?.length > 0 && (
+                                <div>
+                                  <p className="text-green-400 text-[9px] font-bold uppercase mb-1">✅ Strengths</p>
+                                  <ul className="space-y-0.5">
+                                    {aiAnalysis.theirItemStrengths.map((s: string, i: number) => (
+                                      <li key={i} className="text-gray-400 text-[9px] leading-tight">• {s}</li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
+                              {aiAnalysis.theirItemWeaknesses?.length > 0 && (
+                                <div>
+                                  <p className="text-red-400 text-[9px] font-bold uppercase mb-1">⚠️ Risks</p>
+                                  <ul className="space-y-0.5">
+                                    {aiAnalysis.theirItemWeaknesses.map((w: string, i: number) => (
+                                      <li key={i} className="text-gray-400 text-[9px] leading-tight">• {w}</li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
+                            </div>
+                          )}
                           {aiAnalysis.theirItemFuturePotential && (
                             <div className="pt-1 border-t border-gray-700/30">
                               <p className="text-gray-300 text-[10px] font-semibold uppercase mb-0.5">📈 Future Potential</p>
