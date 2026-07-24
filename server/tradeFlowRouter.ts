@@ -1807,6 +1807,7 @@ export const tradeFlowRouter = router({
         const parts: string[] = [];
         for (const item of items) {
           const estimatedValue = parseFloat(item.estimatedValue || '0');
+          const ebayQuery = buildEbayQuery(item); // precise identifier used for eBay search
           const metrics = await getEbayMetrics(item);
           itemMetricsMap.set(item.id, metrics);
 
@@ -1815,6 +1816,8 @@ export const tradeFlowRouter = router({
 
           let line = `- ${item.title}`;
           if (item.category) line += ` (${item.category.replace(/_/g, ' ')})`;
+          // Include the precise eBay search query so the AI knows the exact item
+          if (ebayQuery && ebayQuery !== item.title) line += ` | Precise Identifier: "${ebayQuery}"`;
           if (item.grade) line += ` | Grade: ${parseFloat(item.grade)}`;
           if (item.condition) line += ` | Condition: ${item.condition}`;
           if (certCompany) line += ` | Grading Company: ${certCompany}`;
