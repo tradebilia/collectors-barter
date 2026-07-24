@@ -76,7 +76,13 @@ FACEBOOK_APP_ID=your_facebook_app_id
 FACEBOOK_APP_SECRET=your_facebook_app_secret
 FACEBOOK_REDIRECT_URI=https://yourdomain.com/api/facebook/callback
 
-# ── Manus APIs ────────────────────────────────────────────────────────────────
+# ── OpenAI API (required for AI Trade Analyzer on any external host) ──────────
+# Get your key at: https://platform.openai.com → API Keys
+# Leave blank when running inside Manus (Forge proxy is used automatically)
+OPENAI_API_KEY=sk-proj-your-key-here
+OPENAI_MODEL=gpt-4o-mini
+
+# ── Manus APIs (local dev / Manus-hosted only — not needed on external hosts) ──
 BUILT_IN_FORGE_API_URL=https://forge.manus.ai
 BUILT_IN_FORGE_API_KEY=your_forge_api_key
 VITE_FRONTEND_FORGE_API_URL=https://forge.manus.ai
