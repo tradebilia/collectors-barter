@@ -47,6 +47,9 @@ export const ENV = {
   get ebayRedirectUri() {
     return process.env.EBAY_REDIRECT_URI ?? "http://localhost:3000/api/ebay/callback";
   },
+  get psaApiToken() {
+    return process.env.PSA_API_TOKEN ?? "";
+  },
   get openAiApiKey() {
     // Use TRADEBILIA_OPENAI_API_KEY to avoid conflict with Manus's injected OPENAI_API_KEY
     return process.env.TRADEBILIA_OPENAI_API_KEY ?? "";

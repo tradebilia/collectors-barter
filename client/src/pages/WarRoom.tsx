@@ -1499,10 +1499,32 @@ export default function WarRoom() {
                           <p className="text-gray-300 leading-relaxed">{aiAnalysis.negotiationTip}</p>
                         </div>
 
-                        {/* eBay data indicator */}
-                        <p className="text-gray-600 text-[9px] text-center">
-                          {aiAnalysis.ebayDataUsed ? '📊 Powered by live eBay market data' : '📊 Based on estimated values (eBay data unavailable)'}
-                        </p>
+                        {/* Cross-category comparison */}
+                        {aiAnalysis.crossCategoryComparison && (
+                          <div className="bg-purple-900/20 rounded-lg p-2.5 border border-purple-700/30">
+                            <p className="text-purple-400 text-[10px] font-bold uppercase mb-1">⚖️ Head-to-Head Comparison</p>
+                            <p className="text-gray-300 leading-relaxed">{aiAnalysis.crossCategoryComparison}</p>
+                          </div>
+                        )}
+
+                        {/* Confidence score + eBay data indicator */}
+                        <div className="flex items-center justify-between pt-1">
+                          <p className="text-gray-600 text-[9px]">
+                            {aiAnalysis.ebayDataUsed ? '📊 Live eBay data' : '📊 Estimated values only'}
+                          </p>
+                          {aiAnalysis.confidenceScore && (
+                            <div className="flex items-center gap-1">
+                              <p className="text-gray-600 text-[9px]">Data confidence:</p>
+                              <div className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${
+                                aiAnalysis.confidenceScore >= 8 ? 'bg-green-900/40 text-green-400' :
+                                aiAnalysis.confidenceScore >= 6 ? 'bg-yellow-900/40 text-yellow-400' :
+                                'bg-red-900/40 text-red-400'
+                              }`}>
+                                {aiAnalysis.confidenceScore}/10
+                              </div>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     )}
                   </div>

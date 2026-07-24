@@ -1726,7 +1726,19 @@ export const tradeFlowRouter = router({
         }
       }
 
-      async function getEbayPrice(item: any): Promise<number | null> {
+      // Rich eBay market metrics — returns avg, median, min, max, spread, count, confidence
+      interface EbayMetrics {
+        avg: number;
+        median: number;
+        min: number;
+        max: number;
+        spreadPct: number;  // (max-min)/avg * 100
+        count: number;
+        confidence: 'high' | 'medium' | 'low';
+        fetchedAt: string;
+      }
+
+      async function getEbayMetrics(item: any): Promise<EbayMetrics | null> {
         if (!ebayToken) {
           console.log('[AI Analyzer] No eBay token — skipping price fetch for:', item.title);
           return null;
@@ -1745,33 +1757,63 @@ export const tradeFlowRouter = router({
           }
           const prices = data.itemSummaries
             .map((i: any) => parseFloat(i.price?.value || '0'))
-            .filter((p: number) => p > 0);
+            .filter((p: number) => p > 0)
+            .sort((a: number, b: number) => a - b);
           if (!prices.length) return null;
-          const avg = Math.round(prices.reduce((a: number, b: number) => a + b, 0) / prices.length);
-          console.log(`[AI Analyzer] eBay avg price for "${query}": $${avg} (from ${prices.length} listings)`);
-          return avg;
+
+          const count = prices.length;
+          const avg = Math.round(prices.reduce((a: number, b: number) => a + b, 0) / count);
+          const mid = Math.floor(count / 2);
+          const median = count % 2 !== 0 ? prices[mid] : Math.round((prices[mid - 1] + prices[mid]) / 2);
+          const min = Math.round(prices[0]);
+          const max = Math.round(prices[count - 1]);
+          const spreadPct = avg > 0 ? Math.round(((max - min) / avg) * 100) : 0;
+
+          // Confidence: high = 7+ results with tight spread, medium = 4-6 or wide spread, low = <4
+          let confidence: 'high' | 'medium' | 'low';
+          if (count >= 7 && spreadPct < 80) confidence = 'high';
+          else if (count >= 4) confidence = 'medium';
+          else confidence = 'low';
+
+          console.log(`[AI Analyzer] eBay metrics for "${query}": avg=$${avg} median=$${median} min=$${min} max=$${max} spread=${spreadPct}% count=${count} confidence=${confidence}`);
+          return { avg, median, min, max, spreadPct, count, confidence, fetchedAt: new Date().toISOString() };
         } catch (err: any) {
           console.log(`[AI Analyzer] eBay fetch error for "${item.title}":`, err?.message);
           return null;
         }
       }
 
-      // Build enriched item descriptions with eBay prices
+      // Build enriched item descriptions with full eBay metrics
+      const itemMetricsMap = new Map<number, EbayMetrics | null>();
+
       async function enrichItems(items: any[]): Promise<string> {
         const parts: string[] = [];
         for (const item of items) {
           const estimatedValue = parseFloat(item.estimatedValue || '0');
-          const ebayPrice = await getEbayPrice(item);
+          const metrics = await getEbayMetrics(item);
+          itemMetricsMap.set(item.id, metrics);
+
+          const details = item.itemDetails ? (() => { try { return JSON.parse(item.itemDetails); } catch { return {}; } })() : {};
+          const certCompany = details.certificationCompany || details.customGradingCompany || null;
+
           let line = `- ${item.title}`;
           if (item.category) line += ` (${item.category.replace(/_/g, ' ')})`;
-          if (item.grade) line += ` | Grade: ${item.grade}`;
+          if (item.grade) line += ` | Grade: ${parseFloat(item.grade)}`;
           if (item.condition) line += ` | Condition: ${item.condition}`;
-          line += ` | Estimated Value: $${estimatedValue.toLocaleString()}`;
-          if (ebayPrice) line += ` | eBay Market Price: ~$${ebayPrice.toLocaleString()}`;
+          if (certCompany) line += ` | Grading Company: ${certCompany}`;
+          line += ` | Owner Estimated Value: $${estimatedValue.toLocaleString()} [UNVERIFIED]`;
+
+          if (metrics) {
+            line += ` | eBay Active Listings (${metrics.count} results, confidence: ${metrics.confidence}):`;
+            line += ` Avg=$${metrics.avg.toLocaleString()}`;
+            line += ` Median=$${metrics.median.toLocaleString()}`;
+            line += ` Range=$${metrics.min.toLocaleString()}-$${metrics.max.toLocaleString()}`;
+            line += ` PriceSpread=${metrics.spreadPct}%`;
+            if (metrics.spreadPct > 100) line += ` [HIGH VARIANCE — market is inconsistent]`;
+          } else {
+            line += ` | eBay Data: UNAVAILABLE [use owner estimate with low confidence]`;
+          }
           parts.push(line);
-        }
-        if (myCash > 0 || theirCash > 0) {
-          // handled separately
         }
         return parts.join('\n') || 'No items added yet';
       }
@@ -1791,48 +1833,72 @@ export const tradeFlowRouter = router({
       const estimatedDiff = theirEstimatedTotal - myEstimatedTotal;
       const valueDiffStr = estimatedDiff >= 0 ? `+$${Math.abs(estimatedDiff).toLocaleString()} in your favor (based on estimated values)` : `-$${Math.abs(estimatedDiff).toLocaleString()} against you (based on estimated values)`;
 
-      // Extract eBay prices from enriched item strings for pre-computed eBay gap
-      function extractEbayTotal(enrichedStr: string): number {
-        const matches = enrichedStr.match(/eBay Market Price: ~\$([\.\d,]+)/g) || [];
-        return matches.reduce((sum, m) => {
-          const val = parseFloat(m.replace(/[^\d.]/g, ''));
-          return sum + (isNaN(val) ? 0 : val);
-        }, 0);
+      // Compute eBay-based value totals using median prices from metrics map
+      let myEbayTotal = myCash;
+      let theirEbayTotal = theirCash;
+      let totalDataPoints = 0;
+      let allConfidenceLevels: string[] = [];
+
+      for (const item of myItems) {
+        const m = itemMetricsMap.get(item.id);
+        if (m) { myEbayTotal += m.median; totalDataPoints += m.count; allConfidenceLevels.push(m.confidence); }
+        else myEbayTotal += parseFloat(item.estimatedValue || '0');
       }
-      const myEbayTotal = extractEbayTotal(mySide) + myCash;
-      const theirEbayTotal = extractEbayTotal(theirSide) + theirCash;
+      for (const item of theirItems) {
+        const m = itemMetricsMap.get(item.id);
+        if (m) { theirEbayTotal += m.median; totalDataPoints += m.count; allConfidenceLevels.push(m.confidence); }
+        else theirEbayTotal += parseFloat(item.estimatedValue || '0');
+      }
+
       const ebayDiff = theirEbayTotal - myEbayTotal;
       const ebayDiffStr = ebayDiff > 0
         ? `+$${Math.abs(Math.round(ebayDiff)).toLocaleString()} IN YOUR FAVOR (you receive more eBay value than you give)`
         : ebayDiff < 0
         ? `-$${Math.abs(Math.round(ebayDiff)).toLocaleString()} AGAINST YOU (you give more eBay value than you receive)`
         : `$0 — perfectly balanced on eBay prices`;
-      console.log(`[AI Analyzer] eBay gap: myTotal=$${myEbayTotal} theirTotal=$${theirEbayTotal} diff=${ebayDiffStr}`);
 
-      const prompt = `You are a sharp, direct collectibles trade analyst for Tradebilia. Your job is to give the user a brutally honest, data-driven, investment-grade assessment of their trade — like a professional appraiser who knows the collectibles market deeply.
+      // Overall confidence score (1-10) based on data completeness
+      const hasAllEbayData = allConfidenceLevels.length === (myItems.length + theirItems.length);
+      const highCount = allConfidenceLevels.filter(c => c === 'high').length;
+      const medCount = allConfidenceLevels.filter(c => c === 'medium').length;
+      const overallConfidence = !hasAllEbayData ? 3
+        : highCount === allConfidenceLevels.length ? 9
+        : highCount + medCount >= allConfidenceLevels.length ? 7
+        : 5;
 
-CRITICAL RULES — FOLLOW EXACTLY:
-1. ALWAYS cite specific dollar amounts. Never say "high value" or "significant" — say "$3,500" or "$1,212".
-2. When eBay Market Price is present, treat it as the TRUE current market value. The Estimated Value is the user's opinion — it may be wrong.
-3. If eBay Market Price differs significantly from Estimated Value, CALL IT OUT explicitly.
-4. Be direct and specific. No vague language. No filler sentences.
+      console.log(`[AI Analyzer] eBay gap: myTotal=$${myEbayTotal} theirTotal=$${theirEbayTotal} diff=${ebayDiffStr} overallConfidence=${overallConfidence}/10`);
+
+      const prompt = `You are a professional collectibles trade analyst for Tradebilia. Evaluate this trade with the depth and precision of a seasoned appraiser.
+
+=== DATA RULES (CRITICAL — FOLLOW EXACTLY) ===
+1. The trade data below contains VERIFIED MARKET DATA (eBay listings) and UNVERIFIED OWNER ESTIMATES.
+2. NEVER invent, substitute, or override verified numerical data with your own estimates.
+3. If eBay data is marked UNAVAILABLE, use the owner estimate but explicitly label it as unverified and lower your confidence.
+4. Clearly distinguish between: [VERIFIED DATA] vs [AI INTERPRETATION] vs [FUTURE PROJECTION].
 5. Do NOT include URLs, citations, or links.
-6. FAIRNESS SCORE RULE — READ CAREFULLY:
-   - The score is from YOUR perspective (the user reading this analysis).
-   - 10 = STRONGLY IN YOUR FAVOR = you are RECEIVING much more eBay value than you are GIVING AWAY.
-   - 5 = FAIR = both sides have roughly equal eBay value.
-   - 1 = STRONGLY IN THEIR FAVOR = you are GIVING AWAY much more eBay value than you are RECEIVING.
-   - Example: If you give away $1,212 eBay value and receive $3,399 eBay value — that is IN YOUR FAVOR, score 8-9.
-   - Example: If you give away $3,399 eBay value and receive $1,212 eBay value — that is IN THEIR FAVOR, score 1-2.
-   - BASE THE SCORE ON THE PRE-COMPUTED EBAY GAP PROVIDED BELOW. Do not recalculate.
-7. Explain WHY each item is valued the way it is — key issue status, first appearances, athlete legacy, rarity, grade significance, etc.
-8. For EVERY item, estimate POPULATION/RARITY at that specific grade or condition using your knowledge.
-9. Provide realistic BEAR/BASE/BULL price scenarios for each item over 5-10 years. Use your full market knowledge — do not be overly conservative. Reference historical peaks if relevant.
-10. Identify KEY CATALYSTS that could drive the item's value up or down.
-11. Give each item an INVESTMENT RATING from 1-10 (10 = exceptional long-term hold).
-12. List the top STRENGTHS and WEAKNESSES of each item as a collectible investment.
+6. ALWAYS cite specific dollar amounts — never say "high value", always say "$3,399".
 
-TRADE DATA:
+=== FAIRNESS SCORE RULE ===
+- Score is from the perspective of the USER (the person reading this).
+- 10 = STRONGLY IN YOUR FAVOR: you receive much more eBay value than you give.
+- 5 = FAIR: both sides have roughly equal eBay value.
+- 1 = STRONGLY IN THEIR FAVOR: you give much more eBay value than you receive.
+- USE ONLY the pre-computed eBay gap below. Do not recalculate.
+- Example: Give away $1,212 median eBay value, receive $3,399 → IN YOUR FAVOR, score 8.
+- Example: Give away $3,399 median eBay value, receive $1,212 → IN THEIR FAVOR, score 2.
+
+=== CATEGORY-SPECIFIC EVALUATION RULES ===
+Evaluate each item using criteria appropriate to its category:
+- SPORTS CARDS: Player legacy, rookie status, grade scarcity (PSA/BGS pop), sport popularity, Hall of Fame status, market liquidity.
+- COMICS: Key issue status (first appearances, origin stories), creator significance, CGC/CBCS census, movie/TV potential, publisher, story importance.
+- POKEMON / TCG: Set rarity, card mechanics, character popularity, PSA/CGC pop at grade, competitive vs collector demand.
+- COINS: Mint, year, denomination, PCGS/NGC grade, surviving population, historical significance.
+- VINTAGE TOYS: Brand, character, era, sealed vs opened, graded population, nostalgia factor.
+- VIDEO GAMES: Platform, title rarity, WATA/VGA grade, sealed vs CIB, genre demand.
+- AUTOGRAPHS: Signer significance, authentication company, item signed, provenance.
+- GENERAL: Condition premium, historical significance, cultural relevance, collector demand.
+
+=== TRADE DATA ===
 
 **YOUR SIDE (what you are GIVING AWAY):**
 ${mySide}${myCashStr}
@@ -1840,25 +1906,29 @@ ${mySide}${myCashStr}
 **THEIR SIDE (what you are RECEIVING):**
 ${theirSide}${theirCashStr}
 
-PRE-COMPUTED VALUE GAPS (use these for your fairness score — do not recalculate):
-- eBay Market Value gap: ${ebayDiffStr}
-- Estimated Value gap: ${valueDiffStr}
+=== PRE-COMPUTED METRICS (authoritative — do not override) ===
+- eBay Median Value Gap: ${ebayDiffStr}
+- Owner Estimated Value Gap: ${valueDiffStr}
+- Data Confidence Level: ${overallConfidence}/10 (based on ${totalDataPoints} eBay data points)
 
+=== RESPONSE FORMAT ===
 Respond with ONLY this JSON object — no markdown, no code blocks, just raw JSON:
 {
-  "fairnessScore": <integer 1-10, based on eBay Market Prices>,
+  "fairnessScore": <integer 1-10, based ONLY on the pre-computed eBay gap above>,
   "verdict": <"Strongly in Your Favor" | "In Your Favor" | "Roughly Fair" | "In Their Favor" | "Strongly in Their Favor">,
-  "summary": <2-3 sentences. MUST cite specific eBay dollar amounts. State the true market value gap clearly. Note if estimated values differ significantly from eBay.>,
-  "myItemInsights": <3-4 sentences. Cite estimated value AND eBay price. Explain WHY it is valued that way. Include population/rarity context. Flag overvaluation or undervaluation.>,
-  "myItemFuturePotential": <2-3 sentences. Include bear/base/bull price scenarios with dollar ranges. Identify the biggest catalyst that could move the price. Give an investment rating X/10 and explain it.>,
-  "myItemStrengths": <array of 2-4 short strength strings, e.g. ["First appearance of Elektra", "Frank Miller key issue", "CGC 9.8 high grade"]>,
-  "myItemWeaknesses": <array of 1-3 short weakness strings, e.g. ["Comic market is cyclical", "Below 2022 peak of $7,800"]>,
-  "theirItemInsights": <3-4 sentences. Cite estimated value AND eBay price. Explain WHY it is valued that way. Include population/rarity context. Flag overvaluation or undervaluation.>,
-  "theirItemFuturePotential": <2-3 sentences. Include bear/base/bull price scenarios with dollar ranges. Identify the biggest catalyst that could move the price. Give an investment rating X/10 and explain it.>,
-  "theirItemStrengths": <array of 2-4 short strength strings, e.g. ["Kobe Bryant rookie card", "PSA 10 gem mint", "Global sports audience"]>,
-  "theirItemWeaknesses": <array of 1-3 short weakness strings, e.g. ["Sports card market peaked 2021", "High liquidity means many buyers AND sellers"]>,
-  "negotiationTip": <1 specific, actionable tip with dollar amounts based on the eBay value gap.>,
-  "ebayDataUsed": <true if any eBay Market Price fields were present, false otherwise>
+  "confidenceScore": ${overallConfidence},
+  "summary": <2-3 sentences. Cite specific eBay median dollar amounts. State the true market value gap. Note where estimated values diverge from eBay data. Label as [VERIFIED DATA].>,
+  "myItemInsights": <3-5 sentences using category-appropriate criteria. Cite owner estimate AND eBay avg/median/range. Explain WHY the item is valued this way (key issue, grade significance, player legacy, etc.). Include estimated population/rarity at this grade. Flag overvaluation or undervaluation vs eBay. Label facts as [VERIFIED DATA] and interpretations as [AI INTERPRETATION].>,
+  "myItemFuturePotential": <2-3 sentences labeled [FUTURE PROJECTION]. Give realistic bear/base/bull price scenarios with dollar ranges based on your market knowledge. Reference historical peaks if known. Name the single biggest catalyst. Give investment rating X/10.>,
+  "myItemStrengths": <array of 2-4 concise strength strings specific to this item's category>,
+  "myItemWeaknesses": <array of 1-3 concise risk strings specific to this item's category>,
+  "theirItemInsights": <3-5 sentences using category-appropriate criteria. Same format as myItemInsights.>,
+  "theirItemFuturePotential": <2-3 sentences labeled [FUTURE PROJECTION]. Same format as myItemFuturePotential.>,
+  "theirItemStrengths": <array of 2-4 concise strength strings specific to this item's category>,
+  "theirItemWeaknesses": <array of 1-3 concise risk strings specific to this item's category>,
+  "crossCategoryComparison": <2-3 sentences comparing the two items directly: which has better liquidity, which has stronger long-term collector demand, which has better risk/reward profile, and why. Acknowledge if they are from different categories.>,
+  "negotiationTip": <1 specific, actionable tip with dollar amounts based on the eBay median gap.>,
+  "ebayDataUsed": <true if any eBay data was present, false otherwise>
 }`;
 
       const llmResult = await invokeLLM({
@@ -1904,11 +1974,14 @@ Respond with ONLY this JSON object — no markdown, no code blocks, just raw JSO
       if (analysis.theirItemInsights) analysis.theirItemInsights = stripCitations(analysis.theirItemInsights);
       if (analysis.theirItemFuturePotential) analysis.theirItemFuturePotential = stripCitations(analysis.theirItemFuturePotential);
       if (analysis.negotiationTip) analysis.negotiationTip = stripCitations(analysis.negotiationTip);
+      if (analysis.crossCategoryComparison) analysis.crossCategoryComparison = stripCitations(analysis.crossCategoryComparison);
       // Strip citations from strength/weakness arrays
       if (Array.isArray(analysis.myItemStrengths)) analysis.myItemStrengths = analysis.myItemStrengths.map(stripCitations);
       if (Array.isArray(analysis.myItemWeaknesses)) analysis.myItemWeaknesses = analysis.myItemWeaknesses.map(stripCitations);
       if (Array.isArray(analysis.theirItemStrengths)) analysis.theirItemStrengths = analysis.theirItemStrengths.map(stripCitations);
       if (Array.isArray(analysis.theirItemWeaknesses)) analysis.theirItemWeaknesses = analysis.theirItemWeaknesses.map(stripCitations);
+      // Ensure confidenceScore is always present
+      if (!analysis.confidenceScore) analysis.confidenceScore = overallConfidence;
 
       return analysis;
     }),
