@@ -1404,15 +1404,27 @@ export default function WarRoom() {
                         <p className="text-gray-300 leading-relaxed">{aiAnalysis.summary}</p>
 
                         {/* My items insight */}
-                        <div className="bg-blue-900/20 rounded-lg p-2.5 border border-blue-800/30">
-                          <p className="text-blue-400 text-[10px] font-bold uppercase mb-1">Your Items</p>
+                        <div className="bg-blue-900/20 rounded-lg p-2.5 border border-blue-800/30 space-y-2">
+                          <p className="text-blue-400 text-[10px] font-bold uppercase">Your Items</p>
                           <p className="text-gray-300 leading-relaxed">{aiAnalysis.myItemInsights}</p>
+                          {aiAnalysis.myItemFuturePotential && (
+                            <div className="pt-1 border-t border-blue-800/30">
+                              <p className="text-blue-300 text-[10px] font-semibold uppercase mb-0.5">📈 Future Potential</p>
+                              <p className="text-gray-400 leading-relaxed">{aiAnalysis.myItemFuturePotential}</p>
+                            </div>
+                          )}
                         </div>
 
                         {/* Their items insight */}
-                        <div className="bg-gray-800/40 rounded-lg p-2.5 border border-gray-700/30">
-                          <p className="text-gray-400 text-[10px] font-bold uppercase mb-1">Their Items</p>
+                        <div className="bg-gray-800/40 rounded-lg p-2.5 border border-gray-700/30 space-y-2">
+                          <p className="text-gray-400 text-[10px] font-bold uppercase">Their Items</p>
                           <p className="text-gray-300 leading-relaxed">{aiAnalysis.theirItemInsights}</p>
+                          {aiAnalysis.theirItemFuturePotential && (
+                            <div className="pt-1 border-t border-gray-700/30">
+                              <p className="text-gray-300 text-[10px] font-semibold uppercase mb-0.5">📈 Future Potential</p>
+                              <p className="text-gray-400 leading-relaxed">{aiAnalysis.theirItemFuturePotential}</p>
+                            </div>
+                          )}
                         </div>
 
                         {/* Negotiation tip */}

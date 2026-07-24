@@ -1791,16 +1791,19 @@ export const tradeFlowRouter = router({
       const valueDiff = theirEstimatedTotal - myEstimatedTotal;
       const valueDiffStr = valueDiff >= 0 ? `+$${Math.abs(valueDiff).toLocaleString()} in your favor` : `-$${Math.abs(valueDiff).toLocaleString()} against you`;
 
-      const prompt = `You are a sharp, direct collectibles trade analyst for Tradebilia. Your job is to give the user a brutally honest, data-driven assessment of their trade.
+      const prompt = `You are a sharp, direct collectibles trade analyst for Tradebilia. Your job is to give the user a brutally honest, data-driven assessment of their trade — including current market value, why each item is priced the way it is, and future investment potential.
 
 CRITICAL RULES — FOLLOW EXACTLY:
-1. ALWAYS cite specific dollar amounts from the data below. Never say "high value" or "significant" — say "$3,500" or "$1,212".
+1. ALWAYS cite specific dollar amounts. Never say "high value" or "significant" — say "$3,500" or "$1,212".
 2. When eBay Market Price is present, treat it as the TRUE market value. The Estimated Value is the user's opinion — it may be wrong.
 3. If eBay Market Price differs significantly from Estimated Value, CALL IT OUT explicitly (e.g. "You estimated $3,500 but eBay shows ~$1,212").
 4. Be direct and specific. No vague language. No filler sentences.
 5. Do NOT include URLs, citations, or links.
 6. Fairness score is based on eBay Market Prices when available, otherwise Estimated Values.
    Score: 10 = strongly favors YOU (you receive more than you give), 5 = fair, 1 = strongly favors THEM.
+7. Use your knowledge of collectibles markets to explain WHY each item is valued the way it is (e.g. rarity, historical significance, athlete/character legacy, key issue status, etc.).
+8. Assess the FUTURE POTENTIAL of each item — is it likely to appreciate, hold steady, or decline? Why?
+9. For EVERY item, comment on POPULATION and RARITY at that specific grade/condition. Use your knowledge to estimate how many copies likely exist at that grade (e.g. "PSA 10 copies of this card are extremely scarce — typically fewer than 100 exist", "CGC 9.8 is the most common high grade for this issue with thousands in population", "Mint condition examples of this toy are rare as most were played with", "This coin in MS-65 has a small surviving population due to heavy circulation"). For ungraded items, comment on how condition affects rarity and value. Always relate population to why the item is priced the way it is.
 
 TRADE DATA:
 
@@ -1816,10 +1819,12 @@ Respond with ONLY this JSON object — no markdown, no code blocks, just raw JSO
 {
   "fairnessScore": <integer 1-10>,
   "verdict": <"Strongly in Your Favor" | "In Your Favor" | "Roughly Fair" | "In Their Favor" | "Strongly in Their Favor">,
-  "summary": <2-3 sentences that MUST include specific dollar amounts from the data. State the total value gap clearly.>,
-  "myItemInsights": <1-2 sentences about what you are giving away. MUST cite the specific estimated value AND eBay price if available. Flag any overvaluation or undervaluation.>,
-  "theirItemInsights": <1-2 sentences about what you are receiving. MUST cite the specific estimated value AND eBay price if available. Flag any overvaluation or undervaluation.>,
-  "negotiationTip": <1 specific, actionable tip. Include dollar amounts. E.g. "Ask them to add $X cash to balance the $Y gap" or "Your item is overvalued by $Z vs eBay — adjust your ask.">,
+  "summary": <2-3 sentences that MUST include specific dollar amounts. State the total value gap clearly based on eBay data.>,
+  "myItemInsights": <3-4 sentences about what you are giving away. Cite the specific estimated value AND eBay price. Explain WHY it is valued that way (rarity, grade, key issue, etc.). Include population/rarity context at this grade or condition — estimate how many copies likely exist and what that means for value. Flag any overvaluation or undervaluation vs eBay.>,
+  "myItemFuturePotential": <1-2 sentences on whether this item is likely to appreciate, hold, or decline in value and why — consider rarity, collector demand trends, and cultural relevance.>,
+  "theirItemInsights": <3-4 sentences about what you are receiving. Cite the specific estimated value AND eBay price. Explain WHY it is valued that way (player legacy, rookie card, graded pop, etc.). Include population/rarity context at this grade or condition — estimate how many copies likely exist and what that means for value. Flag any overvaluation or undervaluation vs eBay.>,
+  "theirItemFuturePotential": <1-2 sentences on whether this item is likely to appreciate, hold, or decline in value and why — consider rarity, collector demand trends, and cultural relevance.>,
+  "negotiationTip": <1 specific, actionable tip with dollar amounts. E.g. "Ask them to add $X cash to balance the $Y gap" or "Your item is overvalued by $Z vs eBay — adjust your ask.">,
   "ebayDataUsed": <true if any eBay Market Price fields were present, false otherwise>
 }`;
 
@@ -1828,7 +1833,7 @@ Respond with ONLY this JSON object — no markdown, no code blocks, just raw JSO
           { role: 'system', content: 'You are a collectibles trade analyst. Always respond with valid JSON only. No markdown, no code blocks, no explanation — just the raw JSON object.' },
           { role: 'user', content: prompt },
         ],
-        maxTokens: 2000,
+        maxTokens: 3000,
       });
 
       const content = llmResult.choices[0]?.message?.content;
@@ -1859,7 +1864,9 @@ Respond with ONLY this JSON object — no markdown, no code blocks, just raw JSO
 
       if (analysis.summary) analysis.summary = stripCitations(analysis.summary);
       if (analysis.myItemInsights) analysis.myItemInsights = stripCitations(analysis.myItemInsights);
+      if (analysis.myItemFuturePotential) analysis.myItemFuturePotential = stripCitations(analysis.myItemFuturePotential);
       if (analysis.theirItemInsights) analysis.theirItemInsights = stripCitations(analysis.theirItemInsights);
+      if (analysis.theirItemFuturePotential) analysis.theirItemFuturePotential = stripCitations(analysis.theirItemFuturePotential);
       if (analysis.negotiationTip) analysis.negotiationTip = stripCitations(analysis.negotiationTip);
 
       return analysis;
