@@ -433,7 +433,34 @@ FACEBOOK_REDIRECT_URI=https://tradebilia.com/api/facebook/callback
 
 ---
 
-### 3. General Pre-Launch Items
+### 3. OpenAI API: Switch to Your Own Key
+
+The app currently uses the **Manus Forge proxy** for AI trade analysis in development. Before going live on any external host, you must set your own OpenAI API key — the Forge credentials will not be available outside of Manus.
+
+#### OpenAI Setup
+| Item | Action |
+|---|---|
+| **Create Account** | Sign up at [platform.openai.com](https://platform.openai.com) |
+| **Generate API Key** | Go to **API Keys** → **Create new secret key** |
+| **Add Billing** | Add a payment method (minimum $5 recommended for production) |
+| **Model** | Use `gpt-4o-mini` — costs ~$0.0004 per trade analysis |
+
+#### `.env` Changes
+```env
+OPENAI_API_KEY=sk-proj-your-key-here
+OPENAI_MODEL=gpt-4o-mini
+```
+
+#### How It Works
+The LLM layer (`server/_core/llm.ts`) automatically detects which key to use:
+- If `OPENAI_API_KEY` is set → uses `api.openai.com` directly (any host)
+- If not set → falls back to Manus Forge proxy (local dev / Manus-hosted only)
+
+No code changes required — just set the environment variable on your host.
+
+---
+
+### 4. General Pre-Launch Items
 
 | Item | Status | Notes |
 |---|---|---|
