@@ -209,14 +209,31 @@ const normalizeToolChoice = (
   return toolChoice;
 };
 
-const resolveApiUrl = () =>
-  ENV.forgeApiUrl && ENV.forgeApiUrl.trim().length > 0
-    ? `${ENV.forgeApiUrl.replace(/\/$/, "")}/v1/chat/completions`
-    : "https://forge.manus.im/v1/chat/completions";
+// Resolve the API endpoint:
+// 1. If OPENAI_API_KEY is set, use the official OpenAI API directly (production-ready for any host)
+// 2. If BUILT_IN_FORGE_API_URL is set, use the Manus Forge proxy (local dev / Manus-hosted)
+// 3. Fall back to the Forge default endpoint
+const resolveApiUrl = () => {
+  if (ENV.openAiApiKey && ENV.openAiApiKey.trim().length > 0) {
+    return "https://api.openai.com/v1/chat/completions";
+  }
+  if (ENV.forgeApiUrl && ENV.forgeApiUrl.trim().length > 0) {
+    return `${ENV.forgeApiUrl.replace(/\/$/, "")}/v1/chat/completions`;
+  }
+  return "https://forge.manus.im/v1/chat/completions";
+};
+
+// Resolve the API key: prefer OPENAI_API_KEY, fall back to Forge key
+const resolveApiKey = () => {
+  if (ENV.openAiApiKey && ENV.openAiApiKey.trim().length > 0) {
+    return ENV.openAiApiKey;
+  }
+  return ENV.forgeApiKey;
+};
 
 const assertApiKey = () => {
-  if (!ENV.forgeApiKey) {
-    throw new Error("OPENAI_API_KEY is not configured");
+  if (!resolveApiKey()) {
+    throw new Error("No LLM API key configured. Set OPENAI_API_KEY in your environment variables.");
   }
 };
 
@@ -280,7 +297,7 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
   } = params;
 
   const payload: Record<string, unknown> = {
-    model: "gpt-5-mini",
+    model: ENV.openAiModel,
     messages: messages.map(normalizeMessage),
   };
 
@@ -315,7 +332,7 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
     method: "POST",
     headers: {
       "content-type": "application/json",
-      authorization: `Bearer ${ENV.forgeApiKey}`,
+      authorization: `Bearer ${resolveApiKey()}`,
     },
     body: JSON.stringify(payload),
   });
