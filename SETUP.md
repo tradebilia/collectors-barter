@@ -79,7 +79,7 @@ FACEBOOK_REDIRECT_URI=https://yourdomain.com/api/facebook/callback
 # ── OpenAI API (required for AI Trade Analyzer on any external host) ──────────
 # Get your key at: https://platform.openai.com → API Keys
 # Leave blank when running inside Manus (Forge proxy is used automatically)
-OPENAI_API_KEY=sk-proj-your-key-here
+TRADEBILIA_OPENAI_API_KEY=sk-proj-your-key-here
 OPENAI_MODEL=gpt-4o-mini
 
 # ── Manus APIs (local dev / Manus-hosted only — not needed on external hosts) ──
@@ -453,13 +453,13 @@ The app currently uses the **Manus Forge proxy** for AI trade analysis in develo
 
 #### `.env` Changes
 ```env
-OPENAI_API_KEY=sk-proj-your-key-here
+TRADEBILIA_OPENAI_API_KEY=sk-proj-your-key-here
 OPENAI_MODEL=gpt-4o-mini
 ```
 
 #### How It Works
 The LLM layer (`server/_core/llm.ts`) automatically detects which key to use:
-- If `OPENAI_API_KEY` is set → uses `api.openai.com` directly (any host)
+- If `TRADEBILIA_OPENAI_API_KEY` is set → uses `api.openai.com` directly (any host)
 - If not set → falls back to Manus Forge proxy (local dev / Manus-hosted only)
 
 No code changes required — just set the environment variable on your host.

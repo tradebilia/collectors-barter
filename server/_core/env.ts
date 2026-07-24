@@ -48,7 +48,8 @@ export const ENV = {
     return process.env.EBAY_REDIRECT_URI ?? "http://localhost:3000/api/ebay/callback";
   },
   get openAiApiKey() {
-    return process.env.OPENAI_API_KEY ?? "";
+    // Use TRADEBILIA_OPENAI_API_KEY to avoid conflict with Manus's injected OPENAI_API_KEY
+    return process.env.TRADEBILIA_OPENAI_API_KEY ?? "";
   },
   get openAiModel() {
     return process.env.OPENAI_MODEL ?? "gpt-4o-mini";
