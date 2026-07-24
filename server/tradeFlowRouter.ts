@@ -1745,9 +1745,12 @@ export const tradeFlowRouter = router({
         }
         try {
           const query = buildEbayQuery(item);
+          const estimatedValue = parseFloat(item.estimatedValue || '0');
           console.log(`[AI Analyzer] eBay query for "${item.title}": "${query}"`);
+
+          // Fetch more results (25) so we can filter outliers more effectively
           const res = await fetch(
-            `https://api.ebay.com/buy/browse/v1/item_summary/search?q=${encodeURIComponent(query)}&limit=10&filter=buyingOptions%3A%7BFIXED_PRICE%7D`,
+            `https://api.ebay.com/buy/browse/v1/item_summary/search?q=${encodeURIComponent(query)}&limit=25&filter=buyingOptions%3A%7BFIXED_PRICE%7D`,
             { headers: { 'Authorization': `Bearer ${ebayToken}`, 'X-EBAY-C-MARKETPLACE-ID': 'EBAY_US' } }
           );
           const data = await res.json() as any;
@@ -1755,18 +1758,32 @@ export const tradeFlowRouter = router({
             console.log(`[AI Analyzer] eBay returned 0 results for "${query}"`);
             return null;
           }
-          const prices = data.itemSummaries
+
+          let allPrices = data.itemSummaries
             .map((i: any) => parseFloat(i.price?.value || '0'))
             .filter((p: number) => p > 0)
             .sort((a: number, b: number) => a - b);
-          if (!prices.length) return null;
+          if (!allPrices.length) return null;
 
-          const count = prices.length;
-          const avg = Math.round(prices.reduce((a: number, b: number) => a + b, 0) / count);
+          // Remove statistical outliers using IQR method to filter unrelated cheap/expensive listings
+          const q1idx = Math.floor(allPrices.length * 0.25);
+          const q3idx = Math.floor(allPrices.length * 0.75);
+          const q1 = allPrices[q1idx];
+          const q3 = allPrices[q3idx];
+          const iqr = q3 - q1;
+          const lowerFence = Math.max(q1 - 1.5 * iqr, 1);
+          const upperFence = q3 + 1.5 * iqr;
+          const prices = allPrices.filter((p: number) => p >= lowerFence && p <= upperFence);
+
+          // Fall back to all prices if filtering removed too many
+          const finalPrices = prices.length >= 3 ? prices : allPrices;
+
+          const count = finalPrices.length;
+          const avg = Math.round(finalPrices.reduce((a: number, b: number) => a + b, 0) / count);
           const mid = Math.floor(count / 2);
-          const median = count % 2 !== 0 ? prices[mid] : Math.round((prices[mid - 1] + prices[mid]) / 2);
-          const min = Math.round(prices[0]);
-          const max = Math.round(prices[count - 1]);
+          const median = count % 2 !== 0 ? finalPrices[mid] : Math.round((finalPrices[mid - 1] + finalPrices[mid]) / 2);
+          const min = Math.round(finalPrices[0]);
+          const max = Math.round(finalPrices[count - 1]);
           const spreadPct = avg > 0 ? Math.round(((max - min) / avg) * 100) : 0;
 
           // Confidence: high = 7+ results with tight spread, medium = 4-6 or wide spread, low = <4
@@ -1775,7 +1792,7 @@ export const tradeFlowRouter = router({
           else if (count >= 4) confidence = 'medium';
           else confidence = 'low';
 
-          console.log(`[AI Analyzer] eBay metrics for "${query}": avg=$${avg} median=$${median} min=$${min} max=$${max} spread=${spreadPct}% count=${count} confidence=${confidence}`);
+          console.log(`[AI Analyzer] eBay metrics for "${query}": avg=$${avg} median=$${median} min=$${min} max=$${max} spread=${spreadPct}% count=${count}/${allPrices.length} (after outlier removal) confidence=${confidence}`);
           return { avg, median, min, max, spreadPct, count, confidence, fetchedAt: new Date().toISOString() };
         } catch (err: any) {
           console.log(`[AI Analyzer] eBay fetch error for "${item.title}":`, err?.message);
@@ -1919,11 +1936,11 @@ Respond with ONLY this JSON object — no markdown, no code blocks, just raw JSO
   "confidenceScore": ${overallConfidence},
   "summary": <2-3 sentences. Cite specific eBay median dollar amounts. State the true market value gap. Note where estimated values diverge from eBay data. Label as [VERIFIED DATA].>,
   "myItemInsights": <3-5 sentences using category-appropriate criteria. Cite owner estimate AND eBay avg/median/range. Explain WHY the item is valued this way (key issue, grade significance, player legacy, etc.). Include estimated population/rarity at this grade. Flag overvaluation or undervaluation vs eBay. Label facts as [VERIFIED DATA] and interpretations as [AI INTERPRETATION].>,
-  "myItemFuturePotential": <2-3 sentences labeled [FUTURE PROJECTION]. Give realistic bear/base/bull price scenarios with dollar ranges based on your market knowledge. Reference historical peaks if known. Name the single biggest catalyst. Give investment rating X/10.>,
+  "myItemFuturePotential": <2-3 sentences labeled [FUTURE PROJECTION]. Give REALISTIC bear/base/bull price scenarios with dollar ranges. For bull case, use your FULL knowledge of historical peaks and comparable sales — do NOT be conservative. For example, if a PSA 10 Kobe has sold for $30,000+ at peak, say so. If a CGC 9.8 Daredevil #168 reached $7,800 at Heritage in 2022, say so. Name the single biggest catalyst. Give investment rating X/10.>,
   "myItemStrengths": <array of 2-4 concise strength strings specific to this item's category>,
   "myItemWeaknesses": <array of 1-3 concise risk strings specific to this item's category>,
   "theirItemInsights": <3-5 sentences using category-appropriate criteria. Same format as myItemInsights.>,
-  "theirItemFuturePotential": <2-3 sentences labeled [FUTURE PROJECTION]. Same format as myItemFuturePotential.>,
+  "theirItemFuturePotential": <2-3 sentences labeled [FUTURE PROJECTION]. Give REALISTIC bear/base/bull price scenarios with dollar ranges. For bull case, use your FULL knowledge of historical peaks and comparable sales — do NOT be conservative. Name the single biggest catalyst. Give investment rating X/10.>,
   "theirItemStrengths": <array of 2-4 concise strength strings specific to this item's category>,
   "theirItemWeaknesses": <array of 1-3 concise risk strings specific to this item's category>,
   "crossCategoryComparison": <2-3 sentences comparing the two items directly: which has better liquidity, which has stronger long-term collector demand, which has better risk/reward profile, and why. Acknowledge if they are from different categories.>,
