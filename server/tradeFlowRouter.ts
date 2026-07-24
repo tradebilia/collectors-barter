@@ -1849,6 +1849,9 @@ Respond with ONLY this JSON object — no markdown, no code blocks, just raw JSO
       let analysis: any;
       try {
         analysis = JSON.parse(cleanContent);
+        console.log('[AI Analyzer] Parsed fields:', Object.keys(analysis).join(', '));
+        console.log('[AI Analyzer] myItemFuturePotential:', analysis.myItemFuturePotential ? 'PRESENT' : 'MISSING');
+        console.log('[AI Analyzer] theirItemFuturePotential:', analysis.theirItemFuturePotential ? 'PRESENT' : 'MISSING');
       } catch (parseErr) {
         // Log the raw content for debugging and throw a user-friendly error
         console.error('[AI Analyzer] JSON parse failed. Raw content:', cleanContent.slice(0, 500));
