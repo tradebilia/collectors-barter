@@ -1727,21 +1727,33 @@ export const tradeFlowRouter = router({
       }
 
       async function getEbayPrice(item: any): Promise<number | null> {
-        if (!ebayToken) return null;
+        if (!ebayToken) {
+          console.log('[AI Analyzer] No eBay token — skipping price fetch for:', item.title);
+          return null;
+        }
         try {
           const query = buildEbayQuery(item);
+          console.log(`[AI Analyzer] eBay query for "${item.title}": "${query}"`);
           const res = await fetch(
             `https://api.ebay.com/buy/browse/v1/item_summary/search?q=${encodeURIComponent(query)}&limit=10&filter=buyingOptions%3A%7BFIXED_PRICE%7D`,
             { headers: { 'Authorization': `Bearer ${ebayToken}`, 'X-EBAY-C-MARKETPLACE-ID': 'EBAY_US' } }
           );
           const data = await res.json() as any;
-          if (!data.itemSummaries?.length) return null;
+          if (!data.itemSummaries?.length) {
+            console.log(`[AI Analyzer] eBay returned 0 results for "${query}"`);
+            return null;
+          }
           const prices = data.itemSummaries
             .map((i: any) => parseFloat(i.price?.value || '0'))
             .filter((p: number) => p > 0);
           if (!prices.length) return null;
-          return Math.round(prices.reduce((a: number, b: number) => a + b, 0) / prices.length);
-        } catch (_) { return null; }
+          const avg = Math.round(prices.reduce((a: number, b: number) => a + b, 0) / prices.length);
+          console.log(`[AI Analyzer] eBay avg price for "${query}": $${avg} (from ${prices.length} listings)`);
+          return avg;
+        } catch (err: any) {
+          console.log(`[AI Analyzer] eBay fetch error for "${item.title}":`, err?.message);
+          return null;
+        }
       }
 
       // Build enriched item descriptions with eBay prices
@@ -1766,35 +1778,48 @@ export const tradeFlowRouter = router({
 
       const mySide = await enrichItems(myItems);
       const theirSide = await enrichItems(theirItems);
+      console.log('[AI Analyzer] MY SIDE prompt data:', mySide);
+      console.log('[AI Analyzer] THEIR SIDE prompt data:', theirSide);
 
       const myCashStr = myCash > 0 ? `\n- Cash sweetener: $${myCash.toLocaleString()}` : '';
       const theirCashStr = theirCash > 0 ? `\n- Cash sweetener: $${theirCash.toLocaleString()}` : '';
 
       // Call LLM for analysis
-      const prompt = `You are an expert collectibles trade analyst for Tradebilia, a platform where collectors trade items like sports cards, comics, coins, autographs, and memorabilia.
+      // Compute value totals to help the AI reason accurately
+      const myEstimatedTotal = myItems.reduce((sum: number, i: any) => sum + parseFloat(i.estimatedValue || '0'), 0) + myCash;
+      const theirEstimatedTotal = theirItems.reduce((sum: number, i: any) => sum + parseFloat(i.estimatedValue || '0'), 0) + theirCash;
+      const valueDiff = theirEstimatedTotal - myEstimatedTotal;
+      const valueDiffStr = valueDiff >= 0 ? `+$${Math.abs(valueDiff).toLocaleString()} in your favor` : `-$${Math.abs(valueDiff).toLocaleString()} against you`;
 
-IMPORTANT RULES:
-1. Use ONLY the values provided below. Do NOT search the web or substitute your own price estimates.
-2. The "Estimated Value" field is the user-entered value. The "eBay Market Price" field (if present) is from the eBay Browse API. Trust these numbers.
-3. Do NOT include any URLs, citations, links, or references to external websites in your response.
-4. Fairness score: 10 = strongly favors ME (I receive more value than I give), 5 = perfectly fair, 1 = strongly favors THEM (I give more than I receive).
+      const prompt = `You are a sharp, direct collectibles trade analyst for Tradebilia. Your job is to give the user a brutally honest, data-driven assessment of their trade.
 
-Analyze this trade:
+CRITICAL RULES — FOLLOW EXACTLY:
+1. ALWAYS cite specific dollar amounts from the data below. Never say "high value" or "significant" — say "$3,500" or "$1,212".
+2. When eBay Market Price is present, treat it as the TRUE market value. The Estimated Value is the user's opinion — it may be wrong.
+3. If eBay Market Price differs significantly from Estimated Value, CALL IT OUT explicitly (e.g. "You estimated $3,500 but eBay shows ~$1,212").
+4. Be direct and specific. No vague language. No filler sentences.
+5. Do NOT include URLs, citations, or links.
+6. Fairness score is based on eBay Market Prices when available, otherwise Estimated Values.
+   Score: 10 = strongly favors YOU (you receive more than you give), 5 = fair, 1 = strongly favors THEM.
 
-**MY SIDE (what I'm offering):**
+TRADE DATA:
+
+**YOUR SIDE (what you are GIVING AWAY):**
 ${mySide}${myCashStr}
 
-**THEIR SIDE (what I'm receiving):**
+**THEIR SIDE (what you are RECEIVING):**
 ${theirSide}${theirCashStr}
 
-Respond with ONLY this JSON object, no other text:
+Estimated value difference: ${valueDiffStr}
+
+Respond with ONLY this JSON object — no markdown, no code blocks, just raw JSON:
 {
-  "fairnessScore": <number 1-10, where 10 = strongly favors ME, 5 = fair, 1 = strongly favors THEM>,
+  "fairnessScore": <integer 1-10>,
   "verdict": <"Strongly in Your Favor" | "In Your Favor" | "Roughly Fair" | "In Their Favor" | "Strongly in Their Favor">,
-  "summary": <2-3 sentence plain English summary using only the provided values>,
-  "myItemInsights": <1-2 sentences about the items I'm offering based on the provided data>,
-  "theirItemInsights": <1-2 sentences about the items I'm receiving based on the provided data>,
-  "negotiationTip": <1 practical tip based on the value difference>,
+  "summary": <2-3 sentences that MUST include specific dollar amounts from the data. State the total value gap clearly.>,
+  "myItemInsights": <1-2 sentences about what you are giving away. MUST cite the specific estimated value AND eBay price if available. Flag any overvaluation or undervaluation.>,
+  "theirItemInsights": <1-2 sentences about what you are receiving. MUST cite the specific estimated value AND eBay price if available. Flag any overvaluation or undervaluation.>,
+  "negotiationTip": <1 specific, actionable tip. Include dollar amounts. E.g. "Ask them to add $X cash to balance the $Y gap" or "Your item is overvalued by $Z vs eBay — adjust your ask.">,
   "ebayDataUsed": <true if any eBay Market Price fields were present, false otherwise>
 }`;
 
