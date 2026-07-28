@@ -1,5 +1,7 @@
 import type { Express } from "express";
 import { ENV } from "./env";
+import path from "path";
+import fs from "fs";
 
 export function registerStorageProxy(app: Express) {
   app.get("/manus-storage/*", async (req, res) => {
@@ -9,8 +11,29 @@ export function registerStorageProxy(app: Express) {
       return;
     }
 
-    if (!ENV.forgeApiUrl || !ENV.forgeApiKey) {
-      res.status(500).send("Storage proxy not configured");
+    // Aggressive local search:
+    // 1. Try exact key in public/images
+    // 2. Try basename of key in public/images (strips listings/1/ etc)
+    // 3. Try key in client/public/images
+    // 4. Try basename of key in client/public/images
+    
+    const baseName = path.basename(key);
+    const searchPaths = [
+      path.join(process.cwd(), "server/_core/public/images", key),
+      path.join(process.cwd(), "server/_core/public/images", baseName),
+      path.join(process.cwd(), "client/public/images", key),
+      path.join(process.cwd(), "client/public/images", baseName),
+    ];
+
+    for (const p of searchPaths) {
+      if (fs.existsSync(p)) {
+        res.sendFile(p);
+        return;
+      }
+    }
+
+    if (!ENV.forgeApiUrl || !ENV.forgeApiKey || ENV.forgeApiKey === "dummy") {
+      res.status(500).send("Storage proxy not configured and local fallback failed for key: " + key);
       return;
     }
 
@@ -38,7 +61,6 @@ export function registerStorageProxy(app: Express) {
         return;
       }
 
-      // Fetch the image from CloudFront and proxy it directly
       const imageResp = await fetch(url);
       if (!imageResp.ok) {
         console.error(`[StorageProxy] CloudFront error: ${imageResp.status}`);

@@ -18,11 +18,18 @@ const CATEGORY_ICONS: Record<string, string> = {
   disney_pins: "🏰",
 };
 
-function timeAgo(dateStr: string | null): string {
+function formatTradeDate(dateStr: string | null): string {
   if (!dateStr) return "";
   const date = new Date(dateStr.endsWith("Z") ? dateStr : dateStr + "Z");
   const diff = Date.now() - date.getTime();
   const days = Math.floor(diff / 86400000);
+  
+  // If trade is older than 14 days, show absolute date
+  if (days > 14) {
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+  
+  // Otherwise show relative time
   if (days === 0) return "Today";
   if (days === 1) return "Yesterday";
   if (days < 30) return `${days} days ago`;
@@ -65,7 +72,7 @@ function TradeCard({ trade }: { trade: any }) {
           <Handshake className="w-4 h-4 text-purple-400" />
           <span className="text-white text-xs font-bold font-mono">{trade.tradeReferenceNumber || `TR-${String(trade.id).padStart(6, "0")}`}</span>
         </div>
-        <span className="text-gray-400 text-[10px]">{timeAgo(trade.completedAt)}</span>
+        <span className="text-gray-400 text-[10px]">{formatTradeDate(trade.completedAt)}</span>
       </div>
 
       {/* Items grid */}

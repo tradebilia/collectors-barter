@@ -14,6 +14,7 @@ import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { TopBar } from "@/components/TopBar";
 import { CategoryBar } from "@/components/CategoryBar";
+import { resolveTradebiliaListingImage } from "@/lib/listingImages";
 
 const TRADE_HUB_LOGO_URL = "/images/TradeHub.svg";
 
@@ -256,10 +257,14 @@ export default function TradeHub() {
                   </div>
 
                   {/* Item Image */}
-                  {selectedTrade.listing?.image && (
+                  {selectedTrade.listing && (
                     <div className="rounded-lg overflow-hidden bg-[#0a0a2a] p-2">
                       <img
-                        src={selectedTrade.listing.image}
+                        src={resolveTradebiliaListingImage({ 
+                          title: selectedTrade.listing.title, 
+                          category: selectedTrade.listing.category, 
+                          primaryPhotoUrl: selectedTrade.listing.image 
+                        })}
                         alt={selectedTrade.listing.title}
                         className="w-full h-48 object-contain rounded"
                       />

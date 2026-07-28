@@ -1,5 +1,6 @@
 import dotenv from 'dotenv';
 dotenv.config();
+import morgan from "morgan";
 
 import express from "express";
 import { createServer } from "http";
@@ -66,6 +67,7 @@ async function startServer() {
   await validateDatabaseConnection();
 
   const app = express();
+app.use(morgan("dev"));
   // Trust proxy is required for the session cookie to be set correctly behind 
   // the Manus proxy (handles HTTPS termination). Without this, req.secure is 
   // false, and the 'secure: true' cookie is rejected by the browser.
