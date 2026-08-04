@@ -2168,7 +2168,7 @@ export async function updateListing(
       if (newPhotos.length > 0) {
         // Get current max sort order
         const maxSortResult = await tx
-          .select({ maxOrder: sql<number>`COALESCE(MAX(sort_order), -1)` })
+          .select({ maxOrder: sql<number>`COALESCE(MAX(sortOrder), -1)` })
           .from(listingPhotos)
           .where(eq(listingPhotos.listingId, input.listingId));
 
@@ -4157,4 +4157,3 @@ export async function getSuspendedUsers() {
   
   return suspendedUsers;
 }
-

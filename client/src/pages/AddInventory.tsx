@@ -98,7 +98,11 @@ export default function AddInventory() {
   const saveDraftMutation = trpc.market.saveDraft.useMutation();
   const getListingDetailQuery = trpc.market.listingDetail.useQuery(
     { listingId: params.listingId && !isDraftMode ? parseInt(params.listingId) : 0 },
-    { enabled: isEditMode && !isDraftMode }
+    { 
+      enabled: isEditMode && !isDraftMode,
+      staleTime: 0, // Always fetch fresh data in edit mode
+      gcTime: 0, // Don't cache the data
+    }
   );
   
   const updateListingMutation = trpc.market.updateListing.useMutation({
@@ -151,6 +155,13 @@ export default function AddInventory() {
       }
     }
   }, [isDraftMode, getDraftByIdQuery.data]);
+
+  // Force refetch when entering edit mode
+  useEffect(() => {
+    if (isEditMode && !isDraftMode && !getListingDetailQuery.isLoading) {
+      getListingDetailQuery.refetch();
+    }
+  }, [isEditMode, isDraftMode]);
 
   // Load existing listing data when in edit mode
   useEffect(() => {
@@ -218,7 +229,7 @@ export default function AddInventory() {
         ...updates,
       }));
 
-      // Load existing photos
+      // Load existing photos - ALWAYS update, even if empty
       if (listing.photos && listing.photos.length > 0) {
         const existingPhotos: UploadedImage[] = listing.photos.map(photo => ({
           name: photo.altText || "photo",
@@ -227,6 +238,9 @@ export default function AddInventory() {
           previewUrl: photo.imageUrl,
         }));
         setPhotos(existingPhotos);
+      } else {
+        // If listing has no photos, clear the photos state
+        setPhotos([]);
       }
     }
   }, [isEditMode, isDraftMode, getListingDetailQuery.data, formData.category, formData.itemType, setPhotos]);
