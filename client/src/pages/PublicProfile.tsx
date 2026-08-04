@@ -253,7 +253,7 @@ export default function PublicProfile() {
       <div className="mx-auto max-w-5xl px-4 lg:px-8 relative z-10">
         {/* Profile Header Card */}
         <div className="bg-white rounded-3xl p-6 lg:p-8 shadow-sm border border-slate-100">
-          <div className="flex flex-col md:flex-row gap-6 items-start md:items-end">
+          <div className="flex flex-col md:flex-row gap-6 items-start">
             {/* Avatar — falls back to Facebook picture if no Tradebilia avatar */}
             <div className="h-28 w-28 rounded-3xl bg-slate-100 border-4 border-white shadow-md overflow-hidden shrink-0 flex items-center justify-center">
               {profile?.avatarUrl ? (
@@ -267,17 +267,11 @@ export default function PublicProfile() {
 
             {/* User Info */}
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1">
+              <div className="flex items-start gap-2 mb-2">
                 <h1 className="text-2xl font-black text-slate-950 tracking-tight truncate">{displayName}</h1>
-                {user.ebayIdVerified === 1 && <BadgeCheck className="h-5 w-5 text-blue-500" />}
+                {user.ebayIdVerified === 1 && <BadgeCheck className="h-5 w-5 text-blue-500 shrink-0 mt-0.5" />}
               </div>
               <div className="flex flex-wrap items-center gap-y-1 gap-x-4 text-slate-500 text-sm font-medium">
-                {(profile?.location || user.facebookLocation) && (
-                  <div className="flex items-center gap-1.5">
-                    <MapPin className="h-3.5 w-3.5" />
-                    <span>{profile?.location || user.facebookLocation}</span>
-                  </div>
-                )}
                 <div className="flex items-center gap-1.5">
                   <Calendar className="h-3.5 w-3.5" />
                   <span>Joined {new Date(user.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</span>
@@ -289,10 +283,16 @@ export default function PublicProfile() {
                   </div>
                 )}
               </div>
+              {(profile?.location || user.facebookLocation) && (
+                <div className="flex items-center gap-1.5 text-slate-500 text-sm font-medium mt-2">
+                  <MapPin className="h-3.5 w-3.5" />
+                  <span>{profile?.location || user.facebookLocation}</span>
+                </div>
+              )}
             </div>
 
             {/* Actions */}
-            <div className="flex items-center gap-2 w-full md:w-auto shrink-0">
+            <div className="flex items-start gap-2 w-full md:w-auto shrink-0">
               {currentUser?.id !== user.id ? (
                 <>
                   <Button
