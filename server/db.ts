@@ -116,7 +116,10 @@ export async function closeDb(): Promise<void> {
 
 export async function requireDb(): Promise<ReturnType<typeof drizzle>> {
   if (!_db) {
-    const dbUrl = process.env.DATABASE_URL || ENV.databaseUrl;
+    // Prefer CUSTOM_DATABASE_URL if set (for pointing to existing database with user data)
+    // Fall back to DATABASE_URL (Manus-managed database)
+    const dbUrl = process.env.CUSTOM_DATABASE_URL || process.env.DATABASE_URL || ENV.databaseUrl;
+    console.log(`[requireDb] Using database: ${dbUrl.includes('GnMVDXgu6G8uhj5ZYQtcGe') ? 'CUSTOM (old database with user data)' : 'MANUS-MANAGED'}`);
     const url = new URL(dbUrl);
     const sslParam = url.searchParams.get("ssl");
     
