@@ -416,7 +416,7 @@ export default function Inventory() {
 
       <section className="relative w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden bg-[#00143A] text-white">
         <div className="absolute inset-0" style={{
-          backgroundImage: 'url(/manus-storage/Mainpage_d3f8b6f0.jpg)',
+          backgroundImage: 'url(/manus-storage/Background_48b923f1.jpg)',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat'
