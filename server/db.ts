@@ -2106,33 +2106,13 @@ export async function updateListing(
     throw new Error("Unauthorized: You can only edit your own listings");
   }
 
-  // Get user role to check if they can delete photos
+  // Get user role
   const userRecord = await db
     .select({ role: users.role })
     .from(users)
     .where(eq(users.id, user.id))
     .limit(1);
   const isAdmin = userRecord[0]?.role === 'admin';
-
-  // If not admin, ensure they're not deleting existing photos (only adding new ones allowed)
-  if (!isAdmin) {
-    // Get existing photos for this listing
-    const existingPhotos = await db
-      .select({ imageUrl: listingPhotos.imageUrl })
-      .from(listingPhotos)
-      .where(eq(listingPhotos.listingId, input.listingId));
-
-    const existingUrls = new Set(existingPhotos.map(p => p.imageUrl));
-    const incomingUrls = new Set(input.photos.map(p => p.imageUrl).filter(Boolean));
-    const newUploads = input.photos.filter(p => p.contentBase64);
-
-    // Check if any existing photos are being removed without being replaced by new uploads
-    for (const url of Array.from(existingUrls)) {
-      if (!incomingUrls.has(url) && newUploads.length === 0) {
-        throw new Error("Unauthorized: Only admins can delete photos from listings");
-      }
-    }
-  }
 
   // Update listing
   await db
@@ -2150,54 +2130,67 @@ export async function updateListing(
     })
     .where(eq(listings.id, input.listingId));
 
-  // Synchronize photos: replace existing set with the provided set
+  // Handle photos
   await db.transaction(async tx => {
-    // 1. Delete all existing photos for this listing (only if admin or all photos are new)
     if (isAdmin) {
+      // Admins can delete and replace all photos
       await tx.delete(listingPhotos).where(eq(listingPhotos.listingId, input.listingId));
+
+      for (let index = 0; index < input.photos.length; index += 1) {
+        const photo = input.photos[index]!;
+        let imageUrl = photo.imageUrl;
+        let fileKey = "existing";
+
+        if (photo.contentBase64) {
+          const uploaded = await uploadImage("listings", user.id, {
+            name: photo.name,
+            type: photo.type,
+            contentBase64: photo.contentBase64
+          });
+          imageUrl = uploaded.url;
+          fileKey = uploaded.key;
+        }
+
+        if (imageUrl) {
+          await tx.insert(listingPhotos).values({
+            listingId: input.listingId,
+            fileKey: fileKey,
+            imageUrl: imageUrl,
+            altText: `${input.title.trim()} photo ${index + 1}`,
+            sortOrder: index,
+          });
+        }
+      }
     } else {
-      // For non-admins, only delete photos that are being replaced with new uploads
-      // This is already validated above, so we just delete the ones being re-uploaded
-      const photosToDelete = input.photos
-        .filter(p => p.contentBase64) // New uploads
-        .map(p => p.imageUrl)
-        .filter((url): url is string => Boolean(url));
+      // Non-admins can ONLY add new photos, not delete or modify existing ones
+      const newPhotos = input.photos.filter(p => p.contentBase64);
 
-      if (photosToDelete.length > 0) {
-        await tx.delete(listingPhotos).where(
-          and(
-            eq(listingPhotos.listingId, input.listingId),
-            inArray(listingPhotos.imageUrl, photosToDelete)
-          )
-        );
-      }
-    }
+      if (newPhotos.length > 0) {
+        // Get current max sort order
+        const maxSortResult = await tx
+          .select({ maxOrder: sql<number>`COALESCE(MAX(sort_order), -1)` })
+          .from(listingPhotos)
+          .where(eq(listingPhotos.listingId, input.listingId));
 
-    // 2. Re-insert/Upload photos in the new order
-    for (let index = 0; index < input.photos.length; index += 1) {
-      const photo = input.photos[index]!;
-      let imageUrl = photo.imageUrl;
-      let fileKey = "existing";
+        let nextSortOrder = (maxSortResult[0]?.maxOrder ?? -1) + 1;
 
-      // If it's a new upload (has contentBase64), upload it
-      if (photo.contentBase64) {
-        const uploaded = await uploadImage("listings", user.id, {
-          name: photo.name,
-          type: photo.type,
-          contentBase64: photo.contentBase64
-        });
-        imageUrl = uploaded.url;
-        fileKey = uploaded.key;
-      }
+        // Only insert new photos
+        for (const photo of newPhotos) {
+          const uploaded = await uploadImage("listings", user.id, {
+            name: photo.name,
+            type: photo.type,
+            contentBase64: photo.contentBase64
+          });
 
-      if (imageUrl) {
-        await tx.insert(listingPhotos).values({
-          listingId: input.listingId,
-          fileKey: fileKey,
-          imageUrl: imageUrl,
-          altText: `${input.title.trim()} photo ${index + 1}`,
-          sortOrder: index,
-        });
+          await tx.insert(listingPhotos).values({
+            listingId: input.listingId,
+            fileKey: uploaded.key,
+            imageUrl: uploaded.url,
+            altText: `${input.title.trim()} photo ${nextSortOrder + 1}`,
+            sortOrder: nextSortOrder,
+          });
+          nextSortOrder++;
+        }
       }
     }
   });

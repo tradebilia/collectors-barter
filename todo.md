@@ -78,3 +78,8 @@
   - Issue: Non-admins were getting "Only admins can delete photos" error when trying to add new photos
   - Fix: Updated validation logic to only prevent deletion of existing photos, allow adding new ones
   - Non-admins can now add new photos to their listings without restriction
+- [x] Fix photo duplication bug for non-admins
+  - Issue: When non-admins added new photos, duplicates appeared on edit
+  - Root cause: Logic was deleting all photos and re-inserting all of them, including existing ones
+  - Fix: Non-admins now only INSERT new photos (those with contentBase64), existing photos are never touched
+  - Admins still have full control to delete and reorder photos
