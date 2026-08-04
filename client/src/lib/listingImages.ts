@@ -5,76 +5,23 @@ export type TradebiliaListingImageInput = {
 };
 
 const categoryImageMap: Record<string, string> = {
-  comics: "/manus-storage/comics-background-YZiiH2cyV8YJx6GFQj4PKC_9b892262.webp",
-  sports_cards: "/manus-storage/Sportscardwallpaper_5f3f1c5b.webp",
-  vintage_toys: "/manus-storage/VideoGames_22907529.webp",
-  video_games: "/manus-storage/video-games-background-kyx4vVUqTYCMC3kMbtokYU_705fbec9.webp",
-  stamps: "/manus-storage/Stamps_e5bfdab0.webp",
-  coins: "/manus-storage/Coins_753da58b.webp",
-  pokemon: "/manus-storage/pokemon-background-J6h7Mte6BSYA3GfQ4vtdFj_7c4f745c.webp",
-  movies: "/manus-storage/MoviesTitle_c005588d.png",
-  autographs: "/manus-storage/AutographsTitle_d21930db.png",
-  disney_pins: "/manus-storage/disney-pins-background-F6yUvFLVrhmnaWk6GsFMZ8_fed5de43.webp",
+  auto: "/manus-storage/AutoBackground_77c0fc6a.png",
+  comics: "/manus-storage/ComicsBackground_798a970b.webp",
+  sports_cards: "/manus-storage/SportsCardBackground_e2e711d1.webp",
+  vintage_toys: "/manus-storage/VintageToysBackground_a95e7b30.png",
+  video_games: "/manus-storage/VideoGamesBackground_f9315289.webp",
+  stamps: "/manus-storage/StampsBackground_1bb5af50.png",
+  coins: "/manus-storage/CoinsBackground_8f7db775.png",
+  pokemon: "/manus-storage/PokemonBackground_d2f9e795.webp",
+  movies: "/manus-storage/MoviesBackground_603eb7a8.png",
+  autographs: "/manus-storage/AutoBackground_77c0fc6a.png",
+  disney_pins: "/manus-storage/DisneyPinsBackground_68498869.webp",
 };
 
-const keywordImageMap: Array<{ keywords: string[]; imageUrl: string }> = [
-  {
-    keywords: ["michael jordan", "jordan rookie"],
-    imageUrl: "/images/1986-87 Michael Jordan.jpg",
-  },
-  {
-    keywords: ["walter payton"],
-    imageUrl: "/images/1976 Walter Payton.png",
-  },
-  {
-    keywords: ["rickey henderson"],
-    imageUrl: "/images/1980 Rickey Henderson.png",
-  },
-  {
-    keywords: ["joe montana"],
-    imageUrl: "/images/1981 Joe Montana.png",
-  },
-  {
-    keywords: ["mark mcgwire"],
-    imageUrl: "/images/1985-Mark-McGwire_576b8749.jpg",
-  },
-  {
-    keywords: ["martin brodeur"],
-    imageUrl: "/images/1990 Martin Brodeur.png",
-  },
-  {
-    keywords: ["charizard holo", "charizard - holo", "1999 charizard", "pokemon charizard"],
-    imageUrl: "/images/1999 Charizard - Holo.png",
-  },
-  {
-    keywords: ["charizard v", "2022 charizard"],
-    imageUrl: "/images/2022 Charizard V.png",
-  },
-  {
-    keywords: ["sun & moon", "sun and moon"],
-    imageUrl: "/images/2019 Sun & Moon.png",
-  },
-  {
-    keywords: ["spider-verse", "spider verse", "edge of spider-verse"],
-    imageUrl: "/images/Edge of Spider-Verse 2.png",
-  },
-  {
-    keywords: ["star wars"],
-    imageUrl: "/images/Star Wars 1.png",
-  },
-  {
-    keywords: ["ken griffey jr", "griffey rookie"],
-    imageUrl: "/images/1989-Ken-Griffey-Jr.jpg",
-  },
-  {
-    keywords: ["wayne gretzky", "gretzky rookie"],
-    imageUrl: "/images/1979 Wayne Gretzky Rookie.jpg",
-  },
-  {
-    keywords: ["kobe bryant", "kobe rookie"],
-    imageUrl: "/images/1986-87 Michael Jordan.jpg",
-  },
-];
+// NOTE: Keyword-based image mappings have been disabled because the /images/ paths
+// are no longer available. All listings will fall back to category images or the
+// no-image placeholder.
+const keywordImageMap: Array<{ keywords: string[]; imageUrl: string }> = [];
 
 function normalizeListingImageUrl(url: string) {
   if (url.startsWith('http')) return url;
@@ -100,7 +47,8 @@ export function resolveTradebiliaListingImage(input: TradebiliaListingImageInput
     return normalizeListingImageUrl(input.primaryPhotoUrl);
   }
 
-  // 2. Keyword-based fallback for seed listings or broken URLs
+  // 2. Keyword-based fallback (disabled - use category fallback instead)
+  // Previously used /images/ paths which are no longer available
   const matched = keywordImageMap.find(entry => 
     entry.keywords.some(keyword => titleLower.includes(keyword))
   );
@@ -116,5 +64,6 @@ export function resolveTradebiliaListingImage(input: TradebiliaListingImageInput
   }
 
   // 4. Return a "No Image" placeholder if no match found
+  console.log(`[ImageResolver] No image found for "${input.title}" (category: ${input.category})`);
   return "https://d2xsxph8kpxj0f.cloudfront.net/310519663570115757/nAx6ATm2BH4G46yabuMZgM/no-image-placeholder-HPQQaNUbyBPHRn2iPDGbTL.webp";
 }
