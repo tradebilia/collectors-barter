@@ -771,9 +771,12 @@ export default function AddInventory() {
 
               {/* Photo Preview Grid */}
               <div className="mb-4 space-y-2">
-                {photos.length > 0 && (
-                  <p className="text-xs text-yellow-400 mb-2">💡 Click on a photo to set it as your cover photo (highlighted with yellow border)</p>
-                )}
+                <div className="flex items-center justify-between">
+                  {photos.length > 0 && (
+                    <p className="text-xs text-yellow-400">💡 Click on a photo to set it as your cover photo (highlighted with yellow border)</p>
+                  )}
+                  <p className="text-xs font-semibold text-slate-400">{photos.length} of 10</p>
+                </div>
                 {photos.length > 0 ? (
                   <div className="grid grid-cols-2 gap-2">
                     {photos.map((photo, index) => (
@@ -810,13 +813,19 @@ export default function AddInventory() {
               </div>
 
               {/* Upload Button */}
-              <label className="flex cursor-pointer items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium hover:bg-blue-700 transition-colors">
+              <label className={`flex cursor-pointer items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+                photos.length >= 10
+                  ? 'bg-slate-500 cursor-not-allowed opacity-50'
+                  : 'bg-blue-600 hover:bg-blue-700'
+              }`}>
                 <Upload className="mr-2 h-4 w-4" />
                 Upload Photos
-                <input type="file" multiple accept="image/*" onChange={handlePhotos} className="hidden" />
+                <input type="file" multiple accept="image/*" onChange={handlePhotos} className="hidden" disabled={photos.length >= 10} />
               </label>
 
-              <p className="mt-2 text-xs text-white/50">At least 1 photo required</p>
+              <p className="mt-2 text-xs text-white/50">
+                {photos.length >= 10 ? 'Maximum 10 photos reached' : 'At least 1 photo required'}
+              </p>
             </div>
           </div>
 

@@ -1096,6 +1096,38 @@ export default function AccountSettings() {
                 </CardContent>
               </Card>
 
+              {/* Pending Connections Quick Links */}
+              {(() => {
+                const allPlatforms = [
+                  { key: 'facebook', label: 'Facebook', logo: '/manus-storage/Facebooklogo_19970ec8.png', isConnected: !!user?.facebookId },
+                  { key: 'paypal', label: 'PayPal', logo: '/manus-storage/Paypal_ace464a4.png', isConnected: !!user?.paypalEmail },
+                  { key: 'linkedin', label: 'LinkedIn', logo: '/manus-storage/LinkedIn_dc442074.webp', isConnected: !!user?.linkedinId },
+                  { key: 'ebay', label: 'eBay', logo: '/manus-storage/Ebaylogo_f6331705.png', isConnected: !!user?.ebayUsername },
+                  { key: 'whatnot', label: 'WhatNot', logo: '/manus-storage/WhatNot_f1e0a2e5.png', isConnected: false },
+                ];
+                const pendingPlatforms = allPlatforms.filter(p => !p.isConnected);
+                
+                return pendingPlatforms.length > 0 ? (
+                  <Card className="rounded-[1.5rem] border-slate-200 bg-white shadow-sm">
+                    <CardHeader>
+                      <CardTitle>Pending Connections</CardTitle>
+                      <CardDescription>Connect these accounts to expand your trading profile</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        {pendingPlatforms.map(p => (
+                          <div key={p.key} className="flex flex-col items-center justify-center p-4 rounded-xl border border-slate-100 bg-slate-50/50 hover:bg-slate-100/50 transition-colors cursor-pointer">
+                            <img src={p.logo} alt={p.label} className="h-8 mb-2 object-contain" />
+                            <p className="text-sm font-semibold text-slate-900 text-center">{p.label}</p>
+                            <p className="text-xs text-slate-500 mt-1">Not connected</p>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ) : null;
+              })()}
+
               {/* PayPal Email Card */}
               <Card className="rounded-[1.5rem] border-slate-200 bg-white shadow-sm">
                 <CardHeader>

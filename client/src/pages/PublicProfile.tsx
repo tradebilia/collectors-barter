@@ -16,7 +16,10 @@ import {
   History,
   ShoppingBag,
   UserPlus,
-  UserCheck
+  UserCheck,
+  Package,
+  Zap,
+  MessageCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -276,19 +279,64 @@ export default function PublicProfile() {
                   <Calendar className="h-3.5 w-3.5" />
                   <span>Joined {new Date(user.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</span>
                 </div>
-                {user.lastActivityAt && (
-                  <div className="flex items-center gap-1.5">
-                    <History className="h-3.5 w-3.5" />
-                    <span>Active recently</span>
-                  </div>
-                )}
+                {user.lastActivityAt && (() => {
+                  const lastActivity = new Date(user.lastActivityAt).getTime();
+                  const now = Date.now();
+                  const isOnline = (now - lastActivity) < 5 * 60 * 1000; // 5 minutes
+                  return (
+                    <div className="flex items-center gap-1.5">
+                      <div className={`h-2 w-2 rounded-full ${isOnline ? 'bg-green-500' : 'bg-slate-300'}`} />
+                      <span>{isOnline ? 'Online now' : 'Active recently'}</span>
+                    </div>
+                  );
+                })()}
               </div>
-              {(profile?.location || user.facebookLocation) && (
+              {(profile?.contactTown && profile?.contactState) && (
                 <div className="flex items-center gap-1.5 text-slate-500 text-sm font-medium mt-2">
                   <MapPin className="h-3.5 w-3.5" />
-                  <span>{profile?.location || user.facebookLocation}</span>
+                  <span>{profile?.contactTown}, {profile?.contactState}</span>
                 </div>
               )}
+              {/* Stats Bar */}
+              <div className="grid grid-cols-4 gap-3 mt-4 pt-4 border-t border-slate-100">
+                <div className="text-center">
+                  <div className="flex items-center justify-center gap-1 mb-1">
+                    <Package className="h-4 w-4 text-slate-400" />
+                    <span className="text-lg font-black text-slate-950">{stats?.itemsListed || 0}</span>
+                  </div>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Listed</p>
+                </div>
+                <div className="text-center">
+                  <div className="flex items-center justify-center gap-1 mb-1">
+                    <Zap className="h-4 w-4 text-slate-400" />
+                    <span className="text-lg font-black text-slate-950">{stats?.completedTrades || 0}</span>
+                  </div>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Trades</p>
+                </div>
+                <div className="text-center">
+                  <div className="flex items-center justify-center gap-1 mb-1">
+                    <Star className="h-4 w-4 text-amber-400 fill-amber-400" />
+                    <span className="text-lg font-black text-slate-950">{totalReviews}</span>
+                  </div>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Reviews</p>
+                </div>
+                <div className="text-center">
+                  {(() => {
+                    const lastActivity = user.lastActivityAt ? new Date(user.lastActivityAt).getTime() : 0;
+                    const now = Date.now();
+                    const isOnline = (now - lastActivity) < 5 * 60 * 1000; // 5 minutes
+                    return (
+                      <>
+                        <div className="flex items-center justify-center gap-1 mb-1">
+                          <div className={`h-2 w-2 rounded-full ${isOnline ? 'bg-green-500' : 'bg-slate-300'}`} />
+                          <span className="text-lg font-black text-slate-950">{isOnline ? 'Online' : 'Away'}</span>
+                        </div>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Status</p>
+                      </>
+                    );
+                  })()}
+                </div>
+              </div>
             </div>
 
             {/* Actions */}
@@ -649,31 +697,7 @@ export default function PublicProfile() {
                     </div>
                   </div>
                 )}
-                {/* Pending Connections — only shows platforms not yet connected */}
-                {(() => {
-                  const allPlatforms = [
-                    { key: 'facebook', label: 'Facebook', logo: '/manus-storage/Facebooklogo_19970ec8.png', isConnected: !!user.facebookId },
-                    { key: 'paypal', label: 'PayPal', logo: '/manus-storage/Paypal_ace464a4.png', isConnected: !!user.paypalEmail },
-                    { key: 'linkedin', label: 'LinkedIn', logo: '/manus-storage/LinkedIn_dc442074.webp', isConnected: !!user.linkedinId },
-                    { key: 'ebay', label: 'eBay', logo: '/manus-storage/Ebaylogo_f6331705.png', isConnected: !!user.ebayUsername },
-                    { key: 'whatnot', label: 'WhatNot', logo: '/manus-storage/WhatNot_f1e0a2e5.png', isConnected: false },
-                  ];
-                  const pendingPlatforms = allPlatforms.filter(p => !p.isConnected);
-                  
-                  return pendingPlatforms.length > 0 ? (
-                    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                      <h2 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Pending Connections</h2>
-                      <div className="grid grid-cols-3 gap-3">
-                        {pendingPlatforms.map(p => (
-                          <div key={p.key} className="flex flex-col items-center justify-center p-3 rounded-xl border border-slate-100 bg-slate-50/30 grayscale opacity-40">
-                            <img src={p.logo} alt={p.label} className="h-6 mb-1 object-contain" />
-                            <p className="text-[8px] font-black text-slate-400 uppercase tracking-tighter">Connect</p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ) : null;
-                })()}
+                {/* Pending Connections — only shown on user's own profile in AccountSettings, hidden on public profiles */}
               </div>
             </div>
           )}
