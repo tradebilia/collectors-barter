@@ -308,7 +308,7 @@ export default function Messages() {
       <CategoryBar />
 
       <main className="py-8 lg:py-10 px-4">
-        <div className="grid gap-6 grid-cols-[160px_380px_1fr]">
+        <div className="grid gap-6 grid-cols-[240px_1fr_1.2fr]">
           <aside className="rounded-[2rem] border border-slate-300/70 bg-white/82 p-4 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-sm h-fit sticky top-8">
             <h2 className="text-xl font-semibold text-slate-900">Messages</h2>
             <div className="mt-5 space-y-2">

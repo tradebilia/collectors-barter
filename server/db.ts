@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { and, asc, desc, eq, gte, inArray, isNotNull, like, lte, ne, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, isNotNull, isNull, like, lte, ne, or, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import type { InsertUser, User } from "../drizzle/schema";
 import {
@@ -3138,9 +3138,12 @@ export async function getInquiriesByUser(userId: number, limit: number = 50, off
     .from(itemInquiries)
     .innerJoin(users, eq(itemInquiries.senderId, users.id))
     .where(
-      or(
-        eq(itemInquiries.recipientId, userId),
-        eq(itemInquiries.senderId, userId)
+      and(
+        or(
+          eq(itemInquiries.recipientId, userId),
+          eq(itemInquiries.senderId, userId)
+        ),
+        isNull(itemInquiries.deletedAt)
       )
     )
     .orderBy(desc(itemInquiries.createdAt))
