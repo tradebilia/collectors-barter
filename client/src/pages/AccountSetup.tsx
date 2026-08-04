@@ -79,10 +79,16 @@ export default function AccountSetup() {
   const [bioText, setBioText] = useState("");
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [notificationPreferences, setNotificationPreferences] = useState({
-    tradeRequests: true,
-    messages: true,
-    feedback: true,
-    systemUpdates: true,
+    tradeInitiated: { email: true, text: true },
+    counterProposal: { email: true, text: true },
+    proposalAccepted: { email: true, text: true },
+    proposalRejected: { email: true, text: false },
+    itemsShipped: { email: true, text: true },
+    itemsReceived: { email: true, text: true },
+    feedbackReceived: { email: true, text: false },
+    systemUpdates: { email: true, text: false },
+    marketingEmails: { email: false, text: false },
+    messages: { email: true, text: false },
   });
   const avatarInputRef = useRef<HTMLInputElement>(null);
 
@@ -451,12 +457,7 @@ export default function AccountSetup() {
       businessEmail: formData.businessEmail || undefined,
       businessWebsite: formData.businessWebsite || undefined,
       // Notification preferences
-      notificationPreferences: {
-        tradeRequests: notificationPreferences.tradeRequests,
-        messages: notificationPreferences.messages,
-        feedback: notificationPreferences.feedback,
-        systemUpdates: notificationPreferences.systemUpdates,
-      },
+      notificationPreferences: notificationPreferences,
     });
   };
 

@@ -132,3 +132,8 @@
   - Added explicit validation that throws FORBIDDEN error when non-admins try to modify merchant fields
   - Updated database persistence layer to only write merchant fields for admins
   - UI already had disabled fields, now backend enforces the restriction
+- [x] Fix notification preferences schema validation
+  - Updated Zod schema to accept nested email/text structure for each notification type
+  - Frontend was sending { tradeInitiated: { email, text }, ... } but backend expected flat booleans
+  - Now accepts: tradeInitiated, counterProposal, proposalAccepted, proposalRejected, itemsShipped, itemsReceived, feedbackReceived, systemUpdates, marketingEmails, messages
+  - Each notification type has email and text toggles
