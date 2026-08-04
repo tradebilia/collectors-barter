@@ -68,4 +68,5 @@
 - [x] Update CategoryPage.tsx hero section with new background image URLs
 - [x] Upload all 10 category title images to CDN (Autographs, Sports Cards, Movies, Pokemon, Vintage Toys, Comics, Disney Pins, Video Games, Coins, Stamps)
 - [x] Update CategoryPage.tsx title image URLs with new CDN paths
-- [ ] Check for any remaining broken image links or 404 routes
+- [x] Upload hero section background image to CDN
+- [x] Update Home.tsx hero section with new background image URL
