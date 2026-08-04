@@ -311,10 +311,12 @@ class SDKServer {
       throw ForbiddenError("User not found");
     }
 
-    await db.upsertUser({
-      openId: user.openId,
-      lastSignedIn: signedInAt,
-    });
+    if (user.openId) {
+      await db.upsertUser({
+        openId: user.openId,
+        lastSignedIn: signedInAt,
+      });
+    }
 
     return user;
   }
@@ -332,6 +334,7 @@ function buildCronUser(
   userInfo: GetUserInfoWithJwtResponse
 ): AuthenticatedUser {
   const now = new Date();
+  const nowStr = now.toISOString().slice(0, 19).replace('T', ' ');
   return {
     id: -1,
     openId: userInfo.openId,
@@ -339,9 +342,61 @@ function buildCronUser(
     email: null,
     loginMethod: null,
     role: "user",
-    createdAt: now,
-    updatedAt: now,
-    lastSignedIn: now,
+    createdAt: nowStr,
+    updatedAt: nowStr,
+    lastSignedIn: nowStr,
+    lastActivityAt: nowStr,
+    // Custom Tradebilia fields — all nullable, set to null for cron context
+    username: null,
+    passwordHash: null,
+    displayName: null,
+    avatarUrl: null,
+    securityQuestion: null,
+    securityAnswerHash: null,
+    ebayUsername: null,
+    ebayUserId: null,
+    ebayFeedbackScore: null,
+    ebayFeedbackPercentage: null,
+    ebayMemberSince: null,
+    ebaySellerLevel: null,
+    ebayIdVerified: 0,
+    ebayStar: null,
+    ebayPositive12mo: null,
+    ebayNeutral12mo: null,
+    ebayNegative12mo: null,
+    ebayIsStoreOwner: 0,
+    ebayConnectedAt: null,
+    ebayAccessToken: null,
+    ebayRefreshToken: null,
+    ebayTokenExpiresAt: null,
+    facebookId: null,
+    facebookName: null,
+    facebookVerified: 0,
+    facebookConnectedAt: null,
+    facebookAccessToken: null,
+    facebookEmail: null,
+    facebookPicture: null,
+    facebookLocation: null,
+    facebookLink: null,
+    facebookLikes: null,
+    linkedinId: null,
+    linkedinName: null,
+    linkedinEmail: null,
+    linkedinPicture: null,
+    linkedinHeadline: null,
+    linkedinProfileUrl: null,
+    linkedinAccessToken: null,
+    linkedinConnectedAt: null,
+    isSuspended: 0,
+    suspendedAt: null,
+    suspensionReason: null,
+    suspendedBy: null,
+    isBanned: 0,
+    bannedAt: null,
+    banReason: null,
+    bannedBy: null,
+    warnCount: 0,
+    lastWarnedAt: null,
     taskUid: userInfo.taskUid ?? undefined,
     isCron: true,
   } as AuthenticatedUser;
