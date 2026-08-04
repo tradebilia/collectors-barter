@@ -353,7 +353,7 @@ export default function Messages() {
                 </div>
               ) : (filteredThreads.length || filteredInquiries.length) ? (
                 <div className="space-y-3">
-                  {filteredInquiries.map(inquiry => (
+                  {filteredInquiries.map((inquiry: any) => (
                     <button
                       key={`inquiry-${inquiry.id}`}
                       type="button"

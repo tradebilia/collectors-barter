@@ -1318,6 +1318,26 @@ export const appRouter = router({
           offset: z.number().int().nonnegative().default(0),
         }),
       )
+      .output(
+        z.array(
+          z.object({
+            id: z.number(),
+            senderId: z.number(),
+            senderName: z.string().nullable(),
+            senderAvatarUrl: z.string().nullable(),
+            recipientId: z.number(),
+            recipientName: z.string().nullable(),
+            recipientAvatarUrl: z.string().nullable(),
+            listingId: z.number(),
+            subject: z.string(),
+            message: z.string(),
+            isRead: z.number(),
+            createdAt: z.string(),
+            updatedAt: z.string(),
+            deletedAt: z.string().nullable(),
+          })
+        )
+      )
       .query(async ({ ctx, input }) => {
         return getInquiriesByUser(ctx.user.id, input.limit, input.offset);
       }),
