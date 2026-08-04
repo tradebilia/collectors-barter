@@ -98,3 +98,6 @@
 - [x] Update Conventions page hero title
   - Replaced old SVG title with new Conventions title image (/manus-storage/Conventions_b7b8fc4e.webp)
   - Hero section now displays correctly with colorful Tradebilia logo and "CONVENTIONS" text
+- [x] Update AccountSetup page hero title
+  - Replaced old AccountSettings SVG with new AccountSetup title image (/manus-storage/AccountSetup_8c053a9e.webp)
+  - Hero section now displays correctly with colorful Tradebilia logo
