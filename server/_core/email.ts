@@ -330,9 +330,8 @@ export async function sendReferralInviteEmail(params: {
             src="https://tradebilia.manus.space/manus-storage/tradebilia_final_transparent_58812c5a.svg"
             alt="Tradebilia"
             width="180"
-            style="display:block;margin:0 auto;max-width:180px;"
+            style="display:block;margin:0 auto;width:auto;max-width:100%;height:140px;"
           />
-          <p style="color:rgba(255,255,255,0.55);font-size:12px;margin:10px 0 0;letter-spacing:0.1em;text-transform:uppercase;">Collectors Trading Exchange</p>
         </td></tr>
         <tr><td style="padding:32px;">
           <p style="margin:0 0 16px;font-size:15px;color:#374151;line-height:1.7;">${bodyHtml}</p>
