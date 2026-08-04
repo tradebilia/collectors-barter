@@ -62,7 +62,7 @@ export function ForumTopic() {
         <div className="container relative flex h-64 items-center justify-center py-0 sm:h-72 sm:py-0 lg:h-80 lg:py-0">
           <div className="flex w-full max-w-4xl items-center justify-center -ml-32">
             <img
-              src="/images/forum-title.svg"
+              src="/manus-storage/Collectorsforum_035c9c2c.svg"
               alt="Collector's Forum"
               className="h-auto w-full max-h-[300px]"
             />

@@ -101,3 +101,11 @@
 - [x] Update AccountSetup page hero title
   - Replaced old AccountSettings SVG with new AccountSetup title image (/manus-storage/AccountSetup_8c053a9e.webp)
   - Hero section now displays correctly with colorful Tradebilia logo
+- [x] Fix ForumTopic page hero title
+  - Fixed broken `/images/forum-title.svg` link in ForumTopic.tsx (line 65)
+  - Updated to use new Collector's Forum title image (/manus-storage/Collectorsforum_035c9c2c.svg)
+  - Individual forum topic pages now display correctly
+- [x] Update TradeVoting page hero title
+  - Replaced plain text heading with Community Trade Evaluation title image (/manus-storage/CommunityTradeEvaluation_0423088f.webp)
+  - Updated hero section height to match other pages (h-64 sm:h-72 lg:h-80)
+  - Trade voting page now displays consistently with other pages
