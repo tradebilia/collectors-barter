@@ -83,3 +83,6 @@
   - Root cause: Logic was deleting all photos and re-inserting all of them, including existing ones
   - Fix: Non-admins now only INSERT new photos (those with contentBase64), existing photos are never touched
   - Admins still have full control to delete and reorder photos
+- [x] Increase photo upload limit from 6 to 10
+  - Updated createListing and updateListing procedures
+  - Users can now upload up to 10 photos per listing
