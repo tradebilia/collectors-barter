@@ -279,24 +279,13 @@ export default function PublicProfile() {
                   <Calendar className="h-3.5 w-3.5" />
                   <span>Joined {new Date(user.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</span>
                 </div>
-                {user.lastActivityAt && (() => {
-                  const lastActivity = new Date(user.lastActivityAt).getTime();
-                  const now = Date.now();
-                  const isOnline = (now - lastActivity) < 5 * 60 * 1000; // 5 minutes
-                  return (
-                    <div className="flex items-center gap-1.5">
-                      <div className={`h-2 w-2 rounded-full ${isOnline ? 'bg-green-500' : 'bg-slate-300'}`} />
-                      <span>{isOnline ? 'Online now' : 'Active recently'}</span>
-                    </div>
-                  );
-                })()}
+                {(profile?.contactTown && profile?.contactState) && (
+                  <div className="flex items-center gap-1.5">
+                    <MapPin className="h-3.5 w-3.5" />
+                    <span>{profile?.contactTown}, {profile?.contactState}</span>
+                  </div>
+                )}
               </div>
-              {(profile?.contactTown && profile?.contactState) && (
-                <div className="flex items-center gap-1.5 text-slate-500 text-sm font-medium mt-2">
-                  <MapPin className="h-3.5 w-3.5" />
-                  <span>{profile?.contactTown}, {profile?.contactState}</span>
-                </div>
-              )}
               {/* Stats Bar */}
               <div className="grid grid-cols-4 gap-3 mt-4 pt-4 border-t border-slate-100">
                 <div className="text-center">
