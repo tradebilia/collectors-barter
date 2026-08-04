@@ -204,6 +204,19 @@ export default function Messages() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const directParam = params.get("direct");
+    const inquiryParam = params.get("inquiry");
+    
+    if (inquiryParam) {
+      // Handle inquiry parameter - set folder to inquiries and find the inquiry
+      setFolder("inquiries");
+      const inquiryId = Number(inquiryParam);
+      const matchingInquiry = filteredInquiries.find(i => i.id === inquiryId);
+      if (matchingInquiry) {
+        setActiveThreadKey(`inquiry-${matchingInquiry.id}`);
+      }
+      return;
+    }
+    
     if (directParam) {
       const counterpartId = Number(directParam);
       // Find the DB thread for this counterpart

@@ -29,7 +29,22 @@ export function ComposeMessageModal({ isOpen, onClose, recipient, defaultSubject
   const [subject, setSubject] = useState(defaultSubject ?? "");
   const [body, setBody] = useState("");
 
-  const sendMutation = trpc.market.sendDirectMessage.useMutation({
+  // Use sendInquiry if itemId is present, otherwise use sendDirectMessage
+  const sendInquiryMutation = trpc.market.sendInquiry.useMutation({
+    onSuccess: (data) => {
+      toast.success(`Message sent to ${recipient.displayName}!`);
+      setSubject("");
+      setBody("");
+      onClose();
+      // Navigate to the inquiry thread in the inbox
+      setLocation(`/messages?inquiry=${recipient.id}`);
+    },
+    onError: (err) => {
+      toast.error(err.message || "Failed to send message");
+    },
+  });
+
+  const sendDirectMessageMutation = trpc.market.sendDirectMessage.useMutation({
     onSuccess: (data) => {
       toast.success(`Message sent to ${recipient.displayName}!`);
       setSubject("");
@@ -43,6 +58,9 @@ export function ComposeMessageModal({ isOpen, onClose, recipient, defaultSubject
     },
   });
 
+  // Choose the correct mutation based on whether itemId is present
+  const sendMutation = itemId ? sendInquiryMutation : sendDirectMessageMutation;
+
   const handleSend = () => {
     if (!subject.trim()) {
       toast.error("Please enter a subject");
@@ -52,7 +70,23 @@ export function ComposeMessageModal({ isOpen, onClose, recipient, defaultSubject
       toast.error("Please enter a message");
       return;
     }
-    sendMutation.mutate({ recipientId: recipient.id, subject: subject.trim(), body: body.trim(), itemId });
+    
+    if (itemId) {
+      // Send as inquiry
+      sendInquiryMutation.mutate({
+        listingId: itemId,
+        recipientId: recipient.id,
+        subject: subject.trim(),
+        message: body.trim(),
+      });
+    } else {
+      // Send as direct message
+      sendDirectMessageMutation.mutate({
+        recipientId: recipient.id,
+        subject: subject.trim(),
+        body: body.trim(),
+      });
+    }
   };
 
   const initials = recipient.displayName
