@@ -722,7 +722,7 @@ export default function AccountSettings() {
                           value={identityInfo.firstName} 
                           onChange={(e) => setIdentityInfo(prev => ({ ...prev, firstName: e.target.value }))}
                           disabled={user?.role !== 'admin'}
-                          className='rounded-lg border-slate-200' 
+                          className='rounded-lg border-slate-200 border bg-white disabled:opacity-50 disabled:cursor-not-allowed' 
                         />
                       </div>
                       <div className="space-y-2">
@@ -733,75 +733,92 @@ export default function AccountSettings() {
                           value={identityInfo.lastName} 
                           onChange={(e) => setIdentityInfo(prev => ({ ...prev, lastName: e.target.value }))}
                           disabled={user?.role !== 'admin'}
-                          className='rounded-lg border-slate-200' 
+                          className='rounded-lg border-slate-200 border bg-white disabled:opacity-50 disabled:cursor-not-allowed' 
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label>Email Address</Label>
+                        <Label htmlFor="email">Email Address</Label>
                         <Input 
+                          id="email"
+                          name="email"
+                          type="email"
+                          placeholder="Email address"
                           value={identityInfo.email} 
                           onChange={(e) => setIdentityInfo(prev => ({ ...prev, email: e.target.value }))}
                           disabled={user?.role !== 'admin'}
-                          className='rounded-lg border-slate-200' 
+                          className='rounded-lg border-slate-200 border bg-white disabled:opacity-50 disabled:cursor-not-allowed' 
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label>Country</Label>
+                        <Label htmlFor="country">Country</Label>
                         <Input 
+                          id="country"
+                          name="country"
+                          placeholder="Country"
                           value={identityInfo.country} 
                           onChange={(e) => setIdentityInfo(prev => ({ ...prev, country: e.target.value }))}
                           disabled={user?.role !== 'admin'}
-                          className='rounded-lg border-slate-200' 
+                          className='rounded-lg border-slate-200 border bg-white disabled:opacity-50 disabled:cursor-not-allowed' 
                         />
                       </div>
                       <div className="col-span-2 space-y-2">
-                        <Label>Street Address</Label>
+                        <Label htmlFor="street">Street Address</Label>
                         <Input 
+                          id="street"
+                          name="street"
                           value={identityInfo.street} 
                           onChange={(e) => setIdentityInfo(prev => ({ ...prev, street: e.target.value }))}
                           placeholder="Street address"
                           disabled={user?.role !== 'admin'}
-                          className='rounded-lg border-slate-200' 
+                          className='rounded-lg border-slate-200 border bg-white disabled:opacity-50 disabled:cursor-not-allowed' 
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label>Town/City</Label>
+                        <Label htmlFor="town">Town/City</Label>
                         <Input 
+                          id="town"
+                          name="town"
                           value={identityInfo.town} 
                           onChange={(e) => setIdentityInfo(prev => ({ ...prev, town: e.target.value }))}
                           placeholder="Town or city"
                           disabled={user?.role !== 'admin'}
-                          className='rounded-lg border-slate-200' 
+                          className='rounded-lg border-slate-200 border bg-white disabled:opacity-50 disabled:cursor-not-allowed' 
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label>State</Label>
+                        <Label htmlFor="state">State</Label>
                         <Input 
+                          id="state"
+                          name="state"
                           value={identityInfo.state} 
                           onChange={(e) => setIdentityInfo(prev => ({ ...prev, state: e.target.value }))}
                           placeholder="State"
                           disabled={user?.role !== 'admin'}
-                          className='rounded-lg border-slate-200' 
+                          className='rounded-lg border-slate-200 border bg-white disabled:opacity-50 disabled:cursor-not-allowed' 
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label>Zip Code</Label>
+                        <Label htmlFor="zipCode">Zip Code</Label>
                         <Input 
+                          id="zipCode"
+                          name="zipCode"
                           value={identityInfo.zipCode} 
                           onChange={(e) => setIdentityInfo(prev => ({ ...prev, zipCode: e.target.value }))}
                           placeholder="Zip code"
                           disabled={user?.role !== 'admin'}
-                          className='rounded-lg border-slate-200' 
+                          className='rounded-lg border-slate-200 border bg-white disabled:opacity-50 disabled:cursor-not-allowed' 
                         />
                       </div>
                       <div className="col-span-2 space-y-2">
-                        <Label>Phone Number</Label>
+                        <Label htmlFor="phoneNumber">Phone Number</Label>
                         <Input 
+                          id="phoneNumber"
+                          name="phoneNumber"
                           value={identityInfo.phoneNumber} 
                           onChange={(e) => setIdentityInfo(prev => ({ ...prev, phoneNumber: e.target.value }))}
                           placeholder="Phone number"
                           disabled={user?.role !== 'admin'}
-                          className='rounded-lg border-slate-200' 
+                          className='rounded-lg border-slate-200 border bg-white disabled:opacity-50 disabled:cursor-not-allowed' 
                         />
                       </div>
                     </div>

@@ -33,6 +33,9 @@ export const collectibleCategories = ['comics', 'sports_cards', 'vintage_toys', 
 export const itemConditions = ['mint', 'near_mint', 'excellent', 'very_good', 'good', 'fair', 'poor'] as const;
 
 let _db: ReturnType<typeof drizzle> | null = null;
+let _dbLastError: Error | null = null;
+let _dbErrorCount = 0;
+const MAX_ERROR_COUNT = 3;
 
 const categoryLabels: Record<(typeof collectibleCategories)[number], string> = {
   comics: "Comics",
@@ -100,6 +103,20 @@ function safeJsonParse<T>(raw: string | null | undefined, fallback: T): T {
 }
 
 /**
+ * Track database errors and trigger reconnection if needed.
+ * Call this when a database operation fails.
+ */
+export function trackDbError(error: Error): void {
+  _dbLastError = error;
+  _dbErrorCount++;
+  console.error(`[trackDbError] Database error #${_dbErrorCount}: ${error.message}`);
+  
+  if (_dbErrorCount >= MAX_ERROR_COUNT) {
+    console.warn(`[trackDbError] Max errors reached (${MAX_ERROR_COUNT}), connection will be reset on next requireDb() call`);
+  }
+}
+
+/**
  * Gracefully close the underlying mysql2 connection pool. Called on
  * SIGTERM/SIGINT so restarts never leave half-open database connections.
  */
@@ -141,6 +158,16 @@ export async function requireDb(): Promise<ReturnType<typeof drizzle>> {
     } else {
       _db = drizzle(dbUrl);
     }
+    _dbErrorCount = 0;
+    _dbLastError = null;
+  } else if (_dbErrorCount >= MAX_ERROR_COUNT) {
+    // If we've had too many errors, reset the connection
+    console.warn(`[requireDb] Too many database errors (${_dbErrorCount}), resetting connection`);
+    await closeDb();
+    _dbErrorCount = 0;
+    _dbLastError = null;
+    // Recursively call to reinitialize
+    return requireDb();
   }
   return _db;
 }
