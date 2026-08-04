@@ -72,3 +72,9 @@
 - [x] Update Home.tsx hero section with new background image URL
 - [x] Upload all 17 page title SVGs to CDN
 - [x] Update all page files with new title image URLs
+
+## Phase 10: Bug Fixes
+- [x] Fix non-admin photo upload error when adding additional images to listings
+  - Issue: Non-admins were getting "Only admins can delete photos" error when trying to add new photos
+  - Fix: Updated validation logic to only prevent deletion of existing photos, allow adding new ones
+  - Non-admins can now add new photos to their listings without restriction

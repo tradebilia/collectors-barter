@@ -2114,7 +2114,7 @@ export async function updateListing(
     .limit(1);
   const isAdmin = userRecord[0]?.role === 'admin';
 
-  // If not admin, ensure all photos are either new uploads or existing ones (no deletion)
+  // If not admin, ensure they're not deleting existing photos (only adding new ones allowed)
   if (!isAdmin) {
     // Get existing photos for this listing
     const existingPhotos = await db
@@ -2124,10 +2124,11 @@ export async function updateListing(
 
     const existingUrls = new Set(existingPhotos.map(p => p.imageUrl));
     const incomingUrls = new Set(input.photos.map(p => p.imageUrl).filter(Boolean));
+    const newUploads = input.photos.filter(p => p.contentBase64);
 
-    // Check if any existing photos are missing from the incoming photos
+    // Check if any existing photos are being removed without being replaced by new uploads
     for (const url of Array.from(existingUrls)) {
-      if (!incomingUrls.has(url)) {
+      if (!incomingUrls.has(url) && newUploads.length === 0) {
         throw new Error("Unauthorized: Only admins can delete photos from listings");
       }
     }
