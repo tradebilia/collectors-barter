@@ -35,9 +35,15 @@ export function ReferralsTab() {
   const updateTemplateMutation = trpc.admin.updateReferralEmailTemplate.useMutation();
 
   const handleSaveTemplate = async () => {
-    await updateTemplateMutation.mutateAsync({ subject: emailSubject, body: emailBody });
-    setTemplateDirty(false);
-    toast.success("Email template saved");
+    if (!emailSubject.trim()) { toast.error("Subject cannot be empty"); return; }
+    if (!emailBody.trim()) { toast.error("Message body cannot be empty"); return; }
+    try {
+      await updateTemplateMutation.mutateAsync({ subject: emailSubject, body: emailBody });
+      setTemplateDirty(false);
+      toast.success("Email template saved successfully");
+    } catch (err: any) {
+      toast.error(err?.message ?? "Failed to save template");
+    }
   };
 
   const handleSendEmails = async () => {
@@ -145,7 +151,7 @@ export function ReferralsTab() {
               size="sm"
               variant="outline"
               onClick={handleSaveTemplate}
-              disabled={updateTemplateMutation.isPending || !templateDirty}
+              disabled={updateTemplateMutation.isPending}
               className="flex items-center gap-1"
             >
               <Save className="h-3 w-3" />
