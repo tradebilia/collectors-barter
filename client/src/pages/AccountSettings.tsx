@@ -431,7 +431,17 @@ export default function AccountSettings() {
         displayName: profileForm.displayName,
         bio: profileForm.bio,
         // Only send identity and merchant fields if user is admin (non-admins can't modify these after setup)
-        ...(user?.role === 'admin' && { contactPhone: profileForm.phoneNumber }),
+        ...(user?.role === 'admin' && {
+          firstName: identityInfo.firstName || undefined,
+          lastName: identityInfo.lastName || undefined,
+          contactEmail: identityInfo.email || undefined,
+          contactPhone: identityInfo.phoneNumber || undefined,
+          contactAddress: identityInfo.street || undefined,
+          contactTown: identityInfo.town || undefined,
+          contactState: identityInfo.state || undefined,
+          contactZipCode: identityInfo.zipCode || undefined,
+          contactCountry: identityInfo.country || undefined,
+        }),
         // Merchant fields - only for admins
         ...(user?.role === 'admin' && {
           isMerchant: merchantForm.isMerchant,
