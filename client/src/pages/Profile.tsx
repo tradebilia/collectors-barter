@@ -220,7 +220,7 @@ export default function Profile() {
         <div className="container relative flex h-64 items-center justify-center py-0 sm:h-72 sm:py-0 lg:h-80 lg:py-0">
           <div className="flex w-full max-w-4xl items-center justify-center -ml-32">
             <img
-              src="/manus-storage/Profile_5df6c41d.svg"
+              src="/manus-storage/Profile_db1a0ae7.svg"
               alt="Profile"
               className="h-auto w-full"
             />

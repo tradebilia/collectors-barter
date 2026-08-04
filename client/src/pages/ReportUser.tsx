@@ -17,7 +17,7 @@ import { toast } from "sonner";
 import { Link } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
 
-const TRADEBILIA_LOGO_URL = "/manus-storage/ReportaUser_001357ab_f09e8163.svg";
+const TRADEBILIA_LOGO_URL = "/manus-storage/ReportaUser_06c412db.svg";
 
 const categoryLinks = [
   ["Comics", "comics"],

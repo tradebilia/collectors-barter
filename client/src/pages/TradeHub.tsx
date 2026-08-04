@@ -16,7 +16,7 @@ import { TopBar } from "@/components/TopBar";
 import { CategoryBar } from "@/components/CategoryBar";
 import { resolveTradebiliaListingImage } from "@/lib/listingImages";
 
-const TRADE_HUB_LOGO_URL = "/manus-storage/TradeHub_8f0ef8eb.svg";
+const TRADE_HUB_LOGO_URL = "/manus-storage/TradeHub_26e41e1b.svg";
 
 type TradeFolder = 'proposal' | 'negotiating' | 'accepted' | 'shipped' | 'declined' | 'completed';
 

@@ -70,3 +70,5 @@
 - [x] Update CategoryPage.tsx title image URLs with new CDN paths
 - [x] Upload hero section background image to CDN
 - [x] Update Home.tsx hero section with new background image URL
+- [x] Upload all 17 page title SVGs to CDN
+- [x] Update all page files with new title image URLs
