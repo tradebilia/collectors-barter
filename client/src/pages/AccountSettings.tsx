@@ -430,7 +430,8 @@ export default function AccountSettings() {
       const payload: any = {
         displayName: profileForm.displayName,
         bio: profileForm.bio,
-        contactPhone: profileForm.phoneNumber,
+        // Only send contactPhone if user is admin (non-admins can't modify identity fields after setup)
+        ...(user?.role === 'admin' && { contactPhone: profileForm.phoneNumber }),
         // Merchant fields
         isMerchant: merchantForm.isMerchant,
         storeName: merchantForm.storeName || undefined,

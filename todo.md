@@ -116,3 +116,8 @@
   - Updated FacebookConnection.tsx with new Facebook logo URL (/manus-storage/Facebooklogo_19970ec8.png)
   - Updated LinkedInConnection.tsx with new LinkedIn logo URL (/manus-storage/LinkedIn_dc442074.webp)
   - All integration cards now display logos correctly in the Integrations tab
+- [x] Fix non-admin avatar upload restriction
+  - Issue: Non-admin users were blocked from updating profile pictures with "Identity fields cannot be modified" error
+  - Root cause: contactPhone was being sent in profile update payload and treated as identity field
+  - Fix: Modified AccountSettings.tsx to only send contactPhone if user is admin
+  - Non-admin users can now update avatar, display name, bio, and merchant fields without restriction
