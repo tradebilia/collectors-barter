@@ -649,24 +649,31 @@ export default function PublicProfile() {
                     </div>
                   </div>
                 )}
-                {/* Other Verifications — only shows platforms not yet connected */}
-                {(['paypal', 'instagram', 'twitter'] as const).length > 0 && (
-                  <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                    <h2 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Other Verifications</h2>
-                    <div className="grid grid-cols-3 gap-3">
-                      {[
-                        { key: 'paypal', label: 'PayPal', logo: 'https://upload.wikimedia.org/wikipedia/commons/b/b5/PayPal.svg' },
-                        { key: 'instagram', label: 'Instagram', logo: 'https://upload.wikimedia.org/wikipedia/commons/e/e7/Instagram_logo_2016.svg' },
-                        { key: 'twitter', label: 'X / Twitter', logo: 'https://upload.wikimedia.org/wikipedia/commons/5/57/X_logo_2023_(white).svg' },
-                      ].map(p => (
-                        <div key={p.key} className="flex flex-col items-center justify-center p-3 rounded-xl border border-slate-100 bg-slate-50/30 grayscale opacity-40">
-                          <img src={p.logo} alt={p.label} className="h-6 mb-1 object-contain" />
-                          <p className="text-[8px] font-black text-slate-400 uppercase tracking-tighter">Pending</p>
-                        </div>
-                      ))}
+                {/* Pending Connections — only shows platforms not yet connected */}
+                {(() => {
+                  const allPlatforms = [
+                    { key: 'facebook', label: 'Facebook', logo: '/manus-storage/Facebooklogo_e5c2a1b3.png', isConnected: !!user.facebookId },
+                    { key: 'paypal', label: 'PayPal', logo: '/manus-storage/Paypal_d4f8c2e1.png', isConnected: !!user.paypalEmail },
+                    { key: 'linkedin', label: 'LinkedIn', logo: '/manus-storage/LinkedIn_8c053a9e.webp', isConnected: !!user.linkedinId },
+                    { key: 'ebay', label: 'eBay', logo: '/manus-storage/Ebaylogo_f1b2c3d4.png', isConnected: !!user.ebayUsername },
+                    { key: 'whatnot', label: 'WhatNot', logo: '/manus-storage/WhatNot_a7b8c9d0.png', isConnected: false },
+                  ];
+                  const pendingPlatforms = allPlatforms.filter(p => !p.isConnected);
+                  
+                  return pendingPlatforms.length > 0 ? (
+                    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                      <h2 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Pending Connections</h2>
+                      <div className="grid grid-cols-3 gap-3">
+                        {pendingPlatforms.map(p => (
+                          <div key={p.key} className="flex flex-col items-center justify-center p-3 rounded-xl border border-slate-100 bg-slate-50/30 grayscale opacity-40">
+                            <img src={p.logo} alt={p.label} className="h-6 mb-1 object-contain" />
+                            <p className="text-[8px] font-black text-slate-400 uppercase tracking-tighter">Connect</p>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  ) : null;
+                })()}
               </div>
             </div>
           )}
