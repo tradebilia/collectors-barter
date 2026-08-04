@@ -3147,7 +3147,23 @@ export async function getInquiriesByUser(userId: number, limit: number = 50, off
     .limit(limit)
     .offset(offset);
   
-  return inquiries;
+  // Fetch recipient info for each inquiry
+  const inquiriesWithRecipients = await Promise.all(
+    inquiries.map(async (inquiry) => {
+      const recipient = await db
+        .select({ displayName: users.displayName, avatarUrl: users.avatarUrl })
+        .from(users)
+        .where(eq(users.id, inquiry.recipientId))
+        .limit(1);
+      return {
+        ...inquiry,
+        recipientName: recipient[0]?.displayName ?? null,
+        recipientAvatarUrl: recipient[0]?.avatarUrl ?? null,
+      };
+    })
+  );
+  
+  return inquiriesWithRecipients;
 }
 
 export async function markInquiryAsRead(inquiryId: number, userId: number) {
