@@ -263,13 +263,13 @@ export default function ItemDetail() {
        }}>
          <div className="container relative flex h-64 items-center justify-center py-0 sm:h-72 sm:py-0 lg:h-80 lg:py-0">
             <div className="absolute inset-0 bg-black/35" />
-            <div className="relative z-10 flex flex-col items-center justify-center gap-2">
-              <img
-                src="/manus-storage/Tradebilia_Logo_White_Transparent_8e5f2a1d.svg"
-                alt="Tradebilia"
-                className="h-auto w-72 sm:w-96 lg:w-[480px] drop-shadow-lg"
-              />
-            </div>
+           <div className="relative z-10 flex flex-col items-center justify-center gap-2">
+             <img
+                src="/manus-storage/tradebilia_final_transparent_d37f9c4f.svg"
+               alt="Tradebilia"
+                className="h-auto w-40 sm:w-52 lg:w-64 drop-shadow-lg"
+             />
+           </div>
          </div>
         </section>
 
