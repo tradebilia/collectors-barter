@@ -1523,7 +1523,7 @@ export const appRouter = router({
         const db = await requireDb();
         // Verify user is a participant
         const thread = await db
-          .select()
+          .select({ id: directMessageThreads.id })
           .from(directMessageThreads)
           .where(and(
             eq(directMessageThreads.id, input.threadId),
@@ -1598,7 +1598,7 @@ export const appRouter = router({
         const db = await requireDb();
         // Verify user is a participant before deleting
         const thread = await db
-          .select()
+          .select({ id: directMessageThreads.id })
           .from(directMessageThreads)
           .where(and(
             eq(directMessageThreads.id, input.threadId),
