@@ -3366,6 +3366,8 @@ export async function getAllReferralRequests() {
       referrerId: referralRequests.referrerId,
       referrerName: sql<string>`CONCAT(${referralRequests.referrerFirstName}, ' ', ${referralRequests.referrerLastName})`,
       referrerEmail: referralRequests.referrerEmail,
+      referrerFirstName: referralRequests.referrerFirstName,
+      referrerLastName: referralRequests.referrerLastName,
       collectorName: referralRequests.collectorName,
       collectorEmail: referralRequests.collectorEmail,
       collectorFocus: referralRequests.collectorFocus,
@@ -3376,6 +3378,10 @@ export async function getAllReferralRequests() {
       createdAt: referralRequests.createdAt,
       reviewedAt: referralRequests.reviewedAt,
       reviewedBy: referralRequests.reviewedBy,
+      emailSent: referralRequests.emailSent,
+      emailSentAt: referralRequests.emailSentAt,
+      hasJoined: referralRequests.hasJoined,
+      joinedAt: referralRequests.joinedAt,
     })
     .from(referralRequests)
     .orderBy(desc(referralRequests.createdAt));
