@@ -136,7 +136,7 @@ export default function Conventions() {
         <div className="container relative flex h-64 items-center justify-center sm:h-72 lg:h-80">
           <div className="flex w-full max-w-[1300px] items-center justify-center">
             <img
-              src="/manus-storage/Conventions_4fb4ecfe.svg"
+              src="/manus-storage/Conventions_b7b8fc4e.webp"
               alt="Tradebilia Conventions"
               className="h-auto w-full object-contain"
             />

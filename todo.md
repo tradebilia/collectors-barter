@@ -95,3 +95,6 @@
   - Updated background image to use correct collectibles background (/manus-storage/Background_48b923f1.jpg)
   - Updated title to use Tradebilia logo SVG
   - Hero section now displays consistently with other pages
+- [x] Update Conventions page hero title
+  - Replaced old SVG title with new Conventions title image (/manus-storage/Conventions_b7b8fc4e.webp)
+  - Hero section now displays correctly with colorful Tradebilia logo and "CONVENTIONS" text
