@@ -256,7 +256,7 @@ export default function ItemDetail() {
 
       <main className="pb-16">
         <section className="relative z-0 w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden text-white" style={{
-          backgroundImage: `url(${getCategoryWallpaperUrl(listing.category)})`,
+          backgroundImage: 'url(/manus-storage/Background_48b923f1.jpg)',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat'
@@ -264,7 +264,7 @@ export default function ItemDetail() {
           <div className="container relative flex h-64 items-center justify-center py-0 sm:h-72 sm:py-0 lg:h-80 lg:py-0">
             <div className="flex w-full max-w-6xl items-center justify-center -ml-32">
               <img
-                src="/manus-storage/tradebilia-logo_12c07bbf.svg"
+                src="/manus-storage/Tradebilia_Logo_White_Transparent_8e5f2a1d.svg"
                 alt="Tradebilia"
                 className="h-auto w-full"
               />

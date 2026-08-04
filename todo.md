@@ -91,3 +91,7 @@
   - Cache now invalidates and refetches after successful listing update
   - Clear local photos state to force reload from server
   - Prevents stale photo data from displaying after deletion
+- [x] Fix ItemDetail page hero section
+  - Updated background image to use correct collectibles background (/manus-storage/Background_48b923f1.jpg)
+  - Updated title to use Tradebilia logo SVG
+  - Hero section now displays consistently with other pages

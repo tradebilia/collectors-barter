@@ -12,7 +12,7 @@ import { Mail, CheckCircle } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 
-const CONTACT_HERO_URL = "/manus-storage/TradeRequest_416f81d1.svg";
+const CONTACT_HERO_URL = "/manus-storage/Contact_Us_5330618e.svg";
 
 export default function Contact() {
   const { user } = useAuth();

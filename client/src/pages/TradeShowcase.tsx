@@ -167,7 +167,7 @@ export default function TradeShowcase() {
       >
         <div className="container relative flex h-64 items-center justify-center py-0 sm:h-72 lg:h-80">
           <div className="flex w-full max-w-6xl items-center justify-center -ml-32">
-            <img src="/manus-storage/tradebilia-logo_12c07bbf.svg" alt="Tradebilia" className="h-auto w-full" />
+            <img src="/manus-storage/TRADERSSHOWCASE_826bf6f2.svg" alt="Traders Showcase" className="h-auto w-full" />
           </div>
         </div>
       </section>
