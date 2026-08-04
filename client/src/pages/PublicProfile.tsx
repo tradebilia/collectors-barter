@@ -652,11 +652,11 @@ export default function PublicProfile() {
                 {/* Pending Connections — only shows platforms not yet connected */}
                 {(() => {
                   const allPlatforms = [
-                    { key: 'facebook', label: 'Facebook', logo: '/manus-storage/Facebooklogo_e5c2a1b3.png', isConnected: !!user.facebookId },
-                    { key: 'paypal', label: 'PayPal', logo: '/manus-storage/Paypal_d4f8c2e1.png', isConnected: !!user.paypalEmail },
-                    { key: 'linkedin', label: 'LinkedIn', logo: '/manus-storage/LinkedIn_8c053a9e.webp', isConnected: !!user.linkedinId },
-                    { key: 'ebay', label: 'eBay', logo: '/manus-storage/Ebaylogo_f1b2c3d4.png', isConnected: !!user.ebayUsername },
-                    { key: 'whatnot', label: 'WhatNot', logo: '/manus-storage/WhatNot_a7b8c9d0.png', isConnected: false },
+                    { key: 'facebook', label: 'Facebook', logo: '/manus-storage/Facebooklogo_19970ec8.png', isConnected: !!user.facebookId },
+                    { key: 'paypal', label: 'PayPal', logo: '/manus-storage/Paypal_ace464a4.png', isConnected: !!user.paypalEmail },
+                    { key: 'linkedin', label: 'LinkedIn', logo: '/manus-storage/LinkedIn_dc442074.webp', isConnected: !!user.linkedinId },
+                    { key: 'ebay', label: 'eBay', logo: '/manus-storage/Ebaylogo_f6331705.png', isConnected: !!user.ebayUsername },
+                    { key: 'whatnot', label: 'WhatNot', logo: '/manus-storage/WhatNot_f1e0a2e5.png', isConnected: false },
                   ];
                   const pendingPlatforms = allPlatforms.filter(p => !p.isConnected);
                   
