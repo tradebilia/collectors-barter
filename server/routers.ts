@@ -2100,28 +2100,17 @@ export const appRouter = router({
         const db = await requireDb();
         const { userId, ...updateData } = input;
         
-        // Separate fields for users table vs userProfiles table
-        const usersTableFields: any = {};
+        // All editable fields belong to userProfiles table
         const userProfilesTableFields: any = {};
         
-        // Fields that belong to users table
-        if (updateData.displayName !== undefined && updateData.displayName !== null && updateData.displayName !== '') {
-          usersTableFields.displayName = updateData.displayName;
-        }
-        
-        // Fields that belong to userProfiles table
-        const profileFields = ['firstName', 'lastName', 'contactFullName', 'contactPhone', 'contactEmail', 'contactAddress', 'contactTown', 'contactState', 'contactZipCode', 'contactCountry'];
+        // Map all fields to userProfiles table
+        const profileFields = ['firstName', 'lastName', 'displayName', 'contactFullName', 'contactPhone', 'contactEmail', 'contactAddress', 'contactTown', 'contactState', 'contactZipCode', 'contactCountry'];
         profileFields.forEach(field => {
           const value = updateData[field as keyof typeof updateData];
           if (value !== undefined && value !== null && value !== '') {
             userProfilesTableFields[field] = value;
           }
         });
-        
-        // Update users table if there are fields to update
-        if (Object.keys(usersTableFields).length > 0) {
-          await db.update(users).set(usersTableFields).where(eq(users.id, userId));
-        }
         
         // Update userProfiles table if there are fields to update
         if (Object.keys(userProfilesTableFields).length > 0) {
