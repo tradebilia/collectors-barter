@@ -127,7 +127,7 @@ export default function Conventions() {
       {/* Hero */}
       <section className="relative w-full overflow-hidden bg-white text-white">
         <div className="absolute inset-0" style={{
-          backgroundImage: "url(/manus-storage/Mainpage_d3f8b6f0.jpg)",
+          backgroundImage: "url(/manus-storage/Background_48b923f1.jpg)",
           backgroundSize: "cover",
           backgroundPosition: "center",
           backgroundRepeat: "no-repeat",

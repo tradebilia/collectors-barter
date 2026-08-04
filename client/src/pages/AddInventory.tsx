@@ -485,14 +485,14 @@ export default function AddInventory() {
       <TopBar logoUrl={TRADEBILIA_LOGO_URL} searchPlaceholder="Search..." />
 
       <section className="relative z-0 w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden text-white" style={{
-        backgroundImage: 'url(/manus-storage/Mainpage_d3f8b6f0.jpg)',
+        backgroundImage: 'url(/manus-storage/Background_48b923f1.jpg)',
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat'
       }}>
         <div className="container relative flex h-64 items-center justify-center py-0 sm:h-72 sm:py-0 lg:h-80 lg:py-0">
           <div className="flex w-full max-w-4xl items-center justify-center -ml-32">
-            <img src="/manus-storage/Add_To_Your_Inventory_f9d863a1.svg" alt="Add To Your Inventory" className="h-auto w-full" />
+            <img src="/manus-storage/Add_To_Your_Inventory_e3ab8e8a.svg" alt="Add To Your Inventory" className="h-auto w-full" />
           </div>
         </div>
       </section>

@@ -237,7 +237,7 @@ export default function PublicProfile() {
 
       {/* Hero Section */}
       <section className="relative z-0 w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden text-white" style={{
-        backgroundImage: 'url(/manus-storage/Mainpage_d3f8b6f0.jpg)',
+        backgroundImage: 'url(/manus-storage/Background_48b923f1.jpg)',
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat'

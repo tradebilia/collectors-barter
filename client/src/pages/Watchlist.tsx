@@ -72,7 +72,7 @@ export default function Watchlist() {
       />
 
       <section className="border-b border-white/10 bg-[#00143A]" style={{
-        backgroundImage: 'url(/manus-storage/Mainpage_d3f8b6f0.jpg)',
+        backgroundImage: 'url(/manus-storage/Background_48b923f1.jpg)',
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat'
