@@ -3255,15 +3255,15 @@ export async function getRepliesByInquiry(inquiryId: number) {
 export async function deleteInquiry(inquiryId: number, userId: number) {
   const db = await requireDb();
   
-  // Verify the user is the recipient of the inquiry
+  // Verify the user is either the sender or recipient of the inquiry
   const inquiry = await db
-    .select({ recipientId: itemInquiries.recipientId })
+    .select({ senderId: itemInquiries.senderId, recipientId: itemInquiries.recipientId })
     .from(itemInquiries)
     .where(eq(itemInquiries.id, inquiryId))
     .limit(1);
   
-  if (!inquiry[0] || inquiry[0].recipientId !== userId) {
-    throw new Error("Unauthorized: You can only delete your own inquiries");
+  if (!inquiry[0] || (inquiry[0].senderId !== userId && inquiry[0].recipientId !== userId)) {
+    throw new Error("Unauthorized: You can only delete inquiries you're involved in");
   }
   
   await db
