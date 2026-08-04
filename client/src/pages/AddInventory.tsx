@@ -365,12 +365,21 @@ export default function AddInventory() {
         }
       } else if (isEditMode && params.listingId && !isDraftMode) {
         // When editing, send ALL photos (existing ones have imageUrl as the source)
-        const allPhotos = reorderedPhotos.map((p, i) => ({
-          name: p.name,
-          type: p.type,
-          contentBase64: p.contentBase64 || undefined,
-          imageUrl: !p.contentBase64 ? (p as any).imageUrl || photos[i]?.previewUrl : undefined,
-        }));
+        // reorderedPhotos had previewUrl stripped — look it up from the original photos array by matching contentBase64/name
+        const allPhotos = reorderedPhotos.map((p) => {
+          // Find the original photo entry to get previewUrl (imageUrl for existing photos)
+          const original = photos.find(orig =>
+            orig.name === p.name &&
+            orig.type === p.type &&
+            (orig.contentBase64 === p.contentBase64 || (!orig.contentBase64 && !p.contentBase64))
+          );
+          return {
+            name: p.name,
+            type: p.type,
+            contentBase64: p.contentBase64 || undefined,
+            imageUrl: !p.contentBase64 ? (original?.previewUrl ?? undefined) : undefined,
+          };
+        });
 
         if (formData.category) {
           // Only include condition if it should be shown (not hidden by isGraded = Yes)
