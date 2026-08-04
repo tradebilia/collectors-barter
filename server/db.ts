@@ -2162,8 +2162,26 @@ export async function updateListing(
         }
       }
     } else {
-      // Non-admins can ONLY add new photos, not delete or modify existing ones
+      // Non-admins can add new photos AND update sortOrder of existing ones (for cover selection)
+      // but cannot delete photos
       const newPhotos = input.photos.filter(p => p.contentBase64);
+      const existingPhotos = input.photos.filter(p => !p.contentBase64 && p.imageUrl);
+
+      // Update sortOrder for existing photos to save cover photo selection
+      for (let i = 0; i < existingPhotos.length; i++) {
+        const photo = existingPhotos[i]!;
+        if (photo.imageUrl) {
+          await tx
+            .update(listingPhotos)
+            .set({ sortOrder: i })
+            .where(
+              and(
+                eq(listingPhotos.listingId, input.listingId),
+                eq(listingPhotos.imageUrl, photo.imageUrl)
+              )
+            );
+        }
+      }
 
       if (newPhotos.length > 0) {
         // Get current max sort order
