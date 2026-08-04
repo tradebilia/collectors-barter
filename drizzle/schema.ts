@@ -860,6 +860,15 @@ export const tradePayments = mysqlTable("tradePayments", {
 // ─── Convenience type aliases ─────────────────────────────────────────────────
 // These are used throughout the server codebase (context.ts, customAuth.ts,
 // sdk.ts, db.ts) and must be exported from here.
+export const emailTemplates = mysqlTable("emailTemplates", {
+	id: int().autoincrement().notNull(),
+	templateKey: varchar({ length: 100 }).notNull(),
+	subject: varchar({ length: 500 }).notNull(),
+	body: text().notNull(),
+	updatedAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedBy: int().references(() => users.id),
+});
+
 import type { InferSelectModel, InferInsertModel } from "drizzle-orm";
 export type User = InferSelectModel<typeof users>;
 export type InsertUser = InferInsertModel<typeof users>;

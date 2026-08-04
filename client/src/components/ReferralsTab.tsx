@@ -1,34 +1,77 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Mail, Eye, Trash2 } from "lucide-react";
+import { Mail, Eye, Trash2, Save, Send } from "lucide-react";
 import { trpc } from "@/lib/trpc";
+import { toast } from "sonner";
 
 export function ReferralsTab() {
   const referralsQuery = trpc.admin.getAllReferrals.useQuery();
+  const templateQuery = trpc.admin.getReferralEmailTemplate.useQuery();
+
   const [selectedReferralIds, setSelectedReferralIds] = useState<Set<number>>(new Set());
-  const [bulkEmailDialogOpen, setBulkEmailDialogOpen] = useState(false);
-  const [bulkEmailSubject, setBulkEmailSubject] = useState("");
-  const [bulkEmailMessage, setBulkEmailMessage] = useState("");
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [selectedReferral, setSelectedReferral] = useState<any>(null);
   const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
+
+  // Email template state
+  const [emailSubject, setEmailSubject] = useState("You're invited to join Tradebilia!");
+  const [emailBody, setEmailBody] = useState("");
+  const [templateDirty, setTemplateDirty] = useState(false);
+
+  // Sync template from server
+  useEffect(() => {
+    if (templateQuery.data) {
+      setEmailSubject(templateQuery.data.subject);
+      setEmailBody(templateQuery.data.body);
+      setTemplateDirty(false);
+    }
+  }, [templateQuery.data]);
+
   const sendBulkEmailMutation = trpc.admin.sendBulkEmailToReferrals.useMutation();
   const deleteReferralMutation = trpc.admin.deleteReferral.useMutation();
   const bulkDeleteReferralsMutation = trpc.admin.bulkDeleteReferrals.useMutation();
+  const updateTemplateMutation = trpc.admin.updateReferralEmailTemplate.useMutation();
 
-  const handleSendBulkEmail = async () => {
-    await sendBulkEmailMutation.mutateAsync({
-      referralIds: Array.from(selectedReferralIds),
-      subject: bulkEmailSubject,
-      message: bulkEmailMessage,
+  const handleSaveTemplate = async () => {
+    await updateTemplateMutation.mutateAsync({ subject: emailSubject, body: emailBody });
+    setTemplateDirty(false);
+    toast.success("Email template saved");
+  };
+
+  const handleSendEmails = async () => {
+    if (selectedReferralIds.size === 0) {
+      toast.error("Please select at least one referral to email");
+      return;
+    }
+    if (!emailSubject.trim() || !emailBody.trim()) {
+      toast.error("Please fill in both subject and message body");
+      return;
+    }
+    // Filter out already-emailed
+    const referrals = referralsQuery.data as any[] ?? [];
+    const alreadyEmailed = Array.from(selectedReferralIds).filter(id => {
+      const r = referrals.find((r: any) => r.id === id);
+      return r?.emailSent;
     });
-    setBulkEmailDialogOpen(false);
-    setBulkEmailSubject("");
-    setBulkEmailMessage("");
-    setSelectedReferralIds(new Set());
-    referralsQuery.refetch();
+    if (alreadyEmailed.length === selectedReferralIds.size) {
+      toast.error("All selected referrals have already been emailed");
+      return;
+    }
+    try {
+      const result = await sendBulkEmailMutation.mutateAsync({
+        referralIds: Array.from(selectedReferralIds),
+        subject: emailSubject,
+        message: emailBody,
+      });
+      const { emailsSent, skipped } = result as any;
+      toast.success(`Sent ${emailsSent} email(s)${skipped > 0 ? `, skipped ${skipped} already emailed` : ''}`);
+      setSelectedReferralIds(new Set());
+      referralsQuery.refetch();
+    } catch (err: any) {
+      toast.error(err?.message ?? "Failed to send emails");
+    }
   };
 
   const handleDeleteReferral = async (referralId: number) => {
@@ -40,14 +83,10 @@ export function ReferralsTab() {
 
   const handleBulkDelete = async () => {
     if (selectedReferralIds.size === 0) return;
-    if (confirm(`Are you sure you want to delete ${selectedReferralIds.size} referral request(s)? This action cannot be undone.`)) {
-      await bulkDeleteReferralsMutation.mutateAsync({
-        referralIds: Array.from(selectedReferralIds),
-      });
-      setSelectedReferralIds(new Set());
-      setBulkDeleteDialogOpen(false);
-      referralsQuery.refetch();
-    }
+    await bulkDeleteReferralsMutation.mutateAsync({ referralIds: Array.from(selectedReferralIds) });
+    setSelectedReferralIds(new Set());
+    setBulkDeleteDialogOpen(false);
+    referralsQuery.refetch();
   };
 
   const toggleSelectAll = (checked: boolean) => {
@@ -60,35 +99,84 @@ export function ReferralsTab() {
 
   const toggleSelectReferral = (referralId: number) => {
     const newIds = new Set(selectedReferralIds);
-    if (newIds.has(referralId)) {
-      newIds.delete(referralId);
-    } else {
-      newIds.add(referralId);
-    }
+    if (newIds.has(referralId)) newIds.delete(referralId);
+    else newIds.add(referralId);
     setSelectedReferralIds(newIds);
   };
 
   return (
-    <>
+    <div className="space-y-4">
+      {/* Email Template Editor */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Mail className="h-5 w-5 text-blue-500" />
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Mail className="h-4 w-4 text-blue-500" />
+            Referral Invitation Email
+          </CardTitle>
+          <CardDescription>
+            Edit the email that will be sent to selected referrals. Save changes before sending.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div>
+            <label className="text-sm font-medium block mb-1">Subject</label>
+            <input
+              type="text"
+              value={emailSubject}
+              onChange={(e) => { setEmailSubject(e.target.value); setTemplateDirty(true); }}
+              className="w-full px-3 py-2 border border-border rounded-md text-sm bg-background"
+            />
+          </div>
+          <div>
+            <label className="text-sm font-medium block mb-1">Message Body</label>
+            <textarea
+              value={emailBody}
+              onChange={(e) => { setEmailBody(e.target.value); setTemplateDirty(true); }}
+              rows={8}
+              className="w-full px-3 py-2 border border-border rounded-md text-sm bg-background resize-y font-mono"
+              placeholder="Write your invitation message here..."
+            />
+          </div>
+          <div className="flex items-center gap-2 justify-between">
+            <p className="text-xs text-muted-foreground">
+              {templateDirty ? "Unsaved changes" : templateQuery.data ? `Last saved` : ""}
+            </p>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleSaveTemplate}
+              disabled={updateTemplateMutation.isPending || !templateDirty}
+              className="flex items-center gap-1"
+            >
+              <Save className="h-3 w-3" />
+              {updateTemplateMutation.isPending ? "Saving..." : "Save Template"}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Referral Requests Table */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
             Referral Requests
           </CardTitle>
           <CardDescription>
-            Review and manage collector referrals submitted by members
+            Select referrals to email them the invitation above
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {selectedReferralIds.size > 0 && (
-            <div className="flex gap-2 items-center bg-blue-50 p-3 rounded">
+            <div className="flex gap-2 items-center bg-blue-50 dark:bg-blue-950/30 p-3 rounded border border-blue-200 dark:border-blue-800">
               <span className="text-sm font-medium">{selectedReferralIds.size} selected</span>
               <Button
                 size="sm"
-                onClick={() => setBulkEmailDialogOpen(true)}
+                onClick={handleSendEmails}
+                disabled={sendBulkEmailMutation.isPending}
+                className="flex items-center gap-1"
               >
-                Send Bulk Email
+                <Send className="h-3 w-3" />
+                {sendBulkEmailMutation.isPending ? "Sending..." : "Send Email"}
               </Button>
               <Button
                 size="sm"
@@ -130,12 +218,13 @@ export function ReferralsTab() {
                 </thead>
                 <tbody>
                   {(referralsQuery.data as any[]).map((referral: any) => (
-                    <tr key={referral.id} className="border-b border-border hover:bg-accent/50">
+                    <tr key={referral.id} className={`border-b border-border hover:bg-accent/50 ${referral.emailSent ? 'opacity-60' : ''}`}>
                       <td className="py-2 px-2">
                         <input
                           type="checkbox"
                           checked={selectedReferralIds.has(referral.id)}
                           onChange={() => toggleSelectReferral(referral.id)}
+                          disabled={!!referral.emailSent}
                         />
                       </td>
                       <td className="py-2 px-2 font-semibold">{referral.referrerName}</td>
@@ -159,17 +248,27 @@ export function ReferralsTab() {
                           {referral.status}
                         </span>
                       </td>
-                      <td className="py-2 px-2 text-xs">{referral.emailSent ? '✓' : '-'}</td>
+                      <td className="py-2 px-2 text-xs">
+                        {referral.emailSent ? (
+                          <div>
+                            <span className="text-green-600 font-medium">Yes</span>
+                            {referral.emailSentAt && (
+                              <div className="text-muted-foreground text-[10px]">
+                                {new Date(referral.emailSentAt).toLocaleString()}
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground">No</span>
+                        )}
+                      </td>
                       <td className="py-2 px-2 text-xs">{referral.hasJoined ? '✓' : '-'}</td>
                       <td className="py-2 px-2 text-xs">{new Date(referral.createdAt).toLocaleDateString()}</td>
                       <td className="py-2 px-2 space-x-1 flex gap-1">
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => {
-                            setSelectedReferral(referral);
-                            setDetailsDialogOpen(true);
-                          }}
+                          onClick={() => { setSelectedReferral(referral); setDetailsDialogOpen(true); }}
                           className="flex items-center gap-1"
                         >
                           <Eye className="h-3 w-3" />
@@ -201,17 +300,13 @@ export function ReferralsTab() {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Referral Details</DialogTitle>
-            <DialogDescription>
-              Information about this referral submission
-            </DialogDescription>
+            <DialogDescription>Information about this referral submission</DialogDescription>
           </DialogHeader>
           {selectedReferral && (
             <div className="space-y-4">
               <div>
                 <label className="text-sm font-medium">Referrer</label>
-                <p className="text-sm text-muted-foreground">
-                  {selectedReferral.referrerFirstName} {selectedReferral.referrerLastName}
-                </p>
+                <p className="text-sm text-muted-foreground">{selectedReferral.referrerFirstName} {selectedReferral.referrerLastName}</p>
                 <p className="text-sm text-muted-foreground">{selectedReferral.referrerEmail}</p>
               </div>
               <div>
@@ -244,68 +339,20 @@ export function ReferralsTab() {
                 <label className="text-sm font-medium">Status</label>
                 <p className="text-sm text-muted-foreground">{selectedReferral.status}</p>
               </div>
+              {selectedReferral.emailSent && (
+                <div>
+                  <label className="text-sm font-medium">Emailed</label>
+                  <p className="text-sm text-green-600">Yes — {selectedReferral.emailSentAt ? new Date(selectedReferral.emailSentAt).toLocaleString() : 'date unknown'}</p>
+                </div>
+              )}
               <div>
                 <label className="text-sm font-medium">Submitted</label>
-                <p className="text-sm text-muted-foreground">
-                  {new Date(selectedReferral.createdAt).toLocaleString()}
-                </p>
+                <p className="text-sm text-muted-foreground">{new Date(selectedReferral.createdAt).toLocaleString()}</p>
               </div>
             </div>
           )}
           <div className="flex justify-end">
-            <Button
-              variant="outline"
-              onClick={() => setDetailsDialogOpen(false)}
-            >
-              Close
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Bulk Email Dialog */}
-      <Dialog open={bulkEmailDialogOpen} onOpenChange={setBulkEmailDialogOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Send Bulk Email</DialogTitle>
-            <DialogDescription>
-              Send invitation emails to {selectedReferralIds.size} selected referrals
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium">Subject</label>
-              <input
-                type="text"
-                value={bulkEmailSubject}
-                onChange={(e) => setBulkEmailSubject(e.target.value)}
-                placeholder="Email subject"
-                className="w-full mt-1 px-3 py-2 border border-border rounded-md text-sm"
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium">Message</label>
-              <textarea
-                value={bulkEmailMessage}
-                onChange={(e) => setBulkEmailMessage(e.target.value)}
-                placeholder="Email message"
-                className="w-full mt-1 px-3 py-2 border border-border rounded-md text-sm h-32"
-              />
-            </div>
-            <div className="flex gap-2 justify-end">
-              <Button
-                variant="outline"
-                onClick={() => setBulkEmailDialogOpen(false)}
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleSendBulkEmail}
-                disabled={sendBulkEmailMutation.isPending}
-              >
-                {sendBulkEmailMutation.isPending ? "Sending..." : "Send Emails"}
-              </Button>
-            </div>
+            <Button variant="outline" onClick={() => setDetailsDialogOpen(false)}>Close</Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -320,12 +367,7 @@ export function ReferralsTab() {
             </DialogDescription>
           </DialogHeader>
           <div className="flex gap-2 justify-end">
-            <Button
-              variant="outline"
-              onClick={() => setBulkDeleteDialogOpen(false)}
-            >
-              Cancel
-            </Button>
+            <Button variant="outline" onClick={() => setBulkDeleteDialogOpen(false)}>Cancel</Button>
             <Button
               variant="destructive"
               onClick={handleBulkDelete}
@@ -336,6 +378,6 @@ export function ReferralsTab() {
           </div>
         </DialogContent>
       </Dialog>
-    </>
+    </div>
   );
 }

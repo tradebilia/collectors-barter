@@ -303,3 +303,23 @@ export async function sendDirectMessageReplyEmail(params: {
     html
   );
 }
+
+export async function sendReferralInviteEmail(params: {
+  recipientEmail: string;
+  recipientName: string;
+  subject: string;
+  body: string;
+}): Promise<boolean> {
+  // Convert plain text body to HTML (preserve line breaks)
+  const bodyHtml = params.body
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/\n/g, '<br>');
+
+  const html = emailWrapper(`
+    <p style="margin:0 0 16px;font-size:15px;color:#374151;line-height:1.6;">${bodyHtml}</p>
+  `);
+
+  return sendEmail(params.recipientEmail, params.subject, html);
+}

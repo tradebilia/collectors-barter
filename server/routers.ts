@@ -85,7 +85,7 @@ import {
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { notifyOwner } from "./_core/notification";
-import { sendNewDirectMessageEmail, sendDirectMessageReplyEmail } from "./_core/email";
+import { sendNewDirectMessageEmail, sendDirectMessageReplyEmail, sendReferralInviteEmail } from "./_core/email";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { hashPassword, verifyPassword, isValidUsername, isValidPassword, isValidEmail } from "./_core/auth";
 import bcrypt from 'bcryptjs';
@@ -94,7 +94,7 @@ import { getEbayAuthUrl, exchangeCodeForToken, getUserInfo, getUserFeedback, ref
 import { sdk } from "./_core/sdk";
 import { tradeFlowRouter } from "./tradeFlowRouter";
 import { customAuth } from "./_core/customAuth";
-import { users, userProfiles, listings, deletedAccounts, tradeProposals, tradeMessages, tradeReviews, watchlistEntries, draftListings, passwordResetTokens, referralRequests, userFollows, directMessageThreads, directMessages, tradePayments, tradeActivityLog } from "../drizzle/schema";
+import { users, userProfiles, listings, deletedAccounts, tradeProposals, tradeMessages, tradeReviews, watchlistEntries, draftListings, passwordResetTokens, referralRequests, userFollows, directMessageThreads, directMessages, tradePayments, tradeActivityLog, emailTemplates } from "../drizzle/schema";
 import { eq, sql, desc, or, inArray, and } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { ONE_YEAR_MS } from "@shared/const";
@@ -2263,8 +2263,26 @@ export const appRouter = router({
         if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
         const referrals = await getReferralsByIds(input.referralIds);
         if (referrals.length === 0) throw new TRPCError({ code: 'NOT_FOUND' });
-        await markReferralsAsEmailed(input.referralIds);
-        return { success: true, emailsSent: referrals.length };
+        // Filter out already-emailed referrals
+        const unEmailedReferrals = referrals.filter((r: any) => !r.emailSent);
+        if (unEmailedReferrals.length === 0) {
+          return { success: true, emailsSent: 0, skipped: referrals.length };
+        }
+        // Send emails one by one
+        let sent = 0;
+        for (const referral of unEmailedReferrals) {
+          const ok = await sendReferralInviteEmail({
+            recipientEmail: (referral as any).collectorEmail,
+            recipientName: (referral as any).collectorName,
+            subject: input.subject,
+            body: input.message,
+          });
+          if (ok) sent++;
+        }
+        // Mark successfully-sent referrals as emailed
+        const sentIds = unEmailedReferrals.map((r: any) => r.id);
+        await markReferralsAsEmailed(sentIds);
+        return { success: true, emailsSent: sent, skipped: referrals.length - unEmailedReferrals.length };
       }),
     removeReferralByEmail: protectedProcedure
       .input(z.object({ referralId: z.number(), userId: z.number() }))
@@ -2278,6 +2296,26 @@ export const appRouter = router({
       .mutation(async ({ ctx, input }) => {
         if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
         await removeReferral(input.referralId);
+        return { success: true };
+      }),
+    getReferralEmailTemplate: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      const db = await requireDb();
+      const [template] = await db.select().from(emailTemplates).where(eq(emailTemplates.templateKey, 'referral_invite')).limit(1);
+      if (!template) {
+        return { subject: "You're invited to join Tradebilia!", body: '' };
+      }
+      return { subject: (template as any).subject, body: (template as any).body };
+    }),
+    updateReferralEmailTemplate: protectedProcedure
+      .input(z.object({ subject: z.string().min(1), body: z.string().min(1) }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+        const db = await requireDb();
+        const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
+        await db.update(emailTemplates)
+          .set({ subject: input.subject, body: input.body, updatedAt: now, updatedBy: ctx.user.id })
+          .where(eq(emailTemplates.templateKey, 'referral_invite'));
         return { success: true };
       }),
     bulkDeleteReferrals: protectedProcedure
