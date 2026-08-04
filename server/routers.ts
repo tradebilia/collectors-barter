@@ -546,38 +546,53 @@ export const appRouter = router({
           .limit(1);
         const isFirstTimeSetup = !existingProfile[0] || !existingProfile[0].acceptedTerms;
 
-        // Check if any identity field is being modified by a non-admin user
+        // Check if any identity field is being modified by a non-admin user after first-time setup
         if (!isAdmin && !isFirstTimeSetup) {
-          const lockedFieldsAttempted = [];
-          if (input.firstName !== undefined && input.firstName) lockedFieldsAttempted.push('firstName');
-          if (input.lastName !== undefined && input.lastName) lockedFieldsAttempted.push('lastName');
-          if (input.contactEmail !== undefined && input.contactEmail) lockedFieldsAttempted.push('contactEmail');
-          if (input.contactAddress !== undefined && input.contactAddress) lockedFieldsAttempted.push('contactAddress');
-          if (input.contactTown !== undefined && input.contactTown) lockedFieldsAttempted.push('contactTown');
-          if (input.contactState !== undefined && input.contactState) lockedFieldsAttempted.push('contactState');
-          if (input.contactZipCode !== undefined && input.contactZipCode) lockedFieldsAttempted.push('contactZipCode');
-          if (input.contactCountry !== undefined && input.contactCountry) lockedFieldsAttempted.push('contactCountry');
-          if (input.contactPhone !== undefined && input.contactPhone) lockedFieldsAttempted.push('contactPhone');
-          if (input.contactFullName !== undefined && input.contactFullName) lockedFieldsAttempted.push('contactFullName');
-          // Merchant/store fields are also locked after setup
-          if (input.isMerchant !== undefined) lockedFieldsAttempted.push('isMerchant');
-          if (input.storeName !== undefined && input.storeName) lockedFieldsAttempted.push('storeName');
-          if (input.businessLicense !== undefined && input.businessLicense) lockedFieldsAttempted.push('businessLicense');
-          if (input.taxId !== undefined && input.taxId) lockedFieldsAttempted.push('taxId');
-          if (input.storeDescription !== undefined && input.storeDescription) lockedFieldsAttempted.push('storeDescription');
-          if (input.businessAddress !== undefined && input.businessAddress) lockedFieldsAttempted.push('businessAddress');
-          if (input.businessPhone !== undefined && input.businessPhone) lockedFieldsAttempted.push('businessPhone');
-          if (input.businessEmail !== undefined && input.businessEmail) lockedFieldsAttempted.push('businessEmail');
-          if (input.businessWebsite !== undefined && input.businessWebsite) lockedFieldsAttempted.push('businessWebsite');
+          const identityFieldsAttempted = [];
+          if (input.firstName !== undefined && input.firstName) identityFieldsAttempted.push('firstName');
+          if (input.lastName !== undefined && input.lastName) identityFieldsAttempted.push('lastName');
+          if (input.contactEmail !== undefined && input.contactEmail) identityFieldsAttempted.push('contactEmail');
+          if (input.contactAddress !== undefined && input.contactAddress) identityFieldsAttempted.push('contactAddress');
+          if (input.contactTown !== undefined && input.contactTown) identityFieldsAttempted.push('contactTown');
+          if (input.contactState !== undefined && input.contactState) identityFieldsAttempted.push('contactState');
+          if (input.contactZipCode !== undefined && input.contactZipCode) identityFieldsAttempted.push('contactZipCode');
+          if (input.contactCountry !== undefined && input.contactCountry) identityFieldsAttempted.push('contactCountry');
+          if (input.contactPhone !== undefined && input.contactPhone) identityFieldsAttempted.push('contactPhone');
+          if (input.contactFullName !== undefined && input.contactFullName) identityFieldsAttempted.push('contactFullName');
           
-          if (lockedFieldsAttempted.length > 0) {
+          if (identityFieldsAttempted.length > 0) {
             console.warn(
-              `[saveProfile] Non-admin user ${userId} attempted to modify locked fields:`,
-              lockedFieldsAttempted
+              `[saveProfile] Non-admin user ${userId} attempted to modify identity fields:`,
+              identityFieldsAttempted
             );
             throw new TRPCError({
               code: 'FORBIDDEN',
-              message: 'Identity and merchant fields cannot be modified after account setup. These fields were verified during setup and can only be changed by administrators. Contact support if you need to update them.',
+              message: 'Identity fields cannot be modified after account setup. These fields were verified during setup and can only be changed by administrators. Contact support if you need to update them.',
+            });
+          }
+        }
+        
+        // Merchant/store fields are ALWAYS locked for non-admins, even during first-time setup
+        if (!isAdmin) {
+          const merchantFieldsAttempted = [];
+          if (input.isMerchant !== undefined) merchantFieldsAttempted.push('isMerchant');
+          if (input.storeName !== undefined && input.storeName) merchantFieldsAttempted.push('storeName');
+          if (input.businessLicense !== undefined && input.businessLicense) merchantFieldsAttempted.push('businessLicense');
+          if (input.taxId !== undefined && input.taxId) merchantFieldsAttempted.push('taxId');
+          if (input.storeDescription !== undefined && input.storeDescription) merchantFieldsAttempted.push('storeDescription');
+          if (input.businessAddress !== undefined && input.businessAddress) merchantFieldsAttempted.push('businessAddress');
+          if (input.businessPhone !== undefined && input.businessPhone) merchantFieldsAttempted.push('businessPhone');
+          if (input.businessEmail !== undefined && input.businessEmail) merchantFieldsAttempted.push('businessEmail');
+          if (input.businessWebsite !== undefined && input.businessWebsite) merchantFieldsAttempted.push('businessWebsite');
+          
+          if (merchantFieldsAttempted.length > 0) {
+            console.warn(
+              `[saveProfile] Non-admin user ${userId} attempted to modify merchant fields:`,
+              merchantFieldsAttempted
+            );
+            throw new TRPCError({
+              code: 'FORBIDDEN',
+              message: 'Merchant and store information cannot be modified. Contact support if you need to update these details.',
             });
           }
         }
@@ -602,15 +617,16 @@ export const appRouter = router({
             lastName: canWriteLockedFields ? input.lastName : undefined,
             avatar: input.avatar ? { name: input.avatar.name, type: input.avatar.type, contentBase64: input.avatar.contentBase64! } : null,
             acceptedTerms: input.acceptedTerms,
-            isMerchant: canWriteLockedFields ? input.isMerchant : undefined,
-            storeName: canWriteLockedFields ? input.storeName : undefined,
-            businessLicense: canWriteLockedFields ? input.businessLicense : undefined,
-            taxId: canWriteLockedFields ? input.taxId : undefined,
-            storeDescription: canWriteLockedFields ? input.storeDescription : undefined,
-            businessAddress: canWriteLockedFields ? input.businessAddress : undefined,
-            businessPhone: canWriteLockedFields ? input.businessPhone : undefined,
-            businessEmail: canWriteLockedFields ? input.businessEmail : undefined,
-            businessWebsite: canWriteLockedFields ? input.businessWebsite : undefined,
+            // Merchant fields are only writable by admins
+            isMerchant: isAdmin ? input.isMerchant : undefined,
+            storeName: isAdmin ? input.storeName : undefined,
+            businessLicense: isAdmin ? input.businessLicense : undefined,
+            taxId: isAdmin ? input.taxId : undefined,
+            storeDescription: isAdmin ? input.storeDescription : undefined,
+            businessAddress: isAdmin ? input.businessAddress : undefined,
+            businessPhone: isAdmin ? input.businessPhone : undefined,
+            businessEmail: isAdmin ? input.businessEmail : undefined,
+            businessWebsite: isAdmin ? input.businessWebsite : undefined,
             securityQuestion: input.securityQuestion,
             securityAnswer: input.securityAnswer,
             preferredCategories: input.preferredCategories,

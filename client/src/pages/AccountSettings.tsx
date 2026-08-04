@@ -458,6 +458,8 @@ export default function AccountSettings() {
         };
       }
       
+      console.log("[AccountSettings] Payload being sent:", JSON.stringify(payload, null, 2));
+      console.log("[AccountSettings] User role:", user?.role);
       await saveProfileMutation.mutateAsync(payload);
       console.log("[AccountSettings] Profile saved successfully");
       setConfirmationDialog({
@@ -828,17 +830,21 @@ export default function AccountSettings() {
                   {/* Merchant / Business Section */}
                   <div className="border-t border-slate-200 pt-4 space-y-4">
                     <div className="flex items-center justify-between">
-                      <h3 className="font-semibold text-slate-900">Store / Merchant Status</h3>
+                      <h3 className="font-semibold text-slate-900">Store / Merchant Status {user?.role !== 'admin' ? '(Read-Only)' : ''}</h3>
                       {merchantForm.isMerchant && (
                         <span className="inline-block bg-purple-100 text-purple-800 text-xs font-semibold px-2 py-1 rounded">Verified Merchant</span>
                       )}
                     </div>
+                    {user?.role !== 'admin' && (
+                      <p className="text-xs text-slate-600">Merchant information cannot be changed after account setup. Contact support if you need to update these details.</p>
+                    )}
                     <label className="flex items-center gap-3 cursor-pointer">
                       <input
                         type="checkbox"
                         checked={merchantForm.isMerchant}
                         onChange={(e) => setMerchantForm(prev => ({ ...prev, isMerchant: e.target.checked }))}
-                        className="h-4 w-4 rounded border-slate-300"
+                        disabled={user?.role !== 'admin'}
+                        className="h-4 w-4 rounded border-slate-300 disabled:opacity-50 disabled:cursor-not-allowed"
                       />
                       <span className="text-sm font-medium text-slate-900">I'm a Store Owner or Professional Merchant</span>
                     </label>
@@ -847,35 +853,35 @@ export default function AccountSettings() {
                         <div className="grid grid-cols-2 gap-3">
                           <div className="space-y-2">
                             <Label>Store Name</Label>
-                            <Input value={merchantForm.storeName} onChange={(e) => setMerchantForm(prev => ({ ...prev, storeName: e.target.value }))} placeholder="Your store name" className="rounded-lg border-slate-200" />
+                            <Input disabled={user?.role !== 'admin'} value={merchantForm.storeName} onChange={(e) => setMerchantForm(prev => ({ ...prev, storeName: e.target.value }))} placeholder="Your store name" className="rounded-lg border-slate-200 disabled:opacity-50 disabled:cursor-not-allowed" />
                           </div>
                           <div className="space-y-2">
                             <Label>Business License</Label>
-                            <Input value={merchantForm.businessLicense} onChange={(e) => setMerchantForm(prev => ({ ...prev, businessLicense: e.target.value }))} placeholder="License number" className="rounded-lg border-slate-200" />
+                            <Input disabled={user?.role !== 'admin'} value={merchantForm.businessLicense} onChange={(e) => setMerchantForm(prev => ({ ...prev, businessLicense: e.target.value }))} placeholder="License number" className="rounded-lg border-slate-200 disabled:opacity-50 disabled:cursor-not-allowed" />
                           </div>
                           <div className="space-y-2">
                             <Label>Tax ID / EIN</Label>
-                            <Input value={merchantForm.taxId} onChange={(e) => setMerchantForm(prev => ({ ...prev, taxId: e.target.value }))} placeholder="Tax ID or EIN" className="rounded-lg border-slate-200" />
+                            <Input disabled={user?.role !== 'admin'} value={merchantForm.taxId} onChange={(e) => setMerchantForm(prev => ({ ...prev, taxId: e.target.value }))} placeholder="Tax ID or EIN" className="rounded-lg border-slate-200 disabled:opacity-50 disabled:cursor-not-allowed" />
                           </div>
                           <div className="space-y-2">
                             <Label>Business Phone</Label>
-                            <Input value={merchantForm.businessPhone} onChange={(e) => setMerchantForm(prev => ({ ...prev, businessPhone: e.target.value }))} placeholder="Business phone" className="rounded-lg border-slate-200" />
+                            <Input disabled={user?.role !== 'admin'} value={merchantForm.businessPhone} onChange={(e) => setMerchantForm(prev => ({ ...prev, businessPhone: e.target.value }))} placeholder="Business phone" className="rounded-lg border-slate-200 disabled:opacity-50 disabled:cursor-not-allowed" />
                           </div>
                           <div className="col-span-2 space-y-2">
                             <Label>Business Address</Label>
-                            <Input value={merchantForm.businessAddress} onChange={(e) => setMerchantForm(prev => ({ ...prev, businessAddress: e.target.value }))} placeholder="Business address" className="rounded-lg border-slate-200" />
+                            <Input disabled={user?.role !== 'admin'} value={merchantForm.businessAddress} onChange={(e) => setMerchantForm(prev => ({ ...prev, businessAddress: e.target.value }))} placeholder="Business address" className="rounded-lg border-slate-200 disabled:opacity-50 disabled:cursor-not-allowed" />
                           </div>
                           <div className="space-y-2">
                             <Label>Business Email</Label>
-                            <Input type="email" value={merchantForm.businessEmail} onChange={(e) => setMerchantForm(prev => ({ ...prev, businessEmail: e.target.value }))} placeholder="Business email" className="rounded-lg border-slate-200" />
+                            <Input disabled={user?.role !== 'admin'} type="email" value={merchantForm.businessEmail} onChange={(e) => setMerchantForm(prev => ({ ...prev, businessEmail: e.target.value }))} placeholder="Business email" className="rounded-lg border-slate-200 disabled:opacity-50 disabled:cursor-not-allowed" />
                           </div>
                           <div className="space-y-2">
                             <Label>Business Website</Label>
-                            <Input type="url" value={merchantForm.businessWebsite} onChange={(e) => setMerchantForm(prev => ({ ...prev, businessWebsite: e.target.value }))} placeholder="https://yourstore.com" className="rounded-lg border-slate-200" />
+                            <Input disabled={user?.role !== 'admin'} type="url" value={merchantForm.businessWebsite} onChange={(e) => setMerchantForm(prev => ({ ...prev, businessWebsite: e.target.value }))} placeholder="https://yourstore.com" className="rounded-lg border-slate-200 disabled:opacity-50 disabled:cursor-not-allowed" />
                           </div>
                           <div className="col-span-2 space-y-2">
                             <Label>Store Description</Label>
-                            <Textarea value={merchantForm.storeDescription} onChange={(e) => setMerchantForm(prev => ({ ...prev, storeDescription: e.target.value }))} placeholder="Describe your store" rows={3} className="rounded-lg border-slate-200" />
+                            <Textarea disabled={user?.role !== 'admin'} value={merchantForm.storeDescription} onChange={(e) => setMerchantForm(prev => ({ ...prev, storeDescription: e.target.value }))} placeholder="Describe your store" rows={3} className="rounded-lg border-slate-200 disabled:opacity-50 disabled:cursor-not-allowed" />
                           </div>
                         </div>
                       </div>

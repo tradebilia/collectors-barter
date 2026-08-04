@@ -126,3 +126,9 @@
   - Updated AccountSettings.tsx to only send merchant fields if user is admin
   - Non-admin users can now only update avatar, display name, bio, and notification preferences
   - Merchant information (store name, business license, tax ID, etc.) is now locked after initial setup
+- [x] Fix merchant field locking for non-admins (backend validation)
+  - Separated merchant field validation from identity field validation
+  - Merchant fields now ALWAYS blocked for non-admins (no first-time setup exception)
+  - Added explicit validation that throws FORBIDDEN error when non-admins try to modify merchant fields
+  - Updated database persistence layer to only write merchant fields for admins
+  - UI already had disabled fields, now backend enforces the restriction
