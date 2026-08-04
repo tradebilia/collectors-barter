@@ -705,6 +705,7 @@ export default function ItemDetail() {
             avatarUrl: listing.ownerProfile?.avatarUrl,
           }}
           defaultSubject={`Question about: ${listing.title}`}
+          itemId={listing.id}
         />
       )}
     </div>

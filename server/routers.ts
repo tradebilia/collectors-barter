@@ -1419,26 +1419,34 @@ export const appRouter = router({
         recipientId: z.number().int().positive(),
         subject: z.string().min(1).max(255),
         body: z.string().min(1).max(5000),
+        itemId: z.number().int().positive().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         const db = await requireDb();
         if (ctx.user.id === input.recipientId) {
           throw new TRPCError({ code: 'BAD_REQUEST', message: 'You cannot message yourself.' });
         }
-        // Find or create thread (participants stored in sorted order)
+        // Find or create thread (participants stored in sorted order, unique per item)
         const pA = Math.min(ctx.user.id, input.recipientId);
         const pB = Math.max(ctx.user.id, input.recipientId);
+        const itemId = input.itemId || null;
         const existing = await db
           .select({ id: directMessageThreads.id })
           .from(directMessageThreads)
-          .where(and(eq(directMessageThreads.participantAId, pA), eq(directMessageThreads.participantBId, pB)))
+          .where(and(
+            eq(directMessageThreads.participantAId, pA),
+            eq(directMessageThreads.participantBId, pB),
+            itemId ? eq(directMessageThreads.itemId, itemId) : sql`${directMessageThreads.itemId} IS NULL`
+          ))
           .limit(1);
         let threadId: number;
+        let isNewThread = false;
         if (existing.length > 0) {
           threadId = existing[0].id;
           await db.execute(sql`UPDATE directMessageThreads SET lastMessageAt = NOW() WHERE id = ${threadId}`);
         } else {
-          const result = await db.insert(directMessageThreads).values({ participantAId: pA, participantBId: pB });
+          isNewThread = true;
+          const result = await db.insert(directMessageThreads).values({ participantAId: pA, participantBId: pB, itemId });
           threadId = (result as any)[0]?.insertId ?? (result as any).insertId;
         }
         await db.insert(directMessages).values({
@@ -1450,11 +1458,13 @@ export const appRouter = router({
         });
 
         // Send email notification to recipient if they have messages.email enabled (fire-and-forget)
+        console.log('[sendDirectMessage] Sending email - senderId:', ctx.user.id, 'recipientId:', input.recipientId);
         const recipientUser = await db
           .select({ email: users.email, name: users.name })
           .from(users)
           .where(eq(users.id, input.recipientId))
           .limit(1);
+        console.log('[sendDirectMessage] Recipient email:', recipientUser[0]?.email, 'Recipient name:', recipientUser[0]?.name);
         if (recipientUser[0]?.email) {
           // Check notification preference
           const recipientProfile = await db

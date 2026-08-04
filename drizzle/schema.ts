@@ -809,12 +809,14 @@ export const directMessageThreads = mysqlTable("directMessageThreads", {
 	id: int().autoincrement().notNull().primaryKey(),
 	participantAId: int().notNull().references(() => users.id),
 	participantBId: int().notNull().references(() => users.id),
+	itemId: int().references(() => listings.id, { onDelete: 'set null' }),
 	lastMessageAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
 	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
 },
 (table) => [
 	index("dmThreads_participantA_idx").on(table.participantAId),
 	index("dmThreads_participantB_idx").on(table.participantBId),
+	index("dmThreads_itemId_idx").on(table.itemId),
 	index("dmThreads_lastMessage_idx").on(table.lastMessageAt),
 ]);
 

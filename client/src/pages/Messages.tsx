@@ -380,9 +380,9 @@ export default function Messages() {
                     >
                       <div className="flex items-start justify-between gap-4">
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-lg font-semibold">{thread.counterpartName}</p>
+                          <p className="truncate text-lg font-semibold">{thread.kind === "direct" && thread.subject ? thread.subject : thread.counterpartName}</p>
                           <p className={`mt-1 text-xs uppercase tracking-[0.18em] ${thread.key === activeThreadKey ? "text-white/65" : "text-slate-500"}`}>
-                            {thread.kind === "direct" ? "Direct collector message" : `Trade Proposal #${thread.proposal.id}`}
+                            {thread.kind === "direct" ? `From ${thread.counterpartName}` : `Trade Proposal #${thread.proposal.id}`}
                           </p>
                         </div>
                         <Badge variant={thread.key === activeThreadKey ? "secondary" : "outline"} className="rounded-full capitalize">

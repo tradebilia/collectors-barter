@@ -56,7 +56,8 @@ function emailWrapper(content: string): string {
         </td></tr>
         <!-- Footer -->
         <tr><td style="background:#f8f8f6;padding:20px 32px;text-align:center;border-top:1px solid #ebebeb;">
-          <p style="color:#999;font-size:12px;margin:0;">You're receiving this because you have an account on <a href="${SITE_URL}" style="color:#7f31ff;text-decoration:none;">Tradebilia</a>.</p>
+          <p style="color:#999;font-size:12px;margin:0 0 8px;">You're receiving this because you have an account on <a href="${SITE_URL}" style="color:#7f31ff;text-decoration:none;">Tradebilia</a>.</p>
+          <p style="color:#999;font-size:11px;margin:0;">Don't want to receive these emails? <a href="${SITE_URL}/account-settings?tab=notifications" style="color:#7f31ff;text-decoration:none;">Manage your notification preferences</a></p>
         </td></tr>
       </table>
     </td></tr>

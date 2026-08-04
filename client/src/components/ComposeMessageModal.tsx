@@ -20,9 +20,11 @@ export type ComposeMessageModalProps = {
   };
   /** Optional pre-filled subject (e.g. "Re: [Item Name]") */
   defaultSubject?: string;
+  /** Optional item ID for item-specific messages */
+  itemId?: number;
 };
 
-export function ComposeMessageModal({ isOpen, onClose, recipient, defaultSubject }: ComposeMessageModalProps) {
+export function ComposeMessageModal({ isOpen, onClose, recipient, defaultSubject, itemId }: ComposeMessageModalProps) {
   const [, setLocation] = useLocation();
   const [subject, setSubject] = useState(defaultSubject ?? "");
   const [body, setBody] = useState("");
@@ -50,7 +52,7 @@ export function ComposeMessageModal({ isOpen, onClose, recipient, defaultSubject
       toast.error("Please enter a message");
       return;
     }
-    sendMutation.mutate({ recipientId: recipient.id, subject: subject.trim(), body: body.trim() });
+    sendMutation.mutate({ recipientId: recipient.id, subject: subject.trim(), body: body.trim(), itemId });
   };
 
   const initials = recipient.displayName
