@@ -1964,15 +1964,32 @@ export async function updateProfile(
   const updateSet: Record<string, unknown> = {
     displayName: input.displayName.trim().slice(0, 120),
     bio: input.bio?.trim() ? input.bio.trim() : null,
-    contactFullName: input.contactFullName?.trim() ? input.contactFullName.trim().slice(0, 160) : null,
-    contactEmail: input.contactEmail?.trim() ? input.contactEmail.trim().slice(0, 320) : null,
-    contactPhone: input.contactPhone?.trim() ? input.contactPhone.trim().slice(0, 40) : null,
-    contactAddress: input.contactAddress?.trim() ? input.contactAddress.trim().slice(0, 320) : null,
-    contactTown: input.contactTown?.trim() ? input.contactTown.trim().slice(0, 100) : null,
-    contactState: input.contactState?.trim() ? input.contactState.trim().slice(0, 100) : null,
-    contactZipCode: input.contactZipCode?.trim() ? input.contactZipCode.trim().slice(0, 20) : null,
-    contactCountry: input.contactCountry?.trim() ? input.contactCountry.trim().slice(0, 100) : null,
   };
+  // Only update contact fields when explicitly provided (undefined = not sent = keep existing value)
+  if (input.contactFullName !== undefined) {
+    updateSet.contactFullName = input.contactFullName?.trim() ? input.contactFullName.trim().slice(0, 160) : null;
+  }
+  if (input.contactEmail !== undefined) {
+    updateSet.contactEmail = input.contactEmail?.trim() ? input.contactEmail.trim().slice(0, 320) : null;
+  }
+  if (input.contactPhone !== undefined) {
+    updateSet.contactPhone = input.contactPhone?.trim() ? input.contactPhone.trim().slice(0, 40) : null;
+  }
+  if (input.contactAddress !== undefined) {
+    updateSet.contactAddress = input.contactAddress?.trim() ? input.contactAddress.trim().slice(0, 320) : null;
+  }
+  if (input.contactTown !== undefined) {
+    updateSet.contactTown = input.contactTown?.trim() ? input.contactTown.trim().slice(0, 100) : null;
+  }
+  if (input.contactState !== undefined) {
+    updateSet.contactState = input.contactState?.trim() ? input.contactState.trim().slice(0, 100) : null;
+  }
+  if (input.contactZipCode !== undefined) {
+    updateSet.contactZipCode = input.contactZipCode?.trim() ? input.contactZipCode.trim().slice(0, 20) : null;
+  }
+  if (input.contactCountry !== undefined) {
+    updateSet.contactCountry = input.contactCountry?.trim() ? input.contactCountry.trim().slice(0, 100) : null;
+  }
 
   if (input.firstName !== undefined) {
     updateSet.firstName = input.firstName?.trim() ? input.firstName.trim().slice(0, 100) : null;

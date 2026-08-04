@@ -742,7 +742,6 @@ export default function AccountSettings() {
                           id="email"
                           name="email"
                           type="email"
-                          placeholder="Email address"
                           value={identityInfo.email} 
                           onChange={(e) => setIdentityInfo(prev => ({ ...prev, email: e.target.value }))}
                           disabled={user?.role !== 'admin'}
@@ -754,7 +753,6 @@ export default function AccountSettings() {
                         <Input 
                           id="country"
                           name="country"
-                          placeholder="Country"
                           value={identityInfo.country} 
                           onChange={(e) => setIdentityInfo(prev => ({ ...prev, country: e.target.value }))}
                           disabled={user?.role !== 'admin'}
@@ -768,7 +766,6 @@ export default function AccountSettings() {
                           name="street"
                           value={identityInfo.street} 
                           onChange={(e) => setIdentityInfo(prev => ({ ...prev, street: e.target.value }))}
-                          placeholder="Street address"
                           disabled={user?.role !== 'admin'}
                           className='rounded-lg border-slate-200 border bg-white disabled:opacity-50 disabled:cursor-not-allowed' 
                         />
@@ -780,7 +777,6 @@ export default function AccountSettings() {
                           name="town"
                           value={identityInfo.town} 
                           onChange={(e) => setIdentityInfo(prev => ({ ...prev, town: e.target.value }))}
-                          placeholder="Town or city"
                           disabled={user?.role !== 'admin'}
                           className='rounded-lg border-slate-200 border bg-white disabled:opacity-50 disabled:cursor-not-allowed' 
                         />
@@ -792,7 +788,6 @@ export default function AccountSettings() {
                           name="state"
                           value={identityInfo.state} 
                           onChange={(e) => setIdentityInfo(prev => ({ ...prev, state: e.target.value }))}
-                          placeholder="State"
                           disabled={user?.role !== 'admin'}
                           className='rounded-lg border-slate-200 border bg-white disabled:opacity-50 disabled:cursor-not-allowed' 
                         />
@@ -804,7 +799,6 @@ export default function AccountSettings() {
                           name="zipCode"
                           value={identityInfo.zipCode} 
                           onChange={(e) => setIdentityInfo(prev => ({ ...prev, zipCode: e.target.value }))}
-                          placeholder="Zip code"
                           disabled={user?.role !== 'admin'}
                           className='rounded-lg border-slate-200 border bg-white disabled:opacity-50 disabled:cursor-not-allowed' 
                         />
@@ -816,7 +810,6 @@ export default function AccountSettings() {
                           name="phoneNumber"
                           value={identityInfo.phoneNumber} 
                           onChange={(e) => setIdentityInfo(prev => ({ ...prev, phoneNumber: e.target.value }))}
-                          placeholder="Phone number"
                           disabled={user?.role !== 'admin'}
                           className='rounded-lg border-slate-200 border bg-white disabled:opacity-50 disabled:cursor-not-allowed' 
                         />
@@ -834,7 +827,6 @@ export default function AccountSettings() {
                         name="displayName"
                         value={profileForm.displayName}
                         onChange={handleProfileChange}
-                        placeholder="How you'll appear to other collectors"
                         className="rounded-lg border-slate-200"
                       />
                     </div>
@@ -845,7 +837,6 @@ export default function AccountSettings() {
                         name="bio"
                         value={profileForm.bio}
                         onChange={handleProfileChange}
-                        placeholder="Tell other collectors about yourself (max 500 characters)"
                         maxLength={500}
                         className="rounded-lg border-slate-200"
                         rows={4}
@@ -880,35 +871,35 @@ export default function AccountSettings() {
                         <div className="grid grid-cols-2 gap-3">
                           <div className="space-y-2">
                             <Label>Store Name</Label>
-                            <Input disabled={user?.role !== 'admin'} value={merchantForm.storeName} onChange={(e) => setMerchantForm(prev => ({ ...prev, storeName: e.target.value }))} placeholder="Your store name" className="rounded-lg border-slate-200 disabled:opacity-50 disabled:cursor-not-allowed" />
+                            <Input disabled={user?.role !== 'admin'} value={merchantForm.storeName} onChange={(e) => setMerchantForm(prev => ({ ...prev, storeName: e.target.value }))} className="rounded-lg border-slate-200 disabled:opacity-50 disabled:cursor-not-allowed" />
                           </div>
                           <div className="space-y-2">
                             <Label>Business License</Label>
-                            <Input disabled={user?.role !== 'admin'} value={merchantForm.businessLicense} onChange={(e) => setMerchantForm(prev => ({ ...prev, businessLicense: e.target.value }))} placeholder="License number" className="rounded-lg border-slate-200 disabled:opacity-50 disabled:cursor-not-allowed" />
+                            <Input disabled={user?.role !== 'admin'} value={merchantForm.businessLicense} onChange={(e) => setMerchantForm(prev => ({ ...prev, businessLicense: e.target.value }))} className="rounded-lg border-slate-200 disabled:opacity-50 disabled:cursor-not-allowed" />
                           </div>
                           <div className="space-y-2">
                             <Label>Tax ID / EIN</Label>
-                            <Input disabled={user?.role !== 'admin'} value={merchantForm.taxId} onChange={(e) => setMerchantForm(prev => ({ ...prev, taxId: e.target.value }))} placeholder="Tax ID or EIN" className="rounded-lg border-slate-200 disabled:opacity-50 disabled:cursor-not-allowed" />
+                            <Input disabled={user?.role !== 'admin'} value={merchantForm.taxId} onChange={(e) => setMerchantForm(prev => ({ ...prev, taxId: e.target.value }))} className="rounded-lg border-slate-200 disabled:opacity-50 disabled:cursor-not-allowed" />
                           </div>
                           <div className="space-y-2">
                             <Label>Business Phone</Label>
-                            <Input disabled={user?.role !== 'admin'} value={merchantForm.businessPhone} onChange={(e) => setMerchantForm(prev => ({ ...prev, businessPhone: e.target.value }))} placeholder="Business phone" className="rounded-lg border-slate-200 disabled:opacity-50 disabled:cursor-not-allowed" />
+                            <Input disabled={user?.role !== 'admin'} value={merchantForm.businessPhone} onChange={(e) => setMerchantForm(prev => ({ ...prev, businessPhone: e.target.value }))} className="rounded-lg border-slate-200 disabled:opacity-50 disabled:cursor-not-allowed" />
                           </div>
                           <div className="col-span-2 space-y-2">
                             <Label>Business Address</Label>
-                            <Input disabled={user?.role !== 'admin'} value={merchantForm.businessAddress} onChange={(e) => setMerchantForm(prev => ({ ...prev, businessAddress: e.target.value }))} placeholder="Business address" className="rounded-lg border-slate-200 disabled:opacity-50 disabled:cursor-not-allowed" />
+                            <Input disabled={user?.role !== 'admin'} value={merchantForm.businessAddress} onChange={(e) => setMerchantForm(prev => ({ ...prev, businessAddress: e.target.value }))} className="rounded-lg border-slate-200 disabled:opacity-50 disabled:cursor-not-allowed" />
                           </div>
                           <div className="space-y-2">
                             <Label>Business Email</Label>
-                            <Input disabled={user?.role !== 'admin'} type="email" value={merchantForm.businessEmail} onChange={(e) => setMerchantForm(prev => ({ ...prev, businessEmail: e.target.value }))} placeholder="Business email" className="rounded-lg border-slate-200 disabled:opacity-50 disabled:cursor-not-allowed" />
+                            <Input disabled={user?.role !== 'admin'} type="email" value={merchantForm.businessEmail} onChange={(e) => setMerchantForm(prev => ({ ...prev, businessEmail: e.target.value }))} className="rounded-lg border-slate-200 disabled:opacity-50 disabled:cursor-not-allowed" />
                           </div>
                           <div className="space-y-2">
                             <Label>Business Website</Label>
-                            <Input disabled={user?.role !== 'admin'} type="url" value={merchantForm.businessWebsite} onChange={(e) => setMerchantForm(prev => ({ ...prev, businessWebsite: e.target.value }))} placeholder="https://yourstore.com" className="rounded-lg border-slate-200 disabled:opacity-50 disabled:cursor-not-allowed" />
+                            <Input disabled={user?.role !== 'admin'} type="url" value={merchantForm.businessWebsite} onChange={(e) => setMerchantForm(prev => ({ ...prev, businessWebsite: e.target.value }))} className="rounded-lg border-slate-200 disabled:opacity-50 disabled:cursor-not-allowed" />
                           </div>
                           <div className="col-span-2 space-y-2">
                             <Label>Store Description</Label>
-                            <Textarea disabled={user?.role !== 'admin'} value={merchantForm.storeDescription} onChange={(e) => setMerchantForm(prev => ({ ...prev, storeDescription: e.target.value }))} placeholder="Describe your store" rows={3} className="rounded-lg border-slate-200 disabled:opacity-50 disabled:cursor-not-allowed" />
+                            <Textarea disabled={user?.role !== 'admin'} value={merchantForm.storeDescription} onChange={(e) => setMerchantForm(prev => ({ ...prev, storeDescription: e.target.value }))} rows={3} className="rounded-lg border-slate-200 disabled:opacity-50 disabled:cursor-not-allowed" />
                           </div>
                         </div>
                       </div>
