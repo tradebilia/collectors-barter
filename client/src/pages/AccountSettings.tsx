@@ -430,18 +430,20 @@ export default function AccountSettings() {
       const payload: any = {
         displayName: profileForm.displayName,
         bio: profileForm.bio,
-        // Only send contactPhone if user is admin (non-admins can't modify identity fields after setup)
+        // Only send identity and merchant fields if user is admin (non-admins can't modify these after setup)
         ...(user?.role === 'admin' && { contactPhone: profileForm.phoneNumber }),
-        // Merchant fields
-        isMerchant: merchantForm.isMerchant,
-        storeName: merchantForm.storeName || undefined,
-        businessLicense: merchantForm.businessLicense || undefined,
-        taxId: merchantForm.taxId || undefined,
-        storeDescription: merchantForm.storeDescription || undefined,
-        businessAddress: merchantForm.businessAddress || undefined,
-        businessPhone: merchantForm.businessPhone || undefined,
-        businessEmail: merchantForm.businessEmail || undefined,
-        businessWebsite: merchantForm.businessWebsite || undefined,
+        // Merchant fields - only for admins
+        ...(user?.role === 'admin' && {
+          isMerchant: merchantForm.isMerchant,
+          storeName: merchantForm.storeName || undefined,
+          businessLicense: merchantForm.businessLicense || undefined,
+          taxId: merchantForm.taxId || undefined,
+          storeDescription: merchantForm.storeDescription || undefined,
+          businessAddress: merchantForm.businessAddress || undefined,
+          businessPhone: merchantForm.businessPhone || undefined,
+          businessEmail: merchantForm.businessEmail || undefined,
+          businessWebsite: merchantForm.businessWebsite || undefined,
+        }),
       };
       
       // Handle avatar upload if a new preview was set

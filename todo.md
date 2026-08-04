@@ -121,3 +121,8 @@
   - Root cause: contactPhone was being sent in profile update payload and treated as identity field
   - Fix: Modified AccountSettings.tsx to only send contactPhone if user is admin
   - Non-admin users can now update avatar, display name, bio, and merchant fields without restriction
+- [x] Lock merchant/store fields for non-admin users after account setup
+  - Updated saveProfile procedure in routers.ts to validate and prevent non-admins from modifying merchant fields
+  - Updated AccountSettings.tsx to only send merchant fields if user is admin
+  - Non-admin users can now only update avatar, display name, bio, and notification preferences
+  - Merchant information (store name, business license, tax ID, etc.) is now locked after initial setup

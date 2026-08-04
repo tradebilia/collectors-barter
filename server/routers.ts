@@ -548,59 +548,69 @@ export const appRouter = router({
 
         // Check if any identity field is being modified by a non-admin user
         if (!isAdmin && !isFirstTimeSetup) {
-          const identityFieldsAttempted = [];
-          if (input.firstName !== undefined && input.firstName) identityFieldsAttempted.push('firstName');
-          if (input.lastName !== undefined && input.lastName) identityFieldsAttempted.push('lastName');
-          if (input.contactEmail !== undefined && input.contactEmail) identityFieldsAttempted.push('contactEmail');
-          if (input.contactAddress !== undefined && input.contactAddress) identityFieldsAttempted.push('contactAddress');
-          if (input.contactTown !== undefined && input.contactTown) identityFieldsAttempted.push('contactTown');
-          if (input.contactState !== undefined && input.contactState) identityFieldsAttempted.push('contactState');
-          if (input.contactZipCode !== undefined && input.contactZipCode) identityFieldsAttempted.push('contactZipCode');
-          if (input.contactCountry !== undefined && input.contactCountry) identityFieldsAttempted.push('contactCountry');
-          if (input.contactPhone !== undefined && input.contactPhone) identityFieldsAttempted.push('contactPhone');
-          if (input.contactFullName !== undefined && input.contactFullName) identityFieldsAttempted.push('contactFullName');
+          const lockedFieldsAttempted = [];
+          if (input.firstName !== undefined && input.firstName) lockedFieldsAttempted.push('firstName');
+          if (input.lastName !== undefined && input.lastName) lockedFieldsAttempted.push('lastName');
+          if (input.contactEmail !== undefined && input.contactEmail) lockedFieldsAttempted.push('contactEmail');
+          if (input.contactAddress !== undefined && input.contactAddress) lockedFieldsAttempted.push('contactAddress');
+          if (input.contactTown !== undefined && input.contactTown) lockedFieldsAttempted.push('contactTown');
+          if (input.contactState !== undefined && input.contactState) lockedFieldsAttempted.push('contactState');
+          if (input.contactZipCode !== undefined && input.contactZipCode) lockedFieldsAttempted.push('contactZipCode');
+          if (input.contactCountry !== undefined && input.contactCountry) lockedFieldsAttempted.push('contactCountry');
+          if (input.contactPhone !== undefined && input.contactPhone) lockedFieldsAttempted.push('contactPhone');
+          if (input.contactFullName !== undefined && input.contactFullName) lockedFieldsAttempted.push('contactFullName');
+          // Merchant/store fields are also locked after setup
+          if (input.isMerchant !== undefined) lockedFieldsAttempted.push('isMerchant');
+          if (input.storeName !== undefined && input.storeName) lockedFieldsAttempted.push('storeName');
+          if (input.businessLicense !== undefined && input.businessLicense) lockedFieldsAttempted.push('businessLicense');
+          if (input.taxId !== undefined && input.taxId) lockedFieldsAttempted.push('taxId');
+          if (input.storeDescription !== undefined && input.storeDescription) lockedFieldsAttempted.push('storeDescription');
+          if (input.businessAddress !== undefined && input.businessAddress) lockedFieldsAttempted.push('businessAddress');
+          if (input.businessPhone !== undefined && input.businessPhone) lockedFieldsAttempted.push('businessPhone');
+          if (input.businessEmail !== undefined && input.businessEmail) lockedFieldsAttempted.push('businessEmail');
+          if (input.businessWebsite !== undefined && input.businessWebsite) lockedFieldsAttempted.push('businessWebsite');
           
-          if (identityFieldsAttempted.length > 0) {
+          if (lockedFieldsAttempted.length > 0) {
             console.warn(
-              `[saveProfile] Non-admin user ${userId} attempted to modify identity fields:`,
-              identityFieldsAttempted
+              `[saveProfile] Non-admin user ${userId} attempted to modify locked fields:`,
+              lockedFieldsAttempted
             );
             throw new TRPCError({
               code: 'FORBIDDEN',
-              message: 'Identity fields cannot be modified. These fields were verified during account setup and can only be changed by administrators. Contact support if you need to update them.',
+              message: 'Identity and merchant fields cannot be modified after account setup. These fields were verified during setup and can only be changed by administrators. Contact support if you need to update them.',
             });
           }
         }
         
-        // Identity fields are persisted when the caller is an admin OR this is
+        // Identity and merchant fields are persisted when the caller is an admin OR this is
         // the user's first-time account setup (their own verified info).
-        const canWriteIdentity = isAdmin || isFirstTimeSetup;
+        const canWriteLockedFields = isAdmin || isFirstTimeSetup;
         return updateProfile(
           { id: userId, name: input.displayName },
           {
             displayName: input.displayName,
             bio: input.bio,
-            contactFullName: canWriteIdentity ? input.contactFullName : undefined,
-            contactEmail: canWriteIdentity ? input.contactEmail : undefined,
-            contactPhone: canWriteIdentity ? input.contactPhone : undefined,
-            contactAddress: canWriteIdentity ? input.contactAddress : undefined,
-            contactTown: canWriteIdentity ? input.contactTown : undefined,
-            contactState: canWriteIdentity ? input.contactState : undefined,
-            contactZipCode: canWriteIdentity ? input.contactZipCode : undefined,
-            contactCountry: canWriteIdentity ? input.contactCountry : undefined,
-            firstName: canWriteIdentity ? input.firstName : undefined,
-            lastName: canWriteIdentity ? input.lastName : undefined,
+            contactFullName: canWriteLockedFields ? input.contactFullName : undefined,
+            contactEmail: canWriteLockedFields ? input.contactEmail : undefined,
+            contactPhone: canWriteLockedFields ? input.contactPhone : undefined,
+            contactAddress: canWriteLockedFields ? input.contactAddress : undefined,
+            contactTown: canWriteLockedFields ? input.contactTown : undefined,
+            contactState: canWriteLockedFields ? input.contactState : undefined,
+            contactZipCode: canWriteLockedFields ? input.contactZipCode : undefined,
+            contactCountry: canWriteLockedFields ? input.contactCountry : undefined,
+            firstName: canWriteLockedFields ? input.firstName : undefined,
+            lastName: canWriteLockedFields ? input.lastName : undefined,
             avatar: input.avatar ? { name: input.avatar.name, type: input.avatar.type, contentBase64: input.avatar.contentBase64! } : null,
             acceptedTerms: input.acceptedTerms,
-            isMerchant: input.isMerchant,
-            storeName: input.storeName,
-            businessLicense: input.businessLicense,
-            taxId: input.taxId,
-            storeDescription: input.storeDescription,
-            businessAddress: input.businessAddress,
-            businessPhone: input.businessPhone,
-            businessEmail: input.businessEmail,
-            businessWebsite: input.businessWebsite,
+            isMerchant: canWriteLockedFields ? input.isMerchant : undefined,
+            storeName: canWriteLockedFields ? input.storeName : undefined,
+            businessLicense: canWriteLockedFields ? input.businessLicense : undefined,
+            taxId: canWriteLockedFields ? input.taxId : undefined,
+            storeDescription: canWriteLockedFields ? input.storeDescription : undefined,
+            businessAddress: canWriteLockedFields ? input.businessAddress : undefined,
+            businessPhone: canWriteLockedFields ? input.businessPhone : undefined,
+            businessEmail: canWriteLockedFields ? input.businessEmail : undefined,
+            businessWebsite: canWriteLockedFields ? input.businessWebsite : undefined,
             securityQuestion: input.securityQuestion,
             securityAnswer: input.securityAnswer,
             preferredCategories: input.preferredCategories,
