@@ -3292,7 +3292,13 @@ export async function getDeletedInquiries(userId: number) {
     })
     .from(itemInquiries)
     .innerJoin(users, eq(itemInquiries.senderId, users.id))
-    .where(and(eq(itemInquiries.recipientId, userId), isNotNull(itemInquiries.deletedAt)))
+    .where(and(
+      or(
+        eq(itemInquiries.recipientId, userId),
+        eq(itemInquiries.senderId, userId)
+      ),
+      isNotNull(itemInquiries.deletedAt)
+    ))
     .orderBy(desc(itemInquiries.deletedAt));
   
   return inquiries;
@@ -3304,7 +3310,13 @@ export async function emptyDeletedInquiries(userId: number) {
   // Delete all deleted inquiries for this user
   await db
     .delete(itemInquiries)
-    .where(and(eq(itemInquiries.recipientId, userId), isNotNull(itemInquiries.deletedAt)));
+    .where(and(
+      or(
+        eq(itemInquiries.recipientId, userId),
+        eq(itemInquiries.senderId, userId)
+      ),
+      isNotNull(itemInquiries.deletedAt)
+    ));
 }
 
 
