@@ -102,9 +102,13 @@ export default function AddInventory() {
   );
   
   const updateListingMutation = trpc.market.updateListing.useMutation({
-    onSuccess: () => {
-      // Invalidate the listing detail cache to force a refresh
-      utils.market.listingDetail.invalidate();
+    onSuccess: async () => {
+      // Invalidate and refetch the listing detail cache
+      await utils.market.listingDetail.invalidate();
+      // Refetch to get fresh data
+      await getListingDetailQuery.refetch();
+      // Clear local photos state to force reload from server
+      setPhotos([]);
     },
   });
   const getDraftByIdQuery = trpc.market.getDraftById.useQuery(
@@ -373,7 +377,8 @@ export default function AddInventory() {
             grade: formData.grade && formData.grade !== 'ungraded' ? formData.grade : 'ungraded',
           });
           toast.success("Listing updated successfully!");
-          navigate("/inventory");
+          // Wait a moment for cache to settle, then navigate
+          setTimeout(() => navigate("/inventory"), 500);
         } else {
           toast.error("Please select a category before updating.");
           return;

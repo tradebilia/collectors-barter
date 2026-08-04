@@ -88,5 +88,6 @@
   - Users can now upload up to 10 photos per listing
 - [x] Fix React Query cache invalidation for listing updates
   - Added onSuccess callback to updateListingMutation in AddInventory.tsx
-  - Cache now invalidates after successful listing update
+  - Cache now invalidates and refetches after successful listing update
+  - Clear local photos state to force reload from server
   - Prevents stale photo data from displaying after deletion
