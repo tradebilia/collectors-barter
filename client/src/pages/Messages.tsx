@@ -307,10 +307,10 @@ export default function Messages() {
       </header>
       <CategoryBar />
 
-      <main className="container py-8 lg:py-10">
-        <div className="grid gap-6 xl:grid-cols-[240px_340px_minmax(0,1fr)]">
-          <aside className="rounded-[2rem] border border-slate-300/70 bg-white/82 p-5 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-sm">
-            <h2 className="text-2xl font-semibold text-slate-900">Messages</h2>
+      <main className="py-8 lg:py-10 px-4">
+        <div className="grid gap-6 grid-cols-[180px_1fr_1.2fr]">
+          <aside className="rounded-[2rem] border border-slate-300/70 bg-white/82 p-4 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-sm h-fit sticky top-8">
+            <h2 className="text-xl font-semibold text-slate-900">Messages</h2>
             <div className="mt-5 space-y-2">
               {folders.map(item => {
                 const count = item.value === "all"
@@ -342,7 +342,7 @@ export default function Messages() {
             </div>
           </aside>
 
-          <section className="rounded-[2rem] border border-slate-300/70 bg-white/82 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-sm">
+          <section className="rounded-[2rem] border border-slate-300/70 bg-white/82 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-sm min-w-0">
             <div className="border-b border-slate-200 px-5 py-4">
               <h2 className="text-2xl font-semibold text-slate-900">Message List</h2>
             </div>
