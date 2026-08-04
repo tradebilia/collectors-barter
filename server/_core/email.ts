@@ -317,9 +317,36 @@ export async function sendReferralInviteEmail(params: {
     .replace(/>/g, '&gt;')
     .replace(/\n/g, '<br>');
 
-  const html = emailWrapper(`
-    <p style="margin:0 0 16px;font-size:15px;color:#374151;line-height:1.6;">${bodyHtml}</p>
-  `);
+  // Use a dedicated wrapper with the official Tradebilia logo image
+  const html = `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f5f5f3;font-family:system-ui,-apple-system,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f5f3;padding:40px 20px;">
+    <tr><td align="center">
+      <table width="100%" style="max-width:560px;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+        <tr><td style="background:#0a0d22;padding:32px;text-align:center;">
+          <img
+            src="https://tradebilia.manus.space/manus-storage/tradebilia_final_transparent_58812c5a.svg"
+            alt="Tradebilia"
+            width="180"
+            style="display:block;margin:0 auto;max-width:180px;"
+          />
+          <p style="color:rgba(255,255,255,0.55);font-size:12px;margin:10px 0 0;letter-spacing:0.1em;text-transform:uppercase;">Collectors Trading Exchange</p>
+        </td></tr>
+        <tr><td style="padding:32px;">
+          <p style="margin:0 0 16px;font-size:15px;color:#374151;line-height:1.7;">${bodyHtml}</p>
+          <a href="${SITE_URL}" style="display:inline-block;background:#7f31ff;color:#ffffff;text-decoration:none;padding:14px 28px;border-radius:10px;font-weight:600;font-size:14px;margin-top:8px;">Visit Tradebilia</a>
+        </td></tr>
+        <tr><td style="background:#f8f8f6;padding:20px 32px;text-align:center;border-top:1px solid #ebebeb;">
+          <p style="color:#999;font-size:12px;margin:0 0 8px;">You're receiving this because you were referred to <a href="${SITE_URL}" style="color:#7f31ff;text-decoration:none;">Tradebilia</a>.</p>
+          <p style="color:#999;font-size:11px;margin:0;">If you believe this was sent in error, please disregard this email.</p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
 
   return sendEmail(params.recipientEmail, params.subject, html);
 }
