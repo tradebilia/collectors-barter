@@ -93,17 +93,25 @@ export default function AddInventory() {
     errors,
   } = useAddInventoryForm(photos);
 
+  const utils = trpc.useUtils();
   const createListingMutation = trpc.market.createListing.useMutation();
   const saveDraftMutation = trpc.market.saveDraft.useMutation();
   const getListingDetailQuery = trpc.market.listingDetail.useQuery(
     { listingId: params.listingId && !isDraftMode ? parseInt(params.listingId) : 0 },
     { enabled: isEditMode && !isDraftMode }
   );
+  
+  const updateListingMutation = trpc.market.updateListing.useMutation({
+    onSuccess: () => {
+      // Invalidate the listing detail cache to force a refresh
+      utils.market.listingDetail.invalidate();
+    },
+  });
   const getDraftByIdQuery = trpc.market.getDraftById.useQuery(
     { draftId: draftId || 0 },
     { enabled: isDraftMode && !!draftId }
   );
-  const updateListingMutation = trpc.market.updateListing.useMutation();
+
   const updateDraftMutation = trpc.market.updateDraft.useMutation();
 
   // Load existing draft data when in draft edit mode

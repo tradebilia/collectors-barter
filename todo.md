@@ -86,3 +86,7 @@
 - [x] Increase photo upload limit from 6 to 10
   - Updated createListing and updateListing procedures
   - Users can now upload up to 10 photos per listing
+- [x] Fix React Query cache invalidation for listing updates
+  - Added onSuccess callback to updateListingMutation in AddInventory.tsx
+  - Cache now invalidates after successful listing update
+  - Prevents stale photo data from displaying after deletion
