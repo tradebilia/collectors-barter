@@ -3169,15 +3169,15 @@ export async function getInquiriesByUser(userId: number, limit: number = 50, off
 export async function markInquiryAsRead(inquiryId: number, userId: number) {
   const db = await requireDb();
   
-  // Verify the user is the recipient
+  // Verify the user is either the sender or recipient
   const inquiry = await db
-    .select({ recipientId: itemInquiries.recipientId })
+    .select({ senderId: itemInquiries.senderId, recipientId: itemInquiries.recipientId })
     .from(itemInquiries)
     .where(eq(itemInquiries.id, inquiryId))
     .limit(1);
   
-  if (!inquiry[0] || inquiry[0].recipientId !== userId) {
-    throw new Error("Unauthorized: You can only mark your own inquiries as read");
+  if (!inquiry[0] || (inquiry[0].senderId !== userId && inquiry[0].recipientId !== userId)) {
+    throw new Error("Unauthorized: You can only mark inquiries you're involved in as read");
   }
   
   await db
