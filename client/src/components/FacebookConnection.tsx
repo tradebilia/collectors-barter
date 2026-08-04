@@ -94,7 +94,7 @@ export function FacebookConnection() {
       <div className="flex items-center justify-between rounded-lg border border-slate-200 p-4">
         <div className="flex items-center gap-3">
           <img
-            src="/manus-storage/Facebooklogo_f44d3e19.png"
+            src="/manus-storage/Facebooklogo_19970ec8.png"
             alt="Facebook"
             className="h-12 w-auto object-contain"
           />

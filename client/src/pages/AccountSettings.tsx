@@ -45,8 +45,8 @@ const categoryOptions = [
 ] as const;
 
 const accountSources = [
-  { value: "paypal", label: "PayPal", logo: "/manus-storage/Paypal_32dc64f9.png" },
-  { value: "whatnot", label: "Whatnot", logo: "/manus-storage/WhatNot_5ff27ce4.png" },
+  { value: "paypal", label: "PayPal", logo: "/manus-storage/Paypal_ace464a4.png" },
+  { value: "whatnot", label: "Whatnot", logo: "/manus-storage/WhatNot_f1e0a2e5.png" },
 ] as const;
 
 type AccountSource = typeof accountSources[number]["value"];
@@ -1091,7 +1091,7 @@ export default function AccountSettings() {
               <Card className="rounded-[1.5rem] border-slate-200 bg-white shadow-sm">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <img src="/manus-storage/Paypal_32dc64f9.png" alt="PayPal" className="h-6 w-auto object-contain" />
+                    <img src="/manus-storage/Paypal_ace464a4.png" alt="PayPal" className="h-6 w-auto object-contain" />
                     PayPal Email
                   </CardTitle>
                   <CardDescription>

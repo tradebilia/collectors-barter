@@ -90,7 +90,7 @@ export function EbayConnection() {
       <div className="flex items-center justify-between rounded-lg border border-slate-200 p-4">
         <div className="flex items-center gap-3">
           <img 
-            src="/manus-storage/Ebaylogo_3533363b.png" 
+            src="/manus-storage/Ebaylogo_f6331705.png" 
             alt="eBay" 
             className="h-12 w-auto object-contain"
           />

@@ -109,3 +109,10 @@
   - Replaced plain text heading with Community Trade Evaluation title image (/manus-storage/CommunityTradeEvaluation_0423088f.webp)
   - Updated hero section height to match other pages (h-64 sm:h-72 lg:h-80)
   - Trade voting page now displays consistently with other pages
+- [x] Fix broken integration logo links in AccountSettings
+  - Uploaded all 5 integration logos to CDN (Facebook, PayPal, WhatNot, eBay, LinkedIn)
+  - Updated AccountSettings.tsx with new PayPal and WhatNot logo URLs
+  - Updated EbayConnection.tsx with new eBay logo URL (/manus-storage/Ebaylogo_f6331705.png)
+  - Updated FacebookConnection.tsx with new Facebook logo URL (/manus-storage/Facebooklogo_19970ec8.png)
+  - Updated LinkedInConnection.tsx with new LinkedIn logo URL (/manus-storage/LinkedIn_dc442074.webp)
+  - All integration cards now display logos correctly in the Integrations tab
