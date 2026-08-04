@@ -364,7 +364,7 @@ export default function Messages() {
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-lg font-semibold">{inquiry.senderId === user?.id ? (inquiry.recipientName || `Collector ${inquiry.recipientId}`) : (inquiry.senderName || `Collector ${inquiry.senderId}`)}</p>
                           <p className={`mt-1 text-xs uppercase tracking-[0.18em] ${activeThreadKey === `inquiry-${inquiry.id}` ? "text-white/65" : "text-slate-500"}`}>
-                            Item Inquiry • Ref <Link href={`/inventory/${inquiry.listingId}`} target="_blank" rel="noopener noreferrer" className="underline hover:no-underline">#{inquiry.listingId}</Link>
+                            Item Inquiry • Ref <Link href={`/listings/${inquiry.listingId}`} target="_blank" rel="noopener noreferrer" className="underline hover:no-underline">#{inquiry.listingId}</Link>
                           </p>
                         </div>
                         <Badge 
