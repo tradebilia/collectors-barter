@@ -81,14 +81,6 @@ const conditionOptions = [
   { value: "poor", label: "Poor" },
 ] as const;
 
-const fallbackRecentItems = [
-  { id: -1, title: "Baseball Legends Card Pack", price: "$100.00", subtitle: "4.7 ★ · 67 reviews", imageUrl: "/images/sportscards2_50e2e734.png" },
-  { id: -2, title: "Transformers Action Figures Set", price: "$120.00", subtitle: "4.8 ★ · 51 reviews", imageUrl: "/images/Vintagetoys2_b56d7fdc.png" },
-  { id: -3, title: "Action Comics Collection", price: "$150.00", subtitle: "4.9 ★ · 41 reviews", imageUrl: "/images/Comicpage2_6d086599.png" },
-  { id: -4, title: "Classic Barbie Doll", price: "$80.00", subtitle: "4.6 ★ · 38 reviews", imageUrl: "/images/Vintagetoys2_b56d7fdc.png" },
-  { id: -5, title: "Comic Book Mystery Bundle", price: "$80.00", subtitle: "4.4 ★ · 29 reviews", imageUrl: "/images/Comicpage2_6d086599.png" },
-] as const;
-
 const fallbackMostViewed = [
   "1986 Fleer Michael Jordan Rookie PSA 9",
   "1989 Upper Deck Ken Griffey Jr Rookie PSA 10",

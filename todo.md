@@ -81,3 +81,9 @@
   - Update count in real-time as photos are added/removed
   - Disable upload button when 10 photos reached
   - Show "Maximum 10 photos reached" message when limit is hit
+
+## Phase 13: Bug Fixes — Dead /images/ paths & eBay badge
+- [x] Fix eBay verification badge on ItemDetail.tsx (shows Tradebilia logo, should show Ebaylogo_f6331705.png)
+- [x] Fix TradePrintView.tsx logo to use /manus-storage/ path instead of broken /images/logos/ path
+- [x] Remove dead /images/ fallbackRecentItems array from Home.tsx
+- [x] Fix TRADEBILIA_LOGO_URL constant in tradebilia.ts to point to correct /manus-storage/ path (was /images/, now used by CategoryPage, MemberSearch, Messages)

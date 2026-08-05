@@ -86,7 +86,7 @@ import { Link, useRoute, useLocation } from "wouter";
 import { toast } from "sonner";
 import { ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
 
-const TRADEBILIA_LOGO_URL = "/manus-storage/tradebilia-logo_12c07bbf.svg";
+const TRADEBILIA_LOGO_URL = "/manus-storage/tradebilia_final_transparent_d37f9c4f.svg";
 
 
 const getConditionDisplayName = (condition: string): string => {
@@ -423,7 +423,7 @@ export default function ItemDetail() {
                     <span className="text-xs font-semibold uppercase tracking-wider text-gray-400">Verified on:</span>
                     {listing.ownerProfile.ebayVerified && (
                       <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white border border-gray-200 shadow-sm">
-                        <img src="/manus-storage/tradebilia-logo_12c07bbf.svg" alt="eBay" className="h-3.5 w-auto" />
+                        <img src="/manus-storage/Ebaylogo_f6331705.png" alt="eBay" className="h-3.5 w-auto" />
                       </span>
                     )}
                     {listing.ownerProfile.facebookVerified && (

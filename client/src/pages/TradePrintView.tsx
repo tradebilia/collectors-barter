@@ -99,7 +99,7 @@ export default function TradePrintView() {
         {/* Header */}
         <div className="flex items-center justify-between mb-8 border-b-2 border-gray-800 pb-4">
           <div className="flex items-center gap-3">
-            <img src="/images/logos/tradebilia-logo.svg" alt="Tradebilia" className="h-10" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+            <img src="/manus-storage/tradebilia_final_transparent_d37f9c4f.svg" alt="Tradebilia" className="h-10" />
             <div>
               <p className="font-black text-2xl text-gray-900 tracking-tight">TRADEBILIA</p>
               <p className="text-gray-500 text-xs">Collectors Trading Exchange</p>
