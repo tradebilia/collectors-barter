@@ -99,7 +99,7 @@ export function SearchResults() {
                 <div className="aspect-square bg-gray-200 overflow-hidden">
                   {listing.photos && listing.photos.length > 0 ? (
                     <img
-                      src={listing.photos[0]}
+                      src={typeof listing.photos[0] === 'string' ? listing.photos[0] : listing.photos[0].imageUrl}
                       alt={listing.title}
                       className="w-full h-full object-cover"
                     />

@@ -2489,6 +2489,12 @@ export default function WarRoom() {
                           </div>
                           {/* Title */}
                           <p className="text-white text-xs font-semibold line-clamp-2 leading-tight mb-1">{item.title}</p>
+                          {/* Condition/Grade Badge */}
+                          {(item.grade || item.condition) && (
+                            <p className="text-gray-300 text-xs mb-1">
+                              {item.grade ? `Grade ${item.grade}` : item.conditionLabel || item.condition}
+                            </p>
+                          )}
                           {/* Value */}
                           <p className="text-blue-400 text-sm font-bold mt-auto">${parseFloat(item.estimatedValue || '0').toLocaleString()}</p>
                         </div>

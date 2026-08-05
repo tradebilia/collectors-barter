@@ -115,3 +115,5 @@
 - [x] Upgrade route tests from source-string assertions to behavioral tests: mount the real Express handlers and assert /health 200-vs-503 and cron 403-vs-success paths
 - [x] BUG FIX: Trade room — own items (offeredListings) showed no images because getTradeDetails fetched photos per listing but dropped them from the return spread; added photos: (l as any).photos || [] to the offeredListings map
 - [x] BUG FIX: Your Inventory modal in trade room showed no images because formatListings returned photos as strings [url] instead of objects [{imageUrl, altText}], breaking the modal's item.photos[0].imageUrl access pattern
+- [x] FEATURE: Add condition/grade badge to inventory modal item cards so users see what they're offering
+- [x] BUG FIX: SearchResults.tsx was accessing photos[0] as a string but now gets objects; added typeof check to handle both formats
