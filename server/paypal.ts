@@ -11,7 +11,7 @@
 import axios from "axios";
 
 // PayPal API base URLs
-const PAYPAL_BASE_URL = process.env.PAYPAL_MODE === "live"
+const PAYPAL_BASE_URL = (process.env.PAYPAL_ENV ?? process.env.PAYPAL_MODE) === "live"
   ? "https://api-m.paypal.com"
   : "https://api-m.sandbox.paypal.com";
 
