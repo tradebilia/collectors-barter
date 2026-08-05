@@ -311,7 +311,11 @@ export async function sendReferralInviteEmail(params: {
   body: string;
 }): Promise<boolean> {
   // Convert plain text body to HTML (preserve line breaks)
-  const bodyHtml = params.body
+  // Replace {{name}} placeholder with recipient's first name
+  const firstName = params.recipientName.split(' ')[0];
+  const bodyWithName = params.body.replace(/\{\{name\}\}/g, firstName);
+  
+  const bodyHtml = bodyWithName
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')

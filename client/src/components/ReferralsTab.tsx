@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Mail, Eye, Trash2, Save, Send } from "lucide-react";
-import { trpc } from "@/lib/trpc";
-import { toast } from "sonner";
+  import { Button } from "@/components/ui/button";
+  import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+  import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+  import { Mail, Eye, Trash2, Save, Send, Monitor } from "lucide-react";
+  import { trpc } from "@/lib/trpc";
+  import { toast } from "sonner";
 
 export function ReferralsTab() {
   const referralsQuery = trpc.admin.getAllReferrals.useQuery();
@@ -14,6 +14,7 @@ export function ReferralsTab() {
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [selectedReferral, setSelectedReferral] = useState<any>(null);
   const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
+  const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
 
   // Email template state
   const [emailSubject, setEmailSubject] = useState("You're invited to join Tradebilia!");
@@ -147,6 +148,17 @@ export function ReferralsTab() {
             <p className="text-xs text-muted-foreground">
               {templateDirty ? "Unsaved changes" : templateQuery.data ? `Last saved` : ""}
             </p>
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setPreviewDialogOpen(true)}
+                disabled={!emailSubject.trim() || !emailBody.trim()}
+                className="flex items-center gap-1"
+              >
+                <Monitor className="h-3 w-3" />
+                Preview Email
+              </Button>
             <Button
               size="sm"
               variant="outline"
@@ -157,6 +169,7 @@ export function ReferralsTab() {
               <Save className="h-3 w-3" />
               {updateTemplateMutation.isPending ? "Saving..." : "Save Template"}
             </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -384,6 +397,80 @@ export function ReferralsTab() {
           </div>
         </DialogContent>
       </Dialog>
+      
+      {/* Email Preview Modal */}
+      <Dialog open={previewDialogOpen} onOpenChange={setPreviewDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Email Preview</DialogTitle>
+            <DialogDescription>
+              This is how the email will appear to recipients (with name placeholder replaced by their first name)
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="bg-muted p-3 rounded border">
+              <p className="text-xs font-medium text-muted-foreground mb-1">Subject:</p>
+              <p className="text-sm font-semibold">{emailSubject}</p>
+            </div>
+            <div className="bg-muted/50 p-4 rounded border overflow-auto" style={{ maxHeight: '400px' }}>
+              <iframe
+                srcDoc={generateEmailPreviewHtml(emailSubject, emailBody)}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  border: 'none',
+                  minHeight: '350px',
+                }}
+              />
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setPreviewDialogOpen(false)}>
+              Close
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
+}
+
+// Helper function to generate email preview HTML
+function generateEmailPreviewHtml(subject: string, body: string): string {
+  const firstName = "John"; // Example name for preview
+  const bodyWithName = body.replace(/\{\{name\}\}/g, firstName);
+  const bodyHtml = bodyWithName
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/\n/g, '<br>');
+  
+  return `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f5f5f3;font-family:system-ui,-apple-system,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f5f3;padding:40px 20px;">
+    <tr><td align="center">
+      <table width="100%" style="max-width:560px;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+        <tr><td style="background:#0a0d22;padding:32px;text-align:center;">
+          <img
+            src="https://tradebilia.manus.space/manus-storage/tradebilia_final_transparent_58812c5a.svg"
+            alt="Tradebilia"
+            width="180"
+            style="display:block;margin:0 auto;width:auto;max-width:100%;height:140px;"
+          />
+        </td></tr>
+        <tr><td style="padding:32px;">
+          <p style="margin:0 0 16px;font-size:15px;color:#374151;line-height:1.7;">${bodyHtml}</p>
+          <a href="https://tradebilia.manus.space" style="display:inline-block;background:#7f31ff;color:#ffffff;text-decoration:none;padding:14px 28px;border-radius:10px;font-weight:600;font-size:14px;margin-top:8px;">Visit Tradebilia</a>
+        </td></tr>
+        <tr><td style="background:#f8f8f6;padding:20px 32px;text-align:center;border-top:1px solid #ebebeb;">
+          <p style="color:#999;font-size:12px;margin:0 0 8px;">You're receiving this because you were referred to <a href="https://tradebilia.manus.space" style="color:#7f31ff;text-decoration:none;">Tradebilia</a>.</p>
+          <p style="color:#999;font-size:11px;margin:0;">If you believe this was sent in error, please disregard this email.</p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
 }
