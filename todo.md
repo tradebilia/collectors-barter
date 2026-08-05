@@ -90,4 +90,4 @@
 - [x] Fix PAYPAL_MODE vs PAYPAL_ENV mismatch in paypal.ts (code read PAYPAL_MODE, injected secret is PAYPAL_ENV - now reads both)
 - [x] Add DAILY_API_KEY secret for Daily.co video chat (key validated against Daily.co API - 200 OK, 2 tests passing)
 - [x] Register /api/ebay/callback, /api/facebook/callback, /api/linkedin/callback Express routes in server/_core/index.ts (all three return 302 redirects correctly)
-- [ ] Set FACEBOOK_REDIRECT_URI and LINKEDIN_REDIRECT_URI env vars (required for OAuth code exchange to succeed)
+- [x] Set FACEBOOK_REDIRECT_URI and LINKEDIN_REDIRECT_URI env vars (set to tradebilia.manus.space callback paths, 2 vitest tests passing)
