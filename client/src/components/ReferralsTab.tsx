@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
-  import { Button } from "@/components/ui/button";
-  import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-  import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-  import { Mail, Eye, Trash2, Save, Send, Monitor } from "lucide-react";
-  import { trpc } from "@/lib/trpc";
-  import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Mail, Eye, Trash2, Save, Send, Monitor } from "lucide-react";
+import { trpc } from "@/lib/trpc";
+import { toast } from "sonner";
 
 export function ReferralsTab() {
   const referralsQuery = trpc.admin.getAllReferrals.useQuery();

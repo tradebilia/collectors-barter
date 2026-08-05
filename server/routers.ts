@@ -2313,19 +2313,13 @@ export const appRouter = router({
         if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
         const db = await requireDb();
         const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
-        // Check if the row already exists, then update or insert
-        const existingRows = await db.select({ id: emailTemplates.id })
-          .from(emailTemplates)
-          .where(eq(emailTemplates.templateKey, 'referral_invite'));
-        const existing = existingRows[0];
-        if (existing) {
-          await db.update(emailTemplates)
-            .set({ subject: input.subject, body: input.body, updatedAt: now, updatedBy: ctx.user.id })
-            .where(eq(emailTemplates.templateKey, 'referral_invite'));
-        } else {
-          await db.insert(emailTemplates)
-            .values({ templateKey: 'referral_invite', subject: input.subject, body: input.body, updatedAt: now, updatedBy: ctx.user.id });
-        }
+        // Use raw SQL via $client to avoid Drizzle query builder issues with this table
+        const rawClient: any = (db as any).$client;
+        const pool = typeof rawClient.promise === 'function' ? rawClient.promise() : rawClient;
+        await pool.execute(
+          'INSERT INTO emailTemplates (templateKey, subject, body, updatedAt, updatedBy) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE subject = VALUES(subject), body = VALUES(body), updatedAt = VALUES(updatedAt), updatedBy = VALUES(updatedBy)',
+          ['referral_invite', input.subject, input.body, now, ctx.user.id]
+        );
         return { success: true };
       }),
     bulkDeleteReferrals: protectedProcedure
