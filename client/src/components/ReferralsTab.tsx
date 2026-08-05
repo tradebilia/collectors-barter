@@ -400,7 +400,7 @@ export function ReferralsTab() {
       
       {/* Email Preview Modal */}
       <Dialog open={previewDialogOpen} onOpenChange={setPreviewDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Email Preview</DialogTitle>
             <DialogDescription>
