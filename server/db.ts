@@ -300,7 +300,7 @@ async function formatListings(listingRows: any[], viewerId: number | null) {
     },
     ownerRating: ratingMap.get(row.ownerId) ?? { averageRating: 0, reviewCount: 0 },
     primaryPhotoUrl: row.primaryPhotoUrl ?? null,
-    photos: row.primaryPhotoUrl ? [row.primaryPhotoUrl] : [],
+    photos: row.primaryPhotoUrl ? [{ imageUrl: row.primaryPhotoUrl, altText: null }] : [],
     categoryLabel: categoryLabels[row.category as keyof typeof categoryLabels] ?? row.category,
     conditionLabel: conditionLabels[row.condition as keyof typeof conditionLabels] ?? row.condition,
     savedToWatchlist: savedListingIds.has(row.id),
