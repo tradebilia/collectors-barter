@@ -444,7 +444,7 @@ export const tradeProposals = mysqlTable("tradeProposals", {
 	recipientId: int().notNull().references(() => users.id),
 	requestedListingId: int().notNull().references(() => listings.id),
 	note: text(),
-	status: mysqlEnum(['pending','negotiating','accepted','shipping','shipped','declined','completed','cancelled','frozen']).default('pending').notNull(),
+	status: mysqlEnum(['pending','negotiating','accepted','shipping','shipped','declined','completed','cancelled','frozen','disputed']).default('pending').notNull(),
 	preFreezStatus: varchar({ length: 20 }),
 	frozenAt: timestamp({ mode: 'string' }),
 	frozenReason: text(),

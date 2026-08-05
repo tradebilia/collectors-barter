@@ -1,0 +1,1 @@
+ALTER TABLE `tradeProposals` MODIFY COLUMN `status` enum('pending','negotiating','accepted','shipping','shipped','declined','completed','cancelled','frozen','disputed') NOT NULL DEFAULT 'pending';

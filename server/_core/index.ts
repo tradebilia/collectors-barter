@@ -10,6 +10,10 @@ import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { customAuth } from "./customAuth";
 import { COOKIE_NAME } from "../../shared/const";
+import { sdk } from "./sdk";
+import { notifyOwner } from "./notification";
+import { desc, gte } from "drizzle-orm";
+import { referralRequests } from "../../drizzle/schema";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -38,6 +42,163 @@ async function startServer() {
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
   registerStorageProxy(app);
   registerOAuthRoutes(app);
+
+  // Health check — verifies the process is up AND the database is reachable.
+  app.get("/health", async (_req, res) => {
+    try {
+      const { requireDb } = await import("../db");
+      const db = await requireDb();
+      const { sql } = await import("drizzle-orm");
+      await db.execute(sql`select 1`);
+      res.json({ status: "ok", database: "connected", timestamp: new Date().toISOString() });
+    } catch (error: any) {
+      res.status(503).json({
+        status: "error",
+        database: "unreachable",
+        error: error?.message ?? String(error),
+        timestamp: new Date().toISOString(),
+      });
+    }
+  });
+
+  // ==========================================================================
+  // SCHEDULED (CRON) ENDPOINTS
+  // Invoked by the Heartbeat scheduler, never by end users. Every handler
+  // rejects any caller whose token is not a cron token.
+  // ==========================================================================
+
+  // Delete abandoned draft listings older than 30 days.
+  app.post("/api/scheduled/cleanupExpiredDrafts", async (req, res) => {
+    try {
+      let user;
+      try {
+        user = await sdk.authenticateRequest(req);
+      } catch {
+        return res.status(403).json({ error: "cron-only" });
+      }
+      if (!user.isCron || !user.taskUid) {
+        return res.status(403).json({ error: "cron-only" });
+      }
+      const { requireDb, deleteDraftsOlderThan } = await import("../db");
+      const db = await requireDb();
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+      const deletedCount = await deleteDraftsOlderThan(db, thirtyDaysAgo);
+      res.json({ ok: true, deletedCount, cutoffDate: thirtyDaysAgo.toISOString() });
+    } catch (error: any) {
+      console.error("[cleanupExpiredDrafts] Error:", error);
+      res.status(500).json({ error: error?.message ?? String(error), timestamp: new Date().toISOString() });
+    }
+  });
+
+  // Email the project owner a digest of referral requests from the last 3 days.
+  app.post("/api/scheduled/referralDigest", async (req, res) => {
+    try {
+      let user;
+      try {
+        user = await sdk.authenticateRequest(req);
+      } catch {
+        return res.status(403).json({ error: "cron-only" });
+      }
+      if (!user.isCron || !user.taskUid) {
+        return res.status(403).json({ error: "cron-only" });
+      }
+      const { requireDb } = await import("../db");
+      const db = await requireDb();
+      // Schema timestamps are string-mode, so compare against a MySQL datetime string.
+      const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000)
+        .toISOString()
+        .slice(0, 19)
+        .replace("T", " ");
+      const pendingReferrals = await db
+        .select()
+        .from(referralRequests)
+        .where(gte(referralRequests.createdAt, threeDaysAgo))
+        .orderBy(desc(referralRequests.createdAt));
+      if (pendingReferrals.length === 0) {
+        return res.json({ ok: true, skipped: "no-referrals" });
+      }
+      const referralLines = pendingReferrals.map(
+        (ref: any) =>
+          `- ${ref.collectorName} (${ref.collectorEmail}) - Focus: ${ref.collectorFocus} - Referrer: ${ref.referrerFirstName} ${ref.referrerLastName}`
+      );
+      const delivered = await notifyOwner({
+        title: `Tradebilia Referral Digest - ${pendingReferrals.length} new referrals`,
+        content: [
+          `You have ${pendingReferrals.length} new referral request(s) from the past 3 days:\n`,
+          referralLines.join("\n"),
+        ].join("\n"),
+      });
+      res.json({ ok: true, referralCount: pendingReferrals.length, notified: delivered });
+    } catch (error: any) {
+      console.error("[referralDigest] Error:", error);
+      res.status(500).json({ error: error?.message ?? String(error), timestamp: new Date().toISOString() });
+    }
+  });
+
+  // Enforce all trade-lifecycle timers: stale-negotiation auto-cancel,
+  // acceptance-window expiry, and overdue-receipt escalation.
+  app.post("/api/scheduled/tradeReminders", async (req, res) => {
+    try {
+      let user;
+      try {
+        user = await sdk.authenticateRequest(req);
+      } catch {
+        return res.status(403).json({ error: "cron-only" });
+      }
+      if (!user.isCron || !user.taskUid) {
+        return res.status(403).json({ error: "cron-only" });
+      }
+      const { requireDb } = await import("../db");
+      const db = await requireDb();
+      const { sql } = await import("drizzle-orm");
+      const now = new Date().toISOString().slice(0, 19).replace("T", " ");
+      let autoCancelled = 0;
+      let acceptanceTimedOut = 0;
+      let receiptEscalated = 0;
+
+      // 1. 30-day auto-cancel: negotiating trades with no activity for 30 days.
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 19).replace("T", " ");
+      const [staleResult] = await db.execute(
+        sql`UPDATE tradeProposals SET status = 'cancelled', declineReason = 'Auto-cancelled: 30 days of no activity', updatedAt = ${now} WHERE status IN ('pending', 'negotiating') AND lastActivityAt IS NOT NULL AND lastActivityAt < ${thirtyDaysAgo}`
+      );
+      autoCancelled = (staleResult as any)?.affectedRows || 0;
+
+      // 2. 72-hour acceptance timeout: one party accepted, the other never confirmed.
+      const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString().slice(0, 19).replace("T", " ");
+      const [pendingAcceptances] = await db.execute(
+        sql`SELECT proposalId FROM tradeReceiptConfirmation WHERE confirmationType = 'accepted' AND confirmedAt < ${threeDaysAgo}`
+      );
+      for (const row of ((pendingAcceptances as unknown as any[]) || [])) {
+        await db.execute(
+          sql`UPDATE tradeProposals SET status = 'cancelled', declineReason = 'Auto-cancelled: 72-hour acceptance window expired', updatedAt = ${now} WHERE id = ${row.proposalId} AND status = 'negotiating'`
+        );
+        await db.execute(
+          sql`DELETE FROM tradeReceiptConfirmation WHERE proposalId = ${row.proposalId} AND confirmationType = 'accepted'`
+        );
+        acceptanceTimedOut++;
+      }
+
+      // 3. 15-day receipt timeout: tracking submitted but receipt never confirmed.
+      const fifteenDaysAgo = new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString().slice(0, 19).replace("T", " ");
+      const [overdueShipments] = await db.execute(
+        sql`SELECT DISTINCT proposalId FROM tradeTrackingNumbers WHERE submittedAt < ${fifteenDaysAgo} AND proposalId NOT IN (SELECT proposalId FROM tradeReceiptConfirmation WHERE confirmationType = 'received') AND proposalId IN (SELECT id FROM tradeProposals WHERE status IN ('accepted', 'shipped'))`
+      );
+      for (const row of ((overdueShipments as unknown as any[]) || [])) {
+        await db.execute(
+          sql`UPDATE tradeProposals SET status = 'disputed', declineReason = 'Auto-escalated: Receipt not confirmed within 15 days', updatedAt = ${now} WHERE id = ${row.proposalId}`
+        );
+        await db.execute(
+          sql`INSERT INTO tradeAdminLog (proposalId, eventType, details, createdAt) VALUES (${row.proposalId}, 'disputed', 'Auto-escalated: 15-day receipt timeout', ${now})`
+        );
+        receiptEscalated++;
+      }
+
+      res.json({ ok: true, autoCancelled, acceptanceTimedOut, receiptEscalated, timestamp: now });
+    } catch (error: any) {
+      console.error("[tradeReminders] Error:", error);
+      res.status(500).json({ error: error?.message ?? String(error), timestamp: new Date().toISOString() });
+    }
+  });
 
   // eBay OAuth callback — handles redirect from eBay after user authorizes
   app.get("/api/ebay/callback", async (req: any, res: any) => {
