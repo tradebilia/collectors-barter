@@ -103,7 +103,7 @@
 - [x] Port genuine gap 2: vitest.setup.ts dotenv loader + wire setupFiles into vitest.config.ts
 - [x] Write vitest coverage for the health route and the cron-only auth guard on scheduled routes
 - [x] Verify TypeScript clean (tsc --noEmit exit 0) and run the full vitest suite (13/13 passing)
-- [ ] Upgrade route tests from source-string assertions to behavioral tests: mount the real Express handlers and assert /health 200-vs-503 and cron 403-vs-success paths
+- [x] Upgrade route tests from source-string assertions to behavioral tests: mount the real Express handlers and assert /health 200-vs-503 and cron 403-vs-success paths
 - [x] Upgrade route tests from source-string assertions to behavioral tests: mount the real Express handlers and assert /health 200-vs-503 and cron 403-vs-success paths (26 tests, all passing)
 - [x] Archive GitHub's old history to a `github-history-archive` branch on GitHub before overwriting main
 - [x] Force-push the Manus tree to GitHub main so the repo mirrors the live site (c0495603 confirmed identical)
