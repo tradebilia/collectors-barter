@@ -88,4 +88,4 @@
 - [x] Remove dead /images/ fallbackRecentItems array from Home.tsx
 - [x] Fix TRADEBILIA_LOGO_URL constant in tradebilia.ts to point to correct /manus-storage/ path (was /images/, now used by CategoryPage, MemberSearch, Messages)
 - [x] Fix PAYPAL_MODE vs PAYPAL_ENV mismatch in paypal.ts (code read PAYPAL_MODE, injected secret is PAYPAL_ENV - now reads both)
-- [ ] Add DAILY_API_KEY secret for Daily.co video chat (currently missing - video chat will throw INTERNAL_SERVER_ERROR without it)
+- [x] Add DAILY_API_KEY secret for Daily.co video chat (key validated against Daily.co API - 200 OK, 2 tests passing)
