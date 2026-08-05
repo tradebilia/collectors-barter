@@ -1113,6 +1113,7 @@ export const tradeFlowRouter = router({
         offeredListings: offeredListings.map(l => ({
           ...l,
           ownerId: l.ownerId,
+          photos: (l as any).photos || [],
         })),
         otherUser: (otherUserResult as any)?.[0] || null,
         isRequester: proposal.requesterId === userId,

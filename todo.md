@@ -113,3 +113,4 @@
 - [x] Register 3 project-level Heartbeat crons so the ported endpoints actually fire
 - [x] Add vitest coverage for scheduled route registration/authorization + disputed enum regression (server/scheduledRoutes.test.ts, 8 tests)
 - [x] Upgrade route tests from source-string assertions to behavioral tests: mount the real Express handlers and assert /health 200-vs-503 and cron 403-vs-success paths
+- [x] BUG FIX: Trade room — own items (offeredListings) showed no images because getTradeDetails fetched photos per listing but dropped them from the return spread; added photos: (l as any).photos || [] to the offeredListings map
