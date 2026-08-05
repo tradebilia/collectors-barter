@@ -2314,10 +2314,10 @@ export const appRouter = router({
         const db = await requireDb();
         const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
         // Check if the row already exists, then update or insert
-        const [existing] = await db.select({ id: emailTemplates.id })
+        const existingRows = await db.select({ id: emailTemplates.id })
           .from(emailTemplates)
-          .where(eq(emailTemplates.templateKey, 'referral_invite'))
-          .limit(1);
+          .where(eq(emailTemplates.templateKey, 'referral_invite'));
+        const existing = existingRows[0];
         if (existing) {
           await db.update(emailTemplates)
             .set({ subject: input.subject, body: input.body, updatedAt: now, updatedBy: ctx.user.id })
