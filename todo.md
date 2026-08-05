@@ -100,15 +100,16 @@
 - [x] Verify Manus is a feature superset: tRPC procs 60 vs 59, db.ts exports 103 vs 102, schema tables 46 vs 39, tradeFlow procs 57 vs 54 — zero GitHub-only items in any surface
 - [x] Verify all GitHub-only npm deps (@daily-co/daily-js, playwright, bcrypt) are unused even in GitHub's own source; morgan only used by GitHub index.ts
 - [x] Decide against `git merge --allow-unrelated-histories` (would drag in 52k node_modules + 800 stale .md reports and revert 74 files to older/buggier versions)
-- [ ] Port genuine gap 1: 4 missing Express routes into server/_core/index.ts (/health, /api/scheduled/cleanupExpiredDrafts, /api/scheduled/referralDigest, /api/scheduled/tradeReminders)
-- [ ] Port genuine gap 2: vitest.setup.ts dotenv loader + wire setupFiles into vitest.config.ts
-- [ ] Write vitest coverage for the health route and the cron-only auth guard on scheduled routes
-- [ ] Verify TypeScript clean (npx tsc --noEmit) and run the full vitest suite
-- [ ] Archive GitHub's old history to a `github-history-archive` branch on GitHub before overwriting main
-- [ ] Force-push the Manus tree to GitHub main so the repo mirrors the live site
-- [ ] Save final checkpoint
+- [x] Port genuine gap 2: vitest.setup.ts dotenv loader + wire setupFiles into vitest.config.ts
+- [x] Write vitest coverage for the health route and the cron-only auth guard on scheduled routes
+- [x] Verify TypeScript clean (tsc --noEmit exit 0) and run the full vitest suite (13/13 passing)
+- [ ] Upgrade route tests from source-string assertions to behavioral tests: mount the real Express handlers and assert /health 200-vs-503 and cron 403-vs-success paths
+- [x] Upgrade route tests from source-string assertions to behavioral tests: mount the real Express handlers and assert /health 200-vs-503 and cron 403-vs-success paths (26 tests, all passing)
+- [x] Archive GitHub's old history to a `github-history-archive` branch on GitHub before overwriting main
+- [x] Force-push the Manus tree to GitHub main so the repo mirrors the live site (c0495603 confirmed identical)
 - [x] BUG (pre-existing, live): tradeProposals.status enum lacks 'disputed' but fileComplaint (tradeFlowRouter.ts:822) writes it — throws under STRICT_TRANS_TABLES. Add 'disputed' to the enum via migration
 - [x] Port genuine gap 1: 4 missing Express routes into server/_core/index.ts (/health, /api/scheduled/cleanupExpiredDrafts, /api/scheduled/referralDigest, /api/scheduled/tradeReminders)
 - [x] Harden ported cron endpoints: 403 (not 500) on auth failure, require isCron AND taskUid, never trust req.body
 - [x] Register 3 project-level Heartbeat crons so the ported endpoints actually fire
 - [x] Add vitest coverage for scheduled route registration/authorization + disputed enum regression (server/scheduledRoutes.test.ts, 8 tests)
+- [x] Upgrade route tests from source-string assertions to behavioral tests: mount the real Express handlers and assert /health 200-vs-503 and cron 403-vs-success paths
