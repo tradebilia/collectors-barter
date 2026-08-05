@@ -2313,15 +2313,22 @@ export const appRouter = router({
         if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
         const db = await requireDb();
         const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
-        await db.execute(
-          sql`INSERT INTO emailTemplates (templateKey, subject, body, updatedAt, updatedBy)
-              VALUES ('referral_invite', ${input.subject}, ${input.body}, ${now}, ${ctx.user.id})
-              ON DUPLICATE KEY UPDATE
-                subject = VALUES(subject),
-                body = VALUES(body),
-                updatedAt = VALUES(updatedAt),
-                updatedBy = VALUES(updatedBy)`
-        );
+        await db.insert(emailTemplates)
+          .values({
+            templateKey: 'referral_invite',
+            subject: input.subject,
+            body: input.body,
+            updatedAt: now,
+            updatedBy: ctx.user.id,
+          })
+          .onDuplicateKeyUpdate({
+            set: {
+              subject: input.subject,
+              body: input.body,
+              updatedAt: now,
+              updatedBy: ctx.user.id,
+            },
+          });
         return { success: true };
       }),
     bulkDeleteReferrals: protectedProcedure
