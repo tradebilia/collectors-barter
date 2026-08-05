@@ -8,6 +8,8 @@ import { registerStorageProxy } from "./storageProxy";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
+import { customAuth } from "./customAuth";
+import { COOKIE_NAME } from "../../shared/const";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -36,6 +38,60 @@ async function startServer() {
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
   registerStorageProxy(app);
   registerOAuthRoutes(app);
+
+  // eBay OAuth callback — handles redirect from eBay after user authorizes
+  app.get("/api/ebay/callback", async (req: any, res: any) => {
+    const code = req.query.code as string | undefined;
+    if (!code) return res.redirect(302, "/account-settings?ebay=error&reason=no_code");
+    try {
+      const cookies = customAuth.parseCookies(req.headers?.cookie || "");
+      const user = await customAuth.getUserFromSession(cookies.get(COOKIE_NAME));
+      if (!user) return res.redirect(302, "/account-settings?ebay=error&reason=not_logged_in");
+      const { handleEbayCallback } = await import("./ebayCallback");
+      await handleEbayCallback(code, user.id);
+      return res.redirect(302, "/account-settings?ebay=connected&tab=integrations");
+    } catch (err) {
+      console.error("[eBay Callback] Error:", err);
+      return res.redirect(302, "/account-settings?ebay=error&reason=callback_failed");
+    }
+  });
+
+  // Facebook OAuth callback — handles redirect from Facebook after user authorizes
+  app.get("/api/facebook/callback", async (req: any, res: any) => {
+    const code = req.query.code as string | undefined;
+    if (req.query.error) return res.redirect(302, "/account-settings?facebook=error&reason=access_denied&tab=integrations");
+    if (!code) return res.redirect(302, "/account-settings?facebook=error&reason=no_code&tab=integrations");
+    try {
+      const cookies = customAuth.parseCookies(req.headers?.cookie || "");
+      const user = await customAuth.getUserFromSession(cookies.get(COOKIE_NAME));
+      if (!user) return res.redirect(302, "/account-settings?facebook=error&reason=not_logged_in&tab=integrations");
+      const { handleFacebookCallback } = await import("./facebookCallback");
+      await handleFacebookCallback(code, user.id);
+      return res.redirect(302, "/account-settings?facebook=connected&tab=integrations");
+    } catch (err) {
+      console.error("[Facebook Callback] Error:", err);
+      return res.redirect(302, "/account-settings?facebook=error&reason=callback_failed&tab=integrations");
+    }
+  });
+
+  // LinkedIn OAuth callback — handles redirect from LinkedIn after user authorizes
+  app.get("/api/linkedin/callback", async (req: any, res: any) => {
+    const code = req.query.code as string | undefined;
+    if (req.query.error) return res.redirect(302, "/account-settings?linkedin=error&reason=access_denied&tab=integrations");
+    if (!code) return res.redirect(302, "/account-settings?linkedin=error&reason=no_code&tab=integrations");
+    try {
+      const cookies = customAuth.parseCookies(req.headers?.cookie || "");
+      const user = await customAuth.getUserFromSession(cookies.get(COOKIE_NAME));
+      if (!user) return res.redirect(302, "/account-settings?linkedin=error&reason=not_logged_in&tab=integrations");
+      const { handleLinkedInCallback } = await import("./linkedinCallback");
+      await handleLinkedInCallback(code, user.id);
+      return res.redirect(302, "/account-settings?linkedin=connected&tab=integrations");
+    } catch (err) {
+      console.error("[LinkedIn Callback] Error:", err);
+      return res.redirect(302, "/account-settings?linkedin=error&reason=callback_failed&tab=integrations");
+    }
+  });
+
   // tRPC API
   app.use(
     "/api/trpc",
