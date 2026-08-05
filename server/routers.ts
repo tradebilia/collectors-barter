@@ -2313,22 +2313,19 @@ export const appRouter = router({
         if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
         const db = await requireDb();
         const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
-        await db.insert(emailTemplates)
-          .values({
-            templateKey: 'referral_invite',
-            subject: input.subject,
-            body: input.body,
-            updatedAt: now,
-            updatedBy: ctx.user.id,
-          })
-          .onDuplicateKeyUpdate({
-            set: {
-              subject: input.subject,
-              body: input.body,
-              updatedAt: now,
-              updatedBy: ctx.user.id,
-            },
-          });
+        // Check if the row already exists, then update or insert
+        const [existing] = await db.select({ id: emailTemplates.id })
+          .from(emailTemplates)
+          .where(eq(emailTemplates.templateKey, 'referral_invite'))
+          .limit(1);
+        if (existing) {
+          await db.update(emailTemplates)
+            .set({ subject: input.subject, body: input.body, updatedAt: now, updatedBy: ctx.user.id })
+            .where(eq(emailTemplates.templateKey, 'referral_invite'));
+        } else {
+          await db.insert(emailTemplates)
+            .values({ templateKey: 'referral_invite', subject: input.subject, body: input.body, updatedAt: now, updatedBy: ctx.user.id });
+        }
         return { success: true };
       }),
     bulkDeleteReferrals: protectedProcedure
