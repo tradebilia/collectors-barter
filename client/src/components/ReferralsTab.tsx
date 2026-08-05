@@ -399,27 +399,27 @@ export function ReferralsTab() {
       </Dialog>
       
       {/* Email Preview Modal */}
-      <Dialog open={previewDialogOpen} onOpenChange={setPreviewDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+     <Dialog open={previewDialogOpen} onOpenChange={setPreviewDialogOpen}>
+        <DialogContent className="max-w-5xl w-[90vw] max-h-[95vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>Email Preview</DialogTitle>
             <DialogDescription>
               This is how the email will appear to recipients (with name placeholder replaced by their first name)
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="flex flex-col gap-3 flex-1 min-h-0">
             <div className="bg-muted p-3 rounded border">
               <p className="text-xs font-medium text-muted-foreground mb-1">Subject:</p>
               <p className="text-sm font-semibold">{emailSubject}</p>
             </div>
-            <div className="bg-muted/50 p-4 rounded border overflow-auto" style={{ maxHeight: '400px' }}>
+            <div className="flex-1 min-h-0 rounded border overflow-hidden" style={{ height: 'calc(95vh - 220px)' }}>
               <iframe
                 srcDoc={generateEmailPreviewHtml(emailSubject, emailBody)}
                 style={{
                   width: '100%',
                   height: '100%',
                   border: 'none',
-                  minHeight: '350px',
+                  minHeight: '600px',
                 }}
               />
             </div>
