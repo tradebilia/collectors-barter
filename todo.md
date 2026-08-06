@@ -120,3 +120,4 @@
 - [x] BUG FIX: Trade Hub verification badges now show correct verified accounts (eBay, Facebook, LinkedIn) instead of checking for ID existence
 - [x] FEATURE: Add PayPal verification badge to Trade Hub (shows only when paypalVerified = 1)
 - [x] BUG FIX: eBay IDVerified parsing now handles "true", "1", and case-insensitive variants (was only checking for exact string "true")
+- [x] BUG FIX: eBay OAuth redirect URI now uses correct HTTPS callback URL instead of hardcoded RuName

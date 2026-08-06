@@ -48,7 +48,7 @@ export function getEbayAuthUrl(state: string): string {
   const params = new URLSearchParams({
     client_id: ENV.ebayClientId,
     response_type: "code",
-    redirect_uri: "Rich_Tavani-RichTava-Tradeb-jvtyatuw", // Using the RuName from the screenshot
+    redirect_uri: "https://tradebilia.manus.space/api/ebay/callback",
     scope: [
       "https://api.ebay.com/oauth/api_scope",
       "https://api.ebay.com/oauth/api_scope/commerce.identity.readonly",
@@ -66,7 +66,7 @@ export async function exchangeCodeForToken(code: string): Promise<EbayTokenRespo
   const params = new URLSearchParams({
     grant_type: "authorization_code",
     code,
-    redirect_uri: "Rich_Tavani-RichTava-Tradeb-jvtyatuw", // Must match the RuName used in the auth URL
+    redirect_uri: "https://tradebilia.manus.space/api/ebay/callback",
   });
 
   const response = await fetch(EBAY_TOKEN_URL, {
