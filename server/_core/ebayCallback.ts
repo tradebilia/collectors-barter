@@ -63,7 +63,10 @@ export async function handleEbayCallback(code: string, userId: number) {
       isLowFeedback,
     };
   } catch (error) {
-    console.error("eBay callback error:", error);
-    throw new Error("Failed to connect eBay account");
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    console.error("eBay callback error - Full error:", error);
+    console.error("eBay callback error - Message:", errorMsg);
+    console.error("eBay callback error - Stack:", error instanceof Error ? error.stack : "N/A");
+    throw new Error(`Failed to connect eBay account: ${errorMsg}`);
   }
 }
