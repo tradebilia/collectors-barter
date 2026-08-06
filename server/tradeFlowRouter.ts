@@ -936,8 +936,8 @@ export const tradeFlowRouter = router({
           -- Ratings
           (SELECT AVG(COALESCE(overallRating, (tradeExperienceRating + itemConditionRating + communicationRating + shippingSpeedRating) / 4.0)) FROM tradeReviews WHERE revieweeId = CASE WHEN tp.requesterId = ${userId} THEN tp.recipientId ELSE tp.requesterId END) as otherAvgRating,
           (SELECT COUNT(*) FROM tradeReviews WHERE revieweeId = CASE WHEN tp.requesterId = ${userId} THEN tp.recipientId ELSE tp.requesterId END) as otherReviewCount,
-          -- Verification
-          ou.ebayIdVerified as otherEbayVerified,
+          -- Verification (eBay: connected = verified, IDVerified flag is rarely set by eBay)
+          (ou.ebayUsername IS NOT NULL AND ou.ebayUsername != '') as otherEbayVerified,
           ou.facebookVerified as otherFacebookVerified,
           (ou.linkedinId IS NOT NULL AND ou.linkedinId != '') as otherLinkedinVerified,
           ou.paypalVerified as otherPaypalVerified,

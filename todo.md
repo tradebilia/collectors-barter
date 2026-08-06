@@ -122,3 +122,4 @@
 - [x] BUG FIX: eBay IDVerified parsing now handles "true", "1", and case-insensitive variants (was only checking for exact string "true")
 - [x] BUG FIX: eBay OAuth redirect URI now uses correct HTTPS callback URL instead of hardcoded RuName
 - [x] INFRASTRUCTURE: Switched eBay OAuth from sandbox to production endpoints
+- [x] CHANGE: eBay badge now shows when account is connected (ebayUsername set) instead of requiring IDVerified flag which eBay rarely sets
