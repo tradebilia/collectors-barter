@@ -314,7 +314,7 @@ export default function TradeHub() {
                     </div>
 
                     {/* Verification Badges — only show platforms the user has actually verified */}
-                    {(selectedTrade.otherUser?.ebayVerified || selectedTrade.otherUser?.facebookVerified || selectedTrade.otherUser?.linkedinVerified) && (
+                    {(selectedTrade.otherUser?.ebayVerified || selectedTrade.otherUser?.facebookVerified || selectedTrade.otherUser?.linkedinVerified || selectedTrade.otherUser?.paypalVerified) && (
                       <div className="mt-3 flex items-center gap-2 flex-wrap">
                         <span className="text-xs text-gray-400">Verified on:</span>
                         {selectedTrade.otherUser?.ebayVerified && (
@@ -325,6 +325,9 @@ export default function TradeHub() {
                         )}
                         {selectedTrade.otherUser?.linkedinVerified && (
                           <span className="px-2 py-0.5 bg-sky-900/50 text-sky-300 text-xs rounded font-semibold" title="LinkedIn Verified">LinkedIn</span>
+                        )}
+                        {selectedTrade.otherUser?.paypalVerified && (
+                          <span className="px-2 py-0.5 bg-amber-900/50 text-amber-300 text-xs rounded font-semibold" title="PayPal Verified">PayPal</span>
                         )}
                       </div>
                     )}

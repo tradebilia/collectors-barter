@@ -940,6 +940,7 @@ export const tradeFlowRouter = router({
           ou.ebayIdVerified as otherEbayVerified,
           ou.facebookVerified as otherFacebookVerified,
           (ou.linkedinId IS NOT NULL AND ou.linkedinId != '') as otherLinkedinVerified,
+          ou.paypalVerified as otherPaypalVerified,
           -- Decline reason
           tp.declineReason
         FROM tradeProposals tp
@@ -972,6 +973,7 @@ export const tradeFlowRouter = router({
           ebayVerified: !!row.otherEbayVerified,
           facebookVerified: !!row.otherFacebookVerified,
           linkedinVerified: !!row.otherLinkedinVerified,
+          paypalVerified: !!row.otherPaypalVerified,
         },
         listing: {
           title: row.listingTitle,

@@ -118,3 +118,4 @@
 - [x] FEATURE: Add condition/grade badge to inventory modal item cards so users see what they're offering
 - [x] BUG FIX: SearchResults.tsx was accessing photos[0] as a string but now gets objects; added typeof check to handle both formats
 - [x] BUG FIX: Trade Hub verification badges now show correct verified accounts (eBay, Facebook, LinkedIn) instead of checking for ID existence
+- [x] FEATURE: Add PayPal verification badge to Trade Hub (shows only when paypalVerified = 1)
