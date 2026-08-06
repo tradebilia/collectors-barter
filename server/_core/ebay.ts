@@ -186,7 +186,8 @@ export async function getUserInfo(accessToken: string): Promise<EbayUserInfo> {
       if (regDateStr) memberSince = new Date(regDateStr);
       
 	      sellerLevel = getXmlVal("SellerLevel");
-	      idVerified = getXmlVal("IDVerified") === "true";
+	      const idVerifiedVal = getXmlVal("IDVerified");
+	      idVerified = idVerifiedVal === "true" || idVerifiedVal === "1" || idVerifiedVal?.toLowerCase() === "true";
 	      star = getXmlVal("FeedbackRatingStar");
 	      positive12mo = parseInt(getXmlVal("PositiveFeedbackRating") || "0", 10);
 	      neutral12mo = parseInt(getXmlVal("NeutralFeedbackRating") || "0", 10);
