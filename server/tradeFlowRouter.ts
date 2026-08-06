@@ -938,8 +938,8 @@ export const tradeFlowRouter = router({
           (SELECT COUNT(*) FROM tradeReviews WHERE revieweeId = CASE WHEN tp.requesterId = ${userId} THEN tp.recipientId ELSE tp.requesterId END) as otherReviewCount,
           -- Verification
           ou.ebayIdVerified as otherEbayVerified,
-          ou.facebookId as otherFacebookId,
-          ou.linkedinId as otherLinkedinId,
+          ou.facebookVerified as otherFacebookVerified,
+          (ou.linkedinId IS NOT NULL AND ou.linkedinId != '') as otherLinkedinVerified,
           -- Decline reason
           tp.declineReason
         FROM tradeProposals tp
@@ -970,8 +970,8 @@ export const tradeFlowRouter = router({
           avgRating: row.otherAvgRating ? String(row.otherAvgRating) : null,
           reviewCount: Number(row.otherReviewCount) || 0,
           ebayVerified: !!row.otherEbayVerified,
-          facebookVerified: !!row.otherFacebookId,
-          linkedinVerified: !!row.otherLinkedinId,
+          facebookVerified: !!row.otherFacebookVerified,
+          linkedinVerified: !!row.otherLinkedinVerified,
         },
         listing: {
           title: row.listingTitle,
