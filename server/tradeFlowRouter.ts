@@ -1723,7 +1723,6 @@ export const tradeFlowRouter = router({
     }),
 
   analyzeTradeWithAI: protectedProcedure
-    .input(z.object({ proposalId: z.number().int().positive() }))
     .input(z.object({
       proposalId: z.number().int().positive(),
       myItems: z.array(z.object({
