@@ -230,8 +230,10 @@ const resolveApiUrl = () => {
 // Resolve the API key: prefer TRADEBILIA_OPENAI_API_KEY, fall back to Forge key
 const resolveApiKey = () => {
   if (ENV.openaiApiKey && ENV.openaiApiKey.trim().length > 0) {
+    console.log(`[LLM] Using TRADEBILIA_OPENAI_API_KEY: ${ENV.openaiApiKey.substring(0, 20)}... (len=${ENV.openaiApiKey.length})`);
     return ENV.openaiApiKey;
   }
+  console.log(`[LLM] Falling back to Forge key: ${ENV.forgeApiKey.substring(0, 20)}... (len=${ENV.forgeApiKey.length})`);
   return ENV.forgeApiKey;
 };
 
