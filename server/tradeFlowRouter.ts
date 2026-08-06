@@ -2135,11 +2135,13 @@ Respond with ONLY this JSON object — no markdown, no code blocks, just raw JSO
       }
 
       // Strip any citation links the LLM may have included despite instructions
-      const stripCitations = (text: string): string =>
-        text
+      const stripCitations = (text: unknown): string => {
+        const str = typeof text === 'string' ? text : (text == null ? '' : String(text));
+        return str
           .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // [text](url) -> text
           .replace(/https?:\/\/\S+/g, '')           // bare URLs
           .trim();
+      };
 
       if (analysis.summary) analysis.summary = stripCitations(analysis.summary);
       if (analysis.myItemInsights) analysis.myItemInsights = stripCitations(analysis.myItemInsights);
