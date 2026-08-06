@@ -46,9 +46,13 @@ function emailWrapper(content: string): string {
     <tr><td align="center">
       <table width="100%" style="max-width:560px;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
         <!-- Header -->
-        <tr><td style="background:#0a0d22;padding:28px 32px;text-align:center;">
-          <span style="color:#ffffff;font-size:22px;font-weight:700;letter-spacing:0.05em;">TRADEBILIA</span>
-          <p style="color:rgba(255,255,255,0.55);font-size:12px;margin:4px 0 0;letter-spacing:0.1em;text-transform:uppercase;">Collectors Trading Exchange</p>
+        <tr><td style="background:#0a0d22;padding:24px 16px;text-align:center;">
+          <img
+            src="https://tradebilia.manus.space/manus-storage/tradebilia_final_transparent_58812c5a.svg"
+            alt="Tradebilia"
+            width="520"
+            style="display:block;margin:0 auto;width:100%;max-width:520px;height:auto;"
+          />
         </td></tr>
         <!-- Content -->
         <tr><td style="padding:32px;">
