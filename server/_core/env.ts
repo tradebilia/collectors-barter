@@ -22,7 +22,7 @@ export const ENV = {
   // Encryption key for OAuth tokens at rest
   encryptionKey: process.env.ENCRYPTION_KEY ?? "",
   // OpenAI for trade analysis
-  openaiApiKey: process.env.TRADEBILIA_OPENAI_API_KEY ?? "",
+  openaiApiKey: process.env.TRADEBILIA_OPENAI_API_KEY ?? "", // key refreshed 2026-08-06
   // PSA API (placeholder)
   psaApiToken: process.env.PSA_API_TOKEN ?? "",
 };
