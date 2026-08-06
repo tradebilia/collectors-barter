@@ -123,3 +123,7 @@
 - [x] BUG FIX: eBay OAuth redirect URI now uses correct HTTPS callback URL instead of hardcoded RuName
 - [x] INFRASTRUCTURE: Switched eBay OAuth from sandbox to production endpoints
 - [x] CHANGE: eBay badge now shows when account is connected (ebayUsername set) instead of requiring IDVerified flag which eBay rarely sets
+
+## Pre-Launch Checklist
+- [ ] PRE-LAUNCH: Upgrade AI Analyzer to a better LLM model (e.g., GPT-4o via valid OpenAI key or Claude) before going live — currently using Manus Forge as interim solution
+- [x] BUG FIX: Trade room timeline now shows current display names instead of stored usernames

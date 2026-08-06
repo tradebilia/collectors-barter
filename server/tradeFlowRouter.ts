@@ -1226,8 +1226,9 @@ export const tradeFlowRouter = router({
       }
 
       const [events] = await db.execute(
-        sql`SELECT id, actorId, actorName, eventType, details, createdAt
+        sql`SELECT tal.id, tal.actorId, u.displayName as actorName, tal.eventType, tal.details, tal.createdAt
             FROM tradeActivityLog
+            LEFT JOIN users u ON tal.actorId = u.id
             WHERE proposalId = ${input.proposalId}
             ORDER BY createdAt ASC`
       );
