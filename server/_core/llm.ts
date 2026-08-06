@@ -218,9 +218,6 @@ const normalizeToolChoice = (
 // 2. If BUILT_IN_FORGE_API_URL is set, use the Manus Forge proxy (local dev / Manus-hosted)
 // 3. Fall back to the Forge default endpoint
 const resolveApiUrl = () => {
-  if (ENV.openaiApiKey && ENV.openaiApiKey.trim().length > 0) {
-    return "https://api.openai.com/v1/chat/completions";
-  }
   if (ENV.forgeApiUrl && ENV.forgeApiUrl.trim().length > 0) {
     return `${ENV.forgeApiUrl.replace(/\/$/, "")}/v1/chat/completions`;
   }
@@ -229,11 +226,7 @@ const resolveApiUrl = () => {
 
 // Resolve the API key: prefer TRADEBILIA_OPENAI_API_KEY, fall back to Forge key
 const resolveApiKey = () => {
-  if (ENV.openaiApiKey && ENV.openaiApiKey.trim().length > 0) {
-    console.log(`[LLM] Using TRADEBILIA_OPENAI_API_KEY: ${ENV.openaiApiKey.substring(0, 20)}... (len=${ENV.openaiApiKey.length})`);
-    return ENV.openaiApiKey;
-  }
-  console.log(`[LLM] Falling back to Forge key: ${ENV.forgeApiKey.substring(0, 20)}... (len=${ENV.forgeApiKey.length})`);
+  console.log(`[LLM] Using Manus Forge key`);
   return ENV.forgeApiKey;
 };
 

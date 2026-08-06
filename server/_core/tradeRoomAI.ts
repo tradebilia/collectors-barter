@@ -72,7 +72,7 @@ export async function analyzeTradeProposal(
 
     // Call LLM for analysis
     const aiResult = await invokeLLM({
-      model: 'gpt-4-turbo',
+      model: 'gpt-4o',
       messages: [
         {
           role: 'user',
