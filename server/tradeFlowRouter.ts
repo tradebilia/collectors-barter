@@ -1724,6 +1724,29 @@ export const tradeFlowRouter = router({
 
   analyzeTradeWithAI: protectedProcedure
     .input(z.object({ proposalId: z.number().int().positive() }))
+    .input(z.object({
+      proposalId: z.number().int().positive(),
+      myItems: z.array(z.object({
+        id: z.number(),
+        title: z.string(),
+        category: z.string(),
+        grade: z.string().optional(),
+        condition: z.string().optional(),
+        estimatedValue: z.number().optional(),
+        itemDetails: z.string().optional(),
+      })),
+      theirItems: z.array(z.object({
+        id: z.number(),
+        title: z.string(),
+        category: z.string(),
+        grade: z.string().optional(),
+        condition: z.string().optional(),
+        estimatedValue: z.number().optional(),
+        itemDetails: z.string().optional(),
+      })),
+      myCash: z.number().default(0),
+      theirCash: z.number().default(0),
+    }))
     .mutation(async ({ ctx, input }) => {
       const db = await requireDb();
       const userId = ctx.user.id;
@@ -1735,43 +1758,11 @@ export const tradeFlowRouter = router({
         throw new TRPCError({ code: 'FORBIDDEN', message: 'Not authorized' });
       }
 
-      // Get all items on both sides
-      const isRequester = proposal.requesterId === userId;
-      const myUserId = userId;
-      const theirUserId = isRequester ? proposal.recipientId : proposal.requesterId;
-
-      // Get the requested listing (the item that was originally requested)
-      const [requestedListing] = await db.select().from(listings).where(eq(listings.id, proposal.requestedListingId)).limit(1);
-
-      // Get all offered items
-      const proposalItems = await db.select().from(tradeProposalItems).where(eq(tradeProposalItems.proposalId, input.proposalId));
-      const offeredIds = proposalItems.map(pi => pi.offeredListingId);
-      const offeredListings = offeredIds.length > 0
-        ? await db.select().from(listings).where(inArray(listings.id, offeredIds))
-        : [];
-
-      // Build item lists for each side
-      const myItems: any[] = [];
-      const theirItems: any[] = [];
-
-      // The requested listing belongs to the recipient (their side from requester's view)
-      if (requestedListing) {
-        const targetArray = isRequester ? theirItems : myItems;
-        targetArray.push(requestedListing);
-      }
-
-      for (const item of offeredListings) {
-        if (item.ownerId === myUserId) myItems.push(item);
-        else theirItems.push(item);
-      }
-
-      // Get cash amounts
-      const [cashRows] = await db.execute(
-        sql`SELECT cashFromRequester, cashFromRecipient FROM tradeProposals WHERE id = ${input.proposalId}`
-      );
-      const cashData = (cashRows as any)?.[0];
-      const myCash = isRequester ? Number(cashData?.cashFromRequester || 0) : Number(cashData?.cashFromRecipient || 0);
-      const theirCash = isRequester ? Number(cashData?.cashFromRecipient || 0) : Number(cashData?.cashFromRequester || 0);
+      // Use items provided by client (fresh UI state)
+      const myItems = input.myItems;
+      const theirItems = input.theirItems;
+      const myCash = input.myCash;
+      const theirCash = input.theirCash;
 
       // Fetch eBay market prices for each item
       const ebayClientId = process.env.EBAY_PROD_CLIENT_ID;
@@ -2025,12 +2016,12 @@ export const tradeFlowRouter = router({
       for (const item of myItems) {
         const m = itemMetricsMap.get(item.id);
         if (m) { myEbayTotal += m.median; totalDataPoints += m.count; allConfidenceLevels.push(m.confidence); }
-        else myEbayTotal += parseFloat(item.estimatedValue || '0');
+        else myEbayTotal += (typeof item.estimatedValue === 'number' ? item.estimatedValue : parseFloat(item.estimatedValue || '0'));
       }
       for (const item of theirItems) {
         const m = itemMetricsMap.get(item.id);
         if (m) { theirEbayTotal += m.median; totalDataPoints += m.count; allConfidenceLevels.push(m.confidence); }
-        else theirEbayTotal += parseFloat(item.estimatedValue || '0');
+        else theirEbayTotal += (typeof item.estimatedValue === 'number' ? item.estimatedValue : parseFloat(item.estimatedValue || '0'));
       }
 
       const ebayDiff = theirEbayTotal - myEbayTotal;

@@ -127,3 +127,4 @@
 ## Pre-Launch Checklist
 - [ ] PRE-LAUNCH: Upgrade AI Analyzer to a better LLM model (e.g., GPT-4o via valid OpenAI key or Claude) before going live — currently using Manus Forge as interim solution
 - [x] BUG FIX: Trade room timeline now shows current display names instead of stored usernames
+- [x] REFACTOR: AI Analyzer now accepts item data from client instead of querying DB — analyzes fresh UI state, not stale persisted data

@@ -1384,7 +1384,29 @@ export default function WarRoom() {
                             setAiAnalysisLoading(true);
                             setAiAnalysis(null);
                             try {
-                              const result = await analyzeTradeWithAIMutation.mutateAsync({ proposalId });
+                              const result = await analyzeTradeWithAIMutation.mutateAsync({
+                                proposalId,
+                                myItems: myItems.map(i => ({
+                                  id: i.id,
+                                  title: i.title,
+                                  category: i.category,
+                                  grade: i.grade,
+                                  condition: i.condition,
+                                  estimatedValue: parseFloat(i.estimatedValue || '0'),
+                                  itemDetails: i.itemDetails,
+                                })),
+                                theirItems: theirItems.map(i => ({
+                                  id: i.id,
+                                  title: i.title,
+                                  category: i.category,
+                                  grade: i.grade,
+                                  condition: i.condition,
+                                  estimatedValue: parseFloat(i.estimatedValue || '0'),
+                                  itemDetails: i.itemDetails,
+                                })),
+                                myCash,
+                                theirCash,
+                              });
                               setAiAnalysis(result);
                             } catch (err: any) {
                               toast.error(err.message || 'AI analysis failed');
@@ -1418,9 +1440,31 @@ export default function WarRoom() {
                             onClick={async () => {
                               setAiAnalysisLoading(true);
                               setAiAnalysis(null);
-                              try {
-                                const result = await analyzeTradeWithAIMutation.mutateAsync({ proposalId });
-                                setAiAnalysis(result);
+                            try {
+                              const result = await analyzeTradeWithAIMutation.mutateAsync({
+                                proposalId,
+                                myItems: myItems.map(i => ({
+                                  id: i.id,
+                                  title: i.title,
+                                  category: i.category,
+                                  grade: i.grade,
+                                  condition: i.condition,
+                                  estimatedValue: parseFloat(i.estimatedValue || '0'),
+                                  itemDetails: i.itemDetails,
+                                })),
+                                theirItems: theirItems.map(i => ({
+                                  id: i.id,
+                                  title: i.title,
+                                  category: i.category,
+                                  grade: i.grade,
+                                  condition: i.condition,
+                                  estimatedValue: parseFloat(i.estimatedValue || '0'),
+                                  itemDetails: i.itemDetails,
+                                })),
+                                myCash,
+                                theirCash,
+                              });
+                              setAiAnalysis(result);
                               } catch (err: any) {
                                 toast.error(err.message || 'AI analysis failed');
                               } finally {
