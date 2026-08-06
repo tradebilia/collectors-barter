@@ -1493,77 +1493,101 @@ export default function WarRoom() {
                         {/* Summary */}
                         <p className="text-gray-300 leading-relaxed">{aiAnalysis.summary}</p>
 
-                        {/* My items insight */}
-                        <div className="bg-blue-900/20 rounded-lg p-2.5 border border-blue-800/30 space-y-2">
+                        {/* My items insight - per-item breakdown */}
+                        <div className="bg-blue-900/20 rounded-lg p-2.5 border border-blue-800/30 space-y-3">
                           <p className="text-blue-400 text-[10px] font-bold uppercase">Your Items</p>
-                          <p className="text-gray-300 leading-relaxed">{aiAnalysis.myItemInsights}</p>
-                          {/* Strengths & Weaknesses */}
-                          {(aiAnalysis.myItemStrengths?.length > 0 || aiAnalysis.myItemWeaknesses?.length > 0) && (
-                            <div className="pt-1 border-t border-blue-800/30 grid grid-cols-2 gap-2">
-                              {aiAnalysis.myItemStrengths?.length > 0 && (
-                                <div>
-                                  <p className="text-green-400 text-[9px] font-bold uppercase mb-1">✅ Strengths</p>
-                                  <ul className="space-y-0.5">
-                                    {aiAnalysis.myItemStrengths.map((s: string, i: number) => (
-                                      <li key={i} className="text-gray-400 text-[9px] leading-tight">• {s}</li>
-                                    ))}
-                                  </ul>
-                                </div>
-                              )}
-                              {aiAnalysis.myItemWeaknesses?.length > 0 && (
-                                <div>
-                                  <p className="text-red-400 text-[9px] font-bold uppercase mb-1">⚠️ Risks</p>
-                                  <ul className="space-y-0.5">
-                                    {aiAnalysis.myItemWeaknesses.map((w: string, i: number) => (
-                                      <li key={i} className="text-gray-400 text-[9px] leading-tight">• {w}</li>
-                                    ))}
-                                  </ul>
-                                </div>
-                              )}
-                            </div>
-                          )}
-                          {aiAnalysis.myItemFuturePotential && (
-                            <div className="pt-1 border-t border-blue-800/30">
-                              <p className="text-blue-300 text-[10px] font-semibold uppercase mb-0.5">📈 Future Potential</p>
-                              <p className="text-gray-400 leading-relaxed">{aiAnalysis.myItemFuturePotential}</p>
-                            </div>
+                          {typeof aiAnalysis.myItemInsights === 'object' && !Array.isArray(aiAnalysis.myItemInsights) ? (
+                            Object.entries(aiAnalysis.myItemInsights).map(([itemName, insight]: [string, any]) => (
+                              <div key={itemName} className="space-y-1.5 pb-2 border-b border-blue-800/20 last:border-b-0 last:pb-0">
+                                {/* Item name heading */}
+                                <p className="text-cyan-300 text-sm font-semibold">{itemName}</p>
+                                {/* Insight */}
+                                <p className="text-gray-300 text-[13px] leading-relaxed">{insight}</p>
+                                {/* Strengths & Weaknesses for this item */}
+                                {(aiAnalysis.myItemStrengths?.[itemName]?.length > 0 || aiAnalysis.myItemWeaknesses?.[itemName]?.length > 0) && (
+                                  <div className="grid grid-cols-2 gap-2 pt-1">
+                                    {aiAnalysis.myItemStrengths?.[itemName]?.length > 0 && (
+                                      <div>
+                                        <p className="text-green-400 text-[9px] font-bold uppercase mb-1">✅ Strengths</p>
+                                        <ul className="space-y-0.5">
+                                          {aiAnalysis.myItemStrengths[itemName].map((s: string, i: number) => (
+                                            <li key={i} className="text-gray-400 text-[9px] leading-tight">• {s}</li>
+                                          ))}
+                                        </ul>
+                                      </div>
+                                    )}
+                                    {aiAnalysis.myItemWeaknesses?.[itemName]?.length > 0 && (
+                                      <div>
+                                        <p className="text-red-400 text-[9px] font-bold uppercase mb-1">⚠️ Risks</p>
+                                        <ul className="space-y-0.5">
+                                          {aiAnalysis.myItemWeaknesses[itemName].map((w: string, i: number) => (
+                                            <li key={i} className="text-gray-400 text-[9px] leading-tight">• {w}</li>
+                                          ))}
+                                        </ul>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                                {/* Future Potential for this item */}
+                                {aiAnalysis.myItemFuturePotential?.[itemName] && (
+                                  <div className="pt-1">
+                                    <p className="text-blue-300 text-[9px] font-semibold uppercase mb-0.5">📈 Future Potential</p>
+                                    <p className="text-gray-400 text-[12px] leading-relaxed">{aiAnalysis.myItemFuturePotential[itemName]}</p>
+                                  </div>
+                                )}
+                              </div>
+                            ))
+                          ) : (
+                            <p className="text-gray-300 leading-relaxed">{aiAnalysis.myItemInsights}</p>
                           )}
                         </div>
 
-                        {/* Their items insight */}
-                        <div className="bg-gray-800/40 rounded-lg p-2.5 border border-gray-700/30 space-y-2">
+                        {/* Their items insight - per-item breakdown */}
+                        <div className="bg-gray-800/40 rounded-lg p-2.5 border border-gray-700/30 space-y-3">
                           <p className="text-gray-400 text-[10px] font-bold uppercase">Their Items</p>
-                          <p className="text-gray-300 leading-relaxed">{aiAnalysis.theirItemInsights}</p>
-                          {/* Strengths & Weaknesses */}
-                          {(aiAnalysis.theirItemStrengths?.length > 0 || aiAnalysis.theirItemWeaknesses?.length > 0) && (
-                            <div className="pt-1 border-t border-gray-700/30 grid grid-cols-2 gap-2">
-                              {aiAnalysis.theirItemStrengths?.length > 0 && (
-                                <div>
-                                  <p className="text-green-400 text-[9px] font-bold uppercase mb-1">✅ Strengths</p>
-                                  <ul className="space-y-0.5">
-                                    {aiAnalysis.theirItemStrengths.map((s: string, i: number) => (
-                                      <li key={i} className="text-gray-400 text-[9px] leading-tight">• {s}</li>
-                                    ))}
-                                  </ul>
-                                </div>
-                              )}
-                              {aiAnalysis.theirItemWeaknesses?.length > 0 && (
-                                <div>
-                                  <p className="text-red-400 text-[9px] font-bold uppercase mb-1">⚠️ Risks</p>
-                                  <ul className="space-y-0.5">
-                                    {aiAnalysis.theirItemWeaknesses.map((w: string, i: number) => (
-                                      <li key={i} className="text-gray-400 text-[9px] leading-tight">• {w}</li>
-                                    ))}
-                                  </ul>
-                                </div>
-                              )}
-                            </div>
-                          )}
-                          {aiAnalysis.theirItemFuturePotential && (
-                            <div className="pt-1 border-t border-gray-700/30">
-                              <p className="text-gray-300 text-[10px] font-semibold uppercase mb-0.5">📈 Future Potential</p>
-                              <p className="text-gray-400 leading-relaxed">{aiAnalysis.theirItemFuturePotential}</p>
-                            </div>
+                          {typeof aiAnalysis.theirItemInsights === 'object' && !Array.isArray(aiAnalysis.theirItemInsights) ? (
+                            Object.entries(aiAnalysis.theirItemInsights).map(([itemName, insight]: [string, any]) => (
+                              <div key={itemName} className="space-y-1.5 pb-2 border-b border-gray-700/20 last:border-b-0 last:pb-0">
+                                {/* Item name heading */}
+                                <p className="text-amber-300 text-sm font-semibold">{itemName}</p>
+                                {/* Insight */}
+                                <p className="text-gray-300 text-[13px] leading-relaxed">{insight}</p>
+                                {/* Strengths & Weaknesses for this item */}
+                                {(aiAnalysis.theirItemStrengths?.[itemName]?.length > 0 || aiAnalysis.theirItemWeaknesses?.[itemName]?.length > 0) && (
+                                  <div className="grid grid-cols-2 gap-2 pt-1">
+                                    {aiAnalysis.theirItemStrengths?.[itemName]?.length > 0 && (
+                                      <div>
+                                        <p className="text-green-400 text-[9px] font-bold uppercase mb-1">✅ Strengths</p>
+                                        <ul className="space-y-0.5">
+                                          {aiAnalysis.theirItemStrengths[itemName].map((s: string, i: number) => (
+                                            <li key={i} className="text-gray-400 text-[9px] leading-tight">• {s}</li>
+                                          ))}
+                                        </ul>
+                                      </div>
+                                    )}
+                                    {aiAnalysis.theirItemWeaknesses?.[itemName]?.length > 0 && (
+                                      <div>
+                                        <p className="text-red-400 text-[9px] font-bold uppercase mb-1">⚠️ Risks</p>
+                                        <ul className="space-y-0.5">
+                                          {aiAnalysis.theirItemWeaknesses[itemName].map((w: string, i: number) => (
+                                            <li key={i} className="text-gray-400 text-[9px] leading-tight">• {w}</li>
+                                          ))}
+                                        </ul>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                                {/* Future Potential for this item */}
+                                {aiAnalysis.theirItemFuturePotential?.[itemName] && (
+                                  <div className="pt-1">
+                                    <p className="text-blue-300 text-[9px] font-semibold uppercase mb-0.5">📈 Future Potential</p>
+                                    <p className="text-gray-400 text-[12px] leading-relaxed">{aiAnalysis.theirItemFuturePotential[itemName]}</p>
+                                  </div>
+                                )}
+                              </div>
+                            ))
+                          ) : (
+                            <p className="text-gray-300 leading-relaxed">{aiAnalysis.theirItemInsights}</p>
                           )}
                         </div>
 

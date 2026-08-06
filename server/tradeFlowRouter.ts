@@ -2091,14 +2091,14 @@ Respond with ONLY this JSON object — no markdown, no code blocks, just raw JSO
   "verdict": <"Strongly in Your Favor" | "In Your Favor" | "Roughly Fair" | "In Their Favor" | "Strongly in Their Favor">,
   "confidenceScore": ${overallConfidence},
   "summary": <2-3 sentences. Cite specific eBay median dollar amounts. State the true market value gap. Note where estimated values diverge from eBay data. Label as [VERIFIED DATA].>,
-  "myItemInsights": <SINGLE STRING (not array, not object). If multiple items on this side, combine into one paragraph covering all items. 3-5 sentences total. Cite owner estimate AND eBay avg/median/range. Explain WHY each item is valued this way. Flag overvaluation or undervaluation vs eBay. Label facts as [VERIFIED DATA] and interpretations as [AI INTERPRETATION].>,
-  "myItemFuturePotential": <SINGLE STRING (not array, not object). If multiple items on this side, combine into one paragraph. 2-3 sentences labeled [FUTURE PROJECTION]. Give REALISTIC bear/base/bull price scenarios with dollar ranges. Name the single biggest catalyst. Give investment rating X/10.>,
-  "myItemStrengths": <array of 2-4 concise strength strings specific to this item's category>,
-  "myItemWeaknesses": <array of 1-3 concise risk strings specific to this item's category>,
-  "theirItemInsights": <SINGLE STRING (not array, not object). If multiple items on this side, combine into one paragraph covering all items. 3-5 sentences total. Same format as myItemInsights.>,
-  "theirItemFuturePotential": <SINGLE STRING (not array, not object). If multiple items on this side, combine into one paragraph. 2-3 sentences labeled [FUTURE PROJECTION]. Same format as myItemFuturePotential.>,
-  "theirItemStrengths": <array of 2-4 concise strength strings specific to this item's category>,
-  "theirItemWeaknesses": <array of 1-3 concise risk strings specific to this item's category>,
+  "myItemInsights": <OBJECT (not string). Keys are exact item names from YOUR SIDE. Values are 3-5 sentence insights for that item. Example: { "Barry Sanders Score Rookie": "...", "Star Wars #1": "..." }. Cite owner estimate AND eBay avg/median/range for each. Explain WHY valued this way. Flag overvaluation or undervaluation. Label facts as [VERIFIED DATA] and interpretations as [AI INTERPRETATION].>,
+  "myItemFuturePotential": <OBJECT (not string). Keys are exact item names from YOUR SIDE. Values are 2-3 sentence projections labeled [FUTURE PROJECTION]. Give REALISTIC bear/base/bull price scenarios with dollar ranges. Name single biggest catalyst. Give investment rating X/10.>,
+  "myItemStrengths": <OBJECT. Keys are exact item names from YOUR SIDE. Values are arrays of 2-4 concise strength strings specific to that item's category.>,
+  "myItemWeaknesses": <OBJECT. Keys are exact item names from YOUR SIDE. Values are arrays of 1-3 concise risk strings specific to that item's category.>,
+  "theirItemInsights": <OBJECT (not string). Keys are exact item names from THEIR SIDE. Values are 3-5 sentence insights for that item. Same format as myItemInsights.>,
+  "theirItemFuturePotential": <OBJECT (not string). Keys are exact item names from THEIR SIDE. Values are 2-3 sentence projections. Same format as myItemFuturePotential.>,
+  "theirItemStrengths": <OBJECT. Keys are exact item names from THEIR SIDE. Values are arrays of 2-4 concise strength strings.>,
+  "theirItemWeaknesses": <OBJECT. Keys are exact item names from THEIR SIDE. Values are arrays of 1-3 concise risk strings.>,
   "crossCategoryComparison": <2-3 sentences comparing the two items directly: which has better liquidity, which has stronger long-term collector demand, which has better risk/reward profile, and why. Acknowledge if they are from different categories.>,
   "negotiationTip": <1 specific, actionable tip with dollar amounts based on the eBay median gap.>,
   "ebayDataUsed": <true if any eBay data was present, false otherwise>
@@ -2148,17 +2148,61 @@ Respond with ONLY this JSON object — no markdown, no code blocks, just raw JSO
       };
 
       if (analysis.summary) analysis.summary = stripCitations(analysis.summary);
-      if (analysis.myItemInsights) analysis.myItemInsights = stripCitations(analysis.myItemInsights);
-      if (analysis.myItemFuturePotential) analysis.myItemFuturePotential = stripCitations(analysis.myItemFuturePotential);
-      if (analysis.theirItemInsights) analysis.theirItemInsights = stripCitations(analysis.theirItemInsights);
-      if (analysis.theirItemFuturePotential) analysis.theirItemFuturePotential = stripCitations(analysis.theirItemFuturePotential);
+      
+      // Strip citations from per-item insights (objects keyed by item name)
+      if (typeof analysis.myItemInsights === 'object' && !Array.isArray(analysis.myItemInsights)) {
+        Object.keys(analysis.myItemInsights).forEach(key => {
+          analysis.myItemInsights[key] = stripCitations(analysis.myItemInsights[key]);
+        });
+      }
+      if (typeof analysis.myItemFuturePotential === 'object' && !Array.isArray(analysis.myItemFuturePotential)) {
+        Object.keys(analysis.myItemFuturePotential).forEach(key => {
+          analysis.myItemFuturePotential[key] = stripCitations(analysis.myItemFuturePotential[key]);
+        });
+      }
+      if (typeof analysis.theirItemInsights === 'object' && !Array.isArray(analysis.theirItemInsights)) {
+        Object.keys(analysis.theirItemInsights).forEach(key => {
+          analysis.theirItemInsights[key] = stripCitations(analysis.theirItemInsights[key]);
+        });
+      }
+      if (typeof analysis.theirItemFuturePotential === 'object' && !Array.isArray(analysis.theirItemFuturePotential)) {
+        Object.keys(analysis.theirItemFuturePotential).forEach(key => {
+          analysis.theirItemFuturePotential[key] = stripCitations(analysis.theirItemFuturePotential[key]);
+        });
+      }
+      
       if (analysis.negotiationTip) analysis.negotiationTip = stripCitations(analysis.negotiationTip);
       if (analysis.crossCategoryComparison) analysis.crossCategoryComparison = stripCitations(analysis.crossCategoryComparison);
-      // Strip citations from strength/weakness arrays
-      if (Array.isArray(analysis.myItemStrengths)) analysis.myItemStrengths = analysis.myItemStrengths.map(stripCitations);
-      if (Array.isArray(analysis.myItemWeaknesses)) analysis.myItemWeaknesses = analysis.myItemWeaknesses.map(stripCitations);
-      if (Array.isArray(analysis.theirItemStrengths)) analysis.theirItemStrengths = analysis.theirItemStrengths.map(stripCitations);
-      if (Array.isArray(analysis.theirItemWeaknesses)) analysis.theirItemWeaknesses = analysis.theirItemWeaknesses.map(stripCitations);
+      
+      // Strip citations from strength/weakness objects (keyed by item name, values are arrays)
+      if (typeof analysis.myItemStrengths === 'object' && !Array.isArray(analysis.myItemStrengths)) {
+        Object.keys(analysis.myItemStrengths).forEach(key => {
+          if (Array.isArray(analysis.myItemStrengths[key])) {
+            analysis.myItemStrengths[key] = analysis.myItemStrengths[key].map(stripCitations);
+          }
+        });
+      }
+      if (typeof analysis.myItemWeaknesses === 'object' && !Array.isArray(analysis.myItemWeaknesses)) {
+        Object.keys(analysis.myItemWeaknesses).forEach(key => {
+          if (Array.isArray(analysis.myItemWeaknesses[key])) {
+            analysis.myItemWeaknesses[key] = analysis.myItemWeaknesses[key].map(stripCitations);
+          }
+        });
+      }
+      if (typeof analysis.theirItemStrengths === 'object' && !Array.isArray(analysis.theirItemStrengths)) {
+        Object.keys(analysis.theirItemStrengths).forEach(key => {
+          if (Array.isArray(analysis.theirItemStrengths[key])) {
+            analysis.theirItemStrengths[key] = analysis.theirItemStrengths[key].map(stripCitations);
+          }
+        });
+      }
+      if (typeof analysis.theirItemWeaknesses === 'object' && !Array.isArray(analysis.theirItemWeaknesses)) {
+        Object.keys(analysis.theirItemWeaknesses).forEach(key => {
+          if (Array.isArray(analysis.theirItemWeaknesses[key])) {
+            analysis.theirItemWeaknesses[key] = analysis.theirItemWeaknesses[key].map(stripCitations);
+          }
+        });
+      }
       // Ensure confidenceScore is always present
       if (!analysis.confidenceScore) analysis.confidenceScore = overallConfidence;
 

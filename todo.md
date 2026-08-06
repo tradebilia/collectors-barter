@@ -129,3 +129,5 @@
 - [x] BUG FIX: Trade room timeline now shows current display names instead of stored usernames
 - [x] REFACTOR: AI Analyzer now accepts item data from client instead of querying DB — analyzes fresh UI state, not stale persisted data
 - [x] POLISH: All email notifications now use the Tradebilia logo image header (matching referral email style) instead of text
+- [ ] IMPROVEMENT: AI Analyzer results now format each item with its own paragraph/section — better organization and readability
+- [x] IMPROVEMENT: AI Analyzer results now format each item with its own paragraph/section — better organization and readability
