@@ -2091,12 +2091,12 @@ Respond with ONLY this JSON object — no markdown, no code blocks, just raw JSO
   "verdict": <"Strongly in Your Favor" | "In Your Favor" | "Roughly Fair" | "In Their Favor" | "Strongly in Their Favor">,
   "confidenceScore": ${overallConfidence},
   "summary": <2-3 sentences. Cite specific eBay median dollar amounts. State the true market value gap. Note where estimated values diverge from eBay data. Label as [VERIFIED DATA].>,
-  "myItemInsights": <3-5 sentences using category-appropriate criteria. Cite owner estimate AND eBay avg/median/range. Explain WHY the item is valued this way (key issue, grade significance, player legacy, etc.). Include estimated population/rarity at this grade. Flag overvaluation or undervaluation vs eBay. Label facts as [VERIFIED DATA] and interpretations as [AI INTERPRETATION].>,
-  "myItemFuturePotential": <2-3 sentences labeled [FUTURE PROJECTION]. Give REALISTIC bear/base/bull price scenarios with dollar ranges. For bull case, use your FULL knowledge of historical peaks and comparable sales — do NOT be conservative. For example, if a PSA 10 Kobe has sold for $30,000+ at peak, say so. If a CGC 9.8 Daredevil #168 reached $7,800 at Heritage in 2022, say so. Name the single biggest catalyst. Give investment rating X/10.>,
+  "myItemInsights": <SINGLE STRING (not array, not object). If multiple items on this side, combine into one paragraph covering all items. 3-5 sentences total. Cite owner estimate AND eBay avg/median/range. Explain WHY each item is valued this way. Flag overvaluation or undervaluation vs eBay. Label facts as [VERIFIED DATA] and interpretations as [AI INTERPRETATION].>,
+  "myItemFuturePotential": <SINGLE STRING (not array, not object). If multiple items on this side, combine into one paragraph. 2-3 sentences labeled [FUTURE PROJECTION]. Give REALISTIC bear/base/bull price scenarios with dollar ranges. Name the single biggest catalyst. Give investment rating X/10.>,
   "myItemStrengths": <array of 2-4 concise strength strings specific to this item's category>,
   "myItemWeaknesses": <array of 1-3 concise risk strings specific to this item's category>,
-  "theirItemInsights": <3-5 sentences using category-appropriate criteria. Same format as myItemInsights.>,
-  "theirItemFuturePotential": <2-3 sentences labeled [FUTURE PROJECTION]. Give REALISTIC bear/base/bull price scenarios with dollar ranges. For bull case, use your FULL knowledge of historical peaks and comparable sales — do NOT be conservative. Name the single biggest catalyst. Give investment rating X/10.>,
+  "theirItemInsights": <SINGLE STRING (not array, not object). If multiple items on this side, combine into one paragraph covering all items. 3-5 sentences total. Same format as myItemInsights.>,
+  "theirItemFuturePotential": <SINGLE STRING (not array, not object). If multiple items on this side, combine into one paragraph. 2-3 sentences labeled [FUTURE PROJECTION]. Same format as myItemFuturePotential.>,
   "theirItemStrengths": <array of 2-4 concise strength strings specific to this item's category>,
   "theirItemWeaknesses": <array of 1-3 concise risk strings specific to this item's category>,
   "crossCategoryComparison": <2-3 sentences comparing the two items directly: which has better liquidity, which has stronger long-term collector demand, which has better risk/reward profile, and why. Acknowledge if they are from different categories.>,
@@ -2136,7 +2136,11 @@ Respond with ONLY this JSON object — no markdown, no code blocks, just raw JSO
 
       // Strip any citation links the LLM may have included despite instructions
       const stripCitations = (text: unknown): string => {
-        const str = typeof text === 'string' ? text : (text == null ? '' : String(text));
+        const str = typeof text === 'string'
+          ? text
+          : Array.isArray(text)
+            ? text.map((t: unknown) => (typeof t === 'string' ? t : (t == null ? '' : JSON.stringify(t)))).join(' ')
+            : text == null ? '' : (typeof text === 'object' ? JSON.stringify(text) : String(text));
         return str
           .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // [text](url) -> text
           .replace(/https?:\/\/\S+/g, '')           // bare URLs
