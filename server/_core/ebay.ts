@@ -1,11 +1,11 @@
 import { ENV } from "./env";
 
-const EBAY_AUTH_URL = "https://auth.sandbox.ebay.com/oauth2/authorize";
-const EBAY_TOKEN_URL = "https://api.sandbox.ebay.com/identity/v1/oauth2/token";
+const EBAY_AUTH_URL = "https://auth.ebay.com/oauth2/authorize";
+const EBAY_TOKEN_URL = "https://api.ebay.com/identity/v1/oauth2/token";
 // Commerce Identity API — correct endpoint for authenticated user info
-const EBAY_IDENTITY_URL = "https://apiz.sandbox.ebay.com/commerce/identity/v1/user/";
+const EBAY_IDENTITY_URL = "https://api.ebay.com/commerce/identity/v1/user/";
 // Trading API — XML-based, the only way to get individual feedback entries
-const EBAY_TRADING_API_URL = "https://api.sandbox.ebay.com/ws/api.dll";
+const EBAY_TRADING_API_URL = "https://api.ebay.com/ws/api.dll";
 
 export interface EbayTokenResponse {
   access_token: string;
