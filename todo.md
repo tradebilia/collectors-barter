@@ -131,3 +131,14 @@
 - [x] POLISH: All email notifications now use the Tradebilia logo image header (matching referral email style) instead of text
 - [ ] IMPROVEMENT: AI Analyzer results now format each item with its own paragraph/section — better organization and readability
 - [x] IMPROVEMENT: AI Analyzer results now format each item with its own paragraph/section — better organization and readability
+
+## Test AI Page (Admin Only)
+- [x] FEATURE: Build Test AI page with two-panel item selector (inventory picker or cert ID + grading company)
+- [x] FEATURE: Display eBay active listings per item on Test AI page (with metrics: avg, median, range, confidence)
+- [x] FEATURE: Population report section (placeholder, ready for scraper hookup)
+- [x] FEATURE: Other marketplace sales section (placeholder)
+- [x] FEATURE: AI trade analysis at bottom using eBay metrics and item details
+- [x] FEATURE: Admin-only route guard + link from Admin Dashboard
+- [ ] FUTURE: Add eBay sold/completed history via eBay Finding API
+- [ ] FUTURE: Wire population report scraper into Test AI page (CGC, PSA, BGS, PCGS, NGC, CBCS)
+- [ ] FUTURE: Wire other marketplace scrapers (PWCC, Heritage, GoCollect, Comic Book Realm)

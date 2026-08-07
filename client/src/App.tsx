@@ -38,6 +38,7 @@ import TradeShowcase from "./pages/TradeShowcase";
 import WarRoom from "./pages/WarRoom";
 import TradePrintView from "./pages/TradePrintView";
 import TradeVoting from "./pages/TradeVoting";
+import TestAI from "./pages/TestAI";
 import {
   AllMostViewedRankings,
   AllMostFavoritedRankings,
@@ -111,6 +112,11 @@ function Router() {
       <Route path="/admin">
         <ProtectedRoute>
           <AdminDashboard />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/test-ai">
+        <ProtectedRoute>
+          <TestAI />
         </ProtectedRoute>
       </Route>
       <Route path="/contact" component={Contact} />

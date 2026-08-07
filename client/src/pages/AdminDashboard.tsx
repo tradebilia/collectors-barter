@@ -552,6 +552,13 @@ export default function AdminDashboard() {
           <p className="text-muted-foreground mt-2">
             Manage platform users, listings, and settings
           </p>
+          <div className="mt-3">
+            <Link href="/test-ai">
+              <button className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm rounded-lg font-medium transition-colors">
+                🧪 Test AI Sandbox
+              </button>
+            </Link>
+          </div>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
