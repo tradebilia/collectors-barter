@@ -68,6 +68,7 @@ function filterListingsByGrade(summaries: any[], targetGrade: number | null): an
 // Extract issue number from a listing title (e.g., "Daredevil #168 CGC 9.8" -> "168")
 function extractIssueFromTitle(title: string): string | null {
   // Match #168, #168N (newsstand), #168A (variant), etc. — capture just the numeric part
+  // Comics reliably use # prefix; sports cards do not, so this is comics-only
   const match = title.match(/#(\d+)/);
   return match ? match[1] : null;
 }
@@ -239,9 +240,10 @@ export const testAIRouter = router({
         console.log(`[eBay Search] Fetch Query: "${fetchQuery}", Filter Grade: ${targetGrade}, Total Results: ${summaries.length}`);
         // For comics: also filter by issue number
         const issueNumber = input.category === 'comics' ? (details.issueNumber || null) : null;
-        // For sports cards: also filter by card number
-        const cardNumber = input.category === 'sports_cards' ? (details.cardNumber || null) : null;
-        const targetNumber = issueNumber || cardNumber;
+        // Note: card number filter is NOT applied for sports cards because eBay titles
+        // don't use # prefix for card numbers, making reliable matching impossible.
+        // Year + manufacturer + player already uniquely identify the card.
+        const targetNumber = issueNumber;
         const byNumber = filterListingsByNumber(summaries, targetNumber);
         console.log(`[eBay Search] After number filter: ${byNumber.length} results (target: ${targetNumber})`);
         const filteredSummaries = filterListingsByGrade(byNumber, targetGrade);
