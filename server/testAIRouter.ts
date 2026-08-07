@@ -39,13 +39,13 @@ async function fetchEbayListings(query: string, token: string, limit = 25) {
 // Extract grade from query string — looks for grade AFTER a grading company name
 // e.g., "DareDevil #168 CGC 9.8" -> 9.8 (not 168)
 function extractGradeFromQuery(query: string): number | null {
-  const match = query.match(/(CGC|PSA|BGS|PCGS|NGC|CBCS|SGC|HGA|CSG|ISA|GMA|WATA|VGA|IGS)\s+(\d+\.?\d*)/i);
+  const match = query.match(/(CGC|PSA|BGS|PCGS|NGC|CBCS|SGC|HGA|CSG|ISA|GMA|WATA|VGA|IGS|AFA|CAS|UKG)\s+[QC]?(\d+\.?\d*)/i);
   return match ? parseFloat(match[2]) : null;
 }
 
 // Extract grade from listing title (e.g., "Daredevil #168 CGC 9.8" -> 9.8)
 function extractGradeFromTitle(title: string): number | null {
-  const match = title.match(/(CGC|PSA|BGS|PCGS|NGC|CBCS|SGC|HGA|CSG|ISA|GMA|WATA|VGA|IGS)\s+(\d+\.?\d*)/i);
+  const match = title.match(/(CGC|PSA|BGS|PCGS|NGC|CBCS|SGC|HGA|CSG|ISA|GMA|WATA|VGA|IGS|AFA|CAS|UKG)\s+[QC]?(\d+\.?\d*)[\+]?/i);
   return match ? parseFloat(match[2]) : null;
 }
 
@@ -62,6 +62,14 @@ function filterListingsByGrade(summaries: any[], targetGrade: number | null): an
 
     // Round to 1 decimal to avoid float precision issues (9.8 === 9.8)
     return Math.round(itemGrade * 10) === Math.round(targetGrade * 10);
+  });
+}
+
+// Filter listings by year — for vintage toys where year is critical to value
+function filterListingsByYear(summaries: any[], targetYear: string | null): any[] {
+  if (!targetYear) return summaries;
+  return summaries.filter((item: any) => {
+    return item.title.includes(targetYear);
   });
 }
 
@@ -253,7 +261,7 @@ export const testAIRouter = router({
         // Build a broader query for eBay fetch (without grade) to get more results,
         // then filter by grade internally for accuracy
         const targetGrade = extractGradeFromQuery(query);
-        const broadQuery = query.replace(/(CGC|PSA|BGS|PCGS|NGC|CBCS|SGC|HGA|CSG|ISA|GMA|WATA|VGA|IGS)\s+\d+\.?\d*/gi, '$1').trim();
+        const broadQuery = query.replace(/(CGC|PSA|BGS|PCGS|NGC|CBCS|SGC|HGA|CSG|ISA|GMA|WATA|VGA|IGS|AFA|CAS|UKG)\s+[QC]?\d+\.?\d*\+?/gi, '$1').trim();
         const fetchQuery = broadQuery !== query ? broadQuery : query;
         const summaries = await fetchEbayListings(fetchQuery, token, 100);
         console.log(`[eBay Search] Fetch Query: "${fetchQuery}", Filter Grade: ${targetGrade}, Total Results: ${summaries.length}`);
@@ -265,7 +273,10 @@ export const testAIRouter = router({
         const targetNumber = issueNumber;
         const byNumber = filterListingsByNumber(summaries, targetNumber);
         console.log(`[eBay Search] After number filter: ${byNumber.length} results (target: ${targetNumber})`);
-        const filteredSummaries = filterListingsByGrade(byNumber, targetGrade);
+        // For vintage toys: also filter by year (critical to value — 1984 ≠ 2007)
+        const targetYear = input.category === 'vintage_toys' ? (details.year || null) : null;
+        const byYear = filterListingsByYear(byNumber, targetYear);
+        const filteredSummaries = filterListingsByGrade(byYear, targetGrade);
         console.log(`[eBay Search] After grade filter: ${filteredSummaries.length} results (target grade: ${targetGrade})`);
         // Log first 5 filtered results for debugging
         filteredSummaries.slice(0, 5).forEach((s: any, i: number) => {
