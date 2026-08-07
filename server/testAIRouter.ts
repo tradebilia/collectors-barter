@@ -155,7 +155,12 @@ export const testAIRouter = router({
 
       // Build a smart query from item details
       const details = input.itemDetails ? (() => { try { return JSON.parse(input.itemDetails); } catch { return {}; } })() : {};
-      const cert = (input.certificationCompany || details.certificationCompany || details.customGradingCompany || '').replace(/\s*(Comics|Cards|Grading)$/i, '').trim();
+      // If grading company is "Other", use the custom grading company from itemDetails
+      let cert = input.certificationCompany || details.certificationCompany || '';
+      if (cert === 'Other' || !cert) {
+        cert = details.customGradingCompany || cert;
+      }
+      cert = cert.replace(/\s*(Comics|Cards|Grading)$/i, '').trim();
       const grade = input.grade ? String(parseFloat(input.grade)) : null;
       
       let query = input.title;
