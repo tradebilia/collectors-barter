@@ -208,10 +208,9 @@ export const testAIRouter = router({
         const platform = details.platform || '';
         const parts = [gameTitle, platform].filter((p: string) => p);
         const baseQuery = parts.join(' ');
-        // Only include cert if it's a valid grading company (not "Other")
-        const validCert = cert && cert !== 'Other' ? cert : '';
-        if (validCert && grade) {
-          query = `${baseQuery} ${validCert} ${grade}`.trim();
+        // cert already has custom grading company extracted if it was "Other"
+        if (cert && grade) {
+          query = `${baseQuery} ${cert} ${grade}`.trim();
         } else if (grade) {
           query = `${baseQuery} ${grade}`.trim();
         } else if (input.condition) {
