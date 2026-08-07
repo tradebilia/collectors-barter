@@ -226,7 +226,7 @@ export const testAIRouter = router({
       }
 
       try {
-        const summaries = await fetchEbayListings(query, token, 25);
+        const summaries = await fetchEbayListings(query, token, 100);
         const targetGrade = extractGradeFromQuery(query);
         // For comics: also filter by issue number
         const issueNumber = input.category === 'comics' ? (details.issueNumber || null) : null;
