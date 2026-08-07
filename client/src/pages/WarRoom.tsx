@@ -1493,24 +1493,31 @@ export default function WarRoom() {
                         {/* Summary */}
                         <p className="text-gray-300 leading-relaxed text-sm">{aiAnalysis.summary}</p>
 
-                        {/* Comparison Table */}
-                        <div className="bg-gray-800/30 rounded-lg p-3 border border-gray-700/30">
-                          <p className="text-gray-400 text-[10px] font-bold uppercase mb-2">Quick Comparison</p>
-                          <div className="grid grid-cols-3 gap-2 text-[11px]">
-                            <div>
-                              <p className="text-gray-500 uppercase text-[9px] mb-1">Your Total</p>
-                              <p className="text-cyan-300 font-semibold">$3,650</p>
+                        {/* Comparison Table - Dynamic Totals */}
+                        {(() => {
+                          const myTotal = (myItems?.reduce((sum: number, item: any) => sum + (parseFloat(item?.estimatedValue) || 0), 0) || 0) + (localMyCash || 0);
+                          const theirTotal = (theirItems?.reduce((sum: number, item: any) => sum + (parseFloat(item?.estimatedValue) || 0), 0) || 0) + (localTheirCash || 0);
+                          const gap = myTotal - theirTotal;
+                          return (
+                            <div className="bg-gray-800/30 rounded-lg p-3 border border-gray-700/30">
+                              <p className="text-gray-400 text-[10px] font-bold uppercase mb-2">Quick Comparison</p>
+                              <div className="grid grid-cols-3 gap-2 text-[11px]">
+                                <div>
+                                  <p className="text-gray-500 uppercase text-[9px] mb-1">Your Total</p>
+                                  <p className="text-cyan-300 font-semibold">${myTotal.toLocaleString('en-US', {maximumFractionDigits: 0})}</p>
+                                </div>
+                                <div>
+                                  <p className="text-gray-500 uppercase text-[9px] mb-1">Their Total</p>
+                                  <p className="text-amber-300 font-semibold">${theirTotal.toLocaleString('en-US', {maximumFractionDigits: 0})}</p>
+                                </div>
+                                <div>
+                                  <p className="text-gray-500 uppercase text-[9px] mb-1">Gap</p>
+                                  <p className={gap > 0 ? 'text-green-300 font-semibold' : gap < 0 ? 'text-red-300 font-semibold' : 'text-blue-300 font-semibold'}>${gap.toLocaleString('en-US', {maximumFractionDigits: 0})}</p>
+                                </div>
+                              </div>
                             </div>
-                            <div>
-                              <p className="text-gray-500 uppercase text-[9px] mb-1">Their Total</p>
-                              <p className="text-amber-300 font-semibold">$7,950</p>
-                            </div>
-                            <div>
-                              <p className="text-gray-500 uppercase text-[9px] mb-1">Gap</p>
-                              <p className="text-red-300 font-semibold">-$4,300</p>
-                            </div>
-                          </div>
-                        </div>
+                          );
+                        })()}
 
                         {/* My items insight - per-item breakdown */}
                         <div className="bg-blue-900/20 rounded-lg p-2.5 border border-blue-800/30 space-y-3">
