@@ -1480,18 +1480,37 @@ export default function WarRoom() {
                           </button>
                         </div>
 
-                        {/* Verdict badge */}
-                        <div className={`rounded-lg px-3 py-2 text-center font-bold text-sm ${
-                          aiAnalysis.fairnessScore >= 6 ? 'bg-green-900/40 text-green-300 border border-green-700/40' :
-                          aiAnalysis.fairnessScore <= 4 ? 'bg-red-900/40 text-red-300 border border-red-700/40' :
-                          'bg-blue-900/40 text-blue-300 border border-blue-700/40'
+                        {/* VERDICT AT TOP - PROMINENT */}
+                        <div className={`rounded-lg px-4 py-3 text-center font-bold text-lg ${
+                          aiAnalysis.fairnessScore >= 6 ? 'bg-green-900/50 text-green-200 border-2 border-green-600' :
+                          aiAnalysis.fairnessScore <= 4 ? 'bg-red-900/50 text-red-200 border-2 border-red-600' :
+                          'bg-blue-900/50 text-blue-200 border-2 border-blue-600'
                         }`}>
                           {aiAnalysis.verdict}
-                          <span className="ml-2 text-[10px] font-normal opacity-70">({aiAnalysis.fairnessScore}/10)</span>
+                          <div className="text-[12px] font-normal opacity-80 mt-1">Fairness Score: {aiAnalysis.fairnessScore}/10 | Confidence: {aiAnalysis.confidenceScore}%</div>
                         </div>
 
                         {/* Summary */}
-                        <p className="text-gray-300 leading-relaxed">{aiAnalysis.summary}</p>
+                        <p className="text-gray-300 leading-relaxed text-sm">{aiAnalysis.summary}</p>
+
+                        {/* Comparison Table */}
+                        <div className="bg-gray-800/30 rounded-lg p-3 border border-gray-700/30">
+                          <p className="text-gray-400 text-[10px] font-bold uppercase mb-2">Quick Comparison</p>
+                          <div className="grid grid-cols-3 gap-2 text-[11px]">
+                            <div>
+                              <p className="text-gray-500 uppercase text-[9px] mb-1">Your Total</p>
+                              <p className="text-cyan-300 font-semibold">$3,650</p>
+                            </div>
+                            <div>
+                              <p className="text-gray-500 uppercase text-[9px] mb-1">Their Total</p>
+                              <p className="text-amber-300 font-semibold">$7,950</p>
+                            </div>
+                            <div>
+                              <p className="text-gray-500 uppercase text-[9px] mb-1">Gap</p>
+                              <p className="text-red-300 font-semibold">-$4,300</p>
+                            </div>
+                          </div>
+                        </div>
 
                         {/* My items insight - per-item breakdown */}
                         <div className="bg-blue-900/20 rounded-lg p-2.5 border border-blue-800/30 space-y-3">
@@ -1530,9 +1549,9 @@ export default function WarRoom() {
                                 )}
                                 {/* Future Potential for this item */}
                                 {aiAnalysis.myItemFuturePotential?.[itemName] && (
-                                  <div className="pt-1">
-                                    <p className="text-blue-300 text-[9px] font-semibold uppercase mb-0.5">📈 Future Potential</p>
-                                    <p className="text-gray-400 text-[12px] leading-relaxed">{aiAnalysis.myItemFuturePotential[itemName]}</p>
+                                  <div className="pt-1 bg-blue-950/30 rounded p-1.5">
+                                    <p className="text-blue-300 text-[9px] font-semibold uppercase mb-1">📈 Future Potential</p>
+                                    <p className="text-gray-300 text-[11px] font-mono leading-relaxed">{aiAnalysis.myItemFuturePotential[itemName]}</p>
                                   </div>
                                 )}
                               </div>
@@ -1542,7 +1561,7 @@ export default function WarRoom() {
                           )}
                         </div>
 
-                        {/* Their items insight - per-item breakdown */}
+                        {/* THEIR ITEMS FIRST (what you're receiving) */}
                         <div className="bg-gray-800/40 rounded-lg p-2.5 border border-gray-700/30 space-y-3">
                           <p className="text-gray-400 text-[10px] font-bold uppercase">Their Items</p>
                           {typeof aiAnalysis.theirItemInsights === 'object' && !Array.isArray(aiAnalysis.theirItemInsights) ? (
@@ -1579,9 +1598,9 @@ export default function WarRoom() {
                                 )}
                                 {/* Future Potential for this item */}
                                 {aiAnalysis.theirItemFuturePotential?.[itemName] && (
-                                  <div className="pt-1">
-                                    <p className="text-blue-300 text-[9px] font-semibold uppercase mb-0.5">📈 Future Potential</p>
-                                    <p className="text-gray-400 text-[12px] leading-relaxed">{aiAnalysis.theirItemFuturePotential[itemName]}</p>
+                                  <div className="pt-1 bg-gray-900/30 rounded p-1.5">
+                                    <p className="text-blue-300 text-[9px] font-semibold uppercase mb-1">📈 Future Potential</p>
+                                    <p className="text-gray-300 text-[11px] font-mono leading-relaxed">{aiAnalysis.theirItemFuturePotential[itemName]}</p>
                                   </div>
                                 )}
                               </div>
