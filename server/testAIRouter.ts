@@ -228,13 +228,20 @@ export const testAIRouter = router({
       try {
         const summaries = await fetchEbayListings(query, token, 100);
         const targetGrade = extractGradeFromQuery(query);
+        console.log(`[eBay Search] Query: "${query}", Target Grade: ${targetGrade}, Total Results: ${summaries.length}`);
         // For comics: also filter by issue number
         const issueNumber = input.category === 'comics' ? (details.issueNumber || null) : null;
         // For sports cards: also filter by card number
         const cardNumber = input.category === 'sports_cards' ? (details.cardNumber || null) : null;
         const targetNumber = issueNumber || cardNumber;
         const byNumber = filterListingsByNumber(summaries, targetNumber);
+        console.log(`[eBay Search] After number filter: ${byNumber.length} results (target: ${targetNumber})`);
         const filteredSummaries = filterListingsByGrade(byNumber, targetGrade);
+        console.log(`[eBay Search] After grade filter: ${filteredSummaries.length} results (target grade: ${targetGrade})`);
+        // Log first 5 filtered results for debugging
+        filteredSummaries.slice(0, 5).forEach((s: any, i: number) => {
+          console.log(`  [${i}] ${s.title} - Grade: ${extractGradeFromTitle(s.title)}`);
+        });
         const metrics = computeMetrics(filteredSummaries);
         return {
           query,
