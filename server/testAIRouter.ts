@@ -50,7 +50,7 @@ function extractGradeFromTitle(title: string): number | null {
 }
 
 // Filter listings to match the grade from the search query
-function filterListingsByGrade(summaries: any[], targetGrade: number | null): any[] {
+function filterListingsByGrade(summaries: any[], targetGrade: number | null, gradeTolerance: number = 0): any[] {
   if (!targetGrade) return summaries; // If no grade in query, return all
 
   return summaries.filter((item: any) => {
@@ -60,6 +60,9 @@ function filterListingsByGrade(summaries: any[], targetGrade: number | null): an
     // 2. A grade that matches the target
     if (!itemGrade) return false;
 
+    if (gradeTolerance > 0) {
+      return Math.abs(itemGrade - targetGrade) <= gradeTolerance;
+    }
     // Round to 1 decimal to avoid float precision issues (9.8 === 9.8)
     return Math.round(itemGrade * 10) === Math.round(targetGrade * 10);
   });
@@ -300,7 +303,9 @@ export const testAIRouter = router({
         // For vintage toys: also filter by year (critical to value — 1984 ≠ 2007)
         const targetYear = input.category === 'vintage_toys' ? (details.year || null) : null;
         const byYear = filterListingsByYear(byNumber, targetYear);
-        const byGrade = filterListingsByGrade(byYear, targetGrade);
+        // Stamps use ±5 tolerance (PSE/ASG grades are 1-100 scale); all others use exact match
+        const gradeTolerance = input.category === 'stamps' ? 5 : 0;
+        const byGrade = filterListingsByGrade(byYear, targetGrade, gradeTolerance);
         // For graded stamps: exclude ungraded listings (those with condition abbreviations instead of grading company)
         const isGradedStamp = input.category === 'stamps' && !!cert;
         const filteredSummaries = input.category === 'stamps'
