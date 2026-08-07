@@ -48,16 +48,20 @@ function extractGradeFromTitle(title: string): number | null {
 }
 
 // Filter listings to match the grade from the search query
-function filterListingsByGrade(summaries: any[], targetGrade: number | null, tolerance: number = 0.3): any[] {
+function filterListingsByGrade(summaries: any[], targetGrade: number | null, tolerance: number = 0.5): any[] {
   if (!targetGrade) return summaries; // If no grade in query, return all
   
-  return summaries.filter((item: any) => {
+  const filtered = summaries.filter((item: any) => {
     const itemGrade = extractGradeFromTitle(item.title);
     if (!itemGrade) return false; // Exclude ungraded items when searching for graded
     
-    // Allow small tolerance (e.g., 9.8 ± 0.3 includes 9.5-10.1)
+    // Allow tolerance (e.g., 9.8 ± 0.5 includes 9.3-10.3)
     return Math.abs(itemGrade - targetGrade) <= tolerance;
   });
+  
+  // If filtering removes all results, return original summaries (fallback)
+  // This prevents "no listings found" when the filter is too strict
+  return filtered.length > 0 ? filtered : summaries;
 }
 
 function computeMetrics(summaries: any[]) {
