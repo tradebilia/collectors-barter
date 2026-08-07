@@ -76,12 +76,16 @@ function filterListingsByYear(summaries: any[], targetYear: string | null): any[
 // For graded stamps: exclude listings with condition abbreviations in the title
 // (F-VF, VF, Fine, Used, etc. indicate ungraded stamps)
 const STAMP_UNGRADED_PATTERNS = /\b(F-VF|VF|XF|VF-XF|F|VG|G|AG|FVF|XFSUP|Fine|Very Fine|Extremely Fine|Used|Unused|CTO|NH|OG|HR|NG|Hinged|Never Hinged)\b/i;
-function filterStampUngraded(summaries: any[], isGraded: boolean): any[] {
-  if (!isGraded) return summaries;
+function filterStampGradeStatus(summaries: any[], isGraded: boolean): any[] {
   return summaries.filter((item: any) => {
-    // Keep only listings that have a recognized grading company in the title
     const hasGradingCompany = /(ASG|PSAG|PSE)\s+\d+/i.test(item.title);
-    return hasGradingCompany;
+    if (isGraded) {
+      // Graded item: only keep listings that have a recognized grading company in the title
+      return hasGradingCompany;
+    } else {
+      // Ungraded item: exclude listings that have a grading company in the title
+      return !hasGradingCompany;
+    }
   });
 }
 
@@ -299,7 +303,9 @@ export const testAIRouter = router({
         const byGrade = filterListingsByGrade(byYear, targetGrade);
         // For graded stamps: exclude ungraded listings (those with condition abbreviations instead of grading company)
         const isGradedStamp = input.category === 'stamps' && !!cert;
-        const filteredSummaries = filterStampUngraded(byGrade, isGradedStamp);
+        const filteredSummaries = input.category === 'stamps'
+          ? filterStampGradeStatus(byGrade, isGradedStamp)
+          : byGrade;
         console.log(`[eBay Search] After grade filter: ${filteredSummaries.length} results (target grade: ${targetGrade})`);
         // Log first 5 filtered results for debugging
         filteredSummaries.slice(0, 5).forEach((s: any, i: number) => {
