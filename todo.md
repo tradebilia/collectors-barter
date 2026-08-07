@@ -142,6 +142,7 @@
 - [x] ENHANCEMENT: Update eBay search query logic to handle comics with issue number (comicTitle #issueNumber + grading/condition)
 - [x] ENHANCEMENT: Update eBay search query logic to handle sports cards (year + manufacturer + player + cardNumber + grading/condition)
 - [x] BUG FIX: eBay search now filters results by grade (extracts grade from query, filters listings to match ±0.3 tolerance)
+- [x] ENHANCEMENT: Update eBay search query logic to handle video games (gameTitle + platform + grading/condition)
 - [ ] TESTING PHASE: Test eBay search logic in Test AI page for comics and sports cards before applying to production AI Analyzer
 - [ ] PRODUCTION: Once testing complete, apply same eBay search specs to production AI Analyzer in Trade Room
 - [ ] FUTURE: Add eBay sold/completed history via eBay Finding API

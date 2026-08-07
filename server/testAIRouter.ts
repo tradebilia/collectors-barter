@@ -194,6 +194,23 @@ export const testAIRouter = router({
         }
       }
       // For other categories: use title + grading/condition
+      // For video games: use gameTitle + platform + grading/condition
+      else if (input.category === 'video_games') {
+        const gameTitle = details.gameTitle || input.title;
+        const platform = details.platform || '';
+        const parts = [gameTitle, platform].filter((p: string) => p);
+        const baseQuery = parts.join(' ');
+        if (cert && grade) {
+          query = `${baseQuery} ${cert} ${grade}`.trim();
+        } else if (grade) {
+          query = `${baseQuery} ${grade}`.trim();
+        } else if (input.condition) {
+          query = `${baseQuery} ${input.condition}`.trim();
+        } else {
+          query = baseQuery || input.title;
+        }
+      }
+      // For other categories: use title + grading/condition
       else {
         if (cert && grade) query = `${input.title} ${cert} ${grade}`;
         else if (grade) query = `${input.title} ${grade}`;
