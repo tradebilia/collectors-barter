@@ -110,9 +110,29 @@ export const testAIRouter = router({
       const details = input.itemDetails ? (() => { try { return JSON.parse(input.itemDetails); } catch { return {}; } })() : {};
       const cert = (input.certificationCompany || details.certificationCompany || details.customGradingCompany || '').replace(/\s*(Comics|Cards|Grading)$/i, '').trim();
       const grade = input.grade ? String(parseFloat(input.grade)) : null;
+      
       let query = input.title;
-      if (cert && grade) query = `${input.title} ${cert} ${grade}`;
-      else if (grade) query = `${input.title} ${grade}`;
+      
+      // For comics: use comicTitle + issueNumber + grading/condition
+      if (input.category === 'comics') {
+        const comicTitle = details.comicTitle || input.title;
+        const issueNumber = details.issueNumber || '';
+        const issueStr = issueNumber ? ` #${issueNumber}` : '';
+        
+        if (cert && grade) {
+          query = `${comicTitle}${issueStr} ${cert} ${grade}`;
+        } else if (grade) {
+          query = `${comicTitle}${issueStr} ${grade}`;
+        } else if (input.condition) {
+          query = `${comicTitle}${issueStr} ${input.condition}`;
+        } else {
+          query = `${comicTitle}${issueStr}`;
+        }
+      } else {
+        // For other categories: use title + grading/condition
+        if (cert && grade) query = `${input.title} ${cert} ${grade}`;
+        else if (grade) query = `${input.title} ${grade}`;
+      }
 
       try {
         const summaries = await fetchEbayListings(query, token, 25);
