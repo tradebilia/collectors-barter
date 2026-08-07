@@ -511,11 +511,11 @@ export default function TestAI() {
   });
 
   const leftEbayQuery = trpc.testAI.getEbayData.useQuery(
-    leftItem ? { title: leftItem.title, category: leftItem.category, grade: leftItem.grade, condition: leftItem.condition, certificationCompany: leftItem.certificationCompany, itemDetails: leftItem.itemDetails } : { title: '', category: '' },
+    leftItem ? { title: leftItem.title, category: leftItem.category, grade: leftItem.grade, condition: leftItem.condition, certificationCompany: leftItem.certificationCompany || '', itemDetails: leftItem.itemDetails } : { title: '', category: '' },
     { enabled: !!leftItem && leftItem.category !== 'unknown' && leftSources.has('ebay_active') }
   );
   const rightEbayQuery = trpc.testAI.getEbayData.useQuery(
-    rightItem ? { title: rightItem.title, category: rightItem.category, grade: rightItem.grade, condition: rightItem.condition, certificationCompany: rightItem.certificationCompany, itemDetails: rightItem.itemDetails } : { title: '', category: '' },
+    rightItem ? { title: rightItem.title, category: rightItem.category, grade: rightItem.grade, condition: rightItem.condition, certificationCompany: rightItem.certificationCompany || '', itemDetails: rightItem.itemDetails } : { title: '', category: '' },
     { enabled: !!rightItem && rightItem.category !== 'unknown' && rightSources.has('ebay_active') }
   );
 
