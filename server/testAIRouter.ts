@@ -226,9 +226,13 @@ export const testAIRouter = router({
       }
 
       try {
-        const summaries = await fetchEbayListings(query, token, 100);
+        // Build a broader query for eBay fetch (without grade) to get more results,
+        // then filter by grade internally for accuracy
         const targetGrade = extractGradeFromQuery(query);
-        console.log(`[eBay Search] Query: "${query}", Target Grade: ${targetGrade}, Total Results: ${summaries.length}`);
+        const broadQuery = query.replace(/(CGC|PSA|BGS|PCGS|NGC|CBCS|SGC|HGA|CSG|ISA|GMA|WATA|VGA|IGS)\s+\d+\.?\d*/gi, '$1').trim();
+        const fetchQuery = broadQuery !== query ? broadQuery : query;
+        const summaries = await fetchEbayListings(fetchQuery, token, 100);
+        console.log(`[eBay Search] Fetch Query: "${fetchQuery}", Filter Grade: ${targetGrade}, Total Results: ${summaries.length}`);
         // For comics: also filter by issue number
         const issueNumber = input.category === 'comics' ? (details.issueNumber || null) : null;
         // For sports cards: also filter by card number
