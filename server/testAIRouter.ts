@@ -128,8 +128,29 @@ export const testAIRouter = router({
         } else {
           query = `${comicTitle}${issueStr}`;
         }
-      } else {
-        // For other categories: use title + grading/condition
+      }
+      // For sports cards: use year + manufacturer + player + card number + grading/condition
+      else if (input.category === 'sports_cards') {
+        const year = details.year || '';
+        const manufacturer = details.manufacturer || '';
+        const player = details.player || '';
+        const cardNumber = details.cardNumber || '';
+        
+        const parts = [year, manufacturer, player, cardNumber].filter((p: string) => p);
+        const baseQuery = parts.join(' ');
+        
+        if (cert && grade) {
+          query = `${baseQuery} ${cert} ${grade}`.trim();
+        } else if (grade) {
+          query = `${baseQuery} ${grade}`.trim();
+        } else if (input.condition) {
+          query = `${baseQuery} ${input.condition}`.trim();
+        } else {
+          query = baseQuery || input.title;
+        }
+      }
+      // For other categories: use title + grading/condition
+      else {
         if (cert && grade) query = `${input.title} ${cert} ${grade}`;
         else if (grade) query = `${input.title} ${grade}`;
       }

@@ -140,6 +140,7 @@
 - [x] FEATURE: AI trade analysis at bottom using eBay metrics and item details
 - [x] FEATURE: Admin-only route guard + link from Admin Dashboard
 - [x] ENHANCEMENT: Update eBay search query logic to handle comics with issue number (comicTitle #issueNumber + grading/condition)
+- [x] ENHANCEMENT: Update eBay search query logic to handle sports cards (year + manufacturer + player + cardNumber + grading/condition)
 - [ ] FUTURE: Add eBay sold/completed history via eBay Finding API
 - [ ] FUTURE: Wire population report scraper into Test AI page (CGC, PSA, BGS, PCGS, NGC, CBCS)
 - [ ] FUTURE: Wire other marketplace scrapers (PWCC, Heritage, GoCollect, Comic Book Realm)
