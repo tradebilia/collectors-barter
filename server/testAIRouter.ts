@@ -36,9 +36,11 @@ async function fetchEbayListings(query: string, token: string, limit = 25) {
 // This will be implemented in a future phase when the Finding API is set up.
 
 // Extract grade from query string (e.g., "CGC 9.8" -> 9.8)
+// Extract grade from query string — looks for grade AFTER a grading company name
+// e.g., "DareDevil #168 CGC 9.8" -> 9.8 (not 168)
 function extractGradeFromQuery(query: string): number | null {
-  const match = query.match(/(\d+\.?\d*)/);
-  return match ? parseFloat(match[1]) : null;
+  const match = query.match(/(CGC|PSA|BGS|PCGS|NGC|CBCS|SGC|HGA|CSG|ISA|GMA)\s+(\d+\.?\d*)/i);
+  return match ? parseFloat(match[2]) : null;
 }
 
 // Extract grade from listing title (e.g., "Daredevil #168 CGC 9.8" -> 9.8)
@@ -50,14 +52,13 @@ function extractGradeFromTitle(title: string): number | null {
 // Filter listings to match the grade from the search query
 function filterListingsByGrade(summaries: any[], targetGrade: number | null): any[] {
   if (!targetGrade) return summaries; // If no grade in query, return all
-  
-  // Strict matching: only return listings with exact grade match (no tolerance)
+
   return summaries.filter((item: any) => {
     const itemGrade = extractGradeFromTitle(item.title);
     if (!itemGrade) return false; // Exclude ungraded items when searching for graded
-    
-    // Exact match only (e.g., 9.8 must be 9.8, not 9.2 or 9.4)
-    return itemGrade === targetGrade;
+
+    // Round to 1 decimal to avoid float precision issues (9.8 === 9.8)
+    return Math.round(itemGrade * 10) === Math.round(targetGrade * 10);
   });
 }
 
