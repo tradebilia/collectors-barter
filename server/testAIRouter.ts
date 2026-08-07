@@ -73,6 +73,18 @@ function filterListingsByYear(summaries: any[], targetYear: string | null): any[
   });
 }
 
+// For graded stamps: exclude listings with condition abbreviations in the title
+// (F-VF, VF, Fine, Used, etc. indicate ungraded stamps)
+const STAMP_UNGRADED_PATTERNS = /\b(F-VF|VF|XF|VF-XF|F|VG|G|AG|FVF|XFSUP|Fine|Very Fine|Extremely Fine|Used|Unused|CTO|NH|OG|HR|NG|Hinged|Never Hinged)\b/i;
+function filterStampUngraded(summaries: any[], isGraded: boolean): any[] {
+  if (!isGraded) return summaries;
+  return summaries.filter((item: any) => {
+    // Keep only listings that have a recognized grading company in the title
+    const hasGradingCompany = /(ASG|PSAG|PSE)\s+\d+/i.test(item.title);
+    return hasGradingCompany;
+  });
+}
+
 // Extract issue number from a listing title (e.g., "Daredevil #168 CGC 9.8" -> "168")
 function extractIssueFromTitle(title: string): string | null {
   // Match #168, #168N (newsstand), #168A (variant), etc. — capture just the numeric part
@@ -284,7 +296,10 @@ export const testAIRouter = router({
         // For vintage toys: also filter by year (critical to value — 1984 ≠ 2007)
         const targetYear = input.category === 'vintage_toys' ? (details.year || null) : null;
         const byYear = filterListingsByYear(byNumber, targetYear);
-        const filteredSummaries = filterListingsByGrade(byYear, targetGrade);
+        const byGrade = filterListingsByGrade(byYear, targetGrade);
+        // For graded stamps: exclude ungraded listings (those with condition abbreviations instead of grading company)
+        const isGradedStamp = input.category === 'stamps' && !!cert;
+        const filteredSummaries = filterStampUngraded(byGrade, isGradedStamp);
         console.log(`[eBay Search] After grade filter: ${filteredSummaries.length} results (target grade: ${targetGrade})`);
         // Log first 5 filtered results for debugging
         filteredSummaries.slice(0, 5).forEach((s: any, i: number) => {
