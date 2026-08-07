@@ -252,6 +252,16 @@ export const testAIRouter = router({
         }
       }
       // For other categories: use title + grading/condition
+      // For disney pins: Disney pin + pinName + character + series + LE (if limited edition)
+      else if (input.category === 'disney_pins') {
+        const pinName = details.pinName || input.title;
+        const character = details.character || '';
+        const series = details.series || '';
+        const isLE = details.limitedEdition === 'yes' ? 'LE' : '';
+        const parts = ['Disney pin', pinName, character, series, isLE].filter((p: string) => p);
+        query = parts.join(' ').trim();
+      }
+      // For other categories: use title + grading/condition
       else {
         if (cert && grade) query = `${input.title} ${cert} ${grade}`;
         else if (grade) query = `${input.title} ${grade}`;
