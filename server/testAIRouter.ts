@@ -39,13 +39,13 @@ async function fetchEbayListings(query: string, token: string, limit = 25) {
 // Extract grade from query string — looks for grade AFTER a grading company name
 // e.g., "DareDevil #168 CGC 9.8" -> 9.8 (not 168)
 function extractGradeFromQuery(query: string): number | null {
-  const match = query.match(/(CGC|PSA|BGS|PCGS|NGC|CBCS|SGC|HGA|CSG|ISA|GMA|WATA|VGA|IGS|AFA|CAS|UKG)\s+[QC]?(\d+\.?\d*)/i);
+  const match = query.match(/(CGC|PSA|BGS|PCGS|NGC|CBCS|SGC|HGA|CSG|ISA|GMA|WATA|VGA|IGS|AFA|CAS|UKG|PSE|ASG|PSAG)\s+[QC]?(\d+\.?\d*)/i);
   return match ? parseFloat(match[2]) : null;
 }
 
 // Extract grade from listing title (e.g., "Daredevil #168 CGC 9.8" -> 9.8)
 function extractGradeFromTitle(title: string): number | null {
-  const match = title.match(/(CGC|PSA|BGS|PCGS|NGC|CBCS|SGC|HGA|CSG|ISA|GMA|WATA|VGA|IGS|AFA|CAS|UKG)\s+[QC]?(\d+\.?\d*)[\+]?/i);
+  const match = title.match(/(CGC|PSA|BGS|PCGS|NGC|CBCS|SGC|HGA|CSG|ISA|GMA|WATA|VGA|IGS|AFA|CAS|UKG|PSE|ASG|PSAG)\s+[QC]?(\d+\.?\d*)[\+]?/i);
   return match ? parseFloat(match[2]) : null;
 }
 
@@ -285,7 +285,7 @@ export const testAIRouter = router({
         // Build a broader query for eBay fetch (without grade) to get more results,
         // then filter by grade internally for accuracy
         const targetGrade = extractGradeFromQuery(query);
-        const broadQuery = query.replace(/(CGC|PSA|BGS|PCGS|NGC|CBCS|SGC|HGA|CSG|ISA|GMA|WATA|VGA|IGS|AFA|CAS|UKG)\s+[QC]?\d+\.?\d*\+?/gi, '$1').trim();
+        const broadQuery = query.replace(/(CGC|PSA|BGS|PCGS|NGC|CBCS|SGC|HGA|CSG|ISA|GMA|WATA|VGA|IGS|AFA|CAS|UKG|PSE|ASG|PSAG)\s+[QC]?\d+\.?\d*\+?/gi, '$1').trim();
         const fetchQuery = broadQuery !== query ? broadQuery : query;
         const summaries = await fetchEbayListings(fetchQuery, token, 100);
         console.log(`[eBay Search] Fetch Query: "${fetchQuery}", Filter Grade: ${targetGrade}, Total Results: ${summaries.length}`);
