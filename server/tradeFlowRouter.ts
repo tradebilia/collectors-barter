@@ -2206,6 +2206,28 @@ Respond with ONLY this JSON object — no markdown, no code blocks, just raw JSO
       // Ensure confidenceScore is always present
       if (!analysis.confidenceScore) analysis.confidenceScore = overallConfidence;
 
+      // OVERRIDE fairness score with server-computed value based on eBay gap
+      // This ensures accuracy regardless of LLM interpretation
+      const computedFairnessScore = (() => {
+        const absGap = Math.abs(ebayDiff);
+        if (ebayDiff > 0) {
+          // Positive gap = you receive more = in your favor
+          if (absGap >= 5000) return 9; // Strongly in your favor
+          if (absGap >= 2000) return 7; // In your favor
+          if (absGap >= 500) return 6;  // Slightly in your favor
+        } else if (ebayDiff < 0) {
+          // Negative gap = you give more = against you
+          if (absGap >= 5000) return 2; // Strongly against you
+          if (absGap >= 2000) return 3; // Against you
+          if (absGap >= 500) return 4;  // Slightly against you
+        }
+        return 5; // Roughly fair (gap < $500)
+      })();
+      analysis.fairnessScore = computedFairnessScore;
+
+      // Convert confidence score from 1-10 to percentage (10-100)
+      analysis.confidenceScore = Math.round((analysis.confidenceScore / 10) * 100);
+
       return analysis;
     }),
 });
