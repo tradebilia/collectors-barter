@@ -184,7 +184,11 @@ export const testAIRouter = router({
       // For sports cards: use year + manufacturer + player + card number + grading/condition
       else if (input.category === 'sports_cards') {
         const year = details.year || '';
-        const manufacturer = details.manufacturer || '';
+        // If manufacturer is "Other", use the custom manufacturer field
+        let manufacturer = details.manufacturer || '';
+        if (manufacturer === 'Other' || !manufacturer) {
+          manufacturer = details.customManufacturer || manufacturer;
+        }
         const player = details.player || '';
         const cardNumber = details.cardNumber || '';
         
