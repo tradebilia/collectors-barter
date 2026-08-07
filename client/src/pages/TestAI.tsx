@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import { trpc } from '@/lib/trpc';
 import { useAuth } from '@/_core/hooks/useAuth';
 import { useLocation } from 'wouter';
@@ -6,9 +6,124 @@ import { Spinner } from '@/components/ui/spinner';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 
+// ─── Data Source Registry ────────────────────────────────────────────────────
+// Each source defines: what data it provides, what it needs (cert ID, title, etc.)
+const DATA_SOURCES = {
+  ebay_active: {
+    id: 'ebay_active',
+    label: 'eBay Active Listings',
+    group: 'eBay',
+    icon: '🛒',
+    provides: ['current_prices', 'price_metrics'],
+    status: 'live' as const,
+    description: 'Current fixed-price listings with avg, median, range',
+  },
+  ebay_sold: {
+    id: 'ebay_sold',
+    label: 'eBay Sold History',
+    group: 'eBay',
+    icon: '📊',
+    provides: ['historic_prices'],
+    status: 'placeholder' as const,
+    description: 'Completed sale prices — requires eBay Finding API (coming soon)',
+  },
+  cgc: {
+    id: 'cgc',
+    label: 'CGC',
+    group: 'Grading',
+    icon: '🏅',
+    provides: ['item_details', 'cert_info', 'population_report'],
+    status: 'placeholder' as const,
+    description: 'Cert details, grade, label type, page quality, key comments, full pop report',
+  },
+  psa: {
+    id: 'psa',
+    label: 'PSA',
+    group: 'Grading',
+    icon: '🏅',
+    provides: ['item_details', 'cert_info', 'population_report'],
+    status: 'placeholder' as const,
+    description: 'Cert details, grade, population report',
+  },
+  bgs: {
+    id: 'bgs',
+    label: 'BGS / Beckett',
+    group: 'Grading',
+    icon: '🏅',
+    provides: ['item_details', 'cert_info', 'population_report'],
+    status: 'placeholder' as const,
+    description: 'Cert details, sub-grades, population report',
+  },
+  pcgs: {
+    id: 'pcgs',
+    label: 'PCGS',
+    group: 'Grading',
+    icon: '🪙',
+    provides: ['item_details', 'cert_info', 'population_report'],
+    status: 'placeholder' as const,
+    description: 'Coin cert details, grade, population data',
+  },
+  ngc: {
+    id: 'ngc',
+    label: 'NGC',
+    group: 'Grading',
+    icon: '🪙',
+    provides: ['item_details', 'cert_info', 'population_report'],
+    status: 'placeholder' as const,
+    description: 'Coin/currency cert details, grade, population data',
+  },
+  cbcs: {
+    id: 'cbcs',
+    label: 'CBCS',
+    group: 'Grading',
+    icon: '🏅',
+    provides: ['item_details', 'cert_info', 'population_report'],
+    status: 'placeholder' as const,
+    description: 'Comic cert details, grade, population report',
+  },
+  comic_book_realm: {
+    id: 'comic_book_realm',
+    label: 'Comic Book Realm',
+    group: 'Marketplace',
+    icon: '📚',
+    provides: ['item_details', 'population_report', 'historic_prices'],
+    status: 'placeholder' as const,
+    description: 'CGC census data, estimated values, sale history (scraper coming soon)',
+  },
+  pwcc: {
+    id: 'pwcc',
+    label: 'PWCC',
+    group: 'Marketplace',
+    icon: '🏆',
+    provides: ['historic_prices'],
+    status: 'placeholder' as const,
+    description: 'Premium auction sale history (scraper coming soon)',
+  },
+  heritage: {
+    id: 'heritage',
+    label: 'Heritage Auctions',
+    group: 'Marketplace',
+    icon: '🏛️',
+    provides: ['historic_prices'],
+    status: 'placeholder' as const,
+    description: 'Auction sale history for comics, cards, coins (scraper coming soon)',
+  },
+  gocollect: {
+    id: 'gocollect',
+    label: 'GoCollect',
+    group: 'Marketplace',
+    icon: '📈',
+    provides: ['historic_prices', 'price_metrics'],
+    status: 'placeholder' as const,
+    description: 'Graded comic sale analytics and trends (scraper coming soon)',
+  },
+} as const;
+
+type SourceId = keyof typeof DATA_SOURCES;
+const SOURCE_GROUPS = ['eBay', 'Grading', 'Marketplace'] as const;
+
 const GRADING_COMPANIES = ['CGC', 'PSA', 'BGS', 'PCGS', 'NGC', 'CBCS', 'SGC', 'HGA', 'CSG', 'Other'] as const;
 type GradingCompany = typeof GRADING_COMPANIES[number];
-
 type ItemSource = 'inventory' | 'cert';
 
 interface SelectedItem {
@@ -21,20 +136,71 @@ interface SelectedItem {
   certificationCompany?: string;
   itemDetails?: string;
   primaryPhotoUrl?: string;
-  // cert ID mode
   certId?: string;
   gradingCompany?: GradingCompany;
 }
 
-interface ItemPanelProps {
+// ─── Source Selector ─────────────────────────────────────────────────────────
+function SourceSelector({ enabled, onChange, side }: {
+  enabled: Set<SourceId>;
+  onChange: (s: Set<SourceId>) => void;
+  side: 'left' | 'right';
+}) {
+  const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
+  const toggle = (id: SourceId) => {
+    const next = new Set(enabled);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    onChange(next);
+  };
+
+  return (
+    <div className="bg-gray-800/30 rounded-lg p-3 border border-gray-700/20 space-y-3">
+      <p className={`text-[11px] font-bold uppercase ${accentColor}`}>Data Sources</p>
+      {SOURCE_GROUPS.map(group => (
+        <div key={group}>
+          <p className="text-gray-500 text-[9px] uppercase font-semibold mb-1.5">{group}</p>
+          <div className="flex flex-wrap gap-1.5">
+            {Object.values(DATA_SOURCES)
+              .filter(s => s.group === group)
+              .map(source => {
+                const isEnabled = enabled.has(source.id as SourceId);
+                const isLive = source.status === 'live';
+                return (
+                  <button
+                    key={source.id}
+                    onClick={() => toggle(source.id as SourceId)}
+                    title={source.description}
+                    className={`flex items-center gap-1 px-2 py-1 rounded text-[11px] font-medium border transition-all ${
+                      isEnabled
+                        ? isLive
+                          ? 'bg-green-900/40 border-green-600 text-green-300'
+                          : 'bg-indigo-900/40 border-indigo-600 text-indigo-300'
+                        : 'bg-gray-800/40 border-gray-700 text-gray-500 hover:border-gray-500 hover:text-gray-400'
+                    }`}
+                  >
+                    <span>{source.icon}</span>
+                    <span>{source.label}</span>
+                    {!isLive && <span className="text-[9px] opacity-60">(soon)</span>}
+                  </button>
+                );
+              })}
+          </div>
+        </div>
+      ))}
+      <p className="text-gray-600 text-[10px]">Green = live data · Blue = placeholder (scraper coming soon)</p>
+    </div>
+  );
+}
+
+// ─── Item Panel ──────────────────────────────────────────────────────────────
+function ItemPanel({ side, item, onItemChange, inventory, inventoryLoading }: {
   side: 'left' | 'right';
   item: SelectedItem | null;
   onItemChange: (item: SelectedItem | null) => void;
   inventory: any[];
   inventoryLoading: boolean;
-}
-
-function ItemPanel({ side, item, onItemChange, inventory, inventoryLoading }: ItemPanelProps) {
+}) {
   const [source, setSource] = useState<ItemSource>('inventory');
   const [certId, setCertId] = useState('');
   const [gradingCompany, setGradingCompany] = useState<GradingCompany>('CGC');
@@ -65,72 +231,48 @@ function ItemPanel({ side, item, onItemChange, inventory, inventoryLoading }: It
 
   return (
     <div className={`flex-1 min-w-0 rounded-xl border ${borderColor} ${bgColor} p-4 space-y-4`}>
-      {/* Header */}
       <div className="flex items-center justify-between">
         <span className={`text-xs font-bold uppercase tracking-widest ${accentColor}`}>{label}</span>
         <div className="flex gap-1">
-          <button
-            onClick={() => setSource('inventory')}
-            className={`px-2 py-1 text-[11px] rounded font-medium transition-colors ${source === 'inventory' ? 'bg-white/10 text-white' : 'text-gray-500 hover:text-gray-300'}`}
-          >
-            My Inventory
-          </button>
-          <button
-            onClick={() => setSource('cert')}
-            className={`px-2 py-1 text-[11px] rounded font-medium transition-colors ${source === 'cert' ? 'bg-white/10 text-white' : 'text-gray-500 hover:text-gray-300'}`}
-          >
-            Cert ID
-          </button>
+          {(['inventory', 'cert'] as ItemSource[]).map(s => (
+            <button key={s} onClick={() => setSource(s)}
+              className={`px-2 py-1 text-[11px] rounded font-medium transition-colors ${source === s ? 'bg-white/10 text-white' : 'text-gray-500 hover:text-gray-300'}`}>
+              {s === 'inventory' ? 'My Inventory' : 'Cert ID'}
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* Source selector */}
       {source === 'inventory' ? (
-        <div>
-          {inventoryLoading ? (
-            <div className="flex items-center gap-2 text-gray-500 text-sm"><Spinner className="w-4 h-4" /> Loading inventory...</div>
-          ) : (
-            <select
-              value={selectedInventoryId ?? ''}
-              onChange={e => handleInventorySelect(Number(e.target.value))}
-              className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-gray-500"
-            >
-              <option value="">— Select an item —</option>
-              {inventory.map((i: any) => (
-                <option key={i.id} value={i.id}>
-                  {i.title}{i.grade ? ` (Grade ${i.grade})` : ''}{i.estimatedValue ? ` — $${Number(i.estimatedValue).toLocaleString()}` : ''}
-                </option>
-              ))}
-            </select>
-          )}
-        </div>
+        inventoryLoading ? (
+          <div className="flex items-center gap-2 text-gray-500 text-sm"><Spinner className="w-4 h-4" /> Loading...</div>
+        ) : (
+          <select value={selectedInventoryId ?? ''} onChange={e => handleInventorySelect(Number(e.target.value))}
+            className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm text-white focus:outline-none">
+            <option value="">— Select an item —</option>
+            {inventory.map((i: any) => (
+              <option key={i.id} value={i.id}>
+                {i.title}{i.grade ? ` (Grade ${i.grade})` : ''}{i.estimatedValue ? ` — $${Number(i.estimatedValue).toLocaleString()}` : ''}
+              </option>
+            ))}
+          </select>
+        )
       ) : (
         <div className="space-y-2">
-          <select
-            value={gradingCompany}
-            onChange={e => setGradingCompany(e.target.value as GradingCompany)}
-            className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm text-white focus:outline-none"
-          >
+          <select value={gradingCompany} onChange={e => setGradingCompany(e.target.value as GradingCompany)}
+            className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm text-white focus:outline-none">
             {GRADING_COMPANIES.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
           <div className="flex gap-2">
-            <input
-              value={certId}
-              onChange={e => setCertId(e.target.value)}
-              placeholder="Enter certificate ID..."
-              className="flex-1 bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-gray-500"
-            />
-            <button
-              onClick={handleCertSubmit}
-              className="px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm rounded font-medium transition-colors"
-            >
+            <input value={certId} onChange={e => setCertId(e.target.value)} placeholder="Enter certificate ID..."
+              className="flex-1 bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none" />
+            <button onClick={handleCertSubmit} className="px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm rounded font-medium transition-colors">
               Lookup
             </button>
           </div>
         </div>
       )}
 
-      {/* Selected item preview */}
       {item && (
         <div className="flex gap-3 p-3 bg-gray-800/40 rounded-lg border border-gray-700/30">
           {item.primaryPhotoUrl && (
@@ -142,11 +284,8 @@ function ItemPanel({ side, item, onItemChange, inventory, inventoryLoading }: It
               {item.category && item.category !== 'unknown' && <Badge variant="secondary" className="text-[10px]">{item.category.replace(/_/g, ' ')}</Badge>}
               {item.grade && <Badge variant="outline" className="text-[10px]">Grade {item.grade}</Badge>}
               {item.certificationCompany && <Badge variant="outline" className="text-[10px]">{item.certificationCompany}</Badge>}
-              {item.condition && <Badge variant="secondary" className="text-[10px]">{item.condition}</Badge>}
             </div>
-            {item.estimatedValue && (
-              <p className="text-green-400 text-sm font-semibold mt-1">${Number(item.estimatedValue).toLocaleString()}</p>
-            )}
+            {item.estimatedValue && <p className="text-green-400 text-sm font-semibold mt-1">${Number(item.estimatedValue).toLocaleString()}</p>}
           </div>
           <button onClick={() => { onItemChange(null); setSelectedInventoryId(null); setCertId(''); }} className="text-gray-500 hover:text-red-400 text-lg leading-none flex-shrink-0">×</button>
         </div>
@@ -155,36 +294,22 @@ function ItemPanel({ side, item, onItemChange, inventory, inventoryLoading }: It
   );
 }
 
-// ─── eBay Data Section ───────────────────────────────────────────────────────
-function EbayDataSection({ item, side }: { item: SelectedItem; side: 'left' | 'right' }) {
+// ─── eBay Active Listings Section ────────────────────────────────────────────
+function EbayActiveSection({ item, side }: { item: SelectedItem; side: 'left' | 'right' }) {
   const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
-  const { data, isLoading, error } = trpc.testAI.getEbayData.useQuery(
-    {
-      title: item.title,
-      category: item.category,
-      grade: item.grade,
-      condition: item.condition,
-      certificationCompany: item.certificationCompany,
-      itemDetails: item.itemDetails,
-    },
+  const { data, isLoading } = trpc.testAI.getEbayData.useQuery(
+    { title: item.title, category: item.category, grade: item.grade, condition: item.condition, certificationCompany: item.certificationCompany, itemDetails: item.itemDetails },
     { enabled: !!item.title && item.category !== 'unknown' }
-  );
-
-  if (item.category === 'unknown') return (
-    <div className="bg-gray-800/30 rounded-lg p-3 border border-gray-700/20">
-      <p className="text-gray-500 text-xs">eBay data requires item details. Select from inventory or use cert ID lookup (coming soon).</p>
-    </div>
   );
 
   return (
     <div className="bg-gray-800/30 rounded-lg p-3 border border-gray-700/20 space-y-3">
       <div className="flex items-center justify-between">
-        <p className={`text-[11px] font-bold uppercase ${accentColor}`}>eBay Active Listings</p>
+        <p className={`text-[11px] font-bold uppercase ${accentColor}`}>🛒 eBay Active Listings</p>
         {isLoading && <Spinner className="w-3 h-3" />}
       </div>
-
+      <p className="text-gray-500 text-[10px]">Data type: Current fixed-price listings · Price metrics</p>
       {data?.error && <p className="text-red-400 text-xs">{data.error}</p>}
-
       {data?.metrics && (
         <div className="grid grid-cols-4 gap-2 text-[11px]">
           {[
@@ -200,11 +325,7 @@ function EbayDataSection({ item, side }: { item: SelectedItem; side: 'left' | 'r
           ))}
         </div>
       )}
-
-      {data?.query && (
-        <p className="text-gray-500 text-[10px]">Search query: <span className="text-gray-400 font-mono">"{data.query}"</span> · {data.listings.length} listings</p>
-      )}
-
+      {data?.query && <p className="text-gray-500 text-[10px]">Query: <span className="font-mono text-gray-400">"{data.query}"</span> · {data.listings.length} results</p>}
       {data?.listings && data.listings.length > 0 && (
         <div className="space-y-1 max-h-48 overflow-y-auto">
           {data.listings.map((l: any, i: number) => (
@@ -221,81 +342,35 @@ function EbayDataSection({ item, side }: { item: SelectedItem; side: 'left' | 'r
           ))}
         </div>
       )}
-
-      {data && !data.listings.length && !data.error && (
-        <p className="text-gray-500 text-xs">No eBay listings found for this query.</p>
-      )}
+      {data && !data.listings.length && !data.error && <p className="text-gray-500 text-xs">No listings found.</p>}
     </div>
   );
 }
 
-// ─── Population Report Section ───────────────────────────────────────────────
-function PopulationReportSection({ item, side }: { item: SelectedItem; side: 'left' | 'right' }) {
-  const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
-  const hasCert = !!item.certId && !!item.gradingCompany;
-  const { data, isLoading } = trpc.testAI.getPopulationReport.useQuery(
-    { certId: item.certId!, gradingCompany: item.gradingCompany! },
-    { enabled: hasCert }
-  );
-
-  return (
-    <div className="bg-gray-800/30 rounded-lg p-3 border border-gray-700/20 space-y-2">
-      <p className={`text-[11px] font-bold uppercase ${accentColor}`}>Population Report</p>
-      {!hasCert ? (
-        <div className="text-center py-4">
-          <p className="text-gray-500 text-xs">Enter a certificate ID above to look up population data.</p>
-          <p className="text-gray-600 text-[10px] mt-1">Scraper integration coming soon — will pull live pop reports from CGC, PSA, BGS, PCGS, NGC, CBCS.</p>
-        </div>
-      ) : isLoading ? (
-        <div className="flex items-center gap-2 text-gray-500 text-xs"><Spinner className="w-3 h-3" /> Looking up population report...</div>
-      ) : (
-        <div className="bg-yellow-900/20 border border-yellow-700/30 rounded p-3">
-          <p className="text-yellow-400 text-xs font-semibold mb-1">🚧 Scraper Not Yet Built</p>
-          <p className="text-gray-400 text-xs">{data?.message}</p>
-          <p className="text-gray-500 text-[10px] mt-2">This section will auto-populate with grade distribution, total population, and comparative rarity once the {item.gradingCompany} scraper is complete.</p>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─── Other Marketplaces Section ──────────────────────────────────────────────
-function EbaySoldHistorySection({ side }: { side: 'left' | 'right' }) {
+// ─── Placeholder Section ─────────────────────────────────────────────────────
+function PlaceholderSection({ sourceId, side }: { sourceId: SourceId; side: 'left' | 'right' }) {
+  const source = DATA_SOURCES[sourceId];
   const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
   return (
-    <div className="bg-gray-800/30 rounded-lg p-3 border border-gray-700/20 space-y-2">
-      <p className={`text-[11px] font-bold uppercase ${accentColor}`}>eBay Sold History</p>
-      <div className="text-center py-4">
-        <p className="text-gray-500 text-xs">eBay sold/completed listing history coming soon.</p>
-        <p className="text-gray-600 text-[10px] mt-1">Requires eBay Finding API setup — will show completed auction and fixed-price sale prices with dates.</p>
-      </div>
-    </div>
-  );
-}
-
-function OtherMarketplacesSection({ side }: { side: 'left' | 'right' }) {
-  const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
-  return (
-    <div className="bg-gray-800/30 rounded-lg p-3 border border-gray-700/20 space-y-2">
-      <p className={`text-[11px] font-bold uppercase ${accentColor}`}>Other Marketplace Sales</p>
-      <div className="text-center py-4">
-        <p className="text-gray-500 text-xs">Historic sales data from other platforms coming soon.</p>
-        <div className="flex justify-center gap-3 mt-2">
-          {['PWCC', 'Heritage Auctions', 'GoCollect', 'Comic Book Realm'].map(m => (
-            <span key={m} className="text-[10px] text-gray-600 bg-gray-800 px-2 py-0.5 rounded">{m}</span>
-          ))}
-        </div>
+    <div className="bg-gray-800/30 rounded-lg p-3 border border-dashed border-gray-700/40 space-y-2">
+      <p className={`text-[11px] font-bold uppercase ${accentColor}`}>{source.icon} {source.label}</p>
+      <p className="text-gray-500 text-[10px]">Data type: {source.provides.join(', ').replace(/_/g, ' ')}</p>
+      <div className="bg-yellow-900/20 border border-yellow-700/30 rounded p-2">
+        <p className="text-yellow-400 text-[10px] font-semibold mb-0.5">🚧 Scraper Not Yet Built</p>
+        <p className="text-gray-400 text-[11px]">{source.description}</p>
       </div>
     </div>
   );
 }
 
 // ─── AI Analysis Section ─────────────────────────────────────────────────────
-function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData }: {
+function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, leftSources, rightSources }: {
   leftItem: SelectedItem;
   rightItem: SelectedItem;
   leftEbayData: any;
   rightEbayData: any;
+  leftSources: Set<SourceId>;
+  rightSources: Set<SourceId>;
 }) {
   const [result, setResult] = useState<any>(null);
   const analyzeMutation = trpc.testAI.analyzeItems.useMutation({
@@ -303,50 +378,38 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData }:
     onError: (err) => toast.error(err.message),
   });
 
+  const leftHasEbay = leftSources.has('ebay_active');
+  const rightHasEbay = rightSources.has('ebay_active');
+
   const handleAnalyze = () => {
     analyzeMutation.mutate({
-      leftItem: {
-        title: leftItem.title,
-        category: leftItem.category,
-        grade: leftItem.grade,
-        condition: leftItem.condition,
-        estimatedValue: leftItem.estimatedValue,
-        certificationCompany: leftItem.certificationCompany,
-        itemDetails: leftItem.itemDetails,
-      },
-      rightItem: {
-        title: rightItem.title,
-        category: rightItem.category,
-        grade: rightItem.grade,
-        condition: rightItem.condition,
-        estimatedValue: rightItem.estimatedValue,
-        certificationCompany: rightItem.certificationCompany,
-        itemDetails: rightItem.itemDetails,
-      },
-      leftEbayMetrics: leftEbayData?.metrics ?? null,
-      rightEbayMetrics: rightEbayData?.metrics ?? null,
+      leftItem: { title: leftItem.title, category: leftItem.category, grade: leftItem.grade, condition: leftItem.condition, estimatedValue: leftItem.estimatedValue, certificationCompany: leftItem.certificationCompany, itemDetails: leftItem.itemDetails },
+      rightItem: { title: rightItem.title, category: rightItem.category, grade: rightItem.grade, condition: rightItem.condition, estimatedValue: rightItem.estimatedValue, certificationCompany: rightItem.certificationCompany, itemDetails: rightItem.itemDetails },
+      leftEbayMetrics: leftHasEbay ? (leftEbayData?.metrics ?? null) : null,
+      rightEbayMetrics: rightHasEbay ? (rightEbayData?.metrics ?? null) : null,
     });
   };
+
+  const activeSourcesNote = [
+    leftSources.size > 0 ? `Item A: ${Array.from(leftSources).map(id => DATA_SOURCES[id].label).join(', ')}` : null,
+    rightSources.size > 0 ? `Item B: ${Array.from(rightSources).map(id => DATA_SOURCES[id].label).join(', ')}` : null,
+  ].filter(Boolean).join(' · ');
 
   return (
     <div className="bg-indigo-900/20 rounded-xl border border-indigo-700/30 p-4 space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-indigo-300 font-bold text-sm uppercase tracking-wide">AI Trade Analysis</p>
-          <p className="text-gray-500 text-xs">Powered by Manus Forge LLM using all available data above</p>
+          <p className="text-indigo-300 font-bold text-sm uppercase tracking-wide">🤖 AI Trade Analysis</p>
+          <p className="text-gray-500 text-xs mt-0.5">{activeSourcesNote || 'No data sources selected'}</p>
         </div>
-        <button
-          onClick={handleAnalyze}
-          disabled={analyzeMutation.isPending}
-          className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-sm rounded-lg font-medium transition-colors"
-        >
-          {analyzeMutation.isPending ? <><Spinner className="w-4 h-4" /> Analyzing...</> : '🤖 Run Analysis'}
+        <button onClick={handleAnalyze} disabled={analyzeMutation.isPending}
+          className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-sm rounded-lg font-medium transition-colors">
+          {analyzeMutation.isPending ? <><Spinner className="w-4 h-4" /> Analyzing...</> : 'Run Analysis'}
         </button>
       </div>
 
       {result && (
         <div className="space-y-4">
-          {/* Verdict */}
           <div className={`rounded-lg px-4 py-3 text-center font-bold text-base border-2 ${
             result.verdict?.includes('A') ? 'bg-cyan-900/40 text-cyan-200 border-cyan-600' :
             result.verdict?.includes('B') ? 'bg-amber-900/40 text-amber-200 border-amber-600' :
@@ -355,74 +418,81 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData }:
             {result.verdict}
             {result.tradeFairness && <div className="text-xs font-normal opacity-80 mt-1">{result.tradeFairness}</div>}
           </div>
-
-          {/* Value summary */}
-          {result.valueSummary && (
-            <p className="text-gray-300 text-sm leading-relaxed">{result.valueSummary}</p>
-          )}
-
-          {/* Side-by-side item analysis */}
+          {result.valueSummary && <p className="text-gray-300 text-sm leading-relaxed">{result.valueSummary}</p>}
           <div className="grid grid-cols-2 gap-4">
-            {/* Item A */}
-            <div className="space-y-2">
-              <p className="text-cyan-300 font-semibold text-sm">{leftItem.title}</p>
-              {result.itemAInsights && <p className="text-gray-300 text-xs leading-relaxed">{result.itemAInsights}</p>}
-              {result.itemAFuturePotential && (
-                <div className="bg-cyan-950/30 rounded p-2">
-                  <p className="text-cyan-400 text-[9px] font-bold uppercase mb-1">📈 Future Potential</p>
-                  <p className="text-gray-300 text-[11px] font-mono">{result.itemAFuturePotential}</p>
-                </div>
-              )}
-              {result.itemAStrengths?.length > 0 && (
-                <div>
-                  <p className="text-green-400 text-[9px] font-bold uppercase mb-1">✅ Strengths</p>
-                  {result.itemAStrengths.map((s: string, i: number) => <p key={i} className="text-gray-400 text-[11px]">• {s}</p>)}
-                </div>
-              )}
-              {result.itemARisks?.length > 0 && (
-                <div>
-                  <p className="text-red-400 text-[9px] font-bold uppercase mb-1">⚠️ Risks</p>
-                  {result.itemARisks.map((r: string, i: number) => <p key={i} className="text-gray-400 text-[11px]">• {r}</p>)}
-                </div>
-              )}
-            </div>
-            {/* Item B */}
-            <div className="space-y-2">
-              <p className="text-amber-300 font-semibold text-sm">{rightItem.title}</p>
-              {result.itemBInsights && <p className="text-gray-300 text-xs leading-relaxed">{result.itemBInsights}</p>}
-              {result.itemBFuturePotential && (
-                <div className="bg-amber-950/30 rounded p-2">
-                  <p className="text-amber-400 text-[9px] font-bold uppercase mb-1">📈 Future Potential</p>
-                  <p className="text-gray-300 text-[11px] font-mono">{result.itemBFuturePotential}</p>
-                </div>
-              )}
-              {result.itemBStrengths?.length > 0 && (
-                <div>
-                  <p className="text-green-400 text-[9px] font-bold uppercase mb-1">✅ Strengths</p>
-                  {result.itemBStrengths.map((s: string, i: number) => <p key={i} className="text-gray-400 text-[11px]">• {s}</p>)}
-                </div>
-              )}
-              {result.itemBRisks?.length > 0 && (
-                <div>
-                  <p className="text-red-400 text-[9px] font-bold uppercase mb-1">⚠️ Risks</p>
-                  {result.itemBRisks.map((r: string, i: number) => <p key={i} className="text-gray-400 text-[11px]">• {r}</p>)}
-                </div>
-              )}
-            </div>
+            {[
+              { item: leftItem, insights: result.itemAInsights, potential: result.itemAFuturePotential, strengths: result.itemAStrengths, risks: result.itemARisks, color: 'cyan' },
+              { item: rightItem, insights: result.itemBInsights, potential: result.itemBFuturePotential, strengths: result.itemBStrengths, risks: result.itemBRisks, color: 'amber' },
+            ].map(({ item, insights, potential, strengths, risks, color }) => (
+              <div key={color} className="space-y-2">
+                <p className={`text-${color}-300 font-semibold text-sm`}>{item.title}</p>
+                {insights && <p className="text-gray-300 text-xs leading-relaxed">{insights}</p>}
+                {potential && (
+                  <div className={`bg-${color}-950/30 rounded p-2`}>
+                    <p className={`text-${color}-400 text-[9px] font-bold uppercase mb-1`}>📈 Future Potential</p>
+                    <p className="text-gray-300 text-[11px] font-mono">{potential}</p>
+                  </div>
+                )}
+                {strengths?.length > 0 && (
+                  <div>
+                    <p className="text-green-400 text-[9px] font-bold uppercase mb-1">✅ Strengths</p>
+                    {strengths.map((s: string, i: number) => <p key={i} className="text-gray-400 text-[11px]">• {s}</p>)}
+                  </div>
+                )}
+                {risks?.length > 0 && (
+                  <div>
+                    <p className="text-red-400 text-[9px] font-bold uppercase mb-1">⚠️ Risks</p>
+                    {risks.map((r: string, i: number) => <p key={i} className="text-gray-400 text-[11px]">• {r}</p>)}
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
-
-          {/* Negotiation tip + data quality */}
           {result.negotiationTip && (
             <div className="bg-yellow-900/20 border border-yellow-700/30 rounded p-3">
               <p className="text-yellow-400 text-[10px] font-bold uppercase mb-1">💡 Negotiation Tip</p>
               <p className="text-gray-300 text-xs">{result.negotiationTip}</p>
             </div>
           )}
-          {result.dataQuality && (
-            <p className="text-gray-500 text-[10px]">Data Quality: {result.dataQuality}</p>
-          )}
+          {result.dataQuality && <p className="text-gray-500 text-[10px]">Data Quality: {result.dataQuality}</p>}
         </div>
       )}
+    </div>
+  );
+}
+
+// ─── Data Column ─────────────────────────────────────────────────────────────
+function DataColumn({ item, side, enabledSources, ebayData }: {
+  item: SelectedItem | null;
+  side: 'left' | 'right';
+  enabledSources: Set<SourceId>;
+  ebayData: any;
+}) {
+  if (!item) return (
+    <div className="rounded-xl border border-gray-700/30 bg-gray-800/20 p-8 text-center text-gray-500 text-sm">
+      Select {side === 'left' ? 'Item A' : 'Item B'} to see data
+    </div>
+  );
+  if (enabledSources.size === 0) return (
+    <div className="rounded-xl border border-gray-700/30 bg-gray-800/20 p-6 text-center text-gray-500 text-sm">
+      Enable at least one data source above to see data
+    </div>
+  );
+
+  return (
+    <div className="space-y-3">
+      {enabledSources.has('ebay_active') && <EbayActiveSection item={item} side={side} />}
+      {enabledSources.has('ebay_sold') && <PlaceholderSection sourceId="ebay_sold" side={side} />}
+      {enabledSources.has('cgc') && <PlaceholderSection sourceId="cgc" side={side} />}
+      {enabledSources.has('psa') && <PlaceholderSection sourceId="psa" side={side} />}
+      {enabledSources.has('bgs') && <PlaceholderSection sourceId="bgs" side={side} />}
+      {enabledSources.has('pcgs') && <PlaceholderSection sourceId="pcgs" side={side} />}
+      {enabledSources.has('ngc') && <PlaceholderSection sourceId="ngc" side={side} />}
+      {enabledSources.has('cbcs') && <PlaceholderSection sourceId="cbcs" side={side} />}
+      {enabledSources.has('comic_book_realm') && <PlaceholderSection sourceId="comic_book_realm" side={side} />}
+      {enabledSources.has('pwcc') && <PlaceholderSection sourceId="pwcc" side={side} />}
+      {enabledSources.has('heritage') && <PlaceholderSection sourceId="heritage" side={side} />}
+      {enabledSources.has('gocollect') && <PlaceholderSection sourceId="gocollect" side={side} />}
     </div>
   );
 }
@@ -433,41 +503,36 @@ export default function TestAI() {
   const [, navigate] = useLocation();
   const [leftItem, setLeftItem] = useState<SelectedItem | null>(null);
   const [rightItem, setRightItem] = useState<SelectedItem | null>(null);
+  const [leftSources, setLeftSources] = useState<Set<SourceId>>(new Set(['ebay_active']));
+  const [rightSources, setRightSources] = useState<Set<SourceId>>(new Set(['ebay_active']));
 
   const { data: inventory = [], isLoading: inventoryLoading } = trpc.testAI.getMyInventory.useQuery(undefined, {
     enabled: !!user && user.role === 'admin',
   });
 
-  // Fetch eBay data for both items (enabled when item is selected and has real category)
   const leftEbayQuery = trpc.testAI.getEbayData.useQuery(
     leftItem ? { title: leftItem.title, category: leftItem.category, grade: leftItem.grade, condition: leftItem.condition, certificationCompany: leftItem.certificationCompany, itemDetails: leftItem.itemDetails } : { title: '', category: '' },
-    { enabled: !!leftItem && leftItem.category !== 'unknown' }
+    { enabled: !!leftItem && leftItem.category !== 'unknown' && leftSources.has('ebay_active') }
   );
   const rightEbayQuery = trpc.testAI.getEbayData.useQuery(
     rightItem ? { title: rightItem.title, category: rightItem.category, grade: rightItem.grade, condition: rightItem.condition, certificationCompany: rightItem.certificationCompany, itemDetails: rightItem.itemDetails } : { title: '', category: '' },
-    { enabled: !!rightItem && rightItem.category !== 'unknown' }
+    { enabled: !!rightItem && rightItem.category !== 'unknown' && rightSources.has('ebay_active') }
   );
 
   if (authLoading) return <div className="flex items-center justify-center min-h-screen"><Spinner /></div>;
-  if (!user || user.role !== 'admin') {
-    navigate('/');
-    return null;
-  }
+  if (!user || user.role !== 'admin') { navigate('/'); return null; }
 
   const bothSelected = !!leftItem && !!rightItem;
 
   return (
     <div className="min-h-screen bg-[#0a0e1a] text-white">
-      {/* Header */}
       <div className="border-b border-gray-800 bg-gray-900/50 px-6 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div>
             <h1 className="text-xl font-bold text-white">🧪 Test AI</h1>
-            <p className="text-gray-400 text-sm">Admin testing sandbox for scrapers, eBay data, population reports, and AI analysis</p>
+            <p className="text-gray-400 text-sm">Admin sandbox — test data sources and AI analysis in isolation</p>
           </div>
-          <button onClick={() => navigate('/admin')} className="text-gray-400 hover:text-white text-sm transition-colors">
-            ← Back to Admin
-          </button>
+          <button onClick={() => navigate('/admin')} className="text-gray-400 hover:text-white text-sm transition-colors">← Back to Admin</button>
         </div>
       </div>
 
@@ -481,45 +546,31 @@ export default function TestAI() {
           <ItemPanel side="right" item={rightItem} onItemChange={setRightItem} inventory={inventory} inventoryLoading={inventoryLoading} />
         </div>
 
-        {/* Data sections — only show when items are selected */}
+        {/* Data source selectors — only show when items are selected */}
         {(leftItem || rightItem) && (
           <div className="grid grid-cols-2 gap-4">
-            {/* Left column */}
-            <div className="space-y-4">
-              {leftItem ? (
-              <>
-                <EbayDataSection item={leftItem} side="left" />
-                <EbaySoldHistorySection side="left" />
-                <PopulationReportSection item={leftItem} side="left" />
-                <OtherMarketplacesSection side="left" />
-                </>
-              ) : (
-                <div className="rounded-xl border border-gray-700/30 bg-gray-800/20 p-8 text-center text-gray-500 text-sm">Select Item A to see data</div>
-              )}
-            </div>
-            {/* Right column */}
-            <div className="space-y-4">
-              {rightItem ? (
-              <>
-                <EbayDataSection item={rightItem} side="right" />
-                <EbaySoldHistorySection side="right" />
-                <PopulationReportSection item={rightItem} side="right" />
-                <OtherMarketplacesSection side="right" />
-                </>
-              ) : (
-                <div className="rounded-xl border border-gray-700/30 bg-gray-800/20 p-8 text-center text-gray-500 text-sm">Select Item B to see data</div>
-              )}
-            </div>
+            {leftItem ? <SourceSelector enabled={leftSources} onChange={setLeftSources} side="left" /> : <div />}
+            {rightItem ? <SourceSelector enabled={rightSources} onChange={setRightSources} side="right" /> : <div />}
           </div>
         )}
 
-        {/* AI Analysis — only show when both items are selected */}
+        {/* Data sections */}
+        {(leftItem || rightItem) && (
+          <div className="grid grid-cols-2 gap-4">
+            <DataColumn item={leftItem} side="left" enabledSources={leftSources} ebayData={leftEbayQuery.data} />
+            <DataColumn item={rightItem} side="right" enabledSources={rightSources} ebayData={rightEbayQuery.data} />
+          </div>
+        )}
+
+        {/* AI Analysis */}
         {bothSelected && (
           <AIAnalysisSection
             leftItem={leftItem}
             rightItem={rightItem}
             leftEbayData={leftEbayQuery.data}
             rightEbayData={rightEbayQuery.data}
+            leftSources={leftSources}
+            rightSources={rightSources}
           />
         )}
 
@@ -527,7 +578,7 @@ export default function TestAI() {
           <div className="text-center py-16 text-gray-500">
             <p className="text-4xl mb-4">🧪</p>
             <p className="text-lg font-medium text-gray-400">Select two items to begin testing</p>
-            <p className="text-sm mt-2">Choose from your inventory or enter a certificate ID to test scraped data and AI analysis</p>
+            <p className="text-sm mt-2">Choose from your inventory or enter a certificate ID, then select which data sources to test</p>
           </div>
         )}
       </div>
