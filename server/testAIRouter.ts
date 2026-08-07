@@ -62,6 +62,23 @@ function filterListingsByGrade(summaries: any[], targetGrade: number | null): an
   });
 }
 
+// Extract issue number from a listing title (e.g., "Daredevil #168 CGC 9.8" -> "168")
+function extractIssueFromTitle(title: string): string | null {
+  // Match #168, #168N (newsstand), #168A (variant), etc. — capture just the numeric part
+  const match = title.match(/#(\d+)/);
+  return match ? match[1] : null;
+}
+
+// Filter listings to match the expected issue number (comics) or card number (sports cards)
+function filterListingsByNumber(summaries: any[], targetNumber: string | null): any[] {
+  if (!targetNumber) return summaries;
+  return summaries.filter((item: any) => {
+    const itemNumber = extractIssueFromTitle(item.title);
+    if (!itemNumber) return false;
+    return itemNumber === targetNumber;
+  });
+}
+
 function computeMetrics(summaries: any[]) {
   const prices = summaries
     .map((i: any) => parseFloat(i.price?.value || '0'))
@@ -185,7 +202,13 @@ export const testAIRouter = router({
       try {
         const summaries = await fetchEbayListings(query, token, 25);
         const targetGrade = extractGradeFromQuery(query);
-        const filteredSummaries = filterListingsByGrade(summaries, targetGrade);
+        // For comics: also filter by issue number
+        const issueNumber = input.category === 'comics' ? (details.issueNumber || null) : null;
+        // For sports cards: also filter by card number
+        const cardNumber = input.category === 'sports_cards' ? (details.cardNumber || null) : null;
+        const targetNumber = issueNumber || cardNumber;
+        const byNumber = filterListingsByNumber(summaries, targetNumber);
+        const filteredSummaries = filterListingsByGrade(byNumber, targetGrade);
         const metrics = computeMetrics(filteredSummaries);
         return {
           query,
