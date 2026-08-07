@@ -35,6 +35,31 @@ async function fetchEbayListings(query: string, token: string, limit = 25) {
 // NOTE: eBay sold/completed history requires the eBay Finding API (separate from Browse API).
 // This will be implemented in a future phase when the Finding API is set up.
 
+// Extract grade from query string (e.g., "CGC 9.8" -> 9.8)
+function extractGradeFromQuery(query: string): number | null {
+  const match = query.match(/(\d+\.?\d*)/);
+  return match ? parseFloat(match[1]) : null;
+}
+
+// Extract grade from listing title (e.g., "Daredevil #168 CGC 9.8" -> 9.8)
+function extractGradeFromTitle(title: string): number | null {
+  const match = title.match(/(CGC|PSA|BGS|PCGS|NGC|CBCS|SGC|HGA|CSG|ISA|GMA)\s+(\d+\.?\d*)/i);
+  return match ? parseFloat(match[2]) : null;
+}
+
+// Filter listings to match the grade from the search query
+function filterListingsByGrade(summaries: any[], targetGrade: number | null, tolerance: number = 0.3): any[] {
+  if (!targetGrade) return summaries; // If no grade in query, return all
+  
+  return summaries.filter((item: any) => {
+    const itemGrade = extractGradeFromTitle(item.title);
+    if (!itemGrade) return false; // Exclude ungraded items when searching for graded
+    
+    // Allow small tolerance (e.g., 9.8 ± 0.3 includes 9.5-10.1)
+    return Math.abs(itemGrade - targetGrade) <= tolerance;
+  });
+}
+
 function computeMetrics(summaries: any[]) {
   const prices = summaries
     .map((i: any) => parseFloat(i.price?.value || '0'))
@@ -157,10 +182,12 @@ export const testAIRouter = router({
 
       try {
         const summaries = await fetchEbayListings(query, token, 25);
-        const metrics = computeMetrics(summaries);
+        const targetGrade = extractGradeFromQuery(query);
+        const filteredSummaries = filterListingsByGrade(summaries, targetGrade);
+        const metrics = computeMetrics(filteredSummaries);
         return {
           query,
-          listings: summaries.slice(0, 20).map((s: any) => ({
+          listings: filteredSummaries.slice(0, 20).map((s: any) => ({
             title: s.title,
             price: parseFloat(s.price?.value || '0'),
             currency: s.price?.currency || 'USD',
