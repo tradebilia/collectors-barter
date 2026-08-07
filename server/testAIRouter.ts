@@ -245,6 +245,12 @@ export const testAIRouter = router({
         const metrics = computeMetrics(filteredSummaries);
         return {
           query,
+          debug: {
+            totalFetched: summaries.length,
+            afterNumberFilter: byNumber.length,
+            afterGradeFilter: filteredSummaries.length,
+            targetGrade,
+          },
           listings: filteredSummaries.slice(0, 20).map((s: any) => ({
             title: s.title,
             price: parseFloat(s.price?.value || '0'),
