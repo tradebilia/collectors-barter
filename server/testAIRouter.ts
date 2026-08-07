@@ -225,6 +225,25 @@ export const testAIRouter = router({
         }
       }
       // For other categories: use title + grading/condition
+      // For vintage toys: year (if available) + toyName + brand/franchise + grading/condition
+      else if (input.category === 'vintage_toys') {
+        const year = details.year || '';
+        const toyName = details.toyName || input.title;
+        const brand = details.brand || '';
+        const franchise = details.franchise || '';
+        const parts = [year, toyName, brand || franchise].filter((p: string) => p);
+        const baseQuery = parts.join(' ');
+        if (cert && grade) {
+          query = `${baseQuery} ${cert} ${grade}`.trim();
+        } else if (grade) {
+          query = `${baseQuery} ${grade}`.trim();
+        } else if (input.condition) {
+          query = `${baseQuery} ${input.condition}`.trim();
+        } else {
+          query = baseQuery || input.title;
+        }
+      }
+      // For other categories: use title + grading/condition
       else {
         if (cert && grade) query = `${input.title} ${cert} ${grade}`;
         else if (grade) query = `${input.title} ${grade}`;
