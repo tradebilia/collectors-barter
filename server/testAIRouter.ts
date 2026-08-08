@@ -242,13 +242,13 @@ export const testAIRouter = router({
           query = baseQuery || input.title;
         }
       }
-      // For pokemon: use year + setName + cardName + cardNumber + grading/condition
+      // For pokemon: use year + edition + cardName + cardNumber + grading/condition
       if (input.category === 'pokemon') {
         const year = details.year || '';
-        const setName = details.setName || '';
+        const edition = details.edition || '';
         const cardName = details.cardName || '';
         const cardNumber = details.cardNumber || '';
-        const parts = [year, setName, cardName, cardNumber].filter((p: string) => p);
+        const parts = [year, edition, cardName, cardNumber].filter((p: string) => p);
         const baseQuery = parts.join(' ');
         if (cert && grade) {
           query = `${baseQuery} ${cert} ${grade}`.trim();
