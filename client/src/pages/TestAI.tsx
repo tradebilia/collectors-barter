@@ -285,6 +285,8 @@ function ItemPanel({ side, item, onItemChange, inventory, inventoryLoading }: {
               {item.grade && <Badge variant="outline" className="text-[10px]">Grade {item.grade}</Badge>}
               {item.certificationCompany && <Badge variant="outline" className="text-[10px]">{item.certificationCompany}</Badge>}
             </div>
+            {/* DEBUG: show raw category value */}
+            <p className="text-[9px] text-gray-600 mt-0.5">cat: "{item.category}"</p>
             {item.estimatedValue && <p className="text-green-400 text-sm font-semibold mt-1">${Number(item.estimatedValue).toLocaleString()}</p>}
           </div>
           <button onClick={() => { onItemChange(null); setSelectedInventoryId(null); setCertId(''); }} className="text-gray-500 hover:text-red-400 text-lg leading-none flex-shrink-0">×</button>
