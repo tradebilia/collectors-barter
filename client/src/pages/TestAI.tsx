@@ -298,7 +298,7 @@ function ItemPanel({ side, item, onItemChange, inventory, inventoryLoading }: {
 function EbayActiveSection({ item, side }: { item: SelectedItem; side: 'left' | 'right' }) {
   const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
   const { data, isLoading } = trpc.testAI.getEbayData.useQuery(
-    { title: item.title, category: item.category, grade: item.grade, condition: item.condition, certificationCompany: item.certificationCompany || '', itemDetails: item.itemDetails },
+    { title: item.title, category: item.category, grade: item.grade, condition: item.condition, certificationCompany: item.certificationCompany, itemDetails: item.itemDetails },
     { enabled: !!item.title && item.category !== 'unknown' }
   );
 
@@ -511,11 +511,11 @@ export default function TestAI() {
   });
 
   const leftEbayQuery = trpc.testAI.getEbayData.useQuery(
-    leftItem ? { title: leftItem.title, category: leftItem.category, grade: leftItem.grade, condition: leftItem.condition, certificationCompany: leftItem.certificationCompany || '', itemDetails: leftItem.itemDetails } : { title: '', category: '' },
+    leftItem ? { title: leftItem.title, category: leftItem.category, grade: leftItem.grade, condition: leftItem.condition, certificationCompany: leftItem.certificationCompany, itemDetails: leftItem.itemDetails } : { title: '', category: '' },
     { enabled: !!leftItem && leftItem.category !== 'unknown' && leftSources.has('ebay_active') }
   );
   const rightEbayQuery = trpc.testAI.getEbayData.useQuery(
-    rightItem ? { title: rightItem.title, category: rightItem.category, grade: rightItem.grade, condition: rightItem.condition, certificationCompany: rightItem.certificationCompany || '', itemDetails: rightItem.itemDetails } : { title: '', category: '' },
+    rightItem ? { title: rightItem.title, category: rightItem.category, grade: rightItem.grade, condition: rightItem.condition, certificationCompany: rightItem.certificationCompany, itemDetails: rightItem.itemDetails } : { title: '', category: '' },
     { enabled: !!rightItem && rightItem.category !== 'unknown' && rightSources.has('ebay_active') }
   );
 

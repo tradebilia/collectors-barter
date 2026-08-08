@@ -53,7 +53,7 @@ const categoryFilterPresets: Record<TradebiliaCategorySlug, Array<{ label: strin
   ],
   sports_cards: [
     { label: "Keyword", placeholder: "Search by keyword" },
-    { label: "Manufacturer", placeholder: "Topps, Fleer, Upper Deck, O-Pee-Chee" },
+    { label: "Manufacturer", placeholder: "Topps, Fleer, Upper Deck" },
     { label: "Sport", placeholder: "Select a sport", type: "select" as const },
     { label: "Grading service", placeholder: "Select a grading service", type: "select" as const },
     { label: "Year / era", placeholder: "1950s, 1986, junk wax, ultra-modern" },

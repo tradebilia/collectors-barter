@@ -39,18 +39,18 @@ async function fetchEbayListings(query: string, token: string, limit = 25) {
 // Extract grade from query string — looks for grade AFTER a grading company name
 // e.g., "DareDevil #168 CGC 9.8" -> 9.8 (not 168)
 function extractGradeFromQuery(query: string): number | null {
-  const match = query.match(/(CGC|PSA|BGS|PCGS|NGC|CBCS|SGC|HGA|CSG|ISA|GMA|WATA|VGA|IGS|AFA|CAS|UKG|PSE|ASG|PSAG)\s+[QC]?(\d+\.?\d*)/i);
+  const match = query.match(/(CGC|PSA|BGS|PCGS|NGC|CBCS|SGC|HGA|CSG|ISA|GMA|WATA|VGA|IGS)\s+(\d+\.?\d*)/i);
   return match ? parseFloat(match[2]) : null;
 }
 
 // Extract grade from listing title (e.g., "Daredevil #168 CGC 9.8" -> 9.8)
 function extractGradeFromTitle(title: string): number | null {
-  const match = title.match(/(CGC|PSA|BGS|PCGS|NGC|CBCS|SGC|HGA|CSG|ISA|GMA|WATA|VGA|IGS|AFA|CAS|UKG|PSE|ASG|PSAG)\s+[QC]?(\d+\.?\d*)[\+]?/i);
+  const match = title.match(/(CGC|PSA|BGS|PCGS|NGC|CBCS|SGC|HGA|CSG|ISA|GMA|WATA|VGA|IGS)\s+(\d+\.?\d*)/i);
   return match ? parseFloat(match[2]) : null;
 }
 
 // Filter listings to match the grade from the search query
-function filterListingsByGrade(summaries: any[], targetGrade: number | null, gradeTolerance: number = 0): any[] {
+function filterListingsByGrade(summaries: any[], targetGrade: number | null): any[] {
   if (!targetGrade) return summaries; // If no grade in query, return all
 
   return summaries.filter((item: any) => {
@@ -60,42 +60,14 @@ function filterListingsByGrade(summaries: any[], targetGrade: number | null, gra
     // 2. A grade that matches the target
     if (!itemGrade) return false;
 
-    if (gradeTolerance > 0) {
-      return Math.abs(itemGrade - targetGrade) <= gradeTolerance;
-    }
     // Round to 1 decimal to avoid float precision issues (9.8 === 9.8)
     return Math.round(itemGrade * 10) === Math.round(targetGrade * 10);
-  });
-}
-
-// Filter listings by year — for vintage toys where year is critical to value
-function filterListingsByYear(summaries: any[], targetYear: string | null): any[] {
-  if (!targetYear) return summaries;
-  return summaries.filter((item: any) => {
-    return item.title.includes(targetYear);
-  });
-}
-
-// For graded stamps: exclude listings with condition abbreviations in the title
-// (F-VF, VF, Fine, Used, etc. indicate ungraded stamps)
-const STAMP_UNGRADED_PATTERNS = /\b(F-VF|VF|XF|VF-XF|F|VG|G|AG|FVF|XFSUP|Fine|Very Fine|Extremely Fine|Used|Unused|CTO|NH|OG|HR|NG|Hinged|Never Hinged)\b/i;
-function filterStampGradeStatus(summaries: any[], isGraded: boolean): any[] {
-  return summaries.filter((item: any) => {
-    const hasGradingCompany = /(ASG|PSAG|PSE)\s+\d+/i.test(item.title);
-    if (isGraded) {
-      // Graded item: only keep listings that have a recognized grading company in the title
-      return hasGradingCompany;
-    } else {
-      // Ungraded item: exclude listings that have a grading company in the title
-      return !hasGradingCompany;
-    }
   });
 }
 
 // Extract issue number from a listing title (e.g., "Daredevil #168 CGC 9.8" -> "168")
 function extractIssueFromTitle(title: string): string | null {
   // Match #168, #168N (newsstand), #168A (variant), etc. — capture just the numeric part
-  // Comics reliably use # prefix; sports cards do not, so this is comics-only
   const match = title.match(/#(\d+)/);
   return match ? match[1] : null;
 }
@@ -212,11 +184,7 @@ export const testAIRouter = router({
       // For sports cards: use year + manufacturer + player + card number + grading/condition
       else if (input.category === 'sports_cards') {
         const year = details.year || '';
-        // If manufacturer is "Other", use the custom manufacturer field
-        let manufacturer = details.manufacturer || '';
-        if (manufacturer === 'Other' || !manufacturer) {
-          manufacturer = details.customManufacturer || manufacturer;
-        }
+        const manufacturer = details.manufacturer || '';
         const player = details.player || '';
         const cardNumber = details.cardNumber || '';
         
@@ -252,33 +220,6 @@ export const testAIRouter = router({
         }
       }
       // For other categories: use title + grading/condition
-      // For vintage toys: year (if available) + toyName + brand/franchise + grading/condition
-      else if (input.category === 'vintage_toys') {
-        const year = details.year || '';
-        const toyName = details.toyName || input.title;
-        const brand = details.brand || '';
-        const franchise = details.franchise || '';
-        const parts = [year, toyName, brand || franchise].filter((p: string) => p);
-        const baseQuery = parts.join(' ');
-        if (cert && grade) {
-          query = `${baseQuery} ${cert} ${grade}`.trim();
-        } else if (grade) {
-          query = `${baseQuery} ${grade}`.trim();
-        } else if (input.condition) {
-          query = `${baseQuery} ${input.condition}`.trim();
-        } else {
-          query = baseQuery || input.title;
-        }
-      }
-      // For other categories: use title + grading/condition
-      // For disney pins: Disney pin + pinName + character + series + LE (if limited edition)
-      else if (input.category === 'disney_pins') {
-        const pinName = details.pinName || input.title;
-        const character = details.character || '';
-        const parts = ['Disney Pins', character, pinName].filter((p: string) => p);
-        query = parts.join(' ').trim();
-      }
-      // For other categories: use title + grading/condition
       else {
         if (cert && grade) query = `${input.title} ${cert} ${grade}`;
         else if (grade) query = `${input.title} ${grade}`;
@@ -288,29 +229,18 @@ export const testAIRouter = router({
         // Build a broader query for eBay fetch (without grade) to get more results,
         // then filter by grade internally for accuracy
         const targetGrade = extractGradeFromQuery(query);
-        const broadQuery = query.replace(/(CGC|PSA|BGS|PCGS|NGC|CBCS|SGC|HGA|CSG|ISA|GMA|WATA|VGA|IGS|AFA|CAS|UKG|PSE|ASG|PSAG)\s+[QC]?\d+\.?\d*\+?/gi, '$1').trim();
+        const broadQuery = query.replace(/(CGC|PSA|BGS|PCGS|NGC|CBCS|SGC|HGA|CSG|ISA|GMA|WATA|VGA|IGS)\s+\d+\.?\d*/gi, '$1').trim();
         const fetchQuery = broadQuery !== query ? broadQuery : query;
         const summaries = await fetchEbayListings(fetchQuery, token, 100);
         console.log(`[eBay Search] Fetch Query: "${fetchQuery}", Filter Grade: ${targetGrade}, Total Results: ${summaries.length}`);
         // For comics: also filter by issue number
         const issueNumber = input.category === 'comics' ? (details.issueNumber || null) : null;
-        // Note: card number filter is NOT applied for sports cards because eBay titles
-        // don't use # prefix for card numbers, making reliable matching impossible.
-        // Year + manufacturer + player already uniquely identify the card.
-        const targetNumber = issueNumber;
+        // For sports cards: also filter by card number
+        const cardNumber = input.category === 'sports_cards' ? (details.cardNumber || null) : null;
+        const targetNumber = issueNumber || cardNumber;
         const byNumber = filterListingsByNumber(summaries, targetNumber);
         console.log(`[eBay Search] After number filter: ${byNumber.length} results (target: ${targetNumber})`);
-        // For vintage toys: also filter by year (critical to value — 1984 ≠ 2007)
-        const targetYear = input.category === 'vintage_toys' ? (details.year || null) : null;
-        const byYear = filterListingsByYear(byNumber, targetYear);
-        // Stamps use ±5 tolerance (PSE/ASG grades are 1-100 scale); all others use exact match
-        const gradeTolerance = input.category === 'stamps' ? 5 : 0;
-        const byGrade = filterListingsByGrade(byYear, targetGrade, gradeTolerance);
-        // For graded stamps: exclude ungraded listings (those with condition abbreviations instead of grading company)
-        const isGradedStamp = input.category === 'stamps' && !!cert;
-        const filteredSummaries = input.category === 'stamps'
-          ? filterStampGradeStatus(byGrade, isGradedStamp)
-          : byGrade;
+        const filteredSummaries = filterListingsByGrade(byNumber, targetGrade);
         console.log(`[eBay Search] After grade filter: ${filteredSummaries.length} results (target grade: ${targetGrade})`);
         // Log first 5 filtered results for debugging
         filteredSummaries.slice(0, 5).forEach((s: any, i: number) => {
