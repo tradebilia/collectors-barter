@@ -39,13 +39,13 @@ async function fetchEbayListings(query: string, token: string, limit = 25) {
 // Extract grade from query string — looks for grade AFTER a grading company name
 // e.g., "DareDevil #168 CGC 9.8" -> 9.8 (not 168)
 function extractGradeFromQuery(query: string): number | null {
-  const match = query.match(/(CGC|PSA|BGS|PCGS|NGC|CBCS|SGC|HGA|CSG|ISA|GMA|WATA|VGA|IGS)\s+(\d+\.?\d*)/i);
+  const match = query.match(/(CGC|PSA|BGS|PCGS|NGC|CBCS|SGC|HGA|CSG|ISA|GMA|WATA|VGA|IGS|AFA|CAS|UKG|PSE|ASG|PSAG|VHSDNA|Rewind)\s+[QC]?(\d+\.?\d*)/i);
   return match ? parseFloat(match[2]) : null;
 }
 
 // Extract grade from listing title (e.g., "Daredevil #168 CGC 9.8" -> 9.8)
 function extractGradeFromTitle(title: string): number | null {
-  const match = title.match(/(CGC|PSA|BGS|PCGS|NGC|CBCS|SGC|HGA|CSG|ISA|GMA|WATA|VGA|IGS)\s+(\d+\.?\d*)/i);
+  const match = title.match(/(CGC|PSA|BGS|PCGS|NGC|CBCS|SGC|HGA|CSG|ISA|GMA|WATA|VGA|IGS|AFA|CAS|UKG|PSE|ASG|PSAG|VHSDNA|Rewind)\s+[QC]?(\d+\.?\d*)[\+]?/i);
   return match ? parseFloat(match[2]) : null;
 }
 
@@ -224,12 +224,29 @@ export const testAIRouter = router({
         if (cert && grade) query = `${input.title} ${cert} ${grade}`;
         else if (grade) query = `${input.title} ${grade}`;
       }
+      // For movies: use title + format + grading/condition
+      // Override the fallback above if category is movies
+      if (input.category === 'movies') {
+        const movieTitle = details.title || input.title;
+        const format = details.format === 'Other' ? (details.customFormat || '') : (details.format || '');
+        const parts = [movieTitle, format].filter((p: string) => p);
+        const baseQuery = parts.join(' ');
+        if (cert && grade) {
+          query = `${baseQuery} ${cert} ${grade}`.trim();
+        } else if (grade) {
+          query = `${baseQuery} ${grade}`.trim();
+        } else if (input.condition) {
+          query = `${baseQuery} ${input.condition}`.trim();
+        } else {
+          query = baseQuery || input.title;
+        }
+      }
 
       try {
         // Build a broader query for eBay fetch (without grade) to get more results,
         // then filter by grade internally for accuracy
         const targetGrade = extractGradeFromQuery(query);
-        const broadQuery = query.replace(/(CGC|PSA|BGS|PCGS|NGC|CBCS|SGC|HGA|CSG|ISA|GMA|WATA|VGA|IGS)\s+\d+\.?\d*/gi, '$1').trim();
+        const broadQuery = query.replace(/(CGC|PSA|BGS|PCGS|NGC|CBCS|SGC|HGA|CSG|ISA|GMA|WATA|VGA|IGS|AFA|CAS|UKG|PSE|ASG|PSAG|VHSDNA|Rewind)\s+[QC]?\d+\.?\d*\+?/gi, '$1').trim();
         const fetchQuery = broadQuery !== query ? broadQuery : query;
         const summaries = await fetchEbayListings(fetchQuery, token, 100);
         console.log(`[eBay Search] Fetch Query: "${fetchQuery}", Filter Grade: ${targetGrade}, Total Results: ${summaries.length}`);
