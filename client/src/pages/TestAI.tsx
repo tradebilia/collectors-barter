@@ -300,7 +300,7 @@ function ItemPanel({ side, item, onItemChange, inventory, inventoryLoading }: {
 function EbayActiveSection({ item, side }: { item: SelectedItem; side: 'left' | 'right' }) {
   const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
   const { data, isLoading } = trpc.testAI.getEbayData.useQuery(
-    { title: item.title, category: item.category, grade: item.grade, condition: item.condition, certificationCompany: item.certificationCompany, itemDetails: item.itemDetails },
+    { title: item.title, category: item.category, grade: item.grade ?? undefined, condition: item.condition ?? undefined, certificationCompany: item.certificationCompany ?? '', itemDetails: item.itemDetails ?? undefined },
     { enabled: !!item.title && item.category !== 'unknown' }
   );
 
