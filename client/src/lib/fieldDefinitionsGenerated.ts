@@ -408,7 +408,7 @@ export const COINS_SINGLE_COIN_FIELDS: FieldDefinition[] = [
   },
   {
     name: 'weight',
-    label: 'Weight',
+    label: 'Weight (oz)',
     inputType: 'text',
     requirement: 'recommended',
   },
