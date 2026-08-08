@@ -245,7 +245,9 @@ export const testAIRouter = router({
       if (input.category === 'autographs') {
         const signer = details.signer || input.title;
         const itemType = details.signedItemType || '';
-        const authCompany = cert || '';
+        const authCompany = input.certificationCompany === 'Other' 
+          ? (details.customAuthenticationCompany || '') 
+          : (input.certificationCompany || '');
         const parts = [signer, itemType, authCompany].filter((p: string) => p);
         query = parts.join(' ').trim() || input.title;
       }
