@@ -250,6 +250,7 @@ export const testAIRouter = router({
           : (input.certificationCompany || '');
         const parts = [signer, itemType, authCompany].filter((p: string) => p);
         query = parts.join(' ').trim() || input.title;
+        console.log(`[Autographs Debug] signer="${signer}", itemType="${itemType}", authCompany="${authCompany}", query="${query}"`);
       }
 
       try {
