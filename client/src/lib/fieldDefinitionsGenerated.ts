@@ -3894,6 +3894,12 @@ export const POKEMON_SINGLE_CARD_FIELDS: FieldDefinition[] = [
     requirement: 'required',
   },
   {
+    name: 'year',
+    label: 'Year',
+    inputType: 'number',
+    requirement: 'required',
+  },
+  {
     name: 'rarity',
     label: 'Rarity',
     inputType: 'dropdown',
