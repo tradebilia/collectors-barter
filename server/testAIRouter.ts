@@ -155,6 +155,7 @@ export const testAIRouter = router({
 
       // Build a smart query from item details
       const details = input.itemDetails ? (() => { try { return JSON.parse(input.itemDetails); } catch { return {}; } })() : {};
+      console.log(`[Query Builder] category="${input.category}", title="${input.title}"`);
       // If grading company is "Other", use the custom grading company from itemDetails
       let cert = input.certificationCompany || details.certificationCompany || '';
       if (cert === 'Other' || !cert) {
