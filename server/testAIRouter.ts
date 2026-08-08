@@ -242,6 +242,24 @@ export const testAIRouter = router({
           query = baseQuery || input.title;
         }
       }
+      // For pokemon: use year + setName + cardName + cardNumber + grading/condition
+      if (input.category === 'pokemon') {
+        const year = details.year || '';
+        const setName = details.setName || '';
+        const cardName = details.cardName || '';
+        const cardNumber = details.cardNumber || '';
+        const parts = [year, setName, cardName, cardNumber].filter((p: string) => p);
+        const baseQuery = parts.join(' ');
+        if (cert && grade) {
+          query = `${baseQuery} ${cert} ${grade}`.trim();
+        } else if (grade) {
+          query = `${baseQuery} ${grade}`.trim();
+        } else if (input.condition) {
+          query = `${baseQuery} ${input.condition}`.trim();
+        } else {
+          query = baseQuery || input.title;
+        }
+      }
       // For autographs: use signer + signedItemType + authenticationCompany
       if (input.category === 'autographs') {
         const signer = details.signer || input.title;
