@@ -241,6 +241,14 @@ export const testAIRouter = router({
           query = baseQuery || input.title;
         }
       }
+      // For autographs: use signer + signedItemType + authenticationCompany
+      if (input.category === 'autographs') {
+        const signer = details.signer || input.title;
+        const itemType = details.signedItemType || '';
+        const authCompany = cert || '';
+        const parts = [signer, itemType, authCompany].filter((p: string) => p);
+        query = parts.join(' ').trim() || input.title;
+      }
 
       try {
         // Build a broader query for eBay fetch (without grade) to get more results,
