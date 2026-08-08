@@ -367,7 +367,7 @@ export default function ItemDetail() {
                 <div className="mt-6 grid gap-4 text-lg text-gray-700 sm:grid-cols-2">
                   {listing.grade && listing.grade !== 'ungraded' && parseFloat(listing.grade) > 0 ? (
                     <div>
-                      <p className="text-base font-bold uppercase tracking-[0.25em] text-gray-800">Grade</p>
+                      <p className="text-base font-bold uppercase tracking-[0.25em] text-gray-800">Numerical Grade</p>
                       <p className="mt-2 text-sm font-medium text-gray-500">{formatGrade(listing.grade)}</p>
                     </div>
                   ) : listing.condition ? (
@@ -586,7 +586,13 @@ export default function ItemDetail() {
               if (listing.itemDetails) {
                 for (const [key, value] of Object.entries(listing.itemDetails)) {
                   if (value && !excludeFields.has(key)) {
-                    allFields.push({ label: formatFieldName(key), value: String(value) });
+                    // Label overrides for specific fields
+                    const labelOverrides: Record<string, string> = {
+                      'stampGrade': 'Stamp Grade',
+                      'grade': 'Numerical Grade',
+                    };
+                    const label = labelOverrides[key] ?? formatFieldName(key);
+                    allFields.push({ label, value: String(value) });
                   }
                 }
               }
