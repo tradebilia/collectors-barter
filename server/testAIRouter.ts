@@ -320,6 +320,190 @@ export const testAIRouter = router({
       }
     }),
 
+  // Fetch eBay sold/completed listings via Sold-Comps API
+  getSoldCompsData: protectedProcedure
+    .input(z.object({
+      title: z.string(),
+      category: z.string(),
+      grade: z.string().optional(),
+      condition: z.string().optional(),
+      certificationCompany: z.string().optional(),
+      itemDetails: z.string().optional(),
+    }))
+    .query(async ({ ctx, input }) => {
+      if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      const apiKey = process.env.SOLD_COMPS_API_KEY;
+      if (!apiKey) return { query: input.title, listings: [], metrics: null, error: 'Sold-Comps API key not configured' };
+
+      // Reuse same query-building logic as getEbayData
+      const details = input.itemDetails ? (() => { try { return JSON.parse(input.itemDetails); } catch { return {}; } })() : {};
+      let cert = input.certificationCompany || details.certificationCompany || '';
+      if (cert === 'Other' || !cert) {
+        cert = details.customGradingCompany || cert;
+      }
+      cert = cert.replace(/\s*(Comics|Cards|Grading)$/i, '').trim();
+      const grade = input.grade ? String(parseFloat(input.grade)) : null;
+
+      let query = input.title;
+
+      // Comics
+      if (input.category === 'comics') {
+        const comicTitle = details.comicTitle || input.title;
+        const issueNumber = details.issueNumber || '';
+        const issueStr = issueNumber ? ` #${issueNumber}` : '';
+        if (cert && grade) query = `${comicTitle}${issueStr} ${cert} ${grade}`;
+        else if (grade) query = `${comicTitle}${issueStr} ${grade}`;
+        else if (input.condition) query = `${comicTitle}${issueStr} ${input.condition}`;
+        else query = `${comicTitle}${issueStr}`.trim() || input.title;
+      }
+      // Sports cards
+      else if (input.category === 'sports_cards') {
+        const year = details.year || '';
+        let manufacturer = details.manufacturer || '';
+        if (manufacturer === 'Other') manufacturer = details.customManufacturer || '';
+        const player = details.player || input.title;
+        const parts = [year, manufacturer, player].filter((p: string) => p);
+        const baseQuery = parts.join(' ');
+        if (cert && grade) query = `${baseQuery} ${cert} ${grade}`.trim();
+        else if (grade) query = `${baseQuery} ${grade}`.trim();
+        else if (input.condition) query = `${baseQuery} ${input.condition}`.trim();
+        else query = baseQuery || input.title;
+      }
+      // Video games
+      else if (input.category === 'video_games') {
+        const gameTitle = details.gameTitle || input.title;
+        const platform = details.platform || '';
+        const parts = [gameTitle, platform].filter((p: string) => p);
+        const baseQuery = parts.join(' ');
+        if (cert && grade) query = `${baseQuery} ${cert} ${grade}`.trim();
+        else if (grade) query = `${baseQuery} ${grade}`.trim();
+        else if (input.condition) query = `${baseQuery} ${input.condition}`.trim();
+        else query = baseQuery || input.title;
+      }
+      // Vintage toys
+      else if (input.category === 'vintage_toys') {
+        const year = details.year || '';
+        const toyName = details.toyName || input.title;
+        const brand = details.brand || details.franchise || '';
+        const parts = [year, toyName, brand].filter((p: string) => p);
+        const baseQuery = parts.join(' ');
+        if (cert && grade) query = `${baseQuery} ${cert} ${grade}`.trim();
+        else if (grade) query = `${baseQuery} ${grade}`.trim();
+        else if (input.condition) query = `${baseQuery} ${input.condition}`.trim();
+        else query = baseQuery || input.title;
+      }
+      // Disney pins
+      else if (input.category === 'disney_pins') {
+        const character = details.character || '';
+        const pinName = details.pinName || input.title;
+        const parts = ['Disney Pins', character, pinName].filter((p: string) => p);
+        query = parts.join(' ').trim() || input.title;
+      }
+      // Stamps
+      else if (input.category === 'stamps') {
+        const year = details.year || '';
+        const scottNumber = details.scottNumber || '';
+        const parts = [year, scottNumber ? `US#${scottNumber}` : '', cert].filter((p: string) => p);
+        const baseQuery = parts.join(' ');
+        if (grade) query = `${baseQuery} ${grade}`.trim();
+        else if (input.condition) query = `${baseQuery} ${input.condition}`.trim();
+        else query = baseQuery || input.title;
+      }
+      // Movies
+      else if (input.category === 'movies') {
+        const movieTitle = details.title || input.title;
+        const format = details.format === 'Other' ? (details.customFormat || '') : (details.format || '');
+        const parts = [movieTitle, format].filter((p: string) => p);
+        const baseQuery = parts.join(' ');
+        if (cert && grade) query = `${baseQuery} ${cert} ${grade}`.trim();
+        else if (grade) query = `${baseQuery} ${grade}`.trim();
+        else if (input.condition) query = `${baseQuery} ${input.condition}`.trim();
+        else query = baseQuery || input.title;
+      }
+      // Autographs
+      else if (input.category === 'autographs') {
+        const signer = details.signer || input.title;
+        const itemType = details.signedItemType || '';
+        const authCompany = input.certificationCompany === 'Other'
+          ? (details.customAuthenticationCompany || '')
+          : (input.certificationCompany || '');
+        const parts = [signer, itemType, authCompany].filter((p: string) => p);
+        query = parts.join(' ').trim() || input.title;
+      }
+      // Pokemon
+      else if (input.category === 'pokemon') {
+        const year = details.year || '';
+        const editionEra = details.editionEra || '';
+        const cardName = details.cardName || '';
+        const cardNumber = details.cardNumber || '';
+        const parts = [year, editionEra, cardName, cardNumber].filter((p: string) => p);
+        const baseQuery = parts.join(' ');
+        if (cert && grade) query = `${baseQuery} ${cert} ${grade}`.trim();
+        else if (grade) query = `${baseQuery} ${grade}`.trim();
+        else if (input.condition) query = `${baseQuery} ${input.condition}`.trim();
+        else query = baseQuery || input.title;
+      }
+      // Other categories: use title
+      else {
+        if (cert && grade) query = `${input.title} ${cert} ${grade}`;
+        else if (grade) query = `${input.title} ${grade}`;
+      }
+
+      try {
+        // Use broad query (strip grade number) to get more results, then filter
+        const targetGrade = extractGradeFromQuery(query);
+        const broadQuery = query.replace(/(CGC|PSA|BGS|PCGS|NGC|CBCS|SGC|HGA|CSG|ISA|GMA|WATA|VGA|IGS|AFA|CAS|UKG|PSE|ASG|PSAG|VHSDNA|Rewind)\s+[QC]?\d+\.?\d*\+?/gi, '$1').trim();
+        const fetchQuery = broadQuery !== query ? broadQuery : query;
+
+        const url = `https://api.sold-comps.com/v1/scrape?keyword=${encodeURIComponent(fetchQuery)}&count=100&sortOrder=endedRecently&ebaySite=ebay.com`;
+        const res = await fetch(url, { headers: { Authorization: `Bearer ${apiKey}` } });
+        if (!res.ok) {
+          const errText = await res.text();
+          return { query, listings: [], metrics: null, error: `Sold-Comps API error ${res.status}: ${errText}` };
+        }
+        const data = await res.json() as any;
+        const rawItems: any[] = data.items ?? [];
+
+        console.log(`[Sold-Comps] Fetch Query: "${fetchQuery}", Filter Grade: ${targetGrade}, Total Results: ${rawItems.length}`);
+
+        // Apply same grade filtering as eBay active
+        const issueNumber = input.category === 'comics' ? (details.issueNumber || null) : null;
+        const byNumber = filterListingsByNumber(rawItems.map((i: any) => ({ title: i.title, ...i })), issueNumber);
+        const filtered = filterListingsByGrade(byNumber, targetGrade);
+
+        // Compute metrics from sold prices
+        const soldListings = filtered.map((i: any) => ({
+          price: { value: i.soldPrice || '0', currency: i.soldCurrency || 'USD' },
+          title: i.title,
+          condition: i.condition,
+          itemWebUrl: i.url,
+          image: { imageUrl: i.thumbnailUrl },
+          endedAt: i.endedAt,
+          shippingPrice: i.shippingPrice,
+        }));
+        const metrics = computeMetrics(soldListings);
+
+        return {
+          query,
+          listings: filtered.slice(0, 20).map((i: any) => ({
+            title: i.title,
+            price: parseFloat(i.soldPrice || '0'),
+            currency: i.soldCurrency || 'USD',
+            condition: i.condition,
+            seller: i.sellerUsername,
+            itemUrl: i.url,
+            imageUrl: i.thumbnailUrl,
+            endedAt: i.endedAt,
+            shippingPrice: i.shippingPrice,
+          })),
+          metrics,
+          error: null,
+        };
+      } catch (err: any) {
+        return { query, listings: [], metrics: null, error: err.message };
+      }
+    }),
+
   // Placeholder: population report lookup by cert ID + grading company
   // Will be replaced by real scraper when built
   getPopulationReport: protectedProcedure

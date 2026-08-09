@@ -27,6 +27,15 @@ const DATA_SOURCES = {
     status: 'placeholder' as const,
     description: 'Completed sale prices — requires eBay Finding API (coming soon)',
   },
+  sold_comps: {
+    id: 'sold_comps',
+    label: 'Sold-Comps (eBay Sold)',
+    group: 'eBay',
+    icon: '💰',
+    provides: ['historic_prices', 'price_metrics'],
+    status: 'live' as const,
+    description: 'Real eBay completed/sold listings via Sold-Comps API',
+  },
   cgc: {
     id: 'cgc',
     label: 'CGC',
@@ -294,6 +303,59 @@ function ItemPanel({ side, item, onItemChange, inventory, inventoryLoading }: {
   );
 }
 
+// ─── Sold-Comps Sold History Section ─────────────────────────────────────────
+function SoldCompsSection({ item, side }: { item: SelectedItem; side: 'left' | 'right' }) {
+  const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
+  const { data, isLoading } = trpc.testAI.getSoldCompsData.useQuery(
+    { title: item.title, category: item.category, grade: item.grade ?? undefined, condition: item.condition ?? undefined, certificationCompany: item.certificationCompany ?? '', itemDetails: item.itemDetails ?? undefined },
+    { enabled: !!item.title && item.category !== 'unknown' }
+  );
+
+  return (
+    <div className="bg-gray-800/30 rounded-lg p-3 border border-gray-700/20 space-y-3">
+      <div className="flex items-center justify-between">
+        <p className={`text-[11px] font-bold uppercase ${accentColor}`}>💰 Sold-Comps — eBay Sold History</p>
+        {isLoading && <Spinner className="w-3 h-3" />}
+      </div>
+      <p className="text-gray-500 text-[10px]">Data type: Completed eBay sales · Up to 90 days history</p>
+      {data?.error && <p className="text-red-400 text-xs">{data.error}</p>}
+      {data?.metrics && (
+        <div className="grid grid-cols-4 gap-2 text-[11px]">
+          {[
+            { label: 'Avg Sold', value: `$${data.metrics.avg.toLocaleString()}` },
+            { label: 'Median', value: `$${data.metrics.median.toLocaleString()}` },
+            { label: 'Range', value: `$${data.metrics.min.toLocaleString()}–$${data.metrics.max.toLocaleString()}` },
+            { label: 'Confidence', value: data.metrics.confidence.toUpperCase() },
+          ].map(m => (
+            <div key={m.label} className="bg-gray-900/40 rounded p-1.5 text-center">
+              <p className="text-gray-500 text-[9px] uppercase mb-0.5">{m.label}</p>
+              <p className={`font-semibold ${m.label === 'Confidence' ? (data.metrics!.confidence === 'high' ? 'text-green-400' : data.metrics!.confidence === 'medium' ? 'text-yellow-400' : 'text-red-400') : 'text-white'}`}>{m.value}</p>
+            </div>
+          ))}
+        </div>
+      )}
+      {data?.query && <p className="text-gray-500 text-[10px]">Query: <span className="font-mono text-gray-400">"{data.query}"</span> · {data.listings.length} results</p>}
+      {data?.listings && data.listings.length > 0 && (
+        <div className="space-y-1 max-h-48 overflow-y-auto">
+          {data.listings.map((l: any, i: number) => (
+            <div key={i} className="flex items-center justify-between gap-2 py-1 border-b border-gray-700/20 last:border-b-0">
+              <div className="flex items-center gap-2 min-w-0">
+                {l.imageUrl && <img src={l.imageUrl} alt="" className="w-8 h-8 object-cover rounded flex-shrink-0" />}
+                <div className="min-w-0">
+                  <a href={l.itemUrl} target="_blank" rel="noopener noreferrer" className="text-[11px] text-blue-400 hover:underline truncate block">{l.title}</a>
+                  <p className="text-[10px] text-gray-500">{l.condition} · {l.endedAt ? `Sold ${l.endedAt}` : ''}</p>
+                </div>
+              </div>
+              <p className="text-green-400 font-semibold text-sm flex-shrink-0">${l.price.toLocaleString()}</p>
+            </div>
+          ))}
+        </div>
+      )}
+      {data && !data.listings.length && !data.error && <p className="text-gray-500 text-xs">No sold listings found.</p>}
+    </div>
+  );
+}
+
 // ─── eBay Active Listings Section ────────────────────────────────────────────
 function EbayActiveSection({ item, side }: { item: SelectedItem; side: 'left' | 'right' }) {
   const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
@@ -482,6 +544,7 @@ function DataColumn({ item, side, enabledSources, ebayData }: {
   return (
     <div className="space-y-3">
       {enabledSources.has('ebay_active') && <EbayActiveSection item={item} side={side} />}
+      {enabledSources.has('sold_comps') && <SoldCompsSection item={item} side={side} />}
       {enabledSources.has('ebay_sold') && <PlaceholderSection sourceId="ebay_sold" side={side} />}
       {enabledSources.has('cgc') && <PlaceholderSection sourceId="cgc" side={side} />}
       {enabledSources.has('psa') && <PlaceholderSection sourceId="psa" side={side} />}
