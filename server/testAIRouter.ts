@@ -82,6 +82,25 @@ function filterListingsByNumber(summaries: any[], targetNumber: string | null): 
   });
 }
 
+// Filter listings to ensure the player name appears in the title (sports cards)
+// Uses last name only to handle variations like "Ken Griffey Jr." vs "Griffey"
+function filterListingsByPlayer(summaries: any[], player: string | null): any[] {
+  if (!player) return summaries;
+  // Extract last name (last word before any suffix like Jr., Sr., III, etc.)
+  const parts = player.trim().split(/\s+/);
+  // Find the last meaningful word (skip suffixes)
+  const suffixes = new Set(['jr', 'sr', 'ii', 'iii', 'iv', 'jr.', 'sr.']);
+  let lastName = parts[parts.length - 1];
+  if (suffixes.has(lastName.toLowerCase()) && parts.length > 1) {
+    lastName = parts[parts.length - 2];
+  }
+  if (!lastName || lastName.length < 3) return summaries; // too short to filter reliably
+  const lowerLast = lastName.toLowerCase();
+  return summaries.filter((item: any) => {
+    return item.title?.toLowerCase().includes(lowerLast);
+  });
+}
+
 function computeMetrics(summaries: any[]) {
   const prices = summaries
     .map((i: any) => parseFloat(i.price?.value || '0'))
@@ -287,7 +306,10 @@ export const testAIRouter = router({
         const targetNumber = issueNumber || cardNumber;
         const byNumber = filterListingsByNumber(summaries, targetNumber);
         console.log(`[eBay Search] After number filter: ${byNumber.length} results (target: ${targetNumber})`);
-        const filteredSummaries = filterListingsByGrade(byNumber, targetGrade);
+        // For sports cards: also filter by player name to exclude wrong players
+        const playerName = input.category === 'sports_cards' ? (details.player || null) : null;
+        const byPlayer = filterListingsByPlayer(byNumber, playerName);
+        const filteredSummaries = filterListingsByGrade(byPlayer, targetGrade);
         console.log(`[eBay Search] After grade filter: ${filteredSummaries.length} results (target grade: ${targetGrade})`);
         // Log first 5 filtered results for debugging
         filteredSummaries.slice(0, 5).forEach((s: any, i: number) => {
@@ -469,7 +491,10 @@ export const testAIRouter = router({
         // Apply same grade filtering as eBay active
         const issueNumber = input.category === 'comics' ? (details.issueNumber || null) : null;
         const byNumber = filterListingsByNumber(rawItems.map((i: any) => ({ title: i.title, ...i })), issueNumber);
-        const filtered = filterListingsByGrade(byNumber, targetGrade);
+        // For sports cards: also filter by player name
+        const playerName = input.category === 'sports_cards' ? (details.player || null) : null;
+        const byPlayer = filterListingsByPlayer(byNumber, playerName);
+        const filtered = filterListingsByGrade(byPlayer, targetGrade);
 
         // Compute metrics from sold prices
         const soldListings = filtered.map((i: any) => ({
