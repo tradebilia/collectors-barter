@@ -426,13 +426,15 @@ function PlaceholderSection({ sourceId, side }: { sourceId: SourceId; side: 'lef
 }
 
 // ─── AI Analysis Section ─────────────────────────────────────────────────────
-function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, leftSources, rightSources }: {
+function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, leftSources, rightSources, leftSoldCompsData, rightSoldCompsData }: {
   leftItem: SelectedItem;
   rightItem: SelectedItem;
   leftEbayData: any;
   rightEbayData: any;
   leftSources: Set<SourceId>;
   rightSources: Set<SourceId>;
+  leftSoldCompsData?: any;
+  rightSoldCompsData?: any;
 }) {
   const [result, setResult] = useState<any>(null);
   const analyzeMutation = trpc.testAI.analyzeItems.useMutation({
@@ -442,6 +444,8 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
 
   const leftHasEbay = leftSources.has('ebay_active');
   const rightHasEbay = rightSources.has('ebay_active');
+  const leftHasSoldComps = leftSources.has('sold_comps');
+  const rightHasSoldComps = rightSources.has('sold_comps');
 
   const handleAnalyze = () => {
     analyzeMutation.mutate({
@@ -449,6 +453,8 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
       rightItem: { title: rightItem.title, category: rightItem.category, grade: rightItem.grade, condition: rightItem.condition, estimatedValue: rightItem.estimatedValue, certificationCompany: rightItem.certificationCompany, itemDetails: rightItem.itemDetails },
       leftEbayMetrics: leftHasEbay ? (leftEbayData?.metrics ?? null) : null,
       rightEbayMetrics: rightHasEbay ? (rightEbayData?.metrics ?? null) : null,
+      leftSoldCompsMetrics: leftHasSoldComps ? (leftSoldCompsData?.metrics ?? null) : null,
+      rightSoldCompsMetrics: rightHasSoldComps ? (rightSoldCompsData?.metrics ?? null) : null,
     });
   };
 
@@ -582,6 +588,15 @@ export default function TestAI() {
     { enabled: !!rightItem && rightItem.category !== 'unknown' && rightSources.has('ebay_active') }
   );
 
+  const leftSoldCompsQuery = trpc.testAI.getSoldCompsData.useQuery(
+    leftItem ? { title: leftItem.title, category: leftItem.category, grade: leftItem.grade, condition: leftItem.condition, certificationCompany: leftItem.certificationCompany ?? '', itemDetails: leftItem.itemDetails } : { title: '', category: '' },
+    { enabled: !!leftItem && leftItem.category !== 'unknown' && leftSources.has('sold_comps') }
+  );
+  const rightSoldCompsQuery = trpc.testAI.getSoldCompsData.useQuery(
+    rightItem ? { title: rightItem.title, category: rightItem.category, grade: rightItem.grade, condition: rightItem.condition, certificationCompany: rightItem.certificationCompany ?? '', itemDetails: rightItem.itemDetails } : { title: '', category: '' },
+    { enabled: !!rightItem && rightItem.category !== 'unknown' && rightSources.has('sold_comps') }
+  );
+
   if (authLoading) return <div className="flex items-center justify-center min-h-screen"><Spinner /></div>;
   if (!user || user.role !== 'admin') { navigate('/'); return null; }
 
@@ -634,6 +649,8 @@ export default function TestAI() {
             rightEbayData={rightEbayQuery.data}
             leftSources={leftSources}
             rightSources={rightSources}
+            leftSoldCompsData={leftSoldCompsQuery.data}
+            rightSoldCompsData={rightSoldCompsQuery.data}
           />
         )}
 

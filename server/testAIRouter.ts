@@ -571,33 +571,41 @@ export const testAIRouter = router({
       }),
       leftEbayMetrics: z.any().optional(),
       rightEbayMetrics: z.any().optional(),
+      leftSoldCompsMetrics: z.any().optional(),
+      rightSoldCompsMetrics: z.any().optional(),
     }))
     .mutation(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
 
-      const { leftItem, rightItem, leftEbayMetrics, rightEbayMetrics } = input;
+      const { leftItem, rightItem, leftEbayMetrics, rightEbayMetrics, leftSoldCompsMetrics, rightSoldCompsMetrics } = input;
 
-      const formatItemLine = (item: typeof leftItem, metrics: any) => {
+      const formatItemLine = (item: typeof leftItem, ebayMetrics: any, soldMetrics: any) => {
         let line = `- ${item.title}`;
         if (item.category) line += ` (${item.category.replace(/_/g, ' ')})`;
         if (item.grade) line += ` | Grade: ${item.grade}`;
         if (item.condition) line += ` | Condition: ${item.condition}`;
         if (item.certificationCompany) line += ` | Graded by: ${item.certificationCompany}`;
         if (item.estimatedValue) line += ` | Owner Estimated Value: $${item.estimatedValue.toLocaleString()} [UNVERIFIED]`;
-        if (metrics) {
-          line += ` | eBay Active Listings (${metrics.count} results, confidence: ${metrics.confidence}):`;
-          line += ` Avg=$${metrics.avg} Median=$${metrics.median} Range=$${metrics.min}-$${metrics.max} Spread=${metrics.spreadPct}%`;
-        } else {
-          line += ` | eBay Data: UNAVAILABLE`;
+        if (soldMetrics) {
+          line += ` | eBay SOLD Prices (${soldMetrics.count} sales, confidence: ${soldMetrics.confidence}) [PRIMARY — real transactions]:`;
+          line += ` Avg=$${soldMetrics.avg} Median=$${soldMetrics.median} Range=$${soldMetrics.min}-$${soldMetrics.max}`;
+        }
+        if (ebayMetrics) {
+          line += ` | eBay Active Listings (${ebayMetrics.count} listings, confidence: ${ebayMetrics.confidence}) [asking prices]:`;
+          line += ` Avg=$${ebayMetrics.avg} Median=$${ebayMetrics.median} Range=$${ebayMetrics.min}-$${ebayMetrics.max}`;
+        }
+        if (!soldMetrics && !ebayMetrics) {
+          line += ` | Market Data: UNAVAILABLE`;
         }
         return line;
       };
 
-      const leftLine = formatItemLine(leftItem, leftEbayMetrics);
-      const rightLine = formatItemLine(rightItem, rightEbayMetrics);
+      const leftLine = formatItemLine(leftItem, leftEbayMetrics, leftSoldCompsMetrics);
+      const rightLine = formatItemLine(rightItem, rightEbayMetrics, rightSoldCompsMetrics);
 
-      const leftVal = leftEbayMetrics?.median ?? leftItem.estimatedValue ?? 0;
-      const rightVal = rightEbayMetrics?.median ?? rightItem.estimatedValue ?? 0;
+      // Prefer sold prices (real transactions) over active listing prices for valuation
+      const leftVal = leftSoldCompsMetrics?.median ?? leftEbayMetrics?.median ?? leftItem.estimatedValue ?? 0;
+      const rightVal = rightSoldCompsMetrics?.median ?? rightEbayMetrics?.median ?? rightItem.estimatedValue ?? 0;
       const diff = rightVal - leftVal;
       const diffStr = diff > 0
         ? `+$${Math.abs(diff).toLocaleString()} — RIGHT ITEM is worth more`
