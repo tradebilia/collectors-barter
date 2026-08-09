@@ -489,13 +489,30 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
           {result.valueSummary && <p className="text-gray-300 text-sm leading-relaxed">{result.valueSummary}</p>}
           <div className="grid grid-cols-2 gap-4">
             {[
-              { item: leftItem, insights: result.itemAInsights, potential: result.itemAFuturePotential, strengths: result.itemAStrengths, risks: result.itemARisks, color: 'cyan' },
-              { item: rightItem, insights: result.itemBInsights, potential: result.itemBFuturePotential, strengths: result.itemBStrengths, risks: result.itemBRisks, color: 'amber' },
-            ].map(({ item, insights, potential, strengths, risks, color }) => (
-              <div key={color} className="space-y-2">
-                <p className={`text-${color}-300 font-semibold text-sm`}>{item.title}</p>
-                {insights && <p className="text-gray-300 text-xs leading-relaxed">{insights}</p>}
-                {potential && (
+            { item: leftItem, insights: result.itemAInsights, potential: result.itemAFuturePotential, strengths: result.itemAStrengths, risks: result.itemARisks, gradeCliff: result.itemAGradeCliff, liquidity: result.itemALiquidity, liquidityNote: result.itemALiquidityNote, color: 'cyan' },
+            { item: rightItem, insights: result.itemBInsights, potential: result.itemBFuturePotential, strengths: result.itemBStrengths, risks: result.itemBRisks, gradeCliff: result.itemBGradeCliff, liquidity: result.itemBLiquidity, liquidityNote: result.itemBLiquidityNote, color: 'amber' },
+          ].map(({ item, insights, potential, strengths, risks, gradeCliff, liquidity, liquidityNote, color }) => (
+            <div key={color} className="space-y-2">
+              <p className={`text-${color}-300 font-semibold text-sm`}>{item.title}</p>
+              {insights && <p className="text-gray-300 text-xs leading-relaxed">{insights}</p>}
+              {(liquidity || gradeCliff) && (
+                <div className="grid grid-cols-2 gap-2">
+                  {liquidity && (
+                    <div className="bg-gray-900/40 rounded p-2">
+                      <p className="text-gray-500 text-[9px] uppercase mb-0.5">💧 Liquidity</p>
+                      <p className={`font-semibold text-xs ${liquidity === 'High' ? 'text-green-400' : liquidity === 'Medium' ? 'text-yellow-400' : 'text-red-400'}`}>{liquidity}</p>
+                      {liquidityNote && <p className="text-gray-500 text-[10px] mt-0.5">{liquidityNote}</p>}
+                    </div>
+                  )}
+                  {gradeCliff && (
+                    <div className="bg-gray-900/40 rounded p-2">
+                      <p className="text-gray-500 text-[9px] uppercase mb-0.5">📊 Grade Cliff</p>
+                      <p className="text-gray-300 text-[10px]">{gradeCliff}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+              {potential && (
                   <div className={`bg-${color}-950/30 rounded p-2`}>
                     <p className={`text-${color}-400 text-[9px] font-bold uppercase mb-1`}>📈 Future Potential</p>
                     <p className="text-gray-300 text-[11px] font-mono">{potential}</p>
@@ -516,6 +533,12 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
               </div>
             ))}
           </div>
+          {result.liquidityWarning && (
+            <div className="bg-orange-900/20 border border-orange-700/30 rounded p-3">
+              <p className="text-orange-400 text-[10px] font-bold uppercase mb-1">⚡ Liquidity Warning</p>
+              <p className="text-gray-300 text-xs">{result.liquidityWarning}</p>
+            </div>
+          )}
           {result.negotiationTip && (
             <div className="bg-yellow-900/20 border border-yellow-700/30 rounded p-3">
               <p className="text-yellow-400 text-[10px] font-bold uppercase mb-1">💡 Negotiation Tip</p>

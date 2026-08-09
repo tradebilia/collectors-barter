@@ -613,7 +613,15 @@ export const testAIRouter = router({
         ? `-$${Math.abs(diff).toLocaleString()} — LEFT ITEM is worth more`
         : `$0 — roughly equal`;
 
-      const prompt = `You are a professional collectibles trade analyst. Compare these two items and provide a detailed analysis.
+      const prompt = `You are a professional collectibles trade analyst with deep knowledge of the collectibles market. Compare these two items and provide a comprehensive analysis addressing ALL of the following dimensions:
+
+MARKET & DEMAND: Is each item trending up or down? How liquid is it (how quickly does it typically sell)? Is it a key issue, rookie card, or first appearance that commands a premium?
+POPULATION & RARITY: Based on your knowledge, how common or rare is this item at this specific grade?
+GRADE CLIFF ANALYSIS: For each item, how significant is the price gap between this grade and the next grade up? An item one grade below a massive price cliff has hidden upside potential that matters in a trade.
+LIQUIDITY: Which item is easier to sell quickly? A highly liquid item is worth more in a trade than an illiquid one at the same price.
+REPLACEMENT COST: What would it realistically cost to replace each item at the same grade today?
+RISK FLAGS: Are there known fakes, restoration issues, or market risks specific to this item?
+MARKET STABILITY: Is the market for this item driven by a few large sales (volatile) or consistent smaller sales (stable)?
 
 === ITEM A (LEFT) ===
 ${leftLine}
@@ -628,18 +636,25 @@ ${diffStr}
 Respond with ONLY this JSON object:
 {
   "verdict": <"Item A Worth More" | "Item B Worth More" | "Roughly Equal">,
-  "valueSummary": <2-3 sentences comparing the two items' market values using eBay data where available>,
-  "itemAInsights": <3-5 sentences about Item A: market position, grade significance, collector demand, any overvaluation/undervaluation vs eBay>,
-  "itemBInsights": <3-5 sentences about Item B: same format>,
+  "valueSummary": <2-3 sentences comparing market values, noting which data source was used (sold prices vs asking prices)>,
+  "itemAInsights": <4-6 sentences covering: market position, collector demand, liquidity, whether this is a key/iconic item, and any overvaluation/undervaluation vs market data>,
+  "itemBInsights": <4-6 sentences covering same dimensions as itemAInsights>,
+  "itemAGradeCliff": <1-2 sentences: how significant is the price gap to the next grade up? Is this item near a major value cliff?>,
+  "itemBGradeCliff": <1-2 sentences: same format>,
+  "itemALiquidity": <"High" | "Medium" | "Low">,
+  "itemBLiquidity": <"High" | "Medium" | "Low">,
+  "itemALiquidityNote": <1 sentence explaining the liquidity rating>,
+  "itemBLiquidityNote": <1 sentence explaining the liquidity rating>,
   "itemAFuturePotential": <"Bear: $X-Y | Base: $X-Y | Bull: $X-Y | Catalyst: [driver] | Rating: X/10">,
   "itemBFuturePotential": <same format as itemAFuturePotential>,
-  "itemAStrengths": <array of 2-4 strength strings ranked by relevance>,
-  "itemARisks": <array of 1-3 risk strings ranked by severity>,
-  "itemBStrengths": <array of 2-4 strength strings ranked by relevance>,
-  "itemBRisks": <array of 1-3 risk strings ranked by severity>,
+  "itemAStrengths": <array of 3-5 strength strings ranked by relevance, including liquidity and grade cliff if applicable>,
+  "itemARisks": <array of 2-4 risk strings ranked by severity, including market volatility and known issues>,
+  "itemBStrengths": <array of 3-5 strength strings ranked by relevance>,
+  "itemBRisks": <array of 2-4 risk strings ranked by severity>,
   "tradeFairness": <"Fair trade" | "Slight advantage to A" | "Slight advantage to B" | "Strong advantage to A" | "Strong advantage to B">,
-  "negotiationTip": <1 specific actionable tip with dollar amounts>,
-  "dataQuality": <"High — eBay data available for both" | "Medium — eBay data for one item" | "Low — no eBay data, using estimates only">
+  "liquidityWarning": <null or a string warning if one item is significantly less liquid than the other — this matters even if values match>,
+  "negotiationTip": <1-2 specific actionable tips with dollar amounts, considering both value and liquidity>,
+  "dataQuality": <"High — sold price data for both" | "High — eBay data for both" | "Medium — data for one item only" | "Low — no market data, using estimates only">
 }`;
 
       const llmResult = await invokeLLM({
