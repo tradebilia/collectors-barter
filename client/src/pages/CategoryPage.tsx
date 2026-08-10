@@ -208,6 +208,7 @@ export default function CategoryPage() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [resultsPerPage, setResultsPerPage] = useState(24);
   const [currentPage, setCurrentPage] = useState(1);
+  const [verifiedMerchantsOnlyLocal, setVerifiedMerchantsOnlyLocal] = useState(false);
   const [proposalListingId, setProposalListingId] = useState<number | null>(null);
   const [proposalNote, setProposalNote] = useState("");
   
@@ -428,7 +429,7 @@ export default function CategoryPage() {
       edition: edition || undefined,
       parkOrEvent: parkOrEvent || undefined,
       franchise: franchise || undefined,
-      verifiedMerchantsOnly: submittedFilters.verifiedMerchantsOnly,
+      verifiedMerchantsOnly: verifiedMerchantsOnlyLocal,
     };
 
     setSubmittedFilters(newFilters);
@@ -507,6 +508,7 @@ export default function CategoryPage() {
       franchise: undefined,
       verifiedMerchantsOnly: false,
     });
+    setVerifiedMerchantsOnlyLocal(false);
   };
 
   const createProposalMutation = trpc.market.createTradeProposal.useMutation({
@@ -1026,9 +1028,9 @@ export default function CategoryPage() {
             {/* Verified Merchants Only toggle */}
             <button
               type="button"
-              onClick={() => setSubmittedFilters(prev => ({ ...prev, verifiedMerchantsOnly: !prev.verifiedMerchantsOnly }))}
+              onClick={() => setVerifiedMerchantsOnlyLocal(v => !v)}
               className={`w-full flex items-center justify-center gap-1.5 h-8 text-xs rounded-md border font-semibold transition-colors mt-3 mb-1 ${
-                submittedFilters.verifiedMerchantsOnly
+                verifiedMerchantsOnlyLocal
                   ? 'bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700'
                   : 'bg-white text-emerald-700 border-emerald-300 hover:bg-emerald-50'
               }`}
