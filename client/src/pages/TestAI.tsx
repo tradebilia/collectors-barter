@@ -203,10 +203,11 @@ function SourceSelector({ enabled, onChange, side }: {
 }
 
 // ─── Item Panel ──────────────────────────────────────────────────────────────
-function ItemPanel({ side, item, onItemChange, inventory, inventoryLoading }: {
+function ItemPanel({ side, item, onItemChange, onSourceChange, inventory, inventoryLoading }: {
   side: 'left' | 'right';
   item: SelectedItem | null;
   onItemChange: (item: SelectedItem | null) => void;
+  onSourceChange: (s: Set<SourceId>) => void;
   inventory: any[];
   inventoryLoading: boolean;
 }) {
@@ -244,7 +245,15 @@ function ItemPanel({ side, item, onItemChange, inventory, inventoryLoading }: {
         <span className={`text-xs font-bold uppercase tracking-widest ${accentColor}`}>{label}</span>
         <div className="flex gap-1">
           {(['inventory', 'cert'] as ItemSource[]).map(s => (
-            <button key={s} onClick={() => setSource(s)}
+            <button key={s} onClick={() => {
+              setSource(s);
+              // Clear pre-selected sources when switching to cert mode; reset to ebay_active for inventory
+              if (s === 'cert') onSourceChange(new Set());
+              else onSourceChange(new Set(['ebay_active']));
+              onItemChange(null);
+              setCertId('');
+              setSelectedInventoryId(null);
+            }}
               className={`px-2 py-1 text-[11px] rounded font-medium transition-colors ${source === s ? 'bg-white/10 text-white' : 'text-gray-500 hover:text-gray-300'}`}>
               {s === 'inventory' ? 'My Inventory' : 'Cert ID'}
             </button>
@@ -835,11 +844,11 @@ export default function TestAI() {
       <div className="max-w-7xl mx-auto px-6 py-6 space-y-6">
         {/* Item selectors */}
         <div className="flex gap-4">
-          <ItemPanel side="left" item={leftItem} onItemChange={setLeftItem} inventory={inventory} inventoryLoading={inventoryLoading} />
+          <ItemPanel side="left" item={leftItem} onItemChange={setLeftItem} onSourceChange={setLeftSources} inventory={inventory} inventoryLoading={inventoryLoading} />
           <div className="flex items-center justify-center flex-shrink-0">
             <div className="w-10 h-10 rounded-full bg-gray-800 border border-gray-700 flex items-center justify-center text-gray-400 font-bold text-sm">VS</div>
           </div>
-          <ItemPanel side="right" item={rightItem} onItemChange={setRightItem} inventory={inventory} inventoryLoading={inventoryLoading} />
+          <ItemPanel side="right" item={rightItem} onItemChange={setRightItem} onSourceChange={setRightSources} inventory={inventory} inventoryLoading={inventoryLoading} />
         </div>
 
         {/* Data source selectors — only show when items are selected */}
