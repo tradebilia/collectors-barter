@@ -695,8 +695,9 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
 }
 
 // ─── Data Column ─────────────────────────────────────────────────────────────
-function DataColumn({ item, side, enabledSources, ebayData }: {
+function DataColumn({ item, searchItem, side, enabledSources, ebayData }: {
   item: SelectedItem | null;
+  searchItem: SelectedItem | null;
   side: 'left' | 'right';
   enabledSources: Set<SourceId>;
   ebayData: any;
@@ -712,10 +713,21 @@ function DataColumn({ item, side, enabledSources, ebayData }: {
     </div>
   );
 
+  // For eBay/Sold-Comps, use the enriched searchItem (has PSA-derived title/grade for cert mode)
+  // Fall back to raw item if no enrichment available
+  const queryItem = searchItem ?? item;
+
   return (
     <div className="space-y-3">
-      {enabledSources.has('ebay_active') && <EbayActiveSection item={item} side={side} />}
-      {enabledSources.has('sold_comps') && <SoldCompsSection item={item} side={side} />}
+      {enabledSources.has('ebay_active') && <EbayActiveSection item={queryItem} side={side} />}
+      {enabledSources.has('sold_comps') && (
+        searchItem || item.category !== 'unknown'
+          ? <SoldCompsSection item={queryItem} side={side} />
+          : <div className="bg-gray-800/30 rounded-lg p-3 border border-dashed border-gray-700/40 space-y-2">
+              <p className={`text-[11px] font-bold uppercase ${side === 'left' ? 'text-cyan-300' : 'text-amber-300'}`}>💰 Sold-Comps — eBay Sold History</p>
+              <p className="text-gray-500 text-[10px]">Enable <strong>Parse.bot (PSA Data)</strong> first to auto-build the search query from cert details</p>
+            </div>
+      )}
       {enabledSources.has('ebay_sold') && <PlaceholderSection sourceId="ebay_sold" side={side} />}
       {enabledSources.has('cgc') && <PlaceholderSection sourceId="cgc" side={side} />}
       {enabledSources.has('psa') && <PSASection item={item} side={side} />}
@@ -744,22 +756,56 @@ export default function TestAI() {
     enabled: !!user && user.role === 'admin',
   });
 
+  // ── Silently fetch PSA cert data for cert-mode items so we can build search queries ──
+  const leftPSAQuery = trpc.testAI.getPSAData.useQuery(
+    { certNumber: leftItem?.certId || '' },
+    { enabled: !!leftItem?.certId }
+  );
+  const rightPSAQuery = trpc.testAI.getPSAData.useQuery(
+    { certNumber: rightItem?.certId || '' },
+    { enabled: !!rightItem?.certId }
+  );
+
+  // Build an effective item for Sold-Comps/eBay queries:
+  // If it's a cert-mode item AND Parse.bot returned card data, synthesize a searchable item.
+  // Otherwise fall back to the item as-is (inventory mode).
+  function buildSearchableItem(item: SelectedItem | null, psaData: any): SelectedItem | null {
+    if (!item) return null;
+    if (item.category !== 'unknown') return item; // inventory item — already has all fields
+    const card = psaData?.data?.data;
+    if (!card) return null; // cert mode but PSA data not loaded yet — skip
+    // Build a synthetic searchable item from Parse.bot cert data
+    const grade = card.grade?.match(/\d+(\.\d+)?/)?.[0] ?? undefined;
+    const query = [card.year, card.brand, card.subject, card.cardNumber, item.certificationCompany, grade]
+      .filter(Boolean).join(' ');
+    return {
+      ...item,
+      title: query,
+      category: 'sports_cards', // treat as sports card for query building; Sold-Comps uses title directly
+      grade: grade,
+      certificationCompany: item.certificationCompany,
+    };
+  }
+
+  const leftSearchItem = buildSearchableItem(leftItem, leftPSAQuery);
+  const rightSearchItem = buildSearchableItem(rightItem, rightPSAQuery);
+
   const leftEbayQuery = trpc.testAI.getEbayData.useQuery(
-    leftItem ? { title: leftItem.title, category: leftItem.category, grade: leftItem.grade, condition: leftItem.condition, certificationCompany: leftItem.certificationCompany, itemDetails: leftItem.itemDetails } : { title: '', category: '' },
-    { enabled: !!leftItem && leftItem.category !== 'unknown' && leftSources.has('ebay_active') }
+    leftSearchItem ? { title: leftSearchItem.title, category: leftSearchItem.category, grade: leftSearchItem.grade, condition: leftSearchItem.condition, certificationCompany: leftSearchItem.certificationCompany, itemDetails: leftSearchItem.itemDetails } : { title: '', category: '' },
+    { enabled: !!leftSearchItem && leftSources.has('ebay_active') }
   );
   const rightEbayQuery = trpc.testAI.getEbayData.useQuery(
-    rightItem ? { title: rightItem.title, category: rightItem.category, grade: rightItem.grade, condition: rightItem.condition, certificationCompany: rightItem.certificationCompany, itemDetails: rightItem.itemDetails } : { title: '', category: '' },
-    { enabled: !!rightItem && rightItem.category !== 'unknown' && rightSources.has('ebay_active') }
+    rightSearchItem ? { title: rightSearchItem.title, category: rightSearchItem.category, grade: rightSearchItem.grade, condition: rightSearchItem.condition, certificationCompany: rightSearchItem.certificationCompany, itemDetails: rightSearchItem.itemDetails } : { title: '', category: '' },
+    { enabled: !!rightSearchItem && rightSources.has('ebay_active') }
   );
 
   const leftSoldCompsQuery = trpc.testAI.getSoldCompsData.useQuery(
-    leftItem ? { title: leftItem.title, category: leftItem.category, grade: leftItem.grade, condition: leftItem.condition, certificationCompany: leftItem.certificationCompany ?? '', itemDetails: leftItem.itemDetails } : { title: '', category: '' },
-    { enabled: !!leftItem && leftItem.category !== 'unknown' && leftSources.has('sold_comps') }
+    leftSearchItem ? { title: leftSearchItem.title, category: leftSearchItem.category, grade: leftSearchItem.grade, condition: leftSearchItem.condition, certificationCompany: leftSearchItem.certificationCompany ?? '', itemDetails: leftSearchItem.itemDetails } : { title: '', category: '' },
+    { enabled: !!leftSearchItem && leftSources.has('sold_comps') }
   );
   const rightSoldCompsQuery = trpc.testAI.getSoldCompsData.useQuery(
-    rightItem ? { title: rightItem.title, category: rightItem.category, grade: rightItem.grade, condition: rightItem.condition, certificationCompany: rightItem.certificationCompany ?? '', itemDetails: rightItem.itemDetails } : { title: '', category: '' },
-    { enabled: !!rightItem && rightItem.category !== 'unknown' && rightSources.has('sold_comps') }
+    rightSearchItem ? { title: rightSearchItem.title, category: rightSearchItem.category, grade: rightSearchItem.grade, condition: rightSearchItem.condition, certificationCompany: rightSearchItem.certificationCompany ?? '', itemDetails: rightSearchItem.itemDetails } : { title: '', category: '' },
+    { enabled: !!rightSearchItem && rightSources.has('sold_comps') }
   );
 
   if (authLoading) return <div className="flex items-center justify-center min-h-screen"><Spinner /></div>;
@@ -800,8 +846,8 @@ export default function TestAI() {
         {/* Data sections */}
         {(leftItem || rightItem) && (
           <div className="grid grid-cols-2 gap-4">
-            <DataColumn item={leftItem} side="left" enabledSources={leftSources} ebayData={leftEbayQuery.data} />
-            <DataColumn item={rightItem} side="right" enabledSources={rightSources} ebayData={rightEbayQuery.data} />
+            <DataColumn item={leftItem} searchItem={leftSearchItem} side="left" enabledSources={leftSources} ebayData={leftEbayQuery.data} />
+            <DataColumn item={rightItem} searchItem={rightSearchItem} side="right" enabledSources={rightSources} ebayData={rightEbayQuery.data} />
           </div>
         )}
 
