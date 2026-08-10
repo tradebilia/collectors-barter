@@ -10,7 +10,6 @@ import { trpc } from "@/lib/trpc";
 import { ChevronRight, Loader2, Upload, Eye, EyeOff, CheckCircle2 } from "lucide-react";
 import { TopRightIcons } from "@/components/TopRightIcons";
 import { TopBar } from "@/components/TopBar";
-import { CategoryBar } from "@/components/CategoryBar";
 import { FormEvent, useEffect, useState, useRef } from "react";
 import { toast } from "sonner";
 import { Link, useLocation } from "wouter";
@@ -473,7 +472,7 @@ export default function AccountSetup() {
     <div className="min-h-screen bg-[#f5f5f3] text-slate-950">
       <TopBar
         logoUrl={TRADEBILIA_LOGO_URL}
-        searchPlaceholder="Search Account Setup..."
+        hideSearch
       />
 
       {/* Hero Section */}
@@ -495,52 +494,6 @@ export default function AccountSetup() {
         </div>
       </section>
 
-      <CategoryBar />
-
-      {/* Development Navigation */}
-      {showDevNav && (
-        <div className="bg-yellow-50 border-b border-yellow-200 px-4 py-3 lg:px-8">
-          <div className="flex items-center justify-between">
-            <div className="flex gap-2">
-              <Button
-                onClick={() => setCurrentStep(1)}
-                variant={currentStep === 1 ? "default" : "outline"}
-                size="sm"
-              >
-                Step 1
-              </Button>
-              <Button
-                onClick={() => setCurrentStep(2)}
-                variant={currentStep === 2 ? "default" : "outline"}
-                size="sm"
-              >
-                Step 2
-              </Button>
-              <Button
-                onClick={() => setCurrentStep(3)}
-                variant={currentStep === 3 ? "default" : "outline"}
-                size="sm"
-              >
-                Step 3
-              </Button>
-              <Button
-                onClick={() => setCurrentStep(4)}
-                variant={currentStep === 4 ? "default" : "outline"}
-                size="sm"
-              >
-                Step 4
-              </Button>
-            </div>
-            <button
-              onClick={() => setShowDevNav(false)}
-              className="text-xs text-gray-500 hover:text-gray-700"
-            >
-              Hide Dev Nav
-            </button>
-          </div>
-        </div>
-      )}
-
       <main className="px-4 py-10 lg:px-8">
         <div className="mx-auto max-w-2xl space-y-8">
           <>
@@ -548,19 +501,31 @@ export default function AccountSetup() {
               <div className="text-center">
                 <h1 className="text-6xl font-bold tracking-tight sm:text-7xl">Welcome to Tradebilia</h1>
                 <p className="mt-4 text-lg text-slate-600">Let's set up your account in just a few steps</p>
-              </div>
 
-          {/* Progress Indicator */}
-          <div className="flex justify-center gap-2">
-            {[1, 2, 3].map((step) => (
-              <div
-                key={step}
-                className={`h-2 w-8 rounded-full transition ${
-                  step <= currentStep ? "bg-blue-600" : "bg-slate-300"
-                }`}
-              />
-            ))}
-          </div>
+                {/* Step Navigation */}
+                {showDevNav && (
+                  <div className="mt-6 flex flex-col items-center gap-2">
+                    <div className="flex justify-center gap-2">
+                      {[1, 2, 3, 4].map(step => (
+                        <Button
+                          key={step}
+                          onClick={() => setCurrentStep(step)}
+                          variant={currentStep === step ? "default" : "outline"}
+                          size="sm"
+                        >
+                          Step {step}
+                        </Button>
+                      ))}
+                    </div>
+                    <button
+                      onClick={() => setShowDevNav(false)}
+                      className="text-xs text-slate-500 hover:text-slate-700"
+                    >
+                      Hide Dev Nav
+                    </button>
+                  </div>
+                )}
+              </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Step 1: Basic Information */}
