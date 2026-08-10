@@ -3209,6 +3209,17 @@ export const appRouter = router({
           .limit(1);
         return result[0] ?? null;
       }),
+    verifyMerchant: protectedProcedure
+      .input(z.object({ userId: z.number().int().positive() }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+        const db = await requireDb();
+        const now = new Date().toISOString().slice(0, 19).replace("T", " ");
+        await db.execute(
+          sql`UPDATE users SET merchantVerified = 1, merchantVerifiedAt = ${now}, merchantVerifiedBy = ${ctx.user.id} WHERE id = ${input.userId}`
+        );
+        return { success: true };
+      }),
   }),
 });
 

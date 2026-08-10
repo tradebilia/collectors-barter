@@ -733,6 +733,11 @@ export const users = mysqlTable("users", {
 	paypalEmail: varchar({ length: 320 }),
 	paypalVerified: tinyint().default(0).notNull(),
 	paypalVerifiedAt: timestamp({ mode: 'string' }),
+	// Merchant verification fields
+	isMerchant: tinyint().default(0).notNull(),
+	merchantVerified: tinyint().default(0).notNull(),
+	merchantVerifiedAt: timestamp({ mode: 'string' }),
+	merchantVerifiedBy: int(),
 },
 (table) => [
 	index("users_openId_unique").on(table.openId),

@@ -383,6 +383,7 @@ export default function AdminDashboard() {
   const updateReferralStatusMutation = trpc.admin.updateReferralStatus.useMutation();
   const suspendUserMutation = trpc.admin.suspendUser.useMutation();
   const unsuspendUserMutation = trpc.admin.unsuspendUser.useMutation();
+  const verifyMerchantMutation = trpc.admin.verifyMerchant.useMutation();
   const warnUserMutation = trpc.admin.warnUser.useMutation();
   const banUserMutation = trpc.admin.banUser.useMutation();
   const unbanUserMutation = trpc.admin.unbanUser.useMutation();
@@ -1533,6 +1534,19 @@ export default function AdminDashboard() {
                   </div>
                 </div>
               </div>
+
+              {/* Merchant Verification */}
+              {selectedUser.isMerchant && !selectedUser.merchantVerified && (
+                <div className="border-t border-border pt-4">
+                  <h3 className="font-semibold mb-3">Merchant Verification</h3>
+                  <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white"
+                    onClick={() => { verifyMerchantMutation.mutate({ userId: selectedUser.id }, { onSuccess: () => { usersQuery.refetch(); setSelectedUser((u: any) => ({ ...u, merchantVerified: 1 })); } }); }}
+                    disabled={verifyMerchantMutation.isPending}
+                  >
+                    <CheckCircle className="h-3.5 w-3.5 mr-1" /> Verify Merchant
+                  </Button>
+                </div>
+              )}
 
               {/* Moderation Actions */}
               <div className="border-t border-border pt-4">
