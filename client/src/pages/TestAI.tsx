@@ -655,17 +655,21 @@ function BeckettSection({ item, side }: { item: SelectedItem; side: 'left' | 'ri
                 { label: 'Corners', value: data.data.subGrades?.corners },
                 { label: 'Edges', value: data.data.subGrades?.edges },
                 { label: 'Surface', value: data.data.subGrades?.surface },
-              ].map(sg => (
-                <div key={sg.label} className="bg-gray-800/60 rounded p-1.5 flex items-center justify-between">
-                  <p className="text-gray-400 text-[9px]">{sg.label}</p>
-                  <p className={`font-bold text-[12px] ${
-                    sg.value === '10.0' || sg.value === '10' ? 'text-yellow-400' :
-                    sg.value && parseFloat(sg.value) >= 9.5 ? 'text-green-400' :
-                    sg.value && parseFloat(sg.value) >= 9 ? 'text-cyan-300' :
-                    'text-white'
-                  }`}>{sg.value || 'N/A'}</p>
-                </div>
-              ))}
+              ].map(sg => {
+                const isNA = !sg.value || sg.value === '0.0' || sg.value === '0';
+                return (
+                  <div key={sg.label} className="bg-gray-800/60 rounded p-1.5 flex items-center justify-between">
+                    <p className="text-gray-400 text-[9px]">{sg.label}</p>
+                    <p className={`font-bold text-[12px] ${
+                      isNA ? 'text-gray-600' :
+                      sg.value === '10.0' || sg.value === '10' ? 'text-yellow-400' :
+                      parseFloat(sg.value!) >= 9.5 ? 'text-green-400' :
+                      parseFloat(sg.value!) >= 9 ? 'text-cyan-300' :
+                      'text-white'
+                    }`}>{isNA ? 'N/A' : sg.value}</p>
+                  </div>
+                );
+              })}
             </div>
             {data.data.subGrades?.autograph && data.data.subGrades.autograph !== '0.0' && (
               <div className="bg-gray-800/60 rounded p-1.5 flex items-center justify-between">

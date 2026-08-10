@@ -742,7 +742,7 @@ export const testAIRouter = router({
             manufacturer: card.manufacturer,
             // BGS grading details
             finalGrade: card.final_grade,
-            labelColor: card.label_color,     // Gold, Silver, Black, etc.
+            labelColor: card.label ?? card.label_color ?? null,  // API returns "label" not "label_color"
             dateGraded: card.date_graded,
             // BGS Sub-grades (the key differentiator vs PSA)
             subGrades: {
