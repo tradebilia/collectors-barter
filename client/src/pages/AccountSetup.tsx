@@ -309,22 +309,9 @@ export default function AccountSetup() {
         return;
       }
       // Phone is verified at this point — create the account
-      try {
-        const signupResult = await signupMutation.mutateAsync({
-          username: formData.userName,
-          password: formData.password,
-          displayName: formData.userName,
-          email: formData.email,
-        });
-        if (signupResult?.userId) {
-          setUserId(String(signupResult.userId));
-        }
-        setAccountCreated(true);
-        window.history.replaceState({}, '', '/account-setup');
-        setCurrentStep(2);
-      } catch (err: any) {
-        toast.error(err.message || "Account creation failed");
-      }
+      // All step 1 validations passed — proceed to step 2
+      // Account creation happens only on final submit (step 4)
+      setCurrentStep(2);
       return;
     }
     if (currentStep < 4) {
