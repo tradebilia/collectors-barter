@@ -530,7 +530,118 @@ export const testAIRouter = router({
     }),
 
   // Placeholder: population report lookup by cert ID + grading company
-  // Will be replaced by real scraper when built
+  // Fetch PSA cert details + population breakdown via Parse.bot API
+  getPSAData: protectedProcedure
+    .input(z.object({
+      certNumber: z.string(),
+    }))
+    .query(async ({ ctx, input }) => {
+      if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      
+      const parseApiKey = process.env.PARSE_BOT_API_KEY;
+      if (!parseApiKey) return { 
+        certNumber: input.certNumber, 
+        status: 'error', 
+        message: 'Parse.bot API key not configured',
+        data: null,
+      };
+
+      try {
+        // Call Parse.bot get_cert_full endpoint for combined cert + population data
+        const certFullUrl = `https://api.parse.bot/scraper/311daf8c-242f-4c68-af70-b50617fd1d13/get_cert_full?cert_number=${encodeURIComponent(input.certNumber)}`;
+        const certFullRes = await fetch(certFullUrl, {
+          headers: { 'X-API-Key': parseApiKey },
+        });
+        const certFullData = await certFullRes.json() as any;
+
+        if (!certFullRes.ok || !certFullData) {
+          return {
+            certNumber: input.certNumber,
+            status: 'error',
+            message: `Parse.bot API error: ${certFullData?.message || 'Unknown error'}`,
+            data: null,
+          };
+        }
+
+        // Call Parse.bot get_cert_sales endpoint for recent comparable sales
+        const certSalesUrl = `https://api.parse.bot/scraper/311daf8c-242f-4c68-af70-b50617fd1d13/get_cert_sales?cert_number=${encodeURIComponent(input.certNumber)}`;
+        const certSalesRes = await fetch(certSalesUrl, {
+          headers: { 'X-API-Key': parseApiKey },
+        });
+        const certSalesData = await certSalesRes.json() as any;
+
+        // Extract population breakdown from cert_full response
+        const populationData = {
+          Grade1: certFullData.Grade1 ?? 0,
+          Grade1Q: certFullData.Grade1Q ?? 0,
+          Grade1_5: certFullData.Grade1_5 ?? 0,
+          Grade1_5Q: certFullData.Grade1_5Q ?? 0,
+          Grade2: certFullData.Grade2 ?? 0,
+          Grade2Q: certFullData.Grade2Q ?? 0,
+          Grade2_5: certFullData.Grade2_5 ?? 0,
+          Grade3: certFullData.Grade3 ?? 0,
+          Grade3Q: certFullData.Grade3Q ?? 0,
+          Grade3_5: certFullData.Grade3_5 ?? 0,
+          Grade4: certFullData.Grade4 ?? 0,
+          Grade4Q: certFullData.Grade4Q ?? 0,
+          Grade4_5: certFullData.Grade4_5 ?? 0,
+          Grade5: certFullData.Grade5 ?? 0,
+          Grade5Q: certFullData.Grade5Q ?? 0,
+          Grade5_5: certFullData.Grade5_5 ?? 0,
+          Grade6: certFullData.Grade6 ?? 0,
+          Grade6Q: certFullData.Grade6Q ?? 0,
+          Grade6_5: certFullData.Grade6_5 ?? 0,
+          Grade7: certFullData.Grade7 ?? 0,
+          Grade7Q: certFullData.Grade7Q ?? 0,
+          Grade7_5: certFullData.Grade7_5 ?? 0,
+          Grade8: certFullData.Grade8 ?? 0,
+          Grade8Q: certFullData.Grade8Q ?? 0,
+          Grade8_5: certFullData.Grade8_5 ?? 0,
+          Grade9: certFullData.Grade9 ?? 0,
+          Grade9Q: certFullData.Grade9Q ?? 0,
+          Grade10: certFullData.Grade10 ?? 0,
+          GradeTotal: certFullData.GradeTotal ?? 0,
+          Total: certFullData.Total ?? 0,
+        };
+
+        // Extract recent sales from cert_sales response (array of sales objects)
+        const recentSales = Array.isArray(certSalesData) ? certSalesData.slice(0, 3).map((sale: any) => ({
+          dateSold: sale.date_sold,
+          price: sale.price,
+          title: sale.title,
+          url: sale.url,
+        })) : [];
+
+        return {
+          certNumber: input.certNumber,
+          status: 'success',
+          data: {
+            cardTitle: certFullData.card_title,
+            grade: certFullData.grade,
+            year: certFullData.year,
+            brand: certFullData.brand,
+            subject: certFullData.subject,
+            cardNumber: certFullData.card_number,
+            variety: certFullData.variety,
+            specId: certFullData.spec_id,
+            psaEstimate: certFullData.psa_estimate,
+            frontImageUrl: certFullData.front_image_url,
+            backImageUrl: certFullData.back_image_url,
+            population: populationData,
+            recentSales,
+          },
+        };
+      } catch (err: any) {
+        return {
+          certNumber: input.certNumber,
+          status: 'error',
+          message: `Failed to fetch PSA data: ${err.message}`,
+          data: null,
+        };
+      }
+    }),
+
+  // Placeholder for other grading companies (CGC, BGS, etc.) — future implementation
   getPopulationReport: protectedProcedure
     .input(z.object({
       certId: z.string(),
@@ -538,7 +649,7 @@ export const testAIRouter = router({
     }))
     .query(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
-      // PLACEHOLDER — scraper will populate this
+      // For PSA, use getPSAData instead. This placeholder remains for other grading companies.
       return {
         certId: input.certId,
         gradingCompany: input.gradingCompany,

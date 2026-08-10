@@ -50,9 +50,9 @@ const DATA_SOURCES = {
     label: 'PSA',
     group: 'Grading',
     icon: '🏅',
-    provides: ['item_details', 'cert_info', 'population_report'],
-    status: 'placeholder' as const,
-    description: 'Cert details, grade, population report',
+    provides: ['item_details', 'cert_info', 'population_report', 'recent_sales'],
+    status: 'live' as const,
+    description: 'Cert details, grade, full population breakdown (Grade 1-10), recent sales via Parse.bot API',
   },
   bgs: {
     id: 'bgs',
@@ -409,6 +409,103 @@ function EbayActiveSection({ item, side }: { item: SelectedItem; side: 'left' | 
   );
 }
 
+// ─── PSA Population Report Section ──────────────────────────────────────────
+function PSASection({ item, side }: { item: SelectedItem; side: 'left' | 'right' }) {
+  const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
+  const { data, isLoading } = trpc.testAI.getPSAData.useQuery(
+    { certNumber: item.certId || '' },
+    { enabled: !!item.certId }
+  );
+
+  if (!item.certId) {
+    return (
+      <div className="bg-gray-800/30 rounded-lg p-3 border border-dashed border-gray-700/40 space-y-2">
+        <p className={`text-[11px] font-bold uppercase ${accentColor}`}>🏅 PSA</p>
+        <p className="text-gray-500 text-[10px]">Enter a PSA cert number to fetch population data</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-gray-800/30 rounded-lg p-3 border border-gray-700/20 space-y-3">
+      <div className="flex items-center justify-between">
+        <p className={`text-[11px] font-bold uppercase ${accentColor}`}>🏅 PSA Population Report</p>
+        {isLoading && <Spinner className="w-3 h-3" />}
+      </div>
+      <p className="text-gray-500 text-[10px]">Data type: Cert details, full grade breakdown, recent sales</p>
+      
+      {data?.status === 'error' && (
+        <div className="bg-red-900/20 border border-red-700/30 rounded p-2">
+          <p className="text-red-400 text-[10px]">{data.message}</p>
+        </div>
+      )}
+      
+      {data?.status === 'success' && data.data && (
+        <div className="space-y-3">
+          {/* Card Info */}
+          <div className="bg-gray-900/40 rounded p-2 space-y-1">
+            <p className="text-white text-[11px] font-semibold truncate">{data.data.cardTitle}</p>
+            <div className="grid grid-cols-2 gap-2 text-[10px]">
+              <div>
+                <p className="text-gray-500 text-[9px] uppercase mb-0.5">Grade</p>
+                <p className="text-cyan-300 font-semibold">{data.data.grade}</p>
+              </div>
+              <div>
+                <p className="text-gray-500 text-[9px] uppercase mb-0.5">PSA Estimate</p>
+                <p className="text-green-400 font-semibold">{data.data.psaEstimate || 'N/A'}</p>
+              </div>
+            </div>
+          </div>
+          
+          {/* Population Breakdown */}
+          <div className="bg-gray-900/40 rounded p-2 space-y-2">
+            <p className="text-gray-400 text-[10px] font-semibold uppercase">Population Breakdown</p>
+            <div className="grid grid-cols-5 gap-1 text-[9px]">
+              {[
+                { label: 'Grade 10', value: data.data.population.Grade10 },
+                { label: 'Grade 9', value: data.data.population.Grade9 },
+                { label: 'Grade 8', value: data.data.population.Grade8 },
+                { label: 'Grade 7', value: data.data.population.Grade7 },
+                { label: 'Grade 6', value: data.data.population.Grade6 },
+              ].map(g => (
+                <div key={g.label} className="bg-gray-800/60 rounded p-1 text-center">
+                  <p className="text-gray-500 text-[8px] uppercase mb-0.5">{g.label}</p>
+                  <p className="text-white font-semibold">{g.value}</p>
+                </div>
+              ))}
+            </div>
+            <div className="grid grid-cols-2 gap-2 text-[10px] mt-2">
+              <div className="bg-gray-800/60 rounded p-1.5 text-center">
+                <p className="text-gray-500 text-[9px] uppercase mb-0.5">Total Graded</p>
+                <p className="text-white font-semibold">{data.data.population.GradeTotal}</p>
+              </div>
+              <div className="bg-gray-800/60 rounded p-1.5 text-center">
+                <p className="text-gray-500 text-[9px] uppercase mb-0.5">All (incl. Auth)</p>
+                <p className="text-white font-semibold">{data.data.population.Total}</p>
+              </div>
+            </div>
+          </div>
+          
+          {/* Recent Sales */}
+          {data.data.recentSales && data.data.recentSales.length > 0 && (
+            <div className="bg-gray-900/40 rounded p-2 space-y-1">
+              <p className="text-gray-400 text-[10px] font-semibold uppercase">Recent Sales (Parse.bot)</p>
+              {data.data.recentSales.map((sale: any, i: number) => (
+                <div key={i} className="flex items-center justify-between gap-2 py-1 border-b border-gray-700/20 last:border-b-0">
+                  <div className="min-w-0">
+                    <p className="text-[10px] text-gray-400 truncate">{sale.dateSold}</p>
+                  </div>
+                  <p className="text-green-400 font-semibold text-[11px] flex-shrink-0">${sale.price.toLocaleString()}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Placeholder Section ─────────────────────────────────────────────────────
 function PlaceholderSection({ sourceId, side }: { sourceId: SourceId; side: 'left' | 'right' }) {
   const source = DATA_SOURCES[sourceId];
@@ -576,7 +673,7 @@ function DataColumn({ item, side, enabledSources, ebayData }: {
       {enabledSources.has('sold_comps') && <SoldCompsSection item={item} side={side} />}
       {enabledSources.has('ebay_sold') && <PlaceholderSection sourceId="ebay_sold" side={side} />}
       {enabledSources.has('cgc') && <PlaceholderSection sourceId="cgc" side={side} />}
-      {enabledSources.has('psa') && <PlaceholderSection sourceId="psa" side={side} />}
+      {enabledSources.has('psa') && <PSASection item={item} side={side} />}
       {enabledSources.has('bgs') && <PlaceholderSection sourceId="bgs" side={side} />}
       {enabledSources.has('pcgs') && <PlaceholderSection sourceId="pcgs" side={side} />}
       {enabledSources.has('ngc') && <PlaceholderSection sourceId="ngc" side={side} />}
