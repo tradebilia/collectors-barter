@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { BarChart3, Users, Package, Settings, Trash2, Flag, Mail, Search, ArrowUpDown, Calendar, ExternalLink, CheckCircle, XCircle, AlertTriangle, Ban, ShieldOff, ClipboardList, MessageSquare, TicketCheck, Send, ChevronDown, ChevronUp } from "lucide-react";
+import { BarChart3, Users, Package, Settings, Trash2, Flag, Mail, Search, ArrowUpDown, Calendar, ExternalLink, CheckCircle, XCircle, AlertTriangle, Ban, ShieldOff, ClipboardList, MessageSquare, TicketCheck, Send, ChevronDown, ChevronUp, Store } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -404,7 +404,8 @@ export default function AdminDashboard() {
   const [suspendReason, setSuspendReason] = useState("");
   const [userToAction, setUserToAction] = useState<any>(null);
   const [userStatusFilter, setUserStatusFilter] = useState<'all' | 'active' | 'suspended' | 'banned'>('all');
-  const [userSortBy, setUserSortBy] = useState<'id' | 'username' | 'joined' | 'items' | 'status'>('id');
+  const [userMerchantFilter, setUserMerchantFilter] = useState<'all' | 'pending' | 'verified' | 'none'>('all');
+  const [userSortBy, setUserSortBy] = useState<'id' | 'username' | 'joined' | 'items' | 'status' | 'merchant'>('id');
   const [userSortOrder, setUserSortOrder] = useState<'asc' | 'desc'>('asc');
   const [userSearch, setUserSearch] = useState('');
 
@@ -689,10 +690,41 @@ export default function AdminDashboard() {
                       <option value="suspended">Suspended</option>
                       <option value="banned">Banned</option>
                     </select>
+                    {/* Merchant Filter */}
+                    <select
+                      value={userMerchantFilter}
+                      onChange={e => setUserMerchantFilter(e.target.value as any)}
+                      className="text-sm border border-border rounded-md px-3 py-2 bg-background"
+                    >
+                      <option value="all">All Merchant Types</option>
+                      <option value="pending">Merchants — Pending Review</option>
+                      <option value="verified">Merchants — Verified</option>
+                      <option value="none">Non-Merchants</option>
+                    </select>
                   </div>
                 </div>
               </CardHeader>
               <CardContent>
+                {/* Pending merchant review alert */}
+                {(() => {
+                  const pendingCount = ((usersQuery.data as any[]) || []).filter(
+                    (u: any) => u.isMerchant && !u.merchantVerified
+                  ).length;
+                  if (pendingCount === 0) return null;
+                  return (
+                    <button
+                      type="button"
+                      onClick={() => setUserMerchantFilter('pending')}
+                      className="mb-4 w-full flex items-center justify-between gap-3 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-left transition-colors hover:bg-amber-100"
+                    >
+                      <span className="flex items-center gap-2 text-sm font-semibold text-amber-800">
+                        <Store className="h-4 w-4" />
+                        {pendingCount} merchant{pendingCount !== 1 ? 's' : ''} awaiting verification
+                      </span>
+                      <span className="text-xs font-bold uppercase tracking-wide text-amber-700">Review now →</span>
+                    </button>
+                  );
+                })()}
                 {usersQuery.isLoading ? (
                   <div className="text-sm text-muted-foreground">Loading users...</div>
                 ) : usersQuery.data && usersQuery.data.length > 0 ? (() => {
@@ -702,7 +734,9 @@ export default function AdminDashboard() {
                     ].some(f => f?.toLowerCase().includes(userSearch.toLowerCase()));
                     const accountStatus = u.isBanned ? 'banned' : u.isSuspended ? 'suspended' : 'active';
                     const matchStatus = userStatusFilter === 'all' || accountStatus === userStatusFilter;
-                    return matchSearch && matchStatus;
+                    const merchantState = !u.isMerchant ? 'none' : u.merchantVerified ? 'verified' : 'pending';
+                    const matchMerchant = userMerchantFilter === 'all' || merchantState === userMerchantFilter;
+                    return matchSearch && matchStatus && matchMerchant;
                   });
                   const sorted = [...filtered].sort((a: any, b: any) => {
                     let aVal: any, bVal: any;
@@ -714,6 +748,12 @@ export default function AdminDashboard() {
                       const order = { active: 0, suspended: 1, banned: 2 };
                       aVal = order[a.isBanned ? 'banned' : a.isSuspended ? 'suspended' : 'active'];
                       bVal = order[b.isBanned ? 'banned' : b.isSuspended ? 'suspended' : 'active'];
+                    }
+                    else if (userSortBy === 'merchant') {
+                      // Pending first so the admin action queue surfaces at the top
+                      const order = { pending: 0, verified: 1, none: 2 };
+                      aVal = order[!a.isMerchant ? 'none' : a.merchantVerified ? 'verified' : 'pending'];
+                      bVal = order[!b.isMerchant ? 'none' : b.merchantVerified ? 'verified' : 'pending'];
                     }
                     if (aVal < bVal) return userSortOrder === 'asc' ? -1 : 1;
                     if (aVal > bVal) return userSortOrder === 'asc' ? 1 : -1;
@@ -744,6 +784,7 @@ export default function AdminDashboard() {
                           <th className="text-left py-2 px-4">Online</th>
                           <th className="text-left py-2 px-4">Role</th>
                           <SortHeader col="status" label="Status" />
+                          <SortHeader col="merchant" label="Merchant" />
                           <th className="text-left py-2 px-4">Actions</th>
                         </tr>
                       </thead>
@@ -787,6 +828,23 @@ export default function AdminDashboard() {
                               }`}>
                                 {accountStatus === 'banned' ? '🚫 Banned' : accountStatus === 'suspended' ? '⏸ Suspended' : '✅ Active'}
                               </span>
+                            </td>
+                            <td className="py-2 px-4">
+                              {!u.isMerchant ? (
+                                <span className="text-xs text-muted-foreground">—</span>
+                              ) : u.merchantVerified ? (
+                                <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-bold bg-emerald-100 text-emerald-700 border border-emerald-200 whitespace-nowrap">
+                                  <CheckCircle className="h-3 w-3" /> Verified
+                                </span>
+                              ) : (
+                                <button
+                                  onClick={() => setSelectedUser(u)}
+                                  className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-bold bg-amber-100 text-amber-700 border border-amber-200 hover:bg-amber-200 transition-colors whitespace-nowrap"
+                                  title="Click to review and verify this merchant"
+                                >
+                                  <Store className="h-3 w-3" /> Pending
+                                </button>
+                              )}
                             </td>
                             <td className="py-2 px-4">
                               <div className="flex flex-wrap gap-1">

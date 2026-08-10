@@ -170,5 +170,9 @@
 - [x] FEATURE: "Verified Merchants Only" filter on category pages + verifiedMerchantsOnly in the marketplace feed schema and query
 - [x] FEATURE: Verified Merchants link in the home sidebar
 - [x] TESTS: server/merchantVerification.test.ts — 8 tests covering admin-only authorization, revoke path, public directory access, and feed filter validation
+- [x] FEATURE: Admin Users table now has a sortable "Merchant" column with three states — Verified (green), Pending (amber, click to open the user), and — for non-merchants
+- [x] FEATURE: Admin Users tab merchant filter dropdown (All / Pending Review / Verified / Non-Merchants) so pending applications can be isolated
+- [x] FEATURE: Amber "N merchants awaiting verification" banner above the users table that jumps straight to the pending filter
+- [x] TESTS: 4 more tests covering merchant-state classification (including stale merchantVerified on a non-merchant) and that getAllUsers exposes isMerchant + merchantVerified on every row
 - [ ] FUTURE: Merchant reviews / seller ratings aggregate on verified merchant profiles
 - [ ] FUTURE: Log merchant verify/revoke actions to the moderation audit log
