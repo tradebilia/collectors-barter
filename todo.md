@@ -176,3 +176,12 @@
 - [x] TESTS: 4 more tests covering merchant-state classification (including stale merchantVerified on a non-merchant) and that getAllUsers exposes isMerchant + merchantVerified on every row
 - [ ] FUTURE: Merchant reviews / seller ratings aggregate on verified merchant profiles
 - [ ] FUTURE: Log merchant verify/revoke actions to the moderation audit log
+
+## Category Page Zero-Results Bug
+- [x] BUG: All category pages show "0 results" / stuck spinner. Root cause: CategoryPage sends all 30 filter keys, and superjson encodes the 28 unused ones as explicit `undefined` in the batch URL. The combined batch URL exceeds httpBatchLink's `maxURLLength: 2000`, so the client falls back to POST, and tRPC v11 rejects POST on query procedures with 405 METHOD_NOT_SUPPORTED — so the feed never resolves.
+- [x] FIX: Omit empty/undefined filters from CategoryPage `queryInput` so the request stays a compact GET
+- [x] Remove the temporary [CATDEBUG] console.log diagnostic from CategoryPage.tsx
+- [x] TESTS: Regression test asserting the category feed query input contains no undefined-valued keys and stays well under the batch URL limit (server/categoryFeed.test.ts, 12 tests)
+- [x] VERIFIED (manual, screenshots + direct API calls — not automated end-to-end): All 10 category pages render listings (sports_cards 4, comics 2, coins 2, and 1 each for vintage_toys, video_games, stamps, pokemon, movies, autographs, disney_pins); hero stat bars populate; keyword/manufacturer/valueMin/gradingService filters and the Verified Merchants Only toggle behave correctly; home page carousel unaffected
+- [ ] FUTURE: Add automated end-to-end (Playwright) coverage for category page rendering + filter behavior, so this regression is caught without manual screenshots
+- [x] CLEANUP: Removed the stray checkdb.mjs debug script from the project root

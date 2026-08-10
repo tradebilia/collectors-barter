@@ -355,42 +355,57 @@ export default function CategoryPage() {
   }, [slug]);
 
   // Memoize the query input to ensure proper refetch detection
-  const queryInput = useMemo(() => 
-    slug ? { 
-      category: slug, 
-      condition: submittedFilters.condition, 
-      keyword: submittedFilters.keyword,
-      issueNumber: submittedFilters.issueNumber,
-      manufacturer: submittedFilters.manufacturer,
-      year: submittedFilters.year,
-      team: submittedFilters.team,
-      series: submittedFilters.series,
-      sport: submittedFilters.sport,
-      gradingService: submittedFilters.gradingService,
-      grade: submittedFilters.grade,
-      valueMin: submittedFilters.valueMin,
-      valueMax: submittedFilters.valueMax,
-      rookie: submittedFilters.rookie,
-      autographed: submittedFilters.autographed,
-      signed: submittedFilters.signed,
-      facsimile: submittedFilters.facsimile,
-      rarity: submittedFilters.rarity,
-      title: submittedFilters.title,
-      system: submittedFilters.system,
-      region: submittedFilters.region,
-      country: submittedFilters.country,
-      format: submittedFilters.format,
-      medium: submittedFilters.medium,
-      denomination: submittedFilters.denomination,
-      mintMark: submittedFilters.mintMark,
-      issuer: submittedFilters.issuer,
-      edition: submittedFilters.edition,
-      parkOrEvent: submittedFilters.parkOrEvent,
-      franchise: submittedFilters.franchise,
-      verifiedMerchantsOnly: submittedFilters.verifiedMerchantsOnly || undefined,
-    } : undefined,
-    [slug, submittedFilters]
-  );
+  // IMPORTANT: only include filters that actually have a value. Sending every key
+  // (with most set to `undefined`) makes superjson encode 28 explicit "undefined"
+  // entries into the batched GET URL. That pushed the combined batch past
+  // httpBatchLink's maxURLLength (2000), which silently downgrades the request to a
+  // POST — and tRPC rejects POST on *query* procedures with 405 METHOD_NOT_SUPPORTED,
+  // so the feed never resolved and every category page rendered "0 results".
+  const queryInput = useMemo(() => {
+    if (!slug) return undefined;
+
+    const input: Record<string, unknown> = { category: slug };
+
+    const add = (key: string, value: unknown) => {
+      if (value === undefined || value === null || value === "") return;
+      input[key] = value;
+    };
+
+    add("keyword", submittedFilters.keyword);
+    add("condition", submittedFilters.condition);
+    add("issueNumber", submittedFilters.issueNumber);
+    add("manufacturer", submittedFilters.manufacturer);
+    add("year", submittedFilters.year);
+    add("team", submittedFilters.team);
+    add("series", submittedFilters.series);
+    add("sport", submittedFilters.sport);
+    add("gradingService", submittedFilters.gradingService);
+    add("grade", submittedFilters.grade);
+    add("valueMin", submittedFilters.valueMin);
+    add("valueMax", submittedFilters.valueMax);
+    add("rookie", submittedFilters.rookie);
+    add("autographed", submittedFilters.autographed);
+    add("signed", submittedFilters.signed);
+    add("facsimile", submittedFilters.facsimile);
+    add("rarity", submittedFilters.rarity);
+    add("title", submittedFilters.title);
+    add("system", submittedFilters.system);
+    add("region", submittedFilters.region);
+    add("country", submittedFilters.country);
+    add("format", submittedFilters.format);
+    add("medium", submittedFilters.medium);
+    add("denomination", submittedFilters.denomination);
+    add("mintMark", submittedFilters.mintMark);
+    add("issuer", submittedFilters.issuer);
+    add("edition", submittedFilters.edition);
+    add("parkOrEvent", submittedFilters.parkOrEvent);
+    add("franchise", submittedFilters.franchise);
+    if (submittedFilters.verifiedMerchantsOnly) {
+      input.verifiedMerchantsOnly = true;
+    }
+
+    return input as Parameters<typeof trpc.market.feed.useQuery>[0];
+  }, [slug, submittedFilters]);
 
   const feedQuery = trpc.market.feed.useQuery(
     queryInput,
