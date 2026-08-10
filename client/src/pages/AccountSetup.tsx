@@ -453,16 +453,16 @@ export default function AccountSetup() {
       securityAnswer: securityAnswer,
       preferredCategories: preferredCategories.length > 0 ? (preferredCategories as any) : undefined,
       avatar: avatarData as any,
-      // Merchant fields
+      // Merchant fields — only send if user is a merchant
       isMerchant: formData.isMerchant,
-      storeName: formData.storeName || undefined,
-      businessLicense: formData.businessLicense || undefined,
-      taxId: formData.taxId || undefined,
-      storeDescription: formData.storeDescription || undefined,
-      businessAddress: formData.businessAddress || undefined,
-      businessPhone: formData.businessPhone || undefined,
-      businessEmail: formData.businessEmail || undefined,
-      businessWebsite: formData.businessWebsite || undefined,
+      storeName: formData.isMerchant ? (formData.storeName || undefined) : undefined,
+      businessLicense: formData.isMerchant ? (formData.businessLicense || undefined) : undefined,
+      taxId: formData.isMerchant ? (formData.taxId || undefined) : undefined,
+      storeDescription: formData.isMerchant ? (formData.storeDescription || undefined) : undefined,
+      businessAddress: formData.isMerchant ? (formData.businessAddress || undefined) : undefined,
+      businessPhone: formData.isMerchant ? (formData.businessPhone || undefined) : undefined,
+      businessEmail: formData.isMerchant ? (formData.businessEmail || undefined) : undefined,
+      businessWebsite: formData.isMerchant ? (formData.businessWebsite || undefined) : undefined,
       // Notification preferences
       notificationPreferences: notificationPreferences,
     });
