@@ -797,7 +797,7 @@ export default function TestAI() {
     return {
       ...item,
       title: query,
-      category: 'sports_cards', // treat as sports card for query building; Sold-Comps uses title directly
+      category: 'cert_direct', // tells backend to use title as-is without rebuilding from itemDetails
       grade: grade,
       certificationCompany: item.certificationCompany,
     };

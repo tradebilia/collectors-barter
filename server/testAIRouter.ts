@@ -186,7 +186,12 @@ export const testAIRouter = router({
       let query = input.title;
       
       // For comics: use comicTitle + issueNumber + grading/condition
-      if (input.category === 'comics') {
+      // cert_direct = pre-built query from Parse.bot cert data — use title as-is, no rebuilding
+      if (input.category === 'cert_direct') {
+        query = input.title; // already fully built on the frontend
+      }
+      // For comics: use comicTitle + issueNumber + grading/condition
+      else if (input.category === 'comics') {
         const comicTitle = details.comicTitle || input.title;
         const issueNumber = details.issueNumber || '';
         const issueStr = issueNumber ? ` #${issueNumber}` : '';
@@ -369,7 +374,12 @@ export const testAIRouter = router({
       let query = input.title;
 
       // Comics
-      if (input.category === 'comics') {
+      // cert_direct = pre-built query from Parse.bot cert data — use title as-is
+      if (input.category === 'cert_direct') {
+        query = input.title;
+      }
+      // Comics
+      else if (input.category === 'comics') {
         const comicTitle = details.comicTitle || input.title;
         const issueNumber = details.issueNumber || '';
         const issueStr = issueNumber ? ` #${issueNumber}` : '';
