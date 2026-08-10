@@ -156,3 +156,19 @@
 - [x] FEATURE: Backend server/twilio.ts wrapper (sendVerificationCode, checkVerificationCode, normalizePhone to E.164, maskPhone) + auth.sendPhoneCode / auth.verifyPhoneCode tRPC procedures
 - [x] FEATURE: Account creation is now gated on real phone verification (previously a stub that faked success)
 - [x] TESTS: server/twilio.test.ts — 10 tests covering live Twilio credential validation, E.164 normalization, and phone masking
+
+## Merchant Verification
+- [x] SCHEMA: Added merchantVerified / merchantVerifiedAt / merchantVerifiedBy to users table (isMerchant + store fields already lived in userProfiles)
+- [x] BUG FIX: Removed duplicate isMerchant from users table in Drizzle schema — it already existed in userProfiles, and the duplicate broke every users query (ER_BAD_FIELD_ERROR)
+- [x] FEATURE: admin.verifyMerchant tRPC mutation (admin-only) supporting both verify and revoke
+- [x] FEATURE: Admin Users tab — Merchant Information panel + verification status badge + Verify / Revoke buttons with toasts
+- [x] FEATURE: "Merchant Verified" badge on public profile beside display name
+- [x] BUG FIX: ItemDetail "Verified on:" row now includes merchantVerified in its render condition — a merchant with no social accounts previously showed no badge at all
+- [x] BUG FIX: Removed misleading duplicate Merchant Verified badge nested inside the eBay Reputation Card (only rendered for eBay-connected users and implied eBay verified them)
+- [x] FEATURE: /verified-merchants directory page listing verified merchants with store name, location, item count, website
+- [x] BUG FIX: VerifiedMerchants page — replaced nested anchor (wouter Link wrapping an <a>) with a keyboard-accessible div, and normalized businessWebsite URLs missing a protocol
+- [x] FEATURE: "Verified Merchants Only" filter on category pages + verifiedMerchantsOnly in the marketplace feed schema and query
+- [x] FEATURE: Verified Merchants link in the home sidebar
+- [x] TESTS: server/merchantVerification.test.ts — 8 tests covering admin-only authorization, revoke path, public directory access, and feed filter validation
+- [ ] FUTURE: Merchant reviews / seller ratings aggregate on verified merchant profiles
+- [ ] FUTURE: Log merchant verify/revoke actions to the moderation audit log

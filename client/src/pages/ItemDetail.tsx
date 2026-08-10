@@ -418,9 +418,15 @@ export default function ItemDetail() {
                 </div>
 
                 {/* Verified Platforms */}
-                {(listing.ownerProfile.ebayVerified || listing.ownerProfile.facebookVerified || listing.ownerProfile.linkedinVerified) && (
-                  <div className="flex items-center gap-2 mt-4">
-                    <span className="text-xs font-semibold uppercase tracking-wider text-gray-400">Verified on:</span>
+               {(listing.ownerProfile.merchantVerified || listing.ownerProfile.ebayVerified || listing.ownerProfile.facebookVerified || listing.ownerProfile.linkedinVerified) && (
+                 <div className="flex items-center gap-2 mt-4">
+                   <span className="text-xs font-semibold uppercase tracking-wider text-gray-400">Verified on:</span>
+                    {listing.ownerProfile.merchantVerified && (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-200">
+                        <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/></svg>
+                        Merchant Verified
+                      </span>
+                    )}
                     {listing.ownerProfile.ebayVerified && (
                       <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white border border-gray-200 shadow-sm">
                         <img src="/manus-storage/Ebaylogo_f6331705.png" alt="eBay" className="h-3.5 w-auto" />

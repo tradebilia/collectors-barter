@@ -272,6 +272,7 @@ export default function CategoryPage() {
     edition: undefined as string | undefined,
     parkOrEvent: undefined as string | undefined,
     franchise: undefined as string | undefined,
+    verifiedMerchantsOnly: false,
   });
 
   // Reset filters when category slug changes
@@ -317,6 +318,7 @@ export default function CategoryPage() {
     // Reset submitted filters
     setSubmittedFilters({
       keyword: "",
+      verifiedMerchantsOnly: false,
       condition: undefined,
       issueNumber: undefined,
       manufacturer: undefined,
@@ -384,6 +386,7 @@ export default function CategoryPage() {
       edition: submittedFilters.edition,
       parkOrEvent: submittedFilters.parkOrEvent,
       franchise: submittedFilters.franchise,
+      verifiedMerchantsOnly: submittedFilters.verifiedMerchantsOnly || undefined,
     } : undefined,
     [slug, submittedFilters]
   );
@@ -425,6 +428,7 @@ export default function CategoryPage() {
       edition: edition || undefined,
       parkOrEvent: parkOrEvent || undefined,
       franchise: franchise || undefined,
+      verifiedMerchantsOnly: submittedFilters.verifiedMerchantsOnly,
     };
 
     setSubmittedFilters(newFilters);
@@ -501,6 +505,7 @@ export default function CategoryPage() {
       edition: undefined,
       parkOrEvent: undefined,
       franchise: undefined,
+      verifiedMerchantsOnly: false,
     });
   };
 
@@ -1018,8 +1023,20 @@ export default function CategoryPage() {
                 </Select>
               </div>
             )}
+            {/* Verified Merchants Only toggle */}
+            <button
+              type="button"
+              onClick={() => setSubmittedFilters(prev => ({ ...prev, verifiedMerchantsOnly: !prev.verifiedMerchantsOnly }))}
+              className={`w-full flex items-center justify-center gap-1.5 h-8 text-xs rounded-md border font-semibold transition-colors mt-3 mb-1 ${
+                submittedFilters.verifiedMerchantsOnly
+                  ? 'bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700'
+                  : 'bg-white text-emerald-700 border-emerald-300 hover:bg-emerald-50'
+              }`}
+            >
+              ✓ Verified Merchants Only
+            </button>
             {/* Clear and Search buttons */}
-            <div className="flex gap-2 mt-4 pt-2 border-t border-gray-300">
+            <div className="flex gap-2 mt-2 pt-2 border-t border-gray-300">
               <Button 
                 onClick={handleClearFilters}
                 size="sm"

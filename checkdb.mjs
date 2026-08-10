@@ -1,0 +1,14 @@
+import mysql from 'mysql2/promise';
+const url = process.env.CUSTOM_DATABASE_URL || process.env.DATABASE_URL;
+const c = await mysql.createConnection(url);
+const [db] = await c.query('SELECT DATABASE() as db');
+console.log('DB:', db[0].db);
+const [cols] = await c.query("SHOW COLUMNS FROM users WHERE Field LIKE '%erchant%'");
+console.log('users merchant cols:', cols.map(r => `${r.Field}(${r.Type})`).join(', '));
+const [pcols] = await c.query("SHOW COLUMNS FROM userProfiles WHERE Field LIKE '%erchant%' OR Field LIKE '%store%' OR Field LIKE '%business%' OR Field LIKE '%tax%'");
+console.log('userProfiles cols:', pcols.map(r => r.Field).join(', '));
+const [cnt] = await c.query("SELECT COUNT(*) as n FROM users WHERE merchantVerified = 1");
+console.log('verified merchants:', cnt[0].n);
+const [im] = await c.query("SELECT COUNT(*) as n FROM userProfiles WHERE isMerchant = 1");
+console.log('users with isMerchant=1 in profiles:', im[0].n);
+await c.end();

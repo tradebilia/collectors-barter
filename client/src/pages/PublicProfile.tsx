@@ -271,9 +271,15 @@ export default function PublicProfile() {
             {/* User Info */}
             <div className="flex-1 min-w-0">
               <div className="flex items-start gap-2 mb-2">
-                <h1 className="text-2xl font-black text-slate-950 tracking-tight truncate">{displayName}</h1>
-                {user.ebayIdVerified === 1 && <BadgeCheck className="h-5 w-5 text-blue-500 shrink-0 mt-0.5" />}
-              </div>
+              <h1 className="text-2xl font-black text-slate-950 tracking-tight truncate">{displayName}</h1>
+               {user.ebayIdVerified === 1 && <BadgeCheck className="h-5 w-5 text-blue-500 shrink-0 mt-0.5" />}
+               {user.merchantVerified === 1 && (
+                 <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700 border border-emerald-200 uppercase shrink-0 mt-1">
+                   <BadgeCheck className="h-3 w-3" />
+                   Merchant Verified
+                 </span>
+               )}
+             </div>
               <div className="flex flex-wrap items-center gap-y-1 gap-x-4 text-slate-500 text-sm font-medium">
                 <div className="flex items-center gap-1.5">
                   <Calendar className="h-3.5 w-3.5" />
@@ -551,8 +557,8 @@ export default function PublicProfile() {
                         </div>
                       </div>
 
-                      {/* Badges */}
-                      <div className="flex flex-wrap gap-1.5">
+                     {/* Badges */}
+                    <div className="flex flex-wrap gap-1.5">
                         {user.ebayIsStoreOwner === 1 && (
                           <div className="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2 py-0.5 text-[9px] font-bold text-indigo-700 border border-indigo-100 uppercase">
                             <Store className="h-2.5 w-2.5" />

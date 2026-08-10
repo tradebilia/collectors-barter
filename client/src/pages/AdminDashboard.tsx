@@ -1536,17 +1536,54 @@ export default function AdminDashboard() {
               </div>
 
               {/* Merchant Verification */}
-              {selectedUser.isMerchant && !selectedUser.merchantVerified && (
+              {selectedUser.isMerchant ? (
                 <div className="border-t border-border pt-4">
-                  <h3 className="font-semibold mb-3">Merchant Verification</h3>
-                  <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white"
-                    onClick={() => { verifyMerchantMutation.mutate({ userId: selectedUser.id }, { onSuccess: () => { usersQuery.refetch(); setSelectedUser((u: any) => ({ ...u, merchantVerified: 1 })); } }); }}
-                    disabled={verifyMerchantMutation.isPending}
-                  >
-                    <CheckCircle className="h-3.5 w-3.5 mr-1" /> Verify Merchant
-                  </Button>
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="font-semibold">Merchant Verification</h3>
+                    {selectedUser.merchantVerified ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700">
+                        <CheckCircle className="h-3 w-3" /> Verified
+                        {selectedUser.merchantVerifiedAt ? ` · ${new Date(selectedUser.merchantVerifiedAt).toLocaleDateString()}` : ''}
+                      </span>
+                    ) : (
+                      <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">Pending review</span>
+                    )}
+                  </div>
+                  {selectedUser.merchantVerified ? (
+                    <Button size="sm" variant="outline" className="border-red-500 text-red-600 hover:bg-red-50"
+                      onClick={() => {
+                        verifyMerchantMutation.mutate({ userId: selectedUser.id, verified: false }, {
+                          onSuccess: () => {
+                            toast.success("Merchant verification revoked");
+                            usersQuery.refetch();
+                            setSelectedUser((u: any) => ({ ...u, merchantVerified: 0, merchantVerifiedAt: null }));
+                          },
+                          onError: (e: any) => toast.error(e.message || "Failed to revoke verification"),
+                        });
+                      }}
+                      disabled={verifyMerchantMutation.isPending}
+                    >
+                      Revoke Verification
+                    </Button>
+                  ) : (
+                    <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white"
+                      onClick={() => {
+                        verifyMerchantMutation.mutate({ userId: selectedUser.id, verified: true }, {
+                          onSuccess: () => {
+                            toast.success("Merchant verified");
+                            usersQuery.refetch();
+                            setSelectedUser((u: any) => ({ ...u, merchantVerified: 1, merchantVerifiedAt: new Date().toISOString() }));
+                          },
+                          onError: (e: any) => toast.error(e.message || "Failed to verify merchant"),
+                        });
+                      }}
+                      disabled={verifyMerchantMutation.isPending}
+                    >
+                      <CheckCircle className="h-3.5 w-3.5 mr-1" /> Verify Merchant
+                    </Button>
+                  )}
                 </div>
-              )}
+              ) : null}
 
               {/* Moderation Actions */}
               <div className="border-t border-border pt-4">

@@ -37,7 +37,8 @@ import {
   Bookmark,
   MessageCircle,
   MessagesSquare,
-  Package2
+  Package2,
+  BadgeCheck
 } from "lucide-react";
 import { ChangeEvent, FormEvent, useMemo, useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
@@ -687,6 +688,9 @@ export default function Home() {
                     <button onClick={() => {
                       setLocation('/trade-showcase');
                     }} className="w-full px-3 py-2 rounded bg-white/10 hover:bg-white/20 transition text-white text-sm font-medium text-left flex items-center gap-2"><Handshake className="w-4 h-4 flex-shrink-0" /> Trade Showcase</button>
+                    <button onClick={() => {
+                      setLocation('/verified-merchants');
+                    }} className="w-full px-3 py-2 rounded bg-emerald-700/40 hover:bg-emerald-700/60 transition text-emerald-200 text-sm font-medium text-left flex items-center gap-2"><BadgeCheck className="w-4 h-4 flex-shrink-0" /> Verified Merchants</button>
                     <div className="pt-4 border-t border-white/20 space-y-3">
                       {isAuthenticated && (
                         <div>

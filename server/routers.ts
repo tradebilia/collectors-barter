@@ -141,6 +141,7 @@ const listingFiltersSchema = z.object({
   parkOrEvent: z.string().max(100).optional(),
   franchise: z.string().max(100).optional(),
   rarity: z.string().max(60).optional(),
+  verifiedMerchantsOnly: z.boolean().optional(),
 });
 
 const memberSearchSchema = z.object({
@@ -377,6 +378,28 @@ export const appRouter = router({
     topHighestValueItems: publicProcedure.query(({ ctx }) => {
       return getTopHighestValueItems(ctx.user?.id ?? null);
     }),
+    getVerifiedMerchants: publicProcedure.query(async () => {
+      const db = await requireDb();
+      const [rows] = await db.execute(
+        sql`SELECT
+          u.id,
+          u.merchantVerifiedAt,
+          up.displayName,
+          up.avatarUrl,
+          up.storeName,
+          up.storeDescription,
+          up.businessWebsite,
+          up.contactTown,
+          up.contactState,
+          up.contactCountry,
+          (SELECT COUNT(*) FROM listings l WHERE l.ownerId = u.id AND l.status = 'active' AND l.isActive = 1) as itemsListed
+        FROM users u
+        LEFT JOIN userProfiles up ON up.userId = u.id
+        WHERE u.merchantVerified = 1
+        ORDER BY u.merchantVerifiedAt DESC`
+      );
+      return Array.isArray(rows) ? rows as any[] : [];
+    }),
     getUserProfile: publicProcedure
       .input(z.object({ userId: z.number().int().positive() }))
       .query(async ({ input, ctx }) => {
@@ -419,7 +442,8 @@ export const appRouter = router({
             u.linkedinPicture,
             u.linkedinHeadline,
             u.linkedinProfileUrl,
-            u.linkedinConnectedAt
+            u.linkedinConnectedAt,
+            u.merchantVerified
           FROM users u
           WHERE u.id = ${input.userId}`
         );
@@ -2008,33 +2032,55 @@ export const appRouter = router({
         contactEmail: userProfiles.contactEmail,
         contactPhone: userProfiles.contactPhone,
         contactAddress: userProfiles.contactAddress,
-        contactTown: userProfiles.contactTown,
-        contactState: userProfiles.contactState,
-        contactZipCode: userProfiles.contactZipCode,
-        contactCountry: userProfiles.contactCountry,
-      }).from(users)
-        .leftJoin(userProfiles, eq(users.id, userProfiles.userId)) as Array<{
-        id: number;
-        username: string | null;
-        displayName: string | null;
-        firstName: string | null;
-        lastName: string | null;
-        email: string | null;
-        role: "user" | "admin";
-        // Schema timestamps are string-mode
-        createdAt: string;
-        lastActivityAt: string;
-        isSuspended: number;
-        suspendedAt: string | null;
-        contactFullName: string | null;
-        contactEmail: string | null;
-        contactPhone: string | null;
-        contactAddress: string | null;
-        contactTown: string | null;
-        contactState: string | null;
-        contactZipCode: string | null;
-        contactCountry: string | null;
-      }>;
+      contactTown: userProfiles.contactTown,
+      contactState: userProfiles.contactState,
+      contactZipCode: userProfiles.contactZipCode,
+      contactCountry: userProfiles.contactCountry,
+      isMerchant: userProfiles.isMerchant,
+      merchantVerified: users.merchantVerified,
+      merchantVerifiedAt: users.merchantVerifiedAt,
+      storeName: userProfiles.storeName,
+      businessLicense: userProfiles.businessLicense,
+      taxId: userProfiles.taxId,
+      storeDescription: userProfiles.storeDescription,
+      businessAddress: userProfiles.businessAddress,
+      businessPhone: userProfiles.businessPhone,
+      businessEmail: userProfiles.businessEmail,
+      businessWebsite: userProfiles.businessWebsite,
+    }).from(users)
+      .leftJoin(userProfiles, eq(users.id, userProfiles.userId)) as Array<{
+      id: number;
+      username: string | null;
+      displayName: string | null;
+      firstName: string | null;
+      lastName: string | null;
+      email: string | null;
+      role: "user" | "admin";
+      // Schema timestamps are string-mode
+      createdAt: string;
+      lastActivityAt: string;
+      isSuspended: number;
+      suspendedAt: string | null;
+      contactFullName: string | null;
+      contactEmail: string | null;
+      contactPhone: string | null;
+      contactAddress: string | null;
+      contactTown: string | null;
+      contactState: string | null;
+      contactZipCode: string | null;
+      contactCountry: string | null;
+      isMerchant: number | null;
+      merchantVerified: number | null;
+      merchantVerifiedAt: string | null;
+      storeName: string | null;
+      businessLicense: string | null;
+      taxId: string | null;
+      storeDescription: string | null;
+      businessAddress: string | null;
+      businessPhone: string | null;
+      businessEmail: string | null;
+      businessWebsite: string | null;
+    }>;
       
       // Get active listings count for each user
       const listingCounts = await db.select({
@@ -2799,15 +2845,21 @@ export const appRouter = router({
         return Array.isArray(rows) ? rows : [];
       }),
     verifyMerchant: protectedProcedure
-      .input(z.object({ userId: z.number().int().positive() }))
+      .input(z.object({ userId: z.number().int().positive(), verified: z.boolean().default(true) }))
       .mutation(async ({ ctx, input }) => {
         if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
         const db = await requireDb();
-        const now = new Date().toISOString().slice(0, 19).replace("T", " ");
-        await db.execute(
-          sql`UPDATE users SET merchantVerified = 1, merchantVerifiedAt = ${now}, merchantVerifiedBy = ${ctx.user.id} WHERE id = ${input.userId}`
-        );
-        return { success: true };
+        if (input.verified) {
+          const now = new Date().toISOString().slice(0, 19).replace("T", " ");
+          await db.execute(
+            sql`UPDATE users SET merchantVerified = 1, merchantVerifiedAt = ${now}, merchantVerifiedBy = ${ctx.user.id} WHERE id = ${input.userId}`
+          );
+        } else {
+          await db.execute(
+            sql`UPDATE users SET merchantVerified = 0, merchantVerifiedAt = NULL, merchantVerifiedBy = NULL WHERE id = ${input.userId}`
+          );
+        }
+        return { success: true, verified: input.verified };
       }),
   }),
   // Online status procedures

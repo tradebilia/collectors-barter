@@ -341,6 +341,7 @@ export async function getMarketplaceFeed(
     parkOrEvent?: string;
     franchise?: string;
     rarity?: string;
+    verifiedMerchantsOnly?: boolean;
   },
   viewerId: number | null,
 ) {
@@ -491,6 +492,9 @@ export async function getMarketplaceFeed(
   }
   if (filters.valueMax !== undefined) {
     whereClauses.push(sql`CAST(${listings.estimatedValue} AS DECIMAL(12,2)) <= ${filters.valueMax}`);
+  }
+  if (filters.verifiedMerchantsOnly) {
+    whereClauses.push(sql`${listings.ownerId} IN (SELECT id FROM users WHERE merchantVerified = 1)`);
   }
 
   const listingRows = await db
@@ -756,6 +760,7 @@ export async function getListingDetail(listingId: number, viewerId: number | nul
       facebookId: users.facebookId,
       facebookVerified: users.facebookVerified,
       linkedinId: users.linkedinId,
+      merchantVerified: users.merchantVerified,
     })
     .from(users)
     .where(eq(users.id, detailCard[0].ownerId))
@@ -853,6 +858,7 @@ export async function getListingDetail(listingId: number, viewerId: number | nul
       ebayVerified: ownerUserRows[0]?.ebayIdVerified === 1,
       facebookVerified: !!(ownerUserRows[0]?.facebookId) || ownerUserRows[0]?.facebookVerified === 1,
       linkedinVerified: !!(ownerUserRows[0]?.linkedinId),
+      merchantVerified: ownerUserRows[0]?.merchantVerified === 1,
     },
     ownerRating,
     photos: photoRows.map(p => ({
