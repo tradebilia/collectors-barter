@@ -47,12 +47,12 @@ const DATA_SOURCES = {
   },
   psa: {
     id: 'psa',
-    label: 'PSA',
+    label: 'Parse.bot (PSA Data)',
     group: 'Grading',
-    icon: '🏅',
+    icon: '🧩',
     provides: ['item_details', 'cert_info', 'population_report', 'recent_sales'],
     status: 'live' as const,
-    description: 'Cert details, grade, full population breakdown (Grade 1-10), recent sales via Parse.bot API',
+    description: 'PSA cert details, grade, full population breakdown (Grade 1-10), recent sales — powered by Parse.bot API (not official PSA API)',
   },
   bgs: {
     id: 'bgs',
@@ -420,7 +420,7 @@ function PSASection({ item, side }: { item: SelectedItem; side: 'left' | 'right'
   if (!item.certId) {
     return (
       <div className="bg-gray-800/30 rounded-lg p-3 border border-dashed border-gray-700/40 space-y-2">
-        <p className={`text-[11px] font-bold uppercase ${accentColor}`}>🏅 PSA</p>
+        <p className={`text-[11px] font-bold uppercase ${accentColor}`}>🧩 Parse.bot (PSA Data)</p>
         <p className="text-gray-500 text-[10px]">Enter a PSA cert number to fetch population data</p>
       </div>
     );
@@ -429,7 +429,7 @@ function PSASection({ item, side }: { item: SelectedItem; side: 'left' | 'right'
   return (
     <div className="bg-gray-800/30 rounded-lg p-3 border border-gray-700/20 space-y-3">
       <div className="flex items-center justify-between">
-        <p className={`text-[11px] font-bold uppercase ${accentColor}`}>🏅 PSA Population Report</p>
+        <p className={`text-[11px] font-bold uppercase ${accentColor}`}>🧩 PSA Population Report (via Parse.bot)</p>
         {isLoading && <Spinner className="w-3 h-3" />}
       </div>
       <p className="text-gray-500 text-[10px]">Data type: Cert details, full grade breakdown, recent sales</p>
