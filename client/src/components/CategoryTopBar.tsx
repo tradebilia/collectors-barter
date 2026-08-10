@@ -50,7 +50,10 @@ export function CategoryTopBar({
           <TopRightIcons iconColor="text-white/70" />
           {isAuthenticated ? (
             <Button
-              onClick={logout}
+              onClick={async () => {
+                await logout();
+                window.location.href = "/";
+              }}
               variant="ghost"
               size="sm"
               className="text-white/70 hover:text-white hover:bg-white/10"

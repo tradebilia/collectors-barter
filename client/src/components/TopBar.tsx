@@ -78,7 +78,10 @@ export function TopBar({
             <TopRightIcons iconColor="text-white/70" />
             {isAuthenticated ? (
               <Button
-                onClick={logout}
+                onClick={async () => {
+                  await logout();
+                  window.location.href = "/";
+                }}
                 variant="ghost"
                 size="sm"
                 className="text-white/70 hover:text-white hover:bg-white/10"
@@ -141,15 +144,18 @@ export function TopBar({
         <div className="absolute right-4 flex items-center gap-3 md:gap-4 flex-shrink-0">
         <TopRightIcons iconColor="text-white/70" />
         {isAuthenticated ? (
-          <Button
-            onClick={logout}
-            variant="ghost"
-            size="sm"
-            className="text-white/70 hover:text-white hover:bg-white/10"
-          >
-            <LogOut className="h-4 w-4 mr-2" />
-            Log Out
-          </Button>
+            <Button
+              onClick={async () => {
+                await logout();
+                window.location.href = "/";
+              }}
+              variant="ghost"
+              size="sm"
+              className="text-white/70 hover:text-white hover:bg-white/10"
+            >
+              <LogOut className="h-4 w-4 mr-2" />
+              Sign Out
+            </Button>
         ) : (
           <>
             <Button
