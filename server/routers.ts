@@ -627,8 +627,8 @@ export const appRouter = router({
           }
         }
         
-        // Merchant/store fields are ALWAYS locked for non-admins, even during first-time setup
-        if (!isAdmin) {
+        // Merchant/store fields are locked for non-admins EXCEPT during first-time setup
+        if (!isAdmin && !isFirstTimeSetup) {
           const merchantFieldsAttempted = [];
           if (input.isMerchant !== undefined) merchantFieldsAttempted.push('isMerchant');
           if (input.storeName !== undefined && input.storeName) merchantFieldsAttempted.push('storeName');
