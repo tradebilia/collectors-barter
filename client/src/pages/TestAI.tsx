@@ -719,7 +719,14 @@ function DataColumn({ item, searchItem, side, enabledSources, ebayData }: {
 
   return (
     <div className="space-y-3">
-      {enabledSources.has('ebay_active') && <EbayActiveSection item={queryItem} side={side} />}
+      {enabledSources.has('ebay_active') && (
+        searchItem || item.category !== 'unknown'
+          ? <EbayActiveSection item={queryItem} side={side} />
+          : <div className="bg-gray-800/30 rounded-lg p-3 border border-dashed border-gray-700/40 space-y-2">
+              <p className={`text-[11px] font-bold uppercase ${side === 'left' ? 'text-cyan-300' : 'text-amber-300'}`}>🛒 eBay Active Listings</p>
+              <p className="text-gray-500 text-[10px]">Enable <strong>Parse.bot (PSA Data)</strong> first to auto-build the search query from cert details</p>
+            </div>
+      )}
       {enabledSources.has('sold_comps') && (
         searchItem || item.category !== 'unknown'
           ? <SoldCompsSection item={queryItem} side={side} />
