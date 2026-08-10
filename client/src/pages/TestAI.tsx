@@ -864,6 +864,12 @@ function DataColumn({ item, searchItem, side, enabledSources, ebayData }: {
   // Fall back to raw item if no enrichment available
   const queryItem = searchItem ?? item;
 
+  // Dynamic message for cert mode when no grading source is loaded yet
+  const gradingSourceLabel = item.gradingCompany === 'PSA' ? 'Parse.bot (PSA Data)' :
+    item.gradingCompany === 'BGS' ? 'Parse.bot (Beckett Data)' :
+    item.gradingCompany ? `a ${item.gradingCompany} grading source` :
+    'a grading data source';
+
   return (
     <div className="space-y-3">
       {enabledSources.has('ebay_active') && (
@@ -871,7 +877,7 @@ function DataColumn({ item, searchItem, side, enabledSources, ebayData }: {
           ? <EbayActiveSection item={queryItem} side={side} />
           : <div className="bg-gray-800/30 rounded-lg p-3 border border-dashed border-gray-700/40 space-y-2">
               <p className={`text-[11px] font-bold uppercase ${side === 'left' ? 'text-cyan-300' : 'text-amber-300'}`}>🛒 eBay Active Listings</p>
-              <p className="text-gray-500 text-[10px]">Enable <strong>Parse.bot (PSA Data)</strong> first to auto-build the search query from cert details</p>
+              <p className="text-gray-500 text-[10px]">Enable <strong>{gradingSourceLabel}</strong> first to auto-build the search query from cert details</p>
             </div>
       )}
       {enabledSources.has('sold_comps') && (
@@ -879,7 +885,7 @@ function DataColumn({ item, searchItem, side, enabledSources, ebayData }: {
           ? <SoldCompsSection item={queryItem} side={side} />
           : <div className="bg-gray-800/30 rounded-lg p-3 border border-dashed border-gray-700/40 space-y-2">
               <p className={`text-[11px] font-bold uppercase ${side === 'left' ? 'text-cyan-300' : 'text-amber-300'}`}>💰 Sold-Comps — eBay Sold History</p>
-              <p className="text-gray-500 text-[10px]">Enable <strong>Parse.bot (PSA Data)</strong> first to auto-build the search query from cert details</p>
+              <p className="text-gray-500 text-[10px]">Enable <strong>{gradingSourceLabel}</strong> first to auto-build the search query from cert details</p>
             </div>
       )}
       {enabledSources.has('ebay_sold') && <PlaceholderSection sourceId="ebay_sold" side={side} />}
@@ -913,36 +919,72 @@ export default function TestAI() {
   // ── Silently fetch PSA cert data for cert-mode items so we can build search queries ──
   const leftPSAQuery = trpc.testAI.getPSAData.useQuery(
     { certNumber: leftItem?.certId || '' },
-    { enabled: !!leftItem?.certId }
+    { enabled: !!leftItem?.certId && leftItem?.gradingCompany === 'PSA' }
   );
   const rightPSAQuery = trpc.testAI.getPSAData.useQuery(
     { certNumber: rightItem?.certId || '' },
-    { enabled: !!rightItem?.certId }
+    { enabled: !!rightItem?.certId && rightItem?.gradingCompany === 'PSA' }
+  );
+
+  // ── Silently fetch Beckett cert data for BGS cert-mode items ──
+  const leftBeckettQuery = trpc.testAI.getBeckettData.useQuery(
+    { certNumber: leftItem?.certId || '' },
+    { enabled: !!leftItem?.certId && leftItem?.gradingCompany === 'BGS' }
+  );
+  const rightBeckettQuery = trpc.testAI.getBeckettData.useQuery(
+    { certNumber: rightItem?.certId || '' },
+    { enabled: !!rightItem?.certId && rightItem?.gradingCompany === 'BGS' }
   );
 
   // Build an effective item for Sold-Comps/eBay queries:
   // If it's a cert-mode item AND Parse.bot returned card data, synthesize a searchable item.
   // Otherwise fall back to the item as-is (inventory mode).
-  function buildSearchableItem(item: SelectedItem | null, psaData: any): SelectedItem | null {
+  function buildSearchableItem(item: SelectedItem | null, psaData: any, beckettData: any): SelectedItem | null {
     if (!item) return null;
     if (item.category !== 'unknown') return item; // inventory item — already has all fields
-    const card = psaData?.data?.data;
-    if (!card) return null; // cert mode but PSA data not loaded yet — skip
-    // Build a synthetic searchable item from Parse.bot cert data
-    const grade = card.grade?.match(/\d+(\.\d+)?/)?.[0] ?? undefined;
-    const query = [card.year, card.brand, card.subject, card.cardNumber, item.certificationCompany, grade]
-      .filter(Boolean).join(' ');
-    return {
-      ...item,
-      title: query,
-      category: 'cert_direct', // tells backend to use title as-is without rebuilding from itemDetails
-      grade: grade,
-      certificationCompany: item.certificationCompany,
-    };
+
+    // Choose data source based on grading company
+    const company = item.gradingCompany;
+
+    if (company === 'PSA') {
+      const card = psaData?.data?.data;
+      if (!card) return null; // PSA data not loaded yet
+      const grade = card.grade?.match(/\d+(\.\d+)?/)?.[0] ?? undefined;
+      const query = [card.year, card.brand, card.subject, card.cardNumber, 'PSA', grade]
+        .filter(Boolean).join(' ');
+      return {
+        ...item,
+        title: query,
+        category: 'cert_direct',
+        grade,
+        certificationCompany: 'PSA',
+      };
+    }
+
+    if (company === 'BGS') {
+      const card = beckettData?.data?.data;
+      if (!card) return null; // Beckett data not loaded yet
+      const grade = card.finalGrade ?? undefined;
+      // Beckett: playerName + setName + cardNumber + BGS + grade
+      const query = [card.playerName, card.setName, card.cardNumber, 'BGS', grade]
+        .filter(Boolean).join(' ');
+      return {
+        ...item,
+        title: query,
+        category: 'cert_direct',
+        grade,
+        certificationCompany: 'BGS',
+      };
+    }
+
+    // For other grading companies (CGC, PCGS, NGC, etc.) — no cert data source yet
+    // Return null so Sold-Comps/eBay shows the "Enable grading source first" message
+    return null;
+
   }
 
-  const leftSearchItem = buildSearchableItem(leftItem, leftPSAQuery);
-  const rightSearchItem = buildSearchableItem(rightItem, rightPSAQuery);
+  const leftSearchItem = buildSearchableItem(leftItem, leftPSAQuery, leftBeckettQuery);
+  const rightSearchItem = buildSearchableItem(rightItem, rightPSAQuery, rightBeckettQuery);
 
   const leftEbayQuery = trpc.testAI.getEbayData.useQuery(
     leftSearchItem ? { title: leftSearchItem.title, category: leftSearchItem.category, grade: leftSearchItem.grade, condition: leftSearchItem.condition, certificationCompany: leftSearchItem.certificationCompany, itemDetails: leftSearchItem.itemDetails } : { title: '', category: '' },
