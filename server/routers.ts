@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { verifyPayPalTransaction } from "./paypal";
+import { sendVerificationCode, checkVerificationCode, normalizePhone, maskPhone } from "./twilio";
 import { COOKIE_NAME } from "@shared/const";
 import { collectibleCategories, itemConditions, mysqlNow, toMysqlDateTime } from "./db";
 import { isValidGradeForCompany, getGradingCompanyByName } from "@shared/gradingCompanyConfig";
@@ -249,6 +250,52 @@ export const appRouter = router({
         ctx.res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
 
         return { success: true, userId };
+      }),
+    /**
+     * Send a 6-digit SMS verification code to the supplied phone number.
+     * Public because it runs during account setup before the user exists.
+     */
+    sendPhoneCode: publicProcedure
+      .input(z.object({ phone: z.string().min(7).max(25) }))
+      .mutation(async ({ input }) => {
+        const e164 = normalizePhone(input.phone);
+        if (!e164) {
+          throw new Error("Please enter a valid phone number (e.g. 555-123-4567).");
+        }
+        const result = await sendVerificationCode(e164);
+        if (!result.ok) {
+          throw new Error(result.error);
+        }
+        return { success: true, sentTo: maskPhone(e164) };
+      }),
+    /**
+     * Check the code the user typed against Twilio Verify.
+     * Returns { verified: true } only when Twilio reports the code approved.
+     */
+    verifyPhoneCode: publicProcedure
+      .input(
+        z.object({
+          phone: z.string().min(7).max(25),
+          code: z.string().min(4).max(10),
+        }),
+      )
+      .mutation(async ({ input }) => {
+        const e164 = normalizePhone(input.phone);
+        if (!e164) {
+          throw new Error("Please enter a valid phone number.");
+        }
+        const digitsOnly = input.code.replace(/\D/g, "");
+        if (!digitsOnly) {
+          throw new Error("Please enter the code from the text message.");
+        }
+        const result = await checkVerificationCode(e164, digitsOnly);
+        if (!result.ok) {
+          throw new Error(result.error);
+        }
+        if (!result.approved) {
+          throw new Error("That code is incorrect. Please check and try again.");
+        }
+        return { verified: true, phone: e164 };
       }),
     signin: publicProcedure
       .input(

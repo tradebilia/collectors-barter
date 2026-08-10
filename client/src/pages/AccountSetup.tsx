@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
 import { trpc } from "@/lib/trpc";
-import { ChevronRight, Loader2, Upload, Eye, EyeOff } from "lucide-react";
+import { ChevronRight, Loader2, Upload, Eye, EyeOff, CheckCircle2 } from "lucide-react";
 import { TopRightIcons } from "@/components/TopRightIcons";
 import { TopBar } from "@/components/TopBar";
 import { CategoryBar } from "@/components/CategoryBar";
@@ -106,6 +106,8 @@ export default function AccountSetup() {
   });
 
   const signupMutation = trpc.auth.signup.useMutation();
+  const sendPhoneCodeMutation = trpc.auth.sendPhoneCode.useMutation();
+  const verifyPhoneCodeMutation = trpc.auth.verifyPhoneCode.useMutation();
 
   const saveProfileMutation = trpc.market.saveProfile.useMutation({
     onSuccess: async () => {
@@ -299,11 +301,15 @@ export default function AccountSetup() {
         toast.error("Phone Number is required");
         return;
       }
+      if (!isPhoneVerified) {
+        toast.error("Please verify your phone number before continuing");
+        return;
+      }
       if (!acceptedTerms) {
         toast.error("You must accept the Terms & Conditions and Privacy Policy");
         return;
       }
-      // Create account directly (phone verification will be added later)
+      // Phone is verified at this point — create the account
       try {
         const signupResult = await signupMutation.mutateAsync({
           username: formData.userName,
@@ -314,7 +320,6 @@ export default function AccountSetup() {
         if (signupResult?.userId) {
           setUserId(String(signupResult.userId));
         }
-        setIsPhoneVerified(true);
         setAccountCreated(true);
         window.history.replaceState({}, '', '/account-setup');
         setCurrentStep(2);
@@ -328,44 +333,47 @@ export default function AccountSetup() {
     }
   };
 
+  /** Ask Twilio to text a 6-digit code to the entered number. */
+  const handleSendPhoneCode = async () => {
+    if (!formData.phoneNumber.trim()) {
+      toast.error("Please enter your phone number first");
+      return;
+    }
+    try {
+      const result = await sendPhoneCodeMutation.mutateAsync({ phone: formData.phoneNumber });
+      setShowVerification(true);
+      setVerificationCode("");
+      toast.success(`Verification code sent to ${result.sentTo}`);
+    } catch (err: any) {
+      toast.error(err.message || "Could not send the verification code");
+    }
+  };
+
   const handleVerifyPhone = async () => {
     if (!verificationCode.trim()) {
       toast.error("Please enter the verification code");
       return;
     }
-    
     if (verificationCode.length < 4) {
       toast.error("Invalid verification code");
       return;
     }
-    
     try {
-      // Call the signup mutation to create the account
-      const signupResult = await signupMutation.mutateAsync({
-        username: formData.userName,
-        password: formData.password,
-        displayName: formData.userName,
-        email: formData.email,
+      // Check the code with Twilio Verify. Account creation happens on "Continue".
+      await verifyPhoneCodeMutation.mutateAsync({
+        phone: formData.phoneNumber,
+        code: verificationCode,
       });
-      
-      // Store the userId from the signup response
-      if (signupResult?.userId) {
-        setUserId(String(signupResult.userId));
-      }
-      
       setIsPhoneVerified(true);
       setShowVerification(false);
       setVerificationCode("");
       toast.success("Phone number verified!");
-      setCurrentStep(2);
     } catch (err: any) {
-      toast.error(err.message || "Account creation failed");
+      toast.error(err.message || "Verification failed");
     }
   };
 
-  const handleResendCode = () => {
-    toast.success("Verification code resent to your phone");
-  };
+  const handleResendCode = () => handleSendPhoneCode();
 
   const handlePreviousStep = () => {
     if (currentStep > 1) {
@@ -705,17 +713,82 @@ export default function AccountSetup() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="phoneNumber">Phone Number *</Label>
-                    <Input
-                      id="phoneNumber"
-                      name="phoneNumber"
-                      type="tel"
-                      value={formData.phoneNumber}
-                      onChange={handleInputChange}
-                      placeholder="Your phone number (required for verification)"
-                      required
-                      className="rounded-lg border-slate-200"
-                    />
-                    <p className="text-xs text-slate-600">We'll send a verification code to this number.</p>
+                    <div className="flex gap-2">
+                      <Input
+                        id="phoneNumber"
+                        name="phoneNumber"
+                        type="tel"
+                        value={formData.phoneNumber}
+                        onChange={e => {
+                          handleInputChange(e);
+                          // Changing the number invalidates any prior verification
+                          if (isPhoneVerified || showVerification) {
+                            setIsPhoneVerified(false);
+                            setShowVerification(false);
+                            setVerificationCode("");
+                          }
+                        }}
+                        placeholder="Your phone number (required for verification)"
+                        required
+                        disabled={isPhoneVerified}
+                        className="rounded-lg border-slate-200 flex-1"
+                      />
+                      {isPhoneVerified ? (
+                        <div className="flex items-center gap-1.5 px-3 rounded-lg bg-green-50 border border-green-200 text-green-700 text-sm font-medium whitespace-nowrap">
+                          <CheckCircle2 className="h-4 w-4" />
+                          Verified
+                        </div>
+                      ) : (
+                        <Button
+                          type="button"
+                          onClick={handleSendPhoneCode}
+                          disabled={sendPhoneCodeMutation.isPending || !formData.phoneNumber.trim()}
+                          className="whitespace-nowrap"
+                        >
+                          {sendPhoneCodeMutation.isPending
+                            ? "Sending..."
+                            : showVerification
+                              ? "Resend Code"
+                              : "Push to receive Code"}
+                        </Button>
+                      )}
+                    </div>
+
+                    {/* Code entry — appears once a code has been sent */}
+                    {showVerification && !isPhoneVerified && (
+                      <div className="space-y-2 pt-1">
+                        <Label htmlFor="phoneVerificationCode">Verification Code *</Label>
+                        <div className="flex gap-2">
+                          <Input
+                            id="phoneVerificationCode"
+                            type="text"
+                            inputMode="numeric"
+                            autoComplete="one-time-code"
+                            maxLength={6}
+                            value={verificationCode}
+                            onChange={e => setVerificationCode(e.target.value.replace(/\D/g, ""))}
+                            placeholder="Enter the 6-digit code"
+                            className="rounded-lg border-slate-200 flex-1 tracking-widest"
+                          />
+                          <Button
+                            type="button"
+                            onClick={handleVerifyPhone}
+                            disabled={verifyPhoneCodeMutation.isPending || verificationCode.length < 4}
+                            className="whitespace-nowrap"
+                          >
+                            {verifyPhoneCodeMutation.isPending ? "Verifying..." : "Verify"}
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+
+                    <p className="text-xs text-slate-600">
+                      {isPhoneVerified
+                        ? "This phone number has been verified."
+                        : showVerification
+                          ? "Enter the code we texted you, then press Verify. Codes expire after 10 minutes."
+                          : "We'll text a verification code to this number. You must verify it to continue."}
+                    </p>
                   </div>
 
                   {/* Merchant Checkbox */}
@@ -1247,61 +1320,6 @@ export default function AccountSetup() {
             </div>
           )}
 
-              {/* Phone Verification Modal */}
-              {showVerification && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                  <Card className="w-full max-w-md rounded-[1.5rem] border-slate-200 bg-white shadow-lg">
-                <CardHeader>
-                  <CardTitle>Verify Your Phone Number</CardTitle>
-                  <CardDescription>
-                    We've sent a verification code to {formData.phoneNumber}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="verificationCode">Verification Code</Label>
-                    <Input
-                      id="verificationCode"
-                      type="text"
-                      value={verificationCode}
-                      onChange={(e) => setVerificationCode(e.target.value)}
-                      placeholder="Enter 6-digit code"
-                      maxLength={6}
-                      className="rounded-lg border-slate-200 text-center text-2xl tracking-widest"
-                      autoFocus
-                    />
-                  </div>
-                  <p className="text-xs text-slate-600 text-center">
-                    Didn't receive the code?{" "}
-                    <button
-                      type="button"
-                      onClick={handleResendCode}
-                      className="text-blue-600 hover:underline font-medium"
-                    >
-                      Resend
-                    </button>
-                  </p>
-                </CardContent>
-                <div className="border-t border-slate-200 px-6 py-4 flex gap-3">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setShowVerification(false)}
-                    className="flex-1 rounded-lg"
-                  >
-                    Back
-                  </Button>
-                  <Button
-                    type="button"
-                    onClick={handleVerifyPhone}
-                    className="flex-1 rounded-lg bg-blue-600 hover:bg-blue-700"
-                  >
-                    Verify
-                  </Button>
-                </div>
-              </Card>
-            </div>
-          )}
           </>
         </div>
       </main>

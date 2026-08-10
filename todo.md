@@ -150,3 +150,9 @@
 - [x] FEATURE: Integrate Parse.bot Beckett API into Test AI page (get_graded_card_details — BGS cert lookup with sub-grades, label color, population) — labeled "Parse.bot (Beckett Data)"
 - [ ] FUTURE: Wire population report scraper into Test AI page (CGC, PCGS, NGC, CBCS)
 - [ ] FUTURE: Wire other marketplace scrapers (PWCC, Heritage, GoCollect, Comic Book Realm)
+
+## Phone Verification (Twilio Verify)
+- [x] FEATURE: Twilio Verify SMS phone verification on Account Setup step 1 — "Push to receive Code" button beside phone field, 6-digit code input + "Verify" button below, green Verified badge on success
+- [x] FEATURE: Backend server/twilio.ts wrapper (sendVerificationCode, checkVerificationCode, normalizePhone to E.164, maskPhone) + auth.sendPhoneCode / auth.verifyPhoneCode tRPC procedures
+- [x] FEATURE: Account creation is now gated on real phone verification (previously a stub that faked success)
+- [x] TESTS: server/twilio.test.ts — 10 tests covering live Twilio credential validation, E.164 normalization, and phone masking

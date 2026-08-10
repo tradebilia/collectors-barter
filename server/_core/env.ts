@@ -25,4 +25,8 @@ export const ENV = {
   openaiApiKey: process.env.TRADEBILIA_OPENAI_API_KEY ?? "", // key refreshed 2026-08-06
   // PSA API (placeholder)
   psaApiToken: process.env.PSA_API_TOKEN ?? "",
+  // Twilio Verify (SMS phone verification during account setup)
+  twilioAccountSid: process.env.TWILIO_ACCOUNT_SID ?? "",
+  twilioAuthToken: process.env.TWILIO_AUTH_TOKEN ?? "",
+  twilioVerifyServiceSid: process.env.TWILIO_VERIFY_SERVICE_SID ?? "",
 };
