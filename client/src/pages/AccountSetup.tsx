@@ -533,7 +533,7 @@ export default function AccountSetup() {
               <Card className="rounded-[1.5rem] border-slate-200 bg-white shadow-sm">
                 <CardHeader>
                   <CardTitle>Basic Information</CardTitle>
-                  <CardDescription>Step 1 of 3: Tell us about yourself</CardDescription>
+                  <CardDescription>Step 1 of 4: Tell us about yourself</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
@@ -889,7 +889,7 @@ export default function AccountSetup() {
                 <CardHeader>
                   <CardTitle>Import Account Information</CardTitle>
                   <CardDescription>
-                    Step 2 of 3: Optionally import your information from other accounts to build your Tradebilia profile
+                    Step 2 of 4: Optionally import your information from other accounts to build your Tradebilia profile
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -969,7 +969,7 @@ export default function AccountSetup() {
               <Card className="rounded-[1.5rem] border-slate-200 bg-white shadow-sm">
                 <CardHeader>
                   <CardTitle>Profile Picture & Preferences</CardTitle>
-                  <CardDescription>Step 3 of 3: Customize your profile and set your preferences</CardDescription>
+                  <CardDescription>Step 3 of 4: Customize your profile and set your preferences</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   {/* Avatar Section */}
@@ -1085,7 +1085,7 @@ export default function AccountSetup() {
               <Card className="rounded-[1.5rem] border-slate-200 bg-white shadow-sm">
                 <CardHeader>
                   <CardTitle>Review Your Information</CardTitle>
-                  <CardDescription>Step 5 of 5: Please review your account details before completing setup</CardDescription>
+                  <CardDescription>Step 4 of 4: Please review your account details before completing setup</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   {/* Basic Information Summary */}
