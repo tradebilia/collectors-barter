@@ -383,8 +383,31 @@ export default function AccountSetup() {
       console.log("Not on final step, skipping save");
       return;
     }
+
+    // Step 1: Create the account (signup)
+    let signupResult;
+    try {
+      console.log("Creating account with username:", formData.userName);
+      signupResult = await signupMutation.mutateAsync({
+        username: formData.userName,
+        password: formData.password,
+        displayName: formData.userName,
+        email: formData.email,
+      });
+      console.log("Signup result:", signupResult);
+      if (!signupResult?.userId) {
+        toast.error("Failed to create account");
+        return;
+      }
+      setUserId(String(signupResult.userId));
+    } catch (err: any) {
+      toast.error(err.message || "Account creation failed");
+      return;
+    }
+
+    // Step 2: Save the profile
     const fullName = `${formData.firstName} ${formData.lastName}`;
-    const finalUserId = userId || authQuery.data?.id || user?.id;
+    const finalUserId = signupResult.userId;
     console.log("Final userId to send:", finalUserId);
     console.log("Saving profile with data:", { fullName, contactEmail: formData.email });
     
@@ -490,28 +513,18 @@ export default function AccountSetup() {
                 <p className="mt-4 text-lg text-slate-600">Let's set up your account in just a few steps</p>
 
                 {/* Step Navigation */}
-                {showDevNav && (
-                  <div className="mt-6 flex flex-col items-center gap-2">
-                    <div className="flex justify-center gap-2">
-                      {[1, 2, 3, 4].map(step => (
-                        <Button
-                          key={step}
-                          onClick={() => setCurrentStep(step)}
-                          variant={currentStep === step ? "default" : "outline"}
-                          size="sm"
-                        >
-                          Step {step}
-                        </Button>
-                      ))}
-                    </div>
-                    <button
-                      onClick={() => setShowDevNav(false)}
-                      className="text-xs text-slate-500 hover:text-slate-700"
+                <div className="mt-6 flex justify-center gap-2">
+                  {[1, 2, 3, 4].map(step => (
+                    <Button
+                      key={step}
+                      onClick={() => setCurrentStep(step)}
+                      variant={currentStep === step ? "default" : "outline"}
+                      size="sm"
                     >
-                      Hide Dev Nav
-                    </button>
-                  </div>
-                )}
+                      Step {step}
+                    </Button>
+                  ))}
+                </div>
               </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
