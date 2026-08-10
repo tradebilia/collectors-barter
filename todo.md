@@ -147,5 +147,6 @@
 - [ ] PRODUCTION: Once testing complete, apply same eBay search specs to production AI Analyzer in Trade Room
 - [ ] FUTURE: Add eBay sold/completed history via eBay Finding API
 - [x] FEATURE: Integrate Parse.bot PSA API into Test AI page (get_cert_full + get_cert_sales endpoints)
-- [ ] FUTURE: Wire population report scraper into Test AI page (CGC, BGS, PCGS, NGC, CBCS)
+- [x] FEATURE: Integrate Parse.bot Beckett API into Test AI page (get_graded_card_details — BGS cert lookup with sub-grades, label color, population) — labeled "Parse.bot (Beckett Data)"
+- [ ] FUTURE: Wire population report scraper into Test AI page (CGC, PCGS, NGC, CBCS)
 - [ ] FUTURE: Wire other marketplace scrapers (PWCC, Heritage, GoCollect, Comic Book Realm)

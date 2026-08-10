@@ -56,12 +56,12 @@ const DATA_SOURCES = {
   },
   bgs: {
     id: 'bgs',
-    label: 'BGS / Beckett',
+    label: 'Parse.bot (Beckett Data)',
     group: 'Grading',
-    icon: '🏅',
+    icon: '🧩',
     provides: ['item_details', 'cert_info', 'population_report'],
-    status: 'placeholder' as const,
-    description: 'Cert details, sub-grades, population report',
+    status: 'live' as const,
+    description: 'BGS cert details, final grade, all 4 sub-grades, label color, population — powered by Parse.bot API',
   },
   pcgs: {
     id: 'pcgs',
@@ -561,6 +561,140 @@ function PSASection({ item, side }: { item: SelectedItem; side: 'left' | 'right'
 }
 
 // ─── Placeholder Section ─────────────────────────────────────────────────────
+// ─── Beckett Section ─────────────────────────────────────────────────────────
+function BeckettSection({ item, side }: { item: SelectedItem; side: 'left' | 'right' }) {
+  const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
+  const { data, isLoading } = trpc.testAI.getBeckettData.useQuery(
+    { certNumber: item.certId || '' },
+    { enabled: !!item.certId }
+  );
+
+  if (!item.certId) {
+    return (
+      <div className="bg-gray-800/30 rounded-lg p-3 border border-dashed border-gray-700/40 space-y-2">
+        <p className={`text-[11px] font-bold uppercase ${accentColor}`}>🧩 Parse.bot (Beckett Data)</p>
+        <p className="text-gray-500 text-[10px]">Enter a BGS cert number to fetch grading details</p>
+      </div>
+    );
+  }
+
+  // Label color badge styling
+  const labelColorClass = (label: string | null) => {
+    if (!label) return 'bg-gray-700 text-gray-300';
+    const l = label.toLowerCase();
+    if (l === 'gold') return 'bg-yellow-600/80 text-yellow-100';
+    if (l === 'black') return 'bg-gray-900 text-white border border-gray-600';
+    if (l === 'silver') return 'bg-gray-400/80 text-gray-900';
+    return 'bg-gray-700 text-gray-300';
+  };
+
+  return (
+    <div className="bg-gray-800/30 rounded-lg p-3 border border-gray-700/20 space-y-3">
+      <div className="flex items-center justify-between">
+        <p className={`text-[11px] font-bold uppercase ${accentColor}`}>🧩 BGS Grading Report (via Parse.bot)</p>
+        {isLoading && <Spinner className="w-3 h-3" />}
+      </div>
+      <p className="text-gray-500 text-[10px]">Data type: Cert details, final grade, sub-grades, label color, population</p>
+
+      {data?.status === 'error' && (
+        <div className="bg-red-900/20 border border-red-700/30 rounded p-2">
+          <p className="text-red-400 text-[10px]">{data.message}</p>
+        </div>
+      )}
+
+      {data?.status === 'success' && data.data && (
+        <div className="space-y-3">
+          {/* Card Identity */}
+          <div className="bg-gray-900/40 rounded p-2 space-y-1">
+            <p className="text-white text-[12px] font-semibold">{data.data.playerName}</p>
+            <p className="text-gray-400 text-[10px]">{data.data.setName}</p>
+            <div className="grid grid-cols-3 gap-2 text-[10px] mt-1">
+              <div>
+                <p className="text-gray-500 text-[9px] uppercase mb-0.5">Final Grade</p>
+                <p className="text-cyan-300 font-bold text-[13px]">{data.data.finalGrade}</p>
+              </div>
+              <div>
+                <p className="text-gray-500 text-[9px] uppercase mb-0.5">Label</p>
+                <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded uppercase ${labelColorClass(data.data.labelColor)}`}>
+                  {data.data.labelColor || 'N/A'}
+                </span>
+              </div>
+              <div>
+                <p className="text-gray-500 text-[9px] uppercase mb-0.5">Sport</p>
+                <p className="text-white font-semibold">{data.data.sport || 'N/A'}</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-2 text-[10px] mt-1">
+              <div>
+                <p className="text-gray-500 text-[9px] uppercase mb-0.5">Card #</p>
+                <p className="text-white font-semibold">{data.data.cardNumber || 'N/A'}</p>
+              </div>
+              <div>
+                <p className="text-gray-500 text-[9px] uppercase mb-0.5">Year</p>
+                <p className="text-white font-semibold">{data.data.year || 'N/A'}</p>
+              </div>
+              <div>
+                <p className="text-gray-500 text-[9px] uppercase mb-0.5">Date Graded</p>
+                <p className="text-white font-semibold text-[9px]">{data.data.dateGraded ? new Date(data.data.dateGraded).toLocaleDateString() : 'N/A'}</p>
+              </div>
+            </div>
+            {/* Card Image */}
+            {data.data.frontImageUrl && !data.data.frontImageUrl.includes('no-image') && (
+              <div className="mt-2">
+                <img src={data.data.frontImageUrl} alt="Card" className="h-20 rounded border border-gray-700/40 object-contain" />
+              </div>
+            )}
+          </div>
+
+          {/* BGS Sub-Grades — the key differentiator */}
+          <div className="bg-gray-900/40 rounded p-2 space-y-2">
+            <p className="text-gray-400 text-[10px] font-semibold uppercase">BGS Sub-Grades</p>
+            <div className="grid grid-cols-2 gap-1.5 text-[10px]">
+              {[
+                { label: 'Centering', value: data.data.subGrades?.centering },
+                { label: 'Corners', value: data.data.subGrades?.corners },
+                { label: 'Edges', value: data.data.subGrades?.edges },
+                { label: 'Surface', value: data.data.subGrades?.surface },
+              ].map(sg => (
+                <div key={sg.label} className="bg-gray-800/60 rounded p-1.5 flex items-center justify-between">
+                  <p className="text-gray-400 text-[9px]">{sg.label}</p>
+                  <p className={`font-bold text-[12px] ${
+                    sg.value === '10.0' || sg.value === '10' ? 'text-yellow-400' :
+                    sg.value && parseFloat(sg.value) >= 9.5 ? 'text-green-400' :
+                    sg.value && parseFloat(sg.value) >= 9 ? 'text-cyan-300' :
+                    'text-white'
+                  }`}>{sg.value || 'N/A'}</p>
+                </div>
+              ))}
+            </div>
+            {data.data.subGrades?.autograph && data.data.subGrades.autograph !== '0.0' && (
+              <div className="bg-gray-800/60 rounded p-1.5 flex items-center justify-between">
+                <p className="text-gray-400 text-[9px]">Autograph</p>
+                <p className="text-cyan-300 font-bold text-[12px]">{data.data.subGrades.autograph}</p>
+              </div>
+            )}
+          </div>
+
+          {/* Population Data */}
+          <div className="bg-gray-900/40 rounded p-2 space-y-1">
+            <p className="text-gray-400 text-[10px] font-semibold uppercase">Population Data</p>
+            <div className="grid grid-cols-2 gap-2 text-[10px]">
+              <div className="bg-gray-800/60 rounded p-1.5 text-center">
+                <p className="text-gray-500 text-[9px] uppercase mb-0.5">Graded Higher</p>
+                <p className="text-white font-semibold">{data.data.popHigher?.toLocaleString() ?? 'N/A'}</p>
+              </div>
+              <div className="bg-gray-800/60 rounded p-1.5 text-center">
+                <p className="text-gray-500 text-[9px] uppercase mb-0.5">Total at Grade</p>
+                <p className="text-white font-semibold">{data.data.popTotal?.toLocaleString() ?? 'N/A'}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function PlaceholderSection({ sourceId, side }: { sourceId: SourceId; side: 'left' | 'right' }) {
   const source = DATA_SOURCES[sourceId];
   const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
@@ -747,7 +881,7 @@ function DataColumn({ item, searchItem, side, enabledSources, ebayData }: {
       {enabledSources.has('ebay_sold') && <PlaceholderSection sourceId="ebay_sold" side={side} />}
       {enabledSources.has('cgc') && <PlaceholderSection sourceId="cgc" side={side} />}
       {enabledSources.has('psa') && <PSASection item={item} side={side} />}
-      {enabledSources.has('bgs') && <PlaceholderSection sourceId="bgs" side={side} />}
+      {enabledSources.has('bgs') && <BeckettSection item={item} side={side} />}
       {enabledSources.has('pcgs') && <PlaceholderSection sourceId="pcgs" side={side} />}
       {enabledSources.has('ngc') && <PlaceholderSection sourceId="ngc" side={side} />}
       {enabledSources.has('cbcs') && <PlaceholderSection sourceId="cbcs" side={side} />}

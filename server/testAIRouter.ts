@@ -665,7 +665,7 @@ export const testAIRouter = router({
     }))
     .query(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
-      // For PSA, use getPSAData instead. This placeholder remains for other grading companies.
+      // For PSA, use getPSAData instead. For BGS, use getBeckettData instead.
       return {
         certId: input.certId,
         gradingCompany: input.gradingCompany,
@@ -673,6 +673,102 @@ export const testAIRouter = router({
         message: `Population report scraper for ${input.gradingCompany} not yet built. Cert ID: ${input.certId}`,
         data: null,
       };
+    }),
+
+  // Parse.bot Beckett (BGS) graded card lookup
+  getBeckettData: protectedProcedure
+    .input(z.object({
+      certNumber: z.string(),
+    }))
+    .query(async ({ ctx, input }) => {
+      if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+
+      const parseApiKey = process.env.PARSE_BOT_API_KEY;
+      if (!parseApiKey) return {
+        certNumber: input.certNumber,
+        status: 'error',
+        message: 'Parse.bot API key not configured',
+        data: null,
+      };
+
+      try {
+        // Call Parse.bot get_graded_card_details endpoint for BGS cert lookup
+        const beckettUrl = `https://api.parse.bot/scraper/25ac7096-3092-4807-a4fa-f2a9ac2bf840/get_graded_card_details?cert_number=${encodeURIComponent(input.certNumber)}`;
+        const beckettRes = await fetch(beckettUrl, {
+          headers: { 'X-API-Key': parseApiKey },
+        });
+        const beckettData = await beckettRes.json() as any;
+
+        if (!beckettRes.ok || !beckettData) {
+          return {
+            certNumber: input.certNumber,
+            status: 'error',
+            message: `Parse.bot Beckett API error: ${beckettData?.message || 'Unknown error'}`,
+            data: null,
+          };
+        }
+
+        // Parse.bot wraps the response under a "data" key: { status: "success", data: { ... } }
+        const card = beckettData?.data ?? beckettData;
+
+        // Also fetch price guide data using the player/card name if available
+        let priceGuideData: any = null;
+        const searchQuery = card.player_name || card.set_name;
+        if (searchQuery) {
+          try {
+            const priceUrl = `https://api.parse.bot/scraper/25ac7096-3092-4807-a4fa-f2a9ac2bf840/search_price_guide?query=${encodeURIComponent(searchQuery)}`;
+            const priceRes = await fetch(priceUrl, {
+              headers: { 'X-API-Key': parseApiKey },
+            });
+            if (priceRes.ok) {
+              const priceJson = await priceRes.json() as any;
+              priceGuideData = priceJson?.data ?? priceJson;
+            }
+          } catch {
+            // Price guide is optional — don't fail the whole request
+          }
+        }
+
+        return {
+          certNumber: input.certNumber,
+          status: 'success',
+          data: {
+            // Core card identity
+            playerName: card.player_name,
+            setName: card.set_name,
+            cardNumber: card.card_number,
+            sport: card.sport,
+            year: card.year,
+            manufacturer: card.manufacturer,
+            // BGS grading details
+            finalGrade: card.final_grade,
+            labelColor: card.label_color,     // Gold, Silver, Black, etc.
+            dateGraded: card.date_graded,
+            // BGS Sub-grades (the key differentiator vs PSA)
+            subGrades: {
+              centering: card.centering_grade ?? null,
+              corners: card.corners_grade ?? null,
+              edges: card.edges_grade ?? null,
+              surface: card.surface_grade ?? null,
+              autograph: card.autograph_grade ?? null,
+            },
+            // Population data
+            popHigher: card.pop_higher ?? null,          // How many graded higher than this cert
+            popTotal: card.pop_report_total ?? null,     // Total graded at this grade
+            gradingCategory: card.grading_category ?? 'BGS',
+            frontImageUrl: card.front_image_url ?? null,
+            // Price guide (optional, from separate call)
+            priceGuide: priceGuideData,
+          },
+        };
+      } catch (err: any) {
+        return {
+          certNumber: input.certNumber,
+          status: 'error',
+          message: `Failed to fetch Beckett data: ${err.message}`,
+          data: null,
+        };
+      }
     }),
 
   // Run AI trade analysis between two items
