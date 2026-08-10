@@ -463,16 +463,8 @@ export default function AccountSetup() {
       securityAnswer: securityAnswer,
       preferredCategories: preferredCategories.length > 0 ? (preferredCategories as any) : undefined,
       avatar: avatarData as any,
-      // Merchant fields — only send if user is a merchant
-      isMerchant: formData.isMerchant,
-      storeName: formData.isMerchant ? (formData.storeName || undefined) : undefined,
-      businessLicense: formData.isMerchant ? (formData.businessLicense || undefined) : undefined,
-      taxId: formData.isMerchant ? (formData.taxId || undefined) : undefined,
-      storeDescription: formData.isMerchant ? (formData.storeDescription || undefined) : undefined,
-      businessAddress: formData.isMerchant ? (formData.businessAddress || undefined) : undefined,
-      businessPhone: formData.isMerchant ? (formData.businessPhone || undefined) : undefined,
-      businessEmail: formData.isMerchant ? (formData.businessEmail || undefined) : undefined,
-      businessWebsite: formData.isMerchant ? (formData.businessWebsite || undefined) : undefined,
+      // Merchant fields are NOT sent during account setup — they're admin-only
+      // isMerchant defaults to false on the backend for new users
       // Notification preferences
       notificationPreferences: notificationPreferences,
     });
