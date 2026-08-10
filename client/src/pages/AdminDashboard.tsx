@@ -1473,6 +1473,47 @@ export default function AdminDashboard() {
                 </div>
               )}
 
+              {/* Merchant Information */}
+              {selectedUser.isMerchant && (
+                <div className="border-t border-border pt-4">
+                  <h3 className="font-semibold mb-3">Merchant Information</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm font-semibold text-muted-foreground">Store Name</p>
+                      <p className="text-base">{selectedUser.storeName || "-"}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-muted-foreground">Business License</p>
+                      <p className="text-base">{selectedUser.businessLicense || "-"}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-muted-foreground">Tax ID</p>
+                      <p className="text-base">{selectedUser.taxId || "-"}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-muted-foreground">Business Email</p>
+                      <p className="text-base">{selectedUser.businessEmail || "-"}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-muted-foreground">Business Phone</p>
+                      <p className="text-base">{selectedUser.businessPhone || "-"}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-muted-foreground">Business Website</p>
+                      <p className="text-base">{selectedUser.businessWebsite || "-"}</p>
+                    </div>
+                    <div className="col-span-2">
+                      <p className="text-sm font-semibold text-muted-foreground">Business Address</p>
+                      <p className="text-base">{selectedUser.businessAddress || "-"}</p>
+                    </div>
+                    <div className="col-span-2">
+                      <p className="text-sm font-semibold text-muted-foreground">Store Description</p>
+                      <p className="text-base">{selectedUser.storeDescription || "-"}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div className="border-t border-border pt-4">
                 <h3 className="font-semibold mb-3">Account Statistics</h3>
                 <div className="grid grid-cols-3 gap-4">
