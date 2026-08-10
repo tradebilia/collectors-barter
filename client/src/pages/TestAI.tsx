@@ -444,8 +444,8 @@ function PSASection({ item, side }: { item: SelectedItem; side: 'left' | 'right'
         <div className="space-y-3">
           {/* Card Info */}
           <div className="bg-gray-900/40 rounded p-2 space-y-1">
-            <p className="text-white text-[11px] font-semibold truncate">{data.data.cardTitle}</p>
-            <div className="grid grid-cols-2 gap-2 text-[10px]">
+            <p className="text-white text-[12px] font-semibold">{data.data.cardTitle}</p>
+            <div className="grid grid-cols-3 gap-2 text-[10px] mt-1">
               <div>
                 <p className="text-gray-500 text-[9px] uppercase mb-0.5">Grade</p>
                 <p className="text-cyan-300 font-semibold">{data.data.grade}</p>
@@ -454,7 +454,42 @@ function PSASection({ item, side }: { item: SelectedItem; side: 'left' | 'right'
                 <p className="text-gray-500 text-[9px] uppercase mb-0.5">PSA Estimate</p>
                 <p className="text-green-400 font-semibold">{data.data.psaEstimate || 'N/A'}</p>
               </div>
+              <div>
+                <p className="text-gray-500 text-[9px] uppercase mb-0.5">Year</p>
+                <p className="text-white font-semibold">{data.data.year || 'N/A'}</p>
+              </div>
             </div>
+            <div className="grid grid-cols-3 gap-2 text-[10px] mt-1">
+              <div>
+                <p className="text-gray-500 text-[9px] uppercase mb-0.5">Brand</p>
+                <p className="text-white font-semibold truncate">{data.data.brand || 'N/A'}</p>
+              </div>
+              <div>
+                <p className="text-gray-500 text-[9px] uppercase mb-0.5">Subject</p>
+                <p className="text-white font-semibold truncate">{data.data.subject || 'N/A'}</p>
+              </div>
+              <div>
+                <p className="text-gray-500 text-[9px] uppercase mb-0.5">Card #</p>
+                <p className="text-white font-semibold">{data.data.cardNumber || 'N/A'}</p>
+              </div>
+            </div>
+            {data.data.variety && (
+              <div className="mt-1">
+                <p className="text-gray-500 text-[9px] uppercase mb-0.5">Variety</p>
+                <p className="text-white text-[10px]">{data.data.variety}</p>
+              </div>
+            )}
+            {/* Card Images */}
+            {(data.data.frontImageUrl || data.data.backImageUrl) && (
+              <div className="flex gap-2 mt-2">
+                {data.data.frontImageUrl && (
+                  <img src={data.data.frontImageUrl} alt="Front" className="h-20 rounded border border-gray-700/40 object-contain" />
+                )}
+                {data.data.backImageUrl && (
+                  <img src={data.data.backImageUrl} alt="Back" className="h-20 rounded border border-gray-700/40 object-contain" />
+                )}
+              </div>
+            )}
           </div>
           
           {/* Population Breakdown */}
@@ -462,42 +497,52 @@ function PSASection({ item, side }: { item: SelectedItem; side: 'left' | 'right'
             <p className="text-gray-400 text-[10px] font-semibold uppercase">Population Breakdown</p>
             <div className="grid grid-cols-5 gap-1 text-[9px]">
               {[
-                { label: 'Grade 10', value: data.data.population.Grade10 },
-                { label: 'Grade 9', value: data.data.population.Grade9 },
-                { label: 'Grade 8', value: data.data.population.Grade8 },
-                { label: 'Grade 7', value: data.data.population.Grade7 },
-                { label: 'Grade 6', value: data.data.population.Grade6 },
+                { label: '10', value: data.data.population.Grade10 },
+                { label: '9', value: data.data.population.Grade9 },
+                { label: '8', value: data.data.population.Grade8 },
+                { label: '7', value: data.data.population.Grade7 },
+                { label: '6', value: data.data.population.Grade6 },
+                { label: '5', value: data.data.population.Grade5 },
+                { label: '4', value: data.data.population.Grade4 },
+                { label: '3', value: data.data.population.Grade3 },
+                { label: '2', value: data.data.population.Grade2 },
+                { label: '1', value: data.data.population.Grade1 },
               ].map(g => (
                 <div key={g.label} className="bg-gray-800/60 rounded p-1 text-center">
-                  <p className="text-gray-500 text-[8px] uppercase mb-0.5">{g.label}</p>
-                  <p className="text-white font-semibold">{g.value}</p>
+                  <p className="text-gray-500 text-[8px] mb-0.5">PSA {g.label}</p>
+                  <p className={`font-semibold ${g.value > 0 ? 'text-white' : 'text-gray-600'}`}>{g.value.toLocaleString()}</p>
                 </div>
               ))}
             </div>
             <div className="grid grid-cols-2 gap-2 text-[10px] mt-2">
               <div className="bg-gray-800/60 rounded p-1.5 text-center">
                 <p className="text-gray-500 text-[9px] uppercase mb-0.5">Total Graded</p>
-                <p className="text-white font-semibold">{data.data.population.GradeTotal}</p>
+                <p className="text-white font-semibold">{data.data.population.GradeTotal.toLocaleString()}</p>
               </div>
               <div className="bg-gray-800/60 rounded p-1.5 text-center">
                 <p className="text-gray-500 text-[9px] uppercase mb-0.5">All (incl. Auth)</p>
-                <p className="text-white font-semibold">{data.data.population.Total}</p>
+                <p className="text-white font-semibold">{data.data.population.Total.toLocaleString()}</p>
               </div>
             </div>
           </div>
           
           {/* Recent Sales */}
-          {data.data.recentSales && data.data.recentSales.length > 0 && (
+          {data.data.recentSales && data.data.recentSales.length > 0 ? (
             <div className="bg-gray-900/40 rounded p-2 space-y-1">
               <p className="text-gray-400 text-[10px] font-semibold uppercase">Recent Sales (Parse.bot)</p>
               {data.data.recentSales.map((sale: any, i: number) => (
                 <div key={i} className="flex items-center justify-between gap-2 py-1 border-b border-gray-700/20 last:border-b-0">
                   <div className="min-w-0">
-                    <p className="text-[10px] text-gray-400 truncate">{sale.dateSold}</p>
+                    <a href={sale.url} target="_blank" rel="noopener noreferrer" className="text-[10px] text-blue-400 hover:underline truncate block">{sale.title || 'View listing'}</a>
+                    <p className="text-[9px] text-gray-500">{sale.dateSold}</p>
                   </div>
                   <p className="text-green-400 font-semibold text-[11px] flex-shrink-0">${sale.price.toLocaleString()}</p>
                 </div>
               ))}
+            </div>
+          ) : (
+            <div className="bg-gray-900/40 rounded p-2">
+              <p className="text-gray-500 text-[10px]">No recent sales data available</p>
             </div>
           )}
         </div>

@@ -608,7 +608,8 @@ export const testAIRouter = router({
         };
 
         // Extract recent sales from cert_sales response (array of sales objects)
-        const salesArr = certSalesData?.data ?? certSalesData;
+        // cert_sales response: { status: "success", data: { sales: [...] } }
+        const salesArr = certSalesData?.data?.sales ?? certSalesData?.data ?? certSalesData;
         const recentSales = Array.isArray(salesArr) ? salesArr.slice(0, 3).map((sale: any) => ({
           dateSold: sale.date_sold,
           price: sale.price,
