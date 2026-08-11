@@ -153,7 +153,7 @@ export default function TradeShowcase() {
 
   return (
     <div className="min-h-screen bg-[#f7f4ee]">
-      <TopBar logoUrl="/manus-storage/tradebilia-logo_12c07bbf.svg" searchPlaceholder="Search Tradebilia..." />
+      <TopBar logoUrl="/manus-storage/tradebilia_final_transparent_d37f9c4f.svg" searchPlaceholder="Search Tradebilia..." />
 
       {/* Hero — same as homepage */}
       <section

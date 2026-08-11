@@ -15,7 +15,7 @@ import { toast } from "sonner";
 import { Link, useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 
-const TRADEBILIA_LOGO_URL = "/manus-storage/tradebilia-logo_12c07bbf.svg";
+const TRADEBILIA_LOGO_URL = "/manus-storage/tradebilia_final_transparent_d37f9c4f.svg";
 
 type AccountSource = "ebay" | "paypal" | "facebook" | "linkedin" | "whatnot";
 

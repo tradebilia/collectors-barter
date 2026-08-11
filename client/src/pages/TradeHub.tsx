@@ -104,7 +104,7 @@ export default function TradeHub() {
 
   return (
     <div className="min-h-screen bg-[#f7f4ee] text-foreground">
-      <TopBar logoUrl="/manus-storage/tradebilia-logo_12c07bbf.svg" searchPlaceholder="Search Tradebilia..." />
+      <TopBar logoUrl="/manus-storage/tradebilia_final_transparent_d37f9c4f.svg" searchPlaceholder="Search Tradebilia..." />
 
       <main className="pb-24">
         {/* Hero Section — same background as main page */}

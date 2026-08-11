@@ -13,7 +13,7 @@ interface CategoryTopBarProps {
 }
 
 export function CategoryTopBar({
-  logoUrl = "/manus-storage/tradebilia-logo_12c07bbf.svg",
+  logoUrl = "/manus-storage/tradebilia_final_transparent_d37f9c4f.svg",
   searchPlaceholder = "Search...",
   onSearchChange,
 }: CategoryTopBarProps) {

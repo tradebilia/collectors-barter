@@ -17,7 +17,7 @@ import type { CollectibleCategory, FieldDefinition } from "@/lib/formFieldDefini
 import { getLayoutConfig, getGridColumnsClass, getColSpanClass } from "@/lib/layoutConfigs/layoutTypes";
 import { ITEM_TYPE_LAYOUTS } from "@/lib/layoutConfigs/itemTypeLayouts";
 
-const TRADEBILIA_LOGO_URL = "/manus-storage/tradebilia-logo_c676d640.svg";
+const TRADEBILIA_LOGO_URL = "/manus-storage/tradebilia_final_transparent_d37f9c4f.svg";
 
 // Map display names to enum values
 const conditionDisplayToEnum: Record<string, string> = {

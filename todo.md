@@ -1,5 +1,15 @@
 # Tradebilia Platform TODO
 
+
+# Project TODO
+
+## Session Transition Gate — Do Not Start New Feature Work
+- [ ] BLOCKER: Verify the new session has cloned the GitHub repository, restored required secrets, connected to the intended external CUSTOM_DATABASE_URL, and passed the handoff acceptance checks in SESSION_HANDOFF_GUIDE.md.
+- [ ] BLOCKER: Obtain Rich's explicit confirmation that the new session handoff is complete before starting any feature, scraper, AI Analyzer, or unrelated bug-fix work.
+- [x] HANDOFF: Completed the accurate storage and asset-reference audit, consolidated the master handoff documentation, and added the sanitized handoff package to durable project shared files.
+- [x] HANDOFF: Audited 55 static asset references, preserved all 46 active references in a GitHub recovery release, and removed nine broken source references from executable UI code.
+- [x] HANDOFF: Replaced broken ranking-title image links and the home hero wheel dependency with inline vector rendering, then verified the rendered hero pages.
+
 ## Phase 1: Core Platform Setup
 - [x] User authentication with Manus OAuth
 - [x] Database schema for users, profiles, listings, trades, reviews
@@ -193,6 +203,6 @@
 - [x] CLEANUP: Removed the stray checkdb.mjs debug script from the project root
 
 ## Bugs Found During Messages Page Testing
-- [ ] BUG: Messages page title "Direct Lines, Trusted Conversations" is too small — needs to match home page hero title size (text-6xl sm:text-7xl or similar)
-- [ ] BUG: Reply sender displays "Collector 30002" instead of display name "Administrator" — displayName not being used in reply rendering
+- [x] BUG FIX: Messages page title "Direct Lines, Trusted Conversations" increased to match the home page hero title scale.
+- [x] BUG FIX: Reply sender display now uses the sender displayName instead of fallback "Collector <ID>".
 - [ ] BUG: Sender of a message receives an alert notification when they send a reply — ROOT CAUSE: sendInquiryReply marks inquiry as unread (isRead=0) but doesn't specify for whom. The inquiry is marked unread for BOTH the recipient AND the sender, triggering an alert for the sender. FIX: Only mark as unread for the original inquiry sender (the recipient of the reply), not for the replier.

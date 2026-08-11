@@ -17,7 +17,7 @@ import { toast } from "sonner";
 import { Link } from "wouter";
 import { getAvatarInitials } from "@/lib/tradebilia";
 
-const TRADEBILIA_LOGO_URL = "/manus-storage/tradebilia-logo_12c07bbf.svg";
+const TRADEBILIA_LOGO_URL = "/manus-storage/tradebilia_final_transparent_d37f9c4f.svg";
 
 export default function Watchlist() {
   const { isAuthenticated, loading, user } = useAuth();

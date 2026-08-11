@@ -127,14 +127,17 @@ export function RankingPageHero({ title, subtitle = "Collectors Trading Exchange
           {/* Divider line */}
           <line x1="590" y1="271" x2="590" y2="595" stroke="white" strokeWidth="8.5" strokeLinecap="round" />
 
-          <image
+          <text
             x="650"
-            y="150"
-            width="1800"
-            height="564"
-            href={title === "Most Viewed" ? "/manus-storage/MostViewed_100f9c6d.svg" : title === "Most Favorited" ? "/manus-storage/MostRequested_380cfa4e.svg" : title === "Top Rated Traders" ? "/manus-storage/TopRatedTraders_d73a8d08.svg" : title === "Highest Trade Value" ? "/manus-storage/HighestTradeValue_f34ed3ff_dad70e10.svg" : "/manus-storage/TradeProposal_fe652c50.svg"}
-            preserveAspectRatio="xMinYMid meet"
-          />
+            y="500"
+            fill="white"
+            fontFamily="Georgia, serif"
+            fontSize="150"
+            fontWeight="800"
+            letterSpacing="-4"
+          >
+            {title}
+          </text>
         </svg>
       </div>
     </section>

@@ -29,7 +29,7 @@ import { Link } from "wouter";
 import { TopBar } from "@/components/TopBar";
 import { CategoryBar } from "@/components/CategoryBar";
 
-const TRADEBILIA_LOGO_URL = "/manus-storage/AccountSettings_f9d8a594.svg";
+const TRADEBILIA_LOGO_URL = "/manus-storage/AccountSettingsTitle_d9a1337d.webp";
 
 const categoryOptions = [
   { value: "comics", label: "Comics" },

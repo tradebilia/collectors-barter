@@ -14,7 +14,7 @@ import { toast } from "sonner";
 import { TopBar } from "@/components/TopBar";
 import { CategoryBar } from "@/components/CategoryBar";
 
-const TRADEBILIA_LOGO_URL = "/manus-storage/tradebilia-logo_c676d640.svg";
+const TRADEBILIA_LOGO_URL = "/manus-storage/tradebilia_final_transparent_d37f9c4f.svg";
 
 function firstName(name?: string | null) {
   return name?.split(" ").filter(Boolean)[0] || "Collector";

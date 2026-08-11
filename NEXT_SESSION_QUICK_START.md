@@ -1,139 +1,68 @@
-# Next Session Quick Start (5 Minutes)
+# Tradebilia: Next Session Quick Start
 
-**TL;DR:** Do these 5 things in order, then you're ready to work.
+> **Stop condition:** This is a handoff-validation session first. Do not start new feature work until Rich explicitly confirms the handoff is complete.
 
----
+## 1. Establish the Correct Codebase
 
-## Step 1: Clone & Install (1 min)
+Clone the repository and verify that the checkout is clean before changing anything.
 
 ```bash
 git clone https://github.com/tradebilia/collectors-barter.git
 cd collectors-barter
-pnpm install
+pnpm install --frozen-lockfile
+git status --short
 ```
 
----
+The last command must show no uncommitted files. Then read `SESSION_HANDOFF_GUIDE.md`, `IMAGE_ASSET_INVENTORY.md`, and the **Session Transition Gate** at the top of `todo.md`.
 
-## Step 2: Restore Environment Variables (2 min)
+## 2. Restore Secrets Securely
 
-Use this command to restore all API keys and database credentials:
+Use the project’s secure Secrets interface to restore configuration. Never place a raw value in Markdown, source code, `.env` committed files, a ticket, or chat.
 
-```bash
-webdev_request_secrets \
-  --brief "Restore Tradebilia API credentials and database config" \
-  --secrets '[
-    {"key": "CUSTOM_DATABASE_URL", "description": "Production database connection string"},
-    {"key": "EBAY_PROD_CLIENT_ID", "description": "eBay API client ID"},
-    {"key": "EBAY_PROD_CLIENT_SECRET", "description": "eBay API client secret"},
-    {"key": "TWILIO_ACCOUNT_SID", "description": "Twilio account SID for SMS verification"},
-    {"key": "TWILIO_AUTH_TOKEN", "description": "Twilio auth token"},
-    {"key": "TWILIO_VERIFY_SERVICE_SID", "description": "Twilio Verify service SID"},
-    {"key": "TRADEBILIA_OPENAI_API_KEY", "description": "OpenAI API key for trade analysis"},
-    {"key": "PARSE_BOT_API_KEY", "description": "Parse.bot API key for PSA/Beckett data"},
-    {"key": "SOLD_COMPS_API_KEY", "description": "Sold-Comps API key for sold data"},
-    {"key": "FACEBOOK_APP_ID", "description": "Facebook OAuth app ID"},
-    {"key": "FACEBOOK_APP_SECRET", "description": "Facebook OAuth app secret"},
-    {"key": "FACEBOOK_REDIRECT_URI", "description": "Facebook OAuth redirect URI"},
-    {"key": "LINKEDIN_CLIENT_ID", "description": "LinkedIn OAuth client ID"},
-    {"key": "LINKEDIN_CLIENT_SECRET", "description": "LinkedIn OAuth client secret"},
-    {"key": "LINKEDIN_REDIRECT_URI", "description": "LinkedIn OAuth redirect URI"},
-    {"key": "ENCRYPTION_KEY", "description": "Encryption key for OAuth tokens at rest"}
-  ]'
-```
+| Priority | Environment variables |
+|---|---|
+| Required to access live data | `CUSTOM_DATABASE_URL` |
+| Required for account setup SMS | `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_VERIFY_SERVICE_SID` |
+| Required for Test AI data currently in use | `EBAY_PROD_CLIENT_ID`, `EBAY_PROD_CLIENT_SECRET`, `SOLD_COMPS_API_KEY`, `PARSE_BOT_API_KEY`, `TRADEBILIA_OPENAI_API_KEY` |
+| Required before email/OAuth/payment testing | `RESEND_API_KEY`, Facebook/LinkedIn OAuth values, PayPal values, `ENCRYPTION_KEY`, `JWT_SECRET` |
 
-**Where to get these values:**
-- **Database URL:** From your MySQL/TiDB provider (user's own database)
-- **eBay credentials:** eBay Developer Portal
-- **Twilio credentials:** Twilio Console
-- **OpenAI key:** OpenAI API dashboard
-- **Parse.bot key:** Parse.bot account
-- **Sold-Comps key:** Sold-Comps dashboard
-- **OAuth credentials:** Respective provider dashboards
+Do not assume any current value is correct. Confirm the external database host and database name with Rich before connecting.
 
----
-
-## Step 3: Verify Database Connection (1 min)
+## 3. Verify Before Working
 
 ```bash
+npx tsc --noEmit
 pnpm test
-```
-
-**Expected:** All 67 tests pass ✅
-
-If tests fail, check:
-- `CUSTOM_DATABASE_URL` is correct
-- Database is accessible from your network
-- All credentials are valid
-
----
-
-## Step 4: Start Dev Server (30 sec)
-
-```bash
 pnpm dev
 ```
 
-**Expected:** Server starts on http://localhost:3001 (or similar)
+Inspect the dev server and browser logs. The test count can evolve; the acceptance requirement is that every test passes, TypeScript is clean, and the app uses the intended external database without connection errors.
 
----
+## 4. Validate the Critical User Flows
 
-## Step 5: Test Critical Flows (30 sec)
+Use the preview and authenticated test accounts as appropriate.
 
-Visit these pages to confirm everything works:
+- [ ] Home page renders its animated Tradebilia hero and live listing cards.
+- [ ] `/category/sports_cards` shows listings and filters without an endless spinner.
+- [ ] `/verified-merchants` renders its hero and directory state.
+- [ ] `/messages` renders for an authenticated user.
+- [ ] `/admin/users` loads for an administrator.
+- [ ] `/test-ai` is reachable only through the intended admin path and remains test-only.
+- [ ] No fresh console or server errors appear.
 
-- [ ] Home page: http://localhost:3001 (carousel, hero, stats load)
-- [ ] Category page: http://localhost:3001/category/sports_cards (listings visible)
-- [ ] Messages page: http://localhost:3001/messages (requires login, hero displays)
-- [ ] Admin dashboard: http://localhost:3001/admin/users (requires admin role)
+## 5. Verify Asset Recovery Readiness
 
----
+The runtime retains static assets and user media in project object storage. The GitHub recovery release is a backup for **static design assets only**:
 
-## 🚨 Image Assets Issue
+```text
+Release: tradebilia-static-assets-2026-08-11
+Archive SHA-256: 182292f179319e64610d25c273018df8d3665c225b34870335d0c0651a78528c
+```
 
-**IMPORTANT:** All images are currently in S3 and will not persist across sessions.
+Do not move listing photos or avatars into GitHub. If a static image fails, use the asset inventory and recovery release to restore that one asset through project storage, then update its source reference and re-test.
 
-**Solution:** Migrate images to GitHub (see `IMAGE_ASSET_INVENTORY.md` for full list)
+## 6. Get Rich’s Approval Before Resuming Work
 
-Quick migration:
-1. Download all images from S3 (they're listed in `IMAGE_ASSET_INVENTORY.md`)
-2. Create `/public/assets/` directory in GitHub
-3. Commit images to GitHub
-4. Update all `/manus-storage/...` URLs to `/assets/...` in the codebase
-5. Test that images load
+Present the completed validation checklist to Rich. Only after Rich says the handoff is correct may you mark the two blocking entries in `todo.md` complete and begin the next approved task. The first known open defect is the Messages inquiry-reply alert incorrectly notifying the replier; it must remain paused until then.
 
----
-
-## 📋 After Setup: What to Work On
-
-See `todo.md` for the full list. Current priorities:
-
-1. **Fix sender notification bug** (identified, fix ready)
-2. **Migrate images to GitHub** (critical for persistence)
-3. **CGC integration for comics**
-4. **Port Test AI logic to production**
-
----
-
-## 🆘 Troubleshooting
-
-| Problem | Solution |
-|---------|----------|
-| Tests fail | Check `CUSTOM_DATABASE_URL` and database connectivity |
-| Images show 404 | Migrate images to GitHub (see step above) |
-| Twilio SMS not working | Verify `TWILIO_VERIFY_SERVICE_SID` is correct |
-| eBay API errors | Check `EBAY_PROD_CLIENT_ID` and `EBAY_PROD_CLIENT_SECRET` |
-| "Cannot find module" | Run `pnpm install` again |
-| Port 3000 in use | Dev server will use 3001 automatically |
-
----
-
-## 📚 Full Documentation
-
-- **SESSION_HANDOFF_GUIDE.md** — Complete reference with all details
-- **IMAGE_ASSET_INVENTORY.md** — All images and migration plan
-- **todo.md** — Task tracking and remaining work
-- **MASTER_HANDOFF_GUIDE.md** — Original session notes (if needed)
-
----
-
-**That's it! You're ready to work. 🚀**
+For the complete architecture, credential registry, database safeguards, and recovery procedures, use `SESSION_HANDOFF_GUIDE.md`.

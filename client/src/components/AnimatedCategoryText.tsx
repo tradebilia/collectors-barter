@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 
+import { TradebiliaWheel } from "@/components/TradebiliaWheel";
+
 const categories = [
   { name: 'BILIA', color: 'text-white', duration: 10000 }, // 10 seconds for BILIA
   { name: 'COMICS', color: 'text-rose-300 font-bold', duration: 3000 },
@@ -13,8 +15,6 @@ const categories = [
 ];
 
 const subtitleWords = ['Collectors', 'Trading', 'Exchange'];
-
-const WHEEL_ICON_URL = "/manus-storage/pasted_file_BlVRoF_image_4beb4b70.png";
 
 export function AnimatedCategoryText() {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -78,13 +78,9 @@ export function AnimatedCategoryText() {
 
       <div className="container relative flex h-64 items-center justify-center py-0 sm:h-72 sm:py-0 lg:h-80 lg:py-0">
         <div className="flex w-full max-w-6xl items-center justify-start -ml-32 gap-8">
-          {/* Spinning Wheel Icon - FIXED */}
+          {/* Inline vector wheel avoids a fragile external image dependency. */}
           <div className="flex-shrink-0 flex items-center justify-center">
-            <img
-              src={WHEEL_ICON_URL}
-              alt="Tradebilia Wheel"
-              className="h-56 w-56 wheel-animate drop-shadow-2xl"
-            />
+            <TradebiliaWheel className="h-56 w-56 drop-shadow-2xl" />
           </div>
 
           {/* Vertical Divider - FIXED */}

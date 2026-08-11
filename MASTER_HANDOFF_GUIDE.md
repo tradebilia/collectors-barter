@@ -1,5 +1,7 @@
 # Tradebilia Platform — Master Handoff Guide
 
+> **Historical reference only — do not use this file for setup, credentials, storage, or current status.** Use `SESSION_HANDOFF_GUIDE.md` as the authoritative master guide and `NEXT_SESSION_QUICK_START.md` for the new-session sequence.
+
 **Last Updated:** August 10, 2026  
 **Version:** 8fb129df (current HEAD)  
 **Live URL:** https://tradebilia.manus.space  
