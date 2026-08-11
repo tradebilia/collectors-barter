@@ -292,19 +292,17 @@ export default function Messages() {
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,#0a0d22_0%,#121c48_26%,#ede3d3_26%,#ede3d3_100%)] text-slate-950">
       <TopBar />
-      <header className="border-b border-white/10 bg-[#00143A] text-white" style={{
+      <section className="relative z-0 w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden text-white" style={{
         backgroundImage: 'url(/manus-storage/Background_48b923f1.jpg)',
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat'
       }}>
-        <div className="absolute inset-0 pointer-events-none" />
-        <div className="container relative flex h-64 items-center justify-center py-0 sm:h-72 sm:py-0 lg:h-80 lg:py-0">
-          <div className="flex w-full max-w-4xl items-center justify-center">
-            <img src="/manus-storage/Messages_2225db58.svg" alt="Messages" className="h-auto w-full" />
+        <div className="container relative flex flex-col items-center justify-center py-0 h-64 sm:h-72 lg:h-80">
+          <img src="/manus-storage/Messages_36f2edc7.svg" alt="Messages" className="h-auto w-full max-w-2xl mx-auto" />
+          <p className="mt-4 text-lg font-semibold text-center opacity-90">Direct Lines, Trusted Conversations</p>
           </div>
-        </div>
-      </header>
+      </section>
       <CategoryBar />
 
       <main className="py-8 lg:py-10 px-4">
