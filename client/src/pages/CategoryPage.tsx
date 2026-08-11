@@ -208,7 +208,8 @@ export default function CategoryPage() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [resultsPerPage, setResultsPerPage] = useState(24);
   const [currentPage, setCurrentPage] = useState(1);
-  const [verifiedMerchantsOnlyLocal, setVerifiedMerchantsOnlyLocal] = useState(false);
+  // verifiedMerchantsOnly is now an instant-apply chip above the results grid.
+  // It writes directly to submittedFilters and does not need a local mirror state.
   const [proposalListingId, setProposalListingId] = useState<number | null>(null);
   const [proposalNote, setProposalNote] = useState("");
   
@@ -444,7 +445,7 @@ export default function CategoryPage() {
       edition: edition || undefined,
       parkOrEvent: parkOrEvent || undefined,
       franchise: franchise || undefined,
-      verifiedMerchantsOnly: verifiedMerchantsOnlyLocal,
+      verifiedMerchantsOnly: false,
     };
 
     setSubmittedFilters(newFilters);
@@ -523,7 +524,6 @@ export default function CategoryPage() {
       franchise: undefined,
       verifiedMerchantsOnly: false,
     });
-    setVerifiedMerchantsOnlyLocal(false);
   };
 
   const createProposalMutation = trpc.market.createTradeProposal.useMutation({
@@ -1040,18 +1040,6 @@ export default function CategoryPage() {
                 </Select>
               </div>
             )}
-            {/* Verified Merchants Only toggle */}
-            <button
-              type="button"
-              onClick={() => setVerifiedMerchantsOnlyLocal(v => !v)}
-              className={`w-full flex items-center justify-center gap-1.5 h-8 text-xs rounded-md border font-semibold transition-colors mt-3 mb-1 ${
-                verifiedMerchantsOnlyLocal
-                  ? 'bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700'
-                  : 'bg-white text-emerald-700 border-emerald-300 hover:bg-emerald-50'
-              }`}
-            >
-              ✓ Verified Merchants Only
-            </button>
             {/* Clear and Search buttons */}
             <div className="flex gap-2 mt-2 pt-2 border-t border-gray-300">
               <Button 
@@ -1081,6 +1069,27 @@ export default function CategoryPage() {
             <div className="pb-4 border-b border-current/10">
               <div className="flex items-center justify-between">
                 <p className="text-sm font-medium opacity-70">Showing {listings.length} results</p>
+                {/* Instant-apply Verified Merchants Only chip */}
+                <button
+                  type="button"
+                  onClick={() =>
+                    setSubmittedFilters(prev => ({
+                      ...prev,
+                      verifiedMerchantsOnly: !prev.verifiedMerchantsOnly,
+                    }))
+                  }
+                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border transition-colors ${
+                    submittedFilters.verifiedMerchantsOnly
+                      ? 'bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700'
+                      : 'bg-white/10 text-white border-white/30 hover:bg-white/20'
+                  }`}
+                  title="Toggle to show only listings from Tradebilia-verified merchants"
+                >
+                  <svg className="h-3 w-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                  </svg>
+                  Verified Merchants Only
+                </button>
                 <div className="flex items-center gap-4">
                   {/* View toggle */}
                   <div className="flex gap-1 bg-white/10 rounded p-1">

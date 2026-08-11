@@ -184,4 +184,10 @@
 - [x] TESTS: Regression test asserting the category feed query input contains no undefined-valued keys and stays well under the batch URL limit (server/categoryFeed.test.ts, 12 tests)
 - [x] VERIFIED (manual, screenshots + direct API calls — not automated end-to-end): All 10 category pages render listings (sports_cards 4, comics 2, coins 2, and 1 each for vintage_toys, video_games, stamps, pokemon, movies, autographs, disney_pins); hero stat bars populate; keyword/manufacturer/valueMin/gradingService filters and the Verified Merchants Only toggle behave correctly; home page carousel unaffected
 - [ ] FUTURE: Add automated end-to-end (Playwright) coverage for category page rendering + filter behavior, so this regression is caught without manual screenshots
+
+## Verified Merchants Page & Filter UX
+- [x] FEATURE: Add hero section to Verified Merchants page using uploaded VerifiedMerchants.webp logo and same background as home page hero (Background_48b923f1.jpg). Category bar sits directly below hero per design constraint.
+- [x] FEATURE: Added subtitle strip below category bar on Verified Merchants page with trust copy.
+- [x] UX: Moved "Verified Merchants Only" filter from buried sidebar position to an instant-apply chip inline with "Showing N results". Chip applies the filter immediately on click (no Search button needed), resets when category changes, and is always visible above the grid.
+- [x] CLEANUP: Removed verifiedMerchantsOnlyLocal state — chip now writes directly to submittedFilters, which is safe since the URL-length bug is fixed.
 - [x] CLEANUP: Removed the stray checkdb.mjs debug script from the project root

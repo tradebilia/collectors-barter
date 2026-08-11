@@ -4,6 +4,9 @@ import { BadgeCheck, Store, MapPin, ExternalLink, Package } from "lucide-react";
 import { TopBar } from "@/components/TopBar";
 import { CategoryBar } from "@/components/CategoryBar";
 
+const VERIFIED_MERCHANTS_LOGO_URL = "/manus-storage/VerifiedMerchants_c2e2db11.webp";
+const HERO_BG_URL = "/manus-storage/Background_48b923f1.jpg";
+
 /** Ensure an external URL has a protocol so it is not treated as a relative path. */
 function normalizeUrl(url: string): string {
   const trimmed = url.trim();
@@ -18,21 +21,36 @@ export default function VerifiedMerchants() {
   return (
     <div className="min-h-screen bg-gray-50">
       <TopBar />
+
+      {/* Hero section — same background as home page hero */}
+      <section
+        className="relative z-0 w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden text-white"
+        style={{
+          backgroundImage: `url(${HERO_BG_URL})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+        }}
+      >
+        <div className="container relative flex h-64 items-center justify-center py-0 sm:h-72 lg:h-80">
+          <img
+            src={VERIFIED_MERCHANTS_LOGO_URL}
+            alt="Verified Merchants"
+            className="h-auto w-full max-w-2xl mx-auto"
+          />
+        </div>
+      </section>
+
       <CategoryBar />
 
+      {/* Subtitle strip */}
+      <div className="bg-white border-b border-gray-100 py-3 px-4">
+        <p className="text-center text-sm text-gray-500 max-w-2xl mx-auto">
+          These merchants have been verified by Tradebilia. Shop with confidence knowing their business credentials have been reviewed.
+        </p>
+      </div>
+
       <div className="max-w-6xl mx-auto px-4 py-10">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-emerald-100 rounded-xl">
-              <BadgeCheck className="h-6 w-6 text-emerald-700" />
-            </div>
-            <h1 className="text-3xl font-black text-gray-900">Verified Merchants</h1>
-          </div>
-          <p className="text-gray-500 text-sm ml-14">
-            These merchants have been verified by Tradebilia. Shop with confidence knowing their business credentials have been reviewed.
-          </p>
-        </div>
 
         {/* Merchant Grid */}
         {isLoading ? (
