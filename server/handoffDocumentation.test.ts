@@ -16,6 +16,14 @@ describe("handoff documentation safeguards", () => {
     expect(guide).toContain("Rich explicitly confirms");
   });
 
+  it("requires a continuation inside the existing Tradebilia Website project", () => {
+    expect(guide).toContain("inside the existing “Tradebilia Website” project");
+    expect(guide).toContain("Do not create a new website/WebDev project");
+    expect(quickStart).toContain("Continue the Existing Tradebilia Website Project");
+    expect(quickStart).toContain("Do not create a new website project");
+    expect(assets).toContain("newly initialized web project");
+  });
+
   it("documents all currently essential integration credential names without raw values", () => {
     for (const name of [
       "SOLD_COMPS_API_KEY",

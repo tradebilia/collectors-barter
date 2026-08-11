@@ -1,8 +1,12 @@
 import { defineConfig } from "drizzle-kit";
 
-const connectionString = process.env.DATABASE_URL;
+// The application uses CUSTOM_DATABASE_URL for the live Tradebilia dataset
+// and only falls back to DATABASE_URL for the platform-managed database.
+// Keep migration tooling aligned so a continuation session cannot generate or
+// apply a schema migration against the wrong database by default.
+const connectionString = process.env.CUSTOM_DATABASE_URL || process.env.DATABASE_URL;
 if (!connectionString) {
-  throw new Error("DATABASE_URL is required to run drizzle commands");
+  throw new Error("CUSTOM_DATABASE_URL or DATABASE_URL is required to run drizzle commands");
 }
 
 export default defineConfig({
