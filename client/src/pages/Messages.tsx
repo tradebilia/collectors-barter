@@ -300,7 +300,7 @@ export default function Messages() {
       }}>
         <div className="container relative flex flex-col items-center justify-center py-0 h-64 sm:h-72 lg:h-80">
           <img src="/manus-storage/Messages_36f2edc7.svg" alt="Messages" className="h-auto w-full max-w-2xl mx-auto" />
-          <p className="mt-4 text-lg font-semibold text-center opacity-90">Direct Lines, Trusted Conversations</p>
+          <p className="mt-4 text-3xl sm:text-5xl lg:text-6xl font-bold text-center opacity-90">Direct Lines, Trusted Conversations</p>
           </div>
       </section>
       <CategoryBar />

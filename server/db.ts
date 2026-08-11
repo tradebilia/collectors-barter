@@ -3237,7 +3237,30 @@ export async function sendInquiryReply(inquiryId: number, senderId: number, mess
     .orderBy(desc(inquiryReplies.createdAt))
     .limit(1);
   
-  return newReply[0] || { id: 0, inquiryId, senderId, message, createdAt: new Date(), updatedAt: new Date() };
+  // Fetch the sender's display name and avatar
+  const sender = await db
+    .select({ displayName: users.displayName, avatarUrl: users.avatarUrl })
+    .from(users)
+    .where(eq(users.id, senderId))
+    .limit(1);
+  
+  if (!newReply[0]) {
+    return {
+      id: 0,
+      inquiryId,
+      senderId,
+      senderName: sender[0]?.displayName || null,
+      senderAvatarUrl: sender[0]?.avatarUrl || null,
+      message,
+      createdAt: new Date(),
+    };
+  }
+  
+  return {
+    ...newReply[0],
+    senderName: sender[0]?.displayName || null,
+    senderAvatarUrl: sender[0]?.avatarUrl || null,
+  };
 }
 
 export async function getRepliesByInquiry(inquiryId: number) {
