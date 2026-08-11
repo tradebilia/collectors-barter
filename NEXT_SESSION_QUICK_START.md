@@ -62,7 +62,7 @@ Use the preview and authenticated test accounts as appropriate.
 - [ ] `/messages` renders for an authenticated user.
 - [ ] `/admin/users` loads for an administrator.
 - [ ] `/test-ai` is reachable only through the intended admin path and remains test-only.
-- [ ] Listing `1110009` (Barry Sanders Score Rookie) no longer exposes its known failing secondary image, or its obsolete photo record has been safely removed through the intended listing-management flow.
+- [ ] Listing `1110009` (Barry Sanders Score Rookie) retains its working cover photo and does not expose the obsolete secondary image removed during the August 11, 2026 audit.
 - [ ] No fresh console or server errors appear.
 
 ## 6. Verify Asset Recovery Readiness

@@ -34,15 +34,11 @@ The archive was created from active project storage through the project server�
 
 The prior re-upload work on August 4 was caused by missing **old project-storage paths**: a pre-restoration Comics background path now returns `403`, while its restored current-project replacement returns `200`. This is evidence of a project-storage migration/rebuild issue rather than routine chat-session loss. The required next-session test remains the final confirmation.
 
-## Known Database-Backed Media Defect
+## Authorized Database-Backed Media Cleanup
 
-A full public listing-detail audit reached 28 unique listing/owner media paths. Twenty-seven returned `200`; the following secondary listing photo returns `403`:
+A full public listing-detail audit initially found one obsolete secondary photo record for listing `1110009` — **Barry Sanders Score Rookie** — that referenced a 403 storage object. Rich authorized removal rather than re-upload. A guarded transaction deleted exactly that one record, retained the working cover photo, and public detail no longer returns the obsolete path. The other **27 audited listing/owner media paths were rechecked and all returned `200`**.
 
-| Listing | Failing path | Required correction |
-|---|---|---|
-| `1110009` — Barry Sanders Score Rookie | `/manus-storage/listings/60003/1785287846412-ej9irj-1989-Barry-Sanders_bb0004c8.jpg` | Re-upload the correct image through the intended authenticated listing flow or remove the obsolete photo record safely; do not use an unrelated placeholder. |
-
-This defect is unrelated to a new-session transition, but it must be addressed before calling media continuity fully seamless.
+This cleanup makes the current public media inventory internally consistent. The fresh-session acceptance check remains required because it validates that a new task inside the same project can still resolve representative static, listing, and avatar paths.
 
 ## Repaired Broken Paths
 

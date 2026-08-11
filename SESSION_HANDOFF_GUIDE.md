@@ -39,7 +39,7 @@ Tradebilia deliberately uses more than one storage boundary. Treating them as in
 
 The server mounts a project storage proxy before tRPC and Vite handling, so `/manus-storage/...` paths are served through the application runtime rather than from the repository. The proxy obtains a signed URL using the current project’s Forge credentials. Database-backed listing and avatar URLs therefore must remain in object storage and in the external database’s metadata.
 
-> **Verified on August 11, 2026:** production returned `200` for all 46 static design-asset paths, all 15 marketplace cover-image paths, and both marketplace avatar paths sampled across the 10 public categories. A deeper public listing-detail review reached 28 distinct media paths: **27 returned `200`; one returned `403`**. The failed secondary photo is documented below and must be repaired or removed correctly before the handoff can be accepted as seamless. The evidence strongly supports same-project continuity, but the fresh-session acceptance checklist must still repeat representative static, listing, and avatar checks.
+> **Verified on August 11, 2026:** production returned `200` for all 46 static design-asset paths, all 15 marketplace cover-image paths, and both marketplace avatar paths sampled across the 10 public categories. A deeper public listing-detail review initially found one obsolete 403 secondary photo. With Rich’s authorization, that one database record was removed while preserving the listing’s working cover photo; the remaining **27 public detail-media paths were rechecked and all returned `200`**. The evidence strongly supports same-project continuity, but the fresh-session acceptance checklist must still repeat representative static, listing, and avatar checks.
 
 ## 4. Asset Strategy and Recovery Plan
 
@@ -66,9 +66,9 @@ The asset-restoration commits on August 4 replaced prior background and title pa
 
 For individual listing photos, the application stores a `/manus-storage/listings/...` URL in the external database. Re-uploading is required if either the project storage namespace changes or the new session is connected to a different/empty external database that no longer contains the original URL records. Re-uploading is **not expected** merely because a new conversation starts, provided the new conversation stays in this Tradebilia project, reconnects to the same intended `CUSTOM_DATABASE_URL`, and passes the fresh-session media test.
 
-### Known live-media defect found during the audit
+### Authorized live-media cleanup completed during the audit
 
-The secondary photo path `/manus-storage/listings/60003/1785287846412-ej9irj-1989-Barry-Sanders_bb0004c8.jpg` returns `403`. It belongs to listing `1110009`, **Barry Sanders Score Rookie**, which retains a separate functioning cover image. The missing record must be repaired with the original/replacement image or safely removed from that listing through the intended authenticated listing-management flow. Do **not** run ad-hoc SQL against an unknown database and do not replace it with an unrelated placeholder.
+The obsolete secondary photo record for listing `1110009`, **Barry Sanders Score Rookie**, referenced a 403 storage object. With Rich’s authorization on August 11, 2026, exactly that one record was removed in a guarded transaction. The listing retained its working cover photo, the removed path no longer appears in public listing detail, and all 27 remaining audited public detail-media paths returned `200`.
 
 ### Known repaired asset faults
 
@@ -127,7 +127,7 @@ An early draft credential reference was removed before the final GitHub handoff 
 | Account setup | Complete: final-submit-only profile creation and mandatory Twilio Verify phone step. |
 | Test AI sandbox | Test-only: eBay, Sold-Comps, Parse.bot PSA, Parse.bot Beckett, and grading-company certificate routing are implemented. Do not port logic to the production Trade Room AI Analyzer without Rich’s explicit approval. |
 | Messages | Hero title and reply display name are fixed. **Open defect:** the replier receives an unread alert for their own inquiry reply. It is documented in `todo.md` and must stay paused until handoff approval. |
-| Static asset resilience | All 46 static source references resolve and are release-backed. One secondary database-backed listing photo remains missing; see the known live-media defect above. |
+| Static and public media resilience | All 46 static source references resolve and are release-backed; all 27 remaining public listing-detail/owner media paths audited after the authorized Barry Sanders cleanup return `200`. |
 
 ## 8. Important Technical Rules
 
@@ -153,7 +153,7 @@ The new session must complete this checklist **in order**. Stop and ask Rich if 
 | 5. Compile and test | `npx tsc --noEmit` succeeds and `pnpm test` passes. Record the real total rather than assuming a historical count. |
 | 6. Start and inspect the application | The dev server starts. Confirm no server/database connection errors in `.manus-logs/devserver.log`. |
 | 7. Exercise critical paths | Home, a category page, Messages (authenticated), Verified Merchants, Admin Users (admin), and Test AI load without console errors. Verify category pages return listings and hero assets render. |
-| 8. Verify storage | Confirm the 46 active static assets load, then test at least one `/manus-storage/listings/...` image and one `/manus-storage/avatars/...` image returned by the live marketplace API. Confirm listing `1110009` no longer references a failing secondary photo before approving the handoff. If a static object fails, compare its filename with the GitHub recovery archive and use the checksum before re-uploading. If listing media fails, stop and verify the project identity and `CUSTOM_DATABASE_URL`; do not bulk re-upload customer media. |
+| 8. Verify storage | Confirm the 46 active static assets load, then test at least one `/manus-storage/listings/...` image and one `/manus-storage/avatars/...` image returned by the live marketplace API. Confirm listing `1110009` retains its working cover photo and does not reference the removed obsolete secondary path. If a static object fails, compare its filename with the GitHub recovery archive and use the checksum before re-uploading. If listing media fails, stop and verify the project identity and `CUSTOM_DATABASE_URL`; do not bulk re-upload customer media. |
 | 9. Verify source alignment | `git status --short` is clean; `git rev-parse HEAD` equals `git rev-parse github/main` after any approved handoff-only patch. |
 | 10. Obtain approval | Show Rich the result and wait for explicit confirmation that the handoff is complete. Only then remove the feature-work block in `todo.md`. |
 
