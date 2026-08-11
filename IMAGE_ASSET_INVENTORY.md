@@ -71,4 +71,4 @@ The following unavailable object classes were audited. Their runtime dependency 
 
 ## Related Records
 
-The complete session architecture and acceptance checklist are in `SESSION_HANDOFF_GUIDE.md`. The next-session minimum workflow is in `NEXT_SESSION_QUICK_START.md`.
+The complete session architecture and acceptance checklist are in `SESSION_HANDOFF_GUIDE.md`. The next-session minimum workflow is in `NEXT_SESSION_QUICK_START.md`. The proof level and evidence behind every continuity claim are recorded in `HANDOFF_ADVERSARIAL_AUDIT.md`.

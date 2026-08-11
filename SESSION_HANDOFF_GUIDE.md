@@ -4,11 +4,13 @@
 
 This document is the single source of truth for continuing the **Tradebilia** project in a new session. It intentionally records credential **names, owners, status, and restoration instructions**, but it never contains a raw API key, password, or database connection string. Secrets belong in the project’s secure Secrets configuration, not GitHub.
 
+After reading this guide, read `HANDOFF_ADVERSARIAL_AUDIT.md`. It records the evidence level behind every continuity claim and distinguishes what is proven in the current project from what only a fresh task can prove.
+
 | Project record | Current value |
 |---|---|
 | GitHub source of truth | [`tradebilia/collectors-barter`](https://github.com/tradebilia/collectors-barter) |
 | Production site | [tradebilia.manus.space](https://tradebilia.manus.space) |
-| Latest handoff/media checkpoint | `ef3b73ef` |
+| Latest handoff/media checkpoint | Use the existing project’s **Version history** panel; do not rely on a checkpoint ID inside a static handoff document because every later validation checkpoint supersedes it. |
 | Static-asset recovery release | [`tradebilia-static-assets-2026-08-11`](https://github.com/tradebilia/collectors-barter/releases/tag/tradebilia-static-assets-2026-08-11) |
 | Feature-work status | **Blocked pending new-session acceptance and Rich’s explicit approval** |
 
@@ -122,6 +124,8 @@ The following table consolidates every credential family used or configured in t
 
 An early draft credential reference was removed before the final GitHub handoff push. A direct audit confirmed that file did **not** exist in `github/main`. As a prudent measure, rotate the Twilio Auth Token, Sold-Comps key, Parse.bot key, and any other credential that was ever placed in a temporary draft before production launch. Do not commit secret values—even to a private repository—because Git history is difficult to purge reliably.
 
+The managed workspace also contains a platform-generated `.project-config.json` file with raw injected runtime settings. It is intentionally ignored by Git and is absent from GitHub history; it is **not** a handoff document or a safe source for copying secrets. Do not open, copy, attach, print, or commit it, and do not ask Rich to paste it. The new session should verify secret **presence** only through the secure project configuration or environment-variable names.
+
 ## 7. Current Functional Status
 
 | Area | Status at handoff |
@@ -153,7 +157,7 @@ The new session must complete this checklist **in order**. Stop and ask Rich if 
 | 1. Confirm the existing project | The task is inside the **Tradebilia Website** project; `/home/ubuntu/tradebilia-platform` exists; `git remote get-url github \| sed -E 's#//[^/@]+@#//#'` identifies `github.com/tradebilia/collectors-barter.git` without exposing an embedded credential; and `git status --short` is clean. Do not initialize a new web project. |
 | 2. Read before acting | Read this guide, `NEXT_SESSION_QUICK_START.md`, `IMAGE_ASSET_INVENTORY.md`, and the top “Session Transition Gate” in `todo.md`. |
 | 3. Install dependencies | `pnpm install --frozen-lockfile` completes successfully. |
-| 4. Restore secure configuration | Required secrets are present through the project Secrets interface; no raw values are added to files. Confirm `CUSTOM_DATABASE_URL` points to the intended external database. Do not create a new web project for this validation. |
+| 4. Restore secure configuration | Verify required secret **names** through the secure project Secrets interface or environment presence checks; never inspect/copy `.project-config.json` or raw values. Confirm `CUSTOM_DATABASE_URL` points to the intended external database. Do not create a new web project for this validation. |
 | 5. Compile and test | `npx tsc --noEmit` succeeds and `pnpm test` passes. Record the real total rather than assuming a historical count. |
 | 6. Start and inspect the application | The dev server starts. Confirm no server/database connection errors in `.manus-logs/devserver.log`. |
 | 7. Exercise critical paths | Home, a category page, Messages (authenticated), Verified Merchants, Admin Users (admin), and Test AI load without console errors. Verify category pages return listings and hero assets render. |
@@ -166,3 +170,4 @@ The new session must complete this checklist **in order**. Stop and ask Rich if 
 [1] [Tradebilia source repository](https://github.com/tradebilia/collectors-barter)
 [2] [Static asset recovery release](https://github.com/tradebilia/collectors-barter/releases/tag/tradebilia-static-assets-2026-08-11)
 [3] [Live Tradebilia site](https://tradebilia.manus.space)
+[4] `HANDOFF_ADVERSARIAL_AUDIT.md` in the project root and project shared files

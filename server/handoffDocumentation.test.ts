@@ -9,6 +9,7 @@ describe("handoff documentation safeguards", () => {
   const guide = readProjectFile("SESSION_HANDOFF_GUIDE.md");
   const quickStart = readProjectFile("NEXT_SESSION_QUICK_START.md");
   const assets = readProjectFile("IMAGE_ASSET_INVENTORY.md");
+  const audit = readProjectFile("HANDOFF_ADVERSARIAL_AUDIT.md");
 
   it("preserves the external database warning and explicit approval gate", () => {
     expect(guide).toContain("CUSTOM_DATABASE_URL");
@@ -30,6 +31,21 @@ describe("handoff documentation safeguards", () => {
     expect(quickStart).toContain("Read-only first pass");
     expect(quickStart).toContain("git remote get-url github | sed");
     expect(guide).toContain("without exposing an embedded credential");
+  });
+
+  it("forbids using platform-generated local metadata as a handoff or secret source", () => {
+    expect(guide).toContain(".project-config.json");
+    expect(guide).toContain("Do not open, copy, attach, print, or commit it");
+    expect(quickStart).toContain(".project-config.json");
+    expect(quickStart).toContain("Do not open, copy, attach, print, or commit it");
+  });
+
+  it("requires the adversarial evidence ledger and preserves its fresh-session uncertainty boundary", () => {
+    expect(guide).toContain("HANDOFF_ADVERSARIAL_AUDIT.md");
+    expect(quickStart).toContain("HANDOFF_ADVERSARIAL_AUDIT.md");
+    expect(assets).toContain("HANDOFF_ADVERSARIAL_AUDIT.md");
+    expect(audit).toContain("Expected, not yet proven");
+    expect(audit).toContain("Only the prescribed validation-only new task");
   });
 
   it("documents all currently essential integration credential names without raw values", () => {

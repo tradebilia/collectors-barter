@@ -29,11 +29,13 @@ pnpm install --frozen-lockfile
 git status --short
 ```
 
-The last command must show no uncommitted files. Then read `SESSION_HANDOFF_GUIDE.md`, `IMAGE_ASSET_INVENTORY.md`, and the **Session Transition Gate** at the top of `todo.md`.
+The last command must show no uncommitted files. Then read `SESSION_HANDOFF_GUIDE.md`, `IMAGE_ASSET_INVENTORY.md`, `HANDOFF_ADVERSARIAL_AUDIT.md`, and the **Session Transition Gate** at the top of `todo.md`.
 
 ## 3. Restore Secrets Securely
 
 Use the project’s secure Secrets interface to restore configuration. Never place a raw value in Markdown, source code, `.env` committed files, a ticket, or chat.
+
+> The managed workspace may contain a platform-generated `.project-config.json` file with raw injected runtime values. It is Git-ignored platform metadata, **not** a handoff file. Do not open, copy, attach, print, or commit it; verify secret presence through the secure project configuration or environment-variable names only.
 
 | Priority | Environment variables |
 |---|---|
