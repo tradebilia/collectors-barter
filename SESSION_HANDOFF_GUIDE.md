@@ -8,7 +8,7 @@ This document is the single source of truth for continuing the **Tradebilia** pr
 |---|---|
 | GitHub source of truth | [`tradebilia/collectors-barter`](https://github.com/tradebilia/collectors-barter) |
 | Production site | [tradebilia.manus.space](https://tradebilia.manus.space) |
-| Latest asset-repair checkpoint | `8ad4c8c5` |
+| Latest handoff/media checkpoint | `ef3b73ef` |
 | Static-asset recovery release | [`tradebilia-static-assets-2026-08-11`](https://github.com/tradebilia/collectors-barter/releases/tag/tradebilia-static-assets-2026-08-11) |
 | Feature-work status | **Blocked pending new-session acceptance and Rich’s explicit approval** |
 
@@ -23,6 +23,10 @@ The established project folder is `/home/ubuntu/tradebilia-platform`. Before any
 ## 2. Non-Negotiable First Rule
 
 Do **not** start CGC work, Test AI changes, production AI Analyzer work, merchant enhancements, or unrelated bug fixes until every acceptance check in Section 9 is complete and Rich explicitly confirms that the new session is correctly set up. The only permitted work before that confirmation is restoring, testing, documenting, and correcting the handoff itself.
+
+### Validation is read-only until Rich approves
+
+On the first pass through the acceptance checklist, do not edit source code, alter database records, run migrations, re-upload/delete/move media, change secrets or connectors, modify deployment settings, create a checkpoint, or push to GitHub. Collect evidence and report any discrepancy to Rich first. Only Rich may authorize a corrective handoff action; unrelated development remains blocked even after a handoff correction.
 
 ## 3. What Persists—and What Does Not
 
@@ -104,14 +108,14 @@ The following table consolidates every credential family used or configured in t
 | `PSA_API_TOKEN` | PSA account | Direct PSA API, when approved | Not currently validated. Do not replace Parse.bot data flow with it until independently tested. |
 | `PCGS_API_TOKEN`, `GO_COLLECT_API_KEY` | Respective providers | Future collection-data integrations | Treat as future/conditional. Do not begin implementation before handoff approval. |
 | `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_VERIFY_SERVICE_SID` | Twilio Console / Verify service | Mandatory SMS phone verification in account setup | Working in this session. Restore the matching three values together and test a real verification in a safe account flow. |
-| `TRADEBILIA_OPENAI_API_KEY` | Rich’s AI provider account | Trade-analysis integration | Current Test AI and analyzer credential. Do not change production AI Analyzer logic until Rich confirms Test AI validation is complete. |
+| `TRADEBILIA_OPENAI_API_KEY` | Rich’s AI provider account | Planned direct OpenAI production path | **Not active in the current resolver.** The implementation currently returns the Forge key even when this value exists. Do not alter AI-provider behavior or port Test AI logic until Rich confirms testing is complete. |
 | `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`, `PAYPAL_ENV` | PayPal developer account | PayPal connection / payment configuration | Restore only when PayPal features are tested. Code supports legacy `PAYPAL_MODE` fallback. |
 | `RESEND_API_KEY` | Resend account | Email notification delivery | Restore before email tests. The shared Tradebilia logo header is required for all notification emails. |
 | `FACEBOOK_APP_ID`, `FACEBOOK_APP_SECRET`, `FACEBOOK_REDIRECT_URI` | Facebook developer account | Facebook connection/OAuth | Conditional. Verify redirect URL exactly before enabling. |
 | `LINKEDIN_CLIENT_ID`, `LINKEDIN_CLIENT_SECRET`, `LINKEDIN_REDIRECT_URI` | LinkedIn developer account | LinkedIn connection/OAuth | Conditional. Verify redirect URL exactly before enabling. |
 | `DAILY_API_KEY` | Daily.co account | Video-chat integration | Restore only if that flow is being exercised. |
 | `ENCRYPTION_KEY`, `JWT_SECRET` | Project security configuration | OAuth token encryption and session signing | **Critical.** Never replace casually; rotating can invalidate encrypted tokens or active sessions. |
-| `BUILT_IN_FORGE_API_KEY`, `BUILT_IN_FORGE_API_URL`, `VITE_FRONTEND_FORGE_API_KEY`, `VITE_FRONTEND_FORGE_API_URL` | Platform-provided | Forge/LLM/storage platform integration | Provided by the project platform; do not hardcode. |
+| `BUILT_IN_FORGE_API_KEY`, `BUILT_IN_FORGE_API_URL`, `VITE_FRONTEND_FORGE_API_KEY`, `VITE_FRONTEND_FORGE_API_URL` | Platform-provided | Current Forge LLM and storage integration | The active LLM resolver currently uses the Forge key. Provided by the project platform; do not hardcode. |
 | `DATABASE_URL`, `VITE_APP_ID`, `OAUTH_SERVER_URL`, `OWNER_OPEN_ID`, `OWNER_NAME`, `VITE_OAUTH_PORTAL_URL`, `VITE_ANALYTICS_ENDPOINT`, `VITE_ANALYTICS_WEBSITE_ID` | Platform/project configuration | Framework OAuth, database, and analytics plumbing | Platform-managed unless a session setup explicitly requires an update. |
 
 ### Security note
@@ -146,7 +150,7 @@ The new session must complete this checklist **in order**. Stop and ask Rich if 
 
 | Step | Required evidence |
 |---|---|
-| 1. Confirm the existing project | The task is inside the **Tradebilia Website** project; `/home/ubuntu/tradebilia-platform` exists; `git remote -v` identifies `tradebilia/collectors-barter`; and `git status --short` is clean. Do not initialize a new web project. |
+| 1. Confirm the existing project | The task is inside the **Tradebilia Website** project; `/home/ubuntu/tradebilia-platform` exists; `git remote get-url github \| sed -E 's#//[^/@]+@#//#'` identifies `github.com/tradebilia/collectors-barter.git` without exposing an embedded credential; and `git status --short` is clean. Do not initialize a new web project. |
 | 2. Read before acting | Read this guide, `NEXT_SESSION_QUICK_START.md`, `IMAGE_ASSET_INVENTORY.md`, and the top “Session Transition Gate” in `todo.md`. |
 | 3. Install dependencies | `pnpm install --frozen-lockfile` completes successfully. |
 | 4. Restore secure configuration | Required secrets are present through the project Secrets interface; no raw values are added to files. Confirm `CUSTOM_DATABASE_URL` points to the intended external database. Do not create a new web project for this validation. |
@@ -154,7 +158,7 @@ The new session must complete this checklist **in order**. Stop and ask Rich if 
 | 6. Start and inspect the application | The dev server starts. Confirm no server/database connection errors in `.manus-logs/devserver.log`. |
 | 7. Exercise critical paths | Home, a category page, Messages (authenticated), Verified Merchants, Admin Users (admin), and Test AI load without console errors. Verify category pages return listings and hero assets render. |
 | 8. Verify storage | Confirm the 46 active static assets load, then test at least one `/manus-storage/listings/...` image and one `/manus-storage/avatars/...` image returned by the live marketplace API. Confirm listing `1110009` retains its working cover photo and does not reference the removed obsolete secondary path. If a static object fails, compare its filename with the GitHub recovery archive and use the checksum before re-uploading. If listing media fails, stop and verify the project identity and `CUSTOM_DATABASE_URL`; do not bulk re-upload customer media. |
-| 9. Verify source alignment | `git status --short` is clean; `git rev-parse HEAD` equals `git rev-parse github/main` after any approved handoff-only patch. |
+| 9. Verify source alignment | `git status --short` is clean, no untracked files exist, and `git diff --quiet github/main --` exits successfully. Do not require commit hashes to match: Manus checkpoints and the GitHub mirror can have different commit IDs while the tracked file content is identical. |
 | 10. Obtain approval | Show Rich the result and wait for explicit confirmation that the handoff is complete. Only then remove the feature-work block in `todo.md`. |
 
 ## 10. References

@@ -2,6 +2,8 @@
 
 > **Stop condition:** This is a handoff-validation session first. Do not start new feature work until Rich explicitly confirms the handoff is complete.
 
+> **Read-only first pass:** Until Rich approves the handoff, do not edit code, alter database records, run migrations, re-upload/delete/move media, change secrets/connectors/deployment settings, create a checkpoint, or push to GitHub. Validate and report first.
+
 ## 1. Continue the Existing Tradebilia Website Project — Do Not Create a New One
 
 Start the next conversation **inside the existing “Tradebilia Website” project**. A new conversation/task is correct; a newly initialized website/WebDev project is not. The existing project is what ties together the deployed site, project object-storage namespace, shared files, GitHub connection, and current project configuration.
@@ -13,7 +15,7 @@ Before changing anything, confirm that the task shows the existing Tradebilia We
 ```bash
 cd /home/ubuntu/tradebilia-platform
 git status --short
-git remote -v
+git remote get-url github | sed -E 's#//[^/@]+@#//#'
 ```
 
 If that project folder or context is not available, stop and ask Rich to open the task inside the existing Tradebilia Website project. Do not work around the missing project by initializing a new site.
@@ -37,10 +39,10 @@ Use the project’s secure Secrets interface to restore configuration. Never pla
 |---|---|
 | Required to access live data | `CUSTOM_DATABASE_URL` |
 | Required for account setup SMS | `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_VERIFY_SERVICE_SID` |
-| Required for Test AI data currently in use | `EBAY_PROD_CLIENT_ID`, `EBAY_PROD_CLIENT_SECRET`, `SOLD_COMPS_API_KEY`, `PARSE_BOT_API_KEY`, `TRADEBILIA_OPENAI_API_KEY` |
-| Required before email/OAuth/payment testing | `RESEND_API_KEY`, Facebook/LinkedIn OAuth values, PayPal values, `ENCRYPTION_KEY`, `JWT_SECRET` |
+| Required for Test AI data currently in use | `EBAY_PROD_CLIENT_ID`, `EBAY_PROD_CLIENT_SECRET`, `SOLD_COMPS_API_KEY`, `PARSE_BOT_API_KEY`; the current analyzer uses platform-provided Forge credentials |
+| Required before email/OAuth/payment testing | `RESEND_API_KEY`, Facebook/LinkedIn OAuth values, PayPal values, `ENCRYPTION_KEY`, `JWT_SECRET`. `TRADEBILIA_OPENAI_API_KEY` is a deferred direct-OpenAI path, not the active LLM key. |
 
-Do not assume any current value is correct. Confirm the external database host and database name with Rich before connecting.
+Do not assume any current value is correct. Verify through the secure project configuration that `CUSTOM_DATABASE_URL` targets the intended external database; ask Rich before proceeding only if that target cannot be established safely.
 
 ## 4. Verify Before Working
 

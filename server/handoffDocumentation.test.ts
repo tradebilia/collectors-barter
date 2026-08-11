@@ -24,6 +24,14 @@ describe("handoff documentation safeguards", () => {
     expect(assets).toContain("newly initialized web project");
   });
 
+  it("makes the first handoff-validation pass read-only and prevents token exposure in remote checks", () => {
+    expect(guide).toContain("Validation is read-only until Rich approves");
+    expect(guide).toContain("do not edit source code");
+    expect(quickStart).toContain("Read-only first pass");
+    expect(quickStart).toContain("git remote get-url github | sed");
+    expect(guide).toContain("without exposing an embedded credential");
+  });
+
   it("documents all currently essential integration credential names without raw values", () => {
     for (const name of [
       "SOLD_COMPS_API_KEY",
