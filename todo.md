@@ -20,3 +20,11 @@
 - [x] Map the supplied category title artwork to its corresponding hero sections.
 - [x] Upload the supplied title graphics and restore the matching hero title images.
 - [x] Verify restored title graphics and existing backgrounds across all supplied category pages.
+- [x] Map the supplied remaining page-title graphics and shared logo to their intended application pages.
+- [x] Upload the remaining title/logo files to durable project storage and replace broken references.
+- [x] Verify the restored page headings and shared Tradebilia logo on all affected routes.
+- [x] Document destinations for supplied Inbox, Trade Request, Trade History, and Ratings and Review artwork that lack standalone hero routes.
+- [x] Complete shared-logo and page-title reference repairs left incomplete by the partial update.
+- [x] Correct the Traders Showcase hero background so the restored title artwork has sufficient contrast.
+- [x] Apply the supplied transparent Tradebilia logo as the homepage hero title graphic.
+- [x] Verify the homepage hero title graphic is responsive and readable on desktop and mobile.

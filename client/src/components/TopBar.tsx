@@ -16,7 +16,7 @@ interface TopBarProps {
 }
 
 export function TopBar({
-  logoUrl = "/manus-storage/tradebilia_final_transparent_d37f9c4f.svg",
+  logoUrl = "/manus-storage/tradebilia_final_transparent_8a1981e6.svg",
   searchPlaceholder = "Search...",
   onSearchChange,
   hideSearch = false,

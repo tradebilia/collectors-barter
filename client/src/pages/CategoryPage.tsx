@@ -631,7 +631,7 @@ export default function CategoryPage() {
     ...card,
     imageUrl: resolveTradebiliaListingImage({ title: card.title, category: slug }),
   }));
-  const SPORTS_CARDS_LONG_LOGO_URL = "/manus-storage/tradebilia_final_transparent_d37f9c4f.svg";
+  const SPORTS_CARDS_LONG_LOGO_URL = "/manus-storage/tradebilia_final_transparent_8a1981e6.svg";
 
   return (
     <div className={`min-h-screen ${theme.pageClassName}`}>

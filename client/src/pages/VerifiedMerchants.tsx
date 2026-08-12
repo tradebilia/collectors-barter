@@ -4,8 +4,8 @@ import { BadgeCheck, Store, MapPin, ExternalLink, Package } from "lucide-react";
 import { TopBar } from "@/components/TopBar";
 import { CategoryBar } from "@/components/CategoryBar";
 
-const VERIFIED_MERCHANTS_LOGO_URL = "/manus-storage/VerifiedMerchants_c2e2db11.webp";
-const HERO_BG_URL = "/manus-storage/Background_48b923f1.jpg";
+const VERIFIED_MERCHANTS_LOGO_URL = "/manus-storage/VerifiedMerchants_c3431deb.webp";
+const HERO_BG_URL = "/manus-storage/Background_23084d14.jpg";
 
 /** Ensure an external URL has a protocol so it is not treated as a relative path. */
 function normalizeUrl(url: string): string {
