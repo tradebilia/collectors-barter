@@ -3,7 +3,7 @@
 **Prepared:** August 11, 2026
 **Purpose:** Define a controlled migration from the current Tradebilia WebDev project to a new, independent WebDev project after Manus Support confirmed that a fresh Project task cannot attach to the active published WebDev checkout, controls, storage namespace, and deployment configuration.
 
-> **Decision:** This is not a normal session handoff. It is a **new-WebDev migration**. No replacement project should be created or published until the blocking items in this report have an approved migration design and verification plan.
+> **Decision:** This is not a normal session handoff. It is a **new-WebDev migration**. Rich selected **Strategy B: project-to-project storage cutover**, with a two-phase approach: first create an unpublished replacement project to validate code, secure configuration, and guarded live-data access; later, only with explicit approval, perform the customer-media cutover and production-domain switch.
 
 ## 1. Executive Conclusion
 
@@ -77,15 +77,17 @@ Export current static/user media into storage owned by Tradebilia, such as an ap
 |---|---|
 | Lowest cutover risk; avoids split-brain media paths; portable to future hosts. | Requires Rich’s storage-provider decision, secure credentials, application changes, comprehensive media export/import, and validation. |
 
-### Strategy B — Scheduled maintenance-window media cutover
+### Strategy B — Staged project-to-project storage cutover (**Rich’s selected approach**)
 
-Keep the old project live while the new project is prepared against a read-only or cloned database. At an approved maintenance window, export/upload all media to the new project, verify new storage objects return `200`, place the application in read-only maintenance mode, pause scheduled writers, update database media URLs through an idempotent version-controlled migration with an audit log, verify the new project, and move the domains. The old project’s media may no longer work after database path updates, so rollback requires a database restoration or a proven backward-compatible media mapping—not merely retaining old code.
+This strategy has **two distinct phases**. In Phase B1, create an unpublished replacement project as a complete working snapshot of the current site: locked source code, a writable **isolated staging database clone**, all 46 static assets, all current customer-media binaries, compatible encryption/session settings, and guarded staging integrations. The old project remains live and unchanged. The new project must disable scheduled writers and use non-production delivery controls so normal testing cannot send messages, payments, or mutations to production systems.
+
+In Phase B2, after Rich explicitly approves production cutover, capture the production changes that occurred after the Phase B1 snapshot, repeat the media/database delta verification, place the old production site in a maintenance window, pause scheduled writers, apply the final idempotent delta, verify the new project, and move the domains. Staging test users/items/messages are not automatically production data; only an explicitly approved production delta is applied. Rollback requires retaining the old project, the original production database backup/PITR point, and the pre-cutover media mapping.
 
 | Advantages | Costs / prerequisites |
 |---|---|
-| Avoids an external storage provider in the short term. | Requires downtime or a carefully controlled maintenance window; rollback is more complex; full media manifest and transaction plan are mandatory. |
+| Gives Rich an exact, writable, production-like staging environment for ongoing development and testing while the old project stays live; avoids an external provider in the short term. | Requires a provider-supported writable database clone, complete media replication before staging acceptance, integration safeguards, and a later controlled production delta/cutover. |
 
-> **No-go rule:** Do not create/publish the replacement project against the live external database until Rich approves one of these media strategies and a tested rollback procedure.
+> **No-go rule:** Do not publish the replacement project or permit it to write to the live external database. Strategy B Phase B1 may be writable only against its isolated staging database clone, and it must include replicated static/customer media before it is considered an exact working snapshot. Domain changes and the later production delta remain Phase B2 only.
 
 ## 6. Proposed Controlled Migration Sequence
 
@@ -94,14 +96,14 @@ Keep the old project live while the new project is prepared against a read-only 
 | 0. Freeze and baseline | Pause feature changes; record GitHub commit; run tests/build; use the official data-backup process as instructed by Manus Support if changes continue before their cutoff. | Clean GitHub state, tests/build result, backup confirmation retained by Rich. | Any uncommitted or unpushed work. |
 | 1. Choose media strategy | Rich selects Strategy A or Strategy B. | Written approval of storage/cutover approach. | No approved media strategy. |
 | 2. Build complete media manifest | Inventory every named media field; download and SHA-256 checksum every binary from the old project; design old-to-new mapping and exception handling. | Manifest totals, checksums, inaccessible-file exception list, and source-to-target mapping. | Any missing binary or unexplained URL. |
-| 3. Preserve and audit external database | Confirm provider backup and point-in-time recovery, correct target database, schema/migration ledger, SSL settings, row counts, foreign-key/orphan checks, and migration window. | Backup timestamp, schema fingerprint, relational-integrity and read-only baseline report. | Incorrect database, schema drift, failed integrity check, or unverified backup. |
-| 4. Control concurrent writers | Identify/plan the three current scheduled writers—draft cleanup, referral digest, and trade reminders—and prevent old/new dual execution during cutover. | Written pause/resume and maintenance-mode plan. | Any uncontrolled scheduled or user write path. |
-| 5. Create supported new project | Use the official independent-project/Make a Copy route only after Gates 0–4. Keep it unpublished and do not attach production domains. | New project identity, no production domain attached, secure settings review. | Auto-publish/domain or GitHub-link behavior is unclear. |
-| 6. Restore code/config | Restore locked GitHub source; configure/verify all required secrets securely; confirm encryption/session key parity; test staging callback paths and external API health. | TypeScript/test/build passes; secret-presence and parity checklist; database source check; API/OAuth test report. | Missing critical secret, incorrect DB source, callback failure, or unverified GitHub link. |
-| 7. Restore static/user media | Restore static assets; verify restored static/media objects return `200` before database updates; execute approved user-media migration with idempotent audited scripts. | 100% checksum-backed manifest coverage or approved exception list; new-path `200` evidence. | Any missing/corrupt media or unverified target object. |
-| 8. Staging acceptance | Exercise anonymous, authenticated, admin, category, messages, account setup/Twilio, Test AI, merchant verification, scheduled-route safety, and error logs without publishing. | Acceptance test report and error-log review. | Functional/media/OAuth/background-write failure. |
-| 9. Cutover | Lower external DNS TTL where applicable, pause scheduled writers/maintenance writes, attach both domains, update provider callbacks, and publish at an approved window. | DNS/domain, HTTPS, health, database, media, external API, and OAuth checks pass. | Any production smoke-test failure. |
-| 10. Rollback window | Preserve old project/code, the old domain configuration, media mapping, and database point-in-time recovery plan; do not delete the old project. | Written rollback runbook and observation period. | No tested domain and database/media rollback path. |
+| 3. Preserve and clone external database | Confirm provider backup/PITR, schema/migration ledger, SSL settings, row counts, and integrity checks; create an isolated writable staging clone at a recorded snapshot timestamp. | Production backup timestamp, staging-clone identity, schema fingerprint, relational-integrity report, and no cross-environment write path. | Incorrect database, schema drift, failed integrity check, unverified backup, or staging connection reaches production. |
+| 4. Replicate media and static assets | Build the checksum manifest, copy 46 static assets plus every populated customer-media binary into the new project storage, and verify every target object. Do not change production database paths. | 100% checksum-backed manifest coverage or approved exception list; source-to-staging mapping; target `200` evidence. | Missing/corrupt binary, wrong association, or staging storage path that resolves to production. |
+| 5. Control delivery side effects | Disable the three scheduled writers in staging; configure isolated analytics and staging-safe email/SMS/payment/OAuth behavior. | Written disablement/override evidence and test-route plan. | Any staging write/notification/payment reaches production users or systems. |
+| 6. **Phase B1: Create exact-snapshot project** | Use the official independent-project/Make a Copy route only after Gates 0–5. Keep it unpublished and without production domains; restore locked code, staging database clone, complete media/static snapshot, secure configuration parity, and staging-side-effect protections. | New project identity, no production domain, staging database proof, full media validation, and secure settings review. | Auto-publish/domain or GitHub-link behavior unclear; production database/media/service access. |
+| 7. **Phase B1: Full staging acceptance** | Exercise anonymous, authenticated, admin, category, messages, account setup, Test AI, merchant verification, media display, disabled scheduled writers, and error logs. Create test users/items/trades/messages only in staging. | Full acceptance report, media parity report, no production writes/notifications, and error-log review. | Functional/media/OAuth/background-write failure or unintended production side effect. |
+| 8. **Phase B2: Freeze and delta** | At an approved maintenance window, capture only legitimate production changes after the original snapshot; pause production writers and prepare an idempotent, audited database/media delta. | Production delta report, maintenance notice, PITR point, and dry-run result. | Missing/ambiguous production delta or unverified data/media mapping. |
+| 9. **Phase B2: Cutover** | Apply the approved production delta to the replacement project, attach both domains, update provider callbacks, publish, and run smoke tests. | DNS/domain, HTTPS, health, database, media, external API, and OAuth checks pass. | Any production smoke-test failure. |
+| 10. Rollback window | Preserve old project/code, original production backup/PITR point, old domain configuration, pre-cutover media mapping, and the applied delta audit log; do not delete the old project. | Written rollback runbook and observation period. | No tested domain and database/media rollback path. |
 
 ## 7. Items That Must Be Confirmed Before Project Creation
 
@@ -114,7 +116,7 @@ Keep the old project live while the new project is prepared against a read-only 
 
 ## 8. Recommended Immediate Next Step
 
-Do **not** start a new WebDev project yet. Rich should first choose the media strategy and obtain the unresolved platform answers in Section 7. After that decision, create a dedicated migration checklist and execute the migration in gates, with an explicit maintenance/cutover approval.
+Rich has selected Strategy B as a complete snapshot. Before creating the unpublished Phase B1 replacement project, complete these prerequisites: (1) arrange a provider-supported writable staging database clone from a verified production snapshot, (2) produce a full checksum-backed media/static replication manifest, (3) obtain a safe GitHub-linking approach for the independent project, (4) define staging-safe integration overrides and scheduled-writer disablement, and (5) record new-project naming plus production-domain non-attachment criteria. Do not attach production domains or alter production database/media records until Rich separately approves Phase B2.
 
 ## References
 

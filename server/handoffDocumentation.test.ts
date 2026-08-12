@@ -32,6 +32,16 @@ describe("handoff documentation safeguards", () => {
     expect(migration).toContain("rollback");
   });
 
+  it("requires an exact writable staging snapshot before independent-project testing", () => {
+    expect(quickStart).toContain("complete writable staging snapshot");
+    expect(quickStart).toContain("isolated writable staging database clone");
+    expect(quickStart).toContain("replicated static/customer media");
+    expect(migration).toContain("complete working snapshot of the current site");
+    expect(migration).toContain("isolated staging database clone");
+    expect(migration).toContain("every target object");
+    expect(migration).toContain("production delta");
+  });
+
   it("keeps secrets out of the migration package", () => {
     expect(guide).toContain("token-bearing remote URL");
     expect(quickStart).toContain("Never copy, attach, print, or commit raw secrets");
@@ -81,7 +91,7 @@ describe("handoff documentation safeguards", () => {
 
   it("requires database, scheduler, and two-domain cutover safeguards", () => {
     expect(migration).toContain("schema/migration ledger");
-    expect(migration).toContain("three current scheduled writers");
+    expect(migration).toContain("three active Heartbeat jobs");
     expect(migration).toContain("tradebilia.manus.space");
     expect(migration).toContain("tradebilia-vauewtpb.manus.space");
   });
