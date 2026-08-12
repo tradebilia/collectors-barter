@@ -111,3 +111,14 @@
 - [x] Confirm the local branch and GitHub remote are synchronized after the push.
 - [x] Replace environment-bound OAuth and Sold-Comps test assumptions so the GitHub checkout validates without stored credentials or live external requests.
 - [x] Remove the trailing whitespace found by Git validation from the synchronized eBay integration component.
+- [x] Inventory all configured provider credentials and select the least invasive valid check for each.
+- [x] Validate direct data-provider and service credentials without exposing any secret values; documented provider authorization failures remain for PSA and OpenAI.
+- [x] Run controlled Resend email and Twilio SMS tests after obtaining a destination email address and phone number.
+- [x] Exercise eBay, Facebook, and LinkedIn OAuth authorization-start checks; full provider consent remains optional because third-party login cannot be embedded in the WebDev preview.
+- [x] Record provider-by-provider validation outcomes and required follow-up without exposing credentials.
+- [x] Confirm the WebDev-preview limitation for third-party OAuth sign-in and enable the available user-visible browser handoff for future account-consent steps.
+- [x] Configure provider redirect URIs under the user-directed live mode; staging safeguards were permanently disabled rather than temporarily overridden.
+- [x] Disable `TRADEBILIA_STAGING_MODE` permanently at the user’s direction and verify the live integration setting is active.
+- [x] Configure the Facebook and LinkedIn live callback URI variables needed for OAuth completion.
+- [x] Update obsolete integration test expectations that still require staging mode to remain enabled.
+- [x] Remove the obsolete handoff-document test dependency on a file absent from the managed project root.

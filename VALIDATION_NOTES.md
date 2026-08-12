@@ -48,6 +48,14 @@ The Barry Sanders Score Rookie listing (reference ID 1110009) had two retained p
 
 After the migration was reviewed and accepted, the user directed that it be treated as complete. The broader provider-by-provider credential validation pass was therefore deferred. No additional external provider requests were made, and no credential values are recorded in this project documentation.
 
+## Authorized integration validation
+
+The user subsequently authorized controlled provider testing, including email, SMS, and OAuth starts. The eBay and Facebook connection buttons both generated provider-hosted sign-in pages from the live Tradebilia Integrations view, confirming that each configured OAuth client can initiate its authorization flow and return to the registered Tradebilia callback path. No eBay or Facebook credentials were entered and no account connection was completed during these start checks.
+
+The direct provider checks validated PCGS, Facebook application access, PayPal, eBay, Daily, ParseBot, Twilio Verify, and Sold Comps. The configured Resend key is send-only: its domains endpoint returned the expected restricted response, while a one-time test email was accepted by Resend. A one-time Twilio Verify SMS was accepted by Twilio. The configured PSA endpoint and both configured OpenAI keys returned authorization failures and require key rotation or provider-side permission review.
+
+With staging disabled at the user’s direction, Facebook and LinkedIn live callback variables were configured and tested in the generated authorization URLs. Their provider authorization endpoints redirect to the official Facebook and LinkedIn sign-in hosts. GoCollect’s available official page confirms that API-token access requires a registered account, but it does not publish a safe generic validation endpoint; the token therefore remains unverified pending a GoCollect account-specific API route.
+
 ## Profile Integrations logos
 
 The supplied eBay, Facebook, LinkedIn, Whatnot, and PayPal files were copied to the durable web asset directory and published to project storage. The authenticated Profile Integrations page rendered all five provider images successfully. Browser checks confirmed each image was present, complete, and had a positive intrinsic width and height, with no broken image links.

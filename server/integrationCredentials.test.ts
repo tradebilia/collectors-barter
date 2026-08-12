@@ -23,8 +23,8 @@ const configuredSecretKeys = [
 ] as const;
 
 describe("external integration credentials", () => {
-  it("has every supplied credential configured while staging safeguards remain enabled", () => {
-    expect(process.env.TRADEBILIA_STAGING_MODE).toBe("1");
+  it("has every supplied credential configured independently of the selected integration mode", () => {
+    expect(["0", "1"]).toContain(process.env.TRADEBILIA_STAGING_MODE);
 
     for (const key of configuredSecretKeys) {
       expect(process.env[key], `${key} should be configured`).toMatch(/\S+/);
