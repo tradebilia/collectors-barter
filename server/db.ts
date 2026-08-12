@@ -89,6 +89,37 @@ export function mysqlNow(): string {
 }
 
 /**
+ * A reply is unread only for the original inquiry sender, who receives the
+ * reply. The original recipient sent the reply and must remain marked read.
+ */
+export function getInquiryReplyReadState() {
+  return {
+    senderIsRead: 0,
+    recipientIsRead: 1,
+  } as const;
+}
+
+type InquiryParticipantReadState = {
+  senderId: number;
+  recipientId: number;
+  senderIsRead: number;
+  recipientIsRead: number;
+};
+
+export function isInquiryUnreadForUser(inquiry: InquiryParticipantReadState, userId: number) {
+  if (inquiry.senderId === userId) return inquiry.senderIsRead === 0;
+  if (inquiry.recipientId === userId) return inquiry.recipientIsRead === 0;
+  return false;
+}
+
+function getInquiryUnreadCondition(userId: number) {
+  return or(
+    and(eq(itemInquiries.senderId, userId), eq(itemInquiries.senderIsRead, 0)),
+    and(eq(itemInquiries.recipientId, userId), eq(itemInquiries.recipientIsRead, 0)),
+  );
+}
+
+/**
  * Parse a JSON string stored in a TEXT column without crashing the caller.
  * A single malformed row previously threw and turned entire pages into 500s.
  */
@@ -1401,16 +1432,12 @@ export async function restoreDeletedListings(
 export async function getUnreadMessageCount(userId: number) {
   const db = await requireDb();
   
-  // Count unread inquiries (received by this user)
+  // Count unread inquiries for either participant without alerting the author
+  // of the most recent inquiry reply.
   const inquiryResult = await db
     .select({ count: sql<number>`count(*)` })
     .from(itemInquiries)
-    .where(
-      and(
-        eq(itemInquiries.recipientId, userId),
-        eq(itemInquiries.isRead, 0),
-      ),
-    );
+    .where(getInquiryUnreadCondition(userId));
 
   const inquiryCount = Number(inquiryResult[0]?.count ?? 0);
 
@@ -3102,6 +3129,8 @@ export async function sendItemInquiry(
     subject: input.subject.trim(),
     message: input.message.trim(),
     isRead: 0,
+    senderIsRead: 1,
+    recipientIsRead: 0,
     createdAt: mysqlNow(),
   });
   
@@ -3114,12 +3143,7 @@ export async function getUnreadInquiries(userId: number) {
   const inquiries = await db
     .select()
     .from(itemInquiries)
-    .where(
-      and(
-        eq(itemInquiries.recipientId, userId),
-        eq(itemInquiries.isRead, 0)
-      )
-    )
+    .where(getInquiryUnreadCondition(userId))
     .orderBy(desc(itemInquiries.createdAt));
   
   return inquiries;
@@ -3191,9 +3215,13 @@ export async function markInquiryAsRead(inquiryId: number, userId: number) {
     throw new Error("Unauthorized: You can only mark inquiries you're involved in as read");
   }
   
+  const participantReadState = inquiry[0].senderId === userId
+    ? { senderIsRead: 1 }
+    : { recipientIsRead: 1, isRead: 1 };
+
   await db
     .update(itemInquiries)
-    .set({ isRead: 1 })
+    .set(participantReadState)
     .where(eq(itemInquiries.id, inquiryId));
   
   return { success: true };
@@ -3225,10 +3253,11 @@ export async function sendInquiryReply(inquiryId: number, senderId: number, mess
       message,
     });
   
-  // Mark the original inquiry as unread so it shows up in the recipient's inbox
+  // Mark the reply recipient (the original inquiry sender) unread without
+  // creating an unread alert for the person who sent this reply.
   await db
     .update(itemInquiries)
-    .set({ isRead: 0 })
+    .set(getInquiryReplyReadState())
     .where(eq(itemInquiries.id, inquiryId));
   
   // Fetch the newly created reply to get the ID
