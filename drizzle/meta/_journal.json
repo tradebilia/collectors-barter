@@ -1,5 +1,13 @@
 {
   "version": "7",
   "dialect": "mysql",
-  "entries": []
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1786507630357,
+      "tag": "0000_glamorous_agent_zero",
+      "breakpoints": true
+    }
+  ]
 }
