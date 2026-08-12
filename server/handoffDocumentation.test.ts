@@ -116,10 +116,13 @@ describe("handoff documentation safeguards", () => {
   });
 
   it("provides one current-project handoff that pauses migration and names the next bug", () => {
-    expect(currentProjectHandoff).toContain("Do **not** create a replacement website");
+    expect(currentProjectHandoff).toContain("Do **not** create a public replacement website");
     expect(currentProjectHandoff).toContain("Separate-project migration | **Paused.**");
-    expect(currentProjectHandoff).toContain("clone-only continuation path");
+    expect(currentProjectHandoff).toContain("existing custom database");
     expect(currentProjectHandoff).toContain("/home/ubuntu/tradebilia-clone");
+    expect(currentProjectHandoff).toContain("separate **development-only** WebDev project");
+    expect(currentProjectHandoff).toContain("last verified baseline was 3 users");
+    expect(currentProjectHandoff).toContain("read-only database connection and count validation");
     expect(currentProjectHandoff).toContain("sendInquiryReply");
     expect(currentProjectHandoff).toContain("sender receives an unread-message alert");
   });
