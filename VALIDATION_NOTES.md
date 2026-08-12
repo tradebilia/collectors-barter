@@ -10,6 +10,16 @@ The live recipient Deleted folder displayed **Administrator** for the admin-sent
 
 The cache-busting follow-up deployment was then reloaded successfully in the same live recipient session before reopening the Deleted folder.
 
+The responsive Integration-card deployment was reloaded on the live Profile route before a final class and mobile screenshot recheck.
+
+The live JavaScript bundle contains the new responsive Integration-card class, while the rendered page initially retained the former card class. The final check therefore clears only the site’s stale runtime cache before reloading; no account or database data is modified.
+
+After the cache-cleared reload, the authenticated live Profile route continued to render normally with all five provider logos present. The remaining DOM-class discrepancy is under investigation before the responsive correction is marked verified.
+
+The final live bundle and rendered eBay connection-card markup both resolved to the responsive small-screen stacking class. A final 375-pixel capture is used to confirm the visual result.
+
+The final authenticated 383-pixel capture had no horizontal overflow and loaded all five supplied provider assets. Connection controls stack below their respective logo and label on small screens, eliminating the earlier logo/control overlap. The active/deleted inquiry implementation and live recipient deleted-inquiry view are verified; direct-message rendering is covered by the shared resolver, message-payload paths, and regression tests because the read-only live data did not retain a direct-message thread to open in the browser.
+
 ## Profile Integrations logos
 
 The supplied eBay, Facebook, LinkedIn, Whatnot, and PayPal files were copied to the durable web asset directory and published to project storage. The authenticated Profile Integrations page rendered all five provider images successfully. Browser checks confirmed each image was present, complete, and had a positive intrinsic width and height, with no broken image links.
