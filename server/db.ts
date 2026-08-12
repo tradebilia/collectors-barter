@@ -26,6 +26,7 @@ import {
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 import { storagePut } from "./storage";
+import { resolveDirectMessageDisplayName } from "./directMessageDisplayName";
 import bcrypt from 'bcryptjs';
 import { encrypt } from "./_core/crypto";
 
@@ -3163,6 +3164,7 @@ export async function getInquiriesByUser(userId: number, limit: number = 50, off
       id: itemInquiries.id,
       senderId: itemInquiries.senderId,
       senderName: users.displayName,
+      senderAccountName: users.name,
       senderAvatarUrl: users.avatarUrl,
       recipientId: itemInquiries.recipientId,
           listingId: itemInquiries.listingId,
@@ -3200,6 +3202,11 @@ export async function getInquiriesByUser(userId: number, limit: number = 50, off
         .limit(1);
       return {
         ...inquiry,
+        senderName: resolveDirectMessageDisplayName(
+          inquiry.senderName,
+          inquiry.senderAccountName,
+          inquiry.senderId,
+        ),
         isRead: isInquiryReadForUser(inquiry, userId) ? 1 : 0,
         recipientName: recipient[0]?.displayName ?? null,
         recipientAvatarUrl: recipient[0]?.avatarUrl ?? null,

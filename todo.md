@@ -55,3 +55,7 @@
 - [x] Run the sender-name regression test and TypeScript validation.
 - [ ] Verify the recipient inbox displays Administrator for the admin-sent direct message.
 - [ ] Verify the recipient inbox shows Administrator rather than a generic collector label.
+- [x] Update the item-inquiry sender query to fall back from profile display name to the sender account name.
+- [x] Run the item-inquiry sender-name regression test and TypeScript validation.
+- [x] Complete the account-name fallback in the `getInquiriesByUser` query and mapped inquiry result.
+- [ ] Verify the recipient inbox displays Administrator for the admin-sent item inquiry.
