@@ -20,7 +20,7 @@ After reading this guide, read `HANDOFF_ADVERSARIAL_AUDIT.md`. It records the ev
 
 The project—not simply the Git repository—is the boundary that connects Tradebilia’s deployed application, managed object-storage namespace, project shared files, GitHub integration, and project configuration. A fresh conversation within this project is expected to use the same project resources. A newly initialized project is a separate environment and does not automatically inherit this project’s `/manus-storage/...` media or live-data configuration.
 
-The established project folder is `/home/ubuntu/tradebilia-platform`. Before any action, the next session must confirm the Tradebilia Website project context is present and run `git status --short` in that folder. If the project context or folder is absent, stop and ask Rich to reopen the task in the existing project; do not initialize a replacement web project.
+The existing Tradebilia project normally restores its managed checkout at `/home/ubuntu/tradebilia-platform`, but a fresh task can begin with project context/shared files before that sandbox folder exists. Before any file or Git command, the new task must confirm the **Tradebilia Website** project context and use the platform-managed project restart action to restore the existing checkout. Use the path returned by that restart; do not assume the old sandbox path already exists, manually clone a replacement checkout, or initialize a replacement web project.
 
 ## 2. Non-Negotiable First Rule
 
@@ -36,7 +36,7 @@ Tradebilia deliberately uses more than one storage boundary. Treating them as in
 
 | Boundary | What belongs there | What persists | New-session instruction |
 |---|---|---|---|
-| **GitHub repository** | Source code, schema, tests, documentation, release-backed static recovery archive | Yes | Use the existing project checkout on `main`, verify a clean working tree, and push every approved code change to `github/main`. Clone only as a recovery measure outside the managed project context. |
+| **GitHub repository** | Source code, schema, tests, documentation, release-backed static recovery archive | Yes | Let the existing managed-project restart restore the project checkout from `main`; then verify its content and push every approved code change to `github/main`. Do not manually clone or initialize a replacement checkout during normal handoff validation. |
 | **Project object storage** (`/manus-storage/...`) | Static design assets, listing photographs, user avatars, uploaded files | Project-scoped; not part of Git history | A new **session in this same Tradebilia project** is expected to resolve these paths; confirm representative static, listing, and avatar paths in the fresh-session acceptance test. A fresh web project does not automatically inherit them. Keep runtime paths in object storage; do **not** put live user images into GitHub. |
 | **External CUSTOM database** | Live users, profiles, listings, messages, trades, merchant status, photo/asset URLs | Yes, if reconnecting to the intended database | Restore the correct `CUSTOM_DATABASE_URL` securely before use. Confirm it targets the intended production/staging database. |
 | **Manus-managed database** | Template/platform database only unless deliberately used | Not the live Tradebilia dataset | Do not mistake it for the external live database. Do not run a live-data migration against it. |
@@ -154,8 +154,9 @@ The new session must complete this checklist **in order**. Stop and ask Rich if 
 
 | Step | Required evidence |
 |---|---|
-| 1. Confirm the existing project | The task is inside the **Tradebilia Website** project; `/home/ubuntu/tradebilia-platform` exists; `git remote get-url github \| sed -E 's#//[^/@]+@#//#'` identifies `github.com/tradebilia/collectors-barter.git` without exposing an embedded credential; and `git status --short` is clean. Do not initialize a new web project. |
-| 2. Read before acting | Read this guide, `NEXT_SESSION_QUICK_START.md`, `IMAGE_ASSET_INVENTORY.md`, and the top “Session Transition Gate” in `todo.md`. |
+| 0. Restore the managed checkout | Confirm the task is inside the **Tradebilia Website** project, then use the platform-managed project restart action. This is the only permitted bootstrap action before read-only validation. Use the returned project path. If restart cannot restore an existing checkout, stop and report the blocker; do not create a web project or manually clone a replacement checkout. |
+| 1. Confirm the restored checkout | In the path returned by restart, `git remote get-url github \| sed -E 's#//[^/@]+@#//#'` identifies `github.com/tradebilia/collectors-barter.git` without exposing an embedded credential; `git fetch github main --quiet` succeeds; content diff against `github/main` is empty; and `git status --short` is clean. |
+| 2. Read before acting | Read this guide, `NEXT_SESSION_QUICK_START.md`, `IMAGE_ASSET_INVENTORY.md`, `HANDOFF_ADVERSARIAL_AUDIT.md`, and the top “Session Transition Gate” in `todo.md`. |
 | 3. Install dependencies | `pnpm install --frozen-lockfile` completes successfully. |
 | 4. Restore secure configuration | Verify required secret **names** through the secure project Secrets interface or environment presence checks; never inspect/copy `.project-config.json` or raw values. Confirm `CUSTOM_DATABASE_URL` points to the intended external database. Do not create a new web project for this validation. |
 | 5. Compile and test | `npx tsc --noEmit` succeeds and `pnpm test` passes. Record the real total rather than assuming a historical count. |

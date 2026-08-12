@@ -10,26 +10,23 @@ Start the next conversation **inside the existing “Tradebilia Website” proje
 
 > **Do not create a new website project for this handoff.** A separate project has a different storage namespace and will not automatically contain the current hero backgrounds, title artwork, listing images, avatars, or configuration.
 
-Before changing anything, confirm that the task shows the existing Tradebilia Website project context and use its established project folder:
+Before any file or Git command, confirm that the task shows the existing Tradebilia Website project context and use the platform-managed project restart action. A fresh sandbox can have the project context and shared files while the prior local folder does not yet exist. The restart action restores the existing managed checkout and reports its path.
 
-```bash
-cd /home/ubuntu/tradebilia-platform
-git status --short
-git remote get-url github | sed -E 's#//[^/@]+@#//#'
-```
-
-If that project folder or context is not available, stop and ask Rich to open the task inside the existing Tradebilia Website project. Do not work around the missing project by initializing a new site.
+If the managed restart cannot restore the existing checkout, stop and report that blocker to Rich. Do not work around it by initializing a new site, manually running `git clone`, or substituting another database.
 
 ## 2. Confirm the Correct Codebase
 
-The established project folder should already be connected to GitHub. Verify it is clean before changing anything.
+Use the path returned by the managed restart. The restored project folder should already be connected to GitHub. Verify it is clean before changing anything.
 
 ```bash
-pnpm install --frozen-lockfile
+cd <path returned by the managed restart>
 git status --short
+git remote get-url github | sed -E 's#//[^/@]+@#//#'
+git fetch github main --quiet
+git diff --name-only github/main --
 ```
 
-The last command must show no uncommitted files. Then read `SESSION_HANDOFF_GUIDE.md`, `IMAGE_ASSET_INVENTORY.md`, `HANDOFF_ADVERSARIAL_AUDIT.md`, and the **Session Transition Gate** at the top of `todo.md`.
+The status and content diff output must both be empty, and the remote must identify `https://github.com/tradebilia/collectors-barter.git` without an embedded credential. Then read `SESSION_HANDOFF_GUIDE.md`, `IMAGE_ASSET_INVENTORY.md`, `HANDOFF_ADVERSARIAL_AUDIT.md`, and the **Session Transition Gate** at the top of `todo.md`.
 
 ## 3. Restore Secrets Securely
 
@@ -49,12 +46,12 @@ Do not assume any current value is correct. Verify through the secure project co
 ## 4. Verify Before Working
 
 ```bash
+pnpm install --frozen-lockfile
 npx tsc --noEmit
 pnpm test
-pnpm dev
 ```
 
-Inspect the dev server and browser logs. The test count can evolve; the acceptance requirement is that every test passes, TypeScript is clean, and the app uses the intended external database without connection errors.
+The managed restart already starts the existing project’s development service. Inspect its dev-server and browser logs. The test count can evolve; the acceptance requirement is that every test passes, TypeScript is clean, and the app uses the intended external database without connection errors.
 
 ## 5. Validate the Critical User Flows
 

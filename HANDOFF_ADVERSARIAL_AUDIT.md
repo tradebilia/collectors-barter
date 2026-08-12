@@ -15,7 +15,7 @@
 | ID | Continuity claim | Initial status | Evidence required | Required response if not proven |
 |---|---|---|---|---|
 | P-01 | The next task is created inside the existing **Tradebilia Website** project rather than a new WebDev project. | Expected, not yet proven | New task project context and shared-files panel show the existing project. | Stop; do not initialize a replacement project. |
-| P-02 | The project folder is `/home/ubuntu/tradebilia-platform`. | Expected, not yet proven | Directory exists in the new task and contains the existing project checkout. | Stop and ask Rich to reopen the existing project. |
+| P-02 | The managed project checkout is available to the new task. | Expected, not yet proven | After the managed project restart procedure, use its returned path and confirm it contains the existing restored checkout. | Stop and report the bootstrap blocker; do not create a project, call `webdev_init_project`, or manually clone a replacement checkout. |
 | R-01 | GitHub `main` contains the approved code and handoff documents. | Proven in the current audit; recheck in new task | Sanitized `github` remote identifies `tradebilia/collectors-barter`; content diff against `github/main` is empty. | Stop; do not merge, reset, force-push, or create a replacement repository. |
 | R-02 | Shared handoff files are available to all tasks in this project. | Proven in the current audit; recheck in new task | Shared-files panel includes the three required documents. | Stop and report the missing files. |
 | D-01 | Runtime uses the intended external database through `CUSTOM_DATABASE_URL`. | Proven in current production; recheck in new task | `/health` and dev logs identify the CUSTOM source without printing the URL; marketplace data is present. | Stop; do not substitute `DATABASE_URL`. |
@@ -33,7 +33,7 @@
 
 ## Strict Validation Rule
 
-Until Rich confirms the new-task validation results, the validator must not edit source, alter database records, run migrations, modify secrets/connectors/deployment settings, re-upload/delete/move media, create checkpoints, or push to GitHub. Validation is evidence collection only.
+Until Rich confirms the new-task validation results, the validator must not edit source, alter database records, run migrations, modify secrets/connectors/deployment settings, re-upload/delete/move media, create checkpoints, or push to GitHub. The managed project restart procedure is the sole permitted bootstrap action before validation; after it succeeds, validation is evidence collection only.
 
 ## Current Audit Outcome — August 11, 2026
 

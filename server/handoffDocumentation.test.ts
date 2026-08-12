@@ -25,6 +25,14 @@ describe("handoff documentation safeguards", () => {
     expect(assets).toContain("newly initialized web project");
   });
 
+  it("handles a fresh sandbox by restoring the managed checkout instead of requiring the prior absolute path", () => {
+    expect(guide).toContain("platform-managed project restart action");
+    expect(guide).toContain("do not assume the old sandbox path already exists");
+    expect(quickStart).toContain("managed project restart action");
+    expect(quickStart).toContain("manually running `git clone`");
+    expect(audit).toContain("managed project restart procedure");
+  });
+
   it("makes the first handoff-validation pass read-only and prevents token exposure in remote checks", () => {
     expect(guide).toContain("Validation is read-only until Rich approves");
     expect(guide).toContain("do not edit source code");
