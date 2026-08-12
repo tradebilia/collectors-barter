@@ -8,6 +8,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { getLoginUrl } from "@/const";
 import { getInquiryDirection, getInquiryDirectionPresentation } from "@/lib/inquiryDirection";
 import { getDirectMessageDirection, getDirectMessageDirectionPresentation } from "@/lib/directMessageDirection";
+import { matchesDirectMessageDirectionFilter, type DirectMessageDirectionFilter } from "@/lib/directMessageFilter";
 import { loadPresenceMap, subscribeToPresence, updatePresence } from "@/lib/memberMessaging";
 import { shouldRefreshUnreadAlertAfterOpeningDirectThread } from "@/lib/unreadAlertRefresh";
 import { trpc } from "@/lib/trpc";
@@ -43,6 +44,7 @@ export default function Messages() {
   const utils = trpc.useUtils();
   const [folder, setFolder] = useState<(typeof folders)[number]["value"]>("all");
   const [inquiryDirectionFilter, setInquiryDirectionFilter] = useState<"all" | "received" | "sent">("all");
+  const [directDirectionFilter, setDirectDirectionFilter] = useState<DirectMessageDirectionFilter>("all");
   const [deletedQueryToken, setDeletedQueryToken] = useState(() => Date.now());
   const [activeThreadKey, setActiveThreadKey] = useState<string | null>(null);
   const [messageDraft, setMessageDraft] = useState("");
@@ -123,6 +125,9 @@ export default function Messages() {
     setFolder(nextFolder);
     if (nextFolder === "inquiries") {
       setInquiryDirectionFilter("all");
+    }
+    if (nextFolder === "direct") {
+      setDirectDirectionFilter("all");
     }
     if (nextFolder === "deleted") {
       setDeletedQueryToken(Date.now());
@@ -219,11 +224,17 @@ export default function Messages() {
   const filteredThreads = useMemo(() => {
     if (folder === "inquiries") return [];
     return allThreads.filter((thread: any) => {
-      if (folder === "direct") return thread.kind === "direct";
+      if (folder === "direct") {
+        return thread.kind === "direct" && matchesDirectMessageDirectionFilter(
+          thread.latestSenderId,
+          user?.id,
+          directDirectionFilter,
+        );
+      }
       if (folder === "unread") return thread.unread;
       return true;
     });
-  }, [allThreads, folder]);
+  }, [allThreads, folder, directDirectionFilter, user?.id]);
 
   const filteredInquiries = useMemo(() => {
     if (folder === "deleted") return deletedInquiriesQuery.data ?? [];
@@ -411,6 +422,24 @@ export default function Messages() {
                       type="button"
                       onClick={() => setInquiryDirectionFilter(filter.value)}
                       className={`rounded-full border px-3 py-1.5 text-sm font-medium transition ${inquiryDirectionFilter === filter.value ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100"}`}
+                    >
+                      {filter.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+              {folder === "direct" && (
+                <div className="mt-4 flex flex-wrap gap-2" aria-label="Direct message direction filters">
+                  {([
+                    { value: "all", label: "All" },
+                    { value: "received", label: "Received" },
+                    { value: "sent", label: "Sent" },
+                  ] as const).map(filter => (
+                    <button
+                      key={filter.value}
+                      type="button"
+                      onClick={() => setDirectDirectionFilter(filter.value)}
+                      className={`rounded-full border px-3 py-1.5 text-sm font-medium transition ${directDirectionFilter === filter.value ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100"}`}
                     >
                       {filter.label}
                     </button>

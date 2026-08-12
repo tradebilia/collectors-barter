@@ -125,7 +125,10 @@
 - [x] Inspect the direct-message thread lookup that fails when admin sends the first message to rtavani.
 - [x] Correct the nullable `itemId` thread lookup so first-time direct-message conversations can be created.
 - [x] Add regression coverage for creating a first direct message without an item reference.
-- [ ] Verify the repaired admin-to-rtavani direct-message flow in development and live views.
+- [x] Verify the repaired admin-to-rtavani direct-message flow in development and live views.
+- [x] Verify the repaired admin-to-rtavani direct-message send flow end-to-end in the development preview without a database error.
+- [x] Send one approved development-verification direct message from Admin to Rtavani and verify its created conversation state.
+- [ ] Document both development and live sender-side direct-message send verification results.
 - [x] Compare deployed legacy database table columns with messaging and related data-access paths for incompatible assumptions.
 - [x] Assess and document any additional schema mismatches with likely runtime impact, without changing unaffected code.
 - [x] Supply explicit `lastMessageAt` and `createdAt` values when creating legacy direct-message threads without database defaults.
@@ -143,3 +146,7 @@
 - [ ] Verify the reordered direct-message card matches the item-inquiry hierarchy in development and live views.
 - [x] Locate the broken direct-message notification email logo reference and replace it with the durable Tradebilia logo URL.
 - [x] Verify the email-logo URL is publicly accessible to external email clients and covered by a notification-template regression test.
+- [x] Add All, Sent, and Received subfilters to the Direct Messages folder using latest-message direction.
+- [ ] Verify the direct-message subfilters isolate outgoing and incoming conversations without changing the unified list default.
+- [ ] Review Direct Messages and Item Inquiries from both sender and recipient perspectives for clarity, trust, and conversion friction.
+- [ ] Produce a prioritized messaging-experience improvement roadmap focused on collector retention and repeat engagement.

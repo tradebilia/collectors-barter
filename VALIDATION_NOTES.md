@@ -69,3 +69,11 @@ Focused Vitest coverage for sender resolution, deleted-inquiry refresh behavior,
 ## Direct-message direction deployment check
 
 Two cache-busted live admin Messages reloads immediately after the direct-message direction checkpoint still rendered the preceding direct-message card text, `From Rtavani` and `direct`. The deployed application bundle therefore requires propagation verification before the direction update can be marked visually complete.
+
+Two further cache-busted reloads after the counterpart-first hierarchy checkpoint still served the prior direct card order, placing the subject `direct test` above `To: Rtavani`. The production asset bundle must be distinguished from browser runtime cache before final visual verification.
+
+## Direct-message development verification
+
+After explicit user approval, the development preview successfully sent one message from Admin to Rtavani with no database error. The new conversation card shows the approved hierarchy—**To: Rtavani**, **Direct Message**, **Sent**, subject, preview, and timestamp—and the Direct Messages **Sent** filter retains that outgoing conversation.
+
+The same development view’s **Received** filter correctly excludes the outgoing conversation and renders an empty state because no incoming reply exists. This confirms the All, Sent, and Received filters separate conversations by the latest-message direction without changing the unified Direct Messages folder.
