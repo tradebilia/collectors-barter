@@ -126,5 +126,9 @@
 - [x] Correct the nullable `itemId` thread lookup so first-time direct-message conversations can be created.
 - [x] Add regression coverage for creating a first direct message without an item reference.
 - [ ] Verify the repaired admin-to-rtavani direct-message flow in development and live views.
+- [ ] Compare deployed legacy database table columns with messaging and related data-access paths for incompatible assumptions.
+- [ ] Assess and document any additional schema mismatches with likely runtime impact, without changing unaffected code.
+- [x] Supply explicit `lastMessageAt` and `createdAt` values when creating legacy direct-message threads without database defaults.
+- [x] Add regression coverage for direct-message thread creation against the legacy no-default timestamp shape.
 - [x] Add a router-level legacy-schema regression test proving a first direct message creates one thread and one message without referencing `itemId`.
 - [x] Add a router-level legacy-schema regression test proving a second direct message reuses the same participant thread.

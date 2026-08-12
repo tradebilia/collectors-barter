@@ -5,7 +5,13 @@ import { directMessages, directMessageThreads } from "../drizzle/schema";
 import { persistDirectMessage } from "./directMessagePersistence";
 
 function createLegacyThreadDatabase() {
-  const threads: Array<{ id: number; participantAId: number; participantBId: number }> = [];
+  const threads: Array<{
+    id: number;
+    participantAId: number;
+    participantBId: number;
+    lastMessageAt: string;
+    createdAt: string;
+  }> = [];
   const messages: Array<Record<string, unknown>> = [];
 
   const db = {
@@ -24,6 +30,8 @@ function createLegacyThreadDatabase() {
             id,
             participantAId: values.participantAId as number,
             participantBId: values.participantBId as number,
+            lastMessageAt: values.lastMessageAt as string,
+            createdAt: values.createdAt as string,
           });
           return [{ insertId: id }];
         }
@@ -54,7 +62,9 @@ describe("legacy direct-message thread persistence", () => {
     });
 
     expect(result).toEqual({ threadId: 1, isNewThread: true });
-    expect(threads).toEqual([{ id: 1, participantAId: 30002, participantBId: 60003 }]);
+    expect(threads[0]).toMatchObject({ id: 1, participantAId: 30002, participantBId: 60003 });
+    expect(threads[0].lastMessageAt).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/);
+    expect(threads[0].createdAt).toBe(threads[0].lastMessageAt);
     expect(messages).toHaveLength(1);
     expect(threads[0]).not.toHaveProperty("itemId");
   });

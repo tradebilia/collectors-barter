@@ -44,9 +44,12 @@ export async function persistDirectMessage(
       sql`UPDATE directMessageThreads SET lastMessageAt = NOW() WHERE id = ${threadId}`,
     );
   } else {
+    const createdAt = new Date().toISOString().slice(0, 19).replace("T", " ");
     const result = await db.insert(directMessageThreads).values({
       participantAId,
       participantBId,
+      lastMessageAt: createdAt,
+      createdAt,
     });
     threadId = (result as any)[0]?.insertId ?? (result as any).insertId;
   }

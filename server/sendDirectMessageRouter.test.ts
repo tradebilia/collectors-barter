@@ -24,7 +24,13 @@ vi.mock("./_core/email", () => ({
 import { appRouter } from "./routers";
 
 function createLegacyDirectMessageDatabase() {
-  const threads: Array<{ id: number; participantAId: number; participantBId: number }> = [];
+  const threads: Array<{
+    id: number;
+    participantAId: number;
+    participantBId: number;
+    lastMessageAt: string;
+    createdAt: string;
+  }> = [];
   const messages: Array<Record<string, unknown>> = [];
   let selectCall = 0;
 
@@ -51,6 +57,8 @@ function createLegacyDirectMessageDatabase() {
               id,
               participantAId: values.participantAId as number,
               participantBId: values.participantBId as number,
+              lastMessageAt: values.lastMessageAt as string,
+              createdAt: values.createdAt as string,
             });
             return [{ insertId: id }];
           }
@@ -79,7 +87,9 @@ describe("sendDirectMessage legacy schema path", () => {
     });
 
     expect(result).toEqual({ threadId: 1, recipientId: 60003 });
-    expect(threads).toEqual([{ id: 1, participantAId: 30002, participantBId: 60003 }]);
+    expect(threads[0]).toMatchObject({ id: 1, participantAId: 30002, participantBId: 60003 });
+    expect(threads[0].lastMessageAt).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/);
+    expect(threads[0].createdAt).toBe(threads[0].lastMessageAt);
     expect(messages).toHaveLength(1);
     expect(threads[0]).not.toHaveProperty("itemId");
   });
