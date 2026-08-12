@@ -28,3 +28,10 @@
 - [x] Correct the Traders Showcase hero background so the restored title artwork has sufficient contrast.
 - [x] Apply the supplied transparent Tradebilia logo as the homepage hero title graphic.
 - [x] Verify the homepage hero title graphic is responsive and readable on desktop and mobile.
+- [ ] Catalog missing application secrets and preserve `TRADEBILIA_STAGING_MODE=1` during restoration.
+- [ ] Request missing secret values only through the project’s secure settings form.
+- [ ] Validate secret configuration presence without revealing values or calling external services.
+- [x] Restore the animated category-cycling Tradebilia top-bar mark while keeping the static homepage hero title.
+- [x] Verify the top-bar logo cycles through category words and remains legible at desktop and mobile widths.
+- [x] Correct the mobile top-bar overlap caused by the restored animated logo.
+- [x] Prevent the mobile search action from colliding with the sign-in control.
