@@ -96,3 +96,8 @@
 - [x] Publish the approved item-inquiry direction update and verify both sender and recipient live views.
 - [x] Verify the live sender view shows To, one Sent badge, and Inquiry to for an outgoing item inquiry.
 - [x] Verify the live recipient view shows From, Received, and Inquiry from for the corresponding incoming item inquiry.
+- [x] Identify the user-uploaded Barry Sanders replacement image and the single broken listing photo record.
+- [x] Confirm the already uploaded Barry Sanders replacement image is durably accessible for web use.
+- [x] Update only the identified broken Barry Sanders photo reference without deleting other listing photos.
+- [x] Verify the repaired Barry Sanders image renders in development and live listing views.
+- [x] Update only the inaccessible legacy photo record to the existing accessible Barry Sanders image, preserving both photo rows and all other listing data.

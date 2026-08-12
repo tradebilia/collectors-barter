@@ -40,6 +40,10 @@ In the same live account’s Deleted folder, the existing outgoing inquiry is ex
 
 Opening the live outgoing inquiry shows **Inquiry to Administrator**, a single **Sent** badge, and **You sent this item inquiry on …** timestamp copy. The published implementation therefore verifies both recipient-side and sender-side wording in live browser views.
 
+## Barry Sanders listing photo repair
+
+The Barry Sanders Score Rookie listing (reference ID 1110009) had two retained photo rows. One legacy URL returned an access error while the other rendered the verified PSA 1989 Score Barry Sanders card image. The inaccessible row was updated in place to the existing durable image reference; no photo rows or other listing data were deleted. Development and live listing views both render the repaired image successfully.
+
 ## Profile Integrations logos
 
 The supplied eBay, Facebook, LinkedIn, Whatnot, and PayPal files were copied to the durable web asset directory and published to project storage. The authenticated Profile Integrations page rendered all five provider images successfully. Browser checks confirmed each image was present, complete, and had a positive intrinsic width and height, with no broken image links.
