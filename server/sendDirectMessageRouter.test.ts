@@ -69,7 +69,21 @@ function createLegacyDirectMessageDatabase() {
           throw new Error("Unexpected table insert");
         },
       }),
-      execute: async () => [],
+      execute: async () => {
+        if (threads.length === 0) {
+          const id = 1;
+          const createdAt = new Date().toISOString().slice(0, 19).replace("T", " ");
+          threads.push({
+            id,
+            participantAId: 30002,
+            participantBId: 60003,
+            lastMessageAt: createdAt,
+            createdAt,
+          });
+          return [{ insertId: id }];
+        }
+        return [];
+      },
     },
   };
 }

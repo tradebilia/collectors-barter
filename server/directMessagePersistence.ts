@@ -45,13 +45,12 @@ export async function persistDirectMessage(
     );
   } else {
     const createdAt = new Date().toISOString().slice(0, 19).replace("T", " ");
-    const result = await db.insert(directMessageThreads).values({
-      participantAId,
-      participantBId,
-      lastMessageAt: createdAt,
-      createdAt,
-    });
-    threadId = (result as any)[0]?.insertId ?? (result as any).insertId;
+    const result = await db.execute(sql`
+      INSERT INTO directMessageThreads (participantAId, participantBId, lastMessageAt, createdAt)
+      VALUES (${participantAId}, ${participantBId}, ${createdAt}, ${createdAt})
+    `);
+    const insertResult = Array.isArray(result) ? result[0] : result;
+    threadId = (insertResult as any).insertId;
   }
 
   await db.insert(directMessages).values({

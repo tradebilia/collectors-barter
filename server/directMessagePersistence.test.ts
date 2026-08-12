@@ -44,7 +44,20 @@ function createLegacyThreadDatabase() {
         throw new Error("Unexpected table insert");
       },
     }),
-    execute: async () => [],
+    execute: async () => {
+      if (threads.length === 0) {
+        const id = 1;
+        threads.push({
+          id,
+          participantAId: 30002,
+          participantBId: 60003,
+          lastMessageAt: new Date().toISOString().slice(0, 19).replace("T", " "),
+          createdAt: new Date().toISOString().slice(0, 19).replace("T", " "),
+        });
+        return [{ insertId: id }];
+      }
+      return [];
+    },
   };
 
   return { db, threads, messages };
@@ -88,6 +101,12 @@ describe("legacy direct-message thread persistence", () => {
     expect(result).toEqual({ threadId: 1, isNewThread: false });
     expect(threads).toHaveLength(1);
     expect(messages).toHaveLength(2);
+  });
+
+  it("uses an explicit legacy-compatible insert without the absent itemId column", () => {
+    const source = readFileSync(join(process.cwd(), "server", "directMessagePersistence.ts"), "utf-8");
+    expect(source).toContain("INSERT INTO directMessageThreads (participantAId, participantBId, lastMessageAt, createdAt)");
+    expect(source).not.toContain("insert(directMessageThreads)");
   });
 
   it("routes direct-message sends through the legacy-compatible persistence helper", () => {
