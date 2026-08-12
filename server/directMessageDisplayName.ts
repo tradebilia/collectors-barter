@@ -4,10 +4,11 @@ export function resolveDirectMessageDisplayName(
   userId: number,
 ) {
   const profileName = profileDisplayName?.trim();
-  if (profileName) return profileName;
+  const genericPlaceholder = `Collector ${userId}`;
+  if (profileName && profileName !== genericPlaceholder) return profileName;
 
   const userName = accountName?.trim();
   if (userName) return userName;
 
-  return `Collector ${userId}`;
+  return profileName || genericPlaceholder;
 }

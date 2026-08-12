@@ -59,3 +59,5 @@
 - [x] Run the item-inquiry sender-name regression test and TypeScript validation.
 - [x] Complete the account-name fallback in the `getInquiriesByUser` query and mapped inquiry result.
 - [ ] Verify the recipient inbox displays Administrator for the admin-sent item inquiry.
+- [ ] Inspect administrator identity fields read-only to identify the authoritative display name for inquiry sender labels.
+- [x] Treat `Collector {id}` as a generic placeholder so it cannot override an available account name.
