@@ -90,7 +90,7 @@ export function LinkedInConnection() {
       <div className="flex items-center justify-between rounded-lg border border-slate-200 p-4">
         <div className="flex items-center gap-3">
           <img
-            src="/manus-storage/LinkedIn_dc442074.webp"
+            src="/manus-storage/LinkedIn_df1e2c1e.webp"
             alt="LinkedIn"
             className="h-12 w-auto object-contain"
           />

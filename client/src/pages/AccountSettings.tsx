@@ -45,8 +45,8 @@ const categoryOptions = [
 ] as const;
 
 const accountSources = [
-  { value: "paypal", label: "PayPal", logo: "/manus-storage/Paypal_ace464a4.png" },
-  { value: "whatnot", label: "Whatnot", logo: "/manus-storage/WhatNot_f1e0a2e5.png" },
+  { value: "paypal", label: "PayPal", logo: "/manus-storage/Paypal_25ebc114.png" },
+  { value: "whatnot", label: "Whatnot", logo: "/manus-storage/WhatNot_ab669ac9.png" },
 ] as const;
 
 type AccountSource = typeof accountSources[number]["value"];
@@ -1117,11 +1117,11 @@ export default function AccountSettings() {
               {/* Pending Connections Quick Links */}
               {(() => {
                 const allPlatforms = [
-                  { key: 'facebook', label: 'Facebook', logo: '/manus-storage/Facebooklogo_19970ec8.png', isConnected: !!user?.facebookId },
-                  { key: 'paypal', label: 'PayPal', logo: '/manus-storage/Paypal_ace464a4.png', isConnected: !!user?.paypalEmail },
-                  { key: 'linkedin', label: 'LinkedIn', logo: '/manus-storage/LinkedIn_dc442074.webp', isConnected: !!user?.linkedinId },
-                  { key: 'ebay', label: 'eBay', logo: '/manus-storage/Ebaylogo_f6331705.png', isConnected: !!user?.ebayUsername },
-                  { key: 'whatnot', label: 'WhatNot', logo: '/manus-storage/WhatNot_f1e0a2e5.png', isConnected: false },
+                  { key: 'facebook', label: 'Facebook', logo: '/manus-storage/Facebooklogo_0c02c2d1.png', isConnected: !!user?.facebookId },
+                  { key: 'paypal', label: 'PayPal', logo: '/manus-storage/Paypal_25ebc114.png', isConnected: !!user?.paypalEmail },
+                  { key: 'linkedin', label: 'LinkedIn', logo: '/manus-storage/LinkedIn_df1e2c1e.webp', isConnected: !!user?.linkedinId },
+                  { key: 'ebay', label: 'eBay', logo: '/manus-storage/Ebaylogo_12a10426.png', isConnected: !!user?.ebayUsername },
+                  { key: 'whatnot', label: 'WhatNot', logo: '/manus-storage/WhatNot_ab669ac9.png', isConnected: false },
                 ];
                 const pendingPlatforms = allPlatforms.filter(p => !p.isConnected);
                 
@@ -1150,7 +1150,7 @@ export default function AccountSettings() {
               <Card className="rounded-[1.5rem] border-slate-200 bg-white shadow-sm">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <img src="/manus-storage/Paypal_ace464a4.png" alt="PayPal" className="h-6 w-auto object-contain" />
+                    <img src="/manus-storage/Paypal_25ebc114.png" alt="PayPal" className="h-6 w-auto object-contain" />
                     PayPal Email
                   </CardTitle>
                   <CardDescription>

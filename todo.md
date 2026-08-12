@@ -59,11 +59,24 @@
 - [x] Run the item-inquiry sender-name regression test and TypeScript validation.
 - [x] Complete the account-name fallback in the `getInquiriesByUser` query and mapped inquiry result.
 - [ ] Verify the recipient inbox displays Administrator for the admin-sent item inquiry.
-- [ ] Inspect administrator identity fields read-only to identify the authoritative display name for inquiry sender labels.
-- [ ] Treat `Collector {id}` as a generic placeholder so it cannot override an available account name.
-- [ ] Use display names as the authoritative sender label for all item-inquiry and direct-message communications.
+- [x] Inspect administrator identity fields read-only to identify the authoritative display name for inquiry sender labels.
+- [x] Treat `Collector {id}` as a generic placeholder so it cannot override an available account name.
+- [x] Use display names as the authoritative sender label for all item-inquiry and direct-message communications.
 - [ ] Verify the recipient inbox displays the sender’s display name rather than an account name or generic fallback.
 - [x] Complete the profile display-name join and fallback in `getInquiriesByUser`.
-- [ ] Inspect active and deleted inquiry data paths for stale sender names, missing identity fields, or client-side fallback rendering.
+- [x] Inspect active and deleted inquiry data paths for stale sender names, missing identity fields, or client-side fallback rendering.
 - [ ] Correct display-name resolution consistently across all inquiry inbox states.
 - [x] Validate unified sender-label resolution with focused tests and TypeScript.
+- [x] Identify the authoritative stored display-name source for existing inquiry sender ID 30002 through read-only inspection.
+- [x] Run a read-only application-database identity inspection for sender ID 30002.
+- [x] Force the deleted-inquiry client query to refetch server-resolved sender labels on mount and focus.
+- [x] Apply the profile-display-name-first sender resolver to inquiry reply and direct-message message payloads.
+- [ ] Verify active, deleted, and reply/thread message views render profile display names after cache refresh.
+- [x] Resolve recipient profile display names for sent active and deleted inquiry rows so sender-side labels never render as an undefined collector placeholder.
+- [x] Use the participant-aware counterpart label in an opened inquiry so outgoing threads show the recipient’s profile display name.
+- [x] Copy the supplied eBay, Facebook, LinkedIn, Whatnot, and PayPal logos to durable web asset storage without altering their brand artwork.
+- [x] Replace broken Profile page Integration-tab logo references with the supplied eBay, Facebook, LinkedIn, Whatnot, and PayPal assets.
+- [ ] Verify the Integration tab renders all supplied provider logos without broken image links at desktop and mobile widths.
+- [ ] Verify the recipient-side Messages UI after an authorized deployment while signed in as the recipient account.
+- [ ] Verify the authenticated Profile Integrations tab at a mobile viewport width.
+- [ ] Publish the user-approved Messages and Profile Integrations update from this development workspace.

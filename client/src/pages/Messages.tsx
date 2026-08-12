@@ -107,8 +107,20 @@ export default function Messages() {
 
   const deletedInquiriesQuery = trpc.market.getDeleted.useQuery(
     undefined,
-    { enabled: isAuthenticated }
+    {
+      enabled: isAuthenticated,
+      staleTime: 0,
+      refetchOnMount: "always",
+      refetchOnWindowFocus: "always",
+    }
   );
+
+  const handleFolderChange = (nextFolder: (typeof folders)[number]["value"]) => {
+    setFolder(nextFolder);
+    if (nextFolder === "deleted") {
+      void utils.market.getDeleted.invalidate();
+    }
+  };
 
   const deleteInquiryMutation = trpc.market.deleteInquiry.useMutation({
     onSuccess: async () => {
@@ -249,6 +261,11 @@ export default function Messages() {
 
   const activeThread = filteredThreads.find(thread => thread.key === activeThreadKey) ?? null;
   const activeInquiry = activeThreadKey?.startsWith('inquiry-') ? filteredInquiries.find(i => `inquiry-${i.id}` === activeThreadKey) : null;
+  const activeInquiryCounterpartName = activeInquiry
+    ? activeInquiry.senderId === user?.id
+      ? activeInquiry.recipientName || `Collector ${activeInquiry.recipientId}`
+      : activeInquiry.senderName || `Collector ${activeInquiry.senderId}`
+    : null;
   const activePresence = activeThread ? presenceMap[activeThread.counterpartId] : null;
   const activeOnline = activePresence ? Date.now() - activePresence.updatedAt < 15000 : false;
 
@@ -340,7 +357,7 @@ export default function Messages() {
                   <button
                     key={item.value}
                     type="button"
-                    onClick={() => setFolder(item.value)}
+                    onClick={() => handleFolderChange(item.value)}
                     className={`flex w-full items-center justify-between rounded-[1.25rem] border px-4 py-3 text-left transition ${folder === item.value ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100"}`}
                   >
                     <span className="font-medium">{item.label}</span>
@@ -439,7 +456,7 @@ export default function Messages() {
                         <AvatarFallback>{initials(activeInquiry.senderName || "Collector")}</AvatarFallback>
                       </Avatar>
                       <div>
-                        <h2 className="text-3xl font-semibold text-slate-900">{activeInquiry.senderName || `Collector ${activeInquiry.senderId}`}</h2>
+                        <h2 className="text-3xl font-semibold text-slate-900">{activeInquiryCounterpartName}</h2>
                         <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-slate-600">
                           <Badge variant="outline" className="rounded-full capitalize">Item Inquiry</Badge>
                         </div>
@@ -602,10 +619,11 @@ export default function Messages() {
                     )}
                     {(activeThread.kind === "direct" ? (dbMessagesQuery.data ?? []) : activeThread.proposal.messages).length ? (activeThread.kind === "direct" ? (dbMessagesQuery.data ?? []) : activeThread.proposal.messages).map((message: any) => {
                       const ownMessage = message.senderId === user?.id;
+                      const messageSenderName = message.senderName ?? (ownMessage ? "You" : activeThread.counterpartName);
                       return (
                         <div key={message.id} className={`flex ${ownMessage ? "justify-end" : "justify-start"}`}>
                           <div className={`max-w-[75%] rounded-[1.5rem] px-4 py-3 text-sm leading-7 shadow-sm ${ownMessage ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-700"}`}>
-                            <p className="text-xs uppercase tracking-[0.18em] opacity-65">{ownMessage ? (user?.name ?? 'You') : (activeThread.counterpartName)}</p>
+                            <p className="text-xs uppercase tracking-[0.18em] opacity-65">{messageSenderName}</p>
                             <p className="mt-2">{message.body ?? message.message}</p>
                             <p className="mt-2 text-[11px] uppercase tracking-[0.16em] opacity-55">{new Date(message.createdAt).toLocaleString()}</p>
                           </div>

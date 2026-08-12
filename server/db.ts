@@ -119,6 +119,32 @@ export function isInquiryReadForUser(inquiry: InquiryParticipantReadState, userI
   return false;
 }
 
+/**
+ * Resolve the human-facing sender label for communication payloads. Profile
+ * display names are authoritative; account identity is a fallback.
+ */
+export async function getCommunicationDisplayName(userId: number) {
+  const db = await requireDb();
+  const identity = await db
+    .select({
+      profileDisplayName: userProfiles.displayName,
+      username: users.username,
+      displayName: users.displayName,
+      accountName: users.name,
+    })
+    .from(users)
+    .leftJoin(userProfiles, eq(userProfiles.userId, users.id))
+    .where(eq(users.id, userId))
+    .limit(1);
+
+  const sender = identity[0];
+  return resolveDirectMessageDisplayName(
+    sender?.profileDisplayName,
+    sender?.username || sender?.displayName || sender?.accountName,
+    userId,
+  );
+}
+
 function getInquiryUnreadCondition(userId: number) {
   return or(
     and(eq(itemInquiries.senderId, userId), eq(itemInquiries.senderIsRead, 0)),
@@ -3199,7 +3225,7 @@ export async function getInquiriesByUser(userId: number, limit: number = 50, off
   const inquiriesWithRecipients = await Promise.all(
     inquiries.map(async (inquiry) => {
       const recipient = await db
-        .select({ displayName: users.displayName, avatarUrl: users.avatarUrl })
+        .select({ avatarUrl: users.avatarUrl })
         .from(users)
         .where(eq(users.id, inquiry.recipientId))
         .limit(1);
@@ -3211,7 +3237,7 @@ export async function getInquiriesByUser(userId: number, limit: number = 50, off
           inquiry.senderId,
         ),
         isRead: isInquiryReadForUser(inquiry, userId) ? 1 : 0,
-        recipientName: recipient[0]?.displayName ?? null,
+        recipientName: await getCommunicationDisplayName(inquiry.recipientId),
         recipientAvatarUrl: recipient[0]?.avatarUrl ?? null,
       };
     })
@@ -3289,17 +3315,18 @@ export async function sendInquiryReply(inquiryId: number, senderId: number, mess
   
   // Fetch the sender's display name and avatar
   const sender = await db
-    .select({ displayName: users.displayName, avatarUrl: users.avatarUrl })
+    .select({ avatarUrl: users.avatarUrl })
     .from(users)
     .where(eq(users.id, senderId))
     .limit(1);
+  const senderName = await getCommunicationDisplayName(senderId);
   
   if (!newReply[0]) {
     return {
       id: 0,
       inquiryId,
       senderId,
-      senderName: sender[0]?.displayName || null,
+      senderName,
       senderAvatarUrl: sender[0]?.avatarUrl || null,
       message,
       createdAt: new Date(),
@@ -3308,7 +3335,7 @@ export async function sendInquiryReply(inquiryId: number, senderId: number, mess
   
   return {
     ...newReply[0],
-    senderName: sender[0]?.displayName || null,
+    senderName,
     senderAvatarUrl: sender[0]?.avatarUrl || null,
   };
 }
@@ -3322,16 +3349,27 @@ export async function getRepliesByInquiry(inquiryId: number) {
       inquiryId: inquiryReplies.inquiryId,
       senderId: inquiryReplies.senderId,
       senderName: users.displayName,
+      senderProfileDisplayName: userProfiles.displayName,
+      senderUsername: users.username,
+      senderAccountName: users.name,
       senderAvatarUrl: users.avatarUrl,
       message: inquiryReplies.message,
       createdAt: inquiryReplies.createdAt,
     })
     .from(inquiryReplies)
     .innerJoin(users, eq(inquiryReplies.senderId, users.id))
+    .leftJoin(userProfiles, eq(userProfiles.userId, users.id))
     .where(eq(inquiryReplies.inquiryId, inquiryId))
     .orderBy(asc(inquiryReplies.createdAt));
-  
-  return replies;
+
+  return replies.map(reply => ({
+    ...reply,
+    senderName: resolveDirectMessageDisplayName(
+      reply.senderProfileDisplayName,
+      reply.senderUsername || reply.senderName || reply.senderAccountName,
+      reply.senderId,
+    ),
+  }));
 }
 
 export async function deleteInquiry(inquiryId: number, userId: number) {
@@ -3361,6 +3399,7 @@ export async function getDeletedInquiries(userId: number) {
     .select({
       id: itemInquiries.id,
       senderId: itemInquiries.senderId,
+      recipientId: itemInquiries.recipientId,
       senderName: users.displayName,
       senderProfileDisplayName: userProfiles.displayName,
       senderUsername: users.username,
@@ -3384,14 +3423,15 @@ export async function getDeletedInquiries(userId: number) {
     ))
     .orderBy(desc(itemInquiries.deletedAt));
   
-  return inquiries.map(inquiry => ({
+  return Promise.all(inquiries.map(async inquiry => ({
     ...inquiry,
     senderName: resolveDirectMessageDisplayName(
       inquiry.senderProfileDisplayName,
       inquiry.senderUsername || inquiry.senderName,
       inquiry.senderId,
     ),
-  }));
+    recipientName: await getCommunicationDisplayName(inquiry.recipientId),
+  })));
 }
 
 export async function emptyDeletedInquiries(userId: number) {
