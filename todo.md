@@ -46,3 +46,8 @@
 - [x] Compare the verified WebDev preview with `tradebilia.manus.space` and identify the deployment-version mismatch.
 - [x] Align the live domain with the verified animated-logo project version and verify the production result.
 - [x] Directly verify that `tradebilia.manus.space` advances beyond the initial BILIA label and therefore serves the animated logo implementation.
+- [x] Trace why reading a message does not clear the flashing letter-icon alert.
+- [x] Apply the unread-count cache invalidation after opening a direct thread and marking an inquiry as read.
+- [x] Run the focused unread-alert regression test and verify the flashing Messages alert clears after the message is read.
+- [x] Place the unread-alert regression test in the configured `server/**/*.test.ts` discovery path.
+- [x] Apply participant-specific inquiry read state in `server/db.ts` so the inquiry list no longer relies on the legacy shared flag.

@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { getLoginUrl } from "@/const";
 import { loadPresenceMap, subscribeToPresence, updatePresence } from "@/lib/memberMessaging";
+import { shouldRefreshUnreadAlertAfterOpeningDirectThread } from "@/lib/unreadAlertRefresh";
 import { trpc } from "@/lib/trpc";
 import { TRADEBILIA_LOGO_URL, tradebiliaCategories } from "@/lib/tradebilia";
 import { ArrowRightLeft, Loader2, MailOpen, MessageSquareText, Send, ShieldCheck, UsersRound } from "lucide-react";
@@ -59,6 +60,15 @@ export default function Messages() {
     { threadId: activeDbThreadId ?? 0 },
     { enabled: isAuthenticated && !!activeDbThreadId, refetchInterval: 10000 }
   );
+
+  useEffect(() => {
+    if (!shouldRefreshUnreadAlertAfterOpeningDirectThread(activeDbThreadId, Boolean(dbMessagesQuery.data))) return;
+    void Promise.all([
+      utils.auth.unreadCounts.invalidate(),
+      utils.market.getDirectMessageThreads.invalidate(),
+    ]);
+  }, [activeDbThreadId, dbMessagesQuery.data, utils]);
+
   const replyDirectMutation = trpc.market.replyDirectMessage.useMutation({
     onSuccess: async () => {
       setMessageDraft("");
@@ -90,6 +100,7 @@ export default function Messages() {
       setMessageDraft("");
       await utils.market.getReplies.invalidate();
       await utils.market.getInquiries.invalidate();
+      await utils.auth.unreadCounts.invalidate();
     },
     onError: error => toast.error(error.message),
   });
@@ -249,7 +260,10 @@ export default function Messages() {
 
   const markInquiryAsReadMutation = trpc.market.markInquiryAsRead.useMutation({
     onSuccess: async () => {
-      await utils.market.getInquiries.invalidate();
+      await Promise.all([
+        utils.market.getInquiries.invalidate(),
+        utils.auth.unreadCounts.invalidate(),
+      ]);
     },
     onError: error => toast.error(error.message),
   });

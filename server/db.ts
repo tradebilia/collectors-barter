@@ -112,6 +112,12 @@ export function isInquiryUnreadForUser(inquiry: InquiryParticipantReadState, use
   return false;
 }
 
+export function isInquiryReadForUser(inquiry: InquiryParticipantReadState, userId: number) {
+  if (inquiry.senderId === userId) return inquiry.senderIsRead === 1;
+  if (inquiry.recipientId === userId) return inquiry.recipientIsRead === 1;
+  return false;
+}
+
 function getInquiryUnreadCondition(userId: number) {
   return or(
     and(eq(itemInquiries.senderId, userId), eq(itemInquiries.senderIsRead, 0)),
@@ -3159,11 +3165,13 @@ export async function getInquiriesByUser(userId: number, limit: number = 50, off
       senderName: users.displayName,
       senderAvatarUrl: users.avatarUrl,
       recipientId: itemInquiries.recipientId,
-      listingId: itemInquiries.listingId,
-      subject: itemInquiries.subject,
-      message: itemInquiries.message,
-      isRead: itemInquiries.isRead,
-      createdAt: itemInquiries.createdAt,
+          listingId: itemInquiries.listingId,
+          subject: itemInquiries.subject,
+          message: itemInquiries.message,
+          isRead: itemInquiries.isRead,
+          senderIsRead: itemInquiries.senderIsRead,
+          recipientIsRead: itemInquiries.recipientIsRead,
+          createdAt: itemInquiries.createdAt,
       updatedAt: itemInquiries.updatedAt,
       deletedAt: itemInquiries.deletedAt,
     })
@@ -3192,6 +3200,7 @@ export async function getInquiriesByUser(userId: number, limit: number = 50, off
         .limit(1);
       return {
         ...inquiry,
+        isRead: isInquiryReadForUser(inquiry, userId) ? 1 : 0,
         recipientName: recipient[0]?.displayName ?? null,
         recipientAvatarUrl: recipient[0]?.avatarUrl ?? null,
       };
