@@ -1,84 +1,57 @@
-# Tradebilia: Next Session Quick Start
+# Tradebilia New-WebDev Migration Quick Start
 
-> **Stop condition:** This is a handoff-validation session first. Do not start new feature work until Rich explicitly confirms the handoff is complete.
+> **Critical platform limitation:** Manus Support confirmed that a fresh Project task cannot be documented as attaching to the current published Tradebilia WebDev checkout, controls, storage namespace, deployment, and live configuration. This is now a **controlled migration to an independent WebDev project**, not a normal session handoff.
 
-> **Read-only first pass:** Until Rich approves the handoff, do not edit code, alter database records, run migrations, re-upload/delete/move media, change secrets/connectors/deployment settings, create a checkpoint, or push to GitHub. Validate and report first.
+> **Stop condition:** Do not create the replacement project, move media, update the external database, attach a domain, alter OAuth callbacks, or resume feature work until Rich approves the gates in `NEW_WEBDEV_MIGRATION_READINESS_REPORT.md`.
 
-## 1. Continue the Existing Tradebilia Website Project — Do Not Create a New One
+## 1. Read the Migration Package in Order
 
-Start the next conversation **inside the existing “Tradebilia Website” project**. A new conversation/task is correct; a newly initialized website/WebDev project is not. The existing project is what ties together the deployed site, project object-storage namespace, shared files, GitHub connection, and current project configuration.
+Before any migration action, read these documents in order:
 
-> **Do not create a new website project for this handoff.** A separate project has a different storage namespace and will not automatically contain the current hero backgrounds, title artwork, listing images, avatars, or configuration.
+1. `NEW_WEBDEV_MIGRATION_READINESS_REPORT.md` — controlling migration decision and gates.
+2. `SESSION_HANDOFF_GUIDE.md` — current-project architecture, credential registry, database facts, and recovery reference.
+3. `IMAGE_ASSET_INVENTORY.md` — static asset release and customer-media constraints.
+4. `HANDOFF_ADVERSARIAL_AUDIT.md` — historical audit evidence and the failed fresh-task conclusion.
+5. The **Session Transition Gate** in `todo.md`.
 
-Before any file or Git command, confirm that the task shows the existing Tradebilia Website project context and use the platform-managed project restart action. A fresh sandbox can have the project context and shared files while the prior local folder does not yet exist. The restart action restores the existing managed checkout and reports its path.
+## 2. Do Not Treat a Fresh Task as a Continuation
 
-If the managed restart cannot restore the existing checkout, stop and report that blocker to Rich. Do not work around it by initializing a new site, manually running `git clone`, or substituting another database.
+Project shared files can be available in a fresh task while the active WebDev checkout and controls are not. Do **not** create a new website merely to work around that limitation, manually clone a replacement checkout, point a new application at the live database, or re-upload media without an approved migration plan.
 
-## 2. Confirm the Correct Codebase
+The only approved project-creation path is the independent-project/Make a Copy route described in the migration report, after all pre-creation gates are met. Keep that new project unpublished and without a production domain until it passes staging acceptance.
 
-Use the path returned by the managed restart. The restored project folder should already be connected to GitHub. Verify it is clean before changing anything.
+> **Do not create the replacement project yet.** First satisfy every Gate 0–4 prerequisite in the migration report and obtain Rich’s written approval.
 
-```bash
-cd <path returned by the managed restart>
-git status --short
-git remote get-url github | sed -E 's#//[^/@]+@#//#'
-git fetch github main --quiet
-git diff --name-only github/main --
-```
+## 3. Preserve the Migration Baseline
 
-The status and content diff output must both be empty, and the remote must identify `https://github.com/tradebilia/collectors-barter.git` without an embedded credential. Then read `SESSION_HANDOFF_GUIDE.md`, `IMAGE_ASSET_INVENTORY.md`, `HANDOFF_ADVERSARIAL_AUDIT.md`, and the **Session Transition Gate** at the top of `todo.md`.
+Before migration execution, preserve these records without exposing raw values:
 
-## 3. Restore Secrets Securely
-
-Use the project’s secure Secrets interface to restore configuration. Never place a raw value in Markdown, source code, `.env` committed files, a ticket, or chat.
-
-> The managed workspace may contain a platform-generated `.project-config.json` file with raw injected runtime values. It is Git-ignored platform metadata, **not** a handoff file. Do not open, copy, attach, print, or commit it; verify secret presence through the secure project configuration or environment-variable names only.
-
-| Priority | Environment variables |
+| Boundary | Required baseline |
 |---|---|
-| Required to access live data | `CUSTOM_DATABASE_URL` |
-| Required for account setup SMS | `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_VERIFY_SERVICE_SID` |
-| Required for Test AI data currently in use | `EBAY_PROD_CLIENT_ID`, `EBAY_PROD_CLIENT_SECRET`, `SOLD_COMPS_API_KEY`, `PARSE_BOT_API_KEY`; the current analyzer uses platform-provided Forge credentials |
-| Required before email/OAuth/payment testing | `RESEND_API_KEY`, Facebook/LinkedIn OAuth values, PayPal values, `ENCRYPTION_KEY`, `JWT_SECRET`. `TRADEBILIA_OPENAI_API_KEY` is a deferred direct-OpenAI path, not the active LLM key. |
+| Code | Approved GitHub `main` commit, clean content comparison, passing TypeScript/tests/build. |
+| Live data | Confirmed external `CUSTOM_DATABASE_URL`, provider backup/point-in-time recovery evidence, schema/migration ledger, and relational-integrity report. |
+| Static design assets | GitHub release `tradebilia-static-assets-2026-08-11` with SHA-256 `182292f179319e64610d25c273018df8d3665c225b34870335d0c0651a78528c`. |
+| Customer media | A checksum-backed manifest and old-to-new mapping for every populated media field. Do not place customer images in GitHub. |
+| Security | Required secret names, exact `ENCRYPTION_KEY`/`JWT_SECRET` compatibility, OAuth callback plan, and external API test plan—without printing values. |
+| Cutover | GitHub-link decision, both-domain cutover plan, scheduled-writer pause/resume plan, maintenance mode, and tested rollback plan. |
 
-Do not assume any current value is correct. Verify through the secure project configuration that `CUSTOM_DATABASE_URL` targets the intended external database; ask Rich before proceeding only if that target cannot be established safely.
+## 4. Current Measured Media Inventory
 
-## 4. Verify Before Working
+The last read-only external-database inventory measured 25 listing-photo records across 15 listings and 4 profile-avatar records, all using current-project `/manus-storage/...` paths. Legacy user avatars, draft photo payloads, complaint photos, review photos, and user-report evidence payloads were empty at measurement time. These counts must be rerun immediately before migration.
 
-```bash
-pnpm install --frozen-lockfile
-npx tsc --noEmit
-pnpm test
-```
+## 5. Required Gates Before Replacement-Project Creation
 
-The managed restart already starts the existing project’s development service. Inspect its dev-server and browser logs. The test count can evolve; the acceptance requirement is that every test passes, TypeScript is clean, and the app uses the intended external database without connection errors.
+1. Rich selects an approved media strategy: user-owned independent storage (recommended) or a scheduled maintenance-window cutover.
+2. Every media binary is exported and SHA-256 checked, with exceptions explicitly approved.
+3. The live external database has a verified backup, integrity report, schema/migration check, and rollback procedure.
+4. The three existing scheduled writers—draft cleanup, referral digest, and trade reminders—have a documented pause/resume plan.
+5. Manus/GitHub/domain support questions are resolved: new-project repository linkage, both current hostnames, and provider callback behavior.
+6. Rich explicitly approves creation of the independent unpublished project.
 
-## 5. Validate the Critical User Flows
+## 6. Security Rules
 
-Use the preview and authenticated test accounts as appropriate.
+Never copy, attach, print, or commit raw secrets. The local `.project-config.json` is platform-generated runtime metadata and is not a handoff source. **Do not open, copy, attach, print, or commit it.** Verify secret presence through secure settings only. Do not rotate encryption/session keys during initial migration; key parity must be verified before any live-data cutover.
 
-- [ ] Home page renders its animated Tradebilia hero and live listing cards.
-- [ ] `/category/sports_cards` shows listings and filters without an endless spinner.
-- [ ] `/verified-merchants` renders its hero and directory state.
-- [ ] `/messages` renders for an authenticated user.
-- [ ] `/admin/users` loads for an administrator.
-- [ ] `/test-ai` is reachable only through the intended admin path and remains test-only.
-- [ ] Listing `1110009` (Barry Sanders Score Rookie) retains its working cover photo and does not expose the obsolete secondary image removed during the August 11, 2026 audit.
-- [ ] No fresh console or server errors appear.
+## 7. Approval Requirement
 
-## 6. Verify Asset Recovery Readiness
-
-When the continuation task remains inside the existing Tradebilia Website project, its runtime is expected to resolve current static assets and user media from project object storage. The GitHub recovery release is a backup for **static design assets only**:
-
-```text
-Release: tradebilia-static-assets-2026-08-11
-Archive SHA-256: 182292f179319e64610d25c273018df8d3665c225b34870335d0c0651a78528c
-```
-
-Do not move listing photos or avatars into GitHub. If a static image fails, use the asset inventory and recovery release to restore that one asset through project storage, then update its source reference and re-test.
-
-## 7. Get Rich’s Approval Before Resuming Work
-
-Present the completed validation checklist to Rich. Only after Rich says the handoff is correct may you mark the two blocking entries in `todo.md` complete and begin the next approved task. The first known open defect is the Messages inquiry-reply alert incorrectly notifying the replier; it must remain paused until then.
-
-For the complete architecture, credential registry, database safeguards, and recovery procedures, use `SESSION_HANDOFF_GUIDE.md`.
+The first migration action begins only after Rich approves the selected media strategy and all readiness gates. The old project remains live and unchanged until the replacement project passes staging acceptance and a reversible domain/database/media cutover has been approved.

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This document defines how Tradebilia preserves visual assets across sessions without treating source control as a customer-media database. The word **session** here means a new task created inside this same Tradebilia project; it does not mean a newly initialized web project with a different storage namespace.
+This document records current visual assets without treating source control as a customer-media database. Manus Support confirmed that a fresh task cannot be documented as attaching to the active WebDev project. For a replacement WebDev project, `NEW_WEBDEV_MIGRATION_READINESS_REPORT.md` controls the process: the static release archive covers design assets, while database-backed customer media requires a checksum-backed binary manifest and approved migration strategy.
 
 | Asset class | Primary location | Recovery location | GitHub policy |
 |---|---|---|---|
@@ -28,8 +28,8 @@ The archive was created from active project storage through the project server�
 
 | Situation | Static backgrounds and title assets | Listing photographs and avatars |
 |---|---|---|
-| New session **inside this Tradebilia project** and same external database | No re-upload is expected because the current project paths resolve; confirm this in the new-session acceptance test. | No re-upload is expected because the external database retains the stored media URLs and the project storage proxy resolves them; confirm this in the new-session acceptance test. |
-| New web project / changed project storage namespace | Restore static assets from the release archive into the new project, then update source paths. | Do not bulk re-upload. First preserve/migrate the external database media records and the original object storage, or use a planned media migration. |
+| Current active WebDev project | Existing current-project paths were audited and resolve; use this document only as a recovery reference for that project. | Existing database records reference the current project storage paths. |
+| Replacement WebDev project / changed storage namespace | Restore static assets from the release archive into the new project, verify new objects, then update source paths. | Do not bulk re-upload. First create a checksum-backed binary manifest and old-to-new mapping, then execute the approved media strategy with database and rollback safeguards. |
 | Wrong or empty `CUSTOM_DATABASE_URL` | Static source files may still render. | Listings, photo URLs, avatars, and other live data can appear missing because the records are in a different database. |
 
 The prior re-upload work on August 4 was caused by missing **old project-storage paths**: a pre-restoration Comics background path now returns `403`, while its restored current-project replacement returns `200`. This is evidence of a project-storage migration/rebuild issue rather than routine chat-session loss. The required next-session test remains the final confirmation.
@@ -38,7 +38,7 @@ The prior re-upload work on August 4 was caused by missing **old project-storage
 
 A full public listing-detail audit initially found one obsolete secondary photo record for listing `1110009` — **Barry Sanders Score Rookie** — that referenced a 403 storage object. Rich authorized removal rather than re-upload. A guarded transaction deleted exactly that one record, retained the working cover photo, and public detail no longer returns the obsolete path. The other **27 audited listing/owner media paths were rechecked and all returned `200`**.
 
-This cleanup makes the current public media inventory internally consistent. The fresh-session acceptance check remains required because it validates that a new task inside the same project can still resolve representative static, listing, and avatar paths.
+This cleanup makes the current public media inventory internally consistent. It does not eliminate the replacement-project media migration requirement.
 
 ## Repaired Broken Paths
 
@@ -64,11 +64,11 @@ The following unavailable object classes were audited. Their runtime dependency 
 ## Do Not Do These Things
 
 - Do not bulk-copy live listing photographs, customer avatars, or uploaded records into GitHub.
-- Do not assume an old `/manus-storage` path is unavailable solely because a new chat session starts.
-- Do not create a fresh web project for a routine continuation session; that new project will not automatically own this project’s object-storage namespace.
+- Do not assume current `/manus-storage` paths are portable to a replacement WebDev project.
+- Do not create a replacement WebDev project until the migration report’s media, database, secrets, GitHub, domain, scheduler, and rollback gates are approved.
 - Do not replace database-backed media URLs with placeholder images without confirming with Rich.
 - Do not delete assets from object storage while their URL may still be stored in the external database.
 
 ## Related Records
 
-The complete session architecture and acceptance checklist are in `SESSION_HANDOFF_GUIDE.md`. The next-session minimum workflow is in `NEXT_SESSION_QUICK_START.md`. The proof level and evidence behind every continuity claim are recorded in `HANDOFF_ADVERSARIAL_AUDIT.md`.
+The current-project architecture and credential registry are in `SESSION_HANDOFF_GUIDE.md`. The replacement-project launch gates are in `NEW_WEBDEV_MIGRATION_READINESS_REPORT.md`; the historical audit evidence is in `HANDOFF_ADVERSARIAL_AUDIT.md`.

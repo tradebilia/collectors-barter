@@ -10,6 +10,7 @@ describe("handoff documentation safeguards", () => {
   const quickStart = readProjectFile("NEXT_SESSION_QUICK_START.md");
   const assets = readProjectFile("IMAGE_ASSET_INVENTORY.md");
   const audit = readProjectFile("HANDOFF_ADVERSARIAL_AUDIT.md");
+  const migration = readProjectFile("NEW_WEBDEV_MIGRATION_READINESS_REPORT.md");
 
   it("preserves the external database warning and explicit approval gate", () => {
     expect(guide).toContain("CUSTOM_DATABASE_URL");
@@ -17,28 +18,24 @@ describe("handoff documentation safeguards", () => {
     expect(guide).toContain("Rich explicitly confirms");
   });
 
-  it("requires a continuation inside the existing Tradebilia Website project", () => {
-    expect(guide).toContain("inside the existing “Tradebilia Website” project");
-    expect(guide).toContain("Do not create a new website/WebDev project");
-    expect(quickStart).toContain("Continue the Existing Tradebilia Website Project");
-    expect(quickStart).toContain("Do not create a new website project");
-    expect(assets).toContain("newly initialized web project");
+  it("records that a fresh task cannot attach to the active WebDev project", () => {
+    expect(guide).toContain("fresh Project task cannot be documented as attaching");
+    expect(quickStart).toContain("Critical platform limitation");
+    expect(audit).toContain("cannot be documented as attaching");
+    expect(migration).toContain("not a normal session handoff");
   });
 
-  it("handles a fresh sandbox by restoring the managed checkout instead of requiring the prior absolute path", () => {
-    expect(guide).toContain("platform-managed project restart action");
-    expect(guide).toContain("do not assume the old sandbox path already exists");
-    expect(quickStart).toContain("managed project restart action");
-    expect(quickStart).toContain("manually running `git clone`");
-    expect(audit).toContain("managed project restart procedure");
+  it("requires approved migration gates before replacement-project creation", () => {
+    expect(quickStart).toContain("Do not create the replacement project yet");
+    expect(migration).toContain("No-go rule");
+    expect(migration).toContain("media strategy");
+    expect(migration).toContain("rollback");
   });
 
-  it("makes the first handoff-validation pass read-only and prevents token exposure in remote checks", () => {
-    expect(guide).toContain("Validation is read-only until Rich approves");
-    expect(guide).toContain("do not edit source code");
-    expect(quickStart).toContain("Read-only first pass");
-    expect(quickStart).toContain("git remote get-url github | sed");
-    expect(guide).toContain("without exposing an embedded credential");
+  it("keeps secrets out of the migration package", () => {
+    expect(guide).toContain("token-bearing remote URL");
+    expect(quickStart).toContain("Never copy, attach, print, or commit raw secrets");
+    expect(migration).toContain("never place raw values");
   });
 
   it("forbids using platform-generated local metadata as a handoff or secret source", () => {
@@ -48,12 +45,14 @@ describe("handoff documentation safeguards", () => {
     expect(quickStart).toContain("Do not open, copy, attach, print, or commit it");
   });
 
-  it("requires the adversarial evidence ledger and preserves its fresh-session uncertainty boundary", () => {
+  it("requires the adversarial evidence ledger and migration report", () => {
     expect(guide).toContain("HANDOFF_ADVERSARIAL_AUDIT.md");
+    expect(guide).toContain("NEW_WEBDEV_MIGRATION_READINESS_REPORT.md");
     expect(quickStart).toContain("HANDOFF_ADVERSARIAL_AUDIT.md");
+    expect(quickStart).toContain("NEW_WEBDEV_MIGRATION_READINESS_REPORT.md");
     expect(assets).toContain("HANDOFF_ADVERSARIAL_AUDIT.md");
-    expect(audit).toContain("Expected, not yet proven");
-    expect(audit).toContain("Only the prescribed validation-only new task");
+    expect(assets).toContain("NEW_WEBDEV_MIGRATION_READINESS_REPORT.md");
+    expect(audit).toContain("Historical Current-Project Evidence");
   });
 
   it("documents all currently essential integration credential names without raw values", () => {
@@ -71,10 +70,19 @@ describe("handoff documentation safeguards", () => {
     }
   });
 
-  it("documents the verified static recovery release and preserves the no-user-media rule", () => {
+  it("documents the verified static recovery release and controlled media migration rule", () => {
     expect(assets).toContain("tradebilia-static-assets-2026-08-11");
     expect(assets).toContain("182292f179319e64610d25c273018df8d3665c225b34870335d0c0651a78528c");
     expect(assets).toContain("Never commit");
-    expect(quickStart).toContain("Do not move listing photos or avatars into GitHub");
+    expect(migration).toContain("checksum-backed binary manifest");
+    expect(migration).toContain("25 current binary files");
+    expect(migration).toContain("4 current avatar binaries");
+  });
+
+  it("requires database, scheduler, and two-domain cutover safeguards", () => {
+    expect(migration).toContain("schema/migration ledger");
+    expect(migration).toContain("three current scheduled writers");
+    expect(migration).toContain("tradebilia.manus.space");
+    expect(migration).toContain("tradebilia-vauewtpb.manus.space");
   });
 });

@@ -1,10 +1,10 @@
 # Tradebilia Master Session Handoff Guide
 
-> **Handoff status:** Feature work is paused. A new session must complete the acceptance checklist in this guide and obtain Rich’s approval before changing functionality.
+> **Migration status:** Feature work is paused. Manus Support confirmed that a fresh Project task cannot be documented as attaching to the active published WebDev project. This guide is now a reference inventory for the **current** project; `NEW_WEBDEV_MIGRATION_READINESS_REPORT.md` is the controlling document for any replacement WebDev project.
 
-This document is the single source of truth for continuing the **Tradebilia** project in a new session. It intentionally records credential **names, owners, status, and restoration instructions**, but it never contains a raw API key, password, or database connection string. Secrets belong in the project’s secure Secrets configuration, not GitHub.
+This document records the current Tradebilia project’s credential **names, owners, status, and restoration requirements**, but it never contains a raw API key, password, or database connection string. Secrets belong in secure project configuration, not GitHub. It is not a procedure for binding a new task to this live WebDev project.
 
-After reading this guide, read `HANDOFF_ADVERSARIAL_AUDIT.md`. It records the evidence level behind every continuity claim and distinguishes what is proven in the current project from what only a fresh task can prove.
+After reading this guide, read `HANDOFF_ADVERSARIAL_AUDIT.md` and then `NEW_WEBDEV_MIGRATION_READINESS_REPORT.md`. The migration report supersedes any older wording in this guide that assumes a fresh task can access the current WebDev checkout or project-scoped storage.
 
 | Project record | Current value |
 |---|---|
@@ -12,15 +12,13 @@ After reading this guide, read `HANDOFF_ADVERSARIAL_AUDIT.md`. It records the ev
 | Production site | [tradebilia.manus.space](https://tradebilia.manus.space) |
 | Latest handoff/media checkpoint | Use the existing project’s **Version history** panel; do not rely on a checkpoint ID inside a static handoff document because every later validation checkpoint supersedes it. |
 | Static-asset recovery release | [`tradebilia-static-assets-2026-08-11`](https://github.com/tradebilia/collectors-barter/releases/tag/tradebilia-static-assets-2026-08-11) |
-| Feature-work status | **Blocked pending new-session acceptance and Rich’s explicit approval** |
+| Feature-work status | **Blocked pending controlled new-WebDev migration design, execution, acceptance, and Rich’s explicit approval** |
 
-## 1. Start the Next Conversation in the Existing Project
+## 1. Critical Platform Limitation
 
-> **Create the next conversation inside the existing “Tradebilia Website” project. Do not create a new website/WebDev project.**
+> **Do not assume a fresh Project task can continue the active Tradebilia WebDev project.** The fresh-task validation proved that Project context and shared files are available, but the active WebDev checkout and controls are not. Manus Support confirmed no documented attachment workflow.
 
-The project—not simply the Git repository—is the boundary that connects Tradebilia’s deployed application, managed object-storage namespace, project shared files, GitHub integration, and project configuration. A fresh conversation within this project is expected to use the same project resources. A newly initialized project is a separate environment and does not automatically inherit this project’s `/manus-storage/...` media or live-data configuration.
-
-The existing Tradebilia project normally restores its managed checkout at `/home/ubuntu/tradebilia-platform`, but a fresh task can begin with project context/shared files before that sandbox folder exists. Before any file or Git command, the new task must confirm the **Tradebilia Website** project context and use the platform-managed project restart action to restore the existing checkout. Use the path returned by that restart; do not assume the old sandbox path already exists, manually clone a replacement checkout, or initialize a replacement web project.
+The current WebDev project—not simply its Git repository—is the boundary that owns Tradebilia’s deployed application, managed object-storage namespace, project configuration, GitHub integration, and domains. A replacement WebDev project is a separate environment and does not automatically inherit `/manus-storage/...` media, domain bindings, GitHub integration, or live-data configuration. Use the staged migration gates in `NEW_WEBDEV_MIGRATION_READINESS_REPORT.md`; do not create the replacement project until the media strategy and platform blockers are approved.
 
 ## 2. Non-Negotiable First Rule
 
@@ -36,8 +34,8 @@ Tradebilia deliberately uses more than one storage boundary. Treating them as in
 
 | Boundary | What belongs there | What persists | New-session instruction |
 |---|---|---|---|
-| **GitHub repository** | Source code, schema, tests, documentation, release-backed static recovery archive | Yes | Let the existing managed-project restart restore the project checkout from `main`; then verify its content and push every approved code change to `github/main`. Do not manually clone or initialize a replacement checkout during normal handoff validation. |
-| **Project object storage** (`/manus-storage/...`) | Static design assets, listing photographs, user avatars, uploaded files | Project-scoped; not part of Git history | A new **session in this same Tradebilia project** is expected to resolve these paths; confirm representative static, listing, and avatar paths in the fresh-session acceptance test. A fresh web project does not automatically inherit them. Keep runtime paths in object storage; do **not** put live user images into GitHub. |
+| **GitHub repository** | Source code, schema, tests, documentation, release-backed static recovery archive | Yes | Lock a known `main` commit as the new-project code baseline. New WebDev GitHub integration does not transfer automatically; do not assume simultaneous auto-sync to the same branch is safe. |
+| **Project object storage** (`/manus-storage/...`) | Static design assets, listing photographs, user avatars, uploaded files | Project-scoped; not part of Git history | A replacement WebDev project does not inherit these paths. Static assets have a release backup; customer media requires a checksum-backed manifest and an approved migration strategy. Do **not** put live user images into GitHub. |
 | **External CUSTOM database** | Live users, profiles, listings, messages, trades, merchant status, photo/asset URLs | Yes, if reconnecting to the intended database | Restore the correct `CUSTOM_DATABASE_URL` securely before use. Confirm it targets the intended production/staging database. |
 | **Manus-managed database** | Template/platform database only unless deliberately used | Not the live Tradebilia dataset | Do not mistake it for the external live database. Do not run a live-data migration against it. |
 | **Sandbox runtime** | `node_modules`, dev-server state, logs, `/tmp`, browser state, downloaded local copies | No guarantee | Reinstall dependencies, reauthenticate as required, and regenerate local-only artifacts. |
@@ -70,7 +68,7 @@ Static design files can be recovered from the GitHub release if project storage 
 
 The asset-restoration commits on August 4 replaced prior background and title paths that no longer existed in the current project storage. For example, the pre-restoration Comics background path now returns `403`, while the restored `ComicsBackground_798a970b.webp` returns `200`. That was a **project-storage migration/rebuild issue**, not ordinary chat-session loss.
 
-For individual listing photos, the application stores a `/manus-storage/listings/...` URL in the external database. Re-uploading is required if either the project storage namespace changes or the new session is connected to a different/empty external database that no longer contains the original URL records. Re-uploading is **not expected** merely because a new conversation starts, provided the new conversation stays in this Tradebilia project, reconnects to the same intended `CUSTOM_DATABASE_URL`, and passes the fresh-session media test.
+For individual listing photos, the application stores a `/manus-storage/listings/...` URL in the external database. A replacement WebDev project has a different storage namespace, so existing photo/avatars require a dedicated media migration. Do not update the live database paths until the approved migration strategy, maintenance controls, checksum manifest, and rollback plan are in place.
 
 ### Authorized live-media cleanup completed during the audit
 
@@ -80,7 +78,7 @@ The obsolete secondary photo record for listing `1110009`, **Barry Sanders Score
 
 Nine prior static source objects returned `403`. They are no longer referenced by executable code. Five ranking-page title images and the home page’s wheel image were replaced with inline SVG rendering; stale long-logo paths were redirected to a verified current Tradebilia title asset. Home and all four ranking hero variants were visually checked after the repair.
 
-If a static asset breaks in a new session, first verify that the new task is inside this same Tradebilia project and uses the intended production/staging database. Only then download the recovery archive, verify its checksum, re-upload the affected static asset through project storage, update its source reference, run tests and visual checks, and checkpoint. Never replace a customer listing or avatar from the archive because those items were intentionally excluded.
+If a static asset breaks in the current project, use the recovery archive only after verifying its checksum. For a replacement WebDev project, follow the static and customer-media sequence in the migration report. Never replace a customer listing or avatar from the static archive because those items were intentionally excluded.
 
 ## 5. Database: Live Data and Safe Reconnection
 
@@ -148,23 +146,18 @@ The managed workspace also contains a platform-generated `.project-config.json` 
 7. Do not seed fake reviews, ratings, testimonials, or customer data.
 8. Preserve the animated Tradebilia top-bar branding. The rotating category word is intentional.
 
-## 9. New-Session Acceptance Checklist
+## 9. Current-Project Reference Checks
 
-The new session must complete this checklist **in order**. Stop and ask Rich if any check fails.
+These checks apply only while working in the current active WebDev project. They are **not** a bootstrap method for a fresh Project task.
 
 | Step | Required evidence |
 |---|---|
-| 0. Restore the managed checkout | Confirm the task is inside the **Tradebilia Website** project, then use the platform-managed project restart action. This is the only permitted bootstrap action before read-only validation. Use the returned project path. If restart cannot restore an existing checkout, stop and report the blocker; do not create a web project or manually clone a replacement checkout. |
-| 1. Confirm the restored checkout | In the path returned by restart, `git remote get-url github \| sed -E 's#//[^/@]+@#//#'` identifies `github.com/tradebilia/collectors-barter.git` without exposing an embedded credential; `git fetch github main --quiet` succeeds; content diff against `github/main` is empty; and `git status --short` is clean. |
-| 2. Read before acting | Read this guide, `NEXT_SESSION_QUICK_START.md`, `IMAGE_ASSET_INVENTORY.md`, `HANDOFF_ADVERSARIAL_AUDIT.md`, and the top “Session Transition Gate” in `todo.md`. |
-| 3. Install dependencies | `pnpm install --frozen-lockfile` completes successfully. |
-| 4. Restore secure configuration | Verify required secret **names** through the secure project Secrets interface or environment presence checks; never inspect/copy `.project-config.json` or raw values. Confirm `CUSTOM_DATABASE_URL` points to the intended external database. Do not create a new web project for this validation. |
-| 5. Compile and test | `npx tsc --noEmit` succeeds and `pnpm test` passes. Record the real total rather than assuming a historical count. |
-| 6. Start and inspect the application | The dev server starts. Confirm no server/database connection errors in `.manus-logs/devserver.log`. |
-| 7. Exercise critical paths | Home, a category page, Messages (authenticated), Verified Merchants, Admin Users (admin), and Test AI load without console errors. Verify category pages return listings and hero assets render. |
-| 8. Verify storage | Confirm the 46 active static assets load, then test at least one `/manus-storage/listings/...` image and one `/manus-storage/avatars/...` image returned by the live marketplace API. Confirm listing `1110009` retains its working cover photo and does not reference the removed obsolete secondary path. If a static object fails, compare its filename with the GitHub recovery archive and use the checksum before re-uploading. If listing media fails, stop and verify the project identity and `CUSTOM_DATABASE_URL`; do not bulk re-upload customer media. |
-| 9. Verify source alignment | `git status --short` is clean, no untracked files exist, and `git diff --quiet github/main --` exits successfully. Do not require commit hashes to match: Manus checkpoints and the GitHub mirror can have different commit IDs while the tracked file content is identical. |
-| 10. Obtain approval | Show Rich the result and wait for explicit confirmation that the handoff is complete. Only then remove the feature-work block in `todo.md`. |
+| 1. Verify source alignment | Confirm the working tree content matches approved GitHub `main`; do not require checkpoint commit hashes to match GitHub hashes. |
+| 2. Verify live configuration | Confirm `CUSTOM_DATABASE_URL` is the intended external database and required secret **names** are present; never inspect/copy `.project-config.json` or raw values. |
+| 3. Verify current health | Run the established type, test, build, health, static-asset, and representative listing/avatar checks. |
+| 4. Migration decision | Before any replacement WebDev action, use `NEW_WEBDEV_MIGRATION_READINESS_REPORT.md` and obtain Rich’s explicit decision on media strategy, maintenance/cutover, and unresolved platform questions. |
+
+When inspecting a Git remote, use a sanitized display that removes any embedded credential. Do not print, copy, or record a token-bearing remote URL in documentation, logs, or chat.
 
 ## 10. References
 
