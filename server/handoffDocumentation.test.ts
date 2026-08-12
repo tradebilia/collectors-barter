@@ -40,6 +40,7 @@ describe("handoff documentation safeguards", () => {
     expect(migration).toContain("isolated staging database clone");
     expect(migration).toContain("every target object");
     expect(migration).toContain("production delta");
+    expect(migration).not.toContain("later, only with explicit approval, perform the customer-media cutover");
   });
 
   it("keeps secrets out of the migration package", () => {

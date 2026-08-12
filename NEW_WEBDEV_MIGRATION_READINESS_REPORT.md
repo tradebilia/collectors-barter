@@ -3,7 +3,7 @@
 **Prepared:** August 11, 2026
 **Purpose:** Define a controlled migration from the current Tradebilia WebDev project to a new, independent WebDev project after Manus Support confirmed that a fresh Project task cannot attach to the active published WebDev checkout, controls, storage namespace, and deployment configuration.
 
-> **Decision:** This is not a normal session handoff. It is a **new-WebDev migration**. Rich selected **Strategy B: project-to-project storage cutover**, with a two-phase approach: first create an unpublished replacement project to validate code, secure configuration, and guarded live-data access; later, only with explicit approval, perform the customer-media cutover and production-domain switch.
+> **Decision:** This is not a normal session handoff. It is a **new-WebDev migration**. Rich selected **Strategy B: a full production-to-staging exact snapshot**, with a two-phase approach: Phase B1 creates an unpublished replacement project using a locked code baseline, isolated writable staging-database clone, replicated static assets and customer media, compatible secure configuration, and guarded integrations; Phase B2 later applies only the approved production delta and performs the production-domain switch.
 
 ## 1. Executive Conclusion
 
