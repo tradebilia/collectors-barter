@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { getLoginUrl } from "@/const";
 import { getInquiryDirection, getInquiryDirectionPresentation } from "@/lib/inquiryDirection";
+import { getDirectMessageDirection, getDirectMessageDirectionPresentation } from "@/lib/directMessageDirection";
 import { loadPresenceMap, subscribeToPresence, updatePresence } from "@/lib/memberMessaging";
 import { shouldRefreshUnreadAlertAfterOpeningDirectThread } from "@/lib/unreadAlertRefresh";
 import { trpc } from "@/lib/trpc";
@@ -208,6 +209,7 @@ export default function Messages() {
       counterpartAvatarUrl: thread.counterpartAvatarUrl ?? null,
       summary: thread.latestBody ?? "Direct collector conversation",
       subject: thread.latestSubject ?? "",
+      latestSenderId: Number(thread.latestSenderId),
       threadId: thread.threadId,
     }));
 
@@ -285,6 +287,12 @@ export default function Messages() {
     : null;
   const activePresence = activeThread ? presenceMap[activeThread.counterpartId] : null;
   const activeOnline = activePresence ? Date.now() - activePresence.updatedAt < 15000 : false;
+  const activeDirectDirection = activeThread?.kind === "direct"
+    ? getDirectMessageDirection(activeThread.latestSenderId, user?.id)
+    : null;
+  const activeDirectPresentation = activeThread?.kind === "direct" && activeDirectDirection
+    ? getDirectMessageDirectionPresentation(activeDirectDirection, activeThread.counterpartName)
+    : null;
 
   const repliesQuery = trpc.market.getReplies.useQuery(
     { inquiryId: activeInquiry?.id ?? 0 },
@@ -456,7 +464,15 @@ export default function Messages() {
                       </button>
                     );
                   })}
-                  {filteredThreads.map(thread => (
+                  {filteredThreads.map(thread => {
+                    const directDirection = thread.kind === "direct"
+                      ? getDirectMessageDirection((thread as any).latestSenderId, user?.id)
+                      : null;
+                    const directPresentation = thread.kind === "direct" && directDirection
+                      ? getDirectMessageDirectionPresentation(directDirection, thread.counterpartName)
+                      : null;
+
+                    return (
                     <button
                       key={thread.key}
                       type="button"
@@ -467,20 +483,21 @@ export default function Messages() {
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-lg font-semibold">{thread.kind === "direct" && thread.subject ? thread.subject : thread.counterpartName}</p>
                           <p className={`mt-1 text-xs uppercase tracking-[0.18em] ${thread.key === activeThreadKey ? "text-white/65" : "text-slate-500"}`}>
-                            {thread.kind === "direct" ? `From ${thread.counterpartName}` : `Trade Proposal #${thread.proposal.id}`}
+                            {thread.kind === "direct" ? directPresentation?.listLabel : `Trade Proposal #${thread.proposal.id}`}
                           </p>
                         </div>
-                        <Badge variant={thread.key === activeThreadKey ? "secondary" : "outline"} className="rounded-full capitalize">
-                          {thread.kind === "direct" ? "direct" : thread.proposal.status}
+                        <Badge variant={thread.key === activeThreadKey ? "secondary" : "outline"} className={`rounded-full capitalize ${thread.kind === "direct" ? directDirection === "sent" ? "bg-blue-100 text-blue-800 hover:bg-blue-200" : "bg-emerald-100 text-emerald-800 hover:bg-emerald-200" : ""}`}>
+                          {thread.kind === "direct" ? directPresentation?.badge : thread.proposal.status}
                         </Badge>
                       </div>
                       <p className={`mt-3 line-clamp-2 text-sm leading-6 ${thread.key === activeThreadKey ? "text-white/75" : "text-slate-600"}`}>{thread.summary}</p>
                       <div className="mt-4 flex items-center justify-between text-xs uppercase tracking-[0.18em]">
                         <span>{new Date(thread.updatedAt).toLocaleString()}</span>
-                        {thread.unread ? <span className="inline-flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-emerald-400" />Unread</span> : <span>Seen</span>}
+                        {thread.kind === "direct" && directDirection === "sent" ? null : thread.unread ? <span className="inline-flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-emerald-400" />Unread</span> : <span>Seen</span>}
                       </div>
                     </button>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : (
                 <div className="p-6 text-sm leading-7 text-slate-600">There are no message threads in this folder yet.</div>
@@ -592,9 +609,12 @@ export default function Messages() {
                         <AvatarFallback>{initials(activeThread.counterpartName)}</AvatarFallback>
                       </Avatar>
                       <div>
-                        <h2 className="text-3xl font-semibold text-slate-900">{activeThread.counterpartName}</h2>
+                        <h2 className="text-3xl font-semibold text-slate-900">{activeThread.kind === "direct" ? activeDirectPresentation?.detailHeading : activeThread.counterpartName}</h2>
                         <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-slate-600">
                           <Badge variant="outline" className="rounded-full capitalize">{activeThread.kind === "direct" ? "Direct conversation" : activeThread.proposal.status}</Badge>
+                          {activeThread.kind === "direct" && activeDirectPresentation && (
+                            <Badge className={`rounded-full ${activeDirectDirection === "sent" ? "bg-blue-100 text-blue-800 hover:bg-blue-200" : "bg-emerald-100 text-emerald-800 hover:bg-emerald-200"}`}>{activeDirectPresentation.badge}</Badge>
+                          )}
                           {activeOnline ? <span className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-emerald-700"><span className="h-2 w-2 rounded-full bg-emerald-500" />Online now</span> : null}
                           {activeThread.kind === "trade" ? <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1"><ShieldCheck className="h-4 w-4" />{activeThread.proposal.ownerRating?.averageRating?.toFixed(1) ?? "N/A"} rating</span> : <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1"><UsersRound className="h-4 w-4" />Collector direct line</span>}
                         </div>
@@ -659,6 +679,7 @@ export default function Messages() {
                       <div className="rounded-[1.5rem] border border-slate-100 bg-slate-50 px-4 py-3 text-sm">
                         <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Subject</p>
                         <p className="mt-1 font-semibold text-slate-900">{(activeThread as any).subject || '(no subject)'}</p>
+                        {activeDirectPresentation && <p className="mt-3 text-xs uppercase tracking-[0.18em] text-slate-500">{activeDirectPresentation.detailPrefix} on {new Date(activeThread.updatedAt).toLocaleString()}</p>}
                       </div>
                     )}
                     {(activeThread.kind === "direct" ? (dbMessagesQuery.data ?? []) : activeThread.proposal.messages).length ? (activeThread.kind === "direct" ? (dbMessagesQuery.data ?? []) : activeThread.proposal.messages).map((message: any) => {

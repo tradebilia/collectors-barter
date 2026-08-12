@@ -134,3 +134,7 @@
 - [x] Add a router-level legacy-schema regression test proving a second direct message reuses the same participant thread.
 - [x] Replace the ORM thread insert that expands the absent `itemId` column with an explicit legacy-compatible SQL insert.
 - [x] Add regression coverage proving the thread insert names only columns that exist in the deployed legacy table.
+- [x] Map direct-message latest-sender payloads to signed-in-user direction for list and detail views.
+- [x] Add To/From counterpart labels and Sent/Received status treatment to direct-message list cards.
+- [x] Add participant-aware direct-message detail headings and explanatory sent/received copy.
+- [ ] Add regression coverage and verify direct-message direction in development and live views.
