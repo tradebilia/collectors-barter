@@ -83,3 +83,16 @@
 - [x] Use a changing deleted-inquiry query input when the folder is opened so a browser-cached pre-deployment response cannot persist after a deployment.
 - [x] Prevent connection labels and controls from overlapping the supplied provider logos on the mobile Profile Integrations cards.
 - [x] Publish the user-approved Messages and Profile Integrations update from this development workspace.
+- [x] Analyze the current item-inquiry sender-side presentation and define clear sent-versus-received semantics.
+- [x] Design explicit list and detail indicators for inquiries sent by the signed-in user versus inquiries received.
+- [x] Present the recommended item-inquiry direction model for user approval before implementation.
+- [x] Add sent-versus-received direction data to inquiry list and detail view models.
+- [x] Add a unified Item Inquiries subfilter for All, Received, and Sent inquiries.
+- [x] Render To/From counterpart labels, Sent/Received badges, and participant-aware detail headings for item inquiries.
+- [x] Add regression coverage for item-inquiry direction and user-facing direction copy.
+- [ ] Verify the revised item-inquiry direction experience in development and live recipient/sender views.
+- [x] Remove the duplicate Sent status badge from outgoing item-inquiry cards while retaining a clear sent-direction label.
+- [x] Remove the duplicate Sent status badge from outgoing item-inquiry cards while retaining a clear sent-direction label.
+- [ ] Publish the approved item-inquiry direction update and verify both sender and recipient live views.
+- [ ] Verify the live sender view shows To, one Sent badge, and Inquiry to for an outgoing item inquiry.
+- [ ] Verify the live recipient view shows From, Received, and Inquiry from for the corresponding incoming item inquiry.

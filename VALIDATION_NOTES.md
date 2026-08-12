@@ -20,6 +20,14 @@ The final live bundle and rendered eBay connection-card markup both resolved to 
 
 The final authenticated 383-pixel capture had no horizontal overflow and loaded all five supplied provider assets. Connection controls stack below their respective logo and label on small screens, eliminating the earlier logo/control overlap. The active/deleted inquiry implementation and live recipient deleted-inquiry view are verified; direct-message rendering is covered by the shared resolver, message-payload paths, and regression tests because the read-only live data did not retain a direct-message thread to open in the browser.
 
+## Item inquiry direction
+
+In the development sender session, the active item inquiry now renders **To: Rtavani** with one **Sent** badge. This confirms that the former counterpart-only card heading no longer implies that Rtavani authored the outgoing inquiry.
+
+The dedicated **Item Inquiries** view exposes **All**, **Received**, and **Sent** filters. The **Sent** filter correctly retains the outgoing inquiry with the explicit **To: Rtavani** label and single direction badge.
+
+Opening that outgoing inquiry shows **Inquiry to Rtavani**, a **Sent** badge, and the sentence **You sent this item inquiry on …**. The same sender session’s **Received** filter returns no rows, correctly separating it from the outgoing inquiry.
+
 ## Profile Integrations logos
 
 The supplied eBay, Facebook, LinkedIn, Whatnot, and PayPal files were copied to the durable web asset directory and published to project storage. The authenticated Profile Integrations page rendered all five provider images successfully. Browser checks confirmed each image was present, complete, and had a positive intrinsic width and height, with no broken image links.
