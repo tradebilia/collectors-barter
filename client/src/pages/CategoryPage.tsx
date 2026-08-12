@@ -26,7 +26,7 @@ import { TopRightIcons } from "@/components/TopRightIcons";
 import { TopBar } from "@/components/TopBar";
 import { CategoryBar } from "@/components/CategoryBar";
 import { OnlineIndicator } from "@/components/OnlineIndicator";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { toast } from "sonner";
 import { Link, useRoute } from "wouter";
 import { getGradingCompanyNamesForCategory, getValidGradesForCompany, getGradingCompanyByName } from "@shared/gradingCompanyConfig";
@@ -139,6 +139,32 @@ const categoryHeroBackgroundUrls: Record<TradebiliaCategorySlug, string> = {
   stamps: "/manus-storage/StampsBackground_580a838e.png",
   video_games: "/manus-storage/VideoGamesBackground_abb6b532.webp",
   vintage_toys: "/manus-storage/VintageToysBackground_46983e1a.png",
+};
+
+const categoryHeroTitleUrls: Record<TradebiliaCategorySlug, string> = {
+  autographs: "/manus-storage/AutographsTitle_32ad8e27.png",
+  coins: "/manus-storage/CoinsTitle_04674a85.webp",
+  comics: "/manus-storage/ComicsTitle_74805d30.png",
+  disney_pins: "/manus-storage/DisneyPinsTitle_fcaa6baf.png",
+  movies: "/manus-storage/MoviesTitle_86dfcc85.png",
+  pokemon: "/manus-storage/PokemonTitle_7345573b.png",
+  sports_cards: "/manus-storage/SportsCardsTitle_5d9af601.png",
+  stamps: "/manus-storage/StampsTitle_e766d861.webp",
+  video_games: "/manus-storage/VideoGamesTitle_7dc7fe49.webp",
+  vintage_toys: "/manus-storage/VintageToysTitle_d0af50b4.png",
+};
+
+const categoryHeroTitleStyles: Record<TradebiliaCategorySlug, CSSProperties> = {
+  autographs: { maxHeight: "300px", width: "auto", objectFit: "contain", marginBottom: "30px", transform: "translateY(-100px)", marginLeft: "-25px" },
+  coins: { maxHeight: "225px", width: "auto", objectFit: "contain", marginBottom: "30px", transform: "translateY(-75px)", marginLeft: "-15px" },
+  comics: { maxHeight: "300px", width: "auto", objectFit: "contain", marginBottom: "-40px" },
+  disney_pins: { maxHeight: "475px", width: "auto", objectFit: "contain", marginBottom: "30px", marginTop: "130px" },
+  movies: { maxHeight: "250px", width: "auto", objectFit: "contain", marginBottom: "30px", transform: "translateY(-95px)" },
+  pokemon: { maxHeight: "380px", maxWidth: "90%", width: "auto", objectFit: "contain", marginBottom: "30px", transform: "translateY(15px)" },
+  sports_cards: { maxHeight: "300px", width: "auto", objectFit: "contain", marginBottom: "30px", transform: "translateY(-100px)", marginLeft: "-15px" },
+  stamps: { maxHeight: "200px", width: "auto", objectFit: "contain", marginBottom: "30px", transform: "translateY(10px)" },
+  video_games: { maxHeight: "550px", width: "auto", objectFit: "contain", marginBottom: "30px", transform: "translateY(-200px)" },
+  vintage_toys: { maxHeight: "550px", width: "auto", objectFit: "contain", marginBottom: "30px", transform: "translateY(-200px)" },
 };
 
 // Helper function to get category-specific font
@@ -643,7 +669,11 @@ export default function CategoryPage() {
                   position: "relative",
                   zIndex: 50
                 }}>
-                  {categoryLabel.toUpperCase()}
+                  <img
+                    src={categoryHeroTitleUrls[slug]}
+                    alt={categoryLabel}
+                    style={categoryHeroTitleStyles[slug]}
+                  />
                 </h1>
                 <div className="mt-8 h-px bg-white/50 mx-auto" style={{ maxWidth: "100%", width: "100%", marginTop: "64px" }}></div>
                 <p className="mt-8 text-3xl sm:text-4xl lg:text-5xl font-black uppercase tracking-[0.1em]" style={{

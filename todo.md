@@ -17,3 +17,6 @@
 - [x] Map the supplied hero background files to the homepage and category hero sections with broken links.
 - [x] Upload the supplied hero assets to durable project storage and replace broken image/title references.
 - [x] Verify the corrected homepage and affected category heroes in the deployed development site.
+- [x] Map the supplied category title artwork to its corresponding hero sections.
+- [x] Upload the supplied title graphics and restore the matching hero title images.
+- [x] Verify restored title graphics and existing backgrounds across all supplied category pages.
