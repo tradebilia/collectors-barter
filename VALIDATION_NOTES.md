@@ -44,6 +44,10 @@ Opening the live outgoing inquiry shows **Inquiry to Administrator**, a single *
 
 The Barry Sanders Score Rookie listing (reference ID 1110009) had two retained photo rows. One legacy URL returned an access error while the other rendered the verified PSA 1989 Score Barry Sanders card image. The inaccessible row was updated in place to the existing durable image reference; no photo rows or other listing data were deleted. Development and live listing views both render the repaired image successfully.
 
+## Deferred third-party credential validation
+
+After the migration was reviewed and accepted, the user directed that it be treated as complete. The broader provider-by-provider credential validation pass was therefore deferred. No additional external provider requests were made, and no credential values are recorded in this project documentation.
+
 ## Profile Integrations logos
 
 The supplied eBay, Facebook, LinkedIn, Whatnot, and PayPal files were copied to the durable web asset directory and published to project storage. The authenticated Profile Integrations page rendered all five provider images successfully. Browser checks confirmed each image was present, complete, and had a positive intrinsic width and height, with no broken image links.
