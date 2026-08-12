@@ -12,6 +12,7 @@ describe("handoff documentation safeguards", () => {
   const audit = readProjectFile("HANDOFF_ADVERSARIAL_AUDIT.md");
   const migration = readProjectFile("NEW_WEBDEV_MIGRATION_READINESS_REPORT.md");
   const evidence = readProjectFile("MIGRATION_PREREQUISITE_EVIDENCE.md");
+  const isolation = readProjectFile("STAGING_INTEGRATION_ISOLATION_MATRIX.md");
 
   it("preserves the external database warning and explicit approval gate", () => {
     expect(guide).toContain("CUSTOM_DATABASE_URL");
@@ -104,5 +105,12 @@ describe("handoff documentation safeguards", () => {
     expect(evidence).toContain("4");
     expect(evidence).toContain("source-unavailable");
     expect(evidence).toContain("Do not create the replacement project");
+  });
+
+  it("documents the fail-closed staging safety control and independent-project decisions", () => {
+    expect(isolation).toContain("TRADEBILIA_STAGING_MODE");
+    expect(isolation).toContain("collectors-barter-staging");
+    expect(isolation).toContain("Do not attach `tradebilia.manus.space`");
+    expect(isolation).toContain("create Phase B1 staging project");
   });
 });

@@ -58,6 +58,7 @@ function makeApp(overrides: Partial<ScheduledDeps> = {}) {
     requireDb: vi.fn(async () => fakeDb),
     deleteDraftsOlderThan: vi.fn(async () => 0),
     notifyOwner: vi.fn(async () => true),
+    isStagingSafetyEnabled: vi.fn(() => false),
     ...(Object.fromEntries(Object.entries(overrides).filter(([k]) => k !== "__selectRows"))),
   };
 
@@ -149,6 +150,32 @@ describe("scheduled (cron) endpoint authorization", () => {
       expect(res.status).toBe(403);
     });
   }
+});
+
+describe("scheduled writer staging safety", () => {
+  for (const name of SCHEDULED_ENDPOINTS) {
+    it(`${name} skips all side effects when staging safety is enabled`, async () => {
+      const { app, deps } = makeApp({ isStagingSafetyEnabled: vi.fn(() => true) });
+      const res = await request(app).post(`/api/scheduled/${name}`);
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual({ ok: true, skipped: "staging-safety" });
+      expect(deps.requireDb).not.toHaveBeenCalled();
+      expect(deps.deleteDraftsOlderThan).not.toHaveBeenCalled();
+      expect(deps.notifyOwner).not.toHaveBeenCalled();
+    });
+  }
+
+  it("runs the normal cleanup writer path when staging safety is disabled", async () => {
+    const { app, deps } = makeApp({
+      isStagingSafetyEnabled: vi.fn(() => false),
+      deleteDraftsOlderThan: vi.fn(async () => 3),
+    });
+    const res = await request(app).post("/api/scheduled/cleanupExpiredDrafts");
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ ok: true, deletedCount: 3 });
+    expect(deps.requireDb).toHaveBeenCalledTimes(1);
+    expect(deps.deleteDraftsOlderThan).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe("cleanupExpiredDrafts", () => {

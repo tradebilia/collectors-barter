@@ -7,6 +7,7 @@
  * Docs: https://www.twilio.com/docs/verify/api
  */
 import { ENV } from "./_core/env";
+import { isStagingSafetyEnabled, stagingSafetyReason } from "./_core/stagingSafety";
 
 const VERIFY_BASE = "https://verify.twilio.com/v2";
 
@@ -55,6 +56,9 @@ export type SendCodeResult =
 
 /** Ask Twilio to send a 6-digit SMS code to the given E.164 phone number. */
 export async function sendVerificationCode(e164Phone: string): Promise<SendCodeResult> {
+  if (isStagingSafetyEnabled()) {
+    return { ok: false, error: stagingSafetyReason("SMS verification") };
+  }
   if (!isTwilioConfigured()) {
     return { ok: false, error: "SMS verification is not configured on this server." };
   }
@@ -90,6 +94,9 @@ export type CheckCodeResult =
 
 /** Ask Twilio to check a code the user typed in. */
 export async function checkVerificationCode(e164Phone: string, code: string): Promise<CheckCodeResult> {
+  if (isStagingSafetyEnabled()) {
+    return { ok: false, error: stagingSafetyReason("SMS verification") };
+  }
   if (!isTwilioConfigured()) {
     return { ok: false, error: "SMS verification is not configured on this server." };
   }

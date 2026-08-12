@@ -19,5 +19,5 @@ describe('Daily.co API key validation', () => {
     expect(response.status).toBe(200);
     const data = await response.json() as { total_count?: number };
     expect(typeof data.total_count).toBe('number');
-  });
+  }, 20000);
 });

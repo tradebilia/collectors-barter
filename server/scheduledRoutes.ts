@@ -3,6 +3,7 @@ import { desc, gte, sql } from "drizzle-orm";
 import { referralRequests } from "../drizzle/schema";
 import { sdk } from "./_core/sdk";
 import { notifyOwner } from "./_core/notification";
+import { isStagingSafetyEnabled } from "./_core/stagingSafety";
 import { requireDb, deleteDraftsOlderThan } from "./db";
 
 /** Injectable seams so tests can exercise these handlers without a live DB or cron token. */
@@ -11,6 +12,7 @@ export type ScheduledDeps = {
   requireDb: () => Promise<any>;
   deleteDraftsOlderThan: (db: any, cutoff: Date) => Promise<number>;
   notifyOwner: (payload: { title: string; content: string }) => Promise<boolean>;
+  isStagingSafetyEnabled: () => boolean;
 };
 
 export const defaultScheduledDeps: ScheduledDeps = {
@@ -18,6 +20,7 @@ export const defaultScheduledDeps: ScheduledDeps = {
   requireDb,
   deleteDraftsOlderThan,
   notifyOwner,
+  isStagingSafetyEnabled,
 };
 
 /** MySQL DATETIME literal for `n` days ago. */
@@ -76,6 +79,7 @@ export function makeHealthHandler(deps: ScheduledDeps = defaultScheduledDeps) {
 export function makeCleanupExpiredDraftsHandler(deps: ScheduledDeps = defaultScheduledDeps) {
   return async (req: Request, res: Response) => {
     if (!(await requireCron(deps, req, res))) return;
+    if (deps.isStagingSafetyEnabled()) return res.json({ ok: true, skipped: "staging-safety" });
     try {
       const db = await deps.requireDb();
       const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
@@ -91,6 +95,7 @@ export function makeCleanupExpiredDraftsHandler(deps: ScheduledDeps = defaultSch
 export function makeReferralDigestHandler(deps: ScheduledDeps = defaultScheduledDeps) {
   return async (req: Request, res: Response) => {
     if (!(await requireCron(deps, req, res))) return;
+    if (deps.isStagingSafetyEnabled()) return res.json({ ok: true, skipped: "staging-safety" });
     try {
       const db = await deps.requireDb();
       // Schema timestamps are string-mode, so compare against a MySQL datetime string.
@@ -124,6 +129,7 @@ export function makeReferralDigestHandler(deps: ScheduledDeps = defaultScheduled
 export function makeTradeRemindersHandler(deps: ScheduledDeps = defaultScheduledDeps) {
   return async (req: Request, res: Response) => {
     if (!(await requireCron(deps, req, res))) return;
+    if (deps.isStagingSafetyEnabled()) return res.json({ ok: true, skipped: "staging-safety" });
     try {
       const db = await deps.requireDb();
       const now = new Date().toISOString().slice(0, 19).replace("T", " ");

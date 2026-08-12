@@ -77,6 +77,10 @@ All three current project-level Heartbeat writers are enabled. They remain enabl
 | GitHub/project bootstrap | Blocked | An explicit choice of a separate migration repository or a provider-supported safe linkage procedure. |
 | Domains and callbacks | Blocked | Written non-production hostname/OAuth criteria and a later both-domain rollback plan. |
 
-## 5. Safety Rules Still in Force
+## 5. Staging Safety Control
+
+The source now contains a default-off `TRADEBILIA_STAGING_MODE` safety control. When explicitly enabled only in the future copied project, it blocks transactional email, Twilio Verify, PayPal verification, provider OAuth callbacks, and every scheduled writer before an external request or database side effect. Focused tests passed for these pathways. The complete per-integration configuration and pending external actions are recorded in `STAGING_INTEGRATION_ISOLATION_MATRIX.md`.
+
+## 6. Safety Rules Still in Force
 
 The current production project remains the live system of record. Do not create the replacement project, attach either production hostname, point an application at the live external database, modify existing media paths, change OAuth callbacks, or enable the scheduled writers in any staging environment. A separate written approval is required after every row in the go/no-go table is evidenced.

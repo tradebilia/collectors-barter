@@ -6,8 +6,13 @@
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 const FROM_ADDRESS = "Tradebilia <noreply@tradebilia.com>";
 const SITE_URL = "https://tradebilia.manus.space";
+import { isStagingSafetyEnabled, stagingSafetyReason } from "./stagingSafety";
 
 async function sendEmail(to: string, subject: string, html: string): Promise<boolean> {
+  if (isStagingSafetyEnabled()) {
+    console.warn(`[Email] ${stagingSafetyReason("Email delivery")}`);
+    return false;
+  }
   if (!RESEND_API_KEY) {
     console.warn("[Email] RESEND_API_KEY not configured — skipping email notification");
     return false;

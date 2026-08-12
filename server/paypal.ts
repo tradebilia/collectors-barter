@@ -9,6 +9,7 @@
  */
 
 import axios from "axios";
+import { isStagingSafetyEnabled, stagingSafetyReason } from "./_core/stagingSafety";
 
 // PayPal API base URLs
 const PAYPAL_BASE_URL = (process.env.PAYPAL_ENV ?? process.env.PAYPAL_MODE) === "live"
@@ -84,6 +85,9 @@ export async function verifyPayPalTransaction(
   expectedPayeeEmail: string,
   expectedAmount: number
 ): Promise<PayPalVerificationResult> {
+  if (isStagingSafetyEnabled()) {
+    return { found: false, verified: false, reason: stagingSafetyReason("PayPal verification") };
+  }
   try {
     const token = await getPayPalAccessToken();
 
