@@ -24,9 +24,9 @@ export function CategoryTopBar({
   return (
     <div className="border-b border-white/10 bg-black">
       {/* Top row: Logo, Search, Icons */}
-      <div className="flex items-center justify-between gap-4 pl-2 pr-4 py-3">
+      <div className="flex min-h-14 items-center justify-between gap-4 pl-2 pr-4 py-1">
         {/* Logo on left */}
-        <div className="h-14 w-[340px] flex-shrink-0">
+        <div className="h-12 w-[260px] flex-shrink-0">
           <Link href="/" className="flex h-full items-center hover:opacity-80 transition">
             <AnimatedLogoSmall70 />
           </Link>

@@ -39,3 +39,5 @@
 - [x] Correct the mobile top-bar overlap caused by the restored animated logo.
 - [x] Prevent the mobile search action from colliding with the sign-in control.
 - [x] Determine that no controlled Resend email test is needed because the credential is a valid send-only key and the read-only endpoint correctly rejects it.
+- [x] Match the compact prior-session AnimatedLogoSmall70 geometry and top-bar placement from the supplied reference.
+- [x] Verify the compact animated logo remains legible and unobstructed at desktop and mobile widths.

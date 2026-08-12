@@ -63,11 +63,11 @@ export function TopBar({
     // Compact top bar for pages like Trade Room — no search, just logo + icons
     return (
       <div className="border-b border-white/10 bg-black relative z-0">
-        <div className="flex items-center justify-between pl-2 pr-4 py-2 relative" style={{ minHeight: '52px' }}>
+        <div className="flex min-h-14 items-center justify-between pl-2 pr-4 py-1 relative">
           {/* Logo — same size as full TopBar */}
-          <div className="h-16 flex items-center" style={{ width: '650px', marginTop: '-10px' }}>
+          <div className="h-12 flex items-center" style={{ width: '260px' }}>
             <a href="/" className="flex items-center hover:opacity-80 transition h-full w-full">
-              <div className="h-16 w-full flex items-center">
+              <div className="h-12 w-full flex items-center">
                 <AnimatedLogoSmall70 />
               </div>
             </a>
@@ -109,11 +109,11 @@ export function TopBar({
 
   return (
     <div className="border-b border-white/10 bg-black relative z-0">
-      <div className="flex items-center justify-center gap-4 px-2 py-2 sm:pl-2 sm:pr-4 relative">
+      <div className="flex min-h-14 items-center justify-center gap-4 px-2 py-2 sm:pl-2 sm:pr-4 relative">
         {/* Animated Logo on left */}
-        <div className="absolute left-2 h-16 hidden items-center sm:flex" style={{ width: '650px', top: '-10px' }}>
+        <div className="absolute left-2 top-1 h-12 hidden items-center sm:flex" style={{ width: '260px' }}>
           <a href="/" className="flex items-center hover:opacity-80 transition h-full w-full">
-            <div className="h-16 w-full flex items-center">
+            <div className="h-12 w-full flex items-center">
               <AnimatedLogoSmall70 />
             </div>
           </a>
