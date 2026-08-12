@@ -9,6 +9,8 @@
 - [x] Add a focused Vitest regression test for sender and recipient unread-state handling.
 - [x] Update the production inquiry unread-alert query to use participant-specific read state and verify the full reply-to-alert path.
 - [x] Run applicable Vitest tests and TypeScript checks, targeting the established 91/91 baseline.
-- [ ] Run the credential-dependent and non-staging integration checks only in a separately authorized environment; they are intentionally blocked here by `TRADEBILIA_STAGING_MODE=1` and absent external credentials.
+- [x] Document that credential-dependent and non-staging integration checks were intentionally not run because `TRADEBILIA_STAGING_MODE=1` and external credentials are absent in this approved isolated environment.
 - [x] Review the commit for credentials and prohibited files, then push only the fix and regression test to `main`.
-- [ ] Report database-write status, validation counts, test results, and the pushed commit.
+- [x] Report database-write status, validation counts, test results, and the pushed commit.
+- [x] Replace the isolated WebDev scaffold with the committed Tradebilia repository application while excluding credentials, Git metadata, dependencies, migrations, and seed scripts.
+- [x] Restart and verify that the temporary development homepage renders the real Tradebilia application without publishing or attaching a production domain.

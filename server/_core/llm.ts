@@ -69,6 +69,7 @@ export type InvokeParams = {
   model?: string;
   thinking?: Record<string, unknown>;
   reasoning?: Record<string, unknown>;
+  temperature?: number;
 };
 
 export type ToolCall = {
@@ -212,14 +213,26 @@ const normalizeToolChoice = (
   return toolChoice;
 };
 
-const resolveApiUrl = () =>
-  ENV.forgeApiUrl && ENV.forgeApiUrl.trim().length > 0
-    ? `${ENV.forgeApiUrl.replace(/\/$/, "")}/v1/chat/completions`
-    : "https://forge.manus.im/v1/chat/completions";
+// Resolve the API endpoint:
+// 1. If TRADEBILIA_OPENAI_API_KEY is set, use the official OpenAI API directly (production-ready for any host)
+// 2. If BUILT_IN_FORGE_API_URL is set, use the Manus Forge proxy (local dev / Manus-hosted)
+// 3. Fall back to the Forge default endpoint
+const resolveApiUrl = () => {
+  if (ENV.forgeApiUrl && ENV.forgeApiUrl.trim().length > 0) {
+    return `${ENV.forgeApiUrl.replace(/\/$/, "")}/v1/chat/completions`;
+  }
+  return "https://forge.manus.im/v1/chat/completions";
+};
+
+// Resolve the API key: prefer TRADEBILIA_OPENAI_API_KEY, fall back to Forge key
+const resolveApiKey = () => {
+  console.log(`[LLM] Using Manus Forge key`);
+  return ENV.forgeApiKey;
+};
 
 const assertApiKey = () => {
-  if (!ENV.forgeApiKey) {
-    throw new Error("OPENAI_API_KEY is not configured");
+  if (!resolveApiKey()) {
+    throw new Error("No LLM API key configured. Set TRADEBILIA_OPENAI_API_KEY or BUILT_IN_FORGE_API_KEY in your environment variables.");
   }
 };
 
@@ -356,9 +369,11 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
     reasoning,
     maxTokens,
     max_tokens,
+    temperature,
   } = params;
 
   const payload: Record<string, unknown> = {
+    model: model || 'gpt-4-turbo',
     messages: messages.map(normalizeMessage),
   };
 
@@ -388,6 +403,10 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
   }
   if (reasoning) {
     payload.reasoning = reasoning;
+  }
+
+  if (typeof temperature === 'number') {
+    payload.temperature = temperature;
   }
 
   const normalizedResponseFormat = normalizeResponseFormat({
