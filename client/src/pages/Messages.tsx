@@ -481,16 +481,24 @@ export default function Messages() {
                     >
                       <div className="flex items-start justify-between gap-4">
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-lg font-semibold">{thread.kind === "direct" && thread.subject ? thread.subject : thread.counterpartName}</p>
-                          <p className={`mt-1 text-xs uppercase tracking-[0.18em] ${thread.key === activeThreadKey ? "text-white/65" : "text-slate-500"}`}>
-                            {thread.kind === "direct" ? directPresentation?.listLabel : `Trade Proposal #${thread.proposal.id}`}
-                          </p>
+                          {thread.kind === "direct" ? (
+                            <>
+                              <p className="truncate text-lg font-semibold">{directPresentation?.listLabel}</p>
+                              <p className={`mt-1 text-xs uppercase tracking-[0.18em] ${thread.key === activeThreadKey ? "text-white/65" : "text-slate-500"}`}>Direct Message</p>
+                            </>
+                          ) : (
+                            <>
+                              <p className="truncate text-lg font-semibold">{thread.counterpartName}</p>
+                              <p className={`mt-1 text-xs uppercase tracking-[0.18em] ${thread.key === activeThreadKey ? "text-white/65" : "text-slate-500"}`}>Trade Proposal #{thread.proposal.id}</p>
+                            </>
+                          )}
                         </div>
                         <Badge variant={thread.key === activeThreadKey ? "secondary" : "outline"} className={`rounded-full capitalize ${thread.kind === "direct" ? directDirection === "sent" ? "bg-blue-100 text-blue-800 hover:bg-blue-200" : "bg-emerald-100 text-emerald-800 hover:bg-emerald-200" : ""}`}>
                           {thread.kind === "direct" ? directPresentation?.badge : thread.proposal.status}
                         </Badge>
                       </div>
-                      <p className={`mt-3 line-clamp-2 text-sm leading-6 ${thread.key === activeThreadKey ? "text-white/75" : "text-slate-600"}`}>{thread.summary}</p>
+                      {thread.kind === "direct" && <p className={`mt-3 truncate text-sm font-semibold ${thread.key === activeThreadKey ? "text-white" : "text-slate-900"}`}>{thread.subject || "Direct message"}</p>}
+                      <p className={`mt-2 line-clamp-2 text-sm leading-6 ${thread.key === activeThreadKey ? "text-white/75" : "text-slate-600"}`}>{thread.summary}</p>
                       <div className="mt-4 flex items-center justify-between text-xs uppercase tracking-[0.18em]">
                         <span>{new Date(thread.updatedAt).toLocaleString()}</span>
                         {thread.kind === "direct" && directDirection === "sent" ? null : thread.unread ? <span className="inline-flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-emerald-400" />Unread</span> : <span>Seen</span>}

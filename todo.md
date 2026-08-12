@@ -138,3 +138,8 @@
 - [x] Add To/From counterpart labels and Sent/Received status treatment to direct-message list cards.
 - [x] Add participant-aware direct-message detail headings and explanatory sent/received copy.
 - [ ] Add regression coverage and verify direct-message direction in development and live views.
+- [x] Define and obtain approval for one consistent counterpart-first hierarchy across direct-message and item-inquiry cards.
+- [x] Reorder direct-message cards to show To/From counterpart and direction before context, subject, preview, and timestamp.
+- [ ] Verify the reordered direct-message card matches the item-inquiry hierarchy in development and live views.
+- [x] Locate the broken direct-message notification email logo reference and replace it with the durable Tradebilia logo URL.
+- [x] Verify the email-logo URL is publicly accessible to external email clients and covered by a notification-template regression test.

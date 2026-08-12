@@ -6,6 +6,7 @@
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 const FROM_ADDRESS = "Tradebilia <noreply@tradebilia.com>";
 const SITE_URL = "https://tradebilia.manus.space";
+const EMAIL_LOGO_URL = `${SITE_URL}/manus-storage/tradebilia_final_transparent_8a1981e6.svg`;
 import { isStagingSafetyEnabled, stagingSafetyReason } from "./stagingSafety";
 
 async function sendEmail(to: string, subject: string, html: string): Promise<boolean> {
@@ -53,7 +54,7 @@ function emailWrapper(content: string): string {
         <!-- Header -->
         <tr><td style="background:#0a0d22;padding:24px 16px;text-align:center;">
           <img
-            src="https://tradebilia.manus.space/manus-storage/tradebilia_final_transparent_58812c5a.svg"
+            src="${EMAIL_LOGO_URL}"
             alt="Tradebilia"
             width="520"
             style="display:block;margin:0 auto;width:100%;max-width:520px;height:auto;"
@@ -340,7 +341,7 @@ export async function sendReferralInviteEmail(params: {
       <table width="100%" style="max-width:560px;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
         <tr><td style="background:#0a0d22;padding:24px 16px;text-align:center;">
           <img
-            src="https://tradebilia.manus.space/manus-storage/tradebilia_final_transparent_58812c5a.svg"
+            src="${EMAIL_LOGO_URL}"
             alt="Tradebilia"
             width="520"
             style="display:block;margin:0 auto;width:100%;max-width:520px;height:auto;"

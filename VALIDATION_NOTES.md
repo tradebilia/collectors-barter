@@ -65,3 +65,7 @@ The live authenticated Profile Integrations route was also reloaded under a 375-
 ## Automated checks
 
 Focused Vitest coverage for sender resolution, deleted-inquiry refresh behavior, communication payloads, and Integration-tab asset references passed. The TypeScript check completed successfully.
+
+## Direct-message direction deployment check
+
+Two cache-busted live admin Messages reloads immediately after the direct-message direction checkpoint still rendered the preceding direct-message card text, `From Rtavani` and `direct`. The deployed application bundle therefore requires propagation verification before the direction update can be marked visually complete.
