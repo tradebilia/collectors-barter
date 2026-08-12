@@ -14,9 +14,10 @@ Tradebilia remains in its current Manus project. Rich has approved a **separate 
 2. Create a separate **development-only** WebDev project from the GitHub repository. Keep its default temporary domain; do not publish or attach `tradebilia.manus.space`.
 3. Clone GitHub into the development project’s workspace: `gh repo clone tradebilia/collectors-barter /home/ubuntu/tradebilia-clone`, then run `cd /home/ubuntu/tradebilia-clone && pnpm install --frozen-lockfile`.
 4. In the new development project’s secure settings, add **only** the existing `CUSTOM_DATABASE_URL` through the secret-input flow. Never print it, place it in `.env`, commit it, or ask Rich to paste it into chat. Configure `ENCRYPTION_KEY` only if the approved work needs existing encrypted integration tokens.
-5. Confirm GitHub is `tradebilia/collectors-barter`, branch `main`; do not overwrite or edit `/home/ubuntu/tradebilia-platform`.
-6. Before any write-capable task, perform a read-only database connection and count validation against the custom database. The last verified baseline was 3 users, 4 user profiles, 15 listings, 25 listing photos, 1 inquiry, and 1 trade proposal. Stop and report any mismatch; do not run migrations, seed scripts, delete scripts, or feature flows that write data until Rich explicitly approves the specific action.
-7. Do not print, copy, commit, or request raw API keys, database URLs, encryption keys, or `.project-config.json`.
+5. Set `TRADEBILIA_STAGING_MODE=1` in the new development project. This fail-closed guard blocks external email/SMS, PayPal verification, provider OAuth callbacks, and scheduled writers while the project shares the custom database.
+6. Confirm GitHub is `tradebilia/collectors-barter`, branch `main`; do not overwrite or edit `/home/ubuntu/tradebilia-platform`.
+7. Before any write-capable task, perform a read-only database connection and count validation against the custom database. The last verified baseline was 3 users, 4 user profiles, 15 listings, 25 listing photos, 1 inquiry, and 1 trade proposal. Stop and report any mismatch; do not run migrations, seed scripts, delete scripts, or feature flows that write data until Rich explicitly approves the specific action.
+8. Do not print, copy, commit, or request raw API keys, database URLs, encryption keys, or `.project-config.json`.
 
 ## Current Status
 
@@ -46,4 +47,4 @@ Do not alter the current database configuration, publish/attach a production dom
 
 ## Exact Message Rich Can Use to Start the Next Session
 
-> Read `CURRENT_PROJECT_HANDOFF.md` first. Create a separate development-only WebDev project from `tradebilia/collectors-barter`, keep its temporary domain, then clone it into `/home/ubuntu/tradebilia-clone`. Securely configure the existing `CUSTOM_DATABASE_URL` only through the new project’s secret settings, then perform a read-only connection/count validation before any write. Do not publish, attach a production domain, migrate hosting/database, run migrations, seed scripts, or destructive scripts. Then fix the Messages sender-alert bug described in the handoff document, add tests, and push a credential-safe GitHub commit. Report every database write explicitly.
+> Read `CURRENT_PROJECT_HANDOFF.md` first. Create a separate development-only WebDev project from `tradebilia/collectors-barter`, keep its temporary domain, then clone it into `/home/ubuntu/tradebilia-clone`. Securely configure the existing `CUSTOM_DATABASE_URL` only through the new project’s secret settings and set `TRADEBILIA_STAGING_MODE=1`; then perform a read-only connection/count validation before any write. Do not publish, attach a production domain, migrate hosting/database, run migrations, seed scripts, or destructive scripts. Then fix the Messages sender-alert bug described in the handoff document, add tests, and push a credential-safe GitHub commit. Report every database write explicitly.

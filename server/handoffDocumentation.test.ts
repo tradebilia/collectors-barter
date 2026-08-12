@@ -122,6 +122,7 @@ describe("handoff documentation safeguards", () => {
     expect(currentProjectHandoff).toContain("/home/ubuntu/tradebilia-clone");
     expect(currentProjectHandoff).toContain("separate **development-only** WebDev project");
     expect(currentProjectHandoff).toContain("last verified baseline was 3 users");
+    expect(currentProjectHandoff).toContain("TRADEBILIA_STAGING_MODE=1");
     expect(currentProjectHandoff).toContain("read-only database connection and count validation");
     expect(currentProjectHandoff).toContain("sendInquiryReply");
     expect(currentProjectHandoff).toContain("sender receives an unread-message alert");
