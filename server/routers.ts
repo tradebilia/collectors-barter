@@ -1595,7 +1595,7 @@ export const appRouter = router({
             -- counterpart info
             CASE WHEN t.participantAId = ${ctx.user.id} THEN t.participantBId ELSE t.participantAId END as counterpartId,
             up.displayName as profileDisplayName,
-            u.displayName as accountName,
+            u.username as accountName,
             up.avatarUrl as counterpartAvatarUrl,
             -- latest message
             (SELECT dm2.body FROM directMessages dm2 WHERE dm2.threadId = t.id ORDER BY dm2.createdAt DESC LIMIT 1) as latestBody,

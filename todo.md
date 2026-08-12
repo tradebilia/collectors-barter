@@ -64,3 +64,6 @@
 - [ ] Use display names as the authoritative sender label for all item-inquiry and direct-message communications.
 - [ ] Verify the recipient inbox displays the sender’s display name rather than an account name or generic fallback.
 - [x] Complete the profile display-name join and fallback in `getInquiriesByUser`.
+- [ ] Inspect active and deleted inquiry data paths for stale sender names, missing identity fields, or client-side fallback rendering.
+- [ ] Correct display-name resolution consistently across all inquiry inbox states.
+- [x] Validate unified sender-label resolution with focused tests and TypeScript.

@@ -13,4 +13,8 @@ describe("item inquiry sender display names", () => {
   it("prioritizes a sender profile display name for communications", () => {
     expect(resolveDirectMessageDisplayName("Administrator", "rtavani", 30002)).toBe("Administrator");
   });
+
+  it("uses the sender username when no profile display name exists", () => {
+    expect(resolveDirectMessageDisplayName(null, "Administrator", 30002)).toBe("Administrator");
+  });
 });

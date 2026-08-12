@@ -3166,6 +3166,7 @@ export async function getInquiriesByUser(userId: number, limit: number = 50, off
       senderName: users.displayName,
       senderProfileDisplayName: userProfiles.displayName,
       senderAccountName: users.name,
+      senderUsername: users.username,
       senderAvatarUrl: users.avatarUrl,
       recipientId: itemInquiries.recipientId,
           listingId: itemInquiries.listingId,
@@ -3206,7 +3207,7 @@ export async function getInquiriesByUser(userId: number, limit: number = 50, off
         ...inquiry,
         senderName: resolveDirectMessageDisplayName(
           inquiry.senderProfileDisplayName,
-          inquiry.senderName || inquiry.senderAccountName,
+          inquiry.senderUsername || inquiry.senderName || inquiry.senderAccountName,
           inquiry.senderId,
         ),
         isRead: isInquiryReadForUser(inquiry, userId) ? 1 : 0,
@@ -3361,7 +3362,10 @@ export async function getDeletedInquiries(userId: number) {
       id: itemInquiries.id,
       senderId: itemInquiries.senderId,
       senderName: users.displayName,
+      senderProfileDisplayName: userProfiles.displayName,
+      senderUsername: users.username,
       senderAvatarUrl: users.avatarUrl,
+      listingId: itemInquiries.listingId,
       subject: itemInquiries.subject,
       message: itemInquiries.message,
       isRead: itemInquiries.isRead,
@@ -3370,6 +3374,7 @@ export async function getDeletedInquiries(userId: number) {
     })
     .from(itemInquiries)
     .innerJoin(users, eq(itemInquiries.senderId, users.id))
+    .leftJoin(userProfiles, eq(userProfiles.userId, users.id))
     .where(and(
       or(
         eq(itemInquiries.recipientId, userId),
@@ -3379,7 +3384,14 @@ export async function getDeletedInquiries(userId: number) {
     ))
     .orderBy(desc(itemInquiries.deletedAt));
   
-  return inquiries;
+  return inquiries.map(inquiry => ({
+    ...inquiry,
+    senderName: resolveDirectMessageDisplayName(
+      inquiry.senderProfileDisplayName,
+      inquiry.senderUsername || inquiry.senderName,
+      inquiry.senderId,
+    ),
+  }));
 }
 
 export async function emptyDeletedInquiries(userId: number) {
