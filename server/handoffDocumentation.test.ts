@@ -118,6 +118,8 @@ describe("handoff documentation safeguards", () => {
   it("provides one current-project handoff that pauses migration and names the next bug", () => {
     expect(currentProjectHandoff).toContain("Do **not** create a replacement website");
     expect(currentProjectHandoff).toContain("Separate-project migration | **Paused.**");
+    expect(currentProjectHandoff).toContain("clone-only continuation path");
+    expect(currentProjectHandoff).toContain("/home/ubuntu/tradebilia-clone");
     expect(currentProjectHandoff).toContain("sendInquiryReply");
     expect(currentProjectHandoff).toContain("sender receives an unread-message alert");
   });

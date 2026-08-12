@@ -4,16 +4,16 @@
 
 ## What Rich Decided
 
-Continue building **in the current Tradebilia Manus project**. Do **not** create a replacement website, database clone, hosting migration, new deployment, or external storage move. Tradebilia is still under development and does not yet have independent hosting.
+Tradebilia remains in its current Manus project. Rich has approved a **clone-only continuation path** for a new session: clone the GitHub repository into a separate development workspace and continue source-code work there. Do **not** create a replacement website, database clone, hosting migration, new deployment, or external storage move. Tradebilia is still under development and does not yet have independent hosting.
 
-> If a new task does not show the existing Tradebilia project controls, do not silently create a new WebDev project. Stop and tell Rich that the existing project is unavailable in that task.
+> A cloned workspace is intentionally separate from the live Tradebilia project. It may be used for code and GitHub work, but it must never be described as reattached to the live deployment, database, storage, or domain.
 
 ## First Five Minutes in the New Session
 
-1. Confirm that the task is attached to the existing **Tradebilia Website** project and that the live site is still `https://tradebilia.manus.space`.
-2. Read this file, then read `todo.md` only through the **Session Transition Gate** section.
-3. Confirm the project directory is `/home/ubuntu/tradebilia-platform`. If the directory or existing project controls are absent, stop and ask Rich; do not make a duplicate project.
-4. Confirm GitHub is `tradebilia/collectors-barter`, branch `main`, and use the current working tree rather than cloning over it.
+1. Read this file first, then read `todo.md` only through the **Session Transition Gate** section.
+2. Clone GitHub into a new isolated folder: `gh repo clone tradebilia/collectors-barter /home/ubuntu/tradebilia-clone`.
+3. Enter the clone and install the locked dependencies: `cd /home/ubuntu/tradebilia-clone && pnpm install --frozen-lockfile`.
+4. Confirm GitHub is `tradebilia/collectors-barter`, branch `main`; do not overwrite or edit `/home/ubuntu/tradebilia-platform`.
 5. Do not print, copy, commit, or request raw API keys, database URLs, encryption keys, or `.project-config.json`.
 
 ## Current Status
@@ -24,6 +24,7 @@ Continue building **in the current Tradebilia Manus project**. Do **not** create
 | Current code checkpoint | `0e255ba5` — staging safety preparation; the next checkpoint should include this handoff document. |
 | GitHub baseline | `d4befc5` on `main` — fail-closed staging safety controls and documentation. |
 | Validation | 90/90 Vitest tests passed, TypeScript passed, and the production build passed. |
+| Clone-only development | **Approved.** Source changes may be made and committed in the isolated GitHub clone only. |
 | Separate-project migration | **Paused.** Do not resume unless Rich explicitly asks. |
 | Staging safeguard | `TRADEBILIA_STAGING_MODE` exists for a future copied project. Leave it unset in the current project. |
 
@@ -35,12 +36,12 @@ Fix the **Messages alert bug**: a sender receives an unread-message alert for th
 |---|---|---|
 | `server/db.ts` | `sendInquiryReply` | Mark the inquiry unread only for the original inquiry sender—the recipient of the reply—not for the person sending the reply. |
 
-Add a focused Vitest regression test, run the full suite, run TypeScript checks, visually verify Messages if practical, update `todo.md`, create a checkpoint, and push a credential-safe GitHub commit. Do not begin CGC/Test AI or change the production AI Analyzer unless Rich separately asks.
+Add a focused Vitest regression test, run applicable tests and TypeScript checks, update `todo.md`, and push a credential-safe GitHub commit. Report clearly that the code is in the isolated clone/GitHub and **has not changed the current live site**. Do not begin CGC/Test AI or change the production AI Analyzer unless Rich separately asks.
 
 ## Do Not Change Without Rich’s Specific Approval
 
-Do not alter the live database configuration, deploy/attach a new domain, create or enable scheduled jobs, change provider credentials, modify production AI Analyzer behavior, or move customer media/storage. The older migration documents remain historical preparation only; this document controls the current direction.
+Do not alter the live database configuration, deploy/attach a new domain, create or enable scheduled jobs, change provider credentials, modify production AI Analyzer behavior, or move customer media/storage. Do not create a new WebDev deployment from the clone. The older migration documents remain historical preparation only; this document controls the current direction.
 
 ## Exact Message Rich Can Use to Start the Next Session
 
-> Read `CURRENT_PROJECT_HANDOFF.md` in the Tradebilia project first. Continue in the existing Tradebilia project only; do not create a new WebDev project or migrate hosting/database. Then fix the Messages sender-alert bug described in that handoff document, with tests and a checkpoint.
+> Read `CURRENT_PROJECT_HANDOFF.md` first. Clone `tradebilia/collectors-barter` into `/home/ubuntu/tradebilia-clone` and work only in that separate folder. Do not create a new WebDev deployment or migrate hosting/database. Then fix the Messages sender-alert bug described in the handoff document, add tests, and push a credential-safe GitHub commit. State clearly that the current live site remains unchanged.
