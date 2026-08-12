@@ -11,6 +11,7 @@ describe("handoff documentation safeguards", () => {
   const assets = readProjectFile("IMAGE_ASSET_INVENTORY.md");
   const audit = readProjectFile("HANDOFF_ADVERSARIAL_AUDIT.md");
   const migration = readProjectFile("NEW_WEBDEV_MIGRATION_READINESS_REPORT.md");
+  const evidence = readProjectFile("MIGRATION_PREREQUISITE_EVIDENCE.md");
 
   it("preserves the external database warning and explicit approval gate", () => {
     expect(guide).toContain("CUSTOM_DATABASE_URL");
@@ -95,5 +96,13 @@ describe("handoff documentation safeguards", () => {
     expect(migration).toContain("three active Heartbeat jobs");
     expect(migration).toContain("tradebilia.manus.space");
     expect(migration).toContain("tradebilia-vauewtpb.manus.space");
+  });
+
+  it("records current read-only prerequisite evidence without clearing unresolved media gates", () => {
+    expect(evidence).toContain("CUSTOM_DATABASE_URL");
+    expect(evidence).toContain("25");
+    expect(evidence).toContain("4");
+    expect(evidence).toContain("source-unavailable");
+    expect(evidence).toContain("Do not create the replacement project");
   });
 });
