@@ -101,3 +101,13 @@
 - [x] Update only the identified broken Barry Sanders photo reference without deleting other listing photos.
 - [x] Verify the repaired Barry Sanders image renders in development and live listing views.
 - [x] Update only the inaccessible legacy photo record to the existing accessible Barry Sanders image, preserving both photo rows and all other listing data.
+- [x] Defer the broader third-party credential inventory and validation at the user’s direction after migration completion was confirmed.
+- [x] Defer the broader third-party credential inventory and validation at the user’s direction after migration completion was confirmed.
+- [x] Defer the broader third-party credential inventory and validation at the user’s direction after migration completion was confirmed.
+- [x] Document the deferred external credential-validation scope without exposing secret values.
+- [x] Inspect the Git repository state and define a credential-safe commit scope for completed Tradebilia work.
+- [x] Run validation checks and review staged changes for errors, secrets, generated files, and one-time utilities.
+- [x] Commit the approved clean project changes and push them to `tradebilia/collectors-barter`.
+- [x] Confirm the local branch and GitHub remote are synchronized after the push.
+- [x] Replace environment-bound OAuth and Sold-Comps test assumptions so the GitHub checkout validates without stored credentials or live external requests.
+- [x] Remove the trailing whitespace found by Git validation from the synchronized eBay integration component.

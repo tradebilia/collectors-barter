@@ -89,9 +89,9 @@ export function EbayConnection() {
 
       <div className="flex flex-col items-stretch gap-3 rounded-lg border border-slate-200 p-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
-          <img 
-            src="/manus-storage/Ebaylogo_12a10426.png" 
-            alt="eBay" 
+          <img
+            src="/manus-storage/Ebaylogo_12a10426.png"
+            alt="eBay"
             className="h-12 w-auto object-contain"
           />
           <div>
