@@ -69,7 +69,7 @@
 - [x] Validate unified sender-label resolution with focused tests and TypeScript.
 - [x] Identify the authoritative stored display-name source for existing inquiry sender ID 30002 through read-only inspection.
 - [x] Run a read-only application-database identity inspection for sender ID 30002.
-- [x] Force the deleted-inquiry client query to refetch server-resolved sender labels on mount and focus.
+- [ ] Force the deleted-inquiry client query to refetch server-resolved sender labels on mount and focus.
 - [x] Apply the profile-display-name-first sender resolver to inquiry reply and direct-message message payloads.
 - [ ] Verify active, deleted, and reply/thread message views render profile display names after cache refresh.
 - [x] Resolve recipient profile display names for sent active and deleted inquiry rows so sender-side labels never render as an undefined collector placeholder.
@@ -79,4 +79,6 @@
 - [ ] Verify the Integration tab renders all supplied provider logos without broken image links at desktop and mobile widths.
 - [ ] Verify the recipient-side Messages UI after an authorized deployment while signed in as the recipient account.
 - [ ] Verify the authenticated Profile Integrations tab at a mobile viewport width.
-- [ ] Publish the user-approved Messages and Profile Integrations update from this development workspace.
+- [ ] Recheck live deployment propagation for recipient counterpart fields on the older sent deleted-inquiry row.
+- [ ] Use a changing deleted-inquiry query input when the folder is opened so a browser-cached pre-deployment response cannot persist after a deployment.
+- [x] Publish the user-approved Messages and Profile Integrations update from this development workspace.

@@ -40,6 +40,7 @@ export default function Messages() {
   const { user, isAuthenticated } = useAuth();
   const utils = trpc.useUtils();
   const [folder, setFolder] = useState<(typeof folders)[number]["value"]>("all");
+  const [deletedQueryToken, setDeletedQueryToken] = useState(() => Date.now());
   const [activeThreadKey, setActiveThreadKey] = useState<string | null>(null);
   const [messageDraft, setMessageDraft] = useState("");
   const [directThreads, setDirectThreads] = useState<any[]>([]);
@@ -106,7 +107,7 @@ export default function Messages() {
   });
 
   const deletedInquiriesQuery = trpc.market.getDeleted.useQuery(
-    undefined,
+    { cacheBust: deletedQueryToken },
     {
       enabled: isAuthenticated,
       staleTime: 0,
@@ -118,6 +119,7 @@ export default function Messages() {
   const handleFolderChange = (nextFolder: (typeof folders)[number]["value"]) => {
     setFolder(nextFolder);
     if (nextFolder === "deleted") {
+      setDeletedQueryToken(Date.now());
       void utils.market.getDeleted.invalidate();
     }
   };

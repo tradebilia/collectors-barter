@@ -1439,6 +1439,7 @@ export const appRouter = router({
         return { success: true };
       }),
     getDeleted: protectedProcedure
+      .input(z.object({ cacheBust: z.number().int().nonnegative() }).optional())
       .query(async ({ ctx }) => {
         return getDeletedInquiries(ctx.user.id);
       }),
