@@ -8,9 +8,13 @@ After publication, the live Messages page was opened in the persisted recipient 
 
 The live recipient Deleted folder displayed **Administrator** for the admin-sent inquiry, confirming the reported sender-label issue is resolved. A second, older sent inquiry still rendered a generic counterpart placeholder; its live response did not yet include the newly added `recipientId` or `recipientName` fields, so deployment propagation must be rechecked before treating that unrelated row as corrected.
 
+The cache-busting follow-up deployment was then reloaded successfully in the same live recipient session before reopening the Deleted folder.
+
 ## Profile Integrations logos
 
 The supplied eBay, Facebook, LinkedIn, Whatnot, and PayPal files were copied to the durable web asset directory and published to project storage. The authenticated Profile Integrations page rendered all five provider images successfully. Browser checks confirmed each image was present, complete, and had a positive intrinsic width and height, with no broken image links.
+
+The live authenticated Profile Integrations route was also reloaded under a 375-pixel mobile viewport override. The page rendered the five connection cards and all supplied logo assets without a broken image state; the final responsive overflow measurement is recorded separately.
 
 ## Automated checks
 

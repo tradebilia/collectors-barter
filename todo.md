@@ -81,4 +81,5 @@
 - [ ] Verify the authenticated Profile Integrations tab at a mobile viewport width.
 - [ ] Recheck live deployment propagation for recipient counterpart fields on the older sent deleted-inquiry row.
 - [ ] Use a changing deleted-inquiry query input when the folder is opened so a browser-cached pre-deployment response cannot persist after a deployment.
+- [ ] Prevent connection labels and controls from overlapping the supplied provider logos on the mobile Profile Integrations cards.
 - [x] Publish the user-approved Messages and Profile Integrations update from this development workspace.

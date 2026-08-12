@@ -91,7 +91,7 @@ export function FacebookConnection() {
           <AlertDescription className="text-green-800">{successMsg}</AlertDescription>
         </Alert>
       )}
-      <div className="flex items-center justify-between rounded-lg border border-slate-200 p-4">
+      <div className="flex flex-col items-stretch gap-3 rounded-lg border border-slate-200 p-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
           <img
             src="/manus-storage/Facebooklogo_0c02c2d1.png"
