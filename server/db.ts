@@ -3164,6 +3164,7 @@ export async function getInquiriesByUser(userId: number, limit: number = 50, off
       id: itemInquiries.id,
       senderId: itemInquiries.senderId,
       senderName: users.displayName,
+      senderProfileDisplayName: userProfiles.displayName,
       senderAccountName: users.name,
       senderAvatarUrl: users.avatarUrl,
       recipientId: itemInquiries.recipientId,
@@ -3179,6 +3180,7 @@ export async function getInquiriesByUser(userId: number, limit: number = 50, off
     })
     .from(itemInquiries)
     .innerJoin(users, eq(itemInquiries.senderId, users.id))
+    .leftJoin(userProfiles, eq(userProfiles.userId, users.id))
     .where(
       and(
         or(
@@ -3203,8 +3205,8 @@ export async function getInquiriesByUser(userId: number, limit: number = 50, off
       return {
         ...inquiry,
         senderName: resolveDirectMessageDisplayName(
-          inquiry.senderName,
-          inquiry.senderAccountName,
+          inquiry.senderProfileDisplayName,
+          inquiry.senderName || inquiry.senderAccountName,
           inquiry.senderId,
         ),
         isRead: isInquiryReadForUser(inquiry, userId) ? 1 : 0,

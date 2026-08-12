@@ -9,4 +9,8 @@ describe("item inquiry sender display names", () => {
   it("does not let a generic collector placeholder mask an available account name", () => {
     expect(resolveDirectMessageDisplayName("Collector 30002", "Administrator", 30002)).toBe("Administrator");
   });
+
+  it("prioritizes a sender profile display name for communications", () => {
+    expect(resolveDirectMessageDisplayName("Administrator", "rtavani", 30002)).toBe("Administrator");
+  });
 });

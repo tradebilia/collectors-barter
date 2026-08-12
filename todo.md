@@ -60,4 +60,7 @@
 - [x] Complete the account-name fallback in the `getInquiriesByUser` query and mapped inquiry result.
 - [ ] Verify the recipient inbox displays Administrator for the admin-sent item inquiry.
 - [ ] Inspect administrator identity fields read-only to identify the authoritative display name for inquiry sender labels.
-- [x] Treat `Collector {id}` as a generic placeholder so it cannot override an available account name.
+- [ ] Treat `Collector {id}` as a generic placeholder so it cannot override an available account name.
+- [ ] Use display names as the authoritative sender label for all item-inquiry and direct-message communications.
+- [ ] Verify the recipient inbox displays the sender’s display name rather than an account name or generic fallback.
+- [x] Complete the profile display-name join and fallback in `getInquiriesByUser`.
