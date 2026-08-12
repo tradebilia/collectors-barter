@@ -90,9 +90,9 @@
 - [x] Add a unified Item Inquiries subfilter for All, Received, and Sent inquiries.
 - [x] Render To/From counterpart labels, Sent/Received badges, and participant-aware detail headings for item inquiries.
 - [x] Add regression coverage for item-inquiry direction and user-facing direction copy.
-- [ ] Verify the revised item-inquiry direction experience in development and live recipient/sender views.
+- [x] Verify the revised item-inquiry direction experience in development and live recipient/sender views.
 - [x] Remove the duplicate Sent status badge from outgoing item-inquiry cards while retaining a clear sent-direction label.
 - [x] Remove the duplicate Sent status badge from outgoing item-inquiry cards while retaining a clear sent-direction label.
-- [ ] Publish the approved item-inquiry direction update and verify both sender and recipient live views.
-- [ ] Verify the live sender view shows To, one Sent badge, and Inquiry to for an outgoing item inquiry.
-- [ ] Verify the live recipient view shows From, Received, and Inquiry from for the corresponding incoming item inquiry.
+- [x] Publish the approved item-inquiry direction update and verify both sender and recipient live views.
+- [x] Verify the live sender view shows To, one Sent badge, and Inquiry to for an outgoing item inquiry.
+- [x] Verify the live recipient view shows From, Received, and Inquiry from for the corresponding incoming item inquiry.

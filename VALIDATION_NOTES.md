@@ -28,6 +28,18 @@ The dedicated **Item Inquiries** view exposes **All**, **Received**, and **Sent*
 
 Opening that outgoing inquiry shows **Inquiry to Rtavani**, a **Sent** badge, and the sentence **You sent this item inquiry on …**. The same sender session’s **Received** filter returns no rows, correctly separating it from the outgoing inquiry.
 
+The first live recipient reload after the direction checkpoint still displayed the previous counterpart-only card, so production bundle propagation must complete before live direction verification can be recorded.
+
+A subsequent live recipient reload continued to display the predecessor card, so the served bundle is checked directly before further verification.
+
+After production propagation, the live recipient list card now shows **From: Administrator**, a **Received** direction badge, and its separate **Seen** status. This validates the received-side list semantics.
+
+Opening the live recipient inquiry shows **Inquiry from Administrator**, a **Received** badge, and **Received on …** timestamp copy. Its Item Inquiries folder also exposes the All, Received, and Sent filters with the incoming inquiry present in the combined view.
+
+In the same live account’s Deleted folder, the existing outgoing inquiry is explicitly labeled **To: Administrator** with one **Sent** badge, alongside a separate received example. This confirms that sent and received inquiry direction is distinguishable side by side.
+
+Opening the live outgoing inquiry shows **Inquiry to Administrator**, a single **Sent** badge, and **You sent this item inquiry on …** timestamp copy. The published implementation therefore verifies both recipient-side and sender-side wording in live browser views.
+
 ## Profile Integrations logos
 
 The supplied eBay, Facebook, LinkedIn, Whatnot, and PayPal files were copied to the durable web asset directory and published to project storage. The authenticated Profile Integrations page rendered all five provider images successfully. Browser checks confirmed each image was present, complete, and had a positive intrinsic width and height, with no broken image links.
