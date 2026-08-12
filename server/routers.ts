@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { verifyPayPalTransaction } from "./paypal";
+import { resolveDirectMessageDisplayName } from "./directMessageDisplayName";
 import { sendVerificationCode, checkVerificationCode, normalizePhone, maskPhone } from "./twilio";
 import { COOKIE_NAME } from "@shared/const";
 import { collectibleCategories, itemConditions, mysqlNow, toMysqlDateTime } from "./db";
@@ -1593,7 +1594,8 @@ export const appRouter = router({
             t.lastMessageAt,
             -- counterpart info
             CASE WHEN t.participantAId = ${ctx.user.id} THEN t.participantBId ELSE t.participantAId END as counterpartId,
-            up.displayName as counterpartName,
+            up.displayName as profileDisplayName,
+            u.name as accountName,
             up.avatarUrl as counterpartAvatarUrl,
             -- latest message
             (SELECT dm2.body FROM directMessages dm2 WHERE dm2.threadId = t.id ORDER BY dm2.createdAt DESC LIMIT 1) as latestBody,
@@ -1607,7 +1609,15 @@ export const appRouter = router({
           WHERE t.participantAId = ${ctx.user.id} OR t.participantBId = ${ctx.user.id}
           ORDER BY t.lastMessageAt DESC`
         );
-        return Array.isArray(rows) ? rows : [];
+        const threadRows = Array.isArray(rows) ? rows : [];
+        return threadRows.map((row: any) => ({
+          ...row,
+          counterpartName: resolveDirectMessageDisplayName(
+            row.profileDisplayName,
+            row.accountName,
+            Number(row.counterpartId),
+          ),
+        }));
       }),
 
     getDirectMessages: protectedProcedure

@@ -51,3 +51,7 @@
 - [x] Run the focused unread-alert regression test and verify the flashing Messages alert clears after the message is read.
 - [x] Place the unread-alert regression test in the configured `server/**/*.test.ts` discovery path.
 - [x] Apply participant-specific inquiry read state in `server/db.ts` so the inquiry list no longer relies on the legacy shared flag.
+- [x] Apply the direct-message thread query fallback from profile display name to account name before generic collector text.
+- [x] Run the sender-name regression test and TypeScript validation.
+- [ ] Verify the recipient inbox displays Administrator for the admin-sent direct message.
+- [ ] Verify the recipient inbox shows Administrator rather than a generic collector label.
