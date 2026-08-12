@@ -28,10 +28,14 @@
 - [x] Correct the Traders Showcase hero background so the restored title artwork has sufficient contrast.
 - [x] Apply the supplied transparent Tradebilia logo as the homepage hero title graphic.
 - [x] Verify the homepage hero title graphic is responsive and readable on desktop and mobile.
-- [ ] Catalog missing application secrets and preserve `TRADEBILIA_STAGING_MODE=1` during restoration.
-- [ ] Request missing secret values only through the project’s secure settings form.
-- [ ] Validate secret configuration presence without revealing values or calling external services.
+- [x] Catalog missing application secrets and preserve `TRADEBILIA_STAGING_MODE=1` during restoration.
+- [x] Securely store the user-supplied credential values in project settings without printing or committing them.
+- [x] Validate configuration presence locally and verify Resend through an explicitly read-only authentication probe without sending email or other writes.
+- [x] Store the supplied API and OAuth credentials in secure project settings without writing them to source control.
+- [x] Trace and remove any static top-bar logo overrides so all shared navigation uses `AnimatedLogoSmall70.tsx`.
+- [x] Verify the shared animated navigation mark on the live homepage while preserving the static hero title.
 - [x] Restore the animated category-cycling Tradebilia top-bar mark while keeping the static homepage hero title.
 - [x] Verify the top-bar logo cycles through category words and remains legible at desktop and mobile widths.
 - [x] Correct the mobile top-bar overlap caused by the restored animated logo.
 - [x] Prevent the mobile search action from colliding with the sign-in control.
+- [x] Determine that no controlled Resend email test is needed because the credential is a valid send-only key and the read-only endpoint correctly rejects it.
