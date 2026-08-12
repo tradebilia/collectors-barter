@@ -98,6 +98,7 @@ import { sdk } from "./_core/sdk";
 import { tradeFlowRouter } from "./tradeFlowRouter";
 import { testAIRouter } from "./testAIRouter";
 import { customAuth } from "./_core/customAuth";
+import { persistDirectMessage } from "./directMessagePersistence";
 import { users, userProfiles, listings, deletedAccounts, tradeProposals, tradeMessages, tradeReviews, watchlistEntries, draftListings, passwordResetTokens, referralRequests, userFollows, directMessageThreads, directMessages, tradePayments, tradeActivityLog, emailTemplates } from "../drizzle/schema";
 import { eq, sql, desc, or, inArray, and } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
@@ -1523,35 +1524,11 @@ export const appRouter = router({
         if (ctx.user.id === input.recipientId) {
           throw new TRPCError({ code: 'BAD_REQUEST', message: 'You cannot message yourself.' });
         }
-        // Find or create thread (participants stored in sorted order, unique per item)
-        const pA = Math.min(ctx.user.id, input.recipientId);
-        const pB = Math.max(ctx.user.id, input.recipientId);
-        const itemId = input.itemId || null;
-        const existing = await db
-          .select({ id: directMessageThreads.id })
-          .from(directMessageThreads)
-          .where(and(
-            eq(directMessageThreads.participantAId, pA),
-            eq(directMessageThreads.participantBId, pB),
-            itemId ? eq(directMessageThreads.itemId, itemId) : sql`${directMessageThreads.itemId} IS NULL`
-          ))
-          .limit(1);
-        let threadId: number;
-        let isNewThread = false;
-        if (existing.length > 0) {
-          threadId = existing[0].id;
-          await db.execute(sql`UPDATE directMessageThreads SET lastMessageAt = NOW() WHERE id = ${threadId}`);
-        } else {
-          isNewThread = true;
-          const result = await db.insert(directMessageThreads).values({ participantAId: pA, participantBId: pB, itemId });
-          threadId = (result as any)[0]?.insertId ?? (result as any).insertId;
-        }
-        await db.insert(directMessages).values({
-          threadId,
+        const { threadId } = await persistDirectMessage(db as any, {
           senderId: ctx.user.id,
+          recipientId: input.recipientId,
           subject: input.subject,
           body: input.body,
-          isReadByRecipient: 0,
         });
 
         // Send email notification to recipient if they have messages.email enabled (fire-and-forget)

@@ -122,3 +122,9 @@
 - [x] Configure the Facebook and LinkedIn live callback URI variables needed for OAuth completion.
 - [x] Update obsolete integration test expectations that still require staging mode to remain enabled.
 - [x] Remove the obsolete handoff-document test dependency on a file absent from the managed project root.
+- [x] Inspect the direct-message thread lookup that fails when admin sends the first message to rtavani.
+- [x] Correct the nullable `itemId` thread lookup so first-time direct-message conversations can be created.
+- [x] Add regression coverage for creating a first direct message without an item reference.
+- [ ] Verify the repaired admin-to-rtavani direct-message flow in development and live views.
+- [x] Add a router-level legacy-schema regression test proving a first direct message creates one thread and one message without referencing `itemId`.
+- [x] Add a router-level legacy-schema regression test proving a second direct message reuses the same participant thread.
