@@ -14,3 +14,6 @@
 - [x] Report database-write status, validation counts, test results, and the pushed commit.
 - [x] Replace the isolated WebDev scaffold with the committed Tradebilia repository application while excluding credentials, Git metadata, dependencies, migrations, and seed scripts.
 - [x] Restart and verify that the temporary development homepage renders the real Tradebilia application without publishing or attaching a production domain.
+- [x] Map the supplied hero background files to the homepage and category hero sections with broken links.
+- [x] Upload the supplied hero assets to durable project storage and replace broken image/title references.
+- [x] Verify the corrected homepage and affected category heroes in the deployed development site.
