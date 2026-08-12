@@ -29,7 +29,7 @@ import { Link } from "wouter";
 import { TopBar } from "@/components/TopBar";
 import { CategoryBar } from "@/components/CategoryBar";
 
-const TRADEBILIA_LOGO_URL = "/manus-storage/AccountSettingsTitle_d9a1337d.webp";
+const TRADEBILIA_LOGO_URL = "/manus-storage/tradebilia_final_transparent_8a1981e6.svg";
 
 const categoryOptions = [
   { value: "comics", label: "Comics" },
@@ -45,8 +45,8 @@ const categoryOptions = [
 ] as const;
 
 const accountSources = [
-  { value: "paypal", label: "PayPal", logo: "/manus-storage/Paypal_ace464a4.png" },
-  { value: "whatnot", label: "Whatnot", logo: "/manus-storage/WhatNot_f1e0a2e5.png" },
+  { value: "paypal", label: "PayPal", logo: "/manus-storage/Paypal_25ebc114.png" },
+  { value: "whatnot", label: "Whatnot", logo: "/manus-storage/WhatNot_ab669ac9.png" },
 ] as const;
 
 type AccountSource = typeof accountSources[number]["value"];
@@ -637,7 +637,7 @@ export default function AccountSettings() {
       {/* Hero Section */}
       <section className="relative w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden bg-[#00143A] text-white">
         <div className="absolute inset-0" style={{
-          backgroundImage: 'url(/manus-storage/Background_48b923f1.jpg)',
+          backgroundImage: 'url(/manus-storage/Background_23084d14.jpg)',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat'
@@ -645,7 +645,7 @@ export default function AccountSettings() {
         <div className="container relative flex h-64 items-center justify-center py-0 sm:h-72 sm:py-0 lg:h-80 lg:py-0">
           <div className="flex w-full max-w-6xl items-center justify-center -ml-32">
             <img
-              src="/manus-storage/AccountSettingsTitle_d9a1337d.webp"
+              src="/manus-storage/AccountSettingsTitle_d074dc8b.webp"
               alt="Account Settings"
               className="h-auto w-full"
             />
@@ -1085,7 +1085,7 @@ export default function AccountSettings() {
                     {accountSources.map((source) => (
                       <div
                         key={source.value}
-                        className="flex items-center justify-between rounded-lg border border-slate-200 p-4"
+                        className="flex flex-col items-stretch gap-3 rounded-lg border border-slate-200 p-4 sm:flex-row sm:items-center sm:justify-between"
                       >
                         <div className="flex items-center gap-3">
                           <img 
@@ -1117,11 +1117,11 @@ export default function AccountSettings() {
               {/* Pending Connections Quick Links */}
               {(() => {
                 const allPlatforms = [
-                  { key: 'facebook', label: 'Facebook', logo: '/manus-storage/Facebooklogo_19970ec8.png', isConnected: !!user?.facebookId },
-                  { key: 'paypal', label: 'PayPal', logo: '/manus-storage/Paypal_ace464a4.png', isConnected: !!user?.paypalEmail },
-                  { key: 'linkedin', label: 'LinkedIn', logo: '/manus-storage/LinkedIn_dc442074.webp', isConnected: !!user?.linkedinId },
-                  { key: 'ebay', label: 'eBay', logo: '/manus-storage/Ebaylogo_f6331705.png', isConnected: !!user?.ebayUsername },
-                  { key: 'whatnot', label: 'WhatNot', logo: '/manus-storage/WhatNot_f1e0a2e5.png', isConnected: false },
+                  { key: 'facebook', label: 'Facebook', logo: '/manus-storage/Facebooklogo_0c02c2d1.png', isConnected: !!user?.facebookId },
+                  { key: 'paypal', label: 'PayPal', logo: '/manus-storage/Paypal_25ebc114.png', isConnected: !!user?.paypalEmail },
+                  { key: 'linkedin', label: 'LinkedIn', logo: '/manus-storage/LinkedIn_df1e2c1e.webp', isConnected: !!user?.linkedinId },
+                  { key: 'ebay', label: 'eBay', logo: '/manus-storage/Ebaylogo_12a10426.png', isConnected: !!user?.ebayUsername },
+                  { key: 'whatnot', label: 'WhatNot', logo: '/manus-storage/WhatNot_ab669ac9.png', isConnected: false },
                 ];
                 const pendingPlatforms = allPlatforms.filter(p => !p.isConnected);
                 
@@ -1150,7 +1150,7 @@ export default function AccountSettings() {
               <Card className="rounded-[1.5rem] border-slate-200 bg-white shadow-sm">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <img src="/manus-storage/Paypal_ace464a4.png" alt="PayPal" className="h-6 w-auto object-contain" />
+                    <img src="/manus-storage/Paypal_25ebc114.png" alt="PayPal" className="h-6 w-auto object-contain" />
                     PayPal Email
                   </CardTitle>
                   <CardDescription>

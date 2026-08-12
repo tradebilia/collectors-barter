@@ -5,6 +5,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
 import { Button } from "@/components/ui/button";
 import { tradebiliaCategories } from "@/lib/tradebilia";
+import AnimatedLogoSmall70 from "@/components/AnimatedLogoSmall70";
 
 interface CategoryTopBarProps {
   logoUrl?: string;
@@ -13,7 +14,6 @@ interface CategoryTopBarProps {
 }
 
 export function CategoryTopBar({
-  logoUrl = "/manus-storage/tradebilia_final_transparent_d37f9c4f.svg",
   searchPlaceholder = "Search...",
   onSearchChange,
 }: CategoryTopBarProps) {
@@ -24,11 +24,11 @@ export function CategoryTopBar({
   return (
     <div className="border-b border-white/10 bg-black">
       {/* Top row: Logo, Search, Icons */}
-      <div className="flex items-center justify-between gap-4 pl-2 pr-4 py-3">
+      <div className="flex min-h-14 items-center justify-between gap-4 pl-2 pr-4 py-1">
         {/* Logo on left */}
-        <div className="flex-shrink-0">
-          <Link href="/" className="flex items-center hover:opacity-80 transition">
-            <img src={logoUrl} alt="Tradebilia" className="h-14 w-auto object-contain" />
+        <div className="h-12 w-[260px] flex-shrink-0">
+          <Link href="/" className="flex h-full items-center hover:opacity-80 transition">
+            <AnimatedLogoSmall70 />
           </Link>
         </div>
 

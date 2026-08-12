@@ -1,4 +1,4 @@
-export const TRADEBILIA_LOGO_URL = "/manus-storage/tradebilia_final_transparent_d37f9c4f.svg";
+export const TRADEBILIA_LOGO_URL = "/manus-storage/tradebilia_final_transparent_8a1981e6.svg";
 
 export const tradebiliaCategories = [
   { value: "comics", label: "Comics" },

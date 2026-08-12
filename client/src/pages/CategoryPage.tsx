@@ -26,7 +26,7 @@ import { TopRightIcons } from "@/components/TopRightIcons";
 import { TopBar } from "@/components/TopBar";
 import { CategoryBar } from "@/components/CategoryBar";
 import { OnlineIndicator } from "@/components/OnlineIndicator";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { toast } from "sonner";
 import { Link, useRoute } from "wouter";
 import { getGradingCompanyNamesForCategory, getValidGradesForCompany, getGradingCompanyByName } from "@shared/gradingCompanyConfig";
@@ -127,6 +127,45 @@ const sortOptions = [
   { value: "newest", label: "Newest" },
   { value: "title", label: "Title" },
 ];
+
+const categoryHeroBackgroundUrls: Record<TradebiliaCategorySlug, string> = {
+  autographs: "/manus-storage/AutoBackground_a5b49e15.png",
+  coins: "/manus-storage/CoinsBackground_cea1e610.png",
+  comics: "/manus-storage/ComicsBackground_80eb606d.webp",
+  disney_pins: "/manus-storage/DisneyPinsBackground_cfc008bc.webp",
+  movies: "/manus-storage/MoviesBackground_8ecc4916.png",
+  pokemon: "/manus-storage/PokemonBackground_bce9fc91.webp",
+  sports_cards: "/manus-storage/SportsCardBackground_06cd6816.webp",
+  stamps: "/manus-storage/StampsBackground_580a838e.png",
+  video_games: "/manus-storage/VideoGamesBackground_abb6b532.webp",
+  vintage_toys: "/manus-storage/VintageToysBackground_46983e1a.png",
+};
+
+const categoryHeroTitleUrls: Record<TradebiliaCategorySlug, string> = {
+  autographs: "/manus-storage/AutographsTitle_32ad8e27.png",
+  coins: "/manus-storage/CoinsTitle_04674a85.webp",
+  comics: "/manus-storage/ComicsTitle_74805d30.png",
+  disney_pins: "/manus-storage/DisneyPinsTitle_fcaa6baf.png",
+  movies: "/manus-storage/MoviesTitle_86dfcc85.png",
+  pokemon: "/manus-storage/PokemonTitle_7345573b.png",
+  sports_cards: "/manus-storage/SportsCardsTitle_5d9af601.png",
+  stamps: "/manus-storage/StampsTitle_e766d861.webp",
+  video_games: "/manus-storage/VideoGamesTitle_7dc7fe49.webp",
+  vintage_toys: "/manus-storage/VintageToysTitle_d0af50b4.png",
+};
+
+const categoryHeroTitleStyles: Record<TradebiliaCategorySlug, CSSProperties> = {
+  autographs: { maxHeight: "300px", width: "auto", objectFit: "contain", marginBottom: "30px", transform: "translateY(-100px)", marginLeft: "-25px" },
+  coins: { maxHeight: "225px", width: "auto", objectFit: "contain", marginBottom: "30px", transform: "translateY(-75px)", marginLeft: "-15px" },
+  comics: { maxHeight: "300px", width: "auto", objectFit: "contain", marginBottom: "-40px" },
+  disney_pins: { maxHeight: "475px", width: "auto", objectFit: "contain", marginBottom: "30px", marginTop: "130px" },
+  movies: { maxHeight: "250px", width: "auto", objectFit: "contain", marginBottom: "30px", transform: "translateY(-95px)" },
+  pokemon: { maxHeight: "380px", maxWidth: "90%", width: "auto", objectFit: "contain", marginBottom: "30px", transform: "translateY(15px)" },
+  sports_cards: { maxHeight: "300px", width: "auto", objectFit: "contain", marginBottom: "30px", transform: "translateY(-100px)", marginLeft: "-15px" },
+  stamps: { maxHeight: "200px", width: "auto", objectFit: "contain", marginBottom: "30px", transform: "translateY(10px)" },
+  video_games: { maxHeight: "550px", width: "auto", objectFit: "contain", marginBottom: "30px", transform: "translateY(-200px)" },
+  vintage_toys: { maxHeight: "550px", width: "auto", objectFit: "contain", marginBottom: "30px", transform: "translateY(-200px)" },
+};
 
 // Helper function to get category-specific font
 const getCategoryFont = (slug: TradebiliaCategorySlug): string => {
@@ -592,7 +631,7 @@ export default function CategoryPage() {
     ...card,
     imageUrl: resolveTradebiliaListingImage({ title: card.title, category: slug }),
   }));
-  const SPORTS_CARDS_LONG_LOGO_URL = "/manus-storage/tradebilia_final_transparent_d37f9c4f.svg";
+  const SPORTS_CARDS_LONG_LOGO_URL = "/manus-storage/tradebilia_final_transparent_8a1981e6.svg";
 
   return (
     <div className={`min-h-screen ${theme.pageClassName}`}>
@@ -602,11 +641,11 @@ export default function CategoryPage() {
       />
       <header className={`relative overflow-hidden border-b ${theme.borderClassName} ${theme.heroClassName}`} style={{ minHeight: '400px' }}>
         <div className={`relative overflow-hidden ${theme.textureClassName}`} style={{
-          backgroundImage: isSportsCardsPage ? 'url(/manus-storage/SportsCardBackground_e2e711d1.webp)' : slug === 'video_games' ? 'url(/manus-storage/VideoGamesBackground_f9315289.webp)' : slug === 'coins' ? 'url(/manus-storage/CoinsBackground_8f7db775.png)' : slug === 'stamps' ? 'url(/manus-storage/StampsBackground_1bb5af50.png)' : slug === 'vintage_toys' ? 'url(/manus-storage/VintageToysBackground_a95e7b30.png)' : slug === 'autographs' ? 'url(/manus-storage/AutoBackground_77c0fc6a.png)' : slug === 'movies' ? 'url(/manus-storage/MoviesBackground_603eb7a8.png)' : slug === 'comics' ? 'url(/manus-storage/ComicsBackground_798a970b.webp)' : slug === 'pokemon' ? 'url(/manus-storage/PokemonBackground_d2f9e795.webp)' : slug === 'disney_pins' ? 'url(/manus-storage/DisneyPinsBackground_68498869.webp)' : undefined,
+          backgroundImage: `url(${categoryHeroBackgroundUrls[slug]})`,
           backgroundSize: 'cover',
           backgroundPosition: slug === 'movies' ? 'center top' : 'center',
           backgroundAttachment: 'scroll',
-          backgroundRepeat: (slug === 'movies' || slug === 'comics' || slug === 'pokemon' || slug === 'video_games' || slug === 'disney_pins') ? 'no-repeat' : 'repeat',
+          backgroundRepeat: 'no-repeat',
           height: '400px',
           filter: (slug === 'video_games' || slug === 'coins' || slug === 'stamps' || slug === 'vintage_toys' || slug === 'autographs' || slug === 'movies' || slug === 'comics' || slug === 'pokemon' || slug === 'disney_pins') ? 'contrast(1.2) saturate(1.1)' : 'none'
         }}>
@@ -630,27 +669,11 @@ export default function CategoryPage() {
                   position: "relative",
                   zIndex: 50
                 }}>
-                  {slug === "disney_pins" ? (
-                    <img src="/manus-storage/DisneyPinsTitle_1400d285.png" alt="Disney Pins" style={{ maxHeight: "475px", width: "auto", objectFit: "contain", marginBottom: "30px", marginTop: "130px" }} />
-                  ) : slug === "pokemon" ? (
-                    <img src="/manus-storage/PokemonTitle_a67678b5.png" alt="Pokemon" style={{ maxHeight: "380px", maxWidth: "90%", width: "auto", objectFit: "contain", marginBottom: "30px", transform: "translateY(15px)" }} />
-                  ) : slug === "comics" ? (
-                    <img src="/manus-storage/ComicsTitle_750f38ea.png" alt="Comics" style={{ maxHeight: "300px", width: "auto", objectFit: "contain", marginBottom: "-40px" }} />
-                  ) : slug === "sports_cards" ? (
-                    <img src="/manus-storage/SportsCardsTitle_f996b932.png" alt="Sports Cards" style={{ maxHeight: "300px", width: "auto", objectFit: "contain", marginBottom: "30px", transform: "translateY(-100px)", marginLeft: "-15px" }} />
-                  ) : slug === "vintage_toys" ? (
-                    <img src="/manus-storage/VintageToysTitle_d0118110.png" alt="Vintage Toys" style={{ maxHeight: "550px", width: "auto", objectFit: "contain", marginBottom: "30px", transform: "translateY(-200px)" }} />
-                  ) : slug === "coins" ? (
-                    <img src="/manus-storage/CoinsTitle_54dae263.webp" alt="Coins" style={{ maxHeight: "225px", width: "auto", objectFit: "contain", marginBottom: "30px", transform: "translateY(-75px)", marginLeft: "-15px" }} />
-                  ) : slug === "stamps" ? (
-                    <img src="/manus-storage/StampsTitle_94a26b4f.webp" alt="Stamps" style={{ maxHeight: "200px", width: "auto", objectFit: "contain", marginBottom: "30px", transform: "translateY(10px)" }} />
-                  ) : slug === "video_games" ? (
-                    <img src="/manus-storage/VideoGamesTitle_220b9231.webp" alt="Video Games" style={{ maxHeight: "550px", width: "auto", objectFit: "contain", marginBottom: "30px", transform: "translateY(-200px)" }} />
-                  ) : slug === "movies" ? (
-                    <img src="/manus-storage/MoviesTitle_d6a245f8.png" alt="Movies" style={{ maxHeight: "250px", width: "auto", objectFit: "contain", marginBottom: "30px", transform: "translateY(-95px)" }} />
-                  ) : slug === "autographs" ? (
-                    <img src="/manus-storage/AutographsTitle_d4de6849.png" alt="Autographs" style={{ maxHeight: "300px", width: "auto", objectFit: "contain", marginBottom: "30px", transform: "translateY(-100px)", marginLeft: "-25px" }} />
-                  ) : categoryLabel.toUpperCase()}
+                  <img
+                    src={categoryHeroTitleUrls[slug]}
+                    alt={categoryLabel}
+                    style={categoryHeroTitleStyles[slug]}
+                  />
                 </h1>
                 <div className="mt-8 h-px bg-white/50 mx-auto" style={{ maxWidth: "100%", width: "100%", marginTop: "64px" }}></div>
                 <p className="mt-8 text-3xl sm:text-4xl lg:text-5xl font-black uppercase tracking-[0.1em]" style={{

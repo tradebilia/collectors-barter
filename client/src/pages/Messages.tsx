@@ -6,7 +6,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { getLoginUrl } from "@/const";
+import { getInquiryDirection, getInquiryDirectionPresentation } from "@/lib/inquiryDirection";
 import { loadPresenceMap, subscribeToPresence, updatePresence } from "@/lib/memberMessaging";
+import { shouldRefreshUnreadAlertAfterOpeningDirectThread } from "@/lib/unreadAlertRefresh";
 import { trpc } from "@/lib/trpc";
 import { TRADEBILIA_LOGO_URL, tradebiliaCategories } from "@/lib/tradebilia";
 import { ArrowRightLeft, Loader2, MailOpen, MessageSquareText, Send, ShieldCheck, UsersRound } from "lucide-react";
@@ -39,6 +41,8 @@ export default function Messages() {
   const { user, isAuthenticated } = useAuth();
   const utils = trpc.useUtils();
   const [folder, setFolder] = useState<(typeof folders)[number]["value"]>("all");
+  const [inquiryDirectionFilter, setInquiryDirectionFilter] = useState<"all" | "received" | "sent">("all");
+  const [deletedQueryToken, setDeletedQueryToken] = useState(() => Date.now());
   const [activeThreadKey, setActiveThreadKey] = useState<string | null>(null);
   const [messageDraft, setMessageDraft] = useState("");
   const [directThreads, setDirectThreads] = useState<any[]>([]);
@@ -59,6 +63,15 @@ export default function Messages() {
     { threadId: activeDbThreadId ?? 0 },
     { enabled: isAuthenticated && !!activeDbThreadId, refetchInterval: 10000 }
   );
+
+  useEffect(() => {
+    if (!shouldRefreshUnreadAlertAfterOpeningDirectThread(activeDbThreadId, Boolean(dbMessagesQuery.data))) return;
+    void Promise.all([
+      utils.auth.unreadCounts.invalidate(),
+      utils.market.getDirectMessageThreads.invalidate(),
+    ]);
+  }, [activeDbThreadId, dbMessagesQuery.data, utils]);
+
   const replyDirectMutation = trpc.market.replyDirectMessage.useMutation({
     onSuccess: async () => {
       setMessageDraft("");
@@ -90,14 +103,31 @@ export default function Messages() {
       setMessageDraft("");
       await utils.market.getReplies.invalidate();
       await utils.market.getInquiries.invalidate();
+      await utils.auth.unreadCounts.invalidate();
     },
     onError: error => toast.error(error.message),
   });
 
   const deletedInquiriesQuery = trpc.market.getDeleted.useQuery(
-    undefined,
-    { enabled: isAuthenticated }
+    { cacheBust: deletedQueryToken },
+    {
+      enabled: isAuthenticated,
+      staleTime: 0,
+      refetchOnMount: "always",
+      refetchOnWindowFocus: "always",
+    }
   );
+
+  const handleFolderChange = (nextFolder: (typeof folders)[number]["value"]) => {
+    setFolder(nextFolder);
+    if (nextFolder === "inquiries") {
+      setInquiryDirectionFilter("all");
+    }
+    if (nextFolder === "deleted") {
+      setDeletedQueryToken(Date.now());
+      void utils.market.getDeleted.invalidate();
+    }
+  };
 
   const deleteInquiryMutation = trpc.market.deleteInquiry.useMutation({
     onSuccess: async () => {
@@ -195,11 +225,15 @@ export default function Messages() {
 
   const filteredInquiries = useMemo(() => {
     if (folder === "deleted") return deletedInquiriesQuery.data ?? [];
-    if (folder === "inquiries") return inquiries;
+    if (folder === "inquiries") {
+      if (inquiryDirectionFilter === "sent") return inquiries.filter(inquiry => inquiry.senderId === user?.id);
+      if (inquiryDirectionFilter === "received") return inquiries.filter(inquiry => inquiry.senderId !== user?.id);
+      return inquiries;
+    }
     if (folder === "unread") return inquiries.filter(i => !i.isRead);
     if (folder === "all") return inquiries.filter(i => !i.deletedAt);
     return [];
-  }, [inquiries, folder, deletedInquiriesQuery.data]);
+  }, [inquiries, folder, deletedInquiriesQuery.data, inquiryDirectionFilter, user?.id]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -238,6 +272,17 @@ export default function Messages() {
 
   const activeThread = filteredThreads.find(thread => thread.key === activeThreadKey) ?? null;
   const activeInquiry = activeThreadKey?.startsWith('inquiry-') ? filteredInquiries.find(i => `inquiry-${i.id}` === activeThreadKey) : null;
+  const activeInquiryCounterpartName = activeInquiry
+    ? activeInquiry.senderId === user?.id
+      ? activeInquiry.recipientName || `Collector ${activeInquiry.recipientId}`
+      : activeInquiry.senderName || `Collector ${activeInquiry.senderId}`
+    : null;
+  const activeInquiryDirection = activeInquiry
+    ? getInquiryDirection(activeInquiry.senderId, user?.id)
+    : null;
+  const activeInquiryPresentation = activeInquiry && activeInquiryCounterpartName && activeInquiryDirection
+    ? getInquiryDirectionPresentation(activeInquiryDirection, activeInquiryCounterpartName)
+    : null;
   const activePresence = activeThread ? presenceMap[activeThread.counterpartId] : null;
   const activeOnline = activePresence ? Date.now() - activePresence.updatedAt < 15000 : false;
 
@@ -249,7 +294,10 @@ export default function Messages() {
 
   const markInquiryAsReadMutation = trpc.market.markInquiryAsRead.useMutation({
     onSuccess: async () => {
-      await utils.market.getInquiries.invalidate();
+      await Promise.all([
+        utils.market.getInquiries.invalidate(),
+        utils.auth.unreadCounts.invalidate(),
+      ]);
     },
     onError: error => toast.error(error.message),
   });
@@ -293,13 +341,13 @@ export default function Messages() {
     <div className="min-h-screen bg-[linear-gradient(180deg,#0a0d22_0%,#121c48_26%,#ede3d3_26%,#ede3d3_100%)] text-slate-950">
       <TopBar />
       <section className="relative z-0 w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden text-white" style={{
-        backgroundImage: 'url(/manus-storage/Background_48b923f1.jpg)',
+        backgroundImage: 'url(/manus-storage/Background_23084d14.jpg)',
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat'
       }}>
         <div className="container relative flex flex-col items-center justify-center py-0 h-64 sm:h-72 lg:h-80">
-          <img src="/manus-storage/Messages_36f2edc7.svg" alt="Messages" className="h-auto w-full max-w-2xl mx-auto" />
+          <img src="/manus-storage/Messages_297e64f2.svg" alt="Messages" className="h-auto w-full max-w-2xl mx-auto" />
           <p className="mt-4 text-3xl sm:text-5xl lg:text-6xl font-bold text-center opacity-90">Direct Lines, Trusted Conversations</p>
           </div>
       </section>
@@ -326,7 +374,7 @@ export default function Messages() {
                   <button
                     key={item.value}
                     type="button"
-                    onClick={() => setFolder(item.value)}
+                    onClick={() => handleFolderChange(item.value)}
                     className={`flex w-full items-center justify-between rounded-[1.25rem] border px-4 py-3 text-left transition ${folder === item.value ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100"}`}
                   >
                     <span className="font-medium">{item.label}</span>
@@ -343,6 +391,24 @@ export default function Messages() {
           <section className="rounded-[2rem] border border-slate-300/70 bg-white/82 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-sm min-w-0">
             <div className="border-b border-slate-200 px-5 py-4">
               <h2 className="text-2xl font-semibold text-slate-900">Message List</h2>
+              {folder === "inquiries" && (
+                <div className="mt-4 flex flex-wrap gap-2" aria-label="Item inquiry direction filters">
+                  {([
+                    { value: "all", label: "All" },
+                    { value: "received", label: "Received" },
+                    { value: "sent", label: "Sent" },
+                  ] as const).map(filter => (
+                    <button
+                      key={filter.value}
+                      type="button"
+                      onClick={() => setInquiryDirectionFilter(filter.value)}
+                      className={`rounded-full border px-3 py-1.5 text-sm font-medium transition ${inquiryDirectionFilter === filter.value ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100"}`}
+                    >
+                      {filter.label}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
             <ScrollArea className="h-[70vh] px-3 py-3">
               {dashboardQuery.isLoading || inquiriesQuery.isLoading ? (
@@ -351,37 +417,45 @@ export default function Messages() {
                 </div>
               ) : (filteredThreads.length || filteredInquiries.length) ? (
                 <div className="space-y-3">
-                  {filteredInquiries.map((inquiry: any) => (
-                    <button
-                      key={`inquiry-${inquiry.id}`}
-                      type="button"
-                      onClick={() => setActiveThreadKey(`inquiry-${inquiry.id}`)}
-                      className={`w-full rounded-[1.5rem] border p-4 text-left transition ${activeThreadKey === `inquiry-${inquiry.id}` ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-slate-50 text-slate-900 hover:bg-slate-100"}`}
-                    >
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-lg font-semibold">{inquiry.senderId === user?.id ? (inquiry.recipientName || `Collector ${inquiry.recipientId}`) : (inquiry.senderName || `Collector ${inquiry.senderId}`)}</p>
-                          <p className={`mt-1 text-xs uppercase tracking-[0.18em] ${activeThreadKey === `inquiry-${inquiry.id}` ? "text-white/65" : "text-slate-500"}`}>
-                            Item Inquiry • Ref <Link href={`/listings/${inquiry.listingId}`} target="_blank" rel="noopener noreferrer" className="underline hover:no-underline">#{inquiry.listingId}</Link>
-                          </p>
+                  {filteredInquiries.map((inquiry: any) => {
+                    const inquiryDirection = getInquiryDirection(inquiry.senderId, user?.id);
+                    const inquiryCounterpartName = inquiryDirection === "sent"
+                      ? inquiry.recipientName || `Collector ${inquiry.recipientId}`
+                      : inquiry.senderName || `Collector ${inquiry.senderId}`;
+                    const inquiryPresentation = getInquiryDirectionPresentation(inquiryDirection, inquiryCounterpartName);
+
+                    return (
+                      <button
+                        key={`inquiry-${inquiry.id}`}
+                        type="button"
+                        onClick={() => setActiveThreadKey(`inquiry-${inquiry.id}`)}
+                        className={`w-full rounded-[1.5rem] border p-4 text-left transition ${activeThreadKey === `inquiry-${inquiry.id}` ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-slate-50 text-slate-900 hover:bg-slate-100"}`}
+                      >
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-lg font-semibold">{inquiryPresentation.listLabel}</p>
+                            <p className={`mt-1 text-xs uppercase tracking-[0.18em] ${activeThreadKey === `inquiry-${inquiry.id}` ? "text-white/65" : "text-slate-500"}`}>
+                              Item Inquiry • Ref <Link href={`/listings/${inquiry.listingId}`} target="_blank" rel="noopener noreferrer" className="underline hover:no-underline">#{inquiry.listingId}</Link>
+                            </p>
+                          </div>
+                          <div className="flex flex-wrap justify-end gap-2">
+                            <Badge variant={activeThreadKey === `inquiry-${inquiry.id}` ? "secondary" : "outline"} className={`rounded-full ${inquiryDirection === "sent" ? "bg-blue-100 text-blue-800 hover:bg-blue-200" : "bg-emerald-100 text-emerald-800 hover:bg-emerald-200"}`}>
+                              {inquiryPresentation.badge}
+                            </Badge>
+                            {inquiryDirection === "received" && (
+                              <Badge variant={activeThreadKey === `inquiry-${inquiry.id}` ? "secondary" : "outline"} className={`rounded-full capitalize ${inquiry.isRead ? "bg-slate-200 text-slate-700 hover:bg-slate-300" : "bg-yellow-400 text-slate-900 hover:bg-yellow-500"}`}>
+                                {inquiry.isRead ? "Seen" : inquiryPresentation.statusLabel}
+                              </Badge>
+                            )}
+                          </div>
                         </div>
-                        <Badge 
-                          variant={activeThreadKey === `inquiry-${inquiry.id}` ? "secondary" : "outline"} 
-                          className={`rounded-full capitalize ${
-                            inquiry.isRead 
-                              ? "bg-slate-200 text-slate-700 hover:bg-slate-300" 
-                              : "bg-yellow-400 text-slate-900 hover:bg-yellow-500"
-                          }`}
-                        >
-                          {inquiry.isRead ? "seen" : "unread"}
-                        </Badge>
-                      </div>
-                      <p className={`mt-3 line-clamp-2 text-sm leading-6 ${activeThreadKey === `inquiry-${inquiry.id}` ? "text-white/75" : "text-slate-600"}`}>{inquiry.subject}</p>
-                      <div className="mt-4 flex items-center justify-between text-xs uppercase tracking-[0.18em]">
-                        <span>{new Date(inquiry.createdAt).toLocaleString()}</span>
-                      </div>
-                    </button>
-                  ))}
+                        <p className={`mt-3 line-clamp-2 text-sm leading-6 ${activeThreadKey === `inquiry-${inquiry.id}` ? "text-white/75" : "text-slate-600"}`}>{inquiry.subject}</p>
+                        <div className="mt-4 flex items-center justify-between text-xs uppercase tracking-[0.18em]">
+                          <span>{new Date(inquiry.createdAt).toLocaleString()}</span>
+                        </div>
+                      </button>
+                    );
+                  })}
                   {filteredThreads.map(thread => (
                     <button
                       key={thread.key}
@@ -425,9 +499,10 @@ export default function Messages() {
                         <AvatarFallback>{initials(activeInquiry.senderName || "Collector")}</AvatarFallback>
                       </Avatar>
                       <div>
-                        <h2 className="text-3xl font-semibold text-slate-900">{activeInquiry.senderName || `Collector ${activeInquiry.senderId}`}</h2>
+                        <h2 className="text-3xl font-semibold text-slate-900">{activeInquiryPresentation?.detailHeading}</h2>
                         <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-slate-600">
                           <Badge variant="outline" className="rounded-full capitalize">Item Inquiry</Badge>
+                          <Badge className={`rounded-full ${activeInquiryDirection === "sent" ? "bg-blue-100 text-blue-800 hover:bg-blue-200" : "bg-emerald-100 text-emerald-800 hover:bg-emerald-200"}`}>{activeInquiryPresentation?.badge}</Badge>
                         </div>
                       </div>
                     </div>
@@ -455,7 +530,7 @@ export default function Messages() {
                       <p className="mt-2 whitespace-pre-wrap text-slate-900 break-words">{activeInquiry.message}</p>
                     </div>
                     <div className="text-xs uppercase tracking-[0.18em] text-slate-500">
-                      {new Date(activeInquiry.createdAt).toLocaleString()}
+                      {activeInquiryPresentation?.detailPrefix} on {new Date(activeInquiry.createdAt).toLocaleString()}
                     </div>
 
                     {repliesQuery.data && repliesQuery.data.length > 0 && (
@@ -588,10 +663,11 @@ export default function Messages() {
                     )}
                     {(activeThread.kind === "direct" ? (dbMessagesQuery.data ?? []) : activeThread.proposal.messages).length ? (activeThread.kind === "direct" ? (dbMessagesQuery.data ?? []) : activeThread.proposal.messages).map((message: any) => {
                       const ownMessage = message.senderId === user?.id;
+                      const messageSenderName = message.senderName ?? (ownMessage ? "You" : activeThread.counterpartName);
                       return (
                         <div key={message.id} className={`flex ${ownMessage ? "justify-end" : "justify-start"}`}>
                           <div className={`max-w-[75%] rounded-[1.5rem] px-4 py-3 text-sm leading-7 shadow-sm ${ownMessage ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-700"}`}>
-                            <p className="text-xs uppercase tracking-[0.18em] opacity-65">{ownMessage ? (user?.name ?? 'You') : (activeThread.counterpartName)}</p>
+                            <p className="text-xs uppercase tracking-[0.18em] opacity-65">{messageSenderName}</p>
                             <p className="mt-2">{message.body ?? message.message}</p>
                             <p className="mt-2 text-[11px] uppercase tracking-[0.16em] opacity-55">{new Date(message.createdAt).toLocaleString()}</p>
                           </div>

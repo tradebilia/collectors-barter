@@ -240,14 +240,14 @@ export default function PublicProfile() {
 
       {/* Hero Section */}
       <section className="relative z-0 w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden text-white" style={{
-        backgroundImage: 'url(/manus-storage/Background_48b923f1.jpg)',
+        backgroundImage: 'url(/manus-storage/Background_23084d14.jpg)',
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat'
       }}>
         <div className="container relative flex h-64 items-center justify-center py-0 sm:h-72 lg:h-80">
           <div className="flex w-full max-w-6xl items-center justify-center -ml-32">
-            <img src="/manus-storage/Profile_faf54d36.svg" alt="Profile" className="h-auto w-full" />
+            <img src="/manus-storage/Profile_97aeba0f.svg" alt="Profile" className="h-auto w-full" />
           </div>
         </div>
       </section>

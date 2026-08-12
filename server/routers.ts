@@ -1,11 +1,13 @@
 import { z } from "zod";
 import { verifyPayPalTransaction } from "./paypal";
+import { resolveDirectMessageDisplayName } from "./directMessageDisplayName";
 import { sendVerificationCode, checkVerificationCode, normalizePhone, maskPhone } from "./twilio";
 import { COOKIE_NAME } from "@shared/const";
 import { collectibleCategories, itemConditions, mysqlNow, toMysqlDateTime } from "./db";
 import { isValidGradeForCompany, getGradingCompanyByName } from "@shared/gradingCompanyConfig";
 import {
   createListing,
+  getCommunicationDisplayName,
   updateListing,
   createTradeProposal,
   getDashboardData,
@@ -1348,6 +1350,7 @@ export const appRouter = router({
         }),
       )
       .mutation(async ({ ctx, input }) => {
+        const senderDisplayName = await getCommunicationDisplayName(ctx.user.id);
         const result = await sendItemInquiry({ id: ctx.user.id, name: ctx.user.name }, input);
 
         // Send email notification to recipient if messages.email enabled (fire-and-forget)
@@ -1372,7 +1375,7 @@ export const appRouter = router({
             sendNewDirectMessageEmail({
               recipientEmail: recipientUser[0].email,
               recipientName: recipientUser[0].name ?? `Collector ${input.recipientId}`,
-              senderName: ctx.user.name ?? 'A Tradebilia member',
+              senderName: senderDisplayName,
               subject: input.subject,
               bodyPreview: input.message,
             }).catch(err => console.warn('[Email] Failed to send inquiry notification:', err));
@@ -1436,6 +1439,7 @@ export const appRouter = router({
         return { success: true };
       }),
     getDeleted: protectedProcedure
+      .input(z.object({ cacheBust: z.number().int().nonnegative() }).optional())
       .query(async ({ ctx }) => {
         return getDeletedInquiries(ctx.user.id);
       }),
@@ -1551,6 +1555,7 @@ export const appRouter = router({
         });
 
         // Send email notification to recipient if they have messages.email enabled (fire-and-forget)
+        const senderDisplayName = await getCommunicationDisplayName(ctx.user.id);
         console.log('[sendDirectMessage] Sending email - senderId:', ctx.user.id, 'recipientId:', input.recipientId);
         const recipientUser = await db
           .select({ email: users.email, name: users.name })
@@ -1574,7 +1579,7 @@ export const appRouter = router({
             sendNewDirectMessageEmail({
               recipientEmail: recipientUser[0].email,
               recipientName: recipientUser[0].name ?? `Collector ${input.recipientId}`,
-              senderName: ctx.user.name ?? 'A Tradebilia member',
+              senderName: senderDisplayName,
               subject: input.subject,
               bodyPreview: input.body,
             }).catch(err => console.warn('[Email] Failed to send new message notification:', err));
@@ -1593,7 +1598,8 @@ export const appRouter = router({
             t.lastMessageAt,
             -- counterpart info
             CASE WHEN t.participantAId = ${ctx.user.id} THEN t.participantBId ELSE t.participantAId END as counterpartId,
-            up.displayName as counterpartName,
+            up.displayName as profileDisplayName,
+            u.username as accountName,
             up.avatarUrl as counterpartAvatarUrl,
             -- latest message
             (SELECT dm2.body FROM directMessages dm2 WHERE dm2.threadId = t.id ORDER BY dm2.createdAt DESC LIMIT 1) as latestBody,
@@ -1607,7 +1613,15 @@ export const appRouter = router({
           WHERE t.participantAId = ${ctx.user.id} OR t.participantBId = ${ctx.user.id}
           ORDER BY t.lastMessageAt DESC`
         );
-        return Array.isArray(rows) ? rows : [];
+        const threadRows = Array.isArray(rows) ? rows : [];
+        return threadRows.map((row: any) => ({
+          ...row,
+          counterpartName: resolveDirectMessageDisplayName(
+            row.profileDisplayName,
+            row.accountName,
+            Number(row.counterpartId),
+          ),
+        }));
       }),
 
     getDirectMessages: protectedProcedure
@@ -1625,15 +1639,36 @@ export const appRouter = router({
           .limit(1);
         if (!thread.length) throw new TRPCError({ code: 'FORBIDDEN', message: 'Thread not found.' });
         const msgs = await db
-          .select()
+          .select({
+            id: directMessages.id,
+            threadId: directMessages.threadId,
+            senderId: directMessages.senderId,
+            subject: directMessages.subject,
+            body: directMessages.body,
+            isReadByRecipient: directMessages.isReadByRecipient,
+            createdAt: directMessages.createdAt,
+            senderProfileDisplayName: userProfiles.displayName,
+            senderUsername: users.username,
+            senderDisplayName: users.displayName,
+            senderAccountName: users.name,
+          })
           .from(directMessages)
+          .innerJoin(users, eq(directMessages.senderId, users.id))
+          .leftJoin(userProfiles, eq(userProfiles.userId, users.id))
           .where(eq(directMessages.threadId, input.threadId))
           .orderBy(directMessages.createdAt);
         // Mark all messages from counterpart as read
         await db.execute(
           sql`UPDATE directMessages SET isReadByRecipient = 1 WHERE threadId = ${input.threadId} AND senderId != ${ctx.user.id} AND isReadByRecipient = 0`
         );
-        return msgs;
+        return msgs.map(message => ({
+          ...message,
+          senderName: resolveDirectMessageDisplayName(
+            message.senderProfileDisplayName,
+            message.senderUsername || message.senderDisplayName || message.senderAccountName,
+            message.senderId,
+          ),
+        }));
       }),
 
     replyDirectMessage: protectedProcedure
@@ -1653,6 +1688,7 @@ export const appRouter = router({
         await db.execute(sql`UPDATE directMessageThreads SET lastMessageAt = NOW() WHERE id = ${input.threadId}`);
 
         // Send email notification to the other participant if messages.email enabled (fire-and-forget)
+        const senderDisplayName = await getCommunicationDisplayName(ctx.user.id);
         const recipientId = thread[0].participantAId === ctx.user.id
           ? thread[0].participantBId
           : thread[0].participantAId;
@@ -1676,7 +1712,7 @@ export const appRouter = router({
             sendDirectMessageReplyEmail({
               recipientEmail: recipientUser[0].email,
               recipientName: recipientUser[0].name ?? `Collector ${recipientId}`,
-              senderName: ctx.user.name ?? 'A Tradebilia member',
+              senderName: senderDisplayName,
               bodyPreview: input.body,
             }).catch(err => console.warn('[Email] Failed to send reply notification:', err));
           }
