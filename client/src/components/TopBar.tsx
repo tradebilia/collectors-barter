@@ -111,20 +111,16 @@ export function TopBar({
     <div className="border-b border-white/10 bg-black relative z-0">
       <div className="flex min-h-14 items-center justify-center gap-4 px-2 py-2 sm:pl-2 sm:pr-4 relative">
         {/* Animated Logo on left */}
-        <div className="absolute left-2 top-1 h-12 hidden items-center sm:flex" style={{ width: '260px' }}>
+        <div className="absolute left-2 h-16 hidden items-center sm:flex" style={{ width: '650px', top: '-10px' }}>
           <a href="/" className="flex items-center hover:opacity-80 transition h-full w-full">
-            <div className="h-12 w-full flex items-center">
+            <div className="h-16 w-full flex items-center">
               <AnimatedLogoSmall70 />
             </div>
           </a>
         </div>
 
-        <a href="/" className="absolute left-2 top-2 flex h-9 w-9 items-center sm:hidden" aria-label="Tradebilia home">
-          <AnimatedLogoSmall70 compact />
-        </a>
-
         {/* Search in center */}
-        <div className="flex items-center gap-0 bg-white rounded-lg px-4 py-2 max-w-2xl w-full ml-10 mr-16 sm:mx-0">
+        <div className="flex items-center gap-0 bg-white rounded-lg px-4 py-2 max-w-2xl w-full mr-16 sm:mx-0">
           <Search className="h-4 w-4 text-gray-400 flex-shrink-0" />
           <input
             type="text"

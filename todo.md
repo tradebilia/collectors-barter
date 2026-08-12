@@ -41,3 +41,7 @@
 - [x] Determine that no controlled Resend email test is needed because the credential is a valid send-only key and the read-only endpoint correctly rejects it.
 - [x] Match the compact prior-session AnimatedLogoSmall70 geometry and top-bar placement from the supplied reference.
 - [x] Verify the compact animated logo remains legible and unobstructed at desktop and mobile widths.
+- [x] Restore the exact original `AnimatedLogoSmall70.tsx` inline SVG contract and full-width desktop TopBar container specified by the user.
+- [x] Verify the restored original animated-logo implementation compiles without altering the static homepage hero title.
+- [x] Compare the verified WebDev preview with `tradebilia.manus.space` and identify the deployment-version mismatch.
+- [ ] Align the live domain with the verified animated-logo project version and verify the production result.
