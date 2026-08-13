@@ -267,4 +267,4 @@
 - [x] Add Select all and Clear categories controls to the Member Directory category filter.
 - [x] Display active Member Directory filter chips above results with one-click removal and a Clear all action.
 - [x] Add an accessible explanation of what the Verified Merchant toggle means.
-- [ ] Add regression coverage and validate the Member Directory filter usability refinements in development and production.
+- [x] Add regression coverage and validate the Member Directory filter usability refinements in development and production.

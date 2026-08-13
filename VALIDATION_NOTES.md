@@ -253,3 +253,9 @@ Immediately after the deployment-success notification, the published Member Dire
 In development, the new Select all control successfully selected the collection-category set. The visible Apply filters control was then invoked to verify the applied-filter summary state in the next browser check. No member data was changed.
 
 The applied category set rendered as individual Active filters chips with a Clear all control. Removing the Sports Cards chip immediately removed only that applied category while preserving the other category filters and the filtered two-member result set. The new merchant-verification explanation is visible beside the Verified Merchant only toggle.
+
+The first two cache-busting production checks after checkpoint `a706032e` continued to serve the preceding filter layout without the bulk controls and merchant-verification explanation. These stale requests are not accepted as production validation; deployment completion is still pending.
+
+After propagation, production rendered Select all, Clear categories, and the merchant-verification explanation. The bulk selection control successfully selected the category set before the applied-filter summary check.
+
+In production, applying the bulk-selected categories rendered all ten removable Active filters chips and the Clear all action, while correctly narrowing results to the two collectors with configured categories. This completes production validation of the filter usability refinements.
