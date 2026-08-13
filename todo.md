@@ -206,3 +206,9 @@
 - [x] Add a private My Reports status view for report submitters.
 - [x] Add a Trade Room Report a Trade Issue entry point with prefilled participant and trade context.
 - [x] Add regression coverage and validate evidence, report-status, and Trade Room issue workflows.
+- [x] Restore the original Report a User hero artwork and layout without changing reporting features.
+- [ ] Validate the restored Report a User hero in development and production.
+- [x] Restore high-contrast field labels on the Report a User form.
+- [ ] Verify Report a User field-label readability in development and production.
+- [x] Default Contact email to the signed-in account email after profile data finishes loading.
+- [x] Verify the Contact email default remains account-based and user-editable.
