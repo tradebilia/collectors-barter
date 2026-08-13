@@ -13,6 +13,7 @@ import Messages from "./pages/Messages";
 import MemberSearch from "./pages/MemberSearch";
 import CategoryPage from "./pages/CategoryPage";
 import ReportUser from "./pages/ReportUser";
+import MyReports from "./pages/MyReports";
 import ReferralRequest from "./pages/ReferralRequest";
 import Watchlist from "./pages/Watchlist";
 import AccountSetup from "./pages/AccountSetup";
@@ -92,6 +93,11 @@ function Router() {
       <Route path="/report-user">
         <ProtectedRoute>
           <ReportUser />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/my-reports">
+        <ProtectedRoute>
+          <MyReports />
         </ProtectedRoute>
       </Route>
       <Route path="/referral-request">
