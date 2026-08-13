@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { AlertTriangle, CheckCircle2, FileText, Flag, Loader2, ShieldCheck, Upload, X } from "lucide-react";
-import { TopBar } from "@/components/TopBar";
+import { TopBar as SharedTopBar } from "@/components/TopBar";
 import { CategoryBar } from "@/components/CategoryBar";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
@@ -15,10 +15,11 @@ import { toast } from "sonner";
 
 const concernTypes = ["Counterfeit or inaccurate item description", "Harassment or abusive conduct", "Spam, solicitation, or scam activity", "Unsafe trade behavior", "Trade issue: item, shipment, or delivery", "Unauthorized contact information sharing", "Other community concern"] as const;
 const allowedTypes = new Set(["image/jpeg", "image/png", "image/webp", "application/pdf", "text/plain"]);
-const REPORT_USER_HERO_TITLE_URL = "/manus-storage/ReportaUser_b06c5881.svg";
+const REPORT_USER_HERO_TITLE_URL = "/manus-storage/ReportaMember_35367058.svg";
 const REPORT_USER_HERO_BACKGROUND_URL = "/manus-storage/Background_23084d14.jpg";
 type UploadedEvidence = { key: string; url: string; name: string; type: string; size: number };
 const readAsBase64 = (file: File) => new Promise<string>((resolve, reject) => { const reader = new FileReader(); reader.onerror = () => reject(new Error(`Could not read ${file.name}`)); reader.onload = () => resolve(String(reader.result).split(",")[1] || ""); reader.readAsDataURL(file); });
+const TopBar = () => <SharedTopBar hideSearch />;
 
 export default function ReportUser() {
   const { user, isAuthenticated } = useAuth(); const params = useMemo(() => new URLSearchParams(window.location.search), []);
