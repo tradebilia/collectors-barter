@@ -57,9 +57,9 @@ function TradeItems({ items }: { items: TradeShowcaseItem[] }) {
   }
 
   return (
-    <div className="flex min-w-0 items-center gap-2">
+    <div className="flex items-center gap-2">
       {items.map((item, index) => (
-        <div key={`${item.id ?? item.title}-${index}`} className="flex min-w-0 items-center gap-2 rounded-lg border border-gray-100 bg-white px-2 py-1.5">
+        <div key={`${item.id ?? item.title}-${index}`} className="flex shrink-0 items-center gap-2 rounded-lg border border-gray-100 bg-white px-2 py-1.5">
           <div className="h-12 w-12 shrink-0 overflow-hidden rounded-md bg-gray-50">
             {item.imageUrl ? (
               <img src={item.imageUrl} alt={item.title || "Traded collectible"} className="h-full w-full object-contain" />
@@ -69,7 +69,7 @@ function TradeItems({ items }: { items: TradeShowcaseItem[] }) {
               </div>
             )}
           </div>
-          <p className="max-w-36 truncate text-xs font-semibold text-gray-800">{item.title || "Collectible"}</p>
+          <p className="whitespace-nowrap text-xs font-semibold text-gray-800">{item.title || "Collectible"}</p>
         </div>
       ))}
     </div>
@@ -81,8 +81,7 @@ function TradeParty({ member, reverse = false }: { member: TradeShowcaseParty; r
     <div className={`flex shrink-0 items-center gap-2 ${reverse ? "flex-row-reverse text-right" : ""}`}>
       <Avatar url={member.avatarUrl} name={member.displayName} size="md" />
       <div className="min-w-0">
-        <p className="text-[9px] uppercase tracking-wide text-gray-400">Trading</p>
-        <p className="max-w-24 truncate text-xs font-semibold text-gray-700">{member.displayName || "Member"}</p>
+        <p className="max-w-28 truncate text-sm font-semibold text-gray-700">{member.displayName || "Member"}</p>
       </div>
     </div>
   );
@@ -109,12 +108,12 @@ function TradeCard({ trade }: { trade: any }) {
           <div className="h-24 flex items-center justify-center text-gray-400 text-sm">No item details available</div>
         ) : (
           <div className="overflow-x-auto rounded-xl border border-gray-200 bg-gray-50/70">
-            <div className="flex min-w-[980px] items-center gap-4 p-3">
+            <div className="flex min-w-[1120px] items-center gap-5 p-4">
               <div className="flex flex-1 items-center gap-3">
                 <TradeParty member={exchange.left.member} />
                 <TradeItems items={exchange.left.items} />
               </div>
-              <ArrowLeftRight className="h-6 w-6 shrink-0 text-purple-500" aria-label="Completed exchange between both members" />
+              <ArrowLeftRight className="h-10 w-10 shrink-0 text-purple-500" strokeWidth={2.6} aria-label="Completed exchange between both members" />
               <div className="flex flex-1 flex-row-reverse items-center gap-3">
                 <TradeParty member={exchange.right.member} reverse />
                 <TradeItems items={exchange.right.items} />
