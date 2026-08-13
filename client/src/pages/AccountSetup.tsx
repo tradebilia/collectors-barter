@@ -139,12 +139,12 @@ export default function AccountSetup() {
         zipCode: "",
         state: "",
         country: "",
-        email: user?.email || "",
+        email: profile.contactEmail || "",
         phoneNumber: profile.contactPhone || "",
         bio: profile.bio || "",
       }));
     }
-  }, [dashboardQuery.data?.profile, user?.name, user?.email]);
+  }, [dashboardQuery.data?.profile, user?.name]);
 
   // Check if this is a new signup (from SignUp page)
   const isNewSignup = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('new') === 'true';

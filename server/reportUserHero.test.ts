@@ -3,13 +3,24 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const reportUserSource = readFileSync(resolve(process.cwd(), "client/src/pages/ReportUser.tsx"), "utf8");
+
 describe("Report a User hero", () => {
-  it("retains the title artwork, readable labels, and account-email default", () => {
+  it("retains the supplied title artwork over the original collector-background hero", () => {
     expect(reportUserSource).toContain('REPORT_USER_HERO_TITLE_URL = "/manus-storage/ReportaMember-wide_998d1169.webp"');
     expect(reportUserSource).toContain('REPORT_USER_HERO_BACKGROUND_URL = "/manus-storage/Background_23084d14.jpg"');
-    expect(reportUserSource).toContain('const fieldLabelClass = "text-sm font-medium text-slate-100"');
-    expect(reportUserSource).toContain('if (!contactEmailEdited && user?.email) setContactEmail(user.email);');
-    expect(reportUserSource).toContain('<SharedTopBar hideSearch />');
     expect(reportUserSource).toContain('max-w-7xl items-center justify-center -ml-32');
+    expect(reportUserSource).toContain('alt="Report a Member"');
+    expect(reportUserSource).toContain('sm:h-72 lg:h-80');
+    expect(reportUserSource).toContain("<TopBar hideSearch />");
+  });
+
+  it("uses readable labels and resets Contact email for a new signed-in account without overriding a same-account user edit", () => {
+    expect(reportUserSource).toContain('const fieldLabelClass = "text-sm font-medium text-slate-100"');
+    expect(reportUserSource).toContain('const contactEmailAccountId = useRef<number | null>(null);');
+    expect(reportUserSource).toContain('trpc.market.contactIdentity.useQuery');
+    expect(reportUserSource).toContain('if (contactEmailAccountId.current !== account.userId)');
+    expect(reportUserSource).toContain('setContactEmail(account.contactEmail);');
+    expect(reportUserSource).not.toContain('user.email');
+    expect(reportUserSource).toContain('setContactEmailEdited(true)');
   });
 });

@@ -129,11 +129,11 @@ export default function Profile() {
       fullName: profile.contactFullName || user?.name || "",
       displayName: profile.displayName || user?.name || "",
       location: profile.contactAddress || "",
-      emailAddress: profile.contactEmail || user?.email || "",
+      emailAddress: profile.contactEmail || "",
       phoneNumber: profile.contactPhone || "",
       bio: profile.bio || "",
     });
-  }, [dashboardQuery.data?.profile, user?.email, user?.name]);
+  }, [dashboardQuery.data?.profile, user?.name]);
 
   const saveProfileMutation = trpc.market.saveProfile.useMutation({
     onSuccess: async () => {

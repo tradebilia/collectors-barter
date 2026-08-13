@@ -11,6 +11,7 @@ import {
   updateListing,
   createTradeProposal,
   getDashboardData,
+  getTradebiliaContactIdentity,
   getListingDetail,
   getMarketplaceFeed,
   leaveTradeReview,
@@ -101,6 +102,7 @@ import { sdk } from "./_core/sdk";
 import { tradeFlowRouter } from "./tradeFlowRouter";
 import { testAIRouter } from "./testAIRouter";
 import { customAuth } from "./_core/customAuth";
+import { persistDirectMessage } from "./directMessagePersistence";
 import { users, userProfiles, listings, deletedAccounts, tradeProposals, tradeMessages, tradeReviews, watchlistEntries, draftListings, passwordResetTokens, referralRequests, userFollows, directMessageThreads, directMessages, tradePayments, tradeActivityLog, emailTemplates } from "../drizzle/schema";
 import { eq, sql, desc, or, inArray, and } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
@@ -551,6 +553,9 @@ export const appRouter = router({
       }),
     dashboard: protectedProcedure.query(({ ctx }) => {
       return getDashboardData({ id: ctx.user.id, name: ctx.user.name });
+    }),
+    contactIdentity: protectedProcedure.query(({ ctx }) => {
+      return getTradebiliaContactIdentity({ id: ctx.user.id, name: ctx.user.name });
     }),
     listingDetail: publicProcedure
       .input(
@@ -1129,13 +1134,13 @@ export const appRouter = router({
     reportUser: protectedProcedure
       .input(reportUserSchema)
       .mutation(async ({ ctx, input }) => {
-        const reporterName = ctx.user.name?.trim() || `Collector ${ctx.user.id}`;
+        const reporter = await getTradebiliaContactIdentity({ id: ctx.user.id, name: ctx.user.name });
         const delivered = await notifyOwner({
           title: `Tradebilia report submitted: ${input.concernType}`,
           content: [
-            `Reporter: ${reporterName}`,
+            `Reporter: ${reporter.displayName}`,
             `Reporter user ID: ${ctx.user.id}`,
-            `Reporter account email: ${ctx.user.email ?? "Not available"}`,
+            `Reporter Tradebilia account email: ${reporter.contactEmail || "Not set"}`,
             `Contact email for follow-up: ${input.contactEmail.trim()}`,
             `Reported member: ${input.reportedMember.trim()}`,
             `Listing or trade reference: ${input.listingReference?.trim() || "Not provided"}`,
@@ -1155,16 +1160,14 @@ export const appRouter = router({
     referralRequest: protectedProcedure
       .input(referralRequestSchema)
       .mutation(async ({ ctx, input }) => {
-        const referrerName = ctx.user.name?.trim() || `Collector ${ctx.user.id}`;
-        const referrerFirstName = (ctx.user as any)?.firstName || "";
-        const referrerLastName = (ctx.user as any)?.lastName || "";
+        const referrer = await getTradebiliaContactIdentity({ id: ctx.user.id, name: ctx.user.name });
         
         try {
           await createReferralRequest({
             referrerId: ctx.user.id,
-            referrerEmail: ctx.user.email ?? "",
-            referrerFirstName,
-            referrerLastName,
+            referrerEmail: referrer.contactEmail,
+            referrerFirstName: referrer.firstName,
+            referrerLastName: referrer.lastName,
             collectorName: input.friendName.trim(),
             collectorEmail: input.friendEmail.trim(),
             collectorFocus: input.collectorFocus.trim(),
@@ -1338,16 +1341,21 @@ export const appRouter = router({
         if (input.reportedUserId === ctx.user.id) {
           throw new TRPCError({ code: 'BAD_REQUEST', message: 'You cannot report yourself' });
         }
-        if (input.attachments.some((attachment) => !ownsReportAttachment(ctx.user.id, attachment))) throw new TRPCError({ code: 'FORBIDDEN', message: 'An evidence attachment does not belong to your report.' });
+        if (input.attachments.some((attachment) => !ownsReportAttachment(ctx.user.id, attachment))) {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'An evidence attachment does not belong to your report.' });
+        }
+        const reporter = await getTradebiliaContactIdentity({ id: ctx.user.id, name: ctx.user.name });
         return submitUserReport({
           reportedUserId: input.reportedUserId,
           reporterUserId: ctx.user.id,
           reason: input.reason,
           description: input.description,
-          evidence: serializeReportEvidence({ notes: input.evidence, listingReference: input.listingReference, contactEmail: input.contactEmail, attachments: input.attachments }),
+          evidence: serializeReportEvidence({ notes: input.evidence, listingReference: input.listingReference, contactEmail: reporter.contactEmail || input.contactEmail, attachments: input.attachments }),
         });
       }),
-    uploadReportEvidence: protectedProcedure.input(z.object({ name: z.string().min(1).max(160), type: z.string().min(1).max(120), contentBase64: z.string().min(1).max(14_000_000) })).mutation(({ ctx, input }) => uploadReportEvidence(ctx.user.id, input)),
+    uploadReportEvidence: protectedProcedure
+      .input(z.object({ name: z.string().min(1).max(160), type: z.string().min(1).max(120), contentBase64: z.string().min(1).max(14_000_000) }))
+      .mutation(({ ctx, input }) => uploadReportEvidence(ctx.user.id, input)),
     getMyReports: protectedProcedure.query(({ ctx }) => getReportsByReporter(ctx.user.id)),
     sendInquiry: protectedProcedure
       .input(
@@ -1532,35 +1540,11 @@ export const appRouter = router({
         if (ctx.user.id === input.recipientId) {
           throw new TRPCError({ code: 'BAD_REQUEST', message: 'You cannot message yourself.' });
         }
-        // Find or create thread (participants stored in sorted order, unique per item)
-        const pA = Math.min(ctx.user.id, input.recipientId);
-        const pB = Math.max(ctx.user.id, input.recipientId);
-        const itemId = input.itemId || null;
-        const existing = await db
-          .select({ id: directMessageThreads.id })
-          .from(directMessageThreads)
-          .where(and(
-            eq(directMessageThreads.participantAId, pA),
-            eq(directMessageThreads.participantBId, pB),
-            itemId ? eq(directMessageThreads.itemId, itemId) : sql`${directMessageThreads.itemId} IS NULL`
-          ))
-          .limit(1);
-        let threadId: number;
-        let isNewThread = false;
-        if (existing.length > 0) {
-          threadId = existing[0].id;
-          await db.execute(sql`UPDATE directMessageThreads SET lastMessageAt = NOW() WHERE id = ${threadId}`);
-        } else {
-          isNewThread = true;
-          const result = await db.insert(directMessageThreads).values({ participantAId: pA, participantBId: pB, itemId });
-          threadId = (result as any)[0]?.insertId ?? (result as any).insertId;
-        }
-        await db.insert(directMessages).values({
-          threadId,
+        const { threadId } = await persistDirectMessage(db as any, {
           senderId: ctx.user.id,
+          recipientId: input.recipientId,
           subject: input.subject,
           body: input.body,
-          isReadByRecipient: 0,
         });
 
         // Send email notification to recipient if they have messages.email enabled (fire-and-forget)
@@ -1685,7 +1669,11 @@ export const appRouter = router({
       .mutation(async ({ ctx, input }) => {
         const db = await requireDb();
         const thread = await db
-          .select()
+          .select({
+            id: directMessageThreads.id,
+            participantAId: directMessageThreads.participantAId,
+            participantBId: directMessageThreads.participantBId,
+          })
           .from(directMessageThreads)
           .where(and(
             eq(directMessageThreads.id, input.threadId),
@@ -2062,7 +2050,7 @@ export const appRouter = router({
         displayName: userProfiles.displayName,
         firstName: userProfiles.firstName,
         lastName: userProfiles.lastName,
-        email: users.email,
+        email: userProfiles.contactEmail,
         role: users.role,
         createdAt: users.createdAt,
         lastActivityAt: users.lastActivityAt,
@@ -2218,7 +2206,7 @@ export const appRouter = router({
           await db.insert(deletedAccounts).values({
             userId: input.userId,
             username: user.username || `user_${input.userId}`,
-            email: user.email || null,
+            email: profile?.contactEmail || null,
             displayName: profile?.displayName || user.displayName || null,
             firstName: profile?.firstName || null,
             lastName: profile?.lastName || null,

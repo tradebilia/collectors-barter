@@ -20,7 +20,15 @@ import { DeleteConfirmationDialog } from "@/components/DeleteConfirmationDialog"
 
 function parseReportEvidenceForAdmin(raw?: string) {
   if (!raw) return { notes: "", listingReference: "", contactEmail: "", attachments: [] as Array<{ name: string; url: string }> };
-  try { const parsed = JSON.parse(raw); if (parsed?.version === 1) return { notes: typeof parsed.notes === "string" ? parsed.notes : "", listingReference: typeof parsed.listingReference === "string" ? parsed.listingReference : "", contactEmail: typeof parsed.contactEmail === "string" ? parsed.contactEmail : "", attachments: Array.isArray(parsed.attachments) ? parsed.attachments.filter((item: any) => typeof item?.name === "string" && typeof item?.url === "string") : [] }; } catch { /* Legacy evidence is plain text. */ }
+  try {
+    const parsed = JSON.parse(raw);
+    if (parsed?.version === 1) return {
+      notes: typeof parsed.notes === "string" ? parsed.notes : "",
+      listingReference: typeof parsed.listingReference === "string" ? parsed.listingReference : "",
+      contactEmail: typeof parsed.contactEmail === "string" ? parsed.contactEmail : "",
+      attachments: Array.isArray(parsed.attachments) ? parsed.attachments.filter((item: any) => typeof item?.name === "string" && typeof item?.url === "string") : [],
+    };
+  } catch { /* Legacy evidence is plain text. */ }
   return { notes: raw, listingReference: "", contactEmail: "", attachments: [] as Array<{ name: string; url: string }> };
 }
 
@@ -1185,7 +1193,7 @@ export default function AdminDashboard() {
                         {suspendedUsersQuery.data.map((user: any) => (
                           <tr key={user.id} className="border-b hover:bg-muted/50">
                             <td className="py-3 px-4">{user.username}</td>
-                            <td className="py-3 px-4">{user.email || '-'}</td>
+                            <td className="py-3 px-4">{user.contactEmail || '-'}</td>
                             <td className="py-3 px-4 capitalize">{user.role}</td>
                             <td className="py-3 px-4">
                               {user.suspendedAt ? new Date(user.suspendedAt).toLocaleDateString() : '-'}
@@ -1818,7 +1826,18 @@ export default function AdminDashboard() {
                   <p className="text-sm font-semibold text-muted-foreground">Description</p>
                   <p className="text-base whitespace-pre-wrap">{selectedReport.description}</p>
                 </div>
-                {selectedReport.evidence && (() => { const evidence = parseReportEvidenceForAdmin(selectedReport.evidence); return <div className="col-span-2"><p className="text-sm font-semibold text-muted-foreground">Evidence</p>{evidence.listingReference && <p className="text-sm">Reference: <span className="font-mono">{evidence.listingReference}</span></p>}{evidence.contactEmail && <p className="text-sm">Follow-up: {evidence.contactEmail}</p>}{evidence.notes && <p className="text-base whitespace-pre-wrap">{evidence.notes}</p>}{evidence.attachments.length > 0 && <div className="mt-2 flex flex-wrap gap-2">{evidence.attachments.map((file: any, index: number) => <a key={`${file.url}-${index}`} href={file.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded border border-blue-500/30 px-2 py-1 text-sm text-blue-500 hover:bg-blue-500/10"><ExternalLink className="h-3.5 w-3.5" />{file.name}</a>)}</div>}</div>; })()}
+                {selectedReport.evidence && (() => {
+                  const evidence = parseReportEvidenceForAdmin(selectedReport.evidence);
+                  return (
+                  <div className="col-span-2">
+                    <p className="text-sm font-semibold text-muted-foreground">Evidence</p>
+                    {evidence.listingReference && <p className="text-sm">Reference: <span className="font-mono">{evidence.listingReference}</span></p>}
+                    {evidence.contactEmail && <p className="text-sm">Follow-up: {evidence.contactEmail}</p>}
+                    {evidence.notes && <p className="text-base whitespace-pre-wrap">{evidence.notes}</p>}
+                    {evidence.attachments.length > 0 && <div className="mt-2 flex flex-wrap gap-2">{evidence.attachments.map((file: any, index: number) => <a key={`${file.url}-${index}`} href={file.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded border border-blue-500/30 px-2 py-1 text-sm text-blue-500 hover:bg-blue-500/10"><ExternalLink className="h-3.5 w-3.5" />{file.name}</a>)}</div>}
+                  </div>
+                  );
+                })()}
                 <div>
                   <p className="text-sm font-semibold text-muted-foreground">Submitted</p>
                   <p className="text-base">{new Date(selectedReport.createdAt).toLocaleDateString()}</p>
