@@ -1,0 +1,33 @@
+import { TopBar } from "@/components/TopBar";
+import { CategoryBar } from "@/components/CategoryBar";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { trpc } from "@/lib/trpc";
+import { Link } from "wouter";
+import { ClipboardList, Flag, Loader2 } from "lucide-react";
+
+const statusLabels: Record<string, string> = {
+  pending: "Submitted — awaiting review",
+  reviewed: "Reviewed",
+  dismissed: "Closed",
+  action_taken: "Action taken",
+};
+
+export default function MyReports() {
+  const reports = trpc.market.getMyReports.useQuery();
+  return <div className="min-h-screen bg-[radial-gradient(circle_at_top,rgba(73,125,255,0.14),transparent_30%),linear-gradient(180deg,#050814_0%,#0b1220_32%,#111827_100%)] text-white">
+    <TopBar /><CategoryBar />
+    <main className="container py-8">
+      <div className="mx-auto max-w-4xl space-y-5">
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div><h1 className="flex items-center gap-2 text-2xl font-bold"><ClipboardList className="h-6 w-6 text-blue-300" />My Reports</h1><p className="mt-1 text-sm text-white/65">Private status updates for reports you have submitted. Moderator notes and the reported member’s information stay confidential.</p></div>
+          <Link href="/report-user"><Button className="rounded-full bg-white text-slate-950 hover:bg-white/90"><Flag className="mr-2 h-4 w-4" />Report a Member</Button></Link>
+        </div>
+        {reports.isLoading ? <div className="flex justify-center py-16"><Loader2 className="h-7 w-7 animate-spin text-blue-300" /></div> : reports.data?.length ? <div className="space-y-3">
+          {reports.data.map((report: any) => <Card key={report.reportId} className="border-white/10 bg-white/5"><CardHeader className="flex-row items-start justify-between gap-4 space-y-0"><div><CardTitle className="font-mono text-base text-blue-200">{report.reportId}</CardTitle><CardDescription className="mt-1 text-white/60">Submitted {new Date(report.createdAt).toLocaleString()}</CardDescription></div><Badge className="border border-blue-400/25 bg-blue-500/15 text-blue-100">{statusLabels[report.status] || report.status}</Badge></CardHeader><CardContent className="grid gap-1 text-sm"><p><span className="text-white/55">Reported member:</span> {report.reportedMember}</p><p><span className="text-white/55">Concern:</span> {report.reason}</p></CardContent></Card>)}
+        </div> : <Card className="border-white/10 bg-white/5"><CardContent className="py-14 text-center text-white/65">You have not submitted any member reports.</CardContent></Card>}
+      </div>
+    </main>
+  </div>;
+}

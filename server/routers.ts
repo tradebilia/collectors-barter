@@ -33,9 +33,11 @@ import {
   getSiteStatistics,
   submitUserReport,
   getUserReports,
+  getReportsByReporter,
   getTopHighestValueItems,
   getUserReportDetails,
   updateReportStatus,
+  uploadReportEvidence,
   updateUserEbayInfo,
   getUserEbayInfo,
   storeEbayFeedback,
@@ -85,6 +87,7 @@ import {
   unsuspendUser,
   getSuspendedUsers,
 } from "./db";
+import { ownsReportAttachment, serializeReportEvidence } from "./reportEvidence";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { notifyOwner } from "./_core/notification";
@@ -1326,21 +1329,31 @@ export const appRouter = router({
           reportedUserId: z.number().int().positive(),
           reason: z.string().min(1).max(100),
           description: z.string().min(10).max(2000),
-          evidence: z.string().max(500).optional(),
+          evidence: z.string().max(2000).optional(),
+          listingReference: z.string().max(240).optional(),
+          contactEmail: z.string().email().max(320).optional(),
+          attachments: z.array(z.object({ key: z.string().max(500), url: z.string().max(700), name: z.string().max(160), type: z.string().max(120), size: z.number().int().positive().max(10 * 1024 * 1024) })).max(5).default([]),
         }),
       )
       .mutation(async ({ ctx, input }) => {
         if (input.reportedUserId === ctx.user.id) {
           throw new TRPCError({ code: 'BAD_REQUEST', message: 'You cannot report yourself' });
         }
+        if (input.attachments.some((attachment) => !ownsReportAttachment(ctx.user.id, attachment))) {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'An evidence attachment does not belong to your report.' });
+        }
         return submitUserReport({
           reportedUserId: input.reportedUserId,
           reporterUserId: ctx.user.id,
           reason: input.reason,
           description: input.description,
-          evidence: input.evidence,
+          evidence: serializeReportEvidence({ notes: input.evidence, listingReference: input.listingReference, contactEmail: input.contactEmail, attachments: input.attachments }),
         });
       }),
+    uploadReportEvidence: protectedProcedure
+      .input(z.object({ name: z.string().min(1).max(160), type: z.string().min(1).max(120), contentBase64: z.string().min(1).max(14_000_000) }))
+      .mutation(({ ctx, input }) => uploadReportEvidence(ctx.user.id, input)),
+    getMyReports: protectedProcedure.query(({ ctx }) => getReportsByReporter(ctx.user.id)),
     sendInquiry: protectedProcedure
       .input(
         z.object({

@@ -400,6 +400,17 @@ export default function WarRoom() {
     (trade?.proposal as any)?.shippingAt || (trade?.proposal as any)?.acceptedAt,
   );
   const receiptAvailable = Boolean(trade && ['accepted', 'shipping', 'shipped', 'completed'].includes(currentStage));
+  const canReportTradeIssue = Boolean(receiptAvailable && otherUser?.id);
+  const openTradeIssueReport = () => {
+    if (!otherUser?.id) return;
+    const query = new URLSearchParams({
+      reportedUserId: String(otherUser.id),
+      member: otherUser.username || theirDisplayName,
+      reference: (trade?.proposal as any)?.tradeReferenceNumber || `Proposal #${proposalId}`,
+      tradeIssue: '1',
+    });
+    navigate(`/report-user?${query.toString()}`);
+  };
 
   // Cash sweeteners — from server (already submitted) + local pending (not yet submitted)
   // Perspective-aware: if I am the requester, MY cash = cashFromRequester; if I am the recipient, MY cash = cashFromRecipient
@@ -1029,13 +1040,24 @@ export default function WarRoom() {
                 })()}
 
                 {receiptAvailable && (
-                  <button
-                    type="button"
-                    onClick={downloadCurrentReceipt}
-                    className="inline-flex items-center gap-2 rounded-lg border border-blue-500/40 bg-blue-900/20 px-3 py-2 text-xs font-semibold text-blue-200 transition hover:bg-blue-900/40"
-                  >
-                    <span aria-hidden="true">↓</span> Download Trade Receipt (PDF)
-                  </button>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={downloadCurrentReceipt}
+                      className="inline-flex items-center gap-2 rounded-lg border border-blue-500/40 bg-blue-900/20 px-3 py-2 text-xs font-semibold text-blue-200 transition hover:bg-blue-900/40"
+                    >
+                      <span aria-hidden="true">↓</span> Download Trade Receipt (PDF)
+                    </button>
+                    {canReportTradeIssue && (
+                      <button
+                        type="button"
+                        onClick={openTradeIssueReport}
+                        className="inline-flex items-center gap-2 rounded-lg border border-amber-400/35 bg-amber-500/10 px-3 py-2 text-xs font-semibold text-amber-100 transition hover:bg-amber-500/20"
+                      >
+                        <span aria-hidden="true">!</span> Report a Trade Issue
+                      </button>
+                    )}
+                  </div>
                 )}
 
                 {/* ── SHIPPED / COMPLETED: Compact tracking summary + receipt confirmation ── */}

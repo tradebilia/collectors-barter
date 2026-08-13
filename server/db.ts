@@ -2677,6 +2677,35 @@ export async function submitUserReport(input: {
   return { reportId };
 }
 
+const REPORT_EVIDENCE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "application/pdf", "text/plain"]);
+const REPORT_EVIDENCE_MAX_BYTES = 10 * 1024 * 1024;
+
+export async function uploadReportEvidence(userId: number, input: { name: string; type: string; contentBase64: string }) {
+  if (!REPORT_EVIDENCE_TYPES.has(input.type)) throw new Error("Evidence must be a PNG, JPG, WEBP, PDF, or TXT file.");
+  const buffer = Buffer.from(input.contentBase64, "base64");
+  if (!buffer.length || buffer.length > REPORT_EVIDENCE_MAX_BYTES) throw new Error("Evidence files must be between 1 byte and 10MB.");
+  const safeName = input.name.replace(/[^a-zA-Z0-9._-]+/g, "-").slice(0, 140) || "evidence";
+  const uploaded = await storagePut(`reports/${userId}/${Date.now()}-${safeName}`, buffer, input.type);
+  return { ...uploaded, name: safeName, type: input.type, size: buffer.length };
+}
+
+export async function getReportsByReporter(reporterUserId: number) {
+  const db = await requireDb();
+  return db
+    .select({
+      reportId: userReports.reportId,
+      reason: userReports.reason,
+      status: userReports.status,
+      createdAt: userReports.createdAt,
+      reportedMember: sql<string>`COALESCE(NULLIF(${userProfiles.displayName}, ''), ${users.username})`,
+    })
+    .from(userReports)
+    .innerJoin(users, eq(userReports.reportedUserId, users.id))
+    .leftJoin(userProfiles, eq(userProfiles.userId, users.id))
+    .where(eq(userReports.reporterUserId, reporterUserId))
+    .orderBy(desc(userReports.createdAt));
+}
+
 // Get all user reports for admin (with pagination)
 export async function getUserReports(options: {
   status?: string;
