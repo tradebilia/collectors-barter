@@ -215,3 +215,7 @@ After the deployment-success notice, a cache-busting published Traders Showcase 
 Development validation of the refined consolidated row confirmed both full item titles are visible without truncation, the purple center exchange arrows are prominent, and member names are shown without the redundant Trading label. The completed trade remains one horizontal row with no public values.
 
 The initial published Traders Showcase request after checkpoint `f5788a43` still served the predecessor row with truncated titles, smaller arrows, and Trading labels. Production validation remains incomplete pending deployment freshness.
+
+The first published request after deployment-refresh checkpoint `c00eb717` also served the predecessor Showcase row. Production validation remains incomplete until the deployment-success refresh serves the refined bundle.
+
+After the deployment-success notice, a cache-busting published Traders Showcase load displayed complete **Barry Sanders Score Rookie** and **Rickey Henderson Rookie** titles, prominent purple exchange arrows, and only the member names **Rtavani** and **Administrator** without redundant Trading labels. The completed trade remains one consolidated horizontal row with no public values. This completes development and production validation.

@@ -237,4 +237,4 @@
 - [x] Add regression coverage and validate the consolidated Traders Showcase exchange layout in development and production.
 - [x] Display complete item titles in consolidated Traders Showcase exchange rows.
 - [x] Enlarge the central exchange arrows and remove redundant Trading member labels.
-- [ ] Add regression coverage and validate the refined Showcase exchange layout in development and production.
+- [x] Add regression coverage and validate the refined Showcase exchange layout in development and production.
