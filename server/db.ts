@@ -1216,6 +1216,14 @@ export async function searchMembers(input: {
   query?: string;
   region?: string;
   verification?: "all" | "verified" | "established" | "rising";
+  category?: (typeof collectibleCategories)[number];
+  minRating?: number;
+  minCompletedTrades?: number;
+  activeListingsOnly?: boolean;
+  listingValueMin?: number;
+  listingValueMax?: number;
+  memberSince?: "past_year" | "past_three_years" | "longstanding";
+  sort?: "best_match" | "best_rated" | "most_trades" | "most_listings" | "newest";
 }) {
   const db = await requireDb();
 
@@ -1243,7 +1251,9 @@ export async function searchMembers(input: {
       bio: userProfiles.bio,
       contactTown: userProfiles.contactTown,
       contactState: userProfiles.contactState,
+      profileCreatedAt: userProfiles.createdAt,
       merchantVerified: users.merchantVerified,
+      username: users.username,
     })
     .from(userProfiles)
     .innerJoin(users, eq(users.id, userProfiles.userId))
@@ -1262,6 +1272,15 @@ export async function searchMembers(input: {
     .where(eq(listings.status, "active"))
     .groupBy(listings.ownerId);
   const listingCountMap = new Map(listingCountsResult.map(r => [r.ownerId, Number(r.count)]));
+  const listingValueResult = await db
+    .select({
+      ownerId: listings.ownerId,
+      value: sql<number>`coalesce(sum(cast(${listings.estimatedValue} as decimal(12,2))), 0)`,
+    })
+    .from(listings)
+    .where(eq(listings.status, "active"))
+    .groupBy(listings.ownerId);
+  const listingValueMap = new Map(listingValueResult.map(r => [r.ownerId, Number(r.value ?? 0)]));
   const firstListingMap = new Map<number, number>();
   for (const listing of await db
     .select({ ownerId: listings.ownerId, id: listings.id })
@@ -1312,6 +1331,7 @@ export async function searchMembers(input: {
     return {
       userId: m.userId,
       displayName: m.displayName,
+      username: m.username ?? null,
       avatarUrl: m.avatarUrl,
       bio: m.bio,
       region: m.contactState,
@@ -1320,29 +1340,68 @@ export async function searchMembers(input: {
       averageRating: rating.averageRating,
       reviewCount: rating.reviewCount,
       listingCount: listingCountMap.get(m.userId) ?? 0,
+      activeListingValue: listingValueMap.get(m.userId) ?? 0,
       completedTradeCount,
       topCategories: topCategoriesMap.get(m.userId) ?? [],
       firstListingId: firstListingMap.get(m.userId) ?? null,
+      joinedAt: new Date(m.profileCreatedAt).getTime(),
       standingKey: standing.key,
       verificationLevel: standing.label,
     };
   });
 
-  const filteredMembers = input.verification && input.verification !== "all"
-    ? formattedMembers.filter(member => member.standingKey === input.verification)
-    : formattedMembers;
+  const now = Date.now();
+  const pastYear = now - 365 * 24 * 60 * 60 * 1000;
+  const pastThreeYears = now - 3 * 365 * 24 * 60 * 60 * 1000;
+  const filteredMembers = formattedMembers.filter(member => {
+    if (input.verification && input.verification !== "all" && member.standingKey !== input.verification) return false;
+    if (input.category && !member.topCategories.includes(input.category)) return false;
+    if (input.minRating && member.averageRating < input.minRating) return false;
+    if (input.minCompletedTrades && member.completedTradeCount < input.minCompletedTrades) return false;
+    if (input.activeListingsOnly && member.listingCount === 0) return false;
+    if (input.listingValueMin !== undefined && member.activeListingValue < input.listingValueMin) return false;
+    if (input.listingValueMax !== undefined && member.activeListingValue > input.listingValueMax) return false;
+    if (input.memberSince === "past_year" && member.joinedAt < pastYear) return false;
+    if (input.memberSince === "past_three_years" && member.joinedAt < pastThreeYears) return false;
+    if (input.memberSince === "longstanding" && member.joinedAt > pastThreeYears) return false;
+    return true;
+  });
+
+  const normalizedQuery = trimmedQuery.toLocaleLowerCase();
+  const numericMemberId = Number(trimmedQuery);
+  const isExactMatch = (member: (typeof filteredMembers)[number]) =>
+    (Number.isInteger(numericMemberId) && numericMemberId > 0 && member.userId === numericMemberId)
+    || member.displayName.trim().toLocaleLowerCase() === normalizedQuery
+    || member.username?.trim().toLocaleLowerCase() === normalizedQuery;
+  const orderedMembers = [...filteredMembers].sort((a, b) => {
+    switch (input.sort ?? "best_match") {
+      case "best_rated":
+        return b.averageRating - a.averageRating || b.reviewCount - a.reviewCount || a.displayName.localeCompare(b.displayName);
+      case "most_trades":
+        return b.completedTradeCount - a.completedTradeCount || b.averageRating - a.averageRating || a.displayName.localeCompare(b.displayName);
+      case "most_listings":
+        return b.listingCount - a.listingCount || b.activeListingValue - a.activeListingValue || a.displayName.localeCompare(b.displayName);
+      case "newest":
+        return b.joinedAt - a.joinedAt || a.displayName.localeCompare(b.displayName);
+      default:
+        return Number(isExactMatch(b)) - Number(isExactMatch(a)) || a.displayName.localeCompare(b.displayName);
+    }
+  });
 
   // Return object with members and rankings
   const topRated = [...filteredMembers].sort((a, b) => (b.rating?.averageRating ?? 0) - (a.rating?.averageRating ?? 0)).slice(0, 10);
   const mostActive = [...filteredMembers].sort((a, b) => (b.listingCount + b.completedTradeCount) - (a.listingCount + a.completedTradeCount)).slice(0, 10);
-  const uniqueRegions = Array.from(new Set(members.map(m => m.contactState).filter((region): region is string => Boolean(region))));
+  const uniqueRegions = Array.from(new Set(members.map(m => m.contactState).filter((region): region is string => Boolean(region)))).sort();
+  const exactMatchMemberId = trimmedQuery ? orderedMembers.find(isExactMatch)?.userId ?? null : null;
   
   return {
-    members: filteredMembers,
+    members: orderedMembers,
     rankings: { topRated, mostActive },
     topRated: topRated,
     mostActive: mostActive,
     regions: uniqueRegions,
+    searchedQuery: trimmedQuery,
+    exactMatchMemberId,
   };
 }
 

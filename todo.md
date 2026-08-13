@@ -254,3 +254,10 @@
 - [x] Add an accessible drag-and-drop evidence attachment zone to the Report a User form while retaining browse-file upload.
 - [x] Correct the shared top-bar animated logo scale so it matches the established visual size across pages.
 - [x] Add regression coverage and validate Report a User uploads and top-bar logo sizing in development and production.
+- [x] Redesign Member Directory search results so an intentional member ID or exact-name search leads clearly to the matching public profile, pending approval.
+- [x] Redesign the Member Directory into a deliberate multi-criteria discovery tool with member, location, collection, standing, and value-oriented filtering, pending approval.
+- [x] Create and review a visual mockup of the proposed multi-criteria Member Directory before implementation.
+- [x] Audit existing profile, listing, review, trade, and verification fields for approved privacy-safe directory filters.
+- [x] Add deliberate Search and Clear actions, exact-match profile routing, approved filters, and approved sort controls to Member Directory.
+- [x] Rebuild Member Directory results as profile-first collector cards and make rankings secondary to discovery.
+- [ ] Add regression coverage and validate the redesigned Member Directory in development and production.

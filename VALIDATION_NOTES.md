@@ -227,3 +227,9 @@ In the authenticated development Report a User view, the evidence section render
 The same Report a User view now uses the shared desktop animated-logo geometry in its search-hidden top bar: a 650px-wide, 64px-high absolute container aligned at the same `top: -10px` position used by the standard top bar. The visual comparison against Member Directory confirmed that the desktop animated logo uses the same shared layout contract while mobile retains a compact non-overlapping treatment.
 
 After the deployment-success notice, a cache-busting production Report a User load displayed the focusable **Drop evidence here or click to browse** control with the accepted formats, 10MB per-file limit, and five-file maximum. The production search-hidden top bar uses the same corrected shared animated-logo geometry as development. No report or evidence file was submitted during production validation.
+
+## Member Directory discovery redesign
+
+Development validation confirmed that Member Directory now renders a deliberate Search and Clear workflow, a privacy-safe filter rail, profile-first collector result cards, and a compact secondary Top Collectors panel. The search does not narrow results while a visitor merely types. Entering the exact Member ID `60003` and submitting the search navigated to Rtavani’s existing public profile route in the authenticated development session. No member data was changed during this verification.
+
+A follow-up development view confirmed that the visible filter rail exposes State / region, Collecting category, Member standing, Minimum rating, More filters, and an explicit Apply filters action before any filtering is requested.

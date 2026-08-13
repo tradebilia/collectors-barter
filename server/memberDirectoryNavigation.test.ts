@@ -28,8 +28,9 @@ describe("Member Directory navigation", () => {
     expect(memberDirectorySource).toContain('value="verified"');
   });
 
-  it("keeps the directory publicly viewable while reserving member actions for authenticated users", () => {
+  it("keeps the directory publicly viewable and routes collector actions through the public profile", () => {
     expect(appSource).toContain('<Route path="/members" component={MemberSearch} />');
-    expect(memberDirectorySource).toContain("if (!isAuthenticated)");
+    expect(memberDirectorySource).toContain("setLocation(`/profile/${member.userId}`)");
+    expect(memberDirectorySource).not.toContain("startDirectMessageThread");
   });
 });
