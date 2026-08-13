@@ -192,6 +192,6 @@
 - [x] Add a participant-authorized downloadable Trade Room receipt.
 - [x] Confirm the shipment reminder delivery channel and timing policy.
 - [x] Implement idempotent shipment-date reminders without changing existing trade data.
-- [ ] Add regression coverage and validate timeline labels, receipts, and shipment reminders in development and production.
+- [x] Add regression coverage and validate timeline labels, receipts, and shipment reminders in development and production.
 - [x] Send one shipping reminder 48 hours before each participant's deadline and one daily overdue reminder until that participant submits tracking.
-- [ ] Activate the deployed daily shipment-reminder schedule and verify its safe idempotent behavior.
+- [x] Activate the deployed daily shipment-reminder schedule and verify its safe idempotent behavior.
