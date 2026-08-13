@@ -59,6 +59,7 @@ function makeApp(overrides: Partial<ScheduledDeps> = {}) {
     deleteDraftsOlderThan: vi.fn(async () => 0),
     notifyOwner: vi.fn(async () => true),
     isStagingSafetyEnabled: vi.fn(() => false),
+    sendShippingDeadlineReminderEmail: vi.fn(async () => true),
     ...(Object.fromEntries(Object.entries(overrides).filter(([k]) => k !== "__selectRows"))),
   };
 
@@ -253,6 +254,8 @@ describe("tradeReminders", () => {
       autoCancelled: 0,
       acceptanceTimedOut: 0,
       receiptEscalated: 0,
+      shipmentDueSoonReminders: 0,
+      shipmentOverdueReminders: 0,
     });
   });
 

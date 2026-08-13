@@ -14,6 +14,7 @@ import { OnlineIndicator } from "@/components/OnlineIndicator";
 import { toast } from "sonner";
 import { VideoChatPanel } from "@/components/VideoChatPanel";
 import { getNegotiationTurnState } from "@/lib/tradeNegotiationTurn";
+import { deriveShippingDeadline, downloadTradeReceipt } from "@/lib/tradeReceipt";
 
 type TradeStage = 'proposed' | 'negotiating' | 'accepted' | 'shipping' | 'shipped' | 'completed';
 
@@ -393,6 +394,13 @@ export default function WarRoom() {
     ...pendingTheirItems.filter(i => !existingIds.has(i.id)),
   ];
 
+  const storedShippingDeadline = (trade?.proposal as any)?.shippingDeadline;
+  const shippingDeadline = deriveShippingDeadline(
+    storedShippingDeadline,
+    (trade?.proposal as any)?.shippingAt || (trade?.proposal as any)?.acceptedAt,
+  );
+  const receiptAvailable = Boolean(trade && ['accepted', 'shipping', 'shipped', 'completed'].includes(currentStage));
+
   // Cash sweeteners — from server (already submitted) + local pending (not yet submitted)
   // Perspective-aware: if I am the requester, MY cash = cashFromRequester; if I am the recipient, MY cash = cashFromRecipient
   const serverMyCash = isRequester
@@ -435,6 +443,20 @@ export default function WarRoom() {
   const theirItemsValue = theirItems.reduce((sum: number, l: any) => sum + parseFloat(l?.estimatedValue || '0'), 0);
   const myTotalValue = myItemsValue + myCash;
   const theirTotalValue = theirItemsValue + theirCash;
+
+  const downloadCurrentReceipt = () => {
+    if (!trade || !receiptAvailable) return;
+    downloadTradeReceipt({
+      tradeReference: (trade.proposal as any)?.tradeReferenceNumber || `TR-${proposalId}`,
+      status: currentStage,
+      createdAt: (trade.proposal as any)?.createdAt,
+      acceptedAt: (trade.proposal as any)?.acceptedAt,
+      shippingDeadline,
+      mySide: { name: myDisplayName, contactName: (trade as any)?.myContactInfo?.contactFullName, items: myItems, cash: serverMyCash, tracking: ((trade as any)?.trackingNumbers || []).filter((entry: any) => entry.userId === myUserId) },
+      theirSide: { name: theirDisplayName, contactName: (trade as any)?.theirContactInfo?.contactFullName, items: theirItems, cash: serverTheirCash, tracking: ((trade as any)?.trackingNumbers || []).filter((entry: any) => entry.userId !== myUserId) },
+    });
+    toast.success("Trade receipt downloaded.");
+  };
 
   // Fairness calculation
   // "In your favor" = you RECEIVE more than you GIVE (their side is worth more)
@@ -984,10 +1006,25 @@ export default function WarRoom() {
                         {myTracking.length > 0 && theirTracking.length > 0 && (
                           <p className="ml-auto text-green-400 text-xs font-bold">🚚 Both packages on the way!</p>
                         )}
+                        {shippingDeadline && (myTracking.length === 0 || theirTracking.length === 0) && (
+                          <p className={`ml-auto text-xs font-semibold ${shippingDeadline.getTime() < Date.now() ? 'text-red-300' : 'text-orange-300'}`}>
+                            Ship by {shippingDeadline.toLocaleDateString()}
+                          </p>
+                        )}
                       </div>
                     </div>
                   );
                 })()}
+
+                {receiptAvailable && (
+                  <button
+                    type="button"
+                    onClick={downloadCurrentReceipt}
+                    className="inline-flex items-center gap-2 rounded-lg border border-blue-500/40 bg-blue-900/20 px-3 py-2 text-xs font-semibold text-blue-200 transition hover:bg-blue-900/40"
+                  >
+                    <span aria-hidden="true">↓</span> Download Trade Receipt (PDF)
+                  </button>
+                )}
 
                 {/* ── SHIPPED / COMPLETED: Compact tracking summary + receipt confirmation ── */}
                 {(currentStage === 'shipped' || currentStage === 'completed') && (
