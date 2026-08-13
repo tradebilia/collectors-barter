@@ -175,3 +175,9 @@ After the deployment-success notice, a cache-busting published Report a Member l
 Development validation of the enlarged title confirmed that the Report a Member lettering and companion mark now occupy a visual scale comparable to the main-page hero title. The collector-background hero, hero height, page navigation, and reporting form remain unchanged.
 
 The initial published requests after checkpoint `46b3bfad` still rendered the predecessor smaller title scale. Production validation remains incomplete pending deployment freshness for the enlarged title styling.
+
+The initial published requests after deployment-refresh checkpoint `0c357c01` also rendered the predecessor smaller title scale. The title asset, collector background, and form remained intact, but production validation remained incomplete until the deployment-success refresh.
+
+After the deployment-success notice, a cache-busting published Report a Member load displayed the enlarged title scale. The Report a Member lettering and companion mark are now visually comparable to the main-page hero title, while the collector background, hero height, navigation, and reporting form remain unchanged. This completes development and production validation without submitting a report.
+
+Development validation of the Traders Showcase verified the redesigned completed-trade card for `TR-000001`. Each collectible is presented independently: the original owner appears below the item under **From**, a purple arrow shows the completed ownership movement, and the recipient appears under **Now with**. The card contains no published item value or total-deal value, while retaining the reference number and completion date.

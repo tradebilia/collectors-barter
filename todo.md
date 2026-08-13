@@ -219,4 +219,15 @@
 - [x] Replace the Report a Member hero title with the newly supplied wider artwork.
 - [x] Validate the supplied wider Report a Member title in development and production.
 - [x] Increase the Report a Member hero title scale to align with the main-page hero.
-- [ ] Validate the enlarged Report a Member title in development and production.
+- [x] Validate the enlarged Report a Member title in development and production.
+- [ ] Trace why Report a Member Contact email can retain a prior member’s email after an account change.
+- [ ] Synchronize Contact email with the current authenticated account while retaining manual edit support.
+- [ ] Add regression coverage and validate current-account Contact email behavior in development and production.
+- [ ] Audit all member-facing uses of authentication email versus saved Tradebilia profile contact email.
+- [ ] Add one authoritative Tradebilia profile contact identity source for client and server workflows.
+- [ ] Replace authentication-email fallbacks in Report a Member, Referral Request, Profile, setup, settings, navigation, moderation, and notification records.
+- [ ] Add regression coverage and validate saved Tradebilia contact-email precedence across member-facing workflows.
+- [x] Audit completed-trade ownership data for the Traders Showcase.
+- [x] Show each showcased item with its original owner, a trade-direction arrow, and its receiving member.
+- [x] Remove public total-deal value from Traders Showcase cards.
+- [ ] Add regression coverage and validate the revised Traders Showcase in development and production.
