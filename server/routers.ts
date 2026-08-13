@@ -155,6 +155,14 @@ const memberSearchSchema = z.object({
   query: z.string().max(120).optional(),
   region: z.string().max(120).optional(),
   verification: z.enum(["all", "verified", "established", "rising"]).optional(),
+  category: z.enum(collectibleCategories).optional(),
+  minRating: z.number().min(0).max(5).optional(),
+  minCompletedTrades: z.number().int().min(0).max(100000).optional(),
+  activeListingsOnly: z.boolean().optional(),
+  listingValueMin: z.number().min(0).max(100000000).optional(),
+  listingValueMax: z.number().min(0).max(100000000).optional(),
+  memberSince: z.enum(["past_year", "past_three_years", "longstanding"]).optional(),
+  sort: z.enum(["best_match", "best_rated", "most_trades", "most_listings", "newest"]).optional(),
 });
 
 const reportUserSchema = z.object({

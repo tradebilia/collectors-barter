@@ -7,11 +7,13 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { getLoginUrl } from "@/const";
 import { getInquiryDirection, getInquiryDirectionPresentation } from "@/lib/inquiryDirection";
+import { getDirectMessageDirection, getDirectMessageDirectionPresentation } from "@/lib/directMessageDirection";
+import { matchesDirectMessageDirectionFilter, type DirectMessageDirectionFilter } from "@/lib/directMessageFilter";
 import { loadPresenceMap, subscribeToPresence, updatePresence } from "@/lib/memberMessaging";
 import { shouldRefreshUnreadAlertAfterOpeningDirectThread } from "@/lib/unreadAlertRefresh";
 import { trpc } from "@/lib/trpc";
 import { TRADEBILIA_LOGO_URL, tradebiliaCategories } from "@/lib/tradebilia";
-import { ArrowRightLeft, Loader2, MailOpen, MessageSquareText, Send, ShieldCheck, UsersRound } from "lucide-react";
+import { ArrowRightLeft, Loader2, MailOpen, MessageSquareText, Send, ShieldCheck } from "lucide-react";
 import { TopRightIcons } from "@/components/TopRightIcons";
 import { TopBar } from "@/components/TopBar";
 import { CategoryBar } from "@/components/CategoryBar";
@@ -42,6 +44,7 @@ export default function Messages() {
   const utils = trpc.useUtils();
   const [folder, setFolder] = useState<(typeof folders)[number]["value"]>("all");
   const [inquiryDirectionFilter, setInquiryDirectionFilter] = useState<"all" | "received" | "sent">("all");
+  const [directDirectionFilter, setDirectDirectionFilter] = useState<DirectMessageDirectionFilter>("all");
   const [deletedQueryToken, setDeletedQueryToken] = useState(() => Date.now());
   const [activeThreadKey, setActiveThreadKey] = useState<string | null>(null);
   const [messageDraft, setMessageDraft] = useState("");
@@ -122,6 +125,9 @@ export default function Messages() {
     setFolder(nextFolder);
     if (nextFolder === "inquiries") {
       setInquiryDirectionFilter("all");
+    }
+    if (nextFolder === "direct") {
+      setDirectDirectionFilter("all");
     }
     if (nextFolder === "deleted") {
       setDeletedQueryToken(Date.now());
@@ -208,6 +214,7 @@ export default function Messages() {
       counterpartAvatarUrl: thread.counterpartAvatarUrl ?? null,
       summary: thread.latestBody ?? "Direct collector conversation",
       subject: thread.latestSubject ?? "",
+      latestSenderId: Number(thread.latestSenderId),
       threadId: thread.threadId,
     }));
 
@@ -217,11 +224,17 @@ export default function Messages() {
   const filteredThreads = useMemo(() => {
     if (folder === "inquiries") return [];
     return allThreads.filter((thread: any) => {
-      if (folder === "direct") return thread.kind === "direct";
+      if (folder === "direct") {
+        return thread.kind === "direct" && matchesDirectMessageDirectionFilter(
+          thread.latestSenderId,
+          user?.id,
+          directDirectionFilter,
+        );
+      }
       if (folder === "unread") return thread.unread;
       return true;
     });
-  }, [allThreads, folder]);
+  }, [allThreads, folder, directDirectionFilter, user?.id]);
 
   const filteredInquiries = useMemo(() => {
     if (folder === "deleted") return deletedInquiriesQuery.data ?? [];
@@ -285,6 +298,12 @@ export default function Messages() {
     : null;
   const activePresence = activeThread ? presenceMap[activeThread.counterpartId] : null;
   const activeOnline = activePresence ? Date.now() - activePresence.updatedAt < 15000 : false;
+  const activeDirectDirection = activeThread?.kind === "direct"
+    ? getDirectMessageDirection(activeThread.latestSenderId, user?.id)
+    : null;
+  const activeDirectPresentation = activeThread?.kind === "direct" && activeDirectDirection
+    ? getDirectMessageDirectionPresentation(activeDirectDirection, activeThread.counterpartName)
+    : null;
 
   const repliesQuery = trpc.market.getReplies.useQuery(
     { inquiryId: activeInquiry?.id ?? 0 },
@@ -409,6 +428,24 @@ export default function Messages() {
                   ))}
                 </div>
               )}
+              {folder === "direct" && (
+                <div className="mt-4 flex flex-wrap gap-2" aria-label="Direct message direction filters">
+                  {([
+                    { value: "all", label: "All" },
+                    { value: "received", label: "Received" },
+                    { value: "sent", label: "Sent" },
+                  ] as const).map(filter => (
+                    <button
+                      key={filter.value}
+                      type="button"
+                      onClick={() => setDirectDirectionFilter(filter.value)}
+                      className={`rounded-full border px-3 py-1.5 text-sm font-medium transition ${directDirectionFilter === filter.value ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100"}`}
+                    >
+                      {filter.label}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
             <ScrollArea className="h-[70vh] px-3 py-3">
               {dashboardQuery.isLoading || inquiriesQuery.isLoading ? (
@@ -456,7 +493,15 @@ export default function Messages() {
                       </button>
                     );
                   })}
-                  {filteredThreads.map(thread => (
+                  {filteredThreads.map(thread => {
+                    const directDirection = thread.kind === "direct"
+                      ? getDirectMessageDirection((thread as any).latestSenderId, user?.id)
+                      : null;
+                    const directPresentation = thread.kind === "direct" && directDirection
+                      ? getDirectMessageDirectionPresentation(directDirection, thread.counterpartName)
+                      : null;
+
+                    return (
                     <button
                       key={thread.key}
                       type="button"
@@ -465,22 +510,31 @@ export default function Messages() {
                     >
                       <div className="flex items-start justify-between gap-4">
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-lg font-semibold">{thread.kind === "direct" && thread.subject ? thread.subject : thread.counterpartName}</p>
-                          <p className={`mt-1 text-xs uppercase tracking-[0.18em] ${thread.key === activeThreadKey ? "text-white/65" : "text-slate-500"}`}>
-                            {thread.kind === "direct" ? `From ${thread.counterpartName}` : `Trade Proposal #${thread.proposal.id}`}
-                          </p>
+                          {thread.kind === "direct" ? (
+                            <>
+                              <p className="truncate text-lg font-semibold">{directPresentation?.listLabel}</p>
+                              <p className={`mt-1 text-xs uppercase tracking-[0.18em] ${thread.key === activeThreadKey ? "text-white/65" : "text-slate-500"}`}>Direct Message</p>
+                            </>
+                          ) : (
+                            <>
+                              <p className="truncate text-lg font-semibold">{thread.counterpartName}</p>
+                              <p className={`mt-1 text-xs uppercase tracking-[0.18em] ${thread.key === activeThreadKey ? "text-white/65" : "text-slate-500"}`}>Trade Proposal #{thread.proposal.id}</p>
+                            </>
+                          )}
                         </div>
-                        <Badge variant={thread.key === activeThreadKey ? "secondary" : "outline"} className="rounded-full capitalize">
-                          {thread.kind === "direct" ? "direct" : thread.proposal.status}
+                        <Badge variant={thread.key === activeThreadKey ? "secondary" : "outline"} className={`rounded-full capitalize ${thread.kind === "direct" ? directDirection === "sent" ? "bg-blue-100 text-blue-800 hover:bg-blue-200" : "bg-emerald-100 text-emerald-800 hover:bg-emerald-200" : ""}`}>
+                          {thread.kind === "direct" ? directPresentation?.badge : thread.proposal.status}
                         </Badge>
                       </div>
-                      <p className={`mt-3 line-clamp-2 text-sm leading-6 ${thread.key === activeThreadKey ? "text-white/75" : "text-slate-600"}`}>{thread.summary}</p>
+                      {thread.kind === "direct" && <p className={`mt-3 truncate text-sm font-semibold ${thread.key === activeThreadKey ? "text-white" : "text-slate-900"}`}>{thread.subject || "Direct message"}</p>}
+                      <p className={`mt-2 line-clamp-2 text-sm leading-6 ${thread.key === activeThreadKey ? "text-white/75" : "text-slate-600"}`}>{thread.summary}</p>
                       <div className="mt-4 flex items-center justify-between text-xs uppercase tracking-[0.18em]">
                         <span>{new Date(thread.updatedAt).toLocaleString()}</span>
-                        {thread.unread ? <span className="inline-flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-emerald-400" />Unread</span> : <span>Seen</span>}
+                        {thread.kind === "direct" && directDirection === "sent" ? null : thread.unread ? <span className="inline-flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-emerald-400" />Unread</span> : <span>Seen</span>}
                       </div>
                     </button>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : (
                 <div className="p-6 text-sm leading-7 text-slate-600">There are no message threads in this folder yet.</div>
@@ -592,11 +646,14 @@ export default function Messages() {
                         <AvatarFallback>{initials(activeThread.counterpartName)}</AvatarFallback>
                       </Avatar>
                       <div>
-                        <h2 className="text-3xl font-semibold text-slate-900">{activeThread.counterpartName}</h2>
+                        <h2 className="text-3xl font-semibold text-slate-900">{activeThread.kind === "direct" ? activeDirectPresentation?.detailHeading : activeThread.counterpartName}</h2>
                         <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-slate-600">
                           <Badge variant="outline" className="rounded-full capitalize">{activeThread.kind === "direct" ? "Direct conversation" : activeThread.proposal.status}</Badge>
+                          {activeThread.kind === "direct" && activeDirectPresentation && (
+                            <Badge className={`rounded-full ${activeDirectDirection === "sent" ? "bg-blue-100 text-blue-800 hover:bg-blue-200" : "bg-emerald-100 text-emerald-800 hover:bg-emerald-200"}`}>{activeDirectPresentation.badge}</Badge>
+                          )}
                           {activeOnline ? <span className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-emerald-700"><span className="h-2 w-2 rounded-full bg-emerald-500" />Online now</span> : null}
-                          {activeThread.kind === "trade" ? <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1"><ShieldCheck className="h-4 w-4" />{activeThread.proposal.ownerRating?.averageRating?.toFixed(1) ?? "N/A"} rating</span> : <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1"><UsersRound className="h-4 w-4" />Collector direct line</span>}
+                          {activeThread.kind === "trade" ? <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1"><ShieldCheck className="h-4 w-4" />{activeThread.proposal.ownerRating?.averageRating?.toFixed(1) ?? "N/A"} rating</span> : <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1"><MessageSquareText className="h-4 w-4" />Collector direct line</span>}
                         </div>
                       </div>
                     </div>
@@ -659,6 +716,7 @@ export default function Messages() {
                       <div className="rounded-[1.5rem] border border-slate-100 bg-slate-50 px-4 py-3 text-sm">
                         <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Subject</p>
                         <p className="mt-1 font-semibold text-slate-900">{(activeThread as any).subject || '(no subject)'}</p>
+                        {activeDirectPresentation && <p className="mt-3 text-xs uppercase tracking-[0.18em] text-slate-500">{activeDirectPresentation.detailPrefix} on {new Date(activeThread.updatedAt).toLocaleString()}</p>}
                       </div>
                     )}
                     {(activeThread.kind === "direct" ? (dbMessagesQuery.data ?? []) : activeThread.proposal.messages).length ? (activeThread.kind === "direct" ? (dbMessagesQuery.data ?? []) : activeThread.proposal.messages).map((message: any) => {
@@ -682,7 +740,7 @@ export default function Messages() {
                 </ScrollArea>
 
                 <div className="border-t border-slate-200 px-6 py-5">
-                  <div className="grid gap-3 lg:grid-cols-[1fr_auto_auto]">
+                  <div className={`grid gap-3 ${activeThread.kind === "trade" ? "lg:grid-cols-[1fr_auto_auto]" : "lg:grid-cols-[1fr_auto]"}`}>
                     <Input value={messageDraft} onChange={event => setMessageDraft(event.target.value)} placeholder={activeThread.kind === "direct" ? "Write a direct member message" : "Add a trade note, shipping update, or negotiation reply"} className="h-12 bg-white" />
                     {activeThread.kind === "trade" ? (
                       <Button variant="outline" className="h-12 rounded-full bg-transparent" asChild>
@@ -691,14 +749,7 @@ export default function Messages() {
                           View listing
                         </Link>
                       </Button>
-                    ) : (
-                      <Button variant="outline" className="h-12 rounded-full bg-transparent" asChild>
-                        <Link href="/members">
-                          <UsersRound className="mr-2 h-4 w-4" />
-                          Member directory
-                        </Link>
-                      </Button>
-                    )}
+                    ) : null}
                     <Button className="h-12 rounded-full px-6" disabled={!messageDraft.trim() || sendTradeMessageMutation.isPending} onClick={sendActiveMessage}>
                       {sendTradeMessageMutation.isPending && activeThread.kind === "trade" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
                       {activeThread.kind === "direct" ? "Send Message" : "Send Trade Message"}
