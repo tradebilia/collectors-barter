@@ -247,3 +247,9 @@ Invoking the visible Apply filters control completed the development interaction
 The initial cache-busting production checks after checkpoint `98f3ac56` continued to display the preceding single-category dropdown and Member Standing field. Those stale requests are not accepted as production validation; a deployment refresh is required before the final check.
 
 Immediately after the deployment-success notification, the published Member Directory displayed the multi-select category chips with **Choose any that apply** and the explicit **Verified Merchant only** toggle. The former single-category dropdown and Member Standing control were absent. This completes production validation of the filter refinement.
+
+## Member Directory filter usability refinements
+
+In development, the new Select all control successfully selected the collection-category set. The visible Apply filters control was then invoked to verify the applied-filter summary state in the next browser check. No member data was changed.
+
+The applied category set rendered as individual Active filters chips with a Clear all control. Removing the Sports Cards chip immediately removed only that applied category while preserving the other category filters and the filtered two-member result set. The new merchant-verification explanation is visible beside the Verified Merchant only toggle.

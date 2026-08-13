@@ -49,4 +49,13 @@ describe("Member Directory discovery workflow", () => {
     expect(directorySource).toContain("Verified Merchant only");
     expect(directorySource).not.toContain("Member standing");
   });
+
+  it("provides category bulk actions, removable active-filter chips, and merchant verification guidance", () => {
+    expect(directorySource).toContain("Select all");
+    expect(directorySource).toContain("Clear categories");
+    expect(directorySource).toContain("Active filters");
+    expect(directorySource).toContain("Clear all");
+    expect(directorySource).toContain("removeActiveFilter");
+    expect(directorySource).toContain("reviewed and approved by Tradebilia");
+  });
 });
