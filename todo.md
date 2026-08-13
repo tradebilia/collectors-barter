@@ -212,3 +212,7 @@
 - [x] Verify Report a User field-label readability in development and production.
 - [x] Default Contact email to the signed-in account email after profile data finishes loading.
 - [x] Verify the Contact email default remains account-based and user-editable.
+- [x] Replace the Report a User hero title with the supplied Report a Member artwork.
+- [ ] Verify Contact email defaults to the signed-in account email and remains editable on the updated page.
+- [x] Remove the top-bar search control from the Report a Member page only.
+- [ ] Verify the Report a Member page retains navigation while omitting search in development and production.

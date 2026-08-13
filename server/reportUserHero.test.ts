@@ -6,10 +6,11 @@ const reportUserSource = readFileSync(resolve(process.cwd(), "client/src/pages/R
 
 describe("Report a User hero", () => {
   it("retains the supplied title artwork over the original collector-background hero", () => {
-    expect(reportUserSource).toContain('REPORT_USER_HERO_TITLE_URL = "/manus-storage/ReportaUser_b06c5881.svg"');
+    expect(reportUserSource).toContain('REPORT_USER_HERO_TITLE_URL = "/manus-storage/ReportaMember_35367058.svg"');
     expect(reportUserSource).toContain('REPORT_USER_HERO_BACKGROUND_URL = "/manus-storage/Background_23084d14.jpg"');
-    expect(reportUserSource).toContain('alt="Report a User"');
+    expect(reportUserSource).toContain('alt="Report a Member"');
     expect(reportUserSource).toContain('sm:h-72 lg:h-80');
+    expect(reportUserSource).toContain("<TopBar hideSearch />");
   });
 
   it("uses readable labels and defaults contact email from the signed-in account without overriding a user edit", () => {
