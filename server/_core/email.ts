@@ -225,6 +225,25 @@ export async function sendItemsShippedEmail(params: {
   return sendEmail(params.recipientEmail, `Items shipped for trade TR-${params.tradeRef}`, html);
 }
 
+export async function sendShippingDeadlineReminderEmail(params: {
+  recipientEmail: string;
+  recipientName: string;
+  tradeRef: string;
+  deadline: string;
+  overdue: boolean;
+}): Promise<boolean> {
+  const heading = params.overdue ? "Shipping Deadline Overdue" : "Shipping Deadline Approaching";
+  const detail = params.overdue
+    ? `Your tracking information is overdue for trade TR-${params.tradeRef}. Please ship your items and add tracking as soon as possible.`
+    : `Please ship your items and add tracking for trade TR-${params.tradeRef} by ${params.deadline}.`;
+  const html = emailWrapper(`
+    <h2 style="margin:0 0 8px;font-size:22px;color:#0a0d22;">${heading}</h2>
+    <p style="color:#666;font-size:14px;margin:0 0 24px;">${detail}</p>
+    <a href="${SITE_URL}/trade-hub" style="display:inline-block;background:#7f31ff;color:#ffffff;text-decoration:none;padding:14px 28px;border-radius:10px;font-weight:600;font-size:14px;">Open Trade Room</a>
+  `);
+  return sendEmail(params.recipientEmail, `${heading} — TR-${params.tradeRef}`, html);
+}
+
 /**
  * Notify a user that items have been received.
  */

@@ -558,7 +558,7 @@ export const tradeFlowRouter = router({
       if (otherHasAccepted) {
         // Both have now accepted — move to 'shipping' status and lock items
         await db.execute(
-          sql`UPDATE tradeProposals SET status = 'shipping', acceptedAt = ${now}, shippingAt = ${now}, lastActivityAt = ${now}, updatedAt = ${now} WHERE id = ${input.proposalId}`
+          sql`UPDATE tradeProposals SET status = 'shipping', acceptedAt = ${now}, shippingAt = ${now}, shippingDeadline = DATE_ADD(${now}, INTERVAL 3 DAY), lastActivityAt = ${now}, updatedAt = ${now} WHERE id = ${input.proposalId}`
         );
         // Lock all items in this trade (mark as 'traded' in listings)
         await db.execute(
@@ -1256,8 +1256,12 @@ export const tradeFlowRouter = router({
 
       try {
         const [events] = await db.execute(
-          sql`SELECT tal.id, tal.actorId, tal.actorName, tal.eventType, tal.details, tal.createdAt
+          sql`SELECT tal.id, tal.actorId,
+                COALESCE(NULLIF(up.displayName, ''), NULLIF(CONCAT_WS(' ', up.firstName, up.lastName), ''), NULLIF(u.username, ''), tal.actorName, 'Tradebilia') as actorName,
+                tal.eventType, tal.details, tal.createdAt
               FROM tradeActivityLog tal
+              LEFT JOIN users u ON u.id = tal.actorId
+              LEFT JOIN userProfiles up ON up.userId = tal.actorId
               WHERE tal.proposalId = ${input.proposalId}
               ORDER BY tal.createdAt ASC`
         );
@@ -1318,7 +1322,7 @@ export const tradeFlowRouter = router({
       if (otherHasConfirmed) {
         // Both have now confirmed — move to 'shipping' status
         await db.execute(
-          sql`UPDATE tradeProposals SET status = 'shipping', shippingAt = ${now}, lastActivityAt = ${now}, updatedAt = ${now} WHERE id = ${input.proposalId}`
+          sql`UPDATE tradeProposals SET status = 'shipping', shippingAt = ${now}, shippingDeadline = COALESCE(shippingDeadline, DATE_ADD(${now}, INTERVAL 3 DAY)), lastActivityAt = ${now}, updatedAt = ${now} WHERE id = ${input.proposalId}`
         );
           await createTradeAlert(db, input.proposalId, otherUserId, 'accepted', `Both parties confirmed review for trade (TR-${proposal.tradeReferenceNumber})! Please enter your tracking number.`, now);
         await db.execute(

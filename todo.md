@@ -187,3 +187,11 @@
 - [x] Render Rich Tavani as the authoritative Administrator contact name in the Confirm step.
 - [x] Block a participant from submitting more than one review for the same trade.
 - [x] Add regression coverage and verify Confirm-step names and one-review enforcement in development and live views.
+- [x] Audit timeline actor-name sources, trade receipt data, and shipment-date state.
+- [x] Use authoritative display names for Trade Room timeline actors.
+- [x] Add a participant-authorized downloadable Trade Room receipt.
+- [x] Confirm the shipment reminder delivery channel and timing policy.
+- [x] Implement idempotent shipment-date reminders without changing existing trade data.
+- [ ] Add regression coverage and validate timeline labels, receipts, and shipment reminders in development and production.
+- [x] Send one shipping reminder 48 hours before each participant's deadline and one daily overdue reminder until that participant submits tracking.
+- [ ] Activate the deployed daily shipment-reminder schedule and verify its safe idempotent behavior.
