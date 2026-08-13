@@ -243,3 +243,7 @@ In development, the former single category selector now renders individual colle
 The initial automated Apply filters click did not emit a Member Directory request despite retaining the visible selections. A direct public directory request with `sports_cards` and `comics` returned only the two matching collector profiles, confirming correct server-side inclusive multi-category filtering. The apparent result-set discrepancy was isolated to the automated browser click rather than the filter contract.
 
 Invoking the visible Apply filters control completed the development interaction check: the result count changed from three to two, showing Administrator and Rtavani while excluding the collector without a matching category. This validates inclusive multi-category filtering in the page itself.
+
+The initial cache-busting production checks after checkpoint `98f3ac56` continued to display the preceding single-category dropdown and Member Standing field. Those stale requests are not accepted as production validation; a deployment refresh is required before the final check.
+
+Immediately after the deployment-success notification, the published Member Directory displayed the multi-select category chips with **Choose any that apply** and the explicit **Verified Merchant only** toggle. The former single-category dropdown and Member Standing control were absent. This completes production validation of the filter refinement.
