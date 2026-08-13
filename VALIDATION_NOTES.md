@@ -213,3 +213,5 @@ The first published checks after checkpoint `97160091` also served the predecess
 After the deployment-success notice, a cache-busting published Traders Showcase load displayed one consolidated exchange row for `TR-000001`: Rtavani and the Barry Sanders rookie on the left, a central exchange indicator, then the Rickey Henderson rookie and Administrator on the right. All trade items from both sides are visible together on one line, and no public values are shown. This completes development and production validation.
 
 Development validation of the refined consolidated row confirmed both full item titles are visible without truncation, the purple center exchange arrows are prominent, and member names are shown without the redundant Trading label. The completed trade remains one horizontal row with no public values.
+
+The initial published Traders Showcase request after checkpoint `f5788a43` still served the predecessor row with truncated titles, smaller arrows, and Trading labels. Production validation remains incomplete pending deployment freshness.
