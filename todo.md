@@ -232,4 +232,4 @@
 - [x] Remove public total-deal value from Traders Showcase cards.
 - [x] Add regression coverage and validate the revised Traders Showcase in development and production.
 - [x] Present each Traders Showcase ownership transfer in one left-to-right horizontal line: original owner, item, then receiving member.
-- [ ] Add regression coverage and validate the horizontal Traders Showcase flow in development and production.
+- [x] Add regression coverage and validate the horizontal Traders Showcase flow in development and production.

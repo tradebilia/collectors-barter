@@ -199,3 +199,7 @@ After the deployment-success notice, published Referral Request displayed **Rich
 Development validation of the horizontal Traders Showcase redesign confirmed each item now has one full-width, left-to-right transfer line: original owner, arrow, item image and name, arrow, then receiving member. The two entries in `TR-000001` are entirely visible on desktop with no stacked ownership details and no public values.
 
 The initial published Traders Showcase request after checkpoint `65ac84ba` still served the predecessor card layout, with the item above a separate owner row. This is not accepted as production validation; deployment freshness will be rechecked before finalizing the horizontal-flow update.
+
+The first two published checks after checkpoint `482f15b3` also served the predecessor card bundle with the item above a separate From/Now with row. Production validation remains incomplete pending the deployment-success refresh of the horizontal layout.
+
+After the deployment-success notice, a cache-busting published Traders Showcase load displayed the full-width horizontal transfer rows. Each item is now presented left to right as **Original owner → Item → Now with**, with both arrows and both member identities visible on one line. No public item or total-deal values are displayed. This completes development and production validation.
