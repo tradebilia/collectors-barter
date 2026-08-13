@@ -163,3 +163,7 @@
 - [x] Review the current authentication/session implementation for simultaneous-device behavior.
 - [x] Evaluate single-session, device-management, and risk-based session-control options for collectors.
 - [x] Present a recommended session policy and phased implementation plan for approval.
+- [x] Reassess Tradebilia’s session threat model, token lifetime, revocation gaps, and sensitive marketplace actions.
+- [x] Compare authoritative session-management guidance and relevant consumer-platform device-session practices.
+- [x] Evaluate strict single-session, device-aware, and risk-based controls against Tradebilia requirements.
+- [x] Deliver a definitive session policy recommendation with non-negotiable implementation guardrails.
