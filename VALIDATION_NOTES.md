@@ -195,3 +195,5 @@ The initial published Referral Request load after checkpoint `dd0ffc38` still se
 The two cache-busting published checks after checkpoint `cd0846d5` also served the predecessor Referral Request bundle and still displayed `rtavani@verizon.net`. Production validation remains incomplete until deployment freshness is confirmed.
 
 After the deployment-success notice, published Referral Request displayed **Rich Tavani** with `admin@tradebilia.com`, and published Report a Member populated its Contact email with `admin@tradebilia.com` after its authenticated contact query resolved. This confirms the saved Tradebilia account profile email is now used in both live member-facing flows, rather than the Manus authentication email. No referral or report was submitted.
+
+Development validation of the horizontal Traders Showcase redesign confirmed each item now has one full-width, left-to-right transfer line: original owner, arrow, item image and name, arrow, then receiving member. The two entries in `TR-000001` are entirely visible on desktop with no stacked ownership details and no public values.
