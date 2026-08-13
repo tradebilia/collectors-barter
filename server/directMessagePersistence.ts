@@ -20,9 +20,35 @@ export async function persistDirectMessage(
   db: DirectMessageDatabase,
   input: { senderId: number; recipientId: number; subject: string; body: string },
 ) {
+  const { threadId, isNewThread } = await getOrCreateDirectMessageThread(db, {
+    participantAId: input.senderId,
+    participantBId: input.recipientId,
+  });
+
+  if (!isNewThread) {
+    await db.execute(
+      sql`UPDATE directMessageThreads SET lastMessageAt = NOW() WHERE id = ${threadId}`,
+    );
+  }
+
+  await db.insert(directMessages).values({
+    threadId,
+    senderId: input.senderId,
+    subject: input.subject,
+    body: input.body,
+    isReadByRecipient: 0,
+  });
+
+  return { threadId, isNewThread };
+}
+
+export async function getOrCreateDirectMessageThread(
+  db: DirectMessageDatabase,
+  input: { participantAId: number; participantBId: number },
+) {
   const { participantAId, participantBId } = normalizeDirectMessageParticipants(
-    input.senderId,
-    input.recipientId,
+    input.participantAId,
+    input.participantBId,
   );
   const existing = await db
     .select({ id: directMessageThreads.id })
@@ -40,9 +66,6 @@ export async function persistDirectMessage(
 
   if (existing.length > 0) {
     threadId = existing[0].id;
-    await db.execute(
-      sql`UPDATE directMessageThreads SET lastMessageAt = NOW() WHERE id = ${threadId}`,
-    );
   } else {
     const createdAt = new Date().toISOString().slice(0, 19).replace("T", " ");
     const result = await db.execute(sql`
@@ -52,14 +75,6 @@ export async function persistDirectMessage(
     const insertResult = Array.isArray(result) ? result[0] : result;
     threadId = (insertResult as any).insertId;
   }
-
-  await db.insert(directMessages).values({
-    threadId,
-    senderId: input.senderId,
-    subject: input.subject,
-    body: input.body,
-    isReadByRecipient: 0,
-  });
 
   return { threadId, isNewThread };
 }

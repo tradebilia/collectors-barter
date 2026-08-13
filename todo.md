@@ -238,3 +238,15 @@
 - [x] Display complete item titles in consolidated Traders Showcase exchange rows.
 - [x] Enlarge the central exchange arrows and remove redundant Trading member labels.
 - [x] Add regression coverage and validate the refined Showcase exchange layout in development and production.
+- [x] Audit Member Directory data, filters, profile links, access behavior, and responsive layout.
+- [ ] Verify Member Directory functionality in development and production.
+- [ ] Document prioritized Member Directory gaps and improvement recommendations without changing behavior unless a defect is found.
+- [x] Stop Member Directory region filtering and display from using private street-address data.
+- [x] Implement truthful member standing filters instead of the nonfunctional hardcoded Verified label.
+- [x] Route Member Directory messaging through the persisted direct-message workflow.
+- [x] Add direct public-profile navigation from Member Directory cards and rankings.
+- [ ] Add regression coverage and validate privacy, filters, profile links, and messaging in development and production.
+- [x] Make Member ID search and Offer Trade work against the actual directory response data.
+- [x] Remove misleading browser-local online presence from the public Member Directory until live presence is server-backed.
+- [x] Avoid duplicating the spotlight member in the main search-result grid.
+- [ ] Complete the resumed Member Directory correction, validation, and recommendations review.

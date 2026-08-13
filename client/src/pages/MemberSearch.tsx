@@ -7,9 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getLoginUrl } from "@/const";
-import { ensureDirectThread, loadFavoriteMemberIds, loadPresenceMap, saveFavoriteMemberIds, subscribeToPresence, updatePresence } from "@/lib/memberMessaging";
+import { loadFavoriteMemberIds, saveFavoriteMemberIds } from "@/lib/memberMessaging";
 import { trpc } from "@/lib/trpc";
-import { Crown, Loader2, Medal, MessageSquareText, Search, ShieldCheck, Sparkles, Star, UserRoundPlus } from "lucide-react";
+import { Crown, Loader2, Medal, MessageSquareText, Search, ShieldCheck, Sparkles, Star, UserRound, UserRoundPlus } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { TopBar } from "@/components/TopBar";
@@ -30,12 +30,17 @@ export default function MemberSearch() {
   const [region, setRegion] = useState("all");
   const [verification, setVerification] = useState("all");
   const [favoriteIds, setFavoriteIds] = useState<number[]>([]);
-  const [presenceMap, setPresenceMap] = useState<Record<number, { displayName: string; updatedAt: number }>>({});
 
   const membersQuery = trpc.members.search.useQuery({
     query,
     region,
     verification: verification as "all" | "verified" | "established" | "rising",
+  });
+  const startDirectThread = trpc.members.startDirectMessageThread.useMutation({
+    onSuccess: ({ recipientId }) => {
+      window.location.href = `/messages?direct=${recipientId}`;
+    },
+    onError: error => toast.error(error.message),
   });
 
   useEffect(() => {
@@ -43,20 +48,11 @@ export default function MemberSearch() {
     setFavoriteIds(loadFavoriteMemberIds(user.id));
   }, [user?.id]);
 
-  useEffect(() => {
-    if (!user?.id) return;
-    const presenceName = user.name ?? "Tradebilia Member";
-    updatePresence(user.id, presenceName);
-    const heartbeat = window.setInterval(() => updatePresence(user.id, presenceName), 5000);
-    setPresenceMap(loadPresenceMap());
-    const unsubscribe = subscribeToPresence(() => setPresenceMap(loadPresenceMap()));
-    return () => {
-      window.clearInterval(heartbeat);
-      unsubscribe();
-    };
-  }, [user?.id, user?.name]);
-
   const topSpotlight = useMemo(() => membersQuery.data?.members[0] ?? null, [membersQuery.data?.members]);
+  const memberResults = useMemo(
+    () => (membersQuery.data?.members ?? []).filter(member => member.userId !== topSpotlight?.userId),
+    [membersQuery.data?.members, topSpotlight?.userId],
+  );
 
   const toggleFavorite = (memberId: number, memberName: string) => {
     if (!user?.id) {
@@ -69,18 +65,12 @@ export default function MemberSearch() {
     toast.success(next.includes(memberId) ? `${memberName} added to favorites.` : `${memberName} removed from favorites.`);
   };
 
-  const openDirectConversation = (member: { userId: number; displayName: string; avatarUrl: string | null }) => {
+  const openDirectConversation = (member: { userId: number }) => {
     if (!isAuthenticated || !user?.id || !user.name) {
       window.location.href = getLoginUrl();
       return;
     }
-    ensureDirectThread({
-      currentUserId: user.id,
-      counterpartId: member.userId,
-      counterpartName: member.displayName,
-      counterpartAvatarUrl: member.avatarUrl,
-    });
-    window.location.href = `/messages?direct=${member.userId}`;
+    startDirectThread.mutate({ recipientId: member.userId });
   };
 
   const openTradeEntry = (member: any) => {
@@ -88,13 +78,11 @@ export default function MemberSearch() {
       window.location.href = getLoginUrl();
       return;
     }
-    // Get the first active listing from this member
-    const firstListing = member.listings?.[0];
-    if (!firstListing) {
+    if (!member.firstListingId) {
       toast.info(`${member.displayName} does not currently have a public active listing to start from.`);
       return;
     }
-    window.location.href = `/listings/${firstListing.id}`;
+    window.location.href = `/listings/${member.firstListingId}`;
   };
 
   return (
@@ -132,7 +120,7 @@ export default function MemberSearch() {
                 <Input value={query} onChange={event => setQuery(event.target.value)} placeholder="Search Tradebilia members" className="h-12 bg-white" />
               </div>
               <div className="space-y-2">
-                <Label>Region</Label>
+                <Label>State / region</Label>
                 <Select value={region} onValueChange={setRegion}>
                   <SelectTrigger className="h-12 bg-white">
                     <SelectValue placeholder="All regions" />
@@ -146,14 +134,14 @@ export default function MemberSearch() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Verification</Label>
+                <Label>Member standing</Label>
                 <Select value={verification} onValueChange={setVerification}>
                   <SelectTrigger className="h-12 bg-white">
                     <SelectValue placeholder="Any verification" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All members</SelectItem>
-                    <SelectItem value="verified">Verified</SelectItem>
+                    <SelectItem value="verified">Verified merchant</SelectItem>
                     <SelectItem value="established">Established</SelectItem>
                     <SelectItem value="rising">Rising</SelectItem>
                   </SelectContent>
@@ -161,7 +149,7 @@ export default function MemberSearch() {
               </div>
               <div className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-5">
                 <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Actions</p>
-                <p className="mt-3 text-sm leading-7 text-slate-600">Send Message opens a direct collector conversation, Offer Trade jumps into a real listing flow, and favorites persist for signed-in subscribers.</p>
+                    <p className="mt-3 text-sm leading-7 text-slate-600">Send Message opens a persisted collector conversation, Offer Trade jumps into an active listing flow, and favorites are saved in this browser for signed-in members.</p>
                 {!isAuthenticated ? (
                   <Button className="mt-4 w-full rounded-full" onClick={() => (window.location.href = getLoginUrl())}>Sign in to message members</Button>
                 ) : null}
@@ -192,6 +180,10 @@ export default function MemberSearch() {
                       ))}
                       <Badge className="rounded-full bg-slate-900 px-3 py-1 text-white hover:bg-slate-900">{topSpotlight.verificationLevel}</Badge>
                     </div>
+                    <Button variant="outline" className="w-fit rounded-full bg-white" onClick={() => (window.location.href = `/profile/${topSpotlight.userId}`)}>
+                      <UserRound className="mr-2 h-4 w-4" />
+                      View Profile
+                    </Button>
                   </div>
                   <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
                     {[
@@ -214,12 +206,10 @@ export default function MemberSearch() {
               <div className="flex min-h-[18rem] items-center justify-center rounded-[2rem] border border-dashed border-slate-300 bg-white/60">
                 <Loader2 className="h-8 w-8 animate-spin text-slate-500" />
               </div>
-            ) : membersQuery.data?.members.length ? (
+            ) : memberResults.length ? (
               <div className="grid gap-5 lg:grid-cols-2">
-                {membersQuery.data.members.map(member => {
+                {memberResults.map(member => {
                   const favorite = favoriteIds.includes(member.userId);
-                  const presence = presenceMap[member.userId];
-                  const onlineNow = member.online || (presence ? Date.now() - presence.updatedAt < 15000 : false);
                   return (
                     <Card key={member.userId} className="rounded-[2rem] border border-slate-300/70 bg-white/85 shadow-[0_20px_60px_rgba(15,23,42,0.06)] backdrop-blur-sm">
                       <CardContent className="space-y-5 p-6">
@@ -235,7 +225,6 @@ export default function MemberSearch() {
                               <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-slate-600">
                                 <Badge variant="outline" className="rounded-full">{member.regionLabel}</Badge>
                                 <Badge className="rounded-full bg-slate-900 text-white hover:bg-slate-900">{member.verificationLevel}</Badge>
-                                {onlineNow ? <span className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-emerald-700"><span className="h-2 w-2 rounded-full bg-emerald-500" />Online now</span> : null}
                               </div>
                             </div>
                           </div>
@@ -250,7 +239,7 @@ export default function MemberSearch() {
 
                         <p className="text-sm leading-7 text-slate-600">{member.bio}</p>
 
-                        <div className="grid gap-3 sm:grid-cols-3">
+                        <div className="grid gap-3 sm:grid-cols-2">
                           <div className="rounded-[1.25rem] border border-slate-200 bg-slate-50 p-4">
                             <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Listings</p>
                             <p className="mt-2 text-2xl font-semibold text-slate-900">{member.listingCount}</p>
@@ -259,7 +248,7 @@ export default function MemberSearch() {
                             <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Completed Trades</p>
                             <p className="mt-2 text-2xl font-semibold text-slate-900">{member.completedTradeCount}</p>
                           </div>
-                          <div className="rounded-[1.25rem] border border-slate-200 bg-slate-50 p-4">
+                          <div className="rounded-[1.25rem] border border-slate-200 bg-slate-50 p-4 sm:col-span-2">
                             <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Collection Focus</p>
                             <p className="mt-2 text-sm font-semibold text-slate-900">{member.topCategories.join(" · ") || "Multi-category"}</p>
                           </div>
@@ -269,6 +258,10 @@ export default function MemberSearch() {
                           <Button className="rounded-full" onClick={() => openDirectConversation(member)}>
                             <MessageSquareText className="mr-2 h-4 w-4" />
                             Send Message
+                          </Button>
+                          <Button variant="outline" className="rounded-full bg-transparent" onClick={() => (window.location.href = `/profile/${member.userId}`)}>
+                            <UserRound className="mr-2 h-4 w-4" />
+                            View Profile
                           </Button>
                           <Button variant="outline" className="rounded-full bg-transparent" onClick={() => openTradeEntry(member)}>
                             <ShieldCheck className="mr-2 h-4 w-4" />
@@ -304,7 +297,7 @@ export default function MemberSearch() {
                   {(membersQuery.data?.rankings.topRated ?? []).map((member: any, index: number) => (
                     <div key={member.userId} className="rounded-[1.25rem] border border-slate-200 bg-slate-50 p-4">
                       <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Rank #{index + 1}</p>
-                      <p className="mt-2 text-lg font-semibold text-slate-900">{member.displayName}</p>
+                      <button type="button" className="mt-2 text-left text-lg font-semibold text-slate-900 hover:underline" onClick={() => (window.location.href = `/profile/${member.userId}`)}>{member.displayName}</button>
                       <p className="mt-1 text-sm text-slate-600">{member.averageRating.toFixed(1)} average rating across {member.reviewCount} reviews</p>
                     </div>
                   ))}
@@ -321,7 +314,7 @@ export default function MemberSearch() {
                 <div className="mt-5 space-y-3">
                   {(membersQuery.data?.rankings.mostActive ?? []).map((member: any) => (
                     <div key={member.userId} className="rounded-[1.25rem] border border-slate-200 bg-slate-50 p-4">
-                      <p className="text-lg font-semibold text-slate-900">{member.displayName}</p>
+                      <button type="button" className="text-left text-lg font-semibold text-slate-900 hover:underline" onClick={() => (window.location.href = `/profile/${member.userId}`)}>{member.displayName}</button>
                       <p className="mt-1 text-sm text-slate-600">{member.listingCount} active listings · {member.completedTradeCount} completed trades</p>
                     </div>
                   ))}
