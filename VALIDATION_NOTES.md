@@ -191,3 +191,7 @@ After the deployment-success notice, a cache-busting published Traders Showcase 
 Development validation of the Tradebilia contact-email correction confirmed the saved profile contact email is authoritative. Referral Request displayed **Rich Tavani** with `admin@tradebilia.com` in its Referring member card, and Report a Member defaulted Contact email to `admin@tradebilia.com`. The browser avatar remains cached from a prior display context, but both pages use the authenticated server procedure’s saved Tradebilia account contact email. No referral or report was submitted.
 
 The initial published Referral Request load after checkpoint `dd0ffc38` still served the predecessor client bundle and displayed `rtavani@verizon.net`. This is not accepted as production validation; the saved Tradebilia contact-email procedure will be rechecked after deployment refresh.
+
+The two cache-busting published checks after checkpoint `cd0846d5` also served the predecessor Referral Request bundle and still displayed `rtavani@verizon.net`. Production validation remains incomplete until deployment freshness is confirmed.
+
+After the deployment-success notice, published Referral Request displayed **Rich Tavani** with `admin@tradebilia.com`, and published Report a Member populated its Contact email with `admin@tradebilia.com` after its authenticated contact query resolved. This confirms the saved Tradebilia account profile email is now used in both live member-facing flows, rather than the Manus authentication email. No referral or report was submitted.
