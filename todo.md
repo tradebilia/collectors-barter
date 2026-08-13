@@ -151,8 +151,8 @@
 - [x] Review Direct Messages and Item Inquiries from both sender and recipient perspectives for clarity, trust, and conversion friction.
 - [x] Produce a prioritized messaging-experience improvement roadmap focused on collector retention and repeat engagement.
 - [x] Document the successful live Admin-to-Rtavani direct-message send verification explicitly in the validation record.
-- [ ] Verify the live Direct Messages Received filter with a real incoming direct reply while confirming All remains the unified default.
+- [x] Isolate the verified real incoming Rtavani reply with the live Direct Messages Received filter while retaining All as the unified default.
 - [x] Trace and replace the direct-message reply lookup that still selects the absent legacy `itemId` column.
 - [x] Add regression coverage for a recipient reply against the participant-only legacy thread schema.
-- [ ] Verify the complete live Admin-to-Rtavani direct-message send-and-reply flow after the lookup repair.
+- [x] Verify the complete live Admin-to-Rtavani direct-message send-and-reply flow after the lookup repair.
 - [x] Create the “Items to address when starting a new session” migration handoff document with issues, safeguards, and a startup checklist.

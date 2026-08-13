@@ -87,3 +87,7 @@ The live Direct Messages folder initially retained the published counterpart-fir
 Subsequent inspection confirmed that the live JavaScript bundle contains the Direct Messages filter implementation. The page was then ready for a fresh Direct Messages folder selection to verify the rendered controls.
 
 The live Direct Messages folder now renders **All**, **Received**, and **Sent** controls. The live **All** and **Sent** views both retain the Admin-to-Rtavani outgoing conversation with the counterpart-first card hierarchy, matching the development verification.
+
+After the recipient confirmed a successful live reply, the Admin-side unified Direct Messages view displayed it as **From: Rtavani**, **Direct Message**, and **Received**, with the reply preview and Seen state. This verifies both the repaired recipient reply path and the incoming direction presentation in production.
+
+Selecting the live **Received** filter retained only Rtavani’s real incoming reply and visually activated the filter. This confirms that incoming conversations are isolated correctly while the default **All** view remains the unified conversation list.
