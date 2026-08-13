@@ -179,4 +179,4 @@
 - [x] Preserve the current responder status while a counteroffer draft is edited but not submitted.
 - [x] Update the negotiation turn only after a counteroffer is explicitly submitted.
 - [x] Add regression coverage for draft edits versus submitted counteroffers.
-- [ ] Verify the corrected Admin/Rtavani trade negotiation flow in development and live views.
+- [x] Verify the corrected Admin/Rtavani trade negotiation flow in development and live views.

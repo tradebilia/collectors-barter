@@ -99,3 +99,17 @@ The homepage Subscriber Tools panel now contains **Member Directory** between My
 ## Member Directory shared navigation and hero
 
 The Member Directory is publicly viewable at `/members`; member messaging and trade actions still request sign-in. Its desktop and 375-pixel mobile layouts render the shared Tradebilia top bar, the same homepage collector-collage hero background, the supplied Member Directory title artwork, the shared category bar, and the existing Verification filter without horizontal overflow. The duplicate homepage Verified Merchants shortcut was removed because verified members are discoverable through this directory filter.
+
+## Trade negotiation turn status
+
+On 2026-08-13, the published site was opened in the authenticated Administrator session. The active Admin/Rtavani negotiation `TR-000001` was located in the Negotiating folder and opened at `/trade-room/120003`.
+
+Before any local draft edit, the fairness meter displayed **Your Turn to Respond**. The trade table contained five Administrator-side items, **Accept Trade** was available, and **Counter Offer** was disabled because the proposal had no local modification. No proposal, acceptance, message, or other persisted trade data was changed during this observation.
+
+One Administrator-side item was then removed using the trade-table remove control without pressing **Counter Offer**. The local table changed from five items to four, the total changed from `$19,550` to `$17,450`, **Accept Trade** disappeared, and **Counter Offer** became available. The displayed responder label nevertheless changed to **Awaiting Their Response**. Source inspection confirms the remove handler only updates local React draft state (`selectedItemIds`, pending item lists, and `removedItemIds`) and does not invoke the counteroffer submission mutation. The live JavaScript bundle is being checked before treating the deployed fix as verified. No counteroffer was submitted.
+
+After navigating away and returning to the trade room with a cache-busting URL, the server-backed proposal again showed all five original Administrator-side items, **Your Turn to Respond**, and an available **Accept Trade** action. This confirms the earlier removed item remained an unsent local draft edit only.
+
+The same local-only item removal was then repeated after the cache-refreshed production load. The proposal changed locally to four Administrator-side items and `$17,450`; **Counter Offer** became enabled and **Accept Trade** was disabled/absent. Crucially, the fairness meter continued to display **Your Turn to Respond**. No counteroffer was submitted, so no trade-proposal data was persisted. This verifies the live published behavior matches the required rule: draft edits affect acceptance eligibility but do not change the responder turn.
+
+The development preview was tested with the same active trade and the same local-only Administrator-side item removal. It produced the same expected state: four items and `$17,450` in the unsent draft, **Counter Offer** enabled, **Accept Trade** disabled/absent, and the fairness meter still reading **Your Turn to Respond**. No counteroffer was submitted in development or production. The focused regression tests also verify that the responder label changes to **Awaiting Their Response** only after the submitted proposal is persisted with the current user as `lastProposedBy`.
