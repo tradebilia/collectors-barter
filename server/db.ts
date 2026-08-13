@@ -28,6 +28,7 @@ import { ENV } from "./_core/env";
 import { storagePut } from "./storage";
 import { resolveTradebiliaContactEmail } from "./tradebiliaContactEmail";
 import { resolveDirectMessageDisplayName } from "./directMessageDisplayName";
+import { resolveMemberStanding } from "./memberDirectoryStanding";
 import bcrypt from 'bcryptjs';
 import { encrypt } from "./_core/crypto";
 
@@ -1220,12 +1221,18 @@ export async function searchMembers(input: {
 
   const whereClauses: any[] = [];
 
-  if (input.query?.trim()) {
-    whereClauses.push(like(userProfiles.displayName, `%${input.query.trim()}%`));
+  const trimmedQuery = input.query?.trim() ?? "";
+  if (trimmedQuery) {
+    const memberId = Number(trimmedQuery);
+    whereClauses.push(
+      Number.isInteger(memberId) && memberId > 0
+        ? or(eq(userProfiles.userId, memberId), like(userProfiles.displayName, `%${trimmedQuery}%`))
+        : like(userProfiles.displayName, `%${trimmedQuery}%`),
+    );
   }
 
-  if (input.region?.trim()) {
-    whereClauses.push(like(userProfiles.contactAddress, `%${input.region.trim()}%`));
+  if (input.region?.trim() && input.region !== "all") {
+    whereClauses.push(eq(userProfiles.contactState, input.region.trim()));
   }
 
   const members = await db
@@ -1234,9 +1241,12 @@ export async function searchMembers(input: {
       displayName: userProfiles.displayName,
       avatarUrl: userProfiles.avatarUrl,
       bio: userProfiles.bio,
-      contactAddress: userProfiles.contactAddress,
+      contactTown: userProfiles.contactTown,
+      contactState: userProfiles.contactState,
+      merchantVerified: users.merchantVerified,
     })
     .from(userProfiles)
+    .innerJoin(users, eq(users.id, userProfiles.userId))
     .where(whereClauses.length > 0 ? and(...whereClauses) : undefined)
     .limit(50);
 
@@ -1252,6 +1262,14 @@ export async function searchMembers(input: {
     .where(eq(listings.status, "active"))
     .groupBy(listings.ownerId);
   const listingCountMap = new Map(listingCountsResult.map(r => [r.ownerId, Number(r.count)]));
+  const firstListingMap = new Map<number, number>();
+  for (const listing of await db
+    .select({ ownerId: listings.ownerId, id: listings.id })
+    .from(listings)
+    .where(eq(listings.status, "active"))
+    .orderBy(asc(listings.id))) {
+    if (!firstListingMap.has(listing.ownerId)) firstListingMap.set(listing.ownerId, listing.id);
+  }
 
   // Get completed trade counts
   const completedTradesResult = await db
@@ -1285,31 +1303,42 @@ export async function searchMembers(input: {
 
   const formattedMembers = members.map(m => {
     const rating = ratingMap.get(m.userId) ?? { averageRating: 0, reviewCount: 0 };
+    const completedTradeCount = completedTradesMap.get(m.userId) ?? 0;
+    const standing = resolveMemberStanding({
+      merchantVerified: m.merchantVerified,
+      completedTradeCount,
+      reviewCount: rating.reviewCount,
+    });
     return {
       userId: m.userId,
       displayName: m.displayName,
       avatarUrl: m.avatarUrl,
       bio: m.bio,
-      region: m.contactAddress,
-      regionLabel: m.contactAddress ?? "Unknown",
+      region: m.contactState,
+      regionLabel: [m.contactTown, m.contactState].filter(Boolean).join(", ") || "Location not shared",
       rating,
       averageRating: rating.averageRating,
       reviewCount: rating.reviewCount,
       listingCount: listingCountMap.get(m.userId) ?? 0,
-      completedTradeCount: completedTradesMap.get(m.userId) ?? 0,
+      completedTradeCount,
       topCategories: topCategoriesMap.get(m.userId) ?? [],
-      verificationLevel: "Verified",
-      online: false,
+      firstListingId: firstListingMap.get(m.userId) ?? null,
+      standingKey: standing.key,
+      verificationLevel: standing.label,
     };
   });
 
+  const filteredMembers = input.verification && input.verification !== "all"
+    ? formattedMembers.filter(member => member.standingKey === input.verification)
+    : formattedMembers;
+
   // Return object with members and rankings
-  const topRated = formattedMembers.sort((a, b) => (b.rating?.averageRating ?? 0) - (a.rating?.averageRating ?? 0)).slice(0, 10);
-  const mostActive = formattedMembers.sort((a, b) => (b.listingCount + b.completedTradeCount) - (a.listingCount + a.completedTradeCount)).slice(0, 10);
-  const uniqueRegions = Array.from(new Set(formattedMembers.map(m => m.region).filter(Boolean)));
+  const topRated = [...filteredMembers].sort((a, b) => (b.rating?.averageRating ?? 0) - (a.rating?.averageRating ?? 0)).slice(0, 10);
+  const mostActive = [...filteredMembers].sort((a, b) => (b.listingCount + b.completedTradeCount) - (a.listingCount + a.completedTradeCount)).slice(0, 10);
+  const uniqueRegions = Array.from(new Set(members.map(m => m.contactState).filter((region): region is string => Boolean(region))));
   
   return {
-    members: formattedMembers,
+    members: filteredMembers,
     rankings: { topRated, mostActive },
     topRated: topRated,
     mostActive: mostActive,

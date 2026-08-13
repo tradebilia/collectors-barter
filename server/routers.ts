@@ -102,7 +102,7 @@ import { sdk } from "./_core/sdk";
 import { tradeFlowRouter } from "./tradeFlowRouter";
 import { testAIRouter } from "./testAIRouter";
 import { customAuth } from "./_core/customAuth";
-import { persistDirectMessage } from "./directMessagePersistence";
+import { getOrCreateDirectMessageThread, persistDirectMessage } from "./directMessagePersistence";
 import { users, userProfiles, listings, deletedAccounts, tradeProposals, tradeMessages, tradeReviews, watchlistEntries, draftListings, passwordResetTokens, referralRequests, userFollows, directMessageThreads, directMessages, tradePayments, tradeActivityLog, emailTemplates } from "../drizzle/schema";
 import { eq, sql, desc, or, inArray, and } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
@@ -374,6 +374,19 @@ export const appRouter = router({
     search: publicProcedure.input(memberSearchSchema.optional()).query(({ input }) => {
       return searchMembers(input ?? {});
     }),
+    startDirectMessageThread: protectedProcedure
+      .input(z.object({ recipientId: z.number().int().positive() }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.id === input.recipientId) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "You cannot message yourself." });
+        }
+        const db = await requireDb();
+        const { threadId } = await getOrCreateDirectMessageThread(db as any, {
+          participantAId: ctx.user.id,
+          participantBId: input.recipientId,
+        });
+        return { threadId, recipientId: input.recipientId };
+      }),
   }),
   market: router({
     feed: publicProcedure.input(listingFiltersSchema.optional()).query(({ ctx, input }) => {
