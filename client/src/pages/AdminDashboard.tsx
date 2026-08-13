@@ -1193,7 +1193,7 @@ export default function AdminDashboard() {
                         {suspendedUsersQuery.data.map((user: any) => (
                           <tr key={user.id} className="border-b hover:bg-muted/50">
                             <td className="py-3 px-4">{user.username}</td>
-                            <td className="py-3 px-4">{user.email || '-'}</td>
+                            <td className="py-3 px-4">{user.contactEmail || '-'}</td>
                             <td className="py-3 px-4 capitalize">{user.role}</td>
                             <td className="py-3 px-4">
                               {user.suspendedAt ? new Date(user.suspendedAt).toLocaleDateString() : '-'}

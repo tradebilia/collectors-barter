@@ -27,12 +27,13 @@ export default function ReferralRequest() {
   const [collectorFocus, setCollectorFocus] = useState("");
   const [isMerchant, setIsMerchant] = useState(false);
   const [message, setMessage] = useState("I think you would fit right in on Tradebilia. Join me to trade rare collectibles with a collector-first community.");
+  const contactIdentityQuery = trpc.market.contactIdentity.useQuery(undefined, { enabled: isAuthenticated });
 
   const referrerInfo = useMemo(() => ({
-    firstName: (user as any)?.firstName || "",
-    lastName: (user as any)?.lastName || "",
-    email: user?.email || "",
-  }), [user?.email, (user as any)?.firstName, (user as any)?.lastName]);
+    firstName: contactIdentityQuery.data?.firstName || "",
+    lastName: contactIdentityQuery.data?.lastName || "",
+    email: contactIdentityQuery.data?.contactEmail || "",
+  }), [contactIdentityQuery.data]);
 
   const referralMutation = trpc.market.referralRequest.useMutation({
     onSuccess: result => {

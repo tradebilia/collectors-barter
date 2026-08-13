@@ -17,9 +17,10 @@ describe("Report a User hero", () => {
   it("uses readable labels and resets Contact email for a new signed-in account without overriding a same-account user edit", () => {
     expect(reportUserSource).toContain('const fieldLabelClass = "text-sm font-medium text-slate-100"');
     expect(reportUserSource).toContain('const contactEmailAccountId = useRef<number | null>(null);');
-    expect(reportUserSource).toContain('if (contactEmailAccountId.current !== user.id)');
-    expect(reportUserSource).toContain('setContactEmail(user.email ?? "");');
-    expect(reportUserSource).toContain('if (!contactEmailEdited) setContactEmail(user.email ?? "");');
+    expect(reportUserSource).toContain('trpc.market.contactIdentity.useQuery');
+    expect(reportUserSource).toContain('if (contactEmailAccountId.current !== account.userId)');
+    expect(reportUserSource).toContain('setContactEmail(account.contactEmail);');
+    expect(reportUserSource).not.toContain('user.email');
     expect(reportUserSource).toContain('setContactEmailEdited(true)');
   });
 });

@@ -39,24 +39,26 @@ export default function ReportUser() {
   const [usernameError, setUsernameError] = useState<string | null>(null);
   const [submittedReportId, setSubmittedReportId] = useState<string | null>(null);
   const utils = trpc.useUtils();
+  const contactIdentityQuery = trpc.market.contactIdentity.useQuery(undefined, { enabled: isAuthenticated });
   const uploadEvidence = trpc.market.uploadReportEvidence.useMutation();
   const fieldLabelClass = "text-sm font-medium text-slate-100";
 
   useEffect(() => {
-    if (!user?.id) {
+    const account = contactIdentityQuery.data;
+    if (!account?.userId) {
       contactEmailAccountId.current = null;
       return;
     }
 
-    if (contactEmailAccountId.current !== user.id) {
-      contactEmailAccountId.current = user.id;
-      setContactEmail(user.email ?? "");
+    if (contactEmailAccountId.current !== account.userId) {
+      contactEmailAccountId.current = account.userId;
+      setContactEmail(account.contactEmail);
       setContactEmailEdited(false);
       return;
     }
 
-    if (!contactEmailEdited) setContactEmail(user.email ?? "");
-  }, [contactEmailEdited, user?.email, user?.id]);
+    if (!contactEmailEdited) setContactEmail(account.contactEmail);
+  }, [contactEmailEdited, contactIdentityQuery.data]);
 
   const reportMutation = trpc.market.submitReport.useMutation({ onSuccess: result => { setSubmittedReportId(result.reportId); toast.success(`Report ${result.reportId} submitted.`); }, onError: error => toast.error(error.message) });
   const handleUsernameBlur = async () => { if (!reportedMember.trim()) return setResolvedUserId(null); setIsLookingUp(true); setUsernameError(null); try { const found = await utils.market.lookupUserByUsername.fetch({ username: reportedMember.trim() }); setResolvedUserId(found.userId); } catch { setResolvedUserId(null); setUsernameError("Username not found. Please check the spelling."); } finally { setIsLookingUp(false); } };

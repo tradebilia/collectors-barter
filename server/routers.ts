@@ -11,6 +11,7 @@ import {
   updateListing,
   createTradeProposal,
   getDashboardData,
+  getTradebiliaContactIdentity,
   getListingDetail,
   getMarketplaceFeed,
   leaveTradeReview,
@@ -552,6 +553,9 @@ export const appRouter = router({
       }),
     dashboard: protectedProcedure.query(({ ctx }) => {
       return getDashboardData({ id: ctx.user.id, name: ctx.user.name });
+    }),
+    contactIdentity: protectedProcedure.query(({ ctx }) => {
+      return getTradebiliaContactIdentity({ id: ctx.user.id, name: ctx.user.name });
     }),
     listingDetail: publicProcedure
       .input(
@@ -1130,13 +1134,13 @@ export const appRouter = router({
     reportUser: protectedProcedure
       .input(reportUserSchema)
       .mutation(async ({ ctx, input }) => {
-        const reporterName = ctx.user.name?.trim() || `Collector ${ctx.user.id}`;
+        const reporter = await getTradebiliaContactIdentity({ id: ctx.user.id, name: ctx.user.name });
         const delivered = await notifyOwner({
           title: `Tradebilia report submitted: ${input.concernType}`,
           content: [
-            `Reporter: ${reporterName}`,
+            `Reporter: ${reporter.displayName}`,
             `Reporter user ID: ${ctx.user.id}`,
-            `Reporter account email: ${ctx.user.email ?? "Not available"}`,
+            `Reporter Tradebilia account email: ${reporter.contactEmail || "Not set"}`,
             `Contact email for follow-up: ${input.contactEmail.trim()}`,
             `Reported member: ${input.reportedMember.trim()}`,
             `Listing or trade reference: ${input.listingReference?.trim() || "Not provided"}`,
@@ -1156,16 +1160,14 @@ export const appRouter = router({
     referralRequest: protectedProcedure
       .input(referralRequestSchema)
       .mutation(async ({ ctx, input }) => {
-        const referrerName = ctx.user.name?.trim() || `Collector ${ctx.user.id}`;
-        const referrerFirstName = (ctx.user as any)?.firstName || "";
-        const referrerLastName = (ctx.user as any)?.lastName || "";
+        const referrer = await getTradebiliaContactIdentity({ id: ctx.user.id, name: ctx.user.name });
         
         try {
           await createReferralRequest({
             referrerId: ctx.user.id,
-            referrerEmail: ctx.user.email ?? "",
-            referrerFirstName,
-            referrerLastName,
+            referrerEmail: referrer.contactEmail,
+            referrerFirstName: referrer.firstName,
+            referrerLastName: referrer.lastName,
             collectorName: input.friendName.trim(),
             collectorEmail: input.friendEmail.trim(),
             collectorFocus: input.collectorFocus.trim(),
@@ -1342,12 +1344,13 @@ export const appRouter = router({
         if (input.attachments.some((attachment) => !ownsReportAttachment(ctx.user.id, attachment))) {
           throw new TRPCError({ code: 'FORBIDDEN', message: 'An evidence attachment does not belong to your report.' });
         }
+        const reporter = await getTradebiliaContactIdentity({ id: ctx.user.id, name: ctx.user.name });
         return submitUserReport({
           reportedUserId: input.reportedUserId,
           reporterUserId: ctx.user.id,
           reason: input.reason,
           description: input.description,
-          evidence: serializeReportEvidence({ notes: input.evidence, listingReference: input.listingReference, contactEmail: input.contactEmail, attachments: input.attachments }),
+          evidence: serializeReportEvidence({ notes: input.evidence, listingReference: input.listingReference, contactEmail: reporter.contactEmail || input.contactEmail, attachments: input.attachments }),
         });
       }),
     uploadReportEvidence: protectedProcedure
@@ -2047,7 +2050,7 @@ export const appRouter = router({
         displayName: userProfiles.displayName,
         firstName: userProfiles.firstName,
         lastName: userProfiles.lastName,
-        email: users.email,
+        email: userProfiles.contactEmail,
         role: users.role,
         createdAt: users.createdAt,
         lastActivityAt: users.lastActivityAt,
@@ -2203,7 +2206,7 @@ export const appRouter = router({
           await db.insert(deletedAccounts).values({
             userId: input.userId,
             username: user.username || `user_${input.userId}`,
-            email: user.email || null,
+            email: profile?.contactEmail || null,
             displayName: profile?.displayName || user.displayName || null,
             firstName: profile?.firstName || null,
             lastName: profile?.lastName || null,

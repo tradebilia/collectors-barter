@@ -26,6 +26,7 @@ import {
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 import { storagePut } from "./storage";
+import { resolveTradebiliaContactEmail } from "./tradebiliaContactEmail";
 import { resolveDirectMessageDisplayName } from "./directMessageDisplayName";
 import bcrypt from 'bcryptjs';
 import { encrypt } from "./_core/crypto";
@@ -1724,6 +1725,33 @@ export async function updateDraft(
   }
 
   return { draftId: input.draftId };
+}
+
+export async function getTradebiliaContactIdentity(user: Pick<User, "id" | "name">) {
+  const db = await requireDb();
+  await ensureUserProfileRecord(user);
+  const [profile] = await db
+    .select({
+      displayName: userProfiles.displayName,
+      firstName: userProfiles.firstName,
+      lastName: userProfiles.lastName,
+      contactFullName: userProfiles.contactFullName,
+      contactEmail: userProfiles.contactEmail,
+    })
+    .from(userProfiles)
+    .where(eq(userProfiles.userId, user.id))
+    .limit(1);
+
+  return {
+    userId: user.id,
+    displayName: profile?.displayName?.trim() || user.name?.trim() || `Collector ${user.id}`,
+    firstName: profile?.firstName?.trim() || "",
+    lastName: profile?.lastName?.trim() || "",
+    contactFullName: profile?.contactFullName?.trim() || "",
+    // This is the email a member saved in their Tradebilia profile. Never fall
+    // back to the Manus authentication email for member-facing contact flows.
+    contactEmail: resolveTradebiliaContactEmail(profile?.contactEmail),
+  };
 }
 
 export async function getDashboardData(user: Pick<User, "id" | "name">): Promise<{

@@ -290,7 +290,7 @@ export default function AccountSettings() {
       }
       setCommunicationPrefs(notificationPrefs);
     }
-  }, [dashboardQuery.data?.profile, user?.name, user?.email]);
+  }, [dashboardQuery.data?.profile, user?.name]);
 
   // Attach click listeners to labels to toggle checkboxes (workaround for Manus click interception)
   useEffect(() => {
