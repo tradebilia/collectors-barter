@@ -53,6 +53,8 @@ const eventConfig: Record<string, { color: string; icon: string; label: string }
   tracking_submitted: { color: 'bg-yellow-500', icon: '📦', label: 'Tracking Submitted' },
   items_received:     { color: 'bg-teal-500',   icon: '📬', label: 'Items Received' },
   trade_completed:    { color: 'bg-purple-500', icon: '🏆', label: 'Trade Completed' },
+  message_sent:       { color: 'bg-sky-400',    icon: '💬', label: 'Message Sent' },
+  system_message:     { color: 'bg-slate-400',  icon: 'ℹ️', label: 'System Notice' },
 };
 
 function TimelineTab({ proposalId }: { proposalId: number }) {
@@ -67,6 +69,9 @@ function TimelineTab({ proposalId }: { proposalId: number }) {
       <h3 className="text-white text-sm font-semibold mb-4">Trade Timeline</h3>
       {timelineQuery.isLoading && (
         <p className="text-gray-500 text-xs text-center py-4">Loading timeline...</p>
+      )}
+      {timelineQuery.isError && (
+        <p className="text-red-300 text-xs text-center py-4">Timeline activity could not be loaded.</p>
       )}
       {!timelineQuery.isLoading && events.length === 0 && (
         <p className="text-gray-600 text-xs text-center py-8">No activity yet. Start negotiating!</p>
@@ -300,6 +305,7 @@ export default function WarRoom() {
   const isRequester = trade?.isRequester ?? false;
   const otherUser = trade?.otherUser;
   const messages = (messagesQuery.data?.messages || []) as any[];
+  const myReview = (trade as any)?.myReview || null;
 
   // Reset dismissed state when a new call is started (dailyRoomStartedBy changes)
   const dailyRoomStartedBy = (trade?.proposal as any)?.dailyRoomStartedBy;
@@ -1055,6 +1061,9 @@ export default function WarRoom() {
                     {currentStage === 'completed' && (
                       <div className="pt-4 border-t border-gray-700">
                         <p className="text-white text-sm font-bold mb-3">Leave a Review for {theirDisplayName}</p>
+                        {myReview ? (
+                          <p className="rounded-lg border border-green-500/30 bg-green-900/20 px-3 py-2 text-xs text-green-300">✓ Your review has been submitted and is locked for this trade.</p>
+                        ) : <>
                         {(['tradeExperience', 'itemCondition', 'communication', 'shippingSpeed'] as const).map(key => (
                           <div key={key} className="flex items-center justify-between mb-2">
                             <p className="text-gray-400 text-xs capitalize">{key.replace(/([A-Z])/g, ' $1')}</p>
@@ -1073,6 +1082,7 @@ export default function WarRoom() {
                           className="w-full mt-2 bg-[#0f0f1a] border border-gray-600 text-white text-xs rounded-lg p-3 focus:outline-none focus:border-blue-500 resize-none"
                           rows={3}
                         />
+                        </>}
                       </div>
                     )}
                   </div>
@@ -2168,7 +2178,9 @@ export default function WarRoom() {
           })()}
 
           {/* Stage 5: Completed — leave review */}
-          {currentStage === 'completed' && (
+          {currentStage === 'completed' && (myReview ? (
+            <p className="text-green-300 text-sm flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>Review submitted and locked</p>
+          ) : (
             <>
               <p className="text-green-400 text-sm flex items-center gap-2">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
@@ -2191,7 +2203,7 @@ export default function WarRoom() {
                 ★ Submit Review
               </button>
             </>
-          )}
+          ))}
 
         </div>
         <p className="text-center mt-2 text-gray-600 text-xs flex items-center justify-center gap-1.5">
