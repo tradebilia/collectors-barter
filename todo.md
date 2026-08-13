@@ -160,3 +160,6 @@
 - [x] Add Member Directory to the main homepage left-side panel using the existing panel navigation pattern.
 - [x] Verify the relocated Member Directory entry on desktop and mobile homepage layouts.
 - [x] Reflow the homepage Subscriber Tools panel at mobile widths so Member Directory and all navigation remain usable without horizontal overflow.
+- [x] Review the current authentication/session implementation for simultaneous-device behavior.
+- [x] Evaluate single-session, device-management, and risk-based session-control options for collectors.
+- [x] Present a recommended session policy and phased implementation plan for approval.
