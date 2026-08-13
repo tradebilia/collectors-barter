@@ -77,3 +77,13 @@ Two further cache-busted reloads after the counterpart-first hierarchy checkpoin
 After explicit user approval, the development preview successfully sent one message from Admin to Rtavani with no database error. The new conversation card shows the approved hierarchy—**To: Rtavani**, **Direct Message**, **Sent**, subject, preview, and timestamp—and the Direct Messages **Sent** filter retains that outgoing conversation.
 
 The same development view’s **Received** filter correctly excludes the outgoing conversation and renders an empty state because no incoming reply exists. This confirms the All, Sent, and Received filters separate conversations by the latest-message direction without changing the unified Direct Messages folder.
+
+After the final production propagation, the live admin Messages view renders the same counterpart-first outgoing card: **To: Rtavani**, **Direct Message**, **Sent**, the subject, its preview, and the timestamp. This confirms the previously stale production bundle has been replaced by the published hierarchy update.
+
+The user successfully sent a live direct message from the Admin account to Rtavani after the legacy thread-creation repair. The resulting live outgoing thread was visible from the Admin side before the later presentation improvements, confirming that the repaired creation path works in production as well as in the development preview.
+
+The live Direct Messages folder initially retained the published counterpart-first card but did not yet render the newly added All, Received, and Sent controls, indicating that the latest filter bundle was still propagating after the hierarchy deployment.
+
+Subsequent inspection confirmed that the live JavaScript bundle contains the Direct Messages filter implementation. The page was then ready for a fresh Direct Messages folder selection to verify the rendered controls.
+
+The live Direct Messages folder now renders **All**, **Received**, and **Sent** controls. The live **All** and **Sent** views both retain the Admin-to-Rtavani outgoing conversation with the counterpart-first card hierarchy, matching the development verification.

@@ -128,7 +128,7 @@
 - [x] Verify the repaired admin-to-rtavani direct-message flow in development and live views.
 - [x] Verify the repaired admin-to-rtavani direct-message send flow end-to-end in the development preview without a database error.
 - [x] Send one approved development-verification direct message from Admin to Rtavani and verify its created conversation state.
-- [ ] Document both development and live sender-side direct-message send verification results.
+- [x] Document both development and live sender-side direct-message send verification results.
 - [x] Compare deployed legacy database table columns with messaging and related data-access paths for incompatible assumptions.
 - [x] Assess and document any additional schema mismatches with likely runtime impact, without changing unaffected code.
 - [x] Supply explicit `lastMessageAt` and `createdAt` values when creating legacy direct-message threads without database defaults.
@@ -140,13 +140,19 @@
 - [x] Map direct-message latest-sender payloads to signed-in-user direction for list and detail views.
 - [x] Add To/From counterpart labels and Sent/Received status treatment to direct-message list cards.
 - [x] Add participant-aware direct-message detail headings and explanatory sent/received copy.
-- [ ] Add regression coverage and verify direct-message direction in development and live views.
+- [x] Add regression coverage and verify direct-message direction in development and live views.
 - [x] Define and obtain approval for one consistent counterpart-first hierarchy across direct-message and item-inquiry cards.
 - [x] Reorder direct-message cards to show To/From counterpart and direction before context, subject, preview, and timestamp.
-- [ ] Verify the reordered direct-message card matches the item-inquiry hierarchy in development and live views.
+- [x] Verify the reordered direct-message card matches the item-inquiry hierarchy in development and live views.
 - [x] Locate the broken direct-message notification email logo reference and replace it with the durable Tradebilia logo URL.
 - [x] Verify the email-logo URL is publicly accessible to external email clients and covered by a notification-template regression test.
 - [x] Add All, Sent, and Received subfilters to the Direct Messages folder using latest-message direction.
-- [ ] Verify the direct-message subfilters isolate outgoing and incoming conversations without changing the unified list default.
-- [ ] Review Direct Messages and Item Inquiries from both sender and recipient perspectives for clarity, trust, and conversion friction.
-- [ ] Produce a prioritized messaging-experience improvement roadmap focused on collector retention and repeat engagement.
+- [x] Verify the direct-message subfilters isolate outgoing and incoming conversations without changing the unified list default.
+- [x] Review Direct Messages and Item Inquiries from both sender and recipient perspectives for clarity, trust, and conversion friction.
+- [x] Produce a prioritized messaging-experience improvement roadmap focused on collector retention and repeat engagement.
+- [x] Document the successful live Admin-to-Rtavani direct-message send verification explicitly in the validation record.
+- [ ] Verify the live Direct Messages Received filter with a real incoming direct reply while confirming All remains the unified default.
+- [x] Trace and replace the direct-message reply lookup that still selects the absent legacy `itemId` column.
+- [x] Add regression coverage for a recipient reply against the participant-only legacy thread schema.
+- [ ] Verify the complete live Admin-to-Rtavani direct-message send-and-reply flow after the lookup repair.
+- [x] Create the “Items to address when starting a new session” migration handoff document with issues, safeguards, and a startup checklist.

@@ -1653,7 +1653,11 @@ export const appRouter = router({
       .mutation(async ({ ctx, input }) => {
         const db = await requireDb();
         const thread = await db
-          .select()
+          .select({
+            id: directMessageThreads.id,
+            participantAId: directMessageThreads.participantAId,
+            participantBId: directMessageThreads.participantBId,
+          })
           .from(directMessageThreads)
           .where(and(
             eq(directMessageThreads.id, input.threadId),

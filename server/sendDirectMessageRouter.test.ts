@@ -38,13 +38,25 @@ function createLegacyDirectMessageDatabase() {
     threads,
     messages,
     db: {
-      select: () => ({
+      select: (selection: Record<string, unknown> = {}) => ({
         from: () => ({
           where: () => ({
             limit: async () => {
               selectCall += 1;
-              // The mutation performs one thread lookup followed by one recipient lookup.
-              return selectCall % 2 === 1 ? threads.map(({ id }) => ({ id })) : [{ email: null, name: "Rtavani" }];
+              if ("participantAId" in selection && "participantBId" in selection) {
+                return threads.map(({ id, participantAId, participantBId }) => ({
+                  id,
+                  participantAId,
+                  participantBId,
+                }));
+              }
+              if ("notificationPreferences" in selection) {
+                return [{ notificationPreferences: null }];
+              }
+              if ("email" in selection) {
+                return [{ email: null, name: "Rtavani" }];
+              }
+              return threads.map(({ id }) => ({ id }));
             },
           }),
         }),
@@ -120,5 +132,27 @@ describe("sendDirectMessage legacy schema path", () => {
     expect(result.threadId).toBe(1);
     expect(threads).toHaveLength(1);
     expect(messages).toHaveLength(2);
+  });
+
+  it("allows the recipient to reply through the legacy participant-only thread lookup", async () => {
+    const { db, threads, messages } = createLegacyDirectMessageDatabase();
+    mocks.requireDb.mockResolvedValue(db);
+    const adminCaller = appRouter.createCaller({ user: { id: 30002, name: "Administrator" } } as any);
+    const recipientCaller = appRouter.createCaller({ user: { id: 60003, name: "Rtavani" } } as any);
+
+    await adminCaller.market.sendDirectMessage({
+      recipientId: 60003,
+      subject: "First",
+      body: "First body",
+    });
+    const result = await recipientCaller.market.replyDirectMessage({
+      threadId: 1,
+      body: "Reply body",
+    });
+
+    expect(result).toEqual({ success: true });
+    expect(threads).toHaveLength(1);
+    expect(messages).toHaveLength(2);
+    expect(messages[1]).toMatchObject({ threadId: 1, senderId: 60003, body: "Reply body" });
   });
 });
