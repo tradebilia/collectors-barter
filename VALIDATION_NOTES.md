@@ -235,3 +235,11 @@ Development validation confirmed that Member Directory now renders a deliberate 
 A follow-up development view confirmed that the visible filter rail exposes State / region, Collecting category, Member standing, Minimum rating, More filters, and an explicit Apply filters action before any filtering is requested.
 
 The first several cache-busting production requests after checkpoint `949ee378` served the preceding spotlight-era client bundle and were not accepted as validation. Immediately after the deployment-success notification, the published Member Directory rendered the redesigned **Find Collectors** interface with its Search and Clear controls, State / region, Collecting category, Member standing, Minimum rating, More filters, Apply filters, sort control, profile-first cards, exact-search guidance, and secondary Top Collectors panel. This completes production visual validation without changing member data.
+
+## Member Directory multi-category and merchant verification refinement
+
+In development, the former single category selector now renders individual collection-category controls labeled **Choose any that apply**. Sports Cards and Comics were independently selected before submitting, confirming the intended multi-select interaction. The previous Member Standing field no longer appears; it is replaced by an explicit **Verified Merchant only** toggle. No member data was changed during this validation.
+
+The initial automated Apply filters click did not emit a Member Directory request despite retaining the visible selections. A direct public directory request with `sports_cards` and `comics` returned only the two matching collector profiles, confirming correct server-side inclusive multi-category filtering. The apparent result-set discrepancy was isolated to the automated browser click rather than the filter contract.
+
+Invoking the visible Apply filters control completed the development interaction check: the result count changed from three to two, showing Administrator and Rtavani while excluding the collector without a matching category. This validates inclusive multi-category filtering in the page itself.

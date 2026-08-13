@@ -261,3 +261,6 @@
 - [x] Add deliberate Search and Clear actions, exact-match profile routing, approved filters, and approved sort controls to Member Directory.
 - [x] Rebuild Member Directory results as profile-first collector cards and make rankings secondary to discovery.
 - [x] Add regression coverage and validate the redesigned Member Directory in development and production.
+- [x] Replace the Member Directory single-category dropdown with multi-select collection categories.
+- [x] Replace the Member Standing filter with an explicit Verified Merchant toggle.
+- [ ] Add regression coverage and validate the revised Member Directory category and merchant filters in development and production.

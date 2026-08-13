@@ -13,7 +13,7 @@ describe("Member Directory hero integration", () => {
     expect(source).toContain('<CategoryBar />');
   });
 
-  it("retains the directory verification filter", () => {
-    expect(source).toContain('value="verified"');
+  it("retains the explicit Verified Merchant filter", () => {
+    expect(source).toContain("Verified Merchant only");
   });
 });
