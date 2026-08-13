@@ -205,3 +205,5 @@ The first two published checks after checkpoint `482f15b3` also served the prede
 After the deployment-success notice, a cache-busting published Traders Showcase load displayed the full-width horizontal transfer rows. Each item is now presented left to right as **Original owner → Item → Now with**, with both arrows and both member identities visible on one line. No public item or total-deal values are displayed. This completes development and production validation.
 
 Development validation of the consolidated exchange layout confirmed `TR-000001` now presents all items from both sides on one trade-level horizontal line: Rtavani and the Barry Sanders rookie on the left, a single exchange indicator in the center, and the Rickey Henderson rookie with Administrator on the right. No per-item ownership rows or public values are rendered.
+
+The initial published Traders Showcase request after checkpoint `40a14585` still served the predecessor per-item ownership rows. This is not accepted as production validation; deployment freshness will be rechecked before completing the consolidated exchange update.
