@@ -199,10 +199,10 @@
 - [x] Define the no-key in-room tracking experience and future secure live-status provider boundary.
 - [x] Defer carrier-aware direct tracking presentation changes until a tracking-service credential is available, at the user's direction.
 - [x] Defer tracking-experience regression coverage until live tracking integration is implemented.
-- [ ] When a tracking-service API credential is available, add secure in-room carrier event and delivery-status tracking while preserving official carrier links.
+- [x] Defer secure in-room carrier event and delivery-status tracking until the user provides a tracking-service API credential; official carrier links remain available.
 - [x] Review the existing Report a Member page and provide targeted improvement recommendations without changing its behavior.
 - [x] Audit current report storage, report access, evidence fields, and Trade Room issue-entry points.
 - [x] Persist submitted report context and secure evidence attachments without a database migration.
 - [x] Add a private My Reports status view for report submitters.
 - [x] Add a Trade Room Report a Trade Issue entry point with prefilled participant and trade context.
-- [ ] Add regression coverage and validate evidence, report-status, and Trade Room issue workflows.
+- [x] Add regression coverage and validate evidence, report-status, and Trade Room issue workflows.
