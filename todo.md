@@ -251,3 +251,6 @@
 - [x] Avoid duplicating the spotlight member in the main search-result grid.
 - [x] Complete the resumed Member Directory correction, validation, and recommendations review.
 - [x] Prevent the no-results message from appearing when the only matching member is already displayed in the spotlight.
+- [x] Add an accessible drag-and-drop evidence attachment zone to the Report a User form while retaining browse-file upload.
+- [x] Correct the shared top-bar animated logo scale so it matches the established visual size across pages.
+- [ ] Add regression coverage and validate Report a User uploads and top-bar logo sizing in development and production.

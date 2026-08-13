@@ -64,17 +64,24 @@ export function TopBar({
     return (
       <div className="border-b border-white/10 bg-black relative z-0">
         <div className="flex min-h-14 items-center justify-between pl-2 pr-4 py-1 relative">
-          {/* Logo — same size as full TopBar */}
-          <div className="h-12 flex items-center" style={{ width: '260px' }}>
+          {/* Desktop logo uses the same full shared geometry as pages with search. */}
+          <div className="absolute left-2 h-16 hidden items-center sm:flex" style={{ width: '650px', top: '-10px' }}>
             <a href="/" className="flex items-center hover:opacity-80 transition h-full w-full">
-              <div className="h-12 w-full flex items-center">
+              <div className="h-16 w-full flex items-center">
                 <AnimatedLogoSmall70 />
               </div>
             </a>
           </div>
 
+          {/* Keep a compact, non-overlapping logo only at mobile widths. */}
+          <div className="h-12 w-[220px] items-center sm:hidden">
+            <a href="/" className="flex h-full w-full items-center transition hover:opacity-80">
+              <AnimatedLogoSmall70 />
+            </a>
+          </div>
+
           {/* Icons and Auth on right */}
-          <div className="flex items-center gap-3 md:gap-4 flex-shrink-0">
+          <div className="ml-auto flex items-center gap-3 md:gap-4 flex-shrink-0">
             <TopRightIcons iconColor="text-white/70" />
             {isAuthenticated ? (
               <Button

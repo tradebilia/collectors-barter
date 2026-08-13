@@ -23,4 +23,14 @@ describe("Report a User hero", () => {
     expect(reportUserSource).not.toContain('user.email');
     expect(reportUserSource).toContain('setContactEmailEdited(true)');
   });
+
+  it("supports accessible drag-and-drop evidence uploads while retaining the browse-file path", () => {
+    expect(reportUserSource).toContain("const evidenceInputRef = useRef<HTMLInputElement>(null);");
+    expect(reportUserSource).toContain("const handleEvidenceDrop =");
+    expect(reportUserSource).toContain("Array.from(event.dataTransfer.files)");
+    expect(reportUserSource).toContain('role="button"');
+    expect(reportUserSource).toContain("onKeyDown={handleEvidenceDropzoneKeyDown}");
+    expect(reportUserSource).toContain("Drop evidence here or click to browse");
+    expect(reportUserSource).toContain("evidenceInputRef.current?.click()");
+  });
 });

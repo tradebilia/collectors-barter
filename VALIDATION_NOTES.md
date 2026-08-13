@@ -219,3 +219,9 @@ The initial published Traders Showcase request after checkpoint `f5788a43` still
 The first published request after deployment-refresh checkpoint `c00eb717` also served the predecessor Showcase row. Production validation remains incomplete until the deployment-success refresh serves the refined bundle.
 
 After the deployment-success notice, a cache-busting published Traders Showcase load displayed complete **Barry Sanders Score Rookie** and **Rickey Henderson Rookie** titles, prominent purple exchange arrows, and only the member names **Rtavani** and **Administrator** without redundant Trading labels. The completed trade remains one consolidated horizontal row with no public values. This completes development and production validation.
+
+## Report evidence drop zone and compact top-bar logo
+
+In the authenticated development Report a User view, the evidence section renders as a focusable control with the visible instruction **Drop evidence here or click to browse** and a concise list of accepted formats, 10MB per-file limit, and five-file maximum. It retains the existing secure upload procedure and file-type restrictions; no report or evidence file was submitted during validation.
+
+The same Report a User view now uses the shared desktop animated-logo geometry in its search-hidden top bar: a 650px-wide, 64px-high absolute container aligned at the same `top: -10px` position used by the standard top bar. The visual comparison against Member Directory confirmed that the desktop animated logo uses the same shared layout contract while mobile retains a compact non-overlapping treatment.
