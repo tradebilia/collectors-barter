@@ -3,8 +3,8 @@ import { trpc } from "@/lib/trpc";
 import { TopBar } from "@/components/TopBar";
 import { CategoryBar } from "@/components/CategoryBar";
 import { tradebiliaCategories } from "@/lib/tradebilia";
-import { Handshake, ArrowRight, ArrowUpDown } from "lucide-react";
-import { buildTradeShowcaseMovements } from "@/lib/tradeShowcaseMovements";
+import { Handshake, ArrowLeftRight, ArrowUpDown } from "lucide-react";
+import { buildTradeShowcaseExchange, type TradeShowcaseItem, type TradeShowcaseParty } from "@/lib/tradeShowcaseMovements";
 
 const CATEGORY_ICONS: Record<string, string> = {
   comics: "📚",
@@ -51,8 +51,46 @@ function Avatar({ url, name, size = "sm" }: { url?: string | null; name?: string
   );
 }
 
+function TradeItems({ items }: { items: TradeShowcaseItem[] }) {
+  if (items.length === 0) {
+    return <span className="text-xs italic text-gray-400">No collectible item</span>;
+  }
+
+  return (
+    <div className="flex min-w-0 items-center gap-2">
+      {items.map((item, index) => (
+        <div key={`${item.id ?? item.title}-${index}`} className="flex min-w-0 items-center gap-2 rounded-lg border border-gray-100 bg-white px-2 py-1.5">
+          <div className="h-12 w-12 shrink-0 overflow-hidden rounded-md bg-gray-50">
+            {item.imageUrl ? (
+              <img src={item.imageUrl} alt={item.title || "Traded collectible"} className="h-full w-full object-contain" />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center text-xl text-gray-300">
+                {CATEGORY_ICONS[item.category || ""] || "📦"}
+              </div>
+            )}
+          </div>
+          <p className="max-w-36 truncate text-xs font-semibold text-gray-800">{item.title || "Collectible"}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function TradeParty({ member, reverse = false }: { member: TradeShowcaseParty; reverse?: boolean }) {
+  return (
+    <div className={`flex shrink-0 items-center gap-2 ${reverse ? "flex-row-reverse text-right" : ""}`}>
+      <Avatar url={member.avatarUrl} name={member.displayName} size="md" />
+      <div className="min-w-0">
+        <p className="text-[9px] uppercase tracking-wide text-gray-400">Trading</p>
+        <p className="max-w-24 truncate text-xs font-semibold text-gray-700">{member.displayName || "Member"}</p>
+      </div>
+    </div>
+  );
+}
+
 function TradeCard({ trade }: { trade: any }) {
-  const movements = buildTradeShowcaseMovements(trade);
+  const exchange = buildTradeShowcaseExchange(trade);
+  const hasItems = exchange.left.items.length > 0 || exchange.right.items.length > 0;
 
   return (
     <div className="bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden">
@@ -65,56 +103,23 @@ function TradeCard({ trade }: { trade: any }) {
         <span className="text-gray-400 text-[10px]">{formatTradeDate(trade.completedAt)}</span>
       </div>
 
-      {/* Each item is shown as a completed ownership movement, not as a deal total. */}
+      {/* Both sides of each completed trade are shown together in one exchange line. */}
       <div className="p-4">
-        {movements.length === 0 ? (
+        {!hasItems ? (
           <div className="h-24 flex items-center justify-center text-gray-400 text-sm">No item details available</div>
         ) : (
-          <div className="space-y-3">
-            {movements.slice(0, 4).map((movement, idx) => (
-              <div key={`${movement.id ?? movement.title}-${idx}`} className="rounded-xl border border-gray-200 bg-gray-50/70 overflow-hidden">
-                <div className="overflow-x-auto">
-                  <div className="flex min-w-[650px] items-center gap-3 p-3">
-                    <div className="flex w-36 shrink-0 items-center gap-2">
-                      <Avatar url={movement.originalOwner.avatarUrl} name={movement.originalOwner.displayName} size="md" />
-                      <div className="min-w-0">
-                        <p className="text-[9px] uppercase tracking-wide text-gray-400">Original owner</p>
-                        <p className="truncate text-xs font-semibold text-gray-700">{movement.originalOwner.displayName || "Original owner"}</p>
-                      </div>
-                    </div>
-                    <ArrowRight className="h-5 w-5 shrink-0 text-purple-500" aria-label="Traded item from original owner" />
-                    <div className="flex min-w-[250px] flex-1 items-center gap-3 rounded-lg border border-gray-100 bg-white p-2.5">
-                      <div className="h-16 w-16 shrink-0 overflow-hidden rounded-md bg-gray-50">
-                        {movement.imageUrl ? (
-                          <img src={movement.imageUrl} alt={movement.title || "Traded collectible"} className="h-full w-full object-contain" />
-                        ) : (
-                          <div className="flex h-full w-full items-center justify-center text-2xl text-gray-300">
-                            {CATEGORY_ICONS[movement.category || ""] || "📦"}
-                          </div>
-                        )}
-                      </div>
-                      <div className="min-w-0">
-                        <p className="line-clamp-2 text-sm font-bold leading-tight text-gray-900">{movement.title || "Collectible"}</p>
-                        <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.16em] text-purple-600">Completed trade</p>
-                      </div>
-                    </div>
-                    <ArrowRight className="h-5 w-5 shrink-0 text-purple-500" aria-label="Traded item to receiving member" />
-                    <div className="flex w-36 shrink-0 items-center justify-end gap-2 text-right">
-                      <div className="min-w-0">
-                        <p className="text-[9px] uppercase tracking-wide text-gray-400">Now with</p>
-                        <p className="truncate text-xs font-semibold text-gray-700">{movement.receivingMember.displayName || "Receiving member"}</p>
-                      </div>
-                      <Avatar url={movement.receivingMember.avatarUrl} name={movement.receivingMember.displayName} size="md" />
-                    </div>
-                  </div>
-                </div>
+          <div className="overflow-x-auto rounded-xl border border-gray-200 bg-gray-50/70">
+            <div className="flex min-w-[980px] items-center gap-4 p-3">
+              <div className="flex flex-1 items-center gap-3">
+                <TradeParty member={exchange.left.member} />
+                <TradeItems items={exchange.left.items} />
               </div>
-            ))}
-            {movements.length > 4 && (
-              <div className="rounded-xl bg-gray-100 border border-gray-200 py-2 text-center">
-                <span className="text-gray-500 text-xs font-bold">+{movements.length - 4} more traded items</span>
+              <ArrowLeftRight className="h-6 w-6 shrink-0 text-purple-500" aria-label="Completed exchange between both members" />
+              <div className="flex flex-1 flex-row-reverse items-center gap-3">
+                <TradeParty member={exchange.right.member} reverse />
+                <TradeItems items={exchange.right.items} />
               </div>
-            )}
+            </div>
           </div>
         )}
       </div>

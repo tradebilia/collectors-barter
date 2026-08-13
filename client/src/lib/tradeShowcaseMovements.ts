@@ -27,6 +27,16 @@ export type TradeShowcaseMovement = TradeShowcaseItem & {
   receivingMember: TradeShowcaseParty;
 };
 
+export type TradeShowcaseExchangeSide = {
+  member: TradeShowcaseParty;
+  items: TradeShowcaseItem[];
+};
+
+export type TradeShowcaseExchange = {
+  left: TradeShowcaseExchangeSide;
+  right: TradeShowcaseExchangeSide;
+};
+
 /**
  * The requested listing belongs to the proposal recipient and moves to the
  * requester. Every offered listing belongs to the requester and moves to the
@@ -61,4 +71,35 @@ export function buildTradeShowcaseMovements(trade: TradeShowcaseTrade): TradeSho
   }));
 
   return [...requestedMovement, ...offeredMovements];
+}
+
+/**
+ * Groups the two sides of a completed exchange for a single trade-level
+ * presentation. The recipient originally owns the requested listing; the
+ * requester originally owns every offered listing.
+ */
+export function buildTradeShowcaseExchange(trade: TradeShowcaseTrade): TradeShowcaseExchange {
+  const requester = {
+    displayName: trade.requesterDisplayName,
+    avatarUrl: trade.requesterAvatarUrl,
+  };
+  const recipient = {
+    displayName: trade.recipientDisplayName,
+    avatarUrl: trade.recipientAvatarUrl,
+  };
+
+  const recipientItems: TradeShowcaseItem[] =
+    trade.requestedListingImage || trade.requestedListingTitle
+      ? [{
+          id: trade.requestedListingId,
+          title: trade.requestedListingTitle,
+          category: trade.requestedListingCategory,
+          imageUrl: trade.requestedListingImage,
+        }]
+      : [];
+
+  return {
+    left: { member: recipient, items: recipientItems },
+    right: { member: requester, items: trade.offeredItems ?? [] },
+  };
 }
