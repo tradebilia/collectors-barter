@@ -13,6 +13,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { OnlineIndicator } from "@/components/OnlineIndicator";
 import { toast } from "sonner";
 import { VideoChatPanel } from "@/components/VideoChatPanel";
+import { getNegotiationTurnState } from "@/lib/tradeNegotiationTurn";
 
 type TradeStage = 'proposed' | 'negotiating' | 'accepted' | 'shipping' | 'shipped' | 'completed';
 
@@ -333,18 +334,9 @@ export default function WarRoom() {
   const partnerHasAccepted = (trade as any)?.partnerHasAccepted ?? false;
   const myHasAccepted = (trade as any)?.myHasAccepted ?? false;
 
-  // Can only accept if the OTHER person sent the last proposal (not yourself)
+  // The persisted last proposal determines whose turn it is. Local edits only
+  // affect whether the current proposal can be accepted, not the responder turn.
   const lastProposedBy = (trade?.proposal as any)?.lastProposedBy;
-  // If lastProposedBy is set: accept only if they sent it (not you)
-  // If lastProposedBy is null but status is 'negotiating': the trade was transitioned by the other party
-  // so we fall back to: requester can accept (recipient acted to get it to negotiating), recipient cannot yet
-  const otherPartyProposed = currentStage === 'negotiating' && (
-    lastProposedBy !== null && lastProposedBy !== undefined
-      ? lastProposedBy !== myUserId
-      : isRequester // fallback: if null, requester gets to accept first
-  );
-
-  // hasLocalChanges and iCanAccept are computed below (after cash variables are defined)
 
   // Current user display info
   const myDisplayName = (currentUser as any)?.displayName || currentUser?.name || currentUser?.username || 'You';
@@ -423,8 +415,14 @@ export default function WarRoom() {
     (cashReceiveTouched && localTheirCash !== serverTheirCash)
   );
 
-  // Can only accept if: other party proposed AND you haven't modified anything
-  const iCanAccept = otherPartyProposed && !hasLocalChanges;
+  const negotiationTurn = getNegotiationTurnState({
+    currentStage,
+    lastProposedBy,
+    myUserId,
+    isRequester,
+    hasLocalChanges,
+  });
+  const iCanAccept = negotiationTurn.canAcceptCurrentProposal;
 
   // Calculate total values (items + cash)
   const myItemsValue = myItems.reduce((sum: number, l: any) => sum + parseFloat(l?.estimatedValue || '0'), 0);
@@ -1307,14 +1305,14 @@ export default function WarRoom() {
                     )}
                     {!partnerHasAccepted && !myHasAccepted && currentStage === 'negotiating' && (
                       <div className={`mb-4 px-3 py-2 rounded-lg flex items-center justify-center gap-2 text-[10px] font-bold uppercase tracking-wider animate-pulse ${
-                        iCanAccept
+                        negotiationTurn.status === 'your-turn'
                           ? 'bg-green-500/10 border border-green-500/30 text-green-400 shadow-[0_0_15px_rgba(34,197,94,0.1)]'
                           : 'bg-amber-500/10 border border-amber-500/30 text-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.1)]'
                       }`}>
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-3.5 h-3.5">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
                         </svg>
-                        {iCanAccept ? 'Your Turn to Respond' : 'Awaiting Their Response'}
+                        {negotiationTurn.status === 'your-turn' ? 'Your Turn to Respond' : 'Awaiting Their Response'}
                       </div>
                     )}
                     <p className="text-gray-400 text-[10px] font-bold uppercase tracking-widest mb-3 flex items-center justify-center gap-1">

@@ -175,3 +175,8 @@
 - [x] Add the shared top bar and main-homepage-style hero section to the Member Directory page without changing directory filters or member actions.
 - [x] Verify the updated Member Directory hero and navigation at desktop and mobile widths.
 - [x] Identify and correct the Member Directory route mismatch so homepage navigation reaches the styled directory page.
+- [x] Trace why editing an unsent counteroffer changes the negotiation turn status before submission.
+- [x] Preserve the current responder status while a counteroffer draft is edited but not submitted.
+- [x] Update the negotiation turn only after a counteroffer is explicitly submitted.
+- [x] Add regression coverage for draft edits versus submitted counteroffers.
+- [ ] Verify the corrected Admin/Rtavani trade negotiation flow in development and live views.
