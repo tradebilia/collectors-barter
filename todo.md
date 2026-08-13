@@ -167,3 +167,6 @@
 - [x] Compare authoritative session-management guidance and relevant consumer-platform device-session practices.
 - [x] Evaluate strict single-session, device-aware, and risk-based controls against Tradebilia requirements.
 - [x] Deliver a definitive session policy recommendation with non-negotiable implementation guardrails.
+- [ ] Locate the standalone Verified Merchants homepage action and Member Directory verification discovery path.
+- [ ] Remove the duplicate Verified Merchants homepage action while retaining Member Directory access.
+- [ ] Verify verification discovery remains available through Member Directory and homepage navigation remains responsive.
