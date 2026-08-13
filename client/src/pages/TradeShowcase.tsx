@@ -3,7 +3,8 @@ import { trpc } from "@/lib/trpc";
 import { TopBar } from "@/components/TopBar";
 import { CategoryBar } from "@/components/CategoryBar";
 import { tradebiliaCategories } from "@/lib/tradebilia";
-import { Handshake, TrendingUp, ArrowUpDown } from "lucide-react";
+import { Handshake, ArrowRight, ArrowUpDown } from "lucide-react";
+import { buildTradeShowcaseMovements } from "@/lib/tradeShowcaseMovements";
 
 const CATEGORY_ICONS: Record<string, string> = {
   comics: "📚",
@@ -51,18 +52,7 @@ function Avatar({ url, name, size = "sm" }: { url?: string | null; name?: string
 }
 
 function TradeCard({ trade }: { trade: any }) {
-  const allItems = [
-    ...(trade.requestedListingImage || trade.requestedListingTitle ? [{
-      id: trade.requestedListingId,
-      title: trade.requestedListingTitle,
-      category: trade.requestedListingCategory,
-      estimatedValue: trade.requestedListingValue,
-      imageUrl: trade.requestedListingImage,
-    }] : []),
-    ...(trade.offeredItems || []).map((i: any) => ({ ...i, imageUrl: i.imageUrl })),
-  ];
-
-  const totalValue = parseFloat(trade.totalValue || "0");
+  const movements = buildTradeShowcaseMovements(trade);
 
   return (
     <div className="bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden">
@@ -75,72 +65,66 @@ function TradeCard({ trade }: { trade: any }) {
         <span className="text-gray-400 text-[10px]">{formatTradeDate(trade.completedAt)}</span>
       </div>
 
-      {/* Items grid */}
+      {/* Each item is shown as a completed ownership movement, not as a deal total. */}
       <div className="p-4">
-        {allItems.length === 0 ? (
+        {movements.length === 0 ? (
           <div className="h-24 flex items-center justify-center text-gray-400 text-sm">No item details available</div>
         ) : (
-          <div className={`grid gap-2 ${allItems.length === 1 ? "grid-cols-1" : allItems.length <= 4 ? "grid-cols-2" : "grid-cols-3"}`}>
-            {allItems.slice(0, 6).map((item: any, idx: number) => (
-              <div key={idx} className="relative rounded-xl overflow-hidden bg-gray-50 border border-gray-100 group">
-                {item.imageUrl ? (
-                  <img
-                    src={item.imageUrl}
-                    alt={item.title}
-                    className="w-full h-28 object-contain bg-white"
-                  />
-                ) : (
-                  <div className="w-full h-28 flex items-center justify-center text-gray-300 text-3xl bg-gray-50">
-                    {CATEGORY_ICONS[item.category] || "📦"}
+          <div className="space-y-3">
+            {movements.slice(0, 4).map((movement, idx) => (
+              <div key={`${movement.id ?? movement.title}-${idx}`} className="rounded-xl border border-gray-200 bg-gray-50/70 overflow-hidden">
+                <div className="flex gap-3 p-3">
+                  <div className="w-20 h-20 shrink-0 rounded-lg overflow-hidden border border-gray-100 bg-white">
+                    {movement.imageUrl ? (
+                      <img src={movement.imageUrl} alt={movement.title || "Traded collectible"} className="w-full h-full object-contain" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-gray-300 text-3xl">
+                        {CATEGORY_ICONS[movement.category || ""] || "📦"}
+                      </div>
+                    )}
                   </div>
-                )}
-                <div className="p-1.5">
-                  <p className="text-gray-800 text-[10px] font-semibold leading-tight line-clamp-2">{item.title}</p>
-                  {item.estimatedValue && parseFloat(item.estimatedValue) > 0 && (
-                    <p className="text-purple-600 text-[10px] font-bold mt-0.5">${parseFloat(item.estimatedValue).toLocaleString()}</p>
-                  )}
+                  <div className="min-w-0 flex-1">
+                    <p className="text-gray-900 text-sm font-bold leading-tight line-clamp-2">{movement.title || "Collectible"}</p>
+                    <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.16em] text-purple-600">Completed trade</p>
+                  </div>
+                </div>
+                <div className="border-t border-gray-200 bg-white px-3 py-2.5">
+                  <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+                    <div className="min-w-0 flex items-center gap-1.5">
+                      <Avatar url={movement.originalOwner.avatarUrl} name={movement.originalOwner.displayName} />
+                      <div className="min-w-0">
+                        <p className="text-[9px] uppercase tracking-wide text-gray-400">From</p>
+                        <p className="truncate text-[11px] font-semibold text-gray-700">{movement.originalOwner.displayName || "Original owner"}</p>
+                      </div>
+                    </div>
+                    <ArrowRight className="h-4 w-4 shrink-0 text-purple-500" aria-label="Traded to" />
+                    <div className="min-w-0 flex items-center justify-end gap-1.5 text-right">
+                      <div className="min-w-0">
+                        <p className="text-[9px] uppercase tracking-wide text-gray-400">Now with</p>
+                        <p className="truncate text-[11px] font-semibold text-gray-700">{movement.receivingMember.displayName || "Receiving member"}</p>
+                      </div>
+                      <Avatar url={movement.receivingMember.avatarUrl} name={movement.receivingMember.displayName} />
+                    </div>
+                  </div>
                 </div>
               </div>
             ))}
-            {allItems.length > 6 && (
-              <div className="rounded-xl bg-gray-100 border border-gray-200 h-28 flex items-center justify-center">
-                <span className="text-gray-500 text-sm font-bold">+{allItems.length - 6} more</span>
+            {movements.length > 4 && (
+              <div className="rounded-xl bg-gray-100 border border-gray-200 py-2 text-center">
+                <span className="text-gray-500 text-xs font-bold">+{movements.length - 4} more traded items</span>
               </div>
             )}
           </div>
         )}
       </div>
 
-      {/* Footer — traders */}
-      <div className="px-4 pb-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Avatar url={trade.requesterAvatarUrl} name={trade.requesterDisplayName} />
-          <span className="text-gray-700 text-xs font-semibold">{trade.requesterDisplayName || "Trader"}</span>
-        </div>
-
-        <div className="flex flex-col items-center gap-0.5">
-          <div className="flex items-center gap-1">
-            <div className="h-px w-8 bg-gray-300" />
-            <Handshake className="w-4 h-4 text-purple-500" />
-            <div className="h-px w-8 bg-gray-300" />
-          </div>
-          {totalValue > 0 && (
-            <span className="text-[10px] text-gray-400 font-medium">${totalValue.toLocaleString()} total</span>
-          )}
-        </div>
-
-        <div className="flex items-center gap-2">
-          <span className="text-gray-700 text-xs font-semibold">{trade.recipientDisplayName || "Trader"}</span>
-          <Avatar url={trade.recipientAvatarUrl} name={trade.recipientDisplayName} />
-        </div>
-      </div>
     </div>
   );
 }
 
 export default function TradeShowcase() {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
-  const [sortBy, setSortBy] = useState<"recent" | "value" | "items">("recent");
+  const [sortBy, setSortBy] = useState<"recent" | "items">("recent");
 
   const tradesQuery = trpc.favorites.getCompletedTrades.useQuery({
     category: selectedCategory === "all" ? undefined : selectedCategory,
@@ -190,11 +174,10 @@ export default function TradeShowcase() {
             <ArrowUpDown className="w-4 h-4 text-gray-400" />
             <select
               value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as "recent" | "value" | "items")}
+              onChange={(e) => setSortBy(e.target.value as "recent" | "items")}
               className="text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500"
             >
               <option value="recent">Most Recent</option>
-              <option value="value">Highest Value</option>
               <option value="items">Most Items</option>
             </select>
           </div>
@@ -252,7 +235,7 @@ export default function TradeShowcase() {
               {trades.length} completed trade{trades.length !== 1 ? "s" : ""}
               {selectedCategory !== "all" ? ` in ${tradebiliaCategories.find(c => c.value === selectedCategory)?.label}` : ""}
             </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
               {trades.map((trade: any) => (
                 <TradeCard key={trade.id} trade={trade} />
               ))}

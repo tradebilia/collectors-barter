@@ -10,5 +10,6 @@ describe("Report a User hero", () => {
     expect(reportUserSource).toContain('const fieldLabelClass = "text-sm font-medium text-slate-100"');
     expect(reportUserSource).toContain('if (!contactEmailEdited && user?.email) setContactEmail(user.email);');
     expect(reportUserSource).toContain('<SharedTopBar hideSearch />');
+    expect(reportUserSource).toContain('max-w-7xl items-center justify-center -ml-32');
   });
 });
