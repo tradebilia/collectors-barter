@@ -167,3 +167,7 @@ After the deployment-success notice, a cache-busting published Report a Member p
 Development verification of the newly supplied wider Report a Member title confirmed that the artwork fits fully inside the existing hero without changing the hero background, navigation, reporting controls, or Contact email default. No report was submitted during validation.
 
 The first two published requests after checkpoint `a2976a30` still served the predecessor SVG title asset rather than the newly supplied wide WEBP title. The original collector-background hero was present on the settled view, but production validation remains incomplete until the new wide title asset is served.
+
+The two published requests after deployment-refresh checkpoint `4f7942bc` also continued to serve the predecessor SVG title asset. The collector background and reporting controls remain intact, but production validation remains incomplete until the newly supplied wide WEBP title is served.
+
+After the deployment-success notice, a cache-busting published Report a Member load displayed the supplied wider WEBP title artwork over the existing collector-background hero. The title fits fully within the hero, and the navigation, reporting controls, and account-email default remained unchanged. This completes development and production validation without submitting a report.

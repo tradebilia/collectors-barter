@@ -217,4 +217,4 @@
 - [x] Remove the top-bar search control from the Report a Member page only.
 - [x] Verify the Report a Member page retains navigation while omitting search in development and production.
 - [x] Replace the Report a Member hero title with the newly supplied wider artwork.
-- [ ] Validate the supplied wider Report a Member title in development and production.
+- [x] Validate the supplied wider Report a Member title in development and production.
