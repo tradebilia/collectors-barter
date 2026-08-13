@@ -13,7 +13,7 @@ import { loadPresenceMap, subscribeToPresence, updatePresence } from "@/lib/memb
 import { shouldRefreshUnreadAlertAfterOpeningDirectThread } from "@/lib/unreadAlertRefresh";
 import { trpc } from "@/lib/trpc";
 import { TRADEBILIA_LOGO_URL, tradebiliaCategories } from "@/lib/tradebilia";
-import { ArrowRightLeft, Loader2, MailOpen, MessageSquareText, Send, ShieldCheck, UsersRound } from "lucide-react";
+import { ArrowRightLeft, Loader2, MailOpen, MessageSquareText, Send, ShieldCheck } from "lucide-react";
 import { TopRightIcons } from "@/components/TopRightIcons";
 import { TopBar } from "@/components/TopBar";
 import { CategoryBar } from "@/components/CategoryBar";
@@ -653,7 +653,7 @@ export default function Messages() {
                             <Badge className={`rounded-full ${activeDirectDirection === "sent" ? "bg-blue-100 text-blue-800 hover:bg-blue-200" : "bg-emerald-100 text-emerald-800 hover:bg-emerald-200"}`}>{activeDirectPresentation.badge}</Badge>
                           )}
                           {activeOnline ? <span className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-emerald-700"><span className="h-2 w-2 rounded-full bg-emerald-500" />Online now</span> : null}
-                          {activeThread.kind === "trade" ? <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1"><ShieldCheck className="h-4 w-4" />{activeThread.proposal.ownerRating?.averageRating?.toFixed(1) ?? "N/A"} rating</span> : <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1"><UsersRound className="h-4 w-4" />Collector direct line</span>}
+                          {activeThread.kind === "trade" ? <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1"><ShieldCheck className="h-4 w-4" />{activeThread.proposal.ownerRating?.averageRating?.toFixed(1) ?? "N/A"} rating</span> : <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1"><MessageSquareText className="h-4 w-4" />Collector direct line</span>}
                         </div>
                       </div>
                     </div>
@@ -740,7 +740,7 @@ export default function Messages() {
                 </ScrollArea>
 
                 <div className="border-t border-slate-200 px-6 py-5">
-                  <div className="grid gap-3 lg:grid-cols-[1fr_auto_auto]">
+                  <div className={`grid gap-3 ${activeThread.kind === "trade" ? "lg:grid-cols-[1fr_auto_auto]" : "lg:grid-cols-[1fr_auto]"}`}>
                     <Input value={messageDraft} onChange={event => setMessageDraft(event.target.value)} placeholder={activeThread.kind === "direct" ? "Write a direct member message" : "Add a trade note, shipping update, or negotiation reply"} className="h-12 bg-white" />
                     {activeThread.kind === "trade" ? (
                       <Button variant="outline" className="h-12 rounded-full bg-transparent" asChild>
@@ -749,14 +749,7 @@ export default function Messages() {
                           View listing
                         </Link>
                       </Button>
-                    ) : (
-                      <Button variant="outline" className="h-12 rounded-full bg-transparent" asChild>
-                        <Link href="/members">
-                          <UsersRound className="mr-2 h-4 w-4" />
-                          Member directory
-                        </Link>
-                      </Button>
-                    )}
+                    ) : null}
                     <Button className="h-12 rounded-full px-6" disabled={!messageDraft.trim() || sendTradeMessageMutation.isPending} onClick={sendActiveMessage}>
                       {sendTradeMessageMutation.isPending && activeThread.kind === "trade" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
                       {activeThread.kind === "direct" ? "Send Message" : "Send Trade Message"}

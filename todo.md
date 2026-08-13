@@ -156,3 +156,7 @@
 - [x] Add regression coverage for a recipient reply against the participant-only legacy thread schema.
 - [x] Verify the complete live Admin-to-Rtavani direct-message send-and-reply flow after the lookup repair.
 - [x] Create the “Items to address when starting a new session” migration handoff document with issues, safeguards, and a startup checklist.
+- [x] Locate and remove the existing Member Directory button from its current interface location.
+- [x] Add Member Directory to the main homepage left-side panel using the existing panel navigation pattern.
+- [x] Verify the relocated Member Directory entry on desktop and mobile homepage layouts.
+- [x] Reflow the homepage Subscriber Tools panel at mobile widths so Member Directory and all navigation remain usable without horizontal overflow.

@@ -637,8 +637,8 @@ export default function Home() {
             </div>
           ) : (
             <div className="space-y-0">
-              <div className="grid gap-0 grid-cols-[200px_minmax(0,1fr)] grid-rows-[auto_1fr]">
-                <aside className="bg-gradient-to-b from-blue-900 via-purple-900 to-indigo-900 px-4 py-6 text-white shadow-lg col-start-1 row-span-2 flex flex-col justify-between">
+              <div className="grid grid-cols-1 gap-0 md:grid-cols-[200px_minmax(0,1fr)] md:grid-rows-[auto_1fr]">
+                <aside className="flex flex-col justify-between bg-gradient-to-b from-blue-900 via-purple-900 to-indigo-900 px-4 py-6 text-white shadow-lg md:col-start-1 md:row-span-2">
                   <div className="space-y-4">
                     <div className="pb-4 border-b border-white/20">
                       <h3 className="text-sm font-bold uppercase tracking-wider text-white">Subscriber Tools</h3>
@@ -658,6 +658,9 @@ export default function Home() {
                         setLocation('/trade-hub');
                       }
                     }} className="w-full px-3 py-2 rounded bg-white/10 hover:bg-white/20 transition text-white text-sm font-medium text-left flex items-center gap-2"><ArrowRightLeft className="w-4 h-4 flex-shrink-0" /> My Trades</button>
+                    <button onClick={() => {
+                      setLocation('/members');
+                    }} className="w-full px-3 py-2 rounded bg-white/10 hover:bg-white/20 transition text-white text-sm font-medium text-left flex items-center gap-2"><Users className="w-4 h-4 flex-shrink-0" /> Member Directory</button>
                     <button onClick={() => {
                       if (!isAuthenticated) {
                         toast.error('Members only - Please sign in to report a user');
@@ -723,7 +726,7 @@ export default function Home() {
 
                 </aside>
 
-                <div className="py-3 col-start-2 row-start-1">
+                <div className="py-3 md:col-start-2 md:row-start-1">
                   <h2 className="text-center font-serif text-[2.45rem] font-medium tracking-[-0.035em] text-[#2d241e] sm:text-[2.8rem]">Recently Added</h2>
                   <RecentlyAddedCarousel
                     items={recentShelfItems}
@@ -742,7 +745,7 @@ export default function Home() {
                   />
                 </div>
 
-                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4 lg:col-start-2 px-4 lg:px-8">
+                <div className="grid gap-4 px-4 md:col-start-2 md:grid-cols-2 lg:px-8 xl:grid-cols-4">
                 {/* Most Viewed */}
                 <Card className="overflow-hidden rounded-2xl border border-white/10 bg-[#0d152b] text-white shadow-2xl hover:border-white/20 transition-all flex flex-col">
                   <CardHeader className="pb-4 pt-7 px-6 relative">

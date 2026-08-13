@@ -91,3 +91,7 @@ The live Direct Messages folder now renders **All**, **Received**, and **Sent** 
 After the recipient confirmed a successful live reply, the Admin-side unified Direct Messages view displayed it as **From: Rtavani**, **Direct Message**, and **Received**, with the reply preview and Seen state. This verifies both the repaired recipient reply path and the incoming direction presentation in production.
 
 Selecting the live **Received** filter retained only Rtavani’s real incoming reply and visually activated the filter. This confirms that incoming conversations are isolated correctly while the default **All** view remains the unified conversation list.
+
+## Member Directory navigation relocation
+
+The homepage Subscriber Tools panel now contains **Member Directory** between My Trades and Report a User. Desktop retains the left-column panel placement. At a 375-pixel mobile viewport, the panel stacks above homepage content, preserves the full Member Directory label and navigation affordance, and eliminates the prior horizontal overflow caused by the fixed two-column grid.
