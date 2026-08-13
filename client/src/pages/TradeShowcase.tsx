@@ -73,37 +73,38 @@ function TradeCard({ trade }: { trade: any }) {
           <div className="space-y-3">
             {movements.slice(0, 4).map((movement, idx) => (
               <div key={`${movement.id ?? movement.title}-${idx}`} className="rounded-xl border border-gray-200 bg-gray-50/70 overflow-hidden">
-                <div className="flex gap-3 p-3">
-                  <div className="w-20 h-20 shrink-0 rounded-lg overflow-hidden border border-gray-100 bg-white">
-                    {movement.imageUrl ? (
-                      <img src={movement.imageUrl} alt={movement.title || "Traded collectible"} className="w-full h-full object-contain" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-gray-300 text-3xl">
-                        {CATEGORY_ICONS[movement.category || ""] || "📦"}
-                      </div>
-                    )}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-gray-900 text-sm font-bold leading-tight line-clamp-2">{movement.title || "Collectible"}</p>
-                    <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.16em] text-purple-600">Completed trade</p>
-                  </div>
-                </div>
-                <div className="border-t border-gray-200 bg-white px-3 py-2.5">
-                  <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
-                    <div className="min-w-0 flex items-center gap-1.5">
-                      <Avatar url={movement.originalOwner.avatarUrl} name={movement.originalOwner.displayName} />
+                <div className="overflow-x-auto">
+                  <div className="flex min-w-[650px] items-center gap-3 p-3">
+                    <div className="flex w-36 shrink-0 items-center gap-2">
+                      <Avatar url={movement.originalOwner.avatarUrl} name={movement.originalOwner.displayName} size="md" />
                       <div className="min-w-0">
-                        <p className="text-[9px] uppercase tracking-wide text-gray-400">From</p>
-                        <p className="truncate text-[11px] font-semibold text-gray-700">{movement.originalOwner.displayName || "Original owner"}</p>
+                        <p className="text-[9px] uppercase tracking-wide text-gray-400">Original owner</p>
+                        <p className="truncate text-xs font-semibold text-gray-700">{movement.originalOwner.displayName || "Original owner"}</p>
                       </div>
                     </div>
-                    <ArrowRight className="h-4 w-4 shrink-0 text-purple-500" aria-label="Traded to" />
-                    <div className="min-w-0 flex items-center justify-end gap-1.5 text-right">
+                    <ArrowRight className="h-5 w-5 shrink-0 text-purple-500" aria-label="Traded item from original owner" />
+                    <div className="flex min-w-[250px] flex-1 items-center gap-3 rounded-lg border border-gray-100 bg-white p-2.5">
+                      <div className="h-16 w-16 shrink-0 overflow-hidden rounded-md bg-gray-50">
+                        {movement.imageUrl ? (
+                          <img src={movement.imageUrl} alt={movement.title || "Traded collectible"} className="h-full w-full object-contain" />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center text-2xl text-gray-300">
+                            {CATEGORY_ICONS[movement.category || ""] || "📦"}
+                          </div>
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="line-clamp-2 text-sm font-bold leading-tight text-gray-900">{movement.title || "Collectible"}</p>
+                        <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.16em] text-purple-600">Completed trade</p>
+                      </div>
+                    </div>
+                    <ArrowRight className="h-5 w-5 shrink-0 text-purple-500" aria-label="Traded item to receiving member" />
+                    <div className="flex w-36 shrink-0 items-center justify-end gap-2 text-right">
                       <div className="min-w-0">
                         <p className="text-[9px] uppercase tracking-wide text-gray-400">Now with</p>
-                        <p className="truncate text-[11px] font-semibold text-gray-700">{movement.receivingMember.displayName || "Receiving member"}</p>
+                        <p className="truncate text-xs font-semibold text-gray-700">{movement.receivingMember.displayName || "Receiving member"}</p>
                       </div>
-                      <Avatar url={movement.receivingMember.avatarUrl} name={movement.receivingMember.displayName} />
+                      <Avatar url={movement.receivingMember.avatarUrl} name={movement.receivingMember.displayName} size="md" />
                     </div>
                   </div>
                 </div>
@@ -235,7 +236,7 @@ export default function TradeShowcase() {
               {trades.length} completed trade{trades.length !== 1 ? "s" : ""}
               {selectedCategory !== "all" ? ` in ${tradebiliaCategories.find(c => c.value === selectedCategory)?.label}` : ""}
             </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 gap-5">
               {trades.map((trade: any) => (
                 <TradeCard key={trade.id} trade={trade} />
               ))}
