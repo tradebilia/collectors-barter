@@ -218,3 +218,5 @@
 - [x] Verify the Report a Member page retains navigation while omitting search in development and production.
 - [x] Replace the Report a Member hero title with the newly supplied wider artwork.
 - [x] Validate the supplied wider Report a Member title in development and production.
+- [x] Increase the Report a Member hero title scale to align with the main-page hero.
+- [ ] Validate the enlarged Report a Member title in development and production.

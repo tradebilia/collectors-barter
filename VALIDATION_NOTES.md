@@ -171,3 +171,5 @@ The first two published requests after checkpoint `a2976a30` still served the pr
 The two published requests after deployment-refresh checkpoint `4f7942bc` also continued to serve the predecessor SVG title asset. The collector background and reporting controls remain intact, but production validation remains incomplete until the newly supplied wide WEBP title is served.
 
 After the deployment-success notice, a cache-busting published Report a Member load displayed the supplied wider WEBP title artwork over the existing collector-background hero. The title fits fully within the hero, and the navigation, reporting controls, and account-email default remained unchanged. This completes development and production validation without submitting a report.
+
+Development validation of the enlarged title confirmed that the Report a Member lettering and companion mark now occupy a visual scale comparable to the main-page hero title. The collector-background hero, hero height, page navigation, and reporting form remain unchanged.
