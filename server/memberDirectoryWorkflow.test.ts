@@ -18,4 +18,9 @@ describe("Member Directory workflow", () => {
     expect(directorySource).not.toContain("ensureDirectThread");
     expect(directorySource).not.toContain("loadPresenceMap");
   });
+
+  it("does not render a false no-results message when the only matching member is in the spotlight", () => {
+    expect(directorySource).toContain("const hasMatchingMembers = (membersQuery.data?.members.length ?? 0) > 0;");
+    expect(directorySource).toContain(") : hasMatchingMembers ? null : (");
+  });
 });

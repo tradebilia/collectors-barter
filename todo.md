@@ -250,3 +250,4 @@
 - [x] Remove misleading browser-local online presence from the public Member Directory until live presence is server-backed.
 - [x] Avoid duplicating the spotlight member in the main search-result grid.
 - [ ] Complete the resumed Member Directory correction, validation, and recommendations review.
+- [x] Prevent the no-results message from appearing when the only matching member is already displayed in the spotlight.

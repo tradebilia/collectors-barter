@@ -53,6 +53,7 @@ export default function MemberSearch() {
     () => (membersQuery.data?.members ?? []).filter(member => member.userId !== topSpotlight?.userId),
     [membersQuery.data?.members, topSpotlight?.userId],
   );
+  const hasMatchingMembers = (membersQuery.data?.members.length ?? 0) > 0;
 
   const toggleFavorite = (memberId: number, memberName: string) => {
     if (!user?.id) {
@@ -277,7 +278,7 @@ export default function MemberSearch() {
                   );
                 })}
               </div>
-            ) : (
+            ) : hasMatchingMembers ? null : (
               <div className="rounded-[2rem] border border-slate-300/70 bg-white/80 p-10 text-center shadow-[0_18px_50px_rgba(15,23,42,0.06)]">
                 <Sparkles className="mx-auto h-10 w-10 text-slate-500" />
                 <h3 className="mt-5 text-3xl font-semibold text-slate-900">No members match the current filters.</h3>
