@@ -234,4 +234,7 @@
 - [x] Present each Traders Showcase ownership transfer in one left-to-right horizontal line: original owner, item, then receiving member.
 - [x] Add regression coverage and validate the horizontal Traders Showcase flow in development and production.
 - [x] Consolidate all items from both trade members into one trade-level horizontal exchange line.
-- [ ] Add regression coverage and validate the consolidated Traders Showcase exchange layout in development and production.
+- [x] Add regression coverage and validate the consolidated Traders Showcase exchange layout in development and production.
+- [x] Display complete item titles in consolidated Traders Showcase exchange rows.
+- [x] Enlarge the central exchange arrows and remove redundant Trading member labels.
+- [ ] Add regression coverage and validate the refined Showcase exchange layout in development and production.

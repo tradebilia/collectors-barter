@@ -207,3 +207,9 @@ After the deployment-success notice, a cache-busting published Traders Showcase 
 Development validation of the consolidated exchange layout confirmed `TR-000001` now presents all items from both sides on one trade-level horizontal line: Rtavani and the Barry Sanders rookie on the left, a single exchange indicator in the center, and the Rickey Henderson rookie with Administrator on the right. No per-item ownership rows or public values are rendered.
 
 The initial published Traders Showcase request after checkpoint `40a14585` still served the predecessor per-item ownership rows. This is not accepted as production validation; deployment freshness will be rechecked before completing the consolidated exchange update.
+
+The first published checks after checkpoint `97160091` also served the predecessor per-item ownership rows. Production validation remains incomplete pending the deployment-success refresh of the consolidated exchange bundle.
+
+After the deployment-success notice, a cache-busting published Traders Showcase load displayed one consolidated exchange row for `TR-000001`: Rtavani and the Barry Sanders rookie on the left, a central exchange indicator, then the Rickey Henderson rookie and Administrator on the right. All trade items from both sides are visible together on one line, and no public values are shown. This completes development and production validation.
+
+Development validation of the refined consolidated row confirmed both full item titles are visible without truncation, the purple center exchange arrows are prominent, and member names are shown without the redundant Trading label. The completed trade remains one horizontal row with no public values.
