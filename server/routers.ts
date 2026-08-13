@@ -154,8 +154,8 @@ const listingFiltersSchema = z.object({
 const memberSearchSchema = z.object({
   query: z.string().max(120).optional(),
   region: z.string().max(120).optional(),
-  verification: z.enum(["all", "verified", "established", "rising"]).optional(),
-  category: z.enum(collectibleCategories).optional(),
+  categories: z.array(z.enum(collectibleCategories)).max(collectibleCategories.length).optional(),
+  verifiedMerchantsOnly: z.boolean().optional(),
   minRating: z.number().min(0).max(5).optional(),
   minCompletedTrades: z.number().int().min(0).max(100000).optional(),
   activeListingsOnly: z.boolean().optional(),

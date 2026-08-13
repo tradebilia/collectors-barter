@@ -14,7 +14,8 @@ describe("Member Directory discovery workflow", () => {
 
   it("supports approved trust, activity, collection, value, member-since, and sort filters", () => {
     const searchMembersSource = dbSource.slice(dbSource.indexOf("export async function searchMembers"), dbSource.indexOf("export async function toggleListingStatus"));
-    expect(searchMembersSource).toContain("input.category");
+    expect(searchMembersSource).toContain("input.categories?.length");
+    expect(searchMembersSource).toContain("input.verifiedMerchantsOnly");
     expect(searchMembersSource).toContain("input.minRating");
     expect(searchMembersSource).toContain("input.minCompletedTrades");
     expect(searchMembersSource).toContain("input.activeListingsOnly");
@@ -38,5 +39,14 @@ describe("Member Directory discovery workflow", () => {
     expect(directorySource).not.toContain("Collector spotlight");
     expect(directorySource).not.toContain("startDirectMessageThread");
     expect(directorySource).not.toContain("loadPresenceMap");
+  });
+
+  it("lets collectors choose multiple categories and uses an explicit Verified Merchant toggle", () => {
+    expect(directorySource).toContain("Collecting categories");
+    expect(directorySource).toContain("Choose any that apply");
+    expect(directorySource).toContain('role="checkbox"');
+    expect(directorySource).toContain("toggleCategory");
+    expect(directorySource).toContain("Verified Merchant only");
+    expect(directorySource).not.toContain("Member standing");
   });
 });

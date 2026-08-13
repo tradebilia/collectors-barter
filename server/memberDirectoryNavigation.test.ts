@@ -23,9 +23,9 @@ describe("Member Directory navigation", () => {
     expect(messagesSource).not.toContain("UsersRound");
   });
 
-  it("removes the duplicate Verified Merchants homepage action while retaining directory verification filtering", () => {
+  it("removes the duplicate Verified Merchants homepage action while retaining an explicit directory merchant-verification filter", () => {
     expect(homeSource).not.toContain("setLocation('/verified-merchants')");
-    expect(memberDirectorySource).toContain('value="verified"');
+    expect(memberDirectorySource).toContain("Verified Merchant only");
   });
 
   it("keeps the directory publicly viewable and routes collector actions through the public profile", () => {

@@ -1215,8 +1215,8 @@ export async function sendTradeMessage(
 export async function searchMembers(input: {
   query?: string;
   region?: string;
-  verification?: "all" | "verified" | "established" | "rising";
-  category?: (typeof collectibleCategories)[number];
+  categories?: (typeof collectibleCategories)[number][];
+  verifiedMerchantsOnly?: boolean;
   minRating?: number;
   minCompletedTrades?: number;
   activeListingsOnly?: boolean;
@@ -1345,6 +1345,7 @@ export async function searchMembers(input: {
       topCategories: topCategoriesMap.get(m.userId) ?? [],
       firstListingId: firstListingMap.get(m.userId) ?? null,
       joinedAt: new Date(m.profileCreatedAt).getTime(),
+      isVerifiedMerchant: m.merchantVerified === 1,
       standingKey: standing.key,
       verificationLevel: standing.label,
     };
@@ -1354,8 +1355,8 @@ export async function searchMembers(input: {
   const pastYear = now - 365 * 24 * 60 * 60 * 1000;
   const pastThreeYears = now - 3 * 365 * 24 * 60 * 60 * 1000;
   const filteredMembers = formattedMembers.filter(member => {
-    if (input.verification && input.verification !== "all" && member.standingKey !== input.verification) return false;
-    if (input.category && !member.topCategories.includes(input.category)) return false;
+    if (input.verifiedMerchantsOnly && !member.isVerifiedMerchant) return false;
+    if (input.categories?.length && !input.categories.some(category => member.topCategories.includes(category))) return false;
     if (input.minRating && member.averageRating < input.minRating) return false;
     if (input.minCompletedTrades && member.completedTradeCount < input.minCompletedTrades) return false;
     if (input.activeListingsOnly && member.listingCount === 0) return false;
