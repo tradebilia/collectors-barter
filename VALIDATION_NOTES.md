@@ -173,3 +173,5 @@ The two published requests after deployment-refresh checkpoint `4f7942bc` also c
 After the deployment-success notice, a cache-busting published Report a Member load displayed the supplied wider WEBP title artwork over the existing collector-background hero. The title fits fully within the hero, and the navigation, reporting controls, and account-email default remained unchanged. This completes development and production validation without submitting a report.
 
 Development validation of the enlarged title confirmed that the Report a Member lettering and companion mark now occupy a visual scale comparable to the main-page hero title. The collector-background hero, hero height, page navigation, and reporting form remain unchanged.
+
+The initial published requests after checkpoint `46b3bfad` still rendered the predecessor smaller title scale. Production validation remains incomplete pending deployment freshness for the enlarged title styling.
