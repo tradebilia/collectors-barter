@@ -260,4 +260,4 @@
 - [x] Audit existing profile, listing, review, trade, and verification fields for approved privacy-safe directory filters.
 - [x] Add deliberate Search and Clear actions, exact-match profile routing, approved filters, and approved sort controls to Member Directory.
 - [x] Rebuild Member Directory results as profile-first collector cards and make rankings secondary to discovery.
-- [ ] Add regression coverage and validate the redesigned Member Directory in development and production.
+- [x] Add regression coverage and validate the redesigned Member Directory in development and production.
