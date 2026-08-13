@@ -167,6 +167,11 @@
 - [x] Compare authoritative session-management guidance and relevant consumer-platform device-session practices.
 - [x] Evaluate strict single-session, device-aware, and risk-based controls against Tradebilia requirements.
 - [x] Deliver a definitive session policy recommendation with non-negotiable implementation guardrails.
-- [ ] Locate the standalone Verified Merchants homepage action and Member Directory verification discovery path.
-- [ ] Remove the duplicate Verified Merchants homepage action while retaining Member Directory access.
-- [ ] Verify verification discovery remains available through Member Directory and homepage navigation remains responsive.
+- [x] Locate the standalone Verified Merchants homepage action and Member Directory verification discovery path.
+- [x] Remove the duplicate Verified Merchants homepage action while retaining Member Directory access.
+- [x] Verify verification discovery remains available through Member Directory and homepage navigation remains responsive.
+- [x] Map the shared top bar, homepage hero background, and supplied Member Directory title artwork to the Member Directory page.
+- [x] Publish the supplied MemberDirectory.webp artwork to durable project storage and reference it from the page hero.
+- [x] Add the shared top bar and main-homepage-style hero section to the Member Directory page without changing directory filters or member actions.
+- [x] Verify the updated Member Directory hero and navigation at desktop and mobile widths.
+- [x] Identify and correct the Member Directory route mismatch so homepage navigation reaches the styled directory page.

@@ -95,3 +95,7 @@ Selecting the live **Received** filter retained only Rtavani’s real incoming r
 ## Member Directory navigation relocation
 
 The homepage Subscriber Tools panel now contains **Member Directory** between My Trades and Report a User. Desktop retains the left-column panel placement. At a 375-pixel mobile viewport, the panel stacks above homepage content, preserves the full Member Directory label and navigation affordance, and eliminates the prior horizontal overflow caused by the fixed two-column grid.
+
+## Member Directory shared navigation and hero
+
+The Member Directory is publicly viewable at `/members`; member messaging and trade actions still request sign-in. Its desktop and 375-pixel mobile layouts render the shared Tradebilia top bar, the same homepage collector-collage hero background, the supplied Member Directory title artwork, the shared category bar, and the existing Verification filter without horizontal overflow. The duplicate homepage Verified Merchants shortcut was removed because verified members are discoverable through this directory filter.

@@ -9,12 +9,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { getLoginUrl } from "@/const";
 import { ensureDirectThread, loadFavoriteMemberIds, loadPresenceMap, saveFavoriteMemberIds, subscribeToPresence, updatePresence } from "@/lib/memberMessaging";
 import { trpc } from "@/lib/trpc";
-import { TRADEBILIA_LOGO_URL, tradebiliaCategories } from "@/lib/tradebilia";
 import { Crown, Loader2, Medal, MessageSquareText, Search, ShieldCheck, Sparkles, Star, UserRoundPlus } from "lucide-react";
-import { TopRightIcons } from "@/components/TopRightIcons";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Link } from "wouter";
+import { TopBar } from "@/components/TopBar";
+import { CategoryBar } from "@/components/CategoryBar";
 
 function initials(name: string) {
   return name
@@ -99,54 +98,26 @@ export default function MemberSearch() {
   };
 
   return (
-    <div className="min-h-screen bg-[linear-gradient(180deg,#0b0f25_0%,#121d4a_28%,#efe5d1_28%,#efe5d1_100%)] text-slate-950">
-      <header className="border-b border-white/10 bg-[radial-gradient(circle_at_top,#1c2468_0%,#0b0a22_65%)] text-white">
-        <div className="container py-3 lg:py-4">
-          <div className="mb-4 flex items-center justify-between gap-3">
-            <Link href="/" className="rounded-lg border border-white/30 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/20">
-              Home
-            </Link>
-            <TopRightIcons className="flex items-center gap-3 md:gap-4" iconColor="text-white/70" />
-          </div>
+    <div className="min-h-screen bg-[#f7f4ee] text-slate-950">
+      <TopBar searchPlaceholder="Search Tradebilia..." />
+      <section
+        className="relative z-0 w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden text-white"
+        style={{
+          backgroundImage: "url(/manus-storage/Background_23084d14.jpg)",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+        }}
+      >
+        <div className="container flex h-52 items-center justify-center sm:h-60 lg:h-72">
+          <img
+            src="/manus-storage/MemberDirectory_de7393cf.webp"
+            alt="Member Directory"
+            className="h-auto w-full max-w-5xl object-contain px-4"
+          />
         </div>
-        <div className="container py-8 lg:py-10">
-          <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
-            <div className="max-w-4xl">
-              <img src={TRADEBILIA_LOGO_URL} alt="Tradebilia" className="h-auto w-full max-w-[34rem]" />
-              <p className="mt-6 text-xs font-semibold uppercase tracking-[0.34em] text-white/70">Member directory</p>
-              <h1 className="mt-3 text-5xl font-semibold leading-tight text-white sm:text-6xl">Find reliable collectors by name, member ID, trust level, and collection focus.</h1>
-              <p className="mt-4 max-w-3xl text-base leading-8 text-white/75 sm:text-lg">
-                The Tradebilia directory highlights community reputation, public collecting interests, and activity signals so members can decide who to message or approach with a Trade Proposal.
-              </p>
-            </div>
-            <div className="grid gap-3 sm:grid-cols-3 lg:w-[24rem]">
-              {[
-                ["Visible Members", String(membersQuery.data?.members.length ?? 0)],
-                ["Top Rated", String(membersQuery.data?.rankings.topRated.length ?? 0)],
-                ["Active Regions", String(membersQuery.data?.regions.length ?? 0)],
-              ].map(([label, value]) => (
-                <div key={label} className="rounded-[1.5rem] border border-white/10 bg-white/8 p-4 text-center backdrop-blur-sm">
-                  <p className="text-xs uppercase tracking-[0.24em] text-white/60">{label}</p>
-                  <p className="mt-3 text-3xl font-semibold text-white">{value}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-        <nav className="border-t border-white/10 bg-black/35 backdrop-blur-sm">
-          <div className="container grid overflow-hidden md:grid-cols-5 xl:grid-cols-10">
-            {tradebiliaCategories.map(category => (
-              <Link
-                key={category.value}
-                href={`/category/${category.value}`}
-                className="border-b border-r border-white/10 px-4 py-4 text-center text-xs font-semibold uppercase tracking-[0.16em] text-white transition hover:bg-white/10 lg:text-[11px]"
-              >
-                {category.label}
-              </Link>
-            ))}
-          </div>
-        </nav>
-      </header>
+      </section>
+      <CategoryBar />
 
       <main className="container py-8 lg:py-10">
         <div className="grid gap-6 xl:grid-cols-[320px_minmax(0,1fr)_290px]">

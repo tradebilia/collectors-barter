@@ -84,11 +84,7 @@ function Router() {
           <Messages />
         </ProtectedRoute>
       </Route>
-      <Route path="/members">
-        <ProtectedRoute>
-          <MemberSearch />
-        </ProtectedRoute>
-      </Route>
+      <Route path="/members" component={MemberSearch} />
       <Route path="/report-user">
         <ProtectedRoute>
           <ReportUser />
