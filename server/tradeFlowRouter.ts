@@ -33,6 +33,8 @@ import {
   sendFeedbackReceivedEmail,
   sendTradeCancelledEmail,
 } from "./_core/email";
+import { buildLegacyTradeTimeline, isMissingTradeActivityLogError } from "./tradeTimeline";
+import { getReviewSubmissionBlocker, resolveTradeContactName } from "./tradeRoomSafeguards";
 
 // ============================================================================
 // HELPER: Check notification preference and get user email
@@ -838,6 +840,25 @@ export const tradeFlowRouter = router({
       const [proposal] = await db.select().from(tradeProposals).where(eq(tradeProposals.id, input.proposalId)).limit(1);
       if (!proposal) throw new TRPCError({ code: 'NOT_FOUND', message: 'Trade not found' });
 
+      const isParticipant = proposal.requesterId === userId || proposal.recipientId === userId;
+      const [existingReviewRows] = await db.execute(
+        sql`SELECT id FROM tradeReviews WHERE proposalId = ${input.proposalId} AND reviewerId = ${userId} LIMIT 1`
+      );
+      const reviewBlocker = getReviewSubmissionBlocker({
+        isParticipant,
+        tradeStatus: proposal.status as string,
+        alreadyReviewed: Boolean((existingReviewRows as unknown as any[])?.[0]),
+      });
+      if (reviewBlocker === 'not-participant') {
+        throw new TRPCError({ code: 'FORBIDDEN', message: 'Only trade participants can leave a review.' });
+      }
+      if (reviewBlocker === 'trade-not-completed') {
+        throw new TRPCError({ code: 'BAD_REQUEST', message: 'Reviews are available after the trade is completed.' });
+      }
+      if (reviewBlocker === 'already-reviewed') {
+        throw new TRPCError({ code: 'CONFLICT', message: 'You have already submitted a review for this trade.' });
+      }
+
       const revieweeId = proposal.requesterId === userId ? proposal.recipientId : proposal.requesterId;
       const overallRating = ((input.tradeExperienceRating + input.itemConditionRating + input.communicationRating + input.shippingSpeedRating) / 4).toFixed(1);
 
@@ -1047,18 +1068,25 @@ export const tradeFlowRouter = router({
       let theirContactInfo: any = null;
       if (['accepted', 'shipping', 'shipped', 'completed', 'disputed'].includes(proposal.status as string)) {
         const [myContact] = await db.execute(
-          sql`SELECT u.name, up.contactFullName, up.contactEmail, up.contactPhone,
+          sql`SELECT u.name, u.username, up.contactFullName, up.firstName, up.lastName, up.contactEmail, up.contactPhone,
             up.contactAddress, up.contactTown, up.contactState, up.contactZipCode, up.contactCountry
           FROM users u LEFT JOIN userProfiles up ON up.userId = u.id WHERE u.id = ${userId}`
         );
         const [theirContact] = await db.execute(
-          sql`SELECT u.name, up.contactFullName, up.contactEmail, up.contactPhone,
+          sql`SELECT u.name, u.username, up.contactFullName, up.firstName, up.lastName, up.contactEmail, up.contactPhone,
             up.contactAddress, up.contactTown, up.contactState, up.contactZipCode, up.contactCountry
           FROM users u LEFT JOIN userProfiles up ON up.userId = u.id WHERE u.id = ${otherUserId}`
         );
         myContactInfo = (myContact as any)?.[0] || null;
         theirContactInfo = (theirContact as any)?.[0] || null;
+        if (myContactInfo) myContactInfo.contactFullName = resolveTradeContactName(myContactInfo);
+        if (theirContactInfo) theirContactInfo.contactFullName = resolveTradeContactName(theirContactInfo);
       }
+
+      const [myReviewRows] = await db.execute(
+        sql`SELECT id, rating, review, createdAt FROM tradeReviews WHERE proposalId = ${input.proposalId} AND reviewerId = ${userId} LIMIT 1`
+      );
+      const myReview = (myReviewRows as unknown as any[])?.[0] || null;
 
       // Fetch tracking numbers for shipping/shipped/completed trades
       let trackingNumbers: any[] = [];
@@ -1126,6 +1154,7 @@ export const tradeFlowRouter = router({
         theirReceiptConfirmed,
         partnerHasAccepted,
         myHasAccepted,
+        myReview,
       };
     }),
 
@@ -1225,15 +1254,38 @@ export const tradeFlowRouter = router({
         throw new TRPCError({ code: 'FORBIDDEN', message: 'Not authorized' });
       }
 
-      const [events] = await db.execute(
-        sql`SELECT tal.id, tal.actorId, u.displayName as actorName, tal.eventType, tal.details, tal.createdAt
-            FROM tradeActivityLog
-            LEFT JOIN users u ON tal.actorId = u.id
-            WHERE proposalId = ${input.proposalId}
-            ORDER BY createdAt ASC`
-      );
+      try {
+        const [events] = await db.execute(
+          sql`SELECT tal.id, tal.actorId, tal.actorName, tal.eventType, tal.details, tal.createdAt
+              FROM tradeActivityLog tal
+              WHERE tal.proposalId = ${input.proposalId}
+              ORDER BY tal.createdAt ASC`
+        );
 
-      return { events: (events as unknown as any[]) || [] };
+        return { events: (events as unknown as any[]) || [] };
+      } catch (error) {
+        if (!isMissingTradeActivityLogError(error)) throw error;
+
+        const [messages] = await db.execute(
+          sql`SELECT tm.id, tm.senderId, tm.message, tm.messageType, tm.createdAt,
+              COALESCE(NULLIF(up.displayName, ''), NULLIF(u.username, ''), 'Unknown') as actorName
+            FROM tradeMessages tm
+            LEFT JOIN users u ON u.id = tm.senderId
+            LEFT JOIN userProfiles up ON up.userId = tm.senderId
+            WHERE tm.proposalId = ${input.proposalId}
+            ORDER BY tm.createdAt ASC`
+        );
+        const requesterName = await getUserDisplayName(db, proposal.requesterId);
+        const recipientName = await getUserDisplayName(db, proposal.recipientId);
+
+        return {
+          events: buildLegacyTradeTimeline({
+            ...proposal,
+            requesterName,
+            recipientName,
+          }, messages as unknown as any[]),
+        };
+      }
     }),
 
   proceedToShipping: protectedProcedure

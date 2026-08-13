@@ -113,3 +113,15 @@ After navigating away and returning to the trade room with a cache-busting URL, 
 The same local-only item removal was then repeated after the cache-refreshed production load. The proposal changed locally to four Administrator-side items and `$17,450`; **Counter Offer** became enabled and **Accept Trade** was disabled/absent. Crucially, the fairness meter continued to display **Your Turn to Respond**. No counteroffer was submitted, so no trade-proposal data was persisted. This verifies the live published behavior matches the required rule: draft edits affect acceptance eligibility but do not change the responder turn.
 
 The development preview was tested with the same active trade and the same local-only Administrator-side item removal. It produced the same expected state: four items and `$17,450` in the unsent draft, **Counter Offer** enabled, **Accept Trade** disabled/absent, and the fairness meter still reading **Your Turn to Respond**. No counteroffer was submitted in development or production. The focused regression tests also verify that the responder label changes to **Awaiting Their Response** only after the submitted proposal is persisted with the current user as `lastProposedBy`.
+
+## Trade Room timeline investigation
+
+On 2026-08-13, the active `TR-000001` Trade Room Timeline tab was opened in the development preview. The tab remained on **Loading timeline...** rather than displaying historical activity. Runtime logs identified the failing query: it joined `tradeActivityLog` to `users` and selected the legacy-incompatible `u.displayName` column. The repair now reads the already stored `tradeActivityLog.actorName` value directly and provides a proposal-and-message fallback only if an activity-log table is genuinely absent. No trade data was changed during the investigation.
+
+After the repair, the development Timeline tab rendered the complete stored activity history for `TR-000001`, including trade creation, counteroffers, item additions, both acceptances, and both tracking submissions. The previous perpetual loading state no longer occurred.
+
+## Confirm-step contact name and review guard investigation
+
+The supplied 1505×335 Confirm-step screenshot was inspected in ordered overlapping crops. Its left contact card shows **Your Info** with the name `rtavani`, while the user confirmed the Administrator’s actual first and last name is **Rich Tavani**. The right card correctly identifies the counterparty as Dylan Rhoads. The contact-name resolver and review submission guard are being traced; existing review records will not be modified during this investigation.
+
+After the repair, the development completed Trade Room for `TR-000001` showed **Rich Tavani** in the **Your Info** contact card. Because Administrator had already submitted a review for the trade, the rating inputs and submit action were replaced by **Your review has been submitted and is locked for this trade**. No existing review or trade record was changed during validation.

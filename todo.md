@@ -180,3 +180,10 @@
 - [x] Update the negotiation turn only after a counteroffer is explicitly submitted.
 - [x] Add regression coverage for draft edits versus submitted counteroffers.
 - [x] Verify the corrected Admin/Rtavani trade negotiation flow in development and live views.
+- [x] Trace why historical Trade Room timeline activity does not load.
+- [x] Restore historical timeline activity loading without changing trade data.
+- [ ] Add regression coverage and verify the repaired timeline in development and live views.
+- [x] Trace the incorrect Confirm-step Administrator contact name and review re-submission path.
+- [x] Render Rich Tavani as the authoritative Administrator contact name in the Confirm step.
+- [x] Block a participant from submitting more than one review for the same trade.
+- [ ] Add regression coverage and verify Confirm-step names and one-review enforcement in development and live views.
