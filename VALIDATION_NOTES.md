@@ -273,3 +273,9 @@ Using a native rendered-page input event, a 25-mile filter automatically switche
 The first two cache-busting production checks after checkpoint `5ea5f302` continued to serve the preceding Member Directory bundle, including the old Member ID cards and collapsed filters. These stale requests are not accepted as production validation; a deployment refresh is required.
 
 After the deployment-success notification for refresh checkpoint `a073b3fd`, production displayed username-first lookup copy, username-only collector cards, all filter groups without a collapsible section, no Members/Rankings toggle, automatic-filter guidance, the minimum-reviews filter, and the private distance input. The production card content contained no Member ID, street address, ZIP code, or coordinates.
+
+## USPS tracking test section
+
+The authenticated development Test AI page displayed the new **USPS Carrier Tracking Test** below the existing item, sold-item, and AI analysis layout. It renders a USPS carrier label, tracking-number field, explicit Check tracking action, and read-only notice. The USPS OAuth credential test obtained a short-lived token, and helper regression coverage confirmed that display data excludes recipient and ZIP fields.
+
+The initial production Test AI request for checkpoint `9f6c61fa` still served the preceding bundle without the USPS Carrier Tracking Test. This stale response is not accepted as production validation; a deployment refresh is required before the final production check.
