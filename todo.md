@@ -279,3 +279,9 @@
 - [x] Add approved discovery filters, including minimum review count and nearest-distance sorting when available.
 - [x] Add regression coverage and validate the enhanced Member Directory privacy and filtering behavior in development and production.
 - [x] Replace Member ID text on Member Directory result cards with the member’s username.
+- [x] Add a read-only carrier and tracking-number test section below Test AI sold-item tools.
+- [x] Surface configured carrier tracking results without changing trade or shipment data.
+- [ ] Add regression coverage and validate the Test AI carrier tracking section in development and production.
+- [x] Securely configure the USPS tracking credential for read-only Test AI lookup.
+- [x] Build and validate the USPS-first tracking test section below sold-item AI testing.
+- [x] Securely configure the USPS consumer key and consumer secret for the server-side tracking lookup.
