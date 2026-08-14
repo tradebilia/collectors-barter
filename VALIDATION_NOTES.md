@@ -281,3 +281,13 @@ The authenticated development Test AI page displayed the new **USPS Carrier Trac
 The initial production Test AI request for checkpoint `9f6c61fa` still served the preceding bundle without the USPS Carrier Tracking Test. This stale response is not accepted as production validation; a deployment refresh is required before the final production check.
 
 After the refreshed deployment propagated, the published Test AI page rendered the **USPS Carrier Tracking Test** below the existing Test AI controls, including the USPS carrier label, tracking-number input, Check tracking action, and read-only description. No tracking number was submitted during production verification, so no USPS shipment data or Tradebilia trade/shipment data was changed.
+
+## UPS callback route readiness
+
+The initial production request for `/api/ups/callback` after checkpoint `4f6f2e4f` reached the preceding not-found route instead of the reserved provider callback handler. This response is not accepted as callback-route validation; deployment propagation must complete before the UPS portal is given the production callback value.
+
+After the propagation interval, the cache-busting production `/api/ups/callback` request still reached the not-found route. The callback contract therefore requires a routing correction before it can be treated as ready for UPS registration.
+
+## UPS carrier selector development check
+
+The authenticated development Test AI page rendered the unified Carrier Tracking Test below the sold-item analysis controls. Switching the selector from USPS to UPS updated the input placeholder and accessible label to **Enter UPS tracking number** without initiating a lookup or changing Tradebilia shipment, trade, or notification data.

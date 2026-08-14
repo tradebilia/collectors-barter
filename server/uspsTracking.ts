@@ -53,7 +53,7 @@ export function formatUspsTrackingResult(response: UspsTrackingResponse, request
     status: response.status ?? "USPS update received",
     statusCategory: response.statusCategory ?? null,
     statusSummary: response.statusSummary ?? null,
-    mailClass: response.mailClass ?? null,
+    service: response.mailClass ?? null,
     expectedDeliveryDate: response.deliveryDateExpectation?.expectedDeliveryDate
       ?? response.deliveryDateExpectation?.predictedDeliveryDate
       ?? response.deliveryDateExpectation?.guaranteedDeliveryDate

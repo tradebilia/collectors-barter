@@ -6,6 +6,7 @@ import { listings, listingPhotos, userProfiles } from "../drizzle/schema";
 import { eq, and, desc, sql } from "drizzle-orm";
 import { invokeLLM } from "./_core/llm";
 import { lookupUspsTracking } from "./uspsTracking";
+import { lookupUpsTracking } from "./upsTracking";
 
 // ─── Shared eBay helpers (mirrors tradeFlowRouter logic) ────────────────────
 async function getEbayAppToken(): Promise<string | null> {
@@ -165,6 +166,15 @@ export const testAIRouter = router({
     .mutation(async ({ ctx, input }) => {
       if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
       return lookupUspsTracking(input.trackingNumber);
+    }),
+
+  lookupUpsTracking: protectedProcedure
+    .input(z.object({
+      trackingNumber: z.string().trim().min(7).max(40),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+      return lookupUpsTracking(input.trackingNumber);
     }),
 
   // Fetch eBay active listings + computed metrics for a single item
