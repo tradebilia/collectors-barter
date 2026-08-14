@@ -35,5 +35,7 @@ describe("USPS tracking helpers", () => {
   it("explains an API authorization block without exposing the carrier response", () => {
     expect(getUspsTrackingErrorMessage(403, { error: "MID is not authorized for this endpoint. Request access through IP Agreement." }))
       .toBe("USPS Tracking API access has not yet been authorized for this USPS account. The tracking number may still work on USPS.com.");
+    expect(getUspsTrackingErrorMessage(403, {}))
+      .toBe("USPS Tracking API access has not yet been authorized for this USPS account. The tracking number may still work on USPS.com.");
   });
 });

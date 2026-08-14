@@ -299,3 +299,7 @@ The first cache-busting production Test AI request after refresh checkpoint `807
 After the deployment-success notification, the published Test AI page completed loading with the unified **Carrier Tracking Test**, an explicit USPS/UPS selector, a carrier-specific tracking-number field, and the read-only disclosure. This completes production rendering validation of the carrier-selector interface; no tracking number was submitted during the production check.
 
 The published `/api/ups/callback` route now redirects safely to the Account Settings integrations state with `ups=error&reason=not_configured`. This validates the reserved production callback route without exchanging a UPS token or modifying any external account connection.
+
+The production Carrier Tracking Test loaded with the unified USPS/UPS selector and accepted the USPS tracking number supplied in the user’s error report. The read-only lookup had not yet been submitted at this point.
+
+Submitting that user-supplied USPS number in the published read-only tracker still displayed the prior generic temporary-unavailability message. The client interface is current, but the server-side response must be examined to determine whether the carrier returned a different status category or the deployed server still serves the previous error mapping.

@@ -63,9 +63,8 @@ export function formatUspsTrackingResult(response: UspsTrackingResponse, request
 }
 
 export function getUspsTrackingErrorMessage(status: number, payload: unknown): string {
-  const safeErrorText = JSON.stringify(payload ?? {}).toLowerCase();
   if (status === 404) return "USPS did not find that tracking number.";
-  if (status === 403 && /not authorized|ip agreement|api access/.test(safeErrorText)) {
+  if (status === 403) {
     return "USPS Tracking API access has not yet been authorized for this USPS account. The tracking number may still work on USPS.com.";
   }
   return "USPS tracking is temporarily unavailable. Please try again.";
