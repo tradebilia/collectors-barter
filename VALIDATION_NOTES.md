@@ -269,3 +269,5 @@ The signed-in development session displayed the distance control and accepted a 
 The browser automation did not persist the numeric input value, so it did not exercise the React distance state or server request. The follow-up validation will use a native input event in the rendered page; this is an automation limitation rather than a result from the distance service.
 
 Using a native rendered-page input event, a 25-mile filter automatically switched results to nearest-first, rendered the removable **Within 25 miles** filter chip, and returned two matching collector cards with derived distances of 0 and 2.4 miles. The page showed no address, ZIP code, or coordinate data.
+
+The first two cache-busting production checks after checkpoint `5ea5f302` continued to serve the preceding Member Directory bundle, including the old Member ID cards and collapsed filters. These stale requests are not accepted as production validation; a deployment refresh is required.
