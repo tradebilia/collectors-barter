@@ -316,7 +316,7 @@
 - [x] Clearly present DHL as awaiting secure credentials while keeping the Test AI carrier interface ready.
 - [x] Securely configure and validate the supplied DHL API key and secret for read-only tracking.
 - [x] Activate the DHL Test AI carrier lookup without shipment, trade, or notification writes.
-- [ ] Add regression coverage and validate DHL tracking in development and production.
+- [x] Add regression coverage and validate DHL tracking in development and production.
 - [x] Add regression coverage and validate the FedEx/DHL carrier-tracking expansion in development and production.
 - [x] Evaluate compliant no-fee alternatives to paid USPS Tracking API access and document why public-site scraping is not used.
 - [x] Research and evaluate legitimate multi-carrier tracking providers that offer a current free API allowance for Tradebilia.

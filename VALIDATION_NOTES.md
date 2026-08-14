@@ -315,3 +315,7 @@ After the deployment-success notification, the published Test AI Carrier Trackin
 ## UPS no-shipment CIE validation
 
 UPS’s official Customer Integration Environment check succeeded using UPS’s published repeatable test tracking number. The configured Client ID and Client Secret obtained a short-lived CIE OAuth token, and the read-only CIE Track API request returned HTTP `200` with a shipment-shaped response. No live package, subscription, shipment, trade, or notification data was created or changed. This validates Tradebilia’s UPS OAuth format, bearer-token handling, required transaction headers, and Track API request contract; a real UPS tracking number is still needed only to verify live production shipment data.
+
+## DHL Unified Tracking activation
+
+The supplied DHL API key was validated against the correct DHL Unified Tracking contract. The original MyDHL Basic-authentication endpoints correctly returned `401`, while the Unified Tracking endpoint returned `200`, so the Test AI adapter uses the `DHL-API-Key` header rather than sending the stored secret. TypeScript and the full 174-test suite passed. After the successful deployment refresh, the published Test AI carrier selector displayed active **DHL** alongside USPS, UPS, and FedEx; the former **DHL (credentials pending)** label was absent. No real DHL tracking number was submitted during this selector validation.
