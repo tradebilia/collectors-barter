@@ -334,3 +334,8 @@
 - [x] Remove the requested top utility copy and bottom email-use disclaimer from the Coming Soon page.
 - [x] Add regression coverage and visually validate the refined Coming Soon layout on desktop and mobile.
 - [x] Commit, push, and publish the validated Coming Soon refinement.
+- [x] Reuse the main homepage hero background on the Coming Soon page and center an oversized animated Tradebilia mark without clipping rotating labels.
+- [x] Add an admin-only Pre-Launch Email workspace showing opted-in Coming Soon recipients from Resend Contacts.
+- [x] Add a Pre-Launch Email composer that prepares a branded status update and requires explicit confirmation before any recipient delivery.
+- [x] Add regression coverage and visually validate the revised Coming Soon hero and the Admin Pre-Launch Email workspace.
+- [x] Commit, push, and publish the validated Pre-Launch Email and Coming Soon enhancement.

@@ -1,0 +1,169 @@
+type FetchLike = typeof fetch;
+
+const RESEND_API_BASE = "https://api.resend.com";
+const PRE_LAUNCH_SEGMENT_NAME = "Tradebilia Pre-Launch Updates";
+const FROM_ADDRESS = "Tradebilia <noreply@tradebilia.com>";
+const SITE_URL = "https://tradebilia.manus.space";
+const EMAIL_LOGO_URL = `${SITE_URL}/manus-storage/tradebilia_final_transparent_8a1981e6.svg`;
+
+type ResendContact = {
+  id: string;
+  email: string;
+  created_at?: string;
+  unsubscribed?: boolean;
+  properties?: Record<string, unknown>;
+};
+
+export type PreLaunchRecipient = {
+  id: string;
+  email: string;
+  createdAt: string | null;
+};
+
+type ResendFetchResponse = {
+  ok: boolean;
+  status: number;
+  json: () => Promise<any>;
+};
+
+function getResendApiKey() {
+  return process.env.RESEND_CONTACTS_API_KEY || process.env.RESEND_API_KEY;
+}
+
+function headers(apiKey: string) {
+  return {
+    Authorization: `Bearer ${apiKey}`,
+    "Content-Type": "application/json",
+  };
+}
+
+function isPreLaunchContact(contact: ResendContact) {
+  return contact.unsubscribed !== true
+    && contact.properties?.signup_source === "coming_soon"
+    && contact.properties?.signup_interest === "launch_updates";
+}
+
+async function listAllContacts(fetcher: FetchLike, apiKey: string) {
+  const contacts: ResendContact[] = [];
+  let after: string | undefined;
+
+  for (;;) {
+    const query = new URLSearchParams({ limit: "100" });
+    if (after) query.set("after", after);
+    const response = await fetcher(`${RESEND_API_BASE}/contacts?${query}`, {
+      headers: headers(apiKey),
+      signal: AbortSignal.timeout(10_000),
+    }) as ResendFetchResponse;
+    if (!response.ok) throw new Error("Unable to retrieve Pre-Launch Email recipients.");
+    const payload = await response.json();
+    const page = Array.isArray(payload?.data) ? payload.data as ResendContact[] : [];
+    contacts.push(...page);
+    if (!payload?.has_more || page.length === 0) break;
+    after = page[page.length - 1]?.id;
+    if (!after) break;
+  }
+
+  return contacts.filter(isPreLaunchContact);
+}
+
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+export function buildPreLaunchEmailHtml(message: string) {
+  const paragraphs = escapeHtml(message.trim())
+    .split(/\n{2,}/)
+    .map(paragraph => `<p style="margin:0 0 18px;font-size:15px;color:#374151;line-height:1.75;">${paragraph.replace(/\n/g, "<br>")}</p>`)
+    .join("");
+
+  return `<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f5f5f3;font-family:Arial,sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f5f5f3;padding:40px 20px;"><tr><td align="center">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.08);">
+      <tr><td style="background:#0a0d22;padding:24px 16px;text-align:center;"><img src="${EMAIL_LOGO_URL}" alt="Tradebilia" width="520" style="display:block;margin:0 auto;width:100%;max-width:520px;height:auto;"></td></tr>
+      <tr><td style="padding:34px 32px;">${paragraphs}<a href="${SITE_URL}" style="display:inline-block;background:#7f31ff;color:#fff;text-decoration:none;padding:14px 26px;border-radius:10px;font-weight:700;font-size:14px;">Visit Tradebilia</a></td></tr>
+      <tr><td style="background:#f8f8f6;padding:20px 32px;text-align:center;border-top:1px solid #ebebeb;"><p style="color:#8a8a8a;font-size:12px;line-height:1.6;margin:0;">You are receiving this because you opted in for Tradebilia pre-launch updates. <a href="{{{RESEND_UNSUBSCRIBE_URL}}}" style="color:#7f31ff;text-decoration:none;">Unsubscribe</a></p></td></tr>
+    </table>
+  </td></tr></table>
+</body></html>`;
+}
+
+async function ensurePreLaunchSegment(fetcher: FetchLike, apiKey: string) {
+  const segmentsResponse = await fetcher(`${RESEND_API_BASE}/segments?limit=100`, {
+    headers: headers(apiKey),
+    signal: AbortSignal.timeout(10_000),
+  }) as ResendFetchResponse;
+  if (!segmentsResponse.ok) throw new Error("Unable to prepare the Pre-Launch Email recipient group.");
+  const existing = (await segmentsResponse.json())?.data?.find((segment: any) => segment?.name === PRE_LAUNCH_SEGMENT_NAME);
+  if (existing?.id) return existing.id as string;
+
+  const createResponse = await fetcher(`${RESEND_API_BASE}/segments`, {
+    method: "POST",
+    headers: headers(apiKey),
+    body: JSON.stringify({ name: PRE_LAUNCH_SEGMENT_NAME }),
+    signal: AbortSignal.timeout(10_000),
+  }) as ResendFetchResponse;
+  if (!createResponse.ok) throw new Error("Unable to create the Pre-Launch Email recipient group.");
+  const created = await createResponse.json();
+  if (!created?.id) throw new Error("The Pre-Launch Email recipient group could not be prepared.");
+  return created.id as string;
+}
+
+export async function getPreLaunchRecipients(fetcher: FetchLike = fetch): Promise<PreLaunchRecipient[]> {
+  const apiKey = getResendApiKey();
+  if (!apiKey) throw new Error("Pre-Launch Email is not configured yet.");
+  const contacts = await listAllContacts(fetcher, apiKey);
+  return contacts.map(contact => ({
+    id: contact.id,
+    email: contact.email,
+    createdAt: contact.created_at ?? null,
+  }));
+}
+
+export async function sendPreLaunchUpdate(
+  input: { subject: string; message: string },
+  fetcher: FetchLike = fetch,
+) {
+  const apiKey = getResendApiKey();
+  if (!apiKey) throw new Error("Pre-Launch Email is not configured yet.");
+
+  const contacts = await listAllContacts(fetcher, apiKey);
+  if (contacts.length === 0) return { recipientCount: 0, broadcastId: null as string | null };
+
+  const segmentId = await ensurePreLaunchSegment(fetcher, apiKey);
+  for (const contact of contacts) {
+    const enrollment = await fetcher(`${RESEND_API_BASE}/contacts/${encodeURIComponent(contact.id)}/segments/${segmentId}`, {
+      method: "POST",
+      headers: headers(apiKey),
+      signal: AbortSignal.timeout(10_000),
+    }) as ResendFetchResponse;
+    // Treat an existing enrollment as a safe idempotent success.
+    if (!enrollment.ok && enrollment.status !== 409) {
+      throw new Error("Unable to prepare all opted-in recipients for delivery.");
+    }
+  }
+
+  const broadcast = await fetcher(`${RESEND_API_BASE}/broadcasts`, {
+    method: "POST",
+    headers: headers(apiKey),
+    body: JSON.stringify({
+      segment_id: segmentId,
+      from: FROM_ADDRESS,
+      subject: input.subject.trim(),
+      name: `Tradebilia pre-launch update ${new Date().toISOString()}`,
+      html: buildPreLaunchEmailHtml(input.message),
+      text: `${input.message.trim()}\n\nUnsubscribe: {{{RESEND_UNSUBSCRIBE_URL}}}`,
+      send: true,
+    }),
+    signal: AbortSignal.timeout(15_000),
+  }) as ResendFetchResponse;
+  if (!broadcast.ok) throw new Error("Resend could not deliver the Pre-Launch Email update.");
+  const payload = await broadcast.json();
+  return { recipientCount: contacts.length, broadcastId: payload?.id ?? null };
+}
