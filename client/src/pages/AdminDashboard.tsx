@@ -568,10 +568,16 @@ export default function AdminDashboard() {
           <p className="text-muted-foreground mt-2">
             Manage platform users, listings, and settings
           </p>
-          <div className="mt-3">
+          <div className="mt-3 flex flex-wrap items-center gap-3">
             <Link href="/test-ai">
               <button className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm rounded-lg font-medium transition-colors">
                 🧪 Test AI Sandbox
+              </button>
+            </Link>
+            <Link href="/coming-soon">
+              <button className="inline-flex items-center gap-2 rounded-lg border border-[#29A8FF]/50 bg-[#07142d] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#0d2349]">
+                <ExternalLink className="h-4 w-4" />
+                Coming Soon Preview
               </button>
             </Link>
           </div>
