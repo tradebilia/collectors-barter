@@ -361,4 +361,4 @@
 - [x] Define and implement a complete new Coming Soon page visual system while preserving the animated Tradebilia SVG and the consent-based email signup flow.
 - [x] Preserve a responsive animated-logo presentation and simplify the signup path for the redesigned pre-launch experience.
 - [x] Add regression coverage and visually validate the redesigned Coming Soon page at desktop and mobile breakpoints.
-- [ ] Commit, push, and publish the validated Coming Soon page redesign.
+- [x] Commit, push, and publish the validated Coming Soon page redesign.
