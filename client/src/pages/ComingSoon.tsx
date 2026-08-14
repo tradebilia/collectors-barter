@@ -3,9 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { trpc } from "@/lib/trpc";
-import { ArrowRight, CheckCircle2, Mail, ShieldCheck, Sparkles } from "lucide-react";
+import { ArrowRight, CheckCircle2, Mail, Sparkles } from "lucide-react";
 import { FormEvent, useId, useState } from "react";
-import { Link } from "wouter";
 
 export default function ComingSoon() {
   const emailId = useId();
@@ -34,19 +33,9 @@ export default function ComingSoon() {
       </div>
 
       <div className="relative mx-auto flex min-h-[calc(100vh-3rem)] max-w-6xl flex-col">
-        <header className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.22em] text-white/65">
-            <span className="h-2 w-2 rounded-full bg-[#18B57A] shadow-[0_0_18px_#18B57A]" />
-            A new collector exchange is taking shape
-          </div>
-          <Link href="/privacy" className="text-sm text-white/65 transition-colors hover:text-white">
-            Privacy
-          </Link>
-        </header>
-
-        <section className="mx-auto flex w-full max-w-3xl flex-1 flex-col items-center justify-center py-16 text-center sm:py-20">
-          <div className="mb-7 w-full max-w-[42rem] overflow-hidden sm:mb-10">
-            <div className="w-[210%] max-w-none">
+        <section className="mx-auto flex w-full max-w-3xl flex-1 flex-col items-center justify-center py-12 text-center sm:py-16">
+          <div className="mb-8 w-full sm:mb-12">
+            <div className="w-[160%] max-w-none">
               <AnimatedLogoSmall70 />
             </div>
           </div>
@@ -124,10 +113,6 @@ export default function ComingSoon() {
             )}
           </div>
 
-          <div className="mt-7 flex items-center gap-2 text-sm text-white/55">
-            <ShieldCheck className="h-4 w-4 text-[#18B57A]" aria-hidden="true" />
-            Your email is used only for the launch update list.
-          </div>
         </section>
 
         <footer className="flex flex-col items-center justify-between gap-2 border-t border-white/10 pt-5 text-center text-xs text-white/45 sm:flex-row sm:text-left">
