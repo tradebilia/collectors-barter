@@ -311,3 +311,7 @@ The published lookup returned the clear authorization-pending message: **“USPS
 The initial production checks after checkpoint `670d8203` continued to render the preceding USPS/UPS-only Carrier Tracking Test. The FedEx and DHL options were absent from the public selector, so those stale responses are not accepted as production validation. A deployment refresh is required before the FedEx adapter and DHL credentials-pending state can be treated as live.
 
 After the deployment-success notification, the published Test AI Carrier Tracking Test displayed USPS, UPS, FedEx, and **DHL (credentials pending)**. The read-only disclosure remained present and no tracking number was submitted during this production selector validation.
+
+## UPS no-shipment CIE validation
+
+UPS’s official Customer Integration Environment check succeeded using UPS’s published repeatable test tracking number. The configured Client ID and Client Secret obtained a short-lived CIE OAuth token, and the read-only CIE Track API request returned HTTP `200` with a shipment-shaped response. No live package, subscription, shipment, trade, or notification data was created or changed. This validates Tradebilia’s UPS OAuth format, bearer-token handling, required transaction headers, and Track API request contract; a real UPS tracking number is still needed only to verify live production shipment data.

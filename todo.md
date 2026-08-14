@@ -291,6 +291,7 @@
 - [ ] Obtain USPS Tracking API authorization for the configured MID through the USPS IP Agreement process.
 - [ ] Complete USPS service-provider access steps for third-party tracking numbers, including required MID authorization and agreement enrollment.
 - [ ] Add an official USPS.com tracking-link fallback for member-supplied tracking numbers, pending approval.
+- [ ] Define and implement the approved compliant no-cost USPS tracking experience while retaining the authorized API option for later.
 - [ ] Retest the reported valid USPS tracking number after USPS approves Tradebilia’s third-party Tracking API authorization.
 - [x] Provide the verified USPS service-provider access request instructions for third-party Tracking API use.
 - [x] Audit USPS self-service product enrollment, claims refresh, and Business Portal permission steps for any missing Tracking API activation requirement.
@@ -309,6 +310,7 @@
 - [x] Securely configure the UPS Client ID and Client Secret for server-side OAuth and tracking tests.
 - [x] Correct and validate the UPS production callback route before completing carrier authorization.
 - [x] Add a read-only UPS tracking test to Test AI without changing Tradebilia shipment or trade data.
+- [x] Verify the UPS tracking integration with official no-shipment or sandbox-safe checks before a real tracking number is available.
 - [x] Securely configure and validate the supplied FedEx API key and secret for read-only tracking.
 - [x] Add FedEx and DHL carrier selections and server-side Test AI tracking adapters with no shipment or trade writes.
 - [x] Clearly present DHL as awaiting secure credentials while keeping the Test AI carrier interface ready.
