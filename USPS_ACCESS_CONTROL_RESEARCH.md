@@ -110,6 +110,14 @@ Shippo similarly lists $0.01 per unique tracking number created outside Shippo, 
 
 [26] [17TRACK Tracking API](https://www.17track.net/en/api)
 
+## Focused Review: USPS Tracking v3r2 Documentation
+
+The current USPS Tracking v3r2 page confirms that Tradebilia’s implementation uses the correct public contract: `POST /tracking`, a JSON array containing one to 35 `trackingNumber` values, and OAuth authorization. The same page explicitly documents **403 Forbidden** as a supported response and provides the standard `{ apiVersion, error: { code, message, errors } }` error shape. [27]
+
+The page does not expose an additional Tracking-specific catalog checkbox, license selector, or self-service mechanism for third-party MIDs. It is an endpoint contract page, not an access-entitlement page. The successful Tradebilia OAuth token already fulfills its stated OAuth requirement; the observed 403 is consistent with the separate MID access-control policy in the USPS Tracking Access Control Tech Sheet. [15] [27]
+
+[27] [USPS Tracking v3r2 Documentation](https://developers.usps.com/trackingv3r2)
+
 ## Tracking Access Control Tech Sheet — Self-Service Paths
 
 The official USPS **Package Tracking Access Control** Tech Sheet identifies two distinct authorization paths that were not fully exposed in the HTML API Access summary:
