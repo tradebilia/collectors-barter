@@ -326,7 +326,7 @@
 - [x] Build a responsive Tradebilia Coming Soon splash screen using the existing spinning logo and clear pre-live messaging.
 - [x] Implement consent-based email-updates signup with duplicate-safe validation and no outbound email sends.
 - [x] Add regression coverage and visually verify the splash and email signup on desktop and mobile.
-- [ ] Commit, push, and publish the validated Coming Soon experience.
+- [x] Commit, push, and publish the validated Coming Soon experience.
 - [x] Add a clearly labeled Coming Soon Preview link to the Admin Dashboard and verify its access path.
 - [x] Run and record a final read-only Resend Contacts API credential validation after the Coming Soon workflow is complete.
 - [x] Use the existing category-cycling AnimatedLogoSmall70 component as the primary Coming Soon splash logo rather than a static wheel.
