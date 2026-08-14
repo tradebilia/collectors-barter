@@ -312,4 +312,4 @@
 - [x] Securely configure and validate the supplied FedEx API key and secret for read-only tracking.
 - [x] Add FedEx and DHL carrier selections and server-side Test AI tracking adapters with no shipment or trade writes.
 - [x] Clearly present DHL as awaiting secure credentials while keeping the Test AI carrier interface ready.
-- [ ] Add regression coverage and validate the FedEx/DHL carrier-tracking expansion in development and production.
+- [x] Add regression coverage and validate the FedEx/DHL carrier-tracking expansion in development and production.

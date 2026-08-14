@@ -307,3 +307,7 @@ Submitting that user-supplied USPS number in the published read-only tracker sti
 After the robust 403-message checkpoint, the current production Carrier Tracking Test again accepted the same reported USPS number for a read-only verification. The request had not yet been submitted at this point.
 
 The published lookup returned the clear authorization-pending message: **“USPS Tracking API access has not yet been authorized for this USPS account. The tracking number may still work on USPS.com.”** This confirms the reported valid number is no longer described as a generic carrier outage. No Tradebilia shipment, trade, or notification data changed during this test.
+
+The initial production checks after checkpoint `670d8203` continued to render the preceding USPS/UPS-only Carrier Tracking Test. The FedEx and DHL options were absent from the public selector, so those stale responses are not accepted as production validation. A deployment refresh is required before the FedEx adapter and DHL credentials-pending state can be treated as live.
+
+After the deployment-success notification, the published Test AI Carrier Tracking Test displayed USPS, UPS, FedEx, and **DHL (credentials pending)**. The read-only disclosure remained present and no tracking number was submitted during this production selector validation.
