@@ -291,6 +291,7 @@
 - [ ] Obtain USPS Tracking API authorization for the configured MID through the USPS IP Agreement process.
 - [x] Define and reserve a production UPS OAuth callback route that Tradebilia can handle before UPS credentials are configured.
 - [ ] Verify the UPS-specific OAuth redirect URI requirement and register the matching Tradebilia callback contract.
+- [x] Complete a primary-source USPS review of Tracking API MID/IP Agreement access requirements and alternative activation paths.
 - [x] Securely configure the UPS Client ID and Client Secret for server-side OAuth and tracking tests.
 - [x] Correct and validate the UPS production callback route before completing carrier authorization.
 - [x] Add a read-only UPS tracking test to Test AI without changing Tradebilia shipment or trade data.
