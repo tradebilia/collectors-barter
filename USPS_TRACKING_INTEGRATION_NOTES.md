@@ -11,3 +11,7 @@ For the new Test AI section, use the current Tracking v3r2 endpoint: `POST https
 [2] [USPS OAuth 2.0](https://developers.usps.com/Oauth)
 
 [3] [USPS Tracking v3r2](https://developers.usps.com/trackingv3r2)
+
+## Reported lookup failure
+
+The user-provided wide screenshot was reviewed in ordered overlapping crops. It shows a populated USPS tracking-number field and the generic application response **“USPS tracking is temporarily unavailable. Please try again.”** The page remains explicitly read-only and does not display a USPS-specific error code. The tracking number is intentionally not copied into this record.

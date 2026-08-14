@@ -285,3 +285,40 @@
 - [x] Securely configure the USPS tracking credential for read-only Test AI lookup.
 - [x] Build and validate the USPS-first tracking test section below sold-item AI testing.
 - [x] Securely configure the USPS consumer key and consumer secret for the server-side tracking lookup.
+- [x] Diagnose the USPS Tracking v3r2 failure for a verified valid tracking number without logging private data or credentials.
+- [x] Correct the USPS tracking request and error presentation, then validate the reported tracking number in development and production.
+- [x] Diagnose the USPS Tracking v3r2 failure for a verified valid tracking number without logging private data or credentials.
+- [ ] Obtain USPS Tracking API authorization for the configured MID through the USPS IP Agreement process.
+- [ ] Complete USPS service-provider access steps for third-party tracking numbers, including required MID authorization and agreement enrollment.
+- [ ] Add an official USPS.com tracking-link fallback for member-supplied tracking numbers, pending approval.
+- [ ] Define and implement the approved compliant no-cost USPS tracking experience while retaining the authorized API option for later.
+- [ ] Retest the reported valid USPS tracking number after USPS approves Tradebilia’s third-party Tracking API authorization.
+- [x] Provide the verified USPS service-provider access request instructions for third-party Tracking API use.
+- [x] Audit USPS self-service product enrollment, claims refresh, and Business Portal permission steps for any missing Tracking API activation requirement.
+- [x] Compare the USPS API catalog’s Tracking offering with current access-control and enrollment instructions.
+- [x] Reconcile the supplied USPS Tracking endpoint guidance with the current third-party authorization requirement.
+- [x] Provide a plain-language explanation of USPS public tracking versus third-party Tracking API access controls.
+- [x] Evaluate the supplied USPS Track & Confirm page for a viable current API or tracking alternative.
+- [x] Conduct a primary-source deep review of Business Portal, Business Customer Gateway, and merchant-platform alternatives to USPS email-based MID authorization.
+- [x] Clarify USPS Tracking API access requirements by relationship to the sender MID.
+- [x] Provide the exact USPS provider-access onboarding steps for Tradebilia’s third-party package tracking use case.
+- [x] Research legitimate GitHub-based multi-carrier tracking libraries and determine whether any free token-only option supports Tradebilia’s use case.
+- [x] Reassess the current USPS Tracking v3r2 documentation for any access detail that changes the third-party tracking conclusion.
+- [x] Define and reserve a production UPS OAuth callback route that Tradebilia can handle before UPS credentials are configured.
+- [ ] Verify the UPS-specific OAuth redirect URI requirement and register the matching Tradebilia callback contract.
+- [x] Complete a primary-source USPS review of Tracking API MID/IP Agreement access requirements and alternative activation paths.
+- [x] Securely configure the UPS Client ID and Client Secret for server-side OAuth and tracking tests.
+- [x] Correct and validate the UPS production callback route before completing carrier authorization.
+- [x] Add a read-only UPS tracking test to Test AI without changing Tradebilia shipment or trade data.
+- [x] Verify the UPS tracking integration with official no-shipment or sandbox-safe checks before a real tracking number is available.
+- [x] Securely configure and validate the supplied FedEx API key and secret for read-only tracking.
+- [x] Add FedEx and DHL carrier selections and server-side Test AI tracking adapters with no shipment or trade writes.
+- [x] Clearly present DHL as awaiting secure credentials while keeping the Test AI carrier interface ready.
+- [x] Securely configure and validate the supplied DHL API key and secret for read-only tracking.
+- [x] Activate the DHL Test AI carrier lookup without shipment, trade, or notification writes.
+- [x] Add regression coverage and validate DHL tracking in development and production.
+- [x] Add regression coverage and validate the FedEx/DHL carrier-tracking expansion in development and production.
+- [x] Evaluate compliant no-fee alternatives to paid USPS Tracking API access and document why public-site scraping is not used.
+- [x] Research and evaluate legitimate multi-carrier tracking providers that offer a current free API allowance for Tradebilia.
+- [x] Conduct a broad official-source, GitHub, Reddit, and independent-source review of legitimate free or low-volume multi-carrier tracking options.
+- [x] Record user-confirmed live FedEx tracking success in the carrier validation record.

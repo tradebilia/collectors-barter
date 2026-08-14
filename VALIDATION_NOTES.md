@@ -281,3 +281,41 @@ The authenticated development Test AI page displayed the new **USPS Carrier Trac
 The initial production Test AI request for checkpoint `9f6c61fa` still served the preceding bundle without the USPS Carrier Tracking Test. This stale response is not accepted as production validation; a deployment refresh is required before the final production check.
 
 After the refreshed deployment propagated, the published Test AI page rendered the **USPS Carrier Tracking Test** below the existing Test AI controls, including the USPS carrier label, tracking-number input, Check tracking action, and read-only description. No tracking number was submitted during production verification, so no USPS shipment data or Tradebilia trade/shipment data was changed.
+
+## UPS callback route readiness
+
+The initial production request for `/api/ups/callback` after checkpoint `4f6f2e4f` reached the preceding not-found route instead of the reserved provider callback handler. This response is not accepted as callback-route validation; deployment propagation must complete before the UPS portal is given the production callback value.
+
+After the propagation interval, the cache-busting production `/api/ups/callback` request still reached the not-found route. The callback contract therefore requires a routing correction before it can be treated as ready for UPS registration.
+
+## UPS carrier selector development check
+
+The authenticated development Test AI page rendered the unified Carrier Tracking Test below the sold-item analysis controls. Switching the selector from USPS to UPS updated the input placeholder and accessible label to **Enter UPS tracking number** without initiating a lookup or changing Tradebilia shipment, trade, or notification data.
+
+The initial and post-propagation production Test AI checks for checkpoint `7e8a0b57` continued to serve the preceding USPS-only carrier panel. Those stale responses are not accepted as production validation; a deployment refresh is required before the unified USPS/UPS selector can be treated as live.
+
+The first cache-busting production Test AI request after refresh checkpoint `80743c97` also rendered the preceding USPS-only carrier panel. The public `__manus__/version.json` path is not available on this deployment and therefore cannot confirm the active release version. Additional deployment investigation is required before treating the unified carrier selector or reserved UPS callback route as published.
+
+After the deployment-success notification, the published Test AI page completed loading with the unified **Carrier Tracking Test**, an explicit USPS/UPS selector, a carrier-specific tracking-number field, and the read-only disclosure. This completes production rendering validation of the carrier-selector interface; no tracking number was submitted during the production check.
+
+The published `/api/ups/callback` route now redirects safely to the Account Settings integrations state with `ups=error&reason=not_configured`. This validates the reserved production callback route without exchanging a UPS token or modifying any external account connection.
+
+The production Carrier Tracking Test loaded with the unified USPS/UPS selector and accepted the USPS tracking number supplied in the user’s error report. The read-only lookup had not yet been submitted at this point.
+
+Submitting that user-supplied USPS number in the published read-only tracker still displayed the prior generic temporary-unavailability message. The client interface is current, but the server-side response must be examined to determine whether the carrier returned a different status category or the deployed server still serves the previous error mapping.
+
+After the robust 403-message checkpoint, the current production Carrier Tracking Test again accepted the same reported USPS number for a read-only verification. The request had not yet been submitted at this point.
+
+The published lookup returned the clear authorization-pending message: **“USPS Tracking API access has not yet been authorized for this USPS account. The tracking number may still work on USPS.com.”** This confirms the reported valid number is no longer described as a generic carrier outage. No Tradebilia shipment, trade, or notification data changed during this test.
+
+The initial production checks after checkpoint `670d8203` continued to render the preceding USPS/UPS-only Carrier Tracking Test. The FedEx and DHL options were absent from the public selector, so those stale responses are not accepted as production validation. A deployment refresh is required before the FedEx adapter and DHL credentials-pending state can be treated as live.
+
+After the deployment-success notification, the published Test AI Carrier Tracking Test displayed USPS, UPS, FedEx, and **DHL (credentials pending)**. The read-only disclosure remained present and no tracking number was submitted during this production selector validation.
+
+## UPS no-shipment CIE validation
+
+UPS’s official Customer Integration Environment check succeeded using UPS’s published repeatable test tracking number. The configured Client ID and Client Secret obtained a short-lived CIE OAuth token, and the read-only CIE Track API request returned HTTP `200` with a shipment-shaped response. No live package, subscription, shipment, trade, or notification data was created or changed. This validates Tradebilia’s UPS OAuth format, bearer-token handling, required transaction headers, and Track API request contract; a real UPS tracking number is still needed only to verify live production shipment data.
+
+## DHL Unified Tracking activation
+
+The supplied DHL API key was validated against the correct DHL Unified Tracking contract. The original MyDHL Basic-authentication endpoints correctly returned `401`, while the Unified Tracking endpoint returned `200`, so the Test AI adapter uses the `DHL-API-Key` header rather than sending the stored secret. TypeScript and the full 174-test suite passed. After the successful deployment refresh, the published Test AI carrier selector displayed active **DHL** alongside USPS, UPS, and FedEx; the former **DHL (credentials pending)** label was absent. No real DHL tracking number was submitted during this selector validation.

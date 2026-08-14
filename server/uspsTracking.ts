@@ -53,13 +53,21 @@ export function formatUspsTrackingResult(response: UspsTrackingResponse, request
     status: response.status ?? "USPS update received",
     statusCategory: response.statusCategory ?? null,
     statusSummary: response.statusSummary ?? null,
-    mailClass: response.mailClass ?? null,
+    service: response.mailClass ?? null,
     expectedDeliveryDate: response.deliveryDateExpectation?.expectedDeliveryDate
       ?? response.deliveryDateExpectation?.predictedDeliveryDate
       ?? response.deliveryDateExpectation?.guaranteedDeliveryDate
       ?? null,
     events: (response.trackingEvents ?? []).slice(0, 10).map(toDisplayEvent),
   };
+}
+
+export function getUspsTrackingErrorMessage(status: number, payload: unknown): string {
+  if (status === 404) return "USPS did not find that tracking number.";
+  if (status === 403) {
+    return "USPS Tracking API access has not yet been authorized for this USPS account. The tracking number may still work on USPS.com.";
+  }
+  return "USPS tracking is temporarily unavailable. Please try again.";
 }
 
 async function getUspsAccessToken(): Promise<string> {
@@ -115,12 +123,9 @@ export async function lookupUspsTracking(trackingNumberInput: string) {
     signal: AbortSignal.timeout(15_000),
   });
 
-  const payload = await trackingResponse.json().catch(() => null) as UspsTrackingResponse[] | null;
-  if (!trackingResponse.ok || !payload?.[0]) {
-    if (trackingResponse.status === 404) {
-      throw new Error("USPS did not find that tracking number.");
-    }
-    throw new Error("USPS tracking is temporarily unavailable. Please try again.");
+  const payload = await trackingResponse.json().catch(() => null) as UspsTrackingResponse[] | unknown;
+  if (!trackingResponse.ok || !Array.isArray(payload) || !payload[0]) {
+    throw new Error(getUspsTrackingErrorMessage(trackingResponse.status, payload));
   }
 
   return formatUspsTrackingResult(payload[0], trackingNumber);

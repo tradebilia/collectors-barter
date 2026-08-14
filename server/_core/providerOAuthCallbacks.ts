@@ -56,4 +56,10 @@ export function registerProviderOAuthCallbacks(app: Express) {
       return res.redirect(302, "/account-settings?linkedin=error&reason=callback_failed&tab=integrations");
     }
   });
+
+  // Reserved UPS OAuth return URL. Token exchange remains disabled until the UPS
+  // client credentials are securely configured for Tradebilia.
+  app.get("/api/ups/callback", async (_req: any, res: any) => {
+    return res.redirect(302, "/account-settings?ups=error&reason=not_configured&tab=integrations");
+  });
 }

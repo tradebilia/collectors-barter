@@ -841,35 +841,67 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
   );
 }
 
-// ─── USPS Tracking Test Section ─────────────────────────────────────────────
-function UspsTrackingSection() {
+// ─── Carrier Tracking Test Section ───────────────────────────────────────────
+function CarrierTrackingSection() {
+  const [carrier, setCarrier] = useState<'USPS' | 'UPS' | 'FedEx' | 'DHL'>('USPS');
   const [trackingNumber, setTrackingNumber] = useState('');
-  const lookupMutation = trpc.testAI.lookupUspsTracking.useMutation();
+  const uspsLookupMutation = trpc.testAI.lookupUspsTracking.useMutation();
+  const upsLookupMutation = trpc.testAI.lookupUpsTracking.useMutation();
+  const fedexLookupMutation = trpc.testAI.lookupFedexTracking.useMutation();
+  const dhlLookupMutation = trpc.testAI.lookupDhlTracking.useMutation();
+  const activeMutation = carrier === 'USPS'
+    ? uspsLookupMutation
+    : carrier === 'UPS'
+      ? upsLookupMutation
+      : carrier === 'FedEx'
+        ? fedexLookupMutation
+        : dhlLookupMutation;
 
   const submitLookup = () => {
     const value = trackingNumber.trim();
     if (!value) {
-      toast.error('Enter a USPS tracking number');
+      toast.error(`Enter a ${carrier} tracking number`);
       return;
     }
-    lookupMutation.mutate({ trackingNumber: value }, {
+    const mutation = carrier === 'USPS'
+      ? uspsLookupMutation
+      : carrier === 'UPS'
+        ? upsLookupMutation
+        : carrier === 'FedEx'
+          ? fedexLookupMutation
+          : dhlLookupMutation;
+    mutation.mutate({ trackingNumber: value }, {
       onError: (error) => toast.error(error.message),
     });
   };
 
-  const result = lookupMutation.data;
+  const result = activeMutation.data;
 
   return (
-    <section className="rounded-xl border border-sky-700/30 bg-sky-950/20 p-5 space-y-4" aria-labelledby="usps-tracking-test-title">
+    <section className="rounded-xl border border-sky-700/30 bg-sky-950/20 p-5 space-y-4" aria-labelledby="carrier-tracking-test-title">
       <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h2 id="usps-tracking-test-title" className="text-sm font-bold uppercase tracking-wide text-sky-300">USPS Carrier Tracking Test</h2>
-          <p className="mt-1 text-xs text-gray-400">Read-only USPS Tracking v3r2 lookup. No Tradebilia shipment, trade, or notification data is changed.</p>
+          <h2 id="carrier-tracking-test-title" className="text-sm font-bold uppercase tracking-wide text-sky-300">Carrier Tracking Test</h2>
+          <p className="mt-1 text-xs text-gray-400">Read-only USPS, UPS, FedEx, and DHL lookup. No Tradebilia shipment, trade, or notification data is changed.</p>
         </div>
-        <Badge className="w-fit border border-sky-600/40 bg-sky-900/40 text-[10px] text-sky-200">Carrier: USPS</Badge>
+        <Badge className="w-fit border border-sky-600/40 bg-sky-900/40 text-[10px] text-sky-200">Read only</Badge>
       </div>
 
       <div className="flex flex-col gap-2 sm:flex-row">
+        <select
+          value={carrier}
+          onChange={(event) => {
+            setCarrier(event.target.value as 'USPS' | 'UPS' | 'FedEx' | 'DHL');
+            setTrackingNumber('');
+          }}
+          aria-label="Carrier"
+          className="rounded-lg border border-gray-700 bg-gray-900/70 px-3 py-2.5 text-sm text-white focus:border-sky-500 focus:outline-none"
+        >
+          <option value="USPS">USPS</option>
+          <option value="UPS">UPS</option>
+          <option value="FedEx">FedEx</option>
+          <option value="DHL">DHL</option>
+        </select>
         <input
           value={trackingNumber}
           onChange={(event) => setTrackingNumber(event.target.value)}
@@ -877,22 +909,22 @@ function UspsTrackingSection() {
             if (event.key === 'Enter') submitLookup();
           }}
           inputMode="text"
-          placeholder="Enter USPS tracking number"
-          aria-label="USPS tracking number"
+          placeholder={`Enter ${carrier} tracking number`}
+          aria-label={`${carrier} tracking number`}
           className="min-w-0 flex-1 rounded-lg border border-gray-700 bg-gray-900/70 px-3 py-2.5 text-sm text-white placeholder:text-gray-500 focus:border-sky-500 focus:outline-none"
         />
         <button
           onClick={submitLookup}
-          disabled={lookupMutation.isPending}
+          disabled={activeMutation.isPending}
           className="inline-flex items-center justify-center gap-2 rounded-lg bg-sky-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-sky-500 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {lookupMutation.isPending ? <><Spinner className="h-4 w-4" /> Checking USPS…</> : 'Check tracking'}
+          {activeMutation.isPending ? <><Spinner className="h-4 w-4" /> Checking {carrier}…</> : 'Check tracking'}
         </button>
       </div>
 
-      {lookupMutation.isError && (
+      {activeMutation.isError && (
         <div className="rounded-lg border border-red-700/40 bg-red-950/30 p-3 text-xs text-red-300" role="alert">
-          {lookupMutation.error.message}
+          {activeMutation.error.message}
         </div>
       )}
 
@@ -900,7 +932,7 @@ function UspsTrackingSection() {
         <div className="space-y-3 rounded-lg border border-gray-700/50 bg-gray-950/40 p-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-500">Current USPS status</p>
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-500">Current {carrier} status</p>
               <p className="mt-1 text-base font-semibold text-white">{result.status}</p>
               {result.statusSummary && <p className="mt-1 text-sm text-gray-300">{result.statusSummary}</p>}
             </div>
@@ -910,14 +942,14 @@ function UspsTrackingSection() {
                 <p className="mt-1 text-gray-200">{result.expectedDeliveryDate ? new Date(`${result.expectedDeliveryDate}T12:00:00`).toLocaleDateString() : 'Not provided'}</p>
               </div>
               <div className="rounded bg-gray-900/80 p-2">
-                <p className="text-[9px] font-semibold uppercase text-gray-500">Mail class</p>
-                <p className="mt-1 text-gray-200">{result.mailClass ?? 'Not provided'}</p>
+                <p className="text-[9px] font-semibold uppercase text-gray-500">Service</p>
+                <p className="mt-1 text-gray-200">{result.service ?? 'Not provided'}</p>
               </div>
             </div>
           </div>
 
           <div>
-            <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-gray-500">Recent USPS events</p>
+            <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-gray-500">Recent {carrier} events</p>
             {result.events.length ? (
               <div className="space-y-2">
                 {result.events.map((event, index) => (
@@ -930,7 +962,7 @@ function UspsTrackingSection() {
                   </div>
                 ))}
               </div>
-            ) : <p className="text-xs text-gray-500">USPS returned no detailed event history for this item.</p>}
+            ) : <p className="text-xs text-gray-500">{carrier} returned no detailed event history for this item.</p>}
           </div>
         </div>
       )}
@@ -1159,7 +1191,7 @@ export default function TestAI() {
         )}
 
         {/* Kept below all sold-item data and AI testing so it remains an independent carrier test. */}
-        <UspsTrackingSection />
+        <CarrierTrackingSection />
 
         {!leftItem && !rightItem && (
           <div className="text-center py-16 text-gray-500">
