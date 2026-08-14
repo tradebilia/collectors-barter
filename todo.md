@@ -111,3 +111,177 @@
 - [x] Confirm the local branch and GitHub remote are synchronized after the push.
 - [x] Replace environment-bound OAuth and Sold-Comps test assumptions so the GitHub checkout validates without stored credentials or live external requests.
 - [x] Remove the trailing whitespace found by Git validation from the synchronized eBay integration component.
+- [x] Inventory all configured provider credentials and select the least invasive valid check for each.
+- [x] Validate direct data-provider and service credentials without exposing any secret values; documented provider authorization failures remain for PSA and OpenAI.
+- [x] Run controlled Resend email and Twilio SMS tests after obtaining a destination email address and phone number.
+- [x] Exercise eBay, Facebook, and LinkedIn OAuth authorization-start checks; full provider consent remains optional because third-party login cannot be embedded in the WebDev preview.
+- [x] Record provider-by-provider validation outcomes and required follow-up without exposing credentials.
+- [x] Confirm the WebDev-preview limitation for third-party OAuth sign-in and enable the available user-visible browser handoff for future account-consent steps.
+- [x] Configure provider redirect URIs under the user-directed live mode; staging safeguards were permanently disabled rather than temporarily overridden.
+- [x] Disable `TRADEBILIA_STAGING_MODE` permanently at the user’s direction and verify the live integration setting is active.
+- [x] Configure the Facebook and LinkedIn live callback URI variables needed for OAuth completion.
+- [x] Update obsolete integration test expectations that still require staging mode to remain enabled.
+- [x] Remove the obsolete handoff-document test dependency on a file absent from the managed project root.
+- [x] Inspect the direct-message thread lookup that fails when admin sends the first message to rtavani.
+- [x] Correct the nullable `itemId` thread lookup so first-time direct-message conversations can be created.
+- [x] Add regression coverage for creating a first direct message without an item reference.
+- [x] Verify the repaired admin-to-rtavani direct-message flow in development and live views.
+- [x] Verify the repaired admin-to-rtavani direct-message send flow end-to-end in the development preview without a database error.
+- [x] Send one approved development-verification direct message from Admin to Rtavani and verify its created conversation state.
+- [x] Document both development and live sender-side direct-message send verification results.
+- [x] Compare deployed legacy database table columns with messaging and related data-access paths for incompatible assumptions.
+- [x] Assess and document any additional schema mismatches with likely runtime impact, without changing unaffected code.
+- [x] Supply explicit `lastMessageAt` and `createdAt` values when creating legacy direct-message threads without database defaults.
+- [x] Add regression coverage for direct-message thread creation against the legacy no-default timestamp shape.
+- [x] Add a router-level legacy-schema regression test proving a first direct message creates one thread and one message without referencing `itemId`.
+- [x] Add a router-level legacy-schema regression test proving a second direct message reuses the same participant thread.
+- [x] Replace the ORM thread insert that expands the absent `itemId` column with an explicit legacy-compatible SQL insert.
+- [x] Add regression coverage proving the thread insert names only columns that exist in the deployed legacy table.
+- [x] Map direct-message latest-sender payloads to signed-in-user direction for list and detail views.
+- [x] Add To/From counterpart labels and Sent/Received status treatment to direct-message list cards.
+- [x] Add participant-aware direct-message detail headings and explanatory sent/received copy.
+- [x] Add regression coverage and verify direct-message direction in development and live views.
+- [x] Define and obtain approval for one consistent counterpart-first hierarchy across direct-message and item-inquiry cards.
+- [x] Reorder direct-message cards to show To/From counterpart and direction before context, subject, preview, and timestamp.
+- [x] Verify the reordered direct-message card matches the item-inquiry hierarchy in development and live views.
+- [x] Locate the broken direct-message notification email logo reference and replace it with the durable Tradebilia logo URL.
+- [x] Verify the email-logo URL is publicly accessible to external email clients and covered by a notification-template regression test.
+- [x] Add All, Sent, and Received subfilters to the Direct Messages folder using latest-message direction.
+- [x] Verify the direct-message subfilters isolate outgoing and incoming conversations without changing the unified list default.
+- [x] Review Direct Messages and Item Inquiries from both sender and recipient perspectives for clarity, trust, and conversion friction.
+- [x] Produce a prioritized messaging-experience improvement roadmap focused on collector retention and repeat engagement.
+- [x] Document the successful live Admin-to-Rtavani direct-message send verification explicitly in the validation record.
+- [x] Isolate the verified real incoming Rtavani reply with the live Direct Messages Received filter while retaining All as the unified default.
+- [x] Trace and replace the direct-message reply lookup that still selects the absent legacy `itemId` column.
+- [x] Add regression coverage for a recipient reply against the participant-only legacy thread schema.
+- [x] Verify the complete live Admin-to-Rtavani direct-message send-and-reply flow after the lookup repair.
+- [x] Create the “Items to address when starting a new session” migration handoff document with issues, safeguards, and a startup checklist.
+- [x] Locate and remove the existing Member Directory button from its current interface location.
+- [x] Add Member Directory to the main homepage left-side panel using the existing panel navigation pattern.
+- [x] Verify the relocated Member Directory entry on desktop and mobile homepage layouts.
+- [x] Reflow the homepage Subscriber Tools panel at mobile widths so Member Directory and all navigation remain usable without horizontal overflow.
+- [x] Review the current authentication/session implementation for simultaneous-device behavior.
+- [x] Evaluate single-session, device-management, and risk-based session-control options for collectors.
+- [x] Present a recommended session policy and phased implementation plan for approval.
+- [x] Reassess Tradebilia’s session threat model, token lifetime, revocation gaps, and sensitive marketplace actions.
+- [x] Compare authoritative session-management guidance and relevant consumer-platform device-session practices.
+- [x] Evaluate strict single-session, device-aware, and risk-based controls against Tradebilia requirements.
+- [x] Deliver a definitive session policy recommendation with non-negotiable implementation guardrails.
+- [x] Locate the standalone Verified Merchants homepage action and Member Directory verification discovery path.
+- [x] Remove the duplicate Verified Merchants homepage action while retaining Member Directory access.
+- [x] Verify verification discovery remains available through Member Directory and homepage navigation remains responsive.
+- [x] Map the shared top bar, homepage hero background, and supplied Member Directory title artwork to the Member Directory page.
+- [x] Publish the supplied MemberDirectory.webp artwork to durable project storage and reference it from the page hero.
+- [x] Add the shared top bar and main-homepage-style hero section to the Member Directory page without changing directory filters or member actions.
+- [x] Verify the updated Member Directory hero and navigation at desktop and mobile widths.
+- [x] Identify and correct the Member Directory route mismatch so homepage navigation reaches the styled directory page.
+- [x] Trace why editing an unsent counteroffer changes the negotiation turn status before submission.
+- [x] Preserve the current responder status while a counteroffer draft is edited but not submitted.
+- [x] Update the negotiation turn only after a counteroffer is explicitly submitted.
+- [x] Add regression coverage for draft edits versus submitted counteroffers.
+- [x] Verify the corrected Admin/Rtavani trade negotiation flow in development and live views.
+- [x] Trace why historical Trade Room timeline activity does not load.
+- [x] Restore historical timeline activity loading without changing trade data.
+- [x] Add regression coverage and verify the repaired timeline in development and live views.
+- [x] Trace the incorrect Confirm-step Administrator contact name and review re-submission path.
+- [x] Render Rich Tavani as the authoritative Administrator contact name in the Confirm step.
+- [x] Block a participant from submitting more than one review for the same trade.
+- [x] Add regression coverage and verify Confirm-step names and one-review enforcement in development and live views.
+- [x] Audit timeline actor-name sources, trade receipt data, and shipment-date state.
+- [x] Use authoritative display names for Trade Room timeline actors.
+- [x] Add a participant-authorized downloadable Trade Room receipt.
+- [x] Confirm the shipment reminder delivery channel and timing policy.
+- [x] Implement idempotent shipment-date reminders without changing existing trade data.
+- [x] Add regression coverage and validate timeline labels, receipts, and shipment reminders in development and production.
+- [x] Send one shipping reminder 48 hours before each participant's deadline and one daily overdue reminder until that participant submits tracking.
+- [x] Activate the deployed daily shipment-reminder schedule and verify its safe idempotent behavior.
+- [x] Audit the current carrier selection, tracking-link, and tracking-number workflow.
+- [x] Define the no-key in-room tracking experience and future secure live-status provider boundary.
+- [x] Defer carrier-aware direct tracking presentation changes until a tracking-service credential is available, at the user's direction.
+- [x] Defer tracking-experience regression coverage until live tracking integration is implemented.
+- [x] Defer secure in-room carrier event and delivery-status tracking until the user provides a tracking-service API credential; official carrier links remain available.
+- [x] Review the existing Report a Member page and provide targeted improvement recommendations without changing its behavior.
+- [x] Audit current report storage, report access, evidence fields, and Trade Room issue-entry points.
+- [x] Persist submitted report context and secure evidence attachments without a database migration.
+- [x] Add a private My Reports status view for report submitters.
+- [x] Add a Trade Room Report a Trade Issue entry point with prefilled participant and trade context.
+- [x] Add regression coverage and validate evidence, report-status, and Trade Room issue workflows.
+- [x] Restore the original Report a User hero artwork and layout without changing reporting features.
+- [x] Validate the restored Report a User hero in development and production.
+- [x] Restore high-contrast field labels on the Report a User form.
+- [x] Verify Report a User field-label readability in development and production.
+- [x] Default Contact email to the signed-in account email after profile data finishes loading.
+- [x] Verify the Contact email default remains account-based and user-editable.
+- [x] Replace the Report a User hero title with the supplied Report a Member artwork.
+- [x] Verify Contact email defaults to the signed-in account email and remains editable on the updated page.
+- [x] Remove the top-bar search control from the Report a Member page only.
+- [x] Verify the Report a Member page retains navigation while omitting search in development and production.
+- [x] Replace the Report a Member hero title with the newly supplied wider artwork.
+- [x] Validate the supplied wider Report a Member title in development and production.
+- [x] Increase the Report a Member hero title scale to align with the main-page hero.
+- [x] Validate the enlarged Report a Member title in development and production.
+- [x] Trace why Report a Member Contact email can retain a prior member’s email after an account change.
+- [x] Synchronize Contact email with the current authenticated account while retaining manual edit support.
+- [x] Add regression coverage and validate current-account Contact email behavior in development and production.
+- [x] Audit all member-facing uses of authentication email versus saved Tradebilia profile contact email.
+- [x] Add one authoritative Tradebilia profile contact identity source for client and server workflows.
+- [x] Replace authentication-email fallbacks in Report a Member, Referral Request, Profile, setup, settings, navigation, moderation, and notification records.
+- [x] Add regression coverage and validate saved Tradebilia contact-email precedence across member-facing workflows.
+- [x] Audit completed-trade ownership data for the Traders Showcase.
+- [x] Show each showcased item with its original owner, a trade-direction arrow, and its receiving member.
+- [x] Remove public total-deal value from Traders Showcase cards.
+- [x] Add regression coverage and validate the revised Traders Showcase in development and production.
+- [x] Present each Traders Showcase ownership transfer in one left-to-right horizontal line: original owner, item, then receiving member.
+- [x] Add regression coverage and validate the horizontal Traders Showcase flow in development and production.
+- [x] Consolidate all items from both trade members into one trade-level horizontal exchange line.
+- [x] Add regression coverage and validate the consolidated Traders Showcase exchange layout in development and production.
+- [x] Display complete item titles in consolidated Traders Showcase exchange rows.
+- [x] Enlarge the central exchange arrows and remove redundant Trading member labels.
+- [x] Add regression coverage and validate the refined Showcase exchange layout in development and production.
+- [x] Audit Member Directory data, filters, profile links, access behavior, and responsive layout.
+- [x] Verify Member Directory functionality in development and production.
+- [x] Document prioritized Member Directory gaps and improvement recommendations without changing behavior unless a defect is found.
+- [x] Stop Member Directory region filtering and display from using private street-address data.
+- [x] Implement truthful member standing filters instead of the nonfunctional hardcoded Verified label.
+- [x] Route Member Directory messaging through the persisted direct-message workflow.
+- [x] Add direct public-profile navigation from Member Directory cards and rankings.
+- [x] Add regression coverage and validate privacy, filters, profile links, and messaging in development and production.
+- [x] Make Member ID search and Offer Trade work against the actual directory response data.
+- [x] Remove misleading browser-local online presence from the public Member Directory until live presence is server-backed.
+- [x] Avoid duplicating the spotlight member in the main search-result grid.
+- [x] Complete the resumed Member Directory correction, validation, and recommendations review.
+- [x] Prevent the no-results message from appearing when the only matching member is already displayed in the spotlight.
+- [x] Add an accessible drag-and-drop evidence attachment zone to the Report a User form while retaining browse-file upload.
+- [x] Correct the shared top-bar animated logo scale so it matches the established visual size across pages.
+- [x] Add regression coverage and validate Report a User uploads and top-bar logo sizing in development and production.
+- [x] Redesign Member Directory search results so an intentional member ID or exact-name search leads clearly to the matching public profile, pending approval.
+- [x] Redesign the Member Directory into a deliberate multi-criteria discovery tool with member, location, collection, standing, and value-oriented filtering, pending approval.
+- [x] Create and review a visual mockup of the proposed multi-criteria Member Directory before implementation.
+- [x] Audit existing profile, listing, review, trade, and verification fields for approved privacy-safe directory filters.
+- [x] Add deliberate Search and Clear actions, exact-match profile routing, approved filters, and approved sort controls to Member Directory.
+- [x] Rebuild Member Directory results as profile-first collector cards and make rankings secondary to discovery.
+- [x] Add regression coverage and validate the redesigned Member Directory in development and production.
+- [x] Replace the Member Directory single-category dropdown with multi-select collection categories.
+- [x] Replace the Member Standing filter with an explicit Verified Merchant toggle.
+- [x] Add regression coverage and validate the revised Member Directory category and merchant filters in development and production.
+- [x] Add Select all and Clear categories controls to the Member Directory category filter.
+- [x] Display active Member Directory filter chips above results with one-click removal and a Clear all action.
+- [x] Add an accessible explanation of what the Verified Merchant toggle means.
+- [x] Add regression coverage and validate the Member Directory filter usability refinements in development and production.
+- [x] Design a privacy-safe proximity filter using only coarse member location and a visitor-selected distance range, pending approval.
+- [x] Remove collapsible Member Directory filters and the Members/Rankings toggle, pending approval.
+- [x] Change Member Directory filters to update results immediately after a deliberate control selection, pending approval.
+- [x] Add approved additional directory filters and regression coverage, pending approval.
+- [x] Replace Member Directory lookup guidance with username-first language, pending approval of the broader refinement.
+- [x] Add a privacy-safe server-side distance filter that uses stored coarse location coordinates without exposing home addresses.
+- [x] Replace collapsible Member Directory controls with an always-visible filter layout and remove the Members/Rankings toggle.
+- [x] Update discrete Member Directory filters immediately while retaining deliberate username Search or Enter behavior.
+- [x] Add approved discovery filters, including minimum review count and nearest-distance sorting when available.
+- [x] Add regression coverage and validate the enhanced Member Directory privacy and filtering behavior in development and production.
+- [x] Replace Member ID text on Member Directory result cards with the member’s username.
+- [x] Add a read-only carrier and tracking-number test section below Test AI sold-item tools.
+- [x] Surface configured carrier tracking results without changing trade or shipment data.
+- [x] Add regression coverage and validate the Test AI carrier tracking section in development and production.
+- [x] Securely configure the USPS tracking credential for read-only Test AI lookup.
+- [x] Build and validate the USPS-first tracking test section below sold-item AI testing.
+- [x] Securely configure the USPS consumer key and consumer secret for the server-side tracking lookup.
