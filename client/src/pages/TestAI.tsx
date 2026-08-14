@@ -843,11 +843,17 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
 
 // ─── Carrier Tracking Test Section ───────────────────────────────────────────
 function CarrierTrackingSection() {
-  const [carrier, setCarrier] = useState<'USPS' | 'UPS'>('USPS');
+  const [carrier, setCarrier] = useState<'USPS' | 'UPS' | 'FedEx' | 'DHL'>('USPS');
   const [trackingNumber, setTrackingNumber] = useState('');
   const uspsLookupMutation = trpc.testAI.lookupUspsTracking.useMutation();
   const upsLookupMutation = trpc.testAI.lookupUpsTracking.useMutation();
-  const activeMutation = carrier === 'USPS' ? uspsLookupMutation : upsLookupMutation;
+  const fedexLookupMutation = trpc.testAI.lookupFedexTracking.useMutation();
+  const isDhl = carrier === 'DHL';
+  const activeMutation = carrier === 'USPS'
+    ? uspsLookupMutation
+    : carrier === 'UPS'
+      ? upsLookupMutation
+      : fedexLookupMutation;
 
   const submitLookup = () => {
     const value = trackingNumber.trim();
@@ -855,7 +861,15 @@ function CarrierTrackingSection() {
       toast.error(`Enter a ${carrier} tracking number`);
       return;
     }
-    const mutation = carrier === 'USPS' ? uspsLookupMutation : upsLookupMutation;
+    if (isDhl) {
+      toast.info('DHL tracking is ready for credentials. Add a DHL API key and secret to enable this carrier.');
+      return;
+    }
+    const mutation = carrier === 'USPS'
+      ? uspsLookupMutation
+      : carrier === 'UPS'
+        ? upsLookupMutation
+        : fedexLookupMutation;
     mutation.mutate({ trackingNumber: value }, {
       onError: (error) => toast.error(error.message),
     });
@@ -868,7 +882,7 @@ function CarrierTrackingSection() {
       <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h2 id="carrier-tracking-test-title" className="text-sm font-bold uppercase tracking-wide text-sky-300">Carrier Tracking Test</h2>
-          <p className="mt-1 text-xs text-gray-400">Read-only USPS and UPS lookup. No Tradebilia shipment, trade, or notification data is changed.</p>
+          <p className="mt-1 text-xs text-gray-400">Read-only USPS, UPS, FedEx, and DHL lookup. No Tradebilia shipment, trade, or notification data is changed.</p>
         </div>
         <Badge className="w-fit border border-sky-600/40 bg-sky-900/40 text-[10px] text-sky-200">Read only</Badge>
       </div>
@@ -877,7 +891,7 @@ function CarrierTrackingSection() {
         <select
           value={carrier}
           onChange={(event) => {
-            setCarrier(event.target.value as 'USPS' | 'UPS');
+            setCarrier(event.target.value as 'USPS' | 'UPS' | 'FedEx' | 'DHL');
             setTrackingNumber('');
           }}
           aria-label="Carrier"
@@ -885,6 +899,8 @@ function CarrierTrackingSection() {
         >
           <option value="USPS">USPS</option>
           <option value="UPS">UPS</option>
+          <option value="FedEx">FedEx</option>
+          <option value="DHL">DHL (credentials pending)</option>
         </select>
         <input
           value={trackingNumber}
@@ -899,12 +915,18 @@ function CarrierTrackingSection() {
         />
         <button
           onClick={submitLookup}
-          disabled={activeMutation.isPending}
+          disabled={activeMutation.isPending || isDhl}
           className="inline-flex items-center justify-center gap-2 rounded-lg bg-sky-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-sky-500 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {activeMutation.isPending ? <><Spinner className="h-4 w-4" /> Checking {carrier}…</> : 'Check tracking'}
         </button>
       </div>
+
+      {isDhl && (
+        <div className="rounded-lg border border-amber-700/40 bg-amber-950/30 p-3 text-xs text-amber-200" role="status">
+          DHL is ready in this Test AI carrier selector. Add DHL API credentials to enable read-only lookup results.
+        </div>
+      )}
 
       {activeMutation.isError && (
         <div className="rounded-lg border border-red-700/40 bg-red-950/30 p-3 text-xs text-red-300" role="alert">
