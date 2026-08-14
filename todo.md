@@ -342,8 +342,8 @@
 - [x] Increase both animated Tradebilia SVG wordmark text elements to 125 units while preserving the required viewBox and aspect-ratio contract.
 - [x] Reposition and verify the rotating category label so every label remains distinct from TRADE and visible at responsive breakpoints.
 - [x] Add regression coverage and visually validate the 125-unit wordmark across shared layouts.
-- [ ] Commit, push, and publish the validated 125-unit animated wordmark change.
+- [x] Commit, push, and publish the validated 125-unit animated wordmark change.
 - [x] Correct the Coming Soon hero background sizing so the reused homepage image preserves its intended proportions instead of appearing stretched.
 - [x] Revalidate the 125-unit wordmark and hero presentation at desktop and mobile breakpoints after the background correction.
-- [ ] Commit, push, and publish the validated proportion-preserving hero refinement.
-- [ ] Investigate and resolve the report that the Coming Soon page still appears unchanged despite the 125-unit wordmark update.
+- [x] Commit, push, and publish the validated proportion-preserving hero refinement.
+- [x] Investigate and resolve the report that the Coming Soon page still appears unchanged despite the 125-unit wordmark update.
