@@ -362,3 +362,8 @@
 - [x] Preserve a responsive animated-logo presentation and simplify the signup path for the redesigned pre-launch experience.
 - [x] Add regression coverage and visually validate the redesigned Coming Soon page at desktop and mobile breakpoints.
 - [x] Commit, push, and publish the validated Coming Soon page redesign.
+- [x] Show all six collector categories clearly in the Coming Soon page category strip at every responsive breakpoint.
+- [x] Change the top positioning line to “The Collectors Trading Exchange.”
+- [x] Enlarge the animated Tradebilia logo and make the spinning wheel proportionate to the wordmark, matching the main-homepage relationship.
+- [x] Add clear Coming Soon copy that emphasizes a more organized way for collectors to trade.
+- [ ] Add regression coverage, visually validate desktop and mobile, then commit, push, and publish the refined page.

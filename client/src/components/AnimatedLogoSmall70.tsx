@@ -21,12 +21,14 @@ type AnimatedLogoSmall70Props = {
   fontSize?: number;
   wordmarkColor?: string;
   neutralCategoryColor?: string;
+  wheelScale?: number;
 };
 
 const AnimatedLogoSmall70 = ({
   fontSize = DEFAULT_WORDMARK_FONT_SIZE,
   wordmarkColor = "#FFFFFF",
   neutralCategoryColor = wordmarkColor,
+  wheelScale = 1,
 }: AnimatedLogoSmall70Props) => {
   const [index, setIndex] = useState(0);
 
@@ -45,6 +47,9 @@ const AnimatedLogoSmall70 = ({
     : undefined;
   const categoryWordX = isLargeWordmark ? LARGE_CATEGORY_WORD_X : 348;
   const categoryColor = currentCategory.name === "BILIA" ? neutralCategoryColor : currentCategory.color;
+  const wheelTransform = wheelScale === 1
+    ? "translate(6, 82.5) scale(0.441)"
+    : `translate(6, 82.5) scale(0.441) translate(104, 110) scale(${wheelScale}) translate(-104, -110)`;
 
   return (
     <div className="flex h-full items-center justify-center font-sans py-0" aria-label={`Trade ${currentCategory.name}`}>
@@ -65,7 +70,7 @@ const AnimatedLogoSmall70 = ({
           </filter>
         </defs>
 
-        <g transform="translate(6, 82.5) scale(0.441)">
+        <g transform={wheelTransform}>
           <g filter="url(#wheelGlowSmall)">
           <animateTransform attributeName="transform" type="rotate" from="0 104 110" to="360 104 110" dur="12s" repeatCount="indefinite" />
           <g transform="translate(104, 71) scale(0.82, 1)" fill="#A97AD7"><polygon points="-7,-2.5 -8.5,-2 -42,-35.5 -41.5,-36 -21.5,-36 -21,-36.5 -21,-71.5 -20.5,-72 -7.5,-72 -7,-71.5 -7,-2.5" /><polygon points="20.5,0 7.5,0 7,-0.5 7,-69.5 7.5,-70 8.5,-70 42,-36.5 41.5,-36 21.5,-36 21,-35.5 21,-0.5 20.5,0" /></g>
