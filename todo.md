@@ -350,4 +350,4 @@
 - [x] Remove the reused homepage hero background from the Coming Soon page.
 - [x] Reposition the 125-unit animated SVG so the visible Tradebilia wordmark is centered rather than offset.
 - [x] Add regression coverage and visually verify the simplified Coming Soon presentation on desktop and mobile.
-- [ ] Commit, push, and publish the validated background removal and wordmark alignment refinement.
+- [x] Commit, push, and publish the validated background removal and wordmark alignment refinement.
