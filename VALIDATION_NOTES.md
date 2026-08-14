@@ -291,3 +291,5 @@ After the propagation interval, the cache-busting production `/api/ups/callback`
 ## UPS carrier selector development check
 
 The authenticated development Test AI page rendered the unified Carrier Tracking Test below the sold-item analysis controls. Switching the selector from USPS to UPS updated the input placeholder and accessible label to **Enter UPS tracking number** without initiating a lookup or changing Tradebilia shipment, trade, or notification data.
+
+The initial and post-propagation production Test AI checks for checkpoint `7e8a0b57` continued to serve the preceding USPS-only carrier panel. Those stale responses are not accepted as production validation; a deployment refresh is required before the unified USPS/UPS selector can be treated as live.
