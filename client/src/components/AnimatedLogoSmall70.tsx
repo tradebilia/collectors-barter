@@ -12,7 +12,16 @@ const categories = [
   { name: "TOYS", color: "#FF69B4", duration: 3000 },
 ];
 
-const AnimatedLogoSmall70 = () => {
+const DEFAULT_WORDMARK_FONT_SIZE = 60;
+const LARGE_WORDMARK_FONT_SIZE = 125;
+const LARGE_CATEGORY_WORD_X = 580;
+const LARGE_CATEGORY_TEXT_LENGTH = 680;
+
+type AnimatedLogoSmall70Props = {
+  fontSize?: number;
+};
+
+const AnimatedLogoSmall70 = ({ fontSize = DEFAULT_WORDMARK_FONT_SIZE }: AnimatedLogoSmall70Props) => {
   const [index, setIndex] = useState(0);
 
   useEffect(() => {
@@ -24,6 +33,11 @@ const AnimatedLogoSmall70 = () => {
   }, [index]);
 
   const currentCategory = categories[index];
+  const isLargeWordmark = fontSize >= LARGE_WORDMARK_FONT_SIZE;
+  const categoryTextLength = isLargeWordmark && currentCategory.name.length >= 10
+    ? LARGE_CATEGORY_TEXT_LENGTH
+    : undefined;
+  const categoryWordX = isLargeWordmark ? LARGE_CATEGORY_WORD_X : 348;
 
   return (
     <div className="flex h-full items-center justify-center font-sans py-0" aria-label={`Trade ${currentCategory.name}`}>
@@ -57,8 +71,19 @@ const AnimatedLogoSmall70 = () => {
         </g>
 
         <line x1="114" y1="81.3" x2="114" y2="178.5" stroke="white" strokeWidth="2.55" strokeLinecap="round" />
-        <text x="132" y="157.5" fontFamily="Montserrat, sans-serif" fontSize="60" fontWeight="600" fill="white">TRADE</text>
-        <text x="348" y="157.5" fontFamily="Montserrat, sans-serif" fontSize="60" fontWeight="600" fill={currentCategory.color}>{currentCategory.name}</text>
+        <text x="132" y="157.5" fontFamily="Montserrat, sans-serif" fontSize={fontSize} fontWeight="600" fill="white">TRADE</text>
+        <text
+          x={categoryWordX}
+          y="157.5"
+          fontFamily="Montserrat, sans-serif"
+          fontSize={fontSize}
+          fontWeight="600"
+          fill={currentCategory.color}
+          textLength={categoryTextLength}
+          lengthAdjust={categoryTextLength ? "spacingAndGlyphs" : undefined}
+        >
+          {currentCategory.name}
+        </text>
       </svg>
     </div>
   );
