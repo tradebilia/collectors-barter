@@ -76,6 +76,40 @@ The USPS maintained API examples state that a CRID and MID are needed to obtain 
 
 [14] [USPS Official API Examples](https://github.com/USPS/api-examples)
 
+## GitHub and Aggregator Assessment
+
+GitHub contains useful tracking **helpers**, but no legitimate free repository can grant access to every carrier’s private tracking data merely by supplying a universal token. The maintained `stores-com/bloodhound` package normalizes several carrier responses, but its own configuration requires carrier-specific credentials, including a DHL API key, FedEx key and secret, UPS client credentials, and a USPS user ID. [16]
+
+GitHub packages such as `jkeen/tracking_number`, `darkain/php-tracking-urls`, and `philipnewcomer/linkify-tracking` are useful for detecting a tracking-number format or generating an official carrier tracking URL. They do not retrieve live tracking events and therefore require no carrier API access. [17] [18] [19]
+
+AfterShip is a legitimate multi-carrier aggregation service. Its current official documentation requires an AfterShip API key, and creating a tracking record causes AfterShip to retrieve its own carrier updates. Its current pricing lists Tracking Essentials from $29/month and API/webhook access under Premium from $59/month; this is not a free production API path. [20] [21]
+
+[16] [stores-com/bloodhound](https://github.com/stores-com/bloodhound)
+
+[17] [jkeen/tracking_number](https://github.com/jkeen/tracking_number)
+
+[18] [darkain/php-tracking-urls](https://github.com/darkain/php-tracking-urls)
+
+[19] [philipnewcomer/linkify-tracking](https://github.com/philipnewcomer/linkify-tracking)
+
+[20] [AfterShip Tracking API Quick Start](https://www.aftership.com/docs/tracking/quickstart/api-quick-start)
+
+[21] [AfterShip Tracking Pricing](https://www.aftership.com/pricing/tracking)
+
+EasyPost is another legitimate universal API, but not a free standalone tracker for packages Tradebilia did not ship: its 2026 pricing lists basic tracking at $0.01–$0.03 per shipment, and its support documentation lists $0.03 for a standalone USPS tracker and $0.02 for other standalone carrier trackers. Trackers are free only for labels bought through EasyPost. [22] [23]
+
+Shippo similarly lists $0.01 per unique tracking number created outside Shippo, while tracking is included for shipments created through Shippo. [24] 17TRACK’s current public pricing presents a 14-day trial and paid plans starting at $9/month; its API quota page lists paid volume packs. [25] [26]
+
+[22] [EasyPost Pricing](https://www.easypost.com/pricing/)
+
+[23] [EasyPost Billing & Payments](https://support.easypost.com/hc/en-us/articles/360042414212-Billing-Payments)
+
+[24] [Shippo Subscription Plan Overview](https://support.goshippo.com/hc/en-us/articles/360003855652-Shippo-Subscription-Plan-Overview)
+
+[25] [17TRACK Pricing](https://www.17track.com/en/pricing)
+
+[26] [17TRACK Tracking API](https://www.17track.net/en/api)
+
 ## Tracking Access Control Tech Sheet — Self-Service Paths
 
 The official USPS **Package Tracking Access Control** Tech Sheet identifies two distinct authorization paths that were not fully exposed in the HTML API Access summary:

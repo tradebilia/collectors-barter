@@ -298,6 +298,9 @@
 - [x] Provide a plain-language explanation of USPS public tracking versus third-party Tracking API access controls.
 - [x] Evaluate the supplied USPS Track & Confirm page for a viable current API or tracking alternative.
 - [x] Conduct a primary-source deep review of Business Portal, Business Customer Gateway, and merchant-platform alternatives to USPS email-based MID authorization.
+- [x] Clarify USPS Tracking API access requirements by relationship to the sender MID.
+- [x] Provide the exact USPS provider-access onboarding steps for Tradebilia’s third-party package tracking use case.
+- [x] Research legitimate GitHub-based multi-carrier tracking libraries and determine whether any free token-only option supports Tradebilia’s use case.
 - [x] Define and reserve a production UPS OAuth callback route that Tradebilia can handle before UPS credentials are configured.
 - [ ] Verify the UPS-specific OAuth redirect URI requirement and register the matching Tradebilia callback contract.
 - [x] Complete a primary-source USPS review of Tracking API MID/IP Agreement access requirements and alternative activation paths.
