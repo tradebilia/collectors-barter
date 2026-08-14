@@ -17,7 +17,27 @@ if (!tokenResponse.ok || !tokenPayload?.access_token) {
   process.exit(1);
 }
 
-const trackingResponse = await fetch("https://apis.usps.com/tracking/v3r2/tracking", {
+async function summarizeResponse(name, response) {
+  const payload = await response.json().catch(() => null);
+  const first = Array.isArray(payload) ? payload[0] : payload;
+  const errorEntries = Array.isArray(first?.errors) ? first.errors : Array.isArray(payload?.errors) ? payload.errors : [];
+  const topLevelError = payload?.error && typeof payload.error === "object"
+    ? Object.fromEntries(Object.entries(payload.error).map(([key, value]) => [key, typeof value === "string" ? value.replaceAll(trackingNumber, "[tracking-number]") : value]))
+    : payload?.error ?? null;
+
+  return {
+    endpoint: name,
+    status: response.status,
+    responseType: Array.isArray(payload) ? "array" : typeof payload,
+    topLevelKeys: payload && !Array.isArray(payload) ? Object.keys(payload) : [],
+    firstEntryKeys: first && typeof first === "object" ? Object.keys(first) : [],
+    errorCodes: errorEntries.map((entry) => entry?.code ?? entry?.errorCode ?? entry?.status).filter(Boolean),
+    errorLabels: errorEntries.map((entry) => entry?.message ?? entry?.errorDescription ?? entry?.title).filter(Boolean).map((value) => String(value).replaceAll(trackingNumber, "[tracking-number]")),
+    topLevelError,
+  };
+}
+
+const currentResponse = await fetch("https://apis.usps.com/tracking/v3r2/tracking", {
   method: "POST",
   headers: {
     Authorization: `Bearer ${tokenPayload.access_token}`,
@@ -26,19 +46,17 @@ const trackingResponse = await fetch("https://apis.usps.com/tracking/v3r2/tracki
   },
   body: JSON.stringify([{ trackingNumber }]),
 });
-const payload = await trackingResponse.json().catch(() => null);
-const first = Array.isArray(payload) ? payload[0] : payload;
-const errorEntries = Array.isArray(first?.errors) ? first.errors : Array.isArray(payload?.errors) ? payload.errors : [];
-const topLevelError = payload?.error && typeof payload.error === "object"
-  ? Object.fromEntries(Object.entries(payload.error).map(([key, value]) => [key, typeof value === "string" ? value.replaceAll(trackingNumber, "[tracking-number]") : value]))
-  : payload?.error ?? null;
+
+const legacyResponse = await fetch(`https://apis.usps.com/tracking/v3/tracking/${encodeURIComponent(trackingNumber)}?expand=SUMMARY`, {
+  headers: {
+    Authorization: `Bearer ${tokenPayload.access_token}`,
+    Accept: "application/json",
+  },
+});
 
 console.log(JSON.stringify({
-  trackingStatus: trackingResponse.status,
-  responseType: Array.isArray(payload) ? "array" : typeof payload,
-  topLevelKeys: payload && !Array.isArray(payload) ? Object.keys(payload) : [],
-  firstEntryKeys: first && typeof first === "object" ? Object.keys(first) : [],
-  errorCodes: errorEntries.map((entry) => entry?.code ?? entry?.errorCode ?? entry?.status).filter(Boolean),
-  errorLabels: errorEntries.map((entry) => entry?.message ?? entry?.errorDescription ?? entry?.title).filter(Boolean).map((value) => String(value).replaceAll(trackingNumber, "[tracking-number]")),
-  topLevelError,
+  endpoints: [
+    await summarizeResponse("current-v3r2", currentResponse),
+    await summarizeResponse("legacy-v3", legacyResponse),
+  ],
 }));

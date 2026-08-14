@@ -289,6 +289,15 @@
 - [x] Correct the USPS tracking request and error presentation, then validate the reported tracking number in development and production.
 - [x] Diagnose the USPS Tracking v3r2 failure for a verified valid tracking number without logging private data or credentials.
 - [ ] Obtain USPS Tracking API authorization for the configured MID through the USPS IP Agreement process.
+- [ ] Complete USPS service-provider access steps for third-party tracking numbers, including required MID authorization and agreement enrollment.
+- [ ] Add an official USPS.com tracking-link fallback for member-supplied tracking numbers, pending approval.
+- [x] Provide the verified USPS service-provider access request instructions for third-party Tracking API use.
+- [x] Audit USPS self-service product enrollment, claims refresh, and Business Portal permission steps for any missing Tracking API activation requirement.
+- [x] Compare the USPS API catalog’s Tracking offering with current access-control and enrollment instructions.
+- [x] Reconcile the supplied USPS Tracking endpoint guidance with the current third-party authorization requirement.
+- [x] Provide a plain-language explanation of USPS public tracking versus third-party Tracking API access controls.
+- [x] Evaluate the supplied USPS Track & Confirm page for a viable current API or tracking alternative.
+- [x] Conduct a primary-source deep review of Business Portal, Business Customer Gateway, and merchant-platform alternatives to USPS email-based MID authorization.
 - [x] Define and reserve a production UPS OAuth callback route that Tradebilia can handle before UPS credentials are configured.
 - [ ] Verify the UPS-specific OAuth redirect URI requirement and register the matching Tradebilia callback contract.
 - [x] Complete a primary-source USPS review of Tracking API MID/IP Agreement access requirements and alternative activation paths.
