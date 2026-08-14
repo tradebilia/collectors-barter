@@ -366,4 +366,4 @@
 - [x] Change the top positioning line to “The Collectors Trading Exchange.”
 - [x] Enlarge the animated Tradebilia logo and make the spinning wheel proportionate to the wordmark, matching the main-homepage relationship.
 - [x] Add clear Coming Soon copy that emphasizes a more organized way for collectors to trade.
-- [ ] Add regression coverage, visually validate desktop and mobile, then commit, push, and publish the refined page.
+- [x] Add regression coverage, visually validate desktop and mobile, then commit, push, and publish the refined page.
