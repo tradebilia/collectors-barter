@@ -19,9 +19,15 @@ const LARGE_CATEGORY_TEXT_LENGTH = 680;
 
 type AnimatedLogoSmall70Props = {
   fontSize?: number;
+  wordmarkColor?: string;
+  neutralCategoryColor?: string;
 };
 
-const AnimatedLogoSmall70 = ({ fontSize = DEFAULT_WORDMARK_FONT_SIZE }: AnimatedLogoSmall70Props) => {
+const AnimatedLogoSmall70 = ({
+  fontSize = DEFAULT_WORDMARK_FONT_SIZE,
+  wordmarkColor = "#FFFFFF",
+  neutralCategoryColor = wordmarkColor,
+}: AnimatedLogoSmall70Props) => {
   const [index, setIndex] = useState(0);
 
   useEffect(() => {
@@ -38,6 +44,7 @@ const AnimatedLogoSmall70 = ({ fontSize = DEFAULT_WORDMARK_FONT_SIZE }: Animated
     ? LARGE_CATEGORY_TEXT_LENGTH
     : undefined;
   const categoryWordX = isLargeWordmark ? LARGE_CATEGORY_WORD_X : 348;
+  const categoryColor = currentCategory.name === "BILIA" ? neutralCategoryColor : currentCategory.color;
 
   return (
     <div className="flex h-full items-center justify-center font-sans py-0" aria-label={`Trade ${currentCategory.name}`}>
@@ -70,15 +77,15 @@ const AnimatedLogoSmall70 = ({ fontSize = DEFAULT_WORDMARK_FONT_SIZE }: Animated
           </g>
         </g>
 
-        <line x1="114" y1="81.3" x2="114" y2="178.5" stroke="white" strokeWidth="2.55" strokeLinecap="round" />
-        <text x="132" y="157.5" fontFamily="Montserrat, sans-serif" fontSize={fontSize} fontWeight="600" fill="white">TRADE</text>
+        <line x1="114" y1="81.3" x2="114" y2="178.5" stroke={wordmarkColor} strokeWidth="2.55" strokeLinecap="round" />
+        <text x="132" y="157.5" fontFamily="Montserrat, sans-serif" fontSize={fontSize} fontWeight="600" fill={wordmarkColor}>TRADE</text>
         <text
           x={categoryWordX}
           y="157.5"
           fontFamily="Montserrat, sans-serif"
           fontSize={fontSize}
           fontWeight="600"
-          fill={currentCategory.color}
+          fill={categoryColor}
           textLength={categoryTextLength}
           lengthAdjust={categoryTextLength ? "spacingAndGlyphs" : undefined}
         >
