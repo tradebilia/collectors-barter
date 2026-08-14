@@ -338,4 +338,4 @@
 - [x] Add an admin-only Pre-Launch Email workspace showing opted-in Coming Soon recipients from Resend Contacts.
 - [x] Add a Pre-Launch Email composer that prepares a branded status update and requires explicit confirmation before any recipient delivery.
 - [x] Add regression coverage and visually validate the revised Coming Soon hero and the Admin Pre-Launch Email workspace.
-- [ ] Commit, push, and publish the validated Pre-Launch Email and Coming Soon enhancement.
+- [x] Commit, push, and publish the validated Pre-Launch Email and Coming Soon enhancement.
