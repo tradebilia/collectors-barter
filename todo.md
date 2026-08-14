@@ -315,4 +315,5 @@
 - [x] Add regression coverage and validate the FedEx/DHL carrier-tracking expansion in development and production.
 - [x] Evaluate compliant no-fee alternatives to paid USPS Tracking API access and document why public-site scraping is not used.
 - [x] Research and evaluate legitimate multi-carrier tracking providers that offer a current free API allowance for Tradebilia.
+- [x] Conduct a broad official-source, GitHub, Reddit, and independent-source review of legitimate free or low-volume multi-carrier tracking options.
 - [ ] Record user-confirmed live FedEx tracking success in the carrier validation record.

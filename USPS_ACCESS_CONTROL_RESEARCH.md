@@ -184,3 +184,37 @@ The only verified currently free API allowance found is 17TRACK’s 100 newly re
 [37] [Track123 Tracking API](https://www.track123.com/api)
 
 [38] [AfterShip Tracking Pricing](https://www.aftership.com/pricing/tracking)
+
+## 17TRACK Revalidation and USPS Limitation
+
+17TRACK’s current API documentation contains a more specific quota notice than its support page: effective January 7, 2026, newly registered accounts receive a **one-time allocation of 200 free tracking numbers** after the previous recurring 100-free-number policy was discontinued. Its support article still states that 100 free quotas are provided monthly, so Tradebilia should confirm the actual allocation in the 17TRACK dashboard before relying on either amount. [39] [31]
+
+More importantly, 17TRACK’s USPS policy page states that, from April 1, 2026, USPS queries must be tied to a verified shipping relationship and authorized Mailer ID. It says off-chain public lookup / arbitrary IDs may be throttled, charged, or blocked, even through 17TRACK. Therefore, 17TRACK does not eliminate the underlying USPS authorization issue for Tradebilia’s arbitrary member-entered USPS tracking numbers. [40]
+
+[39] [17TRACK API Documentation](https://api.17track.net/en/doc)
+
+[40] [17TRACK USPS Tracking Changes](https://www.17track.net/en/uspsTracking)
+
+## Additional Candidate Requiring Direct Validation
+
+Broad search surfaced **WhereParcel**, which claims a unified USPS, UPS, FedEx, and DHL API and a three-month free period. A Reddit community result also claims a 1,000-tracking monthly free allowance. These claims are provider-controlled marketing/community statements and have **not** yet been verified against complete official pricing, terms, API documentation, or an actual account. WhereParcel should not be selected until that direct validation is complete. [41] [42]
+
+[41] [WhereParcel](https://whereparcel.com/)
+
+[42] [WhereParcel Reddit Community](https://www.reddit.com/r/whereparcel/)
+
+Direct review shows WhereParcel is **not** a permanent free API option. Its site advertises 10,000 lookups per month for three months only in exchange for a promotional post, and otherwise offers a seven-day trial followed by paid plans beginning at $49/month. The site also contains inconsistent carrier counts (64+ live carriers in one section, 500+ in documentation) and lacks an accessible published terms page at the expected URL. It should be excluded from the free-option shortlist until its legal and service details are independently established. [41] [43]
+
+[43] [WhereParcel Documentation](https://whereparcel.com/docs)
+
+## Direct Review of Tracktry and CWILL Post-Purchase
+
+**Tracktry** lists a free plan with 50 credits per month, but its own pricing page places Tracking API and webhooks in the paid Basic plan. Its API pages also link back to TrackingMore resources, so it is not a standalone free API solution for Tradebilia. [44] [45]
+
+**CWILL Post-Purchase** (formerly ParcelPanel) lists a free plan with 20 monthly credits across 1,651 carriers, including USPS, UPS, FedEx, and DHL. However, its Developer API and webhook access are listed only on the paid Professional plan. It is a credible no-code post-purchase product, not a free general-purpose API for the Tradebilia implementation. [46]
+
+[44] [Tracktry Pricing](https://www.tracktry.com/pricing)
+
+[45] [Tracktry Tracking API](https://www.tracktry.com/global-tracking-api.html)
+
+[46] [CWILL Post-Purchase Pricing](https://www.parcelpanel.com/pricing/)
