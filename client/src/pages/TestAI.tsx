@@ -848,12 +848,14 @@ function CarrierTrackingSection() {
   const uspsLookupMutation = trpc.testAI.lookupUspsTracking.useMutation();
   const upsLookupMutation = trpc.testAI.lookupUpsTracking.useMutation();
   const fedexLookupMutation = trpc.testAI.lookupFedexTracking.useMutation();
-  const isDhl = carrier === 'DHL';
+  const dhlLookupMutation = trpc.testAI.lookupDhlTracking.useMutation();
   const activeMutation = carrier === 'USPS'
     ? uspsLookupMutation
     : carrier === 'UPS'
       ? upsLookupMutation
-      : fedexLookupMutation;
+      : carrier === 'FedEx'
+        ? fedexLookupMutation
+        : dhlLookupMutation;
 
   const submitLookup = () => {
     const value = trackingNumber.trim();
@@ -861,15 +863,13 @@ function CarrierTrackingSection() {
       toast.error(`Enter a ${carrier} tracking number`);
       return;
     }
-    if (isDhl) {
-      toast.info('DHL tracking is ready for credentials. Add a DHL API key and secret to enable this carrier.');
-      return;
-    }
     const mutation = carrier === 'USPS'
       ? uspsLookupMutation
       : carrier === 'UPS'
         ? upsLookupMutation
-        : fedexLookupMutation;
+        : carrier === 'FedEx'
+          ? fedexLookupMutation
+          : dhlLookupMutation;
     mutation.mutate({ trackingNumber: value }, {
       onError: (error) => toast.error(error.message),
     });
@@ -900,7 +900,7 @@ function CarrierTrackingSection() {
           <option value="USPS">USPS</option>
           <option value="UPS">UPS</option>
           <option value="FedEx">FedEx</option>
-          <option value="DHL">DHL (credentials pending)</option>
+          <option value="DHL">DHL</option>
         </select>
         <input
           value={trackingNumber}
@@ -915,18 +915,12 @@ function CarrierTrackingSection() {
         />
         <button
           onClick={submitLookup}
-          disabled={activeMutation.isPending || isDhl}
+          disabled={activeMutation.isPending}
           className="inline-flex items-center justify-center gap-2 rounded-lg bg-sky-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-sky-500 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {activeMutation.isPending ? <><Spinner className="h-4 w-4" /> Checking {carrier}…</> : 'Check tracking'}
         </button>
       </div>
-
-      {isDhl && (
-        <div className="rounded-lg border border-amber-700/40 bg-amber-950/30 p-3 text-xs text-amber-200" role="status">
-          DHL is ready in this Test AI carrier selector. Add DHL API credentials to enable read-only lookup results.
-        </div>
-      )}
 
       {activeMutation.isError && (
         <div className="rounded-lg border border-red-700/40 bg-red-950/30 p-3 text-xs text-red-300" role="alert">

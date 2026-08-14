@@ -8,6 +8,7 @@ import { invokeLLM } from "./_core/llm";
 import { lookupUspsTracking } from "./uspsTracking";
 import { lookupUpsTracking } from "./upsTracking";
 import { lookupFedexTracking } from "./fedexTracking";
+import { lookupDhlTracking } from "./dhlTracking";
 
 // ─── Shared eBay helpers (mirrors tradeFlowRouter logic) ────────────────────
 async function getEbayAppToken(): Promise<string | null> {
@@ -185,6 +186,15 @@ export const testAIRouter = router({
     .mutation(async ({ ctx, input }) => {
       if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
       return lookupFedexTracking(input.trackingNumber);
+    }),
+
+  lookupDhlTracking: protectedProcedure
+    .input(z.object({
+      trackingNumber: z.string().trim().min(10).max(40),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+      return lookupDhlTracking(input.trackingNumber);
     }),
 
   // Fetch eBay active listings + computed metrics for a single item
