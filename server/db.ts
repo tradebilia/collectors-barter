@@ -29,6 +29,7 @@ import { storagePut } from "./storage";
 import { resolveTradebiliaContactEmail } from "./tradebiliaContactEmail";
 import { resolveDirectMessageDisplayName } from "./directMessageDisplayName";
 import { resolveMemberStanding } from "./memberDirectoryStanding";
+import { makeRequest, type GeocodingResult } from "./_core/map";
 import bcrypt from 'bcryptjs';
 import { encrypt } from "./_core/crypto";
 
@@ -52,6 +53,52 @@ const categoryLabels: Record<(typeof collectibleCategories)[number], string> = {
   autographs: "Autographs",
   disney_pins: "Disney Pins",
 };
+
+type PrivateLocation = {
+  contactAddress: string | null;
+  contactTown: string | null;
+  contactState: string | null;
+  contactZipCode: string | null;
+  contactCountry: string | null;
+};
+
+type Coordinates = { lat: number; lng: number };
+
+const privateGeocodeCache = new Map<string, Coordinates | null>();
+
+function locationQuery(location: PrivateLocation) {
+  return [location.contactAddress, location.contactTown, location.contactState, location.contactZipCode, location.contactCountry]
+    .map(part => part?.trim())
+    .filter((part): part is string => Boolean(part))
+    .join(", ");
+}
+
+async function geocodePrivateLocation(location: PrivateLocation): Promise<Coordinates | null> {
+  const query = locationQuery(location);
+  if (!query) return null;
+  if (privateGeocodeCache.has(query)) return privateGeocodeCache.get(query) ?? null;
+
+  try {
+    const result = await makeRequest<GeocodingResult>("/maps/api/geocode/json", { address: query });
+    const coordinates = result.status === "OK" ? result.results[0]?.geometry.location ?? null : null;
+    privateGeocodeCache.set(query, coordinates);
+    return coordinates;
+  } catch (error) {
+    console.warn("[MemberDirectory] Private location lookup failed:", error instanceof Error ? error.message : error);
+    privateGeocodeCache.set(query, null);
+    return null;
+  }
+}
+
+function milesBetween(a: Coordinates, b: Coordinates) {
+  const earthRadiusMiles = 3958.7613;
+  const toRadians = (degrees: number) => (degrees * Math.PI) / 180;
+  const latitudeDelta = toRadians(b.lat - a.lat);
+  const longitudeDelta = toRadians(b.lng - a.lng);
+  const value = Math.sin(latitudeDelta / 2) ** 2
+    + Math.cos(toRadians(a.lat)) * Math.cos(toRadians(b.lat)) * Math.sin(longitudeDelta / 2) ** 2;
+  return earthRadiusMiles * 2 * Math.atan2(Math.sqrt(value), Math.sqrt(1 - value));
+}
 
 const conditionLabels: Record<(typeof itemConditions)[number], string> = {
   mint: "Mint",
@@ -1218,13 +1265,15 @@ export async function searchMembers(input: {
   categories?: (typeof collectibleCategories)[number][];
   verifiedMerchantsOnly?: boolean;
   minRating?: number;
+  minReviewCount?: number;
   minCompletedTrades?: number;
   activeListingsOnly?: boolean;
   listingValueMin?: number;
   listingValueMax?: number;
   memberSince?: "past_year" | "past_three_years" | "longstanding";
-  sort?: "best_match" | "best_rated" | "most_trades" | "most_listings" | "newest";
-}) {
+  distanceMiles?: number;
+  sort?: "best_match" | "best_rated" | "most_trades" | "most_listings" | "newest" | "nearest";
+}, originUserId?: number) {
   const db = await requireDb();
 
   const whereClauses: any[] = [];
@@ -1234,8 +1283,8 @@ export async function searchMembers(input: {
     const memberId = Number(trimmedQuery);
     whereClauses.push(
       Number.isInteger(memberId) && memberId > 0
-        ? or(eq(userProfiles.userId, memberId), like(userProfiles.displayName, `%${trimmedQuery}%`))
-        : like(userProfiles.displayName, `%${trimmedQuery}%`),
+        ? or(eq(userProfiles.userId, memberId), like(userProfiles.displayName, `%${trimmedQuery}%`), like(users.username, `%${trimmedQuery}%`))
+        : or(like(userProfiles.displayName, `%${trimmedQuery}%`), like(users.username, `%${trimmedQuery}%`)),
     );
   }
 
@@ -1251,6 +1300,9 @@ export async function searchMembers(input: {
       bio: userProfiles.bio,
       contactTown: userProfiles.contactTown,
       contactState: userProfiles.contactState,
+      contactAddress: userProfiles.contactAddress,
+      contactZipCode: userProfiles.contactZipCode,
+      contactCountry: userProfiles.contactCountry,
       profileCreatedAt: userProfiles.createdAt,
       merchantVerified: users.merchantVerified,
       username: users.username,
@@ -1348,6 +1400,13 @@ export async function searchMembers(input: {
       isVerifiedMerchant: m.merchantVerified === 1,
       standingKey: standing.key,
       verificationLevel: standing.label,
+      privateLocation: {
+        contactAddress: m.contactAddress,
+        contactTown: m.contactTown,
+        contactState: m.contactState,
+        contactZipCode: m.contactZipCode,
+        contactCountry: m.contactCountry,
+      },
     };
   });
 
@@ -1358,6 +1417,7 @@ export async function searchMembers(input: {
     if (input.verifiedMerchantsOnly && !member.isVerifiedMerchant) return false;
     if (input.categories?.length && !input.categories.some(category => member.topCategories.includes(category))) return false;
     if (input.minRating && member.averageRating < input.minRating) return false;
+    if (input.minReviewCount && member.reviewCount < input.minReviewCount) return false;
     if (input.minCompletedTrades && member.completedTradeCount < input.minCompletedTrades) return false;
     if (input.activeListingsOnly && member.listingCount === 0) return false;
     if (input.listingValueMin !== undefined && member.activeListingValue < input.listingValueMin) return false;
@@ -1368,13 +1428,44 @@ export async function searchMembers(input: {
     return true;
   });
 
+  let distanceFilteredMembers = filteredMembers.map(member => ({ ...member, distanceMiles: null as number | null }));
+  if (input.distanceMiles !== undefined) {
+    if (!originUserId) throw new Error("Sign in to filter members by distance.");
+    const originProfile = await db
+      .select({
+        contactAddress: userProfiles.contactAddress,
+        contactTown: userProfiles.contactTown,
+        contactState: userProfiles.contactState,
+        contactZipCode: userProfiles.contactZipCode,
+        contactCountry: userProfiles.contactCountry,
+      })
+      .from(userProfiles)
+      .where(eq(userProfiles.userId, originUserId))
+      .limit(1);
+    const originCoordinates = originProfile[0] ? await geocodePrivateLocation(originProfile[0]) : null;
+    if (!originCoordinates) throw new Error("Add a saved city, state, or ZIP code to use the distance filter.");
+
+    const memberCoordinates = await Promise.all(distanceFilteredMembers.map(async member => ({
+      userId: member.userId,
+      coordinates: await geocodePrivateLocation(member.privateLocation),
+    })));
+    const coordinatesByUserId = new Map(memberCoordinates.map(result => [result.userId, result.coordinates]));
+    distanceFilteredMembers = distanceFilteredMembers
+      .map(member => {
+        const coordinates = coordinatesByUserId.get(member.userId);
+        const distanceMiles = coordinates ? Math.round(milesBetween(originCoordinates, coordinates) * 10) / 10 : null;
+        return { ...member, distanceMiles };
+      })
+      .filter(member => member.distanceMiles !== null && member.distanceMiles <= input.distanceMiles!);
+  }
+
   const normalizedQuery = trimmedQuery.toLocaleLowerCase();
   const numericMemberId = Number(trimmedQuery);
-  const isExactMatch = (member: (typeof filteredMembers)[number]) =>
+  const isExactMatch = (member: (typeof distanceFilteredMembers)[number]) =>
     (Number.isInteger(numericMemberId) && numericMemberId > 0 && member.userId === numericMemberId)
     || member.displayName.trim().toLocaleLowerCase() === normalizedQuery
     || member.username?.trim().toLocaleLowerCase() === normalizedQuery;
-  const orderedMembers = [...filteredMembers].sort((a, b) => {
+  const orderedMembers = [...distanceFilteredMembers].sort((a, b) => {
     switch (input.sort ?? "best_match") {
       case "best_rated":
         return b.averageRating - a.averageRating || b.reviewCount - a.reviewCount || a.displayName.localeCompare(b.displayName);
@@ -1384,22 +1475,27 @@ export async function searchMembers(input: {
         return b.listingCount - a.listingCount || b.activeListingValue - a.activeListingValue || a.displayName.localeCompare(b.displayName);
       case "newest":
         return b.joinedAt - a.joinedAt || a.displayName.localeCompare(b.displayName);
+      case "nearest":
+        return (a.distanceMiles ?? Number.POSITIVE_INFINITY) - (b.distanceMiles ?? Number.POSITIVE_INFINITY) || a.displayName.localeCompare(b.displayName);
       default:
         return Number(isExactMatch(b)) - Number(isExactMatch(a)) || a.displayName.localeCompare(b.displayName);
     }
   });
 
   // Return object with members and rankings
-  const topRated = [...filteredMembers].sort((a, b) => (b.rating?.averageRating ?? 0) - (a.rating?.averageRating ?? 0)).slice(0, 10);
-  const mostActive = [...filteredMembers].sort((a, b) => (b.listingCount + b.completedTradeCount) - (a.listingCount + a.completedTradeCount)).slice(0, 10);
+  const topRated = [...distanceFilteredMembers].sort((a, b) => (b.rating?.averageRating ?? 0) - (a.rating?.averageRating ?? 0)).slice(0, 10);
+  const mostActive = [...distanceFilteredMembers].sort((a, b) => (b.listingCount + b.completedTradeCount) - (a.listingCount + a.completedTradeCount)).slice(0, 10);
   const uniqueRegions = Array.from(new Set(members.map(m => m.contactState).filter((region): region is string => Boolean(region)))).sort();
   const exactMatchMemberId = trimmedQuery ? orderedMembers.find(isExactMatch)?.userId ?? null : null;
   
   return {
-    members: orderedMembers,
-    rankings: { topRated, mostActive },
-    topRated: topRated,
-    mostActive: mostActive,
+    members: orderedMembers.map(({ privateLocation, ...member }) => member),
+    rankings: {
+      topRated: topRated.map(({ privateLocation, ...member }) => member),
+      mostActive: mostActive.map(({ privateLocation, ...member }) => member),
+    },
+    topRated: topRated.map(({ privateLocation, ...member }) => member),
+    mostActive: mostActive.map(({ privateLocation, ...member }) => member),
     regions: uniqueRegions,
     searchedQuery: trimmedQuery,
     exactMatchMemberId,
