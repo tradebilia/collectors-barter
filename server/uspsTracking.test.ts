@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatUspsTrackingResult, normalizeUspsTrackingNumber } from "./uspsTracking";
+import { formatUspsTrackingResult, getUspsTrackingErrorMessage, normalizeUspsTrackingNumber } from "./uspsTracking";
 
 describe("USPS tracking helpers", () => {
   it("normalizes a user-entered tracking number without accepting unsafe characters", () => {
@@ -30,5 +30,10 @@ describe("USPS tracking helpers", () => {
     });
     expect(JSON.stringify(result)).not.toContain("11743");
     expect(JSON.stringify(result)).not.toContain("Private Recipient");
+  });
+
+  it("explains an API authorization block without exposing the carrier response", () => {
+    expect(getUspsTrackingErrorMessage(403, { error: "MID is not authorized for this endpoint. Request access through IP Agreement." }))
+      .toBe("USPS Tracking API access has not yet been authorized for this USPS account. The tracking number may still work on USPS.com.");
   });
 });
