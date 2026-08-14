@@ -107,6 +107,7 @@ import { users, userProfiles, listings, deletedAccounts, tradeProposals, tradeMe
 import { eq, sql, desc, or, inArray, and } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { ONE_YEAR_MS } from "@shared/const";
+import { subscribeToLaunchUpdates } from "./launchUpdates";
 
 const uploadedImageSchema = z.object({
   name: z.string().max(200).optional().default(''),
@@ -195,6 +196,11 @@ export const appRouter = router({
   system: systemRouter,
   tradeFlow: tradeFlowRouter,
   testAI: testAIRouter,
+  launchUpdates: router({
+    subscribe: publicProcedure
+      .input(z.object({ email: z.string().trim().email().max(320) }))
+      .mutation(async ({ input }) => subscribeToLaunchUpdates(input.email)),
+  }),
   auth: router({
     me: publicProcedure.query(async opts => {
       const user = opts.ctx.user;

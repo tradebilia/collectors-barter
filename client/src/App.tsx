@@ -41,6 +41,7 @@ import WarRoom from "./pages/WarRoom";
 import TradePrintView from "./pages/TradePrintView";
 import TradeVoting from "./pages/TradeVoting";
 import TestAI from "./pages/TestAI";
+import ComingSoon from "./pages/ComingSoon";
 import {
   AllMostViewedRankings,
   AllMostFavoritedRankings,
@@ -52,6 +53,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
+      <Route path="/coming-soon" component={ComingSoon} />
       <Route path="/inventory">
         <ProtectedRoute>
           <Inventory />
