@@ -138,3 +138,17 @@ The Tech Sheet also confirms that the self-service **merchant/platform authoriza
 The Tech Sheet’s Service Providers section separately states that providers tracking packages for delegated MIDs, when they did not generate the label or manifest, are charged per tracking lookup. It explicitly identifies a public tracking website that accepts any USPS package as a paid tracking-data use case. This is the closest documented classification for Tradebilia’s current “member supplies any tracking number” design. [15]
 
 For that public-tracking use case, the Tech Sheet explicitly lists the same required sequence: contact USPS via **Email Us** to initiate the Order Form and IP Agreement process; establish an EPA; sign the Order Form and IP Agreement; receive Business Portal account configuration; and direct MID-owning merchants to the Business Portal to delegate tracking authorization. The guide does not identify a separate self-service route that skips the initial USPS contact for a public site tracking arbitrary USPS packages. [15]
+
+## Public-Site Scraping and No-Fee Alternative
+
+USPS’s current developer terms expressly prohibit using USPS services or `usps.com` for **datamining or datascraping purposes**, circumventing technology that protects content, and uses outside the shipping/mailing purposes permitted by the applicable license. [28] The general USPS website terms also limit the public site to personal, non-commercial use unless USPS expressly grants permission. [29]
+
+Tradebilia should therefore not scrape the USPS Tracking page or emulate an interactive browser session to bypass the carrier’s API authorization controls. Doing so risks account or IP blocking and conflicts with USPS’s published terms.
+
+The compliant no-fee alternative is a direct, user-initiated link to the official USPS Tracking page, which accepts a single tracking number and lets USPS render its own result. This preserves the familiar public tracking experience without copying or storing USPS tracking data in Tradebilia. [30]
+
+[28] [USPS Developer API Terms and Conditions](https://developers.usps.com/terms-and-conditions)
+
+[29] [USPS General Terms of Use](https://about.usps.com/termsofuse.htm)
+
+[30] [USPS Tracking](https://m.usps.com/m/TrackConfirmAction)

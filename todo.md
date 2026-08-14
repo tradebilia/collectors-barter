@@ -313,3 +313,5 @@
 - [x] Add FedEx and DHL carrier selections and server-side Test AI tracking adapters with no shipment or trade writes.
 - [x] Clearly present DHL as awaiting secure credentials while keeping the Test AI carrier interface ready.
 - [x] Add regression coverage and validate the FedEx/DHL carrier-tracking expansion in development and production.
+- [x] Evaluate compliant no-fee alternatives to paid USPS Tracking API access and document why public-site scraping is not used.
+- [ ] Record user-confirmed live FedEx tracking success in the carrier validation record.
