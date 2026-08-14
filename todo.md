@@ -330,3 +330,7 @@
 - [x] Add a clearly labeled Coming Soon Preview link to the Admin Dashboard and verify its access path.
 - [x] Run and record a final read-only Resend Contacts API credential validation after the Coming Soon workflow is complete.
 - [x] Use the existing category-cycling AnimatedLogoSmall70 component as the primary Coming Soon splash logo rather than a static wheel.
+- [x] Enlarge the Coming Soon animated logo by approximately 2× while preserving the full-width rotating category labels without clipping.
+- [x] Remove the requested top utility copy and bottom email-use disclaimer from the Coming Soon page.
+- [x] Add regression coverage and visually validate the refined Coming Soon layout on desktop and mobile.
+- [ ] Commit, push, and publish the validated Coming Soon refinement.
