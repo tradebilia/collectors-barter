@@ -25,13 +25,6 @@ export default function ComingSoon() {
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#060817] px-5 py-6 text-white sm:px-8 sm:py-8">
-      <div
-        aria-hidden="true"
-        className="absolute inset-x-0 top-0 h-64 bg-cover bg-center bg-no-repeat sm:h-72 lg:h-80"
-        style={{ backgroundImage: "url(/manus-storage/Background_23084d14.jpg)" }}
-      >
-        <div className="absolute inset-0 bg-gradient-to-b from-[#03081b]/50 to-[#050818]/80" />
-      </div>
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="absolute -left-20 top-16 h-72 w-72 rounded-full bg-[#29A8FF]/20 blur-3xl" />
         <div className="absolute -right-20 bottom-8 h-80 w-80 rounded-full bg-[#A97AD7]/25 blur-3xl" />
@@ -42,7 +35,7 @@ export default function ComingSoon() {
       <div className="relative mx-auto flex min-h-[calc(100vh-3rem)] max-w-6xl flex-col">
         <section className="mx-auto flex w-full max-w-4xl flex-1 flex-col items-center justify-center py-10 text-center sm:py-14">
           <div className="mb-7 flex h-36 w-full items-center justify-center overflow-visible sm:mb-10 sm:h-48 lg:h-60">
-            <div className="h-full w-[128%] max-w-none translate-x-[20%] scale-[1.1] transform-gpu sm:w-[118%] sm:translate-x-[43%] sm:scale-[1.35] lg:scale-[1.5]">
+            <div className="h-full w-[128%] max-w-none translate-x-[20%] scale-[1.1] transform-gpu sm:w-[118%] sm:translate-x-[25%] sm:scale-[1.35] lg:scale-[1.5]">
               <AnimatedLogoSmall70 fontSize={125} />
             </div>
           </div>

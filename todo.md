@@ -347,3 +347,7 @@
 - [x] Revalidate the 125-unit wordmark and hero presentation at desktop and mobile breakpoints after the background correction.
 - [x] Commit, push, and publish the validated proportion-preserving hero refinement.
 - [x] Investigate and resolve the report that the Coming Soon page still appears unchanged despite the 125-unit wordmark update.
+- [x] Remove the reused homepage hero background from the Coming Soon page.
+- [x] Reposition the 125-unit animated SVG so the visible Tradebilia wordmark is centered rather than offset.
+- [x] Add regression coverage and visually verify the simplified Coming Soon presentation on desktop and mobile.
+- [ ] Commit, push, and publish the validated background removal and wordmark alignment refinement.
