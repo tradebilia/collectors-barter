@@ -271,3 +271,5 @@ The browser automation did not persist the numeric input value, so it did not ex
 Using a native rendered-page input event, a 25-mile filter automatically switched results to nearest-first, rendered the removable **Within 25 miles** filter chip, and returned two matching collector cards with derived distances of 0 and 2.4 miles. The page showed no address, ZIP code, or coordinate data.
 
 The first two cache-busting production checks after checkpoint `5ea5f302` continued to serve the preceding Member Directory bundle, including the old Member ID cards and collapsed filters. These stale requests are not accepted as production validation; a deployment refresh is required.
+
+After the deployment-success notification for refresh checkpoint `a073b3fd`, production displayed username-first lookup copy, username-only collector cards, all filter groups without a collapsible section, no Members/Rankings toggle, automatic-filter guidance, the minimum-reviews filter, and the private distance input. The production card content contained no Member ID, street address, ZIP code, or coordinates.

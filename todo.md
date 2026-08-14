@@ -277,5 +277,5 @@
 - [x] Replace collapsible Member Directory controls with an always-visible filter layout and remove the Members/Rankings toggle.
 - [x] Update discrete Member Directory filters immediately while retaining deliberate username Search or Enter behavior.
 - [x] Add approved discovery filters, including minimum review count and nearest-distance sorting when available.
-- [ ] Add regression coverage and validate the enhanced Member Directory privacy and filtering behavior in development and production.
+- [x] Add regression coverage and validate the enhanced Member Directory privacy and filtering behavior in development and production.
 - [x] Replace Member ID text on Member Directory result cards with the member’s username.
