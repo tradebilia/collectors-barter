@@ -108,6 +108,7 @@ import { eq, sql, desc, or, inArray, and } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { ONE_YEAR_MS } from "@shared/const";
 import { subscribeToLaunchUpdates } from "./launchUpdates";
+import { getPreLaunchRecipients, sendPreLaunchUpdate } from "./preLaunchEmail";
 
 const uploadedImageSchema = z.object({
   name: z.string().max(200).optional().default(''),
@@ -2406,6 +2407,18 @@ export const appRouter = router({
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
       return await getAllReferralRequests();
     }),
+    getPreLaunchRecipients: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      return getPreLaunchRecipients();
+    }),
+    sendPreLaunchUpdate: protectedProcedure
+      .input(z.object({ subject: z.string().trim().min(1).max(160), message: z.string().trim().min(1).max(5000) }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'admin') {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Only admins can send Pre-Launch Email updates' });
+        }
+        return sendPreLaunchUpdate(input);
+      }),
     updateReferralStatus: protectedProcedure
       .input(z.object({
         referralId: z.number(),

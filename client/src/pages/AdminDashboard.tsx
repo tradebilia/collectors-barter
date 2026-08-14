@@ -15,6 +15,7 @@ import { getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
 import { TopBar } from "@/components/TopBar";
 import { ReferralsTab } from "@/components/ReferralsTab";
+import { PreLaunchEmailTab } from "@/components/PreLaunchEmailTab";
 import { Link } from "wouter";
 import { DeleteConfirmationDialog } from "@/components/DeleteConfirmationDialog";
 
@@ -584,7 +585,7 @@ export default function AdminDashboard() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid grid-cols-12 w-full h-auto p-1.5 gap-1">
+          <TabsList className="grid w-full grid-cols-2 gap-1 p-1.5 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-7 h-auto">
             <TabsTrigger value="statistics" className="flex items-center justify-center gap-1.5 text-xs font-medium py-2.5 whitespace-nowrap">
               <BarChart3 className="h-4 w-4" />
               Stats
@@ -616,6 +617,10 @@ export default function AdminDashboard() {
             <TabsTrigger value="referrals" className="flex items-center justify-center gap-1.5 text-xs font-medium py-2.5 whitespace-nowrap">
               <Mail className="h-4 w-4" />
               Referrals
+            </TabsTrigger>
+            <TabsTrigger value="pre-launch-email" className="flex items-center justify-center gap-1.5 text-xs font-medium py-2.5 whitespace-nowrap">
+              <Send className="h-4 w-4" />
+              Pre-Launch Email
             </TabsTrigger>
             <TabsTrigger value="conventions" className="flex items-center justify-center gap-1.5 text-xs font-medium py-2.5 whitespace-nowrap">
               <Calendar className="h-4 w-4" />
@@ -1166,6 +1171,9 @@ export default function AdminDashboard() {
           {/* Referrals Tab */}
           <TabsContent value="referrals" className="space-y-4 mt-6">
             <ReferralsTab />
+          </TabsContent>
+          <TabsContent value="pre-launch-email" className="space-y-4 mt-6">
+            <PreLaunchEmailTab />
           </TabsContent>
           <TabsContent value="conventions" className="space-y-4 mt-6">
             <ConventionsAdminTab />
