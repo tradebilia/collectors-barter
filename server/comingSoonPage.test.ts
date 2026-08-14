@@ -11,10 +11,9 @@ describe("Coming Soon experience", () => {
   it("uses the established animated logo and has an opt-in email form", () => {
     expect(pageSource).toContain('import AnimatedLogoSmall70 from "@/components/AnimatedLogoSmall70"');
     expect(pageSource).toContain("<AnimatedLogoSmall70 fontSize={125} />");
-    expect(pageSource).toContain('className="absolute inset-x-0 top-0 h-64 bg-cover bg-center bg-no-repeat sm:h-72 lg:h-80"');
-    expect(pageSource).toContain("Background_23084d14.jpg");
     expect(pageSource).toContain('className="mb-7 flex h-36 w-full items-center justify-center overflow-visible sm:mb-10 sm:h-48 lg:h-60"');
-    expect(pageSource).toContain('className="h-full w-[128%] max-w-none translate-x-[20%] scale-[1.1] transform-gpu sm:w-[118%] sm:translate-x-[43%] sm:scale-[1.35] lg:scale-[1.5]"');
+    expect(pageSource).toContain('className="h-full w-[128%] max-w-none translate-x-[20%] scale-[1.1] transform-gpu sm:w-[118%] sm:translate-x-[25%] sm:scale-[1.35] lg:scale-[1.5]"');
+    expect(pageSource).not.toContain("Background_23084d14.jpg");
     expect(pageSource).toContain("I agree to receive Tradebilia launch updates");
     expect(pageSource).toContain("trpc.launchUpdates.subscribe.useMutation");
     expect(pageSource).not.toContain("TradebiliaWheel");
