@@ -259,3 +259,13 @@ The first two cache-busting production checks after checkpoint `a706032e` contin
 After propagation, production rendered Select all, Clear categories, and the merchant-verification explanation. The bulk selection control successfully selected the category set before the applied-filter summary check.
 
 In production, applying the bulk-selected categories rendered all ten removable Active filters chips and the Clear all action, while correctly narrowing results to the two collectors with configured categories. This completes production validation of the filter usability refinements.
+
+## Enhanced Member Directory
+
+In development, the directory now shows the username-first lookup field, all approved filters without a collapsible section, no Members/Rankings toggle, and username-based cards with no Member ID text. Searching for `rtavani` and pressing Enter opened that collector’s existing public profile at `/profile/60003` without changing data.
+
+The signed-in development session displayed the distance control and accepted a 25-mile input. The next check will confirm the asynchronous server-side geocoding result; no location data was displayed during this interaction.
+
+The browser automation did not persist the numeric input value, so it did not exercise the React distance state or server request. The follow-up validation will use a native input event in the rendered page; this is an automation limitation rather than a result from the distance service.
+
+Using a native rendered-page input event, a 25-mile filter automatically switched results to nearest-first, rendered the removable **Within 25 miles** filter chip, and returned two matching collector cards with derived distances of 0 and 2.4 miles. The page showed no address, ZIP code, or coordinate data.

@@ -157,12 +157,14 @@ const memberSearchSchema = z.object({
   categories: z.array(z.enum(collectibleCategories)).max(collectibleCategories.length).optional(),
   verifiedMerchantsOnly: z.boolean().optional(),
   minRating: z.number().min(0).max(5).optional(),
+  minReviewCount: z.number().int().min(0).max(100000).optional(),
   minCompletedTrades: z.number().int().min(0).max(100000).optional(),
   activeListingsOnly: z.boolean().optional(),
   listingValueMin: z.number().min(0).max(100000000).optional(),
   listingValueMax: z.number().min(0).max(100000000).optional(),
   memberSince: z.enum(["past_year", "past_three_years", "longstanding"]).optional(),
-  sort: z.enum(["best_match", "best_rated", "most_trades", "most_listings", "newest"]).optional(),
+  distanceMiles: z.number().positive().max(500).optional(),
+  sort: z.enum(["best_match", "best_rated", "most_trades", "most_listings", "newest", "nearest"]).optional(),
 });
 
 const reportUserSchema = z.object({
@@ -381,6 +383,9 @@ export const appRouter = router({
   members: router({
     search: publicProcedure.input(memberSearchSchema.optional()).query(({ input }) => {
       return searchMembers(input ?? {});
+    }),
+    searchNearby: protectedProcedure.input(memberSearchSchema).query(({ ctx, input }) => {
+      return searchMembers(input, ctx.user.id);
     }),
     startDirectMessageThread: protectedProcedure
       .input(z.object({ recipientId: z.number().int().positive() }))

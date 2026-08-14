@@ -268,3 +268,14 @@
 - [x] Display active Member Directory filter chips above results with one-click removal and a Clear all action.
 - [x] Add an accessible explanation of what the Verified Merchant toggle means.
 - [x] Add regression coverage and validate the Member Directory filter usability refinements in development and production.
+- [x] Design a privacy-safe proximity filter using only coarse member location and a visitor-selected distance range, pending approval.
+- [x] Remove collapsible Member Directory filters and the Members/Rankings toggle, pending approval.
+- [x] Change Member Directory filters to update results immediately after a deliberate control selection, pending approval.
+- [x] Add approved additional directory filters and regression coverage, pending approval.
+- [x] Replace Member Directory lookup guidance with username-first language, pending approval of the broader refinement.
+- [x] Add a privacy-safe server-side distance filter that uses stored coarse location coordinates without exposing home addresses.
+- [x] Replace collapsible Member Directory controls with an always-visible filter layout and remove the Members/Rankings toggle.
+- [x] Update discrete Member Directory filters immediately while retaining deliberate username Search or Enter behavior.
+- [x] Add approved discovery filters, including minimum review count and nearest-distance sorting when available.
+- [ ] Add regression coverage and validate the enhanced Member Directory privacy and filtering behavior in development and production.
+- [x] Replace Member ID text on Member Directory result cards with the member’s username.
