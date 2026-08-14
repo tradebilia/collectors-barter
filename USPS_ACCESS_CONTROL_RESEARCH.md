@@ -152,3 +152,35 @@ The compliant no-fee alternative is a direct, user-initiated link to the officia
 [29] [USPS General Terms of Use](https://about.usps.com/termsofuse.htm)
 
 [30] [USPS Tracking](https://m.usps.com/m/TrackConfirmAction)
+
+## Current Legitimate Free Multi-Carrier Options
+
+**17TRACK** currently provides 100 free tracking quotas per month. A quota is consumed when a new tracking number is registered; continued tracking and repeated API calls for an already registered number do not consume further quota. Its API page states support for USPS, UPS, DHL, FedEx, and thousands of other carriers, but it also publishes a current notice that USPS requests are limited because of USPS policy changes. [31] [32]
+
+**Ship24** currently offers a free plan for up to 10 shipments per month, but its pricing page states that USPS tracking is available only on paid plans. Its API documentation confirms that the API key is created after subscribing to a plan and that the free plan is intended for integration and testing. It therefore is not a solution for free USPS API tracking in Tradebilia. [33] [34]
+
+The practical free-provider candidate worth testing is 17TRACK: it can cover UPS, FedEx, and DHL within a 100-new-number monthly quota, but its own current USPS notice means USPS coverage must be verified before relying on it. No provider reviewed offers a permanently unlimited free, compliant API for arbitrary USPS tracking numbers.
+
+[31] [17TRACK Plan Details](https://help.17track.net/hc/en-us/articles/37575217580825-Plan-Details)
+
+[32] [17TRACK Tracking API](https://www.17track.net/en/api)
+
+[33] [Ship24 Pricing](https://www.ship24.com/pricing)
+
+[34] [Ship24 API Getting Started](https://docs.ship24.com/getting-started)
+
+**TrackingMore** publishes a $0 plan, but it has zero monthly credits; its tracking API page advertises a 14-day trial and paid tracking beginning at $0.03 per tracked order. This is not a permanent usable free API quota. [35] [36]
+
+**Track123** advertises a free start and an API that covers USPS, UPS, FedEx, and DHL, but the currently published marketing page does not state a permanent free production quota. It should be treated as a trial unless Track123 confirms a written allowance through its account dashboard or sales team. [37]
+
+**AfterShip Tracking** currently starts at $29/month; programmatic API and webhook access are listed on its $59/month Premium tier. It is not a free API option. [38]
+
+The only verified currently free API allowance found is 17TRACK’s 100 newly registered tracking numbers per month. Its USPS policy notice means this is promising for UPS, FedEx, and DHL but must be tested against USPS before it is selected as a USPS replacement.
+
+[35] [TrackingMore Pricing](https://www.trackingmore.com/pricing)
+
+[36] [TrackingMore Tracking API](https://www.trackingmore.com/tracking-api)
+
+[37] [Track123 Tracking API](https://www.track123.com/api)
+
+[38] [AfterShip Tracking Pricing](https://www.aftership.com/pricing/tracking)
