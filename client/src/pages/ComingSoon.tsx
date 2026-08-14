@@ -39,15 +39,15 @@ export default function ComingSoon() {
           <span className="h-px bg-[#1e1e1e]/20" />
           <div>
             <p className="text-[10px] font-bold uppercase tracking-[0.26em] text-[#171717]/80 sm:text-xs">Tradebilia is coming soon</p>
-            <p className="mt-1 font-serif text-sm italic text-[#171717]/70">The modern collectors&apos; exchange.</p>
+            <p className="mt-1 font-serif text-sm italic text-[#171717]/70">The Collectors Trading Exchange.</p>
           </div>
           <span className="h-px bg-[#1e1e1e]/20" />
         </header>
 
         <section className="flex flex-1 flex-col items-center justify-center py-9 text-center sm:py-12">
-          <div className="flex h-32 w-full max-w-[44rem] items-center justify-center overflow-visible sm:h-40 lg:h-44">
+          <div className="flex h-36 w-full max-w-[48rem] items-center justify-center overflow-visible sm:h-44 lg:h-48">
             <div className="h-full w-full">
-              <AnimatedLogoSmall70 fontSize={125} wordmarkColor="#171717" neutralCategoryColor="#171717" />
+              <AnimatedLogoSmall70 fontSize={125} wordmarkColor="#171717" neutralCategoryColor="#171717" wheelScale={1.45} />
             </div>
           </div>
 
@@ -55,7 +55,7 @@ export default function ComingSoon() {
             A new marketplace for the objects that matter.
           </h1>
           <p className="mt-5 max-w-xl text-sm leading-6 text-[#171717]/65 sm:text-base">
-            Tradebilia is preparing a trusted place for collectors to discover remarkable pieces, connect with their community, and make fair trades.
+            Tradebilia brings collector categories, discovery, and trade conversations into one organized place—so finding the right trade feels simpler and more deliberate.
           </p>
 
           <div className="mt-9 w-full max-w-3xl">
@@ -109,12 +109,12 @@ export default function ComingSoon() {
           </div>
         </section>
 
-        <section className="border-y border-[#171717]/15 py-5 sm:py-6">
-          <div className="grid grid-cols-3 gap-y-5 sm:grid-cols-6 sm:divide-x sm:divide-[#171717]/15">
+        <section className="border-y border-[#171717]/15 py-4 sm:py-6">
+          <div className="grid grid-cols-6 divide-x divide-[#171717]/15">
             {collectingCategories.map(({ label, icon: Icon }) => (
-              <div key={label} className="flex flex-col items-center gap-2 px-2 text-center">
-                <Icon className="h-6 w-6 stroke-[1.25] text-[#171717]/70" aria-hidden="true" />
-                <span className="text-[9px] font-bold uppercase tracking-[0.16em] text-[#171717]/70 sm:text-[10px]">{label}</span>
+              <div key={label} className="flex min-w-0 flex-col items-center gap-1.5 px-1 text-center sm:gap-2 sm:px-2">
+                <Icon className="h-5 w-5 stroke-[1.25] text-[#171717]/70 sm:h-6 sm:w-6" aria-hidden="true" />
+                <span className="text-[7px] font-bold uppercase leading-3 tracking-[0.07em] text-[#171717]/70 sm:text-[10px] sm:tracking-[0.16em]">{label}</span>
               </div>
             ))}
           </div>

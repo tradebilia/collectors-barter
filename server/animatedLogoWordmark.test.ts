@@ -14,6 +14,8 @@ describe("Animated Tradebilia wordmark", () => {
     expect(logoSource).toContain("fontSize?: number;");
     expect(logoSource).toContain("wordmarkColor?: string;");
     expect(logoSource).toContain("neutralCategoryColor?: string;");
+    expect(logoSource).toContain("wheelScale?: number;");
+    expect(logoSource).toContain('scale(0.441) translate(104, 110) scale(${wheelScale}) translate(-104, -110)');
     expect(logoSource).toContain('viewBox="0 0 1300 216"');
     expect(logoSource).toContain('preserveAspectRatio="xMinYMid meet"');
   });
@@ -27,6 +29,6 @@ describe("Animated Tradebilia wordmark", () => {
 
   it("keeps the larger 125-unit mark scoped to the Coming Soon hero", () => {
     const comingSoonSource = fs.readFileSync(path.join(projectRoot, "client/src/pages/ComingSoon.tsx"), "utf8");
-    expect(comingSoonSource).toContain('<AnimatedLogoSmall70 fontSize={125} wordmarkColor="#171717" neutralCategoryColor="#171717" />');
+    expect(comingSoonSource).toContain('<AnimatedLogoSmall70 fontSize={125} wordmarkColor="#171717" neutralCategoryColor="#171717" wheelScale={1.45} />');
   });
 });
