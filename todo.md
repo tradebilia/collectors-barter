@@ -357,7 +357,7 @@
 - [x] Deliver the initial five generated visual mockups as viewable attachments after resolving the initial attachment-path failure.
 - [x] Implement the selected Modern Auction House visual direction with warm paper styling, fine rules, centered animated SVG, and a focused signup bar.
 - [x] Preserve consent-based Resend signup behavior and add the selected reference’s category strip using Tradebilia-relevant collecting categories.
-- [ ] Commit, push, and publish the validated selected Modern Auction House design.
+- [x] Commit, push, and publish the validated selected Modern Auction House design.
 - [x] Define and implement a complete new Coming Soon page visual system while preserving the animated Tradebilia SVG and the consent-based email signup flow.
 - [x] Preserve a responsive animated-logo presentation and simplify the signup path for the redesigned pre-launch experience.
 - [x] Add regression coverage and visually validate the redesigned Coming Soon page at desktop and mobile breakpoints.
