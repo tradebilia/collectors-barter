@@ -367,3 +367,5 @@
 - [x] Enlarge the animated Tradebilia logo and make the spinning wheel proportionate to the wordmark, matching the main-homepage relationship.
 - [x] Add clear Coming Soon copy that emphasizes a more organized way for collectors to trade.
 - [x] Add regression coverage, visually validate desktop and mobile, then commit, push, and publish the refined page.
+- [x] Diagnose the recurring mismatch between saved Coming Soon checkpoints and the standard public Tradebilia URL.
+- [x] Verify the standard public Coming Soon URL serves the current published layout without cache-busting parameters and document the reliable release path.
