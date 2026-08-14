@@ -10,11 +10,13 @@ const adminSource = fs.readFileSync(path.join(projectRoot, "client/src/pages/Adm
 describe("Coming Soon experience", () => {
   it("uses the established animated logo and has an opt-in email form", () => {
     expect(pageSource).toContain('import AnimatedLogoSmall70 from "@/components/AnimatedLogoSmall70"');
-    expect(pageSource).toContain("<AnimatedLogoSmall70 fontSize={125} />");
-    expect(pageSource).toContain('className="mb-7 flex h-36 w-full items-center justify-center overflow-visible sm:mb-10 sm:h-48 lg:h-60"');
-    expect(pageSource).toContain('className="h-full w-[128%] max-w-none translate-x-[20%] scale-[1.1] transform-gpu sm:w-[118%] sm:translate-x-[25%] sm:scale-[1.35] lg:scale-[1.5]"');
+    expect(pageSource).toContain('<AnimatedLogoSmall70 fontSize={125} wordmarkColor="#171717" neutralCategoryColor="#171717" />');
+    expect(pageSource).toContain('className="flex h-32 w-full max-w-[44rem] items-center justify-center overflow-visible sm:h-40 lg:h-44"');
+    expect(pageSource).toContain('className="h-full w-full"');
     expect(pageSource).not.toContain("Background_23084d14.jpg");
-    expect(pageSource).toContain("I agree to receive Tradebilia launch updates");
+    expect(pageSource).toContain("A new marketplace for the objects that matter.");
+    expect(pageSource).toContain("Receive launch updates");
+    expect(pageSource).toContain("Yes, I&apos;d like to receive updates");
     expect(pageSource).toContain("trpc.launchUpdates.subscribe.useMutation");
     expect(pageSource).not.toContain("TradebiliaWheel");
     expect(pageSource).not.toContain("A new collector exchange is taking shape");

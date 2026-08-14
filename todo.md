@@ -351,3 +351,14 @@
 - [x] Reposition the 125-unit animated SVG so the visible Tradebilia wordmark is centered rather than offset.
 - [x] Add regression coverage and visually verify the simplified Coming Soon presentation on desktop and mobile.
 - [x] Commit, push, and publish the validated background removal and wordmark alignment refinement.
+- [x] Create five distinct visual mockups for the Coming Soon redesign, each showing an animated-logo placement and email signup concept.
+- [x] Create and deliver five additional distinct visual mockups, bringing the Coming Soon comparison set to ten directions.
+- [x] Present all ten visual directions and obtain the user’s selection before replacing the current implementation.
+- [x] Deliver the initial five generated visual mockups as viewable attachments after resolving the initial attachment-path failure.
+- [x] Implement the selected Modern Auction House visual direction with warm paper styling, fine rules, centered animated SVG, and a focused signup bar.
+- [x] Preserve consent-based Resend signup behavior and add the selected reference’s category strip using Tradebilia-relevant collecting categories.
+- [x] Commit, push, and publish the validated selected Modern Auction House design.
+- [x] Define and implement a complete new Coming Soon page visual system while preserving the animated Tradebilia SVG and the consent-based email signup flow.
+- [x] Preserve a responsive animated-logo presentation and simplify the signup path for the redesigned pre-launch experience.
+- [x] Add regression coverage and visually validate the redesigned Coming Soon page at desktop and mobile breakpoints.
+- [x] Commit, push, and publish the validated Coming Soon page redesign.
