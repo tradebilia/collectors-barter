@@ -333,4 +333,4 @@
 - [x] Enlarge the Coming Soon animated logo by approximately 2× while preserving the full-width rotating category labels without clipping.
 - [x] Remove the requested top utility copy and bottom email-use disclaimer from the Coming Soon page.
 - [x] Add regression coverage and visually validate the refined Coming Soon layout on desktop and mobile.
-- [ ] Commit, push, and publish the validated Coming Soon refinement.
+- [x] Commit, push, and publish the validated Coming Soon refinement.
