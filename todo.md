@@ -286,7 +286,7 @@
 - [x] Build and validate the USPS-first tracking test section below sold-item AI testing.
 - [x] Securely configure the USPS consumer key and consumer secret for the server-side tracking lookup.
 - [x] Diagnose the USPS Tracking v3r2 failure for a verified valid tracking number without logging private data or credentials.
-- [ ] Correct the USPS tracking request and error presentation, then validate the reported tracking number in development and production.
+- [x] Correct the USPS tracking request and error presentation, then validate the reported tracking number in development and production.
 - [x] Diagnose the USPS Tracking v3r2 failure for a verified valid tracking number without logging private data or credentials.
 - [ ] Obtain USPS Tracking API authorization for the configured MID through the USPS IP Agreement process.
 - [x] Define and reserve a production UPS OAuth callback route that Tradebilia can handle before UPS credentials are configured.

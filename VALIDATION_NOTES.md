@@ -303,3 +303,7 @@ The published `/api/ups/callback` route now redirects safely to the Account Sett
 The production Carrier Tracking Test loaded with the unified USPS/UPS selector and accepted the USPS tracking number supplied in the user’s error report. The read-only lookup had not yet been submitted at this point.
 
 Submitting that user-supplied USPS number in the published read-only tracker still displayed the prior generic temporary-unavailability message. The client interface is current, but the server-side response must be examined to determine whether the carrier returned a different status category or the deployed server still serves the previous error mapping.
+
+After the robust 403-message checkpoint, the current production Carrier Tracking Test again accepted the same reported USPS number for a read-only verification. The request had not yet been submitted at this point.
+
+The published lookup returned the clear authorization-pending message: **“USPS Tracking API access has not yet been authorized for this USPS account. The tracking number may still work on USPS.com.”** This confirms the reported valid number is no longer described as a generic carrier outage. No Tradebilia shipment, trade, or notification data changed during this test.
