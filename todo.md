@@ -386,4 +386,4 @@
 - [x] Commit, push, and publish the validated Trade Room responsive layout fix.
 - [x] Diagnose why the Test AI Sold Comps key-backed lookup fails without exposing the configured credential.
 - [x] Correct the Sold Comps provider request or UI integration if required and retain safe, actionable error feedback.
-- [ ] Add regression coverage, validate the repaired Sold Comps lookup, then commit, push, and publish the fix.
+- [x] Add regression coverage, validate the repaired Sold Comps lookup, then commit, push, and publish the fix.
