@@ -319,3 +319,11 @@ UPS’s official Customer Integration Environment check succeeded using UPS’s 
 ## DHL Unified Tracking activation
 
 The supplied DHL API key was validated against the correct DHL Unified Tracking contract. The original MyDHL Basic-authentication endpoints correctly returned `401`, while the Unified Tracking endpoint returned `200`, so the Test AI adapter uses the `DHL-API-Key` header rather than sending the stored secret. TypeScript and the full 174-test suite passed. After the successful deployment refresh, the published Test AI carrier selector displayed active **DHL** alongside USPS, UPS, and FedEx; the former **DHL (credentials pending)** label was absent. No real DHL tracking number was submitted during this selector validation.
+
+## PCGS release and public availability recovery
+
+After the published-site availability incident cleared, the standard public homepage loaded normally and the authenticated administrator Test AI page at `/test-ai` loaded without error. The PCGS certificate workflow accepted the documented read-only test certificate `25651776`, exposed the live **PCGS CoinFacts** control, and returned **1926 $10**, grade **MS65**, population **558**, higher population **93**, guide value **$4,000**, PCGS number **8882**, and the certificate number. This confirms the published administrator-only CoinFacts workflow is live without exposing the stored credential or changing any Tradebilia data.
+
+## Trade Room Step 6 responsive layout verification
+
+The published completed trade `TR-000001` was opened at `/trade-room/120003` in the authenticated Administrator session. At standard desktop width and a simulated 150% desktop zoom, **Download Trade Receipt (PDF)** and **Report a Trade Issue** remained in their own action row above the Tracking card, while both tracking entries stayed below that row with no overlap. The completed trade and its existing shipping, review, and message data were only viewed; no action, receipt download, report, or trade mutation was performed.
