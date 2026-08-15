@@ -128,6 +128,10 @@ function computeMetrics(summaries: any[]) {
   return { avg, median, min, max, spreadPct, count, confidence };
 }
 
+export function getSoldCompsApiKey(env: NodeJS.ProcessEnv = process.env): string | null {
+  return env.SOLD_COMPS_API_KEY || env.SOLID_COMPS_API_KEY || null;
+}
+
 // ─── Router ─────────────────────────────────────────────────────────────────
 export const testAIRouter = router({
   // Get the logged-in user's active inventory for the item picker
@@ -399,7 +403,7 @@ export const testAIRouter = router({
     }))
     .query(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
-      const apiKey = process.env.SOLD_COMPS_API_KEY;
+      const apiKey = getSoldCompsApiKey();
       if (!apiKey) return { query: input.title, listings: [], metrics: null, error: 'Sold-Comps API key not configured' };
 
       // Reuse same query-building logic as getEbayData
