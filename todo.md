@@ -389,10 +389,10 @@
 - [x] Add regression coverage, validate the repaired Sold Comps lookup, then commit, push, and publish the fix.
 - [x] Inspect the existing Parse PSA/BGS Test AI workflow and validate the SGC API contract without exposing the Parse credential.
 - [x] Add a secure read-only Parse SGC option to Test AI alongside PSA and BGS.
-- [ ] Add regression coverage, validate the SGC lookup in Test AI, then commit, push, and publish the integration.
+- [x] Add regression coverage, validate the SGC lookup in Test AI, then commit, push, and publish the integration.
 - [x] Confirm Parse’s PriceCharting API contract without exposing the Parse credential.
 - [x] Add a secure read-only Parse PriceCharting lookup to Test AI alongside SGC, PSA, and BGS.
-- [ ] Add regression coverage, validate the PriceCharting lookup, then commit, push, and publish the combined provider expansion.
+- [x] Add regression coverage, validate the PriceCharting lookup, then commit, push, and publish the combined provider expansion.
 - [x] Confirm Parse’s 130point API contract without exposing the Parse credential.
 - [x] Add a secure read-only Parse 130point sales-lookup option to Test AI alongside SGC, PriceCharting, PSA, and BGS.
-- [ ] Add regression coverage, validate the 130point lookup, then commit, push, and publish the combined provider expansion.
+- [x] Add regression coverage, validate the 130point lookup, then commit, push, and publish the combined provider expansion.
