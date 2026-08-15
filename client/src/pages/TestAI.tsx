@@ -74,12 +74,12 @@ const DATA_SOURCES = {
   },
   pcgs: {
     id: 'pcgs',
-    label: 'PCGS',
+    label: 'PCGS CoinFacts',
     group: 'Grading',
     icon: '🪙',
-    provides: ['item_details', 'cert_info', 'population_report'],
-    status: 'placeholder' as const,
-    description: 'Coin cert details, grade, population data',
+    provides: ['item_details', 'cert_info', 'population_report', 'current_prices'],
+    status: 'live' as const,
+    description: 'Official PCGS CoinFacts certification, grade, population, price-guide, and image data',
   },
   ngc: {
     id: 'ngc',
@@ -764,6 +764,56 @@ function SgcSection({ item, side }: { item: SelectedItem; side: 'left' | 'right'
   );
 }
 
+function PcgsSection({ item, side }: { item: SelectedItem; side: 'left' | 'right' }) {
+  const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
+  const { data, isLoading } = trpc.testAI.getPcgsData.useQuery(
+    { certNumber: item.certId || '' },
+    { enabled: !!item.certId && item.gradingCompany === 'PCGS' },
+  );
+
+  if (!item.certId || item.gradingCompany !== 'PCGS') return (
+    <div className="bg-gray-800/30 rounded-lg p-3 border border-dashed border-gray-700/40 space-y-2">
+      <p className={`text-[11px] font-bold uppercase ${accentColor}`}>🪙 PCGS CoinFacts</p>
+      <p className="text-gray-500 text-[10px]">Enter a 7- or 8-digit PCGS certification number to retrieve official coin details.</p>
+    </div>
+  );
+
+  return (
+    <div className="bg-gray-800/30 rounded-lg p-3 border border-gray-700/20 space-y-3">
+      <div className="flex items-center justify-between">
+        <p className={`text-[11px] font-bold uppercase ${accentColor}`}>🪙 PCGS CoinFacts</p>
+        {isLoading && <Spinner className="w-3 h-3" />}
+      </div>
+      <p className="text-gray-500 text-[10px]">Official read-only certification, population, and price-guide data</p>
+      {data?.status === 'error' && <p className="rounded border border-red-700/30 bg-red-900/20 p-2 text-[10px] text-red-400">{data.message}</p>}
+      {data?.status === 'not_found' && <p className="rounded border border-amber-700/30 bg-amber-900/20 p-2 text-[10px] text-amber-300">{data.message}</p>}
+      {data?.status === 'success' && data.data && (
+        <div className="space-y-2 rounded bg-gray-900/40 p-2">
+          <p className="text-[12px] font-semibold text-white">{data.data.name || 'PCGS certified coin'}</p>
+          <p className="text-[10px] text-gray-400">{[data.data.year, data.data.denomination, data.data.variety].filter(Boolean).join(' · ') || 'Coin details not provided'}</p>
+          <div className="grid grid-cols-4 gap-2 text-[10px]">
+            <div><p className="text-[9px] uppercase text-gray-500">Grade</p><p className="font-bold text-cyan-300">{data.data.grade || 'N/A'}</p></div>
+            <div><p className="text-[9px] uppercase text-gray-500">Population</p><p className="font-semibold text-white">{data.data.population?.toLocaleString() ?? 'N/A'}</p></div>
+            <div><p className="text-[9px] uppercase text-gray-500">Higher</p><p className="font-semibold text-white">{data.data.popHigher?.toLocaleString() ?? 'N/A'}</p></div>
+            <div><p className="text-[9px] uppercase text-gray-500">Guide Value</p><p className="font-semibold text-green-400">{data.data.priceGuideValue != null ? `$${Number(data.data.priceGuideValue).toLocaleString()}` : 'N/A'}</p></div>
+          </div>
+          <div className="grid grid-cols-2 gap-2 text-[10px]">
+            <div><p className="text-[9px] uppercase text-gray-500">PCGS No.</p><p className="font-semibold text-white">{data.data.pcgsNo || 'N/A'}</p></div>
+            <div><p className="text-[9px] uppercase text-gray-500">Cert No.</p><p className="font-semibold text-white">{data.data.certNo || item.certId}</p></div>
+          </div>
+          {data.data.images?.length > 0 && (
+            <div className="flex gap-2 pt-1">
+              {data.data.images.slice(0, 2).map((image: any, index: number) => image.thumbnailUrl && (
+                <img key={`${image.thumbnailUrl}-${index}`} src={image.thumbnailUrl} alt={image.label || 'PCGS certified coin'} className="h-20 rounded border border-gray-700/40 object-contain" />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function PriceChartingSection({ item, side }: { item: SelectedItem; side: 'left' | 'right' }) {
   const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
   const supported = item.category === 'pokemon';
@@ -1162,9 +1212,9 @@ function DataColumn({ item, searchItem, side, enabledSources, ebayData }: {
       {enabledSources.has('psa') && <PSASection item={item} side={side} />}
       {enabledSources.has('bgs') && <BeckettSection item={item} side={side} />}
       {enabledSources.has('sgc') && <SgcSection item={item} side={side} />}
+      {enabledSources.has('pcgs') && <PcgsSection item={item} side={side} />}
       {enabledSources.has('pricecharting') && <PriceChartingSection item={item} side={side} />}
       {enabledSources.has('one_thirty_point') && <OneThirtyPointSection item={searchItem ?? item} side={side} />}
-      {enabledSources.has('pcgs') && <PlaceholderSection sourceId="pcgs" side={side} />}
       {enabledSources.has('ngc') && <PlaceholderSection sourceId="ngc" side={side} />}
       {enabledSources.has('cbcs') && <PlaceholderSection sourceId="cbcs" side={side} />}
       {enabledSources.has('comic_book_realm') && <PlaceholderSection sourceId="comic_book_realm" side={side} />}
