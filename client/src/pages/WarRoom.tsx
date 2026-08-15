@@ -403,7 +403,12 @@ export default function WarRoom() {
   const canReportTradeIssue = Boolean(receiptAvailable && otherUser?.id);
   const openTradeIssueReport = () => {
     if (!otherUser?.id) return;
-    const query = new URLSearchParams({ reportedUserId: String(otherUser.id), member: otherUser.username || theirDisplayName, reference: (trade?.proposal as any)?.tradeReferenceNumber || `Proposal #${proposalId}`, tradeIssue: '1' });
+    const query = new URLSearchParams({
+      reportedUserId: String(otherUser.id),
+      member: otherUser.username || theirDisplayName,
+      reference: (trade?.proposal as any)?.tradeReferenceNumber || `Proposal #${proposalId}`,
+      tradeIssue: '1',
+    });
     navigate(`/report-user?${query.toString()}`);
   };
 
@@ -458,8 +463,20 @@ export default function WarRoom() {
       createdAt: (trade.proposal as any)?.createdAt,
       acceptedAt: (trade.proposal as any)?.acceptedAt,
       shippingDeadline,
-      mySide: { name: myDisplayName, contactName: (trade as any)?.myContactInfo?.contactFullName, items: myItems, cash: serverMyCash, tracking: ((trade as any)?.trackingNumbers || []).filter((entry: any) => entry.userId === myUserId) },
-      theirSide: { name: theirDisplayName, contactName: (trade as any)?.theirContactInfo?.contactFullName, items: theirItems, cash: serverTheirCash, tracking: ((trade as any)?.trackingNumbers || []).filter((entry: any) => entry.userId !== myUserId) },
+      mySide: {
+        name: myDisplayName,
+        contactName: (trade as any)?.myContactInfo?.contactFullName,
+        items: myItems,
+        cash: serverMyCash,
+        tracking: ((trade as any)?.trackingNumbers || []).filter((entry: any) => entry.userId === myUserId),
+      },
+      theirSide: {
+        name: theirDisplayName,
+        contactName: (trade as any)?.theirContactInfo?.contactFullName,
+        items: theirItems,
+        cash: serverTheirCash,
+        tracking: ((trade as any)?.trackingNumbers || []).filter((entry: any) => entry.userId !== myUserId),
+      },
     });
     toast.success("Trade receipt downloaded.");
   };
@@ -795,7 +812,7 @@ export default function WarRoom() {
                       <p className="text-gray-400 text-xs">Contact details for arranging shipment. Keep this information confidential.</p>
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                     {[{ label: 'Your Info', contact: myContact, color: 'purple' }, { label: `${theirDisplayName}'s Info`, contact: theirContact, color: 'blue' }].map(({ label, contact, color }) => (
                       <div key={label} className={`bg-[#0f0f1a] border border-${color}-500/20 rounded-xl p-4`}>
                         <p className={`text-${color}-400 text-xs font-bold uppercase tracking-wide mb-3`}>{label}</p>
@@ -1022,12 +1039,34 @@ export default function WarRoom() {
                   );
                 })()}
 
-                {receiptAvailable && <div className="flex flex-wrap items-center gap-2"><button type="button" onClick={downloadCurrentReceipt} className="inline-flex items-center gap-2 rounded-lg border border-blue-500/40 bg-blue-900/20 px-3 py-2 text-xs font-semibold text-blue-200 transition hover:bg-blue-900/40"><span aria-hidden="true">↓</span> Download Trade Receipt (PDF)</button>{canReportTradeIssue && <button type="button" onClick={openTradeIssueReport} className="inline-flex items-center gap-2 rounded-lg border border-amber-400/35 bg-amber-500/10 px-3 py-2 text-xs font-semibold text-amber-100 transition hover:bg-amber-500/20"><span aria-hidden="true">!</span> Report a Trade Issue</button>}</div>}
+                {receiptAvailable && (
+                  <section
+                    aria-label="Trade documents and support actions"
+                    className="relative z-10 flex w-full flex-none flex-wrap items-center gap-2 rounded-xl border border-blue-500/15 bg-[#0f0f1a]/60 p-2 sm:p-3"
+                  >
+                    <button
+                      type="button"
+                      onClick={downloadCurrentReceipt}
+                      className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-blue-500/40 bg-blue-900/20 px-3 py-2 text-xs font-semibold text-blue-200 transition hover:bg-blue-900/40 sm:w-auto"
+                    >
+                      <span aria-hidden="true">↓</span> Download Trade Receipt (PDF)
+                    </button>
+                    {canReportTradeIssue && (
+                      <button
+                        type="button"
+                        onClick={openTradeIssueReport}
+                        className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-amber-400/35 bg-amber-500/10 px-3 py-2 text-xs font-semibold text-amber-100 transition hover:bg-amber-500/20 sm:w-auto"
+                      >
+                        <span aria-hidden="true">!</span> Report a Trade Issue
+                      </button>
+                    )}
+                  </section>
+                )}
 
                 {/* ── SHIPPED / COMPLETED: Compact tracking summary + receipt confirmation ── */}
                 {(currentStage === 'shipped' || currentStage === 'completed') && (
-                  <div className="bg-[#16213e] border border-gray-600 rounded-xl p-5 shadow-xl">
-                    <div className="flex items-center gap-3 mb-4">
+                  <div className="relative z-0 w-full flex-none bg-[#16213e] border border-gray-600 rounded-xl p-5 shadow-xl">
+                    <div className="flex flex-col gap-3 mb-4 sm:flex-row sm:items-center">
                       <div className="w-9 h-9 rounded-lg bg-green-900/30 border border-green-500/20 flex items-center justify-center">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-green-400">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 18.75a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 0 1-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 0 0-3.213-9.193 2.056 2.056 0 0 0-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 0 0-10.026 0 1.106 1.106 0 0 0-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12" />
@@ -1037,10 +1076,10 @@ export default function WarRoom() {
                         <h2 className="text-white font-bold text-lg">Tracking</h2>
                         <p className="text-gray-400 text-xs">Both packages are on the way.</p>
                       </div>
-                      <span className="ml-auto px-3 py-1 bg-green-500/20 border border-green-500/30 text-green-400 text-xs font-bold rounded-full">BOTH SHIPPED</span>
+                      <span className="self-start px-3 py-1 bg-green-500/20 border border-green-500/30 text-green-400 text-xs font-bold rounded-full sm:ml-auto sm:self-auto">BOTH SHIPPED</span>
                     </div>
-                    <div className="grid grid-cols-2 gap-4 mb-4">
-                      <div>
+                    <div className="grid grid-cols-1 gap-4 mb-4 lg:grid-cols-2">
+                      <div className="min-w-0">
                         <p className="text-blue-400 text-xs font-bold mb-2">Your Tracking</p>
                         {myTracking.map((t: any, i: number) => {
                           const url = getTrackingUrl(t.carrier, t.trackingNumber);
@@ -1055,7 +1094,7 @@ export default function WarRoom() {
                           );
                         })}
                       </div>
-                      <div>
+                      <div className="min-w-0">
                         <p className="text-gray-300 text-xs font-bold mb-2">{theirDisplayName}'s Tracking</p>
                         {theirTracking.map((t: any, i: number) => {
                           const url = getTrackingUrl(t.carrier, t.trackingNumber);
@@ -1077,7 +1116,7 @@ export default function WarRoom() {
                       <div className="pt-4 border-t border-gray-700">
                         <p className="text-white text-sm font-bold mb-1">Confirm Receipt</p>
                         <p className="text-gray-400 text-xs mb-3">Once both parties confirm they received their items, the trade is complete.</p>
-                        <div className="flex gap-3">
+                        <div className="flex flex-col gap-3 sm:flex-row">
                           <div className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold ${
                             myReceiptConfirmed ? 'bg-green-900/20 border border-green-500/30 text-green-400' : 'bg-gray-800 border border-gray-700 text-gray-500'
                           }`}>

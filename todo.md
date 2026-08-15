@@ -369,3 +369,18 @@
 - [x] Add regression coverage, visually validate desktop and mobile, then commit, push, and publish the refined page.
 - [x] Diagnose the recurring mismatch between saved Coming Soon checkpoints and the standard public Tradebilia URL.
 - [x] Verify the standard public Coming Soon URL serves the current published layout without cache-busting parameters and document the reliable release path.
+- [x] Create and deliver ten additional visual mockups that are distinct from all earlier Coming Soon directions.
+- [ ] Present the expanded set for selection before changing the current published Modern Auction House page.
+- [x] Create and deliver twenty additional professional, classic Coming Soon visual mockups distinct from all earlier directions.
+- [ ] Present the twenty professional, classic directions for selection before changing the current published page.
+- [x] Create and deliver a new category-complete mockup set grounded in the current Tradebilia website look, including all ten live collection categories.
+- [ ] Present the current-site-aligned mockups for selection before changing the published page.
+- [x] Create and deliver twenty additional professional mockups grounded in the current Tradebilia visual system and all ten live collection categories.
+- [ ] Present this additional current-site-aligned set for selection before changing the published page.
+- [x] Create and deliver a focused set of simplistic, highly professional Coming Soon mockups with a clear animated-logo and signup hierarchy.
+- [ ] Present the minimal professional directions for selection before changing the published page.
+- [x] Create and deliver minimal professional Coming Soon mockups that show all ten Tradebilia collection categories as a prominent, balanced visual rail or grid.
+- [ ] Present the category-prominent directions for selection before changing the published page.
+- [x] Fix the Trade Room Step 6 responsive layout so Tracking cannot overlap Download Trade Receipt and Report a Trade at zoomed or narrow desktop widths.
+- [ ] Add regression coverage and visually verify the Step 6 action/tracking layout across desktop, zoomed desktop, and mobile widths.
+- [ ] Commit, push, and publish the validated Trade Room responsive layout fix.
