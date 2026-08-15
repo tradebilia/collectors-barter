@@ -399,3 +399,4 @@
 - [x] Confirm the official PCGS certification API contract and existing placeholder behavior without exposing the stored token.
 - [x] Add a secure read-only PCGS lookup to Test AI using the existing project token.
 - [x] Add regression coverage, validate the PCGS lookup, then commit, push, and publish the integration.
+- [ ] Diagnose and correct the deployment-wide published-site 500 response, then verify the standard public URL.
