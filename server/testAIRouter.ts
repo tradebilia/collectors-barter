@@ -10,6 +10,7 @@ import { lookupUpsTracking } from "./upsTracking";
 import { lookupFedexTracking } from "./fedexTracking";
 import { lookupDhlTracking } from "./dhlTracking";
 import { lookup130PointSales, lookupPriceCharting, lookupSgcCertification } from './parseMarketData';
+import { lookupPcgsCertification } from './pcgsMarketData';
 
 // ─── Shared eBay helpers (mirrors tradeFlowRouter logic) ────────────────────
 async function getEbayAppToken(): Promise<string | null> {
@@ -726,6 +727,14 @@ export const testAIRouter = router({
     .query(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
       return lookupSgcCertification(input.certNumber);
+    }),
+
+  // Official PCGS CoinFacts certification lookup — administrator-only and read-only.
+  getPcgsData: protectedProcedure
+    .input(z.object({ certNumber: z.string().trim().regex(/^\d{7,8}$/, 'Enter a 7- or 8-digit PCGS certification number.') }))
+    .query(async ({ ctx, input }) => {
+      if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      return lookupPcgsCertification(input.certNumber);
     }),
 
   // Parse.bot PriceCharting Pokémon market data — administrator-only and read-only.

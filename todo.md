@@ -396,3 +396,6 @@
 - [x] Confirm Parse’s 130point API contract without exposing the Parse credential.
 - [x] Add a secure read-only Parse 130point sales-lookup option to Test AI alongside SGC, PriceCharting, PSA, and BGS.
 - [x] Add regression coverage, validate the 130point lookup, then commit, push, and publish the combined provider expansion.
+- [x] Confirm the official PCGS certification API contract and existing placeholder behavior without exposing the stored token.
+- [x] Add a secure read-only PCGS lookup to Test AI using the existing project token.
+- [ ] Add regression coverage, validate the PCGS lookup, then commit, push, and publish the integration.
