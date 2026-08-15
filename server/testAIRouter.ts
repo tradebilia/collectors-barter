@@ -9,6 +9,7 @@ import { lookupUspsTracking } from "./uspsTracking";
 import { lookupUpsTracking } from "./upsTracking";
 import { lookupFedexTracking } from "./fedexTracking";
 import { lookupDhlTracking } from "./dhlTracking";
+import { lookup130PointSales, lookupPriceCharting, lookupSgcCertification } from './parseMarketData';
 
 // ─── Shared eBay helpers (mirrors tradeFlowRouter logic) ────────────────────
 async function getEbayAppToken(): Promise<string | null> {
@@ -717,6 +718,30 @@ export const testAIRouter = router({
         message: `Population report scraper for ${input.gradingCompany} not yet built. Cert ID: ${input.certId}`,
         data: null,
       };
+    }),
+
+  // Parse.bot SGC certificate lookup — administrator-only and read-only.
+  getSgcData: protectedProcedure
+    .input(z.object({ certNumber: z.string().trim().min(7).max(20) }))
+    .query(async ({ ctx, input }) => {
+      if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      return lookupSgcCertification(input.certNumber);
+    }),
+
+  // Parse.bot PriceCharting Pokémon market data — administrator-only and read-only.
+  getPriceChartingData: protectedProcedure
+    .input(z.object({ query: z.string().trim().min(2).max(240) }))
+    .query(async ({ ctx, input }) => {
+      if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      return lookupPriceCharting(input.query);
+    }),
+
+  // Parse.bot 130point sold-card search — administrator-only and read-only.
+  get130PointData: protectedProcedure
+    .input(z.object({ query: z.string().trim().min(2).max(240) }))
+    .query(async ({ ctx, input }) => {
+      if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      return lookup130PointSales(input.query);
     }),
 
   // Parse.bot Beckett (BGS) graded card lookup
