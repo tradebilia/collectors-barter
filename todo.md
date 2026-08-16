@@ -400,3 +400,11 @@
 - [x] Add a secure read-only PCGS lookup to Test AI using the existing project token.
 - [x] Add regression coverage, validate the PCGS lookup, then commit, push, and publish the integration.
 - [x] Diagnose and correct the deployment-wide published-site 500 response, then verify the standard public URL.
+- [x] Restore the verified August 15 GitHub-synchronized source baseline and validate it with TypeScript plus the full regression suite.
+- [x] Rebuild and validate the parser-safe, administrator-only Wikidata Test AI provider on the verified baseline.
+- [x] Rebuild and validate the administrator-only Smithsonian Stamp Reference provider with safe Postal Museum relevance filtering.
+- [x] Rebuild and validate recent-versus-historical 130point sale presentation and trend-only AI analyzer context.
+- [x] Rebuild and validate the administrator-only PWCC / Fanatics Collect completed-sales provider with recency safeguards.
+- [x] Rebuild and document the internal source-category applicability policy while preserving manual Test AI source selection.
+- [x] Commit, push, and verify all recovered post-sync Test AI work on the canonical GitHub branch.
+- [x] Audit every completed post-baseline task against the restored source and recovery manifest, then rebuild and verify any remaining missing work before proceeding.
