@@ -291,6 +291,8 @@
 - [ ] Obtain USPS Tracking API authorization for the configured MID through the USPS IP Agreement process.
 - [ ] Complete USPS service-provider access steps for third-party tracking numbers, including required MID authorization and agreement enrollment.
 - [ ] Add an official USPS.com tracking-link fallback for member-supplied tracking numbers, pending approval.
+- [ ] Implement the approved official USPS.com tracking-link fallback while keeping direct USPS API tracking dormant pending authorization.
+- [ ] Keep the paid USPS API disabled by user decision and use only official USPS.com tracking links unless the user later changes the policy.
 - [ ] Define and implement the approved compliant no-cost USPS tracking experience while retaining the authorized API option for later.
 - [ ] Retest the reported valid USPS tracking number after USPS approves Tradebilia’s third-party Tracking API authorization.
 - [x] Provide the verified USPS service-provider access request instructions for third-party Tracking API use.
@@ -414,3 +416,4 @@
 - [x] Diagnose and correct the missing eBay verification badge for the Administrator on item-detail pages.
 - [x] Correct the malformed item-detail eBay verification badge so the full recognizable logo renders at an appropriate size.
 - [x] Add a reliable item-year constraint to Test AI eBay active-listing queries when year metadata exists, preventing incorrect title-and-grade matches.
+- [x] Complete and document a current audit of genuinely no-cost, commercially suitable Test AI sources, separating Parse.bot, open data, paid services, restricted APIs, and approval-only providers.
