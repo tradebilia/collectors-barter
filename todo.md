@@ -407,3 +407,4 @@
 - [x] Rebuild and validate the administrator-only PWCC / Fanatics Collect completed-sales provider with recency safeguards.
 - [x] Rebuild and document the internal source-category applicability policy while preserving manual Test AI source selection.
 - [x] Commit, push, and verify all recovered post-sync Test AI work on the canonical GitHub branch.
+- [x] Audit every completed post-baseline task against the restored source and recovery manifest, then rebuild and verify any remaining missing work before proceeding.
