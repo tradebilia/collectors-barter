@@ -288,13 +288,13 @@
 - [x] Diagnose the USPS Tracking v3r2 failure for a verified valid tracking number without logging private data or credentials.
 - [x] Correct the USPS tracking request and error presentation, then validate the reported tracking number in development and production.
 - [x] Diagnose the USPS Tracking v3r2 failure for a verified valid tracking number without logging private data or credentials.
-- [ ] Obtain USPS Tracking API authorization for the configured MID through the USPS IP Agreement process.
-- [ ] Complete USPS service-provider access steps for third-party tracking numbers, including required MID authorization and agreement enrollment.
-- [ ] Add an official USPS.com tracking-link fallback for member-supplied tracking numbers, pending approval.
-- [ ] Implement the approved official USPS.com tracking-link fallback while keeping direct USPS API tracking dormant pending authorization.
-- [ ] Keep the paid USPS API disabled by user decision and use only official USPS.com tracking links unless the user later changes the policy.
-- [ ] Define and implement the approved compliant no-cost USPS tracking experience while retaining the authorized API option for later.
-- [ ] Retest the reported valid USPS tracking number after USPS approves Tradebilia’s third-party Tracking API authorization.
+- [x] Supersede USPS MID/IP Agreement authorization work after the user declined the paid USPS Tracking API service.
+- [x] Supersede USPS third-party service-provider enrollment work after the user declined the paid USPS Tracking API service.
+- [x] Add an official USPS.com tracking-link fallback for member-supplied tracking numbers.
+- [x] Implement the approved official USPS.com tracking-link fallback while keeping direct USPS API tracking dormant.
+- [x] Keep the paid USPS API disabled by user decision and use only official USPS.com tracking links unless the user later changes the policy.
+- [x] Define and implement the approved compliant no-cost USPS tracking experience while retaining the authorized API option for later.
+- [x] Mark the prior valid-USPS-number API retest as not applicable while the paid API remains disabled by user decision.
 - [x] Provide the verified USPS service-provider access request instructions for third-party Tracking API use.
 - [x] Audit USPS self-service product enrollment, claims refresh, and Business Portal permission steps for any missing Tracking API activation requirement.
 - [x] Compare the USPS API catalog’s Tracking offering with current access-control and enrollment instructions.
