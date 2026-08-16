@@ -405,3 +405,4 @@
 - [x] Compare Collectr data capabilities with active Test AI sources and recommend whether it adds meaningful incremental value.
 - [x] Validate the configured Parse.bot BGS certification workflow with a documented or owner-approved read-only test certificate.
 - [x] Identify collection categories without validated Test AI data sources and recommend compliant free or free-tier APIs for staged implementation.
+- [x] Verify Pokémon TCG API pricing and commercial-use terms, then correct the free-source roadmap if it is not a genuine no-cost commercial option.
