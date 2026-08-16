@@ -14,7 +14,7 @@ import { lookupPcgsCertification } from './pcgsMarketData';
 import { lookupWikidataMetadata } from './wikidataMetadata';
 import { lookupSmithsonianStampReference } from './smithsonianMetadata';
 import { formatHistoricalTrendContext } from './historicalTrendContext';
-import { buildSportsCardTestAiCriteria, resolveTestAiManufacturer } from '../shared/testAiCriteria';
+import { buildSportsCardTestAiCriteria, buildVideoGameTestAiCriteria, filterTestAiListingsByYear, resolveTestAiManufacturer, resolveTestAiYear } from '../shared/testAiCriteria';
 
 // ─── Shared eBay helpers (mirrors tradeFlowRouter logic) ────────────────────
 async function getEbayAppToken(): Promise<string | null> {
@@ -282,10 +282,7 @@ export const testAIRouter = router({
       // For other categories: use title + grading/condition
       // For video games: use gameTitle + platform + grading/condition
       else if (input.category === 'video_games') {
-        const gameTitle = details.gameTitle || input.title;
-        const platform = details.platform || '';
-        const parts = [gameTitle, platform].filter((p: string) => p);
-        const baseQuery = parts.join(' ');
+        const baseQuery = buildVideoGameTestAiCriteria(details, input.title);
         // cert already has custom grading company extracted if it was "Other"
         if (cert && grade) {
           query = `${baseQuery} ${cert} ${grade}`.trim();
@@ -357,12 +354,15 @@ export const testAIRouter = router({
         const fetchQuery = broadQuery !== query ? broadQuery : query;
         const summaries = await fetchEbayListings(fetchQuery, token, 100);
         console.log(`[eBay Search] Fetch Query: "${fetchQuery}", Filter Grade: ${targetGrade}, Total Results: ${summaries.length}`);
+        const targetYear = input.category === 'video_games' ? resolveTestAiYear(details) : '';
+        const byYear = filterTestAiListingsByYear(summaries, targetYear);
+        console.log(`[eBay Search] After year filter: ${byYear.length} results (target year: ${targetYear || 'none'})`);
         // For comics: also filter by issue number
         const issueNumber = input.category === 'comics' ? (details.issueNumber || null) : null;
         // For sports cards: also filter by card number
         const cardNumber = input.category === 'sports_cards' ? (details.cardNumber || null) : null;
         const targetNumber = issueNumber || cardNumber;
-        const byNumber = filterListingsByNumber(summaries, targetNumber);
+        const byNumber = filterListingsByNumber(byYear, targetNumber);
         console.log(`[eBay Search] After number filter: ${byNumber.length} results (target: ${targetNumber})`);
         // For sports cards: also filter by player name to exclude wrong players
         const playerName = input.category === 'sports_cards' ? (details.player || null) : null;
@@ -378,6 +378,7 @@ export const testAIRouter = router({
           query,
           debug: {
             totalFetched: summaries.length,
+            afterYearFilter: byYear.length,
             afterNumberFilter: byNumber.length,
             afterGradeFilter: filteredSummaries.length,
             targetGrade,
@@ -451,10 +452,7 @@ export const testAIRouter = router({
       }
       // Video games
       else if (input.category === 'video_games') {
-        const gameTitle = details.gameTitle || input.title;
-        const platform = details.platform || '';
-        const parts = [gameTitle, platform].filter((p: string) => p);
-        const baseQuery = parts.join(' ');
+        const baseQuery = buildVideoGameTestAiCriteria(details, input.title);
         if (cert && grade) query = `${baseQuery} ${cert} ${grade}`.trim();
         else if (grade) query = `${baseQuery} ${grade}`.trim();
         else if (input.condition) query = `${baseQuery} ${input.condition}`.trim();
@@ -547,8 +545,10 @@ export const testAIRouter = router({
         console.log(`[Sold-Comps] Fetch Query: "${fetchQuery}", Filter Grade: ${targetGrade}, Total Results: ${rawItems.length}`);
 
         // Apply same grade filtering as eBay active
+        const targetYear = input.category === 'video_games' ? resolveTestAiYear(details) : '';
+        const byYear = filterTestAiListingsByYear(rawItems.map((i: any) => ({ title: i.title, ...i })), targetYear);
         const issueNumber = input.category === 'comics' ? (details.issueNumber || null) : null;
-        const byNumber = filterListingsByNumber(rawItems.map((i: any) => ({ title: i.title, ...i })), issueNumber);
+        const byNumber = filterListingsByNumber(byYear, issueNumber);
         // For sports cards: also filter by player name
         const playerName = input.category === 'sports_cards' ? (details.player || null) : null;
         const byPlayer = filterListingsByPlayer(byNumber, playerName);
