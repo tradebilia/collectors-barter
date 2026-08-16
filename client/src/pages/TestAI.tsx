@@ -112,10 +112,10 @@ const DATA_SOURCES = {
     id: 'pwcc',
     label: 'PWCC / Fanatics Collect',
     group: 'Marketplace',
-    icon: '🏆',
-    provides: ['historic_prices'],
+    icon: '🧩',
+    provides: ['historic_prices', 'item_details'],
     status: 'live' as const,
-    description: 'Read-only PWCC / Fanatics Collect completed auction and marketplace sales via Parse.bot; historical records are not current-value comparables',
+    description: 'Read-only PWCC / Fanatics Collect sold graded-card listings via Parse.bot; dated records are research context, not a current-value average',
   },
   heritage: {
     id: 'heritage',
@@ -149,9 +149,9 @@ const DATA_SOURCES = {
     label: 'Parse.bot (130point Sales)',
     group: 'Marketplace',
     icon: '🧩',
-    provides: ['historic_prices'],
+    provides: ['historic_prices', 'price_metrics'],
     status: 'live' as const,
-    description: 'Read-only historical completed-sale context across eBay, Goldin, Heritage and more — not a current value',
+    description: 'Read-only sold trading-card comps across eBay, Goldin, Heritage and more — powered by Parse.bot 130point API',
   },
   wikidata: {
     id: 'wikidata',
@@ -166,10 +166,10 @@ const DATA_SOURCES = {
     id: 'smithsonian',
     label: 'Smithsonian Stamp Reference',
     group: 'Reference',
-    icon: '✉️',
-    provides: ['item_details', 'images'],
+    icon: '🏛️',
+    provides: ['item_details'],
     status: 'live' as const,
-    description: 'Read-only Smithsonian Open Access stamp reference metadata; no prices, certification, or stored data',
+    description: 'Read-only National Postal Museum stamp-reference metadata; no prices, certification, or stored data',
   },
 } as const;
 
@@ -881,69 +881,29 @@ function OneThirtyPointSection({ item, side }: { item: SelectedItem; side: 'left
     { query: item.title },
     { enabled: !!item.title },
   );
-  const sales = data?.status === 'success' && data.data ? data.data.items : [];
-  const recentSales = sales.filter((sale: any) => sale.recency === 'recent');
-  const historicalSales = sales.filter((sale: any) => sale.recency === 'historical');
-  const undatedSales = sales.filter((sale: any) => sale.recency === 'undated');
-  const renderSales = (records: typeof sales, tone: 'recent' | 'historical' | 'undated') => records.map((sale: any) => (
+  const items = data?.data?.items ?? [];
+  const recentSales = items.filter((sale: any) => sale.recency === 'recent');
+  const historicalSales = items.filter((sale: any) => sale.recency === 'historical');
+  const undatedSales = items.filter((sale: any) => sale.recency === 'undated');
+  const SaleRows = ({ sales }: { sales: any[] }) => <div className="max-h-48 space-y-1 overflow-y-auto">{sales.map((sale: any) => (
     <div key={sale.id || `${sale.title}-${sale.date}`} className="flex items-center justify-between gap-2 border-b border-gray-700/20 py-1 last:border-0">
       <div className="min-w-0"><a href={sale.url || undefined} target="_blank" rel="noopener noreferrer" className="block truncate text-[10px] text-blue-400 hover:underline">{sale.title}</a><p className="text-[9px] text-gray-500">{[sale.marketplace, sale.saleType, sale.date || 'Date unavailable'].filter(Boolean).join(' · ')}</p></div>
-      <div className="shrink-0 text-right"><p className="text-[11px] font-semibold text-green-400">{sale.price != null ? `${sale.currency || 'USD'} ${Number(sale.price).toLocaleString()}` : 'Price N/A'}</p><p className={tone === 'recent' ? 'text-[9px] text-cyan-300' : tone === 'historical' ? 'text-[9px] text-amber-300' : 'text-[9px] text-gray-500'}>{tone === 'recent' ? 'Recent' : tone === 'historical' ? 'Historical' : 'Undated'}</p></div>
+      <p className="shrink-0 text-[11px] font-semibold text-green-400">{sale.price != null ? `${sale.currency || 'USD'} ${Number(sale.price).toLocaleString()}` : 'Price N/A'}</p>
     </div>
-  ));
+  ))}</div>;
 
-  return (
-    <div className="bg-gray-800/30 rounded-lg p-3 border border-gray-700/20 space-y-3">
-      <div className="flex items-center justify-between">
-        <p className={`text-[11px] font-bold uppercase ${accentColor}`}>🧩 130point Sales (via Parse.bot)</p>
-        {isLoading && <Spinner className="w-3 h-3" />}
-      </div>
-      <p className="text-gray-500 text-[10px]">Individual completed-sale records only. No current average or valuation is calculated. Confirm the exact item, grade, and variant before using a result.</p>
-      {data?.status === 'error' && <p className="rounded border border-red-700/30 bg-red-900/20 p-2 text-[10px] text-red-400">{data.message}</p>}
-      {data?.status === 'success' && data.data && (
-        <div className="space-y-2">
-          <p className="text-[10px] text-gray-500">{data.data.itemsReturned} shown of {data.data.totalFound} matching sales</p>
-          {sales.length ? <div className="max-h-64 space-y-3 overflow-y-auto">
-            {recentSales.length > 0 && <section><p className="mb-1 text-[10px] font-semibold uppercase text-cyan-300">Recent comparable sales · last 12 months</p><div className="space-y-1">{renderSales(recentSales, 'recent')}</div></section>}
-            {historicalSales.length > 0 && <section><p className="mb-1 text-[10px] font-semibold uppercase text-amber-300">Historical context · over 12 months old</p><p className="mb-1 text-[9px] text-gray-500">These records may show long-term market direction but are not current-value comparables.</p><div className="space-y-1">{renderSales(historicalSales, 'historical')}</div></section>}
-            {undatedSales.length > 0 && <section><p className="mb-1 text-[10px] font-semibold uppercase text-gray-400">Undated records</p><p className="mb-1 text-[9px] text-gray-500">Do not use undated records as current comparables.</p><div className="space-y-1">{renderSales(undatedSales, 'undated')}</div></section>}
-          </div> : <p className="text-[10px] text-gray-500">No completed 130point sales were returned for this query.</p>}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function PwccFanaticsCollectSection({ item, side }: { item: SelectedItem; side: 'left' | 'right' }) {
-  const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
-  const { data, isLoading } = trpc.testAI.getPwccFanaticsCollectData.useQuery(
-    { query: item.title },
-    { enabled: !!item.title },
-  );
-  const sales = data?.status === 'success' && data.data ? data.data.items : [];
-  const recentSales = sales.filter((sale: any) => sale.recency === 'recent');
-  const historicalSales = sales.filter((sale: any) => sale.recency === 'historical');
-  const undatedSales = sales.filter((sale: any) => sale.recency === 'undated');
-  const renderSales = (records: typeof sales, tone: 'recent' | 'historical' | 'undated') => records.map((sale: any) => (
-    <div key={sale.id || `${sale.title}-${sale.date}`} className="flex items-center justify-between gap-2 border-b border-gray-700/20 py-1 last:border-0">
-      <div className="min-w-0"><p className="truncate text-[10px] text-white">{sale.title}</p><p className="text-[9px] text-gray-500">{[sale.saleType, sale.grade != null ? `${sale.gradingService || 'Grade'} ${sale.grade}` : null, sale.date || 'Date unavailable'].filter(Boolean).join(' · ')}</p></div>
-      <div className="shrink-0 text-right"><p className="text-[11px] font-semibold text-green-400">{sale.price != null ? `${sale.currency || 'USD'} ${Number(sale.price).toLocaleString()}` : 'Price N/A'}</p><p className={tone === 'recent' ? 'text-[9px] text-cyan-300' : tone === 'historical' ? 'text-[9px] text-amber-300' : 'text-[9px] text-gray-500'}>{tone === 'recent' ? 'Recent' : tone === 'historical' ? 'Historical' : 'Undated'}</p></div>
-    </div>
-  ));
-
-  return (
-    <div className="bg-gray-800/30 rounded-lg p-3 border border-gray-700/20 space-y-3">
-      <div className="flex items-center justify-between"><p className={`text-[11px] font-bold uppercase ${accentColor}`}>🏆 PWCC / Fanatics Collect (via Parse.bot)</p>{isLoading && <Spinner className="w-3 h-3" />}</div>
-      <p className="text-gray-500 text-[10px]">Individual completed-sale records only. No current average or valuation is calculated. Confirm the exact card, grade, and variant before using a result.</p>
-      {data?.status === 'error' && <p className="rounded border border-red-700/30 bg-red-900/20 p-2 text-[10px] text-red-400">{data.message}</p>}
-      {data?.status === 'not_found' && <p className="text-[10px] text-gray-500">{data.message}</p>}
-      {data?.status === 'success' && data.data && <div className="space-y-2"><p className="text-[10px] text-gray-500">{data.data.itemsReturned} shown of {data.data.totalFound} matching sold listings</p>{sales.length ? <div className="max-h-64 space-y-3 overflow-y-auto">
-        {recentSales.length > 0 && <section><p className="mb-1 text-[10px] font-semibold uppercase text-cyan-300">Recent comparable sales · last 12 months</p><div className="space-y-1">{renderSales(recentSales, 'recent')}</div></section>}
-        {historicalSales.length > 0 && <section><p className="mb-1 text-[10px] font-semibold uppercase text-amber-300">Historical context · over 12 months old</p><p className="mb-1 text-[9px] text-gray-500">These records may show long-term market direction but are not current-value comparables.</p><div className="space-y-1">{renderSales(historicalSales, 'historical')}</div></section>}
-        {undatedSales.length > 0 && <section><p className="mb-1 text-[10px] font-semibold uppercase text-gray-400">Undated records</p><p className="mb-1 text-[9px] text-gray-500">Do not use undated records as current comparables.</p><div className="space-y-1">{renderSales(undatedSales, 'undated')}</div></section>}
-      </div> : <p className="text-[10px] text-gray-500">No completed PWCC / Fanatics Collect sales were returned for this query.</p>}</div>}
-    </div>
-  );
+  return <div className="bg-gray-800/30 rounded-lg p-3 border border-gray-700/20 space-y-3">
+    <div className="flex items-center justify-between"><p className={`text-[11px] font-bold uppercase ${accentColor}`}>🧩 130point Sales (via Parse.bot)</p>{isLoading && <Spinner className="w-3 h-3" />}</div>
+    <p className="text-gray-500 text-[10px]">Read-only completed sales. No current average or valuation is calculated; confirm the exact variant and grade before using a record as a comparable.</p>
+    {data?.status === 'error' && <p className="rounded border border-red-700/30 bg-red-900/20 p-2 text-[10px] text-red-400">{data.message}</p>}
+    {data?.status === 'success' && data.data && <div className="space-y-3">
+      <p className="text-[10px] text-gray-500">{data.data.itemsReturned} shown of {data.data.totalFound} matching sales</p>
+      {recentSales.length > 0 && <div><p className="mb-1 text-[10px] font-semibold uppercase text-emerald-300">Recent comparable sales · last 12 months</p><SaleRows sales={recentSales} /></div>}
+      {historicalSales.length > 0 && <div><p className="mb-1 text-[10px] font-semibold uppercase text-amber-300">Historical context · older than 12 months</p><SaleRows sales={historicalSales} /></div>}
+      {undatedSales.length > 0 && <div><p className="mb-1 text-[10px] font-semibold uppercase text-gray-400">Undated records · research only</p><SaleRows sales={undatedSales} /></div>}
+      {!items.length && <p className="text-[10px] text-gray-500">No completed 130point sales were returned for this query.</p>}
+    </div>}
+  </div>;
 }
 
 function WikidataSection({ item, side }: { item: SelectedItem; side: 'left' | 'right' }) {
@@ -951,87 +911,53 @@ function WikidataSection({ item, side }: { item: SelectedItem; side: 'left' | 'r
   const supported = item.category === 'movies' || item.category === 'autographs';
   const category = item.category === 'movies' ? 'movies' : 'autographs';
   const details = item.itemDetails ? (() => { try { return JSON.parse(item.itemDetails); } catch { return {}; } })() : {};
-  const metadataQuery = category === 'autographs'
-    ? (details.signer || item.title)
-    : (details.title || details.movieTitle || item.title);
+  const metadataQuery = category === 'autographs' ? (details.signer || item.title) : (details.title || details.movieTitle || item.title);
   const { data, isLoading } = trpc.testAI.getWikidataMetadata.useQuery(
     { query: metadataQuery, category },
     { enabled: supported && !!metadataQuery },
   );
-
-  if (!supported) return (
-    <div className="bg-gray-800/30 rounded-lg p-3 border border-dashed border-gray-700/40 space-y-2">
-      <p className={`text-[11px] font-bold uppercase ${accentColor}`}>🔎 Wikidata Metadata</p>
-      <p className="text-gray-500 text-[10px]">This read-only reference source currently supports Movie titles and Autograph signer names only.</p>
-    </div>
-  );
-
-  return (
-    <div className="bg-gray-800/30 rounded-lg p-3 border border-gray-700/20 space-y-3">
-      <div className="flex items-center justify-between">
-        <p className={`text-[11px] font-bold uppercase ${accentColor}`}>🔎 Wikidata Metadata</p>
-        {isLoading && <Spinner className="w-3 h-3" />}
-      </div>
-      <p className="text-gray-500 text-[10px]">Read-only public metadata for Movies and Autographs · Query: {metadataQuery} · Not a price, certification, or authenticity source</p>
-      {data?.status === 'error' && <p className="rounded border border-red-700/30 bg-red-900/20 p-2 text-[10px] text-red-400">{data.message}</p>}
-      {data?.status === 'not_found' && <p className="rounded border border-amber-700/30 bg-amber-900/20 p-2 text-[10px] text-amber-300">{data.message}</p>}
-      {data?.status === 'success' && data.data && (
-        <div className="flex gap-3 rounded bg-gray-900/40 p-2">
-          {data.data.imageUrl && <img src={data.data.imageUrl} alt="" className="h-20 w-14 rounded border border-gray-700/40 object-cover" />}
-          <div className="min-w-0 flex-1 space-y-2">
-            <div>
-              <a href={data.data.sourceUrl} target="_blank" rel="noopener noreferrer" className="text-[12px] font-semibold text-blue-300 hover:underline">{data.data.title}</a>
-              {data.data.description && <p className="mt-0.5 text-[10px] text-gray-400">{data.data.description}</p>}
-            </div>
-            {data.data.facts.length > 0 && <div className="grid grid-cols-2 gap-1.5 text-[10px]">
-              {data.data.facts.map((fact: any) => <div key={fact.label} className="rounded bg-gray-800/60 p-1.5"><p className="text-[8px] uppercase text-gray-500">{fact.label}</p><p className="break-words font-semibold text-white">{fact.value}</p></div>)}
-            </div>}
-          </div>
-        </div>
-      )}
-    </div>
-  );
+  if (!supported) return <div className="bg-gray-800/30 rounded-lg p-3 border border-dashed border-gray-700/40 space-y-2"><p className={`text-[11px] font-bold uppercase ${accentColor}`}>🔎 Wikidata Metadata</p><p className="text-gray-500 text-[10px]">This read-only reference source currently supports Movie titles and Autograph signer names only.</p></div>;
+  return <div className="bg-gray-800/30 rounded-lg p-3 border border-gray-700/20 space-y-3">
+    <div className="flex items-center justify-between"><p className={`text-[11px] font-bold uppercase ${accentColor}`}>🔎 Wikidata Metadata</p>{isLoading && <Spinner className="w-3 h-3" />}</div>
+    <p className="text-gray-500 text-[10px]">Read-only public metadata for Movies and Autographs · Query: {metadataQuery} · Not a price, certification, or authenticity source</p>
+    {data?.status === 'error' && <p className="rounded border border-red-700/30 bg-red-900/20 p-2 text-[10px] text-red-400">{data.message}</p>}
+    {data?.status === 'not_found' && <p className="rounded border border-amber-700/30 bg-amber-900/20 p-2 text-[10px] text-amber-300">{data.message}</p>}
+    {data?.status === 'success' && data.data && <div className="flex gap-3 rounded bg-gray-900/40 p-2">{data.data.imageUrl && <img src={data.data.imageUrl} alt="" className="h-20 w-14 rounded border border-gray-700/40 object-cover" />}<div className="min-w-0 flex-1 space-y-2"><div><a href={data.data.sourceUrl} target="_blank" rel="noopener noreferrer" className="text-[12px] font-semibold text-blue-300 hover:underline">{data.data.title}</a>{data.data.description && <p className="mt-0.5 text-[10px] text-gray-400">{data.data.description}</p>}</div>{data.data.facts.length > 0 && <div className="grid grid-cols-2 gap-1.5 text-[10px]">{data.data.facts.map((fact: any) => <div key={fact.label} className="rounded bg-gray-800/60 p-1.5"><p className="text-[8px] uppercase text-gray-500">{fact.label}</p><p className="break-words font-semibold text-white">{fact.value}</p></div>)}</div>}</div></div>}
+  </div>;
 }
 
 function SmithsonianSection({ item, side }: { item: SelectedItem; side: 'left' | 'right' }) {
   const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
   const supported = item.category === 'stamps';
-  const details = item.itemDetails ? (() => { try { return JSON.parse(item.itemDetails); } catch { return {}; } })() : {};
-  const metadataQuery = details.title || details.stampTitle || `${item.title} stamp`;
-  const { data, isLoading } = trpc.testAI.getSmithsonianStampMetadata.useQuery(
-    { query: metadataQuery },
-    { enabled: supported && !!metadataQuery },
+  const { data, isLoading } = trpc.testAI.getSmithsonianStampReference.useQuery(
+    { query: item.title },
+    { enabled: supported && !!item.title },
   );
+  if (!supported) return <div className="bg-gray-800/30 rounded-lg p-3 border border-dashed border-gray-700/40 space-y-2"><p className={`text-[11px] font-bold uppercase ${accentColor}`}>🏛️ Smithsonian Stamp Reference</p><p className="text-gray-500 text-[10px]">This read-only reference source currently supports Stamp items only.</p></div>;
+  return <div className="bg-gray-800/30 rounded-lg p-3 border border-gray-700/20 space-y-3">
+    <div className="flex items-center justify-between"><p className={`text-[11px] font-bold uppercase ${accentColor}`}>🏛️ Smithsonian Stamp Reference</p>{isLoading && <Spinner className="w-3 h-3" />}</div>
+    <p className="text-gray-500 text-[10px]">Read-only National Postal Museum reference · Not a price, certification, or authenticity source</p>
+    {data?.status === 'error' && <p className="rounded border border-red-700/30 bg-red-900/20 p-2 text-[10px] text-red-400">{data.message}</p>}
+    {data?.status === 'not_found' && <p className="rounded border border-amber-700/30 bg-amber-900/20 p-2 text-[10px] text-amber-300">{data.message}</p>}
+    {data?.status === 'success' && data.data && <div className="flex gap-3 rounded bg-gray-900/40 p-2">{data.data.imageUrl && <img src={data.data.imageUrl} alt="" className="h-20 w-14 rounded border border-gray-700/40 object-cover" />}<div className="min-w-0 flex-1 space-y-2"><a href={data.data.sourceUrl} target="_blank" rel="noopener noreferrer" className="text-[12px] font-semibold text-blue-300 hover:underline">{data.data.title}</a><div className="grid grid-cols-2 gap-1.5 text-[10px]">{data.data.facts.map((fact: any) => <div key={fact.label} className="rounded bg-gray-800/60 p-1.5"><p className="text-[8px] uppercase text-gray-500">{fact.label}</p><p className="break-words font-semibold text-white">{fact.value}</p></div>)}</div></div></div>}
+  </div>;
+}
 
-  if (!supported) return (
-    <div className="bg-gray-800/30 rounded-lg p-3 border border-dashed border-gray-700/40 space-y-2">
-      <p className={`text-[11px] font-bold uppercase ${accentColor}`}>✉️ Smithsonian Stamp Reference</p>
-      <p className="text-gray-500 text-[10px]">This read-only reference source currently supports Stamp-category inventory items only.</p>
-    </div>
-  );
-
-  return (
-    <div className="bg-gray-800/30 rounded-lg p-3 border border-gray-700/20 space-y-3">
-      <div className="flex items-center justify-between">
-        <p className={`text-[11px] font-bold uppercase ${accentColor}`}>✉️ Smithsonian Stamp Reference</p>
-        {isLoading && <Spinner className="w-3 h-3" />}
-      </div>
-      <p className="text-gray-500 text-[10px]">Read-only Smithsonian Open Access reference metadata · Query: {metadataQuery} · Not a price, certification, or authenticity source</p>
-      {data?.status === 'error' && <p className="rounded border border-red-700/30 bg-red-900/20 p-2 text-[10px] text-red-400">{data.message}</p>}
-      {data?.status === 'not_found' && <p className="rounded border border-amber-700/30 bg-amber-900/20 p-2 text-[10px] text-amber-300">{data.message}</p>}
-      {data?.status === 'success' && data.data && (
-        <div className="flex gap-3 rounded bg-gray-900/40 p-2">
-          {data.data.imageUrl && <img src={data.data.imageUrl} alt="" className="h-20 w-14 rounded border border-gray-700/40 object-cover" />}
-          <div className="min-w-0 flex-1 space-y-2">
-            <a href={data.data.sourceUrl} target="_blank" rel="noopener noreferrer" className="text-[12px] font-semibold text-blue-300 hover:underline">{data.data.title}</a>
-            {data.data.facts.length > 0 && <div className="grid grid-cols-2 gap-1.5 text-[10px]">
-              {data.data.facts.map((fact: any) => <div key={fact.label} className="rounded bg-gray-800/60 p-1.5"><p className="text-[8px] uppercase text-gray-500">{fact.label}</p><p className="break-words font-semibold text-white">{fact.value}</p></div>)}
-            </div>}
-          </div>
-        </div>
-      )}
-    </div>
-  );
+function PwccSection({ item, side }: { item: SelectedItem; side: 'left' | 'right' }) {
+  const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
+  const { data, isLoading } = trpc.testAI.getPwccSales.useQuery({ query: item.title }, { enabled: !!item.title });
+  const sales = data?.data?.items ?? [];
+  const buckets = [
+    ['Recent comparable sales · last 12 months', sales.filter((sale: any) => sale.recency === 'recent'), 'text-emerald-300'],
+    ['Historical context · older than 12 months', sales.filter((sale: any) => sale.recency === 'historical'), 'text-amber-300'],
+    ['Undated records · research only', sales.filter((sale: any) => sale.recency === 'undated'), 'text-gray-400'],
+  ] as const;
+  return <div className="bg-gray-800/30 rounded-lg p-3 border border-gray-700/20 space-y-3">
+    <div className="flex items-center justify-between"><p className={`text-[11px] font-bold uppercase ${accentColor}`}>🧩 PWCC / Fanatics Collect</p>{isLoading && <Spinner className="w-3 h-3" />}</div>
+    <p className="text-gray-500 text-[10px]">Read-only Parse.bot sold listings. No current average or valuation is calculated; verify exact card, grade, and certification before comparing.</p>
+    {data?.status === 'error' && <p className="rounded border border-red-700/30 bg-red-900/20 p-2 text-[10px] text-red-400">{data.message}</p>}
+    {data?.status === 'success' && <div className="space-y-3">{buckets.map(([label, bucket, color]) => bucket.length > 0 && <div key={label}><p className={`mb-1 text-[10px] font-semibold uppercase ${color}`}>{label}</p>{bucket.map((sale: any) => <div key={sale.id || sale.title} className="flex items-center justify-between gap-2 border-b border-gray-700/20 py-1 last:border-0"><div className="min-w-0"><a href={sale.url || undefined} target="_blank" rel="noopener noreferrer" className="block truncate text-[10px] text-blue-400 hover:underline">{sale.title}</a><p className="text-[9px] text-gray-500">{[sale.marketplace, sale.grade ? `${sale.certificationCompany || ''} ${sale.grade}`.trim() : null, sale.date || 'Date unavailable'].filter(Boolean).join(' · ')}</p></div><p className="shrink-0 text-[11px] font-semibold text-green-400">{sale.price != null ? `USD ${Number(sale.price).toLocaleString()}` : 'Price N/A'}</p></div>)}</div>)}{!sales.length && <p className="text-[10px] text-gray-500">No sold PWCC / Fanatics Collect listings were returned for this query.</p>}</div>}
+  </div>;
 }
 
 function PlaceholderSection({ sourceId, side }: { sourceId: SourceId; side: 'left' | 'right' }) {
@@ -1050,7 +976,7 @@ function PlaceholderSection({ sourceId, side }: { sourceId: SourceId; side: 'lef
 }
 
 // ─── AI Analysis Section ─────────────────────────────────────────────────────
-function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, leftSources, rightSources, leftSoldCompsData, rightSoldCompsData, left130PointData, right130PointData }: {
+function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, leftSources, rightSources, leftSoldCompsData, rightSoldCompsData, leftHistoricalTrendData, rightHistoricalTrendData }: {
   leftItem: SelectedItem;
   rightItem: SelectedItem;
   leftEbayData: any;
@@ -1059,8 +985,8 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
   rightSources: Set<SourceId>;
   leftSoldCompsData?: any;
   rightSoldCompsData?: any;
-  left130PointData?: any;
-  right130PointData?: any;
+  leftHistoricalTrendData?: any;
+  rightHistoricalTrendData?: any;
 }) {
   const [result, setResult] = useState<any>(null);
   const analyzeMutation = trpc.testAI.analyzeItems.useMutation({
@@ -1072,6 +998,8 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
   const rightHasEbay = rightSources.has('ebay_active');
   const leftHasSoldComps = leftSources.has('sold_comps');
   const rightHasSoldComps = rightSources.has('sold_comps');
+  const leftHas130Point = leftSources.has('one_thirty_point');
+  const rightHas130Point = rightSources.has('one_thirty_point');
 
   const handleAnalyze = () => {
     analyzeMutation.mutate({
@@ -1081,8 +1009,8 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
       rightEbayMetrics: rightHasEbay ? (rightEbayData?.metrics ?? null) : null,
       leftSoldCompsMetrics: leftHasSoldComps ? (leftSoldCompsData?.metrics ?? null) : null,
       rightSoldCompsMetrics: rightHasSoldComps ? (rightSoldCompsData?.metrics ?? null) : null,
-      left130PointSales: leftSources.has('one_thirty_point') ? (left130PointData?.data?.items ?? []) : [],
-      right130PointSales: rightSources.has('one_thirty_point') ? (right130PointData?.data?.items ?? []) : [],
+      leftHistoricalTrendSales: leftHas130Point ? (leftHistoricalTrendData?.data?.items ?? []) : [],
+      rightHistoricalTrendSales: rightHas130Point ? (rightHistoricalTrendData?.data?.items ?? []) : [],
     });
   };
 
@@ -1364,12 +1292,12 @@ function DataColumn({ item, searchItem, side, enabledSources, ebayData }: {
       {enabledSources.has('pcgs') && <PcgsSection item={item} side={side} />}
       {enabledSources.has('pricecharting') && <PriceChartingSection item={item} side={side} />}
       {enabledSources.has('one_thirty_point') && <OneThirtyPointSection item={searchItem ?? item} side={side} />}
-      {enabledSources.has('pwcc') && <PwccFanaticsCollectSection item={searchItem ?? item} side={side} />}
       {enabledSources.has('wikidata') && <WikidataSection item={item} side={side} />}
       {enabledSources.has('smithsonian') && <SmithsonianSection item={item} side={side} />}
       {enabledSources.has('ngc') && <PlaceholderSection sourceId="ngc" side={side} />}
       {enabledSources.has('cbcs') && <PlaceholderSection sourceId="cbcs" side={side} />}
       {enabledSources.has('comic_book_realm') && <PlaceholderSection sourceId="comic_book_realm" side={side} />}
+      {enabledSources.has('pwcc') && <PwccSection item={searchItem ?? item} side={side} />}
       {enabledSources.has('heritage') && <PlaceholderSection sourceId="heritage" side={side} />}
       {enabledSources.has('gocollect') && <PlaceholderSection sourceId="gocollect" side={side} />}
     </div>
@@ -1477,11 +1405,11 @@ export default function TestAI() {
     { enabled: !!rightSearchItem && rightSources.has('sold_comps') }
   );
   const left130PointQuery = trpc.testAI.get130PointData.useQuery(
-    leftSearchItem ? { query: leftSearchItem.title } : { query: '' },
+    { query: leftSearchItem?.title || '' },
     { enabled: !!leftSearchItem && leftSources.has('one_thirty_point') },
   );
   const right130PointQuery = trpc.testAI.get130PointData.useQuery(
-    rightSearchItem ? { query: rightSearchItem.title } : { query: '' },
+    { query: rightSearchItem?.title || '' },
     { enabled: !!rightSearchItem && rightSources.has('one_thirty_point') },
   );
 
@@ -1535,12 +1463,12 @@ export default function TestAI() {
             rightItem={rightItem}
             leftEbayData={leftEbayQuery.data}
             rightEbayData={rightEbayQuery.data}
-            leftSources={leftSources}
-            rightSources={rightSources}
-            leftSoldCompsData={leftSoldCompsQuery.data}
-            rightSoldCompsData={rightSoldCompsQuery.data}
-            left130PointData={left130PointQuery.data}
-            right130PointData={right130PointQuery.data}
+             leftSources={leftSources}
+             rightSources={rightSources}
+             leftSoldCompsData={leftSoldCompsQuery.data}
+             rightSoldCompsData={rightSoldCompsQuery.data}
+             leftHistoricalTrendData={left130PointQuery.data}
+             rightHistoricalTrendData={right130PointQuery.data}
           />
         )}
 

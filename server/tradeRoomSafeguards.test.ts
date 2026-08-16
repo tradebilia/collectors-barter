@@ -3,24 +3,11 @@ import { getReviewSubmissionBlocker, resolveTradeContactName } from "./tradeRoom
 
 describe("Trade Room safeguards", () => {
   it("uses the saved legal first and last name before legacy account-name fallbacks", () => {
-    expect(resolveTradeContactName({
-      contactFullName: null,
-      firstName: "Rich",
-      lastName: "Tavani",
-      name: "rtavani",
-      username: "AdminTavani",
-    })).toBe("Rich Tavani");
+    expect(resolveTradeContactName({ contactFullName: null, firstName: "Rich", lastName: "Tavani", name: "rtavani", username: "AdminTavani" })).toBe("Rich Tavani");
   });
-
   it("retains a complete saved contact name when one is available", () => {
-    expect(resolveTradeContactName({
-      contactFullName: "Dylan Rhoads",
-      firstName: "Dylan",
-      lastName: "Rhoads",
-      name: "rtavani",
-    })).toBe("Dylan Rhoads");
+    expect(resolveTradeContactName({ contactFullName: "Dylan Rhoads", firstName: "Dylan", lastName: "Rhoads", name: "rtavani" })).toBe("Dylan Rhoads");
   });
-
   it("rejects review resubmission while allowing a first completed-trade review", () => {
     expect(getReviewSubmissionBlocker({ isParticipant: true, tradeStatus: "completed", alreadyReviewed: false })).toBeNull();
     expect(getReviewSubmissionBlocker({ isParticipant: true, tradeStatus: "completed", alreadyReviewed: true })).toBe("already-reviewed");

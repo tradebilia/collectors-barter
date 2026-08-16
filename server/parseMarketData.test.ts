@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, afterEach } from 'vitest';
-import { classifySaleRecency, lookup130PointSales, lookupPriceCharting, lookupPwccFanaticsCollectSales, lookupSgcCertification } from './parseMarketData';
+import { classifySaleRecency, lookup130PointSales, lookupPriceCharting, lookupPwccSales, lookupSgcCertification } from './parseMarketData';
 
 const originalFetch = global.fetch;
 
@@ -49,25 +49,6 @@ describe('Parse SGC and PriceCharting adapters', () => {
     expect(fetchMock.mock.calls[0][0]).toContain('/28d873f5-47d5-4c01-a275-e80c6b3fc610/search_sold_items?sort=BestMatch&limit=10&query=Michael%20Jordan%20rookie&marketplace=all');
   });
 
-  it('classifies older and undated 130point records as historical context rather than recent comparables', () => {
-    const referenceTime = Date.parse('2026-08-16T00:00:00Z');
-
-    expect(classifySaleRecency('2016-08-15', referenceTime)).toBe('historical');
-    expect(classifySaleRecency('2026-06-01', referenceTime)).toBe('recent');
-    expect(classifySaleRecency(null, referenceTime)).toBe('undated');
-  });
-
-  it('uses PWCC/Fanatics Collect sold-only results and classifies the dated records by recency', async () => {
-    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ data: { total_hits: 1, hits_per_page: 1, results: [{ listing_uuid: 'listing-1', title: '1986 Fleer Michael Jordan PSA 9', purchase_price_cents: 124500, sold_date: 1460592000, marketplace: 'PREMIER', grading_service: 'PSA', grade: 9, cert_number: '12345678', year: 1986, brand: 'Fleer', card_number: '57' }] } }) });
-    global.fetch = fetchMock as typeof fetch;
-
-    const result = await lookupPwccFanaticsCollectSales('Michael Jordan PSA 9', { PARSE_BOT_API_KEY: 'configured-key' });
-
-    expect(result.status).toBe('success');
-    expect(result.data?.items[0]).toMatchObject({ price: 1245, marketplace: 'PWCC / Fanatics Collect', saleType: 'PREMIER', recency: 'historical', grade: 9, gradingService: 'PSA' });
-    expect(fetchMock.mock.calls[0][0]).toContain('/6f75fc48-78a3-4fa4-a96a-937d35bf9385/search_listings?status=Sold&hits_per_page=10&page=0&keywords=Michael%20Jordan%20PSA%209');
-  });
-
   it('does not call either provider when the Parse key is unavailable', async () => {
     const fetchMock = vi.fn();
     global.fetch = fetchMock as typeof fetch;
@@ -75,7 +56,23 @@ describe('Parse SGC and PriceCharting adapters', () => {
     expect((await lookupSgcCertification('0453727', {})).status).toBe('error');
     expect((await lookupPriceCharting('charizard', {})).status).toBe('error');
     expect((await lookup130PointSales('Michael Jordan', {})).status).toBe('error');
-    expect((await lookupPwccFanaticsCollectSales('Michael Jordan', {})).status).toBe('error');
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('treats older or undated 130point records as historical research context', () => {
+    const now = Date.parse('2026-08-16T00:00:00Z');
+    expect(classifySaleRecency('2026-02-16', now)).toBe('recent');
+    expect(classifySaleRecency('2025-02-15', now)).toBe('historical');
+    expect(classifySaleRecency('2014-03-01', now)).toBe('historical');
+    expect(classifySaleRecency(null, now)).toBe('undated');
+  });
+
+  it('requests sold PWCC / Fanatics Collect listings and maps cents plus date recency', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ results: [{ listing_uuid: 'lot-1', title: 'Charizard PSA 10', purchase_price_cents: 324000, sold_date: 1650170476, marketplace: 'PREMIER', grade: 10, grading_service: 'PSA', cert_number: '24909560' }], total_hits: 1 }) });
+    global.fetch = fetchMock as typeof fetch;
+    const result = await lookupPwccSales('charizard psa 10', { PARSE_BOT_API_KEY: 'configured-key' });
+    expect(result.status).toBe('success');
+    expect(result.data?.items[0]).toEqual(expect.objectContaining({ price: 3240, recency: 'historical', marketplace: 'PREMIER' }));
+    expect(fetchMock.mock.calls[0][0]).toContain('/6f75fc48-78a3-4fa4-a96a-937d35bf9385/search_listings?keywords=charizard+psa+10&status=Sold&page=0&hits_per_page=10');
   });
 });

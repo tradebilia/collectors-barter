@@ -1,35 +1,19 @@
 export type HistoricalTrendSale = {
-  title: string;
+  title?: string | null;
   price?: number | string | null;
   currency?: string | null;
   date?: string | null;
-  saleType?: string | null;
   marketplace?: string | null;
-  recency: 'recent' | 'historical' | 'undated';
+  recency?: 'recent' | 'historical' | 'undated' | null;
 };
 
-function formatSales(sales: HistoricalTrendSale[]): string {
-  return sales.map((sale) => {
-    const price = sale.price == null ? 'price unavailable' : `${sale.currency || 'USD'} ${sale.price}`;
-    return `- ${sale.title} | ${sale.date || 'date unavailable'} | ${price} | ${sale.marketplace || 'marketplace unavailable'} | ${sale.saleType || 'sale type unavailable'}`;
-  }).join('\n');
-}
-
-export function buildHistoricalTrendContext(sales?: HistoricalTrendSale[] | null): string | null {
-  if (!sales?.length) return null;
-
-  const recent = sales.filter((sale) => sale.recency === 'recent');
-  const historical = sales.filter((sale) => sale.recency === 'historical');
-  const undated = sales.filter((sale) => sale.recency === 'undated');
-  const sections = [
-    recent.length ? `RECENT RECORDS (within 12 months):\n${formatSales(recent)}` : null,
-    historical.length ? `HISTORICAL RECORDS (older than 12 months):\n${formatSales(historical)}` : null,
-    undated.length ? `UNDATED RECORDS:\n${formatSales(undated)}` : null,
-  ].filter((section): section is string => Boolean(section));
-
-  return [
-    '130POINT COMPLETED-SALE TREND CONTEXT — QUALITATIVE ONLY',
-    ...sections,
-    'RULES: Use dated records only to discuss a possible long-term market direction, volatility, or collector demand. Do not calculate an average, median, price range, fair-value figure, trade-fairness result, or negotiation amount from these records. Do not treat an older, undated, different-grade, or different-variant record as a current comparable. If record matching or trend evidence is weak, mixed, or sparse, say so explicitly.',
-  ].join('\n\n');
+export function formatHistoricalTrendContext(label: string, sales: HistoricalTrendSale[] | undefined): string {
+  const records = (sales ?? []).slice(0, 10).filter((sale) => sale && typeof sale === 'object');
+  if (!records.length) return `${label}: No 130point historical-sale records were selected.`;
+  const lines = records.map((sale) => {
+    const bucket = sale.recency === 'recent' ? 'recent (≤12 months)' : sale.recency === 'historical' ? 'historical (>12 months)' : 'undated';
+    const amount = sale.price == null ? 'price unavailable' : `${sale.currency || 'USD'} ${sale.price}`;
+    return `- [${bucket}] ${sale.date || 'date unavailable'} | ${amount} | ${sale.marketplace || 'marketplace unavailable'} | ${sale.title || 'untitled sale'}`;
+  });
+  return `${label} 130POINT QUALITATIVE TREND CONTEXT ONLY:\n${lines.join('\n')}\nDo not use these prices to calculate a current value, the value gap, trade fairness, or a negotiation amount. Use dated records only to discuss direction, market interest, volatility, and whether recency limits confidence.`;
 }

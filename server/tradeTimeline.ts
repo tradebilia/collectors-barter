@@ -42,68 +42,27 @@ export function isMissingTradeActivityLogError(error: unknown): boolean {
   return message.includes("tradeActivityLog") && /doesn't exist|ER_NO_SUCH_TABLE|no such table/i.test(message);
 }
 
-export function buildLegacyTradeTimeline(
-  proposal: TimelineProposal,
-  messages: TimelineMessage[],
-): TimelineEvent[] {
-  const events: TimelineEvent[] = [
-    {
-      id: `proposal-${proposal.id}-created`,
-      actorId: proposal.requesterId,
-      actorName: proposal.requesterName,
-      eventType: "trade_created",
-      details: proposal.initiatorMessage || proposal.note || "Trade proposal created",
-      createdAt: proposal.createdAt,
-    },
-  ];
-
-  const milestones: Array<{
-    timestamp: string | Date | null | undefined;
-    eventType: string;
-    details: string;
-  }> = [
+export function buildLegacyTradeTimeline(proposal: TimelineProposal, messages: TimelineMessage[]): TimelineEvent[] {
+  const events: TimelineEvent[] = [{
+    id: `proposal-${proposal.id}-created`, actorId: proposal.requesterId, actorName: proposal.requesterName,
+    eventType: "trade_created", details: proposal.initiatorMessage || proposal.note || "Trade proposal created", createdAt: proposal.createdAt,
+  }];
+  const milestones: Array<{ timestamp: string | Date | null | undefined; eventType: string; details: string }> = [
     { timestamp: proposal.negotiatingAt, eventType: "proposal_sent", details: "Trade entered negotiation" },
     { timestamp: proposal.acceptedAt, eventType: "proposal_accepted", details: "Trade accepted" },
     { timestamp: proposal.shippingAt, eventType: "tracking_submitted", details: "Trade moved to shipping" },
     { timestamp: proposal.shippedAt, eventType: "tracking_submitted", details: "Items marked as shipped" },
     { timestamp: proposal.completedAt, eventType: "trade_completed", details: "Trade completed" },
   ];
-
   for (const milestone of milestones) {
     if (!hasTimestamp(milestone.timestamp)) continue;
-    events.push({
-      id: `proposal-${proposal.id}-${milestone.eventType}-${String(milestone.timestamp)}`,
-      actorId: null,
-      actorName: "Tradebilia",
-      eventType: milestone.eventType,
-      details: milestone.details,
-      createdAt: milestone.timestamp,
-    });
+    events.push({ id: `proposal-${proposal.id}-${milestone.eventType}-${String(milestone.timestamp)}`, actorId: null, actorName: "Tradebilia", eventType: milestone.eventType, details: milestone.details, createdAt: milestone.timestamp });
   }
-
   if (["declined", "cancelled"].includes(proposal.status) && hasTimestamp(proposal.updatedAt)) {
-    events.push({
-      id: `proposal-${proposal.id}-${proposal.status}`,
-      actorId: null,
-      actorName: "Tradebilia",
-      eventType: proposal.status === "declined" ? "proposal_declined" : "trade_cancelled",
-      details: proposal.status === "declined" ? "Trade declined" : "Trade cancelled",
-      createdAt: proposal.updatedAt,
-    });
+    events.push({ id: `proposal-${proposal.id}-${proposal.status}`, actorId: null, actorName: "Tradebilia", eventType: proposal.status === "declined" ? "proposal_declined" : "trade_cancelled", details: proposal.status === "declined" ? "Trade declined" : "Trade cancelled", createdAt: proposal.updatedAt });
   }
-
   for (const message of messages) {
-    events.push({
-      id: `message-${message.id}`,
-      actorId: message.senderId,
-      actorName: message.actorName || proposal.recipientName,
-      eventType: message.messageType === "system" ? "system_message" : "message_sent",
-      details: message.message,
-      createdAt: message.createdAt,
-    });
+    events.push({ id: `message-${message.id}`, actorId: message.senderId, actorName: message.actorName || proposal.recipientName, eventType: message.messageType === "system" ? "system_message" : "message_sent", details: message.message, createdAt: message.createdAt });
   }
-
-  return events.sort((left, right) => {
-    return new Date(left.createdAt).getTime() - new Date(right.createdAt).getTime();
-  });
+  return events.sort((left, right) => new Date(left.createdAt).getTime() - new Date(right.createdAt).getTime());
 }

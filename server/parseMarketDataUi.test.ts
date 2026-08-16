@@ -21,25 +21,6 @@ describe('Test AI Parse provider controls', () => {
   it('keeps all three provider panels explicitly read-only', () => {
     expect(testAiSource).toContain('Read-only cert details, grade, designation, and population data');
     expect(testAiSource).toContain('Read-only Pokémon card market prices by grade');
-    expect(testAiSource).toContain('Read-only historical completed-sale context across eBay, Goldin, Heritage and more — not a current value');
-  });
-
-  it('separates recent 130point comparables from older historical context without calculating a current value', () => {
-    expect(testAiSource).toContain('Recent comparable sales · last 12 months');
-    expect(testAiSource).toContain('Historical context · over 12 months old');
-    expect(testAiSource).toContain('No current average or valuation is calculated.');
-    expect(testAiSource).toContain('not current-value comparables');
-  });
-
-  it('passes selected 130point sales to the analyzer only as separated trend context', () => {
-    expect(testAiSource).toContain('left130PointSales: leftSources.has(\'one_thirty_point\')');
-    expect(testAiSource).toContain('right130PointSales: rightSources.has(\'one_thirty_point\')');
-  });
-
-  it('exposes a live PWCC / Fanatics Collect panel with the same historical-context safeguards', () => {
-    expect(testAiSource).toContain("label: 'PWCC / Fanatics Collect'");
-    expect(testAiSource).toContain('getPwccFanaticsCollectData');
-    expect(testAiSource).toContain('No current average or valuation is calculated');
-    expect(testAiSource).toContain('Historical context · over 12 months old');
+    expect(testAiSource).toContain('Read-only completed sales. No current average or valuation is calculated');
   });
 });

@@ -1,40 +1,17 @@
 import { describe, expect, it } from 'vitest';
-import { TEST_AI_SOURCE_APPLICABILITY, TRADEBILIA_CATEGORIES, getSourceApplicability } from '../shared/testAiSourceApplicability';
+import { getEligibleTestAiSources } from '../shared/testAiSourceApplicability';
 
-describe('Test AI source-category applicability policy', () => {
-  it('covers every Tradebilia category in the source-policy taxonomy', () => {
-    expect(TRADEBILIA_CATEGORIES).toEqual([
-      'comics', 'sports_cards', 'vintage_toys', 'video_games', 'stamps',
-      'coins', 'pokemon', 'movies', 'autographs', 'disney_pins',
-    ]);
+describe('internal Test AI source-category applicability policy', () => {
+  it('limits grading and marketplace sources to valid categories and certificate prerequisites', () => {
+    const ids = getEligibleTestAiSources({ category: 'sports_cards', gradingCompany: 'PSA', hasTitle: true }).map((source) => source.sourceId);
+    expect(ids).toEqual(expect.arrayContaining(['ebay_active', 'sold_comps', 'psa', 'one_thirty_point', 'pwcc']));
+    expect(ids).not.toContain('pcgs');
+    expect(ids).not.toContain('smithsonian');
   });
 
-  it('keeps general eBay-derived completed-sale data applicable to every category', () => {
-    for (const category of TRADEBILIA_CATEGORIES) {
-      expect(getSourceApplicability('sold_comps', category).isApplicable).toBe(true);
-    }
-    expect(TEST_AI_SOURCE_APPLICABILITY.sold_comps.note).toContain('all Tradebilia categories');
-  });
-
-  it('requires the appropriate collectible category and certificate for grading sources', () => {
-    expect(getSourceApplicability('psa', 'sports_cards')).toMatchObject({ isApplicable: true, requires: ['certificate'] });
-    expect(getSourceApplicability('psa', 'stamps').isApplicable).toBe(false);
-    expect(getSourceApplicability('pcgs', 'coins').isApplicable).toBe(true);
-    expect(getSourceApplicability('pcgs', 'pokemon').isApplicable).toBe(false);
-  });
-
-  it('keeps reference and market-specialist sources limited to their supported categories', () => {
-    expect(getSourceApplicability('smithsonian', 'stamps').isApplicable).toBe(true);
-    expect(getSourceApplicability('smithsonian', 'coins').isApplicable).toBe(false);
-    expect(getSourceApplicability('wikidata', 'movies').isApplicable).toBe(true);
-    expect(getSourceApplicability('wikidata', 'autographs').isApplicable).toBe(true);
-    expect(getSourceApplicability('pricecharting', 'pokemon').isApplicable).toBe(true);
-    expect(getSourceApplicability('pricecharting', 'sports_cards').isApplicable).toBe(false);
-  });
-
-  it('records historical completed-sale sources as context requiring exact-match review', () => {
-    expect(getSourceApplicability('pwcc', 'pokemon')).toMatchObject({ isApplicable: true, requires: ['title', 'exact_match_review'] });
-    expect(getSourceApplicability('one_thirty_point', 'disney_pins').isApplicable).toBe(true);
-    expect(TEST_AI_SOURCE_APPLICABILITY.one_thirty_point.note).toContain('never as an automatic current value');
+  it('uses specialist sources only for their designated category', () => {
+    expect(getEligibleTestAiSources({ category: 'stamps', hasTitle: true }).map((source) => source.sourceId)).toEqual(expect.arrayContaining(['ebay_active', 'sold_comps', 'smithsonian']));
+    expect(getEligibleTestAiSources({ category: 'movies', hasTitle: true }).map((source) => source.sourceId)).toContain('wikidata');
+    expect(getEligibleTestAiSources({ category: 'coins', gradingCompany: 'PCGS', hasTitle: true }).map((source) => source.sourceId)).toContain('pcgs');
   });
 });

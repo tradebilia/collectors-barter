@@ -849,15 +849,9 @@ export const tradeFlowRouter = router({
         tradeStatus: proposal.status as string,
         alreadyReviewed: Boolean((existingReviewRows as unknown as any[])?.[0]),
       });
-      if (reviewBlocker === 'not-participant') {
-        throw new TRPCError({ code: 'FORBIDDEN', message: 'Only trade participants can leave a review.' });
-      }
-      if (reviewBlocker === 'trade-not-completed') {
-        throw new TRPCError({ code: 'BAD_REQUEST', message: 'Reviews are available after the trade is completed.' });
-      }
-      if (reviewBlocker === 'already-reviewed') {
-        throw new TRPCError({ code: 'CONFLICT', message: 'You have already submitted a review for this trade.' });
-      }
+      if (reviewBlocker === 'not-participant') throw new TRPCError({ code: 'FORBIDDEN', message: 'Only trade participants can leave a review.' });
+      if (reviewBlocker === 'trade-not-completed') throw new TRPCError({ code: 'BAD_REQUEST', message: 'Reviews are available after the trade is completed.' });
+      if (reviewBlocker === 'already-reviewed') throw new TRPCError({ code: 'CONFLICT', message: 'You have already submitted a review for this trade.' });
 
       const revieweeId = proposal.requesterId === userId ? proposal.recipientId : proposal.requesterId;
       const overallRating = ((input.tradeExperienceRating + input.itemConditionRating + input.communicationRating + input.shippingSpeedRating) / 4).toFixed(1);
@@ -1265,11 +1259,9 @@ export const tradeFlowRouter = router({
               WHERE tal.proposalId = ${input.proposalId}
               ORDER BY tal.createdAt ASC`
         );
-
         return { events: (events as unknown as any[]) || [] };
       } catch (error) {
         if (!isMissingTradeActivityLogError(error)) throw error;
-
         const [messages] = await db.execute(
           sql`SELECT tm.id, tm.senderId, tm.message, tm.messageType, tm.createdAt,
               COALESCE(NULLIF(up.displayName, ''), NULLIF(u.username, ''), 'Unknown') as actorName
@@ -1281,14 +1273,7 @@ export const tradeFlowRouter = router({
         );
         const requesterName = await getUserDisplayName(db, proposal.requesterId);
         const recipientName = await getUserDisplayName(db, proposal.recipientId);
-
-        return {
-          events: buildLegacyTradeTimeline({
-            ...proposal,
-            requesterName,
-            recipientName,
-          }, messages as unknown as any[]),
-        };
+        return { events: buildLegacyTradeTimeline({ ...proposal, requesterName, recipientName }, messages as unknown as any[]) };
       }
     }),
 

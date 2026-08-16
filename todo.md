@@ -400,19 +400,10 @@
 - [x] Add a secure read-only PCGS lookup to Test AI using the existing project token.
 - [x] Add regression coverage, validate the PCGS lookup, then commit, push, and publish the integration.
 - [x] Diagnose and correct the deployment-wide published-site 500 response, then verify the standard public URL.
-- [x] Reconcile the managed source tree with the validated deployed Test AI provider implementation before further source validation.
-- [x] Continue read-only validation of configured Test AI sources while deferring the valuation engine and storage-heavy provider controls.
-- [x] Compare Collectr data capabilities with active Test AI sources and recommend whether it adds meaningful incremental value.
-- [x] Validate the configured Parse.bot BGS certification workflow with a documented or owner-approved read-only test certificate.
-- [x] Identify collection categories without validated Test AI data sources and recommend compliant free or free-tier APIs for staged implementation.
-- [x] Verify Pokémon TCG API pricing and commercial-use terms, then correct the free-source roadmap if it is not a genuine no-cost commercial option.
-- [x] Add and validate an administrator-only, read-only Wikidata metadata lookup for Movies and Autographs in Test AI.
-- [x] Add and validate an administrator-only, read-only Smithsonian Open Access stamp-reference lookup in Test AI.
-- [x] Audit Smithsonian stamp-response field coverage and surface only useful reference fields in Test AI.
-- [x] Expand the approved Smithsonian stamp-reference fields and audit useful additional Wikidata Movie and Autograph metadata fields.
-- [x] Audit complete Wikidata Movie and Autograph entity fields against the displayed Test AI reference metadata and document any safe additions or exclusions.
-- [x] Add clear 130point historical-sales recency treatment so older completed sales are not implied to be current-value comparables.
-- [x] Incorporate separated 130point recent and historical sales into the Test AI analyzer as an explicit recency-aware trend signal, without using them as an unweighted current valuation.
-- [x] Add and validate administrator-only, read-only Parse.bot PWCC and Fanatics Collect completed-sale sources with the same recency safeguards used for 130point.
-- [x] Superseded at user direction: create and enforce an internal Test AI source-category applicability map so each category exposes only valid data sources and explains category restrictions; manual selection remains in Test AI.
-- [x] Create and document an internal source-category applicability map for future Trade Room automation while preserving manual Test AI source selection.
+- [x] Restore the verified August 15 GitHub-synchronized source baseline and validate it with TypeScript plus the full regression suite.
+- [x] Rebuild and validate the parser-safe, administrator-only Wikidata Test AI provider on the verified baseline.
+- [x] Rebuild and validate the administrator-only Smithsonian Stamp Reference provider with safe Postal Museum relevance filtering.
+- [x] Rebuild and validate recent-versus-historical 130point sale presentation and trend-only AI analyzer context.
+- [x] Rebuild and validate the administrator-only PWCC / Fanatics Collect completed-sales provider with recency safeguards.
+- [x] Rebuild and document the internal source-category applicability policy while preserving manual Test AI source selection.
+- [x] Commit, push, and verify all recovered post-sync Test AI work on the canonical GitHub branch.

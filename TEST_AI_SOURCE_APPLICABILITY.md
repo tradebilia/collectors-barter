@@ -1,30 +1,20 @@
-# Test AI Source-Category Applicability Policy
+# Test AI Source Applicability Policy
 
-## Purpose
+This internal policy layer is reserved for future Trade Room automation. It does not filter or change the current manual Test AI source selector.
 
-This document records the internal policy used by future Trade Room automation to decide which data sources are appropriate for a trade item. It is deliberately **not** an automatic selector in the current Test AI sandbox. Administrators retain manual source selection there for validation and comparison.
-
-> A source may be eligible for a category while still requiring an exact-item, grade, variant, and date review. Eligibility is never an automatic valuation or authenticity conclusion.
-
-## Current policy summary
-
-| Source family | Eligible categories | Required context | Use boundary |
+| Source | Valid categories | Required context | Role and limitation |
 |---|---|---|---|
-| eBay Active, Sold-Comps, eBay Sold, 130point, Heritage | All ten categories | Title and exact-match review | Market records only; dated historical sales cannot be treated as automatic current value. |
-| PSA, BGS, SGC | Sports Cards and Pokémon | Matching certificate | Use only for a supported graded-card certificate. |
-| PCGS and NGC | Coins | Matching certificate | Use only for a supported certified coin; NGC awaits approved access. |
-| CGC | Comics, Sports Cards, Pokémon, Video Games, Movies | Matching certificate | Requires approved CGC data access. |
-| CBCS and Comic Book Realm | Comics | Certificate or exact issue/variant review | Comic-specific source family. |
-| PWCC / Fanatics Collect | Sports Cards and Pokémon | Title and exact-match review | Premium completed-sale context; never an automatic current value. |
-| GoCollect | Comics | Exact issue/variant review | Comic market analytics when activated. |
-| PriceCharting | Pokémon | Title and exact-match review | Current implementation is Pokémon-only. |
-| Wikidata | Movies and Autographs | Title or signer | Factual reference metadata only. |
-| Smithsonian Open Access | Stamps | Title and exact-match review | National Postal Museum reference metadata only. |
+| eBay Active Listings / Sold-Comps | All categories | Title | General current-listing or completed-sale research. |
+| Parse PSA / BGS / SGC | Sports Cards, Pokémon | Matching certification company and certificate number | Certification and population data only for the respective grader. |
+| PCGS CoinFacts | Coins | PCGS certificate number | Official coin certification/reference information. |
+| PriceCharting | Pokémon | Title | Price-guide reference; verify exact card/variant. |
+| 130point | Sports Cards, Pokémon | Title | Dated completed-sale trend context. Older records never become a current-value average. |
+| PWCC / Fanatics Collect | Sports Cards, Pokémon | Title | Sold graded-card research; retain sold date and grade context. |
+| Wikidata | Movies, Autographs | Movie title or signer | Factual reference only; not price or authentication evidence. |
+| Smithsonian | Stamps | Title/catalog reference | National Postal Museum reference only; not price or authentication evidence. |
 
-## Future Trade Room use
+When Trade Room receives a listing category, title, grading company, and certificate number, call `getEligibleTestAiSources`. Display only its returned source set by default and retain a transparent rationale for unavailable sources. The policy is deliberately separate from Test AI, where manual selection remains available for controlled administrator testing.
 
-When Trade Room integration is approved, the item category, certification company, certification number, and canonical title can be passed to `getSourceApplicability`. The Trade Room should use the result to offer recommended eligible sources and explain any source restriction. It must not silently enable a source, infer authenticity, calculate a value, or turn historical results into current comparables.
+## Provider contract note
 
-## Implementation location
-
-The policy is implemented in `shared/testAiSourceApplicability.ts`. The test suite verifies all ten Tradebilia categories, all-category eBay-derived source eligibility, grading-certificate restrictions, category-specific reference sources, and historical-sale context requirements.
+PWCC / Fanatics Collect uses Parse.bot scraper ID `6f75fc48-78a3-4fa4-a96a-937d35bf9385` and the read-only `search_listings` endpoint with `status=Sold`, bounded `hits_per_page`, and a title query. It is a managed independent wrapper, not an official Fanatics Collect API. Preserve individual sold dates and do not derive an unqualified current-value average. Source: https://parse.bot/marketplace/fd876e79-7a46-42c6-a13c-35d4c5902c94/pwccmarketplace-com-api

@@ -1,84 +1,44 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import { lookupSmithsonianStampMetadata } from './smithsonianMetadata';
+import { describe, expect, it, vi } from 'vitest';
+import { lookupSmithsonianStampReference } from './smithsonianMetadata';
 
-const originalFetch = global.fetch;
-
-afterEach(() => {
-  global.fetch = originalFetch;
-});
-
-describe('Smithsonian stamp metadata adapter', () => {
-  it('maps a read-only Postal Museum record without returning valuation data', async () => {
+describe('Smithsonian stamp reference adapter', () => {
+  it('maps a National Postal Museum record and rejects unrelated museum results', async () => {
+    const previous = process.env.SMITHSONIAN_API_KEY;
+    process.env.SMITHSONIAN_API_KEY = 'test-key';
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       status: 200,
       json: async () => ({
         response: {
-          rows: [{
-            id: 'edanmdm:npm_1980.0015.0001',
-            title: '24c Curtiss Jenny invert single',
-            content: {
-              freetext: {
-                dataSource: [{ content: 'National Postal Museum' }],
-                title: [{ content: 'Scott Catalogue USA C3a' }],
-                identifier: [{ content: '1980.0015.0001' }],
-                name: [{ content: 'Bureau of Engraving and Printing' }],
-                notes: [{ content: 'Unused' }],
-                objectType: [{ content: 'Postage Stamps' }],
-                physicalDescription: [{ content: 'paper; ink' }, { content: '1 x 1 in.' }],
-                topic: [{ content: 'Airmail stamps' }, { content: 'U.S. Stamps' }],
-                setName: [{ content: 'National Postal Museum Collection' }],
-              },
-              indexedStructured: { date: ['1918'], place: ['United States of America'] },
-              descriptiveNonRepeating: {
-                record_link: 'https://www.si.edu/object/24c-curtiss-jenny-invert-single:npm_1980.0015.0001',
-                online_media: { media: [{ content: 'https://ids.si.edu/example.jpg', usage: { access: 'CC0' } }] },
-                metadata_usage: { access: 'CC0' },
+          rows: [
+            { id: 'unrelated', unitCode: 'NMAH', title: 'Unrelated object' },
+            {
+              id: '2005.2001.257',
+              unitCode: 'NPM',
+              content: {
+                descriptiveNonRepeating: {
+                  title: { content: 'Stamp, 1925' },
+                  record_link: 'https://www.si.edu/object/2005.2001.257',
+                  data_source: 'National Postal Museum',
+                },
+                freetext: {
+                  date: [{ content: '1925' }],
+                  place: [{ content: 'United States' }],
+                  name: [{ content: 'Bureau of Engraving and Printing' }],
+                  objectType: [{ content: 'Postage Stamps' }],
+                  topic: [{ content: 'U.S. Stamps' }],
+                  notes: [{ content: 'Scott Catalogue USA 572' }],
+                },
               },
             },
-          }],
+          ],
         },
       }),
     });
-    global.fetch = fetchMock as typeof fetch;
-
-    const result = await lookupSmithsonianStampMetadata('Curtiss Jenny', 'test-key');
-
+    const result = await lookupSmithsonianStampReference('Scott 572', fetchMock as typeof fetch);
     expect(result.status).toBe('success');
-    expect(result.data?.title).toBe('24c Curtiss Jenny invert single');
-    expect(result.data?.facts).toEqual(expect.arrayContaining([
-      { label: 'Collection', value: 'National Postal Museum' },
-      { label: 'Date', value: '1918' },
-      { label: 'Catalog reference', value: 'Scott Catalogue USA C3a' },
-      { label: 'Printer', value: 'Bureau of Engraving and Printing' },
-      { label: 'Image rights', value: 'CC0' },
-    ]));
-    expect(result.data?.sourceUrl).toContain('si.edu/object');
-    expect(result.data).not.toHaveProperty('price');
-    expect(fetchMock.mock.calls[0]?.[0]).toContain('api_key=test-key');
-  });
-
-  it('returns a clear result when no stamp reference is found', async () => {
-    const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => ({ response: { rows: [] } }) });
-    global.fetch = fetchMock as typeof fetch;
-
-    const result = await lookupSmithsonianStampMetadata('No Such Stamp', 'test-key');
-
-    expect(result.status).toBe('not_found');
-    expect(result.message).toContain('No Smithsonian');
-  });
-
-  it('does not return an unrelated non-postal Smithsonian record', async () => {
-    const fetchMock = vi.fn().mockResolvedValue({
-      ok: true,
-      status: 200,
-      json: async () => ({ response: { rows: [{ id: 'edanmdm:silib_304106', title: 'McNally cool preparation manual 572' }] } }),
-    });
-    global.fetch = fetchMock as typeof fetch;
-
-    const result = await lookupSmithsonianStampMetadata('572', 'test-key');
-
-    expect(result.status).toBe('not_found');
-    expect(result.message).toContain('National Postal Museum');
+    expect(result.data?.id).toBe('2005.2001.257');
+    expect(result.data?.facts).toEqual(expect.arrayContaining([{ label: 'Catalog reference', value: 'Scott Catalogue USA 572' }, { label: 'Collection', value: 'National Postal Museum' }]));
+    if (previous === undefined) delete process.env.SMITHSONIAN_API_KEY; else process.env.SMITHSONIAN_API_KEY = previous;
   });
 });

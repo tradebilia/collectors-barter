@@ -1,13 +1,13 @@
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import fs from 'node:fs';
+import path from 'node:path';
 
-const testAiSource = readFileSync(resolve(process.cwd(), 'client/src/pages/TestAI.tsx'), 'utf8');
+describe('manual Test AI selector boundary', () => {
+  const source = fs.readFileSync(path.resolve(import.meta.dirname, '../client/src/pages/TestAI.tsx'), 'utf8');
 
-describe('Test AI source applicability policy UI boundary', () => {
-  it('retains explicit manual source toggles instead of auto-enforcing category eligibility in Test AI', () => {
-    expect(testAiSource).toContain('function SourceSelector({ enabled, onChange, side }');
-    expect(testAiSource).toContain('onClick={() => toggle(source.id as SourceId)}');
-    expect(testAiSource).not.toContain('getSourceApplicability');
+  it('retains manual source state and does not apply the future Trade Room applicability policy to the sandbox selector', () => {
+    expect(source).toContain('const [leftSources, setLeftSources] = useState<Set<SourceId>>');
+    expect(source).toContain('function SourceSelector');
+    expect(source).not.toContain('getEligibleTestAiSources');
   });
 });

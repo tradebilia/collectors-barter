@@ -6,7 +6,6 @@
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 const FROM_ADDRESS = "Tradebilia <noreply@tradebilia.com>";
 const SITE_URL = "https://tradebilia.manus.space";
-const EMAIL_LOGO_URL = `${SITE_URL}/manus-storage/tradebilia_final_transparent_8a1981e6.svg`;
 import { isStagingSafetyEnabled, stagingSafetyReason } from "./stagingSafety";
 
 async function sendEmail(to: string, subject: string, html: string): Promise<boolean> {
@@ -54,7 +53,7 @@ function emailWrapper(content: string): string {
         <!-- Header -->
         <tr><td style="background:#0a0d22;padding:24px 16px;text-align:center;">
           <img
-            src="${EMAIL_LOGO_URL}"
+            src="https://tradebilia.manus.space/manus-storage/tradebilia_final_transparent_58812c5a.svg"
             alt="Tradebilia"
             width="520"
             style="display:block;margin:0 auto;width:100%;max-width:520px;height:auto;"
@@ -236,11 +235,7 @@ export async function sendShippingDeadlineReminderEmail(params: {
   const detail = params.overdue
     ? `Your tracking information is overdue for trade TR-${params.tradeRef}. Please ship your items and add tracking as soon as possible.`
     : `Please ship your items and add tracking for trade TR-${params.tradeRef} by ${params.deadline}.`;
-  const html = emailWrapper(`
-    <h2 style="margin:0 0 8px;font-size:22px;color:#0a0d22;">${heading}</h2>
-    <p style="color:#666;font-size:14px;margin:0 0 24px;">${detail}</p>
-    <a href="${SITE_URL}/trade-hub" style="display:inline-block;background:#7f31ff;color:#ffffff;text-decoration:none;padding:14px 28px;border-radius:10px;font-weight:600;font-size:14px;">Open Trade Room</a>
-  `);
+  const html = emailWrapper(`<h2 style="margin:0 0 8px;font-size:22px;color:#0a0d22;">${heading}</h2><p style="color:#666;font-size:14px;margin:0 0 24px;">${detail}</p><a href="${SITE_URL}/trade-hub" style="display:inline-block;background:#7f31ff;color:#ffffff;text-decoration:none;padding:14px 28px;border-radius:10px;font-weight:600;font-size:14px;">Open Trade Room</a>`);
   return sendEmail(params.recipientEmail, `${heading} — TR-${params.tradeRef}`, html);
 }
 
@@ -360,7 +355,7 @@ export async function sendReferralInviteEmail(params: {
       <table width="100%" style="max-width:560px;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
         <tr><td style="background:#0a0d22;padding:24px 16px;text-align:center;">
           <img
-            src="${EMAIL_LOGO_URL}"
+            src="https://tradebilia.manus.space/manus-storage/tradebilia_final_transparent_58812c5a.svg"
             alt="Tradebilia"
             width="520"
             style="display:block;margin:0 auto;width:100%;max-width:520px;height:auto;"

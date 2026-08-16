@@ -15,13 +15,7 @@ export type ScheduledDeps = {
   deleteDraftsOlderThan: (db: any, cutoff: Date) => Promise<number>;
   notifyOwner: (payload: { title: string; content: string }) => Promise<boolean>;
   isStagingSafetyEnabled: () => boolean;
-  sendShippingDeadlineReminderEmail: (payload: {
-    recipientEmail: string;
-    recipientName: string;
-    tradeRef: string;
-    deadline: string;
-    overdue: boolean;
-  }) => Promise<boolean>;
+  sendShippingDeadlineReminderEmail: (payload: { recipientEmail: string; recipientName: string; tradeRef: string; deadline: string; overdue: boolean }) => Promise<boolean>;
 };
 
 export const defaultScheduledDeps: ScheduledDeps = {
@@ -182,9 +176,6 @@ export function makeTradeRemindersHandler(deps: ScheduledDeps = defaultScheduled
         receiptEscalated++;
       }
 
-      // 4. Shipping reminders: one email within 48 hours of the deadline, then
-      // one daily overdue email for each participant who has not submitted tracking.
-      // The tradeAlerts marker is inserted before sending so a retry cannot duplicate email.
       const [shipmentCandidates] = await db.execute(
         sql`SELECT tp.id as proposalId, tp.tradeReferenceNumber, tp.shippingDeadline, tp.shippingAt,
               u.id as recipientUserId, u.email,
@@ -198,42 +189,21 @@ export function makeTradeRemindersHandler(deps: ScheduledDeps = defaultScheduled
       );
       const nowDate = new Date(now.replace(" ", "T") + "Z");
       for (const candidate of ((shipmentCandidates as unknown as any[]) || [])) {
-        if (Number(candidate.hasTracking)) continue;
-        if (!isShipmentReminderEmailEnabled(candidate.notificationPreferences)) continue;
-        const deadline = candidate.shippingDeadline
-          ? new Date(candidate.shippingDeadline)
-          : new Date(new Date(candidate.shippingAt).getTime() + 3 * 24 * 60 * 60 * 1000);
+        if (Number(candidate.hasTracking) || !isShipmentReminderEmailEnabled(candidate.notificationPreferences)) continue;
+        const deadline = candidate.shippingDeadline ? new Date(candidate.shippingDeadline) : new Date(new Date(candidate.shippingAt).getTime() + 3 * 24 * 60 * 60 * 1000);
         const kind = getShipmentReminderKind(deadline, nowDate);
         if (!kind) continue;
-
-        const marker = shipmentReminderMarker(kind, deadline, nowDate);
-        const markerMessage = `shipment-reminder:${marker}`;
+        const markerMessage = `shipment-reminder:${shipmentReminderMarker(kind, deadline, nowDate)}`;
         const [reservation] = await db.execute(
           sql`INSERT INTO tradeAlerts (proposalId, recipientUserId, alertType, message, isRead, createdAt)
               SELECT ${candidate.proposalId}, ${candidate.recipientUserId}, 'reminder', ${markerMessage}, 0, ${now}
-              WHERE NOT EXISTS (
-                SELECT 1 FROM tradeAlerts
-                WHERE proposalId = ${candidate.proposalId}
-                  AND recipientUserId = ${candidate.recipientUserId}
-                  AND alertType = 'reminder'
-                  AND message = ${markerMessage}
-              )`
+              WHERE NOT EXISTS (SELECT 1 FROM tradeAlerts WHERE proposalId = ${candidate.proposalId} AND recipientUserId = ${candidate.recipientUserId} AND alertType = 'reminder' AND message = ${markerMessage})`
         );
         if (!(reservation as any)?.affectedRows) continue;
-
         try {
-          await deps.sendShippingDeadlineReminderEmail({
-            recipientEmail: candidate.email,
-            recipientName: candidate.recipientName,
-            tradeRef: candidate.tradeReferenceNumber || String(candidate.proposalId),
-            deadline: deadline.toLocaleDateString("en-US", { timeZone: "America/New_York", month: "long", day: "numeric", year: "numeric" }),
-            overdue: kind === 'overdue',
-          });
-        } catch (error) {
-          console.warn(`[tradeReminders] Shipment reminder email failed for proposal ${candidate.proposalId}, recipient ${candidate.recipientUserId}:`, error);
-        }
-        if (kind === 'overdue') shipmentOverdueReminders++;
-        else shipmentDueSoonReminders++;
+          await deps.sendShippingDeadlineReminderEmail({ recipientEmail: candidate.email, recipientName: candidate.recipientName, tradeRef: candidate.tradeReferenceNumber || String(candidate.proposalId), deadline: deadline.toLocaleDateString("en-US", { timeZone: "America/New_York", month: "long", day: "numeric", year: "numeric" }), overdue: kind === "overdue" });
+        } catch (error) { console.warn(`[tradeReminders] Shipment reminder email failed for proposal ${candidate.proposalId}, recipient ${candidate.recipientUserId}:`, error); }
+        if (kind === "overdue") shipmentOverdueReminders++; else shipmentDueSoonReminders++;
       }
 
       res.json({ ok: true, autoCancelled, acceptanceTimedOut, receiptEscalated, shipmentDueSoonReminders, shipmentOverdueReminders, timestamp: now });

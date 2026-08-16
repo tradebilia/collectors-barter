@@ -10,7 +10,5 @@ describe('Wikidata Test AI UI wiring', () => {
     expect(source).toContain("status: 'live' as const");
     expect(source).toContain("enabledSources.has('wikidata')");
     expect(source).toContain('Read-only public metadata for Movies and Autographs');
-    expect(source).toContain('details.signer || item.title');
-    expect(source).toContain('details.title || details.movieTitle || item.title');
   });
 });

@@ -1,7 +1,7 @@
 # Multi-Carrier Tracking Options: Broad Investigation
 
-**Prepared for:** Tradebilia  
-**Purpose:** Identify a legitimate free or low-volume API option for USPS, UPS, FedEx, and DHL package tracking without scraping carrier websites.  
+**Prepared for:** Tradebilia
+**Purpose:** Identify a legitimate free or low-volume API option for USPS, UPS, FedEx, and DHL package tracking without scraping carrier websites.
 **Status:** Research complete; no provider selected or integrated from this review.
 
 ## Executive conclusion
@@ -51,14 +51,14 @@ No carrier site should be scraped. The legal and operational risk is higher than
 
 ## References
 
-[1] [17TRACK API documentation](https://api.17track.net/en/doc)  
-[2] [17TRACK USPS tracking policy](https://www.17track.net/en/uspsTracking)  
-[3] [17TRACK plan details](https://help.17track.net/hc/en-us/articles/37575217580825-Plan-Details)  
-[4] [TrackingMore pricing](https://www.trackingmore.com/pricing)  
-[5] [Tracktry pricing](https://www.tracktry.com/pricing)  
-[6] [CWILL Post-Purchase pricing](https://www.parcelpanel.com/pricing/)  
-[7] [AfterShip Tracking pricing](https://www.aftership.com/pricing/tracking)  
-[8] [WhereParcel](https://whereparcel.com/)  
-[9] [Karrio on GitHub](https://github.com/karrioapi/karrio)  
-[10] [USPS API access controls](https://www.usps.com/business/api-access.htm)  
+[1] [17TRACK API documentation](https://api.17track.net/en/doc)
+[2] [17TRACK USPS tracking policy](https://www.17track.net/en/uspsTracking)
+[3] [17TRACK plan details](https://help.17track.net/hc/en-us/articles/37575217580825-Plan-Details)
+[4] [TrackingMore pricing](https://www.trackingmore.com/pricing)
+[5] [Tracktry pricing](https://www.tracktry.com/pricing)
+[6] [CWILL Post-Purchase pricing](https://www.parcelpanel.com/pricing/)
+[7] [AfterShip Tracking pricing](https://www.aftership.com/pricing/tracking)
+[8] [WhereParcel](https://whereparcel.com/)
+[9] [Karrio on GitHub](https://github.com/karrioapi/karrio)
+[10] [USPS API access controls](https://www.usps.com/business/api-access.htm)
 [11] [USPS terms of use](https://about.usps.com/termsofuse.htm)

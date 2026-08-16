@@ -315,40 +315,6 @@ describe("tradeReminders", () => {
     expect(res.status).toBe(500);
     expect(res.body.error).toContain("lock wait timeout");
   });
-
-  it("reserves a due-soon reminder before email delivery so a retry cannot duplicate it", async () => {
-    const statements: string[] = [];
-    const execute = vi.fn(async (query: any) => {
-      const text = Array.isArray(query?.queryChunks)
-        ? query.queryChunks.map((chunk: any) => typeof chunk === "string" ? chunk : chunk?.value ?? "").flat().join(" ")
-        : String(query?.sql ?? query ?? "");
-      statements.push(text);
-      if (/FROM tradeProposals tp/.test(text)) {
-        return [[{
-          proposalId: 77,
-          tradeReferenceNumber: "TR-000077",
-          shippingDeadline: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-          shippingAt: new Date().toISOString(),
-          recipientUserId: 30002,
-          email: "admin@tradebilia.com",
-          recipientName: "Administrator",
-          notificationPreferences: null,
-          hasTracking: 0,
-        }], []];
-      }
-      if (/INSERT INTO tradeAlerts/.test(text)) return [{ affectedRows: 1 }, []];
-      if (/^\s*SELECT/i.test(text)) return [[], []];
-      return [{ affectedRows: 0 }, []];
-    });
-    const sendShippingDeadlineReminderEmail = vi.fn(async () => true);
-    const { app } = makeApp({ requireDb: vi.fn(async () => ({ execute })), sendShippingDeadlineReminderEmail } as any);
-    const res = await request(app).post("/api/scheduled/tradeReminders");
-
-    expect(res.status).toBe(200);
-    expect(res.body.shipmentDueSoonReminders).toBe(1);
-    expect(sendShippingDeadlineReminderEmail).toHaveBeenCalledTimes(1);
-    expect(statements.join(" | ")).toContain("shipment-reminder:due-soon");
-  });
 });
 
 describe("scheduled route wiring in the real server", () => {
