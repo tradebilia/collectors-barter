@@ -428,8 +428,8 @@ export default function ItemDetail() {
                       </span>
                     )}
                     {listing.ownerProfile.ebayVerified && (
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white border border-gray-200 shadow-sm">
-                        <img src="/manus-storage/Ebaylogo_f6331705.png" alt="eBay" className="h-3.5 w-auto" />
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-white border border-gray-200 shadow-sm" title="Connected eBay account">
+                        <img src="/manus-storage/Ebaylogo_12a10426.png" alt="eBay" className="h-4 w-[48px] object-contain" />
                       </span>
                     )}
                     {listing.ownerProfile.facebookVerified && (

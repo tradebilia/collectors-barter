@@ -412,3 +412,4 @@
 - [x] Diagnose the Twilio Verify HTTP 451 response through read-only configuration and service-access checks without sending SMS or changing credentials.
 - [x] Identify the collection categories still lacking a category-specific API that would materially improve Test AI analysis beyond general marketplace data.
 - [x] Diagnose and correct the missing eBay verification badge for the Administrator on item-detail pages.
+- [x] Correct the malformed item-detail eBay verification badge so the full recognizable logo renders at an appropriate size.
