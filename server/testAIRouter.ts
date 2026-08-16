@@ -9,8 +9,11 @@ import { lookupUspsTracking } from "./uspsTracking";
 import { lookupUpsTracking } from "./upsTracking";
 import { lookupFedexTracking } from "./fedexTracking";
 import { lookupDhlTracking } from "./dhlTracking";
-import { lookup130PointSales, lookupPriceCharting, lookupSgcCertification } from './parseMarketData';
+import { lookup130PointSales, lookupPriceCharting, lookupPwccSales, lookupSgcCertification } from './parseMarketData';
 import { lookupPcgsCertification } from './pcgsMarketData';
+import { lookupWikidataMetadata } from './wikidataMetadata';
+import { lookupSmithsonianStampReference } from './smithsonianMetadata';
+import { formatHistoricalTrendContext } from './historicalTrendContext';
 
 // ─── Shared eBay helpers (mirrors tradeFlowRouter logic) ────────────────────
 async function getEbayAppToken(): Promise<string | null> {
@@ -753,6 +756,28 @@ export const testAIRouter = router({
       return lookup130PointSales(input.query);
     }),
 
+  getPwccSales: protectedProcedure
+    .input(z.object({ query: z.string().trim().min(2).max(240) }))
+    .query(async ({ ctx, input }) => {
+      if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      return lookupPwccSales(input.query);
+    }),
+
+  // Wikidata public metadata lookup — administrator-only, read-only, and not a valuation source.
+  getWikidataMetadata: protectedProcedure
+    .input(z.object({ query: z.string().trim().min(2).max(180), category: z.enum(['movies', 'autographs']) }))
+    .query(async ({ ctx, input }) => {
+      if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      return lookupWikidataMetadata(input.query, input.category);
+    }),
+
+  getSmithsonianStampReference: protectedProcedure
+    .input(z.object({ query: z.string().trim().min(2).max(240) }))
+    .query(async ({ ctx, input }) => {
+      if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      return lookupSmithsonianStampReference(input.query);
+    }),
+
   // Parse.bot Beckett (BGS) graded card lookup
   getBeckettData: protectedProcedure
     .input(z.object({
@@ -874,11 +899,17 @@ export const testAIRouter = router({
       rightEbayMetrics: z.any().optional(),
       leftSoldCompsMetrics: z.any().optional(),
       rightSoldCompsMetrics: z.any().optional(),
+      leftHistoricalTrendSales: z.array(z.object({
+        title: z.string().nullable().optional(), price: z.union([z.number(), z.string()]).nullable().optional(), currency: z.string().nullable().optional(), date: z.string().nullable().optional(), marketplace: z.string().nullable().optional(), recency: z.enum(['recent', 'historical', 'undated']).nullable().optional(),
+      })).max(10).optional(),
+      rightHistoricalTrendSales: z.array(z.object({
+        title: z.string().nullable().optional(), price: z.union([z.number(), z.string()]).nullable().optional(), currency: z.string().nullable().optional(), date: z.string().nullable().optional(), marketplace: z.string().nullable().optional(), recency: z.enum(['recent', 'historical', 'undated']).nullable().optional(),
+      })).max(10).optional(),
     }))
     .mutation(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
 
-      const { leftItem, rightItem, leftEbayMetrics, rightEbayMetrics, leftSoldCompsMetrics, rightSoldCompsMetrics } = input;
+      const { leftItem, rightItem, leftEbayMetrics, rightEbayMetrics, leftSoldCompsMetrics, rightSoldCompsMetrics, leftHistoricalTrendSales, rightHistoricalTrendSales } = input;
 
       const formatItemLine = (item: typeof leftItem, ebayMetrics: any, soldMetrics: any) => {
         let line = `- ${item.title}`;
@@ -903,6 +934,8 @@ export const testAIRouter = router({
 
       const leftLine = formatItemLine(leftItem, leftEbayMetrics, leftSoldCompsMetrics);
       const rightLine = formatItemLine(rightItem, rightEbayMetrics, rightSoldCompsMetrics);
+      const leftTrendContext = formatHistoricalTrendContext('ITEM A', leftHistoricalTrendSales);
+      const rightTrendContext = formatHistoricalTrendContext('ITEM B', rightHistoricalTrendSales);
 
       // Prefer sold prices (real transactions) over active listing prices for valuation
       const leftVal = leftSoldCompsMetrics?.median ?? leftEbayMetrics?.median ?? leftItem.estimatedValue ?? 0;
@@ -929,6 +962,10 @@ ${leftLine}
 
 === ITEM B (RIGHT) ===
 ${rightLine}
+
+=== QUALITATIVE HISTORICAL TREND INPUT — NOT A VALUATION ===
+${leftTrendContext}
+${rightTrendContext}
 
 === PRE-COMPUTED VALUE GAP ===
 ${diffStr}

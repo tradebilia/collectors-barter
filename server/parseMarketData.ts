@@ -2,8 +2,19 @@ const PARSE_API_BASE = 'https://api.parse.bot/scraper';
 const SGC_SCRAPER_ID = 'f63ad1cb-5b08-4e33-9ea8-573b416e936d';
 const PRICECHARTING_SCRAPER_ID = 'bbbbdc36-6d99-4a7a-8115-cf766b2497e3';
 const ONE_THIRTY_POINT_SCRAPER_ID = '28d873f5-47d5-4c01-a275-e80c6b3fc610';
+const PWCC_SCRAPER_ID = '6f75fc48-78a3-4fa4-a96a-937d35bf9385';
 
 type ParseEnv = Record<string, string | undefined>;
+
+export type SaleRecency = 'recent' | 'historical' | 'undated';
+
+export function classifySaleRecency(date: unknown, nowMs: number = Date.now()): SaleRecency {
+  if (typeof date !== 'string' || !date.trim()) return 'undated';
+  const saleMs = Date.parse(date);
+  if (!Number.isFinite(saleMs)) return 'undated';
+  const ageMs = nowMs - saleMs;
+  return ageMs >= 0 && ageMs <= 365 * 24 * 60 * 60 * 1000 ? 'recent' : 'historical';
+}
 
 function parseErrorMessage(status: number, provider: string): string {
   if (status === 401 || status === 403) return `${provider} credentials are not authorized. Check the secure Parse key configuration.`;
@@ -119,6 +130,7 @@ export async function lookup130PointSales(query: string, env: ParseEnv = process
         price: sale.price ?? null,
         currency: sale.currency ?? 'USD',
         date: sale.date ?? null,
+        recency: classifySaleRecency(sale.date),
         saleType: sale.sale_type ?? null,
         marketplace: sale.sold_via ?? null,
         url: sale.url ?? null,
@@ -137,5 +149,42 @@ export async function lookup130PointSales(query: string, env: ParseEnv = process
     };
   } catch {
     return { query: normalizedQuery, status: 'error' as const, message: 'Parse 130point lookup could not be reached. Try again shortly.', data: null };
+  }
+}
+
+export async function lookupPwccSales(query: string, env: ParseEnv = process.env) {
+  const normalizedQuery = query.trim();
+  const apiKey = env.PARSE_BOT_API_KEY;
+  if (!apiKey) return { query: normalizedQuery, status: 'error' as const, message: 'Parse.bot API key not configured', data: null };
+  if (!normalizedQuery) return { query: normalizedQuery, status: 'error' as const, message: 'Enter an item title before requesting PWCC / Fanatics Collect sales data.', data: null };
+  try {
+    const params = new URLSearchParams({ keywords: normalizedQuery, status: 'Sold', page: '0', hits_per_page: '10' });
+    const response = await fetch(`${PARSE_API_BASE}/${PWCC_SCRAPER_ID}/search_listings?${params.toString()}`, { headers: { 'X-API-Key': apiKey } });
+    const payload = await response.json().catch(() => null);
+    if (!response.ok) return { query: normalizedQuery, status: 'error' as const, message: parseErrorMessage(response.status, 'PWCC / Fanatics Collect'), data: null };
+    const result = asObject(asObject(payload).data ?? payload);
+    const listings = Array.isArray(result.results) ? result.results.map((listing: unknown) => {
+      const sale = asObject(listing);
+      const soldDate = typeof sale.sold_date === 'number' ? new Date(sale.sold_date * 1000).toISOString().slice(0, 10) : sale.sold_date ?? null;
+      const cents = sale.purchase_price_cents ?? sale.current_price_cents ?? null;
+      return {
+        id: sale.listing_uuid ?? sale.listing_id ?? null,
+        title: sale.title ?? 'Untitled PWCC listing',
+        price: typeof cents === 'number' ? cents / 100 : null,
+        currency: 'USD',
+        date: soldDate,
+        recency: classifySaleRecency(soldDate),
+        marketplace: sale.marketplace ?? 'Fanatics Collect',
+        saleType: sale.auction_name ?? sale.marketplace ?? 'Sold listing',
+        grade: sale.grade ?? null,
+        certificationCompany: sale.grading_service ?? null,
+        certNumber: sale.cert_number ?? null,
+        url: sale.listing_uuid ? `https://www.pwccmarketplace.com/items/${sale.listing_uuid}` : null,
+        imageUrl: sale.image_url ?? null,
+      };
+    }) : [];
+    return { query: normalizedQuery, status: 'success' as const, data: { totalFound: result.total_hits ?? listings.length, itemsReturned: listings.length, items: listings } };
+  } catch {
+    return { query: normalizedQuery, status: 'error' as const, message: 'PWCC / Fanatics Collect lookup could not be reached. Try again shortly.', data: null };
   }
 }

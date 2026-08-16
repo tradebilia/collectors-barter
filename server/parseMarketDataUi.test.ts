@@ -21,6 +21,6 @@ describe('Test AI Parse provider controls', () => {
   it('keeps all three provider panels explicitly read-only', () => {
     expect(testAiSource).toContain('Read-only cert details, grade, designation, and population data');
     expect(testAiSource).toContain('Read-only Pokémon card market prices by grade');
-    expect(testAiSource).toContain('Read-only completed trading-card sales across multiple marketplaces');
+    expect(testAiSource).toContain('Read-only completed sales. No current average or valuation is calculated');
   });
 });

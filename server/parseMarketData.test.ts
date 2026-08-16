@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, afterEach } from 'vitest';
-import { lookup130PointSales, lookupPriceCharting, lookupSgcCertification } from './parseMarketData';
+import { classifySaleRecency, lookup130PointSales, lookupPriceCharting, lookupPwccSales, lookupSgcCertification } from './parseMarketData';
 
 const originalFetch = global.fetch;
 
@@ -45,6 +45,7 @@ describe('Parse SGC and PriceCharting adapters', () => {
 
     expect(result.status).toBe('success');
     expect(result.data?.items[0]?.marketplace).toBe('eBay');
+    expect(result.data?.items[0]?.recency).toBe('recent');
     expect(fetchMock.mock.calls[0][0]).toContain('/28d873f5-47d5-4c01-a275-e80c6b3fc610/search_sold_items?sort=BestMatch&limit=10&query=Michael%20Jordan%20rookie&marketplace=all');
   });
 
@@ -56,5 +57,22 @@ describe('Parse SGC and PriceCharting adapters', () => {
     expect((await lookupPriceCharting('charizard', {})).status).toBe('error');
     expect((await lookup130PointSales('Michael Jordan', {})).status).toBe('error');
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('treats older or undated 130point records as historical research context', () => {
+    const now = Date.parse('2026-08-16T00:00:00Z');
+    expect(classifySaleRecency('2026-02-16', now)).toBe('recent');
+    expect(classifySaleRecency('2025-02-15', now)).toBe('historical');
+    expect(classifySaleRecency('2014-03-01', now)).toBe('historical');
+    expect(classifySaleRecency(null, now)).toBe('undated');
+  });
+
+  it('requests sold PWCC / Fanatics Collect listings and maps cents plus date recency', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ results: [{ listing_uuid: 'lot-1', title: 'Charizard PSA 10', purchase_price_cents: 324000, sold_date: 1650170476, marketplace: 'PREMIER', grade: 10, grading_service: 'PSA', cert_number: '24909560' }], total_hits: 1 }) });
+    global.fetch = fetchMock as typeof fetch;
+    const result = await lookupPwccSales('charizard psa 10', { PARSE_BOT_API_KEY: 'configured-key' });
+    expect(result.status).toBe('success');
+    expect(result.data?.items[0]).toEqual(expect.objectContaining({ price: 3240, recency: 'historical', marketplace: 'PREMIER' }));
+    expect(fetchMock.mock.calls[0][0]).toContain('/6f75fc48-78a3-4fa4-a96a-937d35bf9385/search_listings?keywords=charizard+psa+10&status=Sold&page=0&hits_per_page=10');
   });
 });
