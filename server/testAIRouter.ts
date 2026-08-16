@@ -14,6 +14,7 @@ import { lookupPcgsCertification } from './pcgsMarketData';
 import { lookupWikidataMetadata } from './wikidataMetadata';
 import { lookupSmithsonianStampReference } from './smithsonianMetadata';
 import { formatHistoricalTrendContext } from './historicalTrendContext';
+import { buildSportsCardTestAiCriteria, resolveTestAiManufacturer } from '../shared/testAiCriteria';
 
 // ─── Shared eBay helpers (mirrors tradeFlowRouter logic) ────────────────────
 async function getEbayAppToken(): Promise<string | null> {
@@ -156,18 +157,27 @@ export const testAIRouter = router({
       `
     ) as any;
     const arr = Array.isArray(rows) ? rows : [];
-    return arr.map((r: any) => ({
-      id: r.id,
-      title: r.title,
-      category: r.category,
-      condition: r.condition,
-      grade: r.grade ?? null,
-      certificationCompany: r.certificationCompany ?? null,
-      estimatedValue: r.estimatedValue ? Number(r.estimatedValue) : null,
-      itemDetails: r.itemDetails ?? null,
-      description: r.description ?? null,
-      primaryPhotoUrl: r.primaryPhotoUrl ?? null,
-    }));
+    return arr.map((r: any) => {
+      let parsedDetails: Record<string, unknown> | null = null;
+      try {
+        parsedDetails = r.itemDetails ? JSON.parse(r.itemDetails) : null;
+      } catch {
+        parsedDetails = null;
+      }
+      return {
+        id: r.id,
+        title: r.title,
+        category: r.category,
+        condition: r.condition,
+        grade: r.grade ?? null,
+        certificationCompany: r.certificationCompany ?? null,
+        estimatedValue: r.estimatedValue ? Number(r.estimatedValue) : null,
+        itemDetails: r.itemDetails ?? null,
+        manufacturer: resolveTestAiManufacturer(parsedDetails),
+        description: r.description ?? null,
+        primaryPhotoUrl: r.primaryPhotoUrl ?? null,
+      };
+    });
   }),
 
   lookupUspsTracking: protectedProcedure
@@ -257,13 +267,7 @@ export const testAIRouter = router({
       }
       // For sports cards: use year + manufacturer + player + card number + grading/condition
       else if (input.category === 'sports_cards') {
-        const year = details.year || '';
-        const manufacturer = details.manufacturer || '';
-        const player = details.player || '';
-        const cardNumber = details.cardNumber || '';
-        
-        const parts = [year, manufacturer, player, cardNumber].filter((p: string) => p);
-        const baseQuery = parts.join(' ');
+        const baseQuery = buildSportsCardTestAiCriteria(details);
         
         if (cert && grade) {
           query = `${baseQuery} ${cert} ${grade}`.trim();
@@ -439,12 +443,7 @@ export const testAIRouter = router({
       }
       // Sports cards
       else if (input.category === 'sports_cards') {
-        const year = details.year || '';
-        let manufacturer = details.manufacturer || '';
-        if (manufacturer === 'Other') manufacturer = details.customManufacturer || '';
-        const player = details.player || input.title;
-        const parts = [year, manufacturer, player].filter((p: string) => p);
-        const baseQuery = parts.join(' ');
+        const baseQuery = buildSportsCardTestAiCriteria(details) || input.title;
         if (cert && grade) query = `${baseQuery} ${cert} ${grade}`.trim();
         else if (grade) query = `${baseQuery} ${grade}`.trim();
         else if (input.condition) query = `${baseQuery} ${input.condition}`.trim();
