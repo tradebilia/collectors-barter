@@ -14,6 +14,7 @@ import { lookupPcgsCertification } from './pcgsMarketData';
 import { lookupWikidataMetadata } from './wikidataMetadata';
 import { lookupSmithsonianStampReference } from './smithsonianMetadata';
 import { lookupTcgDexCatalog } from './tcgdexMetadata';
+import { lookupIgdbGameMetadata } from './igdbMetadata';
 import { getRawgProviderStatus } from './rawgMetadata';
 import { formatHistoricalTrendContext } from './historicalTrendContext';
 import { buildSportsCardTestAiCriteria, buildVideoGameTestAiCriteria, filterTestAiListingsByYear, resolveTestAiManufacturer, resolveTestAiYear } from '../shared/testAiCriteria';
@@ -789,6 +790,18 @@ export const testAIRouter = router({
     .query(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
       return lookupTcgDexCatalog(input.query, { cardNumber: input.cardNumber, setName: input.setName });
+    }),
+
+  // Commercially approved IGDB catalog metadata — administrator-only, read-only, and not a valuation source.
+  getIgdbGameMetadata: protectedProcedure
+    .input(z.object({
+      title: z.string().trim().min(2).max(180),
+      releaseYear: z.number().int().min(1950).max(2100).optional(),
+      platform: z.string().trim().min(1).max(120).optional(),
+    }))
+    .query(async ({ ctx, input }) => {
+      if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      return lookupIgdbGameMetadata(input.title, { releaseYear: input.releaseYear, platform: input.platform });
     }),
 
   // RAWG stays intentionally inactive until a key and commercial-use confirmation are supplied.
