@@ -5,6 +5,7 @@ import { useLocation } from 'wouter';
 import { Spinner } from '@/components/ui/spinner';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
+import { resolveTestAiManufacturer } from '@shared/testAiCriteria';
 
 // ─── Data Source Registry ────────────────────────────────────────────────────
 // Each source defines: what data it provides, what it needs (cert ID, title, etc.)
@@ -189,9 +190,20 @@ interface SelectedItem {
   estimatedValue?: number;
   certificationCompany?: string;
   itemDetails?: string;
+  manufacturer?: string;
   primaryPhotoUrl?: string;
   certId?: string;
   gradingCompany?: GradingCompany;
+}
+
+function getItemManufacturer(item: SelectedItem): string {
+  if (item.manufacturer) return item.manufacturer;
+  if (!item.itemDetails) return '';
+  try {
+    return resolveTestAiManufacturer(JSON.parse(item.itemDetails));
+  } catch {
+    return '';
+  }
 }
 
 // ─── Source Selector ─────────────────────────────────────────────────────────
@@ -345,6 +357,7 @@ function ItemPanel({ side, item, onItemChange, onSourceChange, inventory, invent
             <p className={`font-semibold text-sm ${accentColor} truncate`}>{item.title}</p>
             <div className="flex flex-wrap gap-1 mt-1">
               {item.category && item.category !== 'unknown' && <Badge variant="secondary" className="text-[10px]">{item.category.replace(/_/g, ' ')}</Badge>}
+              {getItemManufacturer(item) && <Badge variant="outline" className="text-[10px]">{getItemManufacturer(item)}</Badge>}
               {item.grade && <Badge variant="outline" className="text-[10px]">Grade {item.grade}</Badge>}
               {item.certificationCompany && <Badge variant="outline" className="text-[10px]">{item.certificationCompany}</Badge>}
             </div>
