@@ -423,3 +423,4 @@
 - [x] Verify the current IGDB commercial-use terms and Twitch OAuth credential requirements before enabling any IGDB API call for Tradebilia; user confirmed commercial approval.
 - [x] Add IGDB only if commercial use is expressly permitted and required server-side Twitch credentials are securely supplied; it is now an administrator-only factual Video Game source.
 - [x] Securely configure the supplied Twitch Client ID and Client Secret, validate a read-only IGDB response, and add the approved factual Video Game metadata source with regression coverage.
+- [x] Perform a comprehensive source, documentation, validation, canonical-GitHub, and checkpoint reconciliation; commit and push any verified missing backup files.
