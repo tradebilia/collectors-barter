@@ -29,6 +29,7 @@ import { storagePut } from "./storage";
 import { resolveTradebiliaContactEmail } from "./tradebiliaContactEmail";
 import { resolveDirectMessageDisplayName } from "./directMessageDisplayName";
 import { resolveMemberStanding } from "./memberDirectoryStanding";
+import { hasEbayPlatformVerification } from "../shared/ebayVerification";
 import { makeRequest, type GeocodingResult } from "./_core/map";
 import bcrypt from 'bcryptjs';
 import { encrypt } from "./_core/crypto";
@@ -871,6 +872,7 @@ export async function getListingDetail(listingId: number, viewerId: number | nul
   // Fetch owner verification status from users table
   const ownerUserRows = await db
     .select({
+      ebayUsername: users.ebayUsername,
       ebayIdVerified: users.ebayIdVerified,
       facebookId: users.facebookId,
       facebookVerified: users.facebookVerified,
@@ -970,7 +972,7 @@ export async function getListingDetail(listingId: number, viewerId: number | nul
       displayName: ownerProfileRows[0]?.displayName ?? `Collector ${detailCard[0].ownerId}`,
       bio: ownerProfileRows[0]?.bio ?? "Open to thoughtful, collector-to-collector trades.",
       avatarUrl: ownerProfileRows[0]?.avatarUrl ?? null,
-      ebayVerified: ownerUserRows[0]?.ebayIdVerified === 1,
+      ebayVerified: hasEbayPlatformVerification(ownerUserRows[0]?.ebayUsername, ownerUserRows[0]?.ebayIdVerified),
       facebookVerified: !!(ownerUserRows[0]?.facebookId) || ownerUserRows[0]?.facebookVerified === 1,
       linkedinVerified: !!(ownerUserRows[0]?.linkedinId),
       merchantVerified: ownerUserRows[0]?.merchantVerified === 1,
