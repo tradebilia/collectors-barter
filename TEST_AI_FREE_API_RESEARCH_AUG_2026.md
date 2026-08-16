@@ -1,7 +1,8 @@
 # Test AI Data-Source Audit: No-Cost and Low-Risk Options
 
-**Date:** August 16, 2026  
-**Scope:** Tradebilia’s commercial Test AI environment.  
+**Date:** August 16, 2026
+
+**Scope:** Tradebilia’s commercial Test AI environment.
 **Decision rule:** A source is only considered eligible when its documented access and reuse terms support Tradebilia’s use. A public website, a GitHub wrapper, a no-cost trial, or a Reddit recommendation is **not** permission to scrape, redistribute, or commercially reuse data.
 
 ## Executive conclusion
