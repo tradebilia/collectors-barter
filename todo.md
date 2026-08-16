@@ -382,21 +382,11 @@
 - [x] Create and deliver minimal professional Coming Soon mockups that show all ten Tradebilia collection categories as a prominent, balanced visual rail or grid.
 - [ ] Present the category-prominent directions for selection before changing the published page.
 - [x] Fix the Trade Room Step 6 responsive layout so Tracking cannot overlap Download Trade Receipt and Report a Trade at zoomed or narrow desktop widths.
-- [x] Add regression coverage and visually verify the Step 6 action/tracking layout across desktop, zoomed desktop, and mobile widths.
+- [ ] Add regression coverage and visually verify the Step 6 action/tracking layout across desktop, zoomed desktop, and mobile widths.
 - [x] Commit, push, and publish the validated Trade Room responsive layout fix.
-- [x] Diagnose why the Test AI Sold Comps key-backed lookup fails without exposing the configured credential.
-- [x] Correct the Sold Comps provider request or UI integration if required and retain safe, actionable error feedback.
-- [x] Add regression coverage, validate the repaired Sold Comps lookup, then commit, push, and publish the fix.
-- [x] Inspect the existing Parse PSA/BGS Test AI workflow and validate the SGC API contract without exposing the Parse credential.
-- [x] Add a secure read-only Parse SGC option to Test AI alongside PSA and BGS.
-- [x] Add regression coverage, validate the SGC lookup in Test AI, then commit, push, and publish the integration.
-- [x] Confirm Parse’s PriceCharting API contract without exposing the Parse credential.
-- [x] Add a secure read-only Parse PriceCharting lookup to Test AI alongside SGC, PSA, and BGS.
-- [x] Add regression coverage, validate the PriceCharting lookup, then commit, push, and publish the combined provider expansion.
-- [x] Confirm Parse’s 130point API contract without exposing the Parse credential.
-- [x] Add a secure read-only Parse 130point sales-lookup option to Test AI alongside SGC, PriceCharting, PSA, and BGS.
-- [x] Add regression coverage, validate the 130point lookup, then commit, push, and publish the combined provider expansion.
-- [x] Confirm the official PCGS certification API contract and existing placeholder behavior without exposing the stored token.
-- [x] Add a secure read-only PCGS lookup to Test AI using the existing project token.
-- [x] Add regression coverage, validate the PCGS lookup, then commit, push, and publish the integration.
-- [x] Diagnose and correct the deployment-wide published-site 500 response, then verify the standard public URL.
+- [x] Assess the current Test AI integrations and provide a prioritized recommendation for the next capabilities to add.
+- [ ] Continue read-only validation of configured Test AI sources while deferring the valuation engine and storage-heavy provider controls.
+- [x] Research official, compliant NGC certification lookup and structured data-access options for Test AI.
+- [x] Research official, compliant CGC certification, census, and data-access options for Test AI.
+- [x] Inventory Parse.bot endpoints relevant to Tradebilia Test AI and recommend the next compliant sources to validate.
+- [x] Compare unused Parse.bot PSA endpoint data against the PSA data already shown in Test AI and recommend only meaningful additions.
