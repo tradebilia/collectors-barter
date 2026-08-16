@@ -63,14 +63,23 @@ const DATA_SOURCES = {
     status: 'live' as const,
     description: 'BGS cert details, final grade, all 4 sub-grades, label color, population — powered by Parse.bot API',
   },
+  sgc: {
+    id: 'sgc',
+    label: 'Parse.bot (SGC Data)',
+    group: 'Grading',
+    icon: '🧩',
+    provides: ['item_details', 'cert_info', 'population_report'],
+    status: 'live' as const,
+    description: 'SGC cert details, grade, designation, population and higher-population count — powered by Parse.bot API',
+  },
   pcgs: {
     id: 'pcgs',
-    label: 'PCGS',
+    label: 'PCGS CoinFacts',
     group: 'Grading',
     icon: '🪙',
-    provides: ['item_details', 'cert_info', 'population_report'],
-    status: 'placeholder' as const,
-    description: 'Coin cert details, grade, population data',
+    provides: ['item_details', 'cert_info', 'population_report', 'current_prices'],
+    status: 'live' as const,
+    description: 'Official PCGS CoinFacts certification, grade, population, price-guide, and image data',
   },
   ngc: {
     id: 'ngc',
@@ -125,6 +134,24 @@ const DATA_SOURCES = {
     provides: ['historic_prices', 'price_metrics'],
     status: 'placeholder' as const,
     description: 'Graded comic sale analytics and trends (scraper coming soon)',
+  },
+  pricecharting: {
+    id: 'pricecharting',
+    label: 'Parse.bot (PriceCharting)',
+    group: 'Marketplace',
+    icon: '🧩',
+    provides: ['item_details', 'current_prices', 'historic_prices'],
+    status: 'live' as const,
+    description: 'Pokémon card market prices by grade, powered by Parse.bot PriceCharting API',
+  },
+  one_thirty_point: {
+    id: 'one_thirty_point',
+    label: 'Parse.bot (130point Sales)',
+    group: 'Marketplace',
+    icon: '🧩',
+    provides: ['historic_prices', 'price_metrics'],
+    status: 'live' as const,
+    description: 'Read-only sold trading-card comps across eBay, Goldin, Heritage and more — powered by Parse.bot 130point API',
   },
 } as const;
 
@@ -699,6 +726,169 @@ function BeckettSection({ item, side }: { item: SelectedItem; side: 'left' | 'ri
   );
 }
 
+function SgcSection({ item, side }: { item: SelectedItem; side: 'left' | 'right' }) {
+  const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
+  const { data, isLoading } = trpc.testAI.getSgcData.useQuery(
+    { certNumber: item.certId || '' },
+    { enabled: !!item.certId },
+  );
+
+  if (!item.certId) return (
+    <div className="bg-gray-800/30 rounded-lg p-3 border border-dashed border-gray-700/40 space-y-2">
+      <p className={`text-[11px] font-bold uppercase ${accentColor}`}>🧩 Parse.bot (SGC Data)</p>
+      <p className="text-gray-500 text-[10px]">Enter an SGC certification number to retrieve its grading and population details.</p>
+    </div>
+  );
+
+  return (
+    <div className="bg-gray-800/30 rounded-lg p-3 border border-gray-700/20 space-y-3">
+      <div className="flex items-center justify-between">
+        <p className={`text-[11px] font-bold uppercase ${accentColor}`}>🧩 SGC Certification (via Parse.bot)</p>
+        {isLoading && <Spinner className="w-3 h-3" />}
+      </div>
+      <p className="text-gray-500 text-[10px]">Read-only cert details, grade, designation, and population data</p>
+      {data?.status === 'error' && <p className="rounded border border-red-700/30 bg-red-900/20 p-2 text-[10px] text-red-400">{data.message}</p>}
+      {data?.status === 'success' && data.data && (
+        <div className="space-y-2 rounded bg-gray-900/40 p-2">
+          <p className="text-[12px] font-semibold text-white">{data.data.subject || data.data.description || 'SGC certified item'}</p>
+          <p className="text-[10px] text-gray-400">{[data.data.cardSet, data.data.cardNumber, data.data.sport].filter(Boolean).join(' · ') || 'Item details not provided'}</p>
+          <div className="grid grid-cols-4 gap-2 text-[10px]">
+            <div><p className="text-[9px] uppercase text-gray-500">Grade</p><p className="font-bold text-cyan-300">{data.data.grade || 'N/A'}</p></div>
+            <div><p className="text-[9px] uppercase text-gray-500">Designation</p><p className="font-semibold text-white">{data.data.gradeDesignation || 'N/A'}</p></div>
+            <div><p className="text-[9px] uppercase text-gray-500">Population</p><p className="font-semibold text-white">{data.data.population ?? 'N/A'}</p></div>
+            <div><p className="text-[9px] uppercase text-gray-500">Higher</p><p className="font-semibold text-white">{data.data.popHigher ?? 'N/A'}</p></div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PcgsSection({ item, side }: { item: SelectedItem; side: 'left' | 'right' }) {
+  const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
+  const { data, isLoading } = trpc.testAI.getPcgsData.useQuery(
+    { certNumber: item.certId || '' },
+    { enabled: !!item.certId && item.gradingCompany === 'PCGS' },
+  );
+
+  if (!item.certId || item.gradingCompany !== 'PCGS') return (
+    <div className="bg-gray-800/30 rounded-lg p-3 border border-dashed border-gray-700/40 space-y-2">
+      <p className={`text-[11px] font-bold uppercase ${accentColor}`}>🪙 PCGS CoinFacts</p>
+      <p className="text-gray-500 text-[10px]">Enter a 7- or 8-digit PCGS certification number to retrieve official coin details.</p>
+    </div>
+  );
+
+  return (
+    <div className="bg-gray-800/30 rounded-lg p-3 border border-gray-700/20 space-y-3">
+      <div className="flex items-center justify-between">
+        <p className={`text-[11px] font-bold uppercase ${accentColor}`}>🪙 PCGS CoinFacts</p>
+        {isLoading && <Spinner className="w-3 h-3" />}
+      </div>
+      <p className="text-gray-500 text-[10px]">Official read-only certification, population, and price-guide data</p>
+      {data?.status === 'error' && <p className="rounded border border-red-700/30 bg-red-900/20 p-2 text-[10px] text-red-400">{data.message}</p>}
+      {data?.status === 'not_found' && <p className="rounded border border-amber-700/30 bg-amber-900/20 p-2 text-[10px] text-amber-300">{data.message}</p>}
+      {data?.status === 'success' && data.data && (
+        <div className="space-y-2 rounded bg-gray-900/40 p-2">
+          <p className="text-[12px] font-semibold text-white">{data.data.name || 'PCGS certified coin'}</p>
+          <p className="text-[10px] text-gray-400">{[data.data.year, data.data.denomination, data.data.variety].filter(Boolean).join(' · ') || 'Coin details not provided'}</p>
+          <div className="grid grid-cols-4 gap-2 text-[10px]">
+            <div><p className="text-[9px] uppercase text-gray-500">Grade</p><p className="font-bold text-cyan-300">{data.data.grade || 'N/A'}</p></div>
+            <div><p className="text-[9px] uppercase text-gray-500">Population</p><p className="font-semibold text-white">{data.data.population?.toLocaleString() ?? 'N/A'}</p></div>
+            <div><p className="text-[9px] uppercase text-gray-500">Higher</p><p className="font-semibold text-white">{data.data.popHigher?.toLocaleString() ?? 'N/A'}</p></div>
+            <div><p className="text-[9px] uppercase text-gray-500">Guide Value</p><p className="font-semibold text-green-400">{data.data.priceGuideValue != null ? `$${Number(data.data.priceGuideValue).toLocaleString()}` : 'N/A'}</p></div>
+          </div>
+          <div className="grid grid-cols-2 gap-2 text-[10px]">
+            <div><p className="text-[9px] uppercase text-gray-500">PCGS No.</p><p className="font-semibold text-white">{data.data.pcgsNo || 'N/A'}</p></div>
+            <div><p className="text-[9px] uppercase text-gray-500">Cert No.</p><p className="font-semibold text-white">{data.data.certNo || item.certId}</p></div>
+          </div>
+          {data.data.images?.length > 0 && (
+            <div className="flex gap-2 pt-1">
+              {data.data.images.slice(0, 2).map((image: any, index: number) => image.thumbnailUrl && (
+                <img key={`${image.thumbnailUrl}-${index}`} src={image.thumbnailUrl} alt={image.label || 'PCGS certified coin'} className="h-20 rounded border border-gray-700/40 object-contain" />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PriceChartingSection({ item, side }: { item: SelectedItem; side: 'left' | 'right' }) {
+  const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
+  const supported = item.category === 'pokemon';
+  const { data, isLoading } = trpc.testAI.getPriceChartingData.useQuery(
+    { query: item.title },
+    { enabled: supported && !!item.title },
+  );
+
+  if (!supported) return (
+    <div className="bg-gray-800/30 rounded-lg p-3 border border-dashed border-gray-700/40 space-y-2">
+      <p className={`text-[11px] font-bold uppercase ${accentColor}`}>🧩 Parse.bot (PriceCharting)</p>
+      <p className="text-gray-500 text-[10px]">This Test AI integration currently supports Pokémon card pricing. Select a Pokémon item to run a read-only lookup.</p>
+    </div>
+  );
+
+  const prices = data?.data?.prices ?? {};
+  return (
+    <div className="bg-gray-800/30 rounded-lg p-3 border border-gray-700/20 space-y-3">
+      <div className="flex items-center justify-between">
+        <p className={`text-[11px] font-bold uppercase ${accentColor}`}>🧩 PriceCharting (via Parse.bot)</p>
+        {isLoading && <Spinner className="w-3 h-3" />}
+      </div>
+      <p className="text-gray-500 text-[10px]">Read-only Pokémon card market prices by grade</p>
+      {data?.status === 'error' && <p className="rounded border border-red-700/30 bg-red-900/20 p-2 text-[10px] text-red-400">{data.message}</p>}
+      {data?.status === 'not_found' && <p className="text-[10px] text-gray-500">{data.message}</p>}
+      {data?.status === 'success' && data.data && (
+        <div className="space-y-2 rounded bg-gray-900/40 p-2">
+          <p className="text-[12px] font-semibold text-white">{data.data.name || item.title}</p>
+          <p className="text-[10px] text-gray-400">{[data.data.set, data.data.cardNumber].filter(Boolean).join(' · ')}</p>
+          <div className="grid grid-cols-3 gap-2 text-[10px]">
+            {Object.entries(prices).slice(0, 6).map(([grade, value]) => (
+              <div key={grade} className="rounded bg-gray-800/60 p-1.5 text-center">
+                <p className="text-[8px] uppercase text-gray-500">{grade.replace(/_/g, ' ')}</p>
+                <p className="font-semibold text-green-400">{typeof value === 'number' ? `$${value.toLocaleString()}` : String(value ?? 'N/A')}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function OneThirtyPointSection({ item, side }: { item: SelectedItem; side: 'left' | 'right' }) {
+  const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
+  const { data, isLoading } = trpc.testAI.get130PointData.useQuery(
+    { query: item.title },
+    { enabled: !!item.title },
+  );
+
+  return (
+    <div className="bg-gray-800/30 rounded-lg p-3 border border-gray-700/20 space-y-3">
+      <div className="flex items-center justify-between">
+        <p className={`text-[11px] font-bold uppercase ${accentColor}`}>🧩 130point Sales (via Parse.bot)</p>
+        {isLoading && <Spinner className="w-3 h-3" />}
+      </div>
+      <p className="text-gray-500 text-[10px]">Read-only completed trading-card sales across multiple marketplaces</p>
+      {data?.status === 'error' && <p className="rounded border border-red-700/30 bg-red-900/20 p-2 text-[10px] text-red-400">{data.message}</p>}
+      {data?.status === 'success' && data.data && (
+        <div className="space-y-2">
+          <p className="text-[10px] text-gray-500">{data.data.itemsReturned} shown of {data.data.totalFound} matching sales</p>
+          {data.data.items.length ? <div className="max-h-48 space-y-1 overflow-y-auto">
+            {data.data.items.map((sale: any) => (
+              <div key={sale.id || `${sale.title}-${sale.date}`} className="flex items-center justify-between gap-2 border-b border-gray-700/20 py-1 last:border-0">
+                <div className="min-w-0"><a href={sale.url || undefined} target="_blank" rel="noopener noreferrer" className="block truncate text-[10px] text-blue-400 hover:underline">{sale.title}</a><p className="text-[9px] text-gray-500">{[sale.marketplace, sale.saleType, sale.date].filter(Boolean).join(' · ')}</p></div>
+                <p className="shrink-0 text-[11px] font-semibold text-green-400">{sale.price != null ? `${sale.currency || 'USD'} ${Number(sale.price).toLocaleString()}` : 'Price N/A'}</p>
+              </div>
+            ))}
+          </div> : <p className="text-[10px] text-gray-500">No completed 130point sales were returned for this query.</p>}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function PlaceholderSection({ sourceId, side }: { sourceId: SourceId; side: 'left' | 'right' }) {
   const source = DATA_SOURCES[sourceId];
   const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
@@ -1021,7 +1211,10 @@ function DataColumn({ item, searchItem, side, enabledSources, ebayData }: {
       {enabledSources.has('cgc') && <PlaceholderSection sourceId="cgc" side={side} />}
       {enabledSources.has('psa') && <PSASection item={item} side={side} />}
       {enabledSources.has('bgs') && <BeckettSection item={item} side={side} />}
-      {enabledSources.has('pcgs') && <PlaceholderSection sourceId="pcgs" side={side} />}
+      {enabledSources.has('sgc') && <SgcSection item={item} side={side} />}
+      {enabledSources.has('pcgs') && <PcgsSection item={item} side={side} />}
+      {enabledSources.has('pricecharting') && <PriceChartingSection item={item} side={side} />}
+      {enabledSources.has('one_thirty_point') && <OneThirtyPointSection item={searchItem ?? item} side={side} />}
       {enabledSources.has('ngc') && <PlaceholderSection sourceId="ngc" side={side} />}
       {enabledSources.has('cbcs') && <PlaceholderSection sourceId="cbcs" side={side} />}
       {enabledSources.has('comic_book_realm') && <PlaceholderSection sourceId="comic_book_realm" side={side} />}

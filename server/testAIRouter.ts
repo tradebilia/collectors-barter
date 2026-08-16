@@ -9,6 +9,8 @@ import { lookupUspsTracking } from "./uspsTracking";
 import { lookupUpsTracking } from "./upsTracking";
 import { lookupFedexTracking } from "./fedexTracking";
 import { lookupDhlTracking } from "./dhlTracking";
+import { lookup130PointSales, lookupPriceCharting, lookupSgcCertification } from './parseMarketData';
+import { lookupPcgsCertification } from './pcgsMarketData';
 
 // ─── Shared eBay helpers (mirrors tradeFlowRouter logic) ────────────────────
 async function getEbayAppToken(): Promise<string | null> {
@@ -126,6 +128,10 @@ function computeMetrics(summaries: any[]) {
   const spreadPct = avg > 0 ? Math.round(((max - min) / avg) * 100) : 0;
   const confidence: 'high' | 'medium' | 'low' = count >= 7 && spreadPct < 80 ? 'high' : count >= 4 ? 'medium' : 'low';
   return { avg, median, min, max, spreadPct, count, confidence };
+}
+
+export function getSoldCompsApiKey(env: NodeJS.ProcessEnv = process.env): string | null {
+  return env.SOLD_COMPS_API_KEY || env.SOLID_COMPS_API_KEY || null;
 }
 
 // ─── Router ─────────────────────────────────────────────────────────────────
@@ -399,7 +405,7 @@ export const testAIRouter = router({
     }))
     .query(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
-      const apiKey = process.env.SOLD_COMPS_API_KEY;
+      const apiKey = getSoldCompsApiKey();
       if (!apiKey) return { query: input.title, listings: [], metrics: null, error: 'Sold-Comps API key not configured' };
 
       // Reuse same query-building logic as getEbayData
@@ -713,6 +719,38 @@ export const testAIRouter = router({
         message: `Population report scraper for ${input.gradingCompany} not yet built. Cert ID: ${input.certId}`,
         data: null,
       };
+    }),
+
+  // Parse.bot SGC certificate lookup — administrator-only and read-only.
+  getSgcData: protectedProcedure
+    .input(z.object({ certNumber: z.string().trim().min(7).max(20) }))
+    .query(async ({ ctx, input }) => {
+      if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      return lookupSgcCertification(input.certNumber);
+    }),
+
+  // Official PCGS CoinFacts certification lookup — administrator-only and read-only.
+  getPcgsData: protectedProcedure
+    .input(z.object({ certNumber: z.string().trim().regex(/^\d{7,8}$/, 'Enter a 7- or 8-digit PCGS certification number.') }))
+    .query(async ({ ctx, input }) => {
+      if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      return lookupPcgsCertification(input.certNumber);
+    }),
+
+  // Parse.bot PriceCharting Pokémon market data — administrator-only and read-only.
+  getPriceChartingData: protectedProcedure
+    .input(z.object({ query: z.string().trim().min(2).max(240) }))
+    .query(async ({ ctx, input }) => {
+      if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      return lookupPriceCharting(input.query);
+    }),
+
+  // Parse.bot 130point sold-card search — administrator-only and read-only.
+  get130PointData: protectedProcedure
+    .input(z.object({ query: z.string().trim().min(2).max(240) }))
+    .query(async ({ ctx, input }) => {
+      if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      return lookup130PointSales(input.query);
     }),
 
   // Parse.bot Beckett (BGS) graded card lookup
