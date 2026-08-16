@@ -404,3 +404,4 @@
 - [x] Continue read-only validation of configured Test AI sources while deferring the valuation engine and storage-heavy provider controls.
 - [x] Compare Collectr data capabilities with active Test AI sources and recommend whether it adds meaningful incremental value.
 - [x] Validate the configured Parse.bot BGS certification workflow with a documented or owner-approved read-only test certificate.
+- [x] Identify collection categories without validated Test AI data sources and recommend compliant free or free-tier APIs for staged implementation.
