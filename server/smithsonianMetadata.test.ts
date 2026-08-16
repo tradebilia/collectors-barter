@@ -18,12 +18,23 @@ describe('Smithsonian stamp metadata adapter', () => {
             id: 'edanmdm:npm_1980.0015.0001',
             title: '24c Curtiss Jenny invert single',
             content: {
+              freetext: {
+                dataSource: [{ content: 'National Postal Museum' }],
+                title: [{ content: 'Scott Catalogue USA C3a' }],
+                identifier: [{ content: '1980.0015.0001' }],
+                name: [{ content: 'Bureau of Engraving and Printing' }],
+                notes: [{ content: 'Unused' }],
+                objectType: [{ content: 'Postage Stamps' }],
+                physicalDescription: [{ content: 'paper; ink' }, { content: '1 x 1 in.' }],
+                topic: [{ content: 'Airmail stamps' }, { content: 'U.S. Stamps' }],
+                setName: [{ content: 'National Postal Museum Collection' }],
+              },
+              indexedStructured: { date: ['1918'], place: ['United States of America'] },
               descriptiveNonRepeating: {
                 record_link: 'https://www.si.edu/object/24c-curtiss-jenny-invert-single:npm_1980.0015.0001',
-                online_media: { media: [{ content: 'https://ids.si.edu/example.jpg' }] },
+                online_media: { media: [{ content: 'https://ids.si.edu/example.jpg', usage: { access: 'CC0' } }] },
+                metadata_usage: { access: 'CC0' },
               },
-              freetext: { dataSource: [{ content: 'National Postal Museum' }] },
-              indexedStructured: { date: ['1918'], place: ['United States of America'] },
             },
           }],
         },
@@ -38,6 +49,9 @@ describe('Smithsonian stamp metadata adapter', () => {
     expect(result.data?.facts).toEqual(expect.arrayContaining([
       { label: 'Collection', value: 'National Postal Museum' },
       { label: 'Date', value: '1918' },
+      { label: 'Catalog reference', value: 'Scott Catalogue USA C3a' },
+      { label: 'Printer', value: 'Bureau of Engraving and Printing' },
+      { label: 'Image rights', value: 'CC0' },
     ]));
     expect(result.data?.sourceUrl).toContain('si.edu/object');
     expect(result.data).not.toHaveProperty('price');

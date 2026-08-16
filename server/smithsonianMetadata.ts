@@ -17,7 +17,7 @@ export type SmithsonianStampLookup = {
 
 type SmithsonianMedia = {
   content?: string;
-  usage?: string;
+  usage?: { access?: string };
 };
 
 type SmithsonianRecord = {
@@ -28,6 +28,7 @@ type SmithsonianRecord = {
       title?: { content?: string };
       record_link?: string;
       online_media?: { media?: SmithsonianMedia[] };
+      metadata_usage?: { access?: string };
     };
     freetext?: Record<string, Array<{ content?: string }> | undefined>;
     indexedStructured?: Record<string, string[] | undefined>;
@@ -43,6 +44,13 @@ function firstText(...values: Array<string | undefined | null>): string | null {
 function firstFreetext(record: SmithsonianRecord, key: string): string | null {
   const values = record.content?.freetext?.[key] ?? [];
   return firstText(...values.map((value) => value.content));
+}
+
+function joinedFreetext(record: SmithsonianRecord, key: string): string | null {
+  const values = (record.content?.freetext?.[key] ?? [])
+    .map((value) => value.content?.trim())
+    .filter((value): value is string => Boolean(value));
+  return values.length ? [...new Set(values)].join(' · ') : null;
 }
 
 function firstStructured(record: SmithsonianRecord, key: string): string | null {
@@ -87,12 +95,31 @@ export async function lookupSmithsonianStampMetadata(
     const facts: SmithsonianFact[] = [];
     const collection = firstFreetext(record, 'dataSource') ?? firstStructured(record, 'data_source');
     const date = firstStructured(record, 'date') ?? firstFreetext(record, 'date');
-    const subject = firstStructured(record, 'topic') ?? firstFreetext(record, 'topic');
+    const subject = joinedFreetext(record, 'topic') ?? firstStructured(record, 'topic');
     const place = firstStructured(record, 'place') ?? firstFreetext(record, 'place');
+    const catalogReference = firstFreetext(record, 'title');
+    const objectNumber = firstFreetext(record, 'identifier');
+    const printer = firstFreetext(record, 'name');
+    const description = firstFreetext(record, 'notes');
+    const objectType = firstFreetext(record, 'objectType') ?? firstStructured(record, 'object_type');
+    const physicalDetails = joinedFreetext(record, 'physicalDescription');
+    const collectionGroup = firstFreetext(record, 'setName');
+    const rights = firstText(
+      record.content?.descriptiveNonRepeating?.metadata_usage?.access,
+      record.content?.descriptiveNonRepeating?.online_media?.media?.[0]?.usage?.access,
+    );
     if (collection) facts.push({ label: 'Collection', value: collection });
+    if (collectionGroup) facts.push({ label: 'Collection group', value: collectionGroup });
     if (date) facts.push({ label: 'Date', value: date });
     if (subject) facts.push({ label: 'Subject', value: subject });
     if (place) facts.push({ label: 'Place', value: place });
+    if (catalogReference) facts.push({ label: 'Catalog reference', value: catalogReference });
+    if (objectNumber) facts.push({ label: 'Object number', value: objectNumber });
+    if (printer) facts.push({ label: 'Printer', value: printer });
+    if (description) facts.push({ label: 'Description', value: description });
+    if (objectType) facts.push({ label: 'Object type', value: objectType });
+    if (physicalDetails) facts.push({ label: 'Material & dimensions', value: physicalDetails });
+    if (rights) facts.push({ label: 'Image rights', value: rights });
 
     return {
       status: 'success',

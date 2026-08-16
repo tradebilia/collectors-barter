@@ -945,7 +945,7 @@ function WikidataSection({ item, side }: { item: SelectedItem; side: 'left' | 'r
               {data.data.description && <p className="mt-0.5 text-[10px] text-gray-400">{data.data.description}</p>}
             </div>
             {data.data.facts.length > 0 && <div className="grid grid-cols-2 gap-1.5 text-[10px]">
-              {data.data.facts.map((fact: any) => <div key={fact.label} className="rounded bg-gray-800/60 p-1.5"><p className="text-[8px] uppercase text-gray-500">{fact.label}</p><p className="truncate font-semibold text-white">{fact.value}</p></div>)}
+              {data.data.facts.map((fact: any) => <div key={fact.label} className="rounded bg-gray-800/60 p-1.5"><p className="text-[8px] uppercase text-gray-500">{fact.label}</p><p className="break-words font-semibold text-white">{fact.value}</p></div>)}
             </div>}
           </div>
         </div>
@@ -986,7 +986,7 @@ function SmithsonianSection({ item, side }: { item: SelectedItem; side: 'left' |
           <div className="min-w-0 flex-1 space-y-2">
             <a href={data.data.sourceUrl} target="_blank" rel="noopener noreferrer" className="text-[12px] font-semibold text-blue-300 hover:underline">{data.data.title}</a>
             {data.data.facts.length > 0 && <div className="grid grid-cols-2 gap-1.5 text-[10px]">
-              {data.data.facts.map((fact: any) => <div key={fact.label} className="rounded bg-gray-800/60 p-1.5"><p className="text-[8px] uppercase text-gray-500">{fact.label}</p><p className="truncate font-semibold text-white">{fact.value}</p></div>)}
+              {data.data.facts.map((fact: any) => <div key={fact.label} className="rounded bg-gray-800/60 p-1.5"><p className="text-[8px] uppercase text-gray-500">{fact.label}</p><p className="break-words font-semibold text-white">{fact.value}</p></div>)}
             </div>}
           </div>
         </div>

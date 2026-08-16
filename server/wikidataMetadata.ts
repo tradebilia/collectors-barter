@@ -124,8 +124,8 @@ export async function lookupWikidataMetadata(
     if (!entityResult.ok || !entity) return { status: 'error', message: `Wikidata record lookup returned HTTP ${entityResult.status}.` };
 
     const relatedProperties = category === 'movies'
-      ? ['P57', 'P136', 'P495', 'P272']
-      : ['P106', 'P27'];
+      ? ['P57', 'P136', 'P495', 'P272', 'P170', 'P144', 'P179', 'P364']
+      : ['P106', 'P27', 'P19', 'P641', 'P413', 'P54', 'P800'];
     const labels = await resolveLabels(relatedProperties.flatMap((property) => entityIds(entity, property)), fetchImpl);
     const facts: WikidataFact[] = [];
 
@@ -135,20 +135,38 @@ export async function lookupWikidataMetadata(
       const genre = displayList(entityIds(entity, 'P136'), labels);
       const origin = displayList(entityIds(entity, 'P495'), labels);
       const productionCompany = displayList(entityIds(entity, 'P272'), labels);
+      const creator = displayList(entityIds(entity, 'P170'), labels);
+      const basedOn = displayList(entityIds(entity, 'P144'), labels);
+      const franchise = displayList(entityIds(entity, 'P179'), labels);
+      const originalLanguage = displayList(entityIds(entity, 'P364'), labels);
       if (releaseDate) facts.push({ label: 'Release', value: releaseDate });
       if (director) facts.push({ label: 'Director', value: director });
+      if (creator) facts.push({ label: 'Creator', value: creator });
       if (genre) facts.push({ label: 'Genre', value: genre });
       if (origin) facts.push({ label: 'Origin', value: origin });
       if (productionCompany) facts.push({ label: 'Studio', value: productionCompany });
+      if (basedOn) facts.push({ label: 'Based on', value: basedOn });
+      if (franchise) facts.push({ label: 'Franchise', value: franchise });
+      if (originalLanguage) facts.push({ label: 'Original language', value: originalLanguage });
     } else {
       const born = firstTime(entity, 'P569');
       const died = firstTime(entity, 'P570');
       const occupation = displayList(entityIds(entity, 'P106'), labels);
       const nationality = displayList(entityIds(entity, 'P27'), labels);
+      const birthPlace = displayList(entityIds(entity, 'P19'), labels);
+      const sport = displayList(entityIds(entity, 'P641'), labels);
+      const position = displayList(entityIds(entity, 'P413'), labels);
+      const teams = displayList(entityIds(entity, 'P54'), labels);
+      const notableFor = displayList(entityIds(entity, 'P800'), labels);
       if (born) facts.push({ label: 'Born', value: born });
       if (died) facts.push({ label: 'Died', value: died });
       if (occupation) facts.push({ label: 'Known for', value: occupation });
       if (nationality) facts.push({ label: 'Nationality', value: nationality });
+      if (birthPlace) facts.push({ label: 'Birthplace', value: birthPlace });
+      if (sport) facts.push({ label: 'Sport', value: sport });
+      if (position) facts.push({ label: 'Position', value: position });
+      if (teams) facts.push({ label: 'Team history', value: teams });
+      if (notableFor) facts.push({ label: 'Notable for', value: notableFor });
     }
 
     return {
