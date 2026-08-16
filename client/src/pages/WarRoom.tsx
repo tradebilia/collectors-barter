@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { VideoChatPanel } from "@/components/VideoChatPanel";
 import { getNegotiationTurnState } from "@/lib/tradeNegotiationTurn";
 import { deriveShippingDeadline, downloadTradeReceipt } from "@/lib/tradeReceipt";
+import { buildUspsTrackingUrl } from "@shared/uspsTrackingLink";
 
 type TradeStage = 'proposed' | 'negotiating' | 'accepted' | 'shipping' | 'shipped' | 'completed';
 
@@ -702,7 +703,7 @@ export default function WarRoom() {
             const theirReceiptConfirmed = (trade as any)?.theirReceiptConfirmed;
 
             const getTrackingUrl = (carrier: string, number: string) => {
-              if (carrier === 'USPS') return `https://tools.usps.com/go/TrackConfirmAction?tLabels=${number}`;
+              if (carrier === 'USPS') return buildUspsTrackingUrl(number);
               if (carrier === 'UPS') return `https://www.ups.com/track?tracknum=${number}`;
               if (carrier === 'FedEx') return `https://www.fedex.com/fedextrack/?trknbr=${number}`;
               if (carrier === 'DHL') return `https://www.dhl.com/us-en/home/tracking.html?tracking-id=${number}`;
