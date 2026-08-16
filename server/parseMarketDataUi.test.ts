@@ -21,6 +21,13 @@ describe('Test AI Parse provider controls', () => {
   it('keeps all three provider panels explicitly read-only', () => {
     expect(testAiSource).toContain('Read-only cert details, grade, designation, and population data');
     expect(testAiSource).toContain('Read-only Pokémon card market prices by grade');
-    expect(testAiSource).toContain('Read-only completed trading-card sales across multiple marketplaces');
+    expect(testAiSource).toContain('Read-only historical completed-sale context across eBay, Goldin, Heritage and more — not a current value');
+  });
+
+  it('separates recent 130point comparables from older historical context without calculating a current value', () => {
+    expect(testAiSource).toContain('Recent comparable sales · last 12 months');
+    expect(testAiSource).toContain('Historical context · over 12 months old');
+    expect(testAiSource).toContain('No current average or valuation is calculated.');
+    expect(testAiSource).toContain('not current-value comparables');
   });
 });

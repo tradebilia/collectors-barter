@@ -410,3 +410,5 @@
 - [x] Add and validate an administrator-only, read-only Smithsonian Open Access stamp-reference lookup in Test AI.
 - [x] Audit Smithsonian stamp-response field coverage and surface only useful reference fields in Test AI.
 - [x] Expand the approved Smithsonian stamp-reference fields and audit useful additional Wikidata Movie and Autograph metadata fields.
+- [x] Audit complete Wikidata Movie and Autograph entity fields against the displayed Test AI reference metadata and document any safe additions or exclusions.
+- [x] Add clear 130point historical-sales recency treatment so older completed sales are not implied to be current-value comparables.

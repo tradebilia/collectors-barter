@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, afterEach } from 'vitest';
-import { lookup130PointSales, lookupPriceCharting, lookupSgcCertification } from './parseMarketData';
+import { classifySaleRecency, lookup130PointSales, lookupPriceCharting, lookupSgcCertification } from './parseMarketData';
 
 const originalFetch = global.fetch;
 
@@ -45,7 +45,16 @@ describe('Parse SGC and PriceCharting adapters', () => {
 
     expect(result.status).toBe('success');
     expect(result.data?.items[0]?.marketplace).toBe('eBay');
+    expect(result.data?.items[0]?.recency).toBe('recent');
     expect(fetchMock.mock.calls[0][0]).toContain('/28d873f5-47d5-4c01-a275-e80c6b3fc610/search_sold_items?sort=BestMatch&limit=10&query=Michael%20Jordan%20rookie&marketplace=all');
+  });
+
+  it('classifies older and undated 130point records as historical context rather than recent comparables', () => {
+    const referenceTime = Date.parse('2026-08-16T00:00:00Z');
+
+    expect(classifySaleRecency('2016-08-15', referenceTime)).toBe('historical');
+    expect(classifySaleRecency('2026-06-01', referenceTime)).toBe('recent');
+    expect(classifySaleRecency(null, referenceTime)).toBe('undated');
   });
 
   it('does not call either provider when the Parse key is unavailable', async () => {

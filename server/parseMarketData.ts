@@ -16,6 +16,15 @@ function asObject(value: unknown): Record<string, any> {
   return value && typeof value === 'object' ? value as Record<string, any> : {};
 }
 
+export type SaleRecency = 'recent' | 'historical' | 'undated';
+
+export function classifySaleRecency(date: unknown, referenceTime = Date.now()): SaleRecency {
+  if (typeof date !== 'string' || !date.trim()) return 'undated';
+  const saleTime = Date.parse(date);
+  if (Number.isNaN(saleTime) || saleTime > referenceTime) return 'undated';
+  return referenceTime - saleTime <= 365 * 24 * 60 * 60 * 1000 ? 'recent' : 'historical';
+}
+
 export async function lookupSgcCertification(certCode: string, env: ParseEnv = process.env) {
   const normalizedCertCode = certCode.trim();
   const apiKey = env.PARSE_BOT_API_KEY;
@@ -111,15 +120,17 @@ export async function lookup130PointSales(query: string, env: ParseEnv = process
     if (!response.ok) return { query: normalizedQuery, status: 'error' as const, message: parseErrorMessage(response.status, 'Parse 130point'), data: null };
 
     const result = asObject(asObject(payload).data ?? payload);
-    const items = Array.isArray(result.items) ? result.items.map((item: unknown) => {
-      const sale = asObject(item);
-      return {
-        id: sale.id ?? null,
-        title: sale.title ?? 'Untitled sale',
-        price: sale.price ?? null,
-        currency: sale.currency ?? 'USD',
-        date: sale.date ?? null,
-        saleType: sale.sale_type ?? null,
+      const items = Array.isArray(result.items) ? result.items.map((item: unknown) => {
+        const sale = asObject(item);
+        const date = sale.date ?? null;
+        return {
+          id: sale.id ?? null,
+          title: sale.title ?? 'Untitled sale',
+          price: sale.price ?? null,
+          currency: sale.currency ?? 'USD',
+          date,
+          recency: classifySaleRecency(date),
+          saleType: sale.sale_type ?? null,
         marketplace: sale.sold_via ?? null,
         url: sale.url ?? null,
         imageUrl: sale.image_url ?? null,
