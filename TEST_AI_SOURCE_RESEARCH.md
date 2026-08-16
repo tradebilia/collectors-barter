@@ -84,3 +84,5 @@ The 130point presentation now classifies dated completed-sale records into Recen
 ## PWCC / Fanatics Collect via Parse.bot
 
 The Parse.bot PWCC Marketplace API is the relevant Fanatics Collect source because PWCC was rebranded as Fanatics Collect. Tradebilia uses its `search_listings` endpoint with `status=Sold`, a bounded page size of ten, and no write operations. A live development check for the existing Pokémon Charizard item returned 10 of 54,315 broad sold-listing matches. All returned records were older than 12 months and were therefore correctly rendered under **Historical context**, not as current comparables. The returned examples also included different Charizard variants and grades, confirming that this source must remain individual-record context requiring exact title, grade, and variant review; it must not generate an average or current valuation.
+
+The standard public Test AI page was rechecked after the final deployment and lists **PWCC / Fanatics Collect** as a live Marketplace source rather than a placeholder. The source selector remained manual, as required by the internal applicability-policy boundary.
