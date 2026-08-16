@@ -30,4 +30,16 @@ describe('Test AI Parse provider controls', () => {
     expect(testAiSource).toContain('No current average or valuation is calculated.');
     expect(testAiSource).toContain('not current-value comparables');
   });
+
+  it('passes selected 130point sales to the analyzer only as separated trend context', () => {
+    expect(testAiSource).toContain('left130PointSales: leftSources.has(\'one_thirty_point\')');
+    expect(testAiSource).toContain('right130PointSales: rightSources.has(\'one_thirty_point\')');
+  });
+
+  it('exposes a live PWCC / Fanatics Collect panel with the same historical-context safeguards', () => {
+    expect(testAiSource).toContain("label: 'PWCC / Fanatics Collect'");
+    expect(testAiSource).toContain('getPwccFanaticsCollectData');
+    expect(testAiSource).toContain('No current average or valuation is calculated');
+    expect(testAiSource).toContain('Historical context · over 12 months old');
+  });
 });

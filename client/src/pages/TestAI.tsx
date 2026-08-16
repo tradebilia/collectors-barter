@@ -110,12 +110,12 @@ const DATA_SOURCES = {
   },
   pwcc: {
     id: 'pwcc',
-    label: 'PWCC',
+    label: 'PWCC / Fanatics Collect',
     group: 'Marketplace',
     icon: '🏆',
     provides: ['historic_prices'],
-    status: 'placeholder' as const,
-    description: 'Premium auction sale history (scraper coming soon)',
+    status: 'live' as const,
+    description: 'Read-only PWCC / Fanatics Collect completed auction and marketplace sales via Parse.bot; historical records are not current-value comparables',
   },
   heritage: {
     id: 'heritage',
@@ -914,6 +914,38 @@ function OneThirtyPointSection({ item, side }: { item: SelectedItem; side: 'left
   );
 }
 
+function PwccFanaticsCollectSection({ item, side }: { item: SelectedItem; side: 'left' | 'right' }) {
+  const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
+  const { data, isLoading } = trpc.testAI.getPwccFanaticsCollectData.useQuery(
+    { query: item.title },
+    { enabled: !!item.title },
+  );
+  const sales = data?.status === 'success' && data.data ? data.data.items : [];
+  const recentSales = sales.filter((sale: any) => sale.recency === 'recent');
+  const historicalSales = sales.filter((sale: any) => sale.recency === 'historical');
+  const undatedSales = sales.filter((sale: any) => sale.recency === 'undated');
+  const renderSales = (records: typeof sales, tone: 'recent' | 'historical' | 'undated') => records.map((sale: any) => (
+    <div key={sale.id || `${sale.title}-${sale.date}`} className="flex items-center justify-between gap-2 border-b border-gray-700/20 py-1 last:border-0">
+      <div className="min-w-0"><p className="truncate text-[10px] text-white">{sale.title}</p><p className="text-[9px] text-gray-500">{[sale.saleType, sale.grade != null ? `${sale.gradingService || 'Grade'} ${sale.grade}` : null, sale.date || 'Date unavailable'].filter(Boolean).join(' · ')}</p></div>
+      <div className="shrink-0 text-right"><p className="text-[11px] font-semibold text-green-400">{sale.price != null ? `${sale.currency || 'USD'} ${Number(sale.price).toLocaleString()}` : 'Price N/A'}</p><p className={tone === 'recent' ? 'text-[9px] text-cyan-300' : tone === 'historical' ? 'text-[9px] text-amber-300' : 'text-[9px] text-gray-500'}>{tone === 'recent' ? 'Recent' : tone === 'historical' ? 'Historical' : 'Undated'}</p></div>
+    </div>
+  ));
+
+  return (
+    <div className="bg-gray-800/30 rounded-lg p-3 border border-gray-700/20 space-y-3">
+      <div className="flex items-center justify-between"><p className={`text-[11px] font-bold uppercase ${accentColor}`}>🏆 PWCC / Fanatics Collect (via Parse.bot)</p>{isLoading && <Spinner className="w-3 h-3" />}</div>
+      <p className="text-gray-500 text-[10px]">Individual completed-sale records only. No current average or valuation is calculated. Confirm the exact card, grade, and variant before using a result.</p>
+      {data?.status === 'error' && <p className="rounded border border-red-700/30 bg-red-900/20 p-2 text-[10px] text-red-400">{data.message}</p>}
+      {data?.status === 'not_found' && <p className="text-[10px] text-gray-500">{data.message}</p>}
+      {data?.status === 'success' && data.data && <div className="space-y-2"><p className="text-[10px] text-gray-500">{data.data.itemsReturned} shown of {data.data.totalFound} matching sold listings</p>{sales.length ? <div className="max-h-64 space-y-3 overflow-y-auto">
+        {recentSales.length > 0 && <section><p className="mb-1 text-[10px] font-semibold uppercase text-cyan-300">Recent comparable sales · last 12 months</p><div className="space-y-1">{renderSales(recentSales, 'recent')}</div></section>}
+        {historicalSales.length > 0 && <section><p className="mb-1 text-[10px] font-semibold uppercase text-amber-300">Historical context · over 12 months old</p><p className="mb-1 text-[9px] text-gray-500">These records may show long-term market direction but are not current-value comparables.</p><div className="space-y-1">{renderSales(historicalSales, 'historical')}</div></section>}
+        {undatedSales.length > 0 && <section><p className="mb-1 text-[10px] font-semibold uppercase text-gray-400">Undated records</p><p className="mb-1 text-[9px] text-gray-500">Do not use undated records as current comparables.</p><div className="space-y-1">{renderSales(undatedSales, 'undated')}</div></section>}
+      </div> : <p className="text-[10px] text-gray-500">No completed PWCC / Fanatics Collect sales were returned for this query.</p>}</div>}
+    </div>
+  );
+}
+
 function WikidataSection({ item, side }: { item: SelectedItem; side: 'left' | 'right' }) {
   const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
   const supported = item.category === 'movies' || item.category === 'autographs';
@@ -1018,7 +1050,7 @@ function PlaceholderSection({ sourceId, side }: { sourceId: SourceId; side: 'lef
 }
 
 // ─── AI Analysis Section ─────────────────────────────────────────────────────
-function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, leftSources, rightSources, leftSoldCompsData, rightSoldCompsData }: {
+function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, leftSources, rightSources, leftSoldCompsData, rightSoldCompsData, left130PointData, right130PointData }: {
   leftItem: SelectedItem;
   rightItem: SelectedItem;
   leftEbayData: any;
@@ -1027,6 +1059,8 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
   rightSources: Set<SourceId>;
   leftSoldCompsData?: any;
   rightSoldCompsData?: any;
+  left130PointData?: any;
+  right130PointData?: any;
 }) {
   const [result, setResult] = useState<any>(null);
   const analyzeMutation = trpc.testAI.analyzeItems.useMutation({
@@ -1047,6 +1081,8 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
       rightEbayMetrics: rightHasEbay ? (rightEbayData?.metrics ?? null) : null,
       leftSoldCompsMetrics: leftHasSoldComps ? (leftSoldCompsData?.metrics ?? null) : null,
       rightSoldCompsMetrics: rightHasSoldComps ? (rightSoldCompsData?.metrics ?? null) : null,
+      left130PointSales: leftSources.has('one_thirty_point') ? (left130PointData?.data?.items ?? []) : [],
+      right130PointSales: rightSources.has('one_thirty_point') ? (right130PointData?.data?.items ?? []) : [],
     });
   };
 
@@ -1328,12 +1364,12 @@ function DataColumn({ item, searchItem, side, enabledSources, ebayData }: {
       {enabledSources.has('pcgs') && <PcgsSection item={item} side={side} />}
       {enabledSources.has('pricecharting') && <PriceChartingSection item={item} side={side} />}
       {enabledSources.has('one_thirty_point') && <OneThirtyPointSection item={searchItem ?? item} side={side} />}
+      {enabledSources.has('pwcc') && <PwccFanaticsCollectSection item={searchItem ?? item} side={side} />}
       {enabledSources.has('wikidata') && <WikidataSection item={item} side={side} />}
       {enabledSources.has('smithsonian') && <SmithsonianSection item={item} side={side} />}
       {enabledSources.has('ngc') && <PlaceholderSection sourceId="ngc" side={side} />}
       {enabledSources.has('cbcs') && <PlaceholderSection sourceId="cbcs" side={side} />}
       {enabledSources.has('comic_book_realm') && <PlaceholderSection sourceId="comic_book_realm" side={side} />}
-      {enabledSources.has('pwcc') && <PlaceholderSection sourceId="pwcc" side={side} />}
       {enabledSources.has('heritage') && <PlaceholderSection sourceId="heritage" side={side} />}
       {enabledSources.has('gocollect') && <PlaceholderSection sourceId="gocollect" side={side} />}
     </div>
@@ -1440,6 +1476,14 @@ export default function TestAI() {
     rightSearchItem ? { title: rightSearchItem.title, category: rightSearchItem.category, grade: rightSearchItem.grade, condition: rightSearchItem.condition, certificationCompany: rightSearchItem.certificationCompany ?? '', itemDetails: rightSearchItem.itemDetails } : { title: '', category: '' },
     { enabled: !!rightSearchItem && rightSources.has('sold_comps') }
   );
+  const left130PointQuery = trpc.testAI.get130PointData.useQuery(
+    leftSearchItem ? { query: leftSearchItem.title } : { query: '' },
+    { enabled: !!leftSearchItem && leftSources.has('one_thirty_point') },
+  );
+  const right130PointQuery = trpc.testAI.get130PointData.useQuery(
+    rightSearchItem ? { query: rightSearchItem.title } : { query: '' },
+    { enabled: !!rightSearchItem && rightSources.has('one_thirty_point') },
+  );
 
   if (authLoading) return <div className="flex items-center justify-center min-h-screen"><Spinner /></div>;
   if (!user || user.role !== 'admin') { navigate('/'); return null; }
@@ -1495,6 +1539,8 @@ export default function TestAI() {
             rightSources={rightSources}
             leftSoldCompsData={leftSoldCompsQuery.data}
             rightSoldCompsData={rightSoldCompsQuery.data}
+            left130PointData={left130PointQuery.data}
+            right130PointData={right130PointQuery.data}
           />
         )}
 

@@ -9,10 +9,11 @@ import { lookupUspsTracking } from "./uspsTracking";
 import { lookupUpsTracking } from "./upsTracking";
 import { lookupFedexTracking } from "./fedexTracking";
 import { lookupDhlTracking } from "./dhlTracking";
-import { lookup130PointSales, lookupPriceCharting, lookupSgcCertification } from './parseMarketData';
+import { lookup130PointSales, lookupPriceCharting, lookupPwccFanaticsCollectSales, lookupSgcCertification } from './parseMarketData';
 import { lookupPcgsCertification } from './pcgsMarketData';
 import { lookupWikidataMetadata } from './wikidataMetadata';
 import { lookupSmithsonianStampMetadata } from './smithsonianMetadata';
+import { buildHistoricalTrendContext, type HistoricalTrendSale } from './historicalTrendContext';
 
 // ─── Shared eBay helpers (mirrors tradeFlowRouter logic) ────────────────────
 async function getEbayAppToken(): Promise<string | null> {
@@ -755,6 +756,14 @@ export const testAIRouter = router({
       return lookup130PointSales(input.query);
     }),
 
+  // Parse.bot PWCC / Fanatics Collect completed-sale search — administrator-only and read-only.
+  getPwccFanaticsCollectData: protectedProcedure
+    .input(z.object({ query: z.string().trim().min(2).max(240) }))
+    .query(async ({ ctx, input }) => {
+      if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      return lookupPwccFanaticsCollectSales(input.query);
+    }),
+
   // Wikidata public metadata lookup — administrator-only, read-only, and not a valuation source.
   getWikidataMetadata: protectedProcedure
     .input(z.object({
@@ -895,11 +904,29 @@ export const testAIRouter = router({
       rightEbayMetrics: z.any().optional(),
       leftSoldCompsMetrics: z.any().optional(),
       rightSoldCompsMetrics: z.any().optional(),
+      left130PointSales: z.array(z.object({
+        title: z.string(),
+        price: z.union([z.number(), z.string()]).nullable().optional(),
+        currency: z.string().nullable().optional(),
+        date: z.string().nullable().optional(),
+        saleType: z.string().nullable().optional(),
+        marketplace: z.string().nullable().optional(),
+        recency: z.enum(['recent', 'historical', 'undated']),
+      })).max(10).optional(),
+      right130PointSales: z.array(z.object({
+        title: z.string(),
+        price: z.union([z.number(), z.string()]).nullable().optional(),
+        currency: z.string().nullable().optional(),
+        date: z.string().nullable().optional(),
+        saleType: z.string().nullable().optional(),
+        marketplace: z.string().nullable().optional(),
+        recency: z.enum(['recent', 'historical', 'undated']),
+      })).max(10).optional(),
     }))
     .mutation(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
 
-      const { leftItem, rightItem, leftEbayMetrics, rightEbayMetrics, leftSoldCompsMetrics, rightSoldCompsMetrics } = input;
+      const { leftItem, rightItem, leftEbayMetrics, rightEbayMetrics, leftSoldCompsMetrics, rightSoldCompsMetrics, left130PointSales, right130PointSales } = input;
 
       const formatItemLine = (item: typeof leftItem, ebayMetrics: any, soldMetrics: any) => {
         let line = `- ${item.title}`;
@@ -924,6 +951,8 @@ export const testAIRouter = router({
 
       const leftLine = formatItemLine(leftItem, leftEbayMetrics, leftSoldCompsMetrics);
       const rightLine = formatItemLine(rightItem, rightEbayMetrics, rightSoldCompsMetrics);
+      const leftTrendContext = buildHistoricalTrendContext(left130PointSales as HistoricalTrendSale[] | undefined);
+      const rightTrendContext = buildHistoricalTrendContext(right130PointSales as HistoricalTrendSale[] | undefined);
 
       // Prefer sold prices (real transactions) over active listing prices for valuation
       const leftVal = leftSoldCompsMetrics?.median ?? leftEbayMetrics?.median ?? leftItem.estimatedValue ?? 0;
@@ -944,12 +973,15 @@ LIQUIDITY: Which item is easier to sell quickly? A highly liquid item is worth m
 REPLACEMENT COST: What would it realistically cost to replace each item at the same grade today?
 RISK FLAGS: Are there known fakes, restoration issues, or market risks specific to this item?
 MARKET STABILITY: Is the market for this item driven by a few large sales (volatile) or consistent smaller sales (stable)?
+HISTORICAL TREND: If 130point completed-sale trend context is present, use it only for qualitative market direction, volatility, and demand observations. Never use those prices in the pre-computed value gap, value summary, fairness verdict, negotiation tip, or future-potential price ranges. Clearly state when historical evidence is sparse, mixed, old, or not an exact grade/variant match.
 
 === ITEM A (LEFT) ===
 ${leftLine}
+${leftTrendContext ? `\n${leftTrendContext}` : ''}
 
 === ITEM B (RIGHT) ===
 ${rightLine}
+${rightTrendContext ? `\n${rightTrendContext}` : ''}
 
 === PRE-COMPUTED VALUE GAP ===
 ${diffStr}

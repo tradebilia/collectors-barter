@@ -412,3 +412,5 @@
 - [x] Expand the approved Smithsonian stamp-reference fields and audit useful additional Wikidata Movie and Autograph metadata fields.
 - [x] Audit complete Wikidata Movie and Autograph entity fields against the displayed Test AI reference metadata and document any safe additions or exclusions.
 - [x] Add clear 130point historical-sales recency treatment so older completed sales are not implied to be current-value comparables.
+- [x] Incorporate separated 130point recent and historical sales into the Test AI analyzer as an explicit recency-aware trend signal, without using them as an unweighted current valuation.
+- [x] Add and validate administrator-only, read-only Parse.bot PWCC and Fanatics Collect completed-sale sources with the same recency safeguards used for 130point.
