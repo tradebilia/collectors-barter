@@ -54,3 +54,7 @@ CGC public verification covers comics/magazines, cards, video games, and home vi
 - UPS OAuth and CIE tracking were validated previously using UPS’s repeatable test input. A real production number is still needed for a fresh live shipment-data check.
 - FedEx live tracking was user-confirmed after credentials were configured. A fresh validation needs another real tracking number.
 - DHL Unified Tracking uses the correct `DHL-API-Key` contract and is active in Test AI; a real DHL number is still needed for shipment-data validation.
+
+## Current validation conclusion
+
+All currently actionable Test AI certification and market-data sources have been exercised through published read-only flows: eBay active listings, Sold-Comps, Parse PSA, Parse BGS, Parse SGC, Parse PriceCharting, Parse 130point, and official PCGS CoinFacts. The remaining carrier limits are input- or authorization-dependent: USPS requires service-provider authorization, while fresh UPS, FedEx, and DHL shipment reads require valid tracking numbers. No additional provider should be added until the user approves a specific data gap or provides an authorized carrier test input.

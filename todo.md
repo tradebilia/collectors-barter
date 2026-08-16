@@ -401,6 +401,6 @@
 - [x] Add regression coverage, validate the PCGS lookup, then commit, push, and publish the integration.
 - [x] Diagnose and correct the deployment-wide published-site 500 response, then verify the standard public URL.
 - [x] Reconcile the managed source tree with the validated deployed Test AI provider implementation before further source validation.
-- [ ] Continue read-only validation of configured Test AI sources while deferring the valuation engine and storage-heavy provider controls.
+- [x] Continue read-only validation of configured Test AI sources while deferring the valuation engine and storage-heavy provider controls.
 - [x] Compare Collectr data capabilities with active Test AI sources and recommend whether it adds meaningful incremental value.
 - [x] Validate the configured Parse.bot BGS certification workflow with a documented or owner-approved read-only test certificate.
