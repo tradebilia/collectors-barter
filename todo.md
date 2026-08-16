@@ -409,3 +409,4 @@
 - [x] Commit, push, and verify all recovered post-sync Test AI work on the canonical GitHub branch.
 - [x] Audit every completed post-baseline task against the restored source and recovery manifest, then rebuild and verify any remaining missing work before proceeding.
 - [x] When Manufacturer is Other, use the listing’s Custom Manufacturer value in Test AI criteria and every source-query construction path.
+- [x] Diagnose the Twilio Verify HTTP 451 response through read-only configuration and service-access checks without sending SMS or changing credentials.
