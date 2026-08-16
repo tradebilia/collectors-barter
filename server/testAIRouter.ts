@@ -13,6 +13,8 @@ import { lookup130PointSales, lookupPriceCharting, lookupPwccSales, lookupSgcCer
 import { lookupPcgsCertification } from './pcgsMarketData';
 import { lookupWikidataMetadata } from './wikidataMetadata';
 import { lookupSmithsonianStampReference } from './smithsonianMetadata';
+import { lookupTcgDexCatalog } from './tcgdexMetadata';
+import { getRawgProviderStatus } from './rawgMetadata';
 import { formatHistoricalTrendContext } from './historicalTrendContext';
 import { buildSportsCardTestAiCriteria, buildVideoGameTestAiCriteria, filterTestAiListingsByYear, resolveTestAiManufacturer, resolveTestAiYear } from '../shared/testAiCriteria';
 
@@ -775,6 +777,25 @@ export const testAIRouter = router({
     .query(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
       return lookupSmithsonianStampReference(input.query);
+    }),
+
+  // TCGdex catalog metadata — administrator-only, read-only, and explicitly not a price source.
+  getTcgDexCatalog: protectedProcedure
+    .input(z.object({
+      query: z.string().trim().min(2).max(180),
+      cardNumber: z.string().trim().min(1).max(32).optional(),
+      setName: z.string().trim().min(1).max(120).optional(),
+    }))
+    .query(async ({ ctx, input }) => {
+      if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      return lookupTcgDexCatalog(input.query, { cardNumber: input.cardNumber, setName: input.setName });
+    }),
+
+  // RAWG stays intentionally inactive until a key and commercial-use confirmation are supplied.
+  getRawgProviderStatus: protectedProcedure
+    .query(async ({ ctx }) => {
+      if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      return getRawgProviderStatus();
     }),
 
   // Parse.bot Beckett (BGS) graded card lookup

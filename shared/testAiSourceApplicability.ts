@@ -1,4 +1,4 @@
-export type TestAiSourceId = 'ebay_active' | 'sold_comps' | 'psa' | 'bgs' | 'sgc' | 'pcgs' | 'pricecharting' | 'one_thirty_point' | 'pwcc' | 'wikidata' | 'smithsonian';
+export type TestAiSourceId = 'ebay_active' | 'sold_comps' | 'psa' | 'bgs' | 'sgc' | 'pcgs' | 'pricecharting' | 'one_thirty_point' | 'pwcc' | 'wikidata' | 'smithsonian' | 'tcgdex' | 'rawg';
 
 export type SourceEligibilityContext = { category: string; gradingCompany?: string | null; hasTitle?: boolean };
 
@@ -22,6 +22,8 @@ export const TEST_AI_SOURCE_APPLICABILITY: readonly SourceApplicability[] = [
   { sourceId: 'pwcc', categories: ['sports cards', 'pokemon'], requires: 'title', purpose: 'PWCC / Fanatics Collect sold graded-card research.', historicalLimit: 'Use only Sold listings and retain date context; do not calculate an unqualified current average.' },
   { sourceId: 'wikidata', categories: ['movies', 'autographs'], requires: 'title', purpose: 'Public factual reference metadata only; never valuation, authentication, or certification.' },
   { sourceId: 'smithsonian', categories: ['stamps'], requires: 'title', purpose: 'National Postal Museum reference metadata only; never valuation, authentication, or certification.' },
+  { sourceId: 'tcgdex', categories: ['pokemon'], requires: 'title', purpose: 'Pokémon card catalog identification metadata only; never valuation, authentication, certification, or ownership evidence.' },
+  { sourceId: 'rawg', categories: ['video games'], requires: 'title', purpose: 'Video-game catalog metadata only when separately enabled after server-side key setup and written commercial-use confirmation; never valuation, authentication, or grading evidence.' },
 ];
 
 function normalizeCategory(category: string): string { return category.trim().toLowerCase().replace(/[_-]+/g, ' ').replace(/\s+/g, ' '); }

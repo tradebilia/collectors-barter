@@ -417,3 +417,6 @@
 - [x] Correct the malformed item-detail eBay verification badge so the full recognizable logo renders at an appropriate size.
 - [x] Add a reliable item-year constraint to Test AI eBay active-listing queries when year metadata exists, preventing incorrect title-and-grade matches.
 - [x] Complete and document a current audit of genuinely no-cost, commercially suitable Test AI sources, separating Parse.bot, open data, paid services, restricted APIs, and approval-only providers.
+- [x] Add TCGdex as a manual, read-only Test AI Pokémon catalog source for identification metadata only.
+- [x] Prepare a disabled RAWG Test AI provider path; activate it only after a server-side RAWG key is supplied and current commercial-use terms are confirmed in writing.
+- [x] Add provider-specific regression coverage, validate the active TCGdex user flow, then commit, push, publish, and verify the standard public URL.
