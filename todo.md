@@ -414,3 +414,5 @@
 - [x] Add clear 130point historical-sales recency treatment so older completed sales are not implied to be current-value comparables.
 - [x] Incorporate separated 130point recent and historical sales into the Test AI analyzer as an explicit recency-aware trend signal, without using them as an unweighted current valuation.
 - [x] Add and validate administrator-only, read-only Parse.bot PWCC and Fanatics Collect completed-sale sources with the same recency safeguards used for 130point.
+- [x] Superseded at user direction: create and enforce an internal Test AI source-category applicability map so each category exposes only valid data sources and explains category restrictions; manual selection remains in Test AI.
+- [x] Create and document an internal source-category applicability map for future Trade Room automation while preserving manual Test AI source selection.
