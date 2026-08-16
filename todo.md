@@ -420,3 +420,6 @@
 - [x] Add TCGdex as a manual, read-only Test AI Pokémon catalog source for identification metadata only.
 - [x] Prepare a disabled RAWG Test AI provider path; activate it only after a server-side RAWG key is supplied and current commercial-use terms are confirmed in writing.
 - [x] Add provider-specific regression coverage, validate the active TCGdex user flow, then commit, push, publish, and verify the standard public URL.
+- [x] Verify the current IGDB commercial-use terms and Twitch OAuth credential requirements before enabling any IGDB API call for Tradebilia; user confirmed commercial approval.
+- [x] Add IGDB only if commercial use is expressly permitted and required server-side Twitch credentials are securely supplied; it is now an administrator-only factual Video Game source.
+- [x] Securely configure the supplied Twitch Client ID and Client Secret, validate a read-only IGDB response, and add the approved factual Video Game metadata source with regression coverage.
