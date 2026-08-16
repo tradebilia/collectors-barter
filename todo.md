@@ -406,3 +406,5 @@
 - [x] Validate the configured Parse.bot BGS certification workflow with a documented or owner-approved read-only test certificate.
 - [x] Identify collection categories without validated Test AI data sources and recommend compliant free or free-tier APIs for staged implementation.
 - [x] Verify Pokémon TCG API pricing and commercial-use terms, then correct the free-source roadmap if it is not a genuine no-cost commercial option.
+- [x] Add and validate an administrator-only, read-only Wikidata metadata lookup for Movies and Autographs in Test AI.
+- [x] Add and validate an administrator-only, read-only Smithsonian Open Access stamp-reference lookup in Test AI.

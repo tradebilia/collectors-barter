@@ -153,10 +153,28 @@ const DATA_SOURCES = {
     status: 'live' as const,
     description: 'Read-only sold trading-card comps across eBay, Goldin, Heritage and more — powered by Parse.bot 130point API',
   },
+  wikidata: {
+    id: 'wikidata',
+    label: 'Wikidata Metadata',
+    group: 'Reference',
+    icon: '🔎',
+    provides: ['item_details'],
+    status: 'live' as const,
+    description: 'Read-only public metadata for Movies and Autographs; no prices, certification, or stored data',
+  },
+  smithsonian: {
+    id: 'smithsonian',
+    label: 'Smithsonian Stamp Reference',
+    group: 'Reference',
+    icon: '✉️',
+    provides: ['item_details', 'images'],
+    status: 'live' as const,
+    description: 'Read-only Smithsonian Open Access stamp reference metadata; no prices, certification, or stored data',
+  },
 } as const;
 
 type SourceId = keyof typeof DATA_SOURCES;
-const SOURCE_GROUPS = ['eBay', 'Grading', 'Marketplace'] as const;
+const SOURCE_GROUPS = ['eBay', 'Grading', 'Marketplace', 'Reference'] as const;
 
 const GRADING_COMPANIES = ['CGC', 'PSA', 'BGS', 'PCGS', 'NGC', 'CBCS', 'SGC', 'HGA', 'CSG', 'Other'] as const;
 type GradingCompany = typeof GRADING_COMPANIES[number];
@@ -889,6 +907,94 @@ function OneThirtyPointSection({ item, side }: { item: SelectedItem; side: 'left
   );
 }
 
+function WikidataSection({ item, side }: { item: SelectedItem; side: 'left' | 'right' }) {
+  const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
+  const supported = item.category === 'movies' || item.category === 'autographs';
+  const category = item.category === 'movies' ? 'movies' : 'autographs';
+  const details = item.itemDetails ? (() => { try { return JSON.parse(item.itemDetails); } catch { return {}; } })() : {};
+  const metadataQuery = category === 'autographs'
+    ? (details.signer || item.title)
+    : (details.title || details.movieTitle || item.title);
+  const { data, isLoading } = trpc.testAI.getWikidataMetadata.useQuery(
+    { query: metadataQuery, category },
+    { enabled: supported && !!metadataQuery },
+  );
+
+  if (!supported) return (
+    <div className="bg-gray-800/30 rounded-lg p-3 border border-dashed border-gray-700/40 space-y-2">
+      <p className={`text-[11px] font-bold uppercase ${accentColor}`}>🔎 Wikidata Metadata</p>
+      <p className="text-gray-500 text-[10px]">This read-only reference source currently supports Movie titles and Autograph signer names only.</p>
+    </div>
+  );
+
+  return (
+    <div className="bg-gray-800/30 rounded-lg p-3 border border-gray-700/20 space-y-3">
+      <div className="flex items-center justify-between">
+        <p className={`text-[11px] font-bold uppercase ${accentColor}`}>🔎 Wikidata Metadata</p>
+        {isLoading && <Spinner className="w-3 h-3" />}
+      </div>
+      <p className="text-gray-500 text-[10px]">Read-only public metadata for Movies and Autographs · Query: {metadataQuery} · Not a price, certification, or authenticity source</p>
+      {data?.status === 'error' && <p className="rounded border border-red-700/30 bg-red-900/20 p-2 text-[10px] text-red-400">{data.message}</p>}
+      {data?.status === 'not_found' && <p className="rounded border border-amber-700/30 bg-amber-900/20 p-2 text-[10px] text-amber-300">{data.message}</p>}
+      {data?.status === 'success' && data.data && (
+        <div className="flex gap-3 rounded bg-gray-900/40 p-2">
+          {data.data.imageUrl && <img src={data.data.imageUrl} alt="" className="h-20 w-14 rounded border border-gray-700/40 object-cover" />}
+          <div className="min-w-0 flex-1 space-y-2">
+            <div>
+              <a href={data.data.sourceUrl} target="_blank" rel="noopener noreferrer" className="text-[12px] font-semibold text-blue-300 hover:underline">{data.data.title}</a>
+              {data.data.description && <p className="mt-0.5 text-[10px] text-gray-400">{data.data.description}</p>}
+            </div>
+            {data.data.facts.length > 0 && <div className="grid grid-cols-2 gap-1.5 text-[10px]">
+              {data.data.facts.map((fact: any) => <div key={fact.label} className="rounded bg-gray-800/60 p-1.5"><p className="text-[8px] uppercase text-gray-500">{fact.label}</p><p className="truncate font-semibold text-white">{fact.value}</p></div>)}
+            </div>}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SmithsonianSection({ item, side }: { item: SelectedItem; side: 'left' | 'right' }) {
+  const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
+  const supported = item.category === 'stamps';
+  const details = item.itemDetails ? (() => { try { return JSON.parse(item.itemDetails); } catch { return {}; } })() : {};
+  const metadataQuery = details.title || details.stampTitle || `${item.title} stamp`;
+  const { data, isLoading } = trpc.testAI.getSmithsonianStampMetadata.useQuery(
+    { query: metadataQuery },
+    { enabled: supported && !!metadataQuery },
+  );
+
+  if (!supported) return (
+    <div className="bg-gray-800/30 rounded-lg p-3 border border-dashed border-gray-700/40 space-y-2">
+      <p className={`text-[11px] font-bold uppercase ${accentColor}`}>✉️ Smithsonian Stamp Reference</p>
+      <p className="text-gray-500 text-[10px]">This read-only reference source currently supports Stamp-category inventory items only.</p>
+    </div>
+  );
+
+  return (
+    <div className="bg-gray-800/30 rounded-lg p-3 border border-gray-700/20 space-y-3">
+      <div className="flex items-center justify-between">
+        <p className={`text-[11px] font-bold uppercase ${accentColor}`}>✉️ Smithsonian Stamp Reference</p>
+        {isLoading && <Spinner className="w-3 h-3" />}
+      </div>
+      <p className="text-gray-500 text-[10px]">Read-only Smithsonian Open Access reference metadata · Query: {metadataQuery} · Not a price, certification, or authenticity source</p>
+      {data?.status === 'error' && <p className="rounded border border-red-700/30 bg-red-900/20 p-2 text-[10px] text-red-400">{data.message}</p>}
+      {data?.status === 'not_found' && <p className="rounded border border-amber-700/30 bg-amber-900/20 p-2 text-[10px] text-amber-300">{data.message}</p>}
+      {data?.status === 'success' && data.data && (
+        <div className="flex gap-3 rounded bg-gray-900/40 p-2">
+          {data.data.imageUrl && <img src={data.data.imageUrl} alt="" className="h-20 w-14 rounded border border-gray-700/40 object-cover" />}
+          <div className="min-w-0 flex-1 space-y-2">
+            <a href={data.data.sourceUrl} target="_blank" rel="noopener noreferrer" className="text-[12px] font-semibold text-blue-300 hover:underline">{data.data.title}</a>
+            {data.data.facts.length > 0 && <div className="grid grid-cols-2 gap-1.5 text-[10px]">
+              {data.data.facts.map((fact: any) => <div key={fact.label} className="rounded bg-gray-800/60 p-1.5"><p className="text-[8px] uppercase text-gray-500">{fact.label}</p><p className="truncate font-semibold text-white">{fact.value}</p></div>)}
+            </div>}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function PlaceholderSection({ sourceId, side }: { sourceId: SourceId; side: 'left' | 'right' }) {
   const source = DATA_SOURCES[sourceId];
   const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
@@ -1215,6 +1321,8 @@ function DataColumn({ item, searchItem, side, enabledSources, ebayData }: {
       {enabledSources.has('pcgs') && <PcgsSection item={item} side={side} />}
       {enabledSources.has('pricecharting') && <PriceChartingSection item={item} side={side} />}
       {enabledSources.has('one_thirty_point') && <OneThirtyPointSection item={searchItem ?? item} side={side} />}
+      {enabledSources.has('wikidata') && <WikidataSection item={item} side={side} />}
+      {enabledSources.has('smithsonian') && <SmithsonianSection item={item} side={side} />}
       {enabledSources.has('ngc') && <PlaceholderSection sourceId="ngc" side={side} />}
       {enabledSources.has('cbcs') && <PlaceholderSection sourceId="cbcs" side={side} />}
       {enabledSources.has('comic_book_realm') && <PlaceholderSection sourceId="comic_book_realm" side={side} />}

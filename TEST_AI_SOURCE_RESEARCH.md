@@ -58,3 +58,15 @@ CGC public verification covers comics/magazines, cards, video games, and home vi
 ## Current validation conclusion
 
 All currently actionable Test AI certification and market-data sources have been exercised through published read-only flows: eBay active listings, Sold-Comps, Parse PSA, Parse BGS, Parse SGC, Parse PriceCharting, Parse 130point, and official PCGS CoinFacts. The remaining carrier limits are input- or authorization-dependent: USPS requires service-provider authorization, while fresh UPS, FedEx, and DHL shipment reads require valid tracking numbers. No additional provider should be added until the user approves a specific data gap or provides an authorized carrier test input.
+
+## Wikidata development check
+
+The new administrator-only Wikidata reference provider is registered as a live Test AI source and visibly enabled in the development interface for an Autograph-category inventory item. It is explicitly labelled as read-only public metadata and does not expose price, certification, authenticity, valuation, or stored-data fields. The initial listing-title query was correctly revised to use the item’s stored signer field (`Donald Trump`) so public-entity matching is based on the collectible’s signer rather than marketplace listing language. The development result resolved Donald Trump’s linked Wikidata record and showed factual biographical metadata, including birth date, occupation, and nationality, with no valuation or certification output.
+
+The same source was enabled for the available Movie-category inventory item (`Star Wars Graded CGC 9.4`) and resolved the linked Wikidata `Star Wars` reference record with descriptive franchise metadata and origin data. Both reference results visibly exclude price, certification, valuation, authenticity, and storage fields.
+
+## Smithsonian Open Access development check
+
+The configured Smithsonian Open Access key passed a read-only National Postal Museum API search. The new Test AI source is registered as a live Stamp-category-only reference provider and was enabled for the existing `1923 S2 US#572` stamp. A catalog-number-only lookup returned an unrelated Smithsonian Libraries record, so the integration was corrected before publication: it now uses the stamp listing title (`1923 S2 US#572 stamp`) and accepts only National Postal Museum-relevant records. An ambiguous or non-postal match is returned as an explicit not-found result, never as a misleading stamp reference.
+
+The corrected published-development lookup returned the National Postal Museum record **“$2 United States Capitol single”** with date `1923`, place `United States of America`, and a linked official museum record at https://postalmuseum.si.edu/object/npm_2005.2001.257. The panel clearly remained a no-price, no-certification, no-authenticity, no-storage reference source.

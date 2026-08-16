@@ -11,6 +11,8 @@ import { lookupFedexTracking } from "./fedexTracking";
 import { lookupDhlTracking } from "./dhlTracking";
 import { lookup130PointSales, lookupPriceCharting, lookupSgcCertification } from './parseMarketData';
 import { lookupPcgsCertification } from './pcgsMarketData';
+import { lookupWikidataMetadata } from './wikidataMetadata';
+import { lookupSmithsonianStampMetadata } from './smithsonianMetadata';
 
 // ─── Shared eBay helpers (mirrors tradeFlowRouter logic) ────────────────────
 async function getEbayAppToken(): Promise<string | null> {
@@ -751,6 +753,25 @@ export const testAIRouter = router({
     .query(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
       return lookup130PointSales(input.query);
+    }),
+
+  // Wikidata public metadata lookup — administrator-only, read-only, and not a valuation source.
+  getWikidataMetadata: protectedProcedure
+    .input(z.object({
+      query: z.string().trim().min(2).max(180),
+      category: z.enum(['movies', 'autographs']),
+    }))
+    .query(async ({ ctx, input }) => {
+      if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      return lookupWikidataMetadata(input.query, input.category);
+    }),
+
+  // Smithsonian Open Access stamp metadata — administrator-only, read-only, and not a valuation source.
+  getSmithsonianStampMetadata: protectedProcedure
+    .input(z.object({ query: z.string().trim().min(2).max(180) }))
+    .query(async ({ ctx, input }) => {
+      if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      return lookupSmithsonianStampMetadata(input.query);
     }),
 
   // Parse.bot Beckett (BGS) graded card lookup
