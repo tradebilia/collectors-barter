@@ -413,3 +413,4 @@
 - [x] Identify the collection categories still lacking a category-specific API that would materially improve Test AI analysis beyond general marketplace data.
 - [x] Diagnose and correct the missing eBay verification badge for the Administrator on item-detail pages.
 - [x] Correct the malformed item-detail eBay verification badge so the full recognizable logo renders at an appropriate size.
+- [x] Add a reliable item-year constraint to Test AI eBay active-listing queries when year metadata exists, preventing incorrect title-and-grade matches.
