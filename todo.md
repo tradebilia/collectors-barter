@@ -408,5 +408,5 @@
 - [x] Verify Pokémon TCG API pricing and commercial-use terms, then correct the free-source roadmap if it is not a genuine no-cost commercial option.
 - [x] Add and validate an administrator-only, read-only Wikidata metadata lookup for Movies and Autographs in Test AI.
 - [x] Add and validate an administrator-only, read-only Smithsonian Open Access stamp-reference lookup in Test AI.
-- [ ] Audit Smithsonian stamp-response field coverage and surface only useful reference fields in Test AI.
-- [ ] Expand the approved Smithsonian stamp-reference fields and audit useful additional Wikidata Movie and Autograph metadata fields.
+- [x] Audit Smithsonian stamp-response field coverage and surface only useful reference fields in Test AI.
+- [x] Expand the approved Smithsonian stamp-reference fields and audit useful additional Wikidata Movie and Autograph metadata fields.
