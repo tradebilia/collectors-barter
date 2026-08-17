@@ -426,3 +426,5 @@
 - [x] Perform a comprehensive source, documentation, validation, canonical-GitHub, and checkpoint reconciliation; commit and push any verified missing backup files.
 - [x] Assess Cloudflare R2 as a durable storage option for Tradebilia item images, avatars, hero assets, and titles; document current limits, migration scope, risks, and a decision-ready recommendation before any implementation.
 - [x] Compare GoDaddy’s current storage offerings with Cloudflare R2 for Tradebilia’s durable media-storage requirements and document the recommended path before any storage implementation.
+- [x] Prepare a least-privilege Cloudflare R2 API token for `tradebilia-public-media` only; do not upload, migrate, or change any existing media URLs until separate implementation approval.
+- [x] Securely receive and perform a non-writing validation of the replacement `tradebilia-public-media` R2 credential; the token exposed in chat has been revoked and must never be used.
