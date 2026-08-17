@@ -78,6 +78,10 @@ async function migrateOne(candidate: MigrationCandidate) {
   return { kind: candidate.kind, recordId: candidate.recordId, legacyKey: candidate.legacyKey, r2Key: uploaded.key };
 }
 
+function isMigratedLegacyKey(key: string | null | undefined, kind: "listing" | "avatar") {
+  return kind === "listing" ? Boolean(key?.startsWith("listings/")) : Boolean(key?.startsWith("avatars/"));
+}
+
 export const r2MediaRouter = router({
   getMigrationStatus: protectedProcedure.query(async ({ ctx }) => {
     requireAdmin(ctx.user.role);
@@ -103,5 +107,32 @@ export const r2MediaRouter = router({
         }
       }
       return { migrated, failed, status: await getMigrationStatus() };
+    }),
+  restoreMigratedLegacyUrls: protectedProcedure
+    .input(z.object({ confirmation: z.literal("RESTORE_LEGACY_MEDIA_URLS") }))
+    .mutation(async ({ ctx }) => {
+      requireAdmin(ctx.user.role);
+      const db = await requireDb();
+      const [photos, avatars] = await Promise.all([
+        db.select({ id: listingPhotos.id, fileKey: listingPhotos.fileKey, imageUrl: listingPhotos.imageUrl }).from(listingPhotos),
+        db.select({ userId: userProfiles.userId, avatarKey: userProfiles.avatarKey, avatarUrl: userProfiles.avatarUrl }).from(userProfiles),
+      ]);
+      let restoredListingPhotos = 0;
+      let restoredAvatars = 0;
+
+      for (const photo of photos) {
+        if (isR2PublicMediaUrl(photo.imageUrl) && isMigratedLegacyKey(photo.fileKey, "listing")) {
+          await db.update(listingPhotos).set({ imageUrl: `/manus-storage/${photo.fileKey}` }).where(eq(listingPhotos.id, photo.id));
+          restoredListingPhotos += 1;
+        }
+      }
+      for (const avatar of avatars) {
+        if (isR2PublicMediaUrl(avatar.avatarUrl) && isMigratedLegacyKey(avatar.avatarKey, "avatar")) {
+          await db.update(userProfiles).set({ avatarUrl: `/manus-storage/${avatar.avatarKey}` }).where(eq(userProfiles.userId, avatar.userId));
+          restoredAvatars += 1;
+        }
+      }
+
+      return { restoredListingPhotos, restoredAvatars, status: await getMigrationStatus() };
     }),
 });

@@ -8,6 +8,7 @@ import { trpc } from "@/lib/trpc";
 
 export function R2MediaMigrationTab() {
   const [confirmed, setConfirmed] = useState(false);
+  const [rollbackConfirmed, setRollbackConfirmed] = useState(false);
   const status = trpc.r2Media.getMigrationStatus.useQuery();
   const migrate = trpc.r2Media.migrateNextBatch.useMutation({
     onSuccess: (result) => {
@@ -18,6 +19,14 @@ export function R2MediaMigrationTab() {
       } else {
         toast.success(`${result.migrated.length} public-media item(s) migrated and verified.`);
       }
+    },
+    onError: (error) => toast.error(error.message),
+  });
+  const restore = trpc.r2Media.restoreMigratedLegacyUrls.useMutation({
+    onSuccess: (result) => {
+      status.refetch();
+      setRollbackConfirmed(false);
+      toast.success(`Restored ${result.restoredListingPhotos + result.restoredAvatars} migrated legacy URL(s). R2 objects were not deleted.`);
     },
     onError: (error) => toast.error(error.message),
   });
@@ -66,6 +75,22 @@ export function R2MediaMigrationTab() {
           </Button>
           {pendingTotal === 0 && status.data && <span className="flex items-center gap-2 text-sm font-medium text-emerald-700"><CheckCircle2 className="h-4 w-4" /> All detected public media is on R2.</span>}
         </div>
+        {(status.data?.migratedListingPhotos ?? 0) + (status.data?.migratedAvatars ?? 0) > 0 && (
+          <div className="rounded-lg border border-rose-200 bg-rose-50 p-4">
+            <label className="flex items-start gap-3 text-sm text-rose-950">
+              <Checkbox checked={rollbackConfirmed} onCheckedChange={(checked) => setRollbackConfirmed(checked === true)} />
+              <span>I understand this restores migrated legacy database URLs only. It does not delete any R2 object and does not affect new R2 uploads.</span>
+            </label>
+            <Button
+              variant="outline"
+              className="mt-3 border-rose-300 text-rose-800 hover:bg-rose-100"
+              onClick={() => restore.mutate({ confirmation: "RESTORE_LEGACY_MEDIA_URLS" })}
+              disabled={!rollbackConfirmed || restore.isPending}
+            >
+              {restore.isPending ? "Restoring legacy URLs…" : "Restore migrated legacy URLs"}
+            </Button>
+          </div>
+        )}
         <p className="flex gap-2 text-xs text-muted-foreground"><ShieldCheck className="h-4 w-4 shrink-0" /> The control is administrator-only. It cannot access private report evidence or modify existing static asset URLs.</p>
       </CardContent>
     </Card>

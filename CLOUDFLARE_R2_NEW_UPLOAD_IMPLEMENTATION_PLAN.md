@@ -21,6 +21,8 @@ A read-only query against the live Tradebilia database identified **27 listing-p
 
 Every listing-photo record retains its legacy `fileKey`, and every avatar retains its legacy `avatarKey`. Those keys are preserved during migration and provide a deterministic rollback URL (`/manus-storage/{legacyKey}`) without deleting the original object. A legacy object remains in place throughout this release.
 
+The administrator-only Media Storage control includes a separate, confirmation-gated rollback action. It restores only migrated legacy records—identified by their preserved `listings/` or `avatars/` key—to their legacy managed-storage URLs. It does not delete any R2 object and deliberately excludes future uploads whose R2 keys begin with `new/`.
+
 ## Proposed Change
 
 | Scope | Proposed behavior | Explicitly excluded |
