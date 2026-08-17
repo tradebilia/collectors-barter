@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { BarChart3, Users, Package, Settings, Trash2, Flag, Mail, Search, ArrowUpDown, Calendar, ExternalLink, CheckCircle, XCircle, AlertTriangle, Ban, ShieldOff, ClipboardList, MessageSquare, TicketCheck, Send, ChevronDown, ChevronUp, Store } from "lucide-react";
+import { BarChart3, Users, Package, Settings, Trash2, Flag, Mail, Search, ArrowUpDown, Calendar, ExternalLink, CheckCircle, XCircle, AlertTriangle, Ban, ShieldOff, ClipboardList, MessageSquare, TicketCheck, Send, ChevronDown, ChevronUp, Store, CloudUpload } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -16,6 +16,7 @@ import { trpc } from "@/lib/trpc";
 import { TopBar } from "@/components/TopBar";
 import { ReferralsTab } from "@/components/ReferralsTab";
 import { PreLaunchEmailTab } from "@/components/PreLaunchEmailTab";
+import { R2MediaMigrationTab } from "@/components/R2MediaMigrationTab";
 import { Link } from "wouter";
 import { DeleteConfirmationDialog } from "@/components/DeleteConfirmationDialog";
 
@@ -622,6 +623,10 @@ export default function AdminDashboard() {
               <Send className="h-4 w-4" />
               Pre-Launch Email
             </TabsTrigger>
+            <TabsTrigger value="media-storage" className="flex items-center justify-center gap-1.5 text-xs font-medium py-2.5 whitespace-nowrap">
+              <CloudUpload className="h-4 w-4" />
+              Media Storage
+            </TabsTrigger>
             <TabsTrigger value="conventions" className="flex items-center justify-center gap-1.5 text-xs font-medium py-2.5 whitespace-nowrap">
               <Calendar className="h-4 w-4" />
               Conventions
@@ -1174,6 +1179,9 @@ export default function AdminDashboard() {
           </TabsContent>
           <TabsContent value="pre-launch-email" className="space-y-4 mt-6">
             <PreLaunchEmailTab />
+          </TabsContent>
+          <TabsContent value="media-storage" className="space-y-4 mt-6">
+            <R2MediaMigrationTab />
           </TabsContent>
           <TabsContent value="conventions" className="space-y-4 mt-6">
             <ConventionsAdminTab />

@@ -15,6 +15,14 @@
 
 The current database layer routes public listing photos and avatars through a shared `uploadImage` helper in `server/db.ts`. New listing creation, listing edits that contain a new base64 photo, and profile/avatar updates call this helper. Each successful upload writes a storage key and URL to existing database URL fields. Report evidence uses a separate `uploadReportEvidence` path and will remain on the existing private storage path in this phase.
 
+## Legacy Public-Media Inventory
+
+A read-only query against the live Tradebilia database identified **27 listing-photo records** and **4 profile-avatar records** that still use legacy managed-storage URLs. No record currently points to `media.tradebilia.com`. The complete working manifest is deliberately held outside source control because it contains record identifiers and storage paths; the migration service will query fresh candidates immediately before each batch so that it cannot act on a stale snapshot.
+
+Every listing-photo record retains its legacy `fileKey`, and every avatar retains its legacy `avatarKey`. Those keys are preserved during migration and provide a deterministic rollback URL (`/manus-storage/{legacyKey}`) without deleting the original object. A legacy object remains in place throughout this release.
+
+The administrator-only Media Storage control includes a separate, confirmation-gated rollback action. It restores only migrated legacy records—identified by their preserved `listings/` or `avatars/` key—to their legacy managed-storage URLs. It does not delete any R2 object and deliberately excludes future uploads whose R2 keys begin with `new/`.
+
 ## Proposed Change
 
 | Scope | Proposed behavior | Explicitly excluded |
