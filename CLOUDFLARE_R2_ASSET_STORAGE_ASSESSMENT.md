@@ -92,6 +92,18 @@ No database schema migration is required for the recommended approach because th
 4. Confirmation that billing alerts should be enabled and who should receive them.
 5. Agreement that no old managed-storage object or database URL will be deleted until the R2 version and a separate backup have been verified.
 
+## GoDaddy Comparison
+
+GoDaddy is suitable for retaining the `tradebilia.com` registration and can manage DNS records, but its current developer platform documents domain registration and DNS management rather than an R2-equivalent, S3-compatible object-storage service. [7] Its documented Web Hosting file storage is a cPanel file manager intended for a small number of manual uploads or FTP transfers. [8] That is not a safe replacement for application-managed media because it lacks the needed scoped object API, server-issued presigned uploads, separate public/private buckets, object-level access pattern, and durable media migration workflow.
+
+| Service | Appropriate Tradebilia role | Not appropriate for |
+|---|---|---|
+| GoDaddy | Domain registration; keep ownership and billing there. | Serving as the main programmatic media object store. |
+| Cloudflare R2 | Durable public and private file storage with separate buckets and server-controlled access. | Relational listing, trade, member, or message data. |
+| Tradebilia database | Structured application records and media URL metadata. | Image, PDF, or evidence file bytes. |
+
+The practical choice is to **keep the domain registered at GoDaddy** and use Cloudflare R2 only after the DNS zone is safely managed by Cloudflare or an alternative production-grade object-storage/CDN design is selected. Do not substitute GoDaddy shared-hosting file space for R2.
+
 ## References
 
 [1]: https://developers.cloudflare.com/r2/pricing/ "Cloudflare R2 Pricing"
@@ -100,3 +112,5 @@ No database schema migration is required for the recommended approach because th
 [4]: https://developers.cloudflare.com/r2/reference/data-security/ "Cloudflare R2 Data Security"
 [5]: https://developers.cloudflare.com/r2/buckets/cors/ "Cloudflare R2 CORS"
 [6]: https://developers.cloudflare.com/r2/buckets/delete-buckets/ "Cloudflare R2 Bucket Deletion"
+[7]: https://developer.godaddy.com/ "GoDaddy Developer API"
+[8]: https://www.godaddy.com/help/upload-files-using-my-web-hosting-cpanel-file-manager-3239 "GoDaddy Web Hosting cPanel File Manager"
