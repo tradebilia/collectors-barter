@@ -49,3 +49,7 @@ This design does not require a database migration because the existing fields al
 ## Approval Boundary
 
 Implementation requires explicit approval because it will change the destination for **future** listing-photo and avatar uploads. It will not migrate existing media, delete any object, modify report evidence, or update static-asset URLs.
+
+## Completed Public-Media Migration Result
+
+The approved migration completed for every retrievable legacy public-media source. **26 listing photos and 2 avatars** are now stored and checksum-verified through `media.tradebilia.com`. The corresponding database URLs were updated only after public verification. **One listing photo and two avatars** remain on their legacy URLs because the old storage delivery path returns HTTP 403 XML errors. Their records and legacy objects were deliberately left unchanged. See `CLOUDFLARE_R2_PUBLIC_MEDIA_MIGRATION_AUDIT.md` for the failure boundary and rollback status.
