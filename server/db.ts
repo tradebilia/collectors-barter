@@ -26,6 +26,7 @@ import {
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 import { storagePut } from "./storage";
+import { uploadNewPublicMedia } from "./r2PublicMedia";
 import { resolveTradebiliaContactEmail } from "./tradebiliaContactEmail";
 import { resolveDirectMessageDisplayName } from "./directMessageDisplayName";
 import { resolveMemberStanding } from "./memberDirectoryStanding";
@@ -325,8 +326,14 @@ async function uploadImage(folder: string, userId: number, input: PhotoUploadInp
     console.log(`[uploadImage] File key: ${fileKey}`);
     console.log(`[uploadImage] Original name: ${input.name}, Sanitized name: ${sanitizedName}`);
     
-    // Upload to S3 using storagePut
-    const result = await storagePut(fileKey, buffer, input.type);
+    const kind = folder === "avatars" ? "avatar" : "listing";
+    const result = await uploadNewPublicMedia({
+      kind,
+      ownerId: userId,
+      filename: sanitizedName,
+      data: buffer,
+      contentType: input.type,
+    });
     console.log(`[uploadImage] Upload successful, URL: ${result.url}`);
     return result;
   } catch (error) {

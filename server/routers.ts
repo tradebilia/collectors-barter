@@ -101,6 +101,7 @@ import { getEbayAuthUrl, exchangeCodeForToken, getUserInfo, getUserFeedback, ref
 import { sdk } from "./_core/sdk";
 import { tradeFlowRouter } from "./tradeFlowRouter";
 import { testAIRouter } from "./testAIRouter";
+import { r2MediaRouter } from "./r2MediaRouter";
 import { customAuth } from "./_core/customAuth";
 import { getOrCreateDirectMessageThread, persistDirectMessage } from "./directMessagePersistence";
 import { users, userProfiles, listings, deletedAccounts, tradeProposals, tradeMessages, tradeReviews, watchlistEntries, draftListings, passwordResetTokens, referralRequests, userFollows, directMessageThreads, directMessages, tradePayments, tradeActivityLog, emailTemplates } from "../drizzle/schema";
@@ -197,6 +198,7 @@ export const appRouter = router({
   system: systemRouter,
   tradeFlow: tradeFlowRouter,
   testAI: testAIRouter,
+  r2Media: r2MediaRouter,
   launchUpdates: router({
     subscribe: publicProcedure
       .input(z.object({ email: z.string().trim().email().max(320) }))

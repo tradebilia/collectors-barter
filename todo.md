@@ -430,4 +430,5 @@
 - [x] Securely receive and perform a non-writing validation of the replacement `tradebilia-public-media` R2 credential; the token exposed in chat has been revoked and must never be used.
 - [x] Confirm the `media.tradebilia.com` public hostname is active for the future public-media bucket, without uploading or moving any media.
 - [x] Audit and propose the reversible new-upload-only R2 adapter; do not change upload behavior, database records, or existing media URLs until the user explicitly approves implementation.
-- [ ] After explicit user approval, route only new listing-photo and avatar uploads to `tradebilia-public-media`; exclude existing media, static assets, and private report evidence.
+- [ ] Route new listing-photo and avatar uploads to `tradebilia-public-media`, then migrate all existing public listing photos and avatars with a verified source-to-R2 manifest, reversible database URL updates, and no deletion of legacy objects during this release.
+- [ ] Preserve private report evidence and existing static-asset URLs outside the public-media migration; do not use the public bucket or public hostname for either class of asset.
