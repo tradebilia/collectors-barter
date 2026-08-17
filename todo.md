@@ -425,3 +425,4 @@
 - [x] Securely configure the supplied Twitch Client ID and Client Secret, validate a read-only IGDB response, and add the approved factual Video Game metadata source with regression coverage.
 - [x] Perform a comprehensive source, documentation, validation, canonical-GitHub, and checkpoint reconciliation; commit and push any verified missing backup files.
 - [x] Assess Cloudflare R2 as a durable storage option for Tradebilia item images, avatars, hero assets, and titles; document current limits, migration scope, risks, and a decision-ready recommendation before any implementation.
+- [x] Compare GoDaddy’s current storage offerings with Cloudflare R2 for Tradebilia’s durable media-storage requirements and document the recommended path before any storage implementation.
