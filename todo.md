@@ -428,3 +428,6 @@
 - [x] Compare GoDaddy’s current storage offerings with Cloudflare R2 for Tradebilia’s durable media-storage requirements and document the recommended path before any storage implementation.
 - [x] Prepare a least-privilege Cloudflare R2 API token for `tradebilia-public-media` only; do not upload, migrate, or change any existing media URLs until separate implementation approval.
 - [x] Securely receive and perform a non-writing validation of the replacement `tradebilia-public-media` R2 credential; the token exposed in chat has been revoked and must never be used.
+- [x] Confirm the `media.tradebilia.com` public hostname is active for the future public-media bucket, without uploading or moving any media.
+- [x] Audit and propose the reversible new-upload-only R2 adapter; do not change upload behavior, database records, or existing media URLs until the user explicitly approves implementation.
+- [ ] After explicit user approval, route only new listing-photo and avatar uploads to `tradebilia-public-media`; exclude existing media, static assets, and private report evidence.
