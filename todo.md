@@ -456,4 +456,4 @@
 - [x] Review the existing RAWG provider gate and record the user’s written commercial-use confirmation for Test AI activation.
 - [x] Securely receive the RAWG API key through project settings and validate that the server can access it without exposing it in source, logs, or the client.
 - [x] Activate and live-validate the administrator-only RAWG Video Game catalog source, preserving manual Test AI source selection and strict metadata matching.
-- [ ] Run regression checks, document the RAWG activation, publish the verified implementation, and synchronize GitHub.
+- [x] Run regression checks, document the RAWG activation, publish the verified implementation, and synchronize GitHub.
