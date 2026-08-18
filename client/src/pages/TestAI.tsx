@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { trpc } from '@/lib/trpc';
 import { useAuth } from '@/_core/hooks/useAuth';
 import { useLocation } from 'wouter';
@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { resolveTestAiManufacturer } from '@shared/testAiCriteria';
 import { buildUspsTrackingUrl } from '@shared/uspsTrackingLink';
+import { normalizeTestAiEvidence, type EvidenceSourceObservation, type NormalizedEvidenceSummary } from '@shared/testAiEvidenceNormalization';
 
 // ─── Data Source Registry ────────────────────────────────────────────────────
 // Each source defines: what data it provides, what it needs (cert ID, title, etc.)
@@ -1072,6 +1073,136 @@ function PwccSection({ item, side }: { item: SelectedItem; side: 'left' | 'right
   </div>;
 }
 
+function testAiDetails(item: SelectedItem): Record<string, any> {
+  if (!item.itemDetails) return {};
+  try {
+    const parsed = JSON.parse(item.itemDetails);
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function evidenceStatus(data: any): 'success' | 'not_found' | 'error' | 'idle' {
+  if (!data) return 'idle';
+  if (data.status === 'success') return 'success';
+  if (data.status === 'not_found') return 'not_found';
+  if (data.status === 'error' || data.error) return 'error';
+  return 'success';
+}
+
+function factValue(facts: any[], labels: string[]): string {
+  const normalizedLabels = labels.map((label) => label.toLowerCase().replace(/[^a-z0-9]+/g, ''));
+  const matchingFact = facts.find((fact: any) => normalizedLabels.includes(String(fact?.label ?? '').toLowerCase().replace(/[^a-z0-9]+/g, '')));
+  return matchingFact?.value == null ? '' : String(matchingFact.value);
+}
+
+function factualFields(data: any, source: 'tcgdex' | 'rawg' | 'igdb' | 'wikidata' | 'smithsonian'): Record<string, unknown> {
+  const details = data?.data;
+  if (!details) return {};
+  const facts = Array.isArray(details.facts) ? details.facts : [];
+  if (source === 'tcgdex') return {
+    cardName: details.title,
+    set: factValue(facts, ['Set']),
+    cardNumber: factValue(facts, ['Card number', 'Number']),
+    variant: factValue(facts, ['Variants', 'Variant']),
+  };
+  if (source === 'rawg' || source === 'igdb') return {
+    title: details.title,
+    platform: factValue(facts, ['Platforms', 'Platform']),
+    globalReleaseYear: factValue(facts, ['First release', 'Release year', 'Release date']),
+  };
+  if (source === 'wikidata') return { title: details.title };
+  return {
+    title: details.title,
+    catalogNumber: factValue(facts, ['Catalog number', 'Object number']),
+    issueYear: factValue(facts, ['Date', 'Issue year']),
+    country: factValue(facts, ['Place', 'Country']),
+  };
+}
+
+function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, ebayData, soldCompsData, oneThirtyPointData, onSummaryChange }: {
+  item: SelectedItem;
+  marketItem: SelectedItem;
+  side: 'left' | 'right';
+  enabledSources: Set<SourceId>;
+  ebayData: any;
+  soldCompsData: any;
+  oneThirtyPointData: any;
+  onSummaryChange?: (summary: NormalizedEvidenceSummary) => void;
+}) {
+  const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
+  const details = useMemo(() => testAiDetails(item), [item]);
+  const tcgdexInput = useMemo(() => ({
+    query: String(details.cardName || details.pokemonName || details.name || item.title.replace(/^pokemon\s+/i, '')).trim(),
+    cardNumber: details.cardNumber || details.cardNo || details.number || undefined,
+    setName: details.setName || details.set || details.cardSet || undefined,
+  }), [details, item.title]);
+  const gameInput = useMemo(() => {
+    const year = Number(details.releaseYear || details.year || details.release_date_year);
+    return {
+      title: String(details.gameTitle || details.videoGameTitle || details.title || item.title).trim(),
+      releaseYear: Number.isInteger(year) && year > 0 ? year : undefined,
+      platform: details.platform || details.console || details.system || undefined,
+    };
+  }, [details, item.title]);
+  const wikidataCategory = item.category === 'movies' ? 'movies' : 'autographs';
+  const wikidataQuery = String(wikidataCategory === 'autographs' ? (details.signer || item.title) : (details.title || details.movieTitle || item.title)).trim();
+  const certNumber = item.certId || '';
+
+  const tcgdexQuery = trpc.testAI.getTcgDexCatalog.useQuery(tcgdexInput, { enabled: enabledSources.has('tcgdex') && item.category === 'pokemon' && tcgdexInput.query.length >= 2 });
+  const rawgQuery = trpc.testAI.getRawgGameMetadata.useQuery(gameInput, { enabled: enabledSources.has('rawg') && item.category === 'video_games' && gameInput.title.length >= 2 });
+  const igdbQuery = trpc.testAI.getIgdbGameMetadata.useQuery(gameInput, { enabled: enabledSources.has('igdb') && item.category === 'video_games' && gameInput.title.length >= 2 });
+  const priceChartingQuery = trpc.testAI.getPriceChartingData.useQuery({ query: item.title }, { enabled: enabledSources.has('pricecharting') && item.category === 'pokemon' && !!item.title });
+  const smithsonianQuery = trpc.testAI.getSmithsonianStampReference.useQuery({ query: item.title }, { enabled: enabledSources.has('smithsonian') && item.category === 'stamps' && !!item.title });
+  const wikidataQueryResult = trpc.testAI.getWikidataMetadata.useQuery({ query: wikidataQuery, category: wikidataCategory }, { enabled: enabledSources.has('wikidata') && (item.category === 'movies' || item.category === 'autographs') && !!wikidataQuery });
+  const psaQuery = trpc.testAI.getPSAData.useQuery({ certNumber }, { enabled: enabledSources.has('psa') && !!certNumber });
+  const bgsQuery = trpc.testAI.getBeckettData.useQuery({ certNumber }, { enabled: enabledSources.has('bgs') && !!certNumber });
+  const sgcQuery = trpc.testAI.getSgcData.useQuery({ certNumber }, { enabled: enabledSources.has('sgc') && !!certNumber });
+  const pcgsQuery = trpc.testAI.getPcgsData.useQuery({ certNumber }, { enabled: enabledSources.has('pcgs') && item.gradingCompany === 'PCGS' && !!certNumber });
+  const pwccQuery = trpc.testAI.getPwccSales.useQuery({ query: marketItem.title }, { enabled: enabledSources.has('pwcc') && !!marketItem.title });
+
+  const summary = useMemo(() => {
+    const observations: EvidenceSourceObservation[] = [];
+    const add = (observation: EvidenceSourceObservation) => observations.push(observation);
+    if (enabledSources.has('ebay_active')) add({ id: 'ebay_active', label: 'eBay Active Listings', kind: 'market_current', status: evidenceStatus(ebayData), market: { currentListingCount: ebayData?.listings?.length ?? 0 }, message: ebayData?.error ?? null });
+    if (enabledSources.has('sold_comps')) add({ id: 'sold_comps', label: 'Sold-Comps', kind: 'market_completed', status: evidenceStatus(soldCompsData), market: { completedSaleCount: soldCompsData?.listings?.length ?? 0 }, message: soldCompsData?.error ?? null });
+    if (enabledSources.has('one_thirty_point')) {
+      const sales = oneThirtyPointData?.data?.items ?? [];
+      add({ id: 'one_thirty_point', label: '130point', kind: 'market_historical', status: evidenceStatus(oneThirtyPointData), market: { recentSaleCount: sales.filter((sale: any) => sale.recency === 'recent').length, historicalSaleCount: sales.filter((sale: any) => sale.recency === 'historical').length, undatedSaleCount: sales.filter((sale: any) => sale.recency === 'undated').length }, message: oneThirtyPointData?.message ?? null });
+    }
+    if (enabledSources.has('pwcc')) {
+      const sales = pwccQuery.data?.data?.items ?? [];
+      add({ id: 'pwcc', label: 'PWCC / Fanatics Collect', kind: 'market_historical', status: evidenceStatus(pwccQuery.data), market: { recentSaleCount: sales.filter((sale: any) => sale.recency === 'recent').length, historicalSaleCount: sales.filter((sale: any) => sale.recency === 'historical').length, undatedSaleCount: sales.filter((sale: any) => sale.recency === 'undated').length }, message: pwccQuery.data?.message ?? null });
+    }
+    if (enabledSources.has('tcgdex')) add({ id: 'tcgdex', label: 'TCGdex', kind: 'reference', status: evidenceStatus(tcgdexQuery.data), fields: factualFields(tcgdexQuery.data, 'tcgdex'), message: tcgdexQuery.data?.message ?? null });
+    if (enabledSources.has('pricecharting')) add({ id: 'pricecharting', label: 'PriceCharting', kind: 'market_current', status: evidenceStatus(priceChartingQuery.data), fields: { cardName: priceChartingQuery.data?.data?.name, set: priceChartingQuery.data?.data?.set, cardNumber: priceChartingQuery.data?.data?.cardNumber }, message: priceChartingQuery.data?.message ?? null });
+    if (enabledSources.has('rawg')) add({ id: 'rawg', label: 'RAWG', kind: 'reference', status: evidenceStatus(rawgQuery.data), fields: factualFields(rawgQuery.data, 'rawg'), message: rawgQuery.data?.message ?? null });
+    if (enabledSources.has('igdb')) add({ id: 'igdb', label: 'IGDB', kind: 'reference', status: evidenceStatus(igdbQuery.data), fields: factualFields(igdbQuery.data, 'igdb'), message: igdbQuery.data?.message ?? null });
+    if (enabledSources.has('smithsonian')) add({ id: 'smithsonian', label: 'Smithsonian', kind: 'reference', status: evidenceStatus(smithsonianQuery.data), fields: factualFields(smithsonianQuery.data, 'smithsonian'), message: smithsonianQuery.data?.message ?? null });
+    if (enabledSources.has('wikidata')) add({ id: 'wikidata', label: 'Wikidata', kind: 'reference', status: evidenceStatus(wikidataQueryResult.data), fields: factualFields(wikidataQueryResult.data, 'wikidata'), message: wikidataQueryResult.data?.message ?? null });
+    if (enabledSources.has('psa')) add({ id: 'psa', label: 'Parse.bot PSA', kind: 'certification', status: evidenceStatus(psaQuery.data), fields: { title: psaQuery.data?.data?.cardTitle, player: psaQuery.data?.data?.subject, year: psaQuery.data?.data?.year, manufacturer: psaQuery.data?.data?.brand, cardNumber: psaQuery.data?.data?.cardNumber, certificationCompany: 'PSA', grade: psaQuery.data?.data?.grade }, message: psaQuery.data?.message ?? null });
+    if (enabledSources.has('bgs')) add({ id: 'bgs', label: 'Parse.bot BGS', kind: 'certification', status: evidenceStatus(bgsQuery.data), fields: { title: bgsQuery.data?.data?.playerName, player: bgsQuery.data?.data?.playerName, set: bgsQuery.data?.data?.setName, cardNumber: bgsQuery.data?.data?.cardNumber, year: bgsQuery.data?.data?.year, manufacturer: bgsQuery.data?.data?.manufacturer, certificationCompany: 'BGS', grade: bgsQuery.data?.data?.finalGrade }, message: bgsQuery.data?.message ?? null });
+    if (enabledSources.has('sgc')) add({ id: 'sgc', label: 'Parse.bot SGC', kind: 'certification', status: evidenceStatus(sgcQuery.data), fields: { title: sgcQuery.data?.data?.subject, player: sgcQuery.data?.data?.subject, set: sgcQuery.data?.data?.cardSet, cardNumber: sgcQuery.data?.data?.cardNumber, certificationCompany: 'SGC', grade: sgcQuery.data?.data?.grade }, message: sgcQuery.data?.message ?? null });
+    if (enabledSources.has('pcgs')) add({ id: 'pcgs', label: 'PCGS CoinFacts', kind: 'certification', status: evidenceStatus(pcgsQuery.data), fields: { title: pcgsQuery.data?.data?.name, year: pcgsQuery.data?.data?.year, denomination: pcgsQuery.data?.data?.denomination, variety: pcgsQuery.data?.data?.variety, certificationCompany: 'PCGS', grade: pcgsQuery.data?.data?.grade }, message: pcgsQuery.data?.message ?? null });
+    return normalizeTestAiEvidence(item, observations);
+  }, [item, enabledSources, ebayData, soldCompsData, oneThirtyPointData, pwccQuery.data, tcgdexQuery.data, priceChartingQuery.data, rawgQuery.data, igdbQuery.data, smithsonianQuery.data, wikidataQueryResult.data, psaQuery.data, bgsQuery.data, sgcQuery.data, pcgsQuery.data]);
+
+  useEffect(() => {
+    onSummaryChange?.(summary);
+  }, [onSummaryChange, summary]);
+
+  const statusLabel = (status: string) => status === 'success' ? 'available' : status === 'idle' ? 'checking' : status.replace('_', ' ');
+  return <section className="rounded-xl border border-violet-700/40 bg-violet-950/20 p-3 space-y-3" aria-label={`${side === 'left' ? 'Item A' : 'Item B'} normalized evidence review`}>
+    <div className="flex flex-wrap items-start justify-between gap-2"><div><p className={`text-[11px] font-bold uppercase ${accentColor}`}>Evidence review</p><p className="mt-0.5 text-[10px] text-gray-500">Deterministic identity and evidence check. It preserves source facts and does not calculate a value.</p></div><Badge variant="outline" className="border-violet-600/50 text-[9px] text-violet-200">{summary.category}</Badge></div>
+    {summary.identity.length > 0 && <div className="flex flex-wrap gap-1.5">{summary.identity.map((field) => <span key={field.key} className="rounded bg-gray-900/60 px-2 py-1 text-[10px] text-gray-300"><span className="text-gray-500">{field.label}:</span> {field.value}</span>)}</div>}
+    {summary.alignedSources.length > 0 && <div className="rounded bg-emerald-950/20 p-2"><p className="text-[9px] font-semibold uppercase text-emerald-300">Aligned specialist fields</p>{summary.alignedSources.map((source) => <p key={source.id} className="mt-1 text-[10px] text-gray-300"><span className="font-medium text-emerald-200">{source.label}:</span> {source.fields.join(', ')}</p>)}</div>}
+    {summary.marketEvidence.length > 0 && <div className="rounded bg-sky-950/20 p-2"><p className="text-[9px] font-semibold uppercase text-sky-300">Market evidence classification</p>{summary.marketEvidence.map((entry) => <p key={entry} className="mt-1 text-[10px] text-gray-300">{entry}</p>)}</div>}
+    {summary.reviewFlags.length > 0 && <div className="space-y-1 rounded bg-amber-950/25 p-2"><p className="text-[9px] font-semibold uppercase text-amber-300">Review before comparing</p>{summary.reviewFlags.map((flag, index) => <p key={`${flag.sourceId ?? 'flag'}-${index}`} className="text-[10px] text-amber-100/90">• {flag.message}</p>)}</div>}
+    <p className="text-[9px] text-gray-600">{summary.sources.map((source) => `${source.label}: ${statusLabel(source.status)}`).join(' · ') || 'No selected source has a summary contract.'}</p>
+  </section>;
+}
+
 function PlaceholderSection({ sourceId, side }: { sourceId: SourceId; side: 'left' | 'right' }) {
   const source = DATA_SOURCES[sourceId];
   const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
@@ -1088,7 +1219,7 @@ function PlaceholderSection({ sourceId, side }: { sourceId: SourceId; side: 'lef
 }
 
 // ─── AI Analysis Section ─────────────────────────────────────────────────────
-function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, leftSources, rightSources, leftSoldCompsData, rightSoldCompsData, leftHistoricalTrendData, rightHistoricalTrendData }: {
+function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, leftSources, rightSources, leftSoldCompsData, rightSoldCompsData, leftHistoricalTrendData, rightHistoricalTrendData, leftEvidenceSummary, rightEvidenceSummary }: {
   leftItem: SelectedItem;
   rightItem: SelectedItem;
   leftEbayData: any;
@@ -1099,6 +1230,8 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
   rightSoldCompsData?: any;
   leftHistoricalTrendData?: any;
   rightHistoricalTrendData?: any;
+  leftEvidenceSummary?: NormalizedEvidenceSummary | null;
+  rightEvidenceSummary?: NormalizedEvidenceSummary | null;
 }) {
   const [result, setResult] = useState<any>(null);
   const analyzeMutation = trpc.testAI.analyzeItems.useMutation({
@@ -1123,6 +1256,8 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
       rightSoldCompsMetrics: rightHasSoldComps ? (rightSoldCompsData?.metrics ?? null) : null,
       leftHistoricalTrendSales: leftHas130Point ? (leftHistoricalTrendData?.data?.items ?? []) : [],
       rightHistoricalTrendSales: rightHas130Point ? (rightHistoricalTrendData?.data?.items ?? []) : [],
+      leftEvidenceSummary: leftEvidenceSummary ?? undefined,
+      rightEvidenceSummary: rightEvidenceSummary ?? undefined,
     });
   };
 
@@ -1377,12 +1512,15 @@ function CarrierTrackingSection() {
 }
 
 // ─── Data Column ─────────────────────────────────────────────────────────────
-function DataColumn({ item, searchItem, side, enabledSources, ebayData }: {
+function DataColumn({ item, searchItem, side, enabledSources, ebayData, soldCompsData, oneThirtyPointData, onEvidenceSummary }: {
   item: SelectedItem | null;
   searchItem: SelectedItem | null;
   side: 'left' | 'right';
   enabledSources: Set<SourceId>;
   ebayData: any;
+  soldCompsData: any;
+  oneThirtyPointData: any;
+  onEvidenceSummary?: (summary: NormalizedEvidenceSummary) => void;
 }) {
   if (!item) return (
     <div className="rounded-xl border border-gray-700/30 bg-gray-800/20 p-8 text-center text-gray-500 text-sm">
@@ -1407,6 +1545,7 @@ function DataColumn({ item, searchItem, side, enabledSources, ebayData }: {
 
   return (
     <div className="space-y-3">
+      <EvidenceNormalizationSummary item={item} marketItem={queryItem} side={side} enabledSources={enabledSources} ebayData={ebayData} soldCompsData={soldCompsData} oneThirtyPointData={oneThirtyPointData} onSummaryChange={onEvidenceSummary} />
       {enabledSources.has('ebay_active') && (
         searchItem || item.category !== 'unknown'
           ? <EbayActiveSection item={queryItem} side={side} />
@@ -1454,6 +1593,18 @@ export default function TestAI() {
   const [rightItem, setRightItem] = useState<SelectedItem | null>(null);
   const [leftSources, setLeftSources] = useState<Set<SourceId>>(new Set(['ebay_active']));
   const [rightSources, setRightSources] = useState<Set<SourceId>>(new Set(['ebay_active']));
+  const [leftEvidenceSummary, setLeftEvidenceSummary] = useState<NormalizedEvidenceSummary | null>(null);
+  const [rightEvidenceSummary, setRightEvidenceSummary] = useState<NormalizedEvidenceSummary | null>(null);
+  const leftSourceKey = useMemo(() => Array.from(leftSources).sort().join('|'), [leftSources]);
+  const rightSourceKey = useMemo(() => Array.from(rightSources).sort().join('|'), [rightSources]);
+
+  useEffect(() => {
+    setLeftEvidenceSummary(null);
+  }, [leftItem?.id, leftItem?.title, leftItem?.category, leftSourceKey]);
+
+  useEffect(() => {
+    setRightEvidenceSummary(null);
+  }, [rightItem?.id, rightItem?.title, rightItem?.category, rightSourceKey]);
 
   const { data: inventory = [], isLoading: inventoryLoading } = trpc.testAI.getMyInventory.useQuery(undefined, {
     enabled: !!user && user.role === 'admin',
@@ -1593,8 +1744,8 @@ export default function TestAI() {
         {/* Data sections */}
         {(leftItem || rightItem) && (
           <div className="grid grid-cols-2 gap-4">
-            <DataColumn item={leftItem} searchItem={leftSearchItem} side="left" enabledSources={leftSources} ebayData={leftEbayQuery.data} />
-            <DataColumn item={rightItem} searchItem={rightSearchItem} side="right" enabledSources={rightSources} ebayData={rightEbayQuery.data} />
+            <DataColumn item={leftItem} searchItem={leftSearchItem} side="left" enabledSources={leftSources} ebayData={leftEbayQuery.data} soldCompsData={leftSoldCompsQuery.data} oneThirtyPointData={left130PointQuery.data} onEvidenceSummary={setLeftEvidenceSummary} />
+            <DataColumn item={rightItem} searchItem={rightSearchItem} side="right" enabledSources={rightSources} ebayData={rightEbayQuery.data} soldCompsData={rightSoldCompsQuery.data} oneThirtyPointData={right130PointQuery.data} onEvidenceSummary={setRightEvidenceSummary} />
           </div>
         )}
 
@@ -1611,6 +1762,8 @@ export default function TestAI() {
              rightSoldCompsData={rightSoldCompsQuery.data}
              leftHistoricalTrendData={left130PointQuery.data}
              rightHistoricalTrendData={right130PointQuery.data}
+             leftEvidenceSummary={leftEvidenceSummary}
+             rightEvidenceSummary={rightEvidenceSummary}
           />
         )}
 

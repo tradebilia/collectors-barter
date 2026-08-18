@@ -24,4 +24,14 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain('function RawgSection');
     expect(source).not.toContain('RawgSetupSection');
   });
+
+  it('renders a deterministic evidence review beside the existing provider panels without changing manual source selection', () => {
+    expect(source).toContain("from '@shared/testAiEvidenceNormalization'");
+    expect(source).toContain('function EvidenceNormalizationSummary');
+    expect(source).toContain('Deterministic identity and evidence check. It preserves source facts and does not calculate a value.');
+    expect(source).toContain('<EvidenceNormalizationSummary item={item}');
+    expect(source).not.toContain('getEligibleTestAiSources');
+    expect(source).toContain('setLeftEvidenceSummary(null)');
+    expect(source).toContain('setRightEvidenceSummary(null)');
+  });
 });
