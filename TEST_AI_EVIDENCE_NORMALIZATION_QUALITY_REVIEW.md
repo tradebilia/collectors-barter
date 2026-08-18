@@ -41,3 +41,9 @@ The new summary meets the documented acceptance criteria without modifying raw p
 ## Final Validation
 
 TypeScript completed without errors. The complete regression suite passed with 82 test files and 264 tests, plus one intentionally skipped file and four intentionally skipped tests. The production build also completed successfully. The build emitted the project’s existing large-client-chunk advisory; it does not indicate a normalization error and remains a separate performance optimization opportunity.
+
+## Standard-Domain Access-Boundary Check
+
+After the release checkpoint, an unauthenticated standard-domain request to `/test-ai` returned the public homepage rather than Test AI content. This confirms that the administrator-only route remains protected. The browser session available for release verification was not authenticated as an administrator, so direct published-panel interaction was not performed; the protected UI behavior is covered by the existing route guard, source-integrity regression, TypeScript compilation, and production build.
+
+After deployment propagation completed, the standard public application bundle was checked directly and contained the deterministic Evidence Review text. This confirms that the accepted normalization code is present in the published bundle while the administrator route continues to enforce authentication.
