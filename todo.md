@@ -437,3 +437,4 @@
 - [x] Audit and remove the obsolete Collector 2 profile only if it has no active account or dependent records that must be retained; verify its public route is removed afterward.
 - [x] Verify the newly submitted rtavani listing stores and renders its image through `media.tradebilia.com`.
 - [x] Perform a fresh read-only audit of all public listing-photo and avatar URLs to confirm Cloudflare R2 coverage and identify any retained legacy exception.
+- [x] Inventory all application image-reference classes and report which remain outside Cloudflare R2 by design or migration status.
