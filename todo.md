@@ -452,3 +452,4 @@
 - [x] Retrieve checksum-verifiable exact copies of the seven currently referenced Public Profile brand-logo files without substituting artwork variants.
 - [x] Upload the approved exact Public Profile brand-logo copies to `assets.tradebilia.com`, replace only the matching external references, and preserve current dimensions and alt labels.
 - [x] Add regression coverage, verify the Profile page in development and on the standard public domain, document the completed migration, and synchronize GitHub.
+- [x] Perform a read-only current-state verification of all persisted Tradebilia image-bearing records and report any active Cloudflare, protected S3, legacy, or external-storage locations without modifying files or data.

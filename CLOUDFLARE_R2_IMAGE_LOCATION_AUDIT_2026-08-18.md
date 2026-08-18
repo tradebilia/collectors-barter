@@ -25,3 +25,9 @@
 ## Conclusion
 
 All current database-backed public collector imagery is Cloudflare-hosted. The remaining non-Cloudflare image references are limited to seven Public Profile brand-logo references representing six brands, one external no-image fallback, deliberately protected future report evidence, and inline SVG markup. The Public Profile brand marks and fallback are the only public display images that remain appropriate candidates for exact-source Cloudflare migration.
+
+## Fresh Active-S3 Verification
+
+A subsequent read-only custom-database check confirmed that no active persisted image-bearing record currently references `/manus-storage/`, including listing photos, product-profile avatars, draft listing photos, and report evidence. The built-in S3 path remains implemented only for future protected report evidence; there are currently zero report-evidence records. The unused framework image-generation helper is not called by Tradebilia application code.
+
+The built-in storage service does not expose a safe object-list operation, so this conclusion applies to **active, referenced Tradebilia images**. It does not make an unsupported claim about any unreferenced historical bytes that could exist in the platform-managed bucket.
