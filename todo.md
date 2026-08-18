@@ -461,4 +461,4 @@
 - [x] Inventory actual Test AI provider response shapes and category identity fields, then establish documented category-aware normalization rules and quality fixtures.
 - [x] Implement a deterministic, administrator-only Test AI evidence-normalization summary that preserves original provider facts, separates reference metadata from market evidence, and flags conflicts without automatic valuation.
 - [x] Conduct a thorough category-by-category automated and live quality review against current behavior, retaining the improvement only if accuracy and clarity demonstrably improve.
-- [ ] Document the decision and evidence, run full validation, publish the accepted outcome or restore the baseline, and synchronize GitHub.
+- [x] Document the decision and evidence, run full validation, publish the accepted outcome or restore the baseline, and synchronize GitHub.
