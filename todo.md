@@ -448,3 +448,4 @@
 - [x] Implement the read-only health-report procedure and Admin Dashboard interface without exposing object keys, credentials, or private report evidence.
 - [x] Add regression coverage and validate authorization, aggregate health results, source integrity, and responsive administrator rendering.
 - [x] Document the report’s scope and limitations, run full validation, publish the completed report, and synchronize GitHub.
+- [x] Audit all current Tradebilia image locations and report which are Cloudflare-hosted, deliberately private, third-party remote, or otherwise outside Cloudflare without modifying any media.
