@@ -45,6 +45,10 @@ Private report evidence remains intentionally on the protected managed-storage r
 | Public media delivery | Aggregate probe confirmed 33 of 33 database-backed `media.tradebilia.com` URLs were available. |
 | Read-only database classification | 30 listing photos and 3 avatars used public R2; no legacy/other public-media providers remained. No report record referenced a public R2 host. |
 
+## Standard-domain release verification
+
+After the audit checkpoint, the standard public homepage at `https://tradebilia.manus.space/` rendered successfully. Browser inspection confirmed the Tradebilia logo resolves from `https://assets.tradebilia.com/tradebilia_final_transparent_8a1981e6.svg`, the homepage hero background resolves from `assets.tradebilia.com`, and the rendered page contains no legacy static `/manus-storage/` image URL. The homepage also rendered public listing imagery from `media.tradebilia.com`.
+
 ## Deliberate boundary and follow-up decision
 
 The `tradebilia-private-evidence` bucket is **not wired into the application**. This is intentional: private evidence requires a separate private credential, an authorization model, and signed delivery design. It must never reuse public-media or static credentials, buckets, or hosts.
