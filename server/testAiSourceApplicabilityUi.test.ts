@@ -29,6 +29,10 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain("from '@shared/testAiEvidenceNormalization'");
     expect(source).toContain('function EvidenceNormalizationSummary');
     expect(source).toContain('Deterministic identity and evidence check. It preserves source facts and does not calculate a value.');
+    expect(source).toContain('Evidence Review flag legend');
+    expect(source).toContain('a selected source differs on a key identity field. Review before comparing.');
+    expect(source).toContain('both facts may be valid, such as global versus regional release dates.');
+    expect(source).toContain('no result or service issue; it is not negative proof about the item.');
     expect(source).toContain('<EvidenceNormalizationSummary item={item}');
     expect(source).not.toContain('getEligibleTestAiSources');
     expect(source).toContain('setLeftEvidenceSummary(null)');
