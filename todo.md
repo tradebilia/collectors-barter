@@ -463,3 +463,4 @@
 - [x] Conduct a thorough category-by-category automated and live quality review against current behavior, retaining the improvement only if accuracy and clarity demonstrably improve.
 - [x] Document the decision and evidence, run full validation, publish the accepted outcome or restore the baseline, and synchronize GitHub.
 - [x] Add a concise administrator-facing Evidence Review legend that distinguishes material review flags from contextual differences without changing provider results, analysis behavior, or adding analyst notes.
+- [x] Compare the current RAWG Test AI display with available RAWG catalog metadata and recommend only useful additional factual fields; do not change the integration without approval.
