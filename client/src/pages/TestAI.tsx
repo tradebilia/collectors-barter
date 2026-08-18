@@ -197,8 +197,8 @@ const DATA_SOURCES = {
     group: 'Reference',
     icon: '🎮',
     provides: ['item_details'],
-    status: 'requires_key' as const,
-    description: 'Inactive until a server-side RAWG key and written commercial-use confirmation are supplied; no lookup is currently made',
+    status: 'live' as const,
+    description: 'User-approved read-only Video Game catalog metadata; no pricing, grading, certification, authenticity, or stored data',
   },
 } as const;
 
@@ -260,7 +260,6 @@ function SourceSelector({ enabled, onChange, side }: {
               .map(source => {
                 const isEnabled = enabled.has(source.id as SourceId);
                 const isLive = source.status === 'live';
-                const requiresKey = source.status === 'requires_key';
                 return (
                   <button
                     key={source.id}
@@ -270,22 +269,20 @@ function SourceSelector({ enabled, onChange, side }: {
                       isEnabled
                         ? isLive
                           ? 'bg-green-900/40 border-green-600 text-green-300'
-                          : requiresKey
-                            ? 'bg-amber-900/40 border-amber-600 text-amber-200'
-                            : 'bg-indigo-900/40 border-indigo-600 text-indigo-300'
+                          : 'bg-indigo-900/40 border-indigo-600 text-indigo-300'
                         : 'bg-gray-800/40 border-gray-700 text-gray-500 hover:border-gray-500 hover:text-gray-400'
                     }`}
                   >
                     <span>{source.icon}</span>
                     <span>{source.label}</span>
-                    {requiresKey ? <span className="text-[9px] opacity-70">(key required)</span> : !isLive && <span className="text-[9px] opacity-60">(soon)</span>}
+                    {!isLive && <span className="text-[9px] opacity-60">(soon)</span>}
                   </button>
                 );
               })}
           </div>
         </div>
       ))}
-      <p className="text-gray-600 text-[10px]">Green = live data · Amber = key and written terms confirmation required · Blue = placeholder</p>
+      <p className="text-gray-600 text-[10px]">Green = live data · Blue = placeholder</p>
     </div>
   );
 }
@@ -973,15 +970,27 @@ function TcgDexSection({ item, side }: { item: SelectedItem; side: 'left' | 'rig
   </div>;
 }
 
-function RawgSetupSection({ item, side }: { item: SelectedItem; side: 'left' | 'right' }) {
+function RawgSection({ item, side }: { item: SelectedItem; side: 'left' | 'right' }) {
   const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
   const supported = item.category === 'video_games';
-  const { data, isLoading } = trpc.testAI.getRawgProviderStatus.useQuery(undefined, { enabled: supported });
-  if (!supported) return <div className="bg-gray-800/30 rounded-lg p-3 border border-dashed border-gray-700/40 space-y-2"><p className={`text-[11px] font-bold uppercase ${accentColor}`}>🎮 RAWG Video Game Catalog</p><p className="text-gray-500 text-[10px]">This future reference source will support Video Game items only.</p></div>;
-  return <div className="bg-gray-800/30 rounded-lg p-3 border border-amber-700/30 space-y-3">
+  const lookupInput = useMemo(() => {
+    const details = item.itemDetails ? (() => { try { return JSON.parse(item.itemDetails); } catch { return {}; } })() : {};
+    const rawYear = details.releaseYear || details.year || details.release_date_year;
+    const releaseYear = Number(rawYear);
+    return {
+      title: String(details.gameTitle || details.videoGameTitle || details.title || item.title).trim(),
+      releaseYear: Number.isInteger(releaseYear) && releaseYear > 0 ? releaseYear : undefined,
+      platform: details.platform || details.console || details.system || undefined,
+    };
+  }, [item.itemDetails, item.title]);
+  const { data, isLoading } = trpc.testAI.getRawgGameMetadata.useQuery(lookupInput, { enabled: supported && lookupInput.title.length >= 2 });
+  if (!supported) return <div className="bg-gray-800/30 rounded-lg p-3 border border-dashed border-gray-700/40 space-y-2"><p className={`text-[11px] font-bold uppercase ${accentColor}`}>🎮 RAWG Video Game Catalog</p><p className="text-gray-500 text-[10px]">This read-only reference source currently supports Video Game items only.</p></div>;
+  return <div className="bg-gray-800/30 rounded-lg p-3 border border-gray-700/20 space-y-3">
     <div className="flex items-center justify-between"><p className={`text-[11px] font-bold uppercase ${accentColor}`}>🎮 RAWG Video Game Catalog</p>{isLoading && <Spinner className="w-3 h-3" />}</div>
-    <p className="text-amber-200 text-[10px]">Inactive by design. No RAWG request is sent until a server-side key is supplied and current commercial-use terms are confirmed in writing.</p>
-    {data && <p className="rounded bg-amber-950/30 p-2 text-[10px] text-gray-300">{data.message}</p>}
+    <p className="text-gray-500 text-[10px]">User-approved read-only Video Game catalog metadata · Query: {lookupInput.title} · Not a price, grading, certification, authenticity, condition, or ownership source</p>
+    {data?.status === 'error' && <p className="rounded border border-red-700/30 bg-red-900/20 p-2 text-[10px] text-red-400">{data.message}</p>}
+    {data?.status === 'not_found' && <p className="rounded border border-amber-700/30 bg-amber-900/20 p-2 text-[10px] text-amber-300">{data.message}</p>}
+    {data?.status === 'success' && data.data && <div className="space-y-2 rounded bg-gray-900/40 p-2"><a href={data.data.sourceUrl} target="_blank" rel="noopener noreferrer" className="text-[12px] font-semibold text-blue-300 hover:underline">{data.data.title}</a><p className="text-[10px] text-amber-200/90">{data.data.matchNote}</p>{data.data.facts.length > 0 && <div className="grid grid-cols-2 gap-1.5 text-[10px]">{data.data.facts.map((fact: any) => <div key={fact.label} className="rounded bg-gray-800/60 p-1.5"><p className="text-[8px] uppercase text-gray-500">{fact.label}</p><p className="break-words font-semibold text-white">{fact.value}</p></div>)}</div>}</div>}
   </div>;
 }
 
@@ -1424,7 +1433,7 @@ function DataColumn({ item, searchItem, side, enabledSources, ebayData }: {
       {enabledSources.has('one_thirty_point') && <OneThirtyPointSection item={searchItem ?? item} side={side} />}
       {enabledSources.has('tcgdex') && <TcgDexSection item={item} side={side} />}
       {enabledSources.has('igdb') && <IgdbSection item={item} side={side} />}
-      {enabledSources.has('rawg') && <RawgSetupSection item={item} side={side} />}
+      {enabledSources.has('rawg') && <RawgSection item={item} side={side} />}
       {enabledSources.has('wikidata') && <WikidataSection item={item} side={side} />}
       {enabledSources.has('smithsonian') && <SmithsonianSection item={item} side={side} />}
       {enabledSources.has('ngc') && <PlaceholderSection sourceId="ngc" side={side} />}

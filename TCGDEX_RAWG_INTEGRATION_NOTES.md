@@ -4,7 +4,7 @@
 
 TCGdex is implemented as a **manual, administrator-only, read-only Pokémon catalog lookup**. Its normalized response deliberately omits pricing, images, grading, authentication, condition, ownership, and valuation fields.
 
-RAWG is present only as an **inactive setup-gated source** for Video Games. It makes no outbound request until the user supplies a server-side `RAWG_API_KEY` and confirms current commercial-use terms in writing.
+> **RAWG activation update — August 18, 2026:** RAWG is now an active, manual, administrator-only Video Game catalog source. The user supplied `RAWG_API_KEY` through secure project settings and confirmed that RAWG’s current commercial-use terms are acceptable for Tradebilia’s Test AI scope. The source is factual metadata only; it is never used for valuation, authentication, grading, certification, condition, or ownership claims. See `RAWG_TEST_AI_ACTIVATION_2026-08-18.md` for the current implementation and live validation record.
 
 ## Initial browser validation
 

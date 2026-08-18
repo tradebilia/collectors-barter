@@ -11,7 +11,7 @@ describe('manual Test AI selector boundary', () => {
     expect(source).not.toContain('getEligibleTestAiSources');
   });
 
-  it('shows TCGdex and IGDB as factual specialist reference sources and keeps RAWG visibly key-and-terms gated', () => {
+  it('shows TCGdex, IGDB, and user-approved RAWG as factual specialist reference sources', () => {
     expect(source).toContain("label: 'TCGdex Pokémon Catalog'");
     expect(source).toContain("status: 'live' as const");
     expect(source).toContain('Not a price, certification, authenticity, condition, or ownership source');
@@ -19,8 +19,9 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain('Commercially approved read-only game identification metadata');
     expect(source).toContain('getIgdbGameMetadata.useQuery');
     expect(source).toContain("label: 'RAWG Video Game Catalog'");
-    expect(source).toContain("status: 'requires_key' as const");
-    expect(source).toContain('current commercial-use terms are confirmed in writing');
-    expect(source).toContain('getRawgProviderStatus.useQuery');
+    expect(source).toContain("description: 'User-approved read-only Video Game catalog metadata");
+    expect(source).toContain('getRawgGameMetadata.useQuery');
+    expect(source).toContain('function RawgSection');
+    expect(source).not.toContain('RawgSetupSection');
   });
 });
