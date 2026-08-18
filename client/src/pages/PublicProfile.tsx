@@ -35,10 +35,10 @@ import { toast } from "sonner";
 import { ComposeMessageModal } from "@/components/ComposeMessageModal";
 
 const PLATFORMS = [
-  { key: 'facebook', label: 'Facebook', logo: 'https://upload.wikimedia.org/wikipedia/commons/0/05/Facebook_Logo_(2019).png' },
-  { key: 'paypal', label: 'PayPal', logo: 'https://upload.wikimedia.org/wikipedia/commons/b/b5/PayPal.svg' },
-  { key: 'instagram', label: 'Instagram', logo: 'https://upload.wikimedia.org/wikipedia/commons/e/e7/Instagram_logo_2016.svg' },
-  { key: 'twitter', label: 'X / Twitter', logo: 'https://upload.wikimedia.org/wikipedia/commons/5/57/X_logo_2023_(white).svg' }
+  { key: 'facebook', label: 'Facebook', logo: 'https://assets.tradebilia.com/public-profile-logos/Facebook_Logo_2019_9f37233f.png' },
+  { key: 'paypal', label: 'PayPal', logo: 'https://assets.tradebilia.com/public-profile-logos/PayPal_6434033c.svg' },
+  { key: 'instagram', label: 'Instagram', logo: 'https://assets.tradebilia.com/public-profile-logos/Instagram_logo_2016_2d7f0690.svg' },
+  { key: 'twitter', label: 'X / Twitter', logo: 'https://assets.tradebilia.com/public-profile-logos/X_logo_2023_white_bdc2fda7.svg' }
 ];
 
 const categoryMeta: Record<string, { bg: string; text: string; border: string; label: string }> = {
@@ -508,7 +508,7 @@ export default function PublicProfile() {
                 {user?.ebayUsername && (
                   <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-sm">
                     <div className="bg-slate-50 border-b border-slate-100 px-5 py-3 flex items-center justify-between">
-                      <img src="https://upload.wikimedia.org/wikipedia/commons/1/1b/EBay_logo.svg" alt="eBay" className="h-5" />
+                      <img src="https://assets.tradebilia.com/public-profile-logos/EBay_logo_0494719f.svg" alt="eBay" className="h-5" />
                       <div className="flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-[9px] font-black text-green-700 uppercase tracking-tight">
                         <CheckCircle2 className="h-2.5 w-2.5" />
                         Verified User
@@ -595,7 +595,7 @@ export default function PublicProfile() {
                   <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-sm">
                     {/* Header */}
                     <div className="bg-[#1877F2]/5 border-b border-[#1877F2]/10 px-5 py-3 flex items-center justify-between">
-                      <img src="https://upload.wikimedia.org/wikipedia/commons/0/05/Facebook_Logo_(2019).png" alt="Facebook" className="h-5" />
+                      <img src="https://assets.tradebilia.com/public-profile-logos/Facebook_Logo_2019_9f37233f.png" alt="Facebook" className="h-5" />
                       <div className="flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-[9px] font-black text-blue-700 uppercase tracking-tight">
                         <CheckCircle2 className="h-2.5 w-2.5" />
                         Verified User
@@ -653,7 +653,7 @@ export default function PublicProfile() {
                   <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-sm">
                     {/* Header */}
                     <div className="bg-[#0A66C2]/5 border-b border-[#0A66C2]/10 px-5 py-3 flex items-center justify-between">
-                      <img src="https://upload.wikimedia.org/wikipedia/commons/c/ca/LinkedIn_logo_initials.png" alt="LinkedIn" className="h-5 object-contain" />
+                      <img src="https://assets.tradebilia.com/public-profile-logos/LinkedIn_logo_initials_290575a9.png" alt="LinkedIn" className="h-5 object-contain" />
                       <div className="flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-[9px] font-black text-blue-700 uppercase tracking-tight">
                         <CheckCircle2 className="h-2.5 w-2.5" />
                         Verified Professional

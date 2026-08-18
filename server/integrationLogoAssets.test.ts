@@ -5,6 +5,7 @@ const accountSettings = readFileSync(new URL("../client/src/pages/AccountSetting
 const ebayConnection = readFileSync(new URL("../client/src/components/EbayConnection.tsx", import.meta.url), "utf8");
 const facebookConnection = readFileSync(new URL("../client/src/components/FacebookConnection.tsx", import.meta.url), "utf8");
 const linkedInConnection = readFileSync(new URL("../client/src/components/LinkedInConnection.tsx", import.meta.url), "utf8");
+const publicProfile = readFileSync(new URL("../client/src/pages/PublicProfile.tsx", import.meta.url), "utf8");
 
 describe("Profile Integrations provider logos", () => {
   it("uses each supplied provider logo in the Integration tab", () => {
@@ -19,6 +20,16 @@ describe("Profile Integrations provider logos", () => {
     expect(ebayConnection).toContain("https://assets.tradebilia.com/Ebaylogo_12a10426.png");
     expect(facebookConnection).toContain("https://assets.tradebilia.com/Facebooklogo_0c02c2d1.png");
     expect(linkedInConnection).toContain("https://assets.tradebilia.com/LinkedIn_df1e2c1e.webp");
+  });
+
+  it("serves Public Profile brand-logo references from Cloudflare static storage", () => {
+    expect(publicProfile).toContain("https://assets.tradebilia.com/public-profile-logos/Facebook_Logo_2019_9f37233f.png");
+    expect(publicProfile).toContain("https://assets.tradebilia.com/public-profile-logos/PayPal_6434033c.svg");
+    expect(publicProfile).toContain("https://assets.tradebilia.com/public-profile-logos/Instagram_logo_2016_2d7f0690.svg");
+    expect(publicProfile).toContain("https://assets.tradebilia.com/public-profile-logos/X_logo_2023_white_bdc2fda7.svg");
+    expect(publicProfile).toContain("https://assets.tradebilia.com/public-profile-logos/EBay_logo_0494719f.svg");
+    expect(publicProfile).toContain("https://assets.tradebilia.com/public-profile-logos/LinkedIn_logo_initials_290575a9.png");
+    expect(publicProfile).not.toContain("upload.wikimedia.org/wikipedia/commons");
   });
 
   it("stacks connection controls below provider branding on mobile widths", () => {
