@@ -462,3 +462,4 @@
 - [x] Implement a deterministic, administrator-only Test AI evidence-normalization summary that preserves original provider facts, separates reference metadata from market evidence, and flags conflicts without automatic valuation.
 - [x] Conduct a thorough category-by-category automated and live quality review against current behavior, retaining the improvement only if accuracy and clarity demonstrably improve.
 - [x] Document the decision and evidence, run full validation, publish the accepted outcome or restore the baseline, and synchronize GitHub.
+- [ ] Add a concise administrator-facing Evidence Review legend that distinguishes material review flags from contextual differences without changing provider results, analysis behavior, or adding analyst notes.
