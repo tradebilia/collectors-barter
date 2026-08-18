@@ -16,7 +16,7 @@ import { TopBar } from "@/components/TopBar";
 import { CategoryBar } from "@/components/CategoryBar";
 import { resolveTradebiliaListingImage } from "@/lib/listingImages";
 
-const TRADE_HUB_LOGO_URL = "/manus-storage/TradeHub_5b3c2442.svg";
+const TRADE_HUB_LOGO_URL = "https://assets.tradebilia.com/TradeHub_5b3c2442.svg";
 
 type TradeFolder = 'proposal' | 'negotiating' | 'accepted' | 'shipped' | 'declined' | 'completed';
 
@@ -104,12 +104,12 @@ export default function TradeHub() {
 
   return (
     <div className="min-h-screen bg-[#f7f4ee] text-foreground">
-      <TopBar logoUrl="/manus-storage/tradebilia_final_transparent_8a1981e6.svg" searchPlaceholder="Search Tradebilia..." />
+      <TopBar logoUrl="https://assets.tradebilia.com/tradebilia_final_transparent_8a1981e6.svg" searchPlaceholder="Search Tradebilia..." />
 
       <main className="pb-24">
         {/* Hero Section — same background as main page */}
         <section className="relative z-0 w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden text-white" style={{
-          backgroundImage: 'url(/manus-storage/Background_23084d14.jpg)',
+          backgroundImage: 'url(https://assets.tradebilia.com/Background_23084d14.jpg)',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat',

@@ -1,8 +1,8 @@
 const RANKING_TITLE_URLS: Record<string, string> = {
-  "Most Viewed": "/manus-storage/MostViewed_4b1eb573.svg",
-  "Most Favorited": "/manus-storage/MostRequested_388aaf8b.svg",
-  "Top Rated Traders": "/manus-storage/TopRatedTraders_dde137be.svg",
-  "Highest Trade Values": "/manus-storage/HighestTradeValue_804dd20b.svg",
+  "Most Viewed": "https://assets.tradebilia.com/MostViewed_4b1eb573.svg",
+  "Most Favorited": "https://assets.tradebilia.com/MostRequested_388aaf8b.svg",
+  "Top Rated Traders": "https://assets.tradebilia.com/TopRatedTraders_dde137be.svg",
+  "Highest Trade Values": "https://assets.tradebilia.com/HighestTradeValue_804dd20b.svg",
 };
 
 interface RankingPageHeroProps {
@@ -17,7 +17,7 @@ export function RankingPageHero({ title }: RankingPageHeroProps) {
     <section
       className="relative z-0 w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden text-white"
       style={{
-        backgroundImage: "url(/manus-storage/Background_23084d14.jpg)",
+        backgroundImage: "url(https://assets.tradebilia.com/Background_23084d14.jpg)",
         backgroundSize: "cover",
         backgroundPosition: "center",
         backgroundRepeat: "no-repeat",

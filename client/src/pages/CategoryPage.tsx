@@ -129,29 +129,29 @@ const sortOptions = [
 ];
 
 const categoryHeroBackgroundUrls: Record<TradebiliaCategorySlug, string> = {
-  autographs: "/manus-storage/AutoBackground_a5b49e15.png",
-  coins: "/manus-storage/CoinsBackground_cea1e610.png",
-  comics: "/manus-storage/ComicsBackground_80eb606d.webp",
-  disney_pins: "/manus-storage/DisneyPinsBackground_cfc008bc.webp",
-  movies: "/manus-storage/MoviesBackground_8ecc4916.png",
-  pokemon: "/manus-storage/PokemonBackground_bce9fc91.webp",
-  sports_cards: "/manus-storage/SportsCardBackground_06cd6816.webp",
-  stamps: "/manus-storage/StampsBackground_580a838e.png",
-  video_games: "/manus-storage/VideoGamesBackground_abb6b532.webp",
-  vintage_toys: "/manus-storage/VintageToysBackground_46983e1a.png",
+  autographs: "https://assets.tradebilia.com/AutoBackground_a5b49e15.png",
+  coins: "https://assets.tradebilia.com/CoinsBackground_cea1e610.png",
+  comics: "https://assets.tradebilia.com/ComicsBackground_80eb606d.webp",
+  disney_pins: "https://assets.tradebilia.com/DisneyPinsBackground_cfc008bc.webp",
+  movies: "https://assets.tradebilia.com/MoviesBackground_8ecc4916.png",
+  pokemon: "https://assets.tradebilia.com/PokemonBackground_bce9fc91.webp",
+  sports_cards: "https://assets.tradebilia.com/SportsCardBackground_06cd6816.webp",
+  stamps: "https://assets.tradebilia.com/StampsBackground_580a838e.png",
+  video_games: "https://assets.tradebilia.com/VideoGamesBackground_abb6b532.webp",
+  vintage_toys: "https://assets.tradebilia.com/VintageToysBackground_46983e1a.png",
 };
 
 const categoryHeroTitleUrls: Record<TradebiliaCategorySlug, string> = {
-  autographs: "/manus-storage/AutographsTitle_32ad8e27.png",
-  coins: "/manus-storage/CoinsTitle_04674a85.webp",
-  comics: "/manus-storage/ComicsTitle_74805d30.png",
-  disney_pins: "/manus-storage/DisneyPinsTitle_fcaa6baf.png",
-  movies: "/manus-storage/MoviesTitle_86dfcc85.png",
-  pokemon: "/manus-storage/PokemonTitle_7345573b.png",
-  sports_cards: "/manus-storage/SportsCardsTitle_5d9af601.png",
-  stamps: "/manus-storage/StampsTitle_e766d861.webp",
-  video_games: "/manus-storage/VideoGamesTitle_7dc7fe49.webp",
-  vintage_toys: "/manus-storage/VintageToysTitle_d0af50b4.png",
+  autographs: "https://assets.tradebilia.com/AutographsTitle_32ad8e27.png",
+  coins: "https://assets.tradebilia.com/CoinsTitle_04674a85.webp",
+  comics: "https://assets.tradebilia.com/ComicsTitle_74805d30.png",
+  disney_pins: "https://assets.tradebilia.com/DisneyPinsTitle_fcaa6baf.png",
+  movies: "https://assets.tradebilia.com/MoviesTitle_86dfcc85.png",
+  pokemon: "https://assets.tradebilia.com/PokemonTitle_7345573b.png",
+  sports_cards: "https://assets.tradebilia.com/SportsCardsTitle_5d9af601.png",
+  stamps: "https://assets.tradebilia.com/StampsTitle_e766d861.webp",
+  video_games: "https://assets.tradebilia.com/VideoGamesTitle_7dc7fe49.webp",
+  vintage_toys: "https://assets.tradebilia.com/VintageToysTitle_d0af50b4.png",
 };
 
 const categoryHeroTitleStyles: Record<TradebiliaCategorySlug, CSSProperties> = {
@@ -631,7 +631,7 @@ export default function CategoryPage() {
     ...card,
     imageUrl: resolveTradebiliaListingImage({ title: card.title, category: slug }),
   }));
-  const SPORTS_CARDS_LONG_LOGO_URL = "/manus-storage/tradebilia_final_transparent_8a1981e6.svg";
+  const SPORTS_CARDS_LONG_LOGO_URL = "https://assets.tradebilia.com/tradebilia_final_transparent_8a1981e6.svg";
 
   return (
     <div className={`min-h-screen ${theme.pageClassName}`}>

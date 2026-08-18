@@ -454,7 +454,7 @@ function generateEmailPreviewHtml(subject: string, body: string): string {
       <table width="100%" style="max-width:560px;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
         <tr><td style="background:#0a0d22;padding:32px;text-align:center;">
           <img
-            src="https://tradebilia.manus.space/manus-storage/tradebilia_final_transparent_58812c5a.svg"
+            src="https://assets.tradebilia.com/tradebilia_final_transparent_58812c5a.svg"
             alt="Tradebilia"
             width="180"
             style="display:block;margin:0 auto;width:auto;max-width:100%;height:140px;"

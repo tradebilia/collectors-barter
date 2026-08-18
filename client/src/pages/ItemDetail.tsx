@@ -86,7 +86,7 @@ import { Link, useRoute, useLocation } from "wouter";
 import { toast } from "sonner";
 import { ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
 
-const TRADEBILIA_LOGO_URL = "/manus-storage/tradebilia_final_transparent_8a1981e6.svg";
+const TRADEBILIA_LOGO_URL = "https://assets.tradebilia.com/tradebilia_final_transparent_8a1981e6.svg";
 
 
 const getConditionDisplayName = (condition: string): string => {
@@ -114,25 +114,25 @@ const formatFieldName = (fieldName: string): string => {
 const getCategoryWallpaperUrl = (category: string): string => {
   switch(category) {
     case 'sports_cards':
-      return '/manus-storage/SportsCardBackground_06cd6816.webp';
+      return 'https://assets.tradebilia.com/SportsCardBackground_06cd6816.webp';
     case 'video_games':
-      return '/manus-storage/VideoGamesBackground_abb6b532.webp';
+      return 'https://assets.tradebilia.com/VideoGamesBackground_abb6b532.webp';
     case 'coins':
-      return '/manus-storage/CoinsBackground_cea1e610.png';
+      return 'https://assets.tradebilia.com/CoinsBackground_cea1e610.png';
     case 'stamps':
-      return '/manus-storage/StampsBackground_580a838e.png';
+      return 'https://assets.tradebilia.com/StampsBackground_580a838e.png';
     case 'vintage_toys':
-      return '/manus-storage/VintageToysBackground_46983e1a.png';
+      return 'https://assets.tradebilia.com/VintageToysBackground_46983e1a.png';
     case 'autographs':
-      return '/manus-storage/AutoBackground_a5b49e15.png';
+      return 'https://assets.tradebilia.com/AutoBackground_a5b49e15.png';
     case 'movies':
-      return '/manus-storage/MoviesBackground_8ecc4916.png';
+      return 'https://assets.tradebilia.com/MoviesBackground_8ecc4916.png';
     case 'comics':
-      return '/manus-storage/ComicsBackground_80eb606d.webp';
+      return 'https://assets.tradebilia.com/ComicsBackground_80eb606d.webp';
     case 'pokemon':
-      return '/manus-storage/PokemonBackground_bce9fc91.webp';
+      return 'https://assets.tradebilia.com/PokemonBackground_bce9fc91.webp';
     case 'disney_pins':
-      return '/manus-storage/DisneyPinsBackground_cfc008bc.webp';
+      return 'https://assets.tradebilia.com/DisneyPinsBackground_cfc008bc.webp';
     default:
       return '';
   }
@@ -256,7 +256,7 @@ export default function ItemDetail() {
 
       <main className="pb-16">
        <section className="relative z-0 w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden text-white" style={{
-          backgroundImage: getCategoryWallpaperUrl(listing.category) ? `url(${getCategoryWallpaperUrl(listing.category)})` : 'url(/manus-storage/Background_23084d14.jpg)',
+          backgroundImage: getCategoryWallpaperUrl(listing.category) ? `url(${getCategoryWallpaperUrl(listing.category)})` : 'url(https://assets.tradebilia.com/Background_23084d14.jpg)',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat'
@@ -264,7 +264,7 @@ export default function ItemDetail() {
         <div className="container relative flex h-64 items-center justify-center py-0 sm:h-72 sm:py-0 lg:h-80 lg:py-0">
             <div className="flex w-full max-w-6xl items-center justify-center -ml-32">
               <img
-                src="/manus-storage/tradebilia_final_transparent_8a1981e6.svg"
+                src="https://assets.tradebilia.com/tradebilia_final_transparent_8a1981e6.svg"
                 alt="Tradebilia"
                 className="h-auto w-full drop-shadow-lg"
               />
@@ -429,7 +429,7 @@ export default function ItemDetail() {
                     )}
                     {listing.ownerProfile.ebayVerified && (
                       <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-white border border-gray-200 shadow-sm" title="Connected eBay account">
-                        <img src="/manus-storage/Ebaylogo_12a10426.png" alt="eBay" className="h-4 w-[48px] object-contain" />
+                        <img src="https://assets.tradebilia.com/Ebaylogo_12a10426.png" alt="eBay" className="h-4 w-[48px] object-contain" />
                       </span>
                     )}
                     {listing.ownerProfile.facebookVerified && (

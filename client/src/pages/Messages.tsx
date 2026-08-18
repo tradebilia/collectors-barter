@@ -360,13 +360,13 @@ export default function Messages() {
     <div className="min-h-screen bg-[linear-gradient(180deg,#0a0d22_0%,#121c48_26%,#ede3d3_26%,#ede3d3_100%)] text-slate-950">
       <TopBar />
       <section className="relative z-0 w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden text-white" style={{
-        backgroundImage: 'url(/manus-storage/Background_23084d14.jpg)',
+        backgroundImage: 'url(https://assets.tradebilia.com/Background_23084d14.jpg)',
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat'
       }}>
         <div className="container relative flex flex-col items-center justify-center py-0 h-64 sm:h-72 lg:h-80">
-          <img src="/manus-storage/Messages_297e64f2.svg" alt="Messages" className="h-auto w-full max-w-2xl mx-auto" />
+          <img src="https://assets.tradebilia.com/Messages_297e64f2.svg" alt="Messages" className="h-auto w-full max-w-2xl mx-auto" />
           <p className="mt-4 text-3xl sm:text-5xl lg:text-6xl font-bold text-center opacity-90">Direct Lines, Trusted Conversations</p>
           </div>
       </section>

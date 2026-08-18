@@ -30,7 +30,7 @@ import { toast } from "sonner";
 import { Link } from "wouter";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
-const TRADEBILIA_LOGO_URL = "/manus-storage/tradebilia_final_transparent_8a1981e6.svg";
+const TRADEBILIA_LOGO_URL = "https://assets.tradebilia.com/tradebilia_final_transparent_8a1981e6.svg";
 
 const categoryLinks = [
   { value: "comics", label: "Comics" },
@@ -416,7 +416,7 @@ export default function Inventory() {
 
       <section className="relative w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden bg-[#00143A] text-white">
         <div className="absolute inset-0" style={{
-          backgroundImage: 'url(/manus-storage/Background_23084d14.jpg)',
+          backgroundImage: 'url(https://assets.tradebilia.com/Background_23084d14.jpg)',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat'
@@ -424,7 +424,7 @@ export default function Inventory() {
         <div className="container relative flex h-64 items-center justify-center py-0 sm:h-72 sm:py-0 lg:h-80 lg:py-0">
           <div className="flex w-full max-w-4xl items-center justify-center -ml-32">
             <img
-              src="/manus-storage/Myinventory_a9168443.svg"
+              src="https://assets.tradebilia.com/Myinventory_a9168443.svg"
               alt="My Inventory"
               className="h-auto w-full"
             />
