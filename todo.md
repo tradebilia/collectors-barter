@@ -449,3 +449,6 @@
 - [x] Add regression coverage and validate authorization, aggregate health results, source integrity, and responsive administrator rendering.
 - [x] Document the report’s scope and limitations, run full validation, publish the completed report, and synchronize GitHub.
 - [x] Audit all current Tradebilia image locations and report which are Cloudflare-hosted, deliberately private, third-party remote, or otherwise outside Cloudflare without modifying any media.
+- [x] Retrieve checksum-verifiable exact copies of the seven currently referenced Public Profile brand-logo files without substituting artwork variants.
+- [x] Upload the approved exact Public Profile brand-logo copies to `assets.tradebilia.com`, replace only the matching external references, and preserve current dimensions and alt labels.
+- [ ] Add regression coverage, verify the Profile page in development and on the standard public domain, document the completed migration, and synchronize GitHub.
