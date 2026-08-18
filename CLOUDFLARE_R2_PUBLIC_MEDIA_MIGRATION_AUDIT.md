@@ -29,6 +29,10 @@ The user subsequently supplied verified replacement originals for the Star Wars 
 
 On 2026-08-18, the user submitted a new rtavani listing, **2019 Pokemon Magikarp & Wailord** (reference ID `1170009`). Its newly created listing-photo record stores an immutable `https://media.tradebilia.com/new/listings/...` URL, and the standard public listing page rendered the R2-hosted image correctly. This confirms that future listing uploads are using the new R2 public-media adapter rather than the legacy project-storage path.
 
+## Fresh Coverage Confirmation
+
+A fresh read-only audit after the new listing and profile cleanup found **28 of 28** listing-photo records and **3 of 3** non-empty avatar records stored under `https://media.tradebilia.com/`. The audit found **zero** listing-photo or avatar URLs still pointing at `/manus-storage/` or `tradebilia.manus.space/manus-storage/`, and no other public-media URL provider. This confirmation covers database-backed public listing images and avatars only; it does not change the separately intentional static-asset and private-evidence storage boundaries.
+
 ## Rollback
 
 The admin Media Storage tab can restore migrated database URLs to their legacy paths without deleting any R2 object. This control is administrator-only and cannot access private evidence or static assets.
