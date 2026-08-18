@@ -33,6 +33,10 @@ On 2026-08-18, the user submitted a new rtavani listing, **2019 Pokemon Magikarp
 
 A fresh read-only audit after the new listing and profile cleanup found **28 of 28** listing-photo records and **3 of 3** non-empty avatar records stored under `https://media.tradebilia.com/`. The audit found **zero** listing-photo or avatar URLs still pointing at `/manus-storage/` or `tradebilia.manus.space/manus-storage/`, and no other public-media URL provider. This confirmation covers database-backed public listing images and avatars only; it does not change the separately intentional static-asset and private-evidence storage boundaries.
 
+## Post-Implementation Audit Confirmation
+
+A subsequent read-only storage audit found **30 of 30** listing-photo records and **3 of 3** non-empty avatar records on `https://media.tradebilia.com/`, with zero legacy or alternate public-media URLs. An aggregate public-availability probe then verified all **33 of 33** database-backed public-media URLs returned successfully. These newer counts supersede the historical 28-listing snapshot above; no legacy object was deleted as part of the verification.
+
 ## Rollback
 
 The admin Media Storage tab can restore migrated database URLs to their legacy paths without deleting any R2 object. This control is administrator-only and cannot access private evidence or static assets.

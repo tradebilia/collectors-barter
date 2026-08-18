@@ -24,8 +24,10 @@ The secure R2 credential smoke test completed successfully. The test authenticat
 
 ## Current boundary
 
-Cloudflare R2 is **prepared but not integrated**. Existing Tradebilia images continue to use their current storage URLs. No R2-backed upload, serving, migration, database update, asset hostname change, or production media behavior will be implemented unless the user explicitly approves the separate implementation phase.
+Cloudflare R2 is **integrated for approved public media and static artwork**. Public listing photos and avatars use `media.tradebilia.com`; the approved static site artwork set uses `assets.tradebilia.com`. The public-media adapter uses the separate public-media credential, while the static migration used its separate static-only credential. Neither credential value is recorded here.
 
-## Required future decision
+Private report evidence remains deliberately outside public Cloudflare buckets. It continues to use the protected managed-storage path under `reports/{userId}/...`, where server-side ownership validation rejects cross-user attachments.
 
-Before any code work begins, the user must approve the staged implementation plan: add the R2 storage adapter and new-upload path, validate it without migration, then decide separately whether to migrate existing public media in reversible batches. Private evidence remains a later, independently authorized phase.
+## Historical implementation decision
+
+The staged public-media implementation and reversible migration were separately approved and completed after this credential validation. The remaining storage decision is whether a distinct **private** Cloudflare evidence implementation is ever needed; it must not reuse either public bucket or public hostname.

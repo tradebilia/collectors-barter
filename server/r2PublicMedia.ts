@@ -3,6 +3,10 @@ import { createHash, randomUUID } from "node:crypto";
 
 export const R2_PUBLIC_MEDIA_BUCKET = "tradebilia-public-media";
 export const R2_PUBLIC_MEDIA_ORIGIN = "https://media.tradebilia.com";
+export const MAX_NEW_R2_PUBLIC_MEDIA_BYTES = {
+  listing: 10 * 1024 * 1024,
+  avatar: 5 * 1024 * 1024,
+} as const;
 const LEGACY_MEDIA_ORIGIN = "https://tradebilia.manus.space";
 const IMAGE_MIME_TYPES = new Set([
   "image/jpeg",
@@ -73,6 +77,32 @@ function assertImageMimeType(contentType: string) {
   return normalized;
 }
 
+function matchesImageSignature(data: Uint8Array, contentType: string) {
+  if (contentType === "image/jpeg") return data.length >= 3 && data[0] === 0xff && data[1] === 0xd8 && data[2] === 0xff;
+  if (contentType === "image/png") return data.length >= 8 && [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a].every((byte, index) => data[index] === byte);
+  if (contentType === "image/gif") return data.length >= 6 && (Buffer.from(data.subarray(0, 6)).toString("ascii") === "GIF87a" || Buffer.from(data.subarray(0, 6)).toString("ascii") === "GIF89a");
+  return data.length >= 12
+    && Buffer.from(data.subarray(0, 4)).toString("ascii") === "RIFF"
+    && Buffer.from(data.subarray(8, 12)).toString("ascii") === "WEBP";
+}
+
+export function validateR2PublicMediaUpload(input: {
+  data: Uint8Array;
+  contentType: string;
+  kind?: "listing" | "avatar";
+}) {
+  const contentType = assertImageMimeType(input.contentType);
+  const data = Buffer.from(input.data);
+  if (!data.length) throw new Error("Public-media uploads cannot be empty.");
+  if (input.kind && data.length > MAX_NEW_R2_PUBLIC_MEDIA_BYTES[input.kind]) {
+    throw new Error(`New ${input.kind} images exceed the ${MAX_NEW_R2_PUBLIC_MEDIA_BYTES[input.kind] / (1024 * 1024)}MB limit.`);
+  }
+  if (!matchesImageSignature(data, contentType)) {
+    throw new Error("Public-media bytes do not match the declared image type.");
+  }
+  return { data, contentType };
+}
+
 export function buildR2PublicMediaUrl(key: string) {
   return `${R2_PUBLIC_MEDIA_ORIGIN}/${encodeKeyForUrl(key)}`;
 }
@@ -110,9 +140,8 @@ export async function putR2PublicMediaObject(input: {
   contentType: string;
   env?: R2Environment;
 }) : Promise<UploadedPublicMedia> {
-  const contentType = assertImageMimeType(input.contentType);
+  const { contentType, data } = validateR2PublicMediaUpload(input);
   const client = getClient(input.env);
-  const data = Buffer.from(input.data);
   await client.send(new PutObjectCommand({
     Bucket: R2_PUBLIC_MEDIA_BUCKET,
     Key: input.key,
@@ -136,6 +165,11 @@ export async function uploadNewPublicMedia(input: {
   data: Uint8Array;
   contentType: string;
 }) {
+  validateR2PublicMediaUpload({
+    kind: input.kind,
+    data: input.data,
+    contentType: input.contentType,
+  });
   return putR2PublicMediaObject({
     key: buildNewPublicMediaKey(input.kind, input.ownerId, input.filename),
     data: input.data,
