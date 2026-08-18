@@ -3,7 +3,7 @@ import { asc, eq } from "drizzle-orm";
 import { z } from "zod";
 import { listingPhotos, userProfiles } from "../drizzle/schema";
 import { requireDb } from "./db";
-import { protectedProcedure, router } from "./_core/trpc";
+import { adminProcedure, protectedProcedure, router } from "./_core/trpc";
 import {
   buildMigratedPublicMediaKey,
   downloadLegacyPublicMedia,
@@ -12,6 +12,7 @@ import {
   putR2PublicMediaObject,
   verifyR2PublicMediaObject,
 } from "./r2PublicMedia";
+import { getR2StorageHealth } from "./r2StorageHealth";
 
 type MigrationCandidate =
   | { kind: "listing"; recordId: number; legacyKey: string; sourceUrl: string }
@@ -87,6 +88,7 @@ function isMigratedLegacyKey(key: string | null | undefined, kind: "listing" | "
 }
 
 export const r2MediaRouter = router({
+  getStorageHealth: adminProcedure.query(() => getR2StorageHealth()),
   getMigrationStatus: protectedProcedure.query(async ({ ctx }) => {
     requireAdmin(ctx.user.role);
     return getMigrationStatus();

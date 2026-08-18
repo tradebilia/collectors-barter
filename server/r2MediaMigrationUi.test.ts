@@ -24,4 +24,12 @@ describe("R2 public-media migration safeguards", () => {
     expect(source).toContain("Restore migrated legacy URLs");
     expect(source).toContain("administrator-only");
   });
+
+  it("renders the read-only Cloudflare storage health panel in the administrator media-storage tab", () => {
+    const adminSource = fs.readFileSync(path.join(root, "client/src/pages/AdminDashboard.tsx"), "utf8");
+    const healthSource = fs.readFileSync(path.join(root, "client/src/components/R2StorageHealthTab.tsx"), "utf8");
+    expect(adminSource).toContain("R2StorageHealthTab");
+    expect(healthSource).toContain("getStorageHealth.useQuery");
+    expect(healthSource).toContain("The report never returns credentials, object keys, individual evidence records, or private-evidence URLs.");
+  });
 });
