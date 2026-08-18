@@ -24,7 +24,7 @@ export const TEST_AI_SOURCE_APPLICABILITY: readonly SourceApplicability[] = [
   { sourceId: 'smithsonian', categories: ['stamps'], requires: 'title', purpose: 'National Postal Museum reference metadata only; never valuation, authentication, or certification.' },
   { sourceId: 'tcgdex', categories: ['pokemon'], requires: 'title', purpose: 'Pokémon card catalog identification metadata only; never valuation, authentication, certification, or ownership evidence.' },
   { sourceId: 'igdb', categories: ['video games'], requires: 'title', purpose: 'Commercially approved IGDB factual video-game catalog metadata only; never valuation, authentication, grading, certification, or ownership evidence.' },
-  { sourceId: 'rawg', categories: ['video games'], requires: 'title', purpose: 'Video-game catalog metadata only when separately enabled after server-side key setup and written commercial-use confirmation; never valuation, authentication, or grading evidence.' },
+  { sourceId: 'rawg', categories: ['video games'], requires: 'title', purpose: 'User-approved RAWG factual video-game catalog metadata only; never valuation, authentication, grading, certification, or ownership evidence.' },
 ];
 
 function normalizeCategory(category: string): string { return category.trim().toLowerCase().replace(/[_-]+/g, ' ').replace(/\s+/g, ' '); }

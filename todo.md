@@ -453,3 +453,7 @@
 - [x] Upload the approved exact Public Profile brand-logo copies to `assets.tradebilia.com`, replace only the matching external references, and preserve current dimensions and alt labels.
 - [x] Add regression coverage, verify the Profile page in development and on the standard public domain, document the completed migration, and synchronize GitHub.
 - [x] Perform a read-only current-state verification of all persisted Tradebilia image-bearing records and report any active Cloudflare, protected S3, legacy, or external-storage locations without modifying files or data.
+- [x] Review the existing RAWG provider gate and record the user’s written commercial-use confirmation for Test AI activation.
+- [x] Securely receive the RAWG API key through project settings and validate that the server can access it without exposing it in source, logs, or the client.
+- [x] Activate and live-validate the administrator-only RAWG Video Game catalog source, preserving manual Test AI source selection and strict metadata matching.
+- [ ] Run regression checks, document the RAWG activation, publish the verified implementation, and synchronize GitHub.

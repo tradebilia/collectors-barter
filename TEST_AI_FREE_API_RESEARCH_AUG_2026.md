@@ -7,6 +7,8 @@
 
 ## Executive conclusion
 
+> **RAWG activation update — August 18, 2026:** The user confirmed RAWG commercial use for Tradebilia’s Test AI scope and supplied a secure server-side key. RAWG is now an active, manual, administrator-only Video Game factual-metadata source. Its implementation, credential validation, strict platform matching, global-release-year discrepancy disclosure, and live Test AI result are documented in `RAWG_TEST_AI_ACTIVATION_2026-08-18.md`.
+
 There are **two meaningful additions that can be evaluated now without adding a paid data subscription**: **TCGdex** for Pokémon-card identification metadata and, with a written confirmation of the current terms, **RAWG** for video-game identification metadata. Neither is a valuation, sales-comps, grading, or authentication source. The existing **Wikidata** and **Smithsonian Open Access** integrations remain the best confirmed no-cost reference sources already live in Test AI. Smithsonian CC0 records may be used commercially when the individual asset is designated CC0. [1]
 
 > **Important distinction:** No new source discovered in this audit provides reliable, free, commercially cleared **market value**, **authentication**, or **grading-certificate validation** for Comics, Autographs, Disney Pins, Vintage Toys, Stamps, or NGC coins. General eBay/Sold-Comps remains the cross-category market evidence source; specialist data is either paid, approval-only, or lacks a public API.
