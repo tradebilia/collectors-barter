@@ -44,18 +44,22 @@ async function getCandidates(): Promise<MigrationCandidate[]> {
 async function getMigrationStatus() {
   const db = await requireDb();
   const [photos, avatars] = await Promise.all([
-    db.select({ imageUrl: listingPhotos.imageUrl }).from(listingPhotos),
-    db.select({ avatarUrl: userProfiles.avatarUrl }).from(userProfiles),
+    db.select({ fileKey: listingPhotos.fileKey, imageUrl: listingPhotos.imageUrl }).from(listingPhotos),
+    db.select({ avatarKey: userProfiles.avatarKey, avatarUrl: userProfiles.avatarUrl }).from(userProfiles),
   ]);
   const pending = await getCandidates();
   const migratedListingPhotos = photos.filter((photo) => isR2PublicMediaUrl(photo.imageUrl)).length;
   const migratedAvatars = avatars.filter((avatar) => isR2PublicMediaUrl(avatar.avatarUrl)).length;
+  const migratedLegacyListingPhotos = photos.filter((photo) => isR2PublicMediaUrl(photo.imageUrl) && isMigratedLegacyKey(photo.fileKey, "listing")).length;
+  const migratedLegacyAvatars = avatars.filter((avatar) => isR2PublicMediaUrl(avatar.avatarUrl) && isMigratedLegacyKey(avatar.avatarKey, "avatar")).length;
   return {
     pendingListingPhotos: pending.filter((item) => item.kind === "listing").length,
     pendingAvatars: pending.filter((item) => item.kind === "avatar").length,
     migratedListingPhotos,
     migratedAvatars,
-    totalLegacyObjects: pending.length + migratedListingPhotos + migratedAvatars,
+    migratedLegacyListingPhotos,
+    migratedLegacyAvatars,
+    totalLegacyObjects: pending.length + migratedLegacyListingPhotos + migratedLegacyAvatars,
   };
 }
 

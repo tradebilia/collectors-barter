@@ -111,10 +111,14 @@ import { ONE_YEAR_MS } from "@shared/const";
 import { subscribeToLaunchUpdates } from "./launchUpdates";
 import { getPreLaunchRecipients, sendPreLaunchUpdate } from "./preLaunchEmail";
 
-const uploadedImageSchema = z.object({
+// The R2 adapter enforces decoded per-kind limits (10MB listing, 5MB avatar).
+// This ceiling stops an oversized base64 request before its payload is decoded.
+export const MAX_PUBLIC_MEDIA_BASE64_CHARS = 13_981_020;
+
+export const uploadedImageSchema = z.object({
   name: z.string().max(200).optional().default(''),
   type: z.string().max(120).optional().default(''),
-  contentBase64: z.string().min(1).optional(), // Optional: only present for new uploads
+  contentBase64: z.string().min(1).max(MAX_PUBLIC_MEDIA_BASE64_CHARS).optional(), // Optional: only present for new uploads
   imageUrl: z.string().optional(), // Optional: present for existing photos
   previewUrl: z.string().optional(), // Optional: frontend preview URL
 });

@@ -56,6 +56,6 @@ For continuity, the 46-file verified archive has been retained outside the deplo
 
 This was a copy-and-reference migration: no legacy static object was deleted, no database row was changed, and no private object was moved. Reverting the source URL commit restores the prior managed-storage references; retained R2 copies can remain safely in place. The one-time migration and URL-refactor utilities will be removed before the release checkpoint, while this audit remains as the operational record.
 
-## Validation Still Required Before Release Completion
+## Release Verification Completed
 
-The next validation stage is application-level: TypeScript, the full Vitest suite, deployment completion, and visual confirmation on representative public routes. Representative checks include the homepage hero, category heroes, Member Directory, Report a Member, the Profile Integrations tab, and branded email-template URLs.
+The application-level validation completed after migration. TypeScript and the full regression suite passed, and the standard public domain was checked after deployment propagation. The homepage logo and hero background, Comics category title artwork, Member Directory title artwork, Report a Member title artwork, Profile title artwork, and Account Settings title artwork all rendered from `assets.tradebilia.com` on representative deployed routes. A follow-up source inventory found 60 unique static R2 URLs in client/email code, zero literal client static `/manus-storage/` paths, and HTTP 200 availability for every referenced static URL.

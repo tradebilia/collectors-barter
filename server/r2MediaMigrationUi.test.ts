@@ -13,6 +13,8 @@ describe("R2 public-media migration safeguards", () => {
     expect(source).toContain("max(5)");
     expect(source).toContain("verifyR2PublicMediaObject");
     expect(source).toContain("legacyKey");
+    expect(source).toContain("migratedLegacyListingPhotos");
+    expect(source).toContain("totalLegacyObjects: pending.length + migratedLegacyListingPhotos + migratedLegacyAvatars");
   });
 
   it("states the public/private scope accurately in the administrator control", () => {
