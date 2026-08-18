@@ -17,3 +17,5 @@ The lookup accepts a title and optional release year and platform. It removes co
 ## Live Validation
 
 The server-only credential test completed successfully. The administrator Test AI page manually selected the existing `Super Mario Bros 3 Graded` item and manually enabled RAWG. RAWG returned `Super Mario Bros. 3`, its 1988 first-release year, NES among listed platforms, genres, ESRB rating, and an explicit notice that the RAWG global release year differs from the item’s supplied 1990 regional release year. No key value was exposed.
+
+The same manual test was completed successfully on the standard public domain after deployment propagation. The published page displayed the active RAWG selector and the identical factual metadata and discrepancy notice without exposing the server-side key.
