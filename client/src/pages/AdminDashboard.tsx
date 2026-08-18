@@ -17,6 +17,7 @@ import { TopBar } from "@/components/TopBar";
 import { ReferralsTab } from "@/components/ReferralsTab";
 import { PreLaunchEmailTab } from "@/components/PreLaunchEmailTab";
 import { R2MediaMigrationTab } from "@/components/R2MediaMigrationTab";
+import { R2StorageHealthTab } from "@/components/R2StorageHealthTab";
 import { Link } from "wouter";
 import { DeleteConfirmationDialog } from "@/components/DeleteConfirmationDialog";
 
@@ -1181,6 +1182,7 @@ export default function AdminDashboard() {
             <PreLaunchEmailTab />
           </TabsContent>
           <TabsContent value="media-storage" className="space-y-4 mt-6">
+            <R2StorageHealthTab />
             <R2MediaMigrationTab />
           </TabsContent>
           <TabsContent value="conventions" className="space-y-4 mt-6">
