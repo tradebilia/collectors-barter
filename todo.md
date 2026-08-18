@@ -434,3 +434,5 @@
 - [x] Preserve private report evidence and existing static-asset URLs outside the public-media migration; do not use the public bucket or public hostname for either class of asset.
 - [x] Upload and verify the user-supplied Star Wars #1 listing image and ktavani Islanders avatar in R2; leave the Collector 2 avatar unchanged by explicit user direction.
 - [x] Identify and report the exact public listing and profile pages associated with the three unavailable legacy media records before recovery work begins.
+- [x] Audit and remove the obsolete Collector 2 profile only if it has no active account or dependent records that must be retained; verify its public route is removed afterward.
+- [x] Verify the newly submitted rtavani listing stores and renders its image through `media.tradebilia.com`.

@@ -25,6 +25,10 @@ The user subsequently supplied verified replacement originals for the Star Wars 
 | ktavani Islanders avatar | `recovery/avatars/120003/nhl-new-york-islanders-logo.png` | Public R2 checksum and profile-page rendering confirmed. |
 | Collector 2 avatar | Legacy URL retained by user direction | No R2 object or database change. |
 
+## New Upload Validation
+
+On 2026-08-18, the user submitted a new rtavani listing, **2019 Pokemon Magikarp & Wailord** (reference ID `1170009`). Its newly created listing-photo record stores an immutable `https://media.tradebilia.com/new/listings/...` URL, and the standard public listing page rendered the R2-hosted image correctly. This confirms that future listing uploads are using the new R2 public-media adapter rather than the legacy project-storage path.
+
 ## Rollback
 
 The admin Media Storage tab can restore migrated database URLs to their legacy paths without deleting any R2 object. This control is administrator-only and cannot access private evidence or static assets.
