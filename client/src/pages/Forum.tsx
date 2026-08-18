@@ -36,7 +36,7 @@ export function Forum() {
       {/* Hero Section */}
       <section className="relative w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden bg-[#00143A] text-white">
         <div className="absolute inset-0" style={{
-          backgroundImage: 'url(/manus-storage/Background_23084d14.jpg)',
+          backgroundImage: 'url(https://assets.tradebilia.com/Background_23084d14.jpg)',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat'
@@ -44,7 +44,7 @@ export function Forum() {
         <div className="container relative flex h-64 items-center justify-center py-0 sm:h-72 sm:py-0 lg:h-80 lg:py-0">
           <div className="flex w-full max-w-7xl items-center justify-center scale-110">
             <img
-              src="/manus-storage/Collectorsforum_7dba7bdd.svg"
+              src="https://assets.tradebilia.com/Collectorsforum_7dba7bdd.svg"
               alt="Collector's Forum"
               className="h-auto w-full"
             />

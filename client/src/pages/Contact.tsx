@@ -12,7 +12,7 @@ import { Mail, CheckCircle } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 
-const CONTACT_HERO_URL = "/manus-storage/Contact_Us_10be55f2.svg";
+const CONTACT_HERO_URL = "https://assets.tradebilia.com/Contact_Us_10be55f2.svg";
 
 export default function Contact() {
   const { user } = useAuth();
@@ -70,7 +70,7 @@ export default function Contact() {
       {/* Hero Section */}
       <section className="relative z-0 w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden bg-[#00143A] text-white border-b border-white/10">
         <div className="absolute inset-0" style={{
-          backgroundImage: "url(/manus-storage/Background_23084d14.jpg)",
+          backgroundImage: "url(https://assets.tradebilia.com/Background_23084d14.jpg)",
           backgroundSize: "cover",
           backgroundPosition: "center",
           backgroundRepeat: "no-repeat"

@@ -127,7 +127,7 @@ export default function Conventions() {
       {/* Hero */}
       <section className="relative w-full overflow-hidden bg-white text-white">
         <div className="absolute inset-0" style={{
-          backgroundImage: "url(/manus-storage/Background_23084d14.jpg)",
+          backgroundImage: "url(https://assets.tradebilia.com/Background_23084d14.jpg)",
           backgroundSize: "cover",
           backgroundPosition: "center",
           backgroundRepeat: "no-repeat",
@@ -136,7 +136,7 @@ export default function Conventions() {
         <div className="container relative flex h-64 items-center justify-center sm:h-72 lg:h-80">
           <div className="flex w-full max-w-[1300px] items-center justify-center">
             <img
-              src="/manus-storage/Conventions_806639e4.webp"
+              src="https://assets.tradebilia.com/Conventions_806639e4.webp"
               alt="Tradebilia Conventions"
               className="h-auto w-full object-contain"
             />

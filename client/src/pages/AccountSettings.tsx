@@ -29,7 +29,7 @@ import { Link } from "wouter";
 import { TopBar } from "@/components/TopBar";
 import { CategoryBar } from "@/components/CategoryBar";
 
-const TRADEBILIA_LOGO_URL = "/manus-storage/tradebilia_final_transparent_8a1981e6.svg";
+const TRADEBILIA_LOGO_URL = "https://assets.tradebilia.com/tradebilia_final_transparent_8a1981e6.svg";
 
 const categoryOptions = [
   { value: "comics", label: "Comics" },
@@ -45,8 +45,8 @@ const categoryOptions = [
 ] as const;
 
 const accountSources = [
-  { value: "paypal", label: "PayPal", logo: "/manus-storage/Paypal_25ebc114.png" },
-  { value: "whatnot", label: "Whatnot", logo: "/manus-storage/WhatNot_ab669ac9.png" },
+  { value: "paypal", label: "PayPal", logo: "https://assets.tradebilia.com/Paypal_25ebc114.png" },
+  { value: "whatnot", label: "Whatnot", logo: "https://assets.tradebilia.com/WhatNot_ab669ac9.png" },
 ] as const;
 
 type AccountSource = typeof accountSources[number]["value"];
@@ -637,7 +637,7 @@ export default function AccountSettings() {
       {/* Hero Section */}
       <section className="relative w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden bg-[#00143A] text-white">
         <div className="absolute inset-0" style={{
-          backgroundImage: 'url(/manus-storage/Background_23084d14.jpg)',
+          backgroundImage: 'url(https://assets.tradebilia.com/Background_23084d14.jpg)',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat'
@@ -645,7 +645,7 @@ export default function AccountSettings() {
         <div className="container relative flex h-64 items-center justify-center py-0 sm:h-72 sm:py-0 lg:h-80 lg:py-0">
           <div className="flex w-full max-w-6xl items-center justify-center -ml-32">
             <img
-              src="/manus-storage/AccountSettingsTitle_d074dc8b.webp"
+              src="https://assets.tradebilia.com/AccountSettingsTitle_d074dc8b.webp"
               alt="Account Settings"
               className="h-auto w-full"
             />
@@ -1117,11 +1117,11 @@ export default function AccountSettings() {
               {/* Pending Connections Quick Links */}
               {(() => {
                 const allPlatforms = [
-                  { key: 'facebook', label: 'Facebook', logo: '/manus-storage/Facebooklogo_0c02c2d1.png', isConnected: !!user?.facebookId },
-                  { key: 'paypal', label: 'PayPal', logo: '/manus-storage/Paypal_25ebc114.png', isConnected: !!user?.paypalEmail },
-                  { key: 'linkedin', label: 'LinkedIn', logo: '/manus-storage/LinkedIn_df1e2c1e.webp', isConnected: !!user?.linkedinId },
-                  { key: 'ebay', label: 'eBay', logo: '/manus-storage/Ebaylogo_12a10426.png', isConnected: !!user?.ebayUsername },
-                  { key: 'whatnot', label: 'WhatNot', logo: '/manus-storage/WhatNot_ab669ac9.png', isConnected: false },
+                  { key: 'facebook', label: 'Facebook', logo: 'https://assets.tradebilia.com/Facebooklogo_0c02c2d1.png', isConnected: !!user?.facebookId },
+                  { key: 'paypal', label: 'PayPal', logo: 'https://assets.tradebilia.com/Paypal_25ebc114.png', isConnected: !!user?.paypalEmail },
+                  { key: 'linkedin', label: 'LinkedIn', logo: 'https://assets.tradebilia.com/LinkedIn_df1e2c1e.webp', isConnected: !!user?.linkedinId },
+                  { key: 'ebay', label: 'eBay', logo: 'https://assets.tradebilia.com/Ebaylogo_12a10426.png', isConnected: !!user?.ebayUsername },
+                  { key: 'whatnot', label: 'WhatNot', logo: 'https://assets.tradebilia.com/WhatNot_ab669ac9.png', isConnected: false },
                 ];
                 const pendingPlatforms = allPlatforms.filter(p => !p.isConnected);
                 
@@ -1150,7 +1150,7 @@ export default function AccountSettings() {
               <Card className="rounded-[1.5rem] border-slate-200 bg-white shadow-sm">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <img src="/manus-storage/Paypal_25ebc114.png" alt="PayPal" className="h-6 w-auto object-contain" />
+                    <img src="https://assets.tradebilia.com/Paypal_25ebc114.png" alt="PayPal" className="h-6 w-auto object-contain" />
                     PayPal Email
                   </CardTitle>
                   <CardDescription>

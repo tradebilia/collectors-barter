@@ -439,4 +439,4 @@
 - [x] Perform a fresh read-only audit of all public listing-photo and avatar URLs to confirm Cloudflare R2 coverage and identify any retained legacy exception.
 - [x] Inventory all application image-reference classes and report which remain outside Cloudflare R2 by design or migration status.
 - [x] Inventory and propose a safe phased Cloudflare R2 migration for public static hero/title/logo assets, generated public assets, and approved third-party brand assets; retain private evidence outside this scope.
-- [ ] After approval, configure a separate `tradebilia-static`-only R2 credential and migrate public static assets in verified reversible batches; retain private evidence outside this scope.
+- [x] Securely receive and validate the created `tradebilia-static`-only R2 credential, then migrate approved public static assets in verified reversible batches; retain private evidence outside this scope.

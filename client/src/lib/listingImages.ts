@@ -5,17 +5,17 @@ export type TradebiliaListingImageInput = {
 };
 
 const categoryImageMap: Record<string, string> = {
-  auto: "/manus-storage/AutoBackground_77c0fc6a.png",
-  comics: "/manus-storage/ComicsBackground_798a970b.webp",
-  sports_cards: "/manus-storage/SportsCardBackground_e2e711d1.webp",
-  vintage_toys: "/manus-storage/VintageToysBackground_a95e7b30.png",
-  video_games: "/manus-storage/VideoGamesBackground_f9315289.webp",
-  stamps: "/manus-storage/StampsBackground_1bb5af50.png",
-  coins: "/manus-storage/CoinsBackground_8f7db775.png",
-  pokemon: "/manus-storage/PokemonBackground_d2f9e795.webp",
-  movies: "/manus-storage/MoviesBackground_603eb7a8.png",
-  autographs: "/manus-storage/AutoBackground_77c0fc6a.png",
-  disney_pins: "/manus-storage/DisneyPinsBackground_68498869.webp",
+  auto: "https://assets.tradebilia.com/AutoBackground_77c0fc6a.png",
+  comics: "https://assets.tradebilia.com/ComicsBackground_798a970b.webp",
+  sports_cards: "https://assets.tradebilia.com/SportsCardBackground_e2e711d1.webp",
+  vintage_toys: "https://assets.tradebilia.com/VintageToysBackground_a95e7b30.png",
+  video_games: "https://assets.tradebilia.com/VideoGamesBackground_f9315289.webp",
+  stamps: "https://assets.tradebilia.com/StampsBackground_1bb5af50.png",
+  coins: "https://assets.tradebilia.com/CoinsBackground_8f7db775.png",
+  pokemon: "https://assets.tradebilia.com/PokemonBackground_d2f9e795.webp",
+  movies: "https://assets.tradebilia.com/MoviesBackground_603eb7a8.png",
+  autographs: "https://assets.tradebilia.com/AutoBackground_77c0fc6a.png",
+  disney_pins: "https://assets.tradebilia.com/DisneyPinsBackground_68498869.webp",
 };
 
 // NOTE: Keyword-based image mappings have been disabled because the /images/ paths

@@ -181,9 +181,9 @@ export default function MemberSearch() {
   return (
     <div className="min-h-screen bg-[#f7f4ee] text-slate-950">
       <TopBar searchPlaceholder="Search Tradebilia..." />
-      <section className="relative z-0 w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden text-white" style={{ backgroundImage: "url(/manus-storage/Background_23084d14.jpg)", backgroundSize: "cover", backgroundPosition: "center", backgroundRepeat: "no-repeat" }}>
+      <section className="relative z-0 w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden text-white" style={{ backgroundImage: "url(https://assets.tradebilia.com/Background_23084d14.jpg)", backgroundSize: "cover", backgroundPosition: "center", backgroundRepeat: "no-repeat" }}>
         <div className="container flex h-52 items-center justify-center sm:h-60 lg:h-72">
-          <img src="/manus-storage/MemberDirectory_de7393cf.webp" alt="Member Directory" className="h-auto w-full max-w-5xl object-contain px-4" />
+          <img src="https://assets.tradebilia.com/MemberDirectory_de7393cf.webp" alt="Member Directory" className="h-auto w-full max-w-5xl object-contain px-4" />
         </div>
       </section>
       <CategoryBar />

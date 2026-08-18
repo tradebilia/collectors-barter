@@ -56,7 +56,7 @@ type UploadedImage = {
 type ListingCategory = (typeof categoryOptions)[number]["value"];
 type ListingCondition = Exclude<(typeof conditionOptions)[number]["value"], "all">;
 
-const TRADEBILIA_LOGO_URL = "/manus-storage/tradebilia_final_transparent_8a1981e6.svg";
+const TRADEBILIA_LOGO_URL = "https://assets.tradebilia.com/tradebilia_final_transparent_8a1981e6.svg";
 
 const categoryOptions = [
   { value: "comics", label: "Comics" },
@@ -578,7 +578,7 @@ export default function Home() {
 
       <main className="pb-24">
         <section className="relative z-0 w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden text-white" style={{
-          backgroundImage: "url(/manus-storage/Background_23084d14.jpg)",
+          backgroundImage: "url(https://assets.tradebilia.com/Background_23084d14.jpg)",
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat'
@@ -590,7 +590,7 @@ export default function Home() {
           <div className="container relative flex h-64 items-center justify-center py-0 sm:h-72 sm:py-0 lg:h-80 lg:py-0">
             <div className="flex w-full max-w-6xl items-center justify-center px-4">
               <img
-                src="/manus-storage/tradebilia_final_transparent_8a1981e6.svg"
+                src="https://assets.tradebilia.com/tradebilia_final_transparent_8a1981e6.svg"
                 alt="Tradebilia"
                 className="h-auto w-full max-w-5xl object-contain"
               />

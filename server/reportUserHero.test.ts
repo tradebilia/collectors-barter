@@ -6,8 +6,8 @@ const reportUserSource = readFileSync(resolve(process.cwd(), "client/src/pages/R
 
 describe("Report a User hero", () => {
   it("retains the supplied title artwork over the original collector-background hero", () => {
-    expect(reportUserSource).toContain('REPORT_USER_HERO_TITLE_URL = "/manus-storage/ReportaMember-wide_998d1169.webp"');
-    expect(reportUserSource).toContain('REPORT_USER_HERO_BACKGROUND_URL = "/manus-storage/Background_23084d14.jpg"');
+    expect(reportUserSource).toContain('REPORT_USER_HERO_TITLE_URL = "https://assets.tradebilia.com/ReportaMember-wide_998d1169.webp"');
+    expect(reportUserSource).toContain('REPORT_USER_HERO_BACKGROUND_URL = "https://assets.tradebilia.com/Background_23084d14.jpg"');
     expect(reportUserSource).toContain('max-w-7xl items-center justify-center -ml-32');
     expect(reportUserSource).toContain('alt="Report a Member"');
     expect(reportUserSource).toContain('sm:h-72 lg:h-80');
