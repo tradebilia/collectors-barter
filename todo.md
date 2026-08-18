@@ -457,3 +457,8 @@
 - [x] Securely receive the RAWG API key through project settings and validate that the server can access it without exposing it in source, logs, or the client.
 - [x] Activate and live-validate the administrator-only RAWG Video Game catalog source, preserving manual Test AI source selection and strict metadata matching.
 - [x] Run regression checks, document the RAWG activation, publish the verified implementation, and synchronize GitHub.
+- [x] Define the Test AI evidence-normalization scope, measurable quality criteria, and restore baseline for a keep-or-rollback decision; do not change Trade Room behavior.
+- [x] Inventory actual Test AI provider response shapes and category identity fields, then establish documented category-aware normalization rules and quality fixtures.
+- [x] Implement a deterministic, administrator-only Test AI evidence-normalization summary that preserves original provider facts, separates reference metadata from market evidence, and flags conflicts without automatic valuation.
+- [x] Conduct a thorough category-by-category automated and live quality review against current behavior, retaining the improvement only if accuracy and clarity demonstrably improve.
+- [ ] Document the decision and evidence, run full validation, publish the accepted outcome or restore the baseline, and synchronize GitHub.
