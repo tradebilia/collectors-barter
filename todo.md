@@ -471,3 +471,8 @@
 - [x] Refine Completed Trade Hub preview copy by removing “Items actually swapped,” showing the total item count, and replacing technical direction wording with a clear mutual-exchange label; add regression and release validation.
 - [x] Conduct a no-change product, UX, and implementation audit of account sign-up, homepage carousel, category filtering, and core member flows; distinguish verified defects from enhancement opportunities.
 - [x] Perform representative public and authenticated flow checks, document prioritized findings with scope and rationale, and synchronize the audit record to GitHub without altering functionality.
+- [x] Trace the Create Account to authenticated multi-step Account Setup handoff and document the existing profile-save contract without creating test accounts or changing live data.
+- [x] Repair Account Setup completion so it saves required profile data to the already authenticated new account rather than invoking account creation a second time.
+- [x] Preserve mandatory phone verification and terms acceptance at final setup completion through client and server validation, while retaining optional account connections and current setup steps.
+- [x] Add regression coverage for single-account creation, authenticated setup completion, required setup safeguards, and error paths; validate without creating unintended production accounts.
+- [ ] Document, publish, verify, and synchronize the approved account-flow repair.
