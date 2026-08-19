@@ -468,4 +468,4 @@
 - [x] Apply a consistent non-cropping avatar presentation pattern that keeps the full uploaded image visible without changing avatar-container dimensions or the correct Public Profile presentation.
 - [x] Add regression coverage and visually test representative authenticated and public avatar views at desktop and mobile widths, then publish and synchronize the verified correction.
 - [x] Audit the Trade Hub completed-trade preview data and render the actual items exchanged by each member rather than only the original requested item, with regression and visual validation.
-- [ ] Refine Completed Trade Hub preview copy by removing “Items actually swapped,” showing the total item count, and replacing technical direction wording with a clear mutual-exchange label; add regression and release validation.
+- [x] Refine Completed Trade Hub preview copy by removing “Items actually swapped,” showing the total item count, and replacing technical direction wording with a clear mutual-exchange label; add regression and release validation.
