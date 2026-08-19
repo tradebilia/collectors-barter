@@ -485,3 +485,6 @@
 - [x] Implement real Category Page result slicing, accurate total and range labels, working page controls, and safe page reset when a submitted filter, sort, category, or per-page setting changes.
 - [x] Add regression coverage and visually validate unfiltered and filtered pagination at desktop and mobile widths while preserving the existing category design and Sports Cards item sizing.
 - [x] Document, publish, verify, and synchronize the approved Category Page pagination repair.
+- [x] Audit the legacy Profile Completion route, destinations, navigation references, and current save behavior without changing account data.
+- [x] Retire the legacy Profile Completion route through safe redirects to the authoritative Account Setup or Profile path, without adding account writes.
+- [ ] Add regression coverage, validate public and authenticated route behavior, publish, verify the standard domain, and synchronize GitHub.

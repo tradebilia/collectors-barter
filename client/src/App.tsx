@@ -27,7 +27,7 @@ import { ProtectedRoute } from "./components/ProtectedRoute";
 import { VerifyAccount } from "./pages/VerifyAccount";
 import { ForgotPassword } from "./pages/ForgotPassword";
 import { ResetPassword } from "./pages/ResetPassword";
-import { ProfileCompletion } from "./pages/ProfileCompletion";
+import LegacyProfileCompletionRedirect from "./pages/LegacyProfileCompletionRedirect";
 import { SearchResults } from "./pages/SearchResults";
 import AdminDashboard from "./pages/AdminDashboard";
 import Conventions from "./pages/Conventions";
@@ -113,7 +113,7 @@ function Router() {
       <Route path="/verify" component={VerifyAccount} />
       <Route path="/forgot-password" component={ForgotPassword} />
       <Route path="/reset-password" component={ResetPassword} />
-      <Route path="/profile-completion" component={ProfileCompletion} />
+      <Route path="/profile-completion" component={LegacyProfileCompletionRedirect} />
       <Route path="/search" component={SearchResults} />
       <Route path="/welcome" component={Welcome} />
       <Route path="/member-only" component={MemberOnly} />

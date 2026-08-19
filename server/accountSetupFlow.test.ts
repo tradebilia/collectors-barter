@@ -28,4 +28,18 @@ describe("single-account setup handoff", () => {
     expect(routerSource).toContain("emailVerified: isFirstTimeSetup ? true : undefined");
     expect(routerSource).toContain("phoneVerified: isFirstTimeSetup ? true : undefined");
   });
+
+  it("retires the non-persisting Profile Completion workflow in favor of authoritative routes", () => {
+    const app = read("client/src/App.tsx");
+    const legacyRedirect = read("client/src/pages/LegacyProfileCompletionRedirect.tsx");
+
+    expect(app).toContain('path="/profile-completion" component={LegacyProfileCompletionRedirect}');
+    expect(legacyRedirect).toContain('"/account-settings?tab=profile"');
+    expect(legacyRedirect).toContain('"/account-setup"');
+    expect(legacyRedirect).toContain("setLocation(destination, { replace: true })");
+    expect(legacyRedirect).toContain("enabled: isAuthenticated");
+    expect(legacyRedirect).not.toContain("saveProfileMutation");
+    expect(legacyRedirect).not.toContain("mutateAsync");
+    expect(() => read("client/src/pages/ProfileCompletion.tsx")).toThrow();
+  });
 });
