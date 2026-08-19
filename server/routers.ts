@@ -733,6 +733,12 @@ export const appRouter = router({
           query: z.string().max(100),
           category: z.enum(collectibleCategories).optional(),
           condition: z.enum(itemConditions).optional(),
+          valueMin: z.number().min(0).optional(),
+          valueMax: z.number().min(0).optional(),
+          verifiedMerchantsOnly: z.boolean().optional(),
+          sort: z.enum(["newest", "title", "value_low_high", "value_high_low"]).optional(),
+          limit: z.number().int().min(1).max(48).optional(),
+          offset: z.number().int().min(0).max(10000).optional(),
         }),
       )
       .query(({ ctx, input }) => {
@@ -741,6 +747,12 @@ export const appRouter = router({
             keyword: input.query,
             category: input.category,
             condition: input.condition,
+            valueMin: input.valueMin,
+            valueMax: input.valueMax,
+            verifiedMerchantsOnly: input.verifiedMerchantsOnly,
+            sort: input.sort,
+            limit: input.limit,
+            offset: input.offset,
           },
           ctx.user?.id ?? null,
         );

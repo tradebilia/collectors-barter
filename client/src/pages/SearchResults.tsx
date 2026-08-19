@@ -1,131 +1,246 @@
-import { useEffect, useState } from "react";
-import { useLocation } from "wouter";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { Link, useLocation, useSearch } from "wouter";
+import { Filter, Loader2, Search, Sparkles, Star, X } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { CategoryBar } from "@/components/CategoryBar";
+import { TopBar } from "@/components/TopBar";
+import { resolveTradebiliaListingImage } from "@/lib/listingImages";
 import { trpc } from "@/lib/trpc";
-import { Card } from "@/components/ui/card";
-import { Loader2 } from "lucide-react";
-import { type TradebiliaCategorySlug } from "@/lib/tradebilia";
+import {
+  formatGrade,
+  tradebiliaCategories,
+  tradebiliaConditionOptions,
+  tradebiliaCategoryThemes,
+  type TradebiliaCategorySlug,
+} from "@/lib/tradebilia";
+import { getCategoryPaginationState } from "@shared/categoryPagination";
+import { getGlobalSearchQuery, parseGlobalSearchValue } from "@shared/globalSearch";
 
+type SearchSort = "newest" | "title" | "value_low_high" | "value_high_low";
+
+type SearchFilters = {
+  category: "all" | TradebiliaCategorySlug;
+  condition: "all" | (typeof tradebiliaConditionOptions)[number]["value"];
+  valueMin: string;
+  valueMax: string;
+  verifiedMerchantsOnly: boolean;
+  sort: SearchSort;
+};
+
+const emptySearchFilters: SearchFilters = {
+  category: "all",
+  condition: "all",
+  valueMin: "",
+  valueMax: "",
+  verifiedMerchantsOnly: false,
+  sort: "newest",
+};
+
+const searchTheme = tradebiliaCategoryThemes.sports_cards;
 
 export function SearchResults() {
-  const [location] = useLocation();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [category, setCategory] = useState<string>("all");
-  const [condition, setCondition] = useState<string>("all");
+  const rawSearch = useSearch();
+  const [, setLocation] = useLocation();
+  const urlQuery = useMemo(() => getGlobalSearchQuery(rawSearch), [rawSearch]);
+  const lastHandledUrlQuery = useRef(urlQuery);
+  const [pendingQuery, setPendingQuery] = useState(urlQuery);
+  const [submittedQuery, setSubmittedQuery] = useState(urlQuery);
+  const [pendingFilters, setPendingFilters] = useState<SearchFilters>(emptySearchFilters);
+  const [submittedFilters, setSubmittedFilters] = useState<SearchFilters>(emptySearchFilters);
+  const [resultsPerPage, setResultsPerPage] = useState(24);
+  const [currentPage, setCurrentPage] = useState(1);
 
-  // Parse query from URL
   useEffect(() => {
-    const params = new URLSearchParams(location.split("?")[1]);
-    const q = params.get("q") || "";
-    setSearchQuery(q);
-  }, [location]);
+    if (lastHandledUrlQuery.current === urlQuery) return;
+    lastHandledUrlQuery.current = urlQuery;
+    setPendingQuery(urlQuery);
+    setSubmittedQuery(urlQuery);
+    setPendingFilters(emptySearchFilters);
+    setSubmittedFilters(emptySearchFilters);
+    setCurrentPage(1);
+  }, [urlQuery]);
 
-  const searchQuery_trimmed = searchQuery.trim();
-  const queryInput = searchQuery_trimmed.length > 0
-    ? {
-        query: searchQuery_trimmed,
-        category: category !== "all" ? (category as TradebiliaCategorySlug) : undefined,
-        condition: condition !== "all" ? (condition as any) : undefined,
-      }
-    : null;
-  const { data: results, isLoading, error } = trpc.market.search.useQuery(
-    queryInput as any,
-    {
-      enabled: queryInput !== null,
-    },
-  );
+  const preliminaryPagination = getCategoryPaginationState(0, currentPage, resultsPerPage);
+  const searchInput = useMemo(() => {
+    if (!submittedQuery) return null;
+    return {
+      query: submittedQuery,
+      category: submittedFilters.category === "all" ? undefined : submittedFilters.category,
+      condition: submittedFilters.condition === "all" ? undefined : submittedFilters.condition,
+      valueMin: parseGlobalSearchValue(submittedFilters.valueMin),
+      valueMax: parseGlobalSearchValue(submittedFilters.valueMax),
+      verifiedMerchantsOnly: submittedFilters.verifiedMerchantsOnly || undefined,
+      sort: submittedFilters.sort,
+      limit: resultsPerPage,
+      offset: (preliminaryPagination.currentPage - 1) * resultsPerPage,
+    };
+  }, [submittedQuery, submittedFilters, resultsPerPage, preliminaryPagination.currentPage]);
+
+  const resultsQuery = trpc.market.search.useQuery(searchInput as NonNullable<typeof searchInput>, {
+    enabled: searchInput !== null,
+  });
+  const totalResults = resultsQuery.data?.highlights.totalListings ?? 0;
+  const pagination = getCategoryPaginationState(totalResults, currentPage, resultsPerPage);
+
+  useEffect(() => {
+    if (pagination.currentPage !== currentPage) setCurrentPage(pagination.currentPage);
+  }, [currentPage, pagination.currentPage]);
+
+  const submitSearch = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const query = pendingQuery.trim();
+    lastHandledUrlQuery.current = query;
+    setSubmittedQuery(query);
+    setSubmittedFilters(pendingFilters);
+    setCurrentPage(1);
+    setLocation(query ? `/search?q=${encodeURIComponent(query)}` : "/search");
+  };
+
+  const clearSearch = () => {
+    lastHandledUrlQuery.current = "";
+    setPendingQuery("");
+    setSubmittedQuery("");
+    setPendingFilters(emptySearchFilters);
+    setSubmittedFilters(emptySearchFilters);
+    setCurrentPage(1);
+    setLocation("/search");
+  };
+
+  const hasFilters = submittedFilters.category !== "all" || submittedFilters.condition !== "all" || submittedFilters.valueMin !== "" || submittedFilters.valueMax !== "" || submittedFilters.verifiedMerchantsOnly;
+  const listings = resultsQuery.data?.listings ?? [];
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
-      <div className="max-w-6xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-4">Search Results</h1>
-          {searchQuery_trimmed && (
-            <p className="text-gray-600">
-              Results for: <span className="font-semibold">{searchQuery_trimmed}</span>
-            </p>
+    <div className={`min-h-screen ${searchTheme.pageClassName}`}>
+      <TopBar searchPlaceholder="Search the full Tradebilia exchange..." />
+      <section className="relative overflow-hidden border-b border-[#0f5563]/60 bg-[linear-gradient(135deg,#0f3b43_0%,#27758b_52%,#102732_100%)] text-[#fff4e0]">
+        <div className="container py-10 sm:py-14">
+          <p className="text-xs font-semibold uppercase tracking-[0.28em] opacity-75">All categories · one exchange</p>
+          <div className="mt-4 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <h1 className="text-4xl font-semibold sm:text-5xl" style={{ fontFamily: searchTheme.headingFont }}>Search the Exchange</h1>
+              <p className="mt-3 max-w-2xl text-sm leading-6 opacity-85 sm:text-base">Find active collectible listings across every Tradebilia category, then narrow the marketplace with broad, truthful filters.</p>
+            </div>
+            {submittedQuery ? <Badge className={`${searchTheme.chipClassName} rounded-full px-3 py-1 text-xs`}>Searching all categories</Badge> : null}
+          </div>
+        </div>
+      </section>
+      <CategoryBar />
+
+      <main className="container flex min-h-[32rem] flex-col gap-0 py-6 lg:flex-row lg:py-8">
+        <aside className={`w-full shrink-0 border p-4 lg:w-56 ${searchTheme.panelClassName}`}>
+          <div className="mb-4 flex items-center gap-2">
+            <Filter className={`h-4 w-4 ${searchTheme.accentClassName}`} />
+            <h2 className="font-semibold">Filters</h2>
+          </div>
+          <form className="space-y-4" onSubmit={submitSearch}>
+            <div className="space-y-1.5">
+              <Label htmlFor="global-search-query" className="text-xs uppercase tracking-[0.12em] opacity-70">Search the exchange</Label>
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 opacity-55" />
+                <Input id="global-search-query" value={pendingQuery} onChange={event => setPendingQuery(event.target.value)} placeholder="Player, title, set, year…" maxLength={100} className="h-9 bg-white/85 pl-8 text-xs text-black" />
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs uppercase tracking-[0.12em] opacity-70">Category</Label>
+              <Select value={pendingFilters.category} onValueChange={value => setPendingFilters(current => ({ ...current, category: value as SearchFilters["category"] }))}>
+                <SelectTrigger className="h-9 bg-white/85 text-xs text-black"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All categories</SelectItem>
+                  {tradebiliaCategories.map(category => <SelectItem key={category.value} value={category.value}>{category.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs uppercase tracking-[0.12em] opacity-70">Condition</Label>
+              <Select value={pendingFilters.condition} onValueChange={value => setPendingFilters(current => ({ ...current, condition: value as SearchFilters["condition"] }))}>
+                <SelectTrigger className="h-9 bg-white/85 text-xs text-black"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All conditions</SelectItem>
+                  {tradebiliaConditionOptions.map(condition => <SelectItem key={condition.value} value={condition.value}>{condition.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs uppercase tracking-[0.12em] opacity-70">Value range</Label>
+              <div className="flex gap-2">
+                <Input type="number" min="0" inputMode="decimal" value={pendingFilters.valueMin} onChange={event => setPendingFilters(current => ({ ...current, valueMin: event.target.value }))} placeholder="Min" className="h-9 bg-white/85 text-xs text-black" />
+                <Input type="number" min="0" inputMode="decimal" value={pendingFilters.valueMax} onChange={event => setPendingFilters(current => ({ ...current, valueMax: event.target.value }))} placeholder="Max" className="h-9 bg-white/85 text-xs text-black" />
+              </div>
+            </div>
+
+            <label className="flex cursor-pointer items-start gap-2 text-xs leading-5">
+              <input type="checkbox" checked={pendingFilters.verifiedMerchantsOnly} onChange={event => setPendingFilters(current => ({ ...current, verifiedMerchantsOnly: event.target.checked }))} className="mt-1 h-3.5 w-3.5 accent-[#0f5563]" />
+              <span><span className="font-semibold">Verified merchants only</span><br /><span className="opacity-70">Applied with Search or Enter.</span></span>
+            </label>
+
+            <div className="flex gap-2 pt-1">
+              <Button type="button" variant="outline" onClick={clearSearch} className="h-9 flex-1 text-xs"><X className="mr-1 h-3.5 w-3.5" />Clear</Button>
+              <Button type="submit" className="h-9 flex-1 bg-[#0f5563] text-xs text-white hover:bg-[#0b4652]"><Search className="mr-1 h-3.5 w-3.5" />Search</Button>
+            </div>
+          </form>
+        </aside>
+
+        <section className="min-w-0 flex-1 px-0 py-6 lg:px-6 lg:py-0">
+          <div className="border-b border-current/10 pb-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm font-medium opacity-75">{submittedQuery ? (totalResults ? `Showing ${pagination.firstResultNumber}–${pagination.lastResultNumber} of ${totalResults} listings` : "0 listings") : "Enter a search to explore all categories"}</p>
+                {submittedQuery ? <p className="mt-1 text-xs opacity-65">Results for <span className="font-semibold">{submittedQuery}</span></p> : null}
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <Select value={submittedFilters.sort} onValueChange={value => { const sort = value as SearchSort; setPendingFilters(current => ({ ...current, sort })); setSubmittedFilters(current => ({ ...current, sort })); setCurrentPage(1); }}>
+                  <SelectTrigger className="h-9 w-40 bg-white/85 text-xs text-black"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="newest">Newly listed</SelectItem>
+                    <SelectItem value="title">Title</SelectItem>
+                    <SelectItem value="value_low_high">Value: Low to high</SelectItem>
+                    <SelectItem value="value_high_low">Value: High to low</SelectItem>
+                  </SelectContent>
+                </Select>
+                <div className="flex items-center gap-2 text-xs opacity-75"><span>Per page:</span><Select value={String(resultsPerPage)} onValueChange={value => { setResultsPerPage(Number(value)); setCurrentPage(1); }}><SelectTrigger className="h-9 w-18 bg-white/85 text-xs text-black"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="12">12</SelectItem><SelectItem value="24">24</SelectItem><SelectItem value="48">48</SelectItem></SelectContent></Select></div>
+              </div>
+            </div>
+          </div>
+
+          {!submittedQuery ? (
+            <div className={`mt-6 rounded-[2rem] border p-8 text-center ${searchTheme.panelClassName}`}>
+              <Sparkles className={`mx-auto h-10 w-10 ${searchTheme.accentClassName}`} />
+              <h2 className="mt-4 text-2xl font-semibold" style={{ fontFamily: searchTheme.headingFont }}>Search every collection</h2>
+              <p className="mx-auto mt-3 max-w-lg text-sm leading-6 opacity-75">Use the top bar or the Search field to find active listings by any item detail, including title, description, category, condition, grade, certification, value, and category-specific form data.</p>
+            </div>
+          ) : resultsQuery.isLoading ? (
+            <div className="mt-6 flex min-h-[20rem] items-center justify-center rounded-[2rem] border border-dashed border-current/25"><Loader2 className="h-8 w-8 animate-spin" /></div>
+          ) : resultsQuery.isError ? (
+            <div className="mt-6 rounded-[2rem] border border-red-300/60 bg-red-50 p-8 text-red-950"><h2 className="font-semibold">Search results could not load</h2><p className="mt-2 text-sm">{resultsQuery.error.message}</p></div>
+          ) : listings.length === 0 ? (
+            <div className={`mt-6 rounded-[2rem] border p-8 text-center ${searchTheme.panelClassName}`}><Sparkles className={`mx-auto h-10 w-10 ${searchTheme.accentClassName}`} /><h2 className="mt-4 text-2xl font-semibold" style={{ fontFamily: searchTheme.headingFont }}>No listings match this search yet.</h2><p className="mt-3 text-sm opacity-75">Try a broader term, remove a filter, or explore a specific category exchange.</p></div>
+          ) : (
+            <>
+              <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
+                {listings.map(listing => (
+                  <Card key={listing.id} className="overflow-hidden rounded-md border border-gray-200 bg-white text-[#153746] shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+                    <Link href={`/listings/${listing.id}`} className="block aspect-[7/9] border-b border-current/10 bg-white p-0"><img src={resolveTradebiliaListingImage({ title: listing.title, category: listing.category, primaryPhotoUrl: listing.primaryPhotoUrl })} alt={listing.title} className="h-full w-full object-contain" /></Link>
+                    <CardContent className="space-y-1 p-1.5">
+                      <div className="flex items-start justify-between gap-2"><div className="min-w-0"><p className="truncate text-[0.5rem] font-semibold uppercase tracking-[0.12em] opacity-60">{listing.categoryLabel}</p><Link href={`/listings/${listing.id}`} className="mt-1 block line-clamp-2 text-xs font-semibold leading-tight hover:opacity-75">{listing.title}</Link></div>{listing.featured ? <Badge className="rounded-full bg-[#0f5563] px-1 py-0 text-[0.5rem] text-[#fff1d2]">Featured</Badge> : null}</div>
+                      <p className="line-clamp-1 text-[0.65rem] leading-relaxed opacity-75">{listing.description}</p>
+                      <div className="grid grid-cols-2 gap-1 rounded-md border border-current/10 bg-black/5 p-1 text-[0.5rem]"><div><p className="uppercase tracking-[0.1em] opacity-60">{listing.grade && Number(listing.grade) > 0 ? "Grade" : "Condition"}</p><p className="mt-0 font-semibold truncate text-[0.55rem]">{listing.grade && Number(listing.grade) > 0 ? `${listing.certificationCompany ? `${listing.certificationCompany} ` : ""}${formatGrade(listing.grade)}` : listing.conditionLabel}</p></div><div><p className="uppercase tracking-[0.1em] opacity-60">Value</p><p className="mt-0 font-semibold truncate text-[0.55rem]">{listing.estimatedValue === null ? "—" : `$${listing.estimatedValue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</p></div><div><p className="uppercase tracking-[0.1em] opacity-60">Collector</p><p className="mt-0 font-semibold truncate text-[0.55rem]">{listing.owner.displayName}</p></div><div><p className="uppercase tracking-[0.1em] opacity-60">Trust</p><p className="mt-0 flex items-center gap-0.5 font-semibold text-[0.55rem]"><Star className="h-2 w-2 fill-current" />{listing.ownerRating.averageRating.toFixed(1)}</p></div></div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+              <div className="mt-8 flex items-center justify-center gap-4 border-t border-current/10 pt-6"><Button onClick={() => setCurrentPage(page => Math.max(1, page - 1))} disabled={pagination.currentPage === 1} variant="outline" size="sm">← Previous</Button><span className="text-sm font-medium opacity-70">Page {pagination.currentPage} of {pagination.totalPages}</span><Button onClick={() => setCurrentPage(page => Math.min(pagination.totalPages, page + 1))} disabled={pagination.currentPage === pagination.totalPages} variant="outline" size="sm">Next →</Button></div>
+            </>
           )}
-        </div>
-
-        {/* Filters */}
-        <div className="flex gap-4 mb-8">
-          <select
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg"
-          >
-            <option value="all">All Categories</option>
-            <option value="comics">Comics</option>
-            <option value="sports_cards">Sports Cards</option>
-            <option value="vintage_toys">Vintage Toys</option>
-            <option value="video_games">Video Games</option>
-            <option value="stamps">Stamps</option>
-            <option value="coins">Coins</option>
-            <option value="pokemon">Pokemon</option>
-            <option value="movies">Movies</option>
-            <option value="autographs">Autographs</option>
-            <option value="disney_pins">Disney Pins</option>
-          </select>
-
-          <select
-            value={condition}
-            onChange={(e) => setCondition(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg"
-          >
-            <option value="all">All Conditions</option>
-            <option value="mint">Mint</option>
-            <option value="near_mint">Near Mint</option>
-            <option value="excellent">Excellent</option>
-            <option value="very_good">Very Good</option>
-            <option value="good">Good</option>
-            <option value="fair">Fair</option>
-            <option value="poor">Poor</option>
-          </select>
-        </div>
-
-        {/* Results */}
-        {isLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-          </div>
-        ) : error ? (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-            <p className="text-red-800">Error loading results:</p>
-            <p className="text-red-700 text-sm mt-2">{error.message}</p>
-          </div>
-        ) : results?.listings && results.listings.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {results.listings.map((listing) => (
-              <Card key={listing.id} className="overflow-hidden hover:shadow-lg transition">
-                <div className="aspect-square bg-gray-200 overflow-hidden">
-                  {listing.photos && listing.photos.length > 0 ? (
-                    <img
-                      src={typeof listing.photos[0] === 'string' ? listing.photos[0] : listing.photos[0].imageUrl}
-                      alt={listing.title}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-gray-400">
-                      No image
-                    </div>
-                  )}
-                </div>
-                <div className="p-4">
-                  <h3 className="font-semibold text-lg mb-2 line-clamp-2">{listing.title}</h3>
-                  <p className="text-sm text-gray-600 mb-3">{listing.category}</p>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-500">{listing.condition}</span>
-                    <span className="font-bold text-blue-600">${listing.estimatedValue}</span>
-                  </div>
-                </div>
-              </Card>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-12">
-            <p className="text-gray-600 text-lg">No results found for your search.</p>
-          </div>
-        )}
-      </div>
+        </section>
+      </main>
     </div>
   );
 }
