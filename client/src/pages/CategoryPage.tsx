@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { resolveTradebiliaListingImage } from "@/lib/listingImages";
 import { trpc } from "@/lib/trpc";
+import { getCategoryPaginationState } from "@shared/categoryPagination";
 import {
   TRADEBILIA_LOGO_URL,
   formatGrade,
@@ -488,6 +489,7 @@ export default function CategoryPage() {
     };
 
     setSubmittedFilters(newFilters);
+    setCurrentPage(1);
   };
 
   // Handler to clear all filters
@@ -563,6 +565,7 @@ export default function CategoryPage() {
       franchise: undefined,
       verifiedMerchantsOnly: false,
     });
+    setCurrentPage(1);
   };
 
   const createProposalMutation = trpc.market.createTradeProposal.useMutation({
@@ -606,6 +609,21 @@ export default function CategoryPage() {
     // location: not yet implemented — falls through to best_match
     return rows.sort((a, b) => Number(b.featured) - Number(a.featured) || b.id - a.id);
   }, [feedQuery.data?.listings, sortBy]);
+
+  const pagination = useMemo(
+    () => getCategoryPaginationState(listings.length, currentPage, resultsPerPage),
+    [currentPage, listings.length, resultsPerPage],
+  );
+  const pageListings = useMemo(
+    () => listings.slice(pagination.startIndex, pagination.endIndex),
+    [listings, pagination.endIndex, pagination.startIndex],
+  );
+
+  useEffect(() => {
+    if (currentPage !== pagination.currentPage) {
+      setCurrentPage(pagination.currentPage);
+    }
+  }, [currentPage, pagination.currentPage]);
 
   if (!slug || !theme) {
     return (
@@ -1091,16 +1109,21 @@ export default function CategoryPage() {
             {/* Sorting bar - always visible */}
             <div className="pb-4 border-b border-current/10">
               <div className="flex items-center justify-between">
-                <p className="text-sm font-medium opacity-70">Showing {listings.length} results</p>
+                <p className="text-sm font-medium opacity-70">
+                  {listings.length === 0
+                    ? "0 listings"
+                    : `Showing ${pagination.firstResultNumber}–${pagination.lastResultNumber} of ${listings.length} listings`}
+                </p>
                 {/* Instant-apply Verified Merchants Only chip */}
                 <button
                   type="button"
-                  onClick={() =>
+                  onClick={() => {
                     setSubmittedFilters(prev => ({
                       ...prev,
                       verifiedMerchantsOnly: !prev.verifiedMerchantsOnly,
-                    }))
-                  }
+                    }));
+                    setCurrentPage(1);
+                  }}
                   className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border transition-colors ${
                     submittedFilters.verifiedMerchantsOnly
                       ? 'bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700'
@@ -1130,7 +1153,7 @@ export default function CategoryPage() {
                     </button>
                   </div>
                   {/* Sort dropdown */}
-                  <Select value={sortBy} onValueChange={setSortBy}>
+                  <Select value={sortBy} onValueChange={value => { setSortBy(value); setCurrentPage(1); }}>
                     <SelectTrigger className="w-48 h-9 bg-white/80 text-sm">
                       <SelectValue placeholder="Sort by" />
                     </SelectTrigger>
@@ -1198,7 +1221,7 @@ export default function CategoryPage() {
             ) : (
               <>
                 <div className={viewMode === "grid" ? "grid gap-3 grid-cols-6" : "space-y-3"}>
-                  {listings.map(listing => (
+                  {pageListings.map(listing => (
                     <Card key={listing.id} className={`${viewMode === "list" ? "flex flex-col" : "relative"} ${viewMode === "list" ? "" : "overflow-hidden"} border bg-white border-gray-200 text-black ${isSportsCardsPage ? "rounded-md shadow-sm" : "rounded-[2rem]"}`}>
                       {listing.ownerId && viewMode === "list" && (
                         <div className="px-3 py-0.5">
@@ -1345,7 +1368,7 @@ export default function CategoryPage() {
               <div className="flex items-center justify-center gap-4 mt-8 pt-6 border-t border-current/10">
                 <Button
                   onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                  disabled={currentPage === 1}
+                  disabled={pagination.currentPage === 1}
                   variant="outline"
                   size="sm"
                   className="h-8 text-xs"
@@ -1353,11 +1376,11 @@ export default function CategoryPage() {
                   ← Previous
                 </Button>
                 <span className="text-sm font-medium opacity-70">
-                  Page {currentPage}
+                  Page {pagination.currentPage} of {pagination.totalPages}
                 </span>
                 <Button
-                  onClick={() => setCurrentPage(prev => prev + 1)}
-                  disabled={listings.length < resultsPerPage}
+                  onClick={() => setCurrentPage(prev => Math.min(pagination.totalPages, prev + 1))}
+                  disabled={pagination.currentPage === pagination.totalPages}
                   variant="outline"
                   size="sm"
                   className="h-8 text-xs"

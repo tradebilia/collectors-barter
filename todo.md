@@ -481,3 +481,7 @@
 - [x] Implement secure verified email and phone recovery paths with bounded, expiring, single-use proof; do not expose whether an account exists to unauthenticated callers.
 - [x] Add regression coverage for recovery request, verification, expiration, one-time use, rate limiting, and setup requirements; validate without sending live recovery messages or changing real accounts.
 - [x] Document, publish, verify, and synchronize the approved recovery upgrade.
+- [x] Audit Category Page listing, filter, sort, per-page, and page-state contracts without changing listing data or category membership.
+- [x] Implement real Category Page result slicing, accurate total and range labels, working page controls, and safe page reset when a submitted filter, sort, category, or per-page setting changes.
+- [x] Add regression coverage and visually validate unfiltered and filtered pagination at desktop and mobile widths while preserving the existing category design and Sports Cards item sizing.
+- [ ] Document, publish, verify, and synchronize the approved Category Page pagination repair.
