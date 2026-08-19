@@ -469,3 +469,5 @@
 - [x] Add regression coverage and visually test representative authenticated and public avatar views at desktop and mobile widths, then publish and synchronize the verified correction.
 - [x] Audit the Trade Hub completed-trade preview data and render the actual items exchanged by each member rather than only the original requested item, with regression and visual validation.
 - [x] Refine Completed Trade Hub preview copy by removing “Items actually swapped,” showing the total item count, and replacing technical direction wording with a clear mutual-exchange label; add regression and release validation.
+- [x] Conduct a no-change product, UX, and implementation audit of account sign-up, homepage carousel, category filtering, and core member flows; distinguish verified defects from enhancement opportunities.
+- [x] Perform representative public and authenticated flow checks, document prioritized findings with scope and rationale, and synchronize the audit record to GitHub without altering functionality.
