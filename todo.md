@@ -466,5 +466,5 @@
 - [x] Compare the current RAWG Test AI display with available RAWG catalog metadata and recommend only useful additional factual fields; do not change the integration without approval.
 - [x] Audit every Tradebilia avatar renderer and identify any use of cropping image-fit behavior, including Traders Showcase, cards, messages, trade views, profiles, and navigation.
 - [x] Apply a consistent non-cropping avatar presentation pattern that keeps the full uploaded image visible without changing avatar-container dimensions or the correct Public Profile presentation.
-- [ ] Add regression coverage and visually test representative authenticated and public avatar views at desktop and mobile widths, then publish and synchronize the verified correction.
+- [x] Add regression coverage and visually test representative authenticated and public avatar views at desktop and mobile widths, then publish and synchronize the verified correction.
 - [ ] Audit the Trade Hub completed-trade preview data and render the actual items exchanged by each member rather than only the original requested item, with regression and visual validation.

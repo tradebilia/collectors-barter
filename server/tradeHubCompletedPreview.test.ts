@@ -9,8 +9,7 @@ const hubSource = readFileSync(join(projectRoot, "client", "src", "pages", "Trad
 describe("Trade Hub completed exchange preview", () => {
   it("returns the requested and offered items as a direction-aware completed exchange", () => {
     expect(routerSource).toContain("completedExchange");
-    expect(routerSource).toContain("received: requestedItem, sent: offeredItems");
-    expect(routerSource).toContain("received: offeredItems, sent: requestedItem");
+    expect(routerSource).toContain("buildCompletedTradeExchange(trade.direction, requestedItem, offeredItems)");
     expect(routerSource).toContain("JOIN tradeProposalItems tpi ON tpi.offeredListingId = ol.id");
   });
 

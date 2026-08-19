@@ -35,6 +35,7 @@ import {
 } from "./_core/email";
 import { buildLegacyTradeTimeline, isMissingTradeActivityLogError } from "./tradeTimeline";
 import { getReviewSubmissionBlocker, resolveTradeContactName } from "./tradeRoomSafeguards";
+import { buildCompletedTradeExchange } from "../shared/completedTradeExchange";
 
 // ============================================================================
 // HELPER: Check notification preference and get user email
@@ -1022,13 +1023,9 @@ export const tradeFlowRouter = router({
           image: item.image,
         }));
 
-        // The requester sends the offered items and receives the original requested listing.
-        const currentUserIsRequester = trade.direction === 'outgoing';
         return {
           ...trade,
-          completedExchange: currentUserIsRequester
-            ? { received: requestedItem, sent: offeredItems }
-            : { received: offeredItems, sent: requestedItem },
+          completedExchange: buildCompletedTradeExchange(trade.direction, requestedItem, offeredItems),
         };
       }));
 
