@@ -43,7 +43,7 @@ function formatTradeDate(dateStr: string | null): string {
 function Avatar({ url, name, size = "sm" }: { url?: string | null; name?: string | null; size?: "sm" | "md" }) {
   const sz = size === "md" ? "w-10 h-10 text-sm" : "w-7 h-7 text-xs";
   const initial = (name || "?")[0].toUpperCase();
-  if (url) return <img src={url} alt={name || ""} className={`${sz} rounded-full object-cover border-2 border-white/20`} />;
+  if (url) return <img src={url} alt={name || ""} className={`${sz} rounded-full bg-slate-100 object-contain border-2 border-white/20`} />;
   return (
     <div className={`${sz} rounded-full bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center text-white font-bold border-2 border-white/20`}>
       {initial}

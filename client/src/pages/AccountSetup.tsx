@@ -1009,7 +1009,7 @@ export default function AccountSetup() {
                             <img
                               src={formData.avatarPreview}
                               alt="Avatar preview"
-                              className="h-32 w-32 rounded-full object-cover"
+                              className="h-32 w-32 rounded-full bg-slate-100 object-contain"
                             />
                           ) : (
                             <span className="text-4xl">👤</span>

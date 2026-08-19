@@ -968,7 +968,7 @@ export const tradeFlowRouter = router({
         LIMIT ${input.limit} OFFSET ${input.offset}`
       );
 
-      const trades = ((rows as unknown as any[]) || []).map((row: any) => ({
+      const baseTrades = ((rows as unknown as any[]) || []).map((row: any) => ({
         id: row.id,
         status: row.status,
         tradeReferenceNumber: row.tradeReferenceNumber,
@@ -991,11 +991,45 @@ export const tradeFlowRouter = router({
           paypalVerified: !!row.otherPaypalVerified,
         },
         listing: {
+          id: row.requestedListingId,
           title: row.listingTitle,
           image: row.listingImage,
           value: row.listingValue ? String(row.listingValue) : '0',
           category: row.listingCategory,
         },
+      }));
+
+      const trades = await Promise.all(baseTrades.map(async (trade: any) => {
+        if (input.folder !== 'completed') return trade;
+
+        const [offeredRows] = await db.execute(
+          sql`SELECT ol.id, ol.title, ol.category, ol.estimatedValue,
+            (SELECT imageUrl FROM listingPhotos WHERE listingId = ol.id ORDER BY sortOrder ASC LIMIT 1) as image
+          FROM listings ol
+          JOIN tradeProposalItems tpi ON tpi.offeredListingId = ol.id
+          WHERE tpi.proposalId = ${trade.id}
+          ORDER BY tpi.id ASC`
+        );
+
+        const requestedItem = trade.listing?.id
+          ? [{ id: trade.listing.id, title: trade.listing.title, category: trade.listing.category, value: trade.listing.value, image: trade.listing.image }]
+          : [];
+        const offeredItems = ((offeredRows as unknown as any[]) || []).map((item: any) => ({
+          id: item.id,
+          title: item.title,
+          category: item.category,
+          value: item.estimatedValue ? String(item.estimatedValue) : '0',
+          image: item.image,
+        }));
+
+        // The requester sends the offered items and receives the original requested listing.
+        const currentUserIsRequester = trade.direction === 'outgoing';
+        return {
+          ...trade,
+          completedExchange: currentUserIsRequester
+            ? { received: requestedItem, sent: offeredItems }
+            : { received: offeredItems, sent: requestedItem },
+        };
       }));
 
       return { trades };
