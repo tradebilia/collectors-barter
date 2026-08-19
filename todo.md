@@ -488,3 +488,8 @@
 - [x] Audit the legacy Profile Completion route, destinations, navigation references, and current save behavior without changing account data.
 - [x] Retire the legacy Profile Completion route through safe redirects to the authoritative Account Setup or Profile path, without adding account writes.
 - [x] Add regression coverage, validate public and authenticated route behavior, publish, verify the standard domain, and synchronize GitHub.
+- [x] Audit the existing privacy-safe member-location coordinates, town data, Category Page feed payload, and nearest-sort behavior without changing location records.
+- [x] Implement truthful privacy-safe Category Page Location: Nearest First sorting from the signed-in viewer’s saved coarse location to each listing owner’s saved coarse location, with an honest fallback when location is unavailable.
+- [x] Assess whether Category Pages should display a privacy-safe approximate distance on each listing, and present the recommended label policy before implementing it; labels remain unimplemented pending separate approval of the approximate-only policy.
+- [ ] Add a privacy-safe distance dropdown filter to every Category Page, submitted only through the existing Search or Enter action, with honest sign-in and saved-town fallback behavior.
+- [ ] Add regression coverage, validate signed-out and signed-in nearest-sort behavior without changing member location data, publish, verify the standard domain, and synchronize GitHub.
