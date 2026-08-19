@@ -498,4 +498,4 @@
 - [x] Repair the top-bar search query handoff and server-backed all-category listing retrieval using the full set of item fields captured during listing creation.
 - [x] Refine the unified Search Results page with truthful cross-category result cards, broad filters, clear empty/error states, and direct item-detail navigation.
 - [x] Keep the unified Search Results page aligned with the existing Category Page visual system, shared top bar, filter treatment, listing-card sizing, category labels, and responsive behavior.
-- [ ] Add regression coverage, validate global search from the top bar without changing listing data, publish, verify the standard domain, and synchronize GitHub.
+- [x] Add regression coverage, validate global search from the top bar without changing listing data, publish, verify the standard domain, and synchronize GitHub.
