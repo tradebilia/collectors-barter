@@ -110,7 +110,7 @@ export function SignInModal({ isOpen, onClose }: SignInModalProps) {
             <button
               onClick={() => {
                 onClose();
-                navigate("/account-setup?new=true");
+                navigate("/signup");
               }}
               className="text-blue-600 hover:underline font-medium"
             >

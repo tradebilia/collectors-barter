@@ -1,5 +1,4 @@
 import { useAuth } from "@/_core/hooks/useAuth";
-import { getLoginUrl } from "@/const";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -33,9 +32,6 @@ export default function AccountSetup() {
   const utils = trpc.useUtils();
 
   const [currentStep, setCurrentStep] = useState(1);
-  const [showDevNav, setShowDevNav] = useState(true); // Development navigation
-  const [accountCreated, setAccountCreated] = useState(false); // Track if account creation is complete
-  const [userId, setUserId] = useState<string | null>(null); // Store user ID after signup
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isPhoneVerified, setIsPhoneVerified] = useState(false);
@@ -52,8 +48,6 @@ export default function AccountSetup() {
     country: "",
     email: "",
     phoneNumber: "",
-    password: "",
-    confirmPassword: "",
     bio: "",
     avatarPreview: "",
     isMerchant: false,
@@ -104,15 +98,13 @@ export default function AccountSetup() {
     enabled: isAuthenticated,
   });
 
-  const signupMutation = trpc.auth.signup.useMutation();
   const sendPhoneCodeMutation = trpc.auth.sendPhoneCode.useMutation();
   const verifyPhoneCodeMutation = trpc.auth.verifyPhoneCode.useMutation();
 
   const saveProfileMutation = trpc.market.saveProfile.useMutation({
     onSuccess: async () => {
       await utils.market.dashboard.invalidate();
-      // Refetch auth to ensure user is logged in
-      const authResult = await utils.auth.me.refetch();
+      await utils.auth.me.refetch();
       toast.success("Account setup completed!");
       // Do a full page reload to ensure auth is properly initialized
       setTimeout(() => {
@@ -132,7 +124,7 @@ export default function AccountSetup() {
       const [first, last] = fullName.split(" ");
       setFormData((prev) => ({
         ...prev,
-        userName: profile.displayName || user?.name || "",
+        userName: profile.displayName || (user as any)?.username || user?.name || "",
         firstName: first || "",
         lastName: last || "",
         street: profile.contactAddress || "",
@@ -143,14 +135,26 @@ export default function AccountSetup() {
         phoneNumber: profile.contactPhone || "",
         bio: profile.bio || "",
       }));
+      setIsPhoneVerified(Boolean((profile as any).phoneVerified));
     }
   }, [dashboardQuery.data?.profile, user?.name]);
 
-  // Check if this is a new signup (from SignUp page)
-  const isNewSignup = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('new') === 'true';
-  const showAccountCreation = isNewSignup && !accountCreated && !isAuthenticated;
+  useEffect(() => {
+    const authenticatedUsername = (user as any)?.username || user?.name;
+    if (authenticatedUsername) {
+      setFormData((prev) => (prev.userName ? prev : { ...prev, userName: authenticatedUsername }));
+    }
+  }, [user]);
 
-  if (!isAuthenticated && !showAccountCreation && !accountCreated) {
+  if (!isAuthenticated && (authQuery.isLoading || authQuery.isFetching)) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#f5f5f3] text-slate-950">
+        <Loader2 className="h-10 w-10 animate-spin" />
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[radial-gradient(circle_at_top,#1c2468_0%,#0b0a22_65%)] px-6 text-white">
         <div className="w-full max-w-3xl rounded-[2rem] border border-white/10 bg-black/25 p-8 text-center backdrop-blur-md">
@@ -159,15 +163,15 @@ export default function AccountSetup() {
           <p className="mt-4 text-base leading-8 text-white/72">
             Create your profile, add your collection, and start trading with collectors worldwide.
           </p>
-          <Button className="mt-8 rounded-full px-6" onClick={() => (window.location.href = getLoginUrl())}>
-            Sign In to Continue
+          <Button className="mt-8 rounded-full px-6" onClick={() => navigate("/signup")}>
+            Create Account to Continue
           </Button>
         </div>
       </div>
     );
   }
 
-  if (!showAccountCreation && dashboardQuery.isLoading) {
+  if (dashboardQuery.isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#f5f5f3] text-slate-950">
         <Loader2 className="h-10 w-10 animate-spin" />
@@ -204,58 +208,9 @@ export default function AccountSetup() {
     );
   };
 
-  const handleCreateAccount = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.userName.trim() || !formData.password.trim() || !formData.confirmPassword.trim()) {
-      toast.error("Username and password are required");
-      return;
-    }
-    if (!formData.email.trim()) {
-      toast.error("Email is required");
-      return;
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      toast.error("Please enter a valid email address");
-      return;
-    }
-    if (formData.password !== formData.confirmPassword) {
-      toast.error("Passwords do not match");
-      return;
-    }
-    if (formData.password.length < 8) {
-      toast.error("Password must be at least 8 characters");
-      return;
-    }
-    try {
-      const signupResult = await signupMutation.mutateAsync({
-        username: formData.userName,
-        password: formData.password,
-        displayName: formData.userName,
-        email: formData.email,
-      });
-      // Store the userId from the signup response
-      console.log("Signup result:", signupResult);
-      if (signupResult?.userId) {
-        console.log("Setting userId to:", signupResult.userId);
-        setUserId(String(signupResult.userId));
-      } else {
-        console.log("No userId in signup result");
-      }
-      window.history.replaceState({}, '', '/account-setup');
-      setAccountCreated(true);
-      setCurrentStep(1);
-    } catch (err: any) {
-      toast.error(err.message || "Account creation failed");
-    }
-  };
-
   const handleNextStep = async () => {
     // Validate step 1
     if (currentStep === 1) {
-      if (!formData.userName.trim()) {
-        toast.error("User Name is required");
-        return;
-      }
       if (!formData.firstName.trim()) {
         toast.error("First Name is required");
         return;
@@ -284,18 +239,6 @@ export default function AccountSetup() {
         toast.error("Country is required");
         return;
       }
-      if (!formData.password.trim()) {
-        toast.error("Password is required");
-        return;
-      }
-      if (formData.password !== formData.confirmPassword) {
-        toast.error("Passwords do not match");
-        return;
-      }
-      if (formData.password.length < 8) {
-        toast.error("Password must be at least 8 characters");
-        return;
-      }
       if (!formData.phoneNumber.trim()) {
         toast.error("Phone Number is required");
         return;
@@ -308,8 +251,7 @@ export default function AccountSetup() {
         toast.error("You must accept the Terms & Conditions and Privacy Policy");
         return;
       }
-      // Phone is verified at this point — create the account
-      // All step 1 validations passed — proceed to step 2
+      // All first-step requirements are satisfied — continue to optional sources.
       // Account creation happens only on final submit (step 4)
       setCurrentStep(2);
       return;
@@ -345,7 +287,7 @@ export default function AccountSetup() {
       return;
     }
     try {
-      // Check the code with Twilio Verify. Account creation happens on "Continue".
+      // Check the code with Twilio Verify and persist the authenticated member's proof.
       await verifyPhoneCodeMutation.mutateAsync({
         phone: formData.phoneNumber,
         code: verificationCode,
@@ -353,6 +295,7 @@ export default function AccountSetup() {
       setIsPhoneVerified(true);
       setShowVerification(false);
       setVerificationCode("");
+      await utils.market.dashboard.invalidate();
       toast.success("Phone number verified!");
     } catch (err: any) {
       toast.error(err.message || "Verification failed");
@@ -375,41 +318,20 @@ export default function AccountSetup() {
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log("Form submitted, currentStep:", currentStep);
-    console.log("Current userId state:", userId);
-    console.log("authQuery.data?.id:", authQuery.data?.id);
-    console.log("user?.id:", user?.id);
     if (currentStep !== 4) {
-      console.log("Not on final step, skipping save");
       return;
     }
 
-    // Step 1: Create the account (signup)
-    let signupResult;
-    try {
-      console.log("Creating account with username:", formData.userName);
-      signupResult = await signupMutation.mutateAsync({
-        username: formData.userName,
-        password: formData.password,
-        displayName: formData.userName,
-        email: formData.email,
-      });
-      console.log("Signup result:", signupResult);
-      if (!signupResult?.userId) {
-        toast.error("Failed to create account");
-        return;
-      }
-      setUserId(String(signupResult.userId));
-    } catch (err: any) {
-      toast.error(err.message || "Account creation failed");
+    if (!isPhoneVerified || !acceptedTerms || !securityQuestion || !securityAnswer) {
+      toast.error("Complete phone verification, terms acceptance, and security question before finishing setup.");
+      return;
+    }
+    if (formData.isMerchant && (!formData.storeName || !formData.businessLicense || !formData.taxId || !formData.businessAddress || !formData.businessPhone || !formData.businessEmail)) {
+      toast.error("Complete the required merchant verification-request fields before finishing setup.");
       return;
     }
 
-    // Step 2: Save the profile
     const fullName = `${formData.firstName} ${formData.lastName}`;
-    const finalUserId = signupResult.userId;
-    console.log("Final userId to send:", finalUserId);
-    console.log("Saving profile with data:", { fullName, contactEmail: formData.email });
     
     // Convert avatar file to base64 if present
     let avatarData = null;
@@ -425,29 +347,21 @@ export default function AccountSetup() {
               type: avatarFile.type,
               contentBase64: base64String,
             };
-            console.log('Avatar data prepared:', { name: data.name, type: data.type, base64Length: data.contentBase64.length });
             resolve(data);
           } catch (error) {
-            console.error('Error preparing avatar:', error);
-            reject(error);
+          reject(error);
           }
         };
         reader.onerror = () => {
-          console.error('FileReader error');
           reject(new Error('Failed to read file'));
         };
         reader.readAsDataURL(avatarFile);
       });
-    } else {
-      console.log('No avatar file to upload');
     }
-    
-    saveProfileMutation.mutate({
-      userId: finalUserId,
-      displayName: formData.userName,
+
+    await saveProfileMutation.mutateAsync({
+      displayName: formData.userName || (user as any)?.username || user?.name || "New Collector",
       bio: formData.bio,
-      // Mark profile as completed: closes the server's one-time exception that
-      // allows identity fields to be written during first-time setup.
       acceptedTerms: true,
       contactFullName: fullName,
       contactEmail: formData.email,
@@ -463,7 +377,7 @@ export default function AccountSetup() {
       securityAnswer: securityAnswer,
       preferredCategories: preferredCategories.length > 0 ? (preferredCategories as any) : undefined,
       avatar: avatarData as any,
-      // Merchant fields — send during account setup for new users
+      // Submitted as a request; verified status remains administrator controlled.
       isMerchant: formData.isMerchant,
       storeName: formData.isMerchant ? (formData.storeName || undefined) : undefined,
       businessLicense: formData.isMerchant ? (formData.businessLicense || undefined) : undefined,
@@ -512,17 +426,16 @@ export default function AccountSetup() {
                 <h1 className="text-6xl font-bold tracking-tight sm:text-7xl">Welcome to Tradebilia</h1>
                 <p className="mt-4 text-lg text-slate-600">Let's set up your account in just a few steps</p>
 
-                {/* Step Navigation */}
-                <div className="mt-6 flex justify-center gap-2">
+                <div className="mt-6 flex justify-center gap-2" aria-label={`Account setup step ${currentStep} of 4`}>
                   {[1, 2, 3, 4].map(step => (
-                    <Button
+                    <span
                       key={step}
-                      onClick={() => setCurrentStep(step)}
-                      variant={currentStep === step ? "default" : "outline"}
-                      size="sm"
+                      className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                        currentStep === step ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-500"
+                      }`}
                     >
                       Step {step}
-                    </Button>
+                    </span>
                   ))}
                 </div>
               </div>
@@ -537,43 +450,15 @@ export default function AccountSetup() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="userName">User Name *</Label>
+                    <Label htmlFor="userName">User Name</Label>
                     <Input
                       id="userName"
                       name="userName"
                       value={formData.userName}
-                      onChange={handleInputChange}
-                      placeholder="Your unique username"
-                      required
-                      className="rounded-lg border-slate-200"
+                      readOnly
+                      className="rounded-lg border-slate-200 bg-slate-50 text-slate-600"
                     />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="password">Password *</Label>
-                    <Input
-                      id="password"
-                      name="password"
-                      type="password"
-                      value={formData.password}
-                      onChange={handleInputChange}
-                      placeholder="Create a strong password (min 8 characters)"
-                      required
-                      className="rounded-lg border-slate-200"
-                    />
-                    <p className="text-xs text-slate-600">Must be at least 8 characters long.</p>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="confirmPassword">Confirm Password *</Label>
-                    <Input
-                      id="confirmPassword"
-                      name="confirmPassword"
-                      type="password"
-                      value={formData.confirmPassword}
-                      onChange={handleInputChange}
-                      placeholder="Confirm your password"
-                      required
-                      className="rounded-lg border-slate-200"
-                    />
+                    <p className="text-xs text-slate-600">Your account was created on the previous step.</p>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-2">
@@ -768,10 +653,10 @@ export default function AccountSetup() {
                       <span className="text-sm font-medium text-slate-900">
                         I'm a Store Owner or Professional Merchant
                       </span>
-                      <span className="ml-auto inline-block bg-purple-100 text-purple-800 text-xs font-semibold px-2 py-1 rounded">Verified Merchant</span>
+                      <span className="ml-auto inline-block bg-purple-100 text-purple-800 text-xs font-semibold px-2 py-1 rounded">Verification Request</span>
                     </label>
                     <p className="text-xs text-slate-500 mt-2 ml-7">
-                      Merchants get a special designation to build trust with collectors.
+                      Submit your business information for administrator review. A verified badge appears only after approval.
                     </p>
                   </div>
 
@@ -895,12 +780,12 @@ export default function AccountSetup() {
                 <CardContent className="space-y-4">
                   <div className="space-y-3">
                     <p className="text-sm text-slate-600">
-                      Select any accounts you'd like to connect. This helps us verify your trading history and build trust in the community.
+                      Choose any services you may want to connect later. You can finish your profile now and add a supported connection from Profile settings when it is available.
                     </p>
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                      <p className="text-xs text-blue-900 font-medium">🔒 Your credentials are secure</p>
+                      <p className="text-xs text-blue-900 font-medium">Connections are optional</p>
                       <p className="text-xs text-blue-800 mt-1">
-                        You'll be redirected directly to each site to authorize the connection. We never store your login credentials. We only import your feedback ratings and trading history to build trust on Tradebilia.
+                        Selecting a service here does not connect an account yet. Tradebilia never asks for the service password; supported connections are authorized separately from your Profile settings.
                       </p>
                     </div>
                   </div>

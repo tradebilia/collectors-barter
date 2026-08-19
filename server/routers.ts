@@ -110,6 +110,7 @@ import { TRPCError } from "@trpc/server";
 import { ONE_YEAR_MS } from "@shared/const";
 import { subscribeToLaunchUpdates } from "./launchUpdates";
 import { getPreLaunchRecipients, sendPreLaunchUpdate } from "./preLaunchEmail";
+import { validateFirstTimeSetupRequirements } from "./accountSetupRequirements";
 
 // The R2 adapter enforces decoded per-kind limits (10MB listing, 5MB avatar).
 // This ceiling stops an oversized base64 request before its payload is decoded.
@@ -283,10 +284,9 @@ export const appRouter = router({
         return { success: true, userId };
       }),
     /**
-     * Send a 6-digit SMS verification code to the supplied phone number.
-     * Public because it runs during account setup before the user exists.
+     * Send a 6-digit SMS verification code for an authenticated new member.
      */
-    sendPhoneCode: publicProcedure
+    sendPhoneCode: protectedProcedure
       .input(z.object({ phone: z.string().min(7).max(25) }))
       .mutation(async ({ input }) => {
         const e164 = normalizePhone(input.phone);
@@ -303,14 +303,14 @@ export const appRouter = router({
      * Check the code the user typed against Twilio Verify.
      * Returns { verified: true } only when Twilio reports the code approved.
      */
-    verifyPhoneCode: publicProcedure
+    verifyPhoneCode: protectedProcedure
       .input(
         z.object({
           phone: z.string().min(7).max(25),
           code: z.string().min(4).max(10),
         }),
       )
-      .mutation(async ({ input }) => {
+      .mutation(async ({ ctx, input }) => {
         const e164 = normalizePhone(input.phone);
         if (!e164) {
           throw new Error("Please enter a valid phone number.");
@@ -326,6 +326,26 @@ export const appRouter = router({
         if (!result.approved) {
           throw new Error("That code is incorrect. Please check and try again.");
         }
+        const db = await requireDb();
+        const existingProfile = await db
+          .select({ acceptedTerms: userProfiles.acceptedTerms })
+          .from(userProfiles)
+          .where(eq(userProfiles.userId, ctx.user.id))
+          .limit(1);
+        if (existingProfile[0]?.acceptedTerms) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Phone verification is available during first-time account setup only.",
+          });
+        }
+        await updateProfile(
+          { id: ctx.user.id, name: ctx.user.name },
+          {
+            displayName: (ctx.user as any).displayName || (ctx.user as any).username || ctx.user.name || `Collector ${ctx.user.id}`,
+            contactPhone: e164,
+            phoneVerified: true,
+          },
+        );
         return { verified: true, phone: e164 };
       }),
     signin: publicProcedure
@@ -668,11 +688,26 @@ export const appRouter = router({
         const isAdmin = ctx.user.role === 'admin';
         const db0 = await requireDb();
         const existingProfile = await db0
-          .select({ acceptedTerms: userProfiles.acceptedTerms })
+          .select({
+            acceptedTerms: userProfiles.acceptedTerms,
+            contactPhone: userProfiles.contactPhone,
+            phoneVerified: userProfiles.phoneVerified,
+          })
           .from(userProfiles)
           .where(eq(userProfiles.userId, userId))
           .limit(1);
         const isFirstTimeSetup = !existingProfile[0] || !existingProfile[0].acceptedTerms;
+
+        if (isFirstTimeSetup) {
+          try {
+            validateFirstTimeSetupRequirements(input, existingProfile[0]);
+          } catch (error) {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: error instanceof Error ? error.message : "Account setup requirements were not met.",
+            });
+          }
+        }
 
         // Check if any identity field is being modified by a non-admin user after first-time setup
         if (!isAdmin && !isFirstTimeSetup) {
@@ -745,22 +780,24 @@ export const appRouter = router({
             lastName: canWriteLockedFields ? input.lastName : undefined,
             avatar: input.avatar ? { name: input.avatar.name, type: input.avatar.type, contentBase64: input.avatar.contentBase64! } : null,
             acceptedTerms: input.acceptedTerms,
-            // Merchant fields are only writable by admins
-            isMerchant: isAdmin ? input.isMerchant : undefined,
-            storeName: isAdmin ? input.storeName : undefined,
-            businessLicense: isAdmin ? input.businessLicense : undefined,
-            taxId: isAdmin ? input.taxId : undefined,
-            storeDescription: isAdmin ? input.storeDescription : undefined,
-            businessAddress: isAdmin ? input.businessAddress : undefined,
-            businessPhone: isAdmin ? input.businessPhone : undefined,
-            businessEmail: isAdmin ? input.businessEmail : undefined,
-            businessWebsite: isAdmin ? input.businessWebsite : undefined,
+            // A new member may submit merchant information as a verification request.
+            // This does not set the separately administered merchantVerified flag.
+            isMerchant: canWriteLockedFields ? input.isMerchant : undefined,
+            storeName: canWriteLockedFields ? input.storeName : undefined,
+            businessLicense: canWriteLockedFields ? input.businessLicense : undefined,
+            taxId: canWriteLockedFields ? input.taxId : undefined,
+            storeDescription: canWriteLockedFields ? input.storeDescription : undefined,
+            businessAddress: canWriteLockedFields ? input.businessAddress : undefined,
+            businessPhone: canWriteLockedFields ? input.businessPhone : undefined,
+            businessEmail: canWriteLockedFields ? input.businessEmail : undefined,
+            businessWebsite: canWriteLockedFields ? input.businessWebsite : undefined,
             securityQuestion: input.securityQuestion,
             securityAnswer: input.securityAnswer,
             preferredCategories: input.preferredCategories,
             notificationPreferences: input.notificationPreferences ? JSON.stringify(input.notificationPreferences) : (undefined as any),
-            emailVerified: input.emailVerified,
-            phoneVerified: input.phoneVerified,
+            // Do not trust browser-supplied verification flags. A first-time setup can
+            // only finish after verifyPhoneCode persisted a matching approved phone.
+            phoneVerified: isFirstTimeSetup ? true : undefined,
           },
         );
       }),

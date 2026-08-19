@@ -40,7 +40,9 @@ export default function SignUp() {
       newErrors.displayName = "Display name is required";
     }
 
-    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+    if (!formData.email.trim()) {
+      newErrors.email = "Email is required";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = "Invalid email format";
     }
 
@@ -62,11 +64,12 @@ export default function SignUp() {
         username: formData.username,
         password: formData.password,
         displayName: formData.displayName,
-        email: formData.email || undefined,
+        email: formData.email,
       });
 
       // Refresh auth state
       await queryClient.invalidateQueries({ queryKey: ["auth.me"] });
+      await queryClient.refetchQueries({ queryKey: ["auth.me"] });
 
       // Redirect to account setup for new accounts
       navigate("/account-setup?new=true");
@@ -118,7 +121,7 @@ export default function SignUp() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">Email (Optional)</label>
+              <label className="block text-sm font-medium mb-1">Email</label>
               <Input
                 type="email"
                 value={formData.email}
