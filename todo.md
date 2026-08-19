@@ -493,3 +493,9 @@
 - [x] Assess whether Category Pages should display a privacy-safe approximate distance on each listing, and present the recommended label policy before implementing it; labels remain unimplemented pending separate approval of the approximate-only policy.
 - [x] Add a privacy-safe distance dropdown filter to every Category Page, submitted only through the existing Search or Enter action, with honest sign-in and saved-town fallback behavior.
 - [x] Add regression coverage, validate signed-out and signed-in nearest-sort behavior without changing member location data, publish, verify the standard domain, and synchronize GitHub.
+- [x] Audit the shared top-bar search input, submit handling, and destination behavior without changing search functionality; the bar navigates to `/search?q=…`, but the Search Results page fails to retain the URL query and therefore returns no results.
+- [x] Audit the existing marketplace search procedure, listing fields, current Search Results page, and all-category result requirements without changing listing data.
+- [x] Repair the top-bar search query handoff and server-backed all-category listing retrieval using the full set of item fields captured during listing creation.
+- [x] Refine the unified Search Results page with truthful cross-category result cards, broad filters, clear empty/error states, and direct item-detail navigation.
+- [x] Keep the unified Search Results page aligned with the existing Category Page visual system, shared top bar, filter treatment, listing-card sizing, category labels, and responsive behavior.
+- [ ] Add regression coverage, validate global search from the top bar without changing listing data, publish, verify the standard domain, and synchronize GitHub.

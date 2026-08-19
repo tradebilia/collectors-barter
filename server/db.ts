@@ -468,6 +468,9 @@ export async function getMarketplaceFeed(
     verifiedMerchantsOnly?: boolean;
     locationSort?: boolean;
     distanceMiles?: number;
+    limit?: number;
+    offset?: number;
+    sort?: "newest" | "title" | "value_low_high" | "value_high_low";
   },
   viewerId: number | null,
 ) {
@@ -489,15 +492,21 @@ export async function getMarketplaceFeed(
   }
   const keyword = filters.keyword?.trim();
   if (keyword) {
-    // Search across multiple fields including itemDetails JSON,
-    // plus top-level columns: grade (e.g. "9.4") and certification number
+    // Search all listing data captured during item creation. itemDetails holds
+    // category-specific form values; the remaining explicit columns hold the
+    // core fields that the form persists outside that JSON payload.
     const searchCondition = or(
       like(listings.title, `%${keyword}%`),
       like(listings.description, `%${keyword}%`),
+      like(listings.category, `%${keyword}%`),
+      like(listings.condition, `%${keyword}%`),
+      like(listings.itemType, `%${keyword}%`),
       like(listings.certificationCompany, `%${keyword}%`),
+      like(listings.signatures, `%${keyword}%`),
       sql`${listings.itemDetails} LIKE ${`%${keyword}%`}`,
       sql`CAST(${listings.grade} AS CHAR) LIKE ${`%${keyword}%`}`,
-      like(listings.certificationNumber, `%${keyword}%`)
+      like(listings.certificationNumber, `%${keyword}%`),
+      sql`CAST(${listings.estimatedValue} AS CHAR) LIKE ${`%${keyword}%`}`
     );
     // Only add the condition if it's not undefined
     if (searchCondition !== undefined) {
@@ -623,6 +632,16 @@ export async function getMarketplaceFeed(
     whereClauses.push(sql`${listings.ownerId} IN (SELECT id FROM users WHERE merchantVerified = 1)`);
   }
 
+  const listingOrder = filters.sort === "title"
+    ? asc(listings.title)
+    : filters.sort === "value_low_high"
+      ? asc(sql`CAST(${listings.estimatedValue} AS DECIMAL(12,2))`)
+      : filters.sort === "value_high_low"
+        ? desc(sql`CAST(${listings.estimatedValue} AS DECIMAL(12,2))`)
+        : desc(listings.createdAt);
+  const resultLimit = Math.min(Math.max(filters.limit ?? 100, 1), 100);
+  const resultOffset = Math.max(filters.offset ?? 0, 0);
+
   let listingRows = await db
     .select({
       id: listings.id,
@@ -645,8 +664,9 @@ export async function getMarketplaceFeed(
     })
     .from(listings)
     .where(and(...whereClauses))
-    .orderBy(desc(listings.createdAt))
-    .limit(100);
+    .orderBy(listingOrder)
+    .limit(resultLimit)
+    .offset(resultOffset);
 
   const locationSort: NearestLocationSortStatus = {
     requested: filters.locationSort === true,
