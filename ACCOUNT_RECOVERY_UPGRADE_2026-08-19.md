@@ -30,3 +30,5 @@ Existing authenticated members can open **Account Settings → Security → Veri
 ## Validation
 
 Focused tests cover normalized verified contacts, untrusted browser-flag rejection, merchant-request requirements, opaque token hashing, expiry, timing-safe text equality, recovery-request limits, the sign-in recovery entry point, and retired security-question source removal. The full suite passed with **88 test files passed, 1 skipped; 282 tests passed, 4 skipped**. TypeScript and the production build passed. Public development views of Forgot Password, Reset Password, and unauthenticated Account Setup rendered correctly; no recovery request or setup submission was sent during testing.
+
+After deployment propagation, the standard public `/forgot-password` route was verified to display **Verified Email** and **Verified Phone** recovery. The standard public `/account-setup` route was verified to retain its protected **Sign in to set up your Tradebilia account** entry and did not expose a duplicate account-creation form. No recovery message or production data write was made during release verification.

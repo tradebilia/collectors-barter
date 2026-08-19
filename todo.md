@@ -480,4 +480,4 @@
 - [x] Remove security questions from Account Setup and require verified email and phone contact methods for account recovery while retaining the current four-step onboarding structure.
 - [x] Implement secure verified email and phone recovery paths with bounded, expiring, single-use proof; do not expose whether an account exists to unauthenticated callers.
 - [x] Add regression coverage for recovery request, verification, expiration, one-time use, rate limiting, and setup requirements; validate without sending live recovery messages or changing real accounts.
-- [ ] Document, publish, verify, and synchronize the approved recovery upgrade.
+- [x] Document, publish, verify, and synchronize the approved recovery upgrade.
