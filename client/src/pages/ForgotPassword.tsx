@@ -4,26 +4,66 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertCircle, CheckCircle2 } from "lucide-react";
+import { trpc } from "@/lib/trpc";
 
 export function ForgotPassword() {
   const [, setLocation] = useLocation();
+  const [method, setMethod] = useState<"email" | "phone">("email");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [code, setCode] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>();
   const [success, setSuccess] = useState(false);
+  const [phoneCodeSent, setPhoneCodeSent] = useState(false);
+  const requestEmailRecovery = trpc.auth.requestPasswordRecovery.useMutation();
+  const requestPhoneRecovery = trpc.auth.requestPhonePasswordRecovery.useMutation();
+  const completePhoneRecovery = trpc.auth.completePhonePasswordRecovery.useMutation();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError(undefined);
 
     try {
-      // Call tRPC to send password reset email
-      // await trpc.auth.sendPasswordResetEmail.mutate({ email });
+      await requestEmailRecovery.mutateAsync({ email });
       setSuccess(true);
-      setTimeout(() => setLocation("/"), 3000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to send reset email");
+      setError("We could not start recovery. Please try again later.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handlePhoneSend = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError(undefined);
+    try {
+      await requestPhoneRecovery.mutateAsync({ phone });
+      setPhoneCodeSent(true);
+    } catch {
+      setError("We could not start recovery. Please try again later.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handlePhoneComplete = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(undefined);
+    if (newPassword !== confirmPassword) {
+      setError("The new passwords do not match.");
+      return;
+    }
+    setIsLoading(true);
+    try {
+      await completePhoneRecovery.mutateAsync({ phone, code, newPassword });
+      setSuccess(true);
+    } catch {
+      setError("We could not complete recovery. Request a new code and try again.");
     } finally {
       setIsLoading(false);
     }
@@ -34,9 +74,7 @@ export function ForgotPassword() {
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>Reset Your Password</CardTitle>
-          <CardDescription>
-            Enter your email address and we'll send you a link to reset your password
-          </CardDescription>
+          <CardDescription>Recover your account using a verified Tradebilia email or phone number.</CardDescription>
         </CardHeader>
         <CardContent>
           {success ? (
@@ -45,17 +83,21 @@ export function ForgotPassword() {
                 <CheckCircle2 className="h-12 w-12 text-green-600" />
               </div>
               <div className="text-center space-y-2">
-                <p className="font-semibold">Check your email</p>
+                <p className="font-semibold">Check your recovery method</p>
                 <p className="text-sm text-gray-600">
-                  We've sent a password reset link to {email}. Click the link to reset your password.
+                  If the information matches a verified Tradebilia account, recovery instructions have been sent.
                 </p>
               </div>
-              <p className="text-xs text-gray-500 text-center">
-                Redirecting to home page in 3 seconds...
-              </p>
+              <Button type="button" variant="outline" onClick={() => setLocation("/signin")} className="w-full">Back to Sign In</Button>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-2 rounded-lg bg-slate-100 p-1">
+                <Button type="button" variant={method === "email" ? "default" : "ghost"} onClick={() => { setMethod("email"); setError(undefined); }}>Verified Email</Button>
+                <Button type="button" variant={method === "phone" ? "default" : "ghost"} onClick={() => { setMethod("phone"); setError(undefined); }}>Verified Phone</Button>
+              </div>
+              {method === "email" ? (
+            <form onSubmit={handleEmailSubmit} className="space-y-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium">Email Address</label>
                 <Input
@@ -78,16 +120,24 @@ export function ForgotPassword() {
               <Button type="submit" disabled={isLoading} className="w-full">
                 {isLoading ? "Sending..." : "Send Reset Link"}
               </Button>
-
-              <Button
-                type="button"
-                variant="link"
-                onClick={() => setLocation("/signin")}
-                className="w-full"
-              >
-                Back to Sign In
-              </Button>
             </form>
+              ) : (
+                <form onSubmit={phoneCodeSent ? handlePhoneComplete : handlePhoneSend} className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Verified Phone Number</label>
+                    <Input type="tel" placeholder="Your verified phone number" value={phone} onChange={(e) => setPhone(e.target.value)} disabled={isLoading || phoneCodeSent} required />
+                  </div>
+                  {phoneCodeSent && <>
+                    <div className="space-y-2"><label className="text-sm font-medium">Text Message Code</label><Input inputMode="numeric" maxLength={6} value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))} required /></div>
+                    <div className="space-y-2"><label className="text-sm font-medium">New Password</label><Input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required /></div>
+                    <div className="space-y-2"><label className="text-sm font-medium">Confirm New Password</label><Input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required /></div>
+                  </>}
+                  {error && <div className="flex items-center gap-2 text-red-600 text-sm bg-red-50 p-3 rounded"><AlertCircle className="h-4 w-4" /><span>{error}</span></div>}
+                  <Button type="submit" disabled={isLoading} className="w-full">{isLoading ? "Working..." : phoneCodeSent ? "Reset Password" : "Send Recovery Code"}</Button>
+                </form>
+              )}
+              <Button type="button" variant="link" onClick={() => setLocation("/signin")} className="w-full">Back to Sign In</Button>
+            </div>
           )}
         </CardContent>
       </Card>

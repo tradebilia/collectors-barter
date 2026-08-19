@@ -32,8 +32,6 @@ export default function AccountSetup() {
   const utils = trpc.useUtils();
 
   const [currentStep, setCurrentStep] = useState(1);
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isPhoneVerified, setIsPhoneVerified] = useState(false);
   const [verificationCode, setVerificationCode] = useState("");
   const [showVerification, setShowVerification] = useState(false);
@@ -66,8 +64,6 @@ export default function AccountSetup() {
   const [emailVerificationCode, setEmailVerificationCode] = useState("");
   const [showEmailVerification, setShowEmailVerification] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
-  const [securityQuestion, setSecurityQuestion] = useState("");
-  const [securityAnswer, setSecurityAnswer] = useState("");
   const [preferredCategories, setPreferredCategories] = useState<string[]>([]);
   const [bioText, setBioText] = useState("");
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
@@ -100,6 +96,8 @@ export default function AccountSetup() {
 
   const sendPhoneCodeMutation = trpc.auth.sendPhoneCode.useMutation();
   const verifyPhoneCodeMutation = trpc.auth.verifyPhoneCode.useMutation();
+  const sendEmailCodeMutation = trpc.auth.sendEmailCode.useMutation();
+  const verifyEmailCodeMutation = trpc.auth.verifyEmailCode.useMutation();
 
   const saveProfileMutation = trpc.market.saveProfile.useMutation({
     onSuccess: async () => {
@@ -131,11 +129,12 @@ export default function AccountSetup() {
         zipCode: "",
         state: "",
         country: "",
-        email: profile.contactEmail || "",
+        email: profile.contactEmail || (user as any)?.email || "",
         phoneNumber: profile.contactPhone || "",
         bio: profile.bio || "",
       }));
       setIsPhoneVerified(Boolean((profile as any).phoneVerified));
+      setIsEmailVerified(Boolean((profile as any).emailVerified));
     }
   }, [dashboardQuery.data?.profile, user?.name]);
 
@@ -243,6 +242,14 @@ export default function AccountSetup() {
         toast.error("Phone Number is required");
         return;
       }
+      if (!formData.email.trim()) {
+        toast.error("A recovery email is required");
+        return;
+      }
+      if (!isEmailVerified) {
+        toast.error("Please verify your email address before continuing");
+        return;
+      }
       if (!isPhoneVerified) {
         toast.error("Please verify your phone number before continuing");
         return;
@@ -304,6 +311,34 @@ export default function AccountSetup() {
 
   const handleResendCode = () => handleSendPhoneCode();
 
+  const handleSendEmailCode = async () => {
+    try {
+      await sendEmailCodeMutation.mutateAsync({});
+      setShowEmailVerification(true);
+      setEmailVerificationCode("");
+      toast.success("Verification code sent to your Tradebilia email address.");
+    } catch (err: any) {
+      toast.error(err.message || "Could not send the verification email");
+    }
+  };
+
+  const handleVerifyEmail = async () => {
+    if (emailVerificationCode.length < 4) {
+      toast.error("Please enter the verification code from your email");
+      return;
+    }
+    try {
+      await verifyEmailCodeMutation.mutateAsync({ code: emailVerificationCode });
+      setIsEmailVerified(true);
+      setShowEmailVerification(false);
+      setEmailVerificationCode("");
+      await utils.market.dashboard.invalidate();
+      toast.success("Email address verified!");
+    } catch (err: any) {
+      toast.error(err.message || "Email verification failed");
+    }
+  };
+
   const handlePreviousStep = () => {
     if (currentStep > 1) {
       setCurrentStep(currentStep - 1);
@@ -322,8 +357,8 @@ export default function AccountSetup() {
       return;
     }
 
-    if (!isPhoneVerified || !acceptedTerms || !securityQuestion || !securityAnswer) {
-      toast.error("Complete phone verification, terms acceptance, and security question before finishing setup.");
+    if (!isPhoneVerified || !isEmailVerified || !acceptedTerms) {
+      toast.error("Complete email verification, phone verification, and terms acceptance before finishing setup.");
       return;
     }
     if (formData.isMerchant && (!formData.storeName || !formData.businessLicense || !formData.taxId || !formData.businessAddress || !formData.businessPhone || !formData.businessEmail)) {
@@ -373,8 +408,6 @@ export default function AccountSetup() {
       contactCountry: formData.country,
       firstName: formData.firstName,
       lastName: formData.lastName,
-      securityQuestion: securityQuestion,
-      securityAnswer: securityAnswer,
       preferredCategories: preferredCategories.length > 0 ? (preferredCategories as any) : undefined,
       avatar: avatarData as any,
       // Submitted as a request; verified status remains administrator controlled.
@@ -550,16 +583,60 @@ export default function AccountSetup() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="email">Email Address *</Label>
-                    <Input
-                      id="email"
-                      name="email"
-                      type="email"
-                      value={formData.email}
-                      onChange={handleInputChange}
-                      placeholder="your@email.com"
-                      required
-                      className="rounded-lg border-slate-200"
-                    />
+                    <div className="flex gap-2">
+                      <Input
+                        id="email"
+                        name="email"
+                        type="email"
+                        value={formData.email}
+                        readOnly
+                        required
+                        className="flex-1 rounded-lg border-slate-200 bg-slate-50"
+                      />
+                      {isEmailVerified ? (
+                        <div className="flex items-center gap-1.5 px-3 rounded-lg bg-green-50 border border-green-200 text-green-700 text-sm font-medium whitespace-nowrap">
+                          <CheckCircle2 className="h-4 w-4" />
+                          Verified
+                        </div>
+                      ) : (
+                        <Button
+                          type="button"
+                          onClick={handleSendEmailCode}
+                          disabled={sendEmailCodeMutation.isPending || !formData.email.trim()}
+                          className="whitespace-nowrap"
+                        >
+                          {sendEmailCodeMutation.isPending ? "Sending..." : showEmailVerification ? "Resend Code" : "Email Code"}
+                        </Button>
+                      )}
+                    </div>
+                    {showEmailVerification && !isEmailVerified && (
+                      <div className="flex gap-2 pt-1">
+                        <Input
+                          id="emailVerificationCode"
+                          type="text"
+                          inputMode="numeric"
+                          autoComplete="one-time-code"
+                          maxLength={6}
+                          value={emailVerificationCode}
+                          onChange={(e) => setEmailVerificationCode(e.target.value.replace(/\D/g, ""))}
+                          placeholder="Enter the 6-digit email code"
+                          className="flex-1 rounded-lg border-slate-200 tracking-widest"
+                        />
+                        <Button
+                          type="button"
+                          onClick={handleVerifyEmail}
+                          disabled={verifyEmailCodeMutation.isPending || emailVerificationCode.length < 4}
+                          className="whitespace-nowrap"
+                        >
+                          {verifyEmailCodeMutation.isPending ? "Verifying..." : "Verify"}
+                        </Button>
+                      </div>
+                    )}
+                    <p className="text-xs text-slate-600">
+                      {isEmailVerified
+                        ? "This account email is verified and can be used for password recovery."
+                        : "Verify this account email before continuing. It will be used for password recovery."}
+                    </p>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="phoneNumber">Phone Number *</Label>
@@ -809,41 +886,12 @@ export default function AccountSetup() {
                     You can skip this step and add accounts later from your account settings.
                   </p>
 
-                  {/* Security Question Section */}
+                  {/* Verified recovery methods */}
                   <div className="border-t border-slate-200 pt-6 mt-6">
-                    <h3 className="font-semibold text-slate-900 mb-4">Security Question</h3>
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="securityQuestion">Security Question *</Label>
-                        <select
-                          id="securityQuestion"
-                          value={securityQuestion}
-                          onChange={(e) => setSecurityQuestion(e.target.value)}
-                          className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          required
-                        >
-                          <option value="">Select a security question</option>
-                          <option value="What is your mother's maiden name?">What is your mother's maiden name?</option>
-                          <option value="What was the name of your first pet?">What was the name of your first pet?</option>
-                          <option value="What city were you born in?">What city were you born in?</option>
-                          <option value="What is your favorite book?">What is your favorite book?</option>
-                          <option value="What was your first car?">What was your first car?</option>
-                          <option value="What is the name of your best friend from childhood?">What is the name of your best friend from childhood?</option>
-                        </select>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="securityAnswer">Your Answer *</Label>
-                        <Input
-                          id="securityAnswer"
-                          value={securityAnswer}
-                          onChange={(e) => setSecurityAnswer(e.target.value)}
-                          placeholder="Enter your answer"
-                          required
-                          className="rounded-lg border-slate-200"
-                        />
-                        <p className="text-xs text-slate-600">This will help you recover your account if needed.</p>
-                      </div>
-                    </div>
+                    <h3 className="font-semibold text-slate-900 mb-2">Account Recovery</h3>
+                    <p className="text-sm text-slate-600 leading-6">
+                      Tradebilia uses your verified account email and verified phone number for account recovery. We no longer use security questions because personal-answer recovery is easier to guess or discover.
+                    </p>
                   </div>
                 </CardContent>
               </Card>
@@ -1043,6 +1091,7 @@ export default function AccountSetup() {
                   {/* Verification Status */}
                   <div className="space-y-2 bg-blue-50 border border-blue-200 rounded-lg p-3">
                     <p className="text-sm font-medium text-blue-900">Verification Status</p>
+                    <p className="text-xs text-blue-800">Email verified: {isEmailVerified ? "Yes" : "No"}</p>
                     <p className="text-xs text-blue-800">Phone verified: {isPhoneVerified ? "Yes" : "No"}</p>
                     <p className="text-xs text-blue-800">Terms accepted: {acceptedTerms ? "Yes" : "No"}</p>
                   </div>

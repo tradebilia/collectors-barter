@@ -103,6 +103,16 @@ export function SignInModal({ isOpen, onClose }: SignInModalProps) {
             >
               {isLoading ? "Signing in..." : "Sign In"}
             </Button>
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                navigate("/forgot-password");
+              }}
+              className="w-full text-sm text-blue-600 hover:underline"
+            >
+              Forgot password?
+            </button>
           </form>
 
           <div className="mt-4 text-center text-sm flex-shrink-0">

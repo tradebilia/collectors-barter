@@ -60,7 +60,6 @@ export default function AccountSettings() {
     enabled: isAuthenticated,
   });
   const saveProfileMutation = trpc.market.saveProfile.useMutation();
-  const saveSecurityQuestionMutation = trpc.market.saveSecurityQuestion.useMutation();
   const changePasswordMutation = trpc.market.changePassword.useMutation();
   const saveIntegrationsMutation = trpc.market.saveIntegrations.useMutation();
   const saveCommunicationsMutation = trpc.market.saveCommunications.useMutation();
@@ -98,8 +97,6 @@ export default function AccountSettings() {
     currentPassword: "",
     newPassword: "",
     confirmPassword: "",
-    securityQuestion: "",
-    securityAnswer: "",
   });
   const [showPasswordFields, setShowPasswordFields] = useState(false);
 
@@ -227,12 +224,6 @@ export default function AccountSettings() {
         phoneNumber: profile.contactPhone || "",
         avatarPreview: profile.avatarUrl || "",
       });
-
-      setSecurityForm(prev => ({
-        ...prev,
-        securityQuestion: (profile as any).securityQuestion || "",
-        securityAnswer: "", // Answer is hashed in DB, can't display it
-      }));
 
       // Load preferences from profile (only on first load)
       if (!preferencesInitializedRef.current) {
@@ -517,41 +508,11 @@ export default function AccountSettings() {
         currentPassword: "",
         newPassword: "",
         confirmPassword: "",
-        securityQuestion: "",
-        securityAnswer: "",
       });
       setShowPasswordFields(false);
     } catch (error: any) {
       toast.dismiss(toastId);
       toast.error(error.message || "Failed to change password");
-    }
-  };
-
-  const handleSaveSecurityQuestion = async () => {
-    if (!securityForm.securityQuestion || !securityForm.securityAnswer) {
-      setConfirmationDialog({
-        isOpen: true,
-        title: "Missing Information",
-        message: "Please select a security question and provide an answer",
-      });
-      return;
-    }
-    try {
-      await saveSecurityQuestionMutation.mutateAsync({
-        securityQuestion: securityForm.securityQuestion,
-        securityAnswer: securityForm.securityAnswer,
-      });
-      setConfirmationDialog({
-        isOpen: true,
-        title: "Success",
-        message: "Security question saved successfully!",
-      });
-    } catch (error: any) {
-      setConfirmationDialog({
-        isOpen: true,
-        title: "Error",
-        message: error.message || "Failed to save security question",
-      });
     }
   };
 
@@ -944,15 +905,15 @@ export default function AccountSettings() {
               <Card className="rounded-[1.5rem] border-slate-200 bg-white shadow-sm">
                 <CardHeader>
                   <CardTitle>Security Settings</CardTitle>
-                  <CardDescription>Manage your password and security questions</CardDescription>
+                  <CardDescription>Manage your password and recovery methods</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  {/* Email Verification Status */}
+                  {/* Recovery email */}
                   <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                     <div className="flex items-center gap-2">
                       <Shield className="h-5 w-5 text-green-600" />
                       <div>
-                        <p className="font-medium text-green-900">Email Verified</p>
+                        <p className="font-medium text-green-900">Recovery Email</p>
                         <p className="text-sm text-green-800">{identityInfo.email}</p>
                       </div>
                     </div>
@@ -1018,44 +979,20 @@ export default function AccountSettings() {
                     )}
                   </div>
 
-                  {/* Security Questions */}
+                  {/* Account recovery */}
                   <div className="border-t border-slate-200 pt-4 space-y-4">
-                    <h3 className="font-semibold text-slate-900">Security Questions</h3>
-                    <p className="text-sm text-slate-600">These help you recover your account if you forget your password.</p>
-                    <div className="space-y-2">
-                      <Label htmlFor="securityQuestion">Security Question</Label>
-                      <select
-                        id="securityQuestion"
-                        name="securityQuestion"
-                        value={securityForm.securityQuestion}
-                        onChange={handleSecurityChange}
-                        className="rounded-lg border-slate-200 border px-3 py-2 w-full"
-                      >
-                        <option value="">Select a security question</option>
-                        <option value="pet">What was the name of your first pet?</option>
-                        <option value="city">What city were you born in?</option>
-                        <option value="school">What was the name of your first school?</option>
-                        <option value="book">What is your favorite book?</option>
-                        <option value="movie">What is your favorite movie?</option>
-                      </select>
+                    <h3 className="font-semibold text-slate-900">Account Recovery</h3>
+                    <p className="text-sm text-slate-600 leading-6">
+                      Password recovery uses your verified Tradebilia email and verified phone number. Security questions are no longer used.
+                    </p>
+                    <div className="flex flex-wrap gap-3">
+                      <Button variant="outline" onClick={() => window.location.assign("/account-setup")} className="rounded-lg">
+                        Verify Recovery Contacts
+                      </Button>
+                      <Button variant="outline" onClick={() => window.location.assign("/forgot-password")} className="rounded-lg">
+                        Open Password Recovery
+                      </Button>
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="securityAnswer">Your Answer</Label>
-                      <Input
-                        id="securityAnswer"
-                        name="securityAnswer"
-                        value={securityForm.securityAnswer}
-                        onChange={handleSecurityChange}
-                        placeholder="Enter your answer (or re-enter if updating)"
-                        className="rounded-lg border-slate-200"
-                      />
-                      {securityForm.securityQuestion && (
-                        <p className="text-xs text-slate-500 mt-1">Your answer is securely hashed and cannot be displayed for security reasons.</p>
-                      )}
-                    </div>
-                    <Button onClick={handleSaveSecurityQuestion} className="w-full rounded-lg bg-blue-600 hover:bg-blue-700">
-                      Save Security Question
-                    </Button>
                   </div>
 
 
