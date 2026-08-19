@@ -84,7 +84,7 @@ export default function VerifiedMerchants() {
                   <div className="flex items-center gap-4 mb-4">
                     <div className="w-14 h-14 rounded-full bg-emerald-50 border-2 border-emerald-200 flex items-center justify-center overflow-hidden shrink-0">
                       {merchant.avatarUrl ? (
-                        <img src={merchant.avatarUrl} alt={merchant.displayName} className="w-full h-full object-cover" />
+                        <img src={merchant.avatarUrl} alt={merchant.displayName} className="w-full h-full bg-emerald-50 object-contain" />
                       ) : (
                         <Store className="h-6 w-6 text-emerald-600" />
                       )}

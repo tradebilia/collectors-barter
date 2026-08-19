@@ -260,9 +260,9 @@ export default function PublicProfile() {
             {/* Avatar — falls back to Facebook picture if no Tradebilia avatar */}
             <div className="h-28 w-28 rounded-3xl bg-slate-100 border-4 border-white shadow-md overflow-hidden shrink-0 flex items-center justify-center">
               {profile?.avatarUrl ? (
-                <img src={profile.avatarUrl} alt={displayName} className="h-full w-full object-cover" />
+                <img src={profile.avatarUrl} alt={displayName} className="h-full w-full bg-slate-100 object-contain" />
               ) : user.facebookPicture ? (
-                <img src={user.facebookPicture} alt={displayName} className="h-full w-full object-cover" />
+                <img src={user.facebookPicture} alt={displayName} className="h-full w-full bg-slate-100 object-contain" />
               ) : (
                 <User className="h-12 w-12 text-slate-300" />
               )}
@@ -606,7 +606,7 @@ export default function PublicProfile() {
                       {/* Name + picture */}
                       <div className="flex items-center gap-3">
                         {user.facebookPicture && (
-                          <img src={user.facebookPicture} alt={user.facebookName} className="h-10 w-10 rounded-full object-cover border-2 border-white shadow-sm" />
+                          <img src={user.facebookPicture} alt={user.facebookName} className="h-10 w-10 rounded-full bg-slate-100 object-contain border-2 border-white shadow-sm" />
                         )}
                         <div className="min-w-0">
                           <p className="text-sm font-black text-slate-900 tracking-tight truncate">{user.facebookName}</p>
@@ -663,7 +663,7 @@ export default function PublicProfile() {
                       {/* Picture + Name + Headline */}
                       <div className="flex items-center gap-3">
                         {user.linkedinPicture ? (
-                          <img src={user.linkedinPicture} alt={user.linkedinName} className="h-12 w-12 rounded-full object-cover border-2 border-white shadow-sm" />
+                          <img src={user.linkedinPicture} alt={user.linkedinName} className="h-12 w-12 rounded-full bg-slate-100 object-contain border-2 border-white shadow-sm" />
                         ) : (
                           <div className="h-12 w-12 rounded-full bg-[#0A66C2]/10 flex items-center justify-center">
                             <span className="text-[#0A66C2] font-black text-lg">{user.linkedinName?.charAt(0) ?? 'L'}</span>

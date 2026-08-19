@@ -120,7 +120,7 @@ export function ForumTopic() {
                           <img
                               src={reply.author?.avatarUrl || ""}
                               alt={reply.author?.name || "User"}
-                              className="w-full h-full rounded-full object-cover"
+                              className="w-full h-full rounded-full bg-muted object-contain"
                             />
                           ) : (
                             <span className="text-xs font-bold">{reply.author?.name?.charAt(0) || "?"}</span>

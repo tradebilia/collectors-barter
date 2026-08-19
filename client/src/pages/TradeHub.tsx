@@ -53,6 +53,46 @@ function timeAgo(dateStr: string | null): string {
   return `${Math.floor(diffDays / 30)}mo ago`;
 }
 
+function CompletedExchangePreview({ exchange }: { exchange: { received?: any[]; sent?: any[] } }) {
+  const renderItems = (items: any[], emptyLabel: string) => {
+    if (!items.length) return <p className="py-3 text-center text-xs text-gray-500">{emptyLabel}</p>;
+    return <div className="space-y-2">{items.map((item: any) => (
+      <div key={item.id || item.title} className="flex items-center gap-2 rounded-md border border-gray-700 bg-[#0a0a2a] p-2">
+        <div className="h-12 w-12 shrink-0 overflow-hidden rounded bg-gray-900">
+          <img
+            src={resolveTradebiliaListingImage({ title: item.title, category: item.category, primaryPhotoUrl: item.image })}
+            alt={item.title || "Exchanged item"}
+            className="h-full w-full object-contain"
+          />
+        </div>
+        <div className="min-w-0">
+          <p className="truncate text-xs font-semibold text-white">{item.title || "Collectible item"}</p>
+          <p className="mt-0.5 text-[10px] capitalize text-gray-400">{item.category?.replace('_', ' ') || "Collectible"}</p>
+        </div>
+      </div>
+    ))}</div>;
+  };
+
+  return (
+    <section className="space-y-3 rounded-lg border border-purple-900/40 bg-[#11113a] p-3">
+      <div className="flex items-center justify-between">
+        <h4 className="text-sm font-semibold text-white">Completed Exchange</h4>
+        <span className="text-xs text-purple-300">Items actually swapped</span>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div>
+          <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wide text-emerald-300">You received</p>
+          {renderItems(exchange.received || [], "No collectible item received")}
+        </div>
+        <div>
+          <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wide text-amber-300">You sent</p>
+          {renderItems(exchange.sent || [], "No collectible item sent")}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export default function TradeHub() {
   const [, navigate] = useLocation();
   const [activeFolder, setActiveFolder] = useState<TradeFolder>('proposal');
@@ -256,33 +296,37 @@ export default function TradeHub() {
                     </span>
                   </div>
 
-                  {/* Item Image */}
-                  {selectedTrade.listing && (
-                    <div className="rounded-lg overflow-hidden bg-[#0a0a2a] p-2">
-                      <img
-                        src={resolveTradebiliaListingImage({ 
-                          title: selectedTrade.listing.title, 
-                          category: selectedTrade.listing.category, 
-                          primaryPhotoUrl: selectedTrade.listing.image 
-                        })}
-                        alt={selectedTrade.listing.title}
-                        className="w-full h-48 object-contain rounded"
-                      />
-                    </div>
+                  {activeFolder === 'completed' && selectedTrade.completedExchange ? (
+                    <CompletedExchangePreview exchange={selectedTrade.completedExchange} />
+                  ) : (
+                    <>
+                      {/* Original requested item is relevant before a trade is completed. */}
+                      {selectedTrade.listing && (
+                        <div className="rounded-lg overflow-hidden bg-[#0a0a2a] p-2">
+                          <img
+                            src={resolveTradebiliaListingImage({
+                              title: selectedTrade.listing.title,
+                              category: selectedTrade.listing.category,
+                              primaryPhotoUrl: selectedTrade.listing.image
+                            })}
+                            alt={selectedTrade.listing.title}
+                            className="w-full h-48 object-contain rounded"
+                          />
+                        </div>
+                      )}
+                      <div>
+                        <h4 className="text-white font-semibold">{selectedTrade.listing?.title || 'Unknown Item'}</h4>
+                        <div className="flex items-center gap-3 mt-1">
+                          <span className="text-green-400 font-bold">
+                            ${parseFloat(selectedTrade.listing?.value || '0').toLocaleString()}
+                          </span>
+                          <span className="text-xs text-gray-400 capitalize">
+                            {selectedTrade.listing?.category?.replace('_', ' ')}
+                          </span>
+                        </div>
+                      </div>
+                    </>
                   )}
-
-                  {/* Item Details */}
-                  <div>
-                    <h4 className="text-white font-semibold">{selectedTrade.listing?.title || 'Unknown Item'}</h4>
-                    <div className="flex items-center gap-3 mt-1">
-                      <span className="text-green-400 font-bold">
-                        ${parseFloat(selectedTrade.listing?.value || '0').toLocaleString()}
-                      </span>
-                      <span className="text-xs text-gray-400 capitalize">
-                        {selectedTrade.listing?.category?.replace('_', ' ')}
-                      </span>
-                    </div>
-                  </div>
 
                   {/* Trader Info */}
                   <div className="border-t border-gray-700 pt-4">
