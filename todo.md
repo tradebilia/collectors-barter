@@ -487,4 +487,4 @@
 - [x] Document, publish, verify, and synchronize the approved Category Page pagination repair.
 - [x] Audit the legacy Profile Completion route, destinations, navigation references, and current save behavior without changing account data.
 - [x] Retire the legacy Profile Completion route through safe redirects to the authoritative Account Setup or Profile path, without adding account writes.
-- [ ] Add regression coverage, validate public and authenticated route behavior, publish, verify the standard domain, and synchronize GitHub.
+- [x] Add regression coverage, validate public and authenticated route behavior, publish, verify the standard domain, and synchronize GitHub.

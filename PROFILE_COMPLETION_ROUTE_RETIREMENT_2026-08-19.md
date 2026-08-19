@@ -20,4 +20,6 @@ The obsolete `ProfileCompletion.tsx` component was removed. No database schema, 
 
 ## Validation
 
-The account-flow regression suite verifies the legacy route resolves to the redirect component, that the redirect distinguishes the authoritative setup and Profile destinations, that it uses replacement navigation, and that it contains no profile mutation. Development-browser verification confirmed an unauthenticated visit to `/profile-completion` lands at `/account-setup` rather than rendering the prior unsaved form. Full release verification is recorded after standard-domain propagation.
+The account-flow regression suite verifies the legacy route resolves to the redirect component, that the redirect distinguishes the authoritative setup and Profile destinations, that it uses replacement navigation, and that it contains no profile mutation. Development-browser verification confirmed an unauthenticated visit to `/profile-completion` lands at `/account-setup` rather than rendering the prior unsaved form.
+
+Standard-domain verification completed after deployment propagation at `https://tradebilia.manus.space/profile-completion`. The public route briefly displayed the neutral redirect state and then arrived at `/account-setup` for an unauthenticated visitor, with no legacy form fields visible. Canonical GitHub `main` is synchronized at commit `560b555f`.
