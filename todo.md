@@ -475,4 +475,4 @@
 - [x] Repair Account Setup completion so it saves required profile data to the already authenticated new account rather than invoking account creation a second time.
 - [x] Preserve mandatory phone verification and terms acceptance at final setup completion through client and server validation, while retaining optional account connections and current setup steps.
 - [x] Add regression coverage for single-account creation, authenticated setup completion, required setup safeguards, and error paths; validate without creating unintended production accounts.
-- [ ] Document, publish, verify, and synchronize the approved account-flow repair.
+- [x] Document, publish, verify, and synchronize the approved account-flow repair.
