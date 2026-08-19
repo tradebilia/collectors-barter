@@ -34,3 +34,5 @@ The direction is derived from the persisted proposal roles: a requester receives
 ## Validation
 
 Focused avatar, completed-preview, and ownership-model regressions passed. The full validation suite passed with **84 test files passed, 1 skipped; 269 tests passed, 4 skipped**. TypeScript and a production build passed. A completed Trade Hub visual check remains restricted to an authenticated member session; the UI and server contract are covered by focused regression tests pending standard-domain verification after publication.
+
+The standard public Traders Showcase was verified after the release checkpoint. Its completed-trade card displayed both participant avatars with full-image containment, including the previously reported Rtavani avatar, while preserving the existing card dimensions and two-sided exchange layout.
