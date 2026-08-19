@@ -31,6 +31,8 @@ The Trade Hub preview now shows two labeled groups for completed trades:
 
 The direction is derived from the persisted proposal roles: a requester receives the requested listing and sends all offered listings; a recipient receives all offered listings and sends the requested listing. This is the same ownership model already used by the public Traders Showcase. Non-completed folders retain their original requested-item preview because an exchange is not final at those stages.
 
+The completed preview now omits the redundant “Items actually swapped” phrase. Its status summary displays the total number of finalized items across both groups and uses the member-facing label **Mutual Exchange** instead of the technical stored direction value. Non-completed previews continue to display their original offered-item count and stored direction.
+
 ## Validation
 
 Focused avatar, completed-preview, and ownership-model regressions passed. The full validation suite passed with **84 test files passed, 1 skipped; 269 tests passed, 4 skipped**. TypeScript and a production build passed. A completed Trade Hub visual check remains restricted to an authenticated member session; the UI and server contract are covered by focused regression tests pending standard-domain verification after publication.

@@ -54,6 +54,8 @@ function timeAgo(dateStr: string | null): string {
 }
 
 function CompletedExchangePreview({ exchange }: { exchange: { received?: any[]; sent?: any[] } }) {
+  const receivedItems = exchange.received || [];
+  const sentItems = exchange.sent || [];
   const renderItems = (items: any[], emptyLabel: string) => {
     if (!items.length) return <p className="py-3 text-center text-xs text-gray-500">{emptyLabel}</p>;
     return <div className="space-y-2">{items.map((item: any) => (
@@ -77,16 +79,15 @@ function CompletedExchangePreview({ exchange }: { exchange: { received?: any[]; 
     <section className="space-y-3 rounded-lg border border-purple-900/40 bg-[#11113a] p-3">
       <div className="flex items-center justify-between">
         <h4 className="text-sm font-semibold text-white">Completed Exchange</h4>
-        <span className="text-xs text-purple-300">Items actually swapped</span>
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
         <div>
           <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wide text-emerald-300">You received</p>
-          {renderItems(exchange.received || [], "No collectible item received")}
+          {renderItems(receivedItems, "No collectible item received")}
         </div>
         <div>
           <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wide text-amber-300">You sent</p>
-          {renderItems(exchange.sent || [], "No collectible item sent")}
+          {renderItems(sentItems, "No collectible item sent")}
         </div>
       </div>
     </section>
@@ -404,6 +405,10 @@ export default function TradeHub() {
                   )}
 
                   {/* Status Info */}
+                  {(() => {
+                    const completedItemCount = (selectedTrade.completedExchange?.received?.length || 0) + (selectedTrade.completedExchange?.sent?.length || 0);
+                    const isCompletedExchange = activeFolder === 'completed' && Boolean(selectedTrade.completedExchange);
+                    return (
                   <div className="bg-[#0a0a2a] rounded-lg p-3">
                     <div className="grid grid-cols-2 gap-2 text-sm">
                       <div>
@@ -412,11 +417,15 @@ export default function TradeHub() {
                       </div>
                       <div>
                         <span className="text-gray-400">Items:</span>
-                        <span className="text-white ml-2">{selectedTrade.itemCount || 0} offered</span>
+                        <span className="text-white ml-2">
+                          {isCompletedExchange
+                            ? `${completedItemCount} ${completedItemCount === 1 ? 'item' : 'items'}`
+                            : `${selectedTrade.itemCount || 0} offered`}
+                        </span>
                       </div>
                       <div>
                         <span className="text-gray-400">Direction:</span>
-                        <span className="text-white ml-2 capitalize">{selectedTrade.direction}</span>
+                        <span className="text-white ml-2">{isCompletedExchange ? 'Mutual Exchange' : selectedTrade.direction}</span>
                       </div>
                       <div>
                         <span className="text-gray-400">Created:</span>
@@ -424,6 +433,8 @@ export default function TradeHub() {
                       </div>
                     </div>
                   </div>
+                    );
+                  })()}
 
                   {/* Enter Trade Room Button */}
                   <button

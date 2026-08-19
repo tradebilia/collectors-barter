@@ -15,9 +15,11 @@ describe("Trade Hub completed exchange preview", () => {
 
   it("renders actual received and sent item groups instead of the original requested-item preview", () => {
     expect(hubSource).toContain("CompletedExchangePreview");
-    expect(hubSource).toContain("Items actually swapped");
     expect(hubSource).toContain("You received");
     expect(hubSource).toContain("You sent");
     expect(hubSource).toContain("selectedTrade.completedExchange");
+    expect(hubSource).not.toContain("Items actually swapped");
+    expect(hubSource).toContain("Mutual Exchange");
+    expect(hubSource).toContain("completedItemCount");
   });
 });
