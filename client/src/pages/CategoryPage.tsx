@@ -245,6 +245,7 @@ export default function CategoryPage() {
   const [condition, setCondition] = useState<(typeof tradebiliaConditionOptions)[number]["value"] | undefined>(undefined);
   const [sportsCardsConditionText, setSportsCardsConditionText] = useState("");
   const [sortBy, setSortBy] = useState("best_match");
+  const [locationSortNotice, setLocationSortNotice] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [resultsPerPage, setResultsPerPage] = useState(24);
   const [currentPage, setCurrentPage] = useState(1);
@@ -282,6 +283,7 @@ export default function CategoryPage() {
   const [edition, setEdition] = useState("");
   const [parkOrEvent, setParkOrEvent] = useState("");
   const [franchise, setFranchise] = useState("");
+  const [distanceMiles, setDistanceMiles] = useState<number | undefined>(undefined);
 
   // Submitted filters state (only updates when user submits search)
   const [submittedFilters, setSubmittedFilters] = useState({
@@ -314,6 +316,7 @@ export default function CategoryPage() {
     edition: undefined as string | undefined,
     parkOrEvent: undefined as string | undefined,
     franchise: undefined as string | undefined,
+    distanceMiles: undefined as number | undefined,
     verifiedMerchantsOnly: false,
   });
 
@@ -389,9 +392,11 @@ export default function CategoryPage() {
       edition: undefined,
       parkOrEvent: undefined,
       franchise: undefined,
+      distanceMiles: undefined,
     });
     
     // Reset pagination
+    setDistanceMiles(undefined);
     setCurrentPage(1);
   }, [slug]);
 
@@ -441,17 +446,51 @@ export default function CategoryPage() {
     add("edition", submittedFilters.edition);
     add("parkOrEvent", submittedFilters.parkOrEvent);
     add("franchise", submittedFilters.franchise);
+    add("distanceMiles", submittedFilters.distanceMiles);
     if (submittedFilters.verifiedMerchantsOnly) {
       input.verifiedMerchantsOnly = true;
     }
+    if (sortBy === "location") {
+      input.locationSort = true;
+    }
 
     return input as Parameters<typeof trpc.market.feed.useQuery>[0];
-  }, [slug, submittedFilters]);
+  }, [slug, sortBy, submittedFilters]);
 
   const feedQuery = trpc.market.feed.useQuery(
     queryInput,
     { enabled: Boolean(slug) },
   );
+
+  useEffect(() => {
+    if (sortBy !== "location" || feedQuery.isLoading || feedQuery.isFetching) return;
+
+    if (feedQuery.data?.locationSort?.applied) {
+      setLocationSortNotice("Sorted by proximity to your saved town.");
+      return;
+    }
+
+    const messages = {
+      sign_in_required: "Sign in to sort listings by proximity to your saved town.",
+      saved_town_required: "Add your town to your Profile before using nearest-location sorting.",
+      location_unavailable: "Nearest-location sorting is temporarily unavailable. Showing Best Match instead.",
+    } as const;
+    setLocationSortNotice(messages[feedQuery.data?.locationSort?.reason ?? "location_unavailable"]);
+    setSortBy("best_match");
+  }, [feedQuery.data?.locationSort?.applied, feedQuery.data?.locationSort?.reason, feedQuery.isFetching, feedQuery.isLoading, sortBy]);
+
+  useEffect(() => {
+    if (submittedFilters.distanceMiles === undefined || feedQuery.isLoading || feedQuery.isFetching || feedQuery.data?.distanceFilter?.applied) return;
+
+    const messages = {
+      sign_in_required: "Sign in to filter listings by distance from your saved town.",
+      saved_town_required: "Add your town to your Profile before filtering by distance.",
+      location_unavailable: "Distance filtering is temporarily unavailable. Showing all matching listings instead.",
+    } as const;
+    setLocationSortNotice(messages[feedQuery.data?.distanceFilter?.reason ?? "location_unavailable"]);
+    setDistanceMiles(undefined);
+    setSubmittedFilters(previous => ({ ...previous, distanceMiles: undefined }));
+  }, [feedQuery.data?.distanceFilter?.applied, feedQuery.data?.distanceFilter?.reason, feedQuery.isFetching, feedQuery.isLoading, submittedFilters.distanceMiles]);
 
   // Handler to submit filters
   const handleSubmitFilters = () => {
@@ -485,6 +524,7 @@ export default function CategoryPage() {
       edition: edition || undefined,
       parkOrEvent: parkOrEvent || undefined,
       franchise: franchise || undefined,
+      distanceMiles: distanceMiles ?? undefined,
       verifiedMerchantsOnly: false,
     };
 
@@ -532,6 +572,8 @@ export default function CategoryPage() {
     setValueMin(undefined);
     setValueMax(undefined);
     
+    setDistanceMiles(undefined);
+
     // Reset submitted filters to trigger query reset
     setSubmittedFilters({
       keyword: "",
@@ -563,6 +605,7 @@ export default function CategoryPage() {
       edition: undefined,
       parkOrEvent: undefined,
       franchise: undefined,
+      distanceMiles: undefined,
       verifiedMerchantsOnly: false,
     });
     setCurrentPage(1);
@@ -606,7 +649,7 @@ export default function CategoryPage() {
       return rows.sort((a, b) => (conditionOrder[a.condition ?? ''] ?? 99) - (conditionOrder[b.condition ?? ''] ?? 99));
     }
     if (sortBy === "grade") return rows.sort((a, b) => (parseFloat(String(b.grade)) || 0) - (parseFloat(String(a.grade)) || 0));
-    // location: not yet implemented — falls through to best_match
+    if (sortBy === "location" && feedQuery.data?.locationSort?.applied) return rows;
     return rows.sort((a, b) => Number(b.featured) - Number(a.featured) || b.id - a.id);
   }, [feedQuery.data?.listings, sortBy]);
 
@@ -1081,6 +1124,27 @@ export default function CategoryPage() {
                 </Select>
               </div>
             )}
+            <div className="space-y-0.5">
+              <Label className="text-[0.65rem] font-semibold uppercase tracking-[0.16em]">Distance</Label>
+              <Select
+                value={distanceMiles ? String(distanceMiles) : "all"}
+                onValueChange={value => setDistanceMiles(value === "all" ? undefined : Number(value))}
+              >
+                <SelectTrigger className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black`}>
+                  <SelectValue placeholder="Any distance" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Any distance</SelectItem>
+                  <SelectItem value="10">Within 10 miles</SelectItem>
+                  <SelectItem value="25">Within 25 miles</SelectItem>
+                  <SelectItem value="50">Within 50 miles</SelectItem>
+                  <SelectItem value="100">Within 100 miles</SelectItem>
+                  <SelectItem value="250">Within 250 miles</SelectItem>
+                  <SelectItem value="500">Within 500 miles</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-[0.65rem] leading-4 opacity-70">Uses your saved town after Search or Enter.</p>
+            </div>
             {/* Clear and Search buttons */}
             <div className="flex gap-2 mt-2 pt-2 border-t border-gray-300">
               <Button 
@@ -1153,7 +1217,7 @@ export default function CategoryPage() {
                     </button>
                   </div>
                   {/* Sort dropdown */}
-                  <Select value={sortBy} onValueChange={value => { setSortBy(value); setCurrentPage(1); }}>
+                  <Select value={sortBy} onValueChange={value => { setSortBy(value); setLocationSortNotice(null); setCurrentPage(1); }}>
                     <SelectTrigger className="w-48 h-9 bg-white/80 text-sm">
                       <SelectValue placeholder="Sort by" />
                     </SelectTrigger>
@@ -1183,7 +1247,11 @@ export default function CategoryPage() {
                   </div>
                 </div>
               </div>
-                            {/* Clear filters button removed */}
+              {locationSortNotice && (
+                <p role="status" className="mt-3 text-xs font-medium opacity-75">
+                  {locationSortNotice}
+                </p>
+              )}
             </div>
 
 

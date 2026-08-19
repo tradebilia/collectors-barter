@@ -32,6 +32,7 @@ import { resolveDirectMessageDisplayName } from "./directMessageDisplayName";
 import { resolveMemberStanding } from "./memberDirectoryStanding";
 import { hasEbayPlatformVerification } from "../shared/ebayVerification";
 import { makeRequest, type GeocodingResult } from "./_core/map";
+import { filterListingsByOwnerDistance, orderListingsByOwnerDistance, type LocationDistanceStatus, type NearestLocationSortStatus } from "../shared/nearestLocationSort";
 import bcrypt from 'bcryptjs';
 import { encrypt } from "./_core/crypto";
 
@@ -465,6 +466,8 @@ export async function getMarketplaceFeed(
     franchise?: string;
     rarity?: string;
     verifiedMerchantsOnly?: boolean;
+    locationSort?: boolean;
+    distanceMiles?: number;
   },
   viewerId: number | null,
 ) {
@@ -620,7 +623,7 @@ export async function getMarketplaceFeed(
     whereClauses.push(sql`${listings.ownerId} IN (SELECT id FROM users WHERE merchantVerified = 1)`);
   }
 
-  const listingRows = await db
+  let listingRows = await db
     .select({
       id: listings.id,
       ownerId: listings.ownerId,
@@ -645,6 +648,94 @@ export async function getMarketplaceFeed(
     .orderBy(desc(listings.createdAt))
     .limit(100);
 
+  const locationSort: NearestLocationSortStatus = {
+    requested: filters.locationSort === true,
+    applied: false,
+    reason: null,
+  };
+  const distanceFilter: LocationDistanceStatus = {
+    requested: filters.distanceMiles !== undefined,
+    applied: false,
+    reason: null,
+  };
+
+  if (locationSort.requested || distanceFilter.requested) {
+    if (!viewerId) {
+      if (locationSort.requested) locationSort.reason = "sign_in_required";
+      if (distanceFilter.requested) distanceFilter.reason = "sign_in_required";
+    } else {
+      const viewerLocationRows = await db
+        .select({
+          contactTown: userProfiles.contactTown,
+          contactState: userProfiles.contactState,
+          contactCountry: userProfiles.contactCountry,
+        })
+        .from(userProfiles)
+        .where(eq(userProfiles.userId, viewerId))
+        .limit(1);
+      const viewerLocation = viewerLocationRows[0];
+
+      if (!viewerLocation?.contactTown?.trim()) {
+        if (locationSort.requested) locationSort.reason = "saved_town_required";
+        if (distanceFilter.requested) distanceFilter.reason = "saved_town_required";
+      } else {
+        const viewerCoordinates = await geocodePrivateLocation({
+          contactAddress: null,
+          contactTown: viewerLocation.contactTown,
+          contactState: viewerLocation.contactState,
+          contactZipCode: null,
+          contactCountry: viewerLocation.contactCountry,
+        });
+
+        if (!viewerCoordinates) {
+          if (locationSort.requested) locationSort.reason = "location_unavailable";
+          if (distanceFilter.requested) distanceFilter.reason = "location_unavailable";
+        } else if (listingRows.length > 0) {
+          const ownerIds = Array.from(new Set(listingRows.map(listing => listing.ownerId)));
+          const ownerLocations = await db
+            .select({
+              userId: userProfiles.userId,
+              contactTown: userProfiles.contactTown,
+              contactState: userProfiles.contactState,
+              contactCountry: userProfiles.contactCountry,
+            })
+            .from(userProfiles)
+            .where(inArray(userProfiles.userId, ownerIds));
+          const ownerDistances = await Promise.all(ownerLocations.map(async owner => {
+            const coordinates = owner.contactTown?.trim()
+              ? await geocodePrivateLocation({
+                  contactAddress: null,
+                  contactTown: owner.contactTown,
+                  contactState: owner.contactState,
+                  contactZipCode: null,
+                  contactCountry: owner.contactCountry,
+                })
+              : null;
+            return {
+              ownerId: owner.userId,
+              miles: coordinates ? Math.round(milesBetween(viewerCoordinates, coordinates) * 10) / 10 : null,
+            };
+          }));
+          const milesByOwnerId = new Map(ownerDistances.map(result => [result.ownerId, result.miles]));
+
+          if ([...milesByOwnerId.values()].some(miles => miles !== null)) {
+            if (distanceFilter.requested) {
+              listingRows = filterListingsByOwnerDistance(listingRows, milesByOwnerId, filters.distanceMiles!);
+              distanceFilter.applied = true;
+            }
+            if (locationSort.requested) {
+              listingRows = orderListingsByOwnerDistance(listingRows, milesByOwnerId);
+              locationSort.applied = true;
+            }
+          } else {
+            if (locationSort.requested) locationSort.reason = "location_unavailable";
+            if (distanceFilter.requested) distanceFilter.reason = "location_unavailable";
+          }
+        }
+      }
+    }
+  }
+
   if (!listingRows.length) {
     return {
       filters: {
@@ -656,6 +747,8 @@ export async function getMarketplaceFeed(
         activeCollectors: 0,
         completedTrades: 0,
       },
+      locationSort,
+      distanceFilter,
       listings: [],
     };
   }
@@ -694,6 +787,8 @@ export async function getMarketplaceFeed(
       activeCollectors: Number(statsRows[1][0]?.value ?? 0),
       completedTrades: Number(statsRows[2][0]?.value ?? 0),
     },
+    locationSort,
+    distanceFilter,
     listings: await formatListings(listingRows, viewerId),
   };
 }

@@ -43,6 +43,7 @@ const ALL_FILTER_KEYS = [
   "rookie", "autographed", "signed", "facsimile", "rarity", "title",
   "system", "region", "country", "format", "medium", "denomination",
   "mintMark", "issuer", "edition", "parkOrEvent", "franchise",
+  "distanceMiles",
 ];
 
 /** Default (untouched) filter state as the page initializes it. */
@@ -100,6 +101,14 @@ describe("CategoryPage feed query input", () => {
   it("keeps valueMin=0 (a falsy but meaningful number)", () => {
     const input = buildQueryInput("coins", { ...defaultFilters, valueMin: 0 })!;
     expect(input.valueMin).toBe(0);
+  });
+
+  it("keeps a submitted distance range while omitting it when the dropdown is untouched", () => {
+    const untouched = buildQueryInput("movies", defaultFilters)!;
+    const withinFiftyMiles = buildQueryInput("movies", { ...defaultFilters, distanceMiles: 50 })!;
+
+    expect("distanceMiles" in untouched).toBe(false);
+    expect(withinFiftyMiles.distanceMiles).toBe(50);
   });
 
   it("returns undefined when there is no slug so the query stays disabled", () => {

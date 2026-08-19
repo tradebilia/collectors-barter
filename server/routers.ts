@@ -157,6 +157,8 @@ const listingFiltersSchema = z.object({
   franchise: z.string().max(100).optional(),
   rarity: z.string().max(60).optional(),
   verifiedMerchantsOnly: z.boolean().optional(),
+  locationSort: z.boolean().optional(),
+  distanceMiles: z.number().positive().max(500).optional(),
 });
 
 const memberSearchSchema = z.object({
