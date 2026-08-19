@@ -2,9 +2,8 @@ import { normalizePhone } from "./twilio";
 
 export type FirstTimeSetupInput = {
   acceptedTerms?: boolean;
+  contactEmail?: string;
   contactPhone?: string;
-  securityQuestion?: string;
-  securityAnswer?: string;
   isMerchant?: boolean;
   storeName?: string;
   businessLicense?: string;
@@ -15,6 +14,9 @@ export type FirstTimeSetupInput = {
 };
 
 export type PersistedSetupVerification = {
+  accountEmail?: string | null;
+  contactEmail?: string | null;
+  emailVerified?: boolean | number | null;
   contactPhone?: string | null;
   phoneVerified?: boolean | number | null;
 };
@@ -38,6 +40,16 @@ export function validateFirstTimeSetupRequirements(
     throw new Error("You must accept the Terms & Conditions and Privacy Policy before completing setup.");
   }
 
+  required(input.contactEmail, "A verified email address is required before completing setup.");
+  const submittedEmail = input.contactEmail!.trim().toLowerCase();
+  const accountEmail = persisted?.accountEmail?.trim().toLowerCase();
+  const verifiedEmail = persisted?.contactEmail?.trim().toLowerCase();
+  const emailIsVerified = persisted?.emailVerified === true || persisted?.emailVerified === 1;
+
+  if (!accountEmail || !emailIsVerified || submittedEmail !== accountEmail || verifiedEmail !== accountEmail) {
+    throw new Error("Verify the email address used to create your account before completing setup.");
+  }
+
   required(input.contactPhone, "A verified phone number is required before completing setup.");
   const submittedPhone = normalizePhone(input.contactPhone!);
   const verifiedPhone = normalizePhone(persisted?.contactPhone ?? "");
@@ -46,9 +58,6 @@ export function validateFirstTimeSetupRequirements(
   if (!submittedPhone || !phoneIsVerified || submittedPhone !== verifiedPhone) {
     throw new Error("Verify this phone number before completing setup.");
   }
-
-  required(input.securityQuestion, "Choose a security question before completing setup.");
-  required(input.securityAnswer, "Provide an answer to your security question before completing setup.");
 
   if (input.isMerchant) {
     required(input.storeName, "Store name is required for a merchant verification request.");

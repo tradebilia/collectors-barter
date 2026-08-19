@@ -476,3 +476,8 @@
 - [x] Preserve mandatory phone verification and terms acceptance at final setup completion through client and server validation, while retaining optional account connections and current setup steps.
 - [x] Add regression coverage for single-account creation, authenticated setup completion, required setup safeguards, and error paths; validate without creating unintended production accounts.
 - [x] Document, publish, verify, and synchronize the approved account-flow repair.
+- [x] Audit existing password-reset tokens, verified-contact persistence, email/SMS delivery, and recovery UI contracts without migrations, seed data, or user-record changes.
+- [x] Remove security questions from Account Setup and require verified email and phone contact methods for account recovery while retaining the current four-step onboarding structure.
+- [x] Implement secure verified email and phone recovery paths with bounded, expiring, single-use proof; do not expose whether an account exists to unauthenticated callers.
+- [x] Add regression coverage for recovery request, verification, expiration, one-time use, rate limiting, and setup requirements; validate without sending live recovery messages or changing real accounts.
+- [ ] Document, publish, verify, and synchronize the approved recovery upgrade.

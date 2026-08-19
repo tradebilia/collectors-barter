@@ -75,6 +75,35 @@ function emailWrapper(content: string): string {
 </html>`;
 }
 
+export async function sendAccountEmailVerificationCode(params: {
+  recipientEmail: string;
+  code: string;
+}): Promise<boolean> {
+  const html = emailWrapper(`
+    <h2 style="margin:0 0 8px;font-size:22px;color:#0a0d22;">Verify your Tradebilia email</h2>
+    <p style="color:#666;font-size:14px;margin:0 0 24px;">Use this code to complete your Tradebilia account setup. It expires in 10 minutes.</p>
+    <div style="background:#f8f8f6;border-radius:12px;padding:20px;margin-bottom:24px;text-align:center;">
+      <p style="margin:0;font-size:28px;font-weight:700;letter-spacing:0.24em;color:#0a0d22;">${params.code}</p>
+    </div>
+    <p style="color:#666;font-size:13px;margin:0;">If you did not start account setup, you can ignore this email.</p>
+  `);
+  return sendEmail(params.recipientEmail, "Verify your Tradebilia email", html);
+}
+
+export async function sendPasswordRecoveryEmail(params: {
+  recipientEmail: string;
+  token: string;
+}): Promise<boolean> {
+  const resetUrl = `${SITE_URL}/reset-password?token=${encodeURIComponent(params.token)}`;
+  const html = emailWrapper(`
+    <h2 style="margin:0 0 8px;font-size:22px;color:#0a0d22;">Reset your Tradebilia password</h2>
+    <p style="color:#666;font-size:14px;margin:0 0 24px;">Use the secure link below to choose a new password. It expires in 30 minutes and can only be used once.</p>
+    <a href="${resetUrl}" style="display:inline-block;background:#7f31ff;color:#ffffff;text-decoration:none;padding:14px 28px;border-radius:10px;font-weight:600;font-size:14px;">Reset Password</a>
+    <p style="color:#666;font-size:13px;margin:24px 0 0;">If you did not request a password reset, you can ignore this email.</p>
+  `);
+  return sendEmail(params.recipientEmail, "Reset your Tradebilia password", html);
+}
+
 /**
  * Notify a user that they received a new direct message.
  */

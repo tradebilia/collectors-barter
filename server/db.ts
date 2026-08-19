@@ -2725,6 +2725,11 @@ export async function deletePasswordResetToken(token: string) {
   return db.delete(passwordResetTokens).where(eq(passwordResetTokens.token, token));
 }
 
+export async function deletePasswordResetTokensForUser(userId: number) {
+  const db = await requireDb();
+  return db.delete(passwordResetTokens).where(eq(passwordResetTokens.userId, userId));
+}
+
 export async function updateUserPassword(userId: number, passwordHash: string) {
   const db = await requireDb();
   return db.update(users).set({ passwordHash }).where(eq(users.id, userId));

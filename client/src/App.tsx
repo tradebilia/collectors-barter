@@ -26,6 +26,7 @@ import { MemberOnly } from "./pages/MemberOnly";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { VerifyAccount } from "./pages/VerifyAccount";
 import { ForgotPassword } from "./pages/ForgotPassword";
+import { ResetPassword } from "./pages/ResetPassword";
 import { ProfileCompletion } from "./pages/ProfileCompletion";
 import { SearchResults } from "./pages/SearchResults";
 import AdminDashboard from "./pages/AdminDashboard";
@@ -111,6 +112,7 @@ function Router() {
       <Route path="/signup" component={SignUp} />
       <Route path="/verify" component={VerifyAccount} />
       <Route path="/forgot-password" component={ForgotPassword} />
+      <Route path="/reset-password" component={ResetPassword} />
       <Route path="/profile-completion" component={ProfileCompletion} />
       <Route path="/search" component={SearchResults} />
       <Route path="/welcome" component={Welcome} />

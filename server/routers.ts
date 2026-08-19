@@ -92,11 +92,10 @@ import { ownsReportAttachment, serializeReportEvidence } from "./reportEvidence"
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { notifyOwner } from "./_core/notification";
-import { sendNewDirectMessageEmail, sendDirectMessageReplyEmail, sendReferralInviteEmail } from "./_core/email";
+import { sendAccountEmailVerificationCode, sendNewDirectMessageEmail, sendDirectMessageReplyEmail, sendPasswordRecoveryEmail, sendReferralInviteEmail } from "./_core/email";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { hashPassword, verifyPassword, isValidUsername, isValidPassword, isValidEmail } from "./_core/auth";
-import bcrypt from 'bcryptjs';
-import { getUserByUsername, createUser, requireDb } from "./db";
+import { createEmailOtp, createPasswordResetToken, createUser, deleteEmailOtp, deletePasswordResetTokensForUser, getEmailOtp, getPasswordResetToken, getUserByUsername, incrementEmailOtpAttempts, requireDb, updateUserPassword } from "./db";
 import { getEbayAuthUrl, exchangeCodeForToken, getUserInfo, getUserFeedback, refreshAccessToken } from "./_core/ebay";
 import { sdk } from "./_core/sdk";
 import { tradeFlowRouter } from "./tradeFlowRouter";
@@ -111,6 +110,7 @@ import { ONE_YEAR_MS } from "@shared/const";
 import { subscribeToLaunchUpdates } from "./launchUpdates";
 import { getPreLaunchRecipients, sendPreLaunchUpdate } from "./preLaunchEmail";
 import { validateFirstTimeSetupRequirements } from "./accountSetupRequirements";
+import { PASSWORD_RECOVERY_TOKEN_TTL_MS, createOpaqueRecoveryToken, createSixDigitCode, hashRecoveryToken, isRecoveryRequestAllowed, isRecoveryTokenExpired, normalizeRecoveryEmail, timingSafeTextEquals } from "./accountRecovery";
 
 // The R2 adapter enforces decoded per-kind limits (10MB listing, 5MB avatar).
 // This ceiling stops an oversized base64 request before its payload is decoded.
@@ -244,7 +244,7 @@ export const appRouter = router({
           username: z.string().min(3).max(32),
           password: z.string().min(8),
           displayName: z.string().min(1).max(255),
-          email: z.string().email().optional(),
+          email: z.string().email(),
         }),
       )
       .mutation(async ({ input, ctx }) => {
@@ -299,6 +299,65 @@ export const appRouter = router({
         }
         return { success: true, sentTo: maskPhone(e164) };
       }),
+    sendEmailCode: protectedProcedure
+      .input(z.object({}))
+      .mutation(async ({ ctx }) => {
+        const db = await requireDb();
+        const [account] = await db
+          .select({ email: users.email })
+          .from(users)
+          .where(eq(users.id, ctx.user.id))
+          .limit(1);
+        const email = account?.email ? normalizeRecoveryEmail(account.email) : "";
+        if (!email) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Your account does not have a recovery email address." });
+        }
+        if (!isRecoveryRequestAllowed(`setup-email:${ctx.user.id}`)) {
+          throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: "Please wait before requesting another email code." });
+        }
+        const code = createSixDigitCode();
+        await createEmailOtp(email, code, new Date(Date.now() + 10 * 60 * 1000));
+        const sent = await sendAccountEmailVerificationCode({ recipientEmail: email, code });
+        if (!sent) {
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "We could not send a verification email. Please try again later." });
+        }
+        return { success: true };
+      }),
+    verifyEmailCode: protectedProcedure
+      .input(z.object({ code: z.string().min(4).max(10) }))
+      .mutation(async ({ ctx, input }) => {
+        const db = await requireDb();
+        const [account] = await db
+          .select({ email: users.email })
+          .from(users)
+          .where(eq(users.id, ctx.user.id))
+          .limit(1);
+        const email = account?.email ? normalizeRecoveryEmail(account.email) : "";
+        if (!email) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Your account does not have a recovery email address." });
+        }
+        const otp = await getEmailOtp(email);
+        const now = Date.now();
+        if (!otp || new Date(otp.expiresAt).getTime() <= now || otp.attempts >= 5) {
+          await deleteEmailOtp(email);
+          throw new TRPCError({ code: "BAD_REQUEST", message: "This email code is no longer valid. Request a new code." });
+        }
+        const enteredCode = input.code.replace(/\D/g, "");
+        if (!enteredCode || !timingSafeTextEquals(enteredCode, otp.otp)) {
+          await incrementEmailOtpAttempts(email);
+          throw new TRPCError({ code: "BAD_REQUEST", message: "That email code is incorrect. Please check and try again." });
+        }
+        await updateProfile(
+          { id: ctx.user.id, name: ctx.user.name },
+          {
+            displayName: (ctx.user as any).displayName || (ctx.user as any).username || ctx.user.name || `Collector ${ctx.user.id}`,
+            contactEmail: email,
+            emailVerified: true,
+          },
+        );
+        await deleteEmailOtp(email);
+        return { verified: true, email };
+      }),
     /**
      * Check the code the user typed against Twilio Verify.
      * Returns { verified: true } only when Twilio reports the code approved.
@@ -332,12 +391,6 @@ export const appRouter = router({
           .from(userProfiles)
           .where(eq(userProfiles.userId, ctx.user.id))
           .limit(1);
-        if (existingProfile[0]?.acceptedTerms) {
-          throw new TRPCError({
-            code: "FORBIDDEN",
-            message: "Phone verification is available during first-time account setup only.",
-          });
-        }
         await updateProfile(
           { id: ctx.user.id, name: ctx.user.name },
           {
@@ -388,6 +441,86 @@ export const appRouter = router({
         ctx.res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
 
         return { success: true, userId: user.id };
+      }),
+    requestPasswordRecovery: publicProcedure
+      .input(z.object({ email: z.string().email().max(320) }))
+      .mutation(async ({ input }) => {
+        const email = normalizeRecoveryEmail(input.email);
+        const genericResult = { success: true };
+        if (!isRecoveryRequestAllowed(`password-email:${email}`)) return genericResult;
+
+        const db = await requireDb();
+        const [account] = await db
+          .select({ id: users.id, email: users.email })
+          .from(users)
+          .where(eq(users.email, email))
+          .limit(1);
+        if (!account?.email) return genericResult;
+        const [profile] = await db
+          .select({ contactEmail: userProfiles.contactEmail, emailVerified: userProfiles.emailVerified })
+          .from(userProfiles)
+          .where(eq(userProfiles.userId, account.id))
+          .limit(1);
+        if (profile?.emailVerified !== 1 || normalizeRecoveryEmail(profile.contactEmail || "") !== email) return genericResult;
+
+        const token = createOpaqueRecoveryToken();
+        await deletePasswordResetTokensForUser(account.id);
+        await createPasswordResetToken(account.id, hashRecoveryToken(token), new Date(Date.now() + PASSWORD_RECOVERY_TOKEN_TTL_MS));
+        await sendPasswordRecoveryEmail({ recipientEmail: email, token });
+        return genericResult;
+      }),
+    requestPhonePasswordRecovery: publicProcedure
+      .input(z.object({ phone: z.string().min(7).max(25) }))
+      .mutation(async ({ input }) => {
+        const phone = normalizePhone(input.phone);
+        const genericResult = { success: true };
+        if (!phone || !isRecoveryRequestAllowed(`password-phone:${phone}`)) return genericResult;
+        const db = await requireDb();
+        const [profile] = await db
+          .select({ phoneVerified: userProfiles.phoneVerified })
+          .from(userProfiles)
+          .where(and(eq(userProfiles.contactPhone, phone), eq(userProfiles.phoneVerified, 1)))
+          .limit(1);
+        if (profile?.phoneVerified === 1) {
+          await sendVerificationCode(phone);
+        }
+        return genericResult;
+      }),
+    completePhonePasswordRecovery: publicProcedure
+      .input(z.object({ phone: z.string().min(7).max(25), code: z.string().min(4).max(10), newPassword: z.string().min(8).max(255) }))
+      .mutation(async ({ input }) => {
+        const phone = normalizePhone(input.phone);
+        if (!phone || !isValidPassword(input.newPassword) || !isRecoveryRequestAllowed(`password-phone-verify:${phone}`)) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "We could not complete password recovery. Request a new verification code and try again." });
+        }
+        const db = await requireDb();
+        const [profile] = await db
+          .select({ userId: userProfiles.userId })
+          .from(userProfiles)
+          .where(and(eq(userProfiles.contactPhone, phone), eq(userProfiles.phoneVerified, 1)))
+          .limit(1);
+        const result = await checkVerificationCode(phone, input.code.replace(/\D/g, ""));
+        if (!profile || !result.ok || !result.approved) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "We could not complete password recovery. Request a new verification code and try again." });
+        }
+        await updateUserPassword(profile.userId, await hashPassword(input.newPassword));
+        await deletePasswordResetTokensForUser(profile.userId);
+        return { success: true };
+      }),
+    completePasswordRecovery: publicProcedure
+      .input(z.object({ token: z.string().min(20).max(255), newPassword: z.string().min(8).max(255) }))
+      .mutation(async ({ input }) => {
+        const tokenHash = hashRecoveryToken(input.token);
+        if (!isValidPassword(input.newPassword) || !isRecoveryRequestAllowed(`password-token:${tokenHash}`)) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "This password recovery link is no longer valid." });
+        }
+        const resetToken = await getPasswordResetToken(tokenHash);
+        if (!resetToken || isRecoveryTokenExpired(resetToken.expiresAt)) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "This password recovery link is no longer valid." });
+        }
+        await updateUserPassword(resetToken.userId, await hashPassword(input.newPassword));
+        await deletePasswordResetTokensForUser(resetToken.userId);
+        return { success: true };
       }),
     logout: protectedProcedure.mutation(async ({ ctx }) => {
       const db = await requireDb();
@@ -657,8 +790,6 @@ export const appRouter = router({
           businessPhone: z.string().max(40).optional(),
           businessEmail: z.string().email().max(320).optional().or(z.literal("")),
           businessWebsite: z.string().max(512).optional(),
-          securityQuestion: z.string().max(255).optional(),
-          securityAnswer: z.string().max(255).optional(),
           preferredCategories: z.array(z.enum(collectibleCategories)).optional(),
           notificationPreferences: z.object({
             tradeInitiated: z.object({ email: z.boolean(), text: z.boolean() }).optional(),
@@ -672,8 +803,6 @@ export const appRouter = router({
             marketingEmails: z.object({ email: z.boolean(), text: z.boolean() }).optional(),
             messages: z.object({ email: z.boolean(), text: z.boolean() }).optional(),
           }).optional(),
-          emailVerified: z.boolean().optional(),
-          phoneVerified: z.boolean().optional(),
         }),
       )
       .mutation(async ({ ctx, input }) => {
@@ -690,6 +819,8 @@ export const appRouter = router({
         const existingProfile = await db0
           .select({
             acceptedTerms: userProfiles.acceptedTerms,
+            contactEmail: userProfiles.contactEmail,
+            emailVerified: userProfiles.emailVerified,
             contactPhone: userProfiles.contactPhone,
             phoneVerified: userProfiles.phoneVerified,
           })
@@ -700,7 +831,15 @@ export const appRouter = router({
 
         if (isFirstTimeSetup) {
           try {
-            validateFirstTimeSetupRequirements(input, existingProfile[0]);
+            const [account] = await db0
+              .select({ email: users.email })
+              .from(users)
+              .where(eq(users.id, userId))
+              .limit(1);
+            validateFirstTimeSetupRequirements(input, {
+              ...existingProfile[0],
+              accountEmail: account?.email,
+            });
           } catch (error) {
             throw new TRPCError({
               code: "BAD_REQUEST",
@@ -769,7 +908,7 @@ export const appRouter = router({
             displayName: input.displayName,
             bio: input.bio,
             contactFullName: canWriteLockedFields ? input.contactFullName : undefined,
-            contactEmail: canWriteLockedFields ? input.contactEmail : undefined,
+            contactEmail: canWriteLockedFields ? (existingProfile[0]?.contactEmail ?? undefined) : undefined,
             contactPhone: canWriteLockedFields ? input.contactPhone : undefined,
             contactAddress: canWriteLockedFields ? input.contactAddress : undefined,
             contactTown: canWriteLockedFields ? input.contactTown : undefined,
@@ -791,32 +930,14 @@ export const appRouter = router({
             businessPhone: canWriteLockedFields ? input.businessPhone : undefined,
             businessEmail: canWriteLockedFields ? input.businessEmail : undefined,
             businessWebsite: canWriteLockedFields ? input.businessWebsite : undefined,
-            securityQuestion: input.securityQuestion,
-            securityAnswer: input.securityAnswer,
             preferredCategories: input.preferredCategories,
             notificationPreferences: input.notificationPreferences ? JSON.stringify(input.notificationPreferences) : (undefined as any),
             // Do not trust browser-supplied verification flags. A first-time setup can
-            // only finish after verifyPhoneCode persisted a matching approved phone.
+            // only finish after trusted verification procedures persisted matching contacts.
+            emailVerified: isFirstTimeSetup ? true : undefined,
             phoneVerified: isFirstTimeSetup ? true : undefined,
           },
         );
-      }),
-    saveSecurityQuestion: protectedProcedure
-      .input(
-        z.object({
-          securityQuestion: z.string().max(255),
-          securityAnswer: z.string().max(255),
-        }),
-      )
-      .mutation(async ({ ctx, input }) => {
-        const db = await requireDb();
-        // Hash the answer before storing — never save security answers as plain text
-        const hashedAnswer = await bcrypt.hash(input.securityAnswer.trim().toLowerCase(), 10);
-        await db.update(userProfiles).set({
-          securityQuestion: input.securityQuestion,
-          securityAnswer: hashedAnswer,
-        }).where(eq(userProfiles.userId, ctx.user.id));
-        return { success: true };
       }),
     changePassword: protectedProcedure
       .input(

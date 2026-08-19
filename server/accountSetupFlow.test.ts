@@ -19,10 +19,13 @@ describe("single-account setup handoff", () => {
     expect(signUp).toContain('queryClient.refetchQueries({ queryKey: ["auth.me"] })');
   });
 
-  it("requires persisted phone verification and ignores browser verification flags at the router boundary", () => {
+  it("requires persisted verified contacts and ignores browser verification flags at the router boundary", () => {
     const routerSource = read("server/routers.ts");
     expect(routerSource).toContain("verifyPhoneCode: protectedProcedure");
-    expect(routerSource).toContain("validateFirstTimeSetupRequirements(input, existingProfile[0])");
+    expect(routerSource).toContain("verifyEmailCode: protectedProcedure");
+    expect(routerSource).toContain("accountEmail: account?.email");
+    expect(routerSource).toContain("validateFirstTimeSetupRequirements(input, {");
+    expect(routerSource).toContain("emailVerified: isFirstTimeSetup ? true : undefined");
     expect(routerSource).toContain("phoneVerified: isFirstTimeSetup ? true : undefined");
   });
 });
