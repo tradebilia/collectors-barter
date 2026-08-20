@@ -29,6 +29,6 @@ describe("Animated Tradebilia wordmark", () => {
 
   it("keeps the larger 125-unit mark scoped to the Coming Soon hero", () => {
     const comingSoonSource = fs.readFileSync(path.join(projectRoot, "client/src/pages/ComingSoon.tsx"), "utf8");
-    expect(comingSoonSource).toContain('<AnimatedLogoSmall70 fontSize={125} wordmarkColor="#2b2119" neutralCategoryColor="#2b2119" wheelScale={1.18} />');
+    expect(comingSoonSource).toContain('/manus-storage/tradebilia-final-transparent_b18f659a.svg');
   });
 });
