@@ -34,8 +34,9 @@ describe("approved Category Page field expansion", () => {
     }
   });
 
-  it("keeps the mobile layout unchanged while making grades suitable for collectible formats", () => {
+  it("keeps the desktop grid while making grades suitable for collectible formats", () => {
     expect(categoryPageSource).toContain('type="text"');
-    expect(categoryPageSource).toContain('grid gap-3 grid-cols-6');
+    expect(categoryPageSource).toContain('grid-cols-1');
+    expect(categoryPageSource).toContain('md:grid-cols-6');
   });
 });

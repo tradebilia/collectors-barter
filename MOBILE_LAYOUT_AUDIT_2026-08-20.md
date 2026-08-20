@@ -35,3 +35,15 @@ A direct 375-pixel capture of the active `/conventions` route reproduces the pag
 The mobile Conventions hero now uses a text fallback while the existing title artwork remains available from the `sm` breakpoint upward. A repeat 375-pixel capture confirms the route now shows a readable hero, scrollable category bar, stacked filter card, and single-column convention cards without changing desktop artwork or desktop card grids.
 
 The homepage ranking area now uses two columns at phone width and retains the existing four-column layout at the `xl` desktop breakpoint. Phone review confirms the hero, statistic strip, and subscriber tools remain readable; desktop grid definitions are unchanged.
+
+The Member Directory now exposes its extensive filter set through a mobile-only drawer trigger after the username search. The existing filter sidebar remains visible at the `xl` desktop breakpoint. Phone review confirms the long filter panel no longer appears before results, and desktop review confirms the original sidebar and multi-column structure are preserved.
+
+Global Search Results already used a responsive stacked filter panel rather than a fixed desktop sidebar, so it remains unchanged. The mobile repair therefore concentrates on the two verified fixed-sidebar failures: Category Pages and Member Directory.
+
+## Final Validation
+
+The mobile-only responsive contract suite passed **5 tests**. The full application regression suite passed **99 test files / 318 tests** with **4 expected skips**, and the production build passed. Desktop and phone captures verified Category Pages, Member Directory, homepage, Conventions, and shared category navigation at their respective responsive boundaries. No desktop layout, desktop title artwork, hero height, or desktop grid contract was intentionally changed.
+
+The final consolidated phone review confirms: a readable home header and compact ranking start; the Category Page Filter trigger beside single-column cards; the Member Directory search-first entry with drawer access below; a readable Conventions hero and stacked control card; and the already-responsive stacked global Search Results filters. The remaining desktop comparison and public-release verification are pending.
+
+The final desktop review confirms the existing desktop home sidebar and four-column ranking system, Category Page fixed filter sidebar and six-column grid, Member Directory desktop sidebar, Conventions title artwork and multi-card grid, and global Search Results desktop filter panel remain intact. Public-release verification remains pending.
