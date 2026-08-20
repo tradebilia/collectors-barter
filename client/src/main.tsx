@@ -45,8 +45,17 @@ const trpcClient = trpc.createClient({
       transformer: superjson,
       maxURLLength: 2000, // Prevent 414 errors by using POST for large batches
       async fetch(input, init) {
+        const headers = new Headers(init?.headers);
+        try {
+          const mobileSessionToken = sessionStorage.getItem("manus-cookie");
+          if (mobileSessionToken) {
+            headers.set("authorization", `Bearer ${mobileSessionToken}`);
+          }
+        } catch {}
+
         const response = await globalThis.fetch(input, {
           ...(init ?? {}),
+          headers,
           credentials: "include",
         });
 

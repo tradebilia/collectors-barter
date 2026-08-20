@@ -36,13 +36,23 @@ export function SignInModal({ isOpen, onClose }: SignInModalProps) {
     setIsLoading(true);
 
     try {
-      await signinMutation.mutateAsync({
+      const result = await signinMutation.mutateAsync({
         username,
         password,
       });
 
-      // Refresh auth state immediately using tRPC utils
-      await utils.auth.me.refetch();
+      // The cookie is preferred. If a mobile browser does not retain it, store
+      // the signed session token only for the current browser session and retry
+      // through the Authorization-header fallback.
+      let authenticatedUser = await utils.auth.me.fetch();
+      if (!authenticatedUser && result.sessionToken) {
+        sessionStorage.setItem("manus-cookie", result.sessionToken);
+        authenticatedUser = await utils.auth.me.fetch();
+      }
+
+      if (!authenticatedUser) {
+        throw new Error("Sign-in was accepted, but this browser did not establish a session. Please close and reopen the site, then try again.");
+      }
       
       setUsername("");
       setPassword("");
