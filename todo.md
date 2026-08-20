@@ -527,4 +527,4 @@
 - [x] Audit high-impact mobile member journeys for verified layout and interaction defects, then document a prioritized repair plan before changing responsive interfaces.
 - [x] Replace fixed mobile discovery sidebars with a shared mobile-only filter drawer for Category Pages and Member Directory while retaining existing desktop sidebars and explicit Search/Enter behavior; Global Search retained its already-responsive stacked filters.
 - [x] Repair mobile Conventions rendering, compact mobile homepage utility/ranking presentation, and add mobile category-bar scroll affordance without changing desktop layouts, hero dimensions, or statistics bubbles.
-- [ ] Add desktop-regression and mobile-layout coverage, verify each affected public journey at both widths, publish, verify the standard domain, and synchronize GitHub.
+- [x] Add desktop-regression and mobile-layout coverage, verify each affected public journey at both widths, publish, verify the standard domain, and synchronize GitHub.
