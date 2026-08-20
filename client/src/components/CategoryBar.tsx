@@ -10,7 +10,7 @@ export function CategoryBar() {
 
   return (
     <nav className="relative z-0 border-b border-white/10 bg-black">
-      <div className="flex w-full overflow-x-auto">
+      <div className="flex w-full snap-x snap-mandatory overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         <Link
           href="/"
           className={`flex-1 border-r border-white/10 px-4 py-4 text-center text-sm font-semibold uppercase tracking-[0.16em] transition hover:bg-white/10 lg:text-[1.1rem] whitespace-nowrap ${
