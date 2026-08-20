@@ -116,7 +116,31 @@ export function TopBar({
 
   return (
     <div className="border-b border-white/10 bg-black relative z-0">
-      <div className="flex min-h-14 items-center justify-center gap-4 px-2 py-2 sm:pl-2 sm:pr-4 relative">
+      <div className="flex min-h-14 items-center gap-2 px-2 py-2 sm:hidden">
+        <div className="flex w-[40vw] max-w-[170px] flex-none items-center gap-0 rounded-lg bg-white px-3 py-2">
+          <Search className="h-4 w-4 flex-shrink-0 text-gray-400" />
+          <input
+            type="text"
+            placeholder={searchPlaceholder}
+            value={searchQuery}
+            onChange={(e) => handleInputChange(e.target.value)}
+            onKeyDown={handleSearch}
+            className="ml-2 min-w-0 flex-1 bg-transparent text-sm text-black placeholder-gray-700 outline-none"
+          />
+        </div>
+        {isAuthenticated ? (
+          <div className="flex flex-shrink-0 items-center gap-1">
+            <TopRightIcons className="flex items-center gap-1" iconColor="text-white/70" />
+            <Button onClick={async () => { await logout(); window.location.href = "/"; }} variant="ghost" size="icon" className="h-8 w-8 text-white/70 hover:bg-white/10 hover:text-white" aria-label="Sign Out">
+              <LogOut className="h-4 w-4" />
+            </Button>
+          </div>
+        ) : (
+          <Button onClick={() => setShowSignInModal(true)} size="sm" className="flex-shrink-0 bg-white/20 text-white hover:bg-white/30">Sign In</Button>
+        )}
+      </div>
+
+      <div className="hidden min-h-14 items-center justify-center gap-4 px-2 py-2 sm:flex sm:pl-2 sm:pr-4 relative">
         {/* Animated Logo on left */}
         <div className="absolute left-2 h-16 hidden items-center sm:flex" style={{ width: '650px', top: '-10px' }}>
           <a href="/" className="flex items-center hover:opacity-80 transition h-full w-full">
@@ -177,6 +201,7 @@ export function TopBar({
         )}
         </div>
       </div>
+      {!isAuthenticated && <SignInModal isOpen={showSignInModal} onClose={() => setShowSignInModal(false)} />}
     </div>
   );
 }

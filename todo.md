@@ -548,3 +548,6 @@
 - [x] Implement IPQS email-history screening at registration: accounts estimated under one year remain pending administrator approval after normal Account Setup and verified email/phone completion.
 - [x] Add server-side marketplace-action restrictions, an administrator approval queue, member status messaging, regression coverage, security validation, publishing, live verification, and GitHub synchronization for the IPQS approval workflow.
 - [x] Add an administrator-only API Health tab that records external API failures without secrets, classifies quota/rate-limit/auth/configuration/timeout/upstream causes, and surfaces actionable provider status.
+- [x] Restore the missing right-side authenticated action icons in the mobile top bar while preserving desktop header layout and behavior.
+- [x] Shorten the mobile-only top-bar search field to reserve clear right-side space for authenticated actions without changing desktop search dimensions.
+- [x] Add regression coverage, validate authenticated top-bar behavior at mobile and desktop widths, publish, verify the standard domain, and synchronize GitHub.
