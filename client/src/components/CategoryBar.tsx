@@ -7,6 +7,7 @@ export function CategoryBar() {
   
   // Determine if we're on the home page
   const isHomePage = useRoute("/")[0];
+  const isGlobalSearchPage = useRoute("/search")[0];
 
   return (
     <nav className="relative z-0 border-b border-white/10 bg-black">
@@ -18,6 +19,15 @@ export function CategoryBar() {
           }`}
         >
           Home
+        </Link>
+        <Link
+          href="/search"
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          className={`flex-1 border-r border-white/10 px-4 py-4 text-center text-sm font-semibold uppercase tracking-[0.16em] transition hover:bg-white/10 lg:text-[1.1rem] whitespace-nowrap ${
+            isGlobalSearchPage === true ? "bg-white text-slate-950" : "text-white"
+          }`}
+        >
+          Explore All
         </Link>
         {tradebiliaCategories.map(category => (
           <Link

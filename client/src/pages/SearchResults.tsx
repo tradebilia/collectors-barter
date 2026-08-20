@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { Link, useLocation, useSearch } from "wouter";
-import { Filter, Loader2, Search, Sparkles, Star, X } from "lucide-react";
+import { Filter, Loader2, MapPin, Search, Sparkles, Star, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -120,8 +120,8 @@ export function SearchResults() {
         <div className="container relative flex min-h-[400px] flex-col items-center justify-center py-8 text-center sm:py-10">
           <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#fff4e0]/80">All categories · one exchange</p>
           <h1 className="sr-only">Search the Exchange</h1>
-          <div className="mt-5 flex h-28 w-full max-w-[30rem] items-center justify-center sm:h-36 sm:max-w-[38rem] lg:h-44">
-            <img src="/manus-storage/tradebilia-final-transparent_b18f659a.svg" alt="Tradebilia" className="h-full w-full object-contain" />
+          <div className="mt-5 flex h-32 w-full max-w-5xl items-center justify-center sm:h-40 lg:h-48">
+            <img src="https://assets.tradebilia.com/tradebilia_final_transparent_8a1981e6.svg" alt="Tradebilia" className="h-full w-full object-contain" />
           </div>
           <p className="mt-4 max-w-2xl text-sm leading-6 text-[#fff4e0]/90 sm:text-base">Search the Exchange to find active collectible listings across every Tradebilia category, then narrow the marketplace with broad, truthful filters.</p>
           <Badge className={`${searchTheme.chipClassName} mt-5 rounded-full px-3 py-1 text-xs`}>{submittedQuery ? "Searching all categories" : "Browsing all active listings"}</Badge>
@@ -222,8 +222,8 @@ export function SearchResults() {
                     <Link href={`/listings/${listing.id}`} className="block aspect-[7/9] border-b border-current/10 bg-white p-0"><img src={resolveTradebiliaListingImage({ title: listing.title, category: listing.category, primaryPhotoUrl: listing.primaryPhotoUrl })} alt={listing.title} className="h-full w-full object-contain" /></Link>
                     <CardContent className="space-y-1 p-1.5">
                       <div className="flex items-start justify-between gap-2"><div className="min-w-0"><p className="truncate text-[0.5rem] font-semibold uppercase tracking-[0.12em] opacity-60">{listing.categoryLabel}</p><Link href={`/listings/${listing.id}`} className="mt-1 block line-clamp-2 text-xs font-semibold leading-tight hover:opacity-75">{listing.title}</Link></div>{listing.featured ? <Badge className="rounded-full bg-[#0f5563] px-1 py-0 text-[0.5rem] text-[#fff1d2]">Featured</Badge> : null}</div>
-                      <p className="line-clamp-1 text-[0.65rem] leading-relaxed opacity-75">{listing.description}</p>
-                      <div className="grid grid-cols-2 gap-1 rounded-md border border-current/10 bg-black/5 p-1 text-[0.5rem]"><div><p className="uppercase tracking-[0.1em] opacity-60">{listing.grade && Number(listing.grade) > 0 ? "Grade" : "Condition"}</p><p className="mt-0 font-semibold truncate text-[0.55rem]">{listing.grade && Number(listing.grade) > 0 ? `${listing.certificationCompany ? `${listing.certificationCompany} ` : ""}${formatGrade(listing.grade)}` : listing.conditionLabel}</p></div><div><p className="uppercase tracking-[0.1em] opacity-60">Value</p><p className="mt-0 font-semibold truncate text-[0.55rem]">{listing.estimatedValue === null ? "—" : `$${listing.estimatedValue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</p></div><div><p className="uppercase tracking-[0.1em] opacity-60">Collector</p><p className="mt-0 font-semibold truncate text-[0.55rem]">{listing.owner.displayName}</p></div><div><p className="uppercase tracking-[0.1em] opacity-60">Trust</p><p className="mt-0 flex items-center gap-0.5 font-semibold text-[0.55rem]"><Star className="h-2 w-2 fill-current" />{listing.ownerRating.averageRating.toFixed(1)}</p></div></div>
+                       <div className="grid grid-cols-2 gap-1 rounded-md border border-current/10 bg-black/5 p-1 text-[0.5rem]"><div><p className="uppercase tracking-[0.1em] opacity-60">{listing.grade && Number(listing.grade) > 0 ? "Grade" : "Condition"}</p><p className="mt-0 font-semibold truncate text-[0.55rem]">{listing.grade && Number(listing.grade) > 0 ? `${listing.certificationCompany ? `${listing.certificationCompany} ` : ""}${formatGrade(listing.grade)}` : listing.conditionLabel}</p></div><div><p className="uppercase tracking-[0.1em] opacity-60">Value</p><p className="mt-0 font-semibold truncate text-[0.55rem]">{listing.estimatedValue === null ? "—" : `$${listing.estimatedValue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</p></div><div><p className="uppercase tracking-[0.1em] opacity-60">Collector</p><p className="mt-0 font-semibold truncate text-[0.55rem]">{listing.owner.displayName}</p></div><div><p className="uppercase tracking-[0.1em] opacity-60">Trust</p><p className="mt-0 flex items-center gap-0.5 font-semibold text-[0.55rem]"><Star className="h-2 w-2 fill-current" />{listing.ownerRating.averageRating.toFixed(1)}</p></div></div>
+                       {listing.distanceBand && <p className="flex items-center gap-1 text-[0.55rem] font-semibold text-teal-700"><MapPin className="h-2.5 w-2.5" /><span>{listing.distanceBand}</span></p>}
                     </CardContent>
                   </Card>
                 ))}

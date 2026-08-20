@@ -1494,7 +1494,6 @@ export default function CategoryPage() {
                                 </div>
                               )}
                             </div>
-                            <p className="text-xs leading-relaxed opacity-80 mt-1 line-clamp-1">{listing.description}</p>
                           </div>
 
                         </>
@@ -1509,7 +1508,6 @@ export default function CategoryPage() {
                             </div>
                             {listing.featured ? <Badge className={`rounded-full text-[0.5rem] px-1 py-0 ${theme.chipClassName}`}>Featured</Badge> : null}
                           </div>
-                          <p className="line-clamp-1 text-[0.65rem] leading-relaxed opacity-80">{listing.description}</p>
                           <div className="rounded-md border border-current/10 bg-black/5 p-3 grid grid-cols-2 gap-1 p-1 text-[0.5rem]">
                             <div>
                               <p className="uppercase tracking-[0.1em] opacity-60 text-[0.45rem]">{listing.grade && parseFloat(String(listing.grade)) > 0 ? "Grade" : "Condition"}</p>

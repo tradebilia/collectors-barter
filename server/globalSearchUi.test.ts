@@ -27,7 +27,7 @@ describe("unified global search contracts", () => {
     expect(searchPage).toContain("All active listings across the exchange");
     expect(searchPage).toContain("<TopBar searchPlaceholder=");
     expect(searchPage).toContain("<CategoryBar />");
-    expect(searchPage).toContain('/manus-storage/tradebilia-final-transparent_b18f659a.svg');
+    expect(searchPage).toContain('https://assets.tradebilia.com/tradebilia_final_transparent_8a1981e6.svg');
     expect(searchPage).toContain('alt="Tradebilia"');
     expect(searchPage).toContain("globalSearchHeroCollageUrl");
     expect(searchPage).toContain("tradebilia-warm-archival-hero-04_cdf269c5.png");
