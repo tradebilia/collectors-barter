@@ -42,3 +42,21 @@ export function filterListingsByOwnerDistance<T extends DistanceSortableListing>
     return miles !== null && miles !== undefined && miles <= maximumMiles;
   });
 }
+
+/**
+ * Returns a deliberately broad viewer-facing distance description. Exact miles,
+ * towns, addresses, and coordinates remain server-only.
+ */
+export function getApproximateDistanceBand(
+  miles: number | null | undefined,
+  isViewerOwnedListing = false,
+): string | null {
+  if (isViewerOwnedListing) return "Your listing";
+  if (miles === null || miles === undefined || !Number.isFinite(miles)) return null;
+  if (miles <= 10) return "Within 10 miles";
+  if (miles <= 25) return "10–25 miles away";
+  if (miles <= 50) return "25–50 miles away";
+  if (miles <= 100) return "50–100 miles away";
+  if (miles <= 250) return "100–250 miles away";
+  return "250+ miles away";
+}

@@ -22,7 +22,7 @@ import {
   tradebiliaConditionOptions,
   type TradebiliaCategorySlug,
 } from "@/lib/tradebilia";
-import { ArrowRight, Heart, Loader2, MessageSquareText, Search, ShieldCheck, Sparkles, Star, Trophy } from "lucide-react";
+import { ArrowRight, Heart, Loader2, MapPin, MessageSquareText, Search, ShieldCheck, Sparkles, Star, Trophy } from "lucide-react";
 import { TopRightIcons } from "@/components/TopRightIcons";
 import { TopBar } from "@/components/TopBar";
 import { CategoryBar } from "@/components/CategoryBar";
@@ -1436,6 +1436,13 @@ export default function CategoryPage() {
                                 <Star className="fill-current h-3 w-3" />
                                 <span>{listing.ownerRating.averageRating.toFixed(1)}</span>
                               </div>
+                              {listing.distanceBand && (
+                                <div className="flex items-center gap-1 text-teal-700">
+                                  <MapPin className="h-3 w-3" />
+                                  <span className="font-semibold">Nearby:</span>
+                                  <span>{listing.distanceBand}</span>
+                                </div>
+                              )}
                             </div>
                             <p className="text-xs leading-relaxed opacity-80 mt-1 line-clamp-1">{listing.description}</p>
                           </div>
@@ -1478,6 +1485,12 @@ export default function CategoryPage() {
                               </div>
                             </div>
                           </div>
+                          {listing.distanceBand && (
+                            <p className="flex items-center gap-1 text-[0.55rem] font-semibold text-teal-700">
+                              <MapPin className="h-2.5 w-2.5" />
+                              <span>{listing.distanceBand}</span>
+                            </p>
+                          )}
                         </>
                       )}
                       <div className="flex flex-wrap gap-0.5">
