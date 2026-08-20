@@ -9,7 +9,6 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CategoryBar } from "@/components/CategoryBar";
 import { TopBar } from "@/components/TopBar";
-import AnimatedLogoSmall70 from "@/components/AnimatedLogoSmall70";
 import { resolveTradebiliaListingImage } from "@/lib/listingImages";
 import { trpc } from "@/lib/trpc";
 import {
@@ -121,8 +120,8 @@ export function SearchResults() {
         <div className="container relative flex min-h-[400px] flex-col items-center justify-center py-8 text-center sm:py-10">
           <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#fff4e0]/80">All categories · one exchange</p>
           <h1 className="sr-only">Search the Exchange</h1>
-          <div className="mt-5 h-28 w-full max-w-[42rem] sm:h-36 lg:h-44">
-            <AnimatedLogoSmall70 fontSize={125} wordmarkColor="#fff4e0" neutralCategoryColor="#fff4e0" wheelScale={1.38} />
+          <div className="mt-5 flex h-28 w-full max-w-[30rem] items-center justify-center sm:h-36 sm:max-w-[38rem] lg:h-44">
+            <img src="/manus-storage/tradebilia-final-transparent_b18f659a.svg" alt="Tradebilia" className="h-full w-full object-contain" />
           </div>
           <p className="mt-4 max-w-2xl text-sm leading-6 text-[#fff4e0]/90 sm:text-base">Search the Exchange to find active collectible listings across every Tradebilia category, then narrow the marketplace with broad, truthful filters.</p>
           <Badge className={`${searchTheme.chipClassName} mt-5 rounded-full px-3 py-1 text-xs`}>{submittedQuery ? "Searching all categories" : "Browsing all active listings"}</Badge>

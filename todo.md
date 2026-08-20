@@ -559,3 +559,7 @@
 - [x] Validate the selected Coming Soon design at mobile and desktop widths, publish, verify the standard domain, and synchronize GitHub.
 - [x] Rebuild the Coming Soon page to match the supplied Restoration Workbench reference: a full collector workbench surrounding a central aged-parchment composition, with the exact Tradebilia logo and existing signup behavior preserved.
 - [x] Validate reference alignment at mobile and desktop widths, publish, verify the standard domain, and synchronize GitHub.
+- [x] Enrich the Restoration Workbench Coming Soon background with a fuller, balanced multi-object representation of every Tradebilia category while preserving the clean central parchment signup area.
+- [x] Validate category representation at mobile and desktop widths, publish, verify the standard domain, and synchronize GitHub.
+- [x] Replace the Coming Soon parchment-center wordmark with the supplied final transparent Tradebilia logo while preserving clear mobile and desktop rendering.
+- [x] Replace the Global Search hero logo treatment with the supplied final transparent Tradebilia logo without changing its cross-category search functionality or layout.

@@ -8,11 +8,11 @@ const appSource = fs.readFileSync(path.join(projectRoot, "client/src/App.tsx"), 
 const adminSource = fs.readFileSync(path.join(projectRoot, "client/src/pages/AdminDashboard.tsx"), "utf8");
 
 describe("Coming Soon experience", () => {
-  it("uses the established animated logo and has an opt-in email form", () => {
-    expect(pageSource).toContain('import AnimatedLogoSmall70 from "@/components/AnimatedLogoSmall70"');
-    expect(pageSource).toContain('<AnimatedLogoSmall70 fontSize={125} wordmarkColor="#2b2119" neutralCategoryColor="#2b2119" wheelScale={1.18} />');
-    expect(pageSource).toContain('tradebilia-coming-soon-reference-aligned-workbench_e50ba608.png');
-    expect(pageSource).toContain('className="mx-auto h-20 w-full max-w-[25rem] sm:h-28 sm:max-w-[36rem]"');
+  it("uses the supplied final transparent logo and has an opt-in email form", () => {
+    expect(pageSource).toContain('/manus-storage/tradebilia-final-transparent_b18f659a.svg');
+    expect(pageSource).toContain('alt="Tradebilia"');
+    expect(pageSource).toContain('tradebilia-coming-soon-dense-category-workbench_c64ac671.png');
+    expect(pageSource).toContain('className="mx-auto flex h-20 w-full max-w-[25rem] items-center justify-center');
     expect(pageSource).not.toContain("Background_23084d14.jpg");
     expect(pageSource).toContain("Every collection<br />has a next chapter.");
     expect(pageSource).toContain("The Collectors Trading Exchange");

@@ -5,10 +5,9 @@ import { resolve } from "node:path";
 const source = readFileSync(resolve(__dirname, "../client/src/pages/ComingSoon.tsx"), "utf8");
 
 describe("Restoration Workbench Coming Soon page", () => {
-  it("uses the exact shared Tradebilia wheel-and-wordmark component over the selected workbench background", () => {
-    expect(source).toContain('import AnimatedLogoSmall70 from "@/components/AnimatedLogoSmall70"');
-    expect(source).toContain('tradebilia-coming-soon-reference-aligned-workbench_e50ba608.png');
-    expect(source).toContain('<AnimatedLogoSmall70 fontSize={125} wordmarkColor="#2b2119" neutralCategoryColor="#2b2119" wheelScale={1.18} />');
+  it("uses the user-supplied final transparent Tradebilia logo over the Restoration Workbench art", () => {
+    expect(source).toContain('/manus-storage/tradebilia-final-transparent_b18f659a.svg');
+    expect(source).toContain('alt="Tradebilia"');
     expect(source).toContain("Every collection<br />has a next chapter.");
   });
 
