@@ -499,3 +499,7 @@
 - [x] Refine the unified Search Results page with truthful cross-category result cards, broad filters, clear empty/error states, and direct item-detail navigation.
 - [x] Keep the unified Search Results page aligned with the existing Category Page visual system, shared top bar, filter treatment, listing-card sizing, category labels, and responsive behavior.
 - [x] Add regression coverage, validate global search from the top bar without changing listing data, publish, verify the standard domain, and synchronize GitHub.
+- [x] Audit the existing global Search Results hero, category-page hero proportions, animated SVG constraints, and static-asset delivery path without changing shared hero behavior.
+- [x] Create a Tradebilia-compatible all-category collectible collage background for global Search Results, avoiding text and preserving a centered safe area for the animated SVG.
+- [x] Replace the global Search Results solid-color hero background with the approved collage asset and use the existing animated Tradebilia SVG as the focal point without changing category-page heroes.
+- [ ] Add regression coverage, validate desktop and mobile global-search hero rendering, publish, verify the standard domain, and synchronize GitHub.
