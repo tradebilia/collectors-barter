@@ -568,3 +568,4 @@
 - [x] Remove description excerpts from category and Global Search listing cards so uncontrolled member text cannot disrupt result-card layouts.
 - [x] Add existing privacy-safe approximate distance labels to Global Search listing cards and validate card behavior at mobile and desktop widths.
 - [x] Add an Explore All entry as the first shared category-bar tab, linking to Global Search and reflecting an active state on the all-category page without changing existing category navigation.
+- [x] Replace the Global Search static logo title with the shared animated Tradebilia logo while preserving background, category-bar placement, search behavior, and responsive layout.
