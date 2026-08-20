@@ -600,20 +600,18 @@ export default function Home() {
         <CategoryBar />
 
         <section className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 py-1 text-white border-y border-blue-700">
-          <div className="grid gap-0 grid-cols-2 sm:grid-cols-5 items-center">
+          <div className="grid grid-cols-2 items-center gap-0 sm:grid-cols-4">
             {[
               ["users", "Total Members", siteStatisticsQuery.data?.totalMembers ? `${siteStatisticsQuery.data.totalMembers}` : "0"],
               ["list", "Active Listings", siteStatisticsQuery.data?.totalItems ? `${siteStatisticsQuery.data.totalItems.toLocaleString()}` : "0"],
               ["dollar", "Total Items Value", siteStatisticsQuery.data?.totalValue ? `$${Math.floor(siteStatisticsQuery.data.totalValue).toLocaleString('en-US')}` : "$0"],
               ["handshake", "Successful Trades", siteStatisticsQuery.data?.totalTrades ? `${siteStatisticsQuery.data.totalTrades}` : "0"],
-              ["trending", "Member Growth", "Calculating"],
             ].map(([iconType, label, value]) => {
               const iconMap: Record<string, React.ReactNode> = {
                 users: <Users className="w-10 h-10" />,
                 list: <ListTodo className="w-10 h-10" />,
                 dollar: <DollarSign className="w-10 h-10" />,
                 handshake: <Handshake className="w-10 h-10" />,
-                trending: <TrendingUp className="w-10 h-10" />,
               };
               return (
                 <div key={label as string} className="flex items-center justify-center gap-2 px-3 py-1 border-r border-white/20 last:border-r-0 transition-all duration-500 h-full">

@@ -539,3 +539,5 @@
 - [x] Repair the Add Inventory photo-upload section overlap on mobile only while preserving all desktop form geometry and upload behavior.
 - [x] Normalize mobile hero typography for Comics and Autographs and correct the Vintage Toys and Video Games mobile hero-title presentation without changing desktop category heroes.
 - [x] Add regression coverage, validate affected pages at mobile and desktop widths, publish, verify the standard domain, and synchronize GitHub.
+- [ ] Remove the homepage Member Growth metric while preserving the remaining homepage statistics and responsive layout.
+- [ ] Add regression coverage, validate homepage mobile and desktop statistics, publish, verify the standard domain, and synchronize GitHub.
