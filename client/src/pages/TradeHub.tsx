@@ -172,7 +172,7 @@ export default function TradeHub() {
         {/* Trade Hub Content */}
         <div className="bg-[#0a0a2a] min-h-[calc(100vh-400px)]">
           {/* Toolbar */}
-          <div className="max-w-7xl mx-auto px-4 py-4 flex items-center gap-4 border-b border-gray-700">
+          <div className="max-w-7xl mx-auto flex flex-col gap-3 border-b border-gray-700 px-4 py-4 sm:flex-row sm:items-center sm:gap-4">
             <input
               type="text"
               placeholder="Search by User or TR#..."
@@ -190,10 +190,10 @@ export default function TradeHub() {
           </div>
 
           {/* 3-Column Layout */}
-          <div className="max-w-7xl mx-auto px-4 py-4 grid grid-cols-12 gap-4">
+          <div className="mx-auto grid max-w-7xl grid-cols-1 gap-4 px-4 py-4 lg:grid-cols-12">
             
             {/* Sidebar — Folders */}
-            <aside className="col-span-2 space-y-1">
+            <aside className="space-y-1 lg:col-span-2">
               <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 px-3">Trade Status</h3>
               {(Object.keys(folderLabels) as TradeFolder[]).map((folder) => (
                 <button
@@ -212,7 +212,7 @@ export default function TradeHub() {
             </aside>
 
             {/* Center — Inbox Feed */}
-            <main className="col-span-5 bg-[#1a1a4a] rounded-lg overflow-hidden">
+            <main className="overflow-hidden rounded-lg bg-[#1a1a4a] lg:col-span-5">
               <div className="px-4 py-3 border-b border-gray-700 flex items-center justify-between">
                 <h2 className="text-white font-semibold text-sm uppercase tracking-wider">
                   {folderLabels[activeFolder]}
@@ -280,7 +280,7 @@ export default function TradeHub() {
             </main>
 
             {/* Right — Preview Panel */}
-            <aside className="col-span-5 bg-[#1a1a4a] rounded-lg p-5">
+            <aside className="rounded-lg bg-[#1a1a4a] p-5 lg:col-span-5">
               {selectedTrade === null || selectedTrade === undefined ? (
                 <div className="text-center text-gray-400 py-16">
                   <div className="text-4xl mb-3 opacity-50">📋</div>

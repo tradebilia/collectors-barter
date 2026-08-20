@@ -529,3 +529,6 @@
 - [x] Repair mobile Conventions rendering, compact mobile homepage utility/ranking presentation, and add mobile category-bar scroll affordance without changing desktop layouts, hero dimensions, or statistics bubbles.
 - [x] Add desktop-regression and mobile-layout coverage, verify each affected public journey at both widths, publish, verify the standard domain, and synchronize GitHub.
 - [x] Audit mobile readiness of remaining account, sign-up, account setup, inventory, listing management, Trade Room, Messages, reports, and settings journeys; document authenticated testing limits and required repairs before declaring sitewide mobile readiness.
+- [x] Repair Inventory/My Listings, Trade Hub/Trade Room, and Messages with mobile-only responsive layouts while preserving their current desktop sidebars, grids, and workflow behavior.
+- [x] Repair Account Settings, referral, Report a Member, public profile, Account Setup, and Add Inventory mobile presentation with mobile-only responsive rules while preserving desktop layouts.
+- [ ] Add authenticated-flow mobile and desktop regression coverage, validate active routes and form accessibility boundaries, publish, verify the standard domain, and synchronize GitHub.

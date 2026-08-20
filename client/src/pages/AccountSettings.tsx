@@ -604,7 +604,7 @@ export default function AccountSettings() {
           backgroundRepeat: 'no-repeat'
         }} />
         <div className="container relative flex h-64 items-center justify-center py-0 sm:h-72 sm:py-0 lg:h-80 lg:py-0">
-          <div className="flex w-full max-w-6xl items-center justify-center -ml-32">
+          <div className="flex w-full max-w-6xl items-center justify-center lg:-ml-32">
             <img
               src="https://assets.tradebilia.com/AccountSettingsTitle_d074dc8b.webp"
               alt="Account Settings"
@@ -619,12 +619,12 @@ export default function AccountSettings() {
       <main className="px-4 py-10 lg:px-8">
         <div className="mx-auto max-w-4xl space-y-8">
           <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
-            <TabsList className="grid w-full grid-cols-5 rounded-lg bg-slate-200">
-              <TabsTrigger value="profile">Profile</TabsTrigger>
-              <TabsTrigger value="security">Security</TabsTrigger>
-              <TabsTrigger value="integrations">Integrations</TabsTrigger>
-              <TabsTrigger value="communications">Communications</TabsTrigger>
-              <TabsTrigger value="preferences">Preferences</TabsTrigger>
+            <TabsList className="flex w-full justify-start gap-1 overflow-x-auto rounded-lg bg-slate-200 p-1 sm:grid sm:grid-cols-5 sm:gap-0">
+              <TabsTrigger className="flex-none sm:flex-1" value="profile">Profile</TabsTrigger>
+              <TabsTrigger className="flex-none sm:flex-1" value="security">Security</TabsTrigger>
+              <TabsTrigger className="flex-none sm:flex-1" value="integrations">Integrations</TabsTrigger>
+              <TabsTrigger className="flex-none sm:flex-1" value="communications">Communications</TabsTrigger>
+              <TabsTrigger className="flex-none sm:flex-1" value="preferences">Preferences</TabsTrigger>
             </TabsList>
 
             {/* Profile Tab */}
@@ -674,7 +674,7 @@ export default function AccountSettings() {
                   <div className="border-t border-slate-200 pt-4 space-y-4">
                     <h3 className="font-semibold text-slate-900">Identity Information {user?.role === 'admin' ? '' : '(Read-Only)'}</h3>
                     <p className="text-xs text-slate-600">{user?.role === 'admin' ? 'Update your legal name information.' : 'These fields cannot be changed for security reasons. Contact support if you need to update them.'}</p>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                       <div className="space-y-2">
                         <Label htmlFor="firstName">First Name</Label>
                         <Input 
@@ -720,7 +720,7 @@ export default function AccountSettings() {
                           className='rounded-lg border-slate-200 border bg-white disabled:opacity-50 disabled:cursor-not-allowed' 
                         />
                       </div>
-                      <div className="col-span-2 space-y-2">
+                      <div className="space-y-2 sm:col-span-2">
                         <Label htmlFor="street">Street Address</Label>
                         <Input 
                           id="street"
@@ -764,7 +764,7 @@ export default function AccountSettings() {
                           className='rounded-lg border-slate-200 border bg-white disabled:opacity-50 disabled:cursor-not-allowed' 
                         />
                       </div>
-                      <div className="col-span-2 space-y-2">
+                      <div className="space-y-2 sm:col-span-2">
                         <Label htmlFor="phoneNumber">Phone Number</Label>
                         <Input 
                           id="phoneNumber"
@@ -829,7 +829,7 @@ export default function AccountSettings() {
                     </label>
                     {merchantForm.isMerchant && (
                       <div className="space-y-3 bg-purple-50 border border-purple-200 rounded-lg p-4">
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                           <div className="space-y-2">
                             <Label>Store Name</Label>
                             <Input disabled={user?.role !== 'admin'} value={merchantForm.storeName} onChange={(e) => setMerchantForm(prev => ({ ...prev, storeName: e.target.value }))} className="rounded-lg border-slate-200 disabled:opacity-50 disabled:cursor-not-allowed" />
@@ -846,7 +846,7 @@ export default function AccountSettings() {
                             <Label>Business Phone</Label>
                             <Input disabled={user?.role !== 'admin'} value={merchantForm.businessPhone} onChange={(e) => setMerchantForm(prev => ({ ...prev, businessPhone: e.target.value }))} className="rounded-lg border-slate-200 disabled:opacity-50 disabled:cursor-not-allowed" />
                           </div>
-                          <div className="col-span-2 space-y-2">
+                          <div className="space-y-2 sm:col-span-2">
                             <Label>Business Address</Label>
                             <Input disabled={user?.role !== 'admin'} value={merchantForm.businessAddress} onChange={(e) => setMerchantForm(prev => ({ ...prev, businessAddress: e.target.value }))} className="rounded-lg border-slate-200 disabled:opacity-50 disabled:cursor-not-allowed" />
                           </div>
@@ -858,7 +858,7 @@ export default function AccountSettings() {
                             <Label>Business Website</Label>
                             <Input disabled={user?.role !== 'admin'} type="url" value={merchantForm.businessWebsite} onChange={(e) => setMerchantForm(prev => ({ ...prev, businessWebsite: e.target.value }))} className="rounded-lg border-slate-200 disabled:opacity-50 disabled:cursor-not-allowed" />
                           </div>
-                          <div className="col-span-2 space-y-2">
+                          <div className="space-y-2 sm:col-span-2">
                             <Label>Store Description</Label>
                             <Textarea disabled={user?.role !== 'admin'} value={merchantForm.storeDescription} onChange={(e) => setMerchantForm(prev => ({ ...prev, storeDescription: e.target.value }))} rows={3} className="rounded-lg border-slate-200 disabled:opacity-50 disabled:cursor-not-allowed" />
                           </div>

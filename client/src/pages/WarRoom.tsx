@@ -640,15 +640,15 @@ export default function WarRoom() {
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <div className="h-screen bg-[#0f0f1a] flex flex-col overflow-hidden">
+    <div className="min-h-screen bg-[#0f0f1a] flex flex-col overflow-x-hidden lg:h-screen lg:overflow-hidden">
       {/* Top Bar — compact mode (no search) */}
       <TopBar hideSearch />
 
       {/* Progress Tracker Header */}
-      <header className="bg-[#16213e] border-b border-gray-600 px-6 py-3">
-        <div className="max-w-[1600px] mx-auto flex items-center justify-between">
+      <header className="border-b border-gray-600 bg-[#16213e] px-4 py-3 lg:px-6">
+        <div className="mx-auto flex max-w-[1600px] flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           {/* Left: Trade ID */}
-          <div className="flex items-center gap-3 min-w-[200px]">
+          <div className="flex min-w-0 items-center gap-3 lg:min-w-[200px]">
             <span className="text-gray-400 text-sm">Trade ID:</span>
             <span className="text-white font-mono text-sm font-bold">
               {trade?.proposal?.tradeReferenceNumber || `#TB-${String(proposalId).padStart(5, '0')}`}
@@ -656,7 +656,7 @@ export default function WarRoom() {
           </div>
 
           {/* Center: 5-stage progress tracker */}
-          <div className="flex items-center">
+          <div className="flex min-w-max items-center overflow-x-auto pb-2 lg:pb-0">
             {stages.map((stage, i) => (
               <div key={stage.key} className="flex items-center">
                 <div className="flex items-center gap-2">
@@ -686,7 +686,7 @@ export default function WarRoom() {
           </div>
 
           {/* Right: Leave + Settings */}
-          <div className="flex items-center gap-3 min-w-[200px] justify-end">
+          <div className="flex min-w-0 items-center gap-3 lg:min-w-[200px] lg:justify-end">
             <button
               onClick={() => navigate('/trade-hub')}
               className="px-4 py-2 border border-gray-700 text-gray-300 rounded-lg hover:bg-gray-800 transition text-sm flex items-center gap-2"
@@ -702,10 +702,10 @@ export default function WarRoom() {
       </header>
 
       {/* Main Layout: Trade Table (left) + Chat/Timeline (right) */}
-      <div className="flex-1 flex overflow-hidden min-h-0">
+      <div className="flex min-h-0 flex-1 flex-col overflow-visible lg:flex-row lg:overflow-hidden">
 
         {/* Center: Trade Table or Post-Acceptance View */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar p-4 flex flex-col">
+        <div className="flex flex-1 flex-col overflow-visible p-4 lg:overflow-y-auto custom-scrollbar">
 
           {/* ── STAGE 3+: Review / Shipping / Confirm / Completed ── */}
           {(currentStage === 'accepted' || currentStage === 'shipping' || currentStage === 'shipped' || currentStage === 'completed') && (() => {
@@ -759,7 +759,7 @@ export default function WarRoom() {
                     <h2 className="text-white font-bold text-lg">Items Being Traded</h2>
                     <span className="px-3 py-1 bg-green-900/30 border border-green-500/30 text-green-400 text-xs font-bold rounded-full">LOCKED</span>
                   </div>
-                  <div className="flex gap-6 items-start">
+                  <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
                     {/* Your Items */}
                     <div className="flex-1 space-y-2">
                       <div className="flex items-center gap-2 mb-3">
@@ -784,7 +784,7 @@ export default function WarRoom() {
                       )}
                     </div>
                     {/* Exchange Arrow */}
-                    <div className="flex items-center justify-center pt-10 shrink-0">
+                    <div className="flex shrink-0 items-center justify-center lg:pt-10">
                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6 text-gray-500">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 21 3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
                       </svg>
@@ -1279,10 +1279,10 @@ export default function WarRoom() {
               </div>
 
               {/* Three-column layout: Your Side | Fairness + AI | Their Side */}
-              <div className="grid grid-cols-11 gap-5 flex-1 min-h-0">
+              <div className="grid min-h-0 flex-1 grid-cols-1 gap-5 lg:grid-cols-11">
 
                 {/* ── YOUR SIDE ── */}
-                <div className="col-span-4 bg-[#0f0f1a] border border-gray-600 rounded-xl p-4 flex flex-col overflow-hidden">
+                <div className="flex flex-col overflow-hidden rounded-xl border border-gray-600 bg-[#0f0f1a] p-4 lg:col-span-4">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
                       {/* Avatar */}
@@ -1389,7 +1389,7 @@ export default function WarRoom() {
                 </div>
 
                 {/* ── MIDDLE: Fairness Meter + AI Analyzer ── */}
-                <div className="col-span-3 flex flex-col gap-4 overflow-hidden">
+                <div className="flex flex-col gap-4 overflow-hidden lg:col-span-3">
                   {/* Fairness Meter */}
                   <div className="bg-[#0f0f1a] border border-gray-600 rounded-xl p-5 text-center flex-1 flex flex-col justify-center">
                     {myHasAccepted && currentStage === 'negotiating' && (
@@ -1764,7 +1764,7 @@ export default function WarRoom() {
                 </div>
 
                 {/* ── THEIR SIDE ── */}
-                <div className="col-span-4 bg-[#0f0f1a] border border-gray-600 rounded-xl p-4 flex flex-col overflow-hidden">
+                <div className="flex flex-col overflow-hidden rounded-xl border border-gray-600 bg-[#0f0f1a] p-4 lg:col-span-4">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
                       {/* Avatar */}
@@ -1877,7 +1877,7 @@ export default function WarRoom() {
         </div>
 
         {/* Right Column: Chat + Timeline as a card */}
-        <div className="w-[360px] flex-shrink-0 p-4 flex flex-col">
+        <div className="flex min-h-[34rem] w-full flex-shrink-0 flex-col p-4 lg:min-h-0 lg:w-[360px]">
           <div className="bg-[#16213e] border border-gray-600 rounded-xl flex flex-col flex-1 overflow-hidden shadow-xl">
           {/* Tabs */}
           <div className="flex border-b border-gray-600 rounded-t-xl overflow-hidden">

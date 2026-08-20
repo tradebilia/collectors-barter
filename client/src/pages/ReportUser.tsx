@@ -62,6 +62,14 @@ export default function ReportUser() {
     if (!contactEmailEdited) setContactEmail(account.contactEmail);
   }, [contactEmailEdited, contactIdentityQuery.data]);
 
+  useEffect(() => {
+    const mobileHeroStyle = document.createElement("style");
+    mobileHeroStyle.dataset.reportUserMobileHero = "true";
+    mobileHeroStyle.textContent = "@media (max-width: 1023px) { .-ml-32 { margin-left: 0 !important; } }";
+    document.head.appendChild(mobileHeroStyle);
+    return () => mobileHeroStyle.remove();
+  }, []);
+
   const reportMutation = trpc.market.submitReport.useMutation({ onSuccess: result => { setSubmittedReportId(result.reportId); toast.success(`Report ${result.reportId} submitted.`); }, onError: error => toast.error(error.message) });
   const handleUsernameBlur = async () => { if (!reportedMember.trim()) return setResolvedUserId(null); setIsLookingUp(true); setUsernameError(null); try { const found = await utils.market.lookupUserByUsername.fetch({ username: reportedMember.trim() }); setResolvedUserId(found.userId); } catch { setResolvedUserId(null); setUsernameError("Username not found. Please check the spelling."); } finally { setIsLookingUp(false); } };
   const uploadEvidenceFiles = async (files: File[]) => {
