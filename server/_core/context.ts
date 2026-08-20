@@ -15,10 +15,16 @@ export async function createContext(
   let user: User | null = null;
 
   try {
-    // Parse the session cookie and authenticate via custom auth (username/password system)
+    // Prefer the HttpOnly cookie. A short-lived request-header fallback supports
+    // mobile WebViews and privacy modes that reject an otherwise valid Set-Cookie.
     const cookieHeader = opts.req.headers.cookie;
     const cookies = customAuth.parseCookies(cookieHeader);
-    const sessionToken = cookies.get(COOKIE_NAME);
+    const authorization = opts.req.headers.authorization;
+    const bearerToken =
+      typeof authorization === "string" && authorization.startsWith("Bearer ")
+        ? authorization.slice(7)
+        : undefined;
+    const sessionToken = cookies.get(COOKIE_NAME) ?? bearerToken;
     if (sessionToken) {
       user = await customAuth.getUserFromSession(sessionToken);
     }

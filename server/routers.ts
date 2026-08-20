@@ -450,7 +450,10 @@ export const appRouter = router({
         const cookieOptions = getSessionCookieOptions(ctx.req);
         ctx.res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
 
-        return { success: true, userId: user.id };
+        // The cookie remains the normal session transport. Returning the signed
+        // token lets the client use the already-supported Authorization fallback
+        // only when a mobile browser refuses to retain the Set-Cookie response.
+        return { success: true, userId: user.id, sessionToken };
       }),
     requestPasswordRecovery: publicProcedure
       .input(z.object({ email: z.string().email().max(320) }))

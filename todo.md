@@ -534,3 +534,5 @@
 - [x] Add authenticated-flow mobile and desktop regression coverage, validate active routes and form accessibility boundaries, publish, verify the standard domain, and synchronize GitHub.
 - [x] Diagnose and repair the reported mobile sign-in failure while preserving desktop sign-in behavior and authenticated routing.
 - [x] Add regression coverage, validate mobile and desktop sign-in entry points, publish, verify the standard domain, and synchronize GitHub.
+- [ ] Diagnose and repair the confirmed mobile sign-in form submission failure, including visible success or error feedback and authenticated-state transition.
+- [ ] Add regression coverage, validate mobile and desktop credential submission, publish, verify the standard domain, and synchronize GitHub.
