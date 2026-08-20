@@ -267,6 +267,7 @@ export default function CategoryPage() {
   const [sortBy, setSortBy] = useState("best_match");
   const [locationSortNotice, setLocationSortNotice] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [resultsPerPage, setResultsPerPage] = useState(24);
   const [currentPage, setCurrentPage] = useState(1);
   // verifiedMerchantsOnly is now an instant-apply chip above the results grid.
@@ -598,6 +599,7 @@ export default function CategoryPage() {
 
     setSubmittedFilters(newFilters);
     setCurrentPage(1);
+    setMobileFiltersOpen(false);
   };
 
   // Handler to clear all filters
@@ -874,11 +876,28 @@ export default function CategoryPage() {
       <CategoryBar />
 
       <main className="flex bg-transparent">
+        {mobileFiltersOpen && (
+          <button
+            type="button"
+            aria-label="Close filters"
+            className="fixed inset-0 z-40 bg-black/45 md:hidden"
+            onClick={() => setMobileFiltersOpen(false)}
+          />
+        )}
+        <button
+          type="button"
+          onClick={() => setMobileFiltersOpen(true)}
+          className="fixed bottom-5 right-5 z-30 inline-flex items-center gap-2 rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white shadow-xl md:hidden"
+        >
+          <Search className="h-4 w-4" />
+          Filters
+        </button>
         {/* Left sidebar filters */}
-        <aside className={`w-80 border-r border-current/10 bg-current/5 p-4 ${theme.panelClassName}`}>
+        <aside className={`fixed inset-y-0 left-0 z-50 w-[min(88vw,360px)] overflow-y-auto border-r border-current/10 bg-white p-4 shadow-2xl transition-transform duration-200 md:static md:z-auto md:block md:w-80 md:translate-x-0 md:bg-current/5 md:shadow-none ${mobileFiltersOpen ? "translate-x-0" : "-translate-x-full"} ${theme.panelClassName}`}>
           <div className="flex items-center gap-2">
             <Search className={`h-4 w-4 ${theme.accentClassName}`} />
             <h2 className="text-lg font-semibold" style={{ fontFamily: theme.headingFont }}>Filters</h2>
+            <Button variant="ghost" size="sm" className="ml-auto md:hidden" onClick={() => setMobileFiltersOpen(false)}>Close</Button>
           </div>
 
           <div className="mt-4 space-y-2">
@@ -1263,7 +1282,7 @@ export default function CategoryPage() {
         </aside>
 
         {/* Right side content area */}
-        <div className="flex-1 py-8 lg:py-10 px-6">
+        <div className="min-w-0 flex-1 px-4 py-6 md:px-6 md:py-8 lg:py-10">
           <section className="space-y-6">
             {/* Filter summary bar removed */}
 
@@ -1385,7 +1404,7 @@ export default function CategoryPage() {
               </div>
             ) : (
               <>
-                <div className={viewMode === "grid" ? "grid gap-3 grid-cols-6" : "space-y-3"}>
+                <div className={viewMode === "grid" ? "grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-6" : "space-y-3"}>
                   {pageListings.map(listing => (
                     <Card key={listing.id} className={`${viewMode === "list" ? "flex flex-col" : "relative"} ${viewMode === "list" ? "" : "overflow-hidden"} border bg-white border-gray-200 text-black ${isSportsCardsPage ? "rounded-md shadow-sm" : "rounded-[2rem]"}`}>
                       {listing.ownerId && viewMode === "list" && (
