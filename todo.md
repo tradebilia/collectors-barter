@@ -541,3 +541,4 @@
 - [x] Add regression coverage, validate affected pages at mobile and desktop widths, publish, verify the standard domain, and synchronize GitHub.
 - [x] Remove the homepage Member Growth metric while preserving the remaining homepage statistics and responsive layout.
 - [x] Add regression coverage, validate homepage mobile and desktop statistics, publish, verify the standard domain, and synchronize GitHub.
+- [x] Research IPQS verification capabilities and recommend a privacy-conscious, risk-based new-user screening policy, including the value and limitations of email-age signals.
