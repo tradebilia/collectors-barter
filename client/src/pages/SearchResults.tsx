@@ -43,7 +43,7 @@ const emptySearchFilters: SearchFilters = {
 };
 
 const searchTheme = tradebiliaCategoryThemes.sports_cards;
-const globalSearchHeroCollageUrl = "/manus-storage/tradebilia-global-search-collage-hero_7a52c84a.png";
+const globalSearchHeroCollageUrl = "/manus-storage/tradebilia-warm-archival-hero-04_cdf269c5.png";
 
 export function SearchResults() {
   const rawSearch = useSearch();

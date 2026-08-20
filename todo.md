@@ -503,3 +503,7 @@
 - [x] Create a Tradebilia-compatible all-category collectible collage background for global Search Results, avoiding text and preserving a centered safe area for the animated SVG.
 - [x] Replace the global Search Results solid-color hero background with the approved collage asset and use the existing animated Tradebilia SVG as the focal point without changing category-page heroes.
 - [x] Add regression coverage, validate desktop and mobile global-search hero rendering, publish, verify the standard domain, and synchronize GitHub.
+- [x] Generate and present several distinct all-category global Search Results collage hero alternatives; preserve the current live hero until the user selects a replacement.
+- [ ] Integrate only the user-selected global Search Results collage hero, then validate desktop/mobile rendering, publish, verify the standard domain, and synchronize GitHub.
+- [x] Generate and present ten warm archival-study global Search Results hero alternatives that visibly incorporate all Tradebilia collection categories; preserve the current live hero until the user selects a replacement.
+- [x] Integrate the user-selected Option 4 Restoration Workbench hero background into global Search Results while preserving the animated Tradebilia SVG and existing layout.
