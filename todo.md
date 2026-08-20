@@ -528,3 +528,4 @@
 - [x] Replace fixed mobile discovery sidebars with a shared mobile-only filter drawer for Category Pages and Member Directory while retaining existing desktop sidebars and explicit Search/Enter behavior; Global Search retained its already-responsive stacked filters.
 - [x] Repair mobile Conventions rendering, compact mobile homepage utility/ranking presentation, and add mobile category-bar scroll affordance without changing desktop layouts, hero dimensions, or statistics bubbles.
 - [x] Add desktop-regression and mobile-layout coverage, verify each affected public journey at both widths, publish, verify the standard domain, and synchronize GitHub.
+- [x] Audit mobile readiness of remaining account, sign-up, account setup, inventory, listing management, Trade Room, Messages, reports, and settings journeys; document authenticated testing limits and required repairs before declaring sitewide mobile readiness.
