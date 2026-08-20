@@ -522,4 +522,4 @@
 - [x] Add administrator resolution notes to the report-review interface and preserve those notes in the authorized report workflow without changing mobile layout.
 - [x] Add regression coverage, validate the Trade Room reporting and admin-review improvements, publish, verify the standard domain, and synchronize GitHub.
 - [x] Add privacy-safe approximate distance bands to Category Page listing cards for signed-in members with saved towns, without exposing exact mileage, coordinates, addresses, or mobile-layout changes.
-- [ ] Add regression coverage, validate distance-band rendering and fallback behavior, publish, verify the standard domain, and synchronize GitHub.
+- [x] Add regression coverage, validate distance-band rendering and fallback behavior, publish, verify the standard domain, and synchronize GitHub.
