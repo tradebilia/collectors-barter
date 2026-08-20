@@ -520,4 +520,4 @@
 - [x] Add regression coverage for transaction boundaries and safe retry behavior, validate the hardened flow, publish, verify the standard domain, and synchronize GitHub.
 - [x] Add an explicit authenticated Trade Room action to mark a reported trade as disputed with audit logging, participant notice, and no mobile-layout change.
 - [x] Add administrator resolution notes to the report-review interface and preserve those notes in the authorized report workflow without changing mobile layout.
-- [ ] Add regression coverage, validate the Trade Room reporting and admin-review improvements, publish, verify the standard domain, and synchronize GitHub.
+- [x] Add regression coverage, validate the Trade Room reporting and admin-review improvements, publish, verify the standard domain, and synchronize GitHub.
