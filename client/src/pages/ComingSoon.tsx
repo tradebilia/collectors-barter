@@ -1,3 +1,4 @@
+import AnimatedLogoSmall70 from "@/components/AnimatedLogoSmall70";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -32,8 +33,8 @@ export default function ComingSoon() {
         <div className="w-full max-w-xl text-center sm:max-w-2xl">
           <p className="mx-auto mb-4 w-fit border-y border-[#5b4534]/20 px-5 py-2 text-[8px] font-bold uppercase tracking-[0.2em] text-[#443326]/72 sm:mb-6 sm:text-[10px]">Tradebilia · Collector&apos;s Workbench</p>
 
-          <div className="mx-auto flex h-20 w-full max-w-[25rem] items-center justify-center border border-[#765a44]/65 bg-[#201711]/95 px-6 py-3 shadow-[0_8px_18px_rgba(55,32,17,0.14)] sm:h-28 sm:max-w-[36rem] sm:px-9">
-            <img src="/manus-storage/tradebilia-final-transparent_b18f659a.svg" alt="Tradebilia" className="h-full w-full object-contain" />
+          <div className="mx-auto h-20 w-full max-w-[25rem] sm:h-28 sm:max-w-[36rem]">
+            <AnimatedLogoSmall70 fontSize={125} wordmarkColor="#2b2119" neutralCategoryColor="#2b2119" wheelScale={1.18} />
           </div>
 
           <div className="mx-auto mt-8 max-w-lg sm:mt-10">

@@ -563,3 +563,8 @@
 - [x] Validate category representation at mobile and desktop widths, publish, verify the standard domain, and synchronize GitHub.
 - [x] Replace the Coming Soon parchment-center wordmark with the supplied final transparent Tradebilia logo while preserving clear mobile and desktop rendering.
 - [x] Replace the Global Search hero logo treatment with the supplied final transparent Tradebilia logo without changing its cross-category search functionality or layout.
+- [x] Match the Global Search hero logo scale to the established homepage presentation while preserving the hero background, height, category-bar position, and search behavior.
+- [x] Restore the animated Tradebilia logo within the enriched Coming Soon parchment composition while preserving the signup behavior and responsive layout.
+- [x] Remove description excerpts from category and Global Search listing cards so uncontrolled member text cannot disrupt result-card layouts.
+- [x] Add existing privacy-safe approximate distance labels to Global Search listing cards and validate card behavior at mobile and desktop widths.
+- [x] Add an Explore All entry as the first shared category-bar tab, linking to Global Search and reflecting an active state on the all-category page without changing existing category navigation.
