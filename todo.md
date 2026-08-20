@@ -502,4 +502,4 @@
 - [x] Audit the existing global Search Results hero, category-page hero proportions, animated SVG constraints, and static-asset delivery path without changing shared hero behavior.
 - [x] Create a Tradebilia-compatible all-category collectible collage background for global Search Results, avoiding text and preserving a centered safe area for the animated SVG.
 - [x] Replace the global Search Results solid-color hero background with the approved collage asset and use the existing animated Tradebilia SVG as the focal point without changing category-page heroes.
-- [ ] Add regression coverage, validate desktop and mobile global-search hero rendering, publish, verify the standard domain, and synchronize GitHub.
+- [x] Add regression coverage, validate desktop and mobile global-search hero rendering, publish, verify the standard domain, and synchronize GitHub.
