@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CategoryBar } from "@/components/CategoryBar";
 import { TopBar } from "@/components/TopBar";
+import AnimatedLogoSmall70 from "@/components/AnimatedLogoSmall70";
 import { resolveTradebiliaListingImage } from "@/lib/listingImages";
 import { trpc } from "@/lib/trpc";
 import {
@@ -42,6 +43,7 @@ const emptySearchFilters: SearchFilters = {
 };
 
 const searchTheme = tradebiliaCategoryThemes.sports_cards;
+const globalSearchHeroCollageUrl = "/manus-storage/tradebilia-global-search-collage-hero_7a52c84a.png";
 
 export function SearchResults() {
   const rawSearch = useSearch();
@@ -117,16 +119,16 @@ export function SearchResults() {
   return (
     <div className={`min-h-screen ${searchTheme.pageClassName}`}>
       <TopBar searchPlaceholder="Search the full Tradebilia exchange..." />
-      <section className="relative overflow-hidden border-b border-[#0f5563]/60 bg-[linear-gradient(135deg,#0f3b43_0%,#27758b_52%,#102732_100%)] text-[#fff4e0]">
-        <div className="container py-10 sm:py-14">
-          <p className="text-xs font-semibold uppercase tracking-[0.28em] opacity-75">All categories · one exchange</p>
-          <div className="mt-4 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-            <div>
-              <h1 className="text-4xl font-semibold sm:text-5xl" style={{ fontFamily: searchTheme.headingFont }}>Search the Exchange</h1>
-              <p className="mt-3 max-w-2xl text-sm leading-6 opacity-85 sm:text-base">Find active collectible listings across every Tradebilia category, then narrow the marketplace with broad, truthful filters.</p>
-            </div>
-            {submittedQuery ? <Badge className={`${searchTheme.chipClassName} rounded-full px-3 py-1 text-xs`}>Searching all categories</Badge> : null}
+      <section className="relative z-0 w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden border-b border-[#0f5563]/70 text-[#fff4e0]" style={{ backgroundImage: `url(${globalSearchHeroCollageUrl})`, backgroundSize: "cover", backgroundPosition: "center", backgroundRepeat: "no-repeat" }}>
+        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(4,22,30,0.88)_0%,rgba(8,51,61,0.66)_45%,rgba(4,22,30,0.88)_100%)]" />
+        <div className="container relative flex min-h-[400px] flex-col items-center justify-center py-8 text-center sm:py-10">
+          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#fff4e0]/80">All categories · one exchange</p>
+          <h1 className="sr-only">Search the Exchange</h1>
+          <div className="mt-5 h-28 w-full max-w-[42rem] sm:h-36 lg:h-44">
+            <AnimatedLogoSmall70 fontSize={125} wordmarkColor="#fff4e0" neutralCategoryColor="#fff4e0" wheelScale={1.38} />
           </div>
+          <p className="mt-4 max-w-2xl text-sm leading-6 text-[#fff4e0]/90 sm:text-base">Search the Exchange to find active collectible listings across every Tradebilia category, then narrow the marketplace with broad, truthful filters.</p>
+          {submittedQuery ? <Badge className={`${searchTheme.chipClassName} mt-5 rounded-full px-3 py-1 text-xs`}>Searching all categories</Badge> : null}
         </div>
       </section>
       <CategoryBar />
