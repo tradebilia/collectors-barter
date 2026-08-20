@@ -518,3 +518,6 @@
 - [x] Make Trade Room counteroffer item replacement and mutual confirmation atomic and retry-safe without changing trade terms, participant authorization, or existing reminder behavior.
 - [x] Enforce ownership and active-listing validation for every counteroffer item before replacement, within the same atomic Trade Room update.
 - [x] Add regression coverage for transaction boundaries and safe retry behavior, validate the hardened flow, publish, verify the standard domain, and synchronize GitHub.
+- [x] Add an explicit authenticated Trade Room action to mark a reported trade as disputed with audit logging, participant notice, and no mobile-layout change.
+- [x] Add administrator resolution notes to the report-review interface and preserve those notes in the authorized report workflow without changing mobile layout.
+- [ ] Add regression coverage, validate the Trade Room reporting and admin-review improvements, publish, verify the standard domain, and synchronize GitHub.

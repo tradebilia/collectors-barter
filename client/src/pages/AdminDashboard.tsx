@@ -344,6 +344,7 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState("statistics");
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [selectedReport, setSelectedReport] = useState<any>(null);
+  const [reportResolutionNotes, setReportResolutionNotes] = useState("");
   const [editMode, setEditMode] = useState(false);
   const [editFormData, setEditFormData] = useState<any>(null);
   const statsQuery = trpc.admin.getPlatformStatistics.useQuery(undefined, {
@@ -472,8 +473,10 @@ export default function AdminDashboard() {
       await updateReportStatusMutation.mutateAsync({
         reportId,
         status: status as 'pending' | 'reviewed' | 'dismissed' | 'action_taken',
+        adminNotes: reportResolutionNotes.trim() || undefined,
       });
       setSelectedReport(null);
+      setReportResolutionNotes("");
       reportsQuery.refetch();
     } catch (error) {
       console.error('[handleUpdateReportStatus] Failed to update report status', error);
@@ -1157,7 +1160,10 @@ export default function AdminDashboard() {
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => setSelectedReport(report)}
+                                onClick={() => {
+                                  setSelectedReport(report);
+                                  setReportResolutionNotes(report.adminNotes ?? "");
+                                }}
                               >
                                 View
                               </Button>
@@ -1866,10 +1872,21 @@ export default function AdminDashboard() {
                   <p className="text-sm font-semibold text-muted-foreground">Submitted</p>
                   <p className="text-base">{new Date(selectedReport.createdAt).toLocaleDateString()}</p>
                 </div>
+                {selectedReport.adminNotes && (
+                  <div className="col-span-2">
+                    <p className="text-sm font-semibold text-muted-foreground">Current Resolution Notes</p>
+                    <p className="text-base whitespace-pre-wrap">{selectedReport.adminNotes}</p>
+                  </div>
+                )}
               </div>
 
               <div className="border-t border-border pt-4">
                 <h3 className="font-semibold mb-3">Update Status</h3>
+                <div className="mb-3">
+                  <label className="mb-1 block text-sm font-semibold text-muted-foreground" htmlFor="report-resolution-notes">Resolution Notes</label>
+                  <Textarea id="report-resolution-notes" value={reportResolutionNotes} onChange={(event) => setReportResolutionNotes(event.target.value)} placeholder="Record the review outcome, evidence considered, or next action…" className="min-h-[96px]" maxLength={2000} />
+                  <p className="mt-1 text-xs text-muted-foreground">Notes are saved with the status update and remain visible to administrators.</p>
+                </div>
                 <div className="flex flex-wrap gap-2">
                   {['reviewed', 'dismissed', 'action_taken'].map((status) => (
                     <Button
