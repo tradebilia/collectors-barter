@@ -18,14 +18,20 @@ describe("Category Page location discovery", () => {
     expect(router).toContain("distanceMiles: z.number().positive().max(500).optional()");
   });
 
-  it("keeps coordinates and addresses server-only while reporting only non-sensitive applied or fallback status", () => {
+  it("keeps coordinates and addresses server-only while returning only non-sensitive approximate listing bands", () => {
     const database = read("server/db.ts");
+    const categoryPage = read("client/src/pages/CategoryPage.tsx");
 
     expect(database).toContain("contactAddress: null,");
     expect(database).toContain("orderListingsByOwnerDistance(listingRows, milesByOwnerId)");
     expect(database).toContain("filterListingsByOwnerDistance(listingRows, milesByOwnerId, filters.distanceMiles!)");
+    expect(database).toContain("getApproximateDistanceBand(");
+    expect(database).toContain("distanceBand: distanceBandByListingId.get(listing.id) ?? null");
     expect(database).toContain("locationSort,");
     expect(database).toContain("distanceFilter,");
     expect(database).not.toContain("distanceMiles: coordinates");
+    expect(categoryPage).toContain("listing.distanceBand");
+    expect(categoryPage).toContain("Nearby:");
+    expect(categoryPage).not.toContain("listing.distanceMiles");
   });
 });

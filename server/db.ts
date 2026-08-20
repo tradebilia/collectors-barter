@@ -32,7 +32,7 @@ import { resolveDirectMessageDisplayName } from "./directMessageDisplayName";
 import { resolveMemberStanding } from "./memberDirectoryStanding";
 import { hasEbayPlatformVerification } from "../shared/ebayVerification";
 import { makeRequest, type GeocodingResult } from "./_core/map";
-import { filterListingsByOwnerDistance, orderListingsByOwnerDistance, type LocationDistanceStatus, type NearestLocationSortStatus } from "../shared/nearestLocationSort";
+import { filterListingsByOwnerDistance, getApproximateDistanceBand, orderListingsByOwnerDistance, type LocationDistanceStatus, type NearestLocationSortStatus } from "../shared/nearestLocationSort";
 import bcrypt from 'bcryptjs';
 import { encrypt } from "./_core/crypto";
 
@@ -710,8 +710,10 @@ export async function getMarketplaceFeed(
     applied: false,
     reason: null,
   };
+  const distanceBandByListingId = new Map<number, string>();
+  const shouldCalculateDistanceBands = viewerId !== null && listingRows.length > 0;
 
-  if (locationSort.requested || distanceFilter.requested) {
+  if (locationSort.requested || distanceFilter.requested || shouldCalculateDistanceBands) {
     if (!viewerId) {
       if (locationSort.requested) locationSort.reason = "sign_in_required";
       if (distanceFilter.requested) distanceFilter.reason = "sign_in_required";
@@ -771,6 +773,13 @@ export async function getMarketplaceFeed(
           const milesByOwnerId = new Map(ownerDistances.map(result => [result.ownerId, result.miles]));
 
           if ([...milesByOwnerId.values()].some(miles => miles !== null)) {
+            for (const listing of listingRows) {
+              const distanceBand = getApproximateDistanceBand(
+                milesByOwnerId.get(listing.ownerId),
+                listing.ownerId === viewerId,
+              );
+              if (distanceBand) distanceBandByListingId.set(listing.id, distanceBand);
+            }
             if (distanceFilter.requested) {
               listingRows = filterListingsByOwnerDistance(listingRows, milesByOwnerId, filters.distanceMiles!);
               distanceFilter.applied = true;
@@ -841,7 +850,10 @@ export async function getMarketplaceFeed(
     },
     locationSort,
     distanceFilter,
-    listings: await formatListings(listingRows, viewerId),
+    listings: (await formatListings(listingRows, viewerId)).map(listing => ({
+      ...listing,
+      distanceBand: distanceBandByListingId.get(listing.id) ?? null,
+    })),
   };
 }
 
