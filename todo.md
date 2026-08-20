@@ -510,3 +510,4 @@
 - [x] Audit and repair blank global-search behavior so an empty query displays all active listings without applying a keyword filter.
 - [x] Add regression coverage, validate blank and keyword global-search behavior, publish, verify the standard domain, and synchronize GitHub.
 - [x] Audit every category’s required and optional item-entry fields against its Category Page filter coverage, then document verified functional and usability gaps without changing filters.
+- [x] Assess the current Tradebilia product for launch-critical capability gaps, verified defects, operational dependencies, and high-value enhancements without changing functionality.
