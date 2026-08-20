@@ -36,8 +36,7 @@ import {
   UserPlus,
   Bookmark,
   MessageCircle,
-  MessagesSquare,
-  Package2
+  MessagesSquare
 } from "lucide-react";
 import { ChangeEvent, FormEvent, useMemo, useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
@@ -607,7 +606,7 @@ export default function Home() {
               ["list", "Active Listings", siteStatisticsQuery.data?.totalItems ? `${siteStatisticsQuery.data.totalItems.toLocaleString()}` : "0"],
               ["dollar", "Total Items Value", siteStatisticsQuery.data?.totalValue ? `$${Math.floor(siteStatisticsQuery.data.totalValue).toLocaleString('en-US')}` : "$0"],
               ["handshake", "Successful Trades", siteStatisticsQuery.data?.totalTrades ? `${siteStatisticsQuery.data.totalTrades}` : "0"],
-              ["trending", "Member Growth", "+15%"],
+              ["trending", "Member Growth", "Calculating"],
             ].map(([iconType, label, value]) => {
               const iconMap: Record<string, React.ReactNode> = {
                 users: <Users className="w-10 h-10" />,
@@ -713,10 +712,6 @@ export default function Home() {
                           )}
                         </div>
                       )}
-                      <div>
-                        <div className="flex items-center gap-1.5"><Package2 className="w-3.5 h-3.5 text-white/90" /><p className="text-xs font-semibold uppercase tracking-wider text-white/90">Shipping Supplies</p></div>
-                        <p className="text-xs text-white/60 mt-1">Coming soon</p>
-                      </div>
                     </div>
                   </div>
 

@@ -511,3 +511,6 @@
 - [x] Add regression coverage, validate blank and keyword global-search behavior, publish, verify the standard domain, and synchronize GitHub.
 - [x] Audit every category’s required and optional item-entry fields against its Category Page filter coverage, then document verified functional and usability gaps without changing filters.
 - [x] Assess the current Tradebilia product for launch-critical capability gaps, verified defects, operational dependencies, and high-value enhancements without changing functionality.
+- [x] Add the confirmed high-value Category Page filters while retaining submitted Search/Enter activation and leaving the mobile layout unchanged.
+- [x] Remove the homepage Shipping Supplies placeholder and replace the public Member Growth value with Calculating without changing homepage background, hero size, or statistic-bubble layout.
+- [ ] Add regression coverage, validate the expanded filters and homepage cleanup, publish, verify the standard domain, and synchronize GitHub.
