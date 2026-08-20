@@ -43,6 +43,7 @@ import TradePrintView from "./pages/TradePrintView";
 import TradeVoting from "./pages/TradeVoting";
 import TestAI from "./pages/TestAI";
 import ComingSoon from "./pages/ComingSoon";
+import ComingSoonDirections from "./pages/ComingSoonDirections";
 import {
   AllMostViewedRankings,
   AllMostFavoritedRankings,
@@ -55,6 +56,7 @@ function Router() {
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/coming-soon" component={ComingSoon} />
+      <Route path="/coming-soon-directions" component={ComingSoonDirections} />
       <Route path="/inventory">
         <ProtectedRoute>
           <Inventory />

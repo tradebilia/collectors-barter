@@ -551,3 +551,9 @@
 - [x] Restore the missing right-side authenticated action icons in the mobile top bar while preserving desktop header layout and behavior.
 - [x] Shorten the mobile-only top-bar search field to reserve clear right-side space for authenticated actions without changing desktop search dimensions.
 - [x] Add regression coverage, validate authenticated top-bar behavior at mobile and desktop widths, publish, verify the standard domain, and synchronize GitHub.
+- [x] Audit the current Coming Soon page and prepare new professional design directions without changing the published page until a direction is selected.
+- [x] Build a temporary mobile-friendly comparison page for the Coming Soon visual directions without changing the live Coming Soon page.
+- [x] Prepare five additional Restoration Workbench Coming Soon mockups using the exact Tradebilia wheel logo before selecting a final live design.
+- [x] Replace the live Coming Soon page visual treatment with the selected Restoration Workbench direction while preserving the existing consent-based signup behavior.
+- [x] Use the exact inline Tradebilia wheel-and-wordmark component in the selected Restoration Workbench Coming Soon page rather than any generated logo treatment.
+- [x] Validate the selected Coming Soon design at mobile and desktop widths, publish, verify the standard domain, and synchronize GitHub.
