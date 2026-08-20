@@ -21,4 +21,6 @@ The existing 72-hour one-sided-acceptance expiry remains in the scheduled lifecy
 
 ## Validation
 
-The new `tradeAtomicity.test.ts` locks the transactional counteroffer, bounded input, active-owner validation, proposal-row lock, duplicate-safe retry, and post-commit notification contracts. Focused Trade Room coverage passed **8 tests across 3 files**, and TypeScript passed. The complete regression suite passed **97 files / 307 tests** with **4 expected skips**; the production build passed. Public-domain verification and canonical-GitHub synchronization remain pending.
+The new `tradeAtomicity.test.ts` locks the transactional counteroffer, bounded input, active-owner validation, proposal-row lock, duplicate-safe retry, and post-commit notification contracts. Focused Trade Room coverage passed **8 tests across 3 files**, and TypeScript passed. The complete regression suite passed **97 files / 307 tests** with **4 expected skips**; the production build passed.
+
+Standard-domain verification completed after deployment propagation: the public Tradebilia application loaded normally at `https://tradebilia.manus.space/`. This release is server-side and requires an authenticated, state-changing trade action to exercise manually; no live proposal was created, altered, accepted, or shipped for release verification. The exact hardening behavior is therefore verified by transactional source contracts, focused regression coverage, the full suite, TypeScript, and the production build. Canonical GitHub `main` is synchronized at commit `f0880475`.
