@@ -736,7 +736,7 @@ export default function Home() {
                   />
                 </div>
 
-                <div className="grid gap-4 px-4 md:col-start-2 md:grid-cols-2 lg:px-8 xl:grid-cols-4">
+                <div className="grid grid-cols-2 gap-3 px-4 md:col-start-2 md:grid-cols-2 md:gap-4 lg:px-8 xl:grid-cols-4">
                 {/* Most Viewed */}
                 <Card className="overflow-hidden rounded-2xl border border-white/10 bg-[#0d152b] text-white shadow-2xl hover:border-white/20 transition-all flex flex-col">
                   <CardHeader className="pb-4 pt-7 px-6 relative">

@@ -91,6 +91,7 @@ export default function MemberSearch() {
   const [filters, setFilters] = useState<DirectoryFilters>(defaultFilters);
   const [usernameDraft, setUsernameDraft] = useState("");
   const [openExactMatch, setOpenExactMatch] = useState(false);
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const deferredDistanceMiles = useDeferredValue(filters.distanceMiles);
   const requestedDistance = Number(deferredDistanceMiles);
   const hasDistanceFilter = isAuthenticated && Number.isFinite(requestedDistance) && requestedDistance > 0;
@@ -208,9 +209,15 @@ export default function MemberSearch() {
           <p className="mt-3 text-sm text-slate-500">Enter a username, then press Search to view that collector’s public profile.</p>
         </form>
 
+        <Button type="button" variant="outline" className="mt-4 h-11 w-full rounded-xl border-slate-300 bg-white text-slate-900 xl:hidden" onClick={() => setMobileFiltersOpen(true)}>
+          <Filter className="mr-2 h-4 w-4 text-violet-700" />
+          Filters{activeFilterChips.length ? ` (${activeFilterChips.length})` : ""}
+        </Button>
+
         <div className="mt-7 grid gap-6 xl:grid-cols-[322px_minmax(0,1fr)_265px]">
-          <aside className="h-fit rounded-[2rem] border border-slate-300/80 bg-white p-5 shadow-[0_18px_48px_rgba(15,23,42,0.07)] xl:sticky xl:top-4">
-            <div className="flex items-center justify-between gap-3"><div className="flex items-center gap-2"><Filter className="h-5 w-5 text-violet-700" /><h2 className="text-2xl font-semibold text-slate-950">Filters</h2></div><SlidersHorizontal className="h-4 w-4 text-slate-400" /></div>
+          {mobileFiltersOpen ? <button type="button" aria-label="Close filters" className="fixed inset-0 z-40 bg-slate-950/35 xl:hidden" onClick={() => setMobileFiltersOpen(false)} /> : null}
+          <aside className={`fixed inset-y-0 left-0 z-50 w-[min(22rem,calc(100vw-2rem))] overflow-y-auto rounded-r-[2rem] border border-slate-300/80 bg-white p-5 shadow-[0_18px_48px_rgba(15,23,42,0.18)] transition-transform duration-200 ${mobileFiltersOpen ? "translate-x-0" : "-translate-x-full"} xl:sticky xl:top-4 xl:z-auto xl:h-fit xl:w-auto xl:translate-x-0 xl:rounded-[2rem] xl:shadow-[0_18px_48px_rgba(15,23,42,0.07)]`}>
+            <div className="flex items-center justify-between gap-3"><div className="flex items-center gap-2"><Filter className="h-5 w-5 text-violet-700" /><h2 className="text-2xl font-semibold text-slate-950">Filters</h2></div><div className="flex items-center gap-2"><SlidersHorizontal className="hidden h-4 w-4 text-slate-400 xl:block" /><Button type="button" variant="ghost" size="icon" className="xl:hidden" onClick={() => setMobileFiltersOpen(false)}><X className="h-4 w-4" /><span className="sr-only">Close filters</span></Button></div></div>
             <p className="mt-2 text-xs leading-5 text-slate-500">Selections update results automatically.</p>
             <div className="mt-5 space-y-5">
               <div className="space-y-2"><Label>State / region</Label><Select value={filters.region} onValueChange={value => updateFilters(current => ({ ...current, region: value }))}><SelectTrigger className="h-11 border-slate-300 bg-slate-50"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">All regions</SelectItem>{regions.map(region => <SelectItem key={region} value={region}>{region}</SelectItem>)}</SelectContent></Select></div>
