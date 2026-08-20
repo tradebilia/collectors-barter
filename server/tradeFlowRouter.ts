@@ -111,7 +111,7 @@ const declineTradeSchema = z.object({
 
 const sendProposalSchema = z.object({
   proposalId: z.number().int().positive(),
-  offeredListingIds: z.array(z.number().int().positive()),
+  offeredListingIds: z.array(z.number().int().positive()).max(50),
   cashFromProposer: z.number().min(0).optional(),
   cashFromRecipient: z.number().min(0).optional(),
   message: z.string().optional(),
@@ -430,103 +430,84 @@ export const tradeFlowRouter = router({
     .mutation(async ({ ctx, input }) => {
       const db = await requireDb();
       const userId = ctx.user.id;
-
-      const [proposal] = await db.select().from(tradeProposals).where(eq(tradeProposals.id, input.proposalId)).limit(1);
-      if (!proposal) throw new TRPCError({ code: 'NOT_FOUND', message: 'Trade not found' });
-      if (proposal.recipientId !== userId && proposal.requesterId !== userId) {
-        throw new TRPCError({ code: 'FORBIDDEN', message: 'Not authorized' });
-      }
-
       const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
 
-      // Clear existing proposal items from this user and re-insert
-      await db.execute(
-        sql`DELETE FROM tradeProposalItems WHERE proposalId = ${input.proposalId} AND offeredListingId IN (SELECT id FROM listings WHERE ownerId = ${userId})`
-      );
-
-      // Insert new items
-      for (const listingId of input.offeredListingIds) {
-        await db.insert(tradeProposalItems).values({
-          proposalId: input.proposalId,
-          offeredListingId: listingId,
-          createdAt: now,
-        });
-      }
-
-      // Update status to 'negotiating', record who sent the last proposal, and update cash fields
-      // Perspective-aware: cashFromProposer = MY cash, cashFromRecipient = THEIR cash
-      // Map to the correct DB columns based on whether sender is the requester or recipient
-      const senderIsRequester = proposal.requesterId === userId;
-      const newCashFromRequester = senderIsRequester
-        ? (input.cashFromProposer ?? 0)
-        : (input.cashFromRecipient ?? 0);
-      const newCashFromRecipient = senderIsRequester
-        ? (input.cashFromRecipient ?? 0)
-        : (input.cashFromProposer ?? 0);
-
-      if (input.cashFromProposer !== undefined || input.cashFromRecipient !== undefined) {
-        await db.execute(
-          sql`UPDATE tradeProposals SET status = 'negotiating', cashFromRequester = ${newCashFromRequester}, cashFromRecipient = ${newCashFromRecipient}, lastProposedBy = ${userId}, lastActivityAt = ${now}, updatedAt = ${now} WHERE id = ${input.proposalId}`
+      const counteroffer = await db.transaction(async (tx) => {
+        const [proposalRows] = await tx.execute(
+          sql`SELECT * FROM tradeProposals WHERE id = ${input.proposalId} FOR UPDATE`
         );
-      } else {
-        await db.execute(
-          sql`UPDATE tradeProposals SET status = 'negotiating', lastProposedBy = ${userId}, lastActivityAt = ${now}, updatedAt = ${now} WHERE id = ${input.proposalId}`
-        );
-      }
-
-      // Send system message
-      if (input.message) {
-        await db.insert(tradeMessages).values({
-          proposalId: input.proposalId,
-          senderId: userId,
-          message: input.message,
-          createdAt: now,
-        });
-      }
-
-      // Alert other party
-      const otherUserId = proposal.requesterId === userId ? proposal.recipientId : proposal.requesterId;
-      await createTradeAlert(db, input.proposalId, otherUserId, 'counterProposal', `A new counter proposal has been submitted for your trade (TR-${proposal.tradeReferenceNumber}).`, now);
-
-      // Log to activity log — fetch actor name and item titles
-      const [actor] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
-      const actorName = await getUserDisplayName(db, userId);
-
-      // Log each item added
-      if (input.offeredListingIds.length > 0) {
-        const itemRows = await db.select({ title: listings.title }).from(listings).where(inArray(listings.id, input.offeredListingIds));
-        for (const item of itemRows) {
-          await db.execute(
-            sql`INSERT INTO tradeActivityLog (proposalId, actorId, actorName, eventType, details, createdAt) VALUES (${input.proposalId}, ${userId}, ${actorName}, 'item_added', ${`Added: ${item.title}`}, ${now})`
-          );
+        const proposal = (proposalRows as unknown as any[])?.[0];
+        if (!proposal) throw new TRPCError({ code: 'NOT_FOUND', message: 'Trade not found' });
+        if (proposal.recipientId !== userId && proposal.requesterId !== userId) {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Not authorized' });
         }
-      }
+        if (!['pending', 'negotiating'].includes(proposal.status)) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Trade can only be updated while pending or negotiating' });
+        }
 
-      // Log cash if added
-      if (input.cashFromProposer && input.cashFromProposer > 0) {
-        await db.execute(
-          sql`INSERT INTO tradeActivityLog (proposalId, actorId, actorName, eventType, details, createdAt) VALUES (${input.proposalId}, ${userId}, ${actorName}, 'cash_added', ${`Added $${input.cashFromProposer} cash`}, ${now})`
+        const offeredListingIds = [...new Set(input.offeredListingIds)];
+        if (offeredListingIds.length !== input.offeredListingIds.length) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Each offered item may be included only once' });
+        }
+        if (offeredListingIds.includes(proposal.requestedListingId)) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'The requested item is already included in this trade' });
+        }
+
+        let itemRows: Array<{ id: number; title: string }> = [];
+        if (offeredListingIds.length > 0) {
+          const [ownedRows] = await tx.execute(
+            sql`SELECT id, title FROM listings WHERE id IN (${sql.join(offeredListingIds.map(id => sql`${id}`), sql`, `)}) AND ownerId = ${userId} AND isActive = 1 AND status = 'active' FOR UPDATE`
+          );
+          itemRows = (ownedRows as unknown as Array<{ id: number; title: string }>) || [];
+          if (itemRows.length !== offeredListingIds.length) {
+            throw new TRPCError({ code: 'BAD_REQUEST', message: 'Every offered item must be an active listing you own' });
+          }
+        }
+
+        await tx.execute(
+          sql`DELETE FROM tradeProposalItems WHERE proposalId = ${input.proposalId} AND offeredListingId IN (SELECT id FROM listings WHERE ownerId = ${userId})`
         );
-      }
-      if (input.cashFromRecipient && input.cashFromRecipient > 0) {
-        await db.execute(
-          sql`INSERT INTO tradeActivityLog (proposalId, actorId, actorName, eventType, details, createdAt) VALUES (${input.proposalId}, ${userId}, ${actorName}, 'cash_added', ${`Added $${input.cashFromRecipient} cash`}, ${now})`
-        );
-      }
+        for (const listingId of offeredListingIds) {
+          await tx.insert(tradeProposalItems).values({ proposalId: input.proposalId, offeredListingId: listingId, createdAt: now });
+        }
 
-            // Log proposal sent
-      await db.execute(
-        sql`INSERT INTO tradeActivityLog (proposalId, actorId, actorName, eventType, details, createdAt) VALUES (${input.proposalId}, ${userId}, ${actorName}, 'proposal_sent', 'Counter offer submitted', ${now})`
-      );
+        const senderIsRequester = proposal.requesterId === userId;
+        const newCashFromRequester = senderIsRequester ? (input.cashFromProposer ?? 0) : (input.cashFromRecipient ?? 0);
+        const newCashFromRecipient = senderIsRequester ? (input.cashFromRecipient ?? 0) : (input.cashFromProposer ?? 0);
+        if (input.cashFromProposer !== undefined || input.cashFromRecipient !== undefined) {
+          await tx.execute(sql`UPDATE tradeProposals SET status = 'negotiating', cashFromRequester = ${newCashFromRequester}, cashFromRecipient = ${newCashFromRecipient}, lastProposedBy = ${userId}, lastActivityAt = ${now}, updatedAt = ${now} WHERE id = ${input.proposalId}`);
+        } else {
+          await tx.execute(sql`UPDATE tradeProposals SET status = 'negotiating', lastProposedBy = ${userId}, lastActivityAt = ${now}, updatedAt = ${now} WHERE id = ${input.proposalId}`);
+        }
 
-      // Email notification (counterProposal preference)
-      const counterEmailData = await getEmailIfPrefEnabled(db, otherUserId, 'counterProposal');
+        if (input.message) {
+          await tx.insert(tradeMessages).values({ proposalId: input.proposalId, senderId: userId, message: input.message, createdAt: now });
+        }
+
+        const otherUserId = proposal.requesterId === userId ? proposal.recipientId : proposal.requesterId;
+        await createTradeAlert(tx, input.proposalId, otherUserId, 'counterProposal', `A new counter proposal has been submitted for your trade (TR-${proposal.tradeReferenceNumber}).`, now);
+        const actorName = await getUserDisplayName(tx, userId);
+        for (const item of itemRows) {
+          await tx.execute(sql`INSERT INTO tradeActivityLog (proposalId, actorId, actorName, eventType, details, createdAt) VALUES (${input.proposalId}, ${userId}, ${actorName}, 'item_added', ${`Added: ${item.title}`}, ${now})`);
+        }
+        if (input.cashFromProposer && input.cashFromProposer > 0) {
+          await tx.execute(sql`INSERT INTO tradeActivityLog (proposalId, actorId, actorName, eventType, details, createdAt) VALUES (${input.proposalId}, ${userId}, ${actorName}, 'cash_added', ${`Added $${input.cashFromProposer} cash`}, ${now})`);
+        }
+        if (input.cashFromRecipient && input.cashFromRecipient > 0) {
+          await tx.execute(sql`INSERT INTO tradeActivityLog (proposalId, actorId, actorName, eventType, details, createdAt) VALUES (${input.proposalId}, ${userId}, ${actorName}, 'cash_added', ${`Added $${input.cashFromRecipient} cash`}, ${now})`);
+        }
+        await tx.execute(sql`INSERT INTO tradeActivityLog (proposalId, actorId, actorName, eventType, details, createdAt) VALUES (${input.proposalId}, ${userId}, ${actorName}, 'proposal_sent', 'Counter offer submitted', ${now})`);
+
+        return { otherUserId, actorName, tradeReferenceNumber: proposal.tradeReferenceNumber };
+      });
+
+      const counterEmailData = await getEmailIfPrefEnabled(db, counteroffer.otherUserId, 'counterProposal');
       if (counterEmailData) {
         sendCounterProposalEmail({
           recipientEmail: counterEmailData.email,
           recipientName: counterEmailData.name,
-          senderName: actorName,
-          tradeRef: proposal.tradeReferenceNumber ?? String(input.proposalId),
+          senderName: counteroffer.actorName,
+          tradeRef: counteroffer.tradeReferenceNumber ?? String(input.proposalId),
         }).catch(err => console.warn('[Email] Counter proposal email failed:', err));
       }
 
@@ -537,24 +518,33 @@ export const tradeFlowRouter = router({
     .mutation(async ({ ctx, input }) => {
       const db = await requireDb();
       const userId = ctx.user.id;
-
-      const [proposal] = await db.select().from(tradeProposals).where(eq(tradeProposals.id, input.proposalId)).limit(1);
-      if (!proposal) throw new TRPCError({ code: 'NOT_FOUND', message: 'Trade not found' });
-      if (proposal.recipientId !== userId && proposal.requesterId !== userId) {
-        throw new TRPCError({ code: 'FORBIDDEN', message: 'Not authorized' });
-      }
-      if (!['negotiating'].includes(proposal.status)) {
-        throw new TRPCError({ code: 'BAD_REQUEST', message: 'Trade must be in negotiating status to accept' });
-      }
-
       const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
-      const otherUserId = proposal.requesterId === userId ? proposal.recipientId : proposal.requesterId;
+      const acceptance = await db.transaction(async (tx) => {
+        const db = tx as any;
+        const [proposalRows] = await db.execute(
+          sql`SELECT * FROM tradeProposals WHERE id = ${input.proposalId} FOR UPDATE`
+        );
+        const proposal = (proposalRows as any[])?.[0];
+        if (!proposal) throw new TRPCError({ code: 'NOT_FOUND', message: 'Trade not found' });
+        if (proposal.recipientId !== userId && proposal.requesterId !== userId) {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Not authorized' });
+        }
+        const otherUserId = proposal.requesterId === userId ? proposal.recipientId : proposal.requesterId;
+        if (proposal.status === 'shipping') {
+          return { success: true, mutualAcceptance: true, alreadyAccepted: true, otherUserId, tradeReferenceNumber: proposal.tradeReferenceNumber, actorName: null, notification: 'none' as const };
+        }
+        if (!['negotiating'].includes(proposal.status)) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Trade must be in negotiating status to accept' });
+        }
 
-      // 72-hour mutual acceptance: Check if the other party has already accepted
-      const [existingAcceptance] = await db.execute(
-        sql`SELECT id FROM tradeReceiptConfirmation WHERE proposalId = ${input.proposalId} AND userId = ${otherUserId} AND confirmationType = 'accepted'`
-      );
-      const otherHasAccepted = ((existingAcceptance as unknown as any[])?.length || 0) > 0;
+        const [existingAcceptance] = await db.execute(
+          sql`SELECT userId FROM tradeReceiptConfirmation WHERE proposalId = ${input.proposalId} AND confirmationType = 'accepted' FOR UPDATE`
+        );
+        const acceptedUserIds = new Set(((existingAcceptance as any[]) || []).map(row => row.userId));
+        const otherHasAccepted = acceptedUserIds.has(otherUserId);
+        if (acceptedUserIds.has(userId)) {
+          return { success: true, mutualAcceptance: false, alreadyAccepted: true, otherUserId, tradeReferenceNumber: proposal.tradeReferenceNumber, actorName: null, notification: 'none' as const };
+        }
 
       if (otherHasAccepted) {
         // Both have now accepted — move to 'shipping' status and lock items
@@ -591,28 +581,7 @@ export const tradeFlowRouter = router({
         await db.execute(
           sql`INSERT INTO tradeActivityLog (proposalId, actorId, actorName, eventType, details, createdAt) VALUES (${input.proposalId}, ${userId}, ${acceptorName2}, 'proposal_accepted', 'Both parties accepted — trade locked! Entering shipping stage.', ${now})`
         );
-                // Email notification for mutual acceptance (proposalAccepted preference) — notify both parties
-        const acceptorEmailData = await getEmailIfPrefEnabled(db, userId, 'proposalAccepted');
-        if (acceptorEmailData) {
-          sendProposalAcceptedEmail({
-            recipientEmail: acceptorEmailData.email,
-            recipientName: acceptorEmailData.name,
-            otherPartyName: 'Your trade partner',
-            itemTitle: '',
-            tradeRef: proposal.tradeReferenceNumber ?? String(input.proposalId),
-          }).catch(err => console.warn('[Email] Proposal accepted email failed:', err));
-        }
-        const otherAcceptorEmailData = await getEmailIfPrefEnabled(db, otherUserId, 'proposalAccepted');
-        if (otherAcceptorEmailData) {
-          sendProposalAcceptedEmail({
-            recipientEmail: otherAcceptorEmailData.email,
-            recipientName: otherAcceptorEmailData.name,
-            otherPartyName: 'Your trade partner',
-            itemTitle: '',
-            tradeRef: proposal.tradeReferenceNumber ?? String(input.proposalId),
-          }).catch(err => console.warn('[Email] Proposal accepted email failed:', err));
-        }
-        return { success: true, mutualAcceptance: true };
+        return { success: true, mutualAcceptance: true, alreadyAccepted: false, otherUserId, tradeReferenceNumber: proposal.tradeReferenceNumber, actorName: acceptorName2, notification: 'mutual' as const };
       } else {
         // First acceptance — record it and notify other party (72-hour window)
         await db.execute(
@@ -631,19 +600,40 @@ export const tradeFlowRouter = router({
         await db.execute(
           sql`INSERT INTO tradeActivityLog (proposalId, actorId, actorName, eventType, details, createdAt) VALUES (${input.proposalId}, ${userId}, ${acceptorName1}, 'proposal_accepted', 'Accepted the proposal — awaiting partner confirmation', ${now})`
         );
-        // Email notification for first acceptance (proposalAccepted preference)
-        const firstAcceptEmailData = await getEmailIfPrefEnabled(db, otherUserId, 'proposalAccepted');
-        if (firstAcceptEmailData) {
+        return { success: true, mutualAcceptance: false, alreadyAccepted: false, otherUserId, tradeReferenceNumber: proposal.tradeReferenceNumber, actorName: acceptorName1, notification: 'first' as const };
+      }
+      });
+
+      if (!acceptance.alreadyAccepted && acceptance.notification === 'mutual') {
+        const [acceptorEmailData, otherAcceptorEmailData] = await Promise.all([
+          getEmailIfPrefEnabled(db, userId, 'proposalAccepted'),
+          getEmailIfPrefEnabled(db, acceptance.otherUserId, 'proposalAccepted'),
+        ]);
+        for (const recipient of [acceptorEmailData, otherAcceptorEmailData]) {
+          if (recipient) {
+            sendProposalAcceptedEmail({
+              recipientEmail: recipient.email,
+              recipientName: recipient.name,
+              otherPartyName: 'Your trade partner',
+              itemTitle: '',
+              tradeRef: acceptance.tradeReferenceNumber ?? String(input.proposalId),
+            }).catch(err => console.warn('[Email] Proposal accepted email failed:', err));
+          }
+        }
+      }
+      if (!acceptance.alreadyAccepted && acceptance.notification === 'first') {
+        const recipient = await getEmailIfPrefEnabled(db, acceptance.otherUserId, 'proposalAccepted');
+        if (recipient) {
           sendProposalAcceptedEmail({
-            recipientEmail: firstAcceptEmailData.email,
-            recipientName: firstAcceptEmailData.name,
-            otherPartyName: acceptorName1,
+            recipientEmail: recipient.email,
+            recipientName: recipient.name,
+            otherPartyName: acceptance.actorName ?? 'Your trade partner',
             itemTitle: '',
-            tradeRef: proposal.tradeReferenceNumber ?? String(input.proposalId),
+            tradeRef: acceptance.tradeReferenceNumber ?? String(input.proposalId),
           }).catch(err => console.warn('[Email] First acceptance email failed:', err));
         }
-        return { success: true, mutualAcceptance: false };
       }
+      return { success: true, mutualAcceptance: acceptance.mutualAcceptance, alreadyAccepted: acceptance.alreadyAccepted };
     }),
   rejectTradeProposal: protectedProcedure
     .input(rejectProposalSchema)

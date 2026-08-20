@@ -515,3 +515,6 @@
 - [x] Remove the homepage Shipping Supplies placeholder and replace the public Member Growth value with Calculating without changing homepage background, hero size, or statistic-bubble layout.
 - [x] Add regression coverage, validate the expanded filters and homepage cleanup, publish, verify the standard domain, and synchronize GitHub.
 - [x] Audit every Trade Room step for verified functional flaws, unclear handoffs, safety gaps, and usability improvements without changing trade behavior.
+- [x] Make Trade Room counteroffer item replacement and mutual confirmation atomic and retry-safe without changing trade terms, participant authorization, or existing reminder behavior.
+- [x] Enforce ownership and active-listing validation for every counteroffer item before replacement, within the same atomic Trade Room update.
+- [ ] Add regression coverage for transaction boundaries and safe retry behavior, validate the hardened flow, publish, verify the standard domain, and synchronize GitHub.
