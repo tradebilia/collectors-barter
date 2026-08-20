@@ -508,4 +508,4 @@
 - [x] Generate and present ten warm archival-study global Search Results hero alternatives that visibly incorporate all Tradebilia collection categories; preserve the current live hero until the user selects a replacement.
 - [x] Integrate the user-selected Option 4 Restoration Workbench hero background into global Search Results while preserving the animated Tradebilia SVG and existing layout.
 - [x] Audit and repair blank global-search behavior so an empty query displays all active listings without applying a keyword filter.
-- [ ] Add regression coverage, validate blank and keyword global-search behavior, publish, verify the standard domain, and synchronize GitHub.
+- [x] Add regression coverage, validate blank and keyword global-search behavior, publish, verify the standard domain, and synchronize GitHub.
