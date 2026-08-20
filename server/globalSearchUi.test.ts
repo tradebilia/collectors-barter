@@ -23,7 +23,7 @@ describe("unified global search contracts", () => {
     expect(searchPage).toContain("<CategoryBar />");
     expect(searchPage).toContain("AnimatedLogoSmall70 fontSize={125}");
     expect(searchPage).toContain("globalSearchHeroCollageUrl");
-    expect(searchPage).toContain("tradebilia-global-search-collage-hero_7a52c84a.png");
+    expect(searchPage).toContain("tradebilia-warm-archival-hero-04_cdf269c5.png");
     expect(searchPage).toContain('min-h-[400px]');
     expect(searchPage).toContain("Search the Exchange");
     expect(searchPage).toContain('href={`/listings/${listing.id}`}');
