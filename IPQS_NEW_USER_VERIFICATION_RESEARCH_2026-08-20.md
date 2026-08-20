@@ -1,6 +1,6 @@
 # IPQS New-User Verification Assessment for Tradebilia
 
-**Research date:** August 20, 2026  
+**Research date:** August 20, 2026
 **Scope:** Assess IPQualityScore (IPQS) for new-account abuse prevention, with emphasis on email age. This is an operational product recommendation, not legal advice.
 
 ## Executive Recommendation
@@ -37,7 +37,7 @@ The correct interpretation is below.
 | Invalid, disposable, honeypot/spam-trap, or clearly recent abusive email | Reject registration or require manual support review | These are objective abuse/data-quality signals |
 | Breach/leak exposure with otherwise low risk | Allow only after email confirmation and phone verification; encourage a unique password | A leak suggests possible compromise, not that the person is fraudulent |
 
-IPQS's own documentation advises examining multiple values rather than a single age metric, and describes its `first_seen` value as the first time **IPQS analyzed the address**. Exact provider creation dates generally are not public.[1] [2] 
+IPQS's own documentation advises examining multiple values rather than a single age metric, and describes its `first_seen` value as the first time **IPQS analyzed the address**. Exact provider creation dates generally are not public.[1] [2]
 
 ## Recommended First Release: Minimal, Useful, Low-Friction
 
