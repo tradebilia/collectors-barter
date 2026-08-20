@@ -435,8 +435,8 @@ export default function Inventory() {
       <CategoryBar />
 
       <main className="flex flex-col relative">
-        <div className="flex flex-1 relative">
-          <aside className="w-64 border-r border-slate-200 bg-slate-50 p-6 overflow-y-auto z-10 flex-shrink-0">
+        <div className="flex flex-1 flex-col relative lg:flex-row">
+          <aside className="w-full border-b border-slate-200 bg-slate-50 p-4 lg:w-64 lg:flex-shrink-0 lg:overflow-y-auto lg:border-r lg:p-6">
             <Card className="border-0 bg-transparent shadow-none">
               <CardContent className="space-y-2 p-3 pt-0">
                 <div className="pb-2 border-b border-slate-200">
@@ -704,7 +704,7 @@ export default function Inventory() {
                 </div>
 
               </div>
-              <div className="grid gap-3 grid-cols-6">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-6">
               {filteredListings.map((listing: any) => (
                 <Card key={listing.id} className="overflow-hidden border-slate-200 bg-white shadow-sm hover:shadow-lg transition-shadow rounded-lg">
                   <CardContent className="p-0">

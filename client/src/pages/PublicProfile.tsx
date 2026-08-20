@@ -246,7 +246,7 @@ export default function PublicProfile() {
         backgroundRepeat: 'no-repeat'
       }}>
         <div className="container relative flex h-64 items-center justify-center py-0 sm:h-72 lg:h-80">
-          <div className="flex w-full max-w-6xl items-center justify-center -ml-32">
+          <div className="flex w-full max-w-6xl items-center justify-center lg:-ml-32">
             <img src="https://assets.tradebilia.com/Profile_97aeba0f.svg" alt="Profile" className="h-auto w-full" />
           </div>
         </div>
@@ -293,7 +293,7 @@ export default function PublicProfile() {
                 )}
               </div>
               {/* Stats Bar */}
-              <div className="grid grid-cols-4 gap-3 mt-4 pt-4 border-t border-slate-100">
+              <div className="grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-slate-100 sm:grid-cols-4">
                 <div className="text-center">
                   <div className="flex items-center justify-center gap-1 mb-1">
                     <Package className="h-4 w-4 text-slate-400" />
