@@ -514,3 +514,4 @@
 - [x] Add the confirmed high-value Category Page filters while retaining submitted Search/Enter activation and leaving the mobile layout unchanged.
 - [x] Remove the homepage Shipping Supplies placeholder and replace the public Member Growth value with Calculating without changing homepage background, hero size, or statistic-bubble layout.
 - [x] Add regression coverage, validate the expanded filters and homepage cleanup, publish, verify the standard domain, and synchronize GitHub.
+- [x] Audit every Trade Room step for verified functional flaws, unclear handoffs, safety gaps, and usability improvements without changing trade behavior.
