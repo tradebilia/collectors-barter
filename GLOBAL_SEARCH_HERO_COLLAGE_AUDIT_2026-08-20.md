@@ -15,3 +15,7 @@ Desktop review confirmed the collage reaches edge to edge, the animated SVG is c
 ## Scope Boundary
 
 Only the global Search Results hero changed. No category-page background, category title asset, listing data, Search Results behavior, or shared top-bar behavior changed.
+
+## Public Release Verification
+
+The first standard-domain check after the checkpoint still served the preceding solid-color hero. After additional propagation, `https://tradebilia.manus.space/search?q=Star%20Wars` displayed the published collage and centered animated SVG with the Category Bar immediately below it. The initial public response showed the query’s loading state; a follow-up check completed with two active cross-category Star Wars results—one **Comics** listing and one **Movies** listing—visible beneath the hero. The animated SVG continued its intended category-word cycle (for example, from Tradebilia to Trade Coins) while the all-category eyebrow and global-search copy remained stable.
