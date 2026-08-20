@@ -37,6 +37,7 @@ import {
 import { buildLegacyTradeTimeline, isMissingTradeActivityLogError } from "./tradeTimeline";
 import { getReviewSubmissionBlocker, resolveTradeContactName } from "./tradeRoomSafeguards";
 import { buildCompletedTradeExchange } from "../shared/completedTradeExchange";
+import { requireMarketplaceApproval } from "./accountApproval";
 
 // ============================================================================
 // HELPER: Check notification preference and get user email
@@ -218,11 +219,12 @@ export const tradeFlowRouter = router({
 
   initiateTradeProposal: protectedProcedure
     .input(initiateTradeSchema)
-    .mutation(async ({ ctx, input }) => {
-      const db = await requireDb();
-      const userId = ctx.user.id;
+	    .mutation(async ({ ctx, input }) => {
+	      const db = await requireDb();
+	      const userId = ctx.user.id;
+	      await requireMarketplaceApproval(userId);
 
-      // 1. Check if initiator is suspended or banned
+	      // 1. Check if initiator is suspended or banned
       const [initiator] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
       if ((initiator as any)?.isBanned) {
         throw new TRPCError({ code: 'FORBIDDEN', message: 'Your account has been permanently banned' });
@@ -426,12 +428,13 @@ export const tradeFlowRouter = router({
       return { success: true };
     }),
 
-  sendTradeProposal: protectedProcedure
-    .input(sendProposalSchema)
-    .mutation(async ({ ctx, input }) => {
-      const db = await requireDb();
-      const userId = ctx.user.id;
-      const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
+	  sendTradeProposal: protectedProcedure
+	    .input(sendProposalSchema)
+	    .mutation(async ({ ctx, input }) => {
+	      const db = await requireDb();
+	      const userId = ctx.user.id;
+	      await requireMarketplaceApproval(userId);
+	      const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
 
       const counteroffer = await db.transaction(async (tx) => {
         const [proposalRows] = await tx.execute(

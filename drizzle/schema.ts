@@ -738,10 +738,44 @@ export const users = mysqlTable("users", {
 	merchantVerifiedAt: timestamp({ mode: 'string' }),
 	merchantVerifiedBy: int(),
 },
-(table) => [
-	index("users_openId_unique").on(table.openId),
-	index("users_username_unique").on(table.username),
-]);
+	(table) => [
+		index("users_openId_unique").on(table.openId),
+		index("users_username_unique").on(table.username),
+	]);
+
+export const accountApprovalReviews = mysqlTable("accountApprovalReviews", {
+	id: int().autoincrement().notNull(),
+	userId: int().notNull().references(() => users.id),
+	status: mysqlEnum(['pending', 'approved', 'declined']).default('pending').notNull(),
+	reasonCode: varchar({ length: 80 }).notNull(),
+	emailFirstSeenAt: timestamp({ mode: 'string' }),
+	adminNote: text(),
+	reviewedBy: int().references(() => users.id),
+	reviewedAt: timestamp({ mode: 'string' }),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+},
+	(table) => [
+		index("accountApprovalReviews_userId_unique").on(table.userId),
+		index("accountApprovalReviews_status_idx").on(table.status),
+		index("accountApprovalReviews_createdAt_idx").on(table.createdAt),
+	]);
+
+export const apiHealthEvents = mysqlTable("apiHealthEvents", {
+	id: int().autoincrement().notNull(),
+	provider: varchar({ length: 80 }).notNull(),
+	operation: varchar({ length: 120 }).notNull(),
+	failureClass: mysqlEnum(['quota_exhausted', 'rate_limited', 'authentication', 'configuration', 'timeout', 'upstream', 'network', 'validation', 'unknown']).notNull(),
+	statusCode: int(),
+	providerErrorCode: varchar({ length: 120 }),
+	safeMessage: varchar({ length: 255 }),
+	occurredAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+},
+	(table) => [
+		index("apiHealthEvents_provider_idx").on(table.provider),
+		index("apiHealthEvents_failureClass_idx").on(table.failureClass),
+		index("apiHealthEvents_occurredAt_idx").on(table.occurredAt),
+	]);
 
 export const watchlistEntries = mysqlTable("watchlistEntries", {
 	id: int().autoincrement().notNull(),

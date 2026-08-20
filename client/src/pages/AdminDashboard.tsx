@@ -407,6 +407,12 @@ export default function AdminDashboard() {
   const unbanUserMutation = trpc.admin.unbanUser.useMutation();
   const bannedUsersQuery = trpc.admin.getBannedUsers.useQuery(undefined, { enabled: user?.role === 'admin' });
   const moderationLogQuery = trpc.admin.getModerationLog.useQuery(undefined, { enabled: user?.role === 'admin' });
+  const pendingApprovalsQuery = trpc.admin.getPendingAccountApprovals.useQuery(undefined, { enabled: user?.role === 'admin', refetchOnWindowFocus: true });
+  const apiHealthQuery = trpc.admin.getApiHealthEvents.useQuery(undefined, { enabled: user?.role === 'admin', refetchOnWindowFocus: true });
+  const reviewApprovalMutation = trpc.admin.reviewAccountApproval.useMutation({
+    onSuccess: () => pendingApprovalsQuery.refetch(),
+    onError: (error) => toast.error(error.message),
+  });
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<any>(null);
   const [selectedReferral, setSelectedReferral] = useState<any>(null);
@@ -646,6 +652,14 @@ export default function AdminDashboard() {
             <TabsTrigger value="flagged" className="flex items-center justify-center gap-1.5 text-xs font-medium py-2.5 whitespace-nowrap">
               <Flag className="h-4 w-4" />
               Flagged
+            </TabsTrigger>
+            <TabsTrigger value="approvals" className="flex items-center justify-center gap-1.5 text-xs font-medium py-2.5 whitespace-nowrap">
+              <CheckCircle className="h-4 w-4" />
+              Approvals
+            </TabsTrigger>
+            <TabsTrigger value="api-health" className="flex items-center justify-center gap-1.5 text-xs font-medium py-2.5 whitespace-nowrap">
+              <AlertTriangle className="h-4 w-4" />
+              API Health
             </TabsTrigger>
           </TabsList>
 
@@ -1359,6 +1373,32 @@ export default function AdminDashboard() {
           {/* Flagged Content Tab */}
           <TabsContent value="flagged" className="space-y-4 mt-6">
             <FlaggedContentTab />
+          </TabsContent>
+
+          <TabsContent value="approvals" className="space-y-4 mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Pending Account Approvals</CardTitle>
+                <CardDescription>Accounts with an IPQS email-history estimate under one year can finish setup but need approval before marketplace actions.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {pendingApprovalsQuery.isLoading ? <p className="text-sm text-muted-foreground">Loading approval queue…</p> : (pendingApprovalsQuery.data?.length ?? 0) === 0 ? <p className="text-sm text-muted-foreground">No pending account approvals.</p> : <div className="space-y-3">
+                  {pendingApprovalsQuery.data?.map((review: any) => <div key={review.id} className="rounded-lg border p-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                    <div><p className="font-medium">{review.displayName || review.username || `User #${review.userId}`}</p><p className="text-sm text-muted-foreground">{review.email || "Email unavailable"} · Email history estimate: under one year</p><p className="text-xs text-muted-foreground mt-1">Email verified: {review.emailVerified ? "Yes" : "No"} · Phone verified: {review.phoneVerified ? "Yes" : "No"}</p></div>
+                    <div className="flex gap-2"><Button size="sm" onClick={() => reviewApprovalMutation.mutate({ reviewId: review.id, status: 'approved' })} disabled={reviewApprovalMutation.isPending}>Approve marketplace access</Button><Button size="sm" variant="outline" onClick={() => reviewApprovalMutation.mutate({ reviewId: review.id, status: 'declined' })} disabled={reviewApprovalMutation.isPending}>Decline</Button></div>
+                  </div>)}
+                </div>}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="api-health" className="space-y-4 mt-6">
+            <Card>
+              <CardHeader><CardTitle>API Health</CardTitle><CardDescription>Recent sanitized external API failures. Keys, request payloads, and raw provider responses are never displayed.</CardDescription></CardHeader>
+              <CardContent>
+                {apiHealthQuery.isLoading ? <p className="text-sm text-muted-foreground">Loading API health…</p> : (apiHealthQuery.data?.length ?? 0) === 0 ? <p className="text-sm text-muted-foreground">No recorded API failures.</p> : <div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className="border-b text-left"><th className="p-2">Provider</th><th className="p-2">Operation</th><th className="p-2">Likely cause</th><th className="p-2">Status</th><th className="p-2">When</th></tr></thead><tbody>{apiHealthQuery.data?.map((event: any) => <tr key={event.id} className="border-b"><td className="p-2 font-medium">{event.provider}</td><td className="p-2">{event.operation}</td><td className="p-2 capitalize">{event.failureClass.replaceAll('_', ' ')}</td><td className="p-2">{event.statusCode ?? '—'}</td><td className="p-2 whitespace-nowrap">{new Date(event.occurredAt).toLocaleString()}</td></tr>)}</tbody></table></div>}
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>

@@ -543,3 +543,8 @@
 - [x] Add regression coverage, validate homepage mobile and desktop statistics, publish, verify the standard domain, and synchronize GitHub.
 - [x] Research IPQS verification capabilities and recommend a privacy-conscious, risk-based new-user screening policy, including the value and limitations of email-age signals.
 - [x] Define the technical implementation blueprint for privacy-conscious IPQS new-user screening without deploying the integration.
+- [x] Assess whether estimated email-age information should appear on public profiles and recommend an accurate, privacy-conscious trust-signal design.
+- [x] Assess and define a proposed admin-approval gate for accounts with an IPQS email-history estimate under one year, without implementing it yet.
+- [x] Implement IPQS email-history screening at registration: accounts estimated under one year remain pending administrator approval after normal Account Setup and verified email/phone completion.
+- [x] Add server-side marketplace-action restrictions, an administrator approval queue, member status messaging, regression coverage, security validation, publishing, live verification, and GitHub synchronization for the IPQS approval workflow.
+- [x] Add an administrator-only API Health tab that records external API failures without secrets, classifies quota/rate-limit/auth/configuration/timeout/upstream causes, and surfaces actionable provider status.

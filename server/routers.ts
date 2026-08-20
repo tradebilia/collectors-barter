@@ -103,7 +103,7 @@ import { testAIRouter } from "./testAIRouter";
 import { r2MediaRouter } from "./r2MediaRouter";
 import { customAuth } from "./_core/customAuth";
 import { getOrCreateDirectMessageThread, persistDirectMessage } from "./directMessagePersistence";
-import { users, userProfiles, listings, deletedAccounts, tradeProposals, tradeMessages, tradeReviews, watchlistEntries, draftListings, passwordResetTokens, referralRequests, userFollows, directMessageThreads, directMessages, tradePayments, tradeActivityLog, emailTemplates } from "../drizzle/schema";
+import { users, userProfiles, listings, deletedAccounts, tradeProposals, tradeMessages, tradeReviews, watchlistEntries, draftListings, passwordResetTokens, referralRequests, userFollows, directMessageThreads, directMessages, tradePayments, tradeActivityLog, emailTemplates, accountApprovalReviews, apiHealthEvents } from "../drizzle/schema";
 import { eq, sql, desc, or, inArray, and } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { ONE_YEAR_MS } from "@shared/const";
@@ -111,6 +111,8 @@ import { subscribeToLaunchUpdates } from "./launchUpdates";
 import { getPreLaunchRecipients, sendPreLaunchUpdate } from "./preLaunchEmail";
 import { validateFirstTimeSetupRequirements } from "./accountSetupRequirements";
 import { PASSWORD_RECOVERY_TOKEN_TTL_MS, createOpaqueRecoveryToken, createSixDigitCode, hashRecoveryToken, isRecoveryRequestAllowed, isRecoveryTokenExpired, normalizeRecoveryEmail, timingSafeTextEquals } from "./accountRecovery";
+import { createPendingEmailHistoryApproval, requireMarketplaceApproval } from "./accountApproval";
+import { getIpqsEmailHistory } from "./ipqs";
 
 // The R2 adapter enforces decoded per-kind limits (10MB listing, 5MB avatar).
 // This ceiling stops an oversized base64 request before its payload is decoded.
@@ -268,20 +270,26 @@ export const appRouter = router({
           throw new Error("Invalid email format");
         }
 
-        const existing = await getUserByUsername(input.username);
-        if (existing) {
-          throw new Error("Username already taken");
-        }
+	        const existing = await getUserByUsername(input.username);
+	        if (existing) {
+	          throw new Error("Username already taken");
+	        }
 
-        const passwordHash = await hashPassword(input.password);
-        const userId = await createUser({
-          username: input.username,
-          passwordHash,
-          displayName: input.displayName,
-          email: input.email,
-        });
+	        const ipqsHistory = await getIpqsEmailHistory(input.email);
 
-        const sessionToken = await customAuth.createSessionToken(
+	        const passwordHash = await hashPassword(input.password);
+	        const userId = await createUser({
+	          username: input.username,
+	          passwordHash,
+	          displayName: input.displayName,
+	          email: input.email,
+	        });
+
+	        if (ipqsHistory.available && ipqsHistory.underOneYear) {
+	          await createPendingEmailHistoryApproval(userId, ipqsHistory.firstSeenAt);
+	        }
+
+	        const sessionToken = await customAuth.createSessionToken(
           userId,
           input.username,
           'user',
@@ -1057,23 +1065,23 @@ export const appRouter = router({
         console.log('[savePreferences] Update result:', result);
         return { success: true };
       }),
-    createListing: protectedProcedure
-      .input(
-        z.object({
-          title: z.string().min(3).max(160),
-          category: z.enum(collectibleCategories),
-          itemType: z.string().min(1).max(50),
-          condition: z.enum(itemConditions),
-          description: z.string().max(4000),
-          estimatedValue: z.number().nonnegative().optional(),
-          photos: z.array(uploadedImageSchema).max(10),
-          itemDetails: z.record(z.string(), z.string()).optional(),
-          certificationCompany: z.string().optional(),
-          certificationNumber: z.string().optional(),
-          grade: z.string().optional(),
-        }),
-      )
-      .mutation(({ ctx, input }) => {
+	    createListing: protectedProcedure
+	      .input(
+	        z.object({
+	          title: z.string().min(3).max(160),
+	          category: z.enum(collectibleCategories),
+	          itemType: z.string().min(1).max(50),
+	          condition: z.enum(itemConditions),
+	          description: z.string().max(4000),
+	          estimatedValue: z.number().nonnegative().optional(),
+	          photos: z.array(uploadedImageSchema).max(10),
+	          itemDetails: z.record(z.string(), z.string()).optional(),
+	          certificationCompany: z.string().optional(),
+	          certificationNumber: z.string().optional(),
+	          grade: z.string().optional(),
+	        }),
+	      )
+	      .mutation(async ({ ctx, input }) => {
         // Block suspended users from publishing live listings
         if ((ctx.user as any).isSuspended === 1) {
           throw new TRPCError({ code: 'FORBIDDEN', message: 'Your account is suspended. Listings cannot be published while suspended.' });
@@ -1108,7 +1116,8 @@ export const appRouter = router({
           }
         }
         
-        return createListing(
+	        await requireMarketplaceApproval(ctx.user.id);
+	        return createListing(
           { id: ctx.user.id, name: ctx.user.name },
           {
             title: input.title,
@@ -1196,10 +1205,11 @@ export const appRouter = router({
           note: z.string().max(1500).optional(),
         }),
       )
-      .mutation(({ ctx, input }) => {
-        if ((ctx.user as any).isSuspended === 1) {
-          throw new TRPCError({ code: 'FORBIDDEN', message: 'Your account is suspended. You cannot initiate trades while suspended.' });
-        }
+	      .mutation(async ({ ctx, input }) => {
+	        if ((ctx.user as any).isSuspended === 1) {
+	          throw new TRPCError({ code: 'FORBIDDEN', message: 'Your account is suspended. You cannot initiate trades while suspended.' });
+	        }
+	        await requireMarketplaceApproval(ctx.user.id);
         // DEPRECATED: Use tradeFlow.initiateTradeProposal instead
         // Kept for backward compatibility with existing frontend code
         return createTradeProposal(
@@ -1232,9 +1242,10 @@ export const appRouter = router({
           action: z.enum(["accept", "refuse", "counter", "complete", "cancel"]),
           note: z.string().max(1500).optional(),
         }),
-      )
-      .mutation(async ({ ctx, input }) => {
-        await respondToTradeProposal({ id: ctx.user.id, name: ctx.user.name }, {
+	      )
+	      .mutation(async ({ ctx, input }) => {
+	        if (input.action === "counter") await requireMarketplaceApproval(ctx.user.id);
+	        await respondToTradeProposal({ id: ctx.user.id, name: ctx.user.name }, {
           proposalId: input.proposalId,
           response: input.action === "accept" ? "accepted" : "declined"
         });
@@ -2237,7 +2248,7 @@ export const appRouter = router({
   }),
   admin: router({
     // Platform statistics
-    getPlatformStatistics: protectedProcedure.query(async ({ ctx }) => {
+	    getPlatformStatistics: protectedProcedure.query(async ({ ctx }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
       const db = await requireDb();
       
@@ -2258,7 +2269,45 @@ export const appRouter = router({
         totalListings: Number(listingCount[0]?.count || 0),
         totalTrades: Number(tradeCount[0]?.count || 0),
         totalValue: Number(totalValue[0]?.total || 0),
-      };
+	      };
+	    }),
+    getPendingAccountApprovals: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      const db = await requireDb();
+      return db.select({
+        id: accountApprovalReviews.id,
+        userId: accountApprovalReviews.userId,
+        username: users.username,
+        displayName: userProfiles.displayName,
+        email: users.email,
+        emailVerified: userProfiles.emailVerified,
+        phoneVerified: userProfiles.phoneVerified,
+        reasonCode: accountApprovalReviews.reasonCode,
+        emailFirstSeenAt: accountApprovalReviews.emailFirstSeenAt,
+        createdAt: accountApprovalReviews.createdAt,
+      }).from(accountApprovalReviews)
+        .leftJoin(users, eq(accountApprovalReviews.userId, users.id))
+        .leftJoin(userProfiles, eq(accountApprovalReviews.userId, userProfiles.userId))
+        .where(eq(accountApprovalReviews.status, 'pending'))
+        .orderBy(desc(accountApprovalReviews.createdAt));
+    }),
+    reviewAccountApproval: protectedProcedure
+      .input(z.object({ reviewId: z.number().int().positive(), status: z.enum(['approved', 'declined']), adminNote: z.string().max(1000).optional() }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+        const db = await requireDb();
+        await db.update(accountApprovalReviews).set({
+          status: input.status,
+          adminNote: input.adminNote?.trim() || null,
+          reviewedBy: ctx.user.id,
+          reviewedAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
+        }).where(and(eq(accountApprovalReviews.id, input.reviewId), eq(accountApprovalReviews.status, 'pending')));
+        return { success: true };
+      }),
+    getApiHealthEvents: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      const db = await requireDb();
+      return db.select().from(apiHealthEvents).orderBy(desc(apiHealthEvents.occurredAt)).limit(100);
     }),
     // User management
     getAllUsers: protectedProcedure.query(async ({ ctx }) => {
