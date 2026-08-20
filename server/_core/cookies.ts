@@ -42,7 +42,10 @@ export function getSessionCookieOptions(
   return {
     httpOnly: true,
     path: "/",
-    sameSite: "none",
+    // Tradebilia's password sign-in and tRPC calls are same-site. Lax keeps the
+    // session on normal first-party navigation while avoiding the mobile-browser
+    // restrictions that can discard SameSite=None cookies after credential sign-in.
+    sameSite: "lax",
     secure: isSecureRequest(req),
   };
 }
