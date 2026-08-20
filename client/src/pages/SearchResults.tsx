@@ -69,7 +69,6 @@ export function SearchResults() {
 
   const preliminaryPagination = getCategoryPaginationState(0, currentPage, resultsPerPage);
   const searchInput = useMemo(() => {
-    if (!submittedQuery) return null;
     return {
       query: submittedQuery,
       category: submittedFilters.category === "all" ? undefined : submittedFilters.category,
@@ -83,9 +82,7 @@ export function SearchResults() {
     };
   }, [submittedQuery, submittedFilters, resultsPerPage, preliminaryPagination.currentPage]);
 
-  const resultsQuery = trpc.market.search.useQuery(searchInput as NonNullable<typeof searchInput>, {
-    enabled: searchInput !== null,
-  });
+  const resultsQuery = trpc.market.search.useQuery(searchInput);
   const totalResults = resultsQuery.data?.highlights.totalListings ?? 0;
   const pagination = getCategoryPaginationState(totalResults, currentPage, resultsPerPage);
 
@@ -128,7 +125,7 @@ export function SearchResults() {
             <AnimatedLogoSmall70 fontSize={125} wordmarkColor="#fff4e0" neutralCategoryColor="#fff4e0" wheelScale={1.38} />
           </div>
           <p className="mt-4 max-w-2xl text-sm leading-6 text-[#fff4e0]/90 sm:text-base">Search the Exchange to find active collectible listings across every Tradebilia category, then narrow the marketplace with broad, truthful filters.</p>
-          {submittedQuery ? <Badge className={`${searchTheme.chipClassName} mt-5 rounded-full px-3 py-1 text-xs`}>Searching all categories</Badge> : null}
+          <Badge className={`${searchTheme.chipClassName} mt-5 rounded-full px-3 py-1 text-xs`}>{submittedQuery ? "Searching all categories" : "Browsing all active listings"}</Badge>
         </div>
       </section>
       <CategoryBar />
@@ -194,8 +191,8 @@ export function SearchResults() {
           <div className="border-b border-current/10 pb-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <p className="text-sm font-medium opacity-75">{submittedQuery ? (totalResults ? `Showing ${pagination.firstResultNumber}–${pagination.lastResultNumber} of ${totalResults} listings` : "0 listings") : "Enter a search to explore all categories"}</p>
-                {submittedQuery ? <p className="mt-1 text-xs opacity-65">Results for <span className="font-semibold">{submittedQuery}</span></p> : null}
+                <p className="text-sm font-medium opacity-75">{resultsQuery.isLoading ? "Loading active listings…" : totalResults ? `Showing ${pagination.firstResultNumber}–${pagination.lastResultNumber} of ${totalResults} listings` : "0 listings"}</p>
+                <p className="mt-1 text-xs opacity-65">{submittedQuery ? <>Results for <span className="font-semibold">{submittedQuery}</span></> : "All active listings across the exchange"}</p>
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 <Select value={submittedFilters.sort} onValueChange={value => { const sort = value as SearchSort; setPendingFilters(current => ({ ...current, sort })); setSubmittedFilters(current => ({ ...current, sort })); setCurrentPage(1); }}>
@@ -212,13 +209,7 @@ export function SearchResults() {
             </div>
           </div>
 
-          {!submittedQuery ? (
-            <div className={`mt-6 rounded-[2rem] border p-8 text-center ${searchTheme.panelClassName}`}>
-              <Sparkles className={`mx-auto h-10 w-10 ${searchTheme.accentClassName}`} />
-              <h2 className="mt-4 text-2xl font-semibold" style={{ fontFamily: searchTheme.headingFont }}>Search every collection</h2>
-              <p className="mx-auto mt-3 max-w-lg text-sm leading-6 opacity-75">Use the top bar or the Search field to find active listings by any item detail, including title, description, category, condition, grade, certification, value, and category-specific form data.</p>
-            </div>
-          ) : resultsQuery.isLoading ? (
+          {resultsQuery.isLoading ? (
             <div className="mt-6 flex min-h-[20rem] items-center justify-center rounded-[2rem] border border-dashed border-current/25"><Loader2 className="h-8 w-8 animate-spin" /></div>
           ) : resultsQuery.isError ? (
             <div className="mt-6 rounded-[2rem] border border-red-300/60 bg-red-50 p-8 text-red-950"><h2 className="font-semibold">Search results could not load</h2><p className="mt-2 text-sm">{resultsQuery.error.message}</p></div>
