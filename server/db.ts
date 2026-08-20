@@ -465,6 +465,14 @@ export async function getMarketplaceFeed(
     parkOrEvent?: string;
     franchise?: string;
     rarity?: string;
+    publisher?: string;
+    brand?: string;
+    scottNumber?: string;
+    mintOrUsed?: string;
+    stampGrade?: string;
+    editionEra?: string;
+    finishVariant?: string;
+    signer?: string;
     verifiedMerchantsOnly?: boolean;
     locationSort?: boolean;
     distanceMiles?: number;
@@ -586,6 +594,30 @@ export async function getMarketplaceFeed(
   }
   if (filters.rarity?.trim()) {
     whereClauses.push(sql`(${jsonLikeAny(["rarity", "customRarity"], filters.rarity)})`);
+  }
+  if (filters.publisher?.trim()) {
+    whereClauses.push(sql`(${jsonLike("publisher", filters.publisher)})`);
+  }
+  if (filters.brand?.trim()) {
+    whereClauses.push(sql`(${jsonLike("brand", filters.brand)})`);
+  }
+  if (filters.scottNumber?.trim()) {
+    whereClauses.push(sql`(${jsonLike("scottNumber", filters.scottNumber)})`);
+  }
+  if (filters.mintOrUsed?.trim()) {
+    whereClauses.push(sql`(${jsonLike("mintOrUsed", filters.mintOrUsed)})`);
+  }
+  if (filters.stampGrade?.trim()) {
+    whereClauses.push(sql`(${jsonLike("stampGrade", filters.stampGrade)})`);
+  }
+  if (filters.editionEra?.trim()) {
+    whereClauses.push(sql`(${jsonLikeAny(["editionEra", "customEditionEra"], filters.editionEra)})`);
+  }
+  if (filters.finishVariant?.trim()) {
+    whereClauses.push(sql`(${jsonLikeAny(["finishVariant", "customFinishVariant"], filters.finishVariant)})`);
+  }
+  if (filters.signer?.trim()) {
+    whereClauses.push(sql`(${jsonLikeAny(["signer", "signersIncluded"], filters.signer)})`);
   }
   if (filters.sport?.trim()) {
     whereClauses.push(sql`(${jsonLike("sport", filters.sport)})`);

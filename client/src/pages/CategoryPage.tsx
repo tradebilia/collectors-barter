@@ -51,6 +51,8 @@ const categoryFilterPresets: Record<TradebiliaCategorySlug, Array<{ label: strin
     { label: "Value Range", placeholder: "Min - Max", type: "input" },
     { label: "Signed", placeholder: "Select option", type: "select" },
     { label: "Facsimile", placeholder: "Select option", type: "select" },
+    { label: "Publisher", placeholder: "Marvel, DC, Image" },
+    { label: "Year", placeholder: "1963, 1986" },
   ],
   sports_cards: [
     { label: "Keyword", placeholder: "Search by keyword" },
@@ -69,6 +71,9 @@ const categoryFilterPresets: Record<TradebiliaCategorySlug, Array<{ label: strin
     { label: "Keyword", placeholder: "Search by keyword" },
     { label: "Grading service", placeholder: "AFA, CAS, VGA", type: "select" },
     { label: "Franchise", placeholder: "Star Wars, TMNT" },
+    { label: "Brand", placeholder: "Kenner, Mattel, Hasbro" },
+    { label: "Year", placeholder: "1978, 1984" },
+    { label: "Grade", placeholder: "Enter grade (e.g., 85)", type: "input" },
     { label: "Value Range", placeholder: "Min - Max", type: "input" },
   ],
   video_games: [
@@ -76,6 +81,8 @@ const categoryFilterPresets: Record<TradebiliaCategorySlug, Array<{ label: strin
     { label: "System", placeholder: "NES, SNES, Sega", type: "select" },
     { label: "Region", placeholder: "United States, Japan", type: "select" },
     { label: "Grading company", placeholder: "WATA, VGA, UKG", type: "select" },
+    { label: "Year", placeholder: "1985, 2001" },
+    { label: "Grade", placeholder: "Enter grade (e.g., 9.0)", type: "input" },
     { label: "Value Range", placeholder: "Min - Max", type: "input" },
   ],
   stamps: [
@@ -84,6 +91,9 @@ const categoryFilterPresets: Record<TradebiliaCategorySlug, Array<{ label: strin
     { label: "Issuer", placeholder: "Post office or monarchy" },
     { label: "Country", placeholder: "United States, Bermuda", type: "select" },
     { label: "Grading company", placeholder: "PSE, PMG, SCI", type: "select" },
+    { label: "Scott Number", placeholder: "572, C3, 10" },
+    { label: "Mint / Used", placeholder: "Mint, Used, CTO" },
+    { label: "Stamp Grade", placeholder: "MNH, VF, XF" },
     { label: "Value Range", placeholder: "Min - Max", type: "input" },
   ],
   coins: [
@@ -92,6 +102,8 @@ const categoryFilterPresets: Record<TradebiliaCategorySlug, Array<{ label: strin
     { label: "Denomination", placeholder: "Cent, dollar, eagle" },
     { label: "Mint mark", placeholder: "S, D, CC" },
     { label: "Grading service", placeholder: "PCGS, NGC", type: "select" },
+    { label: "Country", placeholder: "United States, Canada", type: "select" },
+    { label: "Grade", placeholder: "Enter grade (e.g., MS 65)", type: "input" },
     { label: "Value Range", placeholder: "Min - Max", type: "input" },
   ],
   pokemon: [
@@ -99,6 +111,10 @@ const categoryFilterPresets: Record<TradebiliaCategorySlug, Array<{ label: strin
     { label: "Set", placeholder: "Base Set, Neo, Evolving Skies" },
     { label: "Rarity", placeholder: "Holo, Secret Rare", type: "select" },
     { label: "Grading service", placeholder: "PSA, CGC, BGS", type: "select" },
+    { label: "Year", placeholder: "1999, 2024" },
+    { label: "Edition / Era", placeholder: "1st Edition, Shadowless" },
+    { label: "Finish / Variant", placeholder: "Holo, Reverse Holo" },
+    { label: "Grade", placeholder: "Enter grade (e.g., 10)", type: "input" },
     { label: "Value Range", placeholder: "Min - Max", type: "input" },
   ],
   movies: [
@@ -106,6 +122,9 @@ const categoryFilterPresets: Record<TradebiliaCategorySlug, Array<{ label: strin
     { label: "Format", placeholder: "Poster, prop, lobby card", type: "select" },
     { label: "Franchise", placeholder: "Marvel, Disney, horror" },
     { label: "Certification", placeholder: "PSA, Beckett, BAS", type: "select" },
+    { label: "Year", placeholder: "1977, 1999" },
+    { label: "Region", placeholder: "United States, Japan", type: "select" },
+    { label: "Grade", placeholder: "Enter grade (e.g., 9.4)", type: "input" },
     { label: "Value Range", placeholder: "Min - Max", type: "input" },
   ],
   autographs: [
@@ -113,6 +132,7 @@ const categoryFilterPresets: Record<TradebiliaCategorySlug, Array<{ label: strin
     { label: "Medium", placeholder: "Photo, comic, baseball", type: "select" },
     { label: "Authentication", placeholder: "JSA, PSA/DNA, BAS", type: "select" },
     { label: "Franchise", placeholder: "Marvel, MLB, Disney" },
+    { label: "Signer", placeholder: "Name of signer" },
     { label: "Value Range", placeholder: "Min - Max", type: "input" },
   ],
   disney_pins: [
@@ -283,6 +303,14 @@ export default function CategoryPage() {
   const [edition, setEdition] = useState("");
   const [parkOrEvent, setParkOrEvent] = useState("");
   const [franchise, setFranchise] = useState("");
+  const [publisher, setPublisher] = useState("");
+  const [brand, setBrand] = useState("");
+  const [scottNumber, setScottNumber] = useState("");
+  const [mintOrUsed, setMintOrUsed] = useState("");
+  const [stampGrade, setStampGrade] = useState("");
+  const [editionEra, setEditionEra] = useState("");
+  const [finishVariant, setFinishVariant] = useState("");
+  const [signer, setSigner] = useState("");
   const [distanceMiles, setDistanceMiles] = useState<number | undefined>(undefined);
 
   // Submitted filters state (only updates when user submits search)
@@ -316,6 +344,14 @@ export default function CategoryPage() {
     edition: undefined as string | undefined,
     parkOrEvent: undefined as string | undefined,
     franchise: undefined as string | undefined,
+    publisher: undefined as string | undefined,
+    brand: undefined as string | undefined,
+    scottNumber: undefined as string | undefined,
+    mintOrUsed: undefined as string | undefined,
+    stampGrade: undefined as string | undefined,
+    editionEra: undefined as string | undefined,
+    finishVariant: undefined as string | undefined,
+    signer: undefined as string | undefined,
     distanceMiles: undefined as number | undefined,
     verifiedMerchantsOnly: false,
   });
@@ -355,6 +391,13 @@ export default function CategoryPage() {
     setEdition("");
     setParkOrEvent("");
     setFranchise("");
+    setPublisher("");
+    setBrand("");
+    setScottNumber("");
+    setMintOrUsed("");
+    setEditionEra("");
+    setFinishVariant("");
+    setSigner("");
     
     // Reset numeric range filters
     setValueMin(undefined);
@@ -392,11 +435,20 @@ export default function CategoryPage() {
       edition: undefined,
       parkOrEvent: undefined,
       franchise: undefined,
+      publisher: undefined,
+      brand: undefined,
+      scottNumber: undefined,
+      mintOrUsed: undefined,
+      stampGrade: undefined,
+      editionEra: undefined,
+      finishVariant: undefined,
+      signer: undefined,
       distanceMiles: undefined,
     });
     
     // Reset pagination
     setDistanceMiles(undefined);
+    setStampGrade("");
     setCurrentPage(1);
   }, [slug]);
 
@@ -446,6 +498,14 @@ export default function CategoryPage() {
     add("edition", submittedFilters.edition);
     add("parkOrEvent", submittedFilters.parkOrEvent);
     add("franchise", submittedFilters.franchise);
+    add("publisher", submittedFilters.publisher);
+    add("brand", submittedFilters.brand);
+    add("scottNumber", submittedFilters.scottNumber);
+    add("mintOrUsed", submittedFilters.mintOrUsed);
+    add("stampGrade", submittedFilters.stampGrade);
+    add("editionEra", submittedFilters.editionEra);
+    add("finishVariant", submittedFilters.finishVariant);
+    add("signer", submittedFilters.signer);
     add("distanceMiles", submittedFilters.distanceMiles);
     if (submittedFilters.verifiedMerchantsOnly) {
       input.verifiedMerchantsOnly = true;
@@ -524,6 +584,14 @@ export default function CategoryPage() {
       edition: edition || undefined,
       parkOrEvent: parkOrEvent || undefined,
       franchise: franchise || undefined,
+      publisher: publisher || undefined,
+      brand: brand || undefined,
+      scottNumber: scottNumber || undefined,
+      mintOrUsed: mintOrUsed || undefined,
+      stampGrade: stampGrade || undefined,
+      editionEra: editionEra || undefined,
+      finishVariant: finishVariant || undefined,
+      signer: signer || undefined,
       distanceMiles: distanceMiles ?? undefined,
       verifiedMerchantsOnly: false,
     };
@@ -567,12 +635,20 @@ export default function CategoryPage() {
     setEdition("");
     setParkOrEvent("");
     setFranchise("");
+    setPublisher("");
+    setBrand("");
+    setScottNumber("");
+    setMintOrUsed("");
+    setEditionEra("");
+    setFinishVariant("");
+    setSigner("");
     
     // Reset numeric range filters
     setValueMin(undefined);
     setValueMax(undefined);
     
     setDistanceMiles(undefined);
+    setStampGrade("");
 
     // Reset submitted filters to trigger query reset
     setSubmittedFilters({
@@ -605,6 +681,14 @@ export default function CategoryPage() {
       edition: undefined,
       parkOrEvent: undefined,
       franchise: undefined,
+      publisher: undefined,
+      brand: undefined,
+      scottNumber: undefined,
+      mintOrUsed: undefined,
+      stampGrade: undefined,
+      editionEra: undefined,
+      finishVariant: undefined,
+      signer: undefined,
       distanceMiles: undefined,
       verifiedMerchantsOnly: false,
     });
@@ -941,8 +1025,7 @@ export default function CategoryPage() {
                       value={grade || ""}
                       onChange={(e) => setGrade(e.target.value || undefined)}
                       className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black`} 
-                      type="number" 
-                      step="0.1"
+                      type="text"
                     />
                   ) : filter.label === "Title" ? (
                     <FilterInput 
@@ -1035,8 +1118,8 @@ export default function CategoryPage() {
                   ) : filter.label === "Signer" ? (
                     <FilterInput 
                       placeholder={filter.placeholder}
-                      value={keyword}
-                      onChange={(e) => setKeyword(e.target.value)}
+                      value={signer}
+                      onChange={(e) => setSigner(e.target.value)}
                       onKeyDown={(e) => e.key === "Enter" && handleSubmitFilters()}
                       className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black`}
                     />
@@ -1088,6 +1171,20 @@ export default function CategoryPage() {
                       onKeyDown={(e) => e.key === "Enter" && handleSubmitFilters()}
                       className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black`}
                     />
+                  ) : filter.label === "Publisher" ? (
+                    <FilterInput placeholder={filter.placeholder} value={publisher} onChange={(e) => setPublisher(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleSubmitFilters()} className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black`} />
+                  ) : filter.label === "Brand" ? (
+                    <FilterInput placeholder={filter.placeholder} value={brand} onChange={(e) => setBrand(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleSubmitFilters()} className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black`} />
+                  ) : filter.label === "Scott Number" ? (
+                    <FilterInput placeholder={filter.placeholder} value={scottNumber} onChange={(e) => setScottNumber(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleSubmitFilters()} className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black`} />
+                  ) : filter.label === "Mint / Used" ? (
+                    <FilterInput placeholder={filter.placeholder} value={mintOrUsed} onChange={(e) => setMintOrUsed(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleSubmitFilters()} className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black`} />
+                  ) : filter.label === "Stamp Grade" ? (
+                    <FilterInput placeholder={filter.placeholder} value={stampGrade} onChange={(e) => setStampGrade(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleSubmitFilters()} className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black`} />
+                  ) : filter.label === "Edition / Era" ? (
+                    <FilterInput placeholder={filter.placeholder} value={editionEra} onChange={(e) => setEditionEra(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleSubmitFilters()} className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black`} />
+                  ) : filter.label === "Finish / Variant" ? (
+                    <FilterInput placeholder={filter.placeholder} value={finishVariant} onChange={(e) => setFinishVariant(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleSubmitFilters()} className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black`} />
                   ) : filter.label === "Year" ? (
                     <FilterInput 
                       placeholder={filter.placeholder}

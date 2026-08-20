@@ -43,6 +43,8 @@ const ALL_FILTER_KEYS = [
   "rookie", "autographed", "signed", "facsimile", "rarity", "title",
   "system", "region", "country", "format", "medium", "denomination",
   "mintMark", "issuer", "edition", "parkOrEvent", "franchise",
+  "publisher", "brand", "scottNumber", "mintOrUsed", "editionEra",
+  "finishVariant", "signer", "stampGrade",
   "distanceMiles",
 ];
 
@@ -88,6 +90,8 @@ describe("CategoryPage feed query input", () => {
       manufacturer: "O-Pee-Chee",
       grade: "9",
       valueMin: 100,
+      editionEra: "1st Edition",
+      scottNumber: "572",
     })!;
     expect(input).toEqual({
       category: "sports_cards",
@@ -95,6 +99,8 @@ describe("CategoryPage feed query input", () => {
       manufacturer: "O-Pee-Chee",
       grade: "9",
       valueMin: 100,
+      editionEra: "1st Edition",
+      scottNumber: "572",
     });
   });
 
