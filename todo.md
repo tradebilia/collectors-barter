@@ -532,5 +532,5 @@
 - [x] Repair Inventory/My Listings, Trade Hub/Trade Room, and Messages with mobile-only responsive layouts while preserving their current desktop sidebars, grids, and workflow behavior.
 - [x] Repair Account Settings, referral, Report a Member, public profile, Account Setup, and Add Inventory mobile presentation with mobile-only responsive rules while preserving desktop layouts.
 - [x] Add authenticated-flow mobile and desktop regression coverage, validate active routes and form accessibility boundaries, publish, verify the standard domain, and synchronize GitHub.
-- [ ] Diagnose and repair the reported mobile sign-in failure while preserving desktop sign-in behavior and authenticated routing.
-- [ ] Add regression coverage, validate mobile and desktop sign-in entry points, publish, verify the standard domain, and synchronize GitHub.
+- [x] Diagnose and repair the reported mobile sign-in failure while preserving desktop sign-in behavior and authenticated routing.
+- [x] Add regression coverage, validate mobile and desktop sign-in entry points, publish, verify the standard domain, and synchronize GitHub.
