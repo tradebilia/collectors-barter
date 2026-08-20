@@ -1,4 +1,6 @@
 const PARSE_API_BASE = 'https://api.parse.bot/scraper';
+import { classifyApiFailure, recordApiFailure } from "./apiHealth";
+
 const SGC_SCRAPER_ID = 'f63ad1cb-5b08-4e33-9ea8-573b416e936d';
 const PRICECHARTING_SCRAPER_ID = 'bbbbdc36-6d99-4a7a-8115-cf766b2497e3';
 const ONE_THIRTY_POINT_SCRAPER_ID = '28d873f5-47d5-4c01-a275-e80c6b3fc610';
@@ -23,6 +25,11 @@ function parseErrorMessage(status: number, provider: string): string {
   return `${provider} lookup is temporarily unavailable. Try again shortly.`;
 }
 
+async function recordParseFailure(operation: string, status: number) {
+  const safeMessage = parseErrorMessage(status, "Parse");
+  await recordApiFailure({ provider: "Parse", operation, failureClass: classifyApiFailure({ statusCode: status, message: safeMessage }), statusCode: status, safeMessage });
+}
+
 function asObject(value: unknown): Record<string, any> {
   return value && typeof value === 'object' ? value as Record<string, any> : {};
 }
@@ -39,7 +46,7 @@ export async function lookupSgcCertification(certCode: string, env: ParseEnv = p
       body: JSON.stringify({ cert_code: normalizedCertCode }),
     });
     const payload = await response.json().catch(() => null);
-    if (!response.ok) return { certCode: normalizedCertCode, status: 'error' as const, message: parseErrorMessage(response.status, 'Parse SGC'), data: null };
+    if (!response.ok) { await recordParseFailure('SGC certification lookup', response.status); return { certCode: normalizedCertCode, status: 'error' as const, message: parseErrorMessage(response.status, 'Parse SGC'), data: null }; }
 
     const card = asObject(asObject(payload).data ?? payload);
     return {
@@ -75,7 +82,7 @@ export async function lookupPriceCharting(query: string, env: ParseEnv = process
     const headers = { 'X-API-Key': apiKey };
     const searchResponse = await fetch(`${PARSE_API_BASE}/${PRICECHARTING_SCRAPER_ID}/search_pokemon_cards?query=${encodeURIComponent(normalizedQuery)}`, { headers });
     const searchPayload = await searchResponse.json().catch(() => null);
-    if (!searchResponse.ok) return { query: normalizedQuery, status: 'error' as const, message: parseErrorMessage(searchResponse.status, 'Parse PriceCharting'), data: null };
+    if (!searchResponse.ok) { await recordParseFailure('PriceCharting search', searchResponse.status); return { query: normalizedQuery, status: 'error' as const, message: parseErrorMessage(searchResponse.status, 'Parse PriceCharting'), data: null }; }
 
     const searchData = asObject(asObject(searchPayload).data ?? searchPayload);
     const firstCard = Array.isArray(searchData.cards) ? asObject(searchData.cards[0]) : {};
@@ -86,7 +93,7 @@ export async function lookupPriceCharting(query: string, env: ParseEnv = process
     const detailUrl = `${PARSE_API_BASE}/${PRICECHARTING_SCRAPER_ID}/get_card_detail?set_slug=${encodeURIComponent(firstCard.set_slug)}&card_slug=${encodeURIComponent(firstCard.card_slug)}`;
     const detailResponse = await fetch(detailUrl, { headers });
     const detailPayload = await detailResponse.json().catch(() => null);
-    if (!detailResponse.ok) return { query: normalizedQuery, status: 'error' as const, message: parseErrorMessage(detailResponse.status, 'Parse PriceCharting'), data: null };
+    if (!detailResponse.ok) { await recordParseFailure('PriceCharting detail', detailResponse.status); return { query: normalizedQuery, status: 'error' as const, message: parseErrorMessage(detailResponse.status, 'Parse PriceCharting'), data: null }; }
 
     const card = asObject(asObject(detailPayload).data ?? detailPayload);
     const prices = asObject(card.prices ?? firstCard.prices);
@@ -119,7 +126,7 @@ export async function lookup130PointSales(query: string, env: ParseEnv = process
     const url = `${PARSE_API_BASE}/${ONE_THIRTY_POINT_SCRAPER_ID}/search_sold_items?sort=BestMatch&limit=10&query=${encodeURIComponent(normalizedQuery)}&marketplace=all`;
     const response = await fetch(url, { headers: { 'X-API-Key': apiKey } });
     const payload = await response.json().catch(() => null);
-    if (!response.ok) return { query: normalizedQuery, status: 'error' as const, message: parseErrorMessage(response.status, 'Parse 130point'), data: null };
+    if (!response.ok) { await recordParseFailure('130point sales lookup', response.status); return { query: normalizedQuery, status: 'error' as const, message: parseErrorMessage(response.status, 'Parse 130point'), data: null }; }
 
     const result = asObject(asObject(payload).data ?? payload);
     const items = Array.isArray(result.items) ? result.items.map((item: unknown) => {
@@ -161,7 +168,7 @@ export async function lookupPwccSales(query: string, env: ParseEnv = process.env
     const params = new URLSearchParams({ keywords: normalizedQuery, status: 'Sold', page: '0', hits_per_page: '10' });
     const response = await fetch(`${PARSE_API_BASE}/${PWCC_SCRAPER_ID}/search_listings?${params.toString()}`, { headers: { 'X-API-Key': apiKey } });
     const payload = await response.json().catch(() => null);
-    if (!response.ok) return { query: normalizedQuery, status: 'error' as const, message: parseErrorMessage(response.status, 'PWCC / Fanatics Collect'), data: null };
+    if (!response.ok) { await recordParseFailure('PWCC / Fanatics Collect lookup', response.status); return { query: normalizedQuery, status: 'error' as const, message: parseErrorMessage(response.status, 'PWCC / Fanatics Collect'), data: null }; }
     const result = asObject(asObject(payload).data ?? payload);
     const listings = Array.isArray(result.results) ? result.results.map((listing: unknown) => {
       const sale = asObject(listing);
