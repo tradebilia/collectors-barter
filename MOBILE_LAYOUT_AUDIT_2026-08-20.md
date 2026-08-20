@@ -33,3 +33,5 @@ The Category Page now uses an off-canvas filter drawer below the desktop breakpo
 A direct 375-pixel capture of the active `/conventions` route reproduces the page as a narrow vertical fragment despite its source card grid using responsive columns. This is a confirmed active-route mobile defect that requires a focused repair without altering the desktop Conventions route.
 
 The mobile Conventions hero now uses a text fallback while the existing title artwork remains available from the `sm` breakpoint upward. A repeat 375-pixel capture confirms the route now shows a readable hero, scrollable category bar, stacked filter card, and single-column convention cards without changing desktop artwork or desktop card grids.
+
+The homepage ranking area now uses two columns at phone width and retains the existing four-column layout at the `xl` desktop breakpoint. Phone review confirms the hero, statistic strip, and subscriber tools remain readable; desktop grid definitions are unchanged.
