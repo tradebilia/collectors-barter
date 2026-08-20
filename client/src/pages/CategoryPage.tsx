@@ -782,6 +782,37 @@ export default function CategoryPage() {
 
   return (
     <div className={`min-h-screen ${theme.pageClassName}`}>
+      <style>{`
+        @media (max-width: 639px) {
+          .category-hero-title-shell-video_games,
+          .category-hero-title-shell-vintage_toys {
+            height: 156px !important;
+            align-items: center !important;
+            padding-top: 0 !important;
+          }
+          .category-hero-title-shell-video_games img,
+          .category-hero-title-shell-vintage_toys img {
+            max-height: 170px !important;
+            max-width: 88vw !important;
+            margin: 0 !important;
+            transform: none !important;
+          }
+          .category-hero-divider-video_games,
+          .category-hero-divider-vintage_toys {
+            margin-top: 20px !important;
+          }
+          .category-hero-exchange-video_games,
+          .category-hero-exchange-vintage_toys {
+            margin-top: 16px !important;
+            top: 0 !important;
+          }
+          .category-hero-exchange-comics,
+          .category-hero-exchange-autographs {
+            font-family: 'Righteous', sans-serif !important;
+            font-style: normal !important;
+          }
+        }
+      `}</style>
       <TopBar
         logoUrl={SPORTS_CARDS_LONG_LOGO_URL}
         searchPlaceholder={`Search ${getTradebiliaCategoryLabel(slug ?? '')}...`}
@@ -801,7 +832,7 @@ export default function CategoryPage() {
             <div className="max-w-4xl mx-auto text-center">
               <p className="mt-2 text-xs font-semibold uppercase tracking-[0.36em] text-white" style={{ visibility: slug === "pokemon" ? "hidden" : "visible", position: "relative", top: "-24px", color: "#ffffff", opacity: 1 }}>{theme.eyebrow}</p>
               <div className="mt-3 leading-none" style={{ marginTop: "24px" }}>
-                <h1 className="max-w-full mx-auto text-6xl sm:text-7xl lg:text-8xl" style={{
+                <h1 className={`category-hero-title-shell category-hero-title-shell-${slug} max-w-full mx-auto text-6xl sm:text-7xl lg:text-8xl`} style={{
                   fontFamily: getCategoryFont(slug),
                   fontWeight: 700,
                   color: "white",
@@ -822,8 +853,8 @@ export default function CategoryPage() {
                     style={categoryHeroTitleStyles[slug]}
                   />
                 </h1>
-                <div className="mt-8 h-px bg-white/50 mx-auto" style={{ maxWidth: "100%", width: "100%", marginTop: "64px" }}></div>
-                <p className="mt-8 text-3xl sm:text-4xl lg:text-5xl font-black uppercase tracking-[0.1em]" style={{
+                <div className={`category-hero-divider category-hero-divider-${slug} mt-8 h-px bg-white/50 mx-auto`} style={{ maxWidth: "100%", width: "100%", marginTop: "64px" }}></div>
+                <p className={`category-hero-exchange category-hero-exchange-${slug} mt-8 text-3xl sm:text-4xl lg:text-5xl font-black uppercase tracking-[0.1em]`} style={{
                   fontFamily: getCategoryFont(slug),
                   fontStyle: "italic",
                   color: "#F4D03F",

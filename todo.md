@@ -536,3 +536,6 @@
 - [x] Add regression coverage, validate mobile and desktop sign-in entry points, publish, verify the standard domain, and synchronize GitHub.
 - [x] Diagnose and repair the confirmed mobile sign-in form submission failure, including visible success or error feedback and authenticated-state transition.
 - [x] Add regression coverage, validate mobile and desktop credential submission, publish, verify the standard domain, and synchronize GitHub.
+- [ ] Repair the Add Inventory photo-upload section overlap on mobile only while preserving all desktop form geometry and upload behavior.
+- [ ] Normalize mobile hero typography for Comics and Autographs and correct the Vintage Toys and Video Games mobile hero-title presentation without changing desktop category heroes.
+- [ ] Add regression coverage, validate affected pages at mobile and desktop widths, publish, verify the standard domain, and synchronize GitHub.
