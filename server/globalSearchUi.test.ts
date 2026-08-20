@@ -19,6 +19,12 @@ describe("unified global search contracts", () => {
 
     expect(searchPage).toContain("useSearch()");
     expect(searchPage).toContain("getGlobalSearchQuery(rawSearch)");
+    expect(searchPage).toContain("query: submittedQuery,");
+    expect(searchPage).not.toContain("if (!submittedQuery) return null");
+    expect(searchPage).not.toContain("!submittedQuery ? (");
+    expect(searchPage).toContain("trpc.market.search.useQuery(searchInput)");
+    expect(searchPage).toContain("Browsing all active listings");
+    expect(searchPage).toContain("All active listings across the exchange");
     expect(searchPage).toContain("<TopBar searchPlaceholder=");
     expect(searchPage).toContain("<CategoryBar />");
     expect(searchPage).toContain("AnimatedLogoSmall70 fontSize={125}");
@@ -42,6 +48,8 @@ describe("unified global search contracts", () => {
     expect(database).toContain("like(listings.itemType, `%${keyword}%`)");
     expect(database).toContain("like(listings.signatures, `%${keyword}%`)");
     expect(database).toContain("CAST(${listings.estimatedValue} AS CHAR)");
+    expect(database).toContain("const keyword = filters.keyword?.trim();");
+    expect(database).toContain("if (keyword) {");
     expect(database).toContain(".offset(resultOffset)");
   });
 });
