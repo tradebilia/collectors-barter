@@ -557,3 +557,5 @@
 - [x] Replace the live Coming Soon page visual treatment with the selected Restoration Workbench direction while preserving the existing consent-based signup behavior.
 - [x] Use the exact inline Tradebilia wheel-and-wordmark component in the selected Restoration Workbench Coming Soon page rather than any generated logo treatment.
 - [x] Validate the selected Coming Soon design at mobile and desktop widths, publish, verify the standard domain, and synchronize GitHub.
+- [x] Rebuild the Coming Soon page to match the supplied Restoration Workbench reference: a full collector workbench surrounding a central aged-parchment composition, with the exact Tradebilia logo and existing signup behavior preserved.
+- [x] Validate reference alignment at mobile and desktop widths, publish, verify the standard domain, and synchronize GitHub.
