@@ -12,4 +12,6 @@ Desktop review confirmed that the workbench’s collectible materials frame the 
 
 Mobile review confirmed that the hero keeps the animated Tradebilia mark, copy, status chip, and Category Bar readable within the existing responsive hierarchy. The workbench background remains full-bleed without repetition or distortion.
 
-Focused global-search hero regression coverage and TypeScript both passed. The complete regression suite passed with **94 test files / 299 tests** and **4 expected skips** when the live UPS probe was given its established 15-second allowance. The production build also passed. Public-domain verification and canonical-GitHub synchronization remain pending.
+Focused global-search hero regression coverage and TypeScript both passed. The complete regression suite passed with **94 test files / 299 tests** and **4 expected skips** when the live UPS probe was given its established 15-second allowance. The production build also passed.
+
+Standard-domain verification completed at `https://tradebilia.manus.space/search?q=Star%20Wars`. The public page displays the selected warm archival Restoration Workbench background behind the centered animated Tradebilia SVG, keeps the Category Bar immediately below the hero, and loads two active cross-category Star Wars results beneath it: one Comics listing and one Movies listing. Canonical GitHub `main` is synchronized at commit `71a21974`.
