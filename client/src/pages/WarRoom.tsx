@@ -17,7 +17,7 @@ import { getNegotiationTurnState } from "@/lib/tradeNegotiationTurn";
 import { deriveShippingDeadline, downloadTradeReceipt } from "@/lib/tradeReceipt";
 import { buildUspsTrackingUrl } from "@shared/uspsTrackingLink";
 
-type TradeStage = 'proposed' | 'negotiating' | 'accepted' | 'shipping' | 'shipped' | 'completed';
+type TradeStage = 'proposed' | 'negotiating' | 'accepted' | 'shipping' | 'shipped' | 'completed' | 'disputed';
 
 function getStageFromStatus(status: string): TradeStage {
   switch (status) {
@@ -27,6 +27,7 @@ function getStageFromStatus(status: string): TradeStage {
     case 'shipping': return 'shipping';       // Stage 4: enter tracking numbers
     case 'shipped': return 'shipped';         // Stage 5: confirm receipt
     case 'completed': return 'completed';     // Stage 6: trade complete
+    case 'disputed': return 'disputed';       // Administrator dispute review
     default: return 'proposed';
   }
 }
@@ -38,6 +39,7 @@ const stages: { key: TradeStage; label: string; sub: string }[] = [
   { key: 'shipping',    label: 'Shipping',  sub: 'Track Packages'  },
   { key: 'shipped',     label: 'Confirm',   sub: 'Confirm Receipt' },
   { key: 'completed',   label: 'Complete',  sub: 'Trade Complete'  },
+  { key: 'disputed',    label: 'Disputed',  sub: 'Under Review'    },
 ];
 
 // ── Event type config ────────────────────────────────────────────────────────
@@ -55,6 +57,7 @@ const eventConfig: Record<string, { color: string; icon: string; label: string }
   tracking_submitted: { color: 'bg-yellow-500', icon: '📦', label: 'Tracking Submitted' },
   items_received:     { color: 'bg-teal-500',   icon: '📬', label: 'Items Received' },
   trade_completed:    { color: 'bg-purple-500', icon: '🏆', label: 'Trade Completed' },
+  disputed:           { color: 'bg-red-500',    icon: '⚠️', label: 'Dispute Review Requested' },
   message_sent:       { color: 'bg-sky-400',    icon: '💬', label: 'Message Sent' },
   system_message:     { color: 'bg-slate-400',  icon: 'ℹ️', label: 'System Notice' },
 };
@@ -124,6 +127,7 @@ export default function WarRoom() {
   const [messageInput, setMessageInput] = useState('');
   const [declineReason, setDeclineReason] = useState('');
   const [showDeclineModal, setShowDeclineModal] = useState(false);
+  const [showDisputeModal, setShowDisputeModal] = useState(false);
   const [showContractModal, setShowContractModal] = useState(false);
   const [showVideoChatModal, setShowVideoChatModal] = useState(false);
   const [videoRoomUrl, setVideoRoomUrl] = useState<string | null>(null);
@@ -209,6 +213,16 @@ export default function WarRoom() {
       utils.tradeFlow.getTradeDetails.invalidate({ proposalId });
     },
     onError: (err) => toast.error(err.message),
+  });
+
+  const disputeMutation = trpc.tradeFlow.markTradeDisputed.useMutation({
+    onSuccess: async (data) => {
+      setShowDisputeModal(false);
+      await utils.tradeFlow.getTradeDetails.invalidate({ proposalId });
+      await utils.tradeFlow.getTimeline.invalidate({ proposalId });
+      toast.success(data.alreadyDisputed ? 'This trade is already under dispute review.' : 'Trade marked disputed. Please complete the report with supporting details.');
+    },
+    onError: (error) => toast.error(error.message),
   });
 
   const declineMutation = trpc.tradeFlow.declineTradeProposal.useMutation({
@@ -400,8 +414,9 @@ export default function WarRoom() {
     storedShippingDeadline,
     (trade?.proposal as any)?.shippingAt || (trade?.proposal as any)?.acceptedAt,
   );
-  const receiptAvailable = Boolean(trade && ['accepted', 'shipping', 'shipped', 'completed'].includes(currentStage));
+  const receiptAvailable = Boolean(trade && ['accepted', 'shipping', 'shipped', 'completed', 'disputed'].includes(currentStage));
   const canReportTradeIssue = Boolean(receiptAvailable && otherUser?.id);
+  const canRequestDisputeReview = Boolean(receiptAvailable && currentStage !== 'disputed');
   const openTradeIssueReport = () => {
     if (!otherUser?.id) return;
     const query = new URLSearchParams({
@@ -1053,13 +1068,24 @@ export default function WarRoom() {
                       <span aria-hidden="true">↓</span> Download Trade Receipt (PDF)
                     </button>
                     {canReportTradeIssue && (
-                      <button
-                        type="button"
-                        onClick={openTradeIssueReport}
-                        className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-amber-400/35 bg-amber-500/10 px-3 py-2 text-xs font-semibold text-amber-100 transition hover:bg-amber-500/20 sm:w-auto"
-                      >
-                        <span aria-hidden="true">!</span> Report a Trade Issue
-                      </button>
+                      <>
+                        <button
+                          type="button"
+                          onClick={openTradeIssueReport}
+                          className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-amber-400/35 bg-amber-500/10 px-3 py-2 text-xs font-semibold text-amber-100 transition hover:bg-amber-500/20 sm:w-auto"
+                        >
+                          <span aria-hidden="true">!</span> Report a Trade Issue
+                        </button>
+                        {canRequestDisputeReview && (
+                          <button
+                            type="button"
+                            onClick={() => setShowDisputeModal(true)}
+                            className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-red-400/45 bg-red-500/10 px-3 py-2 text-xs font-semibold text-red-100 transition hover:bg-red-500/20 sm:w-auto"
+                          >
+                            <span aria-hidden="true">⚠</span> Request Dispute Review
+                          </button>
+                        )}
+                      </>
                     )}
                   </section>
                 )}
@@ -2280,6 +2306,12 @@ export default function WarRoom() {
             </>
           ))}
 
+          {currentStage === 'disputed' && (
+            <p className="text-red-200 text-sm flex items-center gap-2 font-semibold">
+              <span aria-hidden="true">⚠</span> This trade is under administrator dispute review. Trade changes and completion actions are paused.
+            </p>
+          )}
+
         </div>
         <p className="text-center mt-2 text-gray-600 text-xs flex items-center justify-center gap-1.5">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-3.5 h-3.5 text-green-500">
@@ -2887,7 +2919,18 @@ export default function WarRoom() {
           </div>
         </div>
       )}
-
+      {showDisputeModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+          <div className="w-full max-w-md rounded-xl border border-red-400/45 bg-[#16213e] p-6 shadow-2xl">
+            <h2 className="text-lg font-bold text-white">Request dispute review?</h2>
+            <p className="mt-3 text-sm leading-relaxed text-gray-300">This pauses the Trade Room and notifies your partner that administrator review was requested. You can then submit supporting details through Report a Trade Issue.</p>
+            <div className="mt-6 flex justify-end gap-3">
+              <button type="button" onClick={() => setShowDisputeModal(false)} className="rounded-lg border border-gray-600 px-4 py-2 text-sm font-semibold text-gray-200 hover:bg-gray-700">Cancel</button>
+              <button type="button" onClick={() => disputeMutation.mutate({ proposalId })} disabled={disputeMutation.isPending} className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60">{disputeMutation.isPending ? 'Requesting…' : 'Mark Trade Disputed'}</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

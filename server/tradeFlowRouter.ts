@@ -19,6 +19,7 @@ import {
   tradeMessages,
   tradeReviews,
   tradeActivityLog,
+  tradeAdminLog,
 } from "../drizzle/schema";
 
 import { eq, sql, desc, or, and, inArray, asc } from "drizzle-orm";
@@ -634,6 +635,52 @@ export const tradeFlowRouter = router({
         }
       }
       return { success: true, mutualAcceptance: acceptance.mutualAcceptance, alreadyAccepted: acceptance.alreadyAccepted };
+    }),
+  markTradeDisputed: protectedProcedure
+    .input(z.object({ proposalId: z.number().int().positive() }))
+    .mutation(async ({ ctx, input }) => {
+      const db = await requireDb();
+      const userId = ctx.user.id;
+      const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
+      const actorName = await getUserDisplayName(db, userId);
+
+      return db.transaction(async (tx) => {
+        const [proposalRows] = await tx.execute(
+          sql`SELECT * FROM tradeProposals WHERE id = ${input.proposalId} FOR UPDATE`
+        );
+        const proposal = (proposalRows as unknown as any[])?.[0];
+        if (!proposal) throw new TRPCError({ code: 'NOT_FOUND', message: 'Trade not found' });
+        if (proposal.requesterId !== userId && proposal.recipientId !== userId) {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Only trade participants can request dispute review' });
+        }
+        if (proposal.status === 'disputed') {
+          return { success: true, alreadyDisputed: true, tradeReferenceNumber: proposal.tradeReferenceNumber };
+        }
+        if (!['accepted', 'shipping', 'shipped', 'completed'].includes(proposal.status)) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Dispute review is available after the trade has been accepted' });
+        }
+
+        await tx.execute(
+          sql`UPDATE tradeProposals SET status = 'disputed', lastActivityAt = ${now}, updatedAt = ${now} WHERE id = ${input.proposalId}`
+        );
+        await tx.insert(tradeAdminLog).values({
+          proposalId: input.proposalId,
+          actorUserId: userId,
+          eventType: 'disputed',
+          details: 'Trade marked disputed — administrator review requested.',
+          createdAt: now,
+        });
+        await tx.insert(tradeMessages).values({
+          proposalId: input.proposalId,
+          senderId: userId,
+          message: `${actorName} requested administrator dispute review for this trade.`,
+          messageType: 'system',
+          metadata: JSON.stringify({ type: 'trade_disputed', requestedBy: userId }),
+          createdAt: now,
+        });
+
+        return { success: true, alreadyDisputed: false, tradeReferenceNumber: proposal.tradeReferenceNumber };
+      });
     }),
   rejectTradeProposal: protectedProcedure
     .input(rejectProposalSchema)
