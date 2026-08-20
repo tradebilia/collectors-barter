@@ -135,10 +135,11 @@ export default function Conventions() {
         }} />
         <div className="container relative flex h-64 items-center justify-center sm:h-72 lg:h-80">
           <div className="flex w-full max-w-[1300px] items-center justify-center">
+            <h1 className="px-6 text-center text-4xl font-semibold tracking-tight text-white sm:hidden">Conventions</h1>
             <img
               src="https://assets.tradebilia.com/Conventions_806639e4.webp"
               alt="Tradebilia Conventions"
-              className="h-auto w-full object-contain"
+              className="hidden h-auto w-full object-contain sm:block"
             />
           </div>
         </div>

@@ -27,3 +27,9 @@ Start with a **shared mobile filter-drawer system** for Category Pages and, seco
 ## Implemented Mobile Boundary
 
 The Category Page now uses an off-canvas filter drawer below the desktop breakpoint. Its existing desktop sidebar remains in place from the `md` breakpoint upward. Mobile results use one column, while the existing six-column desktop grid is retained from the same desktop breakpoint upward. Phone-width Stamps verification confirms cards are readable again and the fixed filter rail no longer consumes the result area.
+
+## Confirmed Conventions Failure
+
+A direct 375-pixel capture of the active `/conventions` route reproduces the page as a narrow vertical fragment despite its source card grid using responsive columns. This is a confirmed active-route mobile defect that requires a focused repair without altering the desktop Conventions route.
+
+The mobile Conventions hero now uses a text fallback while the existing title artwork remains available from the `sm` breakpoint upward. A repeat 375-pixel capture confirms the route now shows a readable hero, scrollable category bar, stacked filter card, and single-column convention cards without changing desktop artwork or desktop card grids.
