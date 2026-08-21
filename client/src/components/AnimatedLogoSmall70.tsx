@@ -41,8 +41,10 @@ const AnimatedLogoSmall70 = ({
 }: AnimatedLogoSmall70Props) => {
   const [index, setIndex] = useState(0);
   const categoryTextRef = useRef<SVGTextElement>(null);
+  const wordmarkTextRef = useRef<SVGTextElement>(null);
   const [lockupOffsetX, setLockupOffsetX] = useState(0);
   const [dynamicViewBoxWidth, setDynamicViewBoxWidth] = useState(1300);
+  const [wordmarkTextWidth, setWordmarkTextWidth] = useState(fontSize * 3.8);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -54,8 +56,10 @@ const AnimatedLogoSmall70 = ({
 
   const currentCategory = categories[index];
   const isLargeWordmark = fontSize >= LARGE_WORDMARK_FONT_SIZE;
-  const categoryWordX = fixedCategoryMetrics
-    ? GLOBAL_SEARCH_CATEGORY_WORD_X
+  const categoryWordX = centerLockup
+    ? Math.ceil(132 + wordmarkTextWidth + fontSize * 0.22)
+    : fixedCategoryMetrics
+      ? GLOBAL_SEARCH_CATEGORY_WORD_X
     : isLargeWordmark
       ? LARGE_CATEGORY_WORD_X
       : 348;
@@ -65,6 +69,11 @@ const AnimatedLogoSmall70 = ({
     : `translate(${6 + wheelOffsetX}, ${82.5 + wheelOffsetY}) scale(0.441) translate(104, 110) scale(${wheelScale}) translate(-104, -110)`;
 
   useLayoutEffect(() => {
+    const measuredWordmarkWidth = wordmarkTextRef.current?.getComputedTextLength();
+    if (measuredWordmarkWidth && Math.abs(measuredWordmarkWidth - wordmarkTextWidth) > 0.5) {
+      setWordmarkTextWidth(measuredWordmarkWidth);
+    }
+
     if (!centerLockup) {
       setLockupOffsetX(0);
       setDynamicViewBoxWidth(1300);
@@ -80,7 +89,7 @@ const AnimatedLogoSmall70 = ({
 
     setDynamicViewBoxWidth(nextViewBoxWidth);
     setLockupOffsetX(nextOffset);
-  }, [categoryWordX, centerLockup, currentCategory.name, fontSize]);
+  }, [categoryWordX, centerLockup, currentCategory.name, fontSize, wordmarkTextWidth]);
 
   return (
     <div className="flex h-full items-center justify-center font-sans py-0" aria-label={`Trade ${currentCategory.name}`}>
@@ -115,7 +124,7 @@ const AnimatedLogoSmall70 = ({
         </g>
 
         <line x1="114" y1="81.3" x2="114" y2="178.5" stroke={wordmarkColor} strokeWidth="2.55" strokeLinecap="round" />
-        <text x="132" y="157.5" fontFamily="Montserrat, sans-serif" fontSize={fontSize} fontWeight="600" fill={wordmarkColor}>TRADE</text>
+        <text ref={wordmarkTextRef} x="132" y="157.5" fontFamily="Montserrat, sans-serif" fontSize={fontSize} fontWeight="600" fill={wordmarkColor}>TRADE</text>
         <text
           x={categoryWordX}
           y="157.5"
