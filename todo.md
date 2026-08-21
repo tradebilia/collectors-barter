@@ -618,3 +618,5 @@
 - [x] Align the Coming Soon spinning-wheel segment colors with the darker palette used by the animated category names.
 - [x] Document the licensing-safe path for replacing generated workbench props with real collectible photography, including the existing non-authentic Star Wars-style item.
 - [x] Validate the matched wheel and category palette at mobile and desktop widths, publish, verify the standard domain, and synchronize GitHub.
+- [x] Increase the centered Coming Soon animated logo by 25px while retaining its wider-parchment clearance and matched dark wheel palette.
+- [x] Validate the enlarged Coming Soon lockup at mobile and desktop widths, publish, verify the standard domain, and synchronize GitHub.
