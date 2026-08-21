@@ -587,3 +587,6 @@
 - [x] Validate the revised Global Search lockup weight at mobile and desktop widths, publish, verify the standard domain, and synchronize GitHub.
 - [x] Enlarge the Coming Soon animated logo by 25px and apply the whole-lockup centering used by Global Search.
 - [x] Validate the enlarged centered Coming Soon logo at mobile and desktop widths, publish, verify the standard domain, and synchronize GitHub.
+- [x] Rebuild the Coming Soon animated logo from the homepage proportion reference with a 25px larger wordmark and a wheel deliberately larger than the title letter height.
+- [x] Validate the rebuilt Coming Soon animated-logo proportions at mobile and desktop widths, publish, verify the standard domain, and synchronize GitHub.
+- [x] Rework the Coming Soon category-label placement so all category names are fully visible on the page at mobile and desktop widths.
