@@ -686,3 +686,7 @@
 - [x] Make Test AI valuation summaries reject unsupported currencies and deduplicate repeated sale evidence before metrics are calculated.
 - [x] Extend API Health failure telemetry and bounded safe retries to approved external read-only provider paths.
 - [x] Add focused regression coverage and complete validation, documentation, GitHub synchronization, checkpointing, and public release verification for the approved next remediation batch.
+- [x] Add safe owner-scoped listing-photo deletion/reordering controls and semantic cover-photo interaction without changing listing data models.
+- [x] Improve accessible keyboard behavior and labels for country selection and shared search controls.
+- [x] Document the lower-priority decisions for shared caching, review visibility deadlines, real-time updates, migration governance, and independent inquiry retention without a schema migration.
+- [x] Add focused coverage and complete validation, documentation, GitHub synchronization, checkpointing, and public release verification for the approved lower-priority batch.

@@ -44,6 +44,12 @@ Focused regression coverage passed with **4 files and 8 tests**, followed by suc
 
 ## 2. Application architecture
 
+## Lower-priority remediation update — 2026-08-21
+
+Direct reinspection confirmed that owner-scoped listing photo removal, ordering, and cover-photo selection already exist in the active `updateListing` transaction: omitted retained URLs are deleted only for the owner’s listing and retained photo order persists through `sortOrder`. No duplicate backend change was made. The shared desktop and mobile search inputs now have explicit accessible labels.
+
+The remaining lower-priority items are documented rather than auto-implemented: shared cache storage is deferred until multi-instance scaling; a review reveal deadline is a product policy; real-time trade updates are deferred until polling creates measurable friction; schema migrations remain reviewed release operations, not automatic deploy actions; and independent inquiry retention requires a deliberate per-participant deletion schema.
+
 Tradebilia is a React 19 application built with Vite, Tailwind, TanStack React Query, Wouter, and tRPC. The Node/Express server exposes a tRPC API at `/api/trpc`, several Express routes for health, scheduled work, storage, and provider callbacks, and uses Drizzle/MySQL for persistence. Authentication is a signed JWT in an HttpOnly cookie with an Authorization-header fallback. The platform integrates Cloudflare R2/public media, private report-evidence storage, Resend, Twilio, IPQS, PayPal, eBay, Facebook, LinkedIn, carrier APIs, and several collectible-data services.
 
 ```mermaid

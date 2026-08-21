@@ -121,6 +121,7 @@ export function TopBar({
           <Search className="h-4 w-4 flex-shrink-0 text-gray-400" />
           <input
             type="text"
+            aria-label="Search Tradebilia listings"
             placeholder={searchPlaceholder}
             value={searchQuery}
             onChange={(e) => handleInputChange(e.target.value)}
@@ -155,6 +156,7 @@ export function TopBar({
           <Search className="h-4 w-4 text-gray-400 flex-shrink-0" />
           <input
             type="text"
+            aria-label="Search Tradebilia listings"
             placeholder={searchPlaceholder}
             value={searchQuery}
             onChange={(e) => handleInputChange(e.target.value)}
