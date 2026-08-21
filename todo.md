@@ -579,3 +579,5 @@
 - [x] Replace the teal Global Search hero haze with a neutral contrast overlay that preserves the natural archival wallpaper colors and text readability.
 - [x] Reduce the Global Search animated title by 25px and proportionally resize its spinning wheel and divider while preserving whole-lockup centering and hero layout.
 - [x] Validate the resized Global Search title at mobile and desktop widths, publish, verify the standard domain, and synchronize GitHub.
+- [x] Match the Global Search spinning-wheel diameter and divider height to the actual rendered 135px title cap-height while preserving whole-lockup centering.
+- [x] Validate the corrected Global Search proportions at mobile and desktop widths, publish, verify the standard domain, and synchronize GitHub.

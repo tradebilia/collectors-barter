@@ -24,6 +24,7 @@ type AnimatedLogoSmall70Props = {
   neutralCategoryColor?: string;
   wheelScale?: number;
   dividerScale?: number;
+  dividerOffsetY?: number;
   wheelOffsetX?: number;
   wheelOffsetY?: number;
   fixedCategoryMetrics?: boolean;
@@ -36,6 +37,7 @@ const AnimatedLogoSmall70 = ({
   neutralCategoryColor = wordmarkColor,
   wheelScale = 1,
   dividerScale = 1,
+  dividerOffsetY = 0,
   wheelOffsetX = 0,
   wheelOffsetY = 0,
   fixedCategoryMetrics = false,
@@ -69,7 +71,7 @@ const AnimatedLogoSmall70 = ({
   const wheelTransform = wheelScale === 1
     ? `translate(${6 + wheelOffsetX}, ${82.5 + wheelOffsetY}) scale(0.441)`
     : `translate(${6 + wheelOffsetX}, ${82.5 + wheelOffsetY}) scale(0.441) translate(104, 110) scale(${wheelScale}) translate(-104, -110)`;
-  const dividerCenterY = 129.9;
+  const dividerCenterY = 129.9 + dividerOffsetY;
   const dividerHalfHeight = 48.6 * dividerScale;
 
   useLayoutEffect(() => {
