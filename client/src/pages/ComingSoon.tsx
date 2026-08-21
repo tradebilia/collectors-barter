@@ -33,8 +33,8 @@ export default function ComingSoon() {
         <div className="w-full max-w-xl text-center sm:max-w-2xl">
           <p className="mx-auto mb-4 w-fit border-y border-[#5b4534]/20 px-5 py-2 text-[8px] font-bold uppercase tracking-[0.2em] text-[#443326]/72 sm:mb-6 sm:text-[10px]">Tradebilia · Collector&apos;s Workbench</p>
 
-          <div className="mx-auto h-20 w-full max-w-[25rem] sm:h-28 sm:max-w-[36rem]">
-            <AnimatedLogoSmall70 fontSize={96} wordmarkColor="#2b2119" neutralCategoryColor="#2b2119" wheelStrokeWidth={6} dividerStrokeWidth={3.6} fixedCategoryMetrics />
+          <div className="mx-auto h-24 w-full max-w-[25rem] sm:h-32 sm:max-w-[36rem]">
+            <AnimatedLogoSmall70 fontSize={121} wordmarkColor="#2b2119" neutralCategoryColor="#2b2119" wheelStrokeWidth={6} dividerStrokeWidth={3.6} fixedCategoryMetrics centerLockup />
           </div>
 
           <div className="mx-auto mt-8 max-w-lg sm:mt-10">
