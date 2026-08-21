@@ -33,17 +33,29 @@ export default function ComingSoon() {
         <div className="w-full max-w-xl text-center sm:max-w-2xl">
           <p className="mx-auto mb-4 w-fit border-y border-[#5b4534]/20 px-5 py-2 text-[8px] font-bold uppercase tracking-[0.2em] text-[#443326]/72 sm:mb-6 sm:text-[10px]">Tradebilia · Collector&apos;s Workbench</p>
 
-          <div className="mx-auto h-24 w-full max-w-[25rem] sm:h-32 sm:max-w-[36rem]">
-            <AnimatedLogoSmall70 fontSize={121} wordmarkColor="#2b2119" neutralCategoryColor="#2b2119" wheelStrokeWidth={6} dividerStrokeWidth={3.6} fixedCategoryMetrics centerLockup />
+          <div className="mx-auto h-20 w-full max-w-[25rem] sm:h-24 sm:max-w-[38rem]">
+            <AnimatedLogoSmall70 fontSize={146} wheelScale={1.42} dividerScale={1.3} wordmarkColor="#2b2119" neutralCategoryColor="#2b2119" wheelStrokeWidth={6} dividerStrokeWidth={3.6} fixedCategoryMetrics centerLockup />
           </div>
 
-          <div className="mx-auto mt-8 max-w-lg sm:mt-10">
+          <div className="mx-auto mt-2 max-w-lg sm:mt-10">
             <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-[#7b4f2f] sm:text-[10px]">The Collectors Trading Exchange</p>
-            <h1 className="mt-3 font-serif text-4xl leading-[0.92] tracking-[-0.04em] text-[#2b2119] sm:text-6xl">Every collection<br />has a next chapter.</h1>
-            <p className="mx-auto mt-5 max-w-md text-sm leading-6 text-[#4d3c2e]/80 sm:text-base">A deliberate place to discover, value, and trade across all ten collector categories.</p>
+            <h1 className="mt-2 font-serif text-4xl leading-[0.92] tracking-[-0.04em] text-[#2b2119] sm:mt-3 sm:text-6xl">Every collection<br />has a next chapter.</h1>
+            <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-[#4d3c2e]/80 sm:mt-5 sm:text-base">A deliberate place to discover, value, and trade across all ten collector categories.</p>
+            <div aria-label="Collections on the exchange" className="mx-auto mt-2 grid max-w-md grid-cols-2 gap-x-5 gap-y-1 border-y border-[#6c503c]/20 py-2 text-[8px] font-bold uppercase tracking-[0.12em] text-[#4d3c2e]/72 sm:mt-6 sm:max-w-2xl sm:grid-cols-5 sm:gap-x-3 sm:gap-y-1.5 sm:py-3 sm:text-[9px]">
+              <span>Comics</span>
+              <span>Sports Cards</span>
+              <span>Vintage Toys</span>
+              <span>Video Games</span>
+              <span>Stamps</span>
+              <span>Coins</span>
+              <span>Pokémon</span>
+              <span>Movies</span>
+              <span>Autographs</span>
+              <span>Disney Pins</span>
+            </div>
           </div>
 
-          <div className="mx-auto mt-7 max-w-md sm:mt-9">
+          <div className="mx-auto mt-2 max-w-md sm:mt-9">
             {submitted ? (
               <div className="border border-[#6c503c]/35 bg-[#fbf3e4]/70 px-6 py-6 shadow-sm">
                 <CheckCircle2 className="mx-auto h-9 w-9 text-[#1f4d98]" aria-hidden="true" />
@@ -71,7 +83,6 @@ export default function ComingSoon() {
             )}
           </div>
 
-          <p className="mt-8 text-[9px] font-bold uppercase tracking-[0.15em] text-[#4d3c2e]/55 sm:mt-10 sm:text-[10px]">Comics · Sports Cards · Toys · Games · Stamps · Coins · Pokémon · Movies · Autographs · Disney Pins</p>
         </div>
       </section>
 
