@@ -6,6 +6,17 @@ import { trpc } from "@/lib/trpc";
 import { ArrowRight, CheckCircle2, Mail } from "lucide-react";
 import { FormEvent, useId, useState } from "react";
 
+const COMING_SOON_CATEGORY_COLORS = {
+  COMICS: "#6f3b9e",
+  "SPORTS CARDS": "#b0221a",
+  POKEMON: "#a85d00",
+  COINS: "#8b6200",
+  STAMPS: "#087047",
+  "VIDEO GAMES": "#a24760",
+  AUTOGRAPHS: "#175d94",
+  TOYS: "#9c2d69",
+} as const;
+
 export default function ComingSoon() {
   const emailId = useId();
   const consentId = useId();
@@ -24,7 +35,7 @@ export default function ComingSoon() {
     <main className="relative min-h-screen overflow-hidden bg-[#332218] text-[#2b2119]">
       <div
         className="absolute inset-0 bg-cover bg-center"
-        style={{ backgroundImage: "url('/manus-storage/tradebilia-coming-soon-scattered-mixed-grade-workbench-corrected_ea870b57.png')" }}
+        style={{ backgroundImage: "url('/manus-storage/tradebilia-coming-soon-scattered-mixed-grade-workbench-wide-parchment_09ff549f.png')" }}
         aria-hidden="true"
       />
       <div className="absolute inset-0 bg-[#24160f]/10" aria-hidden="true" />
@@ -32,7 +43,7 @@ export default function ComingSoon() {
       <section className="relative flex min-h-screen items-center justify-center px-5 py-12 sm:px-10 sm:py-16">
         <div className="w-full max-w-xl text-center sm:max-w-2xl">
           <div className="mx-auto h-24 w-full max-w-[27rem] translate-y-6 sm:h-28 sm:max-w-[42rem]">
-            <AnimatedLogoSmall70 fontSize={171} wheelScale={1.95} wheelOffsetX={-55} wheelOffsetY={-30} dividerScale={1.35} dividerOffsetY={-20} wordmarkColor="#2b2119" neutralCategoryColor="#2b2119" wheelStrokeWidth={6} dividerStrokeWidth={3.6} fixedCategoryMetrics centerLockup centeredViewBoxWidth={2400} />
+            <AnimatedLogoSmall70 fontSize={171} wheelScale={1.95} wheelOffsetX={-55} wheelOffsetY={-30} dividerScale={1.35} dividerOffsetY={-20} wordmarkColor="#2b2119" neutralCategoryColor="#2b2119" categoryColorOverrides={COMING_SOON_CATEGORY_COLORS} wheelStrokeWidth={6} dividerStrokeWidth={3.6} fixedCategoryMetrics centerLockup centeredViewBoxWidth={2400} />
           </div>
 
           <div className="-translate-y-1 sm:-translate-y-8">

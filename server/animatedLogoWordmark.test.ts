@@ -45,6 +45,9 @@ describe("Animated Tradebilia wordmark", () => {
 
   it("uses the fixed-metric animated lockup on the Coming Soon parchment hero", () => {
     const comingSoonSource = fs.readFileSync(path.join(projectRoot, "client/src/pages/ComingSoon.tsx"), "utf8");
-    expect(comingSoonSource).toContain('<AnimatedLogoSmall70 fontSize={171} wheelScale={1.95} wheelOffsetX={-55} wheelOffsetY={-30} dividerScale={1.35} dividerOffsetY={-20} wordmarkColor="#2b2119" neutralCategoryColor="#2b2119" wheelStrokeWidth={6} dividerStrokeWidth={3.6} fixedCategoryMetrics centerLockup centeredViewBoxWidth={2400} />');
+    expect(logoSource).toContain('categoryColorOverrides?: Partial<Record<(typeof categories)[number]["name"], string>>;');
+    expect(logoSource).toContain('categoryColorOverrides = {},');
+    expect(logoSource).toContain('categoryColorOverrides[currentCategory.name] ?? currentCategory.color');
+    expect(comingSoonSource).toContain('<AnimatedLogoSmall70 fontSize={171} wheelScale={1.95} wheelOffsetX={-55} wheelOffsetY={-30} dividerScale={1.35} dividerOffsetY={-20} wordmarkColor="#2b2119" neutralCategoryColor="#2b2119" categoryColorOverrides={COMING_SOON_CATEGORY_COLORS} wheelStrokeWidth={6} dividerStrokeWidth={3.6} fixedCategoryMetrics centerLockup centeredViewBoxWidth={2400} />');
   });
 });

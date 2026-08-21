@@ -32,6 +32,7 @@ type AnimatedLogoSmall70Props = {
   fixedCategoryMetrics?: boolean;
   centerLockup?: boolean;
   centeredViewBoxWidth?: number;
+  categoryColorOverrides?: Partial<Record<(typeof categories)[number]["name"], string>>;
 };
 
 const AnimatedLogoSmall70 = ({
@@ -48,6 +49,7 @@ const AnimatedLogoSmall70 = ({
   fixedCategoryMetrics = false,
   centerLockup = false,
   centeredViewBoxWidth = CENTERED_LOCKUP_VIEWBOX_WIDTH,
+  categoryColorOverrides = {},
 }: AnimatedLogoSmall70Props) => {
   const [index, setIndex] = useState(0);
   const categoryTextRef = useRef<SVGTextElement>(null);
@@ -74,7 +76,7 @@ const AnimatedLogoSmall70 = ({
     : isLargeWordmark
       ? LARGE_CATEGORY_WORD_X
       : 348;
-  const categoryColor = currentCategory.name === "BILIA" ? neutralCategoryColor : currentCategory.color;
+  const categoryColor = currentCategory.name === "BILIA" ? neutralCategoryColor : categoryColorOverrides[currentCategory.name] ?? currentCategory.color;
   const wheelTransform = wheelScale === 1
     ? `translate(${6 + wheelOffsetX}, ${82.5 + wheelOffsetY}) scale(0.441)`
     : `translate(${6 + wheelOffsetX}, ${82.5 + wheelOffsetY}) scale(0.441) translate(104, 110) scale(${wheelScale}) translate(-104, -110)`;
