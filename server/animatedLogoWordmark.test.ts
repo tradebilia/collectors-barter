@@ -30,6 +30,8 @@ describe("Animated Tradebilia wordmark", () => {
     expect(logoSource).toContain('centerLockup?: boolean;');
     expect(logoSource).toContain('const CENTERED_LOCKUP_VIEWBOX_WIDTH = 1800;');
     expect(logoSource).toContain('setDynamicViewBoxWidth(nextViewBoxWidth);');
+    expect(logoSource).toContain('const wordmarkTextRef = useRef<SVGTextElement>(null);');
+    expect(logoSource).toContain('Math.ceil(132 + wordmarkTextWidth + fontSize * 0.22)');
     expect(globalSearchSource).toContain('<AnimatedLogoSmall70 fontSize={160} fixedCategoryMetrics centerLockup />');
   });
 
