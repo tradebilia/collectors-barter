@@ -628,3 +628,5 @@
 - [x] Validate the restored visible logo scale and long-label clearance at mobile and desktop widths, publish, verify the standard domain, and synchronize GitHub.
 - [x] Expand the Coming Soon animated-logo canvas to 3000 units while applying scale compensation that preserves the current visible 196px lockup size.
 - [x] Validate the compensated 3000-wide canvas keeps long category labels clear at mobile and desktop widths, publish, verify the standard domain, and synchronize GitHub.
+- [x] Expand the Coming Soon rendered visual canvas so the existing font, wheel, and divider remain at their original visible size while the wider SVG provides long-label clearance.
+- [x] Validate the expanded-canvas original-size lockup shows long category labels without clipping at mobile and desktop widths, publish, verify the standard domain, and synchronize GitHub.

@@ -50,10 +50,13 @@ describe("Animated Tradebilia wordmark", () => {
     expect(logoSource).toContain('categoryColorOverrides[currentCategory.name] ?? currentCategory.color');
     expect(logoSource).toContain('wheelColors?: WheelColors;');
     expect(logoSource).toContain('lockupScale?: number;');
+    expect(logoSource).toContain('canvasWidthScale?: number;');
+    expect(logoSource).toContain('canvasWidthScale = 1,');
+    expect(logoSource).toContain('width: `${canvasWidthScale * 100}%`');
     expect(logoSource).toContain('lockupScale = 1,');
     expect(logoSource).toContain('const scaledLockupWidth = lockupWidth * lockupScale;');
     expect(logoSource).toContain('wheelColors = DEFAULT_WHEEL_COLORS,');
     expect(logoSource).toContain('fill={wheelColors[0]} stroke={wheelColors[0]}');
-    expect(comingSoonSource).toContain('<AnimatedLogoSmall70 fontSize={196} wheelScale={2.24} wheelOffsetX={-65} wheelOffsetY={-30} dividerScale={1.55} dividerOffsetY={-20} wordmarkColor="#2b2119" neutralCategoryColor="#2b2119" categoryColorOverrides={COMING_SOON_CATEGORY_COLORS} wheelColors={COMING_SOON_WHEEL_COLORS} wheelStrokeWidth={6} dividerStrokeWidth={3.6} fixedCategoryMetrics centerLockup centeredViewBoxWidth={3000} lockupScale={1.25} />');
+    expect(comingSoonSource).toContain('<AnimatedLogoSmall70 fontSize={196} wheelScale={2.24} wheelOffsetX={-65} wheelOffsetY={-30} dividerScale={1.55} dividerOffsetY={-20} wordmarkColor="#2b2119" neutralCategoryColor="#2b2119" categoryColorOverrides={COMING_SOON_CATEGORY_COLORS} wheelColors={COMING_SOON_WHEEL_COLORS} wheelStrokeWidth={6} dividerStrokeWidth={3.6} fixedCategoryMetrics centerLockup centeredViewBoxWidth={3000} canvasWidthScale={1.25} />');
   });
 });
