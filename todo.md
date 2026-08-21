@@ -603,3 +603,8 @@
 - [x] Replace the Coming Soon supporting line with stronger collector-focused copy.
 - [x] Replace the workbench background with a caption-free graded-collectibles composition covering every category, including graded VHS/DVD movie items and a recognizable famous-person autograph presentation.
 - [x] Validate the refined Coming Soon animation and composition at mobile and desktop widths, publish, verify the standard domain, and synchronize GitHub.
+- [x] Restore a smaller, realistic central parchment with collectible objects placed around all outer workbench borders.
+- [x] Mix selected ungraded pieces with professional-grade cases and use recognizable real movie and toy collectibles in the surrounding scene.
+- [x] Show the actual VHS cassette—not merely its outer case—as the professionally graded movie collectible.
+- [x] Arrange all surrounding collectible objects with a naturally scattered, irregular workbench composition rather than a symmetrical layout.
+- [x] Preserve the corrected animated-logo treatment and validate the restored workbench at mobile and desktop widths, publish, verify the standard domain, and synchronize GitHub.
