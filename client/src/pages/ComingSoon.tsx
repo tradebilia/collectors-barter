@@ -44,7 +44,7 @@ export default function ComingSoon() {
     <main className="relative min-h-screen overflow-hidden bg-[#332218] text-[#2b2119]">
       <div
         className="absolute inset-0 bg-cover bg-center"
-        style={{ backgroundImage: "url('/manus-storage/tradebilia-coming-soon-scattered-mixed-grade-workbench-wide-parchment_09ff549f.png')" }}
+        style={{ backgroundImage: "url('/manus-storage/tradebilia-coming-soon-scattered-mixed-grade-workbench-extra-wide-parchment_9f77d258.png')" }}
         aria-hidden="true"
       />
       <div className="absolute inset-0 bg-[#24160f]/10" aria-hidden="true" />
@@ -52,7 +52,7 @@ export default function ComingSoon() {
       <section className="relative flex min-h-screen items-center justify-center px-5 py-12 sm:px-10 sm:py-16">
         <div className="w-full max-w-xl text-center sm:max-w-2xl">
           <div className="mx-auto h-24 w-full max-w-[27rem] translate-y-6 sm:h-28 sm:max-w-[42rem]">
-            <AnimatedLogoSmall70 fontSize={196} wheelScale={2.24} wheelOffsetX={-65} wheelOffsetY={-30} dividerScale={1.55} dividerOffsetY={-20} wordmarkColor="#2b2119" neutralCategoryColor="#2b2119" categoryColorOverrides={COMING_SOON_CATEGORY_COLORS} wheelColors={COMING_SOON_WHEEL_COLORS} wheelStrokeWidth={6} dividerStrokeWidth={3.6} fixedCategoryMetrics centerLockup centeredViewBoxWidth={2400} />
+            <AnimatedLogoSmall70 fontSize={196} wheelScale={2.24} wheelOffsetX={-65} wheelOffsetY={-30} dividerScale={1.55} dividerOffsetY={-20} wordmarkColor="#2b2119" neutralCategoryColor="#2b2119" categoryColorOverrides={COMING_SOON_CATEGORY_COLORS} wheelColors={COMING_SOON_WHEEL_COLORS} wheelStrokeWidth={6} dividerStrokeWidth={3.6} fixedCategoryMetrics centerLockup centeredViewBoxWidth={3000} />
           </div>
 
           <div className="-translate-y-1 sm:-translate-y-8">

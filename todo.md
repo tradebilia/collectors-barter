@@ -620,3 +620,6 @@
 - [x] Validate the matched wheel and category palette at mobile and desktop widths, publish, verify the standard domain, and synchronize GitHub.
 - [x] Increase the centered Coming Soon animated logo by 25px while retaining its wider-parchment clearance and matched dark wheel palette.
 - [x] Validate the enlarged Coming Soon lockup at mobile and desktop widths, publish, verify the standard domain, and synchronize GitHub.
+- [x] Widen the current Coming Soon parchment enough to keep the enlarged TRADE SPORTS CARDS state clear of all corner holders.
+- [x] Expand the Coming Soon animated-logo viewing bounds so the enlarged long category state is fully visible without clipping.
+- [x] Validate the wider parchment and expanded long-label bounds at mobile and desktop widths, publish, verify the standard domain, and synchronize GitHub.

@@ -10,8 +10,8 @@ const adminSource = fs.readFileSync(path.join(projectRoot, "client/src/pages/Adm
 describe("Coming Soon experience", () => {
   it("uses the animated Tradebilia logo and has an opt-in email form", () => {
     expect(pageSource).toContain('import AnimatedLogoSmall70 from "@/components/AnimatedLogoSmall70"');
-    expect(pageSource).toContain('<AnimatedLogoSmall70 fontSize={196} wheelScale={2.24} wheelOffsetX={-65} wheelOffsetY={-30} dividerScale={1.55} dividerOffsetY={-20} wordmarkColor="#2b2119" neutralCategoryColor="#2b2119" categoryColorOverrides={COMING_SOON_CATEGORY_COLORS} wheelColors={COMING_SOON_WHEEL_COLORS} wheelStrokeWidth={6} dividerStrokeWidth={3.6} fixedCategoryMetrics centerLockup centeredViewBoxWidth={2400} />');
-    expect(pageSource).toContain('tradebilia-coming-soon-scattered-mixed-grade-workbench-wide-parchment_09ff549f.png');
+    expect(pageSource).toContain('<AnimatedLogoSmall70 fontSize={196} wheelScale={2.24} wheelOffsetX={-65} wheelOffsetY={-30} dividerScale={1.55} dividerOffsetY={-20} wordmarkColor="#2b2119" neutralCategoryColor="#2b2119" categoryColorOverrides={COMING_SOON_CATEGORY_COLORS} wheelColors={COMING_SOON_WHEEL_COLORS} wheelStrokeWidth={6} dividerStrokeWidth={3.6} fixedCategoryMetrics centerLockup centeredViewBoxWidth={3000} />');
+    expect(pageSource).toContain('tradebilia-coming-soon-scattered-mixed-grade-workbench-extra-wide-parchment_9f77d258.png');
     expect(pageSource).toContain('COMING_SOON_CATEGORY_COLORS');
     expect(pageSource).toContain('COMICS: "#6f3b9e"');
     expect(pageSource).toContain('"SPORTS CARDS": "#b0221a"');
