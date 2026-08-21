@@ -23,6 +23,7 @@ type AnimatedLogoSmall70Props = {
   wordmarkColor?: string;
   neutralCategoryColor?: string;
   wheelScale?: number;
+  dividerScale?: number;
   wheelOffsetX?: number;
   wheelOffsetY?: number;
   fixedCategoryMetrics?: boolean;
@@ -34,6 +35,7 @@ const AnimatedLogoSmall70 = ({
   wordmarkColor = "#FFFFFF",
   neutralCategoryColor = wordmarkColor,
   wheelScale = 1,
+  dividerScale = 1,
   wheelOffsetX = 0,
   wheelOffsetY = 0,
   fixedCategoryMetrics = false,
@@ -67,6 +69,8 @@ const AnimatedLogoSmall70 = ({
   const wheelTransform = wheelScale === 1
     ? `translate(${6 + wheelOffsetX}, ${82.5 + wheelOffsetY}) scale(0.441)`
     : `translate(${6 + wheelOffsetX}, ${82.5 + wheelOffsetY}) scale(0.441) translate(104, 110) scale(${wheelScale}) translate(-104, -110)`;
+  const dividerCenterY = 129.9;
+  const dividerHalfHeight = 48.6 * dividerScale;
 
   useLayoutEffect(() => {
     const measuredWordmarkWidth = wordmarkTextRef.current?.getComputedTextLength();
@@ -123,7 +127,7 @@ const AnimatedLogoSmall70 = ({
           </g>
         </g>
 
-        <line x1="114" y1="81.3" x2="114" y2="178.5" stroke={wordmarkColor} strokeWidth="2.55" strokeLinecap="round" />
+        <line x1="114" y1={dividerCenterY - dividerHalfHeight} x2="114" y2={dividerCenterY + dividerHalfHeight} stroke={wordmarkColor} strokeWidth={2.55 * dividerScale} strokeLinecap="round" />
         <text ref={wordmarkTextRef} x="132" y="157.5" fontFamily="Montserrat, sans-serif" fontSize={fontSize} fontWeight="600" fill={wordmarkColor}>TRADE</text>
         <text
           x={categoryWordX}

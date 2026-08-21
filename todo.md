@@ -577,3 +577,5 @@
 - [x] Enlarge the Global Search animated title by 50px and dynamically center the entire active lockup—including wheel, divider, Trade, and category label—as one unit on every rotation.
 - [x] Validate the enlarged dynamically centered Global Search title at mobile and desktop widths, publish, verify the standard domain, and synchronize GitHub.
 - [x] Replace the teal Global Search hero haze with a neutral contrast overlay that preserves the natural archival wallpaper colors and text readability.
+- [x] Reduce the Global Search animated title by 25px and proportionally resize its spinning wheel and divider while preserving whole-lockup centering and hero layout.
+- [x] Validate the resized Global Search title at mobile and desktop widths, publish, verify the standard domain, and synchronize GitHub.
