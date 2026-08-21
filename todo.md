@@ -570,3 +570,5 @@
 - [x] Add an Explore All entry as the first shared category-bar tab, linking to Global Search and reflecting an active state on the all-category page without changing existing category navigation.
 - [x] Replace the Global Search static logo title with the shared animated Tradebilia logo while preserving background, category-bar placement, search behavior, and responsive layout.
 - [x] Correct Global Search animated-logo clipping and align the spinning wheel, divider, and title on a shared vertical centerline without changing hero height, background, category bar, or search behavior.
+- [x] Rebuild the Global Search animated title to use the homepage’s visual proportions and fixed wordmark metrics, preventing rotation from changing font size, baseline, divider spacing, or wheel-to-title balance.
+- [x] Validate stable Global Search animation geometry at mobile and desktop widths, publish, verify the standard domain, and synchronize GitHub.

@@ -15,7 +15,7 @@ const categories = [
 const DEFAULT_WORDMARK_FONT_SIZE = 60;
 const LARGE_WORDMARK_FONT_SIZE = 125;
 const LARGE_CATEGORY_WORD_X = 580;
-const LARGE_CATEGORY_TEXT_LENGTH = 680;
+const GLOBAL_SEARCH_CATEGORY_WORD_X = 480;
 
 type AnimatedLogoSmall70Props = {
   fontSize?: number;
@@ -24,6 +24,7 @@ type AnimatedLogoSmall70Props = {
   wheelScale?: number;
   wheelOffsetX?: number;
   wheelOffsetY?: number;
+  fixedCategoryMetrics?: boolean;
 };
 
 const AnimatedLogoSmall70 = ({
@@ -33,6 +34,7 @@ const AnimatedLogoSmall70 = ({
   wheelScale = 1,
   wheelOffsetX = 0,
   wheelOffsetY = 0,
+  fixedCategoryMetrics = false,
 }: AnimatedLogoSmall70Props) => {
   const [index, setIndex] = useState(0);
 
@@ -46,10 +48,11 @@ const AnimatedLogoSmall70 = ({
 
   const currentCategory = categories[index];
   const isLargeWordmark = fontSize >= LARGE_WORDMARK_FONT_SIZE;
-  const categoryTextLength = isLargeWordmark && currentCategory.name.length >= 10
-    ? LARGE_CATEGORY_TEXT_LENGTH
-    : undefined;
-  const categoryWordX = isLargeWordmark ? LARGE_CATEGORY_WORD_X : 348;
+  const categoryWordX = fixedCategoryMetrics
+    ? GLOBAL_SEARCH_CATEGORY_WORD_X
+    : isLargeWordmark
+      ? LARGE_CATEGORY_WORD_X
+      : 348;
   const categoryColor = currentCategory.name === "BILIA" ? neutralCategoryColor : currentCategory.color;
   const wheelTransform = wheelScale === 1
     ? `translate(${6 + wheelOffsetX}, ${82.5 + wheelOffsetY}) scale(0.441)`
@@ -95,8 +98,6 @@ const AnimatedLogoSmall70 = ({
           fontSize={fontSize}
           fontWeight="600"
           fill={categoryColor}
-          textLength={categoryTextLength}
-          lengthAdjust={categoryTextLength ? "spacingAndGlyphs" : undefined}
         >
           {currentCategory.name}
         </text>
