@@ -9,7 +9,7 @@ describe("Restoration Workbench Coming Soon page", () => {
     expect(source).toContain('import AnimatedLogoSmall70 from "@/components/AnimatedLogoSmall70"');
     expect(source).toContain('<AnimatedLogoSmall70 fontSize={171} wheelScale={1.95} wheelOffsetX={-55} wheelOffsetY={-30} dividerScale={1.35} dividerOffsetY={-20} wordmarkColor="#2b2119" neutralCategoryColor="#2b2119" wheelStrokeWidth={6} dividerStrokeWidth={3.6} fixedCategoryMetrics centerLockup centeredViewBoxWidth={2400} />');
     expect(source).toContain("Every collection<br />has a next chapter.");
-    expect(source).toContain('tradebilia-coming-soon-scattered-mixed-grade-workbench_e2671caa.png');
+    expect(source).toContain('tradebilia-coming-soon-scattered-mixed-grade-workbench-corrected_ea870b57.png');
     expect(source).toContain("A home for remarkable collectibles—and the collectors who know their worth.");
   });
 

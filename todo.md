@@ -608,3 +608,6 @@
 - [x] Show the actual VHS cassette—not merely its outer case—as the professionally graded movie collectible.
 - [x] Arrange all surrounding collectible objects with a naturally scattered, irregular workbench composition rather than a symmetrical layout.
 - [x] Preserve the corrected animated-logo treatment and validate the restored workbench at mobile and desktop widths, publish, verify the standard domain, and synchronize GitHub.
+- [x] Widen the existing central parchment so the animated Tradebilia lockup clears the corner holders without changing the page layout.
+- [x] Remove the inaccurate graded-VHS cassette from the existing scattered workbench asset without regenerating the page or altering the corrected animated logo.
+- [x] Validate the targeted workbench correction at mobile and desktop widths, publish, verify the standard domain, and synchronize GitHub.
