@@ -11,7 +11,7 @@ describe("Coming Soon experience", () => {
   it("uses the animated Tradebilia logo and has an opt-in email form", () => {
     expect(pageSource).toContain('import AnimatedLogoSmall70 from "@/components/AnimatedLogoSmall70"');
     expect(pageSource).toContain('<AnimatedLogoSmall70 fontSize={171} wheelScale={1.95} wheelOffsetX={-55} wheelOffsetY={-30} dividerScale={1.35} dividerOffsetY={-20} wordmarkColor="#2b2119" neutralCategoryColor="#2b2119" wheelStrokeWidth={6} dividerStrokeWidth={3.6} fixedCategoryMetrics centerLockup centeredViewBoxWidth={2400} />');
-    expect(pageSource).toContain('tradebilia-coming-soon-scattered-mixed-grade-workbench_e2671caa.png');
+    expect(pageSource).toContain('tradebilia-coming-soon-scattered-mixed-grade-workbench-corrected_ea870b57.png');
     expect(pageSource).not.toContain('tradebilia-coming-soon-dense-category-workbench_c64ac671.png');
     expect(pageSource).toContain('className="mx-auto h-24 w-full max-w-[27rem] translate-y-6 sm:h-28 sm:max-w-[42rem]"');
     expect(pageSource).not.toContain("Collector&apos;s Workbench");
