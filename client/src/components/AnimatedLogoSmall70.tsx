@@ -35,6 +35,7 @@ type AnimatedLogoSmall70Props = {
   centerLockup?: boolean;
   centeredViewBoxWidth?: number;
   lockupScale?: number;
+  canvasWidthScale?: number;
   categoryColorOverrides?: Partial<Record<(typeof categories)[number]["name"], string>>;
   wheelColors?: WheelColors;
 };
@@ -54,6 +55,7 @@ const AnimatedLogoSmall70 = ({
   centerLockup = false,
   centeredViewBoxWidth = CENTERED_LOCKUP_VIEWBOX_WIDTH,
   lockupScale = 1,
+  canvasWidthScale = 1,
   categoryColorOverrides = {},
   wheelColors = DEFAULT_WHEEL_COLORS,
 }: AnimatedLogoSmall70Props) => {
@@ -118,8 +120,8 @@ const AnimatedLogoSmall70 = ({
       <svg
         xmlns="http://www.w3.org/2000/svg"
         viewBox={`0 0 ${dynamicViewBoxWidth} 216`}
-        className="h-auto w-full drop-shadow-lg"
-        style={{ maxWidth: "100%", height: "100%" }}
+        className="h-auto w-full flex-none drop-shadow-lg"
+        style={{ width: `${canvasWidthScale * 100}%`, maxWidth: canvasWidthScale === 1 ? "100%" : "none", height: "100%" }}
         preserveAspectRatio="xMinYMid meet"
       >
         <defs>
