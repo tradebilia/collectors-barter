@@ -611,3 +611,7 @@
 - [x] Widen the existing central parchment so the animated Tradebilia lockup clears the corner holders without changing the page layout.
 - [x] Remove the inaccurate graded-VHS cassette from the existing scattered workbench asset without regenerating the page or altering the corrected animated logo.
 - [x] Validate the targeted workbench correction at mobile and desktop widths, publish, verify the standard domain, and synchronize GitHub.
+- [x] Add vertical room to the Coming Soon parchment composition so rotating category-word states no longer crowd adjacent content.
+- [x] Darken the Coming Soon animated category names so they remain distinct and readable over the parchment background.
+- [x] Validate the revised Coming Soon animation at mobile and desktop widths, publish, verify the standard domain, and synchronize GitHub.
+- [x] Widen the existing Coming Soon parchment enough to keep the long Trade Sports Cards lockup clear of its corner holders without changing the page layout.
