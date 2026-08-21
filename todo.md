@@ -675,3 +675,9 @@
 - [x] Correct metadata-cache staleness evaluation so source-specific cache durations are honored.
 - [x] Make eBay acquisition honor its declared timeout and bounded retry configuration without changing provider query semantics.
 - [x] Document the third-pass deferred design decisions: post-password-change session revocation, dedicated draft-photo storage, report-evidence retention, and owner-notification fallback policy.
+- [x] Conduct the user-requested comprehensive read-only codebase, architecture, security, database, API, workflow, collectible-data, valuation, frontend, performance, deployment, and testing audit without modifying application behavior or data.
+- [x] Deliver the complete evidence-based audit report, prioritized remediation plan, and Top 20 pre-launch fixes; wait for approval before implementing any recommendation.
+- [x] Restrict private report-evidence presigning and delivery to the reporting member or an administrator while retaining public listing/avatar media access.
+- [x] Add one-time state validation to eBay, Facebook, and LinkedIn account-linking authorization callbacks.
+- [x] Require payment-verification callers and payees to be the two participants in the specified trade proposal before any provider call or write.
+- [x] Restrict pending convention submission retrieval to administrators and add focused regression coverage for all approved high-severity repairs.

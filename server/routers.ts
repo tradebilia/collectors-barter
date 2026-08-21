@@ -113,6 +113,8 @@ import { validateFirstTimeSetupRequirements } from "./accountSetupRequirements";
 import { PASSWORD_RECOVERY_TOKEN_TTL_MS, createOpaqueRecoveryToken, createSixDigitCode, hashRecoveryToken, isRecoveryRequestAllowed, isRecoveryTokenExpired, normalizeRecoveryEmail, timingSafeTextEquals } from "./accountRecovery";
 import { createPendingEmailHistoryApproval, requireMarketplaceApproval } from "./accountApproval";
 import { getIpqsEmailHistory } from "./ipqs";
+import { createProviderOauthState, setProviderOauthStateCookie } from "./_core/providerOauthState";
+import { isAuthorizedPaymentVerification } from "./paymentAuthorization";
 
 // The R2 adapter enforces decoded per-kind limits (10MB listing, 5MB avatar).
 // This ceiling stops an oversized base64 request before its payload is decoded.
@@ -2078,9 +2080,11 @@ export const appRouter = router({
   }),
   ebay: router({
     getAuthUrl: protectedProcedure
-      .input(z.object({ state: z.string() }))
-      .query(({ input }) => {
-        return getEbayAuthUrl(input.state);
+      .input(z.object({ state: z.string().optional() }).optional())
+      .query(({ ctx }) => {
+        const state = createProviderOauthState();
+        setProviderOauthStateCookie(ctx.res, "ebay", state);
+        return getEbayAuthUrl(state);
       }),
 
     connectAccount: protectedProcedure
@@ -2179,10 +2183,12 @@ export const appRouter = router({
   facebook: router({
     // Returns the Facebook OAuth login URL for the frontend to redirect to
     getAuthUrl: protectedProcedure
-      .input(z.object({ state: z.string() }))
-      .query(async ({ input }) => {
+      .input(z.object({ state: z.string().optional() }).optional())
+      .query(async ({ ctx }) => {
         const { getFacebookAuthUrl } = await import('./_core/facebook');
-        return getFacebookAuthUrl(input.state) as string;
+        const state = createProviderOauthState();
+        setProviderOauthStateCookie(ctx.res, "facebook", state);
+        return getFacebookAuthUrl(state) as string;
       }),
 
     // Returns the current user's connected Facebook info
@@ -2215,10 +2221,12 @@ export const appRouter = router({
   linkedin: router({
     // Returns the LinkedIn OAuth login URL for the frontend to redirect to
     getAuthUrl: protectedProcedure
-      .input(z.object({ state: z.string() }))
-      .query(async ({ input }) => {
+      .input(z.object({ state: z.string().optional() }).optional())
+      .query(async ({ ctx }) => {
         const { getLinkedInAuthUrl } = await import('./_core/linkedin');
-        return getLinkedInAuthUrl(input.state) as string;
+        const state = createProviderOauthState();
+        setProviderOauthStateCookie(ctx.res, "linkedin", state);
+        return getLinkedInAuthUrl(state) as string;
       }),
     // Returns the current user's connected LinkedIn info
     getInfo: protectedProcedure.query(async ({ ctx }) => {
@@ -3401,8 +3409,11 @@ export const appRouter = router({
       }))
       .mutation(({ ctx, input }) => submitConvention({ ...input, submittedBy: ctx.user?.id })),
 
-    pending: publicProcedure
-      .query(() => getPendingConventions()),
+    pending: protectedProcedure
+      .query(({ ctx }) => {
+        if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+        return getPendingConventions();
+      }),
 
     approve: publicProcedure
       .input(z.object({ id: z.number() }))
@@ -3479,6 +3490,22 @@ export const appRouter = router({
       }))
       .mutation(async ({ ctx, input }) => {
         const db = await requireDb();
+
+        const proposalResult = await db
+          .select({ requesterId: tradeProposals.requesterId, recipientId: tradeProposals.recipientId })
+          .from(tradeProposals)
+          .where(eq(tradeProposals.id, input.proposalId))
+          .limit(1);
+        const proposal = proposalResult[0];
+        if (!proposal) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Trade proposal not found." });
+        }
+        if (!isAuthorizedPaymentVerification(proposal, ctx.user.id, input.payeeUserId)) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Payment verification is limited to the two participants in this trade.",
+          });
+        }
 
         // Get the payee's PayPal email
         const payeeResult = await db
