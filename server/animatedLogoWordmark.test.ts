@@ -16,6 +16,8 @@ describe("Animated Tradebilia wordmark", () => {
     expect(logoSource).toContain("neutralCategoryColor?: string;");
     expect(logoSource).toContain("wheelScale?: number;");
     expect(logoSource).toContain("dividerScale?: number;");
+    expect(logoSource).toContain("wheelStrokeWidth?: number;");
+    expect(logoSource).toContain("dividerStrokeWidth?: number;");
     expect(logoSource).toContain('scale(0.441) translate(104, 110) scale(${wheelScale}) translate(-104, -110)');
     expect(logoSource).toContain('viewBox={`0 0 ${dynamicViewBoxWidth} 216`}');
     expect(logoSource).toContain('preserveAspectRatio="xMinYMid meet"');
@@ -35,11 +37,11 @@ describe("Animated Tradebilia wordmark", () => {
     expect(logoSource).toContain('const wordmarkTextRef = useRef<SVGTextElement>(null);');
     expect(logoSource).toContain('Math.ceil(132 + wordmarkTextWidth + fontSize * 0.22)');
     expect(logoSource).toContain('dividerOffsetY?: number;');
-    expect(globalSearchSource).toContain('<AnimatedLogoSmall70 fontSize={135} wheelScale={1.12} dividerScale={1.12} wheelOffsetX={-30} wheelOffsetY={-20} dividerOffsetY={-20} fixedCategoryMetrics centerLockup />');
+    expect(globalSearchSource).toContain('<AnimatedLogoSmall70 fontSize={135} wheelScale={1.12} dividerScale={1.12} wheelOffsetX={-30} wheelOffsetY={-20} dividerOffsetY={-20} wheelStrokeWidth={6} dividerStrokeWidth={3.6} fixedCategoryMetrics centerLockup />');
   });
 
   it("uses the fixed-metric animated lockup on the Coming Soon parchment hero", () => {
     const comingSoonSource = fs.readFileSync(path.join(projectRoot, "client/src/pages/ComingSoon.tsx"), "utf8");
-    expect(comingSoonSource).toContain('<AnimatedLogoSmall70 fontSize={96} wordmarkColor="#2b2119" neutralCategoryColor="#2b2119" fixedCategoryMetrics />');
+    expect(comingSoonSource).toContain('<AnimatedLogoSmall70 fontSize={96} wordmarkColor="#2b2119" neutralCategoryColor="#2b2119" wheelStrokeWidth={6} dividerStrokeWidth={3.6} fixedCategoryMetrics />');
   });
 });

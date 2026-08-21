@@ -25,6 +25,8 @@ type AnimatedLogoSmall70Props = {
   wheelScale?: number;
   dividerScale?: number;
   dividerOffsetY?: number;
+  wheelStrokeWidth?: number;
+  dividerStrokeWidth?: number;
   wheelOffsetX?: number;
   wheelOffsetY?: number;
   fixedCategoryMetrics?: boolean;
@@ -38,6 +40,8 @@ const AnimatedLogoSmall70 = ({
   wheelScale = 1,
   dividerScale = 1,
   dividerOffsetY = 0,
+  wheelStrokeWidth = 0,
+  dividerStrokeWidth = 2.55,
   wheelOffsetX = 0,
   wheelOffsetY = 0,
   fixedCategoryMetrics = false,
@@ -120,16 +124,16 @@ const AnimatedLogoSmall70 = ({
         <g transform={wheelTransform}>
           <g filter="url(#wheelGlowSmall)">
           <animateTransform attributeName="transform" type="rotate" from="0 104 110" to="360 104 110" dur="12s" repeatCount="indefinite" />
-          <g transform="translate(104, 71) scale(0.82, 1)" fill="#A97AD7"><polygon points="-7,-2.5 -8.5,-2 -42,-35.5 -41.5,-36 -21.5,-36 -21,-36.5 -21,-71.5 -20.5,-72 -7.5,-72 -7,-71.5 -7,-2.5" /><polygon points="20.5,0 7.5,0 7,-0.5 7,-69.5 7.5,-70 8.5,-70 42,-36.5 41.5,-36 21.5,-36 21,-35.5 21,-0.5 20.5,0" /></g>
-          <g transform="translate(137, 90) rotate(60) scale(0.82, 1)" fill="#FF3B30"><polygon points="-7,-2.5 -8.5,-2 -42,-35.5 -41.5,-36 -21.5,-36 -21,-36.5 -21,-71.5 -20.5,-72 -7.5,-72 -7,-71.5 -7,-2.5" /><polygon points="20.5,0 7.5,0 7,-0.5 7,-69.5 7.5,-70 8.5,-70 42,-36.5 41.5,-36 21.5,-36 21,-35.5 21,-0.5 20.5,0" /></g>
-          <g transform="translate(137, 129) rotate(120) scale(0.82, 1)" fill="#FF9800"><polygon points="-7,-2.5 -8.5,-2 -42,-35.5 -41.5,-36 -21.5,-36 -21,-36.5 -21,-71.5 -20.5,-72 -7.5,-72 -7,-71.5 -7,-2.5" /><polygon points="20.5,0 7.5,0 7,-0.5 7,-69.5 7.5,-70 8.5,-70 42,-36.5 41.5,-36 21.5,-36 21,-35.5 21,-0.5 20.5,0" /></g>
-          <g transform="translate(104, 148) rotate(180) scale(0.82, 1)" fill="#18B57A"><polygon points="-7,-2.5 -8.5,-2 -42,-35.5 -41.5,-36 -21.5,-36 -21,-36.5 -21,-71.5 -20.5,-72 -7.5,-72 -7,-71.5 -7,-2.5" /><polygon points="20.5,0 7.5,0 7,-0.5 7,-69.5 7.5,-70 8.5,-70 42,-36.5 41.5,-36 21.5,-36 21,-35.5 21,-0.5 20.5,0" /></g>
-          <g transform="translate(70, 129) rotate(240) scale(0.82, 1)" fill="#F6A5B6"><polygon points="-7,-2.5 -8.5,-2 -42,-35.5 -41.5,-36 -21.5,-36 -21,-36.5 -21,-71.5 -20.5,-72 -7.5,-72 -7,-71.5 -7,-2.5" /><polygon points="20.5,0 7.5,0 7,-0.5 7,-69.5 7.5,-70 8.5,-70 42,-36.5 41.5,-36 21.5,-36 21,-35.5 21,-0.5 20.5,0" /></g>
-          <g transform="translate(70, 90) rotate(300) scale(0.82, 1)" fill="#29A8FF"><polygon points="-7,-2.5 -8.5,-2 -42,-35.5 -41.5,-36 -21.5,-36 -21,-36.5 -21,-71.5 -20.5,-72 -7.5,-72 -7,-71.5 -7,-2.5" /><polygon points="20.5,0 7.5,0 7,-0.5 7,-69.5 7.5,-70 8.5,-70 42,-36.5 41.5,-36 21.5,-36 21,-35.5 21,-0.5 20.5,0" /></g>
+          <g transform="translate(104, 71) scale(0.82, 1)" fill="#A97AD7" stroke="#A97AD7" strokeWidth={wheelStrokeWidth} strokeLinejoin="round"><polygon points="-7,-2.5 -8.5,-2 -42,-35.5 -41.5,-36 -21.5,-36 -21,-36.5 -21,-71.5 -20.5,-72 -7.5,-72 -7,-71.5 -7,-2.5" /><polygon points="20.5,0 7.5,0 7,-0.5 7,-69.5 7.5,-70 8.5,-70 42,-36.5 41.5,-36 21.5,-36 21,-35.5 21,-0.5 20.5,0" /></g>
+          <g transform="translate(137, 90) rotate(60) scale(0.82, 1)" fill="#FF3B30" stroke="#FF3B30" strokeWidth={wheelStrokeWidth} strokeLinejoin="round"><polygon points="-7,-2.5 -8.5,-2 -42,-35.5 -41.5,-36 -21.5,-36 -21,-36.5 -21,-71.5 -20.5,-72 -7.5,-72 -7,-71.5 -7,-2.5" /><polygon points="20.5,0 7.5,0 7,-0.5 7,-69.5 7.5,-70 8.5,-70 42,-36.5 41.5,-36 21.5,-36 21,-35.5 21,-0.5 20.5,0" /></g>
+          <g transform="translate(137, 129) rotate(120) scale(0.82, 1)" fill="#FF9800" stroke="#FF9800" strokeWidth={wheelStrokeWidth} strokeLinejoin="round"><polygon points="-7,-2.5 -8.5,-2 -42,-35.5 -41.5,-36 -21.5,-36 -21,-36.5 -21,-71.5 -20.5,-72 -7.5,-72 -7,-71.5 -7,-2.5" /><polygon points="20.5,0 7.5,0 7,-0.5 7,-69.5 7.5,-70 8.5,-70 42,-36.5 41.5,-36 21.5,-36 21,-35.5 21,-0.5 20.5,0" /></g>
+          <g transform="translate(104, 148) rotate(180) scale(0.82, 1)" fill="#18B57A" stroke="#18B57A" strokeWidth={wheelStrokeWidth} strokeLinejoin="round"><polygon points="-7,-2.5 -8.5,-2 -42,-35.5 -41.5,-36 -21.5,-36 -21,-36.5 -21,-71.5 -20.5,-72 -7.5,-72 -7,-71.5 -7,-2.5" /><polygon points="20.5,0 7.5,0 7,-0.5 7,-69.5 7.5,-70 8.5,-70 42,-36.5 41.5,-36 21.5,-36 21,-35.5 21,-0.5 20.5,0" /></g>
+          <g transform="translate(70, 129) rotate(240) scale(0.82, 1)" fill="#F6A5B6" stroke="#F6A5B6" strokeWidth={wheelStrokeWidth} strokeLinejoin="round"><polygon points="-7,-2.5 -8.5,-2 -42,-35.5 -41.5,-36 -21.5,-36 -21,-36.5 -21,-71.5 -20.5,-72 -7.5,-72 -7,-71.5 -7,-2.5" /><polygon points="20.5,0 7.5,0 7,-0.5 7,-69.5 7.5,-70 8.5,-70 42,-36.5 41.5,-36 21.5,-36 21,-35.5 21,-0.5 20.5,0" /></g>
+          <g transform="translate(70, 90) rotate(300) scale(0.82, 1)" fill="#29A8FF" stroke="#29A8FF" strokeWidth={wheelStrokeWidth} strokeLinejoin="round"><polygon points="-7,-2.5 -8.5,-2 -42,-35.5 -41.5,-36 -21.5,-36 -21,-36.5 -21,-71.5 -20.5,-72 -7.5,-72 -7,-71.5 -7,-2.5" /><polygon points="20.5,0 7.5,0 7,-0.5 7,-69.5 7.5,-70 8.5,-70 42,-36.5 41.5,-36 21.5,-36 21,-35.5 21,-0.5 20.5,0" /></g>
           </g>
         </g>
 
-        <line x1="114" y1={dividerCenterY - dividerHalfHeight} x2="114" y2={dividerCenterY + dividerHalfHeight} stroke={wordmarkColor} strokeWidth={2.55 * dividerScale} strokeLinecap="round" />
+        <line x1="114" y1={dividerCenterY - dividerHalfHeight} x2="114" y2={dividerCenterY + dividerHalfHeight} stroke={wordmarkColor} strokeWidth={dividerStrokeWidth * dividerScale} strokeLinecap="round" />
         <text ref={wordmarkTextRef} x="132" y="157.5" fontFamily="Montserrat, sans-serif" fontSize={fontSize} fontWeight="600" fill={wordmarkColor}>TRADE</text>
         <text
           x={categoryWordX}

@@ -581,3 +581,7 @@
 - [x] Validate the resized Global Search title at mobile and desktop widths, publish, verify the standard domain, and synchronize GitHub.
 - [x] Match the Global Search spinning-wheel diameter and divider height to the actual rendered 135px title cap-height while preserving whole-lockup centering.
 - [x] Validate the corrected Global Search proportions at mobile and desktop widths, publish, verify the standard domain, and synchronize GitHub.
+- [x] Slightly thicken the Global Search animated wheel and divider line while preserving the measured cap-height, centered lockup geometry, and rotation behavior.
+- [x] Apply the same wheel and divider weight refinement to the Coming Soon animated parchment logo without changing its workbench composition or signup behavior.
+- [x] Align the Global Search category bar to the same direct-below-hero boundary and vertical placement used by individual category pages without changing search filters or result behavior.
+- [x] Validate the revised Global Search lockup weight at mobile and desktop widths, publish, verify the standard domain, and synchronize GitHub.

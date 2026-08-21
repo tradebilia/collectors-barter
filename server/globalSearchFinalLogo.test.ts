@@ -8,7 +8,7 @@ const source = fs.readFileSync(path.join(projectRoot, "client/src/pages/SearchRe
 describe("Global Search animated Tradebilia title", () => {
   it("uses the shared animated title without altering the cross-category query contract", () => {
     expect(source).toContain('import AnimatedLogoSmall70 from "@/components/AnimatedLogoSmall70";');
-    expect(source).toContain('<AnimatedLogoSmall70 fontSize={135} wheelScale={1.12} dividerScale={1.12} wheelOffsetX={-30} wheelOffsetY={-20} dividerOffsetY={-20} fixedCategoryMetrics centerLockup />');
+    expect(source).toContain('<AnimatedLogoSmall70 fontSize={135} wheelScale={1.12} dividerScale={1.12} wheelOffsetX={-30} wheelOffsetY={-20} dividerOffsetY={-20} wheelStrokeWidth={6} dividerStrokeWidth={3.6} fixedCategoryMetrics centerLockup />');
     expect(source).toContain('trpc.market.search.useQuery(searchInput)');
     expect(source).toContain('setLocation(query ? `/search?q=${encodeURIComponent(query)}` : "/search")');
     expect(source).toContain('h-36 w-[calc(100vw-2rem)] max-w-[100rem]');
