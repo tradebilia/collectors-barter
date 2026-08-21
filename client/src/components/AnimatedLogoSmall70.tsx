@@ -22,6 +22,7 @@ type AnimatedLogoSmall70Props = {
   wordmarkColor?: string;
   neutralCategoryColor?: string;
   wheelScale?: number;
+  wheelOffsetY?: number;
 };
 
 const AnimatedLogoSmall70 = ({
@@ -29,6 +30,7 @@ const AnimatedLogoSmall70 = ({
   wordmarkColor = "#FFFFFF",
   neutralCategoryColor = wordmarkColor,
   wheelScale = 1,
+  wheelOffsetY = 0,
 }: AnimatedLogoSmall70Props) => {
   const [index, setIndex] = useState(0);
 
@@ -48,8 +50,8 @@ const AnimatedLogoSmall70 = ({
   const categoryWordX = isLargeWordmark ? LARGE_CATEGORY_WORD_X : 348;
   const categoryColor = currentCategory.name === "BILIA" ? neutralCategoryColor : currentCategory.color;
   const wheelTransform = wheelScale === 1
-    ? "translate(6, 82.5) scale(0.441)"
-    : `translate(6, 82.5) scale(0.441) translate(104, 110) scale(${wheelScale}) translate(-104, -110)`;
+    ? `translate(6, ${82.5 + wheelOffsetY}) scale(0.441)`
+    : `translate(6, ${82.5 + wheelOffsetY}) scale(0.441) translate(104, 110) scale(${wheelScale}) translate(-104, -110)`;
 
   return (
     <div className="flex h-full items-center justify-center font-sans py-0" aria-label={`Trade ${currentCategory.name}`}>
