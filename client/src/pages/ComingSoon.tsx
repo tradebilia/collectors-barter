@@ -80,14 +80,9 @@ export default function ComingSoon() {
             </div>
 
             <div className="mx-auto mt-2 max-w-md sm:mt-3">
-            {submitted ? (
-              <div className="border border-[#6c503c]/35 bg-[#fbf3e4]/70 px-6 py-6 shadow-sm">
-                <CheckCircle2 className="mx-auto h-9 w-9 text-[#1f4d98]" aria-hidden="true" />
-                <h2 className="mt-3 font-serif text-3xl text-[#2b2119]">You&apos;re on the list.</h2>
-                <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-[#4d3c2e]/80">Your launch-update signup is saved. We&apos;ll share news as Tradebilia opens its doors.</p>
-              </div>
-            ) : (
               <div className="relative">
+                <div className={submitted ? "invisible" : undefined} aria-hidden={submitted || undefined}>
+                  <div className="relative">
                 <form onSubmit={handleSubmit} noValidate>
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
                     <div className="relative flex-1 border border-[#6c503c]/35 bg-[#fffaf0]/80">
@@ -105,8 +100,18 @@ export default function ComingSoon() {
                   </label>
                 </form>
                 {signupErrorMessage && <p role="alert" aria-live="polite" className="absolute inset-x-0 top-full mt-3 text-center text-sm font-medium text-[#aa3046]">{signupErrorMessage}</p>}
+                  </div>
+                </div>
+                {submitted && (
+                  <div role="status" aria-live="polite" className="absolute inset-x-0 top-0 border border-[#6c503c]/35 bg-[#fbf3e4]/92 px-5 py-3 shadow-sm sm:px-6">
+                    <div className="flex items-center justify-center gap-2">
+                      <CheckCircle2 className="h-6 w-6 text-[#1f4d98]" aria-hidden="true" />
+                      <h2 className="font-serif text-2xl text-[#2b2119]">You&apos;re on the list.</h2>
+                    </div>
+                    <p className="mx-auto mt-1 max-w-sm text-xs leading-5 text-[#4d3c2e]/80 sm:text-sm">Your launch-update signup is saved. We&apos;ll share news as Tradebilia opens its doors.</p>
+                  </div>
+                )}
               </div>
-            )}
             </div>
           </div>
 

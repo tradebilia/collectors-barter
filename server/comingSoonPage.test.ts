@@ -26,6 +26,8 @@ describe("Coming Soon experience", () => {
     expect(pageSource).toContain('/invalid email|invalid_format/i.test(subscribeMutation.error.message)');
     expect(pageSource).toContain('"Please enter a valid email address."');
     expect(pageSource).toContain('"We could not save your email right now. Please try again later."');
+    expect(pageSource).toContain('className={submitted ? "invisible" : undefined}');
+    expect(pageSource).toContain('role="status" aria-live="polite" className="absolute inset-x-0 top-0');
     expect(pageSource).not.toContain("Background_23084d14.jpg");
     expect(pageSource).toContain("Every collection<br />has a next chapter.");
     expect(pageSource).toContain("The Collectors Trading Exchange");
