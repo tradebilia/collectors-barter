@@ -16,7 +16,7 @@ describe("Animated Tradebilia wordmark", () => {
     expect(logoSource).toContain("neutralCategoryColor?: string;");
     expect(logoSource).toContain("wheelScale?: number;");
     expect(logoSource).toContain('scale(0.441) translate(104, 110) scale(${wheelScale}) translate(-104, -110)');
-    expect(logoSource).toContain('viewBox="0 0 1300 216"');
+    expect(logoSource).toContain('viewBox={`0 0 ${dynamicViewBoxWidth} 216`}');
     expect(logoSource).toContain('preserveAspectRatio="xMinYMid meet"');
   });
 
@@ -27,11 +27,14 @@ describe("Animated Tradebilia wordmark", () => {
     expect(logoSource).toContain("fixedCategoryMetrics = false,");
     expect(logoSource).not.toContain("textLength={");
     expect(logoSource).not.toContain("lengthAdjust={");
-    expect(globalSearchSource).toContain('<AnimatedLogoSmall70 fontSize={96} fixedCategoryMetrics />');
+    expect(logoSource).toContain('centerLockup?: boolean;');
+    expect(logoSource).toContain('const CENTERED_LOCKUP_VIEWBOX_WIDTH = 1800;');
+    expect(logoSource).toContain('setDynamicViewBoxWidth(nextViewBoxWidth);');
+    expect(globalSearchSource).toContain('<AnimatedLogoSmall70 fontSize={160} fixedCategoryMetrics centerLockup />');
   });
 
-  it("keeps the larger 125-unit mark scoped to the Coming Soon hero", () => {
+  it("uses the fixed-metric animated lockup on the Coming Soon parchment hero", () => {
     const comingSoonSource = fs.readFileSync(path.join(projectRoot, "client/src/pages/ComingSoon.tsx"), "utf8");
-    expect(comingSoonSource).toContain('<AnimatedLogoSmall70 fontSize={125} wordmarkColor="#2b2119" neutralCategoryColor="#2b2119" wheelScale={1.18} />');
+    expect(comingSoonSource).toContain('<AnimatedLogoSmall70 fontSize={96} wordmarkColor="#2b2119" neutralCategoryColor="#2b2119" fixedCategoryMetrics />');
   });
 });

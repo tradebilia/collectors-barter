@@ -28,10 +28,11 @@ describe("unified global search contracts", () => {
     expect(searchPage).toContain("<TopBar searchPlaceholder=");
     expect(searchPage).toContain("<CategoryBar />");
     expect(searchPage).toContain('import AnimatedLogoSmall70 from "@/components/AnimatedLogoSmall70";');
-    expect(searchPage).toContain('<AnimatedLogoSmall70 fontSize={96} fixedCategoryMetrics />');
+    expect(searchPage).toContain('<AnimatedLogoSmall70 fontSize={160} fixedCategoryMetrics centerLockup />');
     expect(searchPage).toContain("globalSearchHeroCollageUrl");
     expect(searchPage).toContain("tradebilia-warm-archival-hero-04_cdf269c5.png");
     expect(searchPage).toContain('min-h-[400px]');
+    expect(searchPage).toContain('rgba(24,16,11,0.58)');
     expect(searchPage).toContain("Search the Exchange");
     expect(searchPage).toContain('href={`/listings/${listing.id}`}');
     expect(searchPage).toContain("resolveTradebiliaListingImage");
