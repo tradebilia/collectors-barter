@@ -594,3 +594,7 @@
 - [x] Separate the Coming Soon wheel from its divider and make the wheel visibly larger than the adjacent title letters.
 - [x] Validate the corrected Coming Soon animation at mobile and desktop widths, publish, verify the standard domain, and synchronize GitHub.
 - [x] Remove the white item-associated category captions from the Coming Soon workbench background while preserving the surrounding collectible objects.
+- [x] Increase the Coming Soon animated wordmark, wheel, and divider by 25px while centering the wheel vertically with the letterforms.
+- [x] Center the enlarged animated lockup between the parchment top and The Collectors Trading Exchange text, and remove the Collector's Workbench utility label.
+- [x] Reposition the Coming Soon email field and Notify me button together within the parchment without overlapping surrounding workbench objects.
+- [x] Validate the revised Coming Soon parchment composition at mobile and desktop widths, publish, verify the standard domain, and synchronize GitHub.

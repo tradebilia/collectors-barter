@@ -29,12 +29,10 @@ export default function ComingSoon() {
       />
       <div className="absolute inset-0 bg-[#24160f]/10" aria-hidden="true" />
 
-      <section className="relative flex min-h-screen items-center justify-center px-5 py-16 sm:px-10 sm:py-20">
+      <section className="relative flex min-h-screen items-center justify-center px-5 py-12 sm:px-10 sm:py-16">
         <div className="w-full max-w-xl text-center sm:max-w-2xl">
-          <p className="mx-auto mb-4 w-fit border-y border-[#5b4534]/20 px-5 py-2 text-[8px] font-bold uppercase tracking-[0.2em] text-[#443326]/72 sm:mb-6 sm:text-[10px]">Tradebilia · Collector&apos;s Workbench</p>
-
-          <div className="mx-auto h-20 w-full max-w-[25rem] sm:h-24 sm:max-w-[38rem]">
-            <AnimatedLogoSmall70 fontSize={146} wheelScale={1.7} wheelOffsetX={-34} dividerScale={1.15} wordmarkColor="#2b2119" neutralCategoryColor="#2b2119" wheelStrokeWidth={6} dividerStrokeWidth={3.6} fixedCategoryMetrics centerLockup centeredViewBoxWidth={2200} />
+          <div className="mx-auto h-24 w-full max-w-[27rem] translate-y-6 sm:h-28 sm:max-w-[42rem]">
+            <AnimatedLogoSmall70 fontSize={171} wheelScale={1.95} wheelOffsetX={-55} wheelOffsetY={-30} dividerScale={1.35} dividerOffsetY={-20} wordmarkColor="#2b2119" neutralCategoryColor="#2b2119" wheelStrokeWidth={6} dividerStrokeWidth={3.6} fixedCategoryMetrics centerLockup centeredViewBoxWidth={2400} />
           </div>
 
           <div className="mx-auto mt-2 max-w-lg sm:mt-10">
@@ -55,7 +53,7 @@ export default function ComingSoon() {
             </div>
           </div>
 
-          <div className="mx-auto mt-2 max-w-md sm:mt-9">
+          <div className="mx-auto mt-0 max-w-md sm:mt-0">
             {submitted ? (
               <div className="border border-[#6c503c]/35 bg-[#fbf3e4]/70 px-6 py-6 shadow-sm">
                 <CheckCircle2 className="mx-auto h-9 w-9 text-[#1f4d98]" aria-hidden="true" />
