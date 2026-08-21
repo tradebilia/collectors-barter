@@ -37,7 +37,8 @@ describe("Animated Tradebilia wordmark", () => {
     expect(logoSource).toContain('const dividerHalfHeight = 48.6 * dividerScale;');
     expect(logoSource).toContain('setDynamicViewBoxWidth(nextViewBoxWidth);');
     expect(logoSource).toContain('const wordmarkTextRef = useRef<SVGTextElement>(null);');
-    expect(logoSource).toContain('Math.ceil(132 + wordmarkTextWidth + fontSize * 0.22)');
+    expect(logoSource).toContain('const categoryGap = currentCategory.name === "BILIA" ? fontSize * 0.04 : fontSize * 0.22;');
+    expect(logoSource).toContain('Math.ceil(132 + wordmarkTextWidth + categoryGap)');
     expect(logoSource).toContain('dividerOffsetY?: number;');
     expect(globalSearchSource).toContain('<AnimatedLogoSmall70 fontSize={135} wheelScale={1.12} dividerScale={1.12} wheelOffsetX={-30} wheelOffsetY={-20} dividerOffsetY={-20} wheelStrokeWidth={6} dividerStrokeWidth={3.6} fixedCategoryMetrics centerLockup />');
   });
