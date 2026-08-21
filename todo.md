@@ -633,3 +633,8 @@
 - [x] Add a small gap between the Coming Soon category divider and email signup row so the input is not touching the line above it.
 - [x] Verify the Coming Soon email input, consent checkbox, and Notify me behavior without submitting or altering a subscriber record.
 - [x] Validate the refined signup spacing at mobile and desktop widths, publish, verify the standard domain, and synchronize GitHub.
+- [x] Diagnose the live Coming Soon launch-update contact-save failure without exposing submitted addresses or credentials.
+- [x] Repair the failing contact-save integration and add regression coverage for the root cause.
+- [x] Validate the repaired signup flow with privacy-safe checks, publish, verify the standard domain, and synchronize GitHub.
+- [x] Keep the Coming Soon heading, category divider, signup controls, and parchment content fixed when an error message is displayed.
+- [x] Replace raw server validation payloads with a concise friendly email-validation message in the Coming Soon signup form.

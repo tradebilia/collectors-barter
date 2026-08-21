@@ -38,10 +38,11 @@ export async function subscribeToLaunchUpdates(
     return { accepted: true, alreadySubscribed: false };
   }
 
-  // Resend may reject a repeated contact creation. The privacy-safe result is
-  // intentionally identical to a first signup so the endpoint cannot reveal
-  // whether an address was already on the launch list.
-  if (response.status === 409) {
+  // Resend may report a repeated contact as either a conflict or an
+  // unprocessable duplicate. Keep both outcomes indistinguishable from a
+  // first signup so this endpoint cannot disclose subscriber membership.
+  const providerError = response.status === 422 ? await response.text().catch(() => "") : "";
+  if (response.status === 409 || (response.status === 422 && /already exists|duplicate|already been taken/i.test(providerError))) {
     return { accepted: true, alreadySubscribed: true };
   }
 

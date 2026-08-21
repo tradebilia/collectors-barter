@@ -33,6 +33,11 @@ export default function ComingSoon() {
   const [consent, setConsent] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const subscribeMutation = trpc.launchUpdates.subscribe.useMutation({ onSuccess: () => setSubmitted(true) });
+  const signupErrorMessage = subscribeMutation.isError
+    ? /invalid email|invalid_format/i.test(subscribeMutation.error.message)
+      ? "Please enter a valid email address."
+      : "We could not save your email right now. Please try again later."
+    : null;
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -82,23 +87,25 @@ export default function ComingSoon() {
                 <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-[#4d3c2e]/80">Your launch-update signup is saved. We&apos;ll share news as Tradebilia opens its doors.</p>
               </div>
             ) : (
-              <form onSubmit={handleSubmit} noValidate>
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
-                  <div className="relative flex-1 border border-[#6c503c]/35 bg-[#fffaf0]/80">
-                    <Mail className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#5a4536]/50" aria-hidden="true" />
-                    <Input id={emailId} type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="Enter your email for early access" autoComplete="email" required className="h-10 border-0 bg-transparent pl-8 text-xs text-[#2b2119] placeholder:text-[#5a4536]/50 focus-visible:ring-0" />
+              <div className="relative">
+                <form onSubmit={handleSubmit} noValidate>
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
+                    <div className="relative flex-1 border border-[#6c503c]/35 bg-[#fffaf0]/80">
+                      <Mail className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#5a4536]/50" aria-hidden="true" />
+                      <Input id={emailId} type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="Enter your email for early access" autoComplete="email" required className="h-10 border-0 bg-transparent pl-8 text-xs text-[#2b2119] placeholder:text-[#5a4536]/50 focus-visible:ring-0" />
+                    </div>
+                    <Button type="submit" disabled={!consent || subscribeMutation.isPending} className="h-10 rounded-sm bg-[#184b92] px-5 text-[10px] font-bold uppercase tracking-[0.12em] text-white hover:bg-[#113a77] disabled:bg-[#184b92]/40">
+                      {subscribeMutation.isPending ? "Saving…" : "Notify me"}
+                      {!subscribeMutation.isPending && <ArrowRight className="ml-2 h-3.5 w-3.5" aria-hidden="true" />}
+                    </Button>
                   </div>
-                  <Button type="submit" disabled={!consent || subscribeMutation.isPending} className="h-10 rounded-sm bg-[#184b92] px-5 text-[10px] font-bold uppercase tracking-[0.12em] text-white hover:bg-[#113a77] disabled:bg-[#184b92]/40">
-                    {subscribeMutation.isPending ? "Saving…" : "Notify me"}
-                    {!subscribeMutation.isPending && <ArrowRight className="ml-2 h-3.5 w-3.5" aria-hidden="true" />}
-                  </Button>
-                </div>
-                <label htmlFor={consentId} className="mt-3 flex cursor-pointer items-start justify-center gap-2 text-left text-[11px] leading-4 text-[#4d3c2e]/75 sm:text-center">
-                  <Checkbox id={consentId} checked={consent} onCheckedChange={(checked) => setConsent(checked === true)} className="mt-px border-[#6c503c]/45 data-[state=checked]:border-[#184b92] data-[state=checked]:bg-[#184b92]" />
-                  <span>Yes, I&apos;d like to receive launch updates and future collector features.</span>
-                </label>
-                {subscribeMutation.isError && <p role="alert" className="mt-3 text-sm font-medium text-[#aa3046]">{subscribeMutation.error.message}</p>}
-              </form>
+                  <label htmlFor={consentId} className="mt-3 flex cursor-pointer items-start justify-center gap-2 text-left text-[11px] leading-4 text-[#4d3c2e]/75 sm:text-center">
+                    <Checkbox id={consentId} checked={consent} onCheckedChange={(checked) => setConsent(checked === true)} className="mt-px border-[#6c503c]/45 data-[state=checked]:border-[#184b92] data-[state=checked]:bg-[#184b92]" />
+                    <span>Yes, I&apos;d like to receive launch updates and future collector features.</span>
+                  </label>
+                </form>
+                {signupErrorMessage && <p role="alert" aria-live="polite" className="absolute inset-x-0 top-full mt-3 text-center text-sm font-medium text-[#aa3046]">{signupErrorMessage}</p>}
+              </div>
             )}
             </div>
           </div>
