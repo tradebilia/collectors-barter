@@ -1,10 +1,13 @@
 type FetchLike = typeof fetch;
 
+import { classifyApiFailure, recordApiFailure } from "./apiHealth";
+
 const RESEND_API_BASE = "https://api.resend.com";
 const PRE_LAUNCH_SEGMENT_NAME = "Tradebilia Pre-Launch Updates";
 const FROM_ADDRESS = "Tradebilia <noreply@tradebilia.com>";
 const SITE_URL = "https://tradebilia.manus.space";
 const EMAIL_LOGO_URL = `https://assets.tradebilia.com/tradebilia_final_transparent_8a1981e6.svg`;
+const SEGMENT_ENROLLMENT_CONCURRENCY = 5;
 
 type ResendContact = {
   id: string;
@@ -35,6 +38,29 @@ function headers(apiKey: string) {
     Authorization: `Bearer ${apiKey}`,
     "Content-Type": "application/json",
   };
+}
+
+async function enrollContactsInSegment(
+  contacts: ResendContact[],
+  segmentId: string,
+  fetcher: FetchLike,
+  apiKey: string,
+) {
+  for (let start = 0; start < contacts.length; start += SEGMENT_ENROLLMENT_CONCURRENCY) {
+    const batch = contacts.slice(start, start + SEGMENT_ENROLLMENT_CONCURRENCY);
+    const results = await Promise.all(batch.map(async contact => {
+      const enrollment = await fetcher(`${RESEND_API_BASE}/contacts/${encodeURIComponent(contact.id)}/segments/${segmentId}`, {
+        method: "POST",
+        headers: headers(apiKey),
+        signal: AbortSignal.timeout(10_000),
+      }) as ResendFetchResponse;
+      return enrollment.ok || enrollment.status === 409;
+    }));
+
+    if (results.some(result => !result)) {
+      throw new Error("Unable to prepare all opted-in recipients for delivery.");
+    }
+  }
 }
 
 async function listAllContacts(fetcher: FetchLike, apiKey: string) {
@@ -113,12 +139,22 @@ export async function ensurePreLaunchSegment(fetcher: FetchLike, apiKey: string)
 export async function getPreLaunchRecipients(fetcher: FetchLike = fetch): Promise<PreLaunchRecipient[]> {
   const apiKey = getResendApiKey();
   if (!apiKey) throw new Error("Pre-Launch Email is not configured yet.");
-  const contacts = await listAllContacts(fetcher, apiKey);
-  return contacts.map(contact => ({
-    id: contact.id,
-    email: contact.email,
-    createdAt: contact.created_at ?? null,
-  }));
+  try {
+    const contacts = await listAllContacts(fetcher, apiKey);
+    return contacts.map(contact => ({
+      id: contact.id,
+      email: contact.email,
+      createdAt: contact.created_at ?? null,
+    }));
+  } catch (error) {
+    await recordApiFailure({
+      provider: "Resend",
+      operation: "pre_launch_recipient_list",
+      failureClass: classifyApiFailure({ message: error instanceof Error ? error.message : "Unknown failure" }),
+      safeMessage: "Pre-Launch recipient retrieval failed.",
+    });
+    throw error;
+  }
 }
 
 export async function sendPreLaunchUpdate(
@@ -132,17 +168,7 @@ export async function sendPreLaunchUpdate(
   if (contacts.length === 0) return { recipientCount: 0, broadcastId: null as string | null };
 
   const segmentId = await ensurePreLaunchSegment(fetcher, apiKey);
-  for (const contact of contacts) {
-    const enrollment = await fetcher(`${RESEND_API_BASE}/contacts/${encodeURIComponent(contact.id)}/segments/${segmentId}`, {
-      method: "POST",
-      headers: headers(apiKey),
-      signal: AbortSignal.timeout(10_000),
-    }) as ResendFetchResponse;
-    // Treat an existing enrollment as a safe idempotent success.
-    if (!enrollment.ok && enrollment.status !== 409) {
-      throw new Error("Unable to prepare all opted-in recipients for delivery.");
-    }
-  }
+  await enrollContactsInSegment(contacts, segmentId, fetcher, apiKey);
 
   const broadcast = await fetcher(`${RESEND_API_BASE}/broadcasts`, {
     method: "POST",

@@ -628,13 +628,10 @@ export const appRouter = router({
           sql`SELECT
             u.id,
             u.username,
-            u.email,
             u.displayName,
             u.avatarUrl,
             u.role,
             u.createdAt,
-            u.lastSignedIn,
-            u.lastActivityAt,
             u.ebayUsername,
             u.ebayFeedbackScore,
             u.ebayFeedbackPercentage,
@@ -650,20 +647,18 @@ export const appRouter = router({
             u.facebookId,
             u.facebookName,
             u.facebookVerified,
-            u.facebookConnectedAt,
-            u.facebookEmail,
             u.facebookPicture,
             u.facebookLocation,
             u.facebookLink,
             u.facebookLikes,
             u.linkedinId,
             u.linkedinName,
-            u.linkedinEmail,
             u.linkedinPicture,
             u.linkedinHeadline,
             u.linkedinProfileUrl,
             u.linkedinConnectedAt,
-            u.merchantVerified
+            u.merchantVerified,
+            CASE WHEN u.lastActivityAt IS NOT NULL AND u.lastActivityAt >= DATE_SUB(NOW(), INTERVAL 5 MINUTE) THEN 1 ELSE 0 END AS isOnline
           FROM users u
           WHERE u.id = ${input.userId}`
         );
@@ -676,7 +671,7 @@ export const appRouter = router({
         }
 
         const [profileRows] = await db.execute(
-          sql`SELECT * FROM userProfiles WHERE userId = ${input.userId}`
+          sql`SELECT avatarUrl, preferredCategories FROM userProfiles WHERE userId = ${input.userId}`
         );
         const profileRow = Array.isArray(profileRows) ? (profileRows as any[])[0] : profileRows;
 
@@ -1681,8 +1676,8 @@ export const appRouter = router({
       }),
     getReplies: protectedProcedure
       .input(z.object({ inquiryId: z.number().int().positive() }))
-      .query(async ({ input }) => {
-        return getRepliesByInquiry(input.inquiryId);
+      .query(async ({ input, ctx }) => {
+        return getRepliesByInquiry(input.inquiryId, ctx.user.id);
       }),
     deleteInquiry: protectedProcedure
       .input(z.object({ inquiryId: z.number().int().positive() }))

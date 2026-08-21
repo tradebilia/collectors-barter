@@ -1961,8 +1961,10 @@ export async function deleteDraft(
     throw new Error("You can only delete your own drafts.");
   }
 
-  await db.delete(draftListings).where(eq(draftListings.id, input.draftId));
-  await db.delete(listingPhotos).where(eq(listingPhotos.listingId, input.draftId));
+  await db.transaction(async (tx) => {
+    await tx.delete(listingPhotos).where(eq(listingPhotos.listingId, input.draftId));
+    await tx.delete(draftListings).where(eq(draftListings.id, input.draftId));
+  });
 
   return { success: true };
 }
@@ -3788,8 +3790,18 @@ export async function sendInquiryReply(inquiryId: number, senderId: number, mess
   };
 }
 
-export async function getRepliesByInquiry(inquiryId: number) {
+export async function getRepliesByInquiry(inquiryId: number, userId: number) {
   const db = await requireDb();
+
+  const inquiry = await db
+    .select({ senderId: itemInquiries.senderId, recipientId: itemInquiries.recipientId })
+    .from(itemInquiries)
+    .where(eq(itemInquiries.id, inquiryId))
+    .limit(1);
+
+  if (!inquiry[0] || (inquiry[0].senderId !== userId && inquiry[0].recipientId !== userId)) {
+    throw new Error("Unauthorized: You can only view replies to inquiries you're involved in");
+  }
   
   const replies = await db
     .select({

@@ -705,7 +705,7 @@ export default function Home() {
                             </div>
                           ) : (
                             <p className="text-xs text-white/60 mt-1">
-                              No upcoming conventions near you. <a href="/account" className="text-cyan-400 hover:underline">Add your location</a> to see nearby shows, or <a href="/conventions" className="text-cyan-400 hover:underline">browse all →</a>
+                              No upcoming conventions near you. <a href="/account-settings" className="text-cyan-400 hover:underline">Add your location</a> to see nearby shows, or <a href="/conventions" className="text-cyan-400 hover:underline">browse all →</a>
                             </p>
                           )}
                         </div>

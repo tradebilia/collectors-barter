@@ -45,7 +45,7 @@ export class MarketDataOrchestrator {
         { cacheKey }
       );
 
-      if (cachedData && !this.isStale(cachedData)) {
+      if (cachedData && !this.isStale(cachedData, request.cacheMaxAgeMinutes ?? 60)) {
         return {
           success: true,
           data: cachedData,
@@ -342,8 +342,8 @@ export class MarketDataOrchestrator {
   /**
    * Check if cached data is stale
    */
-  private isStale(data: MarketDataPackage): boolean {
-    const maxAge = 60 * 60 * 1000; // 1 hour
+  private isStale(data: MarketDataPackage, maxAgeMinutes: number): boolean {
+    const maxAge = maxAgeMinutes * 60 * 1000;
     const age = Date.now() - data.generatedAt.getTime();
     return age > maxAge;
   }

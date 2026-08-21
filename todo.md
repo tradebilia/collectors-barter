@@ -665,3 +665,13 @@
 - [x] Run a second independent deep dive across route reachability, authorization, data integrity, UI state accuracy, notifications, email, and provider failure handling.
 - [x] Re-verify all second-pass candidate findings and classify them as confirmed, refuted, or intentionally deferred.
 - [x] Deliver a plain-language second-pass findings report with a recommended fix order and no unapproved behavior changes.
+- [x] Repair all safe P0 privacy and authorization findings from the second-pass report with focused regression coverage.
+- [x] Repair all safe P1 broken routes, legacy verification behavior, and misleading cache-action behavior.
+- [x] Implement safe recommended operational hardening for API Health coverage, pre-launch enrollment, and owner-alert delivery where no product-policy decision is required.
+- [x] Preserve and document deferred policy decisions for per-user message/inquiry deletion, account closure, email retry policy, and rich-draft data-model expansion.
+- [x] Run a third independent whole-site audit after remediation and report any newly confirmed flaws in plain language.
+- [x] Restrict counterpart-inventory access, middleman workflow updates, and voting-link generation to participants in the specified trade.
+- [x] Make draft deletion transactionally remove child photo records before the parent draft record without altering live data.
+- [x] Correct metadata-cache staleness evaluation so source-specific cache durations are honored.
+- [x] Make eBay acquisition honor its declared timeout and bounded retry configuration without changing provider query semantics.
+- [x] Document the third-pass deferred design decisions: post-password-change session revocation, dedicated draft-photo storage, report-evidence retention, and owner-notification fallback policy.

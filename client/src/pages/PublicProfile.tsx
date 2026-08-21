@@ -317,9 +317,7 @@ export default function PublicProfile() {
                 </div>
                 <div className="text-center">
                   {(() => {
-                    const lastActivity = user.lastActivityAt ? new Date(user.lastActivityAt).getTime() : 0;
-                    const now = Date.now();
-                    const isOnline = (now - lastActivity) < 5 * 60 * 1000; // 5 minutes
+                    const isOnline = Boolean(user.isOnline);
                     return (
                       <>
                         <div className="flex items-center justify-center gap-1 mb-1">
@@ -357,7 +355,7 @@ export default function PublicProfile() {
                   </Button>
                 </>
               ) : (
-                <Button variant="outline" className="flex-1 md:flex-none rounded-xl border-slate-200 text-slate-600 font-bold px-6" onClick={() => setLocation("/settings")}>
+                <Button variant="outline" className="flex-1 md:flex-none rounded-xl border-slate-200 text-slate-600 font-bold px-6" onClick={() => setLocation("/account-settings")}>
                   Edit Profile
                 </Button>
               )}
@@ -610,9 +608,6 @@ export default function PublicProfile() {
                         )}
                         <div className="min-w-0">
                           <p className="text-sm font-black text-slate-900 tracking-tight truncate">{user.facebookName}</p>
-                          {user.facebookEmail && (
-                            <p className="text-[10px] text-slate-400 font-medium truncate">{user.facebookEmail}</p>
-                          )}
                         </div>
                       </div>
 
@@ -675,12 +670,6 @@ export default function PublicProfile() {
                         </div>
                       </div>
                       {/* Email */}
-                      {user.linkedinEmail && (
-                        <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-medium">
-                          <svg className="h-3 w-3 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
-                          <span className="truncate">{user.linkedinEmail}</span>
-                        </div>
-                      )}
                       {/* Connected since */}
                       {user.linkedinConnectedAt && (
                         <div className="flex items-center gap-1.5 text-[10px] text-slate-400 font-medium">

@@ -6,6 +6,7 @@
  */
 
 import { z } from 'zod';
+import { TRPCError } from '@trpc/server';
 import { publicProcedure, protectedProcedure, router } from './trpc';
 import { marketDataOrchestrator } from './marketDataOrchestrator';
 import { DataAcquisitionRequest } from './marketDataTypes';
@@ -208,17 +209,15 @@ export const marketDataRouter = router({
   clearCache: protectedProcedure
     .input(z.object({ source: z.string().optional() }).optional())
     .mutation(async ({ input, ctx }) => {
-      // Check if user is admin
-      const { requireDb } = await import("../db"); const db = await requireDb();
-      if (!db) {
-        throw new Error('Database not available');
+      if (ctx.user.role !== 'admin') {
+        throw new TRPCError({ code: 'FORBIDDEN', message: 'Only administrators can manage market-data caches.' });
       }
 
-      // For now, just return success
-      // In production, you'd verify admin status
+      // The current market-data orchestrator has no exposed cache invalidation API.
+      // Return an honest unavailable state rather than reporting a cache clear that did not occur.
       return {
-        success: true,
-        message: 'Cache cleared',
+        success: false,
+        message: 'Market-data cache clearing is not available in this deployment.',
       };
     }),
 });
