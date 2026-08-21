@@ -34,7 +34,8 @@ describe("Animated Tradebilia wordmark", () => {
     expect(logoSource).toContain('setDynamicViewBoxWidth(nextViewBoxWidth);');
     expect(logoSource).toContain('const wordmarkTextRef = useRef<SVGTextElement>(null);');
     expect(logoSource).toContain('Math.ceil(132 + wordmarkTextWidth + fontSize * 0.22)');
-    expect(globalSearchSource).toContain('<AnimatedLogoSmall70 fontSize={135} wheelScale={0.84} dividerScale={0.84} fixedCategoryMetrics centerLockup />');
+    expect(logoSource).toContain('dividerOffsetY?: number;');
+    expect(globalSearchSource).toContain('<AnimatedLogoSmall70 fontSize={135} wheelScale={1.12} dividerScale={1.12} wheelOffsetX={-30} wheelOffsetY={-20} dividerOffsetY={-20} fixedCategoryMetrics centerLockup />');
   });
 
   it("uses the fixed-metric animated lockup on the Coming Soon parchment hero", () => {
