@@ -42,4 +42,21 @@ describe("Coming Soon launch updates", () => {
       alreadySubscribed: true,
     });
   });
+
+  it("returns the same privacy-safe success response for Resend's duplicate-contact validation response", async () => {
+    process.env.RESEND_CONTACTS_API_KEY = "test-key";
+    const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify({ message: "The contact already exists." }), { status: 422 }));
+
+    await expect(subscribeToLaunchUpdates("collector@example.com", fetcher)).resolves.toEqual({
+      accepted: true,
+      alreadySubscribed: true,
+    });
+  });
+
+  it("does not mask unrelated contact validation failures as successful signup", async () => {
+    process.env.RESEND_CONTACTS_API_KEY = "test-key";
+    const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify({ message: "Email is invalid." }), { status: 422 }));
+
+    await expect(subscribeToLaunchUpdates("collector@example.com", fetcher)).rejects.toThrow("We could not save your email right now.");
+  });
 });

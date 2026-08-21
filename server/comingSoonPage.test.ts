@@ -21,6 +21,11 @@ describe("Coming Soon experience", () => {
     expect(pageSource).not.toContain("Collector&apos;s Workbench");
     expect(pageSource).toContain('className="-translate-y-1 sm:-translate-y-8"');
     expect(pageSource).toContain('className="mx-auto mt-2 max-w-md sm:mt-3"');
+    expect(pageSource).toContain('<div className="relative">');
+    expect(pageSource).toContain('role="alert" aria-live="polite" className="absolute inset-x-0 top-full mt-3');
+    expect(pageSource).toContain('/invalid email|invalid_format/i.test(subscribeMutation.error.message)');
+    expect(pageSource).toContain('"Please enter a valid email address."');
+    expect(pageSource).toContain('"We could not save your email right now. Please try again later."');
     expect(pageSource).not.toContain("Background_23084d14.jpg");
     expect(pageSource).toContain("Every collection<br />has a next chapter.");
     expect(pageSource).toContain("The Collectors Trading Exchange");
