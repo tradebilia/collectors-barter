@@ -34,6 +34,7 @@ type AnimatedLogoSmall70Props = {
   fixedCategoryMetrics?: boolean;
   centerLockup?: boolean;
   centeredViewBoxWidth?: number;
+  lockupScale?: number;
   categoryColorOverrides?: Partial<Record<(typeof categories)[number]["name"], string>>;
   wheelColors?: WheelColors;
 };
@@ -52,6 +53,7 @@ const AnimatedLogoSmall70 = ({
   fixedCategoryMetrics = false,
   centerLockup = false,
   centeredViewBoxWidth = CENTERED_LOCKUP_VIEWBOX_WIDTH,
+  lockupScale = 1,
   categoryColorOverrides = {},
   wheelColors = DEFAULT_WHEEL_COLORS,
 }: AnimatedLogoSmall70Props) => {
@@ -103,12 +105,13 @@ const AnimatedLogoSmall70 = ({
     const lockupLeft = 15;
     const lockupRight = categoryWordX + categoryWidth;
     const lockupWidth = Math.max(1, lockupRight - lockupLeft);
+    const scaledLockupWidth = lockupWidth * lockupScale;
     const nextViewBoxWidth = centeredViewBoxWidth;
-    const nextOffset = (nextViewBoxWidth - lockupWidth) / 2 - lockupLeft;
+    const nextOffset = (nextViewBoxWidth - scaledLockupWidth) / 2 - lockupLeft * lockupScale;
 
     setDynamicViewBoxWidth(nextViewBoxWidth);
     setLockupOffsetX(nextOffset);
-  }, [categoryWordX, centerLockup, centeredViewBoxWidth, currentCategory.name, fontSize, wordmarkTextWidth]);
+  }, [categoryWordX, centerLockup, centeredViewBoxWidth, currentCategory.name, fontSize, lockupScale, wordmarkTextWidth]);
 
   return (
     <div className="flex h-full items-center justify-center font-sans py-0" aria-label={`Trade ${currentCategory.name}`}>
@@ -129,7 +132,7 @@ const AnimatedLogoSmall70 = ({
           </filter>
         </defs>
 
-        <g transform={`translate(${lockupOffsetX}, 0)`}>
+        <g transform={`translate(${lockupOffsetX}, ${108 * (1 - lockupScale)}) scale(${lockupScale})`}>
         <g transform={wheelTransform}>
           <g filter="url(#wheelGlowSmall)">
           <animateTransform attributeName="transform" type="rotate" from="0 104 110" to="360 104 110" dur="12s" repeatCount="indefinite" />
