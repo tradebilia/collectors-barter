@@ -28,7 +28,7 @@ describe("unified global search contracts", () => {
     expect(searchPage).toContain("<TopBar searchPlaceholder=");
     expect(searchPage).toContain("<CategoryBar />");
     expect(searchPage).toContain('import AnimatedLogoSmall70 from "@/components/AnimatedLogoSmall70";');
-    expect(searchPage).toContain('<AnimatedLogoSmall70 fontSize={125} wheelOffsetY={-20} />');
+    expect(searchPage).toContain('<AnimatedLogoSmall70 fontSize={125} wheelOffsetX={-18} wheelOffsetY={-20} />');
     expect(searchPage).toContain("globalSearchHeroCollageUrl");
     expect(searchPage).toContain("tradebilia-warm-archival-hero-04_cdf269c5.png");
     expect(searchPage).toContain('min-h-[400px]');
