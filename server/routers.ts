@@ -2686,6 +2686,7 @@ export const appRouter = router({
         }
         // Send emails one by one
         let sent = 0;
+        const sentIds: number[] = [];
         for (const referral of unEmailedReferrals) {
           const ok = await sendReferralInviteEmail({
             recipientEmail: (referral as any).collectorEmail,
@@ -2693,10 +2694,12 @@ export const appRouter = router({
             subject: input.subject,
             body: input.message,
           });
-          if (ok) sent++;
+          if (ok) {
+            sent++;
+            sentIds.push(referral.id);
+          }
         }
         // Mark successfully-sent referrals as emailed
-        const sentIds = unEmailedReferrals.map((r: any) => r.id);
         await markReferralsAsEmailed(sentIds);
         return { success: true, emailsSent: sent, skipped: referrals.length - unEmailedReferrals.length };
       }),

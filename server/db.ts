@@ -3582,9 +3582,9 @@ export async function sendItemInquiry(
     throw new Error("Message must be between 1 and 5000 characters");
   }
   
-  // Verify listing exists
+  // Bind inquiries to the actual listing owner instead of trusting a caller-supplied recipient.
   const listing = await db
-    .select({ id: listings.id })
+    .select({ id: listings.id, ownerId: listings.ownerId })
     .from(listings)
     .where(eq(listings.id, input.listingId))
     .limit(1);
@@ -3592,16 +3592,8 @@ export async function sendItemInquiry(
   if (!listing[0]) {
     throw new Error("Listing not found");
   }
-  
-  // Verify recipient exists
-  const recipient = await db
-    .select({ id: users.id })
-    .from(users)
-    .where(eq(users.id, input.recipientId))
-    .limit(1);
-  
-  if (!recipient[0]) {
-    throw new Error("Recipient not found");
+  if (listing[0].ownerId !== input.recipientId) {
+    throw new Error("Item inquiries must be sent to the listing owner");
   }
   
   // Insert inquiry
@@ -4502,6 +4494,14 @@ export async function addForumReply(
   const db = await requireDb();
   const { forumReplies, forumPosts } = await import("../drizzle/schema");
   const { eq } = await import("drizzle-orm");
+
+  const post = await db
+    .select({ isLocked: forumPosts.isLocked })
+    .from(forumPosts)
+    .where(eq(forumPosts.id, input.postId))
+    .limit(1);
+  if (!post[0]) throw new Error("Forum post not found.");
+  if (post[0].isLocked) throw new Error("This discussion is locked.");
 
   const result = await db.insert(forumReplies).values({
     postId: input.postId,
