@@ -662,3 +662,6 @@
 - [x] Re-verify each reliability-audit finding against current source, tests, and user-visible action contracts before changing behavior.
 - [x] Correct only confirmed safe defects with targeted regression coverage, while documenting any account-deletion or lifecycle policy decisions that require explicit approval.
 - [x] Re-run full reliability validation and update the audit report with verified, refuted, and deferred outcomes.
+- [x] Run a second independent deep dive across route reachability, authorization, data integrity, UI state accuracy, notifications, email, and provider failure handling.
+- [x] Re-verify all second-pass candidate findings and classify them as confirmed, refuted, or intentionally deferred.
+- [x] Deliver a plain-language second-pass findings report with a recommended fix order and no unapproved behavior changes.
