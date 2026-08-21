@@ -647,3 +647,5 @@
 - [x] Compare the production and development Resend Contacts integration behavior to identify the confirmed root cause.
 - [x] Repair the confirmed persistent signup root cause, validate the public flow, and synchronize GitHub.
 - [x] Retry the persistent minimal contact-write failure against the authenticated Resend account's existing audience without exposing audience or contact data.
+- [x] Anchor the Coming Soon successful-signup confirmation within the existing signup area so it does not move the logo, heading, or category content.
+- [x] Validate empty, error, and successful signup states at mobile and desktop widths, publish, verify the standard domain, and synchronize GitHub.
