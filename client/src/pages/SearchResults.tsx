@@ -117,12 +117,12 @@ export function SearchResults() {
     <div className={`min-h-screen ${searchTheme.pageClassName}`}>
       <TopBar searchPlaceholder="Search the full Tradebilia exchange..." />
       <section className="relative z-0 w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden border-b border-[#0f5563]/70 text-[#fff4e0]" style={{ backgroundImage: `url(${globalSearchHeroCollageUrl})`, backgroundSize: "cover", backgroundPosition: "center", backgroundRepeat: "no-repeat" }}>
-        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(4,22,30,0.88)_0%,rgba(8,51,61,0.66)_45%,rgba(4,22,30,0.88)_100%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(24,16,11,0.58)_0%,rgba(24,16,11,0.28)_48%,rgba(24,16,11,0.58)_100%)]" />
         <div className="container relative flex min-h-[400px] flex-col items-center justify-center py-8 text-center sm:py-10">
           <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#fff4e0]/80">All categories · one exchange</p>
           <h1 className="sr-only">Search the Exchange</h1>
-          <div className="mt-5 flex h-32 w-full max-w-5xl items-center justify-center sm:h-40 lg:h-48">
-            <AnimatedLogoSmall70 fontSize={96} fixedCategoryMetrics />
+          <div className="mt-5 flex h-36 w-[calc(100vw-2rem)] max-w-[100rem] items-center justify-center sm:h-44 lg:h-56">
+            <AnimatedLogoSmall70 fontSize={160} fixedCategoryMetrics centerLockup />
           </div>
           <p className="mt-4 max-w-2xl text-sm leading-6 text-[#fff4e0]/90 sm:text-base">Search the Exchange to find active collectible listings across every Tradebilia category, then narrow the marketplace with broad, truthful filters.</p>
           <Badge className={`${searchTheme.chipClassName} mt-5 rounded-full px-3 py-1 text-xs`}>{submittedQuery ? "Searching all categories" : "Browsing all active listings"}</Badge>

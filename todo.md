@@ -572,3 +572,8 @@
 - [x] Correct Global Search animated-logo clipping and align the spinning wheel, divider, and title on a shared vertical centerline without changing hero height, background, category bar, or search behavior.
 - [x] Rebuild the Global Search animated title to use the homepage’s visual proportions and fixed wordmark metrics, preventing rotation from changing font size, baseline, divider spacing, or wheel-to-title balance.
 - [x] Validate stable Global Search animation geometry at mobile and desktop widths, publish, verify the standard domain, and synchronize GitHub.
+- [x] Apply the Global Search fixed-metric animated-title configuration to the Coming Soon parchment logo so rotation never changes font size, baseline, divider spacing, or wheel balance.
+- [x] Validate the stabilized Coming Soon animation at mobile and desktop widths, publish, verify the standard domain, and synchronize GitHub.
+- [x] Enlarge the Global Search animated title by 50px and dynamically center the entire active lockup—including wheel, divider, Trade, and category label—as one unit on every rotation.
+- [x] Validate the enlarged dynamically centered Global Search title at mobile and desktop widths, publish, verify the standard domain, and synchronize GitHub.
+- [x] Replace the teal Global Search hero haze with a neutral contrast overlay that preserves the natural archival wallpaper colors and text readability.

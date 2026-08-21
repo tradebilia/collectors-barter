@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
 const categories = [
   { name: "BILIA", color: "#FFFFFF", duration: 10000 },
@@ -16,6 +16,7 @@ const DEFAULT_WORDMARK_FONT_SIZE = 60;
 const LARGE_WORDMARK_FONT_SIZE = 125;
 const LARGE_CATEGORY_WORD_X = 580;
 const GLOBAL_SEARCH_CATEGORY_WORD_X = 480;
+const CENTERED_LOCKUP_VIEWBOX_WIDTH = 1800;
 
 type AnimatedLogoSmall70Props = {
   fontSize?: number;
@@ -25,6 +26,7 @@ type AnimatedLogoSmall70Props = {
   wheelOffsetX?: number;
   wheelOffsetY?: number;
   fixedCategoryMetrics?: boolean;
+  centerLockup?: boolean;
 };
 
 const AnimatedLogoSmall70 = ({
@@ -35,8 +37,12 @@ const AnimatedLogoSmall70 = ({
   wheelOffsetX = 0,
   wheelOffsetY = 0,
   fixedCategoryMetrics = false,
+  centerLockup = false,
 }: AnimatedLogoSmall70Props) => {
   const [index, setIndex] = useState(0);
+  const categoryTextRef = useRef<SVGTextElement>(null);
+  const [lockupOffsetX, setLockupOffsetX] = useState(0);
+  const [dynamicViewBoxWidth, setDynamicViewBoxWidth] = useState(1300);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -58,11 +64,29 @@ const AnimatedLogoSmall70 = ({
     ? `translate(${6 + wheelOffsetX}, ${82.5 + wheelOffsetY}) scale(0.441)`
     : `translate(${6 + wheelOffsetX}, ${82.5 + wheelOffsetY}) scale(0.441) translate(104, 110) scale(${wheelScale}) translate(-104, -110)`;
 
+  useLayoutEffect(() => {
+    if (!centerLockup) {
+      setLockupOffsetX(0);
+      setDynamicViewBoxWidth(1300);
+      return;
+    }
+
+    const categoryWidth = categoryTextRef.current?.getComputedTextLength() ?? 0;
+    const lockupLeft = 15;
+    const lockupRight = categoryWordX + categoryWidth;
+    const lockupWidth = Math.max(1, lockupRight - lockupLeft);
+    const nextViewBoxWidth = CENTERED_LOCKUP_VIEWBOX_WIDTH;
+    const nextOffset = (nextViewBoxWidth - lockupWidth) / 2 - lockupLeft;
+
+    setDynamicViewBoxWidth(nextViewBoxWidth);
+    setLockupOffsetX(nextOffset);
+  }, [categoryWordX, centerLockup, currentCategory.name, fontSize]);
+
   return (
     <div className="flex h-full items-center justify-center font-sans py-0" aria-label={`Trade ${currentCategory.name}`}>
       <svg
         xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 1300 216"
+        viewBox={`0 0 ${dynamicViewBoxWidth} 216`}
         className="h-auto w-full drop-shadow-lg"
         style={{ maxWidth: "100%", height: "100%" }}
         preserveAspectRatio="xMinYMid meet"
@@ -77,6 +101,7 @@ const AnimatedLogoSmall70 = ({
           </filter>
         </defs>
 
+        <g transform={`translate(${lockupOffsetX}, 0)`}>
         <g transform={wheelTransform}>
           <g filter="url(#wheelGlowSmall)">
           <animateTransform attributeName="transform" type="rotate" from="0 104 110" to="360 104 110" dur="12s" repeatCount="indefinite" />
@@ -98,9 +123,11 @@ const AnimatedLogoSmall70 = ({
           fontSize={fontSize}
           fontWeight="600"
           fill={categoryColor}
+          ref={categoryTextRef}
         >
           {currentCategory.name}
         </text>
+        </g>
       </svg>
     </div>
   );
