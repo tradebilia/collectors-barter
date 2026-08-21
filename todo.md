@@ -585,3 +585,5 @@
 - [x] Apply the same wheel and divider weight refinement to the Coming Soon animated parchment logo without changing its workbench composition or signup behavior.
 - [x] Align the Global Search category bar to the same direct-below-hero boundary and vertical placement used by individual category pages without changing search filters or result behavior.
 - [x] Validate the revised Global Search lockup weight at mobile and desktop widths, publish, verify the standard domain, and synchronize GitHub.
+- [x] Enlarge the Coming Soon animated logo by 25px and apply the whole-lockup centering used by Global Search.
+- [x] Validate the enlarged centered Coming Soon logo at mobile and desktop widths, publish, verify the standard domain, and synchronize GitHub.
