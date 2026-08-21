@@ -37,20 +37,15 @@ function headers(apiKey: string) {
   };
 }
 
-function isPreLaunchContact(contact: ResendContact) {
-  return contact.unsubscribed !== true
-    && contact.properties?.signup_source === "coming_soon"
-    && contact.properties?.signup_interest === "launch_updates";
-}
-
 async function listAllContacts(fetcher: FetchLike, apiKey: string) {
+  const segmentId = await ensurePreLaunchSegment(fetcher, apiKey);
   const contacts: ResendContact[] = [];
   let after: string | undefined;
 
   for (;;) {
     const query = new URLSearchParams({ limit: "100" });
     if (after) query.set("after", after);
-    const response = await fetcher(`${RESEND_API_BASE}/contacts?${query}`, {
+    const response = await fetcher(`${RESEND_API_BASE}/segments/${segmentId}/contacts?${query}`, {
       headers: headers(apiKey),
       signal: AbortSignal.timeout(10_000),
     }) as ResendFetchResponse;
@@ -63,7 +58,7 @@ async function listAllContacts(fetcher: FetchLike, apiKey: string) {
     if (!after) break;
   }
 
-  return contacts.filter(isPreLaunchContact);
+  return contacts.filter(contact => contact.unsubscribed !== true);
 }
 
 function escapeHtml(value: string) {
@@ -94,7 +89,7 @@ export function buildPreLaunchEmailHtml(message: string) {
 </body></html>`;
 }
 
-async function ensurePreLaunchSegment(fetcher: FetchLike, apiKey: string) {
+export async function ensurePreLaunchSegment(fetcher: FetchLike, apiKey: string) {
   const segmentsResponse = await fetcher(`${RESEND_API_BASE}/segments?limit=100`, {
     headers: headers(apiKey),
     signal: AbortSignal.timeout(10_000),
