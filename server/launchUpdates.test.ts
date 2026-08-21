@@ -70,12 +70,33 @@ describe("Coming Soon launch updates", () => {
     }));
   });
 
+  it("uses the authenticated account's existing audience only after metadata and minimal contact writes both fail", async () => {
+    process.env.RESEND_CONTACTS_API_KEY = "test-key";
+    const fetcher = vi
+      .fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ message: "Custom properties are not accepted." }), { status: 422 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ message: "Audience required." }), { status: 422 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ data: [{ id: "audience-id" }] }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ id: "contact-id" }), { status: 201 }));
+
+    await expect(subscribeToLaunchUpdates("collector@example.com", fetcher)).resolves.toEqual({
+      accepted: true,
+      alreadySubscribed: false,
+    });
+    expect(fetcher).toHaveBeenCalledTimes(4);
+    expect(fetcher.mock.calls[2]?.[0]).toBe("https://api.resend.com/audiences");
+    expect(fetcher.mock.calls[3]?.[1]).toEqual(expect.objectContaining({
+      body: JSON.stringify({ email: "collector@example.com", unsubscribed: false, audience_id: "audience-id" }),
+    }));
+  });
+
   it("does not mask unrelated contact validation failures as successful signup", async () => {
     process.env.RESEND_CONTACTS_API_KEY = "test-key";
     const fetcher = vi
       .fn()
       .mockResolvedValueOnce(new Response(JSON.stringify({ message: "Email is invalid." }), { status: 422 }))
-      .mockResolvedValueOnce(new Response(JSON.stringify({ message: "Email is invalid." }), { status: 422 }));
+      .mockResolvedValueOnce(new Response(JSON.stringify({ message: "Email is invalid." }), { status: 422 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ data: [] }), { status: 200 }));
 
     await expect(subscribeToLaunchUpdates("collector@example.com", fetcher)).rejects.toThrow("We could not save your email right now.");
   });

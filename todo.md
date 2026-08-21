@@ -643,3 +643,7 @@
 - [x] Validate the corrected public signup behavior with privacy-safe checks, publish, verify the standard domain, and synchronize GitHub.
 - [x] Retry a rejected metadata-bearing Resend contact write once with the required email and unsubscribed fields only, without sending mail or exposing contact data.
 - [x] Record only sanitized provider status and error classification when the live contact-write path still fails.
+- [x] Capture the live production signup request-path status and sanitized provider diagnostics after the persistent failure.
+- [x] Compare the production and development Resend Contacts integration behavior to identify the confirmed root cause.
+- [x] Repair the confirmed persistent signup root cause, validate the public flow, and synchronize GitHub.
+- [x] Retry the persistent minimal contact-write failure against the authenticated Resend account's existing audience without exposing audience or contact data.

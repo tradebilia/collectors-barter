@@ -1,6 +1,7 @@
 type FetchLike = typeof fetch;
 
 const RESEND_CONTACTS_URL = "https://api.resend.com/contacts";
+const RESEND_AUDIENCES_URL = "https://api.resend.com/audiences";
 
 function isDuplicateContact(status: number, providerError: string) {
   return status === 409 || (status === 422 && /already exists|duplicate|already been taken/i.test(providerError));
@@ -13,6 +14,8 @@ function classifyProviderFailure(status: number, providerError: string) {
   if (/propert|custom field|metadata/i.test(providerError)) return "metadata_rejected";
   return `http_${status}`;
 }
+
+type ResendAudienceList = { data?: Array<{ id?: unknown }> } | Array<{ id?: unknown }>;
 
 export type LaunchUpdateSubscriptionResult = {
   accepted: true;
@@ -38,6 +41,18 @@ export async function subscribeToLaunchUpdates(
     body: JSON.stringify(body),
     signal: AbortSignal.timeout(10_000),
   });
+  const findAudienceId = async () => {
+    const audiencesResponse = await fetcher(RESEND_AUDIENCES_URL, {
+      headers: { Authorization: `Bearer ${apiKey}` },
+      signal: AbortSignal.timeout(10_000),
+    });
+    if (!audiencesResponse.ok) return null;
+
+    const audiences = await audiencesResponse.json().catch(() => null) as ResendAudienceList | null;
+    const records = Array.isArray(audiences) ? audiences : audiences?.data;
+    const audienceId = records?.[0]?.id;
+    return typeof audienceId === "string" && audienceId ? audienceId : null;
+  };
 
   const response = await createContact({
     email: normalizedEmail,
@@ -70,12 +85,35 @@ export async function subscribeToLaunchUpdates(
       return { accepted: true, alreadySubscribed: true };
     }
 
-    console.warn("[Launch updates] Resend contact creation failed", {
-      initialStatus: response.status,
-      initialClassification: classifyProviderFailure(response.status, providerError),
-      fallbackStatus: fallbackResponse.status,
-      fallbackClassification: classifyProviderFailure(fallbackResponse.status, fallbackError),
-    });
+    const audienceId = await findAudienceId().catch(() => null);
+    if (audienceId) {
+      const audienceResponse = await createContact({ email: normalizedEmail, unsubscribed: false, audience_id: audienceId });
+      if (audienceResponse.ok) {
+        return { accepted: true, alreadySubscribed: false };
+      }
+
+      const audienceError = await audienceResponse.text().catch(() => "");
+      if (isDuplicateContact(audienceResponse.status, audienceError)) {
+        return { accepted: true, alreadySubscribed: true };
+      }
+
+      console.warn("[Launch updates] Resend contact creation failed", {
+        initialStatus: response.status,
+        initialClassification: classifyProviderFailure(response.status, providerError),
+        fallbackStatus: fallbackResponse.status,
+        fallbackClassification: classifyProviderFailure(fallbackResponse.status, fallbackError),
+        audienceFallbackStatus: audienceResponse.status,
+        audienceFallbackClassification: classifyProviderFailure(audienceResponse.status, audienceError),
+      });
+    } else {
+      console.warn("[Launch updates] Resend contact creation failed", {
+        initialStatus: response.status,
+        initialClassification: classifyProviderFailure(response.status, providerError),
+        fallbackStatus: fallbackResponse.status,
+        fallbackClassification: classifyProviderFailure(fallbackResponse.status, fallbackError),
+        audienceFallbackStatus: "unavailable",
+      });
+    }
   } else {
     console.warn("[Launch updates] Resend contact creation failed", {
       initialStatus: response.status,
