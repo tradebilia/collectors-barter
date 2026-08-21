@@ -653,3 +653,9 @@
 - [x] Align the public signup write destination with the Admin Pre-Launch Email recipient source and add regression coverage.
 - [x] Validate the synchronized public signup and admin recipient visibility, publish, verify both routes, and synchronize GitHub.
 - [x] Add successful Coming Soon contacts to the existing Tradebilia Pre-Launch Updates Resend segment and list admin recipients from that segment rather than custom properties.
+- [x] Inventory all route, page, action, notification, email, and admin workflows for the whole-site reliability audit.
+- [x] Audit route wiring, interactive buttons/forms, and client-to-server action contracts for confirmed failures or dead paths.
+- [x] Audit email, Admin, notification, and external-provider integration behavior without exposing credentials or customer data.
+- [ ] Run automated reliability checks, inspect runtime evidence, and fix confirmed high-confidence defects with regression coverage.
+- [x] Deliver a prioritized evidence-based reliability report with unresolved limitations and actionable next steps.
+- [ ] Implement the confirmed audit findings after the user approves their remediation scope and destructive-account/lifecycle policy decisions.
