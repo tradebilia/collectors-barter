@@ -115,8 +115,25 @@ function filterListingsByPlayer(summaries: any[], player: string | null): any[] 
   });
 }
 
-function computeMetrics(summaries: any[]) {
-  const prices = summaries
+export function normalizeValuationEvidence(summaries: any[]) {
+  const seen = new Set<string>();
+  return summaries.filter((item: any) => {
+    const currency = String(item.price?.currency ?? "USD").toUpperCase();
+    if (currency !== "USD") return false;
+    const price = Number(item.price?.value);
+    if (!Number.isFinite(price) || price <= 0) return false;
+    const key = String(
+      item.saleId ?? item.id ?? item.url ?? item.link ??
+      `${item.marketplace ?? item.source ?? "unknown"}|${item.title ?? ""}|${price}|${item.date ?? item.soldDate ?? ""}`,
+    ).trim().toLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+export function computeMetrics(summaries: any[]) {
+  const prices = normalizeValuationEvidence(summaries)
     .map((i: any) => parseFloat(i.price?.value || '0'))
     .filter((p: number) => p > 0)
     .sort((a: number, b: number) => a - b);

@@ -1,4 +1,5 @@
 import { SignJWT, jwtVerify } from "jose";
+import { createHash } from "node:crypto";
 import { ENV } from "./env";
 import type { User } from "../../drizzle/schema";
 import * as db from "../db";
@@ -9,6 +10,7 @@ export type SessionPayload = {
   userId: number;
   username: string;
   role: string;
+  passwordVersion?: string;
 };
 
 /**
@@ -21,6 +23,12 @@ export class CustomAuthService {
       throw new Error("JWT_SECRET environment variable is not set");
     }
     return new TextEncoder().encode(secret);
+  }
+
+  private getPasswordSessionVersion(passwordHash: string | null | undefined): string {
+    return createHash("sha256")
+      .update(`${ENV.jwtSecret}:${passwordHash ?? ""}`)
+      .digest("base64url");
   }
 
   /**
@@ -36,11 +44,14 @@ export class CustomAuthService {
     const expiresInMs = options.expiresInMs ?? ONE_YEAR_MS;
     const expirationSeconds = Math.floor((issuedAt + expiresInMs) / 1000);
     const secretKey = this.getSessionSecret();
+    const user = await db.getUserById(userId);
+    if (!user) throw new Error("Cannot create a session for an unknown user");
 
     return new SignJWT({
       userId,
       username,
       role,
+      passwordVersion: this.getPasswordSessionVersion(user.passwordHash),
     })
       .setProtectedHeader({ alg: "HS256", typ: "JWT" })
       .setExpirationTime(expirationSeconds)
@@ -93,6 +104,7 @@ export class CustomAuthService {
       if (!user) return null;
       // Banned users cannot have an active session
       if ((user as any).isBanned === 1) return null;
+      if (session.passwordVersion !== this.getPasswordSessionVersion(user.passwordHash)) return null;
       return user;
     } catch (error) {
       console.error("[CustomAuth] Failed to get user from session:", error);

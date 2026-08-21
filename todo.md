@@ -681,3 +681,8 @@
 - [x] Add one-time state validation to eBay, Facebook, and LinkedIn account-linking authorization callbacks.
 - [x] Require payment-verification callers and payees to be the two participants in the specified trade proposal before any provider call or write.
 - [x] Restrict pending convention submission retrieval to administrators and add focused regression coverage for all approved high-severity repairs.
+- [x] Bind every item inquiry recipient to the selected listing owner and mark only successfully delivered referral emails as sent.
+- [x] Enforce forum locks at the reply write boundary and revoke existing sessions after password change or recovery without adding or expanding multi-factor authentication.
+- [x] Make Test AI valuation summaries reject unsupported currencies and deduplicate repeated sale evidence before metrics are calculated.
+- [x] Extend API Health failure telemetry and bounded safe retries to approved external read-only provider paths.
+- [x] Add focused regression coverage and complete validation, documentation, GitHub synchronization, checkpointing, and public release verification for the approved next remediation batch.

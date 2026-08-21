@@ -1,3 +1,5 @@
+import { classifyApiFailure, recordApiFailure } from "./apiHealth";
+
 type FedexAccessToken = {
   value: string;
   baseUrl: string;
@@ -95,26 +97,37 @@ async function getFedexAccessToken(): Promise<FedexAccessToken> {
 }
 
 export async function lookupFedexTracking(trackingNumberInput: string) {
-  const trackingNumber = normalizeFedexTrackingNumber(trackingNumberInput);
-  const accessToken = await getFedexAccessToken();
-  const response = await fetch(`${accessToken.baseUrl}/track/v1/trackingnumbers`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${accessToken.value}`,
-      "Content-Type": "application/json",
-      "X-locale": "en_US",
-    },
-    body: JSON.stringify({
-      includeDetailedScans: true,
-      trackingInfo: [{ trackingNumberInfo: { trackingNumber } }],
-    }),
-    signal: AbortSignal.timeout(15_000),
-  });
-  const payload = await response.json().catch(() => null) as FedexTrackingResponse | null;
-  if (!response.ok || !payload) {
-    if (response.status === 400 || response.status === 404) throw new Error("FedEx did not find that tracking number.");
-    if (response.status === 401 || response.status === 403) throw new Error("FedEx Track API access is not authorized for this account.");
-    throw new Error("FedEx tracking is temporarily unavailable. Please try again.");
+  try {
+    const trackingNumber = normalizeFedexTrackingNumber(trackingNumberInput);
+    const accessToken = await getFedexAccessToken();
+    const response = await fetch(`${accessToken.baseUrl}/track/v1/trackingnumbers`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken.value}`,
+        "Content-Type": "application/json",
+        "X-locale": "en_US",
+      },
+      body: JSON.stringify({
+        includeDetailedScans: true,
+        trackingInfo: [{ trackingNumberInfo: { trackingNumber } }],
+      }),
+      signal: AbortSignal.timeout(15_000),
+    });
+    const payload = await response.json().catch(() => null) as FedexTrackingResponse | null;
+    if (!response.ok || !payload) {
+      if (response.status === 400 || response.status === 404) throw new Error("FedEx did not find that tracking number.");
+      if (response.status === 401 || response.status === 403) throw new Error("FedEx Track API access is not authorized for this account.");
+      throw new Error("FedEx tracking is temporarily unavailable. Please try again.");
+    }
+    return formatFedexTrackingResult(payload, trackingNumber);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "FedEx tracking request failed";
+    await recordApiFailure({
+      provider: "FedEx",
+      operation: "tracking_lookup",
+      failureClass: classifyApiFailure({ message }),
+      safeMessage: message,
+    });
+    throw error;
   }
-  return formatFedexTrackingResult(payload, trackingNumber);
 }

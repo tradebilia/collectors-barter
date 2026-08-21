@@ -34,6 +34,14 @@ The four highest-severity findings approved for immediate repair are complete. N
 
 Focused high-severity coverage passed: **4 test files, 9 tests**. Deterministic application validation passed: **112 test files, 358 tests**, with four existing skips. TypeScript, production build, and whitespace validation passed. Five live credential probes (DHL, FedEx, UPS, USPS, and Twilio) could not complete because their external endpoints timed out from this environment; those are external-network validation gaps, not failures in the repaired code paths.
 
+## Next-batch remediation update — 2026-08-21
+
+The next approved integrity batch is complete without adding or expanding multi-factor authentication. Item inquiries now reject a caller-supplied recipient unless it matches the selected listing’s actual owner. Referral batches mark only confirmed successful sends as delivered. Forum replies now enforce a locked-post check at the write boundary.
+
+Custom-auth tokens now carry a password-derived session version. Replacing a password through either normal account settings or recovery invalidates all prior custom-auth sessions at their next verification; this is session revocation, not a second authentication factor. Test AI metrics now exclude non-USD evidence until a vetted currency-conversion source is introduced and remove duplicate sale records before statistics or confidence are calculated. FedEx tracking failures now add sanitized API Health events without exposing a tracking number or credential.
+
+Focused regression coverage passed with **4 files and 8 tests**, followed by successful TypeScript, production build, and whitespace checks.
+
 ## 2. Application architecture
 
 Tradebilia is a React 19 application built with Vite, Tailwind, TanStack React Query, Wouter, and tRPC. The Node/Express server exposes a tRPC API at `/api/trpc`, several Express routes for health, scheduled work, storage, and provider callbacks, and uses Drizzle/MySQL for persistence. Authentication is a signed JWT in an HttpOnly cookie with an Authorization-header fallback. The platform integrates Cloudflare R2/public media, private report-evidence storage, Resend, Twilio, IPQS, PayPal, eBay, Facebook, LinkedIn, carrier APIs, and several collectible-data services.
