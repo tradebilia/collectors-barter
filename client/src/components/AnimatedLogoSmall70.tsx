@@ -31,6 +31,7 @@ type AnimatedLogoSmall70Props = {
   wheelOffsetY?: number;
   fixedCategoryMetrics?: boolean;
   centerLockup?: boolean;
+  centeredViewBoxWidth?: number;
 };
 
 const AnimatedLogoSmall70 = ({
@@ -46,6 +47,7 @@ const AnimatedLogoSmall70 = ({
   wheelOffsetY = 0,
   fixedCategoryMetrics = false,
   centerLockup = false,
+  centeredViewBoxWidth = CENTERED_LOCKUP_VIEWBOX_WIDTH,
 }: AnimatedLogoSmall70Props) => {
   const [index, setIndex] = useState(0);
   const categoryTextRef = useRef<SVGTextElement>(null);
@@ -94,12 +96,12 @@ const AnimatedLogoSmall70 = ({
     const lockupLeft = 15;
     const lockupRight = categoryWordX + categoryWidth;
     const lockupWidth = Math.max(1, lockupRight - lockupLeft);
-    const nextViewBoxWidth = CENTERED_LOCKUP_VIEWBOX_WIDTH;
+    const nextViewBoxWidth = centeredViewBoxWidth;
     const nextOffset = (nextViewBoxWidth - lockupWidth) / 2 - lockupLeft;
 
     setDynamicViewBoxWidth(nextViewBoxWidth);
     setLockupOffsetX(nextOffset);
-  }, [categoryWordX, centerLockup, currentCategory.name, fontSize, wordmarkTextWidth]);
+  }, [categoryWordX, centerLockup, centeredViewBoxWidth, currentCategory.name, fontSize, wordmarkTextWidth]);
 
   return (
     <div className="flex h-full items-center justify-center font-sans py-0" aria-label={`Trade ${currentCategory.name}`}>

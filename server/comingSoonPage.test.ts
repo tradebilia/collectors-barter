@@ -10,8 +10,9 @@ const adminSource = fs.readFileSync(path.join(projectRoot, "client/src/pages/Adm
 describe("Coming Soon experience", () => {
   it("uses the animated Tradebilia logo and has an opt-in email form", () => {
     expect(pageSource).toContain('import AnimatedLogoSmall70 from "@/components/AnimatedLogoSmall70"');
-    expect(pageSource).toContain('<AnimatedLogoSmall70 fontSize={146} wheelScale={1.42} dividerScale={1.3} wordmarkColor="#2b2119" neutralCategoryColor="#2b2119" wheelStrokeWidth={6} dividerStrokeWidth={3.6} fixedCategoryMetrics centerLockup />');
-    expect(pageSource).toContain('tradebilia-coming-soon-dense-category-workbench_c64ac671.png');
+    expect(pageSource).toContain('<AnimatedLogoSmall70 fontSize={146} wheelScale={1.7} wheelOffsetX={-34} dividerScale={1.15} wordmarkColor="#2b2119" neutralCategoryColor="#2b2119" wheelStrokeWidth={6} dividerStrokeWidth={3.6} fixedCategoryMetrics centerLockup centeredViewBoxWidth={2200} />');
+    expect(pageSource).toContain('tradebilia-coming-soon-dense-category-workbench-caption-free_614a7212.png');
+    expect(pageSource).not.toContain('tradebilia-coming-soon-dense-category-workbench_c64ac671.png');
     expect(pageSource).toContain('className="mx-auto h-20 w-full max-w-[25rem] sm:h-24 sm:max-w-[38rem]"');
     expect(pageSource).not.toContain("Background_23084d14.jpg");
     expect(pageSource).toContain("Every collection<br />has a next chapter.");

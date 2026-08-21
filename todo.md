@@ -590,3 +590,7 @@
 - [x] Rebuild the Coming Soon animated logo from the homepage proportion reference with a 25px larger wordmark and a wheel deliberately larger than the title letter height.
 - [x] Validate the rebuilt Coming Soon animated-logo proportions at mobile and desktop widths, publish, verify the standard domain, and synchronize GitHub.
 - [x] Rework the Coming Soon category-label placement so all category names are fully visible on the page at mobile and desktop widths.
+- [x] Repair the Coming Soon animated-logo bounds so every rotating category word remains fully visible without clipping.
+- [x] Separate the Coming Soon wheel from its divider and make the wheel visibly larger than the adjacent title letters.
+- [x] Validate the corrected Coming Soon animation at mobile and desktop widths, publish, verify the standard domain, and synchronize GitHub.
+- [x] Remove the white item-associated category captions from the Coming Soon workbench background while preserving the surrounding collectible objects.

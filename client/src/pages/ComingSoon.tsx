@@ -24,7 +24,7 @@ export default function ComingSoon() {
     <main className="relative min-h-screen overflow-hidden bg-[#332218] text-[#2b2119]">
       <div
         className="absolute inset-0 bg-cover bg-center"
-        style={{ backgroundImage: "url('/manus-storage/tradebilia-coming-soon-dense-category-workbench_c64ac671.png')" }}
+        style={{ backgroundImage: "url('/manus-storage/tradebilia-coming-soon-dense-category-workbench-caption-free_614a7212.png')" }}
         aria-hidden="true"
       />
       <div className="absolute inset-0 bg-[#24160f]/10" aria-hidden="true" />
@@ -34,7 +34,7 @@ export default function ComingSoon() {
           <p className="mx-auto mb-4 w-fit border-y border-[#5b4534]/20 px-5 py-2 text-[8px] font-bold uppercase tracking-[0.2em] text-[#443326]/72 sm:mb-6 sm:text-[10px]">Tradebilia · Collector&apos;s Workbench</p>
 
           <div className="mx-auto h-20 w-full max-w-[25rem] sm:h-24 sm:max-w-[38rem]">
-            <AnimatedLogoSmall70 fontSize={146} wheelScale={1.42} dividerScale={1.3} wordmarkColor="#2b2119" neutralCategoryColor="#2b2119" wheelStrokeWidth={6} dividerStrokeWidth={3.6} fixedCategoryMetrics centerLockup />
+            <AnimatedLogoSmall70 fontSize={146} wheelScale={1.7} wheelOffsetX={-34} dividerScale={1.15} wordmarkColor="#2b2119" neutralCategoryColor="#2b2119" wheelStrokeWidth={6} dividerStrokeWidth={3.6} fixedCategoryMetrics centerLockup centeredViewBoxWidth={2200} />
           </div>
 
           <div className="mx-auto mt-2 max-w-lg sm:mt-10">
