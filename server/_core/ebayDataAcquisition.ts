@@ -22,6 +22,36 @@ export const ebayDataSourceConfig: DataSourceConfig = {
   timeout: 30000, // 30 seconds
 };
 
+const retryableEbayStatuses = new Set([408, 429, 500, 502, 503, 504]);
+const ebayRetryAttempts = ebayDataSourceConfig.retryAttempts ?? 3;
+const ebayTimeoutMs = ebayDataSourceConfig.timeout ?? 30000;
+
+function waitForEbayRetry(attempt: number) {
+  return new Promise<void>(resolve => setTimeout(resolve, 250 * attempt));
+}
+
+export async function fetchEbayWithRetry(url: string, fetcher: typeof fetch = fetch): Promise<Response> {
+  let lastError: unknown;
+  for (let attempt = 1; attempt <= ebayRetryAttempts; attempt += 1) {
+    try {
+      const response = await fetcher(url, {
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+        signal: AbortSignal.timeout(ebayTimeoutMs),
+      });
+      if (response.ok || !retryableEbayStatuses.has(response.status) || attempt === ebayRetryAttempts) {
+        return response;
+      }
+      lastError = new Error(`eBay API error: ${response.status} ${response.statusText}`);
+    } catch (error) {
+      lastError = error;
+      if (attempt === ebayRetryAttempts) break;
+    }
+    await waitForEbayRetry(attempt);
+  }
+  throw lastError instanceof Error ? lastError : new Error('eBay request failed after retry attempts.');
+}
+
 /**
  * eBay API Response Types
  */
@@ -77,14 +107,8 @@ export async function fetchEbaySalesData(
       'paginationInput.entriesPerPage': maxResults.toString(),
     });
 
-    const response = await fetch(
+    const response = await fetchEbayWithRetry(
       `https://svcs.sandbox.ebay.com/services/search/FindingService/v1?${params.toString()}`,
-      {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-        },
-      }
     );
 
     if (!response.ok) {
@@ -192,14 +216,8 @@ export async function searchEbayForItem(
       params.append('itemFilter(2).value', options.maxPrice.toString());
     }
 
-    const response = await fetch(
+    const response = await fetchEbayWithRetry(
       `https://svcs.sandbox.ebay.com/services/search/FindingService/v1?${params.toString()}`,
-      {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-        },
-      }
     );
 
     if (!response.ok) {

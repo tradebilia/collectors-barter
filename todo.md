@@ -653,3 +653,25 @@
 - [x] Align the public signup write destination with the Admin Pre-Launch Email recipient source and add regression coverage.
 - [x] Validate the synchronized public signup and admin recipient visibility, publish, verify both routes, and synchronize GitHub.
 - [x] Add successful Coming Soon contacts to the existing Tradebilia Pre-Launch Updates Resend segment and list admin recipients from that segment rather than custom properties.
+- [x] Inventory all route, page, action, notification, email, and admin workflows for the whole-site reliability audit.
+- [x] Audit route wiring, interactive buttons/forms, and client-to-server action contracts for confirmed failures or dead paths.
+- [x] Audit email, Admin, notification, and external-provider integration behavior without exposing credentials or customer data.
+- [x] Run automated reliability checks, inspect runtime evidence, and fix confirmed high-confidence defects with regression coverage.
+- [x] Deliver a prioritized evidence-based reliability report with unresolved limitations and actionable next steps.
+- [x] Implement the confirmed audit findings after the user approves their remediation scope and destructive-account/lifecycle policy decisions.
+- [x] Re-verify each reliability-audit finding against current source, tests, and user-visible action contracts before changing behavior.
+- [x] Correct only confirmed safe defects with targeted regression coverage, while documenting any account-deletion or lifecycle policy decisions that require explicit approval.
+- [x] Re-run full reliability validation and update the audit report with verified, refuted, and deferred outcomes.
+- [x] Run a second independent deep dive across route reachability, authorization, data integrity, UI state accuracy, notifications, email, and provider failure handling.
+- [x] Re-verify all second-pass candidate findings and classify them as confirmed, refuted, or intentionally deferred.
+- [x] Deliver a plain-language second-pass findings report with a recommended fix order and no unapproved behavior changes.
+- [x] Repair all safe P0 privacy and authorization findings from the second-pass report with focused regression coverage.
+- [x] Repair all safe P1 broken routes, legacy verification behavior, and misleading cache-action behavior.
+- [x] Implement safe recommended operational hardening for API Health coverage, pre-launch enrollment, and owner-alert delivery where no product-policy decision is required.
+- [x] Preserve and document deferred policy decisions for per-user message/inquiry deletion, account closure, email retry policy, and rich-draft data-model expansion.
+- [x] Run a third independent whole-site audit after remediation and report any newly confirmed flaws in plain language.
+- [x] Restrict counterpart-inventory access, middleman workflow updates, and voting-link generation to participants in the specified trade.
+- [x] Make draft deletion transactionally remove child photo records before the parent draft record without altering live data.
+- [x] Correct metadata-cache staleness evaluation so source-specific cache durations are honored.
+- [x] Make eBay acquisition honor its declared timeout and bounded retry configuration without changing provider query semantics.
+- [x] Document the third-pass deferred design decisions: post-password-change session revocation, dedicated draft-photo storage, report-evidence retention, and owner-notification fallback policy.

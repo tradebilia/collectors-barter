@@ -856,6 +856,19 @@ export const tradeFlowRouter = router({
       const db = await requireDb();
       const userId = ctx.user.id;
 
+      const [proposal] = await db
+        .select({ requesterId: tradeProposals.requesterId, recipientId: tradeProposals.recipientId })
+        .from(tradeProposals)
+        .where(eq(tradeProposals.id, input.proposalId))
+        .limit(1);
+
+      if (!proposal) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Trade not found' });
+      }
+      if (proposal.requesterId !== userId && proposal.recipientId !== userId) {
+        throw new TRPCError({ code: 'FORBIDDEN', message: 'Only trade participants can file a complaint.' });
+      }
+
       const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
       await db.execute(
         sql`INSERT INTO tradeComplaints (proposalId, complaintUserId, description, complaintType, photos, createdAt) VALUES (${input.proposalId}, ${userId}, ${input.description}, ${input.complaintType}, ${JSON.stringify(input.photoUrls || [])}, ${now})`
@@ -1235,6 +1248,9 @@ export const tradeFlowRouter = router({
 
       const [proposal] = await db.select().from(tradeProposals).where(eq(tradeProposals.id, input.proposalId)).limit(1);
       if (!proposal) throw new TRPCError({ code: 'NOT_FOUND', message: 'Trade not found' });
+      if (proposal.recipientId !== userId && proposal.requesterId !== userId) {
+        throw new TRPCError({ code: 'FORBIDDEN', message: 'Not authorized' });
+      }
 
       const otherUserId = proposal.requesterId === userId ? proposal.recipientId : proposal.requesterId;
 
@@ -1483,6 +1499,11 @@ export const tradeFlowRouter = router({
     .mutation(async ({ ctx, input }) => {
       const db = await requireDb();
       const userId = ctx.user.id;
+      const [proposal] = await db.select().from(tradeProposals).where(eq(tradeProposals.id, input.proposalId)).limit(1);
+      if (!proposal) throw new TRPCError({ code: 'NOT_FOUND', message: 'Trade not found' });
+      if (proposal.recipientId !== userId && proposal.requesterId !== userId) {
+        throw new TRPCError({ code: 'FORBIDDEN', message: 'Not authorized' });
+      }
       const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
 
       if (input.action === 'request') {
@@ -1507,6 +1528,11 @@ export const tradeFlowRouter = router({
     .mutation(async ({ ctx, input }) => {
       const db = await requireDb();
       const userId = ctx.user.id;
+      const [proposal] = await db.select().from(tradeProposals).where(eq(tradeProposals.id, input.proposalId)).limit(1);
+      if (!proposal) throw new TRPCError({ code: 'NOT_FOUND', message: 'Trade not found' });
+      if (proposal.recipientId !== userId && proposal.requesterId !== userId) {
+        throw new TRPCError({ code: 'FORBIDDEN', message: 'Not authorized' });
+      }
       const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
 
       // Generate unique token

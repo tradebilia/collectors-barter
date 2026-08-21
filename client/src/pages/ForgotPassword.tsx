@@ -1,13 +1,13 @@
 import { useState } from "react";
-import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertCircle, CheckCircle2 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
+import { getLoginUrl } from "@/const";
 
 export function ForgotPassword() {
-  const [, setLocation] = useLocation();
+  const startLogin = () => { window.location.href = getLoginUrl(); };
   const [method, setMethod] = useState<"email" | "phone">("email");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -88,7 +88,7 @@ export function ForgotPassword() {
                   If the information matches a verified Tradebilia account, recovery instructions have been sent.
                 </p>
               </div>
-              <Button type="button" variant="outline" onClick={() => setLocation("/signin")} className="w-full">Back to Sign In</Button>
+              <Button type="button" variant="outline" onClick={startLogin} className="w-full">Back to Sign In</Button>
             </div>
           ) : (
             <div className="space-y-4">
@@ -136,7 +136,7 @@ export function ForgotPassword() {
                   <Button type="submit" disabled={isLoading} className="w-full">{isLoading ? "Working..." : phoneCodeSent ? "Reset Password" : "Send Recovery Code"}</Button>
                 </form>
               )}
-              <Button type="button" variant="link" onClick={() => setLocation("/signin")} className="w-full">Back to Sign In</Button>
+              <Button type="button" variant="link" onClick={startLogin} className="w-full">Back to Sign In</Button>
             </div>
           )}
         </CardContent>
