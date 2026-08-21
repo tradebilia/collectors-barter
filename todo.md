@@ -626,3 +626,5 @@
 - [x] Restore the visibly 196px Coming Soon animated lockup scale after the expanded viewBox made it appear smaller.
 - [x] Retain the extra-wide parchment and sufficient long Sports Cards clearance without reintroducing clipping or holder overlap.
 - [x] Validate the restored visible logo scale and long-label clearance at mobile and desktop widths, publish, verify the standard domain, and synchronize GitHub.
+- [x] Expand the Coming Soon animated-logo canvas to 3000 units while applying scale compensation that preserves the current visible 196px lockup size.
+- [x] Validate the compensated 3000-wide canvas keeps long category labels clear at mobile and desktop widths, publish, verify the standard domain, and synchronize GitHub.
