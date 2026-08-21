@@ -623,3 +623,6 @@
 - [x] Widen the current Coming Soon parchment enough to keep the enlarged TRADE SPORTS CARDS state clear of all corner holders.
 - [x] Expand the Coming Soon animated-logo viewing bounds so the enlarged long category state is fully visible without clipping.
 - [x] Validate the wider parchment and expanded long-label bounds at mobile and desktop widths, publish, verify the standard domain, and synchronize GitHub.
+- [x] Restore the visibly 196px Coming Soon animated lockup scale after the expanded viewBox made it appear smaller.
+- [x] Retain the extra-wide parchment and sufficient long Sports Cards clearance without reintroducing clipping or holder overlap.
+- [x] Validate the restored visible logo scale and long-label clearance at mobile and desktop widths, publish, verify the standard domain, and synchronize GitHub.
