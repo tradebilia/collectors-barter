@@ -789,7 +789,7 @@ export default function AddInventory() {
                       >
                         <img src={photo.previewUrl} alt={`Photo ${index + 1}`} className="h-24 w-full object-cover" />
                         {index === primaryPhotoIndex && <div className="absolute inset-0 bg-yellow-400/10" />}
-                        {user?.role === 'admin' && (
+                        {(
                           <button
                             type="button"
                             onClick={(e) => {

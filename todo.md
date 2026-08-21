@@ -656,6 +656,9 @@
 - [x] Inventory all route, page, action, notification, email, and admin workflows for the whole-site reliability audit.
 - [x] Audit route wiring, interactive buttons/forms, and client-to-server action contracts for confirmed failures or dead paths.
 - [x] Audit email, Admin, notification, and external-provider integration behavior without exposing credentials or customer data.
-- [ ] Run automated reliability checks, inspect runtime evidence, and fix confirmed high-confidence defects with regression coverage.
+- [x] Run automated reliability checks, inspect runtime evidence, and fix confirmed high-confidence defects with regression coverage.
 - [x] Deliver a prioritized evidence-based reliability report with unresolved limitations and actionable next steps.
-- [ ] Implement the confirmed audit findings after the user approves their remediation scope and destructive-account/lifecycle policy decisions.
+- [x] Implement the confirmed audit findings after the user approves their remediation scope and destructive-account/lifecycle policy decisions.
+- [x] Re-verify each reliability-audit finding against current source, tests, and user-visible action contracts before changing behavior.
+- [x] Correct only confirmed safe defects with targeted regression coverage, while documenting any account-deletion or lifecycle policy decisions that require explicit approval.
+- [x] Re-run full reliability validation and update the audit report with verified, refuted, and deferred outcomes.

@@ -1021,6 +1021,7 @@ export const appRouter = router({
           itemsReceived: z.object({ email: z.boolean(), text: z.boolean() }),
           feedbackReceived: z.object({ email: z.boolean(), text: z.boolean() }),
           systemUpdates: z.object({ email: z.boolean(), text: z.boolean() }),
+          messages: z.object({ email: z.boolean(), text: z.boolean() }),
           marketingEmails: z.object({ email: z.boolean(), text: z.boolean() }),
         }),
       )
@@ -1037,6 +1038,7 @@ export const appRouter = router({
             itemsReceived: input.itemsReceived,
             feedbackReceived: input.feedbackReceived,
             systemUpdates: input.systemUpdates,
+            messages: input.messages,
             marketingEmails: input.marketingEmails,
           }),
         }).where(eq(userProfiles.userId, ctx.user.id));

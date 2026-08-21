@@ -5,21 +5,21 @@
 
 ## Executive Summary
 
-The application has a strong automated baseline: the complete suite passed with **346 tests passing and 4 intentionally skipped**, TypeScript completed without errors, and the production build completed successfully. The live runtime log sample did not contain unhandled error, timeout, email, or notification failures. The audit nevertheless found several **confirmed action-contract defects** where a user interface promise does not match the server behavior.
+The application has a strong automated baseline: the complete suite passed with **351 tests passing and 4 intentionally skipped**, TypeScript completed without errors, and the production build completed successfully. The live runtime log sample did not contain unhandled error, timeout, email, or notification failures. The audit nevertheless found several **confirmed action-contract defects** where a user interface promise did not match the server behavior; the confirmed safe defects were corrected and covered by regression tests.
 
-The most urgent issues are the inventory bulk-delete **Undo** control, which cannot restore rows after a hard deletion, and the standalone account-verification route, whose verification and resend handlers are currently stubbed. Several medium-severity reliability issues should be addressed before broad public launch.
+The most urgent issue is the inventory bulk-delete **Undo** control, which cannot restore rows after a hard deletion. The audit also found several medium-severity reliability issues that should be addressed before broad public launch.
 
 ## Confirmed Defects
 
 | Priority | Area | Confirmed behavior | User impact | Evidence |
 |---|---|---|---|---|
-| High | Inventory bulk delete | The delete operation permanently deletes listing and photo rows; the Undo action later updates those now-missing listing IDs, so it cannot restore them. | A member can believe a deleted item was restored when it was not. | `server/db.ts` lines 1779–1814; `client/src/pages/Inventory.tsx` undo flow. |
-| High | Standalone account verification | The `/verify-account` page contains commented email and phone verification/resend calls; it advances local UI state without a server verification result. | A route user can see a completed verification state without an actual verified contact method. | `client/src/pages/VerifyAccount.tsx` lines 36–64. |
-| Medium | Account deletion | The Account Settings **Delete Account** button has no handler, confirmation dialog, or server mutation. | A visible destructive control does nothing. | `client/src/pages/AccountSettings.tsx` lines 889–895. |
-| Medium | Communications preferences | The client sends a `messages` email/text setting, but `market.saveCommunications` neither accepts nor stores it. | A member’s Messages notification preference is silently discarded on save. | `client/src/pages/AccountSettings.tsx` lines 1342–1356; `server/routers.ts` lines 1013–1043. |
-| Medium | Item inquiry redirection | Compose success redirects with the recipient user ID, while Messages expects an inquiry record ID. | Sending an inquiry does not automatically open the new conversation as intended. | `client/src/components/ComposeMessageModal.tsx` lines 33–40; `client/src/pages/Messages.tsx` lines 251–262. |
-| Medium | Draft inventory persistence | `saveDraft` accepts only core item fields and photos; it does not save the entered description, category-specific fields, or additional notes. | Draft content can be silently lost. | `server/db.ts` lines 1844–1884; Add Inventory draft inputs. |
-| Medium | Listing photo removal | Non-admin updates retain database photo rows that the member has removed in the editor. | Removed listing photos can reappear after saving. | `server/db.ts` lines 2626–2707. |
+| Fixed | Inventory bulk delete | Bulk delete now makes listings inactive while retaining their attached photos; the existing Undo path can restore the listing IDs by reactivating them. | The visible Undo promise now matches the retained server data. | `server/db.ts` bulk-delete and restore paths; `server/reliabilityAuditRepairs.test.ts`. |
+| Refuted as a live route | Standalone account verification | The component contains stale simulated handlers, but `/verify-account` is not registered in the current route map and rendered the application’s Not Found page during re-verification. Normal account setup uses the authenticated verification procedures instead. | No active customer flow currently reaches this component; it should be removed or deliberately registered only after a product-flow decision. | Current route screenshot and `client/src/pages/VerifyAccount.tsx`. |
+| Fixed safely | Account deletion | The misleading dead self-service Delete Account control was replaced with an explicit reviewed account-closure request notice. A direct destructive deletion workflow remains intentionally deferred. | Members receive an honest next step without risking active trades, audit history, or account-safety records. | `client/src/pages/AccountSettings.tsx`; `server/reliabilityAuditRepairs.test.ts`. |
+| Fixed | Communications preferences | The server contract now accepts and persists `messages` email/text preferences. | A member’s Messages notification preference is retained on save. | `server/routers.ts`; `server/reliabilityAuditRepairs.test.ts`. |
+| Fixed | Item inquiry redirection | Compose now uses the returned inquiry record ID for the Messages query parameter. | A sent inquiry can resolve to the corresponding inquiry thread. | `client/src/components/ComposeMessageModal.tsx`; `server/reliabilityAuditRepairs.test.ts`. |
+| Partially fixed | Draft inventory persistence | Existing draft photos are now preserved and removed intentionally rather than deleted and re-uploaded indiscriminately. The draft schema has no dedicated description field, so broader draft-content persistence needs a product/data-model decision. | Draft image updates no longer lose retained photos; richer draft fields remain a separate enhancement. | `server/db.ts` update-draft path. |
+| Fixed | Listing photo removal | Members can now remove their own omitted listing photos; the update path removes only stored URLs excluded by the editor payload. | Removed photos no longer reappear after saving. | `client/src/pages/AddInventory.tsx`; `server/db.ts`; `server/reliabilityAuditRepairs.test.ts`. |
 
 ## Operational and Scale Risks
 
@@ -42,10 +42,16 @@ The account setup email verification path used during normal setup calls `auth.v
 | Check | Result |
 |---|---|
 | TypeScript | Passed (`pnpm check`) |
-| Unit and integration suite | 346 passed, 4 skipped |
+| Unit and integration suite | 351 passed, 4 skipped |
 | Production build | Passed (`pnpm build`) |
 | Production runtime log sample | No matching unhandled error, timeout, email, or notification failures in the reviewed sample |
 | Whole-code audit | Eight independent functional areas reviewed, then high-confidence findings were directly verified against current source |
+
+## Re-Verification Outcome
+
+The audit findings were independently re-checked against the current source, test contracts, and route behavior before code changes were made. Bulk listing Undo, inquiry-thread routing, Messages preference persistence, member photo removal, draft-photo preservation, and the misleading Account Settings deletion control were **confirmed and repaired**. The standalone verification component was **refuted as an active route defect** because the current route map renders Not Found for `/verify-account`; it remains a legacy component rather than a live customer flow.
+
+No direct destructive account deletion was added. The visible control now explains that account closure needs reviewed handling so active trades, audit history, and account-safety obligations are not removed unexpectedly. Rich draft-text persistence remains intentionally deferred because the current draft schema does not include a dedicated description field; that requires a separate product and data-model decision rather than a silent workaround.
 
 ## Limits of This Audit
 
@@ -53,9 +59,7 @@ This audit did not submit real marketplace transactions, delete real accounts/li
 
 ## Recommended Remediation Order
 
-1. Repair inventory bulk-delete Undo by adopting a soft-delete/restore model, or remove the Undo promise.
-2. Replace or fully wire the legacy `/verify-account` flow to server-side OTP verification and resend procedures.
-3. Fix the Account Settings message-preference contract and the inquiry redirect ID contract.
-4. Persist full draft item data and reconcile non-admin photo removals.
-5. Design the Account Delete behavior deliberately: a destructive deletion flow, a reversible deactivation flow, or remove the control until either is approved.
-6. Add the operational hardening items for pre-launch campaign scale, notification fallback, and provider-wide API Health instrumentation.
+1. Decide whether to remove the unreachable legacy `/verify-account` component or explicitly register it as an alternative verification flow; it is not an active user-facing defect today.
+2. Persist full draft item content with an approved data model for description and category-specific fields.
+3. Design the Account Delete behavior deliberately: a destructive deletion flow, a reversible deactivation flow, or remove the control until either is approved.
+4. Add the operational hardening items for pre-launch campaign scale, notification fallback, and provider-wide API Health instrumentation.

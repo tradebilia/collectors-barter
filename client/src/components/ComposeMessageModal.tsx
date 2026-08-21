@@ -37,7 +37,7 @@ export function ComposeMessageModal({ isOpen, onClose, recipient, defaultSubject
       setBody("");
       onClose();
       // Navigate to the inquiry thread in the inbox
-      setLocation(`/messages?inquiry=${recipient.id}`);
+      setLocation(`/messages?inquiry=${data.id}`);
     },
     onError: (err) => {
       toast.error(err.message || "Failed to send message");
