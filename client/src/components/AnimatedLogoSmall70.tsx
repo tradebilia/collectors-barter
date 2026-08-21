@@ -17,6 +17,8 @@ const LARGE_WORDMARK_FONT_SIZE = 125;
 const LARGE_CATEGORY_WORD_X = 580;
 const GLOBAL_SEARCH_CATEGORY_WORD_X = 480;
 const CENTERED_LOCKUP_VIEWBOX_WIDTH = 1800;
+type WheelColors = readonly [string, string, string, string, string, string];
+const DEFAULT_WHEEL_COLORS: WheelColors = ["#A97AD7", "#FF3B30", "#FF9800", "#18B57A", "#F6A5B6", "#29A8FF"];
 
 type AnimatedLogoSmall70Props = {
   fontSize?: number;
@@ -33,6 +35,7 @@ type AnimatedLogoSmall70Props = {
   centerLockup?: boolean;
   centeredViewBoxWidth?: number;
   categoryColorOverrides?: Partial<Record<(typeof categories)[number]["name"], string>>;
+  wheelColors?: WheelColors;
 };
 
 const AnimatedLogoSmall70 = ({
@@ -50,6 +53,7 @@ const AnimatedLogoSmall70 = ({
   centerLockup = false,
   centeredViewBoxWidth = CENTERED_LOCKUP_VIEWBOX_WIDTH,
   categoryColorOverrides = {},
+  wheelColors = DEFAULT_WHEEL_COLORS,
 }: AnimatedLogoSmall70Props) => {
   const [index, setIndex] = useState(0);
   const categoryTextRef = useRef<SVGTextElement>(null);
@@ -129,12 +133,12 @@ const AnimatedLogoSmall70 = ({
         <g transform={wheelTransform}>
           <g filter="url(#wheelGlowSmall)">
           <animateTransform attributeName="transform" type="rotate" from="0 104 110" to="360 104 110" dur="12s" repeatCount="indefinite" />
-          <g transform="translate(104, 71) scale(0.82, 1)" fill="#A97AD7" stroke="#A97AD7" strokeWidth={wheelStrokeWidth} strokeLinejoin="round"><polygon points="-7,-2.5 -8.5,-2 -42,-35.5 -41.5,-36 -21.5,-36 -21,-36.5 -21,-71.5 -20.5,-72 -7.5,-72 -7,-71.5 -7,-2.5" /><polygon points="20.5,0 7.5,0 7,-0.5 7,-69.5 7.5,-70 8.5,-70 42,-36.5 41.5,-36 21.5,-36 21,-35.5 21,-0.5 20.5,0" /></g>
-          <g transform="translate(137, 90) rotate(60) scale(0.82, 1)" fill="#FF3B30" stroke="#FF3B30" strokeWidth={wheelStrokeWidth} strokeLinejoin="round"><polygon points="-7,-2.5 -8.5,-2 -42,-35.5 -41.5,-36 -21.5,-36 -21,-36.5 -21,-71.5 -20.5,-72 -7.5,-72 -7,-71.5 -7,-2.5" /><polygon points="20.5,0 7.5,0 7,-0.5 7,-69.5 7.5,-70 8.5,-70 42,-36.5 41.5,-36 21.5,-36 21,-35.5 21,-0.5 20.5,0" /></g>
-          <g transform="translate(137, 129) rotate(120) scale(0.82, 1)" fill="#FF9800" stroke="#FF9800" strokeWidth={wheelStrokeWidth} strokeLinejoin="round"><polygon points="-7,-2.5 -8.5,-2 -42,-35.5 -41.5,-36 -21.5,-36 -21,-36.5 -21,-71.5 -20.5,-72 -7.5,-72 -7,-71.5 -7,-2.5" /><polygon points="20.5,0 7.5,0 7,-0.5 7,-69.5 7.5,-70 8.5,-70 42,-36.5 41.5,-36 21.5,-36 21,-35.5 21,-0.5 20.5,0" /></g>
-          <g transform="translate(104, 148) rotate(180) scale(0.82, 1)" fill="#18B57A" stroke="#18B57A" strokeWidth={wheelStrokeWidth} strokeLinejoin="round"><polygon points="-7,-2.5 -8.5,-2 -42,-35.5 -41.5,-36 -21.5,-36 -21,-36.5 -21,-71.5 -20.5,-72 -7.5,-72 -7,-71.5 -7,-2.5" /><polygon points="20.5,0 7.5,0 7,-0.5 7,-69.5 7.5,-70 8.5,-70 42,-36.5 41.5,-36 21.5,-36 21,-35.5 21,-0.5 20.5,0" /></g>
-          <g transform="translate(70, 129) rotate(240) scale(0.82, 1)" fill="#F6A5B6" stroke="#F6A5B6" strokeWidth={wheelStrokeWidth} strokeLinejoin="round"><polygon points="-7,-2.5 -8.5,-2 -42,-35.5 -41.5,-36 -21.5,-36 -21,-36.5 -21,-71.5 -20.5,-72 -7.5,-72 -7,-71.5 -7,-2.5" /><polygon points="20.5,0 7.5,0 7,-0.5 7,-69.5 7.5,-70 8.5,-70 42,-36.5 41.5,-36 21.5,-36 21,-35.5 21,-0.5 20.5,0" /></g>
-          <g transform="translate(70, 90) rotate(300) scale(0.82, 1)" fill="#29A8FF" stroke="#29A8FF" strokeWidth={wheelStrokeWidth} strokeLinejoin="round"><polygon points="-7,-2.5 -8.5,-2 -42,-35.5 -41.5,-36 -21.5,-36 -21,-36.5 -21,-71.5 -20.5,-72 -7.5,-72 -7,-71.5 -7,-2.5" /><polygon points="20.5,0 7.5,0 7,-0.5 7,-69.5 7.5,-70 8.5,-70 42,-36.5 41.5,-36 21.5,-36 21,-35.5 21,-0.5 20.5,0" /></g>
+          <g transform="translate(104, 71) scale(0.82, 1)" fill={wheelColors[0]} stroke={wheelColors[0]} strokeWidth={wheelStrokeWidth} strokeLinejoin="round"><polygon points="-7,-2.5 -8.5,-2 -42,-35.5 -41.5,-36 -21.5,-36 -21,-36.5 -21,-71.5 -20.5,-72 -7.5,-72 -7,-71.5 -7,-2.5" /><polygon points="20.5,0 7.5,0 7,-0.5 7,-69.5 7.5,-70 8.5,-70 42,-36.5 41.5,-36 21.5,-36 21,-35.5 21,-0.5 20.5,0" /></g>
+          <g transform="translate(137, 90) rotate(60) scale(0.82, 1)" fill={wheelColors[1]} stroke={wheelColors[1]} strokeWidth={wheelStrokeWidth} strokeLinejoin="round"><polygon points="-7,-2.5 -8.5,-2 -42,-35.5 -41.5,-36 -21.5,-36 -21,-36.5 -21,-71.5 -20.5,-72 -7.5,-72 -7,-71.5 -7,-2.5" /><polygon points="20.5,0 7.5,0 7,-0.5 7,-69.5 7.5,-70 8.5,-70 42,-36.5 41.5,-36 21.5,-36 21,-35.5 21,-0.5 20.5,0" /></g>
+          <g transform="translate(137, 129) rotate(120) scale(0.82, 1)" fill={wheelColors[2]} stroke={wheelColors[2]} strokeWidth={wheelStrokeWidth} strokeLinejoin="round"><polygon points="-7,-2.5 -8.5,-2 -42,-35.5 -41.5,-36 -21.5,-36 -21,-36.5 -21,-71.5 -20.5,-72 -7.5,-72 -7,-71.5 -7,-2.5" /><polygon points="20.5,0 7.5,0 7,-0.5 7,-69.5 7.5,-70 8.5,-70 42,-36.5 41.5,-36 21.5,-36 21,-35.5 21,-0.5 20.5,0" /></g>
+          <g transform="translate(104, 148) rotate(180) scale(0.82, 1)" fill={wheelColors[3]} stroke={wheelColors[3]} strokeWidth={wheelStrokeWidth} strokeLinejoin="round"><polygon points="-7,-2.5 -8.5,-2 -42,-35.5 -41.5,-36 -21.5,-36 -21,-36.5 -21,-71.5 -20.5,-72 -7.5,-72 -7,-71.5 -7,-2.5" /><polygon points="20.5,0 7.5,0 7,-0.5 7,-69.5 7.5,-70 8.5,-70 42,-36.5 41.5,-36 21.5,-36 21,-35.5 21,-0.5 20.5,0" /></g>
+          <g transform="translate(70, 129) rotate(240) scale(0.82, 1)" fill={wheelColors[4]} stroke={wheelColors[4]} strokeWidth={wheelStrokeWidth} strokeLinejoin="round"><polygon points="-7,-2.5 -8.5,-2 -42,-35.5 -41.5,-36 -21.5,-36 -21,-36.5 -21,-71.5 -20.5,-72 -7.5,-72 -7,-71.5 -7,-2.5" /><polygon points="20.5,0 7.5,0 7,-0.5 7,-69.5 7.5,-70 8.5,-70 42,-36.5 41.5,-36 21.5,-36 21,-35.5 21,-0.5 20.5,0" /></g>
+          <g transform="translate(70, 90) rotate(300) scale(0.82, 1)" fill={wheelColors[5]} stroke={wheelColors[5]} strokeWidth={wheelStrokeWidth} strokeLinejoin="round"><polygon points="-7,-2.5 -8.5,-2 -42,-35.5 -41.5,-36 -21.5,-36 -21,-36.5 -21,-71.5 -20.5,-72 -7.5,-72 -7,-71.5 -7,-2.5" /><polygon points="20.5,0 7.5,0 7,-0.5 7,-69.5 7.5,-70 8.5,-70 42,-36.5 41.5,-36 21.5,-36 21,-35.5 21,-0.5 20.5,0" /></g>
           </g>
         </g>
 
