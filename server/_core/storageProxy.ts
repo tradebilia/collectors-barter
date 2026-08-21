@@ -1,5 +1,21 @@
 import type { Express } from "express";
 import { ENV } from "./env";
+import { customAuth } from "./customAuth";
+import { COOKIE_NAME } from "@shared/const";
+
+export function getPrivateReportEvidenceOwnerId(key: string): number | null {
+  const matched = /^reports\/(\d+)\/[^/]+/.exec(key);
+  if (!matched) return null;
+  const ownerId = Number(matched[1]);
+  return Number.isSafeInteger(ownerId) && ownerId > 0 ? ownerId : null;
+}
+
+export function canAccessPrivateReportEvidence(
+  user: { id: number; role?: string } | null,
+  ownerId: number,
+): boolean {
+  return user?.role === "admin" || user?.id === ownerId;
+}
 
 export function registerStorageProxy(app: Express) {
   app.get("/manus-storage/*", async (req, res) => {
@@ -7,6 +23,20 @@ export function registerStorageProxy(app: Express) {
     if (!key) {
       res.status(400).send("Missing storage key");
       return;
+    }
+
+    const reportEvidenceOwnerId = getPrivateReportEvidenceOwnerId(key);
+    if (reportEvidenceOwnerId !== null) {
+      const cookies = customAuth.parseCookies(req.headers.cookie || "");
+      const user = await customAuth.getUserFromSession(cookies.get(COOKIE_NAME));
+      if (!user) {
+        res.status(401).send("Authentication required");
+        return;
+      }
+      if (!canAccessPrivateReportEvidence(user, reportEvidenceOwnerId)) {
+        res.status(403).send("Forbidden");
+        return;
+      }
     }
 
     if (!ENV.forgeApiUrl || !ENV.forgeApiKey) {

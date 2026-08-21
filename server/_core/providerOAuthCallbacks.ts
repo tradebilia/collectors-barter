@@ -2,6 +2,11 @@ import type { Express } from "express";
 import { COOKIE_NAME } from "../../shared/const";
 import { customAuth } from "./customAuth";
 import { isStagingSafetyEnabled } from "./stagingSafety";
+import {
+  clearProviderOauthStateCookie,
+  isValidProviderOauthState,
+  providerOauthStateCookieName,
+} from "./providerOauthState";
 
 export function registerProviderOAuthCallbacks(app: Express) {
   app.get("/api/ebay/callback", async (req: any, res: any) => {
@@ -10,6 +15,9 @@ export function registerProviderOAuthCallbacks(app: Express) {
     if (!code) return res.redirect(302, "/account-settings?ebay=error&reason=no_code");
     try {
       const cookies = customAuth.parseCookies(req.headers?.cookie || "");
+      const isValidState = isValidProviderOauthState(cookies.get(providerOauthStateCookieName("ebay")), req.query.state);
+      clearProviderOauthStateCookie(res, "ebay");
+      if (!isValidState) return res.redirect(302, "/account-settings?ebay=error&reason=invalid_state");
       const user = await customAuth.getUserFromSession(cookies.get(COOKIE_NAME));
       if (!user) return res.redirect(302, "/account-settings?ebay=error&reason=not_logged_in");
       const { handleEbayCallback } = await import("./ebayCallback");
@@ -28,6 +36,9 @@ export function registerProviderOAuthCallbacks(app: Express) {
     if (!code) return res.redirect(302, "/account-settings?facebook=error&reason=no_code&tab=integrations");
     try {
       const cookies = customAuth.parseCookies(req.headers?.cookie || "");
+      const isValidState = isValidProviderOauthState(cookies.get(providerOauthStateCookieName("facebook")), req.query.state);
+      clearProviderOauthStateCookie(res, "facebook");
+      if (!isValidState) return res.redirect(302, "/account-settings?facebook=error&reason=invalid_state&tab=integrations");
       const user = await customAuth.getUserFromSession(cookies.get(COOKIE_NAME));
       if (!user) return res.redirect(302, "/account-settings?facebook=error&reason=not_logged_in&tab=integrations");
       const { handleFacebookCallback } = await import("./facebookCallback");
@@ -46,6 +57,9 @@ export function registerProviderOAuthCallbacks(app: Express) {
     if (!code) return res.redirect(302, "/account-settings?linkedin=error&reason=no_code&tab=integrations");
     try {
       const cookies = customAuth.parseCookies(req.headers?.cookie || "");
+      const isValidState = isValidProviderOauthState(cookies.get(providerOauthStateCookieName("linkedin")), req.query.state);
+      clearProviderOauthStateCookie(res, "linkedin");
+      if (!isValidState) return res.redirect(302, "/account-settings?linkedin=error&reason=invalid_state&tab=integrations");
       const user = await customAuth.getUserFromSession(cookies.get(COOKIE_NAME));
       if (!user) return res.redirect(302, "/account-settings?linkedin=error&reason=not_logged_in&tab=integrations");
       const { handleLinkedInCallback } = await import("./linkedinCallback");
