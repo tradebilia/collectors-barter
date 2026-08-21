@@ -630,3 +630,6 @@
 - [x] Validate the compensated 3000-wide canvas keeps long category labels clear at mobile and desktop widths, publish, verify the standard domain, and synchronize GitHub.
 - [x] Expand the Coming Soon rendered visual canvas so the existing font, wheel, and divider remain at their original visible size while the wider SVG provides long-label clearance.
 - [x] Validate the expanded-canvas original-size lockup shows long category labels without clipping at mobile and desktop widths, publish, verify the standard domain, and synchronize GitHub.
+- [x] Add a small gap between the Coming Soon category divider and email signup row so the input is not touching the line above it.
+- [x] Verify the Coming Soon email input, consent checkbox, and Notify me behavior without submitting or altering a subscriber record.
+- [x] Validate the refined signup spacing at mobile and desktop widths, publish, verify the standard domain, and synchronize GitHub.

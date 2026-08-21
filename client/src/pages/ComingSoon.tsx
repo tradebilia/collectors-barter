@@ -74,7 +74,7 @@ export default function ComingSoon() {
               </div>
             </div>
 
-            <div className="mx-auto mt-0 max-w-md sm:mt-0">
+            <div className="mx-auto mt-2 max-w-md sm:mt-3">
             {submitted ? (
               <div className="border border-[#6c503c]/35 bg-[#fbf3e4]/70 px-6 py-6 shadow-sm">
                 <CheckCircle2 className="mx-auto h-9 w-9 text-[#1f4d98]" aria-hidden="true" />

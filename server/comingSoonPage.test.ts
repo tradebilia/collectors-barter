@@ -20,7 +20,7 @@ describe("Coming Soon experience", () => {
     expect(pageSource).toContain('className="mx-auto h-24 w-full max-w-[27rem] translate-y-6 sm:h-28 sm:max-w-[42rem]"');
     expect(pageSource).not.toContain("Collector&apos;s Workbench");
     expect(pageSource).toContain('className="-translate-y-1 sm:-translate-y-8"');
-    expect(pageSource).toContain('className="mx-auto mt-0 max-w-md sm:mt-0"');
+    expect(pageSource).toContain('className="mx-auto mt-2 max-w-md sm:mt-3"');
     expect(pageSource).not.toContain("Background_23084d14.jpg");
     expect(pageSource).toContain("Every collection<br />has a next chapter.");
     expect(pageSource).toContain("The Collectors Trading Exchange");
