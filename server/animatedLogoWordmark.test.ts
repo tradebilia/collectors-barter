@@ -31,7 +31,9 @@ describe("Animated Tradebilia wordmark", () => {
     expect(logoSource).not.toContain("textLength={");
     expect(logoSource).not.toContain("lengthAdjust={");
     expect(logoSource).toContain('centerLockup?: boolean;');
+    expect(logoSource).toContain('centeredViewBoxWidth?: number;');
     expect(logoSource).toContain('const CENTERED_LOCKUP_VIEWBOX_WIDTH = 1800;');
+    expect(logoSource).toContain('centeredViewBoxWidth = CENTERED_LOCKUP_VIEWBOX_WIDTH,');
     expect(logoSource).toContain('const dividerHalfHeight = 48.6 * dividerScale;');
     expect(logoSource).toContain('setDynamicViewBoxWidth(nextViewBoxWidth);');
     expect(logoSource).toContain('const wordmarkTextRef = useRef<SVGTextElement>(null);');
@@ -42,6 +44,6 @@ describe("Animated Tradebilia wordmark", () => {
 
   it("uses the fixed-metric animated lockup on the Coming Soon parchment hero", () => {
     const comingSoonSource = fs.readFileSync(path.join(projectRoot, "client/src/pages/ComingSoon.tsx"), "utf8");
-    expect(comingSoonSource).toContain('<AnimatedLogoSmall70 fontSize={146} wheelScale={1.42} dividerScale={1.3} wordmarkColor="#2b2119" neutralCategoryColor="#2b2119" wheelStrokeWidth={6} dividerStrokeWidth={3.6} fixedCategoryMetrics centerLockup />');
+    expect(comingSoonSource).toContain('<AnimatedLogoSmall70 fontSize={146} wheelScale={1.7} wheelOffsetX={-34} dividerScale={1.15} wordmarkColor="#2b2119" neutralCategoryColor="#2b2119" wheelStrokeWidth={6} dividerStrokeWidth={3.6} fixedCategoryMetrics centerLockup centeredViewBoxWidth={2200} />');
   });
 });
