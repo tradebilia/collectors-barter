@@ -1,3 +1,5 @@
+import { ensurePreLaunchSegment } from "./preLaunchEmail";
+
 type FetchLike = typeof fetch;
 
 const RESEND_CONTACTS_URL = "https://api.resend.com/contacts";
@@ -41,6 +43,24 @@ export async function subscribeToLaunchUpdates(
     body: JSON.stringify(body),
     signal: AbortSignal.timeout(10_000),
   });
+  const enrollInLaunchSegment = async () => {
+    const segmentId = await ensurePreLaunchSegment(fetcher, apiKey);
+    const membershipResponse = await fetcher(
+      `https://api.resend.com/contacts/${encodeURIComponent(normalizedEmail)}/segments/${segmentId}`,
+      {
+        method: "POST",
+        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+        signal: AbortSignal.timeout(10_000),
+      },
+    );
+    if (!membershipResponse.ok && membershipResponse.status !== 409) {
+      throw new Error("Unable to add the launch signup to its recipient group.");
+    }
+  };
+  const completeSignup = async (alreadySubscribed: boolean) => {
+    await enrollInLaunchSegment();
+    return { accepted: true as const, alreadySubscribed };
+  };
   const findAudienceId = async () => {
     const audiencesResponse = await fetcher(RESEND_AUDIENCES_URL, {
       headers: { Authorization: `Bearer ${apiKey}` },
@@ -57,44 +77,38 @@ export async function subscribeToLaunchUpdates(
   const response = await createContact({
     email: normalizedEmail,
     unsubscribed: false,
-    properties: {
-      signup_source: "coming_soon",
-      signup_interest: "launch_updates",
-    },
   });
 
   if (response.ok) {
-    return { accepted: true, alreadySubscribed: false };
+    return completeSignup(false);
   }
 
   const providerError = await response.text().catch(() => "");
   if (isDuplicateContact(response.status, providerError)) {
-    return { accepted: true, alreadySubscribed: true };
+    return completeSignup(true);
   }
 
-  // Properties are optional in Resend's contact API. Retry once without them
-  // when the metadata-bearing request is rejected, preserving opt-in status.
   if (response.status === 400 || response.status === 422) {
     const fallbackResponse = await createContact({ email: normalizedEmail, unsubscribed: false });
     if (fallbackResponse.ok) {
-      return { accepted: true, alreadySubscribed: false };
+      return completeSignup(false);
     }
 
     const fallbackError = await fallbackResponse.text().catch(() => "");
     if (isDuplicateContact(fallbackResponse.status, fallbackError)) {
-      return { accepted: true, alreadySubscribed: true };
+      return completeSignup(true);
     }
 
     const audienceId = await findAudienceId().catch(() => null);
     if (audienceId) {
       const audienceResponse = await createContact({ email: normalizedEmail, unsubscribed: false, audience_id: audienceId });
       if (audienceResponse.ok) {
-        return { accepted: true, alreadySubscribed: false };
+        return completeSignup(false);
       }
 
       const audienceError = await audienceResponse.text().catch(() => "");
       if (isDuplicateContact(audienceResponse.status, audienceError)) {
-        return { accepted: true, alreadySubscribed: true };
+        return completeSignup(true);
       }
 
       console.warn("[Launch updates] Resend contact creation failed", {

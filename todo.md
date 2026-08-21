@@ -649,3 +649,7 @@
 - [x] Retry the persistent minimal contact-write failure against the authenticated Resend account's existing audience without exposing audience or contact data.
 - [x] Anchor the Coming Soon successful-signup confirmation within the existing signup area so it does not move the logo, heading, or category content.
 - [x] Validate empty, error, and successful signup states at mobile and desktop widths, publish, verify the standard domain, and synchronize GitHub.
+- [x] Trace why a successful Coming Soon signup is absent from the Admin Pre-Launch Email recipient list without exposing contact data.
+- [x] Align the public signup write destination with the Admin Pre-Launch Email recipient source and add regression coverage.
+- [x] Validate the synchronized public signup and admin recipient visibility, publish, verify both routes, and synchronize GitHub.
+- [x] Add successful Coming Soon contacts to the existing Tradebilia Pre-Launch Updates Resend segment and list admin recipients from that segment rather than custom properties.
