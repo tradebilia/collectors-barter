@@ -20,11 +20,14 @@ describe("Animated Tradebilia wordmark", () => {
     expect(logoSource).toContain('preserveAspectRatio="xMinYMid meet"');
   });
 
-  it("keeps the enlarged category label clear of TRADE and constrains long labels", () => {
-    expect(logoSource).toContain("const LARGE_CATEGORY_WORD_X = 580;");
-    expect(logoSource).toContain("const LARGE_CATEGORY_TEXT_LENGTH = 680;");
-    expect(logoSource).toContain('lengthAdjust={categoryTextLength ? "spacingAndGlyphs" : undefined}');
-    expect(logoSource).toContain("currentCategory.name.length >= 10");
+  it("keeps Global Search category rotations on one fixed-size, fixed-baseline track", () => {
+    const globalSearchSource = fs.readFileSync(path.join(projectRoot, "client/src/pages/SearchResults.tsx"), "utf8");
+    expect(logoSource).toContain("const GLOBAL_SEARCH_CATEGORY_WORD_X = 480;");
+    expect(logoSource).toContain("fixedCategoryMetrics?: boolean;");
+    expect(logoSource).toContain("fixedCategoryMetrics = false,");
+    expect(logoSource).not.toContain("textLength={");
+    expect(logoSource).not.toContain("lengthAdjust={");
+    expect(globalSearchSource).toContain('<AnimatedLogoSmall70 fontSize={96} fixedCategoryMetrics />');
   });
 
   it("keeps the larger 125-unit mark scoped to the Coming Soon hero", () => {
