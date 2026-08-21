@@ -53,9 +53,29 @@ describe("Coming Soon launch updates", () => {
     });
   });
 
+  it("retries one metadata-rejected contact creation without optional properties", async () => {
+    process.env.RESEND_CONTACTS_API_KEY = "test-key";
+    const fetcher = vi
+      .fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ message: "Custom properties are not accepted." }), { status: 422 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ id: "contact-id" }), { status: 201 }));
+
+    await expect(subscribeToLaunchUpdates("collector@example.com", fetcher)).resolves.toEqual({
+      accepted: true,
+      alreadySubscribed: false,
+    });
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(fetcher.mock.calls[1]?.[1]).toEqual(expect.objectContaining({
+      body: JSON.stringify({ email: "collector@example.com", unsubscribed: false }),
+    }));
+  });
+
   it("does not mask unrelated contact validation failures as successful signup", async () => {
     process.env.RESEND_CONTACTS_API_KEY = "test-key";
-    const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify({ message: "Email is invalid." }), { status: 422 }));
+    const fetcher = vi
+      .fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ message: "Email is invalid." }), { status: 422 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ message: "Email is invalid." }), { status: 422 }));
 
     await expect(subscribeToLaunchUpdates("collector@example.com", fetcher)).rejects.toThrow("We could not save your email right now.");
   });

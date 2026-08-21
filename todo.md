@@ -638,3 +638,8 @@
 - [x] Validate the repaired signup flow with privacy-safe checks, publish, verify the standard domain, and synchronize GitHub.
 - [x] Keep the Coming Soon heading, category divider, signup controls, and parchment content fixed when an error message is displayed.
 - [x] Replace raw server validation payloads with a concise friendly email-validation message in the Coming Soon signup form.
+- [x] Capture and classify the sanitized live Resend Contacts provider rejection behind the persistent Coming Soon signup failure.
+- [x] Correct the production contact-write path for the identified provider rejection and add targeted regression coverage.
+- [x] Validate the corrected public signup behavior with privacy-safe checks, publish, verify the standard domain, and synchronize GitHub.
+- [x] Retry a rejected metadata-bearing Resend contact write once with the required email and unsubscribed fields only, without sending mail or exposing contact data.
+- [x] Record only sanitized provider status and error classification when the live contact-write path still fails.
