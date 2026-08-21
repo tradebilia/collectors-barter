@@ -24,7 +24,7 @@ export default function ComingSoon() {
     <main className="relative min-h-screen overflow-hidden bg-[#332218] text-[#2b2119]">
       <div
         className="absolute inset-0 bg-cover bg-center"
-        style={{ backgroundImage: "url('/manus-storage/tradebilia-coming-soon-graded-collectibles-workbench-autograph_280c52fe.png')" }}
+        style={{ backgroundImage: "url('/manus-storage/tradebilia-coming-soon-scattered-mixed-grade-workbench_e2671caa.png')" }}
         aria-hidden="true"
       />
       <div className="absolute inset-0 bg-[#24160f]/10" aria-hidden="true" />
