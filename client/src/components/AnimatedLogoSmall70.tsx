@@ -66,8 +66,9 @@ const AnimatedLogoSmall70 = ({
 
   const currentCategory = categories[index];
   const isLargeWordmark = fontSize >= LARGE_WORDMARK_FONT_SIZE;
+  const categoryGap = currentCategory.name === "BILIA" ? fontSize * 0.04 : fontSize * 0.22;
   const categoryWordX = centerLockup
-    ? Math.ceil(132 + wordmarkTextWidth + fontSize * 0.22)
+    ? Math.ceil(132 + wordmarkTextWidth + categoryGap)
     : fixedCategoryMetrics
       ? GLOBAL_SEARCH_CATEGORY_WORD_X
     : isLargeWordmark

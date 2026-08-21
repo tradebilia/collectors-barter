@@ -598,3 +598,8 @@
 - [x] Center the enlarged animated lockup between the parchment top and The Collectors Trading Exchange text, and remove the Collector's Workbench utility label.
 - [x] Reposition the Coming Soon email field and Notify me button together within the parchment without overlapping surrounding workbench objects.
 - [x] Validate the revised Coming Soon parchment composition at mobile and desktop widths, publish, verify the standard domain, and synchronize GitHub.
+- [x] Correct the animated BILIA handoff so TRADEBILIA forms with continuous normal letter spacing while retaining a slight gap before category words.
+- [x] Move the Coming Soon exchange text, headline, supporting copy, category grid, and signup upward so the email controls remain clear of the parchment pegs.
+- [x] Replace the Coming Soon supporting line with stronger collector-focused copy.
+- [x] Replace the workbench background with a caption-free graded-collectibles composition covering every category, including graded VHS/DVD movie items and a recognizable famous-person autograph presentation.
+- [x] Validate the refined Coming Soon animation and composition at mobile and desktop widths, publish, verify the standard domain, and synchronize GitHub.

@@ -24,7 +24,7 @@ export default function ComingSoon() {
     <main className="relative min-h-screen overflow-hidden bg-[#332218] text-[#2b2119]">
       <div
         className="absolute inset-0 bg-cover bg-center"
-        style={{ backgroundImage: "url('/manus-storage/tradebilia-coming-soon-dense-category-workbench-caption-free_614a7212.png')" }}
+        style={{ backgroundImage: "url('/manus-storage/tradebilia-coming-soon-graded-collectibles-workbench-autograph_280c52fe.png')" }}
         aria-hidden="true"
       />
       <div className="absolute inset-0 bg-[#24160f]/10" aria-hidden="true" />
@@ -35,25 +35,26 @@ export default function ComingSoon() {
             <AnimatedLogoSmall70 fontSize={171} wheelScale={1.95} wheelOffsetX={-55} wheelOffsetY={-30} dividerScale={1.35} dividerOffsetY={-20} wordmarkColor="#2b2119" neutralCategoryColor="#2b2119" wheelStrokeWidth={6} dividerStrokeWidth={3.6} fixedCategoryMetrics centerLockup centeredViewBoxWidth={2400} />
           </div>
 
-          <div className="mx-auto mt-2 max-w-lg sm:mt-10">
-            <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-[#7b4f2f] sm:text-[10px]">The Collectors Trading Exchange</p>
-            <h1 className="mt-2 font-serif text-4xl leading-[0.92] tracking-[-0.04em] text-[#2b2119] sm:mt-3 sm:text-6xl">Every collection<br />has a next chapter.</h1>
-            <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-[#4d3c2e]/80 sm:mt-5 sm:text-base">A deliberate place to discover, value, and trade across all ten collector categories.</p>
-            <div aria-label="Collections on the exchange" className="mx-auto mt-2 grid max-w-md grid-cols-2 gap-x-5 gap-y-1 border-y border-[#6c503c]/20 py-2 text-[8px] font-bold uppercase tracking-[0.12em] text-[#4d3c2e]/72 sm:mt-6 sm:max-w-2xl sm:grid-cols-5 sm:gap-x-3 sm:gap-y-1.5 sm:py-3 sm:text-[9px]">
-              <span>Comics</span>
-              <span>Sports Cards</span>
-              <span>Vintage Toys</span>
-              <span>Video Games</span>
-              <span>Stamps</span>
-              <span>Coins</span>
-              <span>Pokémon</span>
-              <span>Movies</span>
-              <span>Autographs</span>
-              <span>Disney Pins</span>
+          <div className="-translate-y-1 sm:-translate-y-8">
+            <div className="mx-auto mt-2 max-w-lg sm:mt-10">
+              <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-[#7b4f2f] sm:text-[10px]">The Collectors Trading Exchange</p>
+              <h1 className="mt-2 font-serif text-4xl leading-[0.92] tracking-[-0.04em] text-[#2b2119] sm:mt-3 sm:text-6xl">Every collection<br />has a next chapter.</h1>
+              <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-[#4d3c2e]/80 sm:mt-5 sm:text-base">A home for remarkable collectibles—and the collectors who know their worth.</p>
+              <div aria-label="Collections on the exchange" className="mx-auto mt-2 grid max-w-md grid-cols-2 gap-x-5 gap-y-1 border-y border-[#6c503c]/20 py-2 text-[8px] font-bold uppercase tracking-[0.12em] text-[#4d3c2e]/72 sm:mt-6 sm:max-w-2xl sm:grid-cols-5 sm:gap-x-3 sm:gap-y-1.5 sm:py-3 sm:text-[9px]">
+                <span>Comics</span>
+                <span>Sports Cards</span>
+                <span>Vintage Toys</span>
+                <span>Video Games</span>
+                <span>Stamps</span>
+                <span>Coins</span>
+                <span>Pokémon</span>
+                <span>Movies</span>
+                <span>Autographs</span>
+                <span>Disney Pins</span>
+              </div>
             </div>
-          </div>
 
-          <div className="mx-auto mt-0 max-w-md sm:mt-0">
+            <div className="mx-auto mt-0 max-w-md sm:mt-0">
             {submitted ? (
               <div className="border border-[#6c503c]/35 bg-[#fbf3e4]/70 px-6 py-6 shadow-sm">
                 <CheckCircle2 className="mx-auto h-9 w-9 text-[#1f4d98]" aria-hidden="true" />
@@ -79,6 +80,7 @@ export default function ComingSoon() {
                 {subscribeMutation.isError && <p role="alert" className="mt-3 text-sm font-medium text-[#aa3046]">{subscribeMutation.error.message}</p>}
               </form>
             )}
+            </div>
           </div>
 
         </div>
