@@ -61,6 +61,10 @@ When and only when a future billing-activation project intentionally switches Tr
 
 The site home page and account, sign-in, password-reset, privacy, and terms routes remain technical entry points so a visitor can navigate, authenticate, or understand the service. They do not grant access to member marketplace functions. The future restriction screen deliberately contains no checkout, pricing form, card field, or payment action.
 
+## Current Release Verification
+
+After the future-access-policy checkpoint, the standard public Global Search page and an individual item-detail page were both verified while `billingMode` remains `free_launch`. Each continued to load normally, confirming that the future restriction is dormant and has not changed current browsing access. No billing setting, plan-feature entry, or complimentary membership grant was changed during verification.
+
 ## Complimentary Membership Grants
 
 Only the configured **Tradebilia owner** can grant **Complimentary Membership** to a selected member. The grant associates the member with the future Subscription Membership plan while recording the membership status as `complimentary`. During Free Launch, every member remains open to every current feature regardless of that status. If a later, separately approved subscription activation occurs, a complimentary member receives the enabled Subscription-plan features without a payment requirement. Other administrators cannot decide, grant, revoke, or retrieve the complimentary-membership control.
