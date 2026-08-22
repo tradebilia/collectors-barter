@@ -65,6 +65,8 @@ The site home page and account, sign-in, password-reset, privacy, and terms rout
 
 After the future-access-policy checkpoint, the standard public Global Search page and an individual item-detail page were both verified while `billingMode` remains `free_launch`. Each continued to load normally, confirming that the future restriction is dormant and has not changed current browsing access. No billing setting, plan-feature entry, or complimentary membership grant was changed during verification.
 
+After the member-selected payment-term checkpoint, the authenticated Admin browser initially displayed the preceding Billing bundle without the new payment-terms planning card. After deployment propagation and a refreshed Admin view, the public Billing panel displayed the **$1 per month** and **$10 per year** options, stated that both provide identical access, and retained the disabled Checkout, card collection, and Stripe billing indicators. No plan, membership, or billing setting was changed during verification.
+
 ## Complimentary Membership Grants
 
 Only the configured **Tradebilia owner** can grant **Complimentary Membership** to a selected member. The grant associates the member with the future Subscription Membership plan while recording the membership status as `complimentary`. During Free Launch, every member remains open to every current feature regardless of that status. If a later, separately approved subscription activation occurs, a complimentary member receives the enabled Subscription-plan features without a payment requirement. Other administrators cannot decide, grant, revoke, or retrieve the complimentary-membership control.
