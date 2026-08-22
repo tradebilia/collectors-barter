@@ -12,6 +12,25 @@
  * (These are the standard OpenID Connect scopes available to all LinkedIn apps)
  */
 import { ENV } from "./env";
+import { classifyApiFailure, recordApiFailure } from "../apiHealth";
+
+const fetch = async (input: RequestInfo | URL, init: RequestInit = {}): Promise<Response> => {
+  try {
+    return await globalThis.fetch(input, {
+      ...init,
+      signal: init.signal ?? AbortSignal.timeout(15_000),
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "LinkedIn request failed";
+    await recordApiFailure({
+      provider: "LinkedIn",
+      operation: "account_linking_or_profile_lookup",
+      failureClass: classifyApiFailure({ message }),
+      safeMessage: message,
+    });
+    throw error;
+  }
+};
 
 const LINKEDIN_AUTH_URL = "https://www.linkedin.com/oauth/v2/authorization";
 const LINKEDIN_TOKEN_URL = "https://www.linkedin.com/oauth/v2/accessToken";

@@ -1,3 +1,5 @@
+import { classifyApiFailure, recordApiFailure } from "./apiHealth";
+
 type DhlAddress = {
   addressLocality?: string;
   postalCode?: string;
@@ -67,16 +69,28 @@ export async function lookupDhlTracking(trackingNumberInput: string) {
   const trackingNumber = normalizeDhlTrackingNumber(trackingNumberInput);
   const apiKey = process.env.DHL_API_KEY;
   if (!apiKey) throw new Error("DHL API key is not configured.");
-  const response = await fetch(
-    `${DHL_UNIFIED_TRACKING_URL}?trackingNumber=${encodeURIComponent(trackingNumber)}`,
-    {
-      headers: {
-        "DHL-API-Key": apiKey,
-        Accept: "application/json",
+  let response: Response;
+  try {
+    response = await fetch(
+      `${DHL_UNIFIED_TRACKING_URL}?trackingNumber=${encodeURIComponent(trackingNumber)}`,
+      {
+        headers: {
+          "DHL-API-Key": apiKey,
+          Accept: "application/json",
+        },
+        signal: AbortSignal.timeout(15_000),
       },
-      signal: AbortSignal.timeout(15_000),
-    },
-  );
+    );
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "DHL request failed";
+    await recordApiFailure({
+      provider: "DHL",
+      operation: "tracking_lookup",
+      failureClass: classifyApiFailure({ message }),
+      safeMessage: message,
+    });
+    throw error;
+  }
   const payload = await response.json().catch(() => null) as DhlTrackingResponse | null;
 
   if (!response.ok || !payload) {
