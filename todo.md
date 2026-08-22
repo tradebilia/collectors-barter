@@ -731,3 +731,5 @@
 - [x] Validate email markup and preview behavior, checkpoint, synchronize GitHub, and document the completed email-header refinement without sending a new email.
 - [x] Diagnose and repair the selected Pre-Launch recipient preparation failure without sending an unapproved email.
 - [x] Add regression coverage, validate selected-recipient preparation, checkpoint, synchronize GitHub, and verify the repaired resend workflow.
+- [x] Run a non-sending live Resend diagnostic for repeated selected-recipient preparation failure and correct the verified provider integration issue.
+- [x] Add regression coverage, validate the repaired no-send preparation path, checkpoint, synchronize GitHub, and document the exact provider cause.

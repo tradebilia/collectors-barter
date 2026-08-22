@@ -4,6 +4,7 @@ import { classifyApiFailure, recordApiFailure } from "./apiHealth";
 
 const RESEND_API_BASE = "https://api.resend.com";
 const PRE_LAUNCH_SEGMENT_NAME = "Tradebilia Pre-Launch Updates";
+const PRE_LAUNCH_DELIVERY_SEGMENT_PREFIX = "Tradebilia Pre-Launch Send";
 const FROM_ADDRESS = "Tradebilia <noreply@tradebilia.com>";
 const SITE_URL = "https://tradebilia.manus.space";
 const EMAIL_LOGO_URL = `https://assets.tradebilia.com/tradebilia_final_transparent_8a1981e6.svg`;
@@ -67,6 +68,43 @@ async function enrollContactsInSegment(
     if (results.some(result => !result)) {
       throw new Error("Unable to prepare all opted-in recipients for delivery.");
     }
+  }
+}
+
+async function listSegmentContacts(fetcher: FetchLike, apiKey: string, segmentId: string) {
+  const contacts: ResendContact[] = [];
+  let after: string | undefined;
+  for (;;) {
+    const query = new URLSearchParams({ limit: "100" });
+    if (after) query.set("after", after);
+    const response = await fetcher(`${RESEND_API_BASE}/segments/${encodeURIComponent(segmentId)}/contacts?${query}`, {
+      headers: headers(apiKey),
+      signal: AbortSignal.timeout(10_000),
+    }) as ResendFetchResponse;
+    if (!response.ok) throw new Error("Unable to retrieve the selected Pre-Launch Email recipients.");
+    const payload = await response.json();
+    const page = Array.isArray(payload?.data) ? payload.data as ResendContact[] : [];
+    contacts.push(...page);
+    if (!payload?.has_more || page.length === 0) break;
+    after = page[page.length - 1]?.id;
+    if (!after) break;
+  }
+  return contacts;
+}
+
+async function clearSegmentContacts(fetcher: FetchLike, apiKey: string, segmentId: string) {
+  const existingContacts = await listSegmentContacts(fetcher, apiKey, segmentId);
+  for (let start = 0; start < existingContacts.length; start += SEGMENT_ENROLLMENT_CONCURRENCY) {
+    const batch = existingContacts.slice(start, start + SEGMENT_ENROLLMENT_CONCURRENCY);
+    const results = await Promise.all(batch.map(async contact => {
+      const removal = await fetcher(`${RESEND_API_BASE}/contacts/${encodeURIComponent(contact.id)}/segments/${encodeURIComponent(segmentId)}`, {
+        method: "DELETE",
+        headers: headers(apiKey),
+        signal: AbortSignal.timeout(10_000),
+      }) as ResendFetchResponse;
+      return removal.ok || removal.status === 404;
+    }));
+    if (results.some(result => !result)) throw new Error("Unable to clear the prior Pre-Launch Email recipient selection.");
   }
 }
 
@@ -143,6 +181,30 @@ export async function ensurePreLaunchSegment(fetcher: FetchLike, apiKey: string)
   return created.id as string;
 }
 
+async function getReusableDeliverySegment(fetcher: FetchLike, apiKey: string) {
+  const response = await fetcher(`${RESEND_API_BASE}/segments?limit=100`, {
+    headers: headers(apiKey),
+    signal: AbortSignal.timeout(10_000),
+  }) as ResendFetchResponse;
+  if (!response.ok) throw new Error("Unable to prepare the selected Pre-Launch Email recipients.");
+  const segments = (await response.json())?.data;
+  const existing = Array.isArray(segments)
+    ? segments.find((segment: any) => typeof segment?.name === "string" && segment.name.startsWith(PRE_LAUNCH_DELIVERY_SEGMENT_PREFIX))
+    : null;
+  if (existing?.id) return existing.id as string;
+
+  const create = await fetcher(`${RESEND_API_BASE}/segments`, {
+    method: "POST",
+    headers: headers(apiKey),
+    body: JSON.stringify({ name: PRE_LAUNCH_DELIVERY_SEGMENT_PREFIX }),
+    signal: AbortSignal.timeout(10_000),
+  }) as ResendFetchResponse;
+  if (!create.ok) throw new Error("Unable to prepare the selected Pre-Launch Email recipients.");
+  const payload = await create.json();
+  if (!payload?.id) throw new Error("The selected recipient group could not be prepared.");
+  return payload.id as string;
+}
+
 export async function getPreLaunchRecipients(fetcher: FetchLike = fetch): Promise<PreLaunchRecipient[]> {
   const apiKey = getResendContactsApiKey();
   if (!apiKey) throw new Error("Pre-Launch Email is not configured yet.");
@@ -199,18 +261,9 @@ export async function sendPreLaunchUpdate(
   const selectedContacts = requestedIds ? contacts.filter(contact => requestedIds.has(contact.id)) : contacts;
   if (selectedContacts.length === 0) return { recipientCount: 0, broadcastId: null as string | null };
 
-  const segmentName = `Tradebilia Pre-Launch Send ${new Date().toISOString()}`;
-  const segmentResponse = await fetcher(`${RESEND_API_BASE}/segments`, {
-    method: "POST",
-    headers: headers(broadcastApiKey),
-    body: JSON.stringify({ name: segmentName }),
-    signal: AbortSignal.timeout(10_000),
-  }) as ResendFetchResponse;
-  if (!segmentResponse.ok) throw new Error("Unable to prepare the selected Pre-Launch Email recipients.");
-  const segmentPayload = await segmentResponse.json();
-  if (!segmentPayload?.id) throw new Error("The selected recipient group could not be prepared.");
-  const segmentId = segmentPayload.id as string;
-  await enrollContactsInSegment(selectedContacts, segmentId, fetcher, broadcastApiKey);
+  const segmentId = await getReusableDeliverySegment(fetcher, contactsApiKey);
+  await clearSegmentContacts(fetcher, contactsApiKey, segmentId);
+  await enrollContactsInSegment(selectedContacts, segmentId, fetcher, contactsApiKey);
 
   const broadcast = await fetcher(`${RESEND_API_BASE}/broadcasts`, {
     method: "POST",
@@ -231,7 +284,7 @@ export async function sendPreLaunchUpdate(
   const sentAt = new Date().toISOString();
   const propertyResponse = await fetcher(`${RESEND_API_BASE}/contact-properties`, {
     method: "POST",
-    headers: headers(broadcastApiKey),
+    headers: headers(contactsApiKey),
     body: JSON.stringify({ key: LAST_SENT_PROPERTY, type: "string", fallback_value: "" }),
     signal: AbortSignal.timeout(10_000),
   }) as ResendFetchResponse;
@@ -241,7 +294,7 @@ export async function sendPreLaunchUpdate(
     await Promise.all(selectedContacts.map(async contact => {
       const update = await fetcher(`${RESEND_API_BASE}/contacts/${encodeURIComponent(contact.id)}`, {
         method: "PATCH",
-        headers: headers(broadcastApiKey),
+        headers: headers(contactsApiKey),
         body: JSON.stringify({ properties: { [LAST_SENT_PROPERTY]: sentAt } }),
         signal: AbortSignal.timeout(10_000),
       }) as ResendFetchResponse;

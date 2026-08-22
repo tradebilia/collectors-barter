@@ -11,3 +11,7 @@ Sources: [Resend Create Broadcast](https://resend.com/docs/api-reference/broadca
 The Admin Pre-Launch recipient grid uses the Resend contact property `tradebilia_prelaunch_last_sent_at`. Resend documents that an existing contact can be updated by ID with a `PATCH` request containing a `properties` map, and that a custom property must already exist with a valid type before it can be set.
 
 Sources: [Resend Update Contact](https://resend.com/docs/api-reference/contacts/update-contact) and [Resend Contact Properties](https://resend.com/docs/dashboard/audiences/properties).
+
+## Selected-recipient delivery segment diagnosis
+
+On 2026-08-22, a non-sending live diagnostic verified that the contacts-scoped credential can list segments, while the send-only broadcast credential cannot create or list them. The account reported a three-segment plan limit when the application attempted to create another temporary selected-recipient segment. Selected Pre-Launch sends therefore reuse one existing delivery segment, clear its previous membership through Resend's contact-segment removal endpoint, add the newly selected opted-in contacts, and then submit the broadcast with the send-only credential. No diagnostic broadcast was sent.

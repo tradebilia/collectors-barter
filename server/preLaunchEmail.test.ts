@@ -31,8 +31,8 @@ describe("Pre-Launch Email", () => {
     const result = await sendPreLaunchUpdate({ subject: "A Tradebilia update", message: "We are getting closer." }, async (url, init) => {
       requests.push({ url: String(url), init });
       if (String(url).startsWith("https://api.resend.com/segments/segment-1/contacts?")) return response(true, { has_more: false, data: [{ id: "contact-1", email: "member@example.com", unsubscribed: false }] }) as any;
-      if (String(url).startsWith("https://api.resend.com/segments?")) return response(true, { data: [{ id: "segment-1", name: "Tradebilia Pre-Launch Updates" }] }) as any;
-      if (String(url) === "https://api.resend.com/segments") return response(true, { id: "selected-segment" }) as any;
+      if (String(url).startsWith("https://api.resend.com/segments/selected-segment/contacts?")) return response(true, { has_more: false, data: [] }) as any;
+      if (String(url).startsWith("https://api.resend.com/segments?")) return response(true, { data: [{ id: "segment-1", name: "Tradebilia Pre-Launch Updates" }, { id: "selected-segment", name: "Tradebilia Pre-Launch Send" }] }) as any;
       if (String(url).includes("/contacts/contact-1/segments/selected-segment")) return response(true, { id: "selected-segment" }) as any;
       if (String(url) === "https://api.resend.com/broadcasts") return response(true, { id: "broadcast-1" }) as any;
       if (String(url) === "https://api.resend.com/contact-properties") return response(false, {}, 409) as any;
@@ -53,8 +53,8 @@ describe("Pre-Launch Email", () => {
     const result = await sendPreLaunchUpdate({ subject: "Batch test", message: "Enrollment test" }, async (url) => {
       const target = String(url);
       if (target.startsWith("https://api.resend.com/segments/segment-1/contacts?")) return response(true, { has_more: false, data: recipients }) as any;
-      if (target.startsWith("https://api.resend.com/segments?")) return response(true, { data: [{ id: "segment-1", name: "Tradebilia Pre-Launch Updates" }] }) as any;
-      if (target === "https://api.resend.com/segments") return response(true, { id: "selected-segment" }) as any;
+      if (target.startsWith("https://api.resend.com/segments/selected-segment/contacts?")) return response(true, { has_more: false, data: [] }) as any;
+      if (target.startsWith("https://api.resend.com/segments?")) return response(true, { data: [{ id: "segment-1", name: "Tradebilia Pre-Launch Updates" }, { id: "selected-segment", name: "Tradebilia Pre-Launch Send" }] }) as any;
       if (target.includes("/segments/selected-segment")) {
         activeEnrollments += 1;
         peakEnrollments = Math.max(peakEnrollments, activeEnrollments);

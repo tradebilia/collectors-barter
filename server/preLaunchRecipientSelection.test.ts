@@ -12,7 +12,9 @@ describe("Pre-Launch recipient selection", () => {
     expect(serviceSource).toContain("tradebilia_prelaunch_last_sent_at");
     expect(serviceSource).toContain("method: \"PATCH\"");
     expect(serviceSource).toContain("getResendBroadcastApiKey");
-    expect(serviceSource).toContain("headers(broadcastApiKey)");
+    expect(serviceSource).toContain("headers(contactsApiKey)");
+    expect(serviceSource).toContain("getReusableDeliverySegment");
+    expect(serviceSource).toContain("clearSegmentContacts");
   });
 
   it("keeps recipient selection and latest-only handoff visible in the Admin tab", () => {
