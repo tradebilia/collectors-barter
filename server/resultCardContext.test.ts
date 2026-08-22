@@ -23,4 +23,8 @@ describe("result card context", () => {
     expect(categoryPage).toContain('"space-y-1 p-1.5 text-[#153746]"');
     expect(categoryPage).not.toContain('isSportsCardsPage ? "p-1.5 text-[#153746]" : "p-5"');
   });
+
+  it("does not place a divider beneath category-card images", () => {
+    expect(categoryPage).not.toContain("overflow-hidden border-b border-current/10");
+  });
 });

@@ -1450,7 +1450,7 @@ export default function CategoryPage() {
                         <OnlineIndicator sellerId={listing.ownerId} />
                       </div>
                     )}
-                    <Link href={`/listings/${listing.id}`} className={`relative overflow-hidden border-b border-current/10 ${viewMode === "list" ? "" : "block"} cursor-pointer hover:opacity-90 transition ${viewMode === "list" ? "w-32 flex-shrink-0" : ""} ${isSportsCardsPage ? "aspect-[7/9]" : "aspect-[4/5]"} bg-white p-0`}>
+                    <Link href={`/listings/${listing.id}`} className={`relative overflow-hidden ${viewMode === "list" ? "" : "block"} cursor-pointer hover:opacity-90 transition ${viewMode === "list" ? "w-32 flex-shrink-0" : ""} ${isSportsCardsPage ? "aspect-[7/9]" : "aspect-[4/5]"} bg-white p-0`}>
                       <div className="h-full">
                         <img
                           src={resolveTradebiliaListingImage({ title: listing.title, category: listing.category, primaryPhotoUrl: listing.primaryPhotoUrl })}

@@ -701,3 +701,5 @@
 - [x] Add regression coverage, validate responsive category/global layouts, checkpoint, synchronize GitHub, and verify the public release.
 - [x] Standardize every category grid card so its title starts immediately below the image divider while a consistent fixed title area aligns the details panel.
 - [x] Add regression coverage, validate the all-category spacing standard on desktop and mobile, checkpoint, synchronize GitHub, and verify the public release.
+- [x] Remove image-bottom divider lines from all category grid cards while retaining title and details-panel alignment.
+- [x] Add regression coverage, validate the adjusted category-card layout, checkpoint, synchronize GitHub, and verify the public release.
