@@ -203,7 +203,6 @@ export function TopBar({
         )}
         </div>
       </div>
-      {!isAuthenticated && <SignInModal isOpen={showSignInModal} onClose={() => setShowSignInModal(false)} />}
     </div>
   );
 }

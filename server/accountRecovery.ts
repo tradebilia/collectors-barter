@@ -33,13 +33,13 @@ export function timingSafeTextEquals(left: string, right: string): boolean {
   return timingSafeEqual(leftBytes, rightBytes);
 }
 
-export function isRecoveryRequestAllowed(key: string, now = Date.now()): boolean {
+export function isRecoveryRequestAllowed(key: string, now = Date.now(), limit = RECOVERY_REQUEST_LIMIT): boolean {
   const existing = requestWindows.get(key);
   if (!existing || existing.resetAt <= now) {
     requestWindows.set(key, { count: 1, resetAt: now + RECOVERY_REQUEST_WINDOW_MS });
     return true;
   }
-  if (existing.count >= RECOVERY_REQUEST_LIMIT) return false;
+  if (existing.count >= limit) return false;
   existing.count += 1;
   return true;
 }

@@ -54,6 +54,17 @@ export const CountrySelect: React.FC<CountrySelectProps> = ({
     setSearchTerm(e.target.value);
   };
 
+  const handleSearchKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Escape') {
+      setIsOpen(false);
+      return;
+    }
+    if (event.key === 'Enter' && filteredCountries[0]) {
+      event.preventDefault();
+      handleSelect(filteredCountries[0]);
+    }
+  };
+
   return (
     <div ref={dropdownRef} className="relative w-full">
       {/* Trigger Button */}
@@ -61,6 +72,9 @@ export const CountrySelect: React.FC<CountrySelectProps> = ({
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         disabled={disabled}
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
+        aria-controls="country-select-listbox"
         className="w-full px-3 py-2 text-left bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-between"
       >
         <span className="text-gray-700">{value || placeholder}</span>
@@ -75,15 +89,17 @@ export const CountrySelect: React.FC<CountrySelectProps> = ({
             <input
               ref={inputRef}
               type="text"
+              aria-label="Search countries"
               placeholder="Search countries..."
               value={searchTerm}
               onChange={handleSearchChange}
+              onKeyDown={handleSearchKeyDown}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
           {/* Country List */}
-          <div className="max-h-64 overflow-y-auto">
+          <div id="country-select-listbox" role="listbox" aria-label="Countries" className="max-h-64 overflow-y-auto">
             {filteredCountries.length === 0 ? (
               <div className="px-3 py-2 text-gray-500 text-sm">No countries found</div>
             ) : (
@@ -96,6 +112,8 @@ export const CountrySelect: React.FC<CountrySelectProps> = ({
                     <button
                       type="button"
                       onClick={() => handleSelect(country)}
+                      role="option"
+                      aria-selected={value === country}
                       className={`w-full px-3 py-2 text-left hover:bg-blue-50 focus:outline-none focus:bg-blue-50 ${
                         value === country ? 'bg-blue-100 font-semibold' : ''
                       }`}

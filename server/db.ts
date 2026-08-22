@@ -3888,10 +3888,9 @@ export async function getDeletedInquiries(userId: number) {
 
 export async function emptyDeletedInquiries(userId: number) {
   const db = await requireDb();
-  
-  // Delete all deleted inquiries for this user
-  await db
-    .delete(itemInquiries)
+  const deletedInquiryIds = await db
+    .select({ id: itemInquiries.id })
+    .from(itemInquiries)
     .where(and(
       or(
         eq(itemInquiries.recipientId, userId),
@@ -3899,6 +3898,13 @@ export async function emptyDeletedInquiries(userId: number) {
       ),
       isNotNull(itemInquiries.deletedAt)
     ));
+  if (deletedInquiryIds.length === 0) return;
+
+  const inquiryIds = deletedInquiryIds.map((inquiry) => inquiry.id);
+  await db.transaction(async (tx) => {
+    await tx.delete(inquiryReplies).where(inArray(inquiryReplies.inquiryId, inquiryIds));
+    await tx.delete(itemInquiries).where(inArray(itemInquiries.id, inquiryIds));
+  });
 }
 
 
@@ -4367,13 +4373,12 @@ export async function deleteDraftsOlderThan(db: any, cutoffDate: Date): Promise<
 
   const draftIds = oldDrafts.map((d: any) => d.id);
 
-  // Delete photos associated with these drafts
-  await db.delete(listingPhotos)
-    .where(inArray(listingPhotos.listingId, draftIds));
-
-  // Delete the drafts
-  await db.delete(draftListings)
-    .where(inArray(draftListings.id, draftIds));
+  await db.transaction(async (tx: any) => {
+    await tx.delete(listingPhotos)
+      .where(inArray(listingPhotos.listingId, draftIds));
+    await tx.delete(draftListings)
+      .where(inArray(draftListings.id, draftIds));
+  });
 
   return draftIds.length;
 }

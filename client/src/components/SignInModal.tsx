@@ -22,13 +22,24 @@ export function SignInModal({ isOpen, onClose }: SignInModalProps) {
   const utils = trpc.useUtils();
   const signinMutation = trpc.auth.signin.useMutation();
   const formRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
 
   // Reset scroll position when modal opens to ensure heading is visible
   useEffect(() => {
     if (isOpen && formRef.current) {
       formRef.current.scrollTop = 0;
+      closeButtonRef.current?.focus();
     }
   }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [isOpen, onClose]);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -75,14 +86,18 @@ export function SignInModal({ isOpen, onClose }: SignInModalProps) {
       />
 
       {/* Modal */}
-      <Card className="relative z-[10000] w-full max-w-sm bg-white shadow-lg rounded-lg">
+      <Card role="dialog" aria-modal="true" aria-labelledby="signin-modal-title" className="relative z-[10000] w-full max-w-sm bg-white shadow-lg rounded-lg">
         <div ref={formRef} className="p-6 flex flex-col max-h-[90vh] overflow-y-auto">
-          <h2 className="text-2xl font-bold mb-6 flex-shrink-0">Sign In</h2>
+          <div className="flex items-center justify-between gap-4 mb-6 flex-shrink-0">
+            <h2 id="signin-modal-title" className="text-2xl font-bold">Sign In</h2>
+            <button ref={closeButtonRef} type="button" onClick={onClose} className="text-slate-500 hover:text-slate-900" aria-label="Close sign in dialog">Close</button>
+          </div>
 
           <form onSubmit={handleSignIn} className="space-y-4 flex-1">
             <div>
-              <label className="block text-sm font-medium mb-1">Username</label>
+              <label htmlFor="signin-username" className="block text-sm font-medium mb-1">Username</label>
               <Input
+                id="signin-username"
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
@@ -92,8 +107,9 @@ export function SignInModal({ isOpen, onClose }: SignInModalProps) {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">Password</label>
+              <label htmlFor="signin-password" className="block text-sm font-medium mb-1">Password</label>
               <Input
+                id="signin-password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
