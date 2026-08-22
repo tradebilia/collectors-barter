@@ -18,4 +18,9 @@ describe("result card context", () => {
     expect(categoryPage).toContain("min-h-[2rem] line-clamp-2");
     expect(globalResults).toContain("min-h-[2rem] line-clamp-2");
   });
+
+  it("uses the compact Sports Cards content spacing for every category grid variant", () => {
+    expect(categoryPage).toContain('"space-y-1 p-1.5 text-[#153746]"');
+    expect(categoryPage).not.toContain('isSportsCardsPage ? "p-1.5 text-[#153746]" : "p-5"');
+  });
 });

@@ -1459,7 +1459,7 @@ export default function CategoryPage() {
                         />
                       </div>
                     </Link>
-                      <CardContent className={`${viewMode === "list" ? "p-3 min-w-0 flex flex-col" : `space-y-1 ${isSportsCardsPage ? "p-1.5 text-[#153746]" : "p-5"}`}`}>
+                      <CardContent className={`${viewMode === "list" ? "p-3 min-w-0 flex flex-col" : "space-y-1 p-1.5 text-[#153746]"}`}>
                       {viewMode === "list" ? (
                         <>
                           <div className="flex-1 min-w-0 flex flex-col">
