@@ -637,10 +637,6 @@ export default function AdminDashboard() {
               <CloudUpload className="h-4 w-4" />
               Media Storage
             </TabsTrigger>
-            <TabsTrigger value="conventions" className="flex items-center justify-center gap-1.5 text-xs font-medium py-2.5 whitespace-nowrap">
-              <Calendar className="h-4 w-4" />
-              Conventions
-            </TabsTrigger>
             <TabsTrigger value="modlog" className="flex items-center justify-center gap-1.5 text-xs font-medium py-2.5 whitespace-nowrap">
               <ClipboardList className="h-4 w-4" />
               Mod Log
@@ -693,15 +689,15 @@ export default function AdminDashboard() {
             </div>
             <Card>
               <CardHeader>
-                <CardTitle>Platform Overview</CardTitle>
+                <CardTitle>Marketplace ratios</CardTitle>
                 <CardDescription>
-                  Key metrics and statistics about the Tradebilia platform
+                  Derived from the current member, listing, trade, and inventory-value totals.
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="text-sm text-muted-foreground">
-                  Platform overview data will be displayed here with charts and detailed analytics.
-                </div>
+              <CardContent className="grid gap-4 sm:grid-cols-3">
+                <div className="rounded-lg border p-4"><p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Average listing value</p><p className="mt-2 text-2xl font-semibold">{statsQuery.data?.totalListings ? `$${Math.round(statsQuery.data.totalValue / statsQuery.data.totalListings).toLocaleString()}` : "—"}</p></div>
+                <div className="rounded-lg border p-4"><p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Listings per member</p><p className="mt-2 text-2xl font-semibold">{statsQuery.data?.totalMembers ? (statsQuery.data.totalListings / statsQuery.data.totalMembers).toFixed(1) : "—"}</p></div>
+                <div className="rounded-lg border p-4"><p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Trade proposals per member</p><p className="mt-2 text-2xl font-semibold">{statsQuery.data?.totalMembers ? (statsQuery.data.totalTrades / statsQuery.data.totalMembers).toFixed(1) : "—"}</p></div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -1106,21 +1102,16 @@ export default function AdminDashboard() {
               <CardHeader>
                 <CardTitle>Platform Settings</CardTitle>
                 <CardDescription>
-                  Configure platform parameters and features
+                  Fee and commission controls will be added only if Tradebilia adopts a fee-based model.
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="text-sm text-muted-foreground">
-                  <p>Platform settings interface coming soon. You'll be able to:</p>
-                  <ul className="list-disc list-inside mt-2 space-y-1">
-                    <li>Configure platform parameters</li>
-                    <li>Manage email templates</li>
-                    <li>Set trading fees or commissions</li>
-                    <li>Configure notification settings</li>
-                  </ul>
+                  <p>No platform fees are active. This area is reserved for future fee-based settings and other explicitly approved platform controls.</p>
                 </div>
               </CardContent>
             </Card>
+            <ConventionsAdminTab />
           </TabsContent>
 
           {/* Reported Users Tab */}
@@ -2092,7 +2083,7 @@ function ConventionsAdminTab() {
       setScrapeResult(result);
       pendingQuery.refetch();
     },
-    onError: (e) => alert('Scrape failed: ' + e.message),
+    onError: (e) => toast.error(`Convention refresh failed: ${e.message}`),
   });
 
   const pending = pendingQuery.data ?? [];
@@ -2127,7 +2118,17 @@ function ConventionsAdminTab() {
         <h3 className="text-lg font-semibold">Pending Convention Submissions</h3>
         <span className="text-sm text-gray-500">{pending.length} pending</span>
       </div>
-      {pending.length === 0 ? (
+      {pendingQuery.isLoading ? (
+        <div className="text-center py-12 text-gray-400">
+          <Calendar className="w-12 h-12 mx-auto mb-3 opacity-40" />
+          <p>Loading pending convention submissions…</p>
+        </div>
+      ) : pendingQuery.isError ? (
+        <div className="text-center py-12 text-rose-600">
+          <Calendar className="w-12 h-12 mx-auto mb-3 opacity-40" />
+          <p>Pending convention submissions could not be loaded.</p>
+        </div>
+      ) : pending.length === 0 ? (
         <div className="text-center py-12 text-gray-400">
           <Calendar className="w-12 h-12 mx-auto mb-3 opacity-40" />
           <p>No pending convention submissions.</p>
@@ -2374,7 +2375,11 @@ function SupportTicketsTab() {
                     variant="destructive"
                     size="sm"
                     className="h-8 text-xs"
-                    onClick={() => deleteTicketMutation.mutate({ ticketId: selectedTicket.id })}
+                    onClick={() => {
+                      if (window.confirm("Delete this support ticket and all of its replies permanently? This cannot be undone.")) {
+                        deleteTicketMutation.mutate({ ticketId: selectedTicket.id });
+                      }
+                    }}
                   >
                     <Trash2 className="h-3 w-3" />
                   </Button>

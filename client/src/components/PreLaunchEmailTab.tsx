@@ -12,6 +12,7 @@ const DEFAULT_SUBJECT = "An update from Tradebilia";
 
 export function PreLaunchEmailTab() {
   const recipientsQuery = trpc.admin.getPreLaunchRecipients.useQuery();
+  const broadcastsQuery = trpc.admin.getPreLaunchBroadcastStatuses.useQuery();
   const [subject, setSubject] = useState(DEFAULT_SUBJECT);
   const [message, setMessage] = useState("");
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -19,9 +20,10 @@ export function PreLaunchEmailTab() {
   const sendMutation = trpc.admin.sendPreLaunchUpdate.useMutation({
     onSuccess: result => {
       toast.success(result.recipientCount > 0
-        ? `Pre-Launch Email sent to ${result.recipientCount} opted-in recipient${result.recipientCount === 1 ? "" : "s"}.`
+        ? `Resend accepted the broadcast for ${result.recipientCount} opted-in recipient${result.recipientCount === 1 ? "" : "s"}.`
         : "There are no opted-in Pre-Launch Email recipients yet.");
       setConfirmOpen(false);
+      broadcastsQuery.refetch();
     },
     onError: error => toast.error(error.message),
   });
@@ -61,6 +63,20 @@ export function PreLaunchEmailTab() {
             <Button type="button" variant="outline" onClick={() => setPreviewOpen(true)} disabled={!subject.trim() || !message.trim()} className="border-white/20 bg-white/5 text-white hover:bg-white/10 hover:text-white"><Eye className="mr-2 h-4 w-4" />Preview</Button>
             <Button type="button" onClick={() => setConfirmOpen(true)} disabled={!canPrepareSend} className="bg-[#7f31ff] text-white hover:bg-[#8d46ff]"><Send className="mr-2 h-4 w-4" />Review &amp; Send to {recipients.length || 0}</Button>
           </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Recent delivery handoff</CardTitle>
+          <CardDescription>“Sent” means Resend accepted the broadcast. Inbox placement, spam filtering, bounces, and opens are tracked in Resend’s Broadcasts dashboard.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {broadcastsQuery.isLoading ? <p className="text-sm text-muted-foreground">Checking recent broadcast status…</p> : broadcastsQuery.isError ? <p className="text-sm text-rose-700">Recent broadcast status could not be loaded.</p> : (broadcastsQuery.data ?? []).length === 0 ? <p className="text-sm text-muted-foreground">No Pre-Launch broadcasts have been recorded yet.</p> : (
+            <div className="space-y-2">
+              {broadcastsQuery.data?.map((broadcast: { id: string; status: string | null; sentAt: string | null; createdAt: string | null }) => <div key={broadcast.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border p-3 text-sm"><span className="font-medium">{broadcast.status ?? "unknown"}</span><span className="text-xs text-muted-foreground">{broadcast.sentAt ? `Sent ${new Date(broadcast.sentAt).toLocaleString()}` : broadcast.createdAt ? `Created ${new Date(broadcast.createdAt).toLocaleString()}` : "Timestamp unavailable"}</span></div>)}
+            </div>
+          )}
         </CardContent>
       </Card>
 

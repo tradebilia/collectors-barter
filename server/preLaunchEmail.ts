@@ -157,6 +157,27 @@ export async function getPreLaunchRecipients(fetcher: FetchLike = fetch): Promis
   }
 }
 
+export async function getPreLaunchBroadcastStatuses(fetcher: FetchLike = fetch) {
+  const apiKey = getResendApiKey();
+  if (!apiKey) throw new Error("Pre-Launch Email is not configured yet.");
+  const response = await fetcher(`${RESEND_API_BASE}/broadcasts?limit=20`, {
+    headers: headers(apiKey),
+    signal: AbortSignal.timeout(10_000),
+  }) as ResendFetchResponse;
+  if (!response.ok) throw new Error("Unable to retrieve Pre-Launch Email delivery status.");
+  const payload = await response.json();
+  const broadcasts = Array.isArray(payload?.data) ? payload.data : [];
+  return broadcasts
+    .filter((broadcast: any) => typeof broadcast?.name === "string" && broadcast.name.startsWith("Tradebilia pre-launch update"))
+    .slice(0, 5)
+    .map((broadcast: any) => ({
+      id: typeof broadcast.id === "string" ? broadcast.id : "unknown",
+      status: typeof broadcast.status === "string" ? broadcast.status : null,
+      sentAt: typeof broadcast.sent_at === "string" ? broadcast.sent_at : null,
+      createdAt: typeof broadcast.created_at === "string" ? broadcast.created_at : null,
+    }));
+}
+
 export async function sendPreLaunchUpdate(
   input: { subject: string; message: string },
   fetcher: FetchLike = fetch,

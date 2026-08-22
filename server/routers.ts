@@ -105,10 +105,11 @@ import { customAuth } from "./_core/customAuth";
 import { getOrCreateDirectMessageThread, persistDirectMessage } from "./directMessagePersistence";
 import { users, userProfiles, listings, deletedAccounts, tradeProposals, tradeMessages, tradeReviews, watchlistEntries, draftListings, passwordResetTokens, referralRequests, userFollows, directMessageThreads, directMessages, tradePayments, tradeActivityLog, emailTemplates, accountApprovalReviews, apiHealthEvents } from "../drizzle/schema";
 import { eq, sql, desc, or, inArray, and } from "drizzle-orm";
+import { alias } from "drizzle-orm/mysql-core";
 import { TRPCError } from "@trpc/server";
 import { ONE_YEAR_MS } from "@shared/const";
 import { subscribeToLaunchUpdates } from "./launchUpdates";
-import { getPreLaunchRecipients, sendPreLaunchUpdate } from "./preLaunchEmail";
+import { getPreLaunchBroadcastStatuses, getPreLaunchRecipients, sendPreLaunchUpdate } from "./preLaunchEmail";
 import { validateFirstTimeSetupRequirements } from "./accountSetupRequirements";
 import { PASSWORD_RECOVERY_TOKEN_TTL_MS, createOpaqueRecoveryToken, createSixDigitCode, hashRecoveryToken, isRecoveryRequestAllowed, isRecoveryTokenExpired, normalizeRecoveryEmail, timingSafeTextEquals } from "./accountRecovery";
 import { createPendingEmailHistoryApproval, requireMarketplaceApproval } from "./accountApproval";
@@ -2584,11 +2585,13 @@ export const appRouter = router({
     getAllTrades: protectedProcedure.query(async ({ ctx }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
       const db = await requireDb();
+      const recipientUsers = alias(users, "adminTradeRecipients");
       const allTrades = await db.select({
         id: tradeProposals.id,
         requesterId: tradeProposals.requesterId,
         requesterUsername: users.username,
         recipientId: tradeProposals.recipientId,
+        recipientUsername: recipientUsers.username,
         requestedListingId: tradeProposals.requestedListingId,
         listingTitle: listings.title,
         listingCategory: listings.category,
@@ -2598,6 +2601,7 @@ export const appRouter = router({
         completedAt: tradeProposals.completedAt,
       }).from(tradeProposals)
         .leftJoin(users, eq(tradeProposals.requesterId, users.id))
+        .leftJoin(recipientUsers, eq(tradeProposals.recipientId, recipientUsers.id))
         .leftJoin(listings, eq(tradeProposals.requestedListingId, listings.id))
         .orderBy(desc(tradeProposals.createdAt));
       return allTrades;
@@ -2652,6 +2656,10 @@ export const appRouter = router({
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
       return getPreLaunchRecipients();
     }),
+    getPreLaunchBroadcastStatuses: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      return getPreLaunchBroadcastStatuses();
+    }),
     sendPreLaunchUpdate: protectedProcedure
       .input(z.object({ subject: z.string().trim().min(1).max(160), message: z.string().trim().min(1).max(5000) }))
       .mutation(async ({ ctx, input }) => {
@@ -2682,24 +2690,24 @@ export const appRouter = router({
         if (unEmailedReferrals.length === 0) {
           return { success: true, emailsSent: 0, skipped: referrals.length };
         }
-        // Send emails one by one
-        let sent = 0;
         const sentIds: number[] = [];
-        for (const referral of unEmailedReferrals) {
-          const ok = await sendReferralInviteEmail({
-            recipientEmail: (referral as any).collectorEmail,
-            recipientName: (referral as any).collectorName,
-            subject: input.subject,
-            body: input.message,
-          });
-          if (ok) {
-            sent++;
-            sentIds.push(referral.id);
-          }
+        const concurrency = 5;
+        for (let start = 0; start < unEmailedReferrals.length; start += concurrency) {
+          const batch = unEmailedReferrals.slice(start, start + concurrency);
+          const outcomes = await Promise.all(batch.map(async referral => ({
+            id: referral.id,
+            sent: await sendReferralInviteEmail({
+              recipientEmail: (referral as any).collectorEmail,
+              recipientName: (referral as any).collectorName,
+              subject: input.subject,
+              body: input.message,
+            }),
+          })));
+          sentIds.push(...outcomes.filter(outcome => outcome.sent).map(outcome => outcome.id));
         }
         // Mark successfully-sent referrals as emailed
         await markReferralsAsEmailed(sentIds);
-        return { success: true, emailsSent: sent, skipped: referrals.length - unEmailedReferrals.length };
+        return { success: true, emailsSent: sentIds.length, skipped: referrals.length - unEmailedReferrals.length };
       }),
     removeReferralByEmail: protectedProcedure
       .input(z.object({ referralId: z.number(), userId: z.number() }))
