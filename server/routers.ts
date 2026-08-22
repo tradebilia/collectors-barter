@@ -263,6 +263,10 @@ export const appRouter = router({
         }),
       )
       .mutation(async ({ input, ctx }) => {
+        const clientAddress = ctx.req.ip ?? ctx.req.socket.remoteAddress ?? "unknown";
+        if (!isRecoveryRequestAllowed(`signup:${clientAddress}`, Date.now(), 5)) {
+          throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: "Please wait before creating another account." });
+        }
         if (!isValidUsername(input.username)) {
           throw new Error("Username must be 3-32 characters, alphanumeric with underscores/hyphens");
         }
@@ -430,6 +434,10 @@ export const appRouter = router({
         }),
       )
       .mutation(async ({ input, ctx }) => {
+        const clientAddress = ctx.req.ip ?? ctx.req.socket.remoteAddress ?? "unknown";
+        if (!isRecoveryRequestAllowed(`signin:${clientAddress}:${input.username.toLowerCase()}`, Date.now(), 10)) {
+          throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: "Too many sign-in attempts. Please wait and try again." });
+        }
         // NOTE: do not log password/hash details — sensitive material was
         // previously written to server logs here.
         const user = await getUserByUsername(input.username);
@@ -1019,6 +1027,7 @@ export const appRouter = router({
           itemsReceived: z.object({ email: z.boolean(), text: z.boolean() }),
           feedbackReceived: z.object({ email: z.boolean(), text: z.boolean() }),
           systemUpdates: z.object({ email: z.boolean(), text: z.boolean() }),
+          messages: z.object({ email: z.boolean(), text: z.boolean() }),
           marketingEmails: z.object({ email: z.boolean(), text: z.boolean() }),
         }),
       )
@@ -1035,6 +1044,7 @@ export const appRouter = router({
             itemsReceived: input.itemsReceived,
             feedbackReceived: input.feedbackReceived,
             systemUpdates: input.systemUpdates,
+            messages: input.messages,
             marketingEmails: input.marketingEmails,
           }),
         }).where(eq(userProfiles.userId, ctx.user.id));
@@ -3513,6 +3523,18 @@ export const appRouter = router({
           throw new TRPCError({
             code: "FORBIDDEN",
             message: "Payment verification is limited to the two participants in this trade.",
+          });
+        }
+
+        const reusedTransaction = await db
+          .select({ proposalId: tradePayments.proposalId })
+          .from(tradePayments)
+          .where(eq(tradePayments.transactionId, input.transactionId))
+          .limit(1);
+        if (reusedTransaction[0] && reusedTransaction[0].proposalId !== input.proposalId) {
+          throw new TRPCError({
+            code: "CONFLICT",
+            message: "This PayPal transaction is already associated with a different trade.",
           });
         }
 

@@ -889,10 +889,18 @@ export default function AccountSettings() {
                   <div className="border-t border-slate-200 pt-4">
                     <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                       <h3 className="font-semibold text-red-900 mb-2">Danger Zone</h3>
-                      <Button variant="destructive" className="rounded-lg">
-                        Delete Account
+                      <Button
+                        variant="destructive"
+                        className="rounded-lg"
+                        onClick={() => setConfirmationDialog({
+                          isOpen: true,
+                          title: "Account deletion review",
+                          message: "Self-service account deletion is not available while active trades, audit records, and account-safety obligations are protected. Please contact Tradebilia support to request a reviewed account closure.",
+                        })}
+                      >
+                        Request Account Deletion Review
                       </Button>
-                      <p className="text-xs text-red-800 mt-2">This action cannot be undone. All your data will be permanently deleted.</p>
+                      <p className="text-xs text-red-800 mt-2">A reviewed closure request avoids deleting active trade records or required account history unexpectedly.</p>
                     </div>
                   </div>
 

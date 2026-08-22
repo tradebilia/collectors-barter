@@ -1776,13 +1776,12 @@ export async function bulkDeleteListings(
     );
   }
 
-    // Atomic delete: photos + listings together. Without a transaction, a
-  // failure between the two deletes left listings with missing photos or
-  // half-deleted state.
-  await db.transaction(async tx => {
-    await tx.delete(listingPhotos).where(inArray(listingPhotos.listingId, input.listingIds));
-    await tx.delete(listings).where(inArray(listings.id, input.listingIds));
-  });
+  // Keep bulk-deleted listings recoverable for the Inventory Undo action.
+  // Photos stay attached to the inactive listing and are restored with it.
+  await db
+    .update(listings)
+    .set({ isActive: 0 })
+    .where(inArray(listings.id, input.listingIds));
 
   return getDashboardData(user);
 }
@@ -2065,19 +2064,41 @@ export async function updateDraft(
     })
     .where(eq(draftListings.id, input.draftId));
 
-  await db.delete(listingPhotos).where(eq(listingPhotos.listingId, input.draftId));
+  await db.transaction(async tx => {
+    const storedPhotos = await tx
+      .select({ imageUrl: listingPhotos.imageUrl })
+      .from(listingPhotos)
+      .where(eq(listingPhotos.listingId, input.draftId));
+    const retainedUrls = new Set(
+      input.photos.filter(photo => !photo.contentBase64 && photo.imageUrl).map(photo => photo.imageUrl!),
+    );
 
-  for (let index = 0; index < input.photos.length; index += 1) {
-    const photo = input.photos[index]!;
-    const uploaded = await uploadImage("drafts", user.id, photo);
-    await db.insert(listingPhotos).values({
-      listingId: input.draftId,
-      fileKey: uploaded.key,
-      imageUrl: uploaded.url,
-      altText: `${input.title.trim()} draft photo ${index + 1}`,
-      sortOrder: index,
-    });
-  }
+    for (const storedPhoto of storedPhotos) {
+      if (!retainedUrls.has(storedPhoto.imageUrl)) {
+        await tx.delete(listingPhotos).where(
+          and(eq(listingPhotos.listingId, input.draftId), eq(listingPhotos.imageUrl, storedPhoto.imageUrl)),
+        );
+      }
+    }
+
+    for (let index = 0; index < input.photos.length; index += 1) {
+      const photo = input.photos[index]!;
+      if (photo.contentBase64) {
+        const uploaded = await uploadImage("drafts", user.id, photo);
+        await tx.insert(listingPhotos).values({
+          listingId: input.draftId,
+          fileKey: uploaded.key,
+          imageUrl: uploaded.url,
+          altText: `${input.title.trim()} draft photo ${index + 1}`,
+          sortOrder: index,
+        });
+      } else if (photo.imageUrl) {
+        await tx.update(listingPhotos)
+          .set({ sortOrder: index })
+          .where(and(eq(listingPhotos.listingId, input.draftId), eq(listingPhotos.imageUrl, photo.imageUrl)));
+      }
+    }
+  });
 
   return { draftId: input.draftId };
 }
@@ -2657,10 +2678,22 @@ export async function updateListing(
         }
       }
     } else {
-      // Non-admins can add new photos AND update sortOrder of existing ones (for cover selection)
-      // but cannot delete photos
+      // Members can remove their own photos, reorder retained photos, and add new ones.
       const newPhotos = input.photos.filter(p => p.contentBase64);
       const existingPhotos = input.photos.filter(p => !p.contentBase64 && p.imageUrl);
+
+      const storedPhotos = await tx
+        .select({ imageUrl: listingPhotos.imageUrl })
+        .from(listingPhotos)
+        .where(eq(listingPhotos.listingId, input.listingId));
+      const retainedUrls = new Set(existingPhotos.map(photo => photo.imageUrl!));
+      for (const storedPhoto of storedPhotos) {
+        if (!retainedUrls.has(storedPhoto.imageUrl)) {
+          await tx.delete(listingPhotos).where(
+            and(eq(listingPhotos.listingId, input.listingId), eq(listingPhotos.imageUrl, storedPhoto.imageUrl)),
+          );
+        }
+      }
 
       // Update sortOrder for existing photos to save cover photo selection
       for (let i = 0; i < existingPhotos.length; i++) {
@@ -3855,10 +3888,9 @@ export async function getDeletedInquiries(userId: number) {
 
 export async function emptyDeletedInquiries(userId: number) {
   const db = await requireDb();
-  
-  // Delete all deleted inquiries for this user
-  await db
-    .delete(itemInquiries)
+  const deletedInquiryIds = await db
+    .select({ id: itemInquiries.id })
+    .from(itemInquiries)
     .where(and(
       or(
         eq(itemInquiries.recipientId, userId),
@@ -3866,6 +3898,13 @@ export async function emptyDeletedInquiries(userId: number) {
       ),
       isNotNull(itemInquiries.deletedAt)
     ));
+  if (deletedInquiryIds.length === 0) return;
+
+  const inquiryIds = deletedInquiryIds.map((inquiry) => inquiry.id);
+  await db.transaction(async (tx) => {
+    await tx.delete(inquiryReplies).where(inArray(inquiryReplies.inquiryId, inquiryIds));
+    await tx.delete(itemInquiries).where(inArray(itemInquiries.id, inquiryIds));
+  });
 }
 
 
@@ -4334,13 +4373,12 @@ export async function deleteDraftsOlderThan(db: any, cutoffDate: Date): Promise<
 
   const draftIds = oldDrafts.map((d: any) => d.id);
 
-  // Delete photos associated with these drafts
-  await db.delete(listingPhotos)
-    .where(inArray(listingPhotos.listingId, draftIds));
-
-  // Delete the drafts
-  await db.delete(draftListings)
-    .where(inArray(draftListings.id, draftIds));
+  await db.transaction(async (tx: any) => {
+    await tx.delete(listingPhotos)
+      .where(inArray(listingPhotos.listingId, draftIds));
+    await tx.delete(draftListings)
+      .where(inArray(draftListings.id, draftIds));
+  });
 
   return draftIds.length;
 }

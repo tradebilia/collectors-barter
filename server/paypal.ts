@@ -10,6 +10,7 @@
 
 import axios from "axios";
 import { isStagingSafetyEnabled, stagingSafetyReason } from "./_core/stagingSafety";
+import { classifyApiFailure, recordApiFailure } from "./apiHealth";
 
 // PayPal API base URLs
 const PAYPAL_BASE_URL = (process.env.PAYPAL_ENV ?? process.env.PAYPAL_MODE) === "live"
@@ -46,6 +47,7 @@ export async function getPayPalAccessToken(): Promise<string> {
         Authorization: `Basic ${credentials}`,
         "Content-Type": "application/x-www-form-urlencoded",
       },
+      timeout: 15_000,
     }
   );
 
@@ -109,6 +111,7 @@ export async function verifyPayPalTransaction(
           transaction_id: transactionId,
           fields: "all",
         },
+        timeout: 15_000,
       }
     );
 
@@ -186,6 +189,13 @@ export async function verifyPayPalTransaction(
     return { found: true, verified: true, transaction: details };
   } catch (err: unknown) {
     const error = err as { response?: { status?: number; data?: unknown }; message?: string };
+    await recordApiFailure({
+      provider: "PayPal",
+      operation: "transaction_verification",
+      failureClass: classifyApiFailure({ statusCode: error?.response?.status, message: error?.message }),
+      statusCode: error?.response?.status,
+      safeMessage: error?.message ?? "PayPal verification failed",
+    });
     if (error?.response?.status === 401) {
       // Force token refresh on next call
       _cachedToken = null;

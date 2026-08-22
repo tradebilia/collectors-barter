@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { OtpVerification } from "@/components/OtpVerification";
+import { trpc } from "@/lib/trpc";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertCircle } from "lucide-react";
@@ -10,6 +11,10 @@ export function VerifyAccount() {
   const [verificationStep, setVerificationStep] = useState<"email" | "phone" | "complete">("email");
   const [error, setError] = useState<string>();
   const [isLoading, setIsLoading] = useState(false);
+  const sendEmailCodeMutation = trpc.auth.sendEmailCode.useMutation();
+  const verifyEmailCodeMutation = trpc.auth.verifyEmailCode.useMutation();
+  const sendPhoneCodeMutation = trpc.auth.sendPhoneCode.useMutation();
+  const verifyPhoneCodeMutation = trpc.auth.verifyPhoneCode.useMutation();
 
   // Get email and phone from query params or session
   const params = new URLSearchParams(location.split("?")[1]);
@@ -20,9 +25,8 @@ export function VerifyAccount() {
     setIsLoading(true);
     setError(undefined);
     try {
-      // Call tRPC to verify email OTP
-      // await trpc.auth.verifyEmailOtp.mutate({ email, otp });
-      setVerificationStep("phone");
+      await verifyEmailCodeMutation.mutateAsync({ code: otp });
+      setVerificationStep(phone ? "phone" : "complete");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Verification failed");
     } finally {
@@ -34,8 +38,8 @@ export function VerifyAccount() {
     setIsLoading(true);
     setError(undefined);
     try {
-      // Call tRPC to verify phone OTP
-      // await trpc.auth.verifyPhoneOtp.mutate({ phone, otp });
+      if (!phone) throw new Error("Your phone number is missing. Return to account setup and try again.");
+      await verifyPhoneCodeMutation.mutateAsync({ phone, code: otp });
       setVerificationStep("complete");
       // Redirect to welcome page after 2 seconds
       setTimeout(() => setLocation("/welcome?new=true"), 2000);
@@ -48,8 +52,8 @@ export function VerifyAccount() {
 
   const handleResendEmail = async () => {
     try {
-      // Call tRPC to resend email OTP
-      // await trpc.auth.resendEmailOtp.mutate({ email });
+      setError(undefined);
+      await sendEmailCodeMutation.mutateAsync({});
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to resend code");
     }
@@ -57,8 +61,9 @@ export function VerifyAccount() {
 
   const handleResendPhone = async () => {
     try {
-      // Call tRPC to resend phone OTP
-      // await trpc.auth.resendPhoneOtp.mutate({ phone });
+      if (!phone) throw new Error("Your phone number is missing. Return to account setup and try again.");
+      setError(undefined);
+      await sendPhoneCodeMutation.mutateAsync({ phone });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to resend code");
     }
