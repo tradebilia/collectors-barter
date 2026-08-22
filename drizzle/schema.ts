@@ -751,7 +751,7 @@ export const membershipPlans = mysqlTable("membershipPlans", {
 	code: varchar({ length: 64 }).notNull(),
 	name: varchar({ length: 120 }).notNull(),
 	description: text(),
-	billingInterval: mysqlEnum(['free', 'month', 'year']).default('free').notNull(),
+	billingInterval: mysqlEnum(['free', 'subscription']).default('free').notNull(),
 	isActive: tinyint().default(1).notNull(),
 	isFreeLaunch: tinyint().default(0).notNull(),
 	stripePriceId: varchar({ length: 255 }),
@@ -814,7 +814,7 @@ export const userMemberships = mysqlTable("userMemberships", {
 
 export const billingSettings = mysqlTable("billingSettings", {
 	id: int().autoincrement().notNull().primaryKey(),
-	billingMode: mysqlEnum(['free_launch', 'preview', 'live']).default('free_launch').notNull(),
+	billingMode: mysqlEnum(['free_launch', 'subscription']).default('free_launch').notNull(),
 	stripeBillingEnabled: tinyint().default(0).notNull(),
 	updatedBy: int().references(() => users.id),
 	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),

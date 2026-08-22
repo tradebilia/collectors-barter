@@ -1511,7 +1511,7 @@ export default function AccountSettings() {
                     </div>
                     <div className="inline-flex w-fit items-center gap-2 rounded-full border border-emerald-200 bg-white/85 px-3 py-1.5 text-sm font-medium text-emerald-800">
                       <CheckCircle2 className="h-4 w-4" />
-                      Active at no charge
+                      {membershipQuery.data?.membership.isComplimentary ? "Complimentary access" : "Active at no charge"}
                     </div>
                   </div>
                 </div>
@@ -1520,7 +1520,7 @@ export default function AccountSettings() {
                   <div className="grid gap-4 sm:grid-cols-3">
                     <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
                       <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Plan</p>
-                      <p className="mt-1 font-semibold text-slate-900">Free Launch Access</p>
+                      <p className="mt-1 font-semibold text-slate-900">{membershipQuery.data?.membership.planName ?? "Free Launch Access"}</p>
                     </div>
                     <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
                       <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Payment</p>
@@ -1528,7 +1528,13 @@ export default function AccountSettings() {
                     </div>
                     <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
                       <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Billing status</p>
-                      <p className="mt-1 font-semibold text-slate-900">Billing not active</p>
+                      <p className="mt-1 font-semibold text-slate-900">
+                        {membershipQuery.data?.membership.isComplimentary
+                          ? "Complimentary access granted"
+                          : membershipQuery.data?.billing.freeLaunchOverride !== false
+                            ? "Billing not active"
+                            : "Subscription billing prepared"}
+                      </p>
                     </div>
                   </div>
 
@@ -1537,7 +1543,11 @@ export default function AccountSettings() {
                       <CreditCard className="mt-0.5 h-5 w-5 shrink-0 text-blue-700" />
                       <div>
                         <p className="font-semibold text-slate-900">No payment method is being collected</p>
-                        <p className="mt-1">Tradebilia has not activated subscriptions, checkout, invoices, or card collection. If paid plans are introduced later, you will receive clear notice before any billing change.</p>
+                        <p className="mt-1">
+                          {membershipQuery.data?.membership.isComplimentary
+                            ? "Your complimentary membership is an administrator-granted access status. It does not require a card and does not create a charge."
+                            : "Tradebilia has not activated subscriptions, checkout, invoices, or card collection. If a single subscription option is introduced later, you will receive clear notice before any billing change."}
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -1545,8 +1555,14 @@ export default function AccountSettings() {
                   <div>
                     <div className="flex items-end justify-between gap-4">
                       <div>
-                        <h3 className="font-semibold text-slate-900">Included during free launch</h3>
-                        <p className="mt-1 text-sm text-slate-600">All current Tradebilia features remain available at no charge.</p>
+                        <h3 className="font-semibold text-slate-900">
+                          {membershipQuery.data?.membership.isComplimentary ? "Included with your complimentary membership" : "Included during free launch"}
+                        </h3>
+                        <p className="mt-1 text-sm text-slate-600">
+                          {membershipQuery.data?.membership.isComplimentary
+                            ? "Your administrator-granted access will continue if Tradebilia later offers a Subscription Membership."
+                            : "All current Tradebilia features remain available at no charge."}
+                        </p>
                       </div>
                       {membershipQuery.isLoading && <Loader2 className="h-5 w-5 animate-spin text-slate-400" aria-label="Loading membership access" />}
                     </div>

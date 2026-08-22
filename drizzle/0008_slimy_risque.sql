@@ -1,0 +1,2 @@
+ALTER TABLE `billingSettings` MODIFY COLUMN `billingMode` enum('free_launch','subscription') NOT NULL DEFAULT 'free_launch';--> statement-breakpoint
+ALTER TABLE `membershipPlans` MODIFY COLUMN `billingInterval` enum('free','subscription') NOT NULL DEFAULT 'free';

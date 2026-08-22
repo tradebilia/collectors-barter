@@ -711,6 +711,9 @@
 - [x] Add a member-facing Membership & Billing panel that clearly explains free launch access and collects no payment details.
 - [x] Add an Admin Billing preview with plan/feature settings in inactive billing mode.
 - [x] Add regression coverage, validate the membership foundation, document the inactive Stripe boundary, checkpoint, synchronize GitHub, and verify the release.
+- [x] Simplify future membership choices to Free or a single Subscription plan without enabling billing or payments.
+- [x] Add an administrator-only complimentary membership grant for selected members when subscriptions are active.
+- [x] Update the Profile and Admin Billing interfaces, regression coverage, documentation, checkpoint, GitHub synchronization, and release verification for the simplified model.
 - [x] Restore online/offline member status to Global search-result cards without changing their divider-free aligned layout.
 - [x] Add regression coverage, validate status and alignment, checkpoint, synchronize GitHub, and verify the public release.
 - [x] Conduct a read-only audit of every Admin page tab, control, backing procedure, authorization boundary, loading state, and error path; report only confirmed issues before making repairs.

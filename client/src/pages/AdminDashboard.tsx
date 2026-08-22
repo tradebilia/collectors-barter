@@ -344,10 +344,13 @@ function BillingPreviewTab() {
   const overviewQuery = trpc.billing.getOverview.useQuery(undefined, {
     refetchOnWindowFocus: true,
   });
+  const membersQuery = trpc.billing.getMembers.useQuery(undefined, {
+    refetchOnWindowFocus: true,
+  });
   const updatePlanFeatureMutation = trpc.billing.updatePlanFeature.useMutation({
     onSuccess: async () => {
       await utils.billing.getOverview.invalidate();
-      toast.success("Future plan setting saved. Free-launch access remains open for every member.");
+      toast.success("Future plan setting saved. Free Launch access remains open for every member.");
     },
     onError: (error) => toast.error(error.message || "The plan setting could not be saved."),
   });
@@ -369,7 +372,7 @@ function BillingPreviewTab() {
               <div>
                 <CardTitle>Billing is not active</CardTitle>
                 <CardDescription className="mt-1 max-w-3xl text-slate-700">
-                  Tradebilia is in Free Launch mode. Every current feature is available to every member at no charge, regardless of the future plan matrix below.
+                  Tradebilia is in Free Launch mode. Every current feature is available to every member at no charge. The only future paid option prepared below is one Subscription Membership.
                 </CardDescription>
               </div>
             </div>
@@ -387,9 +390,9 @@ function BillingPreviewTab() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Future plan-to-feature matrix</CardTitle>
+          <CardTitle>Free and Subscription feature matrix</CardTitle>
           <CardDescription>
-            These settings prepare future plans only. Changing a checkbox does not remove access while the Free Launch override is active, and this page has no control to activate billing.
+            These settings prepare Free Launch and one future Subscription Membership only. Changing a checkbox does not remove access while the Free Launch override is active, and this page has no control to activate billing.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -409,7 +412,7 @@ function BillingPreviewTab() {
                       <th key={plan.id} className="min-w-[150px] px-4 py-3 align-top font-semibold text-slate-700">
                         <div>{plan.name}</div>
                         <div className="mt-1 text-xs font-normal text-slate-500">
-                          {plan.isFreeLaunch ? "Active launch plan" : "Future placeholder"}
+                          {plan.isFreeLaunch ? "Active free mode" : "One future paid option"}
                         </div>
                       </th>
                     ))}
@@ -458,6 +461,8 @@ function BillingPreviewTab() {
         </CardContent>
       </Card>
 
+      <ComplimentaryMembershipAccessCard membersQuery={membersQuery} />
+
       <Card className="border-slate-200 bg-slate-50">
         <CardContent className="flex gap-3 pt-6 text-sm leading-6 text-slate-700">
           <CreditCard className="mt-0.5 h-5 w-5 shrink-0 text-slate-500" />
@@ -465,6 +470,134 @@ function BillingPreviewTab() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+function ComplimentaryMembershipAccessCard({ membersQuery }: { membersQuery: any }) {
+  const utils = trpc.useUtils();
+  const [memberToGrant, setMemberToGrant] = useState<any>(null);
+  const [memberToRevoke, setMemberToRevoke] = useState<any>(null);
+  const grantComplimentaryMutation = trpc.billing.grantComplimentaryAccess.useMutation({
+    onSuccess: async () => {
+      await Promise.all([utils.billing.getMembers.invalidate(), utils.billing.getOverview.invalidate()]);
+      setMemberToGrant(null);
+      toast.success("Complimentary access granted. Billing remains inactive.");
+    },
+    onError: (error) => toast.error(error.message || "Complimentary access could not be granted."),
+  });
+  const revokeComplimentaryMutation = trpc.billing.revokeComplimentaryAccess.useMutation({
+    onSuccess: async () => {
+      await Promise.all([utils.billing.getMembers.invalidate(), utils.billing.getOverview.invalidate()]);
+      setMemberToRevoke(null);
+      toast.success("Complimentary access grant removed. Free Launch access remains open for every member.");
+    },
+    onError: (error) => toast.error(error.message || "Complimentary access could not be removed."),
+  });
+
+  return (
+    <>
+      <Card className="border-violet-200 bg-violet-50/30">
+        <CardHeader>
+          <div className="flex gap-3">
+            <div className="rounded-xl bg-violet-600 p-2.5 text-white">
+              <Users className="h-5 w-5" />
+            </div>
+            <div>
+              <CardTitle>Complimentary membership access</CardTitle>
+              <CardDescription className="mt-1 max-w-3xl text-slate-700">
+                Selected members can retain Subscription Membership access at no charge if subscriptions are introduced later. This administrator-only grant does not activate Stripe, collect a card, or charge anyone.
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {membersQuery.isLoading ? (
+            <p className="text-sm text-muted-foreground">Loading members…</p>
+          ) : membersQuery.isError ? (
+            <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+              Member access controls could not be loaded. Billing remains inactive and no membership grant was changed.
+            </div>
+          ) : (
+            <div className="overflow-x-auto rounded-xl border border-violet-100 bg-white">
+              <table className="w-full min-w-[680px] text-sm">
+                <thead className="border-b bg-violet-50/70 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">
+                  <tr>
+                    <th className="px-4 py-3">Tradebilia member</th>
+                    <th className="px-4 py-3">Current access</th>
+                    <th className="px-4 py-3 text-right">Complimentary access</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(membersQuery.data ?? []).map((member: any) => {
+                    const isPending = grantComplimentaryMutation.isPending || revokeComplimentaryMutation.isPending;
+                    return (
+                      <tr key={member.userId} className="border-b last:border-b-0">
+                        <td className="px-4 py-3">
+                          <p className="font-medium text-slate-900">{member.displayName}</p>
+                          {member.username && <p className="mt-0.5 text-xs text-slate-500">@{member.username}</p>}
+                        </td>
+                        <td className="px-4 py-3">
+                          {member.isComplimentary ? (
+                            <Badge className="border border-violet-200 bg-violet-100 text-violet-800 hover:bg-violet-100">Complimentary Membership</Badge>
+                          ) : (
+                            <Badge variant="outline" className="border-slate-200 text-slate-700">{member.planName}</Badge>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          {member.isComplimentary ? (
+                            <Button type="button" size="sm" variant="outline" className="border-violet-200 text-violet-800 hover:bg-violet-50" disabled={isPending} onClick={() => setMemberToRevoke(member)}>
+                              Remove grant
+                            </Button>
+                          ) : (
+                            <Button type="button" size="sm" className="bg-violet-700 text-white hover:bg-violet-800" disabled={isPending} onClick={() => setMemberToGrant(member)}>
+                              Grant complimentary access
+                            </Button>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Dialog open={Boolean(memberToGrant)} onOpenChange={(open) => !open && setMemberToGrant(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Grant complimentary membership?</DialogTitle>
+            <DialogDescription>
+              {memberToGrant?.displayName} will be recorded as a Complimentary Membership member. This does not activate billing, request payment details, or charge the member. The grant will preserve Subscription Membership access if Tradebilia enables subscriptions later.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-3 pt-2">
+            <Button type="button" variant="outline" onClick={() => setMemberToGrant(null)} disabled={grantComplimentaryMutation.isPending}>Cancel</Button>
+            <Button type="button" className="bg-violet-700 text-white hover:bg-violet-800" disabled={grantComplimentaryMutation.isPending} onClick={() => memberToGrant && grantComplimentaryMutation.mutate({ targetUserId: memberToGrant.userId })}>
+              {grantComplimentaryMutation.isPending ? "Granting…" : "Grant access"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={Boolean(memberToRevoke)} onOpenChange={(open) => !open && setMemberToRevoke(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Remove complimentary access?</DialogTitle>
+            <DialogDescription>
+              {memberToRevoke?.displayName} will return to the standard Free Launch record. During Free Launch, this does not remove any current feature access. If subscriptions are introduced later, the member would no longer have a complimentary grant.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-3 pt-2">
+            <Button type="button" variant="outline" onClick={() => setMemberToRevoke(null)} disabled={revokeComplimentaryMutation.isPending}>Cancel</Button>
+            <Button type="button" variant="destructive" disabled={revokeComplimentaryMutation.isPending} onClick={() => memberToRevoke && revokeComplimentaryMutation.mutate({ targetUserId: memberToRevoke.userId })}>
+              {revokeComplimentaryMutation.isPending ? "Removing…" : "Remove grant"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
