@@ -2671,7 +2671,7 @@ export const appRouter = router({
       return getPreLaunchBroadcastStatuses();
     }),
     sendPreLaunchUpdate: protectedProcedure
-      .input(z.object({ subject: z.string().trim().min(1).max(160), message: z.string().trim().min(1).max(5000) }))
+      .input(z.object({ subject: z.string().trim().min(1).max(160), message: z.string().trim().min(1).max(5000), recipientIds: z.array(z.string().min(1)).min(1).max(500) }))
       .mutation(async ({ ctx, input }) => {
         if (ctx.user.role !== 'admin') {
           throw new TRPCError({ code: 'FORBIDDEN', message: 'Only admins can send Pre-Launch Email updates' });

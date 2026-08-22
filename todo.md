@@ -714,6 +714,9 @@
 - [x] Validate profile spacing, checkpoint, synchronize GitHub, and verify the public release.
 - [x] Synchronize every current managed-project fix into the canonical GitHub checkout and verify both working trees and GitHub main are aligned.
 - [x] Document the managed checkpoint naming and Git commit metadata relationship after synchronization.
+- [x] Add selected-recipient resend controls with individual unchecking and per-recipient last-send timestamps to the Admin Pre-Launch Email tab.
+- [x] Limit delivery visibility to the latest handoff and add resend safeguards without altering provider unsubscribe behavior.
+- [x] Add regression coverage, validate Pre-Launch email administration, checkpoint, synchronize GitHub, and report recommendations.
 - [x] Repair Admin API Health retrieval so a healthy empty state is distinguishable from an unavailable request.
 - [x] Complete linked Admin Trade ID navigation and the Pre-Launch email logo divider-to-wordmark spacing refinement.
 - [x] Add regression coverage, validate all combined fixes, checkpoint, synchronize GitHub, and verify the public release.

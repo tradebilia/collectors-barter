@@ -8,6 +8,7 @@ const FROM_ADDRESS = "Tradebilia <noreply@tradebilia.com>";
 const SITE_URL = "https://tradebilia.manus.space";
 const EMAIL_LOGO_URL = `https://assets.tradebilia.com/tradebilia_final_transparent_58812c5a.svg`;
 const SEGMENT_ENROLLMENT_CONCURRENCY = 5;
+const LAST_SENT_PROPERTY = "tradebilia_prelaunch_last_sent_at";
 
 type ResendContact = {
   id: string;
@@ -21,6 +22,7 @@ export type PreLaunchRecipient = {
   id: string;
   email: string;
   createdAt: string | null;
+  lastSentAt: string | null;
 };
 
 type ResendFetchResponse = {
@@ -145,6 +147,7 @@ export async function getPreLaunchRecipients(fetcher: FetchLike = fetch): Promis
       id: contact.id,
       email: contact.email,
       createdAt: contact.created_at ?? null,
+      lastSentAt: typeof contact.properties?.[LAST_SENT_PROPERTY] === "string" ? contact.properties[LAST_SENT_PROPERTY] : null,
     }));
   } catch (error) {
     await recordApiFailure({
@@ -169,7 +172,7 @@ export async function getPreLaunchBroadcastStatuses(fetcher: FetchLike = fetch) 
   const broadcasts = Array.isArray(payload?.data) ? payload.data : [];
   return broadcasts
     .filter((broadcast: any) => typeof broadcast?.name === "string" && broadcast.name.startsWith("Tradebilia pre-launch update"))
-    .slice(0, 5)
+    .slice(0, 1)
     .map((broadcast: any) => ({
       id: typeof broadcast.id === "string" ? broadcast.id : "unknown",
       status: typeof broadcast.status === "string" ? broadcast.status : null,
@@ -179,17 +182,29 @@ export async function getPreLaunchBroadcastStatuses(fetcher: FetchLike = fetch) 
 }
 
 export async function sendPreLaunchUpdate(
-  input: { subject: string; message: string },
+  input: { subject: string; message: string; recipientIds?: string[] },
   fetcher: FetchLike = fetch,
 ) {
   const apiKey = getResendApiKey();
   if (!apiKey) throw new Error("Pre-Launch Email is not configured yet.");
 
   const contacts = await listAllContacts(fetcher, apiKey);
-  if (contacts.length === 0) return { recipientCount: 0, broadcastId: null as string | null };
+  const requestedIds = input.recipientIds ? new Set(input.recipientIds) : null;
+  const selectedContacts = requestedIds ? contacts.filter(contact => requestedIds.has(contact.id)) : contacts;
+  if (selectedContacts.length === 0) return { recipientCount: 0, broadcastId: null as string | null };
 
-  const segmentId = await ensurePreLaunchSegment(fetcher, apiKey);
-  await enrollContactsInSegment(contacts, segmentId, fetcher, apiKey);
+  const segmentName = `Tradebilia Pre-Launch Send ${new Date().toISOString()}`;
+  const segmentResponse = await fetcher(`${RESEND_API_BASE}/segments`, {
+    method: "POST",
+    headers: headers(apiKey),
+    body: JSON.stringify({ name: segmentName }),
+    signal: AbortSignal.timeout(10_000),
+  }) as ResendFetchResponse;
+  if (!segmentResponse.ok) throw new Error("Unable to prepare the selected Pre-Launch Email recipients.");
+  const segmentPayload = await segmentResponse.json();
+  if (!segmentPayload?.id) throw new Error("The selected recipient group could not be prepared.");
+  const segmentId = segmentPayload.id as string;
+  await enrollContactsInSegment(selectedContacts, segmentId, fetcher, apiKey);
 
   const broadcast = await fetcher(`${RESEND_API_BASE}/broadcasts`, {
     method: "POST",
@@ -207,5 +222,25 @@ export async function sendPreLaunchUpdate(
   }) as ResendFetchResponse;
   if (!broadcast.ok) throw new Error("Resend could not deliver the Pre-Launch Email update.");
   const payload = await broadcast.json();
-  return { recipientCount: contacts.length, broadcastId: payload?.id ?? null };
+  const sentAt = new Date().toISOString();
+  const propertyResponse = await fetcher(`${RESEND_API_BASE}/contact-properties`, {
+    method: "POST",
+    headers: headers(apiKey),
+    body: JSON.stringify({ key: LAST_SENT_PROPERTY, type: "string", fallback_value: "" }),
+    signal: AbortSignal.timeout(10_000),
+  }) as ResendFetchResponse;
+  if (!propertyResponse.ok && propertyResponse.status !== 409) {
+    await recordApiFailure({ provider: "Resend", operation: "pre_launch_last_sent_property", failureClass: "upstream", safeMessage: "Pre-Launch recipient timestamp tracking could not be prepared." });
+  } else {
+    await Promise.all(selectedContacts.map(async contact => {
+      const update = await fetcher(`${RESEND_API_BASE}/contacts/${encodeURIComponent(contact.id)}`, {
+        method: "PATCH",
+        headers: headers(apiKey),
+        body: JSON.stringify({ properties: { [LAST_SENT_PROPERTY]: sentAt } }),
+        signal: AbortSignal.timeout(10_000),
+      }) as ResendFetchResponse;
+      if (!update.ok) throw new Error("Unable to record recipient send timestamp.");
+    }));
+  }
+  return { recipientCount: selectedContacts.length, broadcastId: payload?.id ?? null };
 }

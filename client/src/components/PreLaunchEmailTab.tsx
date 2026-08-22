@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { trpc } from "@/lib/trpc";
 import { Eye, Mail, Send, Users } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 const DEFAULT_SUBJECT = "An update from Tradebilia";
@@ -17,6 +17,8 @@ export function PreLaunchEmailTab() {
   const [message, setMessage] = useState("");
   const [previewOpen, setPreviewOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [selectedRecipientIds, setSelectedRecipientIds] = useState<string[]>([]);
+  const [selectionInitialized, setSelectionInitialized] = useState(false);
   const sendMutation = trpc.admin.sendPreLaunchUpdate.useMutation({
     onSuccess: result => {
       toast.success(result.recipientCount > 0
@@ -24,17 +26,25 @@ export function PreLaunchEmailTab() {
         : "There are no opted-in Pre-Launch Email recipients yet.");
       setConfirmOpen(false);
       broadcastsQuery.refetch();
+      recipientsQuery.refetch();
     },
     onError: error => toast.error(error.message),
   });
 
   const recipients = recipientsQuery.data ?? [];
-  const canPrepareSend = recipients.length > 0 && subject.trim().length > 0 && message.trim().length > 0;
+  useEffect(() => {
+    if (!selectionInitialized && recipients.length > 0) {
+      setSelectedRecipientIds(recipients.map(recipient => recipient.id));
+      setSelectionInitialized(true);
+    }
+  }, [recipients, selectionInitialized]);
+  const selectedRecipients = recipients.filter(recipient => selectedRecipientIds.includes(recipient.id));
+  const canPrepareSend = selectedRecipients.length > 0 && subject.trim().length > 0 && message.trim().length > 0;
   const formattedMessage = useMemo(() => message.trim() || "Your update will appear here.", [message]);
 
   const confirmSend = () => {
     if (!canPrepareSend || sendMutation.isPending) return;
-    sendMutation.mutate({ subject, message });
+    sendMutation.mutate({ subject, message, recipientIds: selectedRecipientIds });
   };
 
   return (
@@ -61,7 +71,7 @@ export function PreLaunchEmailTab() {
           </div>
           <div className="flex flex-wrap justify-end gap-2 md:col-span-2">
             <Button type="button" variant="outline" onClick={() => setPreviewOpen(true)} disabled={!subject.trim() || !message.trim()} className="border-white/20 bg-white/5 text-white hover:bg-white/10 hover:text-white"><Eye className="mr-2 h-4 w-4" />Preview</Button>
-            <Button type="button" onClick={() => setConfirmOpen(true)} disabled={!canPrepareSend} className="bg-[#7f31ff] text-white hover:bg-[#8d46ff]"><Send className="mr-2 h-4 w-4" />Review &amp; Send to {recipients.length || 0}</Button>
+            <Button type="button" onClick={() => setConfirmOpen(true)} disabled={!canPrepareSend} className="bg-[#7f31ff] text-white hover:bg-[#8d46ff]"><Send className="mr-2 h-4 w-4" />Review &amp; Send to {selectedRecipients.length || 0}</Button>
           </div>
         </CardContent>
       </Card>
@@ -81,11 +91,11 @@ export function PreLaunchEmailTab() {
       </Card>
 
       <Card>
-        <CardHeader><CardTitle className="text-base">Opted-in recipients</CardTitle><CardDescription>Only Coming Soon contacts that have not unsubscribed are shown here.</CardDescription></CardHeader>
+        <CardHeader><CardTitle className="text-base">Opted-in recipients</CardTitle><CardDescription>Select the collectors for this send. Unchecked recipients remain opted in and can be included in a later resend.</CardDescription></CardHeader>
         <CardContent>
           {recipientsQuery.isLoading ? <p className="text-sm text-muted-foreground">Loading opted-in recipients…</p> : recipients.length === 0 ? <p className="text-sm text-muted-foreground">No one has opted in for pre-launch updates yet.</p> : (
             <div className="max-h-80 overflow-auto rounded-xl border border-border">
-              <table className="w-full text-left text-sm"><thead className="sticky top-0 bg-muted"><tr><th className="px-4 py-3 font-medium">Email</th><th className="px-4 py-3 font-medium">Signed up</th></tr></thead><tbody>{recipients.map(recipient => <tr key={recipient.id} className="border-t border-border"><td className="px-4 py-3">{recipient.email}</td><td className="px-4 py-3 text-muted-foreground">{recipient.createdAt ? new Date(recipient.createdAt).toLocaleString() : "—"}</td></tr>)}</tbody></table>
+              <table className="w-full text-left text-sm"><thead className="sticky top-0 bg-muted"><tr><th className="w-12 px-4 py-3"><input aria-label="Select all recipients" type="checkbox" checked={recipients.length > 0 && selectedRecipientIds.length === recipients.length} onChange={event => setSelectedRecipientIds(event.target.checked ? recipients.map(recipient => recipient.id) : [])} /></th><th className="px-4 py-3 font-medium">Email</th><th className="px-4 py-3 font-medium">Signed up</th><th className="px-4 py-3 font-medium">Last sent</th></tr></thead><tbody>{recipients.map(recipient => <tr key={recipient.id} className="border-t border-border"><td className="px-4 py-3"><input aria-label={`Select ${recipient.email}`} type="checkbox" checked={selectedRecipientIds.includes(recipient.id)} onChange={event => setSelectedRecipientIds(current => event.target.checked ? [...current, recipient.id] : current.filter(id => id !== recipient.id))} /></td><td className="px-4 py-3">{recipient.email}</td><td className="px-4 py-3 text-muted-foreground">{recipient.createdAt ? new Date(recipient.createdAt).toLocaleString() : "—"}</td><td className="px-4 py-3 text-muted-foreground">{recipient.lastSentAt ? new Date(recipient.lastSentAt).toLocaleString() : "Never"}</td></tr>)}</tbody></table>
             </div>
           )}
         </CardContent>
@@ -93,7 +103,7 @@ export function PreLaunchEmailTab() {
 
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}><DialogContent className="max-w-2xl"><DialogHeader><DialogTitle>Email preview</DialogTitle><DialogDescription>Preview only. This does not create or send an email.</DialogDescription></DialogHeader><div className="overflow-hidden rounded-xl border bg-white"><div className="bg-[#0a0d22] p-6 text-center"><img src="https://assets.tradebilia.com/tradebilia_final_transparent_8a1981e6.svg" alt="Tradebilia" className="mx-auto h-auto w-full max-w-md" /></div><div className="space-y-4 p-7 text-slate-800"><h2 className="text-xl font-semibold">{subject || DEFAULT_SUBJECT}</h2><p className="whitespace-pre-wrap text-sm leading-7">{formattedMessage}</p><p className="border-t pt-4 text-xs text-slate-500">Recipients can unsubscribe from future pre-launch updates using the link in their email.</p></div></div></DialogContent></Dialog>
 
-      <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}><DialogContent className="max-w-md"><DialogHeader><DialogTitle>Send this Pre-Launch Email?</DialogTitle><DialogDescription>This will deliver the current status update to {recipients.length} opted-in recipient{recipients.length === 1 ? "" : "s"}. This cannot be recalled after delivery starts.</DialogDescription></DialogHeader><div className="rounded-xl border bg-muted/50 p-4"><p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Subject</p><p className="mt-1 font-medium">{subject}</p></div><div className="flex justify-end gap-2"><Button type="button" variant="outline" onClick={() => setConfirmOpen(false)} disabled={sendMutation.isPending}>Cancel</Button><Button type="button" onClick={confirmSend} disabled={!canPrepareSend || sendMutation.isPending} className="bg-[#7f31ff] hover:bg-[#8d46ff]">{sendMutation.isPending ? "Sending…" : `Send to ${recipients.length}`}</Button></div></DialogContent></Dialog>
+      <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}><DialogContent className="max-w-md"><DialogHeader><DialogTitle>Send this Pre-Launch Email?</DialogTitle><DialogDescription>This will deliver the current status update to {selectedRecipients.length} selected opted-in recipient{selectedRecipients.length === 1 ? "" : "s"}. This cannot be recalled after delivery starts.</DialogDescription></DialogHeader><div className="rounded-xl border bg-muted/50 p-4"><p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Subject</p><p className="mt-1 font-medium">{subject}</p></div><div className="flex justify-end gap-2"><Button type="button" variant="outline" onClick={() => setConfirmOpen(false)} disabled={sendMutation.isPending}>Cancel</Button><Button type="button" onClick={confirmSend} disabled={!canPrepareSend || sendMutation.isPending} className="bg-[#7f31ff] hover:bg-[#8d46ff]">{sendMutation.isPending ? "Sending…" : `Send to ${selectedRecipients.length}`}</Button></div></DialogContent></Dialog>
     </div>
   );
 }

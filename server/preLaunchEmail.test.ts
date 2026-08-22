@@ -21,7 +21,7 @@ describe("Pre-Launch Email", () => {
       ],
     }));
     const recipients = await getPreLaunchRecipients(fetcher as any);
-    expect(recipients).toEqual([{ id: "active", email: "active@example.com", createdAt: "2026-08-14" }]);
+    expect(recipients).toEqual([{ id: "active", email: "active@example.com", createdAt: "2026-08-14", lastSentAt: null }]);
     expect(fetcher.mock.calls[1]?.[0]).toContain("/segments/segment-1/contacts?");
   });
 
@@ -32,13 +32,16 @@ describe("Pre-Launch Email", () => {
       requests.push({ url: String(url), init });
       if (String(url).startsWith("https://api.resend.com/segments/segment-1/contacts?")) return response(true, { has_more: false, data: [{ id: "contact-1", email: "member@example.com", unsubscribed: false }] }) as any;
       if (String(url).startsWith("https://api.resend.com/segments?")) return response(true, { data: [{ id: "segment-1", name: "Tradebilia Pre-Launch Updates" }] }) as any;
-      if (String(url).includes("/contacts/contact-1/segments/segment-1")) return response(true, { id: "segment-1" }) as any;
+      if (String(url) === "https://api.resend.com/segments") return response(true, { id: "selected-segment" }) as any;
+      if (String(url).includes("/contacts/contact-1/segments/selected-segment")) return response(true, { id: "selected-segment" }) as any;
       if (String(url) === "https://api.resend.com/broadcasts") return response(true, { id: "broadcast-1" }) as any;
+      if (String(url) === "https://api.resend.com/contact-properties") return response(false, {}, 409) as any;
+      if (String(url) === "https://api.resend.com/contacts/contact-1") return response(true, { id: "contact-1" }) as any;
       throw new Error(`Unexpected request: ${url}`);
     });
     expect(result).toEqual({ recipientCount: 1, broadcastId: "broadcast-1" });
     const broadcast = requests.find(request => request.url.endsWith("/broadcasts"));
-    expect(JSON.parse(String(broadcast?.init?.body))).toMatchObject({ segment_id: "segment-1", send: true, subject: "A Tradebilia update" });
+    expect(JSON.parse(String(broadcast?.init?.body))).toMatchObject({ segment_id: "selected-segment", send: true, subject: "A Tradebilia update" });
     expect(String(broadcast?.init?.body)).toContain("RESEND_UNSUBSCRIBE_URL");
   });
 
@@ -51,7 +54,8 @@ describe("Pre-Launch Email", () => {
       const target = String(url);
       if (target.startsWith("https://api.resend.com/segments/segment-1/contacts?")) return response(true, { has_more: false, data: recipients }) as any;
       if (target.startsWith("https://api.resend.com/segments?")) return response(true, { data: [{ id: "segment-1", name: "Tradebilia Pre-Launch Updates" }] }) as any;
-      if (target.includes("/contacts/contact-")) {
+      if (target === "https://api.resend.com/segments") return response(true, { id: "selected-segment" }) as any;
+      if (target.includes("/segments/selected-segment")) {
         activeEnrollments += 1;
         peakEnrollments = Math.max(peakEnrollments, activeEnrollments);
         await new Promise(resolve => setTimeout(resolve, 5));
@@ -59,6 +63,8 @@ describe("Pre-Launch Email", () => {
         return response(true, { id: "segment-1" }) as any;
       }
       if (target === "https://api.resend.com/broadcasts") return response(true, { id: "broadcast-1" }) as any;
+      if (target === "https://api.resend.com/contact-properties") return response(false, {}, 409) as any;
+      if (target.startsWith("https://api.resend.com/contacts/contact-")) return response(true, { id: "contact" }) as any;
       throw new Error(`Unexpected request: ${target}`);
     });
 
