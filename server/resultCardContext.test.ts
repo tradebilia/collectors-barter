@@ -32,4 +32,9 @@ describe("result card context", () => {
   it("does not place a divider beneath Global result-card images", () => {
     expect(globalResults).not.toContain("aspect-[7/9] border-b border-current/10");
   });
+
+  it("keeps batched member online status above Global result-card images", () => {
+    expect(globalResults).toContain("getMultipleSellerOnlineStatus");
+    expect(globalResults).toContain("Member {sellerStatusQuery.data[listing.owner.id].isOnline ? \"Online\" : \"Offline\"}");
+  });
 });

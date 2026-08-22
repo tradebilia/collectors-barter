@@ -112,6 +112,11 @@ export function SearchResults() {
 
   const hasFilters = submittedFilters.category !== "all" || submittedFilters.condition !== "all" || submittedFilters.valueMin !== "" || submittedFilters.valueMax !== "" || submittedFilters.verifiedMerchantsOnly;
   const listings = resultsQuery.data?.listings ?? [];
+  const sellerIds = useMemo(() => [...new Set(listings.map(listing => listing.owner.id))], [listings]);
+  const sellerStatusQuery = trpc.onlineStatus.getMultipleSellerOnlineStatus.useQuery(
+    { sellerIds },
+    { enabled: sellerIds.length > 0, refetchInterval: 60_000 }
+  );
 
   return (
     <div className={`min-h-screen ${searchTheme.pageClassName}`}>
@@ -220,6 +225,9 @@ export function SearchResults() {
               <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
                 {listings.map(listing => (
                   <Card key={listing.id} className="overflow-hidden rounded-md border border-gray-200 bg-white text-[#153746] shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+                    <div className="flex h-5 items-center justify-center gap-1 bg-white text-[0.55rem] font-medium" aria-live="polite">
+                      {sellerStatusQuery.data?.[listing.owner.id] ? <><span className={`h-2 w-2 rounded-full ${sellerStatusQuery.data[listing.owner.id].isOnline ? "bg-emerald-500" : "bg-red-500"}`} /><span className={sellerStatusQuery.data[listing.owner.id].isOnline ? "text-emerald-700" : "text-red-600"}>Member {sellerStatusQuery.data[listing.owner.id].isOnline ? "Online" : "Offline"}</span></> : <span className="text-slate-400">Checking member status…</span>}
+                    </div>
                     <Link href={`/listings/${listing.id}`} className="block aspect-[7/9] bg-white p-0"><img src={resolveTradebiliaListingImage({ title: listing.title, category: listing.category, primaryPhotoUrl: listing.primaryPhotoUrl })} alt={listing.title} className="h-full w-full object-contain" /></Link>
                     <CardContent className="space-y-1 p-1.5">
                       <div className="flex min-h-[3rem] items-start justify-between gap-2"><div className="min-w-0"><p className="truncate text-[0.5rem] font-semibold uppercase tracking-[0.12em] opacity-60">{listing.categoryLabel}</p><Link href={`/listings/${listing.id}`} className="mt-1 block min-h-[2rem] line-clamp-2 text-xs font-semibold leading-tight hover:opacity-75">{listing.title}</Link></div>{listing.featured ? <Badge className="rounded-full bg-[#0f5563] px-1 py-0 text-[0.5rem] text-[#fff1d2]">Featured</Badge> : null}</div>

@@ -706,6 +706,8 @@
 - [x] Remove image-bottom divider lines from Global search-result cards while retaining their category labels.
 - [x] Reserve a consistent title area so Global card detail panels align regardless of title length.
 - [x] Add regression coverage, validate Global result-card alignment, checkpoint, synchronize GitHub, and verify the public release.
+- [x] Restore online/offline member status to Global search-result cards without changing their divider-free aligned layout.
+- [x] Add regression coverage, validate status and alignment, checkpoint, synchronize GitHub, and verify the public release.
 - [x] Conduct a read-only audit of every Admin page tab, control, backing procedure, authorization boundary, loading state, and error path; report only confirmed issues before making repairs.
 - [x] Display both requester and recipient members in the Admin Trades tab and move the convention refresh control from its standalone tab into Settings.
 - [x] Repair Admin loading/error states, support-ticket deletion safety, referral bulk delivery resilience, moderation, tickets, flagged-content, approvals, API Health, and Statistics tab behaviors.
