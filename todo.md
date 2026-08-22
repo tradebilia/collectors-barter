@@ -699,3 +699,5 @@
 - [x] Hide redundant category labels on category-specific result cards while retaining category labels on the global results page.
 - [x] Reserve a consistent two-line title area so all result-card detail panels align below item titles regardless of title wrapping.
 - [x] Add regression coverage, validate responsive category/global layouts, checkpoint, synchronize GitHub, and verify the public release.
+- [x] Standardize every category grid card so its title starts immediately below the image divider while a consistent fixed title area aligns the details panel.
+- [x] Add regression coverage, validate the all-category spacing standard on desktop and mobile, checkpoint, synchronize GitHub, and verify the public release.
