@@ -707,4 +707,4 @@
 - [x] Display both requester and recipient members in the Admin Trades tab and move the convention refresh control from its standalone tab into Settings.
 - [x] Repair Admin loading/error states, support-ticket deletion safety, referral bulk delivery resilience, moderation, tickets, flagged-content, approvals, API Health, and Statistics tab behaviors.
 - [x] Diagnose and correct the Pre-Launch email delivery failure and recipient visibility without sending an unapproved new test email.
-- [ ] Add focused regression coverage, validate all repaired Admin workflows, document outcomes, checkpoint, synchronize GitHub, and verify the released Admin experience.
+- [x] Add focused regression coverage, validate all repaired Admin workflows, document outcomes, checkpoint, synchronize GitHub, and verify the released Admin experience.
