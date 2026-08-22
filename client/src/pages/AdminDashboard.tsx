@@ -388,6 +388,24 @@ function BillingPreviewTab() {
         </CardContent>
       </Card>
 
+      <Card className="border-indigo-200 bg-indigo-50/50">
+        <CardHeader>
+          <CardTitle>Future member payment terms</CardTitle>
+          <CardDescription>
+            Members will choose one payment term for the same Subscription Membership. Both terms provide identical access; this is planning information only and is not available for purchase.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-3 sm:grid-cols-2">
+          {(overview?.billing.futureSubscriptionTerms ?? []).map((term) => (
+            <div key={term.code} className="rounded-xl border border-indigo-100 bg-white p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-indigo-700">{term.label} option</p>
+              <p className="mt-1 text-xl font-semibold text-slate-950">{term.displayPrice}</p>
+              <p className="mt-2 text-sm leading-5 text-slate-600">Same Subscription Membership access. A member will select this term only after a separate billing activation project is approved.</p>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader>
           <CardTitle>Free and Subscription feature matrix</CardTitle>

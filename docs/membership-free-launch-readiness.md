@@ -38,14 +38,14 @@ The Admin Billing matrix may be used to prepare feature availability for the one
 
 ## Future Subscription Pricing — Planning Only
 
-The current working direction is one Subscription Membership, with a final future price decision between **$10 per year** and **$1 per month**. These are planning values only. No price is configured with a payment provider, no billing term has been selected, and no member can be charged.
+The current working direction is one Subscription Membership with two member-selected payment terms: **$10 per year** or **$1 per month**. These are planning values only. No price is configured with a payment provider, no member can currently select a term, and no member can be charged.
 
 | Future option | Planning value | Current state |
 |---|---:|---|
-| Annual Subscription Membership | $10 per year | Candidate only; not configured or offered. |
-| Monthly Subscription Membership | $1 per month | Candidate only; not configured or offered. |
+| Annual payment term | $10 per year | A future member-selected term for Subscription Membership; not configured or offered. |
+| Monthly payment term | $1 per month | A future member-selected term for Subscription Membership; not configured or offered. |
 
-The application treats both as possible payment terms for the **same single Subscription Membership**, not as separate membership tiers. The final term and price must be explicitly approved during the separate billing-activation project.
+The application treats both as member-selected payment terms for the **same single Subscription Membership**, not as separate membership tiers. Both terms will receive identical access. Provider price setup, checkout selection, and the exact subscription change/cancellation rules still require a separate billing-activation project.
 
 ## Future Free-Browsing Policy — Prepared, Not Active
 

@@ -18,6 +18,10 @@ export const FREE_LAUNCH_BILLING_MODE = "free_launch" as const;
 export const SUBSCRIPTION_BILLING_MODE = "subscription" as const;
 export const FREE_LAUNCH_PLAN_CODE = "free_launch" as const;
 export const SUBSCRIPTION_PLAN_CODE = "subscription" as const;
+export const FUTURE_SUBSCRIPTION_PAYMENT_TERMS = [
+  { code: "monthly", label: "Monthly", priceCents: 100, displayPrice: "$1 per month" },
+  { code: "annual", label: "Annual", priceCents: 1000, displayPrice: "$10 per year" },
+] as const;
 
 type BillingMode = typeof FREE_LAUNCH_BILLING_MODE | typeof SUBSCRIPTION_BILLING_MODE;
 type MembershipStatus = "free_launch" | "trialing" | "active" | "past_due" | "cancelled" | "complimentary";
@@ -58,6 +62,7 @@ export function buildBillingSummary(settings?: {
     checkoutAvailable: false,
     cardCollectionAvailable: false,
     paymentRequired: false,
+    futureSubscriptionTerms: FUTURE_SUBSCRIPTION_PAYMENT_TERMS,
     statusLabel: freeLaunchOverride ? "Free Launch Access" : "Subscription Model Prepared",
     statusMessage: freeLaunchOverride
       ? "No credit card is required. All current Tradebilia features are available at no charge during the free launch."

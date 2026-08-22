@@ -3,6 +3,7 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   buildBillingSummary,
+  FUTURE_SUBSCRIPTION_PAYMENT_TERMS,
   hasSubscriptionMembershipAccess,
   isMembershipFeatureGranted,
 } from "./membership";
@@ -52,6 +53,10 @@ describe("free-launch membership foundation", () => {
     expect(freeLaunch.cardCollectionAvailable).toBe(false);
     expect(freeLaunch.paymentRequired).toBe(false);
     expect(freeLaunch.statusLabel).toBe("Free Launch Access");
+    expect(FUTURE_SUBSCRIPTION_PAYMENT_TERMS).toEqual([
+      { code: "monthly", label: "Monthly", priceCents: 100, displayPrice: "$1 per month" },
+      { code: "annual", label: "Annual", priceCents: 1000, displayPrice: "$10 per year" },
+    ]);
   });
 
   it("keeps plan-feature changes behind an administrator check, restricts complimentary grants to the owner, and exposes no billing activation mutation", () => {
@@ -81,6 +86,8 @@ describe("free-launch membership foundation", () => {
     expect(adminDashboardSource).toContain("Billing is not active");
     expect(adminDashboardSource).toContain("Free and Subscription feature matrix");
     expect(adminDashboardSource).toContain("Free Launch override enabled");
+    expect(adminDashboardSource).toContain("Future member payment terms");
+    expect(adminDashboardSource).toContain("Both terms provide identical access");
     expect(adminDashboardSource).toContain("Grant complimentary access");
     expect(adminDashboardSource).toContain("Grant complimentary membership?");
     expect(adminDashboardSource).toContain("Remove complimentary access?");

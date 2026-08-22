@@ -717,6 +717,8 @@
 - [x] Record the future single-subscription pricing choice as $10 annually or $1 monthly without activating payments.
 - [x] Prepare subscription-mode access guards so free members can use only category pages, Global Search, and Contact Us—not item detail pages.
 - [x] Restrict complimentary membership grants to the Tradebilia owner, then validate, document, checkpoint, synchronize GitHub, and verify the policy remains inactive during Free Launch.
+- [x] Prepare one Subscription Membership with member-selected $10 annual or $1 monthly payment terms and identical access.
+- [x] Validate, document, checkpoint, synchronize GitHub, and verify that the updated billing-term plan does not affect current Free Launch access.
 - [x] Restore online/offline member status to Global search-result cards without changing their divider-free aligned layout.
 - [x] Add regression coverage, validate status and alignment, checkpoint, synchronize GitHub, and verify the public release.
 - [x] Conduct a read-only audit of every Admin page tab, control, backing procedure, authorization boundary, loading state, and error path; report only confirmed issues before making repairs.
