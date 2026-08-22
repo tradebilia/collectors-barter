@@ -2302,6 +2302,8 @@ function SupportTicketsTab() {
           <CardContent className="p-0">
             {ticketsQuery.isLoading ? (
               <div className="p-4 text-sm text-muted-foreground">Loading tickets...</div>
+            ) : ticketsQuery.isError ? (
+              <div className="p-4 text-sm text-rose-700">Support tickets could not be loaded. Refresh the page and try again.</div>
             ) : filtered.length === 0 ? (
               <div className="p-4 text-sm text-muted-foreground">No tickets found.</div>
             ) : (
@@ -2404,6 +2406,8 @@ function SupportTicketsTab() {
               {/* Replies */}
               {repliesQuery.isLoading ? (
                 <div className="text-sm text-muted-foreground">Loading replies...</div>
+              ) : repliesQuery.isError ? (
+                <div className="text-sm text-rose-700">Ticket replies could not be loaded.</div>
               ) : (repliesQuery.data ?? []).length > 0 ? (
                 <div className="space-y-2">
                   <div className="text-xs font-medium text-muted-foreground">Conversation</div>
@@ -2524,6 +2528,8 @@ function FlaggedContentTab() {
         <CardContent>
           {flagsQuery.isLoading ? (
             <div className="text-sm text-muted-foreground">Loading flagged content...</div>
+          ) : flagsQuery.isError ? (
+            <div className="text-sm text-rose-700">Flagged content could not be loaded. Refresh the page and try again.</div>
           ) : flags.length === 0 ? (
             <div className="flex flex-col items-center py-10 text-muted-foreground">
               <CheckCircle className="h-8 w-8 mb-2 opacity-30" />
