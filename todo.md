@@ -703,6 +703,9 @@
 - [x] Add regression coverage, validate the all-category spacing standard on desktop and mobile, checkpoint, synchronize GitHub, and verify the public release.
 - [x] Remove image-bottom divider lines from all category grid cards while retaining title and details-panel alignment.
 - [x] Add regression coverage, validate the adjusted category-card layout, checkpoint, synchronize GitHub, and verify the public release.
+- [x] Remove image-bottom divider lines from Global search-result cards while retaining their category labels.
+- [x] Reserve a consistent title area so Global card detail panels align regardless of title length.
+- [x] Add regression coverage, validate Global result-card alignment, checkpoint, synchronize GitHub, and verify the public release.
 - [x] Conduct a read-only audit of every Admin page tab, control, backing procedure, authorization boundary, loading state, and error path; report only confirmed issues before making repairs.
 - [x] Display both requester and recipient members in the Admin Trades tab and move the convention refresh control from its standalone tab into Settings.
 - [x] Repair Admin loading/error states, support-ticket deletion safety, referral bulk delivery resilience, moderation, tickets, flagged-content, approvals, API Health, and Statistics tab behaviors.
