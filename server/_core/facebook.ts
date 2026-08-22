@@ -9,6 +9,25 @@
  */
 
 import { ENV } from "./env";
+import { classifyApiFailure, recordApiFailure } from "../apiHealth";
+
+const fetch = async (input: RequestInfo | URL, init: RequestInit = {}): Promise<Response> => {
+  try {
+    return await globalThis.fetch(input, {
+      ...init,
+      signal: init.signal ?? AbortSignal.timeout(15_000),
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Facebook request failed";
+    await recordApiFailure({
+      provider: "Facebook",
+      operation: "account_linking_or_profile_lookup",
+      failureClass: classifyApiFailure({ message }),
+      safeMessage: message,
+    });
+    throw error;
+  }
+};
 
 // Facebook OAuth endpoints
 const FACEBOOK_AUTH_URL = "https://www.facebook.com/v19.0/dialog/oauth";

@@ -1,3 +1,23 @@
+import { classifyApiFailure, recordApiFailure } from "./apiHealth";
+
+const fetch = async (input: RequestInfo | URL, init: RequestInit = {}): Promise<Response> => {
+  try {
+    return await globalThis.fetch(input, {
+      ...init,
+      signal: init.signal ?? AbortSignal.timeout(15_000),
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "UPS request failed";
+    await recordApiFailure({
+      provider: "UPS",
+      operation: "tracking_or_token_request",
+      failureClass: classifyApiFailure({ message }),
+      safeMessage: message,
+    });
+    throw error;
+  }
+};
+
 type UpsAccessToken = {
   value: string;
   expiresAt: number;

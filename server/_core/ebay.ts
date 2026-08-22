@@ -1,4 +1,23 @@
 import { ENV } from "./env";
+import { classifyApiFailure, recordApiFailure } from "../apiHealth";
+
+const fetch = async (input: RequestInfo | URL, init: RequestInit = {}): Promise<Response> => {
+  try {
+    return await globalThis.fetch(input, {
+      ...init,
+      signal: init.signal ?? AbortSignal.timeout(15_000),
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "eBay request failed";
+    await recordApiFailure({
+      provider: "eBay",
+      operation: "account_linking_or_profile_lookup",
+      failureClass: classifyApiFailure({ message }),
+      safeMessage: message,
+    });
+    throw error;
+  }
+};
 
 const EBAY_AUTH_URL = "https://auth.ebay.com/oauth2/authorize";
 const EBAY_TOKEN_URL = "https://api.ebay.com/identity/v1/oauth2/token";

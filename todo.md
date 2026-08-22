@@ -691,8 +691,8 @@
 - [x] Document the lower-priority decisions for shared caching, review visibility deadlines, real-time updates, migration governance, and independent inquiry retention without a schema migration.
 - [x] Add focused coverage and complete validation, documentation, GitHub synchronization, checkpointing, and public release verification for the approved lower-priority batch.
 - [x] Conduct a fresh read-only whole-application double-check across completed repairs, security, workflows, integrations, frontend behavior, tests, and release state; report only verified findings before any new implementation.
-- [ ] Make inquiry empty-trash and expired-draft cleanup transactionally child-safe without a schema migration.
-- [ ] Remove duplicate sign-in modal mounting and add accessible dialog, focus, and country-selector keyboard semantics.
-- [ ] Add safe public authentication/API throttling and application-level prevention of PayPal transaction reuse across proposals without a schema migration.
-- [ ] Extend external provider timeout, retry, and sanitized API Health handling across the remaining approved provider paths.
-- [ ] Add focused regression coverage and complete validation, documentation, GitHub synchronization, checkpointing, and public release verification for the seven verified repairs.
+- [x] Make inquiry empty-trash and expired-draft cleanup transactionally child-safe without a schema migration.
+- [x] Remove duplicate sign-in modal mounting and add accessible dialog, focus, and country-selector keyboard semantics.
+- [x] Add safe public authentication/API throttling and application-level prevention of PayPal transaction reuse across proposals without a schema migration.
+- [x] Extend external provider timeout, retry, and sanitized API Health handling across the remaining approved provider paths.
+- [x] Add focused regression coverage and complete validation, documentation, GitHub synchronization, checkpointing, and public release verification for the seven verified repairs.

@@ -1,3 +1,15 @@
+import { classifyApiFailure, recordApiFailure } from "./apiHealth";
+
+async function recordUspsFailure(operation: string, error: unknown) {
+  const message = error instanceof Error ? error.message : "USPS request failed";
+  await recordApiFailure({
+    provider: "USPS",
+    operation,
+    failureClass: classifyApiFailure({ message }),
+    safeMessage: message,
+  });
+}
+
 type UspsAccessToken = {
   value: string;
   expiresAt: number;
@@ -82,7 +94,9 @@ async function getUspsAccessToken(): Promise<string> {
     throw new Error("USPS credentials are not configured.");
   }
 
-  const tokenResponse = await fetch("https://apis.usps.com/oauth2/v3/token", {
+  let tokenResponse: Response;
+  try {
+    tokenResponse = await fetch("https://apis.usps.com/oauth2/v3/token", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -90,8 +104,12 @@ async function getUspsAccessToken(): Promise<string> {
       client_id: consumerKey,
       client_secret: consumerSecret,
     }),
-    signal: AbortSignal.timeout(12_000),
-  });
+      signal: AbortSignal.timeout(12_000),
+    });
+  } catch (error) {
+    await recordUspsFailure("token_request", error);
+    throw error;
+  }
 
   const tokenPayload = await tokenResponse.json().catch(() => null) as {
     access_token?: string;
@@ -112,7 +130,9 @@ async function getUspsAccessToken(): Promise<string> {
 export async function lookupUspsTracking(trackingNumberInput: string) {
   const trackingNumber = normalizeUspsTrackingNumber(trackingNumberInput);
   const accessToken = await getUspsAccessToken();
-  const trackingResponse = await fetch("https://apis.usps.com/tracking/v3r2/tracking", {
+  let trackingResponse: Response;
+  try {
+    trackingResponse = await fetch("https://apis.usps.com/tracking/v3r2/tracking", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -120,8 +140,12 @@ export async function lookupUspsTracking(trackingNumberInput: string) {
       Accept: "application/json",
     },
     body: JSON.stringify([{ trackingNumber }]),
-    signal: AbortSignal.timeout(15_000),
-  });
+      signal: AbortSignal.timeout(15_000),
+    });
+  } catch (error) {
+    await recordUspsFailure("tracking_lookup", error);
+    throw error;
+  }
 
   const payload = await trackingResponse.json().catch(() => null) as UspsTrackingResponse[] | unknown;
   if (!trackingResponse.ok || !Array.isArray(payload) || !payload[0]) {

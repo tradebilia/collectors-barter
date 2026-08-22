@@ -56,3 +56,9 @@ The following should be exercised in controlled tests before launch: cross-user 
 5. Centralize provider timeout, retry, and sanitized API Health telemetry.
 6. Make draft cleanup transactional.
 7. Complete keyboard and focus accessibility improvements.
+
+## Remediation update — 2026-08-22
+
+All seven verified issues listed in this double-check have now been repaired without a database migration or multi-factor-authentication change. Inquiry empty-trash and expired-draft cleanup both delete child records before parents inside transactions. The shared top bar now mounts a single sign-in dialog, and that dialog includes core labels, dialog semantics, Escape handling, and focus placement. The country selector exposes listbox relationships and essential keyboard interaction.
+
+Public signup and sign-in are throttled by client address and username where applicable. Payment verification rejects any PayPal transaction already associated with a different proposal before a provider lookup or payment write. PayPal, eBay, Facebook, LinkedIn, UPS, USPS, FedEx, and DHL now have explicit bounded network behavior or sanitized API Health failure recording on their reviewed request paths. The deterministic post-repair suite passed **367 tests** with 4 existing skips, and the production build passed.
