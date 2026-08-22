@@ -696,3 +696,6 @@
 - [x] Add safe public authentication/API throttling and application-level prevention of PayPal transaction reuse across proposals without a schema migration.
 - [x] Extend external provider timeout, retry, and sanitized API Health handling across the remaining approved provider paths.
 - [x] Add focused regression coverage and complete validation, documentation, GitHub synchronization, checkpointing, and public release verification for the seven verified repairs.
+- [x] Hide redundant category labels on category-specific result cards while retaining category labels on the global results page.
+- [x] Reserve a consistent two-line title area so all result-card detail panels align below item titles regardless of title wrapping.
+- [x] Add regression coverage, validate responsive category/global layouts, checkpoint, synchronize GitHub, and verify the public release.

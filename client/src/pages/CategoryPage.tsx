@@ -1500,9 +1500,8 @@ export default function CategoryPage() {
                       ) : (
                         <>
                           <div className="flex items-start justify-between gap-3">
-                            <div className="flex-1">
-                              <p className="font-semibold uppercase tracking-[0.12em] opacity-60 text-[0.5rem]">{listing.categoryLabel}</p>
-                              <Link href={`/listings/${listing.id}`} className="mt-1 block font-semibold leading-tight hover:opacity-75 text-xs">
+                            <div className="min-w-0 flex-1">
+                              <Link href={`/listings/${listing.id}`} className="block min-h-[2rem] line-clamp-2 font-semibold leading-tight hover:opacity-75 text-xs">
                                 {listing.title}
                               </Link>
                             </div>

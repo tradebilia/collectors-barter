@@ -1,0 +1,21 @@
+import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+
+describe("result card context", () => {
+  const categoryPage = readFileSync("client/src/pages/CategoryPage.tsx", "utf8");
+  const globalResults = readFileSync("client/src/pages/SearchResults.tsx", "utf8");
+
+  it("does not repeat the category label in the category-page grid card", () => {
+    const categoryCard = categoryPage.slice(categoryPage.indexOf("<CardContent className={`${viewMode"), categoryPage.indexOf("{listing.distanceBand &&", categoryPage.indexOf("<CardContent className={`${viewMode")));
+    expect(categoryCard).not.toContain("{listing.categoryLabel}");
+  });
+
+  it("keeps the category label for mixed-category global results", () => {
+    expect(globalResults).toContain("{listing.categoryLabel}");
+  });
+
+  it("reserves a two-line title area in both grid card contexts", () => {
+    expect(categoryPage).toContain("min-h-[2rem] line-clamp-2");
+    expect(globalResults).toContain("min-h-[2rem] line-clamp-2");
+  });
+});
