@@ -714,6 +714,9 @@
 - [x] Simplify future membership choices to Free or a single Subscription plan without enabling billing or payments.
 - [x] Add an administrator-only complimentary membership grant for selected members when subscriptions are active.
 - [x] Update the Profile and Admin Billing interfaces, regression coverage, documentation, checkpoint, GitHub synchronization, and release verification for the simplified model.
+- [x] Record the future single-subscription pricing choice as $10 annually or $1 monthly without activating payments.
+- [x] Prepare subscription-mode access guards so free members can use only category pages, Global Search, and Contact Us—not item detail pages.
+- [x] Restrict complimentary membership grants to the Tradebilia owner, then validate, document, checkpoint, synchronize GitHub, and verify the policy remains inactive during Free Launch.
 - [x] Restore online/offline member status to Global search-result cards without changing their divider-free aligned layout.
 - [x] Add regression coverage, validate status and alignment, checkpoint, synchronize GitHub, and verify the public release.
 - [x] Conduct a read-only audit of every Admin page tab, control, backing procedure, authorization boundary, loading state, and error path; report only confirmed issues before making repairs.

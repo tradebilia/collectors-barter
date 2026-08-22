@@ -24,6 +24,7 @@ import SignUp from "./pages/SignUp";
 import Welcome from "./pages/Welcome";
 import { MemberOnly } from "./pages/MemberOnly";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import { SubscriptionAccessGate } from "./components/SubscriptionAccessGate";
 import { VerifyAccount } from "./pages/VerifyAccount";
 import { ForgotPassword } from "./pages/ForgotPassword";
 import { ResetPassword } from "./pages/ResetPassword";
@@ -171,7 +172,9 @@ function App() {
       <ThemeProvider defaultTheme="light">
         <TooltipProvider>
           <Toaster richColors position="top-right" />
-          <Router />
+          <SubscriptionAccessGate>
+            <Router />
+          </SubscriptionAccessGate>
         </TooltipProvider>
       </ThemeProvider>
     </ErrorBoundary>

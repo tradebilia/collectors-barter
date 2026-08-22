@@ -36,13 +36,38 @@ The non-destructive configuration retains the earlier planning records, seven fe
 
 The Admin Billing matrix may be used to prepare feature availability for the one future Subscription Membership. It must not be treated as permission to begin charging members; the application deliberately exposes **no** billing-mode activation action.
 
+## Future Subscription Pricing — Planning Only
+
+The current working direction is one Subscription Membership, with a final future price decision between **$10 per year** and **$1 per month**. These are planning values only. No price is configured with a payment provider, no billing term has been selected, and no member can be charged.
+
+| Future option | Planning value | Current state |
+|---|---:|---|
+| Annual Subscription Membership | $10 per year | Candidate only; not configured or offered. |
+| Monthly Subscription Membership | $1 per month | Candidate only; not configured or offered. |
+
+The application treats both as possible payment terms for the **same single Subscription Membership**, not as separate membership tiers. The final term and price must be explicitly approved during the separate billing-activation project.
+
+## Future Free-Browsing Policy — Prepared, Not Active
+
+When and only when a future billing-activation project intentionally switches Tradebilia from Free Launch to Subscription mode, a non-subscriber will be limited to the following public browsing content. The policy is implemented as a dormant route gate and an item-detail server check; **it does not change current Free Launch access**.
+
+| Visitor access in future Subscription mode | Policy |
+|---|---|
+| Category pages | Available without a subscription. |
+| Global Search (`/search`) | Available without a subscription. |
+| Contact Us (`/contact`) | Available without a subscription. |
+| Individual item-detail pages | Subscription access required; this is enforced both in the route gate and the listing-detail data procedure. |
+| Other member-facing marketplace pages | Subscription access required unless separately designated as a necessary account, authentication, or legal route. |
+
+The site home page and account, sign-in, password-reset, privacy, and terms routes remain technical entry points so a visitor can navigate, authenticate, or understand the service. They do not grant access to member marketplace functions. The future restriction screen deliberately contains no checkout, pricing form, card field, or payment action.
+
 ## Complimentary Membership Grants
 
-An administrator can grant **Complimentary Membership** to a selected Tradebilia member. The grant associates the member with the future Subscription Membership plan while recording the membership status as `complimentary`. During Free Launch, every member remains open to every current feature regardless of that status. If a later, separately approved subscription activation occurs, a complimentary member receives the enabled Subscription-plan features without a payment requirement.
+Only the configured **Tradebilia owner** can grant **Complimentary Membership** to a selected member. The grant associates the member with the future Subscription Membership plan while recording the membership status as `complimentary`. During Free Launch, every member remains open to every current feature regardless of that status. If a later, separately approved subscription activation occurs, a complimentary member receives the enabled Subscription-plan features without a payment requirement. Other administrators cannot decide, grant, revoke, or retrieve the complimentary-membership control.
 
 | Control | Effect | Payment impact |
 |---|---|---|
-| Grant complimentary access | Assigns the selected member a `complimentary` membership status and the Subscription Membership plan. | Does not create a customer, collect a card, start Checkout, or charge the member. |
+| Owner grants complimentary access | Assigns the selected member a `complimentary` membership status and the Subscription Membership plan. | Does not create a customer, collect a card, start Checkout, or charge the member. |
 | Remove grant | Returns the selected member to the standard Free Launch membership record after explicit confirmation. | During Free Launch, it does not remove current feature access. |
 | Subscription feature matrix | Defines the enabled features that paid and complimentary Subscription Memberships would share later. | Has no effect on current free access and cannot activate billing. |
 

@@ -11,7 +11,8 @@ import {
   users,
 } from "../drizzle/schema";
 import { requireDb } from "./db";
-import { protectedProcedure, router } from "./_core/trpc";
+import { ENV } from "./_core/env";
+import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 
 export const FREE_LAUNCH_BILLING_MODE = "free_launch" as const;
 export const SUBSCRIPTION_BILLING_MODE = "subscription" as const;
@@ -25,6 +26,10 @@ type MembershipFeatureGrant = {
   planEnabled: boolean;
 };
 
+export function hasSubscriptionMembershipAccess(status: MembershipStatus | null | undefined) {
+  return status === "active" || status === "trialing" || status === "complimentary";
+}
+
 /**
  * Free launch is open to every member. After a future subscription launch, a
  * feature is granted only to an active/trialing subscriber or an administrator-
@@ -36,10 +41,7 @@ export function isMembershipFeatureGranted(
   grant: MembershipFeatureGrant,
 ) {
   if (billingMode === FREE_LAUNCH_BILLING_MODE) return true;
-  const hasMembershipAccess = membershipStatus === "active"
-    || membershipStatus === "trialing"
-    || membershipStatus === "complimentary";
-  return hasMembershipAccess && grant.planEnabled;
+  return hasSubscriptionMembershipAccess(membershipStatus) && grant.planEnabled;
 }
 
 export function buildBillingSummary(settings?: {
@@ -61,6 +63,46 @@ export function buildBillingSummary(settings?: {
       ? "No credit card is required. All current Tradebilia features are available at no charge during the free launch."
       : "Subscription billing is not active. Checkout, card collection, and charges remain unavailable.",
   };
+}
+
+/**
+ * The public browsing policy is dormant during Free Launch. If a separately
+ * approved project enables subscription mode, callers without an active,
+ * trialing, or complimentary membership cannot receive premium page data.
+ */
+export async function getSubscriptionAccessPolicy(userId: number | null) {
+  const settings = await getBillingSettingsRow();
+  const billing = buildBillingSummary(settings as any);
+  if (billing.freeLaunchOverride) {
+    return {
+      ...billing,
+      hasSubscriptionAccess: true,
+      membershipStatus: userId ? "free_launch" : null,
+    };
+  }
+
+  if (!userId) {
+    return { ...billing, hasSubscriptionAccess: false, membershipStatus: null };
+  }
+
+  const membership = await getMembershipWithPlan(userId);
+  const membershipStatus = membership?.membership.status ?? null;
+  return {
+    ...billing,
+    hasSubscriptionAccess: hasSubscriptionMembershipAccess(membershipStatus),
+    membershipStatus,
+  };
+}
+
+export async function assertSubscriptionAccess(userId: number | null) {
+  const policy = await getSubscriptionAccessPolicy(userId);
+  if (!policy.hasSubscriptionAccess) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "Subscription access is required for this page. Category pages, Global Search, and Contact Us remain available.",
+    });
+  }
+  return policy;
 }
 
 async function getBillingSettingsRow() {
@@ -324,7 +366,17 @@ function requireAdministrator(role: string | null | undefined) {
   }
 }
 
+function requireTradebiliaOwner(user: { role: string | null | undefined; openId: string | null | undefined }) {
+  if (user.role !== "admin" || !ENV.ownerOpenId || user.openId !== ENV.ownerOpenId) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "Only the Tradebilia owner can decide complimentary membership access.",
+    });
+  }
+}
+
 export const membershipRouter = router({
+  getAccessPolicy: publicProcedure.query(async ({ ctx }) => getSubscriptionAccessPolicy(ctx.user?.id ?? null)),
   getMyStatus: protectedProcedure.query(async ({ ctx }) => getMyMembershipStatus(ctx.user.id)),
 });
 
@@ -334,7 +386,7 @@ export const billingRouter = router({
     return getBillingOverview();
   }),
   getMembers: protectedProcedure.query(async ({ ctx }) => {
-    requireAdministrator(ctx.user.role);
+    requireTradebiliaOwner(ctx.user);
     return getMembershipAdministrationMembers();
   }),
   updatePlanFeature: protectedProcedure
@@ -352,14 +404,14 @@ export const billingRouter = router({
   grantComplimentaryAccess: protectedProcedure
     .input(z.object({ targetUserId: z.number().int().positive() }))
     .mutation(async ({ ctx, input }) => {
-      requireAdministrator(ctx.user.role);
+      requireTradebiliaOwner(ctx.user);
       await grantComplimentaryMembership(input.targetUserId);
       return { success: true };
     }),
   revokeComplimentaryAccess: protectedProcedure
     .input(z.object({ targetUserId: z.number().int().positive() }))
     .mutation(async ({ ctx, input }) => {
-      requireAdministrator(ctx.user.role);
+      requireTradebiliaOwner(ctx.user);
       await revokeComplimentaryMembership(input.targetUserId);
       return { success: true };
     }),

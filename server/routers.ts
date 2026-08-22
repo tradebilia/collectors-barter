@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { verifyPayPalTransaction } from "./paypal";
+import { assertSubscriptionAccess } from "./membership";
 import { resolveDirectMessageDisplayName } from "./directMessageDisplayName";
 import { sendVerificationCode, checkVerificationCode, normalizePhone, maskPhone } from "./twilio";
 import { COOKIE_NAME } from "@shared/const";
@@ -798,6 +799,7 @@ export const appRouter = router({
         }),
       )
       .query(async ({ ctx, input }) => {
+        await assertSubscriptionAccess(ctx.user?.id ?? null);
         const detail = await getListingDetail(input.listingId, ctx.user?.id ?? null);
         return { listing: detail };
       }),

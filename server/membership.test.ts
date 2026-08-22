@@ -3,6 +3,7 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   buildBillingSummary,
+  hasSubscriptionMembershipAccess,
   isMembershipFeatureGranted,
 } from "./membership";
 
@@ -10,6 +11,8 @@ const projectRoot = path.resolve(import.meta.dirname, "..");
 const membershipSource = fs.readFileSync(path.join(projectRoot, "server/membership.ts"), "utf8");
 const accountSettingsSource = fs.readFileSync(path.join(projectRoot, "client/src/pages/AccountSettings.tsx"), "utf8");
 const adminDashboardSource = fs.readFileSync(path.join(projectRoot, "client/src/pages/AdminDashboard.tsx"), "utf8");
+const accessGateSource = fs.readFileSync(path.join(projectRoot, "client/src/components/SubscriptionAccessGate.tsx"), "utf8");
+const appSource = fs.readFileSync(path.join(projectRoot, "client/src/App.tsx"), "utf8");
 
 describe("free-launch membership foundation", () => {
   it("keeps every current feature available while the free-launch override is active", () => {
@@ -19,6 +22,11 @@ describe("free-launch membership foundation", () => {
   });
 
   it("grants one future subscription plan to active or complimentary members only", () => {
+    expect(hasSubscriptionMembershipAccess("active")).toBe(true);
+    expect(hasSubscriptionMembershipAccess("trialing")).toBe(true);
+    expect(hasSubscriptionMembershipAccess("complimentary")).toBe(true);
+    expect(hasSubscriptionMembershipAccess("free_launch")).toBe(false);
+    expect(hasSubscriptionMembershipAccess("past_due")).toBe(false);
     expect(isMembershipFeatureGranted("subscription", "complimentary", {
       planEnabled: true,
     })).toBe(true);
@@ -46,11 +54,13 @@ describe("free-launch membership foundation", () => {
     expect(freeLaunch.statusLabel).toBe("Free Launch Access");
   });
 
-  it("keeps plan-feature and complimentary-grant changes behind an administrator check and does not expose a billing-activation mutation", () => {
+  it("keeps plan-feature changes behind an administrator check, restricts complimentary grants to the owner, and exposes no billing activation mutation", () => {
     expect(membershipSource).toContain("requireAdministrator(ctx.user.role)");
     expect(membershipSource).toContain("updatePlanFeature: protectedProcedure");
     expect(membershipSource).toContain("grantComplimentaryAccess: protectedProcedure");
     expect(membershipSource).toContain("revokeComplimentaryAccess: protectedProcedure");
+    expect(membershipSource).toContain("requireTradebiliaOwner(ctx.user)");
+    expect(membershipSource).toContain("ENV.ownerOpenId");
     expect(membershipSource).not.toContain("activateBilling:");
     expect(membershipSource).not.toContain("updateBillingMode:");
     expect(membershipSource).not.toContain("createCheckoutSession");
@@ -74,5 +84,16 @@ describe("free-launch membership foundation", () => {
     expect(adminDashboardSource).toContain("Grant complimentary access");
     expect(adminDashboardSource).toContain("Grant complimentary membership?");
     expect(adminDashboardSource).toContain("Remove complimentary access?");
+  });
+
+  it("prepares only category pages, Global Search, and Contact Us for free browsing once subscription mode is enabled", () => {
+    expect(appSource).toContain("SubscriptionAccessGate");
+    expect(accessGateSource).toContain('location === "/search"');
+    expect(accessGateSource).toContain('location.startsWith("/category/")');
+    expect(accessGateSource).toContain('location === "/contact"');
+    expect(accessGateSource).toContain("Subscription access required");
+    expect(membershipSource).toContain("Subscription access is required for this page");
+    expect(membershipSource).toContain("assertSubscriptionAccess");
+    expect(membershipSource).toContain("getAccessPolicy: publicProcedure");
   });
 });
