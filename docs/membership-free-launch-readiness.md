@@ -82,3 +82,7 @@ During release verification, the Admin matrix correctly surfaced that the applic
 The released authenticated Profile page was then rechecked successfully. It rendered the Membership & Billing tab, Free Launch Access plan, no-credit-card-required language, inactive billing status, no-payment-method notice, and all seven configured features.
 
 The released authenticated Admin Billing tab was rechecked successfully after the custom-database migration. It rendered the full four-plan by seven-feature matrix, showed every entry as open at launch, and retained the disabled Checkout, Card collection, and Stripe billing indicators. The verification did not modify any plan-feature checkbox or billing setting.
+
+After the simplified-model checkpoint, the standard public domain initially continued to serve the preceding four-plan Admin Billing build. The deployment later reported success. A direct public-bundle inspection confirmed the simplified Billing labels are present, while the authenticated browser still displayed its stale client bundle; the final browser check must reload after clearing that local cache.
+
+After the authenticated browser cache was cleared, the standard public Admin Billing page was verified successfully. It displayed the two-column Free Launch and Subscription feature matrix, the complimentary-access explanation, the three current Tradebilia members, and confirmation-gated grant controls. Checkout, card collection, and Stripe billing remained disabled. No member grant or plan-feature setting was changed during verification.
