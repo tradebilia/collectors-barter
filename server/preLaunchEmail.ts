@@ -6,7 +6,8 @@ const RESEND_API_BASE = "https://api.resend.com";
 const PRE_LAUNCH_SEGMENT_NAME = "Tradebilia Pre-Launch Updates";
 const FROM_ADDRESS = "Tradebilia <noreply@tradebilia.com>";
 const SITE_URL = "https://tradebilia.manus.space";
-const EMAIL_LOGO_URL = `https://assets.tradebilia.com/tradebilia_final_transparent_58812c5a.svg`;
+const EMAIL_LOGO_URL = `https://assets.tradebilia.com/tradebilia_final_transparent_8a1981e6.svg`;
+const EMAIL_HERO_BACKGROUND_URL = `https://assets.tradebilia.com/Background_23084d14.jpg`;
 const SEGMENT_ENROLLMENT_CONCURRENCY = 5;
 const LAST_SENT_PROPERTY = "tradebilia_prelaunch_last_sent_at";
 
@@ -101,17 +102,17 @@ function escapeHtml(value: string) {
 export function buildPreLaunchEmailHtml(message: string) {
   const paragraphs = escapeHtml(message.trim())
     .split(/\n{2,}/)
-    .map(paragraph => `<p style="margin:0 0 18px;font-size:15px;color:#374151;line-height:1.75;">${paragraph.replace(/\n/g, "<br>")}</p>`)
+    .map(paragraph => `<p style="margin:0 0 20px;font-size:16px;color:#334155;line-height:1.75;">${paragraph.replace(/\n/g, "<br>")}</p>`)
     .join("");
 
   return `<!doctype html>
 <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
 <body style="margin:0;padding:0;background:#f5f5f3;font-family:Arial,sans-serif;">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f5f5f3;padding:40px 20px;"><tr><td align="center">
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.08);">
-      <tr><td style="background:#0a0d22;padding:24px 16px;text-align:center;"><img src="${EMAIL_LOGO_URL}" alt="Tradebilia" width="520" style="display:block;margin:0 auto;width:100%;max-width:520px;height:auto;"></td></tr>
-      <tr><td style="padding:34px 32px;">${paragraphs}<a href="${SITE_URL}" style="display:inline-block;background:#7f31ff;color:#fff;text-decoration:none;padding:14px 26px;border-radius:10px;font-weight:700;font-size:14px;">Visit Tradebilia</a></td></tr>
-      <tr><td style="background:#f8f8f6;padding:20px 32px;text-align:center;border-top:1px solid #ebebeb;"><p style="color:#8a8a8a;font-size:12px;line-height:1.6;margin:0;">You are receiving this because you opted in for Tradebilia pre-launch updates. <a href="{{{RESEND_UNSUBSCRIBE_URL}}}" style="color:#7f31ff;text-decoration:none;">Unsubscribe</a></p></td></tr>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#eef1f2;padding:40px 16px;"><tr><td align="center">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#ffffff;border-radius:18px;overflow:hidden;box-shadow:0 8px 28px rgba(15,23,42,.12);">
+      <tr><td background="${EMAIL_HERO_BACKGROUND_URL}" style="background:#08162a url('${EMAIL_HERO_BACKGROUND_URL}') center/cover no-repeat;padding:0;text-align:center;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:rgba(4,15,35,.82);"><tr><td style="padding:46px 32px 42px;text-align:center;"><img src="${EMAIL_LOGO_URL}" alt="Tradebilia — Collectors Trading Exchange" width="500" style="display:block;margin:0 auto;width:100%;max-width:500px;height:auto;"></td></tr></table></td></tr>
+      <tr><td style="padding:38px 40px 42px;">${paragraphs}<table role="presentation" cellpadding="0" cellspacing="0" style="margin:28px 0 0;"><tr><td style="background:#0f9b86;border-radius:8px;"><a href="${SITE_URL}" style="display:inline-block;color:#ffffff;text-decoration:none;padding:14px 24px;font-weight:700;font-size:14px;letter-spacing:.01em;">Explore Tradebilia</a></td></tr></table></td></tr>
+      <tr><td style="background:#f7f8f8;padding:20px 32px;text-align:center;border-top:1px solid #e5e7eb;"><p style="color:#7b8490;font-size:12px;line-height:1.6;margin:0;">You are receiving this because you opted in for Tradebilia pre-launch updates. <a href="{{{RESEND_UNSUBSCRIBE_URL}}}" style="color:#0f9b86;text-decoration:underline;">Unsubscribe</a></p></td></tr>
     </table>
   </td></tr></table>
 </body></html>`;

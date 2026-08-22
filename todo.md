@@ -724,3 +724,8 @@
 - [x] Validate linked Trade ID navigation, checkpoint, synchronize GitHub, and verify the public release.
 - [x] Add clear horizontal spacing between the Pre-Launch email logo divider and Tradebilia wordmark without sending an additional email.
 - [x] Validate generated email-logo markup, checkpoint, synchronize GitHub, and document the completed spacing refinement.
+- [x] Refine the Pre-Launch email into a polished email-client-safe hero, logo lockup, content layout, and Explore Tradebilia call to action without sending a new email.
+- [x] Validate rendered email markup and preview behavior, checkpoint, synchronize GitHub, and document the professional email refinement.
+- [x] Rebuild the Pre-Launch email header using an email-safe version of the Tradebilia homepage hero direction with clear divider-to-wordmark spacing.
+- [x] Replace the selected-looking Visit Tradebilia text with a clear Explore Tradebilia call-to-action link.
+- [x] Validate email markup and preview behavior, checkpoint, synchronize GitHub, and document the completed email-header refinement without sending a new email.

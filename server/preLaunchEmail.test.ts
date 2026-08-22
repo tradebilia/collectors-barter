@@ -76,6 +76,8 @@ describe("Pre-Launch Email", () => {
     const html = buildPreLaunchEmailHtml("<b>Hello</b>");
     expect(html).toContain("&lt;b&gt;Hello&lt;/b&gt;");
     expect(html).toContain("{{{RESEND_UNSUBSCRIBE_URL}}}");
+    expect(html).toContain("Background_23084d14.jpg");
+    expect(html).toContain("Explore Tradebilia");
   });
 
   it("records only a safe operational classification when recipient retrieval fails", async () => {
