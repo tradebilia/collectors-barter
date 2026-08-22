@@ -64,3 +64,13 @@ Until that project is complete and explicitly approved, **`billingMode` must rem
 ## Validation Record
 
 The foundation has focused automated coverage for free-launch entitlement precedence, unavailable payment capabilities, administrator-only matrix updates, the Profile panel, and the Admin Billing preview. The deterministic full suite passed with the known live UPS credential probe excluded; that isolated probe remains environment-dependent and is unrelated to the membership foundation.
+
+Public-release verification began immediately after the checkpoint. The authenticated public Profile page was initially still serving the preceding build, which did not yet include the Membership tab; the release must be rechecked after deployment propagation before this record is treated as final.
+
+After the deployment reported success, the authenticated Admin Dashboard displayed the new Billing tab. Its rendered content confirmed the Free Launch override, disabled checkout, disabled card collection, disabled Stripe billing, the future plan-feature matrix area, and the explicit no-Stripe-activation boundary. No administrative matrix setting was changed during this verification.
+
+During release verification, the Admin matrix correctly surfaced that the application’s custom data connection did not yet contain the new tables. A read-only baseline confirmed three existing users and eighteen existing listings, with none of the five membership tables present. The same approved non-destructive DDL and idempotent seed were then applied through that verified application connection. Post-migration verification confirmed four plans, seven features, twenty-eight plan-feature rows, one free-launch billing-settings row, zero pre-provisioned user memberships, and all five tables visible to the live Drizzle connection. Existing user and listing counts were preserved.
+
+The released authenticated Profile page was then rechecked successfully. It rendered the Membership & Billing tab, Free Launch Access plan, no-credit-card-required language, inactive billing status, no-payment-method notice, and all seven configured features.
+
+The released authenticated Admin Billing tab was rechecked successfully after the custom-database migration. It rendered the full four-plan by seven-feature matrix, showed every entry as open at launch, and retained the disabled Checkout, Card collection, and Stripe billing indicators. The verification did not modify any plan-feature checkbox or billing setting.
