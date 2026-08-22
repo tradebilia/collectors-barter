@@ -710,3 +710,12 @@
 - [x] Add focused regression coverage, validate all repaired Admin workflows, document outcomes, checkpoint, synchronize GitHub, and verify the released Admin experience.
 - [x] Replace the ambiguous item-detail title display font with a clearer numeral-friendly font while preserving the existing page layout and listing data.
 - [x] Validate title readability, checkpoint, synchronize GitHub, and verify the public release.
+- [x] Add a modest gap between the public-profile Category Bar and profile header card without changing surrounding layout.
+- [x] Validate profile spacing, checkpoint, synchronize GitHub, and verify the public release.
+- [ ] Repair Admin API Health retrieval so a healthy empty state is distinguishable from an unavailable request.
+- [ ] Complete linked Admin Trade ID navigation and the Pre-Launch email logo divider-to-wordmark spacing refinement.
+- [ ] Add regression coverage, validate all combined fixes, checkpoint, synchronize GitHub, and verify the public release.
+- [ ] Link every Admin Trades table ID to the corresponding trade detail view without changing trade data or actions.
+- [ ] Validate linked Trade ID navigation, checkpoint, synchronize GitHub, and verify the public release.
+- [x] Add clear horizontal spacing between the Pre-Launch email logo divider and Tradebilia wordmark without sending an additional email.
+- [x] Validate generated email-logo markup, checkpoint, synchronize GitHub, and document the completed spacing refinement.

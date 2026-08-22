@@ -253,7 +253,7 @@ export default function PublicProfile() {
       </section>
       <CategoryBar />
 
-      <div className="mx-auto max-w-5xl px-4 lg:px-8 relative z-10">
+      <div className="relative z-10 mx-auto mt-3 max-w-5xl px-4 lg:px-8">
         {/* Profile Header Card */}
         <div className="bg-white rounded-3xl p-6 lg:p-8 shadow-sm border border-slate-100">
           <div className="flex flex-col md:flex-row gap-6 items-start">
