@@ -978,7 +978,7 @@ export default function AdminDashboard() {
                       <tbody>
                         {(tradesQuery.data as any[])?.map((trade: any) => (
                           <tr key={trade.id} className="border-b border-border hover:bg-accent/50">
-                            <td className="py-2 px-4 font-mono text-xs">{trade.id}</td>
+                            <td className="py-2 px-4 font-mono text-xs"><a href={`/trade-room/${trade.id}`} className="font-semibold text-primary underline-offset-2 hover:underline" title={`Open trade ${trade.id} details`}>#{trade.id}</a></td>
                             <td className="py-2 px-4">{trade.requesterUsername || "-"}</td>
                             <td className="py-2 px-4">{(trade as any).recipientUsername || "-"}</td>
                             <td className="py-2 px-4">{trade.listingTitle || "-"}</td>

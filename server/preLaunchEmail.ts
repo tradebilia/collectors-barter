@@ -6,7 +6,7 @@ const RESEND_API_BASE = "https://api.resend.com";
 const PRE_LAUNCH_SEGMENT_NAME = "Tradebilia Pre-Launch Updates";
 const FROM_ADDRESS = "Tradebilia <noreply@tradebilia.com>";
 const SITE_URL = "https://tradebilia.manus.space";
-const EMAIL_LOGO_URL = `https://assets.tradebilia.com/tradebilia_final_transparent_8a1981e6.svg`;
+const EMAIL_LOGO_URL = `https://assets.tradebilia.com/tradebilia_final_transparent_58812c5a.svg`;
 const SEGMENT_ENROLLMENT_CONCURRENCY = 5;
 
 type ResendContact = {
