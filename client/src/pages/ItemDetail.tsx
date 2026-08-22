@@ -363,7 +363,7 @@ export default function ItemDetail() {
                     <p className="mt-1 text-lg font-semibold text-gray-900">#{listing.id}</p>
                   </div>
                 </div>
-                <h1 className="mt-6 text-5xl font-semibold leading-[1.05] tracking-tight text-gray-900">{listing.title}</h1>
+                <h1 className="mt-6 font-sans text-5xl font-bold leading-[1.05] tracking-tight text-gray-900">{listing.title}</h1>
                 <div className="mt-6 grid gap-4 text-lg text-gray-700 sm:grid-cols-2">
                   {listing.grade && listing.grade !== 'ungraded' && parseFloat(listing.grade) > 0 ? (
                     <div>

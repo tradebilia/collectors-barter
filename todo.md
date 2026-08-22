@@ -708,3 +708,5 @@
 - [x] Repair Admin loading/error states, support-ticket deletion safety, referral bulk delivery resilience, moderation, tickets, flagged-content, approvals, API Health, and Statistics tab behaviors.
 - [x] Diagnose and correct the Pre-Launch email delivery failure and recipient visibility without sending an unapproved new test email.
 - [x] Add focused regression coverage, validate all repaired Admin workflows, document outcomes, checkpoint, synchronize GitHub, and verify the released Admin experience.
+- [x] Replace the ambiguous item-detail title display font with a clearer numeral-friendly font while preserving the existing page layout and listing data.
+- [x] Validate title readability, checkpoint, synchronize GitHub, and verify the public release.
