@@ -12,6 +12,7 @@ describe("Admin dashboard repairs", () => {
   it("returns both participants for Admin trade records", () => {
     expect(routerSource).toContain('alias(users, "adminTradeRecipients")');
     expect(routerSource).toContain("recipientUsername: recipientUsers.username");
+    expect(adminSource).toContain("/trade-room/${trade.id}");
   });
 
   it("places convention refresh in Settings and removes it from the visible tab list", () => {

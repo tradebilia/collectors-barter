@@ -408,7 +408,7 @@ export default function AdminDashboard() {
   const bannedUsersQuery = trpc.admin.getBannedUsers.useQuery(undefined, { enabled: user?.role === 'admin' });
   const moderationLogQuery = trpc.admin.getModerationLog.useQuery(undefined, { enabled: user?.role === 'admin' });
   const pendingApprovalsQuery = trpc.admin.getPendingAccountApprovals.useQuery(undefined, { enabled: user?.role === 'admin', refetchOnWindowFocus: true });
-  const apiHealthQuery = trpc.admin.getApiHealthEvents.useQuery(undefined, { enabled: user?.role === 'admin', refetchOnWindowFocus: true });
+  const apiHealthQuery = trpc.admin.getApiHealthEvents.useQuery(undefined, { enabled: user?.role === 'admin', retry: 2, retryDelay: 800, refetchOnWindowFocus: true });
   const reviewApprovalMutation = trpc.admin.reviewAccountApproval.useMutation({
     onSuccess: () => pendingApprovalsQuery.refetch(),
     onError: (error) => toast.error(error.message),
