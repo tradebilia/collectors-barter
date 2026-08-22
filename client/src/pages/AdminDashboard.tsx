@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { BarChart3, Users, Package, Settings, Trash2, Flag, Mail, Search, ArrowUpDown, Calendar, ExternalLink, CheckCircle, XCircle, AlertTriangle, Ban, ShieldOff, ClipboardList, MessageSquare, TicketCheck, Send, ChevronDown, ChevronUp, Store, CloudUpload } from "lucide-react";
+import { BarChart3, Users, Package, Settings, Trash2, Flag, Mail, Search, ArrowUpDown, Calendar, ExternalLink, CheckCircle, XCircle, AlertTriangle, Ban, ShieldOff, ClipboardList, MessageSquare, TicketCheck, Send, ChevronDown, ChevronUp, Store, CloudUpload, CreditCard, ShieldCheck } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -339,6 +339,135 @@ function AdminListingsTab({ listingsQuery }: { listingsQuery: any }) {
   );
 }
 
+function BillingPreviewTab() {
+  const utils = trpc.useUtils();
+  const overviewQuery = trpc.billing.getOverview.useQuery(undefined, {
+    refetchOnWindowFocus: true,
+  });
+  const updatePlanFeatureMutation = trpc.billing.updatePlanFeature.useMutation({
+    onSuccess: async () => {
+      await utils.billing.getOverview.invalidate();
+      toast.success("Future plan setting saved. Free-launch access remains open for every member.");
+    },
+    onError: (error) => toast.error(error.message || "The plan setting could not be saved."),
+  });
+
+  const overview = overviewQuery.data;
+  const matrixByPlanFeature = new Map(
+    (overview?.matrix ?? []).map((entry) => [`${entry.planId}:${entry.featureId}`, entry]),
+  );
+
+  return (
+    <div className="space-y-4">
+      <Card className="border-emerald-200 bg-[linear-gradient(135deg,#ecfdf5_0%,#f0fdf4_56%,#eff6ff_100%)]">
+        <CardHeader>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="flex gap-3">
+              <div className="rounded-xl bg-emerald-600 p-2.5 text-white">
+                <ShieldCheck className="h-6 w-6" />
+              </div>
+              <div>
+                <CardTitle>Billing is not active</CardTitle>
+                <CardDescription className="mt-1 max-w-3xl text-slate-700">
+                  Tradebilia is in Free Launch mode. Every current feature is available to every member at no charge, regardless of the future plan matrix below.
+                </CardDescription>
+              </div>
+            </div>
+            <Badge className="w-fit border border-emerald-200 bg-white text-emerald-800 hover:bg-white">
+              Free Launch override enabled
+            </Badge>
+          </div>
+        </CardHeader>
+        <CardContent className="grid gap-3 text-sm sm:grid-cols-3">
+          <div className="rounded-xl border border-emerald-100 bg-white/80 p-4"><p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Checkout</p><p className="mt-1 font-semibold text-slate-950">Disabled</p></div>
+          <div className="rounded-xl border border-emerald-100 bg-white/80 p-4"><p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Card collection</p><p className="mt-1 font-semibold text-slate-950">Disabled</p></div>
+          <div className="rounded-xl border border-emerald-100 bg-white/80 p-4"><p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Stripe billing</p><p className="mt-1 font-semibold text-slate-950">Disabled</p></div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Future plan-to-feature matrix</CardTitle>
+          <CardDescription>
+            These settings prepare future plans only. Changing a checkbox does not remove access while the Free Launch override is active, and this page has no control to activate billing.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {overviewQuery.isLoading ? (
+            <p className="text-sm text-muted-foreground">Loading membership plans…</p>
+          ) : overviewQuery.isError ? (
+            <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+              Billing details could not be loaded. The billing system remains inactive and member access is unchanged.
+            </div>
+          ) : (
+            <div className="overflow-x-auto rounded-xl border">
+              <table className="w-full min-w-[900px] text-sm">
+                <thead className="bg-slate-50 text-left">
+                  <tr className="border-b">
+                    <th className="sticky left-0 z-10 min-w-[240px] bg-slate-50 px-4 py-3 font-semibold text-slate-700">Feature</th>
+                    {(overview?.plans ?? []).map((plan) => (
+                      <th key={plan.id} className="min-w-[150px] px-4 py-3 align-top font-semibold text-slate-700">
+                        <div>{plan.name}</div>
+                        <div className="mt-1 text-xs font-normal text-slate-500">
+                          {plan.isFreeLaunch ? "Active launch plan" : "Future placeholder"}
+                        </div>
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {(overview?.features ?? []).map((feature) => (
+                    <tr key={feature.id} className="border-b last:border-b-0">
+                      <td className="sticky left-0 z-10 bg-white px-4 py-3">
+                        <p className="font-medium text-slate-900">{feature.name}</p>
+                        {feature.description && <p className="mt-1 max-w-xs text-xs leading-5 text-slate-500">{feature.description}</p>}
+                      </td>
+                      {(overview?.plans ?? []).map((plan) => {
+                        const entry = matrixByPlanFeature.get(`${plan.id}:${feature.id}`);
+                        const isPending = updatePlanFeatureMutation.isPending
+                          && updatePlanFeatureMutation.variables?.planId === plan.id
+                          && updatePlanFeatureMutation.variables?.featureId === feature.id;
+                        return (
+                          <td key={plan.id} className="px-4 py-3 text-center">
+                            <div className="flex flex-col items-center gap-2">
+                              <Checkbox
+                                checked={Boolean(entry?.isEnabled)}
+                                disabled={!entry || updatePlanFeatureMutation.isPending}
+                                aria-label={`${feature.name} for ${plan.name}`}
+                                onCheckedChange={(checked) => {
+                                  if (!entry) return;
+                                  updatePlanFeatureMutation.mutate({
+                                    planId: plan.id,
+                                    featureId: feature.id,
+                                    isEnabled: checked === true,
+                                    limitValue: entry.limitValue,
+                                  });
+                                }}
+                              />
+                              <span className="text-xs text-emerald-700">{isPending ? "Saving…" : "Open at launch"}</span>
+                            </div>
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card className="border-slate-200 bg-slate-50">
+        <CardContent className="flex gap-3 pt-6 text-sm leading-6 text-slate-700">
+          <CreditCard className="mt-0.5 h-5 w-5 shrink-0 text-slate-500" />
+          <p><strong className="text-slate-900">Stripe readiness only:</strong> No Stripe secret, checkout session, billing portal, payment method, invoice, webhook, subscription activation, or charge has been added. Those items require a separate reviewed activation project later.</p>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 export default function AdminDashboard() {
   const { user, loading } = useAuth();
   const [activeTab, setActiveTab] = useState("statistics");
@@ -617,6 +746,10 @@ export default function AdminDashboard() {
               <Settings className="h-4 w-4" />
               Settings
             </TabsTrigger>
+            <TabsTrigger value="billing" className="flex items-center justify-center gap-1.5 text-xs font-medium py-2.5 whitespace-nowrap">
+              <CreditCard className="h-4 w-4" />
+              Billing
+            </TabsTrigger>
             <TabsTrigger value="deleted" className="flex items-center justify-center gap-1.5 text-xs font-medium py-2.5 whitespace-nowrap">
               <Users className="h-4 w-4" />
               Deleted
@@ -658,6 +791,10 @@ export default function AdminDashboard() {
               API Health
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="billing" className="space-y-4 mt-6">
+            <BillingPreviewTab />
+          </TabsContent>
 
           {/* Statistics Tab */}
           <TabsContent value="statistics" className="space-y-4 mt-6">

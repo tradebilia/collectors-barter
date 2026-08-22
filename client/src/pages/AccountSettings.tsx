@@ -15,7 +15,7 @@ import { EbayConnection } from "@/components/EbayConnection";
 import { FacebookConnection } from "@/components/FacebookConnection";
 import { LinkedInConnection } from "@/components/LinkedInConnection";
 import { trpc } from "@/lib/trpc";
-import { Bell, Lock, Mail, Loader2, Save, Shield, Link as LinkIcon, Upload, Eye, EyeOff, Cog } from "lucide-react";
+import { Bell, Lock, Mail, Loader2, Save, Shield, Link as LinkIcon, Upload, Eye, EyeOff, Cog, CheckCircle2, CreditCard, Sparkles } from "lucide-react";
 import { FormEvent, useEffect, useState, useRef } from "react";
 import { toast } from "sonner";
 import {
@@ -59,6 +59,9 @@ export default function AccountSettings() {
   const dashboardQuery = trpc.market.dashboard.useQuery(undefined, {
     enabled: isAuthenticated,
   });
+  const membershipQuery = trpc.membership.getMyStatus.useQuery(undefined, {
+    enabled: isAuthenticated,
+  });
   const saveProfileMutation = trpc.market.saveProfile.useMutation();
   const changePasswordMutation = trpc.market.changePassword.useMutation();
   const saveIntegrationsMutation = trpc.market.saveIntegrations.useMutation();
@@ -69,10 +72,10 @@ export default function AccountSettings() {
   const savePayPalEmailMutation = trpc.payment.savePayPalEmail.useMutation();
 
   // Read ?tab= from URL to support redirects (e.g., from eBay OAuth callback)
-  const validTabs = ["profile", "security", "integrations", "communications", "preferences"] as const;
+  const validTabs = ["profile", "security", "integrations", "communications", "preferences", "membership"] as const;
   const urlTab = new URLSearchParams(window.location.search).get("tab");
   const initialTab = validTabs.includes(urlTab as any) ? (urlTab as typeof validTabs[number]) : "profile";
-  const [activeTab, setActiveTab] = useState<"profile" | "security" | "integrations" | "communications" | "preferences">(initialTab);
+  const [activeTab, setActiveTab] = useState<"profile" | "security" | "integrations" | "communications" | "preferences" | "membership">(initialTab);
   
   // Profile Form State
   const [confirmationDialog, setConfirmationDialog] = useState<{
@@ -619,12 +622,13 @@ export default function AccountSettings() {
       <main className="px-4 py-10 lg:px-8">
         <div className="mx-auto max-w-4xl space-y-8">
           <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
-            <TabsList className="flex w-full justify-start gap-1 overflow-x-auto rounded-lg bg-slate-200 p-1 sm:grid sm:grid-cols-5 sm:gap-0">
+            <TabsList className="flex w-full justify-start gap-1 overflow-x-auto rounded-lg bg-slate-200 p-1 sm:grid sm:grid-cols-6 sm:gap-0">
               <TabsTrigger className="flex-none sm:flex-1" value="profile">Profile</TabsTrigger>
               <TabsTrigger className="flex-none sm:flex-1" value="security">Security</TabsTrigger>
               <TabsTrigger className="flex-none sm:flex-1" value="integrations">Integrations</TabsTrigger>
               <TabsTrigger className="flex-none sm:flex-1" value="communications">Communications</TabsTrigger>
               <TabsTrigger className="flex-none sm:flex-1" value="preferences">Preferences</TabsTrigger>
+              <TabsTrigger className="flex-none sm:flex-1" value="membership">Membership &amp; Billing</TabsTrigger>
             </TabsList>
 
             {/* Profile Tab */}
@@ -1483,6 +1487,88 @@ export default function AccountSettings() {
                     <Save className="mr-2 h-4 w-4" />
                     Save Preferences
                   </Button>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="membership" className="space-y-6">
+              <Card className="overflow-hidden rounded-[1.5rem] border-emerald-200 bg-white shadow-sm">
+                <div className="border-b border-emerald-100 bg-[linear-gradient(135deg,#ecfdf5_0%,#f0fdf4_55%,#eff6ff_100%)] px-6 py-6">
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="flex items-start gap-3">
+                      <div className="rounded-2xl bg-emerald-600 p-3 text-white shadow-sm">
+                        <Sparkles className="h-6 w-6" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold uppercase tracking-[0.16em] text-emerald-700">Current membership</p>
+                        <h2 className="mt-1 text-2xl font-semibold text-slate-950">
+                          {membershipQuery.data?.membership.planName ?? "Free Launch Access"}
+                        </h2>
+                        <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-700">
+                          {membershipQuery.data?.billing.statusMessage ?? "No credit card is required. All current Tradebilia features are available at no charge during the free launch."}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="inline-flex w-fit items-center gap-2 rounded-full border border-emerald-200 bg-white/85 px-3 py-1.5 text-sm font-medium text-emerald-800">
+                      <CheckCircle2 className="h-4 w-4" />
+                      Active at no charge
+                    </div>
+                  </div>
+                </div>
+
+                <CardContent className="space-y-6 pt-6">
+                  <div className="grid gap-4 sm:grid-cols-3">
+                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Plan</p>
+                      <p className="mt-1 font-semibold text-slate-900">Free Launch Access</p>
+                    </div>
+                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Payment</p>
+                      <p className="mt-1 font-semibold text-slate-900">No credit card required</p>
+                    </div>
+                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Billing status</p>
+                      <p className="mt-1 font-semibold text-slate-900">Billing not active</p>
+                    </div>
+                  </div>
+
+                  <div className="rounded-xl border border-blue-100 bg-blue-50/70 p-4 text-sm leading-6 text-slate-700">
+                    <div className="flex gap-3">
+                      <CreditCard className="mt-0.5 h-5 w-5 shrink-0 text-blue-700" />
+                      <div>
+                        <p className="font-semibold text-slate-900">No payment method is being collected</p>
+                        <p className="mt-1">Tradebilia has not activated subscriptions, checkout, invoices, or card collection. If paid plans are introduced later, you will receive clear notice before any billing change.</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="flex items-end justify-between gap-4">
+                      <div>
+                        <h3 className="font-semibold text-slate-900">Included during free launch</h3>
+                        <p className="mt-1 text-sm text-slate-600">All current Tradebilia features remain available at no charge.</p>
+                      </div>
+                      {membershipQuery.isLoading && <Loader2 className="h-5 w-5 animate-spin text-slate-400" aria-label="Loading membership access" />}
+                    </div>
+
+                    {membershipQuery.isError ? (
+                      <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                        Membership details could not be loaded right now. Your free-launch access remains available; please refresh the page to try again.
+                      </div>
+                    ) : (
+                      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                        {(membershipQuery.data?.entitlements ?? []).map((feature) => (
+                          <div key={feature.featureKey} className="flex gap-3 rounded-xl border border-slate-200 bg-white p-4">
+                            <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
+                            <div>
+                              <p className="font-medium text-slate-900">{feature.name}</p>
+                              {feature.description && <p className="mt-1 text-sm leading-5 text-slate-600">{feature.description}</p>}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
             </TabsContent>

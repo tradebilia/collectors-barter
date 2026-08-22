@@ -13,7 +13,8 @@ describe("next-batch integrity repairs", () => {
 
   it("marks only successful referral deliveries as emailed", () => {
     const routers = source("server/routers.ts");
-    expect(routers).toMatch(/if \(ok\) \{\s*sent\+\+;\s*sentIds\.push\(referral\.id\);/);
+    expect(routers).toContain("const concurrency = 5;");
+    expect(routers).toContain("outcomes.filter(outcome => outcome.sent).map(outcome => outcome.id)");
     expect(routers).toContain("markReferralsAsEmailed(sentIds)");
   });
 

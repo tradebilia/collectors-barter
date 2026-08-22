@@ -27,9 +27,9 @@ describe("authenticated mobile-only responsive layout contracts", () => {
     expect(source).toContain("overflow-x-auto pb-2 lg:pb-0");
   });
 
-  it("keeps account settings tabs horizontally usable on phones and five-column on larger screens", () => {
+  it("keeps account settings tabs horizontally usable on phones and six-column on larger screens", () => {
     const source = read("client/src/pages/AccountSettings.tsx");
-    expect(source).toContain("overflow-x-auto rounded-lg bg-slate-200 p-1 sm:grid sm:grid-cols-5");
+    expect(source).toContain("overflow-x-auto rounded-lg bg-slate-200 p-1 sm:grid sm:grid-cols-6");
     expect(source).toContain("grid grid-cols-1 gap-4 sm:grid-cols-2");
     expect(source).toContain("grid grid-cols-1 gap-3 sm:grid-cols-2");
   });

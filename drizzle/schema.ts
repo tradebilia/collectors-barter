@@ -1,4 +1,4 @@
-import { mysqlTable, mysqlSchema, AnyMySqlColumn, index, int, mysqlEnum, varchar, text, timestamp, foreignKey, decimal, datetime, tinyint, json } from "drizzle-orm/mysql-core"
+import { mysqlTable, mysqlSchema, AnyMySqlColumn, index, int, mysqlEnum, varchar, text, timestamp, foreignKey, decimal, datetime, tinyint, json, uniqueIndex } from "drizzle-orm/mysql-core"
 import { sql } from "drizzle-orm"
 
 export const conventionCategories = mysqlTable("conventionCategories", {
@@ -742,6 +742,84 @@ export const users = mysqlTable("users", {
 		index("users_openId_unique").on(table.openId),
 		index("users_username_unique").on(table.username),
 	]);
+
+// ─── Membership and Billing Foundation ──────────────────────────────────────
+// Stripe IDs are intentionally nullable. Free-launch access is the default and
+// no checkout, card collection, or charge occurs until billing is activated.
+export const membershipPlans = mysqlTable("membershipPlans", {
+	id: int().autoincrement().notNull().primaryKey(),
+	code: varchar({ length: 64 }).notNull(),
+	name: varchar({ length: 120 }).notNull(),
+	description: text(),
+	billingInterval: mysqlEnum(['free', 'month', 'year']).default('free').notNull(),
+	isActive: tinyint().default(1).notNull(),
+	isFreeLaunch: tinyint().default(0).notNull(),
+	stripePriceId: varchar({ length: 255 }),
+	sortOrder: int().default(0).notNull(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+}, (table) => [
+	uniqueIndex("membershipPlans_code_unique").on(table.code),
+	index("membershipPlans_active_idx").on(table.isActive),
+]);
+
+export const membershipFeatures = mysqlTable("membershipFeatures", {
+	id: int().autoincrement().notNull().primaryKey(),
+	featureKey: varchar({ length: 80 }).notNull(),
+	name: varchar({ length: 120 }).notNull(),
+	description: text(),
+	category: varchar({ length: 80 }).default('membership').notNull(),
+	defaultFreeLaunchEnabled: tinyint().default(1).notNull(),
+	sortOrder: int().default(0).notNull(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+}, (table) => [
+	uniqueIndex("membershipFeatures_key_unique").on(table.featureKey),
+	index("membershipFeatures_category_idx").on(table.category),
+]);
+
+export const membershipPlanFeatures = mysqlTable("membershipPlanFeatures", {
+	id: int().autoincrement().notNull().primaryKey(),
+	planId: int().notNull().references(() => membershipPlans.id, { onDelete: 'cascade' }),
+	featureId: int().notNull().references(() => membershipFeatures.id, { onDelete: 'cascade' }),
+	isEnabled: tinyint().default(1).notNull(),
+	limitValue: int(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+}, (table) => [
+	uniqueIndex("membershipPlanFeatures_plan_feature_unique").on(table.planId, table.featureId),
+	index("membershipPlanFeatures_plan_idx").on(table.planId),
+	index("membershipPlanFeatures_feature_idx").on(table.featureId),
+]);
+
+export const userMemberships = mysqlTable("userMemberships", {
+	id: int().autoincrement().notNull().primaryKey(),
+	userId: int().notNull().references(() => users.id, { onDelete: 'cascade' }),
+	planId: int().notNull().references(() => membershipPlans.id),
+	status: mysqlEnum(['free_launch', 'trialing', 'active', 'past_due', 'cancelled', 'complimentary']).default('free_launch').notNull(),
+	stripeCustomerId: varchar({ length: 255 }),
+	stripeSubscriptionId: varchar({ length: 255 }),
+	currentPeriodStart: timestamp({ mode: 'string' }),
+	currentPeriodEnd: timestamp({ mode: 'string' }),
+	cancelAtPeriodEnd: tinyint().default(0).notNull(),
+	freeLaunchGrantedAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+}, (table) => [
+	uniqueIndex("userMemberships_user_unique").on(table.userId),
+	uniqueIndex("userMemberships_stripeSubscription_unique").on(table.stripeSubscriptionId),
+	index("userMemberships_plan_idx").on(table.planId),
+	index("userMemberships_status_idx").on(table.status),
+]);
+
+export const billingSettings = mysqlTable("billingSettings", {
+	id: int().autoincrement().notNull().primaryKey(),
+	billingMode: mysqlEnum(['free_launch', 'preview', 'live']).default('free_launch').notNull(),
+	stripeBillingEnabled: tinyint().default(0).notNull(),
+	updatedBy: int().references(() => users.id),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+});
 
 export const accountApprovalReviews = mysqlTable("accountApprovalReviews", {
 	id: int().autoincrement().notNull(),

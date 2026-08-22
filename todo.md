@@ -706,6 +706,11 @@
 - [x] Remove image-bottom divider lines from Global search-result cards while retaining their category labels.
 - [x] Reserve a consistent title area so Global card detail panels align regardless of title length.
 - [x] Add regression coverage, validate Global result-card alignment, checkpoint, synchronize GitHub, and verify the public release.
+- [x] Define and apply a non-destructive membership, plan, and plan-feature schema migration for the free-launch billing foundation.
+- [x] Add server-side free-launch membership status, entitlement evaluation, and administrator plan-feature matrix controls with Stripe checkout and charges inactive.
+- [x] Add a member-facing Membership & Billing panel that clearly explains free launch access and collects no payment details.
+- [x] Add an Admin Billing preview with plan/feature settings in inactive billing mode.
+- [x] Add regression coverage, validate the membership foundation, document the inactive Stripe boundary, checkpoint, synchronize GitHub, and verify the release.
 - [x] Restore online/offline member status to Global search-result cards without changing their divider-free aligned layout.
 - [x] Add regression coverage, validate status and alignment, checkpoint, synchronize GitHub, and verify the public release.
 - [x] Conduct a read-only audit of every Admin page tab, control, backing procedure, authorization boundary, loading state, and error path; report only confirmed issues before making repairs.
