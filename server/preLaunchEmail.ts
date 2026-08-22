@@ -32,8 +32,12 @@ type ResendFetchResponse = {
   json: () => Promise<any>;
 };
 
-function getResendApiKey() {
+function getResendContactsApiKey() {
   return process.env.RESEND_CONTACTS_API_KEY || process.env.RESEND_API_KEY;
+}
+
+function getResendBroadcastApiKey() {
+  return process.env.RESEND_API_KEY || process.env.RESEND_CONTACTS_API_KEY;
 }
 
 function headers(apiKey: string) {
@@ -140,7 +144,7 @@ export async function ensurePreLaunchSegment(fetcher: FetchLike, apiKey: string)
 }
 
 export async function getPreLaunchRecipients(fetcher: FetchLike = fetch): Promise<PreLaunchRecipient[]> {
-  const apiKey = getResendApiKey();
+  const apiKey = getResendContactsApiKey();
   if (!apiKey) throw new Error("Pre-Launch Email is not configured yet.");
   try {
     const contacts = await listAllContacts(fetcher, apiKey);
@@ -162,7 +166,7 @@ export async function getPreLaunchRecipients(fetcher: FetchLike = fetch): Promis
 }
 
 export async function getPreLaunchBroadcastStatuses(fetcher: FetchLike = fetch) {
-  const apiKey = getResendApiKey();
+  const apiKey = getResendBroadcastApiKey();
   if (!apiKey) throw new Error("Pre-Launch Email is not configured yet.");
   const response = await fetcher(`${RESEND_API_BASE}/broadcasts?limit=20`, {
     headers: headers(apiKey),
@@ -186,10 +190,11 @@ export async function sendPreLaunchUpdate(
   input: { subject: string; message: string; recipientIds?: string[] },
   fetcher: FetchLike = fetch,
 ) {
-  const apiKey = getResendApiKey();
-  if (!apiKey) throw new Error("Pre-Launch Email is not configured yet.");
+  const contactsApiKey = getResendContactsApiKey();
+  const broadcastApiKey = getResendBroadcastApiKey();
+  if (!contactsApiKey || !broadcastApiKey) throw new Error("Pre-Launch Email is not configured yet.");
 
-  const contacts = await listAllContacts(fetcher, apiKey);
+  const contacts = await listAllContacts(fetcher, contactsApiKey);
   const requestedIds = input.recipientIds ? new Set(input.recipientIds) : null;
   const selectedContacts = requestedIds ? contacts.filter(contact => requestedIds.has(contact.id)) : contacts;
   if (selectedContacts.length === 0) return { recipientCount: 0, broadcastId: null as string | null };
@@ -197,7 +202,7 @@ export async function sendPreLaunchUpdate(
   const segmentName = `Tradebilia Pre-Launch Send ${new Date().toISOString()}`;
   const segmentResponse = await fetcher(`${RESEND_API_BASE}/segments`, {
     method: "POST",
-    headers: headers(apiKey),
+    headers: headers(broadcastApiKey),
     body: JSON.stringify({ name: segmentName }),
     signal: AbortSignal.timeout(10_000),
   }) as ResendFetchResponse;
@@ -205,11 +210,11 @@ export async function sendPreLaunchUpdate(
   const segmentPayload = await segmentResponse.json();
   if (!segmentPayload?.id) throw new Error("The selected recipient group could not be prepared.");
   const segmentId = segmentPayload.id as string;
-  await enrollContactsInSegment(selectedContacts, segmentId, fetcher, apiKey);
+  await enrollContactsInSegment(selectedContacts, segmentId, fetcher, broadcastApiKey);
 
   const broadcast = await fetcher(`${RESEND_API_BASE}/broadcasts`, {
     method: "POST",
-    headers: headers(apiKey),
+    headers: headers(broadcastApiKey),
     body: JSON.stringify({
       segment_id: segmentId,
       from: FROM_ADDRESS,
@@ -226,7 +231,7 @@ export async function sendPreLaunchUpdate(
   const sentAt = new Date().toISOString();
   const propertyResponse = await fetcher(`${RESEND_API_BASE}/contact-properties`, {
     method: "POST",
-    headers: headers(apiKey),
+    headers: headers(broadcastApiKey),
     body: JSON.stringify({ key: LAST_SENT_PROPERTY, type: "string", fallback_value: "" }),
     signal: AbortSignal.timeout(10_000),
   }) as ResendFetchResponse;
@@ -236,7 +241,7 @@ export async function sendPreLaunchUpdate(
     await Promise.all(selectedContacts.map(async contact => {
       const update = await fetcher(`${RESEND_API_BASE}/contacts/${encodeURIComponent(contact.id)}`, {
         method: "PATCH",
-        headers: headers(apiKey),
+        headers: headers(broadcastApiKey),
         body: JSON.stringify({ properties: { [LAST_SENT_PROPERTY]: sentAt } }),
         signal: AbortSignal.timeout(10_000),
       }) as ResendFetchResponse;

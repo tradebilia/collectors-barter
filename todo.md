@@ -729,3 +729,5 @@
 - [x] Rebuild the Pre-Launch email header using an email-safe version of the Tradebilia homepage hero direction with clear divider-to-wordmark spacing.
 - [x] Replace the selected-looking Visit Tradebilia text with a clear Explore Tradebilia call-to-action link.
 - [x] Validate email markup and preview behavior, checkpoint, synchronize GitHub, and document the completed email-header refinement without sending a new email.
+- [x] Diagnose and repair the selected Pre-Launch recipient preparation failure without sending an unapproved email.
+- [x] Add regression coverage, validate selected-recipient preparation, checkpoint, synchronize GitHub, and verify the repaired resend workflow.
