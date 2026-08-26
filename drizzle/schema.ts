@@ -1,4 +1,4 @@
-import { mysqlTable, mysqlSchema, AnyMySqlColumn, index, int, mysqlEnum, varchar, text, timestamp, foreignKey, decimal, datetime, tinyint, json } from "drizzle-orm/mysql-core"
+import { mysqlTable, mysqlSchema, AnyMySqlColumn, index, int, mysqlEnum, varchar, text, timestamp, foreignKey, decimal, datetime, tinyint, json, uniqueIndex } from "drizzle-orm/mysql-core"
 import { sql } from "drizzle-orm"
 
 export const conventionCategories = mysqlTable("conventionCategories", {
@@ -893,6 +893,145 @@ export const tradePayments = mysqlTable("tradePayments", {
 	index("tradePayments_payerId_idx").on(table.payerId),
 	index("tradePayments_payeeId_idx").on(table.payeeId),
 	index("tradePayments_status_idx").on(table.status),
+]);
+
+// ─── Membership, Billing, and Verification Foundation ───────────────────────
+// All payment-provider identifiers are nullable. Free Launch remains the
+// default state and payment enforcement stays disabled until a future manual
+// launch decision. These tables do not alter existing marketplace records.
+export const membershipPlans = mysqlTable("membershipPlans", {
+	id: int().autoincrement().notNull().primaryKey(),
+	code: varchar({ length: 64 }).notNull(),
+	name: varchar({ length: 120 }).notNull(),
+	description: text(),
+	billingInterval: mysqlEnum(['free', 'subscription']).default('free').notNull(),
+	isActive: tinyint().default(1).notNull(),
+	isFreeLaunch: tinyint().default(0).notNull(),
+	stripeMonthlyPriceId: varchar({ length: 255 }),
+	stripeAnnualPriceId: varchar({ length: 255 }),
+	sortOrder: int().default(0).notNull(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+}, (table) => [
+	uniqueIndex("membershipPlans_code_unique").on(table.code),
+	index("membershipPlans_active_idx").on(table.isActive),
+]);
+
+export const membershipFeatures = mysqlTable("membershipFeatures", {
+	id: int().autoincrement().notNull().primaryKey(),
+	featureKey: varchar({ length: 80 }).notNull(),
+	name: varchar({ length: 120 }).notNull(),
+	description: text(),
+	category: varchar({ length: 80 }).default('membership').notNull(),
+	defaultFreeLaunchEnabled: tinyint().default(1).notNull(),
+	sortOrder: int().default(0).notNull(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+}, (table) => [
+	uniqueIndex("membershipFeatures_key_unique").on(table.featureKey),
+	index("membershipFeatures_category_idx").on(table.category),
+]);
+
+export const membershipPlanFeatures = mysqlTable("membershipPlanFeatures", {
+	id: int().autoincrement().notNull().primaryKey(),
+	planId: int().notNull().references(() => membershipPlans.id, { onDelete: 'cascade' }),
+	featureId: int().notNull().references(() => membershipFeatures.id, { onDelete: 'cascade' }),
+	isEnabled: tinyint().default(1).notNull(),
+	limitValue: int(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+}, (table) => [
+	uniqueIndex("membershipPlanFeatures_plan_feature_unique").on(table.planId, table.featureId),
+	index("membershipPlanFeatures_plan_idx").on(table.planId),
+	index("membershipPlanFeatures_feature_idx").on(table.featureId),
+]);
+
+export const billingSettings = mysqlTable("billingSettings", {
+	id: int().autoincrement().notNull().primaryKey(),
+	billingMode: mysqlEnum(['free_launch', 'launch_grace', 'membership_required']).default('free_launch').notNull(),
+	stripeBillingEnabled: tinyint().default(0).notNull(),
+	paymentEnforcementEnabled: tinyint().default(0).notNull(),
+	feeLaunchStartsAt: timestamp({ mode: 'string' }),
+	feeLaunchGraceEndsAt: timestamp({ mode: 'string' }),
+	updatedBy: int().references(() => users.id),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+});
+
+export const userMemberships = mysqlTable("userMemberships", {
+	id: int().autoincrement().notNull().primaryKey(),
+	userId: int().notNull().references(() => users.id, { onDelete: 'cascade' }),
+	planId: int().notNull().references(() => membershipPlans.id),
+	status: mysqlEnum(['free_launch', 'active', 'past_due', 'cancelled', 'complimentary', 'unpaid']).default('free_launch').notNull(),
+	billingTerm: mysqlEnum(['none', 'monthly', 'annual', 'complimentary']).default('none').notNull(),
+	stripeCustomerId: varchar({ length: 255 }),
+	stripeSubscriptionId: varchar({ length: 255 }),
+	currentPeriodStart: timestamp({ mode: 'string' }),
+	currentPeriodEnd: timestamp({ mode: 'string' }),
+	paymentGraceEndsAt: timestamp({ mode: 'string' }),
+	cancelAtPeriodEnd: tinyint().default(0).notNull(),
+	accessOverrideNote: text(),
+	freeLaunchGrantedAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+}, (table) => [
+	uniqueIndex("userMemberships_user_unique").on(table.userId),
+	uniqueIndex("userMemberships_stripeSubscription_unique").on(table.stripeSubscriptionId),
+	index("userMemberships_plan_idx").on(table.planId),
+	index("userMemberships_status_idx").on(table.status),
+	index("userMemberships_grace_idx").on(table.paymentGraceEndsAt),
+]);
+
+export const membershipProviderEvents = mysqlTable("membershipProviderEvents", {
+	id: int().autoincrement().notNull().primaryKey(),
+	provider: varchar({ length: 32 }).notNull(),
+	providerEventId: varchar({ length: 255 }).notNull(),
+	eventType: varchar({ length: 120 }).notNull(),
+	processedAt: timestamp({ mode: 'string' }),
+	processingStatus: mysqlEnum(['received', 'processed', 'ignored', 'failed']).default('received').notNull(),
+	failureReason: text(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+}, (table) => [
+	uniqueIndex("membershipProviderEvents_unique").on(table.provider, table.providerEventId),
+	index("membershipProviderEvents_status_idx").on(table.processingStatus),
+]);
+
+export const verificationOrders = mysqlTable("verificationOrders", {
+	id: int().autoincrement().notNull().primaryKey(),
+	proposalId: int().notNull().references(() => tradeProposals.id, { onDelete: 'cascade' }),
+	status: mysqlEnum(['awaiting_agreement', 'awaiting_payment', 'awaiting_shipment', 'received', 'matched_listing', 'forwarded', 'completed', 'admin_review', 'cancelled']).default('awaiting_agreement').notNull(),
+	requesterAgreed: tinyint().default(0).notNull(),
+	recipientAgreed: tinyint().default(0).notNull(),
+	requesterPaymentStatus: mysqlEnum(['not_required', 'unpaid', 'paid', 'failed', 'refunded']).default('unpaid').notNull(),
+	recipientPaymentStatus: mysqlEnum(['not_required', 'unpaid', 'paid', 'failed', 'refunded']).default('unpaid').notNull(),
+	feeCentsPerMember: int().default(2000).notNull(),
+	requesterPaymentReference: varchar({ length: 255 }),
+	recipientPaymentReference: varchar({ length: 255 }),
+	shipByAt: timestamp({ mode: 'string' }),
+	adminNote: text(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+}, (table) => [
+	uniqueIndex("verificationOrders_proposal_unique").on(table.proposalId),
+	index("verificationOrders_status_idx").on(table.status),
+]);
+
+export const verificationOrderShipments = mysqlTable("verificationOrderShipments", {
+	id: int().autoincrement().notNull().primaryKey(),
+	verificationOrderId: int().notNull().references(() => verificationOrders.id, { onDelete: 'cascade' }),
+	memberId: int().notNull().references(() => users.id, { onDelete: 'cascade' }),
+	direction: mysqlEnum(['to_tradebilia', 'to_member']).notNull(),
+	trackingNumber: varchar({ length: 255 }),
+	carrier: varchar({ length: 80 }),
+	receivedAt: timestamp({ mode: 'string' }),
+	forwardedAt: timestamp({ mode: 'string' }),
+	evidenceUrl: text(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+}, (table) => [
+	uniqueIndex("verificationOrderShipments_order_member_direction_unique").on(table.verificationOrderId, table.memberId, table.direction),
+	index("verificationOrderShipments_member_idx").on(table.memberId),
 ]);
 
 // ─── Convenience type aliases ─────────────────────────────────────────────────

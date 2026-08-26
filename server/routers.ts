@@ -115,6 +115,7 @@ import { createPendingEmailHistoryApproval, requireMarketplaceApproval } from ".
 import { getIpqsEmailHistory } from "./ipqs";
 import { createProviderOauthState, setProviderOauthStateCookie } from "./_core/providerOauthState";
 import { isAuthorizedPaymentVerification } from "./paymentAuthorization";
+import { assertSubscriptionAccess, billingRouter, membershipRouter } from "./membership";
 
 // The R2 adapter enforces decoded per-kind limits (10MB listing, 5MB avatar).
 // This ceiling stops an oversized base64 request before its payload is decoded.
@@ -218,6 +219,8 @@ export const appRouter = router({
   tradeFlow: tradeFlowRouter,
   testAI: testAIRouter,
   r2Media: r2MediaRouter,
+  membership: membershipRouter,
+  billing: billingRouter,
   launchUpdates: router({
     subscribe: publicProcedure
       .input(z.object({ email: z.string().trim().email().max(320) }))
@@ -794,6 +797,7 @@ export const appRouter = router({
         }),
       )
       .query(async ({ ctx, input }) => {
+        await assertSubscriptionAccess(ctx.user?.id ?? null);
         const detail = await getListingDetail(input.listingId, ctx.user?.id ?? null);
         return { listing: detail };
       }),

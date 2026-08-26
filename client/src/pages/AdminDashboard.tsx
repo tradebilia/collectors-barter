@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { BarChart3, Users, Package, Settings, Trash2, Flag, Mail, Search, ArrowUpDown, Calendar, ExternalLink, CheckCircle, XCircle, AlertTriangle, Ban, ShieldOff, ClipboardList, MessageSquare, TicketCheck, Send, ChevronDown, ChevronUp, Store, CloudUpload } from "lucide-react";
+import { BarChart3, Users, Package, Settings, Trash2, Flag, Mail, Search, ArrowUpDown, Calendar, ExternalLink, CheckCircle, XCircle, AlertTriangle, Ban, ShieldOff, ClipboardList, MessageSquare, TicketCheck, Send, ChevronDown, ChevronUp, Store, CloudUpload, CreditCard } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -409,6 +409,8 @@ export default function AdminDashboard() {
   const moderationLogQuery = trpc.admin.getModerationLog.useQuery(undefined, { enabled: user?.role === 'admin' });
   const pendingApprovalsQuery = trpc.admin.getPendingAccountApprovals.useQuery(undefined, { enabled: user?.role === 'admin', refetchOnWindowFocus: true });
   const apiHealthQuery = trpc.admin.getApiHealthEvents.useQuery(undefined, { enabled: user?.role === 'admin', refetchOnWindowFocus: true });
+  const billingOverviewQuery = trpc.billing.getOverview.useQuery(undefined, { enabled: user?.role === "admin", refetchOnWindowFocus: true });
+  const billingMembersQuery = trpc.billing.getMembers.useQuery(undefined, { enabled: user?.role === "admin", refetchOnWindowFocus: true });
   const reviewApprovalMutation = trpc.admin.reviewAccountApproval.useMutation({
     onSuccess: () => pendingApprovalsQuery.refetch(),
     onError: (error) => toast.error(error.message),
@@ -616,6 +618,10 @@ export default function AdminDashboard() {
             <TabsTrigger value="settings" className="flex items-center justify-center gap-1.5 text-xs font-medium py-2.5 whitespace-nowrap">
               <Settings className="h-4 w-4" />
               Settings
+            </TabsTrigger>
+            <TabsTrigger value="billing" className="flex items-center justify-center gap-1.5 text-xs font-medium py-2.5 whitespace-nowrap">
+              <CreditCard className="h-4 w-4" />
+              Billing
             </TabsTrigger>
             <TabsTrigger value="deleted" className="flex items-center justify-center gap-1.5 text-xs font-medium py-2.5 whitespace-nowrap">
               <Users className="h-4 w-4" />
@@ -1120,6 +1126,28 @@ export default function AdminDashboard() {
                   </ul>
                 </div>
               </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Billing Tab */}
+          <TabsContent value="billing" className="space-y-4 mt-6">
+            <Card className="border-blue-200 bg-gradient-to-br from-blue-50 via-white to-violet-50">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2"><CreditCard className="h-5 w-5 text-blue-700" /> Tradebilia Membership &amp; Billing</CardTitle>
+                <CardDescription>Membership preparation is visible to administrators; payment collection and enforcement remain disabled.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-5">
+                {billingOverviewQuery.isLoading ? <p className="text-sm text-slate-600">Loading billing status…</p> : billingOverviewQuery.data ? <>
+                  <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-950"><p className="font-semibold">{billingOverviewQuery.data.billing.statusLabel}</p><p className="mt-1 text-sm leading-6">{billingOverviewQuery.data.billing.statusMessage}</p></div>
+                  <div className="grid gap-3 md:grid-cols-2">{billingOverviewQuery.data.billing.futureSubscriptionTerms.map((term) => <div key={term.code} className="rounded-xl border border-slate-200 bg-white p-4"><p className="font-semibold text-slate-900">Future {term.label} term</p><p className="mt-1 text-xl font-bold text-blue-700">{term.displayPrice}</p><p className="mt-2 text-sm text-slate-600">Both terms are planned to include identical membership access.</p></div>)}</div>
+                  <div className="rounded-xl border border-slate-200 bg-white p-4"><p className="font-semibold text-slate-900">Free and Membership feature matrix</p><div className="mt-3 grid gap-2 md:grid-cols-2">{billingOverviewQuery.data.features.map((feature) => <div key={feature.id} className="flex items-center justify-between gap-3 rounded-lg bg-slate-50 px-3 py-2 text-sm"><span className="text-slate-800">{feature.name}</span><span className="shrink-0 text-emerald-700">Included at launch</span></div>)}</div></div>
+                  <p className="rounded-lg bg-slate-100 px-4 py-3 text-sm leading-6 text-slate-700">There is intentionally no control here to activate billing. Checkout, card collection, Stripe webhooks, and paid-access enforcement are unavailable until a separately approved test-mode payment phase.</p>
+                </> : <p className="text-sm text-red-700">Billing data is unavailable. Refresh the page and review the server logs if this persists.</p>}
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader><CardTitle>Member membership status</CardTitle><CardDescription>Current members should remain in Free Launch. Administrators can monitor future plan, status, and grace-period data here.</CardDescription></CardHeader>
+              <CardContent>{billingMembersQuery.isLoading ? <p className="text-sm text-slate-600">Loading member status…</p> : billingMembersQuery.data ? <div className="overflow-x-auto"><table className="w-full min-w-[620px] text-left text-sm"><thead className="border-b text-slate-600"><tr><th className="px-3 py-2">Member</th><th className="px-3 py-2">Plan</th><th className="px-3 py-2">Status</th><th className="px-3 py-2">Term</th><th className="px-3 py-2">Grace ends</th></tr></thead><tbody>{billingMembersQuery.data.map((member) => <tr key={member.userId} className="border-b border-slate-100"><td className="px-3 py-3"><p className="font-medium text-slate-900">{member.displayName}</p><p className="text-xs text-slate-500">{member.email ?? "No email"}</p></td><td className="px-3 py-3">{member.planName}</td><td className="px-3 py-3 capitalize">{member.membershipStatus.replace("_", " ")}</td><td className="px-3 py-3 capitalize">{member.billingTerm}</td><td className="px-3 py-3">{member.paymentGraceEndsAt ?? "—"}</td></tr>)}</tbody></table></div> : <p className="text-sm text-slate-600">Member-level membership data is unavailable. Refresh the page and review administrator access if this persists.</p>}</CardContent>
             </Card>
           </TabsContent>
 
