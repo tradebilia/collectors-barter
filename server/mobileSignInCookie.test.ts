@@ -20,6 +20,21 @@ describe("mobile credential sign-in session contract", () => {
     });
   });
 
+  it("uses a secure third-party-capable cookie only for the embedded HTTPS WebDev preview host", () => {
+    const options = getSessionCookieOptions({
+      protocol: "https",
+      hostname: "3000-example.us2.manus.computer",
+      headers: {},
+    } as any);
+
+    expect(options).toMatchObject({
+      httpOnly: true,
+      path: "/",
+      sameSite: "none",
+      secure: true,
+    });
+  });
+
   it("uses an immediate in-memory fallback and server-confirmed user snapshot for embedded previews", () => {
     const client = readFileSync(resolve(root, "client/src/main.tsx"), "utf8");
     const modal = readFileSync(resolve(root, "client/src/components/SignInModal.tsx"), "utf8");

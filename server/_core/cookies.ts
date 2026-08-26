@@ -24,6 +24,8 @@ function isSecureRequest(req: Request) {
 export function getSessionCookieOptions(
   req: Request
 ): Pick<CookieOptions, "domain" | "httpOnly" | "path" | "sameSite" | "secure"> {
+  const hostname = (req.hostname || req.headers.host || "").split(":")[0].toLowerCase();
+  const isEmbeddedWebDevPreview = hostname.endsWith(".manus.computer");
   // const hostname = req.hostname;
   // const shouldSetDomain =
   //   hostname &&
@@ -42,10 +44,10 @@ export function getSessionCookieOptions(
   return {
     httpOnly: true,
     path: "/",
-    // Tradebilia's password sign-in and tRPC calls are same-site. Lax keeps the
-    // session on normal first-party navigation while avoiding the mobile-browser
-    // restrictions that can discard SameSite=None cookies after credential sign-in.
-    sameSite: "lax",
+    // The public Tradebilia domain remains first-party/Lax. The Management UI
+    // loads its HTTPS preview from *.manus.computer in an iframe, which requires
+    // SameSite=None for the browser to return the host-only session cookie.
+    sameSite: isEmbeddedWebDevPreview ? "none" : "lax",
     secure: isSecureRequest(req),
   };
 }
