@@ -11,124 +11,81 @@ import {
   users,
 } from "../drizzle/schema";
 import { requireDb } from "./db";
-import { ENV } from "./_core/env";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 
 export const FREE_LAUNCH_BILLING_MODE = "free_launch" as const;
-export const SUBSCRIPTION_BILLING_MODE = "subscription" as const;
+export const LAUNCH_GRACE_BILLING_MODE = "launch_grace" as const;
+export const MEMBERSHIP_REQUIRED_BILLING_MODE = "membership_required" as const;
 export const FREE_LAUNCH_PLAN_CODE = "free_launch" as const;
-export const SUBSCRIPTION_PLAN_CODE = "subscription" as const;
+export const TRADEBILIA_MEMBERSHIP_PLAN_CODE = "tradebilia_membership" as const;
+
 export const FUTURE_SUBSCRIPTION_PAYMENT_TERMS = [
   { code: "monthly", label: "Monthly", priceCents: 100, displayPrice: "$1 per month" },
   { code: "annual", label: "Annual", priceCents: 1000, displayPrice: "$10 per year" },
 ] as const;
 
-type BillingMode = typeof FREE_LAUNCH_BILLING_MODE | typeof SUBSCRIPTION_BILLING_MODE;
-type MembershipStatus = "free_launch" | "trialing" | "active" | "past_due" | "cancelled" | "complimentary";
+type BillingMode = typeof FREE_LAUNCH_BILLING_MODE | typeof LAUNCH_GRACE_BILLING_MODE | typeof MEMBERSHIP_REQUIRED_BILLING_MODE;
+type MembershipStatus = "free_launch" | "active" | "past_due" | "cancelled" | "complimentary" | "unpaid";
 
-type MembershipFeatureGrant = {
-  planEnabled: boolean;
-};
-
-export function hasSubscriptionMembershipAccess(status: MembershipStatus | null | undefined) {
-  return status === "active" || status === "trialing" || status === "complimentary";
-}
-
-/**
- * Free launch is open to every member. After a future subscription launch, a
- * feature is granted only to an active/trialing subscriber or an administrator-
- * granted complimentary member, and only when the subscription plan enables it.
- */
-export function isMembershipFeatureGranted(
-  billingMode: BillingMode,
-  membershipStatus: MembershipStatus,
-  grant: MembershipFeatureGrant,
-) {
-  if (billingMode === FREE_LAUNCH_BILLING_MODE) return true;
-  return hasSubscriptionMembershipAccess(membershipStatus) && grant.planEnabled;
-}
-
-export function buildBillingSummary(settings?: {
+type BillingSettingsRow = {
   billingMode: BillingMode;
   stripeBillingEnabled: number;
-} | null) {
-  const billingMode = settings?.billingMode ?? FREE_LAUNCH_BILLING_MODE;
-  const freeLaunchOverride = billingMode === FREE_LAUNCH_BILLING_MODE;
+  paymentEnforcementEnabled: number;
+  feeLaunchStartsAt: string | null;
+  feeLaunchGraceEndsAt: string | null;
+};
+
+function isFutureDate(value: string | null | undefined) {
+  return Boolean(value && new Date(value).getTime() > Date.now());
+}
+
+export function hasMembershipAccess(status: MembershipStatus | null | undefined, paymentGraceEndsAt?: string | null) {
+  return status === "active" || status === "complimentary" || (status === "past_due" && isFutureDate(paymentGraceEndsAt));
+}
+
+export function buildBillingSummary(settings?: BillingSettingsRow | null) {
+  const configuredMode = settings?.billingMode ?? FREE_LAUNCH_BILLING_MODE;
+  const paymentEnforcementEnabled = Boolean(settings?.paymentEnforcementEnabled);
+  const freeLaunchOverride = configuredMode === FREE_LAUNCH_BILLING_MODE || !paymentEnforcementEnabled;
 
   return {
-    billingMode,
+    billingMode: configuredMode,
     freeLaunchOverride,
     stripeBillingEnabled: false,
     checkoutAvailable: false,
     cardCollectionAvailable: false,
     paymentRequired: false,
+    paymentEnforcementEnabled: false,
     futureSubscriptionTerms: FUTURE_SUBSCRIPTION_PAYMENT_TERMS,
-    statusLabel: freeLaunchOverride ? "Free Launch Access" : "Subscription Model Prepared",
+    statusLabel: freeLaunchOverride ? "Free Launch Access" : "Membership model prepared",
     statusMessage: freeLaunchOverride
-      ? "No credit card is required. All current Tradebilia features are available at no charge during the free launch."
-      : "Subscription billing is not active. Checkout, card collection, and charges remain unavailable.",
+      ? "No credit card is required. All current Tradebilia features are available at no charge during the Free Launch."
+      : "Payment enforcement is intentionally inactive. Checkout, card collection, and charges remain unavailable.",
   };
 }
 
-/**
- * The public browsing policy is dormant during Free Launch. If a separately
- * approved project enables subscription mode, callers without an active,
- * trialing, or complimentary membership cannot receive premium page data.
- */
-export async function getSubscriptionAccessPolicy(userId: number | null) {
-  const settings = await getBillingSettingsRow();
-  const billing = buildBillingSummary(settings as any);
-  if (billing.freeLaunchOverride) {
-    return {
-      ...billing,
-      hasSubscriptionAccess: true,
-      membershipStatus: userId ? "free_launch" : null,
-    };
-  }
-
-  if (!userId) {
-    return { ...billing, hasSubscriptionAccess: false, membershipStatus: null };
-  }
-
-  const membership = await getMembershipWithPlan(userId);
-  const membershipStatus = membership?.membership.status ?? null;
-  return {
-    ...billing,
-    hasSubscriptionAccess: hasSubscriptionMembershipAccess(membershipStatus),
-    membershipStatus,
-  };
-}
-
-export async function assertSubscriptionAccess(userId: number | null) {
-  const policy = await getSubscriptionAccessPolicy(userId);
-  if (!policy.hasSubscriptionAccess) {
-    throw new TRPCError({
-      code: "FORBIDDEN",
-      message: "Subscription access is required for this page. Category pages, Global Search, and Contact Us remain available.",
-    });
-  }
-  return policy;
+export function isMembershipFeatureGranted(
+  billing: ReturnType<typeof buildBillingSummary>,
+  status: MembershipStatus,
+  planEnabled: boolean,
+  paymentGraceEndsAt?: string | null,
+) {
+  if (billing.freeLaunchOverride) return true;
+  return hasMembershipAccess(status, paymentGraceEndsAt) && planEnabled;
 }
 
 async function getBillingSettingsRow() {
   const db = await requireDb();
   const rows = await db.select().from(billingSettings).orderBy(asc(billingSettings.id)).limit(1);
-  return rows[0] ?? null;
+  return (rows[0] ?? null) as BillingSettingsRow | null;
 }
 
-async function getPlanByCode(code: typeof FREE_LAUNCH_PLAN_CODE | typeof SUBSCRIPTION_PLAN_CODE) {
+async function getPlanByCode(code: typeof FREE_LAUNCH_PLAN_CODE | typeof TRADEBILIA_MEMBERSHIP_PLAN_CODE) {
   const db = await requireDb();
-  const plans = await db
-    .select()
-    .from(membershipPlans)
-    .where(eq(membershipPlans.code, code))
-    .limit(1);
-  const plan = plans[0];
+  const rows = await db.select().from(membershipPlans).where(eq(membershipPlans.code, code)).limit(1);
+  const plan = rows[0];
   if (!plan) {
-    throw new TRPCError({
-      code: "INTERNAL_SERVER_ERROR",
-      message: `${code === FREE_LAUNCH_PLAN_CODE ? "Free-launch" : "Subscription"} membership plan is unavailable. Please contact Tradebilia support.`,
-    });
+    throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "The required Tradebilia membership plan is unavailable." });
   }
   return plan;
 }
@@ -144,41 +101,58 @@ async function getMembershipWithPlan(userId: number) {
   return rows[0] ?? null;
 }
 
-/** Existing members receive a durable free-launch record only when needed. */
+/** A membership row is created only when a signed-in member first requests status. */
 export async function getOrCreateFreeLaunchMembership(userId: number) {
   const existing = await getMembershipWithPlan(userId);
   if (existing) return existing;
 
   const db = await requireDb();
   const freeLaunchPlan = await getPlanByCode(FREE_LAUNCH_PLAN_CODE);
-
   try {
     await db.insert(userMemberships).values({
       userId,
       planId: freeLaunchPlan.id,
       status: "free_launch",
+      billingTerm: "none",
     });
   } catch (error) {
-    const concurrentMembership = await getMembershipWithPlan(userId);
-    if (concurrentMembership) return concurrentMembership;
+    const concurrent = await getMembershipWithPlan(userId);
+    if (concurrent) return concurrent;
     throw error;
   }
 
   const created = await getMembershipWithPlan(userId);
-  if (!created) {
-    throw new TRPCError({
-      code: "INTERNAL_SERVER_ERROR",
-      message: "Membership access could not be prepared. Please try again.",
-    });
-  }
+  if (!created) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Membership access could not be prepared." });
   return created;
 }
 
+export async function getSubscriptionAccessPolicy(userId: number | null) {
+  const settings = await getBillingSettingsRow();
+  const billing = buildBillingSummary(settings);
+  if (billing.freeLaunchOverride) {
+    return { ...billing, hasSubscriptionAccess: true, membershipStatus: userId ? "free_launch" : null };
+  }
+  if (!userId) return { ...billing, hasSubscriptionAccess: false, membershipStatus: null };
+
+  const row = await getMembershipWithPlan(userId);
+  const membershipStatus = (row?.membership.status ?? "unpaid") as MembershipStatus;
+  return {
+    ...billing,
+    hasSubscriptionAccess: hasMembershipAccess(membershipStatus, row?.membership.paymentGraceEndsAt),
+    membershipStatus,
+  };
+}
+
+export async function assertSubscriptionAccess(userId: number | null) {
+  const policy = await getSubscriptionAccessPolicy(userId);
+  if (!policy.hasSubscriptionAccess) {
+    throw new TRPCError({ code: "FORBIDDEN", message: "Tradebilia Membership is required for this page." });
+  }
+  return policy;
+}
+
 export async function getMyMembershipStatus(userId: number) {
-  const [settings, membership] = await Promise.all([
-    getBillingSettingsRow(),
-    getOrCreateFreeLaunchMembership(userId),
-  ]);
+  const [settings, membership] = await Promise.all([getBillingSettingsRow(), getOrCreateFreeLaunchMembership(userId)]);
   const db = await requireDb();
   const grants = await db
     .select({
@@ -188,29 +162,26 @@ export async function getMyMembershipStatus(userId: number) {
       category: membershipFeatures.category,
       sortOrder: membershipFeatures.sortOrder,
       planEnabled: membershipPlanFeatures.isEnabled,
-      limitValue: membershipPlanFeatures.limitValue,
     })
     .from(membershipFeatures)
     .leftJoin(
       membershipPlanFeatures,
-      and(
-        eq(membershipPlanFeatures.featureId, membershipFeatures.id),
-        eq(membershipPlanFeatures.planId, membership.plan.id),
-      ),
+      and(eq(membershipPlanFeatures.featureId, membershipFeatures.id), eq(membershipPlanFeatures.planId, membership.plan.id)),
     )
     .orderBy(asc(membershipFeatures.sortOrder));
+  const billing = buildBillingSummary(settings);
+  const status = membership.membership.status as MembershipStatus;
 
-  const billing = buildBillingSummary(settings as BillingMode extends never ? never : any);
-  const isComplimentary = membership.membership.status === "complimentary";
   return {
     billing,
     membership: {
       planCode: membership.plan.code,
-      planName: isComplimentary ? "Complimentary Membership" : membership.plan.name,
-      status: membership.membership.status,
-      isComplimentary,
-      billingInterval: membership.plan.billingInterval,
+      planName: status === "complimentary" ? "Complimentary Membership" : membership.plan.name,
+      status,
+      billingTerm: membership.membership.billingTerm,
+      isComplimentary: status === "complimentary",
       currentPeriodEnd: membership.membership.currentPeriodEnd,
+      paymentGraceEndsAt: membership.membership.paymentGraceEndsAt,
       cancelAtPeriodEnd: Boolean(membership.membership.cancelAtPeriodEnd),
     },
     entitlements: grants.map((grant) => ({
@@ -218,19 +189,8 @@ export async function getMyMembershipStatus(userId: number) {
       name: grant.name,
       description: grant.description,
       category: grant.category,
-      limitValue: grant.limitValue,
-      granted: isMembershipFeatureGranted(
-        billing.billingMode,
-        membership.membership.status,
-        { planEnabled: Boolean(grant.planEnabled) },
-      ),
-      source: billing.freeLaunchOverride
-        ? "free_launch_override"
-        : isComplimentary
-          ? "complimentary_grant"
-          : Boolean(grant.planEnabled)
-            ? "subscription"
-            : "not_included",
+      granted: isMembershipFeatureGranted(billing, status, Boolean(grant.planEnabled), membership.membership.paymentGraceEndsAt),
+      source: billing.freeLaunchOverride ? "free_launch_override" : status === "complimentary" ? "complimentary_access" : "membership_plan",
     })),
   };
 }
@@ -239,47 +199,23 @@ export async function getBillingOverview() {
   const db = await requireDb();
   const [settings, plans, features, mappings] = await Promise.all([
     getBillingSettingsRow(),
-    db
-      .select()
-      .from(membershipPlans)
-      .where(inArray(membershipPlans.code, [FREE_LAUNCH_PLAN_CODE, SUBSCRIPTION_PLAN_CODE]))
-      .orderBy(asc(membershipPlans.sortOrder)),
+    db.select().from(membershipPlans).where(inArray(membershipPlans.code, [FREE_LAUNCH_PLAN_CODE, TRADEBILIA_MEMBERSHIP_PLAN_CODE])).orderBy(asc(membershipPlans.sortOrder)),
     db.select().from(membershipFeatures).orderBy(asc(membershipFeatures.sortOrder)),
     db.select().from(membershipPlanFeatures),
   ]);
-
-  const mappingByPlanFeature = new Map(mappings.map((mapping) => [`${mapping.planId}:${mapping.featureId}`, mapping]));
-  const billing = buildBillingSummary(settings as any);
-
+  const mappingsByKey = new Map(mappings.map((row) => [`${row.planId}:${row.featureId}`, row]));
+  const billing = buildBillingSummary(settings);
   return {
     billing,
-    plans: plans.map((plan) => ({
-      id: plan.id,
-      code: plan.code,
-      name: plan.name,
-      description: plan.description,
-      billingInterval: plan.billingInterval,
-      isActive: Boolean(plan.isActive),
-      isFreeLaunch: Boolean(plan.isFreeLaunch),
-      stripePriceConfigured: false,
-    })),
-    features: features.map((feature) => ({
-      id: feature.id,
-      featureKey: feature.featureKey,
-      name: feature.name,
-      description: feature.description,
-      category: feature.category,
-    })),
-    matrix: plans.flatMap((plan) => features.map((feature) => {
-      const mapping = mappingByPlanFeature.get(`${plan.id}:${feature.id}`);
-      return {
-        planId: plan.id,
-        featureId: feature.id,
-        isEnabled: Boolean(mapping?.isEnabled),
-        limitValue: mapping?.limitValue ?? null,
-        effectiveAtLaunch: true,
-      };
-    })),
+    plans: plans.map((plan) => ({ id: plan.id, code: plan.code, name: plan.name, isFreeLaunch: Boolean(plan.isFreeLaunch), isActive: Boolean(plan.isActive) })),
+    features: features.map((feature) => ({ id: feature.id, featureKey: feature.featureKey, name: feature.name, description: feature.description })),
+    matrix: plans.flatMap((plan) => features.map((feature) => ({
+      planId: plan.id,
+      featureId: feature.id,
+      isEnabled: Boolean(mappingsByKey.get(`${plan.id}:${feature.id}`)?.isEnabled),
+      limitValue: mappingsByKey.get(`${plan.id}:${feature.id}`)?.limitValue ?? null,
+      effectiveAtLaunch: true,
+    }))),
   };
 }
 
@@ -289,10 +225,13 @@ export async function getMembershipAdministrationMembers() {
     .select({
       userId: users.id,
       username: users.username,
+      email: users.email,
       accountDisplayName: users.displayName,
       accountName: users.name,
       profileDisplayName: userProfiles.displayName,
       membershipStatus: userMemberships.status,
+      billingTerm: userMemberships.billingTerm,
+      paymentGraceEndsAt: userMemberships.paymentGraceEndsAt,
       planCode: membershipPlans.code,
       planName: membershipPlans.name,
     })
@@ -301,122 +240,86 @@ export async function getMembershipAdministrationMembers() {
     .leftJoin(userMemberships, eq(userMemberships.userId, users.id))
     .leftJoin(membershipPlans, eq(membershipPlans.id, userMemberships.planId))
     .orderBy(asc(users.id));
-
   return rows.map((row) => ({
     userId: row.userId,
     displayName: row.profileDisplayName || row.accountDisplayName || row.accountName || row.username || `Collector ${row.userId}`,
-    username: row.username || null,
+    email: row.email ?? null,
     membershipStatus: row.membershipStatus ?? "free_launch",
+    billingTerm: row.billingTerm ?? "none",
+    paymentGraceEndsAt: row.paymentGraceEndsAt ?? null,
     isComplimentary: row.membershipStatus === "complimentary",
     planCode: row.planCode ?? FREE_LAUNCH_PLAN_CODE,
     planName: row.membershipStatus === "complimentary" ? "Complimentary Membership" : row.planName ?? "Free Launch Access",
   }));
 }
 
-export async function grantComplimentaryMembership(targetUserId: number) {
+function requireAdministrator(role: string | null | undefined) {
+  if (role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Only administrators can manage membership configuration." });
+}
+
+export async function grantComplimentaryMembership(userId: number) {
   const db = await requireDb();
-  const target = await db.select({ id: users.id }).from(users).where(eq(users.id, targetUserId)).limit(1);
+  const target = await db.select({ id: users.id }).from(users).where(eq(users.id, userId)).limit(1);
   if (!target[0]) throw new TRPCError({ code: "NOT_FOUND", message: "The selected member was not found." });
-
-  const subscriptionPlan = await getPlanByCode(SUBSCRIPTION_PLAN_CODE);
-  const existing = await getMembershipWithPlan(targetUserId);
+  const plan = await getPlanByCode(TRADEBILIA_MEMBERSHIP_PLAN_CODE);
+  const existing = await getMembershipWithPlan(userId);
   if (existing) {
-    await db
-      .update(userMemberships)
-      .set({ planId: subscriptionPlan.id, status: "complimentary", cancelAtPeriodEnd: 0 })
-      .where(eq(userMemberships.userId, targetUserId));
+    await db.update(userMemberships).set({ planId: plan.id, status: "complimentary", billingTerm: "complimentary", cancelAtPeriodEnd: 0, paymentGraceEndsAt: null }).where(eq(userMemberships.userId, userId));
   } else {
-    await db.insert(userMemberships).values({
-      userId: targetUserId,
-      planId: subscriptionPlan.id,
-      status: "complimentary",
-    });
+    await db.insert(userMemberships).values({ userId, planId: plan.id, status: "complimentary", billingTerm: "complimentary" });
   }
 }
 
-export async function revokeComplimentaryMembership(targetUserId: number) {
+export async function revokeComplimentaryMembership(userId: number) {
   const db = await requireDb();
-  const freeLaunchPlan = await getPlanByCode(FREE_LAUNCH_PLAN_CODE);
-  const result = await db
-    .update(userMemberships)
-    .set({ planId: freeLaunchPlan.id, status: "free_launch", cancelAtPeriodEnd: 0 })
-    .where(and(eq(userMemberships.userId, targetUserId), eq(userMemberships.status, "complimentary")));
+  const plan = await getPlanByCode(FREE_LAUNCH_PLAN_CODE);
+  const result = await db.update(userMemberships).set({ planId: plan.id, status: "free_launch", billingTerm: "none", cancelAtPeriodEnd: 0, paymentGraceEndsAt: null }).where(and(eq(userMemberships.userId, userId), eq(userMemberships.status, "complimentary")));
   const affectedRows = Number((result as any)[0]?.affectedRows ?? (result as any).affectedRows ?? 0);
-  if (affectedRows === 0) {
-    throw new TRPCError({ code: "NOT_FOUND", message: "The selected member does not have a complimentary membership grant." });
-  }
+  if (affectedRows === 0) throw new TRPCError({ code: "NOT_FOUND", message: "The selected member does not have complimentary access." });
 }
 
-export async function updatePlanFeatureConfiguration(input: {
-  planId: number;
-  featureId: number;
-  isEnabled: boolean;
-  limitValue: number | null;
-}) {
+export async function updatePlanFeatureConfiguration(input: { planId: number; featureId: number; isEnabled: boolean; limitValue: number | null }) {
   const db = await requireDb();
   const result = await db
     .update(membershipPlanFeatures)
     .set({ isEnabled: input.isEnabled ? 1 : 0, limitValue: input.limitValue })
     .where(and(eq(membershipPlanFeatures.planId, input.planId), eq(membershipPlanFeatures.featureId, input.featureId)));
-
   const affectedRows = Number((result as any)[0]?.affectedRows ?? (result as any).affectedRows ?? 0);
-  if (affectedRows === 0) {
-    throw new TRPCError({ code: "NOT_FOUND", message: "The selected plan-feature setting was not found." });
-  }
-}
-
-function requireAdministrator(role: string | null | undefined) {
-  if (role !== "admin") {
-    throw new TRPCError({ code: "FORBIDDEN", message: "Only administrators can manage membership configuration." });
-  }
-}
-
-function requireTradebiliaOwner(user: { role: string | null | undefined; openId: string | null | undefined }) {
-  if (user.role !== "admin" || !ENV.ownerOpenId || user.openId !== ENV.ownerOpenId) {
-    throw new TRPCError({
-      code: "FORBIDDEN",
-      message: "Only the Tradebilia owner can decide complimentary membership access.",
-    });
-  }
+  if (affectedRows === 0) throw new TRPCError({ code: "NOT_FOUND", message: "The selected plan feature was not found." });
 }
 
 export const membershipRouter = router({
-  getAccessPolicy: publicProcedure.query(async ({ ctx }) => getSubscriptionAccessPolicy(ctx.user?.id ?? null)),
-  getMyStatus: protectedProcedure.query(async ({ ctx }) => getMyMembershipStatus(ctx.user.id)),
+  getAccessPolicy: publicProcedure.query(({ ctx }) => getSubscriptionAccessPolicy(ctx.user?.id ?? null)),
+  getMyStatus: protectedProcedure.query(({ ctx }) => getMyMembershipStatus(ctx.user.id)),
 });
 
 export const billingRouter = router({
-  getOverview: protectedProcedure.query(async ({ ctx }) => {
+  getOverview: protectedProcedure.query(({ ctx }) => {
     requireAdministrator(ctx.user.role);
     return getBillingOverview();
   }),
-  getMembers: protectedProcedure.query(async ({ ctx }) => {
-    requireTradebiliaOwner(ctx.user);
+  getMembers: protectedProcedure.query(({ ctx }) => {
+    requireAdministrator(ctx.user.role);
     return getMembershipAdministrationMembers();
   }),
   updatePlanFeature: protectedProcedure
-    .input(z.object({
-      planId: z.number().int().positive(),
-      featureId: z.number().int().positive(),
-      isEnabled: z.boolean(),
-      limitValue: z.number().int().nonnegative().nullable(),
-    }))
+    .input(z.object({ planId: z.number().int().positive(), featureId: z.number().int().positive(), isEnabled: z.boolean(), limitValue: z.number().int().nonnegative().nullable() }))
     .mutation(async ({ ctx, input }) => {
       requireAdministrator(ctx.user.role);
       await updatePlanFeatureConfiguration(input);
-      return { success: true, billing: buildBillingSummary(await getBillingSettingsRow() as any) };
+      return { success: true, billing: buildBillingSummary(await getBillingSettingsRow()) };
     }),
   grantComplimentaryAccess: protectedProcedure
     .input(z.object({ targetUserId: z.number().int().positive() }))
     .mutation(async ({ ctx, input }) => {
-      requireTradebiliaOwner(ctx.user);
+      requireAdministrator(ctx.user.role);
       await grantComplimentaryMembership(input.targetUserId);
       return { success: true };
     }),
   revokeComplimentaryAccess: protectedProcedure
     .input(z.object({ targetUserId: z.number().int().positive() }))
     .mutation(async ({ ctx, input }) => {
-      requireTradebiliaOwner(ctx.user);
+      requireAdministrator(ctx.user.role);
       await revokeComplimentaryMembership(input.targetUserId);
       return { success: true };
     }),

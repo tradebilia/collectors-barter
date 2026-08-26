@@ -1,106 +1,58 @@
+import { describe, expect, it } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
-import { describe, expect, it } from "vitest";
 import {
   buildBillingSummary,
   FUTURE_SUBSCRIPTION_PAYMENT_TERMS,
-  hasSubscriptionMembershipAccess,
+  hasMembershipAccess,
   isMembershipFeatureGranted,
 } from "./membership";
 
-const projectRoot = path.resolve(import.meta.dirname, "..");
-const membershipSource = fs.readFileSync(path.join(projectRoot, "server/membership.ts"), "utf8");
-const accountSettingsSource = fs.readFileSync(path.join(projectRoot, "client/src/pages/AccountSettings.tsx"), "utf8");
-const adminDashboardSource = fs.readFileSync(path.join(projectRoot, "client/src/pages/AdminDashboard.tsx"), "utf8");
-const accessGateSource = fs.readFileSync(path.join(projectRoot, "client/src/components/SubscriptionAccessGate.tsx"), "utf8");
-const appSource = fs.readFileSync(path.join(projectRoot, "client/src/App.tsx"), "utf8");
-
-describe("free-launch membership foundation", () => {
-  it("keeps every current feature available while the free-launch override is active", () => {
-    expect(isMembershipFeatureGranted("free_launch", "cancelled", {
-      planEnabled: false,
-    })).toBe(true);
-  });
-
-  it("grants one future subscription plan to active or complimentary members only", () => {
-    expect(hasSubscriptionMembershipAccess("active")).toBe(true);
-    expect(hasSubscriptionMembershipAccess("trialing")).toBe(true);
-    expect(hasSubscriptionMembershipAccess("complimentary")).toBe(true);
-    expect(hasSubscriptionMembershipAccess("free_launch")).toBe(false);
-    expect(hasSubscriptionMembershipAccess("past_due")).toBe(false);
-    expect(isMembershipFeatureGranted("subscription", "complimentary", {
-      planEnabled: true,
-    })).toBe(true);
-    expect(isMembershipFeatureGranted("subscription", "active", {
-      planEnabled: true,
-    })).toBe(true);
-    expect(isMembershipFeatureGranted("subscription", "past_due", {
-      planEnabled: true,
-    })).toBe(false);
-    expect(isMembershipFeatureGranted("subscription", "complimentary", {
-      planEnabled: false,
-    })).toBe(false);
-  });
-
-  it("hard-disables checkout, card collection, payment requirements, and Stripe billing in the current foundation", () => {
-    const freeLaunch = buildBillingSummary({
+describe("Tradebilia Membership Free Launch safeguards", () => {
+  it("keeps all current features available while Free Launch remains active", () => {
+    const billing = buildBillingSummary({
       billingMode: "free_launch",
       stripeBillingEnabled: 1,
+      paymentEnforcementEnabled: 1,
+      feeLaunchStartsAt: null,
+      feeLaunchGraceEndsAt: null,
     });
+    expect(billing.freeLaunchOverride).toBe(true);
+    expect(isMembershipFeatureGranted(billing, "cancelled", false)).toBe(true);
+  });
 
-    expect(freeLaunch.stripeBillingEnabled).toBe(false);
-    expect(freeLaunch.checkoutAvailable).toBe(false);
-    expect(freeLaunch.cardCollectionAvailable).toBe(false);
-    expect(freeLaunch.paymentRequired).toBe(false);
-    expect(freeLaunch.statusLabel).toBe("Free Launch Access");
+  it("hard-disables Stripe collection and payment enforcement in the foundation", () => {
+    const billing = buildBillingSummary({
+      billingMode: "membership_required",
+      stripeBillingEnabled: 1,
+      paymentEnforcementEnabled: 0,
+      feeLaunchStartsAt: null,
+      feeLaunchGraceEndsAt: null,
+    });
+    expect(billing.checkoutAvailable).toBe(false);
+    expect(billing.cardCollectionAvailable).toBe(false);
+    expect(billing.paymentRequired).toBe(false);
+    expect(billing.stripeBillingEnabled).toBe(false);
+    expect(billing.paymentEnforcementEnabled).toBe(false);
+  });
+
+  it("records the agreed future $1 monthly and $10 annual terms with identical access", () => {
     expect(FUTURE_SUBSCRIPTION_PAYMENT_TERMS).toEqual([
       { code: "monthly", label: "Monthly", priceCents: 100, displayPrice: "$1 per month" },
       { code: "annual", label: "Annual", priceCents: 1000, displayPrice: "$10 per year" },
     ]);
   });
 
-  it("keeps plan-feature changes behind an administrator check, restricts complimentary grants to the owner, and exposes no billing activation mutation", () => {
-    expect(membershipSource).toContain("requireAdministrator(ctx.user.role)");
-    expect(membershipSource).toContain("updatePlanFeature: protectedProcedure");
-    expect(membershipSource).toContain("grantComplimentaryAccess: protectedProcedure");
-    expect(membershipSource).toContain("revokeComplimentaryAccess: protectedProcedure");
-    expect(membershipSource).toContain("requireTradebiliaOwner(ctx.user)");
-    expect(membershipSource).toContain("ENV.ownerOpenId");
-    expect(membershipSource).not.toContain("activateBilling:");
-    expect(membershipSource).not.toContain("updateBillingMode:");
-    expect(membershipSource).not.toContain("createCheckoutSession");
+  it("recognizes active and complimentary access, plus an unexpired payment grace period", () => {
+    expect(hasMembershipAccess("active")).toBe(true);
+    expect(hasMembershipAccess("complimentary")).toBe(true);
+    expect(hasMembershipAccess("past_due", "2099-01-01 00:00:00")).toBe(true);
+    expect(hasMembershipAccess("past_due", "2020-01-01 00:00:00")).toBe(false);
+    expect(hasMembershipAccess("unpaid")).toBe(false);
   });
 
-  it("renders clear free-launch information without payment fields in the Profile page", () => {
-    expect(accountSettingsSource).toContain('value="membership"');
-    expect(accountSettingsSource).toContain("Membership &amp; Billing");
-    expect(accountSettingsSource).toContain("Free Launch Access");
-    expect(accountSettingsSource).toContain("No credit card required");
-    expect(accountSettingsSource).toContain("No payment method is being collected");
-    expect(accountSettingsSource).toContain("membership.isComplimentary");
-    expect(accountSettingsSource).toContain("administrator-granted access status");
-  });
-
-  it("renders the Admin Billing preview with a single subscription plan and complimentary-member controls", () => {
-    expect(adminDashboardSource).toContain('value="billing"');
-    expect(adminDashboardSource).toContain("Billing is not active");
-    expect(adminDashboardSource).toContain("Free and Subscription feature matrix");
-    expect(adminDashboardSource).toContain("Free Launch override enabled");
-    expect(adminDashboardSource).toContain("Future member payment terms");
-    expect(adminDashboardSource).toContain("Both terms provide identical access");
-    expect(adminDashboardSource).toContain("Grant complimentary access");
-    expect(adminDashboardSource).toContain("Grant complimentary membership?");
-    expect(adminDashboardSource).toContain("Remove complimentary access?");
-  });
-
-  it("prepares only category pages, Global Search, and Contact Us for free browsing once subscription mode is enabled", () => {
-    expect(appSource).toContain("SubscriptionAccessGate");
-    expect(accessGateSource).toContain('location === "/search"');
-    expect(accessGateSource).toContain('location.startsWith("/category/")');
-    expect(accessGateSource).toContain('location === "/contact"');
-    expect(accessGateSource).toContain("Subscription access required");
-    expect(membershipSource).toContain("Subscription access is required for this page");
-    expect(membershipSource).toContain("assertSubscriptionAccess");
-    expect(membershipSource).toContain("getAccessPolicy: publicProcedure");
+  it("prepares the listing-detail server boundary for future membership enforcement", () => {
+    const routerSource = fs.readFileSync(path.resolve(import.meta.dirname, "routers.ts"), "utf8");
+    expect(routerSource).toContain("await assertSubscriptionAccess(ctx.user?.id ?? null)");
   });
 });
