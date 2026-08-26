@@ -620,7 +620,7 @@ export default function AccountSettings() {
       <main className="px-4 py-10 lg:px-8">
         <div className="mx-auto max-w-4xl space-y-8">
           <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
-            <TabsList className="flex w-full justify-start gap-1 overflow-x-auto rounded-lg bg-slate-200 p-1 sm:grid sm:grid-cols-6 sm:gap-0">
+            <TabsList className="flex w-full items-center justify-start gap-1 overflow-x-auto overflow-y-hidden rounded-lg bg-slate-200 p-1 sm:grid sm:grid-cols-6 sm:gap-0">
               <TabsTrigger className="flex-none sm:flex-1" value="profile">Profile</TabsTrigger>
               <TabsTrigger className="flex-none sm:flex-1" value="membership">Membership</TabsTrigger>
               <TabsTrigger className="flex-none sm:flex-1" value="security">Security</TabsTrigger>
