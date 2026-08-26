@@ -54,10 +54,13 @@ export function SignInModal({ isOpen, onClose }: SignInModalProps) {
 
       // The cookie is preferred. If a mobile browser does not retain it, store
       // the signed session token only for the current browser session and retry
-      // through the Authorization-header fallback.
+      // through the Authorization-header fallback. In an embedded preview the
+      // first auth.me request can cache null before this token is stored, so
+      // explicitly invalidate it before retrying.
       let authenticatedUser = await utils.auth.me.fetch();
       if (!authenticatedUser && result.sessionToken) {
         sessionStorage.setItem("manus-cookie", result.sessionToken);
+        await utils.auth.me.invalidate();
         authenticatedUser = await utils.auth.me.fetch();
       }
 
