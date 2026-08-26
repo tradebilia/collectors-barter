@@ -706,6 +706,6 @@
 - [x] Run one normal-path read-only custom-database connection retry and provide a sanitized diagnostic result for Manus support without changing credentials or data.
 - [x] Identify the earliest reliable evidence of when Tradebilia began using the custom TiDB database, without exposing credentials or changing project data.
 - [x] Determine whether preserved Tradebilia records document a future Stripe integration and fee-based marketplace model, distinguishing confirmed plans from exploratory discussion.
-- [ ] Inspect uploaded Manus task backup archives read-only for recoverable Tradebilia database data, schema, or configuration metadata; do not restore or expose credentials.
+- [x] Inspect uploaded Manus task backup archives read-only for recoverable Tradebilia database data, schema, or configuration metadata; do not restore or expose credentials.
 - [x] Collect Rich's new user-owned TiDB Cloud fallback connection in a separate check-only secure setting and run only a read-only connection health query without switching Tradebilia.
 - [x] Document the agreed future Tradebilia Membership, Stripe billing, unpaid-member access rules, and Verification & Forwarding Service plan for later implementation; do not code or change database behavior yet.
