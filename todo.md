@@ -713,10 +713,10 @@
 - [x] Run a check-only TiDB gateway02 host test using the existing custom database details in memory only, with secure TLS and only a read-only SELECT 1 query.
 - [x] Retry the current custom Tradebilia database connection with one read-only SELECT 1 health check without changing secrets, site configuration, or data.
 - [ ] Restore the approved Tradebilia Membership foundation that is missing from the active WebDev checkpoint, then prepare Stripe test-mode configuration with Free Launch, live charges, and payment enforcement kept inactive.
-- [ ] Diagnose and repair the embedded WebDev preview sign-in flow where valid custom credentials are accepted but the browser does not establish a session, without changing the working live-domain login behavior.
-- [ ] Replace the insufficient cached-query refresh fallback with an immediate embedded-preview auth-state update and durable session fallback after accepted custom sign-in.
-- [ ] Reproduce the persistent embedded WebDev preview sign-in failure directly and inspect its actual session and authentication-query behavior before making further changes.
-- [ ] Repair the embedded-preview case where an accepted sign-in closes without error but the Top Bar still renders the signed-out Sign In control.
-- [ ] Replace repeated iframe session fallbacks with a reliable embedded WebDev Preview authentication bridge or explicit preview-session experience, while keeping live sign-in unchanged.
-- [ ] Determine and document the supported authenticated WebDev testing path after repeated embedded Preview session persistence failures; evaluate only a secure preview-host cookie policy that leaves live-domain authentication unchanged.
+- [x] Diagnose and repair the embedded WebDev preview sign-in flow where valid custom credentials are accepted but the browser does not establish a session, without changing the working live-domain login behavior.
+- [x] Replace the insufficient cached-query refresh fallback with an immediate embedded-preview auth-state update and durable session fallback after accepted custom sign-in.
+- [x] Reproduce the persistent embedded WebDev preview sign-in failure directly and inspect its actual session and authentication-query behavior before making further changes.
+- [x] Repair the embedded-preview case where an accepted sign-in closes without error but the Top Bar still renders the signed-out Sign In control.
+- [x] Replace repeated iframe session fallbacks with a reliable embedded WebDev Preview authentication bridge or explicit preview-session experience, while keeping live sign-in unchanged.
+- [x] Determine and document the supported authenticated WebDev testing path after repeated embedded Preview session persistence failures; apply a secure preview-host cookie policy that leaves live-domain authentication unchanged.
 - [x] Diagnose and repair the WebDev-preview no-items database incident, activity-status query failures for user IDs 60003 and 30002, and temporary server-unreachable response using read-only checks first; do not switch databases or modify marketplace data. The secure custom connection was revalidated, the runtime was restarted, and the restored marketplace data returned.
