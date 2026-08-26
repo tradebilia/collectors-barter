@@ -712,3 +712,4 @@
 - [x] Increase the Member Directory hero section title size by 25px without affecting other page hero titles.
 - [x] Run a check-only TiDB gateway02 host test using the existing custom database details in memory only, with secure TLS and only a read-only SELECT 1 query.
 - [x] Retry the current custom Tradebilia database connection with one read-only SELECT 1 health check without changing secrets, site configuration, or data.
+- [x] Increase the Member Directory hero title artwork more noticeably so it better matches the visual scale of other page hero titles.
