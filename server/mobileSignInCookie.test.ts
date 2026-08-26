@@ -32,12 +32,16 @@ describe("mobile credential sign-in session contract", () => {
     expect(client).toContain("getPreviewSessionToken()");
     expect(client).toContain('headers.set("authorization", `Bearer ${mobileSessionToken}`)');
     expect(session).toContain("let previewSessionToken: string | null = null");
+    expect(session).toContain("let previewAuthenticatedUser: PreviewAuthenticatedUser | null = null");
+    expect(session).toContain('PREVIEW_AUTH_CHANGED_EVENT = "tradebilia-preview-auth-changed"');
+    expect(session).toContain("setPreviewAuthenticatedUser(user: PreviewAuthenticatedUser)");
     expect(session).toContain("return window.self !== window.top");
     expect(session).toContain("previewSessionToken = token");
     expect(session).toContain('sessionStorage.setItem("manus-cookie", token)');
     expect(authHook).toContain("clearPreviewSessionToken()");
     expect(modal).toContain("if (result.sessionToken && isEmbeddedPreview())");
     expect(modal).toContain("utils.auth.me.setData(undefined, result.user as any)");
+    expect(modal).toContain("setPreviewAuthenticatedUser(result.user)");
     expect(modal.indexOf("utils.auth.me.setData(undefined, result.user as any)")).toBeLessThan(
       modal.indexOf("let authenticatedUser = await utils.auth.me.fetch()"),
     );
@@ -48,5 +52,8 @@ describe("mobile credential sign-in session contract", () => {
     expect(context).toContain("const sessionToken = cookies.get(COOKIE_NAME) ?? bearerToken");
     expect(router).toContain("sessionToken,");
     expect(router).toContain("displayName:");
+    expect(authHook).toContain("getPreviewAuthenticatedUser()");
+    expect(authHook).toContain("PREVIEW_AUTH_CHANGED_EVENT");
+    expect(authHook).toContain("const resolvedUser = meQuery.data ??");
   });
 });

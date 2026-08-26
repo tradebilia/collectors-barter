@@ -5,7 +5,11 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
-import { isEmbeddedPreview, setPreviewSessionToken } from "@/lib/previewSession";
+import {
+  isEmbeddedPreview,
+  setPreviewAuthenticatedUser,
+  setPreviewSessionToken,
+} from "@/lib/previewSession";
 
 interface SignInModalProps {
   isOpen: boolean;
@@ -61,6 +65,7 @@ export function SignInModal({ isOpen, onClose }: SignInModalProps) {
         // instead of rejecting a valid login because a follow-up cookie query is
         // blocked by the hosting panel.
         utils.auth.me.setData(undefined, result.user as any);
+        setPreviewAuthenticatedUser(result.user);
         setUsername("");
         setPassword("");
         onClose();
