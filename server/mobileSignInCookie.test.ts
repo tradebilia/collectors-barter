@@ -20,7 +20,7 @@ describe("mobile credential sign-in session contract", () => {
     });
   });
 
-  it("uses an immediate in-memory fallback before the first embedded-preview auth refresh", () => {
+  it("uses an immediate in-memory fallback and server-confirmed user snapshot for embedded previews", () => {
     const client = readFileSync(resolve(root, "client/src/main.tsx"), "utf8");
     const modal = readFileSync(resolve(root, "client/src/components/SignInModal.tsx"), "utf8");
     const session = readFileSync(resolve(root, "client/src/lib/previewSession.ts"), "utf8");
@@ -37,7 +37,8 @@ describe("mobile credential sign-in session contract", () => {
     expect(session).toContain('sessionStorage.setItem("manus-cookie", token)');
     expect(authHook).toContain("clearPreviewSessionToken()");
     expect(modal).toContain("if (result.sessionToken && isEmbeddedPreview())");
-    expect(modal.indexOf("setPreviewSessionToken(result.sessionToken)")).toBeLessThan(
+    expect(modal).toContain("utils.auth.me.setData(undefined, result.user as any)");
+    expect(modal.indexOf("utils.auth.me.setData(undefined, result.user as any)")).toBeLessThan(
       modal.indexOf("let authenticatedUser = await utils.auth.me.fetch()"),
     );
     expect(modal).toContain("let authenticatedUser = await utils.auth.me.fetch()");
@@ -45,6 +46,7 @@ describe("mobile credential sign-in session contract", () => {
     expect(modal).toContain("await utils.auth.me.invalidate()");
     expect(modal).toContain("Sign-in was accepted, but this browser did not establish a session");
     expect(context).toContain("const sessionToken = cookies.get(COOKIE_NAME) ?? bearerToken");
-    expect(router).toContain("return { success: true, userId: user.id, sessionToken }");
+    expect(router).toContain("sessionToken,");
+    expect(router).toContain("displayName:");
   });
 });

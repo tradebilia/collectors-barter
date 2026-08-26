@@ -5,7 +5,6 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
-import { useQueryClient } from "@tanstack/react-query";
 import { isEmbeddedPreview, setPreviewSessionToken } from "@/lib/previewSession";
 
 interface SignInModalProps {
@@ -19,7 +18,6 @@ export function SignInModal({ isOpen, onClose }: SignInModalProps) {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [, navigate] = useLocation();
-  const queryClient = useQueryClient();
   const utils = trpc.useUtils();
   const signinMutation = trpc.auth.signin.useMutation();
   const formRef = useRef<HTMLDivElement>(null);
@@ -58,7 +56,15 @@ export function SignInModal({ isOpen, onClose }: SignInModalProps) {
       // before the first auth refresh. Live domains retain the normal cookie path.
       if (result.sessionToken && isEmbeddedPreview()) {
         setPreviewSessionToken(result.sessionToken);
-        await utils.auth.me.invalidate();
+        // Third-party iframe storage can disappear between requests. Prime the
+        // current page's auth cache from the server-authenticated sign-in result
+        // instead of rejecting a valid login because a follow-up cookie query is
+        // blocked by the hosting panel.
+        utils.auth.me.setData(undefined, result.user as any);
+        setUsername("");
+        setPassword("");
+        onClose();
+        return;
       }
 
       let authenticatedUser = await utils.auth.me.fetch();

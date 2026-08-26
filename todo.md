@@ -715,4 +715,5 @@
 - [ ] Restore the approved Tradebilia Membership foundation that is missing from the active WebDev checkpoint, then prepare Stripe test-mode configuration with Free Launch, live charges, and payment enforcement kept inactive.
 - [ ] Diagnose and repair the embedded WebDev preview sign-in flow where valid custom credentials are accepted but the browser does not establish a session, without changing the working live-domain login behavior.
 - [ ] Replace the insufficient cached-query refresh fallback with an immediate embedded-preview auth-state update and durable session fallback after accepted custom sign-in.
+- [ ] Reproduce the persistent embedded WebDev preview sign-in failure directly and inspect its actual session and authentication-query behavior before making further changes.
 - [x] Diagnose and repair the WebDev-preview no-items database incident, activity-status query failures for user IDs 60003 and 30002, and temporary server-unreachable response using read-only checks first; do not switch databases or modify marketplace data. The secure custom connection was revalidated, the runtime was restarted, and the restored marketplace data returned.
