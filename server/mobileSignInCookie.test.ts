@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { getSessionCookieOptions } from "./_core/cookies";
+import { buildBillingSummary, hasMembershipAccess } from "./membership";
 
 const root = resolve(import.meta.dirname, "..");
 
@@ -77,5 +78,28 @@ describe("mobile credential sign-in session contract", () => {
     expect(topBar).toContain("onAuthenticated={setEmbeddedPreviewUser}");
     expect(icons).toContain("userOverride?: any");
     expect(icons).toContain("const user = authenticatedUser ?? userOverride ?? null");
+  });
+});
+
+describe("Tradebilia Membership Free Launch safeguards", () => {
+  it("keeps checkout, card collection, and payment enforcement inactive", () => {
+    const summary = buildBillingSummary({ billingMode: "free_launch", paymentEnforcementEnabled: 0 });
+
+    expect(summary.freeLaunchOverride).toBe(true);
+    expect(summary.checkoutAvailable).toBe(false);
+    expect(summary.cardCollectionAvailable).toBe(false);
+    expect(summary.paymentRequired).toBe(false);
+    expect(summary.futureSubscriptionTerms).toEqual([
+      expect.objectContaining({ code: "monthly", priceCents: 100 }),
+      expect.objectContaining({ code: "annual", priceCents: 1000 }),
+    ]);
+  });
+
+  it("recognizes active, complimentary, and unexpired payment-grace access only", () => {
+    expect(hasMembershipAccess("active")).toBe(true);
+    expect(hasMembershipAccess("complimentary")).toBe(true);
+    expect(hasMembershipAccess("past_due", new Date(Date.now() + 60_000).toISOString())).toBe(true);
+    expect(hasMembershipAccess("past_due", new Date(Date.now() - 60_000).toISOString())).toBe(false);
+    expect(hasMembershipAccess("unpaid")).toBe(false);
   });
 });

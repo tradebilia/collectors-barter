@@ -409,6 +409,8 @@ export default function AdminDashboard() {
   const moderationLogQuery = trpc.admin.getModerationLog.useQuery(undefined, { enabled: user?.role === 'admin' });
   const pendingApprovalsQuery = trpc.admin.getPendingAccountApprovals.useQuery(undefined, { enabled: user?.role === 'admin', refetchOnWindowFocus: true });
   const apiHealthQuery = trpc.admin.getApiHealthEvents.useQuery(undefined, { enabled: user?.role === 'admin', refetchOnWindowFocus: true });
+  const billingOverviewQuery = trpc.billing.getOverview.useQuery(undefined, { enabled: user?.role === "admin", refetchOnWindowFocus: true });
+  const billingMembersQuery = trpc.billing.getMembers.useQuery(undefined, { enabled: user?.role === "admin", refetchOnWindowFocus: true });
   const reviewApprovalMutation = trpc.admin.reviewAccountApproval.useMutation({
     onSuccess: () => pendingApprovalsQuery.refetch(),
     onError: (error) => toast.error(error.message),
@@ -601,6 +603,10 @@ export default function AdminDashboard() {
               <BarChart3 className="h-4 w-4" />
               Stats
             </TabsTrigger>
+            <TabsTrigger value="billing" className="flex items-center justify-center gap-1.5 text-xs font-medium py-2.5 whitespace-nowrap">
+              <Settings className="h-4 w-4" />
+              Billing
+            </TabsTrigger>
             <TabsTrigger value="users" className="flex items-center justify-center gap-1.5 text-xs font-medium py-2.5 whitespace-nowrap">
               <Users className="h-4 w-4" />
               Users
@@ -707,6 +713,49 @@ export default function AdminDashboard() {
           </TabsContent>
 
           {/* Users Tab */}
+          <TabsContent value="billing" className="space-y-4 mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Membership &amp; Billing</CardTitle>
+                <CardDescription>Free Launch is active. Stripe, checkout, card collection, and payment enforcement remain unavailable.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-5">
+                {billingOverviewQuery.isLoading ? (
+                  <p className="text-sm text-muted-foreground">Loading membership configuration…</p>
+                ) : billingOverviewQuery.error ? (
+                  <p className="rounded-lg bg-red-50 p-4 text-sm text-red-700">Membership configuration is temporarily unavailable. Free Launch access remains unchanged.</p>
+                ) : (
+                  <>
+                    <div className="rounded-xl border border-violet-100 bg-violet-50 p-4">
+                      <p className="text-xs font-bold uppercase tracking-[0.14em] text-violet-700">Current status</p>
+                      <p className="mt-1 text-lg font-semibold text-slate-900">{billingOverviewQuery.data?.billing.statusLabel}</p>
+                      <p className="mt-1 text-sm text-slate-700">{billingOverviewQuery.data?.billing.statusMessage}</p>
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {billingOverviewQuery.data?.billing.futureSubscriptionTerms.map((term) => (
+                        <div key={term.code} className="rounded-lg border p-4">
+                          <p className="font-semibold">{term.label}</p>
+                          <p className="text-sm text-muted-foreground">Future Tradebilia Membership: {term.displayPrice}</p>
+                        </div>
+                      ))}
+                    </div>
+                    <div>
+                      <h3 className="font-semibold">Member status monitoring</h3>
+                      <div className="mt-3 overflow-x-auto rounded-lg border">
+                        <table className="w-full min-w-[520px] text-sm">
+                          <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500"><tr><th className="p-3">Member</th><th className="p-3">Plan</th><th className="p-3">Status</th><th className="p-3">Term</th></tr></thead>
+                          <tbody>
+                            {billingMembersQuery.data?.map((member) => <tr key={member.userId} className="border-t"><td className="p-3 font-medium">{member.displayName}</td><td className="p-3">{member.planName}</td><td className="p-3">{member.membershipStatus}</td><td className="p-3">{member.billingTerm}</td></tr>)}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           <TabsContent value="users" className="space-y-4 mt-6">
             <Card>
               <CardHeader>

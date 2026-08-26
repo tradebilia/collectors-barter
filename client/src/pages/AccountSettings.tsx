@@ -64,15 +64,18 @@ export default function AccountSettings() {
   const saveIntegrationsMutation = trpc.market.saveIntegrations.useMutation();
   const saveCommunicationsMutation = trpc.market.saveCommunications.useMutation();
   const savePreferencesMutation = trpc.market.savePreferences.useMutation();
+  const membershipQuery = trpc.membership.getMyStatus.useQuery(undefined, {
+    enabled: isAuthenticated,
+  });
   // PayPal
   const paypalQuery = trpc.payment.getPayPalEmail.useQuery();
   const savePayPalEmailMutation = trpc.payment.savePayPalEmail.useMutation();
 
   // Read ?tab= from URL to support redirects (e.g., from eBay OAuth callback)
-  const validTabs = ["profile", "security", "integrations", "communications", "preferences"] as const;
+  const validTabs = ["profile", "membership", "security", "integrations", "communications", "preferences"] as const;
   const urlTab = new URLSearchParams(window.location.search).get("tab");
   const initialTab = validTabs.includes(urlTab as any) ? (urlTab as typeof validTabs[number]) : "profile";
-  const [activeTab, setActiveTab] = useState<"profile" | "security" | "integrations" | "communications" | "preferences">(initialTab);
+  const [activeTab, setActiveTab] = useState<"profile" | "membership" | "security" | "integrations" | "communications" | "preferences">(initialTab);
   
   // Profile Form State
   const [confirmationDialog, setConfirmationDialog] = useState<{
@@ -619,8 +622,9 @@ export default function AccountSettings() {
       <main className="px-4 py-10 lg:px-8">
         <div className="mx-auto max-w-4xl space-y-8">
           <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
-            <TabsList className="flex w-full justify-start gap-1 overflow-x-auto rounded-lg bg-slate-200 p-1 sm:grid sm:grid-cols-5 sm:gap-0">
+            <TabsList className="flex w-full justify-start gap-1 overflow-x-auto overflow-y-hidden rounded-lg bg-slate-200 p-1 sm:grid sm:grid-cols-6 sm:gap-0">
               <TabsTrigger className="flex-none sm:flex-1" value="profile">Profile</TabsTrigger>
+              <TabsTrigger className="flex-none sm:flex-1" value="membership">Membership</TabsTrigger>
               <TabsTrigger className="flex-none sm:flex-1" value="security">Security</TabsTrigger>
               <TabsTrigger className="flex-none sm:flex-1" value="integrations">Integrations</TabsTrigger>
               <TabsTrigger className="flex-none sm:flex-1" value="communications">Communications</TabsTrigger>
@@ -1483,6 +1487,49 @@ export default function AccountSettings() {
                     <Save className="mr-2 h-4 w-4" />
                     Save Preferences
                   </Button>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="membership" className="space-y-6">
+              <Card className="rounded-[1.5rem] border-slate-200 bg-white shadow-sm">
+                <CardHeader>
+                  <CardTitle>Membership &amp; Billing</CardTitle>
+                  <CardDescription>Tradebilia is currently in Free Launch. No card is required and no payment is being collected.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-5">
+                  {membershipQuery.isLoading ? (
+                    <p className="text-sm text-slate-600">Loading your membership status…</p>
+                  ) : membershipQuery.error ? (
+                    <p className="rounded-lg bg-red-50 p-4 text-sm text-red-700">Your membership status is temporarily unavailable. Free Launch access remains unchanged.</p>
+                  ) : (
+                    <>
+                      <div className="rounded-xl border border-violet-100 bg-violet-50 p-5">
+                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-violet-700">Current status</p>
+                        <p className="mt-1 text-xl font-semibold text-slate-900">{membershipQuery.data?.billing.statusLabel ?? "Free Launch Access"}</p>
+                        <p className="mt-2 text-sm leading-6 text-slate-700">{membershipQuery.data?.billing.statusMessage}</p>
+                      </div>
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        {membershipQuery.data?.billing.futureSubscriptionTerms.map((term) => (
+                          <div key={term.code} className="rounded-xl border border-slate-200 p-4">
+                            <p className="font-semibold text-slate-900">{term.label}</p>
+                            <p className="mt-1 text-sm text-slate-600">Future Tradebilia Membership: {term.displayPrice}</p>
+                          </div>
+                        ))}
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-slate-900">Included during Free Launch</h3>
+                        <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                          {membershipQuery.data?.entitlements.map((feature) => (
+                            <div key={feature.featureKey} className="rounded-lg border border-slate-100 bg-slate-50 p-3">
+                              <p className="text-sm font-medium text-slate-900">{feature.name}</p>
+                              <p className="mt-1 text-xs leading-5 text-slate-600">{feature.description}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>
