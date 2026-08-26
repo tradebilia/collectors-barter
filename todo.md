@@ -709,3 +709,4 @@
 - [x] Inspect uploaded Manus task backup archives read-only for recoverable Tradebilia database data, schema, or configuration metadata; do not restore or expose credentials.
 - [x] Collect Rich's new user-owned TiDB Cloud fallback connection in a separate check-only secure setting and run only a read-only connection health query without switching Tradebilia.
 - [x] Document the agreed future Tradebilia Membership, Stripe billing, unpaid-member access rules, and Verification & Forwarding Service plan for later implementation; do not code or change database behavior yet.
+- [x] Increase the Member Directory hero section title size by 25px without affecting other page hero titles.
