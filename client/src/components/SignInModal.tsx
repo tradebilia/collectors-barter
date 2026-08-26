@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { useQueryClient } from "@tanstack/react-query";
+import { isEmbeddedPreview, setPreviewSessionToken } from "@/lib/previewSession";
 
 interface SignInModalProps {
   isOpen: boolean;
@@ -52,14 +53,17 @@ export function SignInModal({ isOpen, onClose }: SignInModalProps) {
         password,
       });
 
-      // The cookie is preferred. If a mobile browser does not retain it, store
-      // the signed session token only for the current browser session and retry
-      // through the Authorization-header fallback. In an embedded preview the
-      // first auth.me request can cache null before this token is stored, so
-      // explicitly invalidate it before retrying.
+      // The cookie is preferred. Embedded previews can block both the Set-Cookie
+      // response and browser storage, so put the signed token in page memory
+      // before the first auth refresh. Live domains retain the normal cookie path.
+      if (result.sessionToken && isEmbeddedPreview()) {
+        setPreviewSessionToken(result.sessionToken);
+        await utils.auth.me.invalidate();
+      }
+
       let authenticatedUser = await utils.auth.me.fetch();
       if (!authenticatedUser && result.sessionToken) {
-        sessionStorage.setItem("manus-cookie", result.sessionToken);
+        setPreviewSessionToken(result.sessionToken);
         await utils.auth.me.invalidate();
         authenticatedUser = await utils.auth.me.fetch();
       }

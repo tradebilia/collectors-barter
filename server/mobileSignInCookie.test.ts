@@ -20,17 +20,28 @@ describe("mobile credential sign-in session contract", () => {
     });
   });
 
-  it("uses the session-storage fallback and refreshes cached auth after an embedded preview rejects the cookie", () => {
+  it("uses an immediate in-memory fallback before the first embedded-preview auth refresh", () => {
     const client = readFileSync(resolve(root, "client/src/main.tsx"), "utf8");
     const modal = readFileSync(resolve(root, "client/src/components/SignInModal.tsx"), "utf8");
+    const session = readFileSync(resolve(root, "client/src/lib/previewSession.ts"), "utf8");
+    const authHook = readFileSync(resolve(root, "client/src/_core/hooks/useAuth.ts"), "utf8");
     const context = readFileSync(resolve(root, "server/_core/context.ts"), "utf8");
     const router = readFileSync(resolve(root, "server/routers.ts"), "utf8");
 
     expect(client).toContain('credentials: "include"');
-    expect(client).toContain('sessionStorage.getItem("manus-cookie")');
+    expect(client).toContain("getPreviewSessionToken()");
     expect(client).toContain('headers.set("authorization", `Bearer ${mobileSessionToken}`)');
+    expect(session).toContain("let previewSessionToken: string | null = null");
+    expect(session).toContain("return window.self !== window.top");
+    expect(session).toContain("previewSessionToken = token");
+    expect(session).toContain('sessionStorage.setItem("manus-cookie", token)');
+    expect(authHook).toContain("clearPreviewSessionToken()");
+    expect(modal).toContain("if (result.sessionToken && isEmbeddedPreview())");
+    expect(modal.indexOf("setPreviewSessionToken(result.sessionToken)")).toBeLessThan(
+      modal.indexOf("let authenticatedUser = await utils.auth.me.fetch()"),
+    );
     expect(modal).toContain("let authenticatedUser = await utils.auth.me.fetch()");
-    expect(modal).toContain('sessionStorage.setItem("manus-cookie", result.sessionToken)');
+    expect(modal).toContain("setPreviewSessionToken(result.sessionToken)");
     expect(modal).toContain("await utils.auth.me.invalidate()");
     expect(modal).toContain("Sign-in was accepted, but this browser did not establish a session");
     expect(context).toContain("const sessionToken = cookies.get(COOKIE_NAME) ?? bearerToken");
