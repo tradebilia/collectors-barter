@@ -720,3 +720,6 @@
 - [x] Validate the corrected custom TiDB connection against the clarified Tradebilia schema `GnMVDXgu6G8uhj5ZYQtcGe` using read-only aggregate checks only.
 - [x] Synchronize the external Tradebilia GitHub repository with the current WebDev checkpoint and verify GitHub `main` matches the released project state.
 - [x] Perform a final independent audit that confirms the WebDev project and external GitHub repository are committed, pushed, checkpoint-backed up, and reconciled without uncommitted work.
+- [ ] Diagnose and repair the WebDev preview-panel sign-in failure while preserving the working sign-in flow on `tradebilia.manus.space`.
+- [ ] Trace the divergent GitHub and WebDev histories and prepare an approval-gated plan to establish one durable synchronized baseline without overwriting newer GitHub work or database state.
+- [ ] Make external GitHub `main` the canonical Tradebilia code history, create recoverable references, reconcile WebDev by reviewed content, validate without migrations or database writes, and record the paired commit/checkpoint baseline.
