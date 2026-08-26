@@ -714,3 +714,4 @@
 - [x] Retry the current custom Tradebilia database connection with one read-only SELECT 1 health check without changing secrets, site configuration, or data.
 - [x] Increase the Member Directory hero title artwork more noticeably so it better matches the visual scale of other page hero titles.
 - [x] Make the Member Directory hero title artwork larger again and center the logo-divider-title group better within the hero section.
+- [x] Re-diagnose the custom TiDB connection after DBeaver successfully connects, focusing on SSL/TLS, URL parsing, and application connection options without exposing credentials or changing data.
