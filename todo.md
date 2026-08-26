@@ -718,3 +718,4 @@
 - [x] Compare the DBeaver-visible TiDB host, database, and SSL settings against the app connection using read-only SELECT 1 probes without exposing credentials or changing data.
 - [x] Securely update CUSTOM_DATABASE_URL to the DBeaver-confirmed TiDB username format, then verify with read-only SELECT 1 and aggregate marketplace counts before any public-data claim.
 - [x] Validate the corrected custom TiDB connection against the clarified Tradebilia schema `GnMVDXgu6G8uhj5ZYQtcGe` using read-only aggregate checks only.
+- [x] Synchronize the external Tradebilia GitHub repository with the current WebDev checkpoint and verify GitHub `main` matches the released project state.
