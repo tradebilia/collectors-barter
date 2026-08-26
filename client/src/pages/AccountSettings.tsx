@@ -15,7 +15,7 @@ import { EbayConnection } from "@/components/EbayConnection";
 import { FacebookConnection } from "@/components/FacebookConnection";
 import { LinkedInConnection } from "@/components/LinkedInConnection";
 import { trpc } from "@/lib/trpc";
-import { Bell, Lock, Mail, Loader2, Save, Shield, Link as LinkIcon, Upload, Eye, EyeOff, Cog, CreditCard, Sparkles } from "lucide-react";
+import { Bell, Lock, Mail, Loader2, Save, Shield, Link as LinkIcon, Upload, Eye, EyeOff, Cog } from "lucide-react";
 import { FormEvent, useEffect, useState, useRef } from "react";
 import { toast } from "sonner";
 import {
@@ -64,16 +64,15 @@ export default function AccountSettings() {
   const saveIntegrationsMutation = trpc.market.saveIntegrations.useMutation();
   const saveCommunicationsMutation = trpc.market.saveCommunications.useMutation();
   const savePreferencesMutation = trpc.market.savePreferences.useMutation();
-  const membershipQuery = trpc.membership.getMyStatus.useQuery(undefined, { enabled: isAuthenticated });
   // PayPal
   const paypalQuery = trpc.payment.getPayPalEmail.useQuery();
   const savePayPalEmailMutation = trpc.payment.savePayPalEmail.useMutation();
 
   // Read ?tab= from URL to support redirects (e.g., from eBay OAuth callback)
-  const validTabs = ["profile", "membership", "security", "integrations", "communications", "preferences"] as const;
+  const validTabs = ["profile", "security", "integrations", "communications", "preferences"] as const;
   const urlTab = new URLSearchParams(window.location.search).get("tab");
   const initialTab = validTabs.includes(urlTab as any) ? (urlTab as typeof validTabs[number]) : "profile";
-  const [activeTab, setActiveTab] = useState<"profile" | "membership" | "security" | "integrations" | "communications" | "preferences">(initialTab);
+  const [activeTab, setActiveTab] = useState<"profile" | "security" | "integrations" | "communications" | "preferences">(initialTab);
   
   // Profile Form State
   const [confirmationDialog, setConfirmationDialog] = useState<{
@@ -620,9 +619,8 @@ export default function AccountSettings() {
       <main className="px-4 py-10 lg:px-8">
         <div className="mx-auto max-w-4xl space-y-8">
           <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
-            <TabsList className="flex w-full items-center justify-start gap-1 overflow-x-auto overflow-y-hidden rounded-lg bg-slate-200 p-1 sm:grid sm:grid-cols-6 sm:gap-0">
+            <TabsList className="flex w-full justify-start gap-1 overflow-x-auto rounded-lg bg-slate-200 p-1 sm:grid sm:grid-cols-5 sm:gap-0">
               <TabsTrigger className="flex-none sm:flex-1" value="profile">Profile</TabsTrigger>
-              <TabsTrigger className="flex-none sm:flex-1" value="membership">Membership</TabsTrigger>
               <TabsTrigger className="flex-none sm:flex-1" value="security">Security</TabsTrigger>
               <TabsTrigger className="flex-none sm:flex-1" value="integrations">Integrations</TabsTrigger>
               <TabsTrigger className="flex-none sm:flex-1" value="communications">Communications</TabsTrigger>
@@ -906,29 +904,6 @@ export default function AccountSettings() {
                     </div>
                   </div>
 
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            {/* Membership Tab */}
-            <TabsContent value="membership" className="space-y-6">
-              <Card className="overflow-hidden rounded-[1.5rem] border-[#2f73ed]/25 bg-white shadow-sm">
-                <CardHeader className="bg-gradient-to-r from-[#edf4ff] via-white to-[#f7f3ff]">
-                  <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                    <div className="flex gap-3">
-                      <div className="mt-0.5 rounded-xl bg-[#2f73ed] p-2 text-white"><CreditCard className="h-5 w-5" /></div>
-                      <div><CardTitle>Membership &amp; Billing</CardTitle><CardDescription className="mt-1">Your current access and future Tradebilia Membership details.</CardDescription></div>
-                    </div>
-                    <span className="w-fit rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-sm font-semibold text-emerald-800">Free Launch Access</span>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-5 pt-6">
-                  {membershipQuery.isLoading ? <div className="flex items-center gap-2 text-sm text-slate-600"><Loader2 className="h-4 w-4 animate-spin" /> Loading membership status…</div> : membershipQuery.data ? <>
-                    <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-950"><div className="flex gap-3"><Sparkles className="mt-0.5 h-5 w-5 shrink-0 text-emerald-700" /><div><p className="font-semibold">{membershipQuery.data.billing.statusLabel}</p><p className="mt-1 text-sm leading-6">{membershipQuery.data.billing.statusMessage}</p></div></div></div>
-                    <div className="grid gap-3 sm:grid-cols-2">{membershipQuery.data.billing.futureSubscriptionTerms.map((term) => <div key={term.code} className="rounded-xl border border-slate-200 p-4"><p className="font-semibold text-slate-900">Future {term.label} option</p><p className="mt-1 text-xl font-bold text-[#2f73ed]">{term.displayPrice}</p><p className="mt-2 text-sm text-slate-600">Both future terms provide identical access.</p></div>)}</div>
-                    <div className="rounded-xl bg-slate-50 p-4 text-sm leading-6 text-slate-700"><p className="font-semibold text-slate-900">What is active today</p><p className="mt-1">No credit card required. No payment method is being collected. Checkout, Stripe charges, and paid-access restrictions are inactive.</p></div>
-                    <div><p className="mb-3 font-semibold text-slate-900">Current access</p><div className="grid gap-2 sm:grid-cols-2">{membershipQuery.data.entitlements.map((feature) => <div key={feature.featureKey} className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700">{feature.name}</div>)}</div></div>
-                  </> : <p className="text-sm text-slate-600">Membership status is currently unavailable. Please refresh and try again.</p>}
                 </CardContent>
               </Card>
             </TabsContent>

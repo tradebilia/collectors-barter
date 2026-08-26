@@ -1,10 +1,8 @@
 # Future Tradebilia Membership, Billing, and Verification Plan
 
-**Author:** Manus AI
-**Date:** 2026-08-26
+**Author:** Manus AI  
+**Date:** 2026-08-26  
 **Status:** Planning document only. No Stripe integration, database schema change, access-control enforcement, or live-site behavior change has been implemented from this document.
-
-**Status update (2026-08-26):** The verified custom TiDB connection has since been restored through its intended Tradebilia schema using read-only checks. This removes the prior connection incident as a planning blocker, but it does not authorize billing implementation, migrations, or paid-access enforcement without a separate explicit approval.
 
 ## 1. Executive Summary
 
@@ -12,7 +10,7 @@ Tradebilia will launch as a **free collectibles trading community** and remain f
 
 The fee model should remain disabled until three conditions are satisfied: the production database is stable, the Stripe implementation is built and tested in test mode, and the Terms of Service/payment disclosures have been reviewed. Stripe should be used for subscriptions first, and the later item-handling option should be framed as **Tradebilia Verification & Forwarding Service**, not as legal or financial escrow.
 
-> **Important implementation constraint:** Stripe coding and paid-access enforcement should not begin until the now-restored production database remains stable, Stripe is tested in test mode, and a separate explicit implementation approval is given.
+> **Important implementation constraint:** Stripe coding and paid-access enforcement should not begin until the current database issue is resolved or Rich’s new user-owned TiDB Cloud database is intentionally selected as the official Tradebilia database.
 
 ## 2. Confirmed Business Decisions
 
@@ -129,7 +127,7 @@ Before paid access or the Verification & Forwarding Service goes live, Tradebili
 
 ## 8. Database and Implementation Dependencies
 
-The future billing system requires a durable database because membership status, Stripe IDs, subscription lifecycle events, failed-payment grace periods, admin overrides, and verification orders must persist reliably. The verified custom TiDB connection is currently restored. If Tradebilia later elects to move to Rich’s user-owned TiDB Cloud database, that change must follow an explicit migration/rebuild decision.
+The future billing system requires a durable database because membership status, Stripe IDs, subscription lifecycle events, failed-payment grace periods, admin overrides, and verification orders must persist reliably. The current custom TiDB database authentication issue blocks safe implementation. If the custom database cannot be restored, Rich’s new user-owned TiDB Cloud database should become the permanent foundation only after an explicit migration/rebuild decision.
 
 | Dependency | Why it is required before coding |
 |---|---|
@@ -169,7 +167,7 @@ The core business plan is complete enough to preserve for future execution. The 
 
 ## References
 
-[1]: https://docs.stripe.com/customer-management "Stripe Docs — Provide a customer portal to your customers"
-[2]: https://docs.stripe.com/receipts "Stripe Docs — Receipts and paid invoices"
-[3]: https://docs.stripe.com/connect "Stripe Docs — Platforms and marketplaces with Stripe Connect"
+[1]: https://docs.stripe.com/customer-management "Stripe Docs — Provide a customer portal to your customers"  
+[2]: https://docs.stripe.com/receipts "Stripe Docs — Receipts and paid invoices"  
+[3]: https://docs.stripe.com/connect "Stripe Docs — Platforms and marketplaces with Stripe Connect"  
 [4]: https://docs.stripe.com/tax "Stripe Docs — Stripe Tax"
