@@ -7,6 +7,7 @@ import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import {
   isEmbeddedPreview,
+  type PreviewAuthenticatedUser,
   setPreviewAuthenticatedUser,
   setPreviewSessionToken,
 } from "@/lib/previewSession";
@@ -14,9 +15,10 @@ import {
 interface SignInModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onAuthenticated?: (user: PreviewAuthenticatedUser) => void;
 }
 
-export function SignInModal({ isOpen, onClose }: SignInModalProps) {
+export function SignInModal({ isOpen, onClose, onAuthenticated }: SignInModalProps) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -66,6 +68,7 @@ export function SignInModal({ isOpen, onClose }: SignInModalProps) {
         // blocked by the hosting panel.
         utils.auth.me.setData(undefined, result.user as any);
         setPreviewAuthenticatedUser(result.user);
+        onAuthenticated?.(result.user);
         setUsername("");
         setPassword("");
         onClose();

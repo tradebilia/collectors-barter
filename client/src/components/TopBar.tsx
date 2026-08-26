@@ -7,6 +7,11 @@ import { SignInModal } from "@/components/SignInModal";
 import { useState, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import AnimatedLogoSmall70 from "@/components/AnimatedLogoSmall70";
+import {
+  clearPreviewSessionToken,
+  isEmbeddedPreview,
+  type PreviewAuthenticatedUser,
+} from "@/lib/previewSession";
 
 interface TopBarProps {
   logoUrl?: string;
@@ -23,17 +28,28 @@ export function TopBar({
 }: TopBarProps) {
   const { isAuthenticated, logout, user } = useAuth();
   const [showSignInModal, setShowSignInModal] = useState(false);
+  const [embeddedPreviewUser, setEmbeddedPreviewUser] = useState<PreviewAuthenticatedUser | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [, setLocation] = useLocation();
+  const isEmbedded = isEmbeddedPreview();
+  const visibleUser = isAuthenticated ? user : (isEmbedded ? embeddedPreviewUser : null);
+  const visiblyAuthenticated = Boolean(visibleUser);
+
+  const handleLogout = async () => {
+    setEmbeddedPreviewUser(null);
+    if (isEmbedded) clearPreviewSessionToken();
+    await logout();
+    window.location.href = "/";
+  };
 
   // Global activity heartbeat — keeps online status accurate on every page
   const updateActivityMutation = trpc.onlineStatus.updateActivity.useMutation();
   useEffect(() => {
-    if (!isAuthenticated) return;
+    if (!visiblyAuthenticated) return;
     updateActivityMutation.mutate();
     const interval = setInterval(() => updateActivityMutation.mutate(), 2 * 60 * 1000); // every 2 minutes
     return () => clearInterval(interval);
-  }, [isAuthenticated]);
+  }, [visiblyAuthenticated]);
   // Note: market.search is a query, not a mutation
 
   const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -82,13 +98,10 @@ export function TopBar({
 
           {/* Icons and Auth on right */}
           <div className="ml-auto flex items-center gap-3 md:gap-4 flex-shrink-0">
-            <TopRightIcons iconColor="text-white/70" />
-            {isAuthenticated ? (
+            <TopRightIcons iconColor="text-white/70" userOverride={visibleUser ?? undefined} />
+            {visiblyAuthenticated ? (
               <Button
-                onClick={async () => {
-                  await logout();
-                  window.location.href = "/";
-                }}
+                onClick={handleLogout}
                 variant="ghost"
                 size="sm"
                 className="text-white/70 hover:text-white hover:bg-white/10"
@@ -105,7 +118,7 @@ export function TopBar({
                 >
                   Sign In
                 </Button>
-                <SignInModal isOpen={showSignInModal} onClose={() => setShowSignInModal(false)} />
+                <SignInModal isOpen={showSignInModal} onClose={() => setShowSignInModal(false)} onAuthenticated={setEmbeddedPreviewUser} />
               </>
             )}
           </div>
@@ -129,10 +142,10 @@ export function TopBar({
             className="ml-2 min-w-0 flex-1 bg-transparent text-sm text-black placeholder-gray-700 outline-none"
           />
         </div>
-        {isAuthenticated ? (
+        {visiblyAuthenticated ? (
           <div className="flex flex-shrink-0 items-center gap-1">
-            <TopRightIcons className="flex items-center gap-1" iconColor="text-white/70" />
-            <Button onClick={async () => { await logout(); window.location.href = "/"; }} variant="ghost" size="icon" className="h-8 w-8 text-white/70 hover:bg-white/10 hover:text-white" aria-label="Sign Out">
+            <TopRightIcons className="flex items-center gap-1" iconColor="text-white/70" userOverride={visibleUser ?? undefined} />
+            <Button onClick={handleLogout} variant="ghost" size="icon" className="h-8 w-8 text-white/70 hover:bg-white/10 hover:text-white" aria-label="Sign Out">
               <LogOut className="h-4 w-4" />
             </Button>
           </div>
@@ -175,13 +188,10 @@ export function TopBar({
 
         {/* Icons and Auth on right */}
         <div className="absolute right-2 sm:right-4 flex items-center gap-3 md:gap-4 flex-shrink-0">
-        <div className="hidden sm:block"><TopRightIcons iconColor="text-white/70" /></div>
-        {isAuthenticated ? (
+        <div className="hidden sm:block"><TopRightIcons iconColor="text-white/70" userOverride={visibleUser ?? undefined} /></div>
+        {visiblyAuthenticated ? (
             <Button
-              onClick={async () => {
-                await logout();
-                window.location.href = "/";
-              }}
+              onClick={handleLogout}
               variant="ghost"
               size="sm"
               className="text-white/70 hover:text-white hover:bg-white/10"
@@ -198,7 +208,7 @@ export function TopBar({
             >
               Sign In
             </Button>
-            <SignInModal isOpen={showSignInModal} onClose={() => setShowSignInModal(false)} />
+            <SignInModal isOpen={showSignInModal} onClose={() => setShowSignInModal(false)} onAuthenticated={setEmbeddedPreviewUser} />
           </>
         )}
         </div>

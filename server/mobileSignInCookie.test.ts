@@ -25,6 +25,8 @@ describe("mobile credential sign-in session contract", () => {
     const modal = readFileSync(resolve(root, "client/src/components/SignInModal.tsx"), "utf8");
     const session = readFileSync(resolve(root, "client/src/lib/previewSession.ts"), "utf8");
     const authHook = readFileSync(resolve(root, "client/src/_core/hooks/useAuth.ts"), "utf8");
+    const topBar = readFileSync(resolve(root, "client/src/components/TopBar.tsx"), "utf8");
+    const icons = readFileSync(resolve(root, "client/src/components/TopRightIcons.tsx"), "utf8");
     const context = readFileSync(resolve(root, "server/_core/context.ts"), "utf8");
     const router = readFileSync(resolve(root, "server/routers.ts"), "utf8");
 
@@ -55,5 +57,10 @@ describe("mobile credential sign-in session contract", () => {
     expect(authHook).toContain("getPreviewAuthenticatedUser()");
     expect(authHook).toContain("PREVIEW_AUTH_CHANGED_EVENT");
     expect(authHook).toContain("const resolvedUser = meQuery.data ??");
+    expect(topBar).toContain("const [embeddedPreviewUser, setEmbeddedPreviewUser]");
+    expect(topBar).toContain("const visiblyAuthenticated = Boolean(visibleUser)");
+    expect(topBar).toContain("onAuthenticated={setEmbeddedPreviewUser}");
+    expect(icons).toContain("userOverride?: any");
+    expect(icons).toContain("const user = authenticatedUser ?? userOverride ?? null");
   });
 });

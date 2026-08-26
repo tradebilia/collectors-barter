@@ -8,6 +8,7 @@ import { getAvatarInitials } from "@/lib/tradebilia";
 interface TopRightIconsProps {
   className?: string;
   iconColor?: string;
+  userOverride?: any;
 }
 
 const mailFlashStyle = `
@@ -20,21 +21,23 @@ const mailFlashStyle = `
   }
 `;
 
-export function TopRightIcons({ className = "flex items-center gap-3 md:gap-4", iconColor = "text-[#d4e86d]" }: TopRightIconsProps) {
-  const { user } = useAuth();
+export function TopRightIcons({ className = "flex items-center gap-3 md:gap-4", iconColor = "text-[#d4e86d]", userOverride }: TopRightIconsProps) {
+  const { user: authenticatedUser } = useAuth();
+  const user = authenticatedUser ?? userOverride ?? null;
+  const canLoadAuthenticatedData = Boolean(authenticatedUser);
   const unreadQuery = trpc.auth.unreadCounts.useQuery(undefined, {
-    enabled: !!user,
+    enabled: canLoadAuthenticatedData,
     refetchOnMount: true,
     refetchInterval: 30000,
     staleTime: 15000,
   });
   const tradeUnreadQuery = trpc.tradeFlow.getUnreadTradeAlertCount.useQuery(undefined, {
-    enabled: !!user,
+    enabled: canLoadAuthenticatedData,
     refetchInterval: 15000,
     staleTime: 10000,
   });
   const dashboardQuery = trpc.market.dashboard.useQuery(undefined, {
-    enabled: !!user,
+    enabled: canLoadAuthenticatedData,
     refetchOnMount: true,
     staleTime: 60000,
   });
