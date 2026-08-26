@@ -715,3 +715,6 @@
 - [x] Increase the Member Directory hero title artwork more noticeably so it better matches the visual scale of other page hero titles.
 - [x] Make the Member Directory hero title artwork larger again and center the logo-divider-title group better within the hero section.
 - [x] Re-diagnose the custom TiDB connection after DBeaver successfully connects, focusing on SSL/TLS, URL parsing, and application connection options without exposing credentials or changing data.
+- [x] Compare the DBeaver-visible TiDB host, database, and SSL settings against the app connection using read-only SELECT 1 probes without exposing credentials or changing data.
+- [x] Securely update CUSTOM_DATABASE_URL to the DBeaver-confirmed TiDB username format, then verify with read-only SELECT 1 and aggregate marketplace counts before any public-data claim.
+- [x] Validate the corrected custom TiDB connection against the clarified Tradebilia schema `GnMVDXgu6G8uhj5ZYQtcGe` using read-only aggregate checks only.
