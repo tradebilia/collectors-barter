@@ -213,6 +213,7 @@ export async function getBillingOverview() {
       planId: plan.id,
       featureId: feature.id,
       isEnabled: Boolean(mappingsByKey.get(`${plan.id}:${feature.id}`)?.isEnabled),
+      limitValue: mappingsByKey.get(`${plan.id}:${feature.id}`)?.limitValue ?? null,
       effectiveAtLaunch: true,
     }))),
   };
@@ -277,6 +278,16 @@ export async function revokeComplimentaryMembership(userId: number) {
   if (affectedRows === 0) throw new TRPCError({ code: "NOT_FOUND", message: "The selected member does not have complimentary access." });
 }
 
+export async function updatePlanFeatureConfiguration(input: { planId: number; featureId: number; isEnabled: boolean; limitValue: number | null }) {
+  const db = await requireDb();
+  const result = await db
+    .update(membershipPlanFeatures)
+    .set({ isEnabled: input.isEnabled ? 1 : 0, limitValue: input.limitValue })
+    .where(and(eq(membershipPlanFeatures.planId, input.planId), eq(membershipPlanFeatures.featureId, input.featureId)));
+  const affectedRows = Number((result as any)[0]?.affectedRows ?? (result as any).affectedRows ?? 0);
+  if (affectedRows === 0) throw new TRPCError({ code: "NOT_FOUND", message: "The selected plan feature was not found." });
+}
+
 export const membershipRouter = router({
   getAccessPolicy: publicProcedure.query(({ ctx }) => getSubscriptionAccessPolicy(ctx.user?.id ?? null)),
   getMyStatus: protectedProcedure.query(({ ctx }) => getMyMembershipStatus(ctx.user.id)),
@@ -291,18 +302,25 @@ export const billingRouter = router({
     requireAdministrator(ctx.user.role);
     return getMembershipAdministrationMembers();
   }),
-  grantComplimentaryAccess: protectedProcedure
-    .input(z.object({ userId: z.number().int().positive() }))
+  updatePlanFeature: protectedProcedure
+    .input(z.object({ planId: z.number().int().positive(), featureId: z.number().int().positive(), isEnabled: z.boolean(), limitValue: z.number().int().nonnegative().nullable() }))
     .mutation(async ({ ctx, input }) => {
       requireAdministrator(ctx.user.role);
-      await grantComplimentaryMembership(input.userId);
+      await updatePlanFeatureConfiguration(input);
+      return { success: true, billing: buildBillingSummary(await getBillingSettingsRow()) };
+    }),
+  grantComplimentaryAccess: protectedProcedure
+    .input(z.object({ targetUserId: z.number().int().positive() }))
+    .mutation(async ({ ctx, input }) => {
+      requireAdministrator(ctx.user.role);
+      await grantComplimentaryMembership(input.targetUserId);
       return { success: true };
     }),
   revokeComplimentaryAccess: protectedProcedure
-    .input(z.object({ userId: z.number().int().positive() }))
+    .input(z.object({ targetUserId: z.number().int().positive() }))
     .mutation(async ({ ctx, input }) => {
       requireAdministrator(ctx.user.role);
-      await revokeComplimentaryMembership(input.userId);
+      await revokeComplimentaryMembership(input.targetUserId);
       return { success: true };
     }),
 });
