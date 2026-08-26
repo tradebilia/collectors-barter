@@ -40,3 +40,15 @@ No migration, seed, schema push, destructive action, or database write is author
 ## Verified Compatible Baseline Content
 
 The Member Directory title-artwork adjustment, its regression test, and the future membership/billing/verification planning document are present and identical in both repositories at this baseline.
+
+## WebDev-First Membership Implementation Pair
+
+| Record | Value |
+|---|---|
+| Approved custom TiDB membership migration | Applied and verified on 2026-08-26; existing marketplace records were retained. |
+| WebDev membership implementation checkpoint | `fd796d54` |
+| GitHub implementation commit | `85e92ae4ed2926cd864786cfbc2f7629989f0213` |
+| Payment state | Free Launch retained; Stripe, checkout, card collection, and paid-access enforcement are inactive. |
+| Later payment safety boundary | A separately approved Stripe test-mode phase is required before any payment credential, checkout, webhook, or charge is introduced. |
+
+The GitHub `0009_warm_mongu.sql` migration is the source-history upgrade path for environments that already ran GitHub’s earlier membership migrations. It must **not** be replayed on the restored custom TiDB runtime, which already received the separately reviewed WebDev migration `0007_elite_switch.sql`.
