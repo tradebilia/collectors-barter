@@ -12,6 +12,8 @@
 | Initial canonical baseline commit | `44375811651b2141613ad2d46b1aa76b346f41ff` |
 | GitHub pre-reconciliation backup tag | `backup/github-main-pre-webdev-reconcile-20260826T1705Z` |
 | Managed WebDev pre-reconciliation checkpoint | `8e6c5375` |
+| Canonical GitHub main validated for this reconciliation | `85f82901dbf854b091a3d1e426cbea60fa850b8b` |
+| Managed WebDev reconciliation recovery checkpoint | `85605dc2` |
 
 ## Purpose and Recovery Rules
 
