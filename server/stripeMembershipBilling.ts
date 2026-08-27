@@ -158,13 +158,14 @@ export async function recordVerifiedTestMembershipEvent(event: Stripe.Event) {
       }
     }
     const subscriptionData = subscription as Stripe.Subscription & { current_period_start?: number; current_period_end?: number };
+    const subscriptionItem = subscription.items.data[0];
     const updateResult = await db.update(userMemberships).set({
       stripeCustomerId: typeof subscription.customer === "string" ? subscription.customer : subscription.customer.id,
       stripeSubscriptionId: subscription.id,
       status: stripeStatusToMembershipStatus(subscription.status),
       billingTerm,
-      currentPeriodStart: toMysqlDateTime(subscriptionData.current_period_start),
-      currentPeriodEnd: toMysqlDateTime(subscriptionData.current_period_end),
+      currentPeriodStart: toMysqlDateTime(subscriptionItem?.current_period_start ?? subscriptionData.current_period_start),
+      currentPeriodEnd: toMysqlDateTime(subscriptionItem?.current_period_end ?? subscriptionData.current_period_end),
       cancelAtPeriodEnd: subscription.cancel_at_period_end ? 1 : 0,
     }).where(eq(userMemberships.userId, metadataUserId));
     const affectedRows = Number((updateResult as any)[0]?.affectedRows ?? (updateResult as any).affectedRows ?? 0);
