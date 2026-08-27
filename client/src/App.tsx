@@ -44,6 +44,7 @@ import TradeVoting from "./pages/TradeVoting";
 import TestAI from "./pages/TestAI";
 import ComingSoon from "./pages/ComingSoon";
 import ComingSoonDirections from "./pages/ComingSoonDirections";
+import HowTradebiliaWorks from "./pages/HowTradebiliaWorks";
 import {
   AllMostViewedRankings,
   AllMostFavoritedRankings,
@@ -57,6 +58,7 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/coming-soon" component={ComingSoon} />
       <Route path="/coming-soon-directions" component={ComingSoonDirections} />
+      <Route path="/how-it-works" component={HowTradebiliaWorks} />
       <Route path="/inventory">
         <ProtectedRoute>
           <Inventory />
