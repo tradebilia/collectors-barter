@@ -1452,6 +1452,9 @@ export default function Home() {
             </div>
             
             <div className="flex items-center gap-8">
+              <Link href="/how-it-works" className="text-white/40 hover:text-white/80 text-sm transition-colors">
+                How Tradebilia Works
+              </Link>
               <Link href="/privacy" className="text-white/40 hover:text-white/80 text-sm transition-colors">
                 Privacy Policy
               </Link>
