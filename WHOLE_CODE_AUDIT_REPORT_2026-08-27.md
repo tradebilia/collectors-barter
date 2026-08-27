@@ -2,13 +2,19 @@
 
 **Audit date:** August 27, 2026
 **Scope:** Client, server, database contracts, authentication and authorization, storage, integrations, Stripe sandbox handling, PayPal verification, scheduled work, tests, runtime logs, dependency advisories, and deployment behavior.
-**Change boundary:** Read-only. No application source, database data/schema, schedules, Stripe settings/subscriptions, third-party accounts, secrets, or live behavior was changed.
+**Initial audit boundary:** Read-only. The audit did not change application source, database data/schema, schedules, Stripe settings/subscriptions, third-party accounts, secrets, or live behavior. After the user separately approved P0 and P1 remediation, only the documented fixes below were implemented and validated.
 
 ## Executive Summary
 
 This audit found **three current operational blockers** that should be addressed before relying on their affected features: the Manus OAuth sign-in route is internally inconsistent and rejects callers that use it; the daily shipment-reminder job is enabled but has recent HTTP 404 failures and an overdue next-run timestamp; and provider OAuth token encryption is not operational because the required encryption key is absent or invalid in the active environment. The application itself currently type-checks and produces a production bundle, and the custom TiDB connection is healthy through the published health endpoint.[1] [2] [3]
 
 The audit also identified data-integrity, payment-record, support-abuse, test-maintenance, performance, and dependency-upgrade work. These are actionable risks, but none justified making unapproved changes during this review. No evidence supported several initially suspected issues, including a current Vite syntax failure, public listing-detail routing failure, unsafe user-controlled SQL in the reviewed raw-SQL call sites, first-time profile verification bypass, Stripe billing-period field mapping, or loss of private report-evidence authorization.
+
+## Approved Remediation Status
+
+The user subsequently approved the P0 and P1 repair batches. **All P0 and P1 findings in this report are now remediated.** The implementation repaired the OAuth start-state cookie flow, refreshed and verified the existing zero-work shipment-reminder job, configured secure provider-token encryption and fail-closed messaging, added five TiDB uniqueness constraints after zero-duplicate preflight, made failed sandbox Stripe webhook events retryable, derived PayPal verification requirements from the locked trade proposal, throttled and correctly attributed anonymous contact tickets, and performed a controlled dependency update.[34] [35] [36]
+
+The final production dependency audit reports **zero critical, high, moderate, and low advisories**. Focused remediation coverage passed 17 tests; TypeScript, the production build, local health response, and desktop public-route smoke checks passed. The broader suite has 421 passing and four skipped tests, with the two previously documented brittle mobile exact-string test failures still outstanding.[37] [38]
 
 | Priority | Classification | Count | Meaning |
 | --- | --- | ---: | --- |
@@ -177,3 +183,8 @@ The complete P0-focused test set passed: **5 files and 40 tests**. The complete 
 [31]: ./server/routers.ts "Profile persistence procedure"
 [32]: ./server/_core/storageProxy.ts "Private report-evidence storage proxy"
 [33]: ./server/_core/providerOAuthCallbacks.ts "Provider callback state and session checks"
+[34]: ./todo.md "P0 and P1 remediation tracker"
+[35]: ./drizzle/0010_p1_unique_integrity_indexes.sql "Approved TiDB uniqueness migration"
+[36]: ./drizzle/0011_p1_contact_intake_hardening.sql "Approved contact-intake migration"
+[37]: /tmp/tradebilia-p1-audit-final.json "Final production dependency audit"
+[38]: /tmp/tradebilia-p1-full-test.log "Final full-suite test summary"

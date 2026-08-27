@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isAuthorizedPaymentVerification } from "./paymentAuthorization";
+import { getPaymentVerificationObligation, isAuthorizedPaymentVerification } from "./paymentAuthorization";
 
 describe("payment verification authorization", () => {
   const proposal = { requesterId: 10, recipientId: 20 };
@@ -13,5 +13,18 @@ describe("payment verification authorization", () => {
     expect(isAuthorizedPaymentVerification(proposal, 99, 20)).toBe(false);
     expect(isAuthorizedPaymentVerification(proposal, 10, 99)).toBe(false);
     expect(isAuthorizedPaymentVerification(proposal, 10, 10)).toBe(false);
+  });
+
+  it("derives an accepted payer obligation from the proposal rather than browser input", () => {
+    const cashTrade = { requesterId: 10, recipientId: 20, status: "accepted", cashFromRequester: "12.50", cashFromRecipient: "0.00" };
+    expect(getPaymentVerificationObligation(cashTrade, 10)).toEqual({ payerId: 10, payeeId: 20, amount: 12.5 });
+    expect(getPaymentVerificationObligation(cashTrade, 20)).toBeNull();
+  });
+
+  it("rejects no-cash, non-accepted, malformed, and outsider payment obligations", () => {
+    expect(getPaymentVerificationObligation({ requesterId: 10, recipientId: 20, status: "accepted", cashFromRequester: "0", cashFromRecipient: "0" }, 10)).toBeNull();
+    expect(getPaymentVerificationObligation({ requesterId: 10, recipientId: 20, status: "shipping", cashFromRequester: "10", cashFromRecipient: "0" }, 10)).toBeNull();
+    expect(getPaymentVerificationObligation({ requesterId: 10, recipientId: 20, status: "accepted", cashFromRequester: "not-a-number", cashFromRecipient: "0" }, 10)).toBeNull();
+    expect(getPaymentVerificationObligation({ requesterId: 10, recipientId: 20, status: "accepted", cashFromRequester: "10", cashFromRecipient: "0" }, 99)).toBeNull();
   });
 });

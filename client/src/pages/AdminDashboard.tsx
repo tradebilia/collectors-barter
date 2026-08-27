@@ -2433,7 +2433,7 @@ function SupportTicketsTab() {
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">
                         <div className="text-xs font-medium truncate">{ticket.subject}</div>
-                        <div className="text-xs text-muted-foreground mt-0.5">{ticket.displayName || ticket.username}</div>
+                        <div className="text-xs text-muted-foreground mt-0.5">{ticket.submitterDisplayName || ticket.displayName || ticket.username || "Anonymous visitor"}</div>
                         <div className="text-xs text-muted-foreground">{new Date(ticket.createdAt).toLocaleDateString()}</div>
                       </div>
                       <div className="flex flex-col gap-1 shrink-0">
@@ -2469,8 +2469,8 @@ function SupportTicketsTab() {
                 <div>
                   <CardTitle className="text-base">{selectedTicket.subject}</CardTitle>
                   <CardDescription className="mt-1">
-                    From: <strong>{selectedTicket.displayName || selectedTicket.username}</strong>
-                    {selectedTicket.email && <span className="ml-1 text-xs">({selectedTicket.email})</span>}
+                    From: <strong>{selectedTicket.submitterDisplayName || selectedTicket.displayName || selectedTicket.username || "Anonymous visitor"}</strong>
+                    {(selectedTicket.submitterEmail || selectedTicket.email) && <span className="ml-1 text-xs">({selectedTicket.submitterEmail || selectedTicket.email})</span>}
                     {" · "}{new Date(selectedTicket.createdAt).toLocaleString()}
                   </CardDescription>
                 </div>

@@ -41,6 +41,12 @@ function findBillingTerm(subscription: Stripe.Subscription): MembershipBillingTe
 const DUPLICATE_SUBSCRIPTION_STATUSES = new Set<Stripe.Subscription.Status>(["active", "trialing", "past_due", "incomplete", "unpaid"]);
 const ACTIVE_LOCAL_MEMBERSHIP_STATUSES = new Set(["active", "past_due", "unpaid"]);
 
+type MembershipEventProcessingStatus = "received" | "processed" | "ignored" | "failed";
+
+export function shouldRetryFailedMembershipEvent(status: MembershipEventProcessingStatus | undefined): boolean {
+  return status === "failed";
+}
+
 async function assertNoExistingTestMembershipSubscription(stripe: Stripe, membership: { stripeCustomerId: string | null; stripeSubscriptionId: string | null; status: string } | undefined) {
   if (membership?.stripeSubscriptionId && ACTIVE_LOCAL_MEMBERSHIP_STATUSES.has(membership.status)) {
     throw new Error("A Tradebilia Membership subscription is already active or awaiting payment. Use the test customer portal before starting another Checkout.");
@@ -129,19 +135,29 @@ export async function recordVerifiedTestMembershipEvent(event: Stripe.Event) {
   if (event.livemode) return { status: "ignored" as const };
   const db = await requireDb();
   const eventWhere = and(eq(membershipProviderEvents.provider, "stripe"), eq(membershipProviderEvents.providerEventId, event.id));
-  const existingEvent = (await db.select({ id: membershipProviderEvents.id }).from(membershipProviderEvents).where(eventWhere).limit(1))[0];
-  if (existingEvent) return { status: "duplicate" as const };
-  try {
-    await db.insert(membershipProviderEvents).values({
-      provider: "stripe",
-      providerEventId: event.id,
-      eventType: event.type,
+  const existingEvent = (await db.select({ id: membershipProviderEvents.id, processingStatus: membershipProviderEvents.processingStatus }).from(membershipProviderEvents).where(eventWhere).limit(1))[0];
+  if (existingEvent && !shouldRetryFailedMembershipEvent(existingEvent.processingStatus)) return { status: "duplicate" as const };
+  if (existingEvent) {
+    const resetResult = await db.update(membershipProviderEvents).set({
       processingStatus: "received",
-    });
-  } catch (error) {
-    const concurrentEvent = (await db.select({ id: membershipProviderEvents.id }).from(membershipProviderEvents).where(eventWhere).limit(1))[0];
-    if (concurrentEvent) return { status: "duplicate" as const };
-    throw error;
+      processedAt: null,
+      failureReason: null,
+    }).where(and(eventWhere, eq(membershipProviderEvents.processingStatus, "failed")));
+    const resetRows = Number((resetResult as any)[0]?.affectedRows ?? (resetResult as any).affectedRows ?? 0);
+    if (resetRows === 0) return { status: "duplicate" as const };
+  } else {
+    try {
+      await db.insert(membershipProviderEvents).values({
+        provider: "stripe",
+        providerEventId: event.id,
+        eventType: event.type,
+        processingStatus: "received",
+      });
+    } catch (error) {
+      const concurrentEvent = (await db.select({ id: membershipProviderEvents.id }).from(membershipProviderEvents).where(eventWhere).limit(1))[0];
+      if (concurrentEvent) return { status: "duplicate" as const };
+      throw error;
+    }
   }
 
   try {

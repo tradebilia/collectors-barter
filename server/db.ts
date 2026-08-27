@@ -304,6 +304,12 @@ function getInsertId(result: any) {
   return Number(id);
 }
 
+function isDuplicateKeyError(error: unknown): boolean {
+  if (!error || typeof error !== "object") return false;
+  const candidate = error as { code?: string; errno?: number };
+  return candidate.code === "ER_DUP_ENTRY" || candidate.errno === 1062;
+}
+
 async function ensureUserProfileRecord(user: Pick<User, "id" | "name">) {
   const db = await requireDb();
   const existing = await db.select().from(userProfiles).where(eq(userProfiles.userId, user.id)).limit(1);
@@ -311,7 +317,7 @@ async function ensureUserProfileRecord(user: Pick<User, "id" | "name">) {
     await db.insert(userProfiles).values({
       userId: user.id,
       displayName: user.name ?? `Collector ${user.id}`,
-    });
+    }).onDuplicateKeyUpdate({ set: { userId: sql`${userProfiles.userId}` } });
   }
 }
 
@@ -1347,11 +1353,11 @@ export async function toggleWatchlist(userId: number, listingId: number) {
     await db.insert(watchlistEntries).values({
       userId,
       listingId,
-    });
+    }).onDuplicateKeyUpdate({ set: { id: sql`${watchlistEntries.id}` } });
     await db.insert(favorites).values({
       userId,
       listingId,
-    });
+    }).onDuplicateKeyUpdate({ set: { id: sql`${favorites.id}` } });
   }
 
   return { saved: isSaved };
@@ -2893,6 +2899,9 @@ export async function createUser(input: {
     banReason: null,
     bannedBy: null,
     lastWarnedAt: null,
+  }).catch((error) => {
+    if (isDuplicateKeyError(error)) throw new Error("Username already taken");
+    throw error;
   });
   return getInsertId(result);
 }
@@ -3082,20 +3091,26 @@ export async function submitUserReport(input: {
   evidence?: string;
 }): Promise<{ reportId: string }> {
   const db = await requireDb();
-  
-  const reportId = await generateReportId();
-  
-  await db.insert(userReports).values({
-    reportId,
-    reportedUserId: input.reportedUserId,
-    reporterUserId: input.reporterUserId,
-    reason: input.reason,
-    description: input.description,
-    evidence: input.evidence,
-    status: 'pending',
-  });
-  
-  return { reportId };
+
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const reportId = await generateReportId();
+    try {
+      await db.insert(userReports).values({
+        reportId,
+        reportedUserId: input.reportedUserId,
+        reporterUserId: input.reporterUserId,
+        reason: input.reason,
+        description: input.description,
+        evidence: input.evidence,
+        status: 'pending',
+      });
+      return { reportId };
+    } catch (error) {
+      if (!isDuplicateKeyError(error) || attempt === 2) throw error;
+    }
+  }
+
+  throw new Error("Unable to allocate a report reference. Please try again.");
 }
 
 const REPORT_EVIDENCE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "application/pdf", "text/plain"]);

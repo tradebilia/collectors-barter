@@ -114,9 +114,9 @@ export const favorites = mysqlTable("favorites", {
 	userId: int().notNull().references(() => users.id),
 	listingId: int().notNull().references(() => listings.id),
 	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
-},
-(table) => [
-	index("favorites_user_listing_unique").on(table.userId, table.listingId),
+	},
+	(table) => [
+		uniqueIndex("favorites_user_listing_unique").on(table.userId, table.listingId),
 	index("favorites_user_idx").on(table.userId),
 	index("favorites_listing_idx").on(table.listingId),
 ]);
@@ -626,9 +626,9 @@ export const userProfiles = mysqlTable("userProfiles", {
 	phoneVerified: tinyint().default(0).notNull(),
 	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
 	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
-},
-(table) => [
-	index("userProfiles_userId_unique").on(table.userId),
+	},
+	(table) => [
+		uniqueIndex("userProfiles_userId_unique").on(table.userId),
 ]);
 
 export const userRatingSummary = mysqlTable("userRatingSummary", {
@@ -661,9 +661,9 @@ export const userReports = mysqlTable("userReports", {
 	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
 	reviewedAt: timestamp({ mode: 'string' }),
 	reviewedBy: int().references(() => users.id),
-},
-(table) => [
-	index("userReports_reportId_unique").on(table.reportId),
+	},
+	(table) => [
+		uniqueIndex("userReports_reportId_unique").on(table.reportId),
 	index("userReports_reportedUserId_idx").on(table.reportedUserId),
 	index("userReports_reporterUserId_idx").on(table.reporterUserId),
 	index("userReports_status_idx").on(table.status),
@@ -753,10 +753,10 @@ export const users = mysqlTable("users", {
 	merchantVerified: tinyint().default(0).notNull(),
 	merchantVerifiedAt: timestamp({ mode: 'string' }),
 	merchantVerifiedBy: int(),
-},
-	(table) => [
-		index("users_openId_unique").on(table.openId),
-		index("users_username_unique").on(table.username),
+	},
+		(table) => [
+			index("users_openId_unique").on(table.openId),
+			uniqueIndex("users_username_unique").on(table.username),
 	]);
 
 export const accountApprovalReviews = mysqlTable("accountApprovalReviews", {
@@ -798,9 +798,9 @@ export const watchlistEntries = mysqlTable("watchlistEntries", {
 	userId: int().notNull().references(() => users.id),
 	listingId: int().notNull().references(() => listings.id),
 	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
-},
-(table) => [
-	index("watchlistEntries_unique_user_listing").on(table.userId, table.listingId),
+	},
+	(table) => [
+		uniqueIndex("watchlistEntries_unique_user_listing").on(table.userId, table.listingId),
 	index("watchlistEntries_user_idx").on(table.userId),
 	index("watchlistEntries_listing_idx").on(table.listingId),
 ]);
@@ -808,7 +808,9 @@ export const watchlistEntries = mysqlTable("watchlistEntries", {
 export const supportTickets = mysqlTable("supportTickets", {
 	id: int().autoincrement().notNull().primaryKey(),
 	ticketId: varchar({ length: 20 }).notNull().unique(),
-	userId: int().notNull().references(() => users.id),
+	userId: int().references(() => users.id),
+	submittedByName: varchar({ length: 100 }),
+	submittedByEmail: varchar({ length: 320 }),
 	subject: varchar({ length: 255 }).notNull(),
 	message: text().notNull(),
 	category: mysqlEnum(['general','listing','trade','account','billing','bug','other']).default('general').notNull(),

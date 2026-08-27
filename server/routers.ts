@@ -115,7 +115,7 @@ import { PASSWORD_RECOVERY_TOKEN_TTL_MS, createOpaqueRecoveryToken, createSixDig
 import { createPendingEmailHistoryApproval, requireMarketplaceApproval } from "./accountApproval";
 import { getIpqsEmailHistory } from "./ipqs";
 import { createProviderOauthState, setProviderOauthStateCookie } from "./_core/providerOauthState";
-import { isAuthorizedPaymentVerification } from "./paymentAuthorization";
+import { getPaymentVerificationObligation, isAuthorizedPaymentVerification } from "./paymentAuthorization";
 import { billingRouter, membershipRouter } from "./membership";
 import { listHeartbeatJobs } from "./_core/heartbeat";
 
@@ -3132,6 +3132,8 @@ export const appRouter = router({
       const db = await requireDb();
       const [rows] = await db.execute(
         sql`SELECT st.*, u.username, u.displayName, u.email,
+                   COALESCE(NULLIF(u.displayName, ''), u.username, st.submittedByName, 'Anonymous visitor') AS submitterDisplayName,
+                   COALESCE(u.email, st.submittedByEmail) AS submitterEmail,
                    a.username as assignedAdminUsername
             FROM supportTickets st
             LEFT JOIN users u ON u.id = st.userId
@@ -3258,24 +3260,24 @@ export const appRouter = router({
         subject: z.string().min(1).max(255),
         message: z.string().min(10).max(5000),
         category: z.enum(['general','listing','trade','account','billing','bug','other']).default('general'),
-        priority: z.enum(['low','medium','high','urgent']).default('medium'),
       }))
       .mutation(async ({ ctx, input }) => {
+        const clientAddress = ctx.req.ip ?? ctx.req.socket.remoteAddress ?? "unknown";
+        if (!isRecoveryRequestAllowed(`public-contact:${clientAddress}`, Date.now(), 3)) {
+          throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: "Please wait before sending another message." });
+        }
         const db = await requireDb();
         const ticketId = 'TKT-' + Date.now().toString(36).toUpperCase();
-        // If user is logged in, link to their account; otherwise store email/name in subject
         const userId = ctx.user?.id;
         if (userId) {
           await db.execute(
             sql`INSERT INTO supportTickets (ticketId, userId, subject, message, category, priority)
-                VALUES (${ticketId}, ${userId}, ${input.subject}, ${input.message}, ${input.category}, ${input.priority})`
+                VALUES (${ticketId}, ${userId}, ${input.subject.trim()}, ${input.message.trim()}, ${input.category}, 'medium')`
           );
         } else {
-          // For anonymous submissions, use admin user as placeholder (id=30002)
-          const anonSubject = `[${input.name} <${input.email}>] ${input.subject}`;
           await db.execute(
-            sql`INSERT INTO supportTickets (ticketId, userId, subject, message, category, priority)
-                VALUES (${ticketId}, 30002, ${anonSubject}, ${input.message}, ${input.category}, ${input.priority})`
+            sql`INSERT INTO supportTickets (ticketId, userId, submittedByName, submittedByEmail, subject, message, category, priority)
+                VALUES (${ticketId}, NULL, ${input.name.trim()}, ${input.email.trim().toLowerCase()}, ${input.subject.trim()}, ${input.message.trim()}, ${input.category}, 'medium')`
           );
         }
         return { success: true, ticketId };
@@ -3643,14 +3645,18 @@ export const appRouter = router({
       .input(z.object({
         proposalId: z.number().int().positive(),
         transactionId: z.string().min(1).max(255),
-        payeeUserId: z.number().int().positive(),
-        amount: z.number().positive(),
       }))
       .mutation(async ({ ctx, input }) => {
         const db = await requireDb();
 
         const proposalResult = await db
-          .select({ requesterId: tradeProposals.requesterId, recipientId: tradeProposals.recipientId })
+          .select({
+            requesterId: tradeProposals.requesterId,
+            recipientId: tradeProposals.recipientId,
+            status: tradeProposals.status,
+            cashFromRequester: tradeProposals.cashFromRequester,
+            cashFromRecipient: tradeProposals.cashFromRecipient,
+          })
           .from(tradeProposals)
           .where(eq(tradeProposals.id, input.proposalId))
           .limit(1);
@@ -3658,11 +3664,19 @@ export const appRouter = router({
         if (!proposal) {
           throw new TRPCError({ code: "NOT_FOUND", message: "Trade proposal not found." });
         }
-        if (!isAuthorizedPaymentVerification(proposal, ctx.user.id, input.payeeUserId)) {
+        const expectedPayeeId = ctx.user.id === proposal.requesterId ? proposal.recipientId : proposal.requesterId;
+        if (!isAuthorizedPaymentVerification(proposal, ctx.user.id, expectedPayeeId)) {
           throw new TRPCError({
             code: "FORBIDDEN",
             message: "Payment verification is limited to the two participants in this trade.",
           });
+        }
+        if (proposal.status !== "accepted") {
+          throw new TRPCError({ code: "CONFLICT", message: "Cash payments can be verified only while this trade is accepted." });
+        }
+        const obligation = getPaymentVerificationObligation(proposal, ctx.user.id);
+        if (!obligation) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "You do not owe a cash payment for this trade." });
         }
 
         const reusedTransaction = await db
@@ -3681,7 +3695,7 @@ export const appRouter = router({
         const payeeResult = await db
           .select({ paypalEmail: users.paypalEmail })
           .from(users)
-          .where(eq(users.id, input.payeeUserId))
+          .where(eq(users.id, obligation.payeeId))
           .limit(1);
 
         const payeePaypalEmail = payeeResult[0]?.paypalEmail;
@@ -3698,14 +3712,14 @@ export const appRouter = router({
           actorId: ctx.user.id,
           actorName: ctx.user.name ?? ctx.user.username ?? "User",
           eventType: "payment_verification_started",
-          details: JSON.stringify({ transactionId: input.transactionId, amount: input.amount }),
+          details: JSON.stringify({ transactionId: input.transactionId, amount: obligation.amount }),
         });
 
         // Verify with PayPal
         const result = await verifyPayPalTransaction(
           input.transactionId,
           payeePaypalEmail,
-          input.amount
+          obligation.amount
         );
 
         // Upsert tradePayments record
@@ -3723,8 +3737,8 @@ export const appRouter = router({
         const paymentData = {
           proposalId: input.proposalId,
           payerId: ctx.user.id,
-          payeeId: input.payeeUserId,
-          amount: input.amount.toFixed(2),
+          payeeId: obligation.payeeId,
+          amount: obligation.amount.toFixed(2),
           paypalEmail: payeePaypalEmail,
           transactionId: input.transactionId,
           status: (result.verified ? "verified" : "failed") as "verified" | "failed",
@@ -3748,7 +3762,7 @@ export const appRouter = router({
             transactionId: input.transactionId,
             verified: result.verified,
             reason: result.reason,
-            amount: input.amount,
+            amount: obligation.amount,
           }),
         });
 
