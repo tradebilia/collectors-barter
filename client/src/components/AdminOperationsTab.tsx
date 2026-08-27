@@ -1,0 +1,128 @@
+import { AlertTriangle, CheckCircle2, Clock3, Download, ExternalLink, HeartPulse, Loader2, ShieldCheck } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { trpc } from "@/lib/trpc";
+
+type AdminTab = "approvals" | "users" | "reports" | "flagged" | "tickets" | "trades" | "api-health" | "billing";
+type ExportKind = "listings" | "trades" | "members" | "support_metrics";
+
+function displayDate(value?: string | null) {
+  return value ? new Date(value).toLocaleString() : "Not available";
+}
+
+function exportLabel(kind: ExportKind) {
+  return kind === "support_metrics" ? "Support metrics" : kind[0].toUpperCase() + kind.slice(1);
+}
+
+function downloadCsv(filename: string, content: string) {
+  const url = URL.createObjectURL(new Blob([content], { type: "text/csv;charset=utf-8" }));
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  anchor.click();
+  URL.revokeObjectURL(url);
+}
+
+export function AdminOperationsTab({ onNavigate }: { onNavigate: (tab: AdminTab) => void }) {
+  const snapshotQuery = trpc.admin.getOperationsSnapshot.useQuery(undefined, { refetchOnWindowFocus: true });
+  const lifecycleQuery = trpc.admin.getActiveTradeLifecycle.useQuery(undefined, { refetchOnWindowFocus: true });
+  const timelineQuery = trpc.admin.getOperationalTimeline.useQuery(undefined, { refetchOnWindowFocus: true });
+  const exportMutation = trpc.admin.exportOperationalCsv.useMutation({
+    onSuccess: ({ filename, content }) => downloadCsv(filename, content),
+  });
+
+  if (snapshotQuery.isLoading || lifecycleQuery.isLoading || timelineQuery.isLoading) {
+    return <Card><CardContent className="flex items-center gap-2 py-8 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Loading operations data…</CardContent></Card>;
+  }
+
+  if (snapshotQuery.error || lifecycleQuery.error || timelineQuery.error) {
+    return <Card><CardContent className="py-8 text-sm text-destructive">Operations data could not be loaded. Refresh the page or review the individual administrator tabs.</CardContent></Card>;
+  }
+
+  const snapshot = snapshotQuery.data;
+  const queue = snapshot?.actionQueue ?? [];
+  const lifecycle = lifecycleQuery.data ?? [];
+  const timeline = timelineQuery.data ?? [];
+  const schedule = snapshot?.schedule;
+
+  return (
+    <div className="space-y-5">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2"><HeartPulse className="h-5 w-5 text-primary" /> Operations Health</CardTitle>
+          <CardDescription>Read-only platform health. No schedule, membership, payment, or member access setting can be changed here.</CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-3 md:grid-cols-3">
+          <div className="rounded-lg border bg-card p-4">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Database</p>
+            <div className="mt-2 flex items-center gap-2 font-semibold text-emerald-700"><CheckCircle2 className="h-4 w-4" /> Connected</div>
+            <p className="mt-1 text-xs text-muted-foreground">Custom Tradebilia runtime data is responding.</p>
+          </div>
+          <div className="rounded-lg border bg-card p-4">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Shipment reminders</p>
+            <div className={`mt-2 flex items-center gap-2 font-semibold ${schedule?.isEnable ? "text-emerald-700" : "text-amber-700"}`}>
+              {schedule?.isEnable ? <CheckCircle2 className="h-4 w-4" /> : <AlertTriangle className="h-4 w-4" />}
+              {schedule ? (schedule.isEnable ? "Enabled" : "Paused") : "Not found"}
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">Last run: {displayDate(schedule?.lastExecutedAt)}<br />Next run: {displayDate(schedule?.nextExecutionAt)}</p>
+          </div>
+          <div className="rounded-lg border bg-card p-4">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">External API health</p>
+            <div className={`mt-2 flex items-center gap-2 font-semibold ${(snapshot?.recentApiFailures ?? 0) > 0 ? "text-amber-700" : "text-emerald-700"}`}>
+              {(snapshot?.recentApiFailures ?? 0) > 0 ? <AlertTriangle className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
+              {snapshot?.recentApiFailures ?? 0} recent recorded failures
+            </div>
+            <Button variant="link" className="mt-1 h-auto px-0 text-xs" onClick={() => onNavigate("api-health")}>Review API Health</Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2"><AlertTriangle className="h-5 w-5 text-amber-600" /> Admin Action Queue</CardTitle>
+          <CardDescription>Counts link to the existing administrator workspaces; each action retains its original authorization and confirmation requirements.</CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {queue.map((item: any) => (
+            <div key={item.key} className="rounded-lg border p-4">
+              <div className="flex items-start justify-between gap-3"><p className="font-medium">{item.label}</p><Badge variant={item.count > 0 ? "default" : "secondary"}>{item.count}</Badge></div>
+              <p className="mt-1 text-xs text-muted-foreground">{item.description}</p>
+              <Button variant="link" className="mt-2 h-auto px-0 text-xs" onClick={() => onNavigate(item.tab as AdminTab)}>Open queue <ExternalLink className="ml-1 h-3 w-3" /></Button>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+
+      <div className="grid gap-5 xl:grid-cols-2">
+        <Card>
+          <CardHeader><CardTitle className="flex items-center gap-2"><Clock3 className="h-5 w-5 text-primary" /> Active Trade Lifecycle</CardTitle><CardDescription>Participant names and milestone state only; no shipping addresses, payment details, or tracking numbers are shown.</CardDescription></CardHeader>
+          <CardContent>
+            {lifecycle.length === 0 ? <p className="text-sm text-muted-foreground">No active trades require monitoring.</p> : <div className="space-y-3">{lifecycle.map((trade: any) => <div key={trade.id} className="rounded-lg border p-3 text-sm"><div className="flex flex-wrap items-center justify-between gap-2"><p className="font-medium">{trade.requesterDisplayName} ↔ {trade.recipientDisplayName}</p><Badge variant="outline" className="capitalize">{trade.status}</Badge></div><p className="mt-1 text-xs text-muted-foreground">{trade.listingTitle || "Requested listing unavailable"} · Tracking: {trade.trackingCount > 0 ? "submitted" : "not submitted"} · Receipts: {trade.receiptCount}/2</p><p className={`mt-1 text-xs ${trade.isOverdue ? "font-medium text-destructive" : "text-muted-foreground"}`}>Deadline: {displayDate(trade.nextDeadline)}{trade.isOverdue ? " · overdue" : ""}</p></div>)}</div>}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader><CardTitle className="flex items-center gap-2"><ShieldCheck className="h-5 w-5 text-primary" /> Operational Timeline</CardTitle><CardDescription>Aggregated moderation, trade-administration, and Membership provider events. Raw provider payloads and payment data are never retained or shown.</CardDescription></CardHeader>
+          <CardContent>
+            {timeline.length === 0 ? <p className="text-sm text-muted-foreground">No recent operational events.</p> : <div className="space-y-3">{timeline.map((event: any) => <div key={event.key} className="border-l-2 border-primary/30 pl-3"><p className="text-sm font-medium capitalize">{event.event.replaceAll("_", " ")}</p><p className="text-xs text-muted-foreground">{event.source} · {displayDate(event.createdAt)}</p></div>)}</div>}
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader><CardTitle>Launch & Membership Readiness</CardTitle><CardDescription>Visibility only. Free Launch remains the access override and payment enforcement remains inactive unless separately enabled later.</CardDescription></CardHeader>
+        <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="rounded-lg border p-3"><p className="text-xs text-muted-foreground">New members (30 days)</p><p className="mt-1 text-2xl font-semibold">{snapshot?.launch.newMembers30d ?? 0}</p></div>
+          <div className="rounded-lg border p-3"><p className="text-xs text-muted-foreground">New listings (30 days)</p><p className="mt-1 text-2xl font-semibold">{snapshot?.launch.newListings30d ?? 0}</p></div>
+          <div className="rounded-lg border p-3"><p className="text-xs text-muted-foreground">Completed trades (30 days)</p><p className="mt-1 text-2xl font-semibold">{snapshot?.launch.completedTrades30d ?? 0}</p></div>
+          <div className="rounded-lg border p-3"><p className="text-xs text-muted-foreground">Membership mode</p><p className="mt-1 text-sm font-semibold capitalize">{String(snapshot?.membership.billingMode ?? "free launch").replaceAll("_", " ")}</p><p className="mt-1 text-xs text-muted-foreground">Stripe: {snapshot?.membership.stripeBillingEnabled ? "enabled" : "inactive"} · Enforcement: {snapshot?.membership.paymentEnforcementEnabled ? "enabled" : "inactive"}</p></div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader><CardTitle>Internal CSV Exports</CardTitle><CardDescription>Administrator-only operational summaries. Exports exclude passwords, authentication data, payment data, Stripe identifiers, raw provider payloads, and private shipping addresses.</CardDescription></CardHeader>
+        <CardContent className="flex flex-wrap gap-2">{(["listings", "trades", "members", "support_metrics"] as ExportKind[]).map((kind) => <Button key={kind} variant="outline" size="sm" onClick={() => exportMutation.mutate({ kind })} disabled={exportMutation.isPending}><Download className="mr-1.5 h-4 w-4" />Export {exportLabel(kind)}</Button>)}</CardContent>
+      </Card>
+    </div>
+  );
+}

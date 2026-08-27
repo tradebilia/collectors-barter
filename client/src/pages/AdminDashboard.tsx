@@ -18,6 +18,7 @@ import { ReferralsTab } from "@/components/ReferralsTab";
 import { PreLaunchEmailTab } from "@/components/PreLaunchEmailTab";
 import { R2MediaMigrationTab } from "@/components/R2MediaMigrationTab";
 import { R2StorageHealthTab } from "@/components/R2StorageHealthTab";
+import { AdminOperationsTab } from "@/components/AdminOperationsTab";
 import { Link } from "wouter";
 import { DeleteConfirmationDialog } from "@/components/DeleteConfirmationDialog";
 
@@ -708,6 +709,10 @@ export default function AdminDashboard() {
             <TabsTrigger value="api-health" className="flex items-center justify-center gap-1.5 text-xs font-medium py-2.5 whitespace-nowrap">
               <AlertTriangle className="h-4 w-4" />
               API Health
+            </TabsTrigger>
+            <TabsTrigger value="operations" className="flex items-center justify-center gap-1.5 text-xs font-medium py-2.5 whitespace-nowrap">
+              <ClipboardList className="h-4 w-4" />
+              Operations
             </TabsTrigger>
           </TabsList>
 
@@ -1510,6 +1515,9 @@ export default function AdminDashboard() {
                 {apiHealthQuery.isLoading ? <p className="text-sm text-muted-foreground">Loading API health…</p> : (apiHealthQuery.data?.length ?? 0) === 0 ? <p className="text-sm text-muted-foreground">No recorded API failures.</p> : <div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className="border-b text-left"><th className="p-2">Provider</th><th className="p-2">Operation</th><th className="p-2">Likely cause</th><th className="p-2">Status</th><th className="p-2">When</th></tr></thead><tbody>{apiHealthQuery.data?.map((event: any) => <tr key={event.id} className="border-b"><td className="p-2 font-medium">{event.provider}</td><td className="p-2">{event.operation}</td><td className="p-2 capitalize">{event.failureClass.replaceAll('_', ' ')}</td><td className="p-2">{event.statusCode ?? '—'}</td><td className="p-2 whitespace-nowrap">{new Date(event.occurredAt).toLocaleString()}</td></tr>)}</tbody></table></div>}
               </CardContent>
             </Card>
+          </TabsContent>
+          <TabsContent value="operations" className="space-y-4 mt-6">
+            <AdminOperationsTab onNavigate={setActiveTab} />
           </TabsContent>
         </Tabs>
       </div>
