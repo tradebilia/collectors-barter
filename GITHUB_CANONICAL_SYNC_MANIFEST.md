@@ -122,6 +122,17 @@ The canonical commit deliberately merges the sandbox-specific behavior without r
 | Corrected audit point | Direct remediation review confirmed full street-address and postal-code data were already removed from member-search responses; the completed privacy repair addresses the confirmed preference-enforcement and inventory/contact boundaries. |
 | Preserved safeguards | No custom TiDB record/schema changes, marketplace data changes, Free Launch policy change, Stripe sandbox configuration/subscription change, payment charge, provider-account action, or secret change occurred. |
 
+## Second Deep-Audit P1 Remediation Pair
+
+| Record | Value |
+|---|---|
+| Canonical implementation commit | `cd2b3d129666ce7b680ba3f6b0cdbc7f936bb85d` — normal push to GitHub `main`; no force push or history replacement. |
+| Paired managed WebDev checkpoint | `d331268e` |
+| Scope | Eight reviewed trade-artifact uniqueness protections after one approved duplicate-review cleanup; participant-specific message/inquiry archive retention; guarded receipt escalation; 15-second Resend/Twilio/PCGS timeout boundaries with sanitized failure telemetry; and core custom-TiDB-first startup validation. |
+| Custom TiDB outcome | The sole approved data cleanup removed the newer row in one duplicate review pair; the oldest row was retained. The additive `0013` communication migration removed no correspondence body and mapped zero legacy shared inquiry deletions. Aggregate postchecks preserved 3 members, 16 active listings, and $147,530 active listing value. |
+| Validation | WebDev full non-watch suite, TypeScript, production build, `pnpm audit --prod`, whitespace review, startup logs, and public smoke checks passed. Fresh canonical P1-focused tests, TypeScript, production build, dependency audit, and whitespace review passed. A fresh canonical full-suite attempt additionally surfaced pre-existing, unrelated legacy test-contract drift outside this P1 scope. |
+| Preserved safeguards | Free Launch remains active; Stripe remains sandbox-only; payment enforcement remains inactive. No schedule was run or reconfigured, no provider message/payment action was invoked, and no secret value is recorded here. |
+
 ## Synchronization Rules
 
 Before future GitHub-to-WebDev reconciliation, create a recovery checkpoint and an immutable GitHub backup tag. Before a reviewed WebDev change becomes canonical, merge only the relevant content into the current GitHub `main`, preserve any newer canonical work, use a normal commit/push, and record the associated checkpoint. Never force-push or replace the canonical repository wholesale.
