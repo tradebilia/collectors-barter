@@ -68,6 +68,63 @@ const steps = [
   },
 ] as const;
 
+const frequentlyAskedQuestions = [
+  {
+    question: "Do I need an account to participate in a trade?",
+    answer: "You can explore public Tradebilia listings and categories, but you need an account to create a collector profile, add collectibles, send offers, respond to offers, or use the Trade Room.",
+  },
+  {
+    question: "Is Tradebilia charging members right now?",
+    answer: "No live Membership payment or access enforcement is active during Free Launch. Tradebilia is currently available for members to use without a live Membership charge.",
+  },
+  {
+    question: "When should collectors exchange shipping details?",
+    answer: "Discuss the proposed exchange first. Once both collectors confirm the trade, follow the Trade Room instructions to exchange the necessary shipping information and share tracking when it is available.",
+  },
+  {
+    question: "Can an offer change before it is confirmed?",
+    answer: "Yes. Collectors can use the Trade Room to discuss the proposed exchange and work through changes before both sides agree to the final terms.",
+  },
+  {
+    question: "What should I do if there is a problem?",
+    answer: "Use the reporting tools for a member or a trade concern. Tradebilia can review the relevant authorized context; keep private shipping and payment details out of public comments.",
+  },
+] as const;
+
+function TradeFlowIllustration() {
+  const flow = [
+    { title: "Build your collection", detail: "Profile + inventory", icon: UserRoundPlus, tone: "from-violet-600 to-indigo-700" },
+    { title: "Find a match", detail: "Browse + offer", icon: Search, tone: "from-sky-600 to-blue-700" },
+    { title: "Agree together", detail: "Trade Room", icon: MessageCircle, tone: "from-fuchsia-600 to-purple-700" },
+    { title: "Complete the exchange", detail: "Ship + confirm", icon: CheckCircle2, tone: "from-emerald-600 to-teal-700" },
+  ] as const;
+
+  return (
+    <figure className="mx-auto mt-10 max-w-5xl rounded-[1.75rem] border border-[#d9d1c8] bg-[#fbfaf7] p-5 shadow-[0_18px_38px_-30px_rgba(45,36,30,0.6)] sm:p-8">
+      <figcaption className="sr-only">Tradebilia trading process: build your collection, find a match, agree together in the Trade Room, and complete the exchange.</figcaption>
+      <div className="grid gap-3 md:grid-cols-[1fr_auto_1fr_auto_1fr_auto_1fr] md:items-center md:gap-2">
+        {flow.map(({ title, detail, icon: Icon, tone }, index) => (
+          <div key={title} className="contents">
+            <div className="group rounded-2xl border border-[#e5ded6] bg-white p-4 text-center shadow-[0_10px_22px_-20px_rgba(45,36,30,0.65)] transition-transform duration-200 hover:-translate-y-0.5 sm:p-5">
+              <div className={`mx-auto flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br ${tone} text-white shadow-lg sm:h-12 sm:w-12`}>
+                <Icon className="h-5 w-5" aria-hidden="true" />
+              </div>
+              <p className="mt-3 font-serif text-lg font-medium leading-tight text-[#2d241e] sm:text-xl">{title}</p>
+              <p className="mt-1 text-xs font-semibold uppercase tracking-[0.14em] text-[#756a61]">{detail}</p>
+            </div>
+            {index < flow.length - 1 ? (
+              <div aria-hidden="true" className="flex h-5 items-center justify-center text-violet-500 md:h-auto md:w-7">
+                <ArrowRight className="h-5 w-5 rotate-90 md:rotate-0" />
+              </div>
+            ) : null}
+          </div>
+        ))}
+      </div>
+      <p className="mt-5 text-center text-sm leading-6 text-[#655b53]">A clear sequence keeps the focus on the collectibles and the agreement between both collectors.</p>
+    </figure>
+  );
+}
+
 export default function HowTradebiliaWorks() {
   return (
     <div className="min-h-screen bg-[#f7f4ee] text-[#2d241e]">
@@ -97,6 +154,7 @@ export default function HowTradebiliaWorks() {
             <h2 className="mt-3 font-serif text-4xl font-medium tracking-[-0.035em] text-[#2d241e] sm:text-5xl">From collection to confirmed exchange</h2>
             <p className="mt-5 text-base leading-8 text-[#655b53]">Every trade is different, but the member journey follows the same clear sequence.</p>
           </div>
+          <TradeFlowIllustration />
 
           <div className="relative mx-auto mt-12 max-w-5xl space-y-4 sm:space-y-5">
             <div aria-hidden="true" className="absolute bottom-8 left-[2.55rem] top-8 hidden w-px bg-gradient-to-b from-violet-300 via-violet-200 to-transparent sm:block" />
@@ -115,6 +173,27 @@ export default function HowTradebiliaWorks() {
                 </div>
               </article>
             ))}
+          </div>
+        </section>
+
+        <section className="border-t border-[#ddd5cb] bg-white px-4 py-14 sm:py-18">
+          <div className="mx-auto max-w-4xl">
+            <div className="text-center">
+              <p className="text-xs font-bold uppercase tracking-[0.24em] text-violet-700">Common questions</p>
+              <h2 className="mt-3 font-serif text-4xl font-medium tracking-[-0.035em] text-[#2d241e] sm:text-5xl">Before you make an offer</h2>
+              <p className="mx-auto mt-4 max-w-2xl text-base leading-8 text-[#655b53]">A few practical answers for collectors who are getting started.</p>
+            </div>
+            <div className="mt-9 divide-y divide-[#e4ddd4] overflow-hidden rounded-[1.5rem] border border-[#e2d9cf] bg-[#fdfcf9]">
+              {frequentlyAskedQuestions.map(({ question, answer }) => (
+                <details key={question} className="group px-5 py-1 sm:px-7">
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-4 py-5 font-serif text-xl font-medium text-[#2d241e] marker:content-none sm:text-2xl">
+                    {question}
+                    <span aria-hidden="true" className="flex h-7 w-7 flex-none items-center justify-center rounded-full bg-violet-100 text-lg leading-none text-violet-700 transition-transform duration-200 group-open:rotate-45">+</span>
+                  </summary>
+                  <p className="max-w-3xl pb-5 pr-10 text-sm leading-7 text-[#655b53] sm:text-base">{answer}</p>
+                </details>
+              ))}
+            </div>
           </div>
         </section>
 
