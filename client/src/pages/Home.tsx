@@ -44,6 +44,7 @@ import { Link, useLocation } from "wouter";
 import { TopBar } from "@/components/TopBar";
 import { CategoryBar } from "@/components/CategoryBar";
 import { RecentlyAddedCarousel } from "@/components/RecentlyAddedCarousel";
+import { RecentTradesCarousel } from "@/components/RecentTradesCarousel";
 
 type UploadedImage = {
   name: string;
@@ -298,6 +299,9 @@ export default function Home() {
   });
   const topRatedTradersQuery = trpc.favorites.getTopRatedTraders.useQuery(undefined, {
     refetchInterval: 300000, // Refetch every 5 minutes
+  });
+  const recentTradesQuery = trpc.favorites.getCompletedTrades.useQuery({ limit: 10, offset: 0, sortBy: "recent" }, {
+    refetchInterval: 300000,
   });
   const dashboardQuery = trpc.market.dashboard.useQuery(undefined, {
     enabled: isAuthenticated,
@@ -732,6 +736,10 @@ export default function Home() {
                       marketplaceQuery.refetch();
                     }}
                   />
+                </div>
+
+                <div className="md:col-start-2">
+                  <RecentTradesCarousel trades={recentTradesQuery.data?.trades ?? []} isLoading={recentTradesQuery.isLoading} />
                 </div>
 
                 <div className="grid grid-cols-2 gap-3 px-4 md:col-start-2 md:grid-cols-2 md:gap-4 lg:px-8 xl:grid-cols-4">
