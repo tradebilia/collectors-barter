@@ -89,6 +89,17 @@ The canonical commit deliberately merges the sandbox-specific behavior without r
 | Validation | Focused P0 suite: 41 tests passed across five files; TypeScript and production build passed. The complete suite retains only two pre-existing brittle mobile UI test-contract failures. |
 | Preserved safeguards | No custom TiDB records/schema, marketplace data, Free Launch policy, Stripe sandbox configuration, subscription, provider account, or provider token was changed. The secure encryption-key value is not committed or recorded here. |
 
+## P1 Audit Remediation Pair
+
+| Record | Value |
+|---|---|
+| Canonical implementation commit | `c67c1af5da185fe62543f20f3ef907b81133f231` — normal push to GitHub `main`; no force push or history replacement. |
+| Paired managed WebDev checkpoint | `5a1357a4` |
+| Scope | Additive TiDB unique indexes for usernames, profiles, reports, watchlist entries, and mirrored favorites after zero-duplicate preflight; retry-safe sandbox Stripe failed events; server-derived PayPal payment obligations; public-contact throttling and anonymous attribution; targeted dependency remediation through Express 5 and Recharts 3. |
+| Validation | 17 focused P0/P1 tests passed; TypeScript, production build, local custom-TiDB health, desktop public-route smoke checks, and canonical validation passed. The full suite has 421 passing and four skipped tests, with the two existing brittle mobile exact-string test failures still documented for separate P2 work. |
+| Dependency posture | Final `pnpm audit --prod` reports zero critical, high, moderate, and low advisories. |
+| Preserved safeguards | Marketplace baseline remained 3 members, 16 active listings, and $147,530. Free Launch remains active; Stripe stays sandbox-only; payment enforcement remains inactive; no external payment or provider account action was invoked. |
+
 ## Synchronization Rules
 
 Before future GitHub-to-WebDev reconciliation, create a recovery checkpoint and an immutable GitHub backup tag. Before a reviewed WebDev change becomes canonical, merge only the relevant content into the current GitHub `main`, preserve any newer canonical work, use a normal commit/push, and record the associated checkpoint. Never force-push or replace the canonical repository wholesale.
