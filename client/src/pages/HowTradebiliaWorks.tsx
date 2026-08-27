@@ -3,12 +3,10 @@ import {
   ArrowRight,
   CheckCircle2,
   ClipboardCheck,
-  FileText,
   Handshake,
   LockKeyhole,
   MessageCircle,
   PackagePlus,
-  PackageCheck,
   Search,
   ShieldCheck,
   Star,
@@ -95,11 +93,10 @@ const frequentlyAskedQuestions = [
   },
 ] as const;
 
-const tradeRoomStages = [
-  { title: "Review", detail: "Read the proposal and see which collectible started the conversation.", tone: "bg-slate-100 text-slate-700" },
-  { title: "Negotiate", detail: "Discuss terms and respond with a counteroffer when needed.", tone: "bg-violet-100 text-violet-800" },
-  { title: "Confirm", detail: "Both collectors agree to the final exchange before moving forward.", tone: "bg-amber-100 text-amber-800" },
-  { title: "Ship & confirm", detail: "Share tracking when available, confirm receipt, then leave a review.", tone: "bg-emerald-100 text-emerald-800" },
+const tradeRoomScreenshots = [
+  { title: "1. Review the proposal", description: "A fictional example of the first review screen, where both sides can compare the proposed exchange.", image: "/manus-storage/trade-room-review-sample_ced37cf9.png", alt: "Illustrative fictional Trade Room screenshot showing Avery Cole and Morgan Reed reviewing a proposal." },
+  { title: "2. Confirm the exchange", description: "A fictional example of both collectors confirming agreed terms before the trade progresses.", image: "/manus-storage/trade-room-confirm-sample_051f1b84.png", alt: "Illustrative fictional Trade Room screenshot showing Avery Cole and Morgan Reed confirming an exchange." },
+  { title: "3. Confirm receipt", description: "A fictional example of the completion stage, where collectors record receipt and may leave a fair review.", image: "/manus-storage/trade-room-complete-sample_4bbcfa74.png", alt: "Illustrative fictional Trade Room screenshot showing Avery Cole and Morgan Reed completing an exchange." },
 ] as const;
 
 const safetyChecklist = [
@@ -212,17 +209,15 @@ export default function HowTradebiliaWorks() {
             <div className="mx-auto max-w-3xl text-center">
               <p className="text-xs font-bold uppercase tracking-[0.24em] text-violet-700">A closer look</p>
               <h2 className="mt-3 font-serif text-4xl font-medium tracking-[-0.035em] text-[#2d241e] sm:text-5xl">Inside the Trade Room</h2>
-              <p className="mt-4 text-base leading-8 text-[#655b53]">This illustrated walkthrough describes the current process. It is not a live trade, member profile, or private trade record.</p>
+              <p className="mt-4 text-base leading-8 text-[#655b53]">These sample screenshots describe the current process. They use fictional collectors and collectibles, not a live trade, member profile, or private trade record.</p>
             </div>
-            <div className="mt-9 overflow-hidden rounded-[1.75rem] border border-violet-200 bg-white shadow-[0_20px_42px_-30px_rgba(45,36,30,0.65)]">
-              <div className="flex items-center justify-between border-b border-[#e6e0ee] bg-[#1b1943] px-5 py-4 text-white sm:px-7">
-                <div className="flex items-center gap-3"><div className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-500/30 text-violet-100"><MessageCircle className="h-5 w-5" aria-hidden="true" /></div><div><p className="font-serif text-lg font-medium">Trade Room guide</p><p className="text-xs text-white/60">A shared workspace for a proposed exchange</p></div></div>
-                <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-violet-100">Guide</span>
-              </div>
-              <div className="grid gap-4 p-5 sm:grid-cols-2 sm:p-7 lg:grid-cols-4">
-                {tradeRoomStages.map(({ title, detail, tone }, index) => <div key={title} className="relative rounded-2xl border border-[#e7e1ec] bg-[#fdfcff] p-4"><span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold uppercase tracking-[0.14em] ${tone}`}>{String(index + 1).padStart(2, "0")} · {title}</span><p className="mt-4 font-serif text-xl font-medium text-[#2d241e]">{title} the exchange</p><p className="mt-2 text-sm leading-6 text-[#655b53]">{detail}</p>{index < tradeRoomStages.length - 1 ? <ArrowRight aria-hidden="true" className="absolute -right-3 top-1/2 hidden h-5 w-5 -translate-y-1/2 rounded-full bg-violet-600 p-1 text-white lg:block" /> : null}</div>)}
-              </div>
-              <div className="grid gap-4 border-t border-[#e9e3eb] bg-[#fbf9fd] p-5 text-sm text-[#5d5464] sm:grid-cols-3 sm:p-7"><div className="flex gap-3"><FileText className="mt-0.5 h-5 w-5 flex-none text-violet-700" aria-hidden="true" /><p><strong className="text-[#35284c]">Trade details.</strong> The room keeps the proposed exchange and progress in one place.</p></div><div className="flex gap-3"><PackageCheck className="mt-0.5 h-5 w-5 flex-none text-violet-700" aria-hidden="true" /><p><strong className="text-[#35284c]">Shipping progress.</strong> Add tracking when available after confirmation.</p></div><div className="flex gap-3"><Star className="mt-0.5 h-5 w-5 flex-none text-violet-700" aria-hidden="true" /><p><strong className="text-[#35284c]">Completion.</strong> Confirm receipt before sharing a fair review.</p></div></div>
+            <div className="mt-9 grid gap-6 lg:grid-cols-3">
+              {tradeRoomScreenshots.map(({ title, description, image, alt }) => (
+                <figure key={title} className="overflow-hidden rounded-[1.5rem] border border-violet-200 bg-white shadow-[0_18px_38px_-30px_rgba(45,36,30,0.7)]">
+                  <img src={image} alt={alt} className="aspect-video w-full border-b border-violet-100 object-cover" loading="lazy" />
+                  <figcaption className="p-5"><p className="font-serif text-xl font-medium text-[#2d241e]">{title}</p><p className="mt-2 text-sm leading-6 text-[#655b53]">{description}</p><p className="mt-3 text-xs font-semibold uppercase tracking-[0.12em] text-violet-700">Illustrative example — fictional collectors and items</p></figcaption>
+                </figure>
+              ))}
             </div>
           </div>
         </section>
