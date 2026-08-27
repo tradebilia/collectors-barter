@@ -2430,7 +2430,11 @@ export const appRouter = router({
     exportOperationalCsv: protectedProcedure.input(z.object({ kind: z.enum(['listings', 'trades', 'members', 'support_metrics']) })).mutation(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
       const db = await requireDb();
-      const csvCell = (value: unknown) => `"${String(value ?? '').replaceAll('"', '""')}"`;
+      const csvCell = (value: unknown) => {
+        const raw = String(value ?? '');
+        const safe = /^[=+\-@]/.test(raw) ? `'${raw}` : raw;
+        return `"${safe.replaceAll('"', '""')}"`;
+      };
       const csv = (headers: string[], rows: unknown[][]) => [headers, ...rows].map((row) => row.map(csvCell).join(',')).join('\n');
       const recordExport = async () => {
         await db.insert(adminActivityLog).values({

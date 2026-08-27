@@ -12,6 +12,7 @@ describe("administrator operations workspace", () => {
     expect(routerSource).toContain("getActiveTradeLifecycle");
     expect(routerSource).toContain("getOperationalTimeline");
     expect(routerSource).toContain("exportOperationalCsv");
+    expect(routerSource).toContain("/^[=+\\-@]/.test(raw)");
     expect(routerSource).toContain('callbackPath === "/api/scheduled/tradeReminders"');
     expect(routerSource).not.toContain('callbackPath === "/api/scheduled/shipment-reminders"');
     expect(routerSource).toMatch(/getOperationsSnapshot:[\s\S]{0,240}ctx\.user\.role !== 'admin'/);
