@@ -1,7 +1,7 @@
 # Tradebilia Whole-Code Audit Report
 
-**Audit date:** August 27, 2026  
-**Scope:** Client, server, database contracts, authentication and authorization, storage, integrations, Stripe sandbox handling, PayPal verification, scheduled work, tests, runtime logs, dependency advisories, and deployment behavior.  
+**Audit date:** August 27, 2026
+**Scope:** Client, server, database contracts, authentication and authorization, storage, integrations, Stripe sandbox handling, PayPal verification, scheduled work, tests, runtime logs, dependency advisories, and deployment behavior.
 **Change boundary:** Read-only. No application source, database data/schema, schedules, Stripe settings/subscriptions, third-party accounts, secrets, or live behavior was changed.
 
 ## Executive Summary
@@ -129,6 +129,18 @@ I recommend approving remediation in three small, reversible batches rather than
 | **C — Launch hardening** | Rate-limit contact intake, replace brittle tests, reduce client bundle size, improve accessibility/local-storage minimization, tighten scheduled cleanup, and plan dependency updates. | Improves scale readiness and safety without changing marketplace policy. |
 
 No remediation has begun. Please approve **Batch A**, **Batches A and B**, **all three batches**, or a narrower subset. I will preserve the custom TiDB database, Free Launch, Stripe sandbox-only status, existing schedule identity, and existing deployment/domain behavior while implementing only the approved scope.
+
+## P0 Remediation Update — August 27, 2026
+
+Rich approved the three P0 items after this report was issued. All three have now been remediated and rechecked.
+
+| Original blocker | Remediation and evidence | Status |
+| --- | --- | --- |
+| Manus OAuth sign-in state | `getLoginUrl()` now begins at the server-owned `/api/oauth/start` route, which creates a short-lived HttpOnly state cookie with request-aware secure/SameSite options before redirecting to the OAuth portal. Callback decoding now rejects malformed state safely and clears the cookie using matching options. Three focused tests cover live-domain start, embedded-preview callback, and cookie-missing rejection; a non-following development smoke check returned HTTP 302 plus the state cookie. | **Resolved** |
+| Daily shipment reminders | The existing job was refreshed in place with the same task identity, POST method, route, daily 14:00 UTC schedule, payload, and reminder policy. A read-only lifecycle preflight confirmed zero eligible actions. The controlled verification returned HTTP 200 at 2026-08-27T15:11:08Z with all action counts at zero, and the next scheduled execution is 2026-08-28T14:00:00Z. | **Resolved** |
+| Provider-token encryption | A new AES-256-GCM key was generated and stored only in secure project settings. A focused test verified its 64-hex-character format and a local encrypt/decrypt round trip without displaying a key or token. eBay, Facebook, and LinkedIn callbacks now stop before token exchange if encryption is unavailable, and each connection card gives a clear temporary-unavailable explanation. | **Resolved** |
+
+The complete P0-focused test set passed: **5 files and 40 tests**. The complete suite retains two pre-existing brittle mobile UI test-contract failures, while TypeScript checking and the production build both pass. No customer, marketplace, trade, Membership, Stripe, or provider-account records were created or changed during these repairs.
 
 ## References
 

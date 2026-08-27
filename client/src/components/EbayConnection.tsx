@@ -33,7 +33,11 @@ export function EbayConnection() {
       window.history.replaceState({}, "", url.toString());
     } else if (ebayStatus === "error") {
       const reason = params.get("reason") || "unknown";
-      setError(`eBay connection failed (${reason}). Please try again.`);
+      setError(
+        reason === "encryption_unavailable"
+          ? "eBay connection is temporarily unavailable while secure token storage is being configured. Please try again later."
+          : `eBay connection failed (${reason}). Please try again.`,
+      );
       const url = new URL(window.location.href);
       url.searchParams.delete("ebay");
       url.searchParams.delete("reason");

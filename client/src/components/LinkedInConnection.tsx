@@ -38,6 +38,7 @@ export function LinkedInConnection() {
         access_denied: "You declined the LinkedIn connection request.",
         no_code: "LinkedIn did not return an authorization code.",
         not_logged_in: "You must be logged in to connect LinkedIn.",
+        encryption_unavailable: "LinkedIn connection is temporarily unavailable while secure token storage is being configured. Please try again later.",
         callback_failed: "LinkedIn connection failed. Please try again.",
       };
       setError(messages[reason] || `LinkedIn connection failed (${reason}). Please try again.`);

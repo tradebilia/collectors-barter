@@ -22,6 +22,16 @@ function getKey(): Buffer {
   return Buffer.from(hex, "hex");
 }
 
+/** True only when newly received provider tokens can be encrypted safely. */
+export function hasValidProviderTokenEncryptionKey(): boolean {
+  try {
+    getKey();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Encrypt a plain-text string. Returns a base64-encoded string.
  * Returns null if input is null/undefined.

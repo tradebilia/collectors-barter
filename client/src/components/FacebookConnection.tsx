@@ -42,6 +42,7 @@ export function FacebookConnection() {
         access_denied: "You declined the Facebook connection request.",
         no_code: "Facebook did not return an authorization code.",
         not_logged_in: "You must be logged in to connect Facebook.",
+        encryption_unavailable: "Facebook connection is temporarily unavailable while secure token storage is being configured. Please try again later.",
         callback_failed: "Facebook connection failed. Please try again.",
       };
       setError(messages[reason] || `Facebook connection failed (${reason}). Please try again.`);
