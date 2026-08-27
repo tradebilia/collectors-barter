@@ -45,6 +45,7 @@ import TestAI from "./pages/TestAI";
 import ComingSoon from "./pages/ComingSoon";
 import ComingSoonDirections from "./pages/ComingSoonDirections";
 import HowTradebiliaWorks from "./pages/HowTradebiliaWorks";
+import TradeRoomGuideCapture from "./pages/TradeRoomGuideCapture";
 import {
   AllMostViewedRankings,
   AllMostFavoritedRankings,
@@ -59,6 +60,7 @@ function Router() {
       <Route path="/coming-soon" component={ComingSoon} />
       <Route path="/coming-soon-directions" component={ComingSoonDirections} />
       <Route path="/how-it-works" component={HowTradebiliaWorks} />
+      <Route path="/how-it-works/trade-room-capture/:stage" component={TradeRoomGuideCapture} />
       <Route path="/inventory">
         <ProtectedRoute>
           <Inventory />

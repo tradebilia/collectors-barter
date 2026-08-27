@@ -94,9 +94,9 @@ const frequentlyAskedQuestions = [
 ] as const;
 
 const tradeRoomScreenshots = [
-  { title: "1. Review the proposal", description: "A fictional example of the first review screen, where both sides can compare the proposed exchange.", image: "/manus-storage/trade-room-review-sample_ced37cf9.png", alt: "Illustrative fictional Trade Room screenshot showing Avery Cole and Morgan Reed reviewing a proposal." },
-  { title: "2. Confirm the exchange", description: "A fictional example of both collectors confirming agreed terms before the trade progresses.", image: "/manus-storage/trade-room-confirm-sample_051f1b84.png", alt: "Illustrative fictional Trade Room screenshot showing Avery Cole and Morgan Reed confirming an exchange." },
-  { title: "3. Confirm receipt", description: "A fictional example of the completion stage, where collectors record receipt and may leave a fair review.", image: "/manus-storage/trade-room-complete-sample_4bbcfa74.png", alt: "Illustrative fictional Trade Room screenshot showing Avery Cole and Morgan Reed completing an exchange." },
+  { title: "1. Review the proposal", description: "A development-only capture of the actual Trade Room review layout, using an illustrative exchange between fictional collectors.", image: "/manus-storage/trade-room-review_91abd2a2.png", alt: "Development-only Trade Room capture showing fictional Avery Cole and Morgan Reed reviewing a proposal." },
+  { title: "2. Confirm the exchange", description: "A development-only capture of the actual confirmation layout, showing the next shipping step after fictional collectors agree to the terms.", image: "/manus-storage/trade-room-confirm_e64c3760.png", alt: "Development-only Trade Room capture showing fictional Avery Cole and Morgan Reed confirming an exchange." },
+  { title: "3. Confirm receipt", description: "A development-only capture of the actual completion layout, showing where fictional collectors record receipt after an exchange.", image: "/manus-storage/trade-room-complete_8eb0811a.png", alt: "Development-only Trade Room capture showing fictional Avery Cole and Morgan Reed confirming receipt." },
 ] as const;
 
 const safetyChecklist = [
@@ -209,13 +209,13 @@ export default function HowTradebiliaWorks() {
             <div className="mx-auto max-w-3xl text-center">
               <p className="text-xs font-bold uppercase tracking-[0.24em] text-violet-700">A closer look</p>
               <h2 className="mt-3 font-serif text-4xl font-medium tracking-[-0.035em] text-[#2d241e] sm:text-5xl">Inside the Trade Room</h2>
-              <p className="mt-4 text-base leading-8 text-[#655b53]">These sample screenshots describe the current process. They use fictional collectors and collectibles, not a live trade, member profile, or private trade record.</p>
+              <p className="mt-4 text-base leading-8 text-[#655b53]">These development-only captures use the actual Trade Room layout with fictional collectors and collectibles. They are not live trade, member-profile, or private trade records.</p>
             </div>
             <div className="mt-9 grid gap-6 lg:grid-cols-3">
               {tradeRoomScreenshots.map(({ title, description, image, alt }) => (
                 <figure key={title} className="overflow-hidden rounded-[1.5rem] border border-violet-200 bg-white shadow-[0_18px_38px_-30px_rgba(45,36,30,0.7)]">
                   <img src={image} alt={alt} className="aspect-video w-full border-b border-violet-100 object-cover" loading="lazy" />
-                  <figcaption className="p-5"><p className="font-serif text-xl font-medium text-[#2d241e]">{title}</p><p className="mt-2 text-sm leading-6 text-[#655b53]">{description}</p><p className="mt-3 text-xs font-semibold uppercase tracking-[0.12em] text-violet-700">Illustrative example — fictional collectors and items</p></figcaption>
+                  <figcaption className="p-5"><p className="font-serif text-xl font-medium text-[#2d241e]">{title}</p><p className="mt-2 text-sm leading-6 text-[#655b53]">{description}</p><p className="mt-3 text-xs font-semibold uppercase tracking-[0.12em] text-violet-700">Development-only capture — fictional collectors and items</p></figcaption>
                 </figure>
               ))}
             </div>
