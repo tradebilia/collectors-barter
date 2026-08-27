@@ -2,9 +2,13 @@ import { Link } from "wouter";
 import {
   ArrowRight,
   CheckCircle2,
+  ClipboardCheck,
+  FileText,
   Handshake,
+  LockKeyhole,
   MessageCircle,
   PackagePlus,
+  PackageCheck,
   Search,
   ShieldCheck,
   Star,
@@ -89,6 +93,33 @@ const frequentlyAskedQuestions = [
     question: "What should I do if there is a problem?",
     answer: "Use the reporting tools for a member or a trade concern. Tradebilia can review the relevant authorized context; keep private shipping and payment details out of public comments.",
   },
+] as const;
+
+const tradeRoomStages = [
+  { title: "Review", detail: "Read the proposal and see which collectible started the conversation.", tone: "bg-slate-100 text-slate-700" },
+  { title: "Negotiate", detail: "Discuss terms and respond with a counteroffer when needed.", tone: "bg-violet-100 text-violet-800" },
+  { title: "Confirm", detail: "Both collectors agree to the final exchange before moving forward.", tone: "bg-amber-100 text-amber-800" },
+  { title: "Ship & confirm", detail: "Share tracking when available, confirm receipt, then leave a review.", tone: "bg-emerald-100 text-emerald-800" },
+] as const;
+
+const safetyChecklist = [
+  "Use current, clear listing photos and describe condition, grade, and known issues accurately.",
+  "Keep trade questions, counteroffers, and agreed terms in the Trade Room so both collectors share the same record.",
+  "Review every item in a final exchange before confirming; do not rely on assumptions from an earlier offer.",
+  "Use careful packing and tracked shipping when it is available for the carrier and service you choose.",
+  "Share necessary shipping information only after a trade is confirmed, and keep addresses and payment details out of public comments.",
+  "Report a trade or member concern promptly through Tradebilia’s reporting tools if something does not match the agreed exchange.",
+] as const;
+
+const glossary = [
+  { term: "Listing", definition: "A collectible a member has added to Tradebilia, including its photos, category, condition details, and trade availability." },
+  { term: "Trade proposal", definition: "The first structured offer sent by one collector to another about a listing." },
+  { term: "Counteroffer", definition: "A revised exchange proposed in response to an existing trade proposal before both collectors agree." },
+  { term: "Trade Room", definition: "The shared trade workspace where the collectors review the exchange, communicate, confirm terms, and progress through the trade." },
+  { term: "Tracking", definition: "Carrier information a collector can add after shipping so the other collector can follow the shipment through the carrier’s official tracking page." },
+  { term: "Mutual confirmation", definition: "The point at which both collectors agree to the exchange terms, or later both confirm that the agreed collectibles were received." },
+  { term: "Completed trade", definition: "A trade both collectors have confirmed after receipt. Completed trades can appear as real Tradebilia exchange activity." },
+  { term: "Report a concern", definition: "A private request for Tradebilia to review a member or trade issue through the authorized reporting process." },
 ] as const;
 
 function TradeFlowIllustration() {
@@ -176,6 +207,26 @@ export default function HowTradebiliaWorks() {
           </div>
         </section>
 
+        <section className="border-y border-[#ddd5cb] bg-[#ede9f7] px-4 py-14 sm:py-18">
+          <div className="mx-auto max-w-5xl">
+            <div className="mx-auto max-w-3xl text-center">
+              <p className="text-xs font-bold uppercase tracking-[0.24em] text-violet-700">A closer look</p>
+              <h2 className="mt-3 font-serif text-4xl font-medium tracking-[-0.035em] text-[#2d241e] sm:text-5xl">Inside the Trade Room</h2>
+              <p className="mt-4 text-base leading-8 text-[#655b53]">This illustrated walkthrough describes the current process. It is not a live trade, member profile, or private trade record.</p>
+            </div>
+            <div className="mt-9 overflow-hidden rounded-[1.75rem] border border-violet-200 bg-white shadow-[0_20px_42px_-30px_rgba(45,36,30,0.65)]">
+              <div className="flex items-center justify-between border-b border-[#e6e0ee] bg-[#1b1943] px-5 py-4 text-white sm:px-7">
+                <div className="flex items-center gap-3"><div className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-500/30 text-violet-100"><MessageCircle className="h-5 w-5" aria-hidden="true" /></div><div><p className="font-serif text-lg font-medium">Trade Room guide</p><p className="text-xs text-white/60">A shared workspace for a proposed exchange</p></div></div>
+                <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-violet-100">Guide</span>
+              </div>
+              <div className="grid gap-4 p-5 sm:grid-cols-2 sm:p-7 lg:grid-cols-4">
+                {tradeRoomStages.map(({ title, detail, tone }, index) => <div key={title} className="relative rounded-2xl border border-[#e7e1ec] bg-[#fdfcff] p-4"><span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold uppercase tracking-[0.14em] ${tone}`}>{String(index + 1).padStart(2, "0")} · {title}</span><p className="mt-4 font-serif text-xl font-medium text-[#2d241e]">{title} the exchange</p><p className="mt-2 text-sm leading-6 text-[#655b53]">{detail}</p>{index < tradeRoomStages.length - 1 ? <ArrowRight aria-hidden="true" className="absolute -right-3 top-1/2 hidden h-5 w-5 -translate-y-1/2 rounded-full bg-violet-600 p-1 text-white lg:block" /> : null}</div>)}
+              </div>
+              <div className="grid gap-4 border-t border-[#e9e3eb] bg-[#fbf9fd] p-5 text-sm text-[#5d5464] sm:grid-cols-3 sm:p-7"><div className="flex gap-3"><FileText className="mt-0.5 h-5 w-5 flex-none text-violet-700" aria-hidden="true" /><p><strong className="text-[#35284c]">Trade details.</strong> The room keeps the proposed exchange and progress in one place.</p></div><div className="flex gap-3"><PackageCheck className="mt-0.5 h-5 w-5 flex-none text-violet-700" aria-hidden="true" /><p><strong className="text-[#35284c]">Shipping progress.</strong> Add tracking when available after confirmation.</p></div><div className="flex gap-3"><Star className="mt-0.5 h-5 w-5 flex-none text-violet-700" aria-hidden="true" /><p><strong className="text-[#35284c]">Completion.</strong> Confirm receipt before sharing a fair review.</p></div></div>
+            </div>
+          </div>
+        </section>
+
         <section className="border-t border-[#ddd5cb] bg-white px-4 py-14 sm:py-18">
           <div className="mx-auto max-w-4xl">
             <div className="text-center">
@@ -195,6 +246,22 @@ export default function HowTradebiliaWorks() {
               ))}
             </div>
           </div>
+        </section>
+
+        <section className="border-y border-[#d7cfc4] bg-[#f8f5f0] px-4 py-14 sm:py-18">
+          <div className="mx-auto grid max-w-5xl gap-9 lg:grid-cols-[0.84fr_1.16fr] lg:items-start">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.24em] text-violet-700">Trade thoughtfully</p>
+              <h2 className="mt-3 font-serif text-4xl font-medium tracking-[-0.035em] text-[#2d241e] sm:text-5xl">A practical safety checklist</h2>
+              <p className="mt-5 max-w-xl text-base leading-8 text-[#655b53]">Clear records and careful communication help collectors make informed decisions at every stage of an exchange.</p>
+              <div className="mt-7 rounded-[1.5rem] border border-violet-200 bg-white p-5 shadow-[0_14px_32px_-26px_rgba(45,36,30,0.6)]"><div className="flex gap-3"><LockKeyhole className="mt-0.5 h-5 w-5 flex-none text-violet-700" aria-hidden="true" /><p className="text-sm leading-7 text-[#5e5550]"><strong className="text-[#2d241e]">Keep private details private.</strong> Tradebilia’s public areas are not the place for home addresses, payment credentials, or other sensitive information.</p></div></div>
+            </div>
+            <ul className="grid gap-3" aria-label="Trade safety checklist">{safetyChecklist.map((item) => <li key={item} className="flex gap-4 rounded-2xl border border-[#e2dacf] bg-white p-4 shadow-[0_12px_28px_-26px_rgba(45,36,30,0.55)]"><ClipboardCheck className="mt-0.5 h-5 w-5 flex-none text-emerald-700" aria-hidden="true" /><span className="text-sm leading-7 text-[#5d544d]">{item}</span></li>)}</ul>
+          </div>
+        </section>
+
+        <section className="bg-white px-4 py-14 sm:py-18">
+          <div className="mx-auto max-w-5xl"><div className="mx-auto max-w-3xl text-center"><p className="text-xs font-bold uppercase tracking-[0.24em] text-violet-700">Plain language</p><h2 className="mt-3 font-serif text-4xl font-medium tracking-[-0.035em] text-[#2d241e] sm:text-5xl">Collector trading glossary</h2><p className="mt-4 text-base leading-8 text-[#655b53]">A quick reference for the terms you will see while you explore Tradebilia.</p></div><dl className="mt-9 grid gap-4 md:grid-cols-2">{glossary.map(({ term, definition }) => <div key={term} className="rounded-2xl border border-[#e2dbd2] bg-[#fdfcf9] p-5"><dt className="font-serif text-2xl font-medium text-[#2d241e]">{term}</dt><dd className="mt-2 text-sm leading-7 text-[#655b53]">{definition}</dd></div>)}</dl></div>
         </section>
 
         <section className="border-y border-[#d7cfc4] bg-[#eee8df] px-4 py-12 sm:py-16">

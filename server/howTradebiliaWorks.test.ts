@@ -45,4 +45,25 @@ describe("How Tradebilia Works guide", () => {
     expect(guide).toContain("Is Tradebilia charging members right now?");
     expect(guide).toContain("No live Membership payment or access enforcement is active during Free Launch.");
   });
+
+  it("includes an accurate labeled Trade Room guide, practical safety checklist, and public glossary", () => {
+    for (const label of [
+      "Inside the Trade Room",
+      "Trade Room guide",
+      "This illustrated walkthrough describes the current process",
+      "Review",
+      "Negotiate",
+      "Confirm",
+      "Ship & confirm",
+      "A practical safety checklist",
+      "Collector trading glossary",
+    ]) {
+      expect(guide).toContain(label);
+    }
+    for (const term of ["Trade proposal", "Counteroffer", "Tracking", "Mutual confirmation", "Completed trade", "Report a concern"]) {
+      expect(guide).toContain(term);
+    }
+    expect(guide).toContain("Keep private details private.");
+    expect(guide).toContain("It is not a live trade, member profile, or private trade record.");
+  });
 });
