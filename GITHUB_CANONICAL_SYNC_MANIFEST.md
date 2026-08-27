@@ -100,6 +100,17 @@ The canonical commit deliberately merges the sandbox-specific behavior without r
 | Dependency posture | Final `pnpm audit --prod` reports zero critical, high, moderate, and low advisories. |
 | Preserved safeguards | Marketplace baseline remained 3 members, 16 active listings, and $147,530. Free Launch remains active; Stripe stays sandbox-only; payment enforcement remains inactive; no external payment or provider account action was invoked. |
 
+## P2 Audit Remediation Pair
+
+| Record | Value |
+|---|---|
+| Canonical implementation commit | `87048200` — normal push to GitHub `main`; no force push or history replacement. |
+| Paired managed WebDev checkpoint | `813e09e1` |
+| Scope | Behavior-focused mobile responsive tests; guarded scheduled acceptance cleanup; Sign Up and Trade Room accessibility associations; lazy loading for infrequently used authenticated/administrator routes; minimal, validated 30-minute embedded-preview session persistence; and reconciliation of the previously deployed P0 preview-authentication components in canonical GitHub. |
+| Validation | Full suite passed 141 files / 430 tests with four intentional skips; focused canonical P0/P2 suite passed 50 tests; TypeScript, production builds, clean production dependency audit, and desktop/mobile public-route visual checks passed. |
+| Performance | Main production JavaScript fell from 3,749,720 bytes to 1,790,690 bytes (52.2% reduction); infrequently used routes remain available as separately loaded chunks. |
+| Preserved safeguards | No marketplace, custom TiDB data/schema, Free Launch policy, Stripe sandbox configuration, payment-enforcement, subscription, or provider-account behavior was changed. |
+
 ## Synchronization Rules
 
 Before future GitHub-to-WebDev reconciliation, create a recovery checkpoint and an immutable GitHub backup tag. Before a reviewed WebDev change becomes canonical, merge only the relevant content into the current GitHub `main`, preserve any newer canonical work, use a normal commit/push, and record the associated checkpoint. Never force-push or replace the canonical repository wholesale.
