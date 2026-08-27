@@ -16,8 +16,8 @@ describe("How Tradebilia Works guide", () => {
     expect(app).toContain('<Route path="/how-it-works" component={HowTradebiliaWorks} />');
     expect(home).toContain('href="/how-it-works"');
     expect(home).toContain("How Tradebilia Works");
-    expect(categoryBar).toContain('href="/how-it-works"');
-    expect(categoryBar).toContain("How It Works");
+    expect(categoryBar).not.toContain('href="/how-it-works"');
+    expect(categoryBar).not.toContain("How It Works");
   });
 
   it("describes the real trading sequence without presenting future payment services as active", () => {
