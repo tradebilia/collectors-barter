@@ -477,7 +477,19 @@ export const appRouter = router({
         // The cookie remains the normal session transport. Returning the signed
         // token lets the client use the already-supported Authorization fallback
         // only when a mobile browser refuses to retain the Set-Cookie response.
-        return { success: true, userId: user.id, sessionToken };
+        return {
+          success: true,
+          userId: user.id,
+          sessionToken,
+          user: {
+            id: user.id,
+            name: user.name ?? user.username ?? "Collector",
+            username: user.username ?? null,
+            role: user.role ?? "user",
+            displayName: (user as any).displayName ?? user.name ?? user.username ?? "Collector",
+            avatarUrl: (user as any).avatarUrl ?? null,
+          },
+        };
       }),
     requestPasswordRecovery: publicProcedure
       .input(z.object({ email: z.string().email().max(320) }))

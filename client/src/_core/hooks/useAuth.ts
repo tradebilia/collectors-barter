@@ -1,7 +1,12 @@
 import { startLogin } from "@/const";
 import { trpc } from "@/lib/trpc";
 import { TRPCClientError } from "@trpc/client";
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  clearPreviewSessionToken,
+  getPreviewAuthenticatedUser,
+  PREVIEW_AUTH_CHANGED_EVENT,
+} from "@/lib/previewSession";
 
 type UseAuthOptions = {
   redirectOnUnauthenticated?: boolean;
@@ -15,6 +20,7 @@ export function useAuth(options?: UseAuthOptions) {
   // desync it from an in-flight login's `state`.
   const { redirectOnUnauthenticated = false, redirectPath } = options ?? {};
   const utils = trpc.useUtils();
+  const [embeddedPreviewUser, setEmbeddedPreviewUser] = useState(() => getPreviewAuthenticatedUser());
 
   const meQuery = trpc.auth.me.useQuery(undefined, {
     retry: false,
@@ -26,6 +32,13 @@ export function useAuth(options?: UseAuthOptions) {
       utils.auth.me.setData(undefined, null);
     },
   });
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const syncEmbeddedPreviewUser = () => setEmbeddedPreviewUser(getPreviewAuthenticatedUser());
+    window.addEventListener(PREVIEW_AUTH_CHANGED_EVENT, syncEmbeddedPreviewUser);
+    return () => window.removeEventListener(PREVIEW_AUTH_CHANGED_EVENT, syncEmbeddedPreviewUser);
+  }, []);
 
   const logout = useCallback(async () => {
     try {
@@ -42,27 +55,23 @@ export function useAuth(options?: UseAuthOptions) {
       // Clear the Preview auto-login token mirrored into sessionStorage, so
       // header-based sessions (Safari ITP / WebView) are logged out too. The
       // backend cookie is cleared by the logout mutation.
-      try {
-        sessionStorage.removeItem("manus-cookie");
-      } catch {}
+      clearPreviewSessionToken();
       utils.auth.me.setData(undefined, null);
       await utils.auth.me.invalidate();
     }
   }, [logoutMutation, utils]);
 
+  const resolvedUser = meQuery.data ?? (embeddedPreviewUser as typeof meQuery.data);
+
   const state = useMemo(() => {
-    localStorage.setItem(
-      "manus-runtime-user-info",
-      JSON.stringify(meQuery.data)
-    );
     return {
-      user: meQuery.data ?? null,
+      user: resolvedUser ?? null,
       loading: meQuery.isLoading || logoutMutation.isPending,
       error: meQuery.error ?? logoutMutation.error ?? null,
-      isAuthenticated: Boolean(meQuery.data),
+      isAuthenticated: Boolean(resolvedUser),
     };
   }, [
-    meQuery.data,
+    resolvedUser,
     meQuery.error,
     meQuery.isLoading,
     logoutMutation.error,

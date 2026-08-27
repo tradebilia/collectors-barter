@@ -150,12 +150,18 @@ export function makeTradeRemindersHandler(deps: ScheduledDeps = defaultScheduled
 
       // 2. 72-hour acceptance timeout: one party accepted, the other never confirmed.
       const [pendingAcceptances] = await db.execute(
-        sql`SELECT proposalId FROM tradeReceiptConfirmation WHERE confirmationType = 'accepted' AND confirmedAt < ${daysAgoSql(3)}`
+        sql`SELECT trc.proposalId
+            FROM tradeReceiptConfirmation trc
+            INNER JOIN tradeProposals tp ON tp.id = trc.proposalId
+            WHERE trc.confirmationType = 'accepted'
+              AND trc.confirmedAt < ${daysAgoSql(3)}
+              AND tp.status = 'negotiating'`
       );
       for (const row of ((pendingAcceptances as unknown as any[]) || [])) {
-        await db.execute(
+        const [cancelResult] = await db.execute(
           sql`UPDATE tradeProposals SET status = 'cancelled', declineReason = 'Auto-cancelled: 72-hour acceptance window expired', updatedAt = ${now} WHERE id = ${row.proposalId} AND status = 'negotiating'`
         );
+        if (!((cancelResult as any)?.affectedRows || 0)) continue;
         await db.execute(
           sql`DELETE FROM tradeReceiptConfirmation WHERE proposalId = ${row.proposalId} AND confirmationType = 'accepted'`
         );

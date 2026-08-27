@@ -6,6 +6,7 @@ import { createRoot } from "react-dom/client";
 import superjson from "superjson";
 import App from "./App";
 import { getLoginUrl } from "./const";
+import { getPreviewSessionToken } from "./lib/previewSession";
 import "./index.css";
 
 const queryClient = new QueryClient();
@@ -47,7 +48,7 @@ const trpcClient = trpc.createClient({
       async fetch(input, init) {
         const headers = new Headers(init?.headers);
         try {
-          const mobileSessionToken = sessionStorage.getItem("manus-cookie");
+          const mobileSessionToken = getPreviewSessionToken();
           if (mobileSessionToken) {
             headers.set("authorization", `Bearer ${mobileSessionToken}`);
           }
