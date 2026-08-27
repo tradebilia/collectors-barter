@@ -2368,7 +2368,7 @@ export const appRouter = router({
       let schedule: Awaited<ReturnType<typeof listHeartbeatJobs>>["jobs"][number] | null = null;
       try {
         const schedules = await listHeartbeatJobs("", { page: 1, pageSize: 100 });
-        schedule = schedules.jobs.find((job) => job.callbackPath === "/api/scheduled/shipment-reminders") ?? null;
+        schedule = schedules.jobs.find((job) => job.callbackPath === "/api/scheduled/tradeReminders") ?? null;
       } catch {
         schedule = null;
       }
