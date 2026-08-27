@@ -1,7 +1,7 @@
 # Tradebilia Second Deep Code Audit
 
-**Audit date:** August 27, 2026  
-**Scope:** A second read-only audit of the updated post-P0/P1/P2 project. It examined client and server code, custom-TiDB schema/constraints, authentication and authorization, profile privacy, marketplace and trade state transitions, messages, reporting, administrator tools, Stripe sandbox, PayPal verification, storage, external providers, scheduled work, runtime startup, tests, dependencies, and deployment-facing controls.  
+**Audit date:** August 27, 2026
+**Scope:** A second read-only audit of the updated post-P0/P1/P2 project. It examined client and server code, custom-TiDB schema/constraints, authentication and authorization, profile privacy, marketplace and trade state transitions, messages, reporting, administrator tools, Stripe sandbox, PayPal verification, storage, external providers, scheduled work, runtime startup, tests, dependencies, and deployment-facing controls.
 **Audit boundary:** No application code, database record/schema, schedule, Stripe setting/subscription, provider account, or secret was changed during this audit. This report and the tracker entry were initially documentation only. The two P0 findings below were subsequently approved and repaired; the repair record appears in the next section.
 
 ## Bottom Line

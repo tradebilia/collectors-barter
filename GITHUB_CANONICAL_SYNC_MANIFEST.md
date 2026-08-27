@@ -111,6 +111,17 @@ The canonical commit deliberately merges the sandbox-specific behavior without r
 | Performance | Main production JavaScript fell from 3,749,720 bytes to 1,790,690 bytes (52.2% reduction); infrequently used routes remain available as separately loaded chunks. |
 | Preserved safeguards | No marketplace, custom TiDB data/schema, Free Launch policy, Stripe sandbox configuration, payment-enforcement, subscription, or provider-account behavior was changed. |
 
+## Second Deep-Audit P0 Remediation Pair
+
+| Record | Value |
+|---|---|
+| Canonical implementation commit | `dd8e305816d21f1ad82d47b41ad6bc89e456db5e` — normal push to GitHub `main`; no force push or history replacement. |
+| Paired managed WebDev checkpoint | `53429841` |
+| Scope | Enforce saved profile visibility, inventory-value, and contact-request choices at public profile, member-search, inquiry, and direct-message boundaries; retain address data server-only for distance calculations; restore accepted Review status after mutual trade acceptance; preserve item locks until mutual Review confirmation starts Shipping; retain server-derived positive-cash PayPal verification at the intended Review stage. |
+| Validation | Focused privacy, lifecycle, payment-authorization, and atomicity tests passed; TypeScript, production build, clean dependency audit, and public visual checks passed. The complete suite recorded only two unrelated external UPS/USPS endpoint timeouts. |
+| Corrected audit point | Direct remediation review confirmed full street-address and postal-code data were already removed from member-search responses; the completed privacy repair addresses the confirmed preference-enforcement and inventory/contact boundaries. |
+| Preserved safeguards | No custom TiDB record/schema changes, marketplace data changes, Free Launch policy change, Stripe sandbox configuration/subscription change, payment charge, provider-account action, or secret change occurred. |
+
 ## Synchronization Rules
 
 Before future GitHub-to-WebDev reconciliation, create a recovery checkpoint and an immutable GitHub backup tag. Before a reviewed WebDev change becomes canonical, merge only the relevant content into the current GitHub `main`, preserve any newer canonical work, use a normal commit/push, and record the associated checkpoint. Never force-push or replace the canonical repository wholesale.
