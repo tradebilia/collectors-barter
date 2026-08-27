@@ -18,6 +18,11 @@ describe("Stripe Membership test Checkout safeguards", () => {
     expect(billingSource).toContain("environment: \"test\"");
     expect(billingSource).toContain("stripe.billingPortal.sessions.create");
     expect(billingSource).toContain("if (event.livemode) return { status: \"ignored\" as const }");
+    expect(billingSource).toContain("const existingEvent");
+    expect(billingSource).toContain("const concurrentEvent");
+    expect(billingSource).toContain("Stripe Membership subscription does not use a configured test price.");
+    expect(billingSource).toContain("const existingMembership");
+    expect(billingSource).toContain("Stripe Membership event could not update the member record.");
     expect(billingSource).not.toContain("card_number");
     expect(routerSource).toContain("startTestCheckout");
     expect(routerSource).toContain("openTestPortal");

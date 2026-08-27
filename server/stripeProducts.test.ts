@@ -4,9 +4,10 @@ import Stripe from "stripe";
 const secretKey = process.env.STRIPE_SECRET_KEY;
 const monthlyPriceId = process.env.STRIPE_MEMBERSHIP_MONTHLY_PRICE_ID;
 const annualPriceId = process.env.STRIPE_MEMBERSHIP_ANNUAL_PRICE_ID;
+const testWithStripeConfiguration = secretKey && monthlyPriceId && annualPriceId ? it : it.skip;
 
 describe("Tradebilia Stripe test Membership prices", () => {
-  it("retrieves the configured test prices read-only and confirms the agreed recurring terms", async () => {
+  testWithStripeConfiguration("retrieves the configured test prices read-only and confirms the agreed recurring terms", async () => {
     expect(secretKey).toBeTruthy();
     expect(monthlyPriceId).toMatch(/^price_/);
     expect(annualPriceId).toMatch(/^price_/);

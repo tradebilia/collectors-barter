@@ -1,6 +1,6 @@
 import Stripe from "stripe";
 import { and, eq } from "drizzle-orm";
-import { membershipProviderEvents, userMemberships, users } from "../drizzle/schema";
+import { membershipPlans, membershipProviderEvents, userMemberships, users } from "../drizzle/schema";
 import { requireDb } from "./db";
 import { stripeMembershipPrices } from "./stripeProducts";
 
@@ -108,6 +108,9 @@ export async function createMembershipTestPortal(userId: number, origin: string)
 export async function recordVerifiedTestMembershipEvent(event: Stripe.Event) {
   if (event.livemode) return { status: "ignored" as const };
   const db = await requireDb();
+  const eventWhere = and(eq(membershipProviderEvents.provider, "stripe"), eq(membershipProviderEvents.providerEventId, event.id));
+  const existingEvent = (await db.select({ id: membershipProviderEvents.id }).from(membershipProviderEvents).where(eventWhere).limit(1))[0];
+  if (existingEvent) return { status: "duplicate" as const };
   try {
     await db.insert(membershipProviderEvents).values({
       provider: "stripe",
@@ -115,8 +118,10 @@ export async function recordVerifiedTestMembershipEvent(event: Stripe.Event) {
       eventType: event.type,
       processingStatus: "received",
     });
-  } catch {
-    return { status: "duplicate" as const };
+  } catch (error) {
+    const concurrentEvent = (await db.select({ id: membershipProviderEvents.id }).from(membershipProviderEvents).where(eventWhere).limit(1))[0];
+    if (concurrentEvent) return { status: "duplicate" as const };
+    throw error;
   }
 
   try {
@@ -133,26 +138,41 @@ export async function recordVerifiedTestMembershipEvent(event: Stripe.Event) {
     }
 
     if (!subscription) {
-      await db.update(membershipProviderEvents).set({ processingStatus: "ignored", processedAt: new Date().toISOString().slice(0, 19).replace("T", " ") }).where(and(eq(membershipProviderEvents.provider, "stripe"), eq(membershipProviderEvents.providerEventId, event.id)));
+      await db.update(membershipProviderEvents).set({ processingStatus: "ignored", processedAt: new Date().toISOString().slice(0, 19).replace("T", " ") }).where(eventWhere);
       return { status: "ignored" as const };
     }
 
     const metadataUserId = Number(subscription.metadata.user_id);
     if (!Number.isInteger(metadataUserId) || metadataUserId <= 0) throw new Error("Stripe Membership subscription is missing its Tradebilia user reference.");
+    const billingTerm = findBillingTerm(subscription);
+    if (billingTerm === "none") throw new Error("Stripe Membership subscription does not use a configured test price.");
+    const existingMembership = (await db.select({ id: userMemberships.id }).from(userMemberships).where(eq(userMemberships.userId, metadataUserId)).limit(1))[0];
+    if (!existingMembership) {
+      const freeLaunchPlan = (await db.select({ id: membershipPlans.id }).from(membershipPlans).where(eq(membershipPlans.code, "free_launch")).limit(1))[0];
+      if (!freeLaunchPlan) throw new Error("The Free Launch membership plan is unavailable.");
+      try {
+        await db.insert(userMemberships).values({ userId: metadataUserId, planId: freeLaunchPlan.id, status: "free_launch", billingTerm: "none" });
+      } catch (error) {
+        const concurrentMembership = (await db.select({ id: userMemberships.id }).from(userMemberships).where(eq(userMemberships.userId, metadataUserId)).limit(1))[0];
+        if (!concurrentMembership) throw error;
+      }
+    }
     const subscriptionData = subscription as Stripe.Subscription & { current_period_start?: number; current_period_end?: number };
-    await db.update(userMemberships).set({
+    const updateResult = await db.update(userMemberships).set({
       stripeCustomerId: typeof subscription.customer === "string" ? subscription.customer : subscription.customer.id,
       stripeSubscriptionId: subscription.id,
       status: stripeStatusToMembershipStatus(subscription.status),
-      billingTerm: findBillingTerm(subscription),
+      billingTerm,
       currentPeriodStart: toMysqlDateTime(subscriptionData.current_period_start),
       currentPeriodEnd: toMysqlDateTime(subscriptionData.current_period_end),
       cancelAtPeriodEnd: subscription.cancel_at_period_end ? 1 : 0,
     }).where(eq(userMemberships.userId, metadataUserId));
-    await db.update(membershipProviderEvents).set({ processingStatus: "processed", processedAt: new Date().toISOString().slice(0, 19).replace("T", " ") }).where(and(eq(membershipProviderEvents.provider, "stripe"), eq(membershipProviderEvents.providerEventId, event.id)));
+    const affectedRows = Number((updateResult as any)[0]?.affectedRows ?? (updateResult as any).affectedRows ?? 0);
+    if (affectedRows === 0) throw new Error("Stripe Membership event could not update the member record.");
+    await db.update(membershipProviderEvents).set({ processingStatus: "processed", processedAt: new Date().toISOString().slice(0, 19).replace("T", " ") }).where(eventWhere);
     return { status: "processed" as const };
   } catch (error) {
-    await db.update(membershipProviderEvents).set({ processingStatus: "failed", failureReason: error instanceof Error ? error.message.slice(0, 500) : "Stripe event processing failed" }).where(and(eq(membershipProviderEvents.provider, "stripe"), eq(membershipProviderEvents.providerEventId, event.id)));
+    await db.update(membershipProviderEvents).set({ processingStatus: "failed", failureReason: error instanceof Error ? error.message.slice(0, 500) : "Stripe event processing failed" }).where(eventWhere);
     throw error;
   }
 }
