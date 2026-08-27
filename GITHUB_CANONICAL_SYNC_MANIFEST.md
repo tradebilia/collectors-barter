@@ -133,6 +133,16 @@ The canonical commit deliberately merges the sandbox-specific behavior without r
 | Validation | WebDev full non-watch suite, TypeScript, production build, `pnpm audit --prod`, whitespace review, startup logs, and public smoke checks passed. Fresh canonical P1-focused tests, TypeScript, production build, dependency audit, and whitespace review passed. A fresh canonical full-suite attempt additionally surfaced pre-existing, unrelated legacy test-contract drift outside this P1 scope. |
 | Preserved safeguards | Free Launch remains active; Stripe remains sandbox-only; payment enforcement remains inactive. No schedule was run or reconfigured, no provider message/payment action was invoked, and no secret value is recorded here. |
 
+## Canonical Legacy Test-Contract Maintenance Pair
+
+| Record | Value |
+|---|---|
+| Canonical implementation commit | `ffdee059696a7834fc1c686ed1101e5e8b720a75` — normal push to GitHub `main`; no force push or history replacement. |
+| Paired managed WebDev checkpoint | `26790c47` |
+| Scope | Six stale assertions across four canonical-only, migration-gated test files were aligned with the already-approved current behavior: Free Launch public listing details, both administrator trade participant names, successful sequential referral marking, and opt-in-only Pre-Launch Email review/confirmation. |
+| Validation | A fresh canonical full suite passed 149 files / 461 tests with four intentional skips. TypeScript, production build, `pnpm audit --prod`, and whitespace review also passed. |
+| Preserved safeguards | No WebDev application code was changed; the canonical-only test files remain excluded from the custom-TiDB WebDev migration boundary. No marketplace data/schema, payment configuration, provider policy/action, schedule, or secret changed. |
+
 ## Synchronization Rules
 
 Before future GitHub-to-WebDev reconciliation, create a recovery checkpoint and an immutable GitHub backup tag. Before a reviewed WebDev change becomes canonical, merge only the relevant content into the current GitHub `main`, preserve any newer canonical work, use a normal commit/push, and record the associated checkpoint. Never force-push or replace the canonical repository wholesale.
