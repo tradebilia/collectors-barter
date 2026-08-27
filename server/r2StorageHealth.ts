@@ -11,7 +11,8 @@ import {
 const R2_STATIC_BUCKET = "tradebilia-static";
 const R2_STATIC_ORIGIN = "https://assets.tradebilia.com";
 const STORAGE_HEALTH_TIMEOUT_MS = 7_500;
-const MAX_BUCKET_SAMPLE_OBJECTS = 1_000;
+const MAX_BUCKET_USAGE_OBJECTS = 10_000;
+const R2_STANDARD_FREE_ALLOWANCE_BYTES = 10 * 1_000 * 1_000 * 1_000;
 const STATIC_SENTINELS = [
   `${R2_STATIC_ORIGIN}/tradebilia_final_transparent_8a1981e6.svg`,
   `${R2_STATIC_ORIGIN}/Background_23084d14.jpg`,
@@ -56,21 +57,30 @@ function getStaticR2Config(env: StaticR2Environment = process.env as StaticR2Env
 
 async function summarizeBucket(config: R2ClientConfig | null, bucket: string) {
   if (!config) {
-    return { credentialConfigured: false, reachable: false, sampleObjectCount: 0, sampleBytes: 0, truncated: false };
+    return { credentialConfigured: false, reachable: false, objectCount: 0, totalBytes: 0, truncated: false };
   }
 
   try {
-    const result = await createR2Client(config).send(new ListObjectsV2Command({ Bucket: bucket, MaxKeys: MAX_BUCKET_SAMPLE_OBJECTS }));
-    const objects = result.Contents ?? [];
+    const client = createR2Client(config);
+    let continuationToken: string | undefined;
+    let objectCount = 0;
+    let totalBytes = 0;
+    do {
+      const result = await client.send(new ListObjectsV2Command({ Bucket: bucket, MaxKeys: Math.min(1_000, MAX_BUCKET_USAGE_OBJECTS - objectCount), ContinuationToken: continuationToken }));
+      const objects = result.Contents ?? [];
+      objectCount += objects.length;
+      totalBytes += objects.reduce((total, object) => total + (object.Size ?? 0), 0);
+      continuationToken = result.IsTruncated ? result.NextContinuationToken : undefined;
+    } while (continuationToken && objectCount < MAX_BUCKET_USAGE_OBJECTS);
     return {
       credentialConfigured: true,
       reachable: true,
-      sampleObjectCount: objects.length,
-      sampleBytes: objects.reduce((total, object) => total + (object.Size ?? 0), 0),
-      truncated: Boolean(result.IsTruncated),
+      objectCount,
+      totalBytes,
+      truncated: Boolean(continuationToken),
     };
   } catch {
-    return { credentialConfigured: true, reachable: false, sampleObjectCount: 0, sampleBytes: 0, truncated: false };
+    return { credentialConfigured: true, reachable: false, objectCount: 0, totalBytes: 0, truncated: false };
   }
 }
 
@@ -126,6 +136,8 @@ export async function getR2StorageHealth() {
     probePublicUrl(sampleListingRows[0]?.url),
     Promise.all(STATIC_SENTINELS.map(probePublicUrl)),
   ]);
+  const trackedBytes = publicMediaBucket.totalBytes + staticBucket.totalBytes;
+  const usageIsComplete = !publicMediaBucket.truncated && !staticBucket.truncated;
 
   return {
     checkedAt: new Date().toISOString(),
@@ -155,9 +167,17 @@ export async function getR2StorageHealth() {
       publicR2References: numberValue(evidenceStats?.publicR2References),
       protectedBoundaryIntact: numberValue(evidenceStats?.publicR2References) === 0,
     },
+    capacity: {
+      trackedBytes,
+      trackedUsagePercentOfFreeAllowance: usageIsComplete ? (trackedBytes / R2_STANDARD_FREE_ALLOWANCE_BYTES) * 100 : null,
+      usageIsComplete,
+      standardFreeAllowanceBytes: R2_STANDARD_FREE_ALLOWANCE_BYTES,
+      bucketCapacity: "unlimited",
+      note: "Cloudflare R2 bucket capacity is unlimited. The 10 GB-month Standard-storage free allowance is a monthly billing allowance, not a hard storage cap. The Cloudflare dashboard remains the authoritative source for account-wide billable usage and all buckets.",
+    },
     limitations: {
-      bucketSampleLimit: MAX_BUCKET_SAMPLE_OBJECTS,
-      note: "Bucket figures are a read-only first-page sample. Full Cloudflare account usage remains available in the Cloudflare dashboard.",
+      bucketUsageScanLimit: MAX_BUCKET_USAGE_OBJECTS,
+      note: "Bucket figures are calculated read-only across up to 10,000 objects per Tradebilia bucket. When a bucket exceeds this bound, the displayed total is marked as a lower bound.",
     },
   };
 }

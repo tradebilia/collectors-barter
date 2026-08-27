@@ -2600,13 +2600,15 @@ export const appRouter = router({
     getAllTrades: protectedProcedure.query(async ({ ctx }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
       const db = await requireDb();
+      const requesterProfiles = alias(userProfiles, "adminTradeRequesterProfiles");
       const recipientUsers = alias(users, "adminTradeRecipients");
-      const allTrades = await db.select({
+      const recipientProfiles = alias(userProfiles, "adminTradeRecipientProfiles");
+      return db.select({
         id: tradeProposals.id,
         requesterId: tradeProposals.requesterId,
-        requesterUsername: users.username,
+        requesterDisplayName: sql<string>`COALESCE(NULLIF(${requesterProfiles.displayName}, ''), NULLIF(${users.displayName}, ''), NULLIF(${users.name}, ''), ${users.username}, CONCAT('Collector ', ${tradeProposals.requesterId}))`,
         recipientId: tradeProposals.recipientId,
-        recipientUsername: recipientUsers.username,
+        recipientDisplayName: sql<string>`COALESCE(NULLIF(${recipientProfiles.displayName}, ''), NULLIF(${recipientUsers.displayName}, ''), NULLIF(${recipientUsers.name}, ''), ${recipientUsers.username}, CONCAT('Collector ', ${tradeProposals.recipientId}))`,
         requestedListingId: tradeProposals.requestedListingId,
         listingTitle: listings.title,
         listingCategory: listings.category,
@@ -2616,10 +2618,11 @@ export const appRouter = router({
         completedAt: tradeProposals.completedAt,
       }).from(tradeProposals)
         .leftJoin(users, eq(tradeProposals.requesterId, users.id))
+        .leftJoin(requesterProfiles, eq(tradeProposals.requesterId, requesterProfiles.userId))
         .leftJoin(recipientUsers, eq(tradeProposals.recipientId, recipientUsers.id))
+        .leftJoin(recipientProfiles, eq(tradeProposals.recipientId, recipientProfiles.userId))
         .leftJoin(listings, eq(tradeProposals.requestedListingId, listings.id))
         .orderBy(desc(tradeProposals.createdAt));
-      return allTrades;
     }),
     // Reported users management
     getReportedUsers: protectedProcedure

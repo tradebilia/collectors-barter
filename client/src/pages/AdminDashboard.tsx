@@ -35,6 +35,45 @@ function parseReportEvidenceForAdmin(raw?: string) {
   return { notes: raw, listingReference: "", contactEmail: "", attachments: [] as Array<{ name: string; url: string }> };
 }
 
+type BillingMemberRecord = {
+  userId: number;
+  displayName: string;
+  planName: string;
+  membershipStatus: string;
+  billingTerm: string;
+};
+
+type BillingMemberSortField = "member" | "status" | "term";
+type BillingMemberSortDirection = "asc" | "desc";
+
+const MEMBERSHIP_STATUS_SORT_ORDER: Record<string, number> = {
+  active: 10,
+  past_due: 20,
+  unpaid: 30,
+  cancelled: 40,
+  complimentary: 50,
+  free_launch: 60,
+};
+
+const MEMBERSHIP_TERM_SORT_ORDER: Record<string, number> = {
+  annual: 10,
+  monthly: 20,
+  complimentary: 30,
+  none: 40,
+};
+
+export function sortBillingMembers(members: readonly BillingMemberRecord[], sortBy: BillingMemberSortField, sortDirection: BillingMemberSortDirection) {
+  const direction = sortDirection === "asc" ? 1 : -1;
+  return [...members].sort((left, right) => {
+    const comparison = sortBy === "status"
+      ? (MEMBERSHIP_STATUS_SORT_ORDER[left.membershipStatus] ?? 999) - (MEMBERSHIP_STATUS_SORT_ORDER[right.membershipStatus] ?? 999)
+      : sortBy === "term"
+        ? (MEMBERSHIP_TERM_SORT_ORDER[left.billingTerm] ?? 999) - (MEMBERSHIP_TERM_SORT_ORDER[right.billingTerm] ?? 999)
+        : left.displayName.localeCompare(right.displayName);
+    return comparison === 0 ? left.displayName.localeCompare(right.displayName) : comparison * direction;
+  });
+}
+
 function AdminListingsTab({ listingsQuery }: { listingsQuery: any }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState<"refId" | "title" | "category" | "date" | "value" | "views" | "status" | "owner">("refId");
@@ -495,6 +534,9 @@ function ComplimentaryMembershipAccessCard({ membersQuery }: { membersQuery: any
   const utils = trpc.useUtils();
   const [memberToGrant, setMemberToGrant] = useState<any>(null);
   const [memberToRevoke, setMemberToRevoke] = useState<any>(null);
+  const [billingSortBy, setBillingSortBy] = useState<BillingMemberSortField>("member");
+  const [billingSortDirection, setBillingSortDirection] = useState<BillingMemberSortDirection>("asc");
+  const sortedBillingMembers = useMemo(() => sortBillingMembers(membersQuery.data ?? [], billingSortBy, billingSortDirection), [membersQuery.data, billingSortBy, billingSortDirection]);
   const grantComplimentaryMutation = trpc.billing.grantComplimentaryAccess.useMutation({
     onSuccess: async () => {
       await Promise.all([utils.billing.getMembers.invalidate(), utils.billing.getOverview.invalidate()]);
@@ -536,17 +578,34 @@ function ComplimentaryMembershipAccessCard({ membersQuery }: { membersQuery: any
               Member access controls could not be loaded. Billing remains inactive and no membership grant was changed.
             </div>
           ) : (
-            <div className="overflow-x-auto rounded-xl border border-violet-100 bg-white">
-              <table className="w-full min-w-[680px] text-sm">
+            <div className="space-y-3">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-sm font-medium text-slate-800">Membership status monitoring</p>
+                <div className="flex flex-wrap items-center gap-2" aria-label="Membership monitoring sort controls">
+                  <span className="text-sm text-muted-foreground">Sort by</span>
+                  <Select value={billingSortBy} onValueChange={(value) => setBillingSortBy(value as BillingMemberSortField)}>
+                    <SelectTrigger className="w-[150px] bg-white"><SelectValue /></SelectTrigger>
+                    <SelectContent><SelectItem value="member">Member</SelectItem><SelectItem value="status">Status</SelectItem><SelectItem value="term">Billing term</SelectItem></SelectContent>
+                  </Select>
+                  <Select value={billingSortDirection} onValueChange={(value) => setBillingSortDirection(value as BillingMemberSortDirection)}>
+                    <SelectTrigger className="w-[130px] bg-white"><SelectValue /></SelectTrigger>
+                    <SelectContent><SelectItem value="asc">Ascending</SelectItem><SelectItem value="desc">Descending</SelectItem></SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="overflow-x-auto rounded-xl border border-violet-100 bg-white">
+              <table className="w-full min-w-[840px] text-sm">
                 <thead className="border-b bg-violet-50/70 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">
                   <tr>
                     <th className="px-4 py-3">Tradebilia member</th>
                     <th className="px-4 py-3">Current access</th>
+                    <th className="px-4 py-3">Status</th>
+                    <th className="px-4 py-3">Billing term</th>
                     <th className="px-4 py-3 text-right">Complimentary access</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {(membersQuery.data ?? []).map((member: any) => {
+                  {sortedBillingMembers.map((member: any) => {
                     const isPending = grantComplimentaryMutation.isPending || revokeComplimentaryMutation.isPending;
                     return (
                       <tr key={member.userId} className="border-b last:border-b-0">
@@ -561,6 +620,8 @@ function ComplimentaryMembershipAccessCard({ membersQuery }: { membersQuery: any
                             <Badge variant="outline" className="border-slate-200 text-slate-700">{member.planName}</Badge>
                           )}
                         </td>
+                        <td className="px-4 py-3"><Badge variant="outline" className="border-slate-200 text-slate-700">{member.membershipStatus || "free_launch"}</Badge></td>
+                        <td className="px-4 py-3 text-slate-700">{member.billingTerm || "none"}</td>
                         <td className="px-4 py-3 text-right">
                           {member.isComplimentary ? (
                             <Button type="button" size="sm" variant="outline" className="border-violet-200 text-violet-800 hover:bg-violet-50" disabled={isPending} onClick={() => setMemberToRevoke(member)}>
@@ -577,6 +638,7 @@ function ComplimentaryMembershipAccessCard({ membersQuery }: { membersQuery: any
                   })}
                 </tbody>
               </table>
+            </div>
             </div>
           )}
         </CardContent>
@@ -1267,8 +1329,8 @@ export default function AdminDashboard() {
                         {(tradesQuery.data as any[])?.map((trade: any) => (
                           <tr key={trade.id} className="border-b border-border hover:bg-accent/50">
                             <td className="py-2 px-4 font-mono text-xs"><a href={`/trade-room/${trade.id}`} className="font-semibold text-primary underline-offset-2 hover:underline" title={`Open trade ${trade.id} details`}>#{trade.id}</a></td>
-                            <td className="py-2 px-4">{trade.requesterUsername || "-"}</td>
-                            <td className="py-2 px-4">{(trade as any).recipientUsername || "-"}</td>
+                            <td className="py-2 px-4">{trade.requesterDisplayName || "-"}</td>
+                            <td className="py-2 px-4">{trade.recipientDisplayName || "-"}</td>
                             <td className="py-2 px-4">{trade.listingTitle || "-"}</td>
                             <td className="py-2 px-4">
                               <span className={`px-2 py-1 rounded text-xs font-medium ${
@@ -1315,7 +1377,7 @@ export default function AdminDashboard() {
                 <DialogHeader>
                   <DialogTitle className="text-red-600">Delete Trade Permanently?</DialogTitle>
                   <DialogDescription>
-                    This will permanently delete trade <strong>#{tradeToDelete?.id}</strong> between <strong>{tradeToDelete?.requesterUsername || 'Unknown'}</strong> and <strong>{(tradeToDelete as any)?.recipientUsername || 'Unknown'}</strong> for item <strong>{tradeToDelete?.listingTitle || 'Unknown'}</strong>.
+                    This will permanently delete trade <strong>#{tradeToDelete?.id}</strong> between <strong>{tradeToDelete?.requesterDisplayName || 'Unknown'}</strong> and <strong>{tradeToDelete?.recipientDisplayName || 'Unknown'}</strong> for item <strong>{tradeToDelete?.listingTitle || 'Unknown'}</strong>.
                     <br /><br />
                     All associated messages, alerts, items, tracking numbers, and records will be removed. <strong>This cannot be undone.</strong>
                   </DialogDescription>
