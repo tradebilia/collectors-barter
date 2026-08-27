@@ -25,6 +25,9 @@ describe("Stripe Membership test Checkout safeguards", () => {
     expect(billingSource).toContain("Stripe Membership event could not update the member record.");
     expect(billingSource).toContain("subscriptionItem?.current_period_start ?? subscriptionData.current_period_start");
     expect(billingSource).toContain("subscriptionItem?.current_period_end ?? subscriptionData.current_period_end");
+    expect(billingSource).toContain("assertNoExistingTestMembershipSubscription");
+    expect(billingSource).toContain("stripe.subscriptions.list");
+    expect(billingSource).toContain("A Tradebilia Membership subscription is already active or awaiting payment.");
     expect(billingSource).not.toContain("card_number");
     expect(routerSource).toContain("startTestCheckout");
     expect(routerSource).toContain("openTestPortal");
@@ -33,6 +36,10 @@ describe("Stripe Membership test Checkout safeguards", () => {
     expect(accountSettingsSource).toContain("Sandbox administrator tools");
     expect(accountSettingsSource).toContain('user?.role === "admin"');
     expect(accountSettingsSource).toContain("Open the Stripe sandbox");
+    expect(accountSettingsSource).toContain("window.location.assign(url)");
+    expect(accountSettingsSource).toContain("openStripeSandboxCheckout(url)");
+    expect(accountSettingsSource).toContain("hasExistingSandboxMembership");
+    expect(accountSettingsSource).toContain("prevent a duplicate subscription");
     expect(accountSettingsSource).toContain('window.open(url, "_blank", "noopener,noreferrer")');
   });
 });

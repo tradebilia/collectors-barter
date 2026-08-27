@@ -96,6 +96,10 @@ export default function AccountSettings() {
     toast.success(`${label} opened in a new tab.`);
   };
 
+  const openStripeSandboxCheckout = (url: string) => {
+    window.location.assign(url);
+  };
+
   const handleStartTestCheckout = (billingTerm: "monthly" | "annual") => {
     setTestBillingTerm(billingTerm);
   };
@@ -103,7 +107,7 @@ export default function AccountSettings() {
   const confirmTestCheckout = () => {
     if (!testBillingTerm) return;
     startTestCheckoutMutation.mutate({ billingTerm: testBillingTerm }, {
-      onSuccess: ({ url }) => openStripeSandboxWindow(url, "Stripe sandbox Checkout"),
+      onSuccess: ({ url }) => openStripeSandboxCheckout(url),
       onError: (error) => toast.error(error.message),
       onSettled: () => setTestBillingTerm(null),
     });
@@ -115,6 +119,9 @@ export default function AccountSettings() {
       onError: (error) => toast.error(error.message),
     });
   };
+
+  const hasExistingSandboxMembership = ["active", "past_due", "unpaid"].includes(membershipQuery.data?.membership.status ?? "")
+    && ["monthly", "annual"].includes(membershipQuery.data?.membership.billingTerm ?? "");
 
   const [profileForm, setProfileForm] = useState({
     displayName: "",
@@ -1566,22 +1573,25 @@ export default function AccountSettings() {
                             <span className="w-fit rounded-full bg-violet-200 px-3 py-1 text-xs font-semibold text-violet-900">Test mode only</span>
                           </div>
                           <div className="mt-4 flex flex-col gap-3 sm:flex-row">
-                            <Button type="button" className="bg-violet-700 hover:bg-violet-800" disabled={startTestCheckoutMutation.isPending} onClick={() => handleStartTestCheckout("monthly")}>
+                            <Button type="button" className="bg-violet-700 hover:bg-violet-800" disabled={hasExistingSandboxMembership || startTestCheckoutMutation.isPending} onClick={() => handleStartTestCheckout("monthly")}>
                               <ExternalLink className="mr-2 h-4 w-4" />Test $1 monthly Checkout
                             </Button>
-                            <Button type="button" variant="outline" className="border-violet-300 bg-white text-violet-900 hover:bg-violet-100" disabled={startTestCheckoutMutation.isPending} onClick={() => handleStartTestCheckout("annual")}>
+                            <Button type="button" variant="outline" className="border-violet-300 bg-white text-violet-900 hover:bg-violet-100" disabled={hasExistingSandboxMembership || startTestCheckoutMutation.isPending} onClick={() => handleStartTestCheckout("annual")}>
                               <ExternalLink className="mr-2 h-4 w-4" />Test $10 annual Checkout
                             </Button>
                             <Button type="button" variant="outline" className="border-violet-300 bg-white text-violet-900 hover:bg-violet-100" disabled={openTestPortalMutation.isPending} onClick={handleOpenTestPortal}>
                               <ExternalLink className="mr-2 h-4 w-4" />Open test portal
                             </Button>
                           </div>
+                          {hasExistingSandboxMembership && (
+                            <p className="mt-3 rounded-lg border border-violet-200 bg-white px-3 py-2 text-sm text-violet-950">A sandbox Membership is already active for this administrator account. The Checkout buttons are disabled to prevent a duplicate subscription. Use the test portal to review it; do not cancel or change it unless you intend to test that action.</p>
+                          )}
                           {testBillingTerm && (
                             <div className="mt-4 rounded-lg border border-violet-300 bg-white p-4" role="status">
                               <p className="text-sm font-semibold text-slate-900">Open the Stripe sandbox {testBillingTerm} Checkout?</p>
                               <p className="mt-1 text-sm leading-6 text-slate-700">This creates a test-only Membership subscription for administrator validation. It does not create a live charge, change Free Launch, or restrict any member.</p>
                               <div className="mt-3 flex flex-wrap gap-2">
-                                <Button type="button" size="sm" className="bg-violet-700 hover:bg-violet-800" disabled={startTestCheckoutMutation.isPending} onClick={confirmTestCheckout}>Open sandbox Checkout</Button>
+                                <Button type="button" size="sm" className="bg-violet-700 hover:bg-violet-800" disabled={hasExistingSandboxMembership || startTestCheckoutMutation.isPending} onClick={confirmTestCheckout}>Open sandbox Checkout</Button>
                                 <Button type="button" size="sm" variant="outline" onClick={() => setTestBillingTerm(null)}>Cancel</Button>
                               </div>
                             </div>

@@ -38,6 +38,25 @@ function findBillingTerm(subscription: Stripe.Subscription): MembershipBillingTe
   return "none";
 }
 
+const DUPLICATE_SUBSCRIPTION_STATUSES = new Set<Stripe.Subscription.Status>(["active", "trialing", "past_due", "incomplete", "unpaid"]);
+const ACTIVE_LOCAL_MEMBERSHIP_STATUSES = new Set(["active", "past_due", "unpaid"]);
+
+async function assertNoExistingTestMembershipSubscription(stripe: Stripe, membership: { stripeCustomerId: string | null; stripeSubscriptionId: string | null; status: string } | undefined) {
+  if (membership?.stripeSubscriptionId && ACTIVE_LOCAL_MEMBERSHIP_STATUSES.has(membership.status)) {
+    throw new Error("A Tradebilia Membership subscription is already active or awaiting payment. Use the test customer portal before starting another Checkout.");
+  }
+  if (!membership?.stripeCustomerId) return;
+  const subscriptions = await stripe.subscriptions.list({ customer: membership.stripeCustomerId, status: "all", limit: 100 });
+  const hasBlockingMembership = subscriptions.data.some((subscription) =>
+    !subscription.livemode &&
+    DUPLICATE_SUBSCRIPTION_STATUSES.has(subscription.status) &&
+    findBillingTerm(subscription) !== "none",
+  );
+  if (hasBlockingMembership) {
+    throw new Error("A Tradebilia Membership subscription is already active or awaiting payment. Use the test customer portal before starting another Checkout.");
+  }
+}
+
 async function assertConfiguredTestPrice(stripe: Stripe, priceId: string) {
   const price = await stripe.prices.retrieve(priceId);
   if (price.livemode || !price.recurring) {
@@ -58,10 +77,11 @@ export async function createMembershipTestCheckout(input: CheckoutInput) {
     .limit(1))[0];
   if (!user?.email) throw new Error("A verified account email is required before starting a Membership test Checkout.");
 
-  const membership = (await db.select({ stripeCustomerId: userMemberships.stripeCustomerId })
+  const membership = (await db.select({ stripeCustomerId: userMemberships.stripeCustomerId, stripeSubscriptionId: userMemberships.stripeSubscriptionId, status: userMemberships.status })
     .from(userMemberships)
     .where(eq(userMemberships.userId, input.userId))
     .limit(1))[0];
+  await assertNoExistingTestMembershipSubscription(stripe, membership);
   const session = await stripe.checkout.sessions.create({
     mode: "subscription",
     line_items: [{ price: priceId, quantity: 1 }],
