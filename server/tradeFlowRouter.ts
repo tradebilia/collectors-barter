@@ -6,6 +6,7 @@
  */
 
 import { z } from "zod";
+import { randomBytes } from "node:crypto";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { TRPCError } from "@trpc/server";
 import { requireDb } from "./db";
@@ -749,6 +750,20 @@ export const tradeFlowRouter = router({
       if (!['shipping', 'shipped', 'accepted'].includes(proposal.status as string)) {
         throw new TRPCError({ code: 'BAD_REQUEST', message: 'Trade must be in shipping stage to submit tracking' });
       }
+      if ((proposal.status as string) === 'accepted') {
+        throw new TRPCError({ code: 'BAD_REQUEST', message: 'Both members must complete Review before tracking can be submitted.' });
+      }
+
+      const expectedListingIds = proposal.requesterId === userId
+        ? [proposal.requestedListingId]
+        : (await db.select({ listingId: tradeProposalItems.offeredListingId })
+          .from(tradeProposalItems)
+          .where(eq(tradeProposalItems.proposalId, input.proposalId)))
+          .map((item) => item.listingId);
+      const submittedListingIds = input.trackingNumbers.map((tracking) => tracking.listingId);
+      if (new Set(submittedListingIds).size !== submittedListingIds.length || submittedListingIds.some((listingId) => !expectedListingIds.includes(listingId))) {
+        throw new TRPCError({ code: 'BAD_REQUEST', message: 'Tracking can only be submitted once for each item you are sending in this trade.' });
+      }
 
       const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
 
@@ -814,11 +829,14 @@ export const tradeFlowRouter = router({
       if (proposal.recipientId !== userId && proposal.requesterId !== userId) {
         throw new TRPCError({ code: 'FORBIDDEN', message: 'Not authorized' });
       }
+      if ((proposal.status as string) !== 'shipped') {
+        throw new TRPCError({ code: 'BAD_REQUEST', message: 'Receipt confirmation is available after both members have submitted tracking.' });
+      }
 
       const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
 
       await db.execute(
-        sql`INSERT INTO tradeReceiptConfirmation (proposalId, userId, confirmationType, confirmedAt) VALUES (${input.proposalId}, ${userId}, ${input.confirmationType}, ${now})`
+        sql`INSERT INTO tradeReceiptConfirmation (proposalId, userId, confirmationType, confirmedAt) VALUES (${input.proposalId}, ${userId}, ${input.confirmationType}, ${now}) ON DUPLICATE KEY UPDATE id = id`
       );
 
       // Check if both confirmed receipt (exclude 'accepted' type which is used for mutual acceptance)
@@ -913,14 +931,21 @@ export const tradeFlowRouter = router({
       const overallRating = ((input.tradeExperienceRating + input.itemConditionRating + input.communicationRating + input.shippingSpeedRating) / 4).toFixed(1);
 
       const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
-      await db.insert(tradeReviews).values({
-        proposalId: input.proposalId,
-        reviewerId: userId,
-        revieweeId: revieweeId,
-        rating: Math.round(parseFloat(overallRating)),
-        review: input.review || null,
-        createdAt: now,
-      });
+      try {
+        await db.insert(tradeReviews).values({
+          proposalId: input.proposalId,
+          reviewerId: userId,
+          revieweeId: revieweeId,
+          rating: Math.round(parseFloat(overallRating)),
+          review: input.review || null,
+          createdAt: now,
+        });
+      } catch (error: any) {
+        if (error?.code === 'ER_DUP_ENTRY' || error?.cause?.code === 'ER_DUP_ENTRY') {
+          throw new TRPCError({ code: 'CONFLICT', message: 'You have already submitted a review for this trade.' });
+        }
+        throw error;
+      }
 
       // Set sub-ratings via raw SQL
       await db.execute(
@@ -1389,15 +1414,24 @@ export const tradeFlowRouter = router({
         sql`SELECT id FROM tradeReceiptConfirmation WHERE proposalId = ${input.proposalId} AND userId = ${otherUserId} AND confirmationType = 'accepted'`
       );
       const otherHasConfirmed = ((existingConfirmation as unknown as any[])?.length || 0) > 0;
+      const [ownConfirmation] = await db.execute(
+        sql`SELECT id FROM tradeReceiptConfirmation WHERE proposalId = ${input.proposalId} AND userId = ${userId} AND confirmationType = 'accepted'`
+      );
+      if (((ownConfirmation as unknown as any[])?.length || 0) > 0) {
+        return { success: true, mutualConfirmation: false, alreadyConfirmed: true };
+      }
 
       const [actor] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
       const actorName = await getUserDisplayName(db, userId);
 
       if (otherHasConfirmed) {
         // Both have now confirmed — move to 'shipping' status
-        await db.execute(
-          sql`UPDATE tradeProposals SET status = 'shipping', shippingAt = ${now}, shippingDeadline = COALESCE(shippingDeadline, DATE_ADD(${now}, INTERVAL 3 DAY)), lastActivityAt = ${now}, updatedAt = ${now} WHERE id = ${input.proposalId}`
+        const [transitionResult] = await db.execute(
+          sql`UPDATE tradeProposals SET status = 'shipping', shippingAt = ${now}, shippingDeadline = COALESCE(shippingDeadline, DATE_ADD(${now}, INTERVAL 3 DAY)), lastActivityAt = ${now}, updatedAt = ${now} WHERE id = ${input.proposalId} AND status = 'accepted'`
         );
+        if (Number((transitionResult as any)?.affectedRows ?? 0) !== 1) {
+          return { success: true, mutualConfirmation: true, alreadyTransitioned: true };
+        }
           await createTradeAlert(db, input.proposalId, otherUserId, 'accepted', `Both parties confirmed review for trade (TR-${proposal.tradeReferenceNumber})! Please enter your tracking number.`, now);
         await db.execute(
           sql`INSERT INTO tradeActivityLog (proposalId, actorId, actorName, eventType, details, createdAt) VALUES (${input.proposalId}, ${userId}, ${actorName}, 'proposal_accepted', 'Confirmed review. Both parties confirmed, proceeding to Shipping stage.', ${now})`
@@ -1537,14 +1571,14 @@ export const tradeFlowRouter = router({
       }
       const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
 
-      // Generate unique token
-      const token = Array.from({ length: 32 }, () => Math.random().toString(36)[2]).join('');
+      // Cryptographically strong opaque token; the database also rejects collisions.
+      const token = randomBytes(32).toString('base64url');
 
       // Expires in 3 days
       const expiresAt = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().slice(0, 19).replace('T', ' ');
 
       await db.execute(
-        sql`INSERT INTO tradeVotingLinks (proposalId, generatedByUserId, linkToken, expiresAt, createdAt) VALUES (${input.proposalId}, ${userId}, ${token}, ${expiresAt}, ${now})`
+        sql`INSERT INTO tradeVotingLinks (proposalId, generatedByUserId, linkToken, expiresAt, createdAt) VALUES (${input.proposalId}, ${userId}, ${token}, ${expiresAt}, ${now}) ON DUPLICATE KEY UPDATE generatedByUserId = VALUES(generatedByUserId), linkToken = VALUES(linkToken), expiresAt = VALUES(expiresAt), createdAt = VALUES(createdAt)`
       );
 
       return { token, expiresAt };
@@ -1571,9 +1605,16 @@ export const tradeFlowRouter = router({
         throw new TRPCError({ code: 'BAD_REQUEST', message: 'Cannot vote on your own trade' });
       }
 
-      await db.execute(
-        sql`INSERT INTO tradeVotes (votingLinkId, voterUserId, verdict, comment, createdAt) VALUES (${link.id}, ${userId}, ${input.verdict}, ${input.comment || null}, ${now})`
-      );
+      try {
+        await db.execute(
+          sql`INSERT INTO tradeVotes (votingLinkId, voterUserId, verdict, comment, createdAt) VALUES (${link.id}, ${userId}, ${input.verdict}, ${input.comment || null}, ${now})`
+        );
+      } catch (error: any) {
+        if (error?.code === 'ER_DUP_ENTRY' || error?.cause?.code === 'ER_DUP_ENTRY') {
+          throw new TRPCError({ code: 'CONFLICT', message: 'You have already voted on this trade.' });
+        }
+        throw error;
+      }
 
       return { success: true };
     }),
@@ -1644,6 +1685,12 @@ export const tradeFlowRouter = router({
       const userId = ctx.user.id;
       const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
 
+      const [proposal] = await db.select().from(tradeProposals).where(eq(tradeProposals.id, input.proposalId)).limit(1);
+      if (!proposal) throw new TRPCError({ code: 'NOT_FOUND', message: 'Trade not found' });
+      if (proposal.recipientId !== userId && proposal.requesterId !== userId) {
+        throw new TRPCError({ code: 'FORBIDDEN', message: 'Only trade participants can save private notes.' });
+      }
+
       // Upsert
       await db.execute(
         sql`INSERT INTO tradePrivateNotes (proposalId, userId, noteContent, createdAt, updatedAt) VALUES (${input.proposalId}, ${userId}, ${input.noteContent}, ${now}, ${now}) ON DUPLICATE KEY UPDATE noteContent = ${input.noteContent}, updatedAt = ${now}`
@@ -1657,6 +1704,12 @@ export const tradeFlowRouter = router({
     .query(async ({ ctx, input }) => {
       const db = await requireDb();
       const userId = ctx.user.id;
+
+      const [proposal] = await db.select().from(tradeProposals).where(eq(tradeProposals.id, input.proposalId)).limit(1);
+      if (!proposal) throw new TRPCError({ code: 'NOT_FOUND', message: 'Trade not found' });
+      if (proposal.recipientId !== userId && proposal.requesterId !== userId) {
+        throw new TRPCError({ code: 'FORBIDDEN', message: 'Only trade participants can view private notes.' });
+      }
 
       const [notes] = await db.execute(
         sql`SELECT noteContent, updatedAt FROM tradePrivateNotes WHERE proposalId = ${input.proposalId} AND userId = ${userId}`

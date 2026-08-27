@@ -27,7 +27,7 @@ export async function persistDirectMessage(
 
   if (!isNewThread) {
     await db.execute(
-      sql`UPDATE directMessageThreads SET lastMessageAt = NOW() WHERE id = ${threadId}`,
+      sql`UPDATE directMessageThreads SET lastMessageAt = NOW(), participantAArchivedAt = NULL, participantBArchivedAt = NULL WHERE id = ${threadId}`,
     );
   }
 

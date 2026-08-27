@@ -26,7 +26,7 @@ const folders = [
   { value: "inquiries", label: "Item Inquiries" },
   { value: "direct", label: "Direct Messages" },
   { value: "unread", label: "Unread" },
-  { value: "deleted", label: "Deleted" },
+  { value: "deleted", label: "Archived" },
   // Trade-related folders removed per Decision 2 — trade activity is now in the Trade Hub
 ] as const;
 
@@ -49,6 +49,7 @@ export default function Messages() {
   const [activeThreadKey, setActiveThreadKey] = useState<string | null>(null);
   const [messageDraft, setMessageDraft] = useState("");
   const [directThreads, setDirectThreads] = useState<any[]>([]);
+  const [archivedDirectThreads, setArchivedDirectThreads] = useState<any[]>([]);
   const [presenceMap, setPresenceMap] = useState<Record<number, { displayName: string; updatedAt: number }>>({});
 
   const dashboardQuery = trpc.market.dashboard.useQuery(undefined, {
@@ -61,6 +62,7 @@ export default function Messages() {
   );
 
   const dbDirectThreadsQuery = trpc.market.getDirectMessageThreads.useQuery(undefined, { enabled: isAuthenticated, refetchInterval: 15000 });
+  const archivedDirectThreadsQuery = trpc.market.getDirectMessageThreads.useQuery({ archived: true }, { enabled: isAuthenticated, refetchInterval: 15000 });
   const activeDbThreadId = activeThreadKey?.startsWith('dbdirect-') ? Number(activeThreadKey.replace('dbdirect-', '')) : null;
   const dbMessagesQuery = trpc.market.getDirectMessages.useQuery(
     { threadId: activeDbThreadId ?? 0 },
@@ -88,7 +90,7 @@ export default function Messages() {
     onSuccess: async () => {
       setActiveThreadKey(null);
       await utils.market.getDirectMessageThreads.invalidate();
-      toast.success('Conversation deleted');
+      toast.success('Conversation archived from your inbox');
     },
     onError: error => toast.error(error.message),
   });
@@ -144,22 +146,18 @@ export default function Messages() {
     onError: error => toast.error(error.message),
   });
 
-  const emptyDeletedMutation = trpc.market.emptyDeleted.useMutation({
-    onSuccess: async () => {
-      await utils.market.getDeleted.invalidate();
-      setActiveThreadKey(null);
-      toast.success("Deleted folder emptied");
-    },
-    onError: error => toast.error(error.message),
-  });
-
-
   // Sync DB direct threads into state
   useEffect(() => {
     if (dbDirectThreadsQuery.data) {
       setDirectThreads(dbDirectThreadsQuery.data);
     }
   }, [dbDirectThreadsQuery.data]);
+
+  useEffect(() => {
+    if (archivedDirectThreadsQuery.data) {
+      setArchivedDirectThreads(archivedDirectThreadsQuery.data);
+    }
+  }, [archivedDirectThreadsQuery.data]);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -221,7 +219,23 @@ export default function Messages() {
     return [...tradeThreads, ...direct].sort((a, b) => b.updatedAt - a.updatedAt);
   }, [directThreads, proposals, user?.id]);
 
+  const archivedThreads = useMemo(() => archivedDirectThreads.map((thread: any) => ({
+    key: `dbdirect-${thread.threadId}`,
+    kind: "direct" as const,
+    updatedAt: new Date(thread.lastMessageAt).getTime(),
+    unread: false,
+    accepted: false,
+    counterpartId: Number(thread.counterpartId),
+    counterpartName: thread.counterpartName || `Collector ${thread.counterpartId}`,
+    counterpartAvatarUrl: thread.counterpartAvatarUrl ?? null,
+    summary: thread.latestBody ?? "Direct collector conversation",
+    subject: thread.latestSubject ?? "",
+    latestSenderId: Number(thread.latestSenderId),
+    threadId: thread.threadId,
+  })).sort((a, b) => b.updatedAt - a.updatedAt), [archivedDirectThreads]);
+
   const filteredThreads = useMemo(() => {
+    if (folder === "deleted") return archivedThreads;
     if (folder === "inquiries") return [];
     return allThreads.filter((thread: any) => {
       if (folder === "direct") {
@@ -234,7 +248,7 @@ export default function Messages() {
       if (folder === "unread") return thread.unread;
       return true;
     });
-  }, [allThreads, folder, directDirectionFilter, user?.id]);
+  }, [allThreads, archivedThreads, folder, directDirectionFilter, user?.id]);
 
   const filteredInquiries = useMemo(() => {
     if (folder === "deleted") return deletedInquiriesQuery.data ?? [];
@@ -387,7 +401,7 @@ export default function Messages() {
                       : item.value === "unread"
                         ? allThreads.filter(thread => thread.unread).length + inquiries.filter(i => !i.isRead).length
                         : item.value === "deleted"
-                          ? (deletedInquiriesQuery.data ?? []).length
+                          ? (deletedInquiriesQuery.data ?? []).length + archivedThreads.length
                           : allThreads.length;
                 return (
                   <button
@@ -567,7 +581,7 @@ export default function Messages() {
                         onClick={() => deleteInquiryMutation.mutate({ inquiryId: activeInquiry.id })}
                         disabled={deleteInquiryMutation.isPending}
                       >
-                        Delete
+                        Archive
                       </Button>
                     )}
                   </div>
@@ -612,14 +626,9 @@ export default function Messages() {
 
                 <div className="border-t border-slate-200 px-6 py-5">
                   {folder === "deleted" ? (
-                    <Button
-                      variant="destructive"
-                      className="w-full"
-                      onClick={() => emptyDeletedMutation.mutate()}
-                      disabled={emptyDeletedMutation.isPending}
-                    >
-                      Empty Deleted Folder
-                    </Button>
+                    <p className="rounded-[1.25rem] border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-600">
+                      Archived inquiries are retained for your records and are not permanently deleted here.
+                    </p>
                   ) : (
                     <div className="grid gap-3 lg:grid-cols-[1fr_auto]">
                       <Input value={messageDraft} onChange={event => setMessageDraft(event.target.value)} placeholder="Reply to this inquiry..." className="h-12 bg-white" />
@@ -657,18 +666,18 @@ export default function Messages() {
                         </div>
                       </div>
                     </div>
-                    {activeThread.kind === "direct" ? (
+                    {activeThread.kind === "direct" && folder !== "deleted" ? (
                       <Button
                         variant="destructive"
                         size="sm"
                         onClick={() => {
-                          if (confirm('Delete this conversation? This cannot be undone.')) {
+                          if (confirm('Archive this conversation from your inbox? Your trade partner can still access their messages.')) {
                             deleteDirectThreadMutation.mutate({ threadId: (activeThread as any).threadId });
                           }
                         }}
                         disabled={deleteDirectThreadMutation.isPending}
                       >
-                        Delete
+                        Archive
                       </Button>
                     ) : activeThread.kind === "trade" ? (
                       <div className="grid gap-3 sm:grid-cols-2">
@@ -740,6 +749,11 @@ export default function Messages() {
                 </ScrollArea>
 
                 <div className="border-t border-slate-200 px-6 py-5">
+                  {folder === "deleted" && activeThread.kind === "direct" ? (
+                    <p className="rounded-[1.25rem] border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-600">
+                      Archived conversations remain available to read and are not permanently deleted here.
+                    </p>
+                  ) : (
                   <div className={`grid gap-3 ${activeThread.kind === "trade" ? "lg:grid-cols-[1fr_auto_auto]" : "lg:grid-cols-[1fr_auto]"}`}>
                     <Input value={messageDraft} onChange={event => setMessageDraft(event.target.value)} placeholder={activeThread.kind === "direct" ? "Write a direct member message" : "Add a trade note, shipping update, or negotiation reply"} className="h-12 bg-white" />
                     {activeThread.kind === "trade" ? (
@@ -755,6 +769,7 @@ export default function Messages() {
                       {activeThread.kind === "direct" ? "Send Message" : "Send Trade Message"}
                     </Button>
                   </div>
+                  )}
                 </div>
               </div>
             ) : (

@@ -199,8 +199,8 @@ export async function getCommunicationDisplayName(userId: number) {
 
 function getInquiryUnreadCondition(userId: number) {
   return or(
-    and(eq(itemInquiries.senderId, userId), eq(itemInquiries.senderIsRead, 0)),
-    and(eq(itemInquiries.recipientId, userId), eq(itemInquiries.recipientIsRead, 0)),
+    and(eq(itemInquiries.senderId, userId), isNull(itemInquiries.senderArchivedAt), eq(itemInquiries.senderIsRead, 0)),
+    and(eq(itemInquiries.recipientId, userId), isNull(itemInquiries.recipientArchivedAt), eq(itemInquiries.recipientIsRead, 0)),
   );
 }
 
@@ -1853,6 +1853,8 @@ export async function getUnreadMessageCount(userId: number) {
     sql`SELECT COUNT(*) as count FROM directMessages dm
     JOIN directMessageThreads t ON t.id = dm.threadId
     WHERE (t.participantAId = ${userId} OR t.participantBId = ${userId})
+    AND ((t.participantAId = ${userId} AND t.participantAArchivedAt IS NULL)
+      OR (t.participantBId = ${userId} AND t.participantBArchivedAt IS NULL))
     AND dm.senderId != ${userId}
     AND dm.isReadByRecipient = 0`
   );
@@ -3681,12 +3683,9 @@ export async function getInquiriesByUser(userId: number, limit: number = 50, off
     .innerJoin(users, eq(itemInquiries.senderId, users.id))
     .leftJoin(userProfiles, eq(userProfiles.userId, users.id))
     .where(
-      and(
-        or(
-          eq(itemInquiries.recipientId, userId),
-          eq(itemInquiries.senderId, userId)
-        ),
-        isNull(itemInquiries.deletedAt)
+      or(
+        and(eq(itemInquiries.senderId, userId), isNull(itemInquiries.senderArchivedAt)),
+        and(eq(itemInquiries.recipientId, userId), isNull(itemInquiries.recipientArchivedAt)),
       )
     )
     .orderBy(desc(itemInquiries.createdAt))
@@ -3774,7 +3773,11 @@ export async function sendInquiryReply(inquiryId: number, senderId: number, mess
   // creating an unread alert for the person who sent this reply.
   await db
     .update(itemInquiries)
-    .set(getInquiryReplyReadState())
+    .set({
+      ...getInquiryReplyReadState(),
+      senderArchivedAt: null,
+      recipientArchivedAt: null,
+    })
     .where(eq(itemInquiries.id, inquiryId));
   
   // Fetch the newly created reply to get the ID
@@ -3870,7 +3873,9 @@ export async function deleteInquiry(inquiryId: number, userId: number) {
   
   await db
     .update(itemInquiries)
-    .set({ deletedAt: mysqlNow() })
+    .set(inquiry[0].senderId === userId
+      ? { senderArchivedAt: mysqlNow() }
+      : { recipientArchivedAt: mysqlNow() })
     .where(eq(itemInquiries.id, inquiryId));
 }
 
@@ -3891,19 +3896,16 @@ export async function getDeletedInquiries(userId: number) {
       message: itemInquiries.message,
       isRead: itemInquiries.isRead,
       createdAt: itemInquiries.createdAt,
-      deletedAt: itemInquiries.deletedAt,
+      deletedAt: sql<string>`CASE WHEN ${itemInquiries.senderId} = ${userId} THEN ${itemInquiries.senderArchivedAt} ELSE ${itemInquiries.recipientArchivedAt} END`,
     })
     .from(itemInquiries)
     .innerJoin(users, eq(itemInquiries.senderId, users.id))
     .leftJoin(userProfiles, eq(userProfiles.userId, users.id))
-    .where(and(
-      or(
-        eq(itemInquiries.recipientId, userId),
-        eq(itemInquiries.senderId, userId)
-      ),
-      isNotNull(itemInquiries.deletedAt)
+    .where(or(
+      and(eq(itemInquiries.senderId, userId), isNotNull(itemInquiries.senderArchivedAt)),
+      and(eq(itemInquiries.recipientId, userId), isNotNull(itemInquiries.recipientArchivedAt)),
     ))
-    .orderBy(desc(itemInquiries.deletedAt));
+    .orderBy(desc(itemInquiries.updatedAt));
   
   return Promise.all(inquiries.map(async inquiry => ({
     ...inquiry,
@@ -3917,24 +3919,10 @@ export async function getDeletedInquiries(userId: number) {
 }
 
 export async function emptyDeletedInquiries(userId: number) {
-  const db = await requireDb();
-  const deletedInquiryIds = await db
-    .select({ id: itemInquiries.id })
-    .from(itemInquiries)
-    .where(and(
-      or(
-        eq(itemInquiries.recipientId, userId),
-        eq(itemInquiries.senderId, userId)
-      ),
-      isNotNull(itemInquiries.deletedAt)
-    ));
-  if (deletedInquiryIds.length === 0) return;
-
-  const inquiryIds = deletedInquiryIds.map((inquiry) => inquiry.id);
-  await db.transaction(async (tx) => {
-    await tx.delete(inquiryReplies).where(inArray(inquiryReplies.inquiryId, inquiryIds));
-    await tx.delete(itemInquiries).where(inArray(itemInquiries.id, inquiryIds));
-  });
+  // Shared trade correspondence is retained. This endpoint remains a safe no-op for
+  // older clients while the current UI no longer offers a permanent-purge action.
+  void userId;
+  return { success: true, preserved: true };
 }
 
 
