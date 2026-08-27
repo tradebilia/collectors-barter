@@ -89,8 +89,9 @@ export default function SignUp() {
 
           <form onSubmit={handleSignUp} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-1">Username</label>
+              <label htmlFor="signup-username" className="block text-sm font-medium mb-1">Username</label>
               <Input
+                id="signup-username"
                 type="text"
                 value={formData.username}
                 onChange={(e) =>
@@ -98,15 +99,18 @@ export default function SignUp() {
                 }
                 placeholder="Choose a username"
                 disabled={isLoading}
+                aria-invalid={Boolean(errors.username)}
+                aria-describedby={errors.username ? "signup-username-error" : undefined}
               />
               {errors.username && (
-                <p className="text-red-600 text-sm mt-1">{errors.username}</p>
+                <p id="signup-username-error" role="alert" className="text-red-600 text-sm mt-1">{errors.username}</p>
               )}
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">Display Name</label>
+              <label htmlFor="signup-display-name" className="block text-sm font-medium mb-1">Display Name</label>
               <Input
+                id="signup-display-name"
                 type="text"
                 value={formData.displayName}
                 onChange={(e) =>
@@ -114,15 +118,18 @@ export default function SignUp() {
                 }
                 placeholder="Your display name"
                 disabled={isLoading}
+                aria-invalid={Boolean(errors.displayName)}
+                aria-describedby={errors.displayName ? "signup-display-name-error" : undefined}
               />
               {errors.displayName && (
-                <p className="text-red-600 text-sm mt-1">{errors.displayName}</p>
+                <p id="signup-display-name-error" role="alert" className="text-red-600 text-sm mt-1">{errors.displayName}</p>
               )}
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">Email</label>
+              <label htmlFor="signup-email" className="block text-sm font-medium mb-1">Email</label>
               <Input
+                id="signup-email"
                 type="email"
                 value={formData.email}
                 onChange={(e) =>
@@ -130,15 +137,18 @@ export default function SignUp() {
                 }
                 placeholder="your@email.com"
                 disabled={isLoading}
+                aria-invalid={Boolean(errors.email)}
+                aria-describedby={errors.email ? "signup-email-error" : undefined}
               />
               {errors.email && (
-                <p className="text-red-600 text-sm mt-1">{errors.email}</p>
+                <p id="signup-email-error" role="alert" className="text-red-600 text-sm mt-1">{errors.email}</p>
               )}
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">Password</label>
+              <label htmlFor="signup-password" className="block text-sm font-medium mb-1">Password</label>
               <Input
+                id="signup-password"
                 type="password"
                 value={formData.password}
                 onChange={(e) =>
@@ -146,17 +156,19 @@ export default function SignUp() {
                 }
                 placeholder="Create a strong password"
                 disabled={isLoading}
+                aria-invalid={Boolean(errors.password)}
+                aria-describedby={errors.password ? "signup-password-error" : "signup-password-help"}
               />
               {errors.password && (
-                <p className="text-red-600 text-sm mt-1">{errors.password}</p>
+                <p id="signup-password-error" role="alert" className="text-red-600 text-sm mt-1">{errors.password}</p>
               )}
-              <p className="text-xs text-gray-500 mt-1">
+              <p id="signup-password-help" className="text-xs text-gray-500 mt-1">
                 At least 8 characters with uppercase, lowercase, and numbers
               </p>
             </div>
 
             {errors.submit && (
-              <p className="text-red-600 text-sm">{errors.submit}</p>
+              <p role="alert" className="text-red-600 text-sm">{errors.submit}</p>
             )}
 
             <Button

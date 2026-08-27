@@ -87,6 +87,7 @@ export function VideoChatPanel({ roomUrl, displayName, onClose }: VideoChatPanel
           className="h-7 w-7 p-0 text-gray-400 hover:text-white hover:bg-gray-700"
           onClick={onClose}
           title="End call and close"
+          aria-label="End video call and close panel"
         >
           <X className="w-4 h-4" />
         </Button>

@@ -1,23 +1,14 @@
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
+import { lazy, Suspense } from "react";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
 import ItemDetail from "./pages/ItemDetail";
-import Inventory from "./pages/Inventory";
-import AddInventory from "./pages/AddInventory";
-import Profile from "./pages/Profile";
-import Messages from "./pages/Messages";
 import MemberSearch from "./pages/MemberSearch";
 import CategoryPage from "./pages/CategoryPage";
-import ReportUser from "./pages/ReportUser";
-import MyReports from "./pages/MyReports";
-import ReferralRequest from "./pages/ReferralRequest";
-import Watchlist from "./pages/Watchlist";
-import AccountSetup from "./pages/AccountSetup";
-import AccountSettings from "./pages/AccountSettings";
 import PublicProfile from "./pages/PublicProfile";
 import VerifiedMerchants from "./pages/VerifiedMerchants";
 import SignUp from "./pages/SignUp";
@@ -29,29 +20,44 @@ import { ForgotPassword } from "./pages/ForgotPassword";
 import { ResetPassword } from "./pages/ResetPassword";
 import LegacyProfileCompletionRedirect from "./pages/LegacyProfileCompletionRedirect";
 import { SearchResults } from "./pages/SearchResults";
-import AdminDashboard from "./pages/AdminDashboard";
 import Conventions from "./pages/Conventions";
 import Contact from "./pages/Contact";
 import { Forum } from "./pages/Forum";
 import { ForumTopic } from "./pages/ForumTopic";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
-import TradeHub from "./pages/TradeHub";
 import TradeShowcase from "./pages/TradeShowcase";
-import WarRoom from "./pages/WarRoom";
-import TradePrintView from "./pages/TradePrintView";
 import TradeVoting from "./pages/TradeVoting";
-import TestAI from "./pages/TestAI";
 import ComingSoon from "./pages/ComingSoon";
 import ComingSoonDirections from "./pages/ComingSoonDirections";
 import HowTradebiliaWorks from "./pages/HowTradebiliaWorks";
-import TradeRoomGuideCapture from "./pages/TradeRoomGuideCapture";
 import {
   AllMostViewedRankings,
   AllMostFavoritedRankings,
   AllRatedTradersRankings,
   AllHighestTradeValuesRankings,
 } from "./pages/RankingPages";
+
+const Inventory = lazy(() => import("./pages/Inventory"));
+const AddInventory = lazy(() => import("./pages/AddInventory"));
+const Profile = lazy(() => import("./pages/Profile"));
+const Messages = lazy(() => import("./pages/Messages"));
+const ReportUser = lazy(() => import("./pages/ReportUser"));
+const MyReports = lazy(() => import("./pages/MyReports"));
+const ReferralRequest = lazy(() => import("./pages/ReferralRequest"));
+const Watchlist = lazy(() => import("./pages/Watchlist"));
+const AccountSetup = lazy(() => import("./pages/AccountSetup"));
+const AccountSettings = lazy(() => import("./pages/AccountSettings"));
+const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
+const TradeHub = lazy(() => import("./pages/TradeHub"));
+const WarRoom = lazy(() => import("./pages/WarRoom"));
+const TradePrintView = lazy(() => import("./pages/TradePrintView"));
+const TestAI = lazy(() => import("./pages/TestAI"));
+const TradeRoomGuideCapture = lazy(() => import("./pages/TradeRoomGuideCapture"));
+
+function RouteLoadingFallback() {
+  return <main role="status" aria-live="polite" className="grid min-h-[50vh] place-items-center text-slate-600">Loading Tradebilia…</main>;
+}
 
 function Router() {
   return (
@@ -175,7 +181,9 @@ function App() {
       <ThemeProvider defaultTheme="light">
         <TooltipProvider>
           <Toaster richColors position="top-right" />
-          <Router />
+          <Suspense fallback={<RouteLoadingFallback />}>
+            <Router />
+          </Suspense>
         </TooltipProvider>
       </ThemeProvider>
     </ErrorBoundary>

@@ -6,9 +6,12 @@ const source = readFileSync(resolve(__dirname, "../client/src/components/TopBar.
 
 describe("authenticated mobile top bar", () => {
   it("keeps a phone-only authenticated icon group visible beside a reserved search field", () => {
-    expect(source).toContain('className="flex min-h-14 items-center gap-2 px-2 py-2 sm:hidden"');
-    expect(source).toContain('className="flex w-[40vw] max-w-[170px] flex-none items-center gap-0 rounded-lg bg-white px-3 py-2"');
-    expect(source).toContain('<TopRightIcons className="flex items-center gap-1" iconColor="text-white/70" />');
+    const mobileSection = source.match(/<div className="flex min-h-14[\s\S]*?<div className="hidden min-h-14/);
+
+    expect(mobileSection?.[0]).toContain("sm:hidden");
+    expect(mobileSection?.[0]).toContain("w-[40vw]");
+    expect(mobileSection?.[0]).toContain("max-w-[170px]");
+    expect(mobileSection?.[0]).toContain("<TopRightIcons");
     expect(source).toContain('aria-label="Sign Out"');
   });
 

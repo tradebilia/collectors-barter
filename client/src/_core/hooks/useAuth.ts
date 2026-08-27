@@ -79,15 +79,6 @@ export function useAuth(options?: UseAuthOptions) {
   ]);
 
   useEffect(() => {
-    try {
-      localStorage.setItem("manus-runtime-user-info", JSON.stringify(resolvedUser));
-    } catch {
-      // Storage can be unavailable inside an embedded preview; auth state still
-      // lives in React Query and must not fail during render.
-    }
-  }, [resolvedUser]);
-
-  useEffect(() => {
     if (!redirectOnUnauthenticated) return;
     if (meQuery.isLoading || logoutMutation.isPending) return;
     if (state.user) return;

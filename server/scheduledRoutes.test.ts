@@ -303,6 +303,33 @@ describe("tradeReminders", () => {
     expect(all).toContain("tradeAdminLog");
   });
 
+  it("preserves an accepted confirmation when its proposal is no longer eligible for cancellation", async () => {
+    const statements: string[] = [];
+    const execute = vi.fn(async (q: any) => {
+      const text: string = Array.isArray(q?.queryChunks)
+        ? q.queryChunks.map((c: any) => (typeof c === "string" ? c : c?.value ?? "")).flat().join(" ")
+        : String(q?.sql ?? "");
+      statements.push(text);
+      const isSelect = /^\s*SELECT/i.test(text);
+      if (isSelect) {
+        const selectCount = statements.filter(s => /^\s*SELECT/i.test(s)).length;
+        if (selectCount === 1) return [[{ proposalId: 77 }], []];
+        return [[], []];
+      }
+      if (text.includes("72-hour acceptance window expired")) return [{ affectedRows: 0 }, []];
+      return [{ affectedRows: 0 }, []];
+    });
+    const { app } = makeApp({ requireDb: vi.fn(async () => ({ execute })) } as any);
+    const res = await request(app).post("/api/scheduled/tradeReminders");
+
+    expect(res.status).toBe(200);
+    expect(res.body.acceptanceTimedOut).toBe(0);
+    const all = statements.join(" | ");
+    expect(all).toContain("INNER JOIN tradeProposals");
+    expect(all).toContain("tp.status = 'negotiating'");
+    expect(all).not.toContain("DELETE FROM tradeReceiptConfirmation");
+  });
+
   it("returns 500 when the database fails mid-run", async () => {
     const { app } = makeApp({
       requireDb: vi.fn(async () => ({

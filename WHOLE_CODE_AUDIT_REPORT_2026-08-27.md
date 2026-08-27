@@ -146,7 +146,15 @@ Rich approved the three P0 items after this report was issued. All three have no
 | Daily shipment reminders | The existing job was refreshed in place with the same task identity, POST method, route, daily 14:00 UTC schedule, payload, and reminder policy. A read-only lifecycle preflight confirmed zero eligible actions. The controlled verification returned HTTP 200 at 2026-08-27T15:11:08Z with all action counts at zero, and the next scheduled execution is 2026-08-28T14:00:00Z. | **Resolved** |
 | Provider-token encryption | A new AES-256-GCM key was generated and stored only in secure project settings. A focused test verified its 64-hex-character format and a local encrypt/decrypt round trip without displaying a key or token. eBay, Facebook, and LinkedIn callbacks now stop before token exchange if encryption is unavailable, and each connection card gives a clear temporary-unavailable explanation. | **Resolved** |
 
-The complete P0-focused test set passed: **5 files and 40 tests**. The complete suite retains two pre-existing brittle mobile UI test-contract failures, while TypeScript checking and the production build both pass. No customer, marketplace, trade, Membership, Stripe, or provider-account records were created or changed during these repairs.
+The complete P0-focused test set passed: **5 files and 40 tests**. The formerly brittle mobile UI test contracts were remediated in the later P2 hardening pass; TypeScript checking and production builds continue to pass. No customer, marketplace, trade, Membership, Stripe, or provider-account records were created or changed during these repairs.
+
+## P2 Remediation Update — August 27, 2026
+
+Rich approved the five P2 hardening items. They were restored after a sandbox reset to the P2 recovery checkpoint and then revalidated. Responsive tests now verify actual Account Settings tab availability and phone header controls rather than JSX formatting. The daily acceptance cleanup selects only still-negotiating proposals and preserves a confirmation whenever its guarded cancellation does not affect the proposal. Sign Up controls now associate labels, help, and validation errors accessibly, and the Trade Room video panel close action has an explicit accessible name.[39] [40] [41]
+
+Infrequently used authenticated and administrator routes now load on demand behind an accessible loading state. The main production asset is 1,790,690 bytes, down from the original 3,749,720 bytes; all active routes remain available as separate on-demand chunks. Broad `localStorage` persistence of the resolved user was removed. The embedded preview may retain only the minimum display user in `sessionStorage` for 30 minutes, subject to validation and logout cleanup; normal live-domain cookie authentication remains unchanged.[41] [42]
+
+The final P2 validation completed with **141 passing test files, 430 passing tests, and four intentionally skipped tests**. TypeScript, production build, and the production dependency audit passed; the latter reports zero advisories in every severity category. Desktop homepage and Sign Up visual checks also passed.[42] [43]
 
 ## References
 
@@ -188,3 +196,8 @@ The complete P0-focused test set passed: **5 files and 40 tests**. The complete 
 [36]: ./drizzle/0011_p1_contact_intake_hardening.sql "Approved contact-intake migration"
 [37]: /tmp/tradebilia-p1-audit-final.json "Final production dependency audit"
 [38]: /tmp/tradebilia-p1-full-test.log "Final full-suite test summary"
+[39]: ./server/mobileAuthenticatedLayouts.test.ts "Responsive Account Settings behavior contract"
+[40]: ./server/scheduledRoutes.ts "Guarded acceptance-timeout cleanup"
+[41]: ./server/p2Accessibility.test.ts "P2 accessibility contract"
+[42]: ./server/p2PerformanceAndSession.test.ts "P2 route-loading and preview-session regression coverage"
+[43]: /tmp/tradebilia-p2-recovery-full-test.log "Recovered P2 full-suite validation"

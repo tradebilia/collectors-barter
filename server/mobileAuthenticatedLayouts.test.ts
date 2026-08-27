@@ -27,9 +27,16 @@ describe("authenticated mobile-only responsive layout contracts", () => {
     expect(source).toContain("overflow-x-auto pb-2 lg:pb-0");
   });
 
-  it("keeps account settings tabs horizontally usable on phones and five-column on larger screens", () => {
+  it("keeps every Account Settings tab reachable on phones and arranged as a desktop grid", () => {
     const source = read("client/src/pages/AccountSettings.tsx");
-    expect(source).toContain("overflow-x-auto rounded-lg bg-slate-200 p-1 sm:grid sm:grid-cols-5");
+    const tabsList = source.match(/<TabsList className="([^"]+)"/);
+    const tabValues = [...source.matchAll(/<TabsTrigger[^>]*value="([^"]+)"/g)].map((match) => match[1]);
+
+    expect(tabsList?.[1]).toContain("overflow-x-auto");
+    expect(tabsList?.[1]).toContain("sm:grid");
+    expect(tabsList?.[1]).toMatch(/sm:grid-cols-[5-9]/);
+    expect(tabValues).toHaveLength(6);
+    expect(new Set(tabValues)).toEqual(new Set(["profile", "membership", "security", "integrations", "communications", "preferences"]));
     expect(source).toContain("grid grid-cols-1 gap-4 sm:grid-cols-2");
     expect(source).toContain("grid grid-cols-1 gap-3 sm:grid-cols-2");
   });
