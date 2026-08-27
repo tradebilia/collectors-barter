@@ -1,6 +1,5 @@
 import { z } from "zod";
 import { verifyPayPalTransaction } from "./paypal";
-import { assertSubscriptionAccess } from "./membership";
 import { resolveDirectMessageDisplayName } from "./directMessageDisplayName";
 import { sendVerificationCode, checkVerificationCode, normalizePhone, maskPhone } from "./twilio";
 import { COOKIE_NAME } from "@shared/const";
@@ -110,7 +109,7 @@ import { alias } from "drizzle-orm/mysql-core";
 import { TRPCError } from "@trpc/server";
 import { ONE_YEAR_MS } from "@shared/const";
 import { subscribeToLaunchUpdates } from "./launchUpdates";
-import { getPreLaunchBroadcastStatuses, getPreLaunchRecipients, sendPreLaunchUpdate } from "./preLaunchEmail";
+import { getPreLaunchRecipients, sendPreLaunchUpdate } from "./preLaunchEmail";
 import { validateFirstTimeSetupRequirements } from "./accountSetupRequirements";
 import { PASSWORD_RECOVERY_TOKEN_TTL_MS, createOpaqueRecoveryToken, createSixDigitCode, hashRecoveryToken, isRecoveryRequestAllowed, isRecoveryTokenExpired, normalizeRecoveryEmail, timingSafeTextEquals } from "./accountRecovery";
 import { createPendingEmailHistoryApproval, requireMarketplaceApproval } from "./accountApproval";
@@ -596,11 +595,11 @@ export const appRouter = router({
 
 
   members: router({
-    search: publicProcedure.input(memberSearchSchema.optional()).query(({ input }) => {
-      return searchMembers(input ?? {});
+    search: publicProcedure.input(memberSearchSchema.optional()).query(({ ctx, input }) => {
+      return searchMembers(input ?? {}, ctx.user ? { id: ctx.user.id, role: ctx.user.role } : null);
     }),
     searchNearby: protectedProcedure.input(memberSearchSchema).query(({ ctx, input }) => {
-      return searchMembers(input, ctx.user.id);
+      return searchMembers(input, { id: ctx.user.id, role: ctx.user.role });
     }),
     startDirectMessageThread: protectedProcedure
       .input(z.object({ recipientId: z.number().int().positive() }))
@@ -609,6 +608,14 @@ export const appRouter = router({
           throw new TRPCError({ code: "BAD_REQUEST", message: "You cannot message yourself." });
         }
         const db = await requireDb();
+        const recipientProfile = await db
+          .select({ receiveContactRequests: userProfiles.receiveContactRequests })
+          .from(userProfiles)
+          .where(eq(userProfiles.userId, input.recipientId))
+          .limit(1);
+        if (recipientProfile[0]?.receiveContactRequests === 0) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "This collector is not accepting contact requests." });
+        }
         const { threadId } = await getOrCreateDirectMessageThread(db as any, {
           participantAId: ctx.user.id,
           participantBId: input.recipientId,
@@ -699,9 +706,14 @@ export const appRouter = router({
         }
 
         const [profileRows] = await db.execute(
-          sql`SELECT avatarUrl, preferredCategories FROM userProfiles WHERE userId = ${input.userId}`
+          sql`SELECT displayName, avatarUrl, bio, contactTown, contactState, preferredCategories, showProfile, hideInventoryValue FROM userProfiles WHERE userId = ${input.userId}`
         );
         const profileRow = Array.isArray(profileRows) ? (profileRows as any[])[0] : profileRows;
+        const viewerMayBypassProfilePrivacy = ctx.user?.id === input.userId || ctx.user?.role === "admin";
+        if (profileRow?.showProfile === 0 && !viewerMayBypassProfilePrivacy) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Profile not available" });
+        }
+        const shouldHideInventoryValue = profileRow?.hideInventoryValue === 1 && !viewerMayBypassProfilePrivacy;
 
         const [recentListingsRows] = await db.execute(
           sql`SELECT 
@@ -748,7 +760,14 @@ export const appRouter = router({
 
         return {
           user: userRow,
-          profile: profileRow || null,
+          profile: profileRow ? {
+            displayName: profileRow.displayName,
+            avatarUrl: profileRow.avatarUrl,
+            bio: profileRow.bio,
+            contactTown: profileRow.contactTown,
+            contactState: profileRow.contactState,
+            preferredCategories: profileRow.preferredCategories,
+          } : null,
           stats: {
             itemsListed: stats.itemsListed || 0,
             completedTrades: stats.completedTrades || 0,
@@ -766,7 +785,9 @@ export const appRouter = router({
             },
           },
           reviews,
-          recentListings: recentListingsArr,
+          recentListings: shouldHideInventoryValue
+            ? recentListingsArr.map((listing: any) => ({ ...listing, estimatedValue: null }))
+            : recentListingsArr,
         };
       }),
     search: publicProcedure
@@ -812,7 +833,6 @@ export const appRouter = router({
         }),
       )
       .query(async ({ ctx, input }) => {
-        await assertSubscriptionAccess(ctx.user?.id ?? null);
         const detail = await getListingDetail(input.listingId, ctx.user?.id ?? null);
         return { listing: detail };
       }),
@@ -1626,11 +1646,19 @@ export const appRouter = router({
         }),
       )
       .mutation(async ({ ctx, input }) => {
+        const db = await requireDb();
+        const recipientProfile = await db
+          .select({ receiveContactRequests: userProfiles.receiveContactRequests })
+          .from(userProfiles)
+          .where(eq(userProfiles.userId, input.recipientId))
+          .limit(1);
+        if (recipientProfile[0]?.receiveContactRequests === 0) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "This collector is not accepting contact requests." });
+        }
         const senderDisplayName = await getCommunicationDisplayName(ctx.user.id);
         const result = await sendItemInquiry({ id: ctx.user.id, name: ctx.user.name }, input);
 
         // Send email notification to recipient if messages.email enabled (fire-and-forget)
-        const db = await requireDb();
         const recipientUser = await db
           .select({ email: users.email, name: users.name })
           .from(users)
@@ -2439,7 +2467,13 @@ export const appRouter = router({
       };
       const csv = (headers: string[], rows: unknown[][]) => [headers, ...rows].map((row) => row.map(csvCell).join(',')).join('\n');
       const recordExport = async () => {
-        await db.insert(adminActivityLog).values({ adminId: ctx.user.id, action: 'operational_csv_exported', targetType: 'operational_export', targetReference: input.kind, summary: `Generated ${input.kind.replaceAll('_', ' ')} CSV export` });
+        await db.insert(adminActivityLog).values({
+          adminId: ctx.user.id,
+          action: 'operational_csv_exported',
+          targetType: 'operational_export',
+          targetReference: input.kind,
+          summary: `Generated ${input.kind.replaceAll('_', ' ')} CSV export`,
+        });
       };
       if (input.kind === 'listings') {
         const [rows] = await db.execute(sql`SELECT l.id, l.title, l.category, l.status, l.estimatedValue, COALESCE(NULLIF(up.displayName, ''), NULLIF(u.displayName, ''), u.username, CONCAT('Collector ', l.ownerId)) AS owner, l.createdAt FROM listings l LEFT JOIN users u ON u.id = l.ownerId LEFT JOIN userProfiles up ON up.userId = l.ownerId ORDER BY l.createdAt DESC LIMIT 5000`);
@@ -2806,12 +2840,8 @@ export const appRouter = router({
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
       return getPreLaunchRecipients();
     }),
-    getPreLaunchBroadcastStatuses: protectedProcedure.query(async ({ ctx }) => {
-      if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
-      return getPreLaunchBroadcastStatuses();
-    }),
     sendPreLaunchUpdate: protectedProcedure
-      .input(z.object({ subject: z.string().trim().min(1).max(160), message: z.string().trim().min(1).max(5000), recipientIds: z.array(z.string().min(1)).min(1).max(500) }))
+      .input(z.object({ subject: z.string().trim().min(1).max(160), message: z.string().trim().min(1).max(5000) }))
       .mutation(async ({ ctx, input }) => {
         if (ctx.user.role !== 'admin') {
           throw new TRPCError({ code: 'FORBIDDEN', message: 'Only admins can send Pre-Launch Email updates' });
@@ -2840,24 +2870,24 @@ export const appRouter = router({
         if (unEmailedReferrals.length === 0) {
           return { success: true, emailsSent: 0, skipped: referrals.length };
         }
+        // Send emails one by one
+        let sent = 0;
         const sentIds: number[] = [];
-        const concurrency = 5;
-        for (let start = 0; start < unEmailedReferrals.length; start += concurrency) {
-          const batch = unEmailedReferrals.slice(start, start + concurrency);
-          const outcomes = await Promise.all(batch.map(async referral => ({
-            id: referral.id,
-            sent: await sendReferralInviteEmail({
-              recipientEmail: (referral as any).collectorEmail,
-              recipientName: (referral as any).collectorName,
-              subject: input.subject,
-              body: input.message,
-            }),
-          })));
-          sentIds.push(...outcomes.filter(outcome => outcome.sent).map(outcome => outcome.id));
+        for (const referral of unEmailedReferrals) {
+          const ok = await sendReferralInviteEmail({
+            recipientEmail: (referral as any).collectorEmail,
+            recipientName: (referral as any).collectorName,
+            subject: input.subject,
+            body: input.message,
+          });
+          if (ok) {
+            sent++;
+            sentIds.push(referral.id);
+          }
         }
         // Mark successfully-sent referrals as emailed
         await markReferralsAsEmailed(sentIds);
-        return { success: true, emailsSent: sentIds.length, skipped: referrals.length - unEmailedReferrals.length };
+        return { success: true, emailsSent: sent, skipped: referrals.length - unEmailedReferrals.length };
       }),
     removeReferralByEmail: protectedProcedure
       .input(z.object({ referralId: z.number(), userId: z.number() }))
@@ -3132,6 +3162,8 @@ export const appRouter = router({
       const db = await requireDb();
       const [rows] = await db.execute(
         sql`SELECT st.*, u.username, u.displayName, u.email,
+                   COALESCE(NULLIF(u.displayName, ''), u.username, st.submittedByName, 'Anonymous visitor') AS submitterDisplayName,
+                   COALESCE(u.email, st.submittedByEmail) AS submitterEmail,
                    a.username as assignedAdminUsername
             FROM supportTickets st
             LEFT JOIN users u ON u.id = st.userId

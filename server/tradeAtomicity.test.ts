@@ -27,7 +27,7 @@ describe("Trade Room atomicity and retry-safety contracts", () => {
     expect(acceptance).toContain("db.transaction(async (tx)");
     expect(acceptance).toContain("SELECT * FROM tradeProposals WHERE id = ${input.proposalId} FOR UPDATE");
     expect(acceptance).toContain("SELECT userId FROM tradeReceiptConfirmation");
-    expect(acceptance).toContain("if (proposal.status === 'shipping')");
+    expect(acceptance).toContain("proposal.status === 'accepted' || proposal.status === 'shipping'");
     expect(acceptance).toContain("alreadyAccepted: true");
     expect(acceptance).toContain("!acceptance.alreadyAccepted && acceptance.notification === 'mutual'");
   });
