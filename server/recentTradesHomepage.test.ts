@@ -23,6 +23,8 @@ describe("homepage Recent Trades carousel", () => {
     expect(carouselSource).toContain("text-[2.45rem]");
     expect(carouselSource).toContain('alignment="end"');
     expect(carouselSource).toContain('alignment="start"');
+    expect(carouselSource).toContain('className="h-16 w-16');
+    expect(carouselSource).toContain('className="h-10 w-10 text-violet-600"');
     expect(carouselSource).not.toContain("Tradebilia exchange activity");
     expect(carouselSource).not.toContain("Completed trade");
     expect(carouselSource).not.toContain("Previous");
