@@ -1447,8 +1447,9 @@ export async function searchMembers(input: {
   memberSince?: "past_year" | "past_three_years" | "longstanding";
   distanceMiles?: number;
   sort?: "best_match" | "best_rated" | "most_trades" | "most_listings" | "newest" | "nearest";
-}, originUserId?: number) {
+}, viewer?: { id: number; role?: string | null } | null) {
   const db = await requireDb();
+  const originUserId = viewer?.id;
 
   const whereClauses: any[] = [];
 
@@ -1466,6 +1467,16 @@ export async function searchMembers(input: {
     whereClauses.push(eq(userProfiles.contactState, input.region.trim()));
   }
 
+  // Hidden profiles remain available to their owner and administrators, but
+  // are removed from all other public/member discovery results.
+  if (viewer?.role !== "admin") {
+    whereClauses.push(
+      originUserId
+        ? or(eq(userProfiles.showProfile, 1), eq(userProfiles.userId, originUserId))
+        : eq(userProfiles.showProfile, 1),
+    );
+  }
+
   const members = await db
     .select({
       userId: userProfiles.userId,
@@ -1477,6 +1488,7 @@ export async function searchMembers(input: {
       contactAddress: userProfiles.contactAddress,
       contactZipCode: userProfiles.contactZipCode,
       contactCountry: userProfiles.contactCountry,
+      hideInventoryValue: userProfiles.hideInventoryValue,
       profileCreatedAt: userProfiles.createdAt,
       merchantVerified: users.merchantVerified,
       username: users.username,
@@ -1566,7 +1578,10 @@ export async function searchMembers(input: {
       averageRating: rating.averageRating,
       reviewCount: rating.reviewCount,
       listingCount: listingCountMap.get(m.userId) ?? 0,
-      activeListingValue: listingValueMap.get(m.userId) ?? 0,
+      // Full location is used only by the server's optional distance filter
+      // and is stripped from every response below. Hidden values cannot be
+      // inferred through directory value filters or sorting.
+      activeListingValue: m.hideInventoryValue === 1 ? null : (listingValueMap.get(m.userId) ?? 0),
       completedTradeCount,
       topCategories: topCategoriesMap.get(m.userId) ?? [],
       firstListingId: firstListingMap.get(m.userId) ?? null,
@@ -1594,8 +1609,8 @@ export async function searchMembers(input: {
     if (input.minReviewCount && member.reviewCount < input.minReviewCount) return false;
     if (input.minCompletedTrades && member.completedTradeCount < input.minCompletedTrades) return false;
     if (input.activeListingsOnly && member.listingCount === 0) return false;
-    if (input.listingValueMin !== undefined && member.activeListingValue < input.listingValueMin) return false;
-    if (input.listingValueMax !== undefined && member.activeListingValue > input.listingValueMax) return false;
+    if (input.listingValueMin !== undefined && (member.activeListingValue === null || member.activeListingValue < input.listingValueMin)) return false;
+    if (input.listingValueMax !== undefined && (member.activeListingValue === null || member.activeListingValue > input.listingValueMax)) return false;
     if (input.memberSince === "past_year" && member.joinedAt < pastYear) return false;
     if (input.memberSince === "past_three_years" && member.joinedAt < pastThreeYears) return false;
     if (input.memberSince === "longstanding" && member.joinedAt > pastThreeYears) return false;
@@ -1646,7 +1661,7 @@ export async function searchMembers(input: {
       case "most_trades":
         return b.completedTradeCount - a.completedTradeCount || b.averageRating - a.averageRating || a.displayName.localeCompare(b.displayName);
       case "most_listings":
-        return b.listingCount - a.listingCount || b.activeListingValue - a.activeListingValue || a.displayName.localeCompare(b.displayName);
+        return b.listingCount - a.listingCount || (b.activeListingValue ?? -1) - (a.activeListingValue ?? -1) || a.displayName.localeCompare(b.displayName);
       case "newest":
         return b.joinedAt - a.joinedAt || a.displayName.localeCompare(b.displayName);
       case "nearest":

@@ -534,7 +534,7 @@ export const tradeFlowRouter = router({
           throw new TRPCError({ code: 'FORBIDDEN', message: 'Not authorized' });
         }
         const otherUserId = proposal.requesterId === userId ? proposal.recipientId : proposal.requesterId;
-        if (proposal.status === 'shipping') {
+        if (proposal.status === 'accepted' || proposal.status === 'shipping') {
           return { success: true, mutualAcceptance: true, alreadyAccepted: true, otherUserId, tradeReferenceNumber: proposal.tradeReferenceNumber, actorName: null, notification: 'none' as const };
         }
         if (!['negotiating'].includes(proposal.status)) {
@@ -551,9 +551,11 @@ export const tradeFlowRouter = router({
         }
 
       if (otherHasAccepted) {
-        // Both have now accepted — move to 'shipping' status and lock items
+        // Both have now accepted — keep the trade in Review while locking its
+        // agreed items. Shipping and its deadline begin only once both people
+        // confirm this final review through proceedToShipping.
         await db.execute(
-          sql`UPDATE tradeProposals SET status = 'shipping', acceptedAt = ${now}, shippingAt = ${now}, shippingDeadline = DATE_ADD(${now}, INTERVAL 3 DAY), lastActivityAt = ${now}, updatedAt = ${now} WHERE id = ${input.proposalId}`
+          sql`UPDATE tradeProposals SET status = 'accepted', acceptedAt = ${now}, shippingAt = NULL, shippingDeadline = NULL, lastActivityAt = ${now}, updatedAt = ${now} WHERE id = ${input.proposalId}`
         );
         // Lock all items in this trade (mark as 'traded' in listings)
         await db.execute(
@@ -562,9 +564,9 @@ export const tradeFlowRouter = router({
         await db.execute(
           sql`UPDATE listings SET status = 'traded' WHERE id = ${proposal.requestedListingId}`
         );
-          await createTradeAlert(db, input.proposalId, otherUserId, 'accepted', `Both parties have accepted trade (TR-${proposal.tradeReferenceNumber})! Please enter your tracking number.`, now);
+          await createTradeAlert(db, input.proposalId, otherUserId, 'accepted', `Both parties have accepted trade (TR-${proposal.tradeReferenceNumber})! Please review the final terms and confirm when ready to ship.`, now);
         await db.execute(
-          sql`INSERT INTO tradeAdminLog (proposalId, eventType, actorUserId, details, createdAt) VALUES (${input.proposalId}, 'accepted', ${userId}, 'Mutual acceptance — trade locked, entering shipping stage', ${now})`
+          sql`INSERT INTO tradeAdminLog (proposalId, eventType, actorUserId, details, createdAt) VALUES (${input.proposalId}, 'accepted', ${userId}, 'Mutual acceptance — trade locked, entering Review stage', ${now})`
         );
         // Clean up the acceptance records
         await db.execute(
@@ -583,7 +585,7 @@ export const tradeFlowRouter = router({
         const [acceptor2] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
         const acceptorName2 = (acceptor2 as any)?.displayName || (acceptor2 as any)?.username || 'Unknown';
         await db.execute(
-          sql`INSERT INTO tradeActivityLog (proposalId, actorId, actorName, eventType, details, createdAt) VALUES (${input.proposalId}, ${userId}, ${acceptorName2}, 'proposal_accepted', 'Both parties accepted — trade locked! Entering shipping stage.', ${now})`
+          sql`INSERT INTO tradeActivityLog (proposalId, actorId, actorName, eventType, details, createdAt) VALUES (${input.proposalId}, ${userId}, ${acceptorName2}, 'proposal_accepted', 'Both parties accepted — trade locked! Entering Review stage.', ${now})`
         );
         return { success: true, mutualAcceptance: true, alreadyAccepted: false, otherUserId, tradeReferenceNumber: proposal.tradeReferenceNumber, actorName: acceptorName2, notification: 'mutual' as const };
       } else {

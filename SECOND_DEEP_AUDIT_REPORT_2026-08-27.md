@@ -2,34 +2,34 @@
 
 **Audit date:** August 27, 2026  
 **Scope:** A second read-only audit of the updated post-P0/P1/P2 project. It examined client and server code, custom-TiDB schema/constraints, authentication and authorization, profile privacy, marketplace and trade state transitions, messages, reporting, administrator tools, Stripe sandbox, PayPal verification, storage, external providers, scheduled work, runtime startup, tests, dependencies, and deployment-facing controls.  
-**Change boundary:** No application code, database record/schema, schedule, Stripe setting/subscription, provider account, or secret was changed during this audit. This report and the tracker entry are documentation only.
+**Audit boundary:** No application code, database record/schema, schedule, Stripe setting/subscription, provider account, or secret was changed during this audit. This report and the tracker entry were initially documentation only. The two P0 findings below were subsequently approved and repaired; the repair record appears in the next section.
 
 ## Bottom Line
 
-The prior P0–P2 remediations remain materially intact: the fresh baseline passed **430 tests with four intentional skips**, TypeScript checking and the production build completed, and the production dependency audit remained clean. The review did, however, identify **two critical newly confirmed defects** that require approval before release: privacy controls do not control all public/member-facing data paths, and the trade flow skips the Review status that the PayPal verification feature requires. [1] [2] [3]
+The prior P0–P2 remediations remained materially intact: the fresh baseline passed **430 tests with four intentional skips**, TypeScript checking and the production build completed, and the production dependency audit remained clean. The review identified two critical defects—privacy controls did not govern all public/member-facing data paths, and the trade flow skipped the Review state that PayPal verification requires. Both were subsequently approved and repaired. [1] [2] [3]
 
 The audit also found one already-observed duplicate review group in the custom TiDB database and several trade workflow tables whose “unique” index names are not backed by real unique constraints. Other findings are reliability or data-retention concerns that should be repaired in a controlled follow-up batch. [4]
 
 | Priority | Status | Finding | Practical effect |
 | --- | --- | --- | --- |
-| **P0** | **Confirmed** | Profile and location privacy settings are not enforced across profile/member-search APIs. | A profile marked hidden can still be fetched publicly; a signed-in member search response includes another member’s full stored street address and postal code. |
-| **P0** | **Confirmed** | Mutual trade acceptance jumps directly to Shipping while Review and PayPal verification require `accepted`. | The Review step is bypassed, items are locked and shipping time begins, and cash-trade payment verification cannot be used in the normal completed-acceptance flow. |
+| **P0** | **Repaired** | Profile visibility, inventory-value, and contact-request preferences were not enforced across all profile/member-search/contact APIs. | Hidden profiles were discoverable, inventory values could be inferred through directory values, and opted-out members could still receive new contacts. Full street addresses were already stripped from the member-search response; the earlier audit wording on client-address exposure was corrected. |
+| **P0** | **Repaired** | Mutual trade acceptance jumped directly to Shipping while Review and PayPal verification require `accepted`. | The Review step was bypassed, items were locked and shipping time began, and cash-trade payment verification could not be used in the normal completed-acceptance flow. |
 | **P1** | **Confirmed** | Workflow “unique” constraints are ordinary indexes; one duplicate review pair already exists. | Repeated reviews/votes/notes/receipt/tracking/item associations can be created by concurrent or repeated requests. |
 | **P1** | **Confirmed** | A participant can delete shared messages/inquiries for both people. | One member can permanently remove conversation evidence visible to the other member. |
 | **P1** | **Confirmed** | Scheduled escalation and outbound provider calls have avoidable reliability gaps. | A race can escalate a trade that just advanced; a slow email/SMS/lookup provider can hold a request indefinitely. |
 | **P1** | **Confirmed** | Defined startup validation is not executed by the server entry point. | Misconfigured dependencies can appear as later user-facing failures rather than a clear failed startup. |
 
-## P0 — Fix Before Relying on These Features
+## P0 — Approved and Repaired
 
 ### 1. Saved privacy choices are bypassed by profile and member-search data paths
 
-Tradebilia saves `showProfile`, `hideInventoryValue`, and `receiveContactRequests` preferences in account settings. However, the public `market.getUserProfile` procedure does not read any of those preferences before returning a profile, active listings, listing values, statistics, and visible reviews. A member who has switched off public profile visibility can therefore still be retrieved by the public endpoint. [1] [2]
+Tradebilia saves `showProfile`, `hideInventoryValue`, and `receiveContactRequests` preferences in account settings. Before the repair, the public `market.getUserProfile` procedure did not read those preferences before returning a profile, active listings, listing values, statistics, and visible reviews. A member who switched off public profile visibility could therefore still be retrieved by the public endpoint. [1] [2]
 
-The separate protected `searchMembers` path has a more serious information-disclosure issue: it selects `contactAddress`, `contactTown`, `contactState`, `contactZipCode`, and `contactCountry`, then returns them together as `privateLocation` to any authenticated searching member. It neither filters out profiles where `showProfile` is off nor removes those fields after its distance calculation. This is not merely an imprecise map result—the full location object is serialized into the API response. [1]
+The protected `searchMembers` path selected full address fields for server-side distance calculation. Direct review during remediation confirmed those fields were already stripped before the response; the original claim that a `privateLocation` object containing full street address was serialized to searchers was incorrect and has been corrected here. The confirmed defects were that the search did not exclude hidden profiles, and it could expose or use an inventory total despite the saved preference. [1]
 
-> **Impact:** A hidden member can remain discoverable, and a signed-in member can retrieve another member’s home street address and postal code through the member-search response. The street-address portion was not found in the public-profile response, but the privacy preference bypass is still public.
+> **Corrected impact:** A hidden member could remain discoverable, inventory values could remain visible in affected public/directory paths, and a member who declined contact requests could still receive a new inquiry or direct-message thread. Full home street address and postal code were not returned by the reviewed search response.
 
-**Minimal repair:** Enforce `showProfile = 1` at every public/search profile query except the account owner or administrator. Keep full address fields server-only for distance calculations; return only a coarse display region and numeric distance. Conditionally omit aggregate inventory value when `hideInventoryValue` is enabled. Enforce `receiveContactRequests` before inquiry/direct-message creation. Add server tests for public, authenticated non-owner, owner, and administrator cases.
+**Completed repair:** `showProfile` is now enforced at the public profile and member-search boundary for non-owners/non-administrators. Directory inventory values are omitted when hidden, contact-request preference is checked before new direct threads/inquiries, and full addresses remain server-only for distance calculations. Focused privacy tests and TypeScript passed.[1] [2]
 
 ### 2. Normal mutual acceptance bypasses Review and blocks PayPal verification
 
@@ -39,7 +39,11 @@ The P1 payment safeguard correctly derives an obligation from the locked proposa
 
 > **Impact:** The user-facing trade sequence does not match its own stages. Both parties can be sent into Shipping without a Review confirmation, while the direct PayPal verification capability is unavailable in the ordinary cash-trade path.
 
-**Minimal repair:** Preserve the `accepted` status after mutual proposal acceptance, keep the agreed items locked, and use the existing mutual `proceedToShipping` confirmation to start Shipping and its deadline. Align PayPal verification to the confirmed business state chosen for payment; do not simply relax its check to arbitrary later statuses. Add an end-to-end state-transition test for no-cash and cash trades.
+**Completed repair:** Mutual proposal acceptance now locks the agreed items while retaining the `accepted` Review status with no shipping deadline. The existing mutual `proceedToShipping` confirmation starts Shipping and its deadline. The server-derived positive-cash PayPal obligation remains available only in the intended Review state. Focused lifecycle, payment authorization, and atomicity tests plus TypeScript passed without creating a trade or payment.[5] [6] [7]
+
+## Post-Repair Validation
+
+The approved P0 changes were checked with six privacy tests and ten trade/payment lifecycle tests, all passing. TypeScript checking, production build, and production dependency audit also passed. The complete suite recorded 434 passing tests and four intentional skips; two external carrier credential checks timed out against UPS and USPS endpoints. Those timeouts are external-provider reliability issues already listed as P1 work and are unrelated to the P0 code changes. Public homepage and profile rendering remained visually intact after the repair.[3]
 
 ## P1 — Repair in the Next Controlled Batch
 
@@ -108,11 +112,11 @@ The audit did not simply repeat earlier findings. The following controls were sp
 
 | Batch | Scope | Reason for sequence |
 | --- | --- | --- |
-| **A — Privacy and trade-flow repair** | Enforce profile/search/contact preferences, remove client-address exposure, restore Review-before-Shipping, and make cash verification reachable in the chosen review state. | Resolves the two P0 findings and protects members before broader marketplace use. |
+| **A — Privacy and trade-flow repair** | Enforce profile/search/contact preferences, retain server-only distance data, restore Review-before-Shipping, and make cash verification reachable in the chosen review state. | **Completed.** The two P0 findings were repaired and focused regression validation passed. |
 | **B — Integrity and communication retention** | Reconcile duplicate review data, add narrowly scoped trade artifact constraints, make messaging/inquiry deletion per-user archival, and harden scheduled escalation idempotency. | Prevents repeated actions and unilateral loss of trade evidence. |
 | **C — Resilience and maintenance** | Add outbound timeouts, wire startup checks, harden trusted external return origins, clarify provider-preview behavior, update policy/comment text, and reduce manual admin-auth repetition. | Reduces operational failures without changing marketplace terms, membership mode, or payments. |
 
-No corrective work has begun from this audit. Please approve **Batch A**, **Batches A and B**, **all three batches**, or a smaller subset. Any approved repair will use a recovery checkpoint, narrow custom-TiDB preflight before database changes, focused tests, full revalidation, and normal GitHub synchronization.
+The P0 portion of Batch A is complete. No P1 or P2 corrective work from this audit has begun. Please approve **Batch B**, **Batch C**, both remaining batches, or a smaller subset. Any approved repair will use a recovery checkpoint, narrow custom-TiDB preflight before database changes, focused tests, full revalidation, and normal GitHub synchronization.
 
 ## References
 
