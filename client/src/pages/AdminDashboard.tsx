@@ -18,6 +18,7 @@ import { ReferralsTab } from "@/components/ReferralsTab";
 import { PreLaunchEmailTab } from "@/components/PreLaunchEmailTab";
 import { R2MediaMigrationTab } from "@/components/R2MediaMigrationTab";
 import { R2StorageHealthTab } from "@/components/R2StorageHealthTab";
+import { AdminOperationsTab } from "@/components/AdminOperationsTab";
 import { Link } from "wouter";
 import { DeleteConfirmationDialog } from "@/components/DeleteConfirmationDialog";
 
@@ -1003,10 +1004,18 @@ export default function AdminDashboard() {
               <AlertTriangle className="h-4 w-4" />
               API Health
             </TabsTrigger>
+            <TabsTrigger value="operations" className="flex items-center justify-center gap-1.5 text-xs font-medium py-2.5 whitespace-nowrap">
+              <ShieldCheck className="h-4 w-4" />
+              Operations
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="billing" className="space-y-4 mt-6">
             <BillingPreviewTab />
+          </TabsContent>
+
+          <TabsContent value="operations" className="space-y-4 mt-6">
+            <AdminOperationsTab onNavigate={setActiveTab} />
           </TabsContent>
 
           {/* Statistics Tab */}

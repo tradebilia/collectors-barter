@@ -104,7 +104,7 @@ import { testAIRouter } from "./testAIRouter";
 import { r2MediaRouter } from "./r2MediaRouter";
 import { customAuth } from "./_core/customAuth";
 import { getOrCreateDirectMessageThread, persistDirectMessage } from "./directMessagePersistence";
-import { users, userProfiles, listings, deletedAccounts, tradeProposals, tradeMessages, tradeReviews, watchlistEntries, draftListings, passwordResetTokens, referralRequests, userFollows, directMessageThreads, directMessages, tradePayments, tradeActivityLog, emailTemplates, accountApprovalReviews, apiHealthEvents } from "../drizzle/schema";
+import { users, userProfiles, listings, deletedAccounts, tradeProposals, tradeMessages, tradeReviews, watchlistEntries, draftListings, passwordResetTokens, referralRequests, userFollows, directMessageThreads, directMessages, tradePayments, tradeActivityLog, emailTemplates, accountApprovalReviews, apiHealthEvents, adminActivityLog } from "../drizzle/schema";
 import { eq, sql, desc, or, inArray, and } from "drizzle-orm";
 import { alias } from "drizzle-orm/mysql-core";
 import { TRPCError } from "@trpc/server";
@@ -118,6 +118,7 @@ import { getIpqsEmailHistory } from "./ipqs";
 import { createProviderOauthState, setProviderOauthStateCookie } from "./_core/providerOauthState";
 import { isAuthorizedPaymentVerification } from "./paymentAuthorization";
 import { billingRouter, membershipRouter } from "./membership";
+import { listHeartbeatJobs } from "./_core/heartbeat";
 
 // The R2 adapter enforces decoded per-kind limits (10MB listing, 5MB avatar).
 // This ceiling stops an oversized base64 request before its payload is decoded.
@@ -2321,12 +2322,131 @@ export const appRouter = router({
           reviewedBy: ctx.user.id,
           reviewedAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
         }).where(and(eq(accountApprovalReviews.id, input.reviewId), eq(accountApprovalReviews.status, 'pending')));
+        await db.insert(adminActivityLog).values({
+          adminId: ctx.user.id,
+          action: 'account_approval_reviewed',
+          targetType: 'account_approval',
+          targetReference: String(input.reviewId),
+          summary: `Account approval marked ${input.status}`,
+        });
         return { success: true };
       }),
     getApiHealthEvents: protectedProcedure.query(async ({ ctx }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
       const db = await requireDb();
       return db.select().from(apiHealthEvents).orderBy(desc(apiHealthEvents.occurredAt)).limit(100);
+    }),
+    getOperationsSnapshot: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      const db = await requireDb();
+      const [queueRows] = await db.execute(sql`
+        SELECT
+          (SELECT COUNT(*) FROM accountApprovalReviews WHERE status = 'pending') AS pendingApprovals,
+          (SELECT COUNT(*) FROM userProfiles up INNER JOIN users u ON u.id = up.userId WHERE up.isMerchant = 1 AND COALESCE(u.merchantVerified, 0) = 0) AS unverifiedMerchants,
+          (SELECT COUNT(*) FROM userReports WHERE status = 'pending') AS pendingReports,
+          (SELECT COUNT(*) FROM flaggedContent WHERE status = 'pending') AS pendingFlags,
+          (SELECT COUNT(*) FROM lowFeedbackFlags WHERE status = 'pending') AS pendingFeedbackFlags,
+          (SELECT COUNT(*) FROM supportTickets WHERE status IN ('open','in_progress') AND priority IN ('high','urgent')) AS urgentTickets,
+          (SELECT COUNT(*) FROM tradeProposals WHERE status = 'disputed') AS disputedTrades,
+          (SELECT COUNT(*) FROM tradeProposals WHERE status IN ('accepted','shipping','shipped') AND ((shippingDeadline IS NOT NULL AND shippingDeadline < NOW()) OR (receiptDeadline IS NOT NULL AND receiptDeadline < NOW()))) AS overdueTradeMilestones,
+          (SELECT COUNT(*) FROM apiHealthEvents WHERE occurredAt >= DATE_SUB(NOW(), INTERVAL 24 HOUR)) AS recentApiFailures,
+          (SELECT COUNT(*) FROM users WHERE createdAt >= DATE_SUB(NOW(), INTERVAL 30 DAY)) AS newMembers30d,
+          (SELECT COUNT(*) FROM listings WHERE createdAt >= DATE_SUB(NOW(), INTERVAL 30 DAY)) AS newListings30d,
+          (SELECT COUNT(*) FROM tradeProposals WHERE completedAt >= DATE_SUB(NOW(), INTERVAL 30 DAY)) AS completedTrades30d
+      `);
+      const counts = (queueRows as unknown as any[])[0] ?? {};
+      let schedule: Awaited<ReturnType<typeof listHeartbeatJobs>>["jobs"][number] | null = null;
+      try {
+        const schedules = await listHeartbeatJobs("", { page: 1, pageSize: 100 });
+        schedule = schedules.jobs.find((job) => job.callbackPath === "/api/scheduled/tradeReminders") ?? null;
+      } catch {
+        schedule = null;
+      }
+      const [billingRows] = await db.execute(sql`SELECT billingMode, stripeBillingEnabled, paymentEnforcementEnabled FROM billingSettings ORDER BY id ASC LIMIT 1`);
+      const billing = (billingRows as unknown as any[])[0] ?? { billingMode: 'free_launch', stripeBillingEnabled: 0, paymentEnforcementEnabled: 0 };
+      return {
+        schedule,
+        recentApiFailures: Number(counts.recentApiFailures ?? 0),
+        actionQueue: [
+          { key: 'approvals', label: 'Pending approvals', count: Number(counts.pendingApprovals ?? 0), description: 'Accounts awaiting marketplace approval.', tab: 'approvals' },
+          { key: 'merchants', label: 'Unverified merchants', count: Number(counts.unverifiedMerchants ?? 0), description: 'Merchant profiles awaiting verification.', tab: 'users' },
+          { key: 'reports', label: 'Reports & flags', count: Number(counts.pendingReports ?? 0) + Number(counts.pendingFlags ?? 0) + Number(counts.pendingFeedbackFlags ?? 0), description: 'Pending community and feedback-safety review.', tab: 'reports' },
+          { key: 'tickets', label: 'Urgent support', count: Number(counts.urgentTickets ?? 0), description: 'Open or in-progress high-priority tickets.', tab: 'tickets' },
+          { key: 'trades', label: 'Trade follow-up', count: Number(counts.disputedTrades ?? 0) + Number(counts.overdueTradeMilestones ?? 0), description: 'Disputed or overdue trade milestones.', tab: 'trades' },
+        ],
+        launch: { newMembers30d: Number(counts.newMembers30d ?? 0), newListings30d: Number(counts.newListings30d ?? 0), completedTrades30d: Number(counts.completedTrades30d ?? 0) },
+        membership: { billingMode: billing.billingMode, stripeBillingEnabled: Boolean(billing.stripeBillingEnabled), paymentEnforcementEnabled: Boolean(billing.paymentEnforcementEnabled) },
+      };
+    }),
+    getActiveTradeLifecycle: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      const db = await requireDb();
+      const [rows] = await db.execute(sql`
+        SELECT tp.id, tp.status, tp.shippingDeadline, tp.receiptDeadline,
+          COALESCE(NULLIF(requesterProfile.displayName, ''), NULLIF(requester.displayName, ''), NULLIF(requester.name, ''), requester.username, CONCAT('Collector ', tp.requesterId)) AS requesterDisplayName,
+          COALESCE(NULLIF(recipientProfile.displayName, ''), NULLIF(recipient.displayName, ''), NULLIF(recipient.name, ''), recipient.username, CONCAT('Collector ', tp.recipientId)) AS recipientDisplayName,
+          requested.title AS listingTitle,
+          (SELECT COUNT(*) FROM tradeTrackingNumbers tracking WHERE tracking.proposalId = tp.id) AS trackingCount,
+          (SELECT COUNT(*) FROM tradeReceiptConfirmation receipt WHERE receipt.proposalId = tp.id) AS receiptCount,
+          CASE WHEN tp.status IN ('accepted','shipping') THEN tp.shippingDeadline ELSE tp.receiptDeadline END AS nextDeadline,
+          CASE WHEN ((tp.shippingDeadline IS NOT NULL AND tp.shippingDeadline < NOW()) OR (tp.receiptDeadline IS NOT NULL AND tp.receiptDeadline < NOW())) THEN 1 ELSE 0 END AS isOverdue
+        FROM tradeProposals tp
+        LEFT JOIN users requester ON requester.id = tp.requesterId
+        LEFT JOIN userProfiles requesterProfile ON requesterProfile.userId = tp.requesterId
+        LEFT JOIN users recipient ON recipient.id = tp.recipientId
+        LEFT JOIN userProfiles recipientProfile ON recipientProfile.userId = tp.recipientId
+        LEFT JOIN listings requested ON requested.id = tp.requestedListingId
+        WHERE tp.status IN ('pending','negotiating','accepted','shipping','shipped','frozen','disputed')
+        ORDER BY CASE WHEN ((tp.shippingDeadline IS NOT NULL AND tp.shippingDeadline < NOW()) OR (tp.receiptDeadline IS NOT NULL AND tp.receiptDeadline < NOW())) THEN 0 ELSE 1 END, COALESCE(tp.shippingDeadline, tp.receiptDeadline, tp.updatedAt) ASC
+        LIMIT 100
+      `);
+      return rows as unknown as any[];
+    }),
+    getOperationalTimeline: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      const db = await requireDb();
+      const [rows] = await db.execute(sql`
+        SELECT CONCAT('moderation-', id) AS eventKey, 'Moderation' AS source, action AS event, createdAt FROM moderationLog
+        UNION ALL
+        SELECT CONCAT('trade-', id) AS eventKey, 'Trade administration' AS source, eventType AS event, createdAt FROM tradeAdminLog
+        UNION ALL
+        SELECT CONCAT('membership-', id) AS eventKey, 'Membership provider' AS source, eventType AS event, createdAt FROM membershipProviderEvents
+        UNION ALL
+        SELECT CONCAT('administrator-', id) AS eventKey, 'Administrator activity' AS source, action AS event, createdAt FROM adminActivityLog
+        ORDER BY createdAt DESC LIMIT 100
+      `);
+      return (rows as unknown as any[]).map((row) => ({ key: row.eventKey, source: row.source, event: row.event, createdAt: row.createdAt }));
+    }),
+    exportOperationalCsv: protectedProcedure.input(z.object({ kind: z.enum(['listings', 'trades', 'members', 'support_metrics']) })).mutation(async ({ ctx, input }) => {
+      if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      const db = await requireDb();
+      const csvCell = (value: unknown) => {
+        const raw = String(value ?? '');
+        const safe = /^[=+\-@]/.test(raw) ? `'${raw}` : raw;
+        return `"${safe.replaceAll('"', '""')}"`;
+      };
+      const csv = (headers: string[], rows: unknown[][]) => [headers, ...rows].map((row) => row.map(csvCell).join(',')).join('\n');
+      const recordExport = async () => {
+        await db.insert(adminActivityLog).values({ adminId: ctx.user.id, action: 'operational_csv_exported', targetType: 'operational_export', targetReference: input.kind, summary: `Generated ${input.kind.replaceAll('_', ' ')} CSV export` });
+      };
+      if (input.kind === 'listings') {
+        const [rows] = await db.execute(sql`SELECT l.id, l.title, l.category, l.status, l.estimatedValue, COALESCE(NULLIF(up.displayName, ''), NULLIF(u.displayName, ''), u.username, CONCAT('Collector ', l.ownerId)) AS owner, l.createdAt FROM listings l LEFT JOIN users u ON u.id = l.ownerId LEFT JOIN userProfiles up ON up.userId = l.ownerId ORDER BY l.createdAt DESC LIMIT 5000`);
+        await recordExport();
+        return { filename: 'tradebilia-listings.csv', content: csv(['Listing ID', 'Title', 'Category', 'Status', 'Estimated Value', 'Owner', 'Created'], (rows as unknown as any[]).map((row) => [row.id, row.title, row.category, row.status, row.estimatedValue, row.owner, row.createdAt])) };
+      }
+      if (input.kind === 'trades') {
+        const [rows] = await db.execute(sql`SELECT tp.id, tp.tradeReferenceNumber, tp.status, COALESCE(NULLIF(requesterProfile.displayName, ''), NULLIF(requester.displayName, ''), requester.username, CONCAT('Collector ', tp.requesterId)) AS requester, COALESCE(NULLIF(recipientProfile.displayName, ''), NULLIF(recipient.displayName, ''), recipient.username, CONCAT('Collector ', tp.recipientId)) AS recipient, requested.title AS requestedListing, tp.createdAt, tp.completedAt FROM tradeProposals tp LEFT JOIN users requester ON requester.id = tp.requesterId LEFT JOIN userProfiles requesterProfile ON requesterProfile.userId = tp.requesterId LEFT JOIN users recipient ON recipient.id = tp.recipientId LEFT JOIN userProfiles recipientProfile ON recipientProfile.userId = tp.recipientId LEFT JOIN listings requested ON requested.id = tp.requestedListingId ORDER BY tp.createdAt DESC LIMIT 5000`);
+        await recordExport();
+        return { filename: 'tradebilia-trades.csv', content: csv(['Trade ID', 'Reference', 'Status', 'Requestor', 'Recipient', 'Requested Listing', 'Created', 'Completed'], (rows as unknown as any[]).map((row) => [row.id, row.tradeReferenceNumber, row.status, row.requester, row.recipient, row.requestedListing, row.createdAt, row.completedAt])) };
+      }
+      if (input.kind === 'members') {
+        const [rows] = await db.execute(sql`SELECT u.id, COALESCE(NULLIF(up.displayName, ''), NULLIF(u.displayName, ''), u.username, CONCAT('Collector ', u.id)) AS displayName, u.username, u.role, u.createdAt, COUNT(CASE WHEN l.status = 'active' THEN l.id END) AS activeListings, COALESCE(um.status, 'free_launch') AS membershipStatus, COALESCE(um.billingTerm, 'none') AS billingTerm FROM users u LEFT JOIN userProfiles up ON up.userId = u.id LEFT JOIN listings l ON l.ownerId = u.id LEFT JOIN userMemberships um ON um.userId = u.id GROUP BY u.id, up.displayName, u.displayName, u.username, u.role, u.createdAt, um.status, um.billingTerm ORDER BY u.createdAt DESC LIMIT 5000`);
+        await recordExport();
+        return { filename: 'tradebilia-members.csv', content: csv(['Member ID', 'Display Name', 'Username', 'Role', 'Joined', 'Active Listings', 'Membership Status', 'Billing Term'], (rows as unknown as any[]).map((row) => [row.id, row.displayName, row.username, row.role, row.createdAt, row.activeListings, row.membershipStatus, row.billingTerm])) };
+      }
+      const [rows] = await db.execute(sql`SELECT status, priority, COUNT(*) AS count FROM supportTickets GROUP BY status, priority ORDER BY status, priority`);
+      await recordExport();
+      return { filename: 'tradebilia-support-metrics.csv', content: csv(['Ticket Status', 'Priority', 'Count'], (rows as unknown as any[]).map((row) => [row.status, row.priority, row.count])) };
     }),
     // User management
     getAllUsers: protectedProcedure.query(async ({ ctx }) => {

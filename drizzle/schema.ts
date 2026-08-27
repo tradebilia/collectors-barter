@@ -267,6 +267,22 @@ export const moderationLog = mysqlTable("moderationLog", {
 	index("moderationLog_createdAt_idx").on(table.createdAt),
 ]);
 
+export const adminActivityLog = mysqlTable("adminActivityLog", {
+	id: int().autoincrement().notNull().primaryKey(),
+	adminId: int().notNull(),
+	action: varchar({ length: 100 }).notNull(),
+	targetType: varchar({ length: 80 }).notNull(),
+	targetReference: varchar({ length: 120 }),
+	summary: varchar({ length: 255 }).notNull(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+},
+(table) => [
+	index("adminActivityLog_admin_idx").on(table.adminId),
+	index("adminActivityLog_target_idx").on(table.targetType, table.targetReference),
+	index("adminActivityLog_action_idx").on(table.action),
+	index("adminActivityLog_createdAt_idx").on(table.createdAt),
+]);
+
 export const passwordResetTokens = mysqlTable("passwordResetTokens", {
 	id: int().autoincrement().notNull(),
 	userId: int().notNull().references(() => users.id, { onDelete: "cascade" } ),
