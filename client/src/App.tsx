@@ -24,7 +24,6 @@ import SignUp from "./pages/SignUp";
 import Welcome from "./pages/Welcome";
 import { MemberOnly } from "./pages/MemberOnly";
 import { ProtectedRoute } from "./components/ProtectedRoute";
-import { SubscriptionAccessGate } from "./components/SubscriptionAccessGate";
 import { VerifyAccount } from "./pages/VerifyAccount";
 import { ForgotPassword } from "./pages/ForgotPassword";
 import { ResetPassword } from "./pages/ResetPassword";
@@ -46,6 +45,7 @@ import TestAI from "./pages/TestAI";
 import ComingSoon from "./pages/ComingSoon";
 import ComingSoonDirections from "./pages/ComingSoonDirections";
 import HowTradebiliaWorks from "./pages/HowTradebiliaWorks";
+import TradeRoomGuideCapture from "./pages/TradeRoomGuideCapture";
 import {
   AllMostViewedRankings,
   AllMostFavoritedRankings,
@@ -60,6 +60,7 @@ function Router() {
       <Route path="/coming-soon" component={ComingSoon} />
       <Route path="/coming-soon-directions" component={ComingSoonDirections} />
       <Route path="/how-it-works" component={HowTradebiliaWorks} />
+      <Route path="/how-it-works/trade-room-capture/:stage" component={TradeRoomGuideCapture} />
       <Route path="/inventory">
         <ProtectedRoute>
           <Inventory />
@@ -174,9 +175,7 @@ function App() {
       <ThemeProvider defaultTheme="light">
         <TooltipProvider>
           <Toaster richColors position="top-right" />
-          <SubscriptionAccessGate>
-            <Router />
-          </SubscriptionAccessGate>
+          <Router />
         </TooltipProvider>
       </ThemeProvider>
     </ErrorBoundary>

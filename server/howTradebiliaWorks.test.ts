@@ -49,8 +49,8 @@ describe("How Tradebilia Works guide", () => {
   it("includes an accurate labeled Trade Room guide, practical safety checklist, and public glossary", () => {
     for (const label of [
       "Inside the Trade Room",
-      "Illustrative example — fictional collectors and items",
-      "These sample screenshots describe the current process",
+      "Development-only capture — fictional collectors and items",
+      "These development-only captures use the actual Trade Room layout",
       "1. Review the proposal",
       "2. Confirm the exchange",
       "3. Confirm receipt",
@@ -63,9 +63,9 @@ describe("How Tradebilia Works guide", () => {
       expect(guide).toContain(term);
     }
     expect(guide).toContain("Keep private details private.");
-    expect(guide).toContain("Illustrative example — fictional collectors and items");
-    expect(guide).toContain("trade-room-review-sample_ced37cf9.png");
-    expect(guide).toContain("trade-room-confirm-sample_051f1b84.png");
-    expect(guide).toContain("trade-room-complete-sample_4bbcfa74.png");
+    expect(guide).toContain("Development-only capture — fictional collectors and items");
+    expect(guide).toContain("trade-room-review_91abd2a2.png");
+    expect(guide).toContain("trade-room-confirm_e64c3760.png");
+    expect(guide).toContain("trade-room-complete_8eb0811a.png");
   });
 });
