@@ -3306,11 +3306,11 @@ export const appRouter = router({
             tp.completedAt,
             tp.requesterId,
             tp.recipientId,
-            -- Requester info
-            req_up.displayName as requesterDisplayName,
+            -- Public requester identity with display-name-first fallback
+            COALESCE(NULLIF(req_up.displayName, ''), NULLIF(req_u.displayName, ''), NULLIF(req_u.name, ''), req_u.username, 'Collector') as requesterDisplayName,
             req_up.avatarUrl as requesterAvatarUrl,
-            -- Recipient info
-            rec_up.displayName as recipientDisplayName,
+            -- Public recipient identity with display-name-first fallback
+            COALESCE(NULLIF(rec_up.displayName, ''), NULLIF(rec_u.displayName, ''), NULLIF(rec_u.name, ''), rec_u.username, 'Collector') as recipientDisplayName,
             rec_up.avatarUrl as recipientAvatarUrl,
             -- Requested listing (the item that started the trade)
             l.id as requestedListingId,
@@ -3336,15 +3336,14 @@ export const appRouter = router({
 
         const trades = (rows as unknown as any[]) || [];
 
-        // For each trade, also fetch the offered items (up to 4 for display)
+        // Return every offered item for each completed exchange so public trade summaries are complete.
         const enriched = await Promise.all(trades.map(async (trade: any) => {
           const [offeredRows] = await db.execute(
             sql`SELECT ol.id, ol.title, ol.category, ol.estimatedValue,
               (SELECT imageUrl FROM listingPhotos WHERE listingId = ol.id ORDER BY sortOrder ASC LIMIT 1) as imageUrl
             FROM listings ol
             JOIN tradeProposalItems tpi ON tpi.offeredListingId = ol.id
-            WHERE tpi.proposalId = ${trade.id}
-            LIMIT 4`
+            WHERE tpi.proposalId = ${trade.id}`
           );
           return {
             ...trade,
