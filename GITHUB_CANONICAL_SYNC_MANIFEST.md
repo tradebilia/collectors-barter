@@ -143,6 +143,16 @@ The canonical commit deliberately merges the sandbox-specific behavior without r
 | Validation | A fresh canonical full suite passed 149 files / 461 tests with four intentional skips. TypeScript, production build, `pnpm audit --prod`, and whitespace review also passed. |
 | Preserved safeguards | No WebDev application code was changed; the canonical-only test files remain excluded from the custom-TiDB WebDev migration boundary. No marketplace data/schema, payment configuration, provider policy/action, schedule, or secret changed. |
 
+## Remaining Audit Reassessment Pair
+
+| Record | Value |
+|---|---|
+| Canonical documentation commit | `ac6cbae815fe07b151ae7ca7810a5f8d0c7c98a7` — normal push to GitHub `main`; no force push or history replacement. |
+| Paired managed WebDev checkpoint | `32256c7a` |
+| Scope | No-change reassessment of the remaining post-P1 recommendations: copy-only Privacy Policy alignment, trusted Stripe return-origin allowlisting before any live billing, preview OAuth guidance rather than bearer-token propagation, incremental use of the existing administrator guard, and a Stripe webhook-comment correction. |
+| Outcome | P2A—truthful account-closure policy copy—is the recommended next approval. P2B—trusted return origins—must precede any future live-billing proposal. The other three items remain intentionally separate and lower-risk. |
+| Preserved safeguards | No application behavior, custom TiDB data/schema, marketplace record, Stripe setting/action, provider action, schedule, or secret changed. |
+
 ## Synchronization Rules
 
 Before future GitHub-to-WebDev reconciliation, create a recovery checkpoint and an immutable GitHub backup tag. Before a reviewed WebDev change becomes canonical, merge only the relevant content into the current GitHub `main`, preserve any newer canonical work, use a normal commit/push, and record the associated checkpoint. Never force-push or replace the canonical repository wholesale.
