@@ -1,5 +1,6 @@
 import express, { type Express, type Request, type Response } from "express";
 import Stripe from "stripe";
+import { recordVerifiedTestMembershipEvent } from "./stripeMembershipBilling";
 
 function getStripeClient() {
   const secretKey = process.env.STRIPE_SECRET_KEY;
@@ -12,7 +13,7 @@ function getStripeClient() {
  * it verifies signed events but never changes membership access or billing state.
  */
 export function registerStripeWebhook(app: Express) {
-  app.post("/api/stripe/webhook", express.raw({ type: "application/json" }), (req: Request, res: Response) => {
+  app.post("/api/stripe/webhook", express.raw({ type: "application/json" }), async (req: Request, res: Response) => {
     const stripe = getStripeClient();
     const signingSecret = process.env.STRIPE_WEBHOOK_SECRET;
     const signature = req.headers["stripe-signature"];
@@ -35,13 +36,17 @@ export function registerStripeWebhook(app: Express) {
       return res.json({ verified: true });
     }
 
-    // Live payment handling remains intentionally inactive until Rich approves
-    // a separate activation stage. Do not store raw payloads or card data.
-    console.info("[StripeWebhook] Verified event received while enforcement is inactive", {
-      type: event.type,
-      id: event.id,
-      created: event.created,
-    });
-    return res.json({ received: true });
+    try {
+      const result = await recordVerifiedTestMembershipEvent(event);
+      console.info("[StripeWebhook] Verified sandbox event handled while payment enforcement is inactive", {
+        type: event.type,
+        id: event.id,
+        status: result.status,
+      });
+      return res.json({ received: true });
+    } catch (error) {
+      console.error("[StripeWebhook] Verified event processing failed", error instanceof Error ? error.message : "unknown error");
+      return res.status(500).json({ error: "Verified Stripe sandbox event could not be processed." });
+    }
   });
 }

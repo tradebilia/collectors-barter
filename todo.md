@@ -721,7 +721,9 @@
 - [x] Register the deployed `/api/stripe/webhook` endpoint with the Manus-linked Stripe sandbox, securely validate its signing secret, and verify a test event while payment enforcement remains inactive.
 - [x] Resolve or route around the current Stripe-versus-project authentication-context blocker before connecting the project to Rich’s Stripe test account; preserve the existing test product and do not alter Tradebilia sign-in.
 - [ ] Implement an approval-gated test Checkout and customer-portal flow for the configured Membership prices, then validate a test subscription without enabling live payments or member restrictions.
+- [ ] Implement the approved test-only Stripe Checkout and customer-portal flow for Tradebilia Membership, including verified sandbox webhook status updates and disabled-by-default member billing controls; keep Free Launch, live payments, and member restrictions inactive.
 - [ ] Synchronize the reviewed Stripe test-mode preparation and future checkout implementation to GitHub after validation, preserving the canonical repository history.
+- [ ] Resolve the custom TiDB membership-table mismatch discovered during Stripe sandbox Checkout verification; inspect table names read-only and apply only the already-approved non-destructive membership migration if the runtime foundation is absent.
 - [x] Diagnose and repair the embedded WebDev preview sign-in flow where valid custom credentials are accepted but the browser does not establish a session, without changing the working live-domain login behavior.
 - [x] Replace the insufficient cached-query refresh fallback with an immediate embedded-preview auth-state update and durable session fallback after accepted custom sign-in.
 - [x] Reproduce the persistent embedded WebDev preview sign-in failure directly and inspect its actual session and authentication-query behavior before making further changes.

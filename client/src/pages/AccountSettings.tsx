@@ -15,7 +15,7 @@ import { EbayConnection } from "@/components/EbayConnection";
 import { FacebookConnection } from "@/components/FacebookConnection";
 import { LinkedInConnection } from "@/components/LinkedInConnection";
 import { trpc } from "@/lib/trpc";
-import { Bell, Lock, Mail, Loader2, Save, Shield, Link as LinkIcon, Upload, Eye, EyeOff, Cog } from "lucide-react";
+import { Bell, Lock, Mail, Loader2, Save, Shield, Link as LinkIcon, Upload, Eye, EyeOff, Cog, CreditCard, ExternalLink } from "lucide-react";
 import { FormEvent, useEffect, useState, useRef } from "react";
 import { toast } from "sonner";
 import {
@@ -67,6 +67,8 @@ export default function AccountSettings() {
   const membershipQuery = trpc.membership.getMyStatus.useQuery(undefined, {
     enabled: isAuthenticated,
   });
+  const startTestCheckoutMutation = trpc.billing.startTestCheckout.useMutation();
+  const openTestPortalMutation = trpc.billing.openTestPortal.useMutation();
   // PayPal
   const paypalQuery = trpc.payment.getPayPalEmail.useQuery();
   const savePayPalEmailMutation = trpc.payment.savePayPalEmail.useMutation();
@@ -87,6 +89,32 @@ export default function AccountSettings() {
     title: "",
     message: "",
   });
+  const [testBillingTerm, setTestBillingTerm] = useState<"monthly" | "annual" | null>(null);
+
+  const openStripeSandboxWindow = (url: string, label: string) => {
+    window.open(url, "_blank", "noopener,noreferrer");
+    toast.success(`${label} opened in a new tab.`);
+  };
+
+  const handleStartTestCheckout = (billingTerm: "monthly" | "annual") => {
+    setTestBillingTerm(billingTerm);
+  };
+
+  const confirmTestCheckout = () => {
+    if (!testBillingTerm) return;
+    startTestCheckoutMutation.mutate({ billingTerm: testBillingTerm }, {
+      onSuccess: ({ url }) => openStripeSandboxWindow(url, "Stripe sandbox Checkout"),
+      onError: (error) => toast.error(error.message),
+      onSettled: () => setTestBillingTerm(null),
+    });
+  };
+
+  const handleOpenTestPortal = () => {
+    openTestPortalMutation.mutate(undefined, {
+      onSuccess: ({ url }) => openStripeSandboxWindow(url, "Stripe sandbox customer portal"),
+      onError: (error) => toast.error(error.message),
+    });
+  };
 
   const [profileForm, setProfileForm] = useState({
     displayName: "",
@@ -1528,6 +1556,38 @@ export default function AccountSettings() {
                           ))}
                         </div>
                       </div>
+                      {user?.role === "admin" && (
+                        <div className="rounded-xl border border-dashed border-violet-300 bg-violet-50/70 p-5">
+                          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                            <div>
+                              <p className="flex items-center gap-2 text-sm font-bold text-violet-950"><CreditCard className="h-4 w-4" />Sandbox administrator tools</p>
+                              <p className="mt-1 max-w-2xl text-sm leading-6 text-violet-900">These test-only controls are visible only to administrators. They create Stripe sandbox sessions for validation; Free Launch, live charges, and member restrictions remain inactive.</p>
+                            </div>
+                            <span className="w-fit rounded-full bg-violet-200 px-3 py-1 text-xs font-semibold text-violet-900">Test mode only</span>
+                          </div>
+                          <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+                            <Button type="button" className="bg-violet-700 hover:bg-violet-800" disabled={startTestCheckoutMutation.isPending} onClick={() => handleStartTestCheckout("monthly")}>
+                              <ExternalLink className="mr-2 h-4 w-4" />Test $1 monthly Checkout
+                            </Button>
+                            <Button type="button" variant="outline" className="border-violet-300 bg-white text-violet-900 hover:bg-violet-100" disabled={startTestCheckoutMutation.isPending} onClick={() => handleStartTestCheckout("annual")}>
+                              <ExternalLink className="mr-2 h-4 w-4" />Test $10 annual Checkout
+                            </Button>
+                            <Button type="button" variant="outline" className="border-violet-300 bg-white text-violet-900 hover:bg-violet-100" disabled={openTestPortalMutation.isPending} onClick={handleOpenTestPortal}>
+                              <ExternalLink className="mr-2 h-4 w-4" />Open test portal
+                            </Button>
+                          </div>
+                          {testBillingTerm && (
+                            <div className="mt-4 rounded-lg border border-violet-300 bg-white p-4" role="status">
+                              <p className="text-sm font-semibold text-slate-900">Open the Stripe sandbox {testBillingTerm} Checkout?</p>
+                              <p className="mt-1 text-sm leading-6 text-slate-700">This creates a test-only Membership subscription for administrator validation. It does not create a live charge, change Free Launch, or restrict any member.</p>
+                              <div className="mt-3 flex flex-wrap gap-2">
+                                <Button type="button" size="sm" className="bg-violet-700 hover:bg-violet-800" disabled={startTestCheckoutMutation.isPending} onClick={confirmTestCheckout}>Open sandbox Checkout</Button>
+                                <Button type="button" size="sm" variant="outline" onClick={() => setTestBillingTerm(null)}>Cancel</Button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </>
                   )}
                 </CardContent>
