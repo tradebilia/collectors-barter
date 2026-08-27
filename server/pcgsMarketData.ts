@@ -1,5 +1,9 @@
 type PcgsEnv = Record<string, string | undefined>;
 
+import { classifyApiFailure, recordApiFailure } from './apiHealth';
+
+const PCGS_REQUEST_TIMEOUT_MS = 15_000;
+
 function asObject(value: unknown): Record<string, any> {
   return value && typeof value === 'object' ? value as Record<string, any> : {};
 }
@@ -29,9 +33,17 @@ export async function lookupPcgsCertification(certNumber: string, env: PcgsEnv =
     const url = `https://api.pcgs.com/publicapi/coindetail/GetCoinFactsByCertNo/${encodeURIComponent(normalizedCertNumber)}?retrieveAllData=true`;
     const response = await fetch(url, {
       headers: { Authorization: `bearer ${token}` },
+      signal: AbortSignal.timeout(PCGS_REQUEST_TIMEOUT_MS),
     });
     const payload = await response.json().catch(() => null);
     if (!response.ok) {
+      await recordApiFailure({
+        provider: 'PCGS',
+        operation: 'certification_lookup',
+        failureClass: classifyApiFailure({ statusCode: response.status }),
+        statusCode: response.status,
+        safeMessage: 'PCGS certification lookup was rejected by the provider.',
+      });
       return { certNumber: normalizedCertNumber, status: 'error' as const, message: pcgsErrorMessage(response.status), data: null };
     }
 
@@ -72,7 +84,14 @@ export async function lookupPcgsCertification(certNumber: string, env: PcgsEnv =
         images,
       },
     };
-  } catch {
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'PCGS request failed';
+    await recordApiFailure({
+      provider: 'PCGS',
+      operation: 'certification_lookup',
+      failureClass: classifyApiFailure({ message }),
+      safeMessage: 'PCGS certification lookup is temporarily unavailable.',
+    });
     return { certNumber: normalizedCertNumber, status: 'error' as const, message: 'PCGS lookup could not be reached. Try again shortly.', data: null };
   }
 }

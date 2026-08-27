@@ -13,6 +13,7 @@ import { sdk } from "./sdk";
 import { registerScheduledRoutes } from "../scheduledRoutes";
 import { registerProviderOAuthCallbacks } from "./providerOAuthCallbacks";
 import { registerStripeWebhook } from "../stripeWebhook";
+import { validateDatabaseConnection, validateEnvironment } from "./startupChecks";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -34,6 +35,8 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
 }
 
 async function startServer() {
+  validateEnvironment();
+  await validateDatabaseConnection();
   const app = express();
   const server = createServer(app);
   // Stripe must receive raw bytes for signed webhook verification. Keep this

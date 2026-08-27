@@ -7,7 +7,6 @@
 import { sql } from "drizzle-orm";
 
 const REQUIRED_ENV_VARS = [
-  "DATABASE_URL",
   "JWT_SECRET",
   "VITE_APP_ID",
   "BUILT_IN_FORGE_API_URL",
@@ -15,7 +14,9 @@ const REQUIRED_ENV_VARS = [
 ] as const;
 
 export function validateEnvironment(): void {
-  const missing = REQUIRED_ENV_VARS.filter(name => !process.env[name]);
+  const missing: string[] = REQUIRED_ENV_VARS.filter(name => !process.env[name]);
+  const runtimeDatabaseUrl = process.env.CUSTOM_DATABASE_URL || process.env.DATABASE_URL;
+  if (!runtimeDatabaseUrl) missing.push("CUSTOM_DATABASE_URL or DATABASE_URL");
   if (missing.length > 0) {
     console.error("========================================================");
     console.error("STARTUP CHECK FAILED: missing required environment vars:");
@@ -26,12 +27,12 @@ export function validateEnvironment(): void {
     throw new Error(`Missing required environment variables: ${missing.join(", ")}`);
   }
 
-  // Sanity-check DATABASE_URL is a parseable URL before anything uses it.
+  // Validate the same CUSTOM_DATABASE_URL-first precedence used by requireDb().
   try {
-    new URL(process.env.DATABASE_URL as string);
+    new URL(runtimeDatabaseUrl as string);
   } catch {
     throw new Error(
-      "DATABASE_URL is set but is not a valid URL. Check the .env file for quoting/formatting errors.",
+      "The active CUSTOM_DATABASE_URL or DATABASE_URL is not a valid URL. Check the secure project settings for quoting/formatting errors.",
     );
   }
   console.log("[startup] Environment check: PASS (all required variables present)");

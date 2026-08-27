@@ -173,9 +173,15 @@ export function makeTradeRemindersHandler(deps: ScheduledDeps = defaultScheduled
         sql`SELECT DISTINCT proposalId FROM tradeTrackingNumbers WHERE submittedAt < ${daysAgoSql(15)} AND proposalId NOT IN (SELECT proposalId FROM tradeReceiptConfirmation WHERE confirmationType = 'received') AND proposalId IN (SELECT id FROM tradeProposals WHERE status IN ('accepted', 'shipped'))`
       );
       for (const row of ((overdueShipments as unknown as any[]) || [])) {
-        await db.execute(
-          sql`UPDATE tradeProposals SET status = 'disputed', declineReason = 'Auto-escalated: Receipt not confirmed within 15 days', updatedAt = ${now} WHERE id = ${row.proposalId}`
+        const [escalationResult] = await db.execute(
+          sql`UPDATE tradeProposals
+              SET status = 'disputed', declineReason = 'Auto-escalated: Receipt not confirmed within 15 days', updatedAt = ${now}
+              WHERE id = ${row.proposalId}
+                AND status IN ('accepted', 'shipped')
+                AND EXISTS (SELECT 1 FROM tradeTrackingNumbers WHERE proposalId = ${row.proposalId} AND submittedAt < ${daysAgoSql(15)})
+                AND NOT EXISTS (SELECT 1 FROM tradeReceiptConfirmation WHERE proposalId = ${row.proposalId} AND confirmationType = 'received')`
         );
+        if (!((escalationResult as any)?.affectedRows || 0)) continue;
         await db.execute(
           sql`INSERT INTO tradeAdminLog (proposalId, eventType, details, createdAt) VALUES (${row.proposalId}, 'disputed', 'Auto-escalated: 15-day receipt timeout', ${now})`
         );

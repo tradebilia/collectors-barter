@@ -291,6 +291,7 @@ describe("tradeReminders", () => {
         if (selectCount === 2) return [[{ proposalId: 42 }], []]; // overdue shipments
         return [[], []]; // pending acceptances (none)
       }
+      if (text.includes("Auto-escalated: Receipt not confirmed within 15 days")) return [{ affectedRows: 1 }, []];
       return [{ affectedRows: 0 }, []];
     });
     const { app } = makeApp({ requireDb: vi.fn(async () => ({ execute })) } as any);
@@ -301,6 +302,31 @@ describe("tradeReminders", () => {
     const all = statements.join(" | ");
     expect(all).toContain("disputed");
     expect(all).toContain("tradeAdminLog");
+    expect(all).toContain("status IN ('accepted', 'shipped')");
+    expect(all).toContain("NOT EXISTS (SELECT 1 FROM tradeReceiptConfirmation");
+  });
+
+  it("does not overwrite an advanced trade or append a duplicate escalation log after a guarded update affects zero rows", async () => {
+    const statements: string[] = [];
+    const execute = vi.fn(async (q: any) => {
+      const text: string = Array.isArray(q?.queryChunks)
+        ? q.queryChunks.map((c: any) => (typeof c === "string" ? c : c?.value ?? "")).flat().join(" ")
+        : String(q?.sql ?? "");
+      statements.push(text);
+      if (/^\s*SELECT/i.test(text)) {
+        const selectCount = statements.filter(s => /^\s*SELECT/i.test(s)).length;
+        if (selectCount === 2) return [[{ proposalId: 42 }], []];
+        return [[], []];
+      }
+      if (text.includes("Auto-escalated: Receipt not confirmed within 15 days")) return [{ affectedRows: 0 }, []];
+      return [{ affectedRows: 0 }, []];
+    });
+    const { app } = makeApp({ requireDb: vi.fn(async () => ({ execute })) } as any);
+    const res = await request(app).post("/api/scheduled/tradeReminders");
+
+    expect(res.status).toBe(200);
+    expect(res.body.receiptEscalated).toBe(0);
+    expect(statements.some(statement => statement.includes("tradeAdminLog"))).toBe(false);
   });
 
   it("preserves an accepted confirmation when its proposal is no longer eligible for cancellation", async () => {
