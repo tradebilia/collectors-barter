@@ -46,6 +46,7 @@ export class CustomAuthService {
     const secretKey = this.getSessionSecret();
     const user = await db.getUserById(userId);
     if (!user) throw new Error("Cannot create a session for an unknown user");
+    if ((user as any).isAccountClosed === 1) throw new Error("Cannot create a session for a closed account");
 
     return new SignJWT({
       userId,
@@ -104,6 +105,7 @@ export class CustomAuthService {
       if (!user) return null;
       // Banned users cannot have an active session
       if ((user as any).isBanned === 1) return null;
+      if ((user as any).isAccountClosed === 1) return null;
       if (session.passwordVersion !== this.getPasswordSessionVersion(user.passwordHash)) return null;
       return user;
     } catch (error) {

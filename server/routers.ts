@@ -118,6 +118,7 @@ import { createProviderOauthState, setProviderOauthStateCookie } from "./_core/p
 import { getPaymentVerificationObligation, isAuthorizedPaymentVerification } from "./paymentAuthorization";
 import { billingRouter, membershipRouter } from "./membership";
 import { listHeartbeatJobs } from "./_core/heartbeat";
+import { getAccountClosureAudit, getAccountClosureRequestsForAdmin, getMyAccountClosureRequest, requestAccountClosure, reviewAccountClosureRequest } from "./accountClosure";
 
 // The R2 adapter enforces decoded per-kind limits (10MB listing, 5MB avatar).
 // This ceiling stops an oversized base64 request before its payload is decoded.
@@ -462,6 +463,13 @@ export const appRouter = router({
           });
         }
 
+        if ((user as any).isAccountClosed === 1) {
+          throw new TRPCError({
+            code: 'FORBIDDEN',
+            message: 'This account has been closed. Please contact Tradebilia support if you believe this is an error.',
+          });
+        }
+
         const { customAuth } = await import("./_core/customAuth");
         const sessionToken = await customAuth.createSessionToken(
           user.id,
@@ -570,7 +578,7 @@ export const appRouter = router({
         await deletePasswordResetTokensForUser(resetToken.userId);
         return { success: true };
       }),
-    logout: protectedProcedure.mutation(async ({ ctx }) => {
+    logout: publicProcedure.mutation(async ({ ctx }) => {
       const db = await requireDb();
       // Clear lastActivityAt to mark user as offline (set to a very old date)
       if (ctx.user?.id) {
@@ -621,6 +629,48 @@ export const appRouter = router({
           participantBId: input.recipientId,
         });
         return { threadId, recipientId: input.recipientId };
+      }),
+  }),
+  accountClosure: router({
+    getMyRequest: protectedProcedure.query(async ({ ctx }) => {
+      const db = await requireDb();
+      return getMyAccountClosureRequest(db as any, ctx.user.id);
+    }),
+    request: protectedProcedure
+      .input(z.object({ memberNote: z.string().trim().max(1000).optional() }))
+      .mutation(async ({ ctx, input }) => {
+        const db = await requireDb();
+        return requestAccountClosure(db as any, ctx.user.id, input.memberNote);
+      }),
+    adminList: protectedProcedure
+      .input(z.object({ status: z.enum(["pending_review", "closed", "declined", "withdrawn"]).optional() }).optional())
+      .query(async ({ ctx, input }) => {
+        if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+        const db = await requireDb();
+        return getAccountClosureRequestsForAdmin(db as any, input?.status);
+      }),
+    adminAudit: protectedProcedure
+      .input(z.object({ userId: z.number().int().positive() }))
+      .query(async ({ ctx, input }) => {
+        if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+        const db = await requireDb();
+        return getAccountClosureAudit(db as any, input.userId);
+      }),
+    adminReview: protectedProcedure
+      .input(z.object({
+        requestId: z.number().int().positive(),
+        decision: z.enum(["approve_close", "decline"]),
+        adminNote: z.string().trim().min(1).max(2000),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+        const db = await requireDb();
+        return reviewAccountClosureRequest(db as any, {
+          requestId: input.requestId,
+          administratorId: ctx.user.id,
+          decision: input.decision,
+          adminNote: input.adminNote,
+        });
       }),
   }),
   market: router({

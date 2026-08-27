@@ -741,11 +741,13 @@ export const users = mysqlTable("users", {
 	suspendedAt: datetime({ mode: 'string'}),
 	suspensionReason: text(),
 	suspendedBy: int(),
-	isBanned: tinyint().default(0).notNull(),
-	bannedAt: timestamp({ mode: 'string' }),
-	banReason: text(),
-	bannedBy: int(),
-	warnCount: int().default(0).notNull(),
+		isBanned: tinyint().default(0).notNull(),
+		bannedAt: timestamp({ mode: 'string' }),
+		banReason: text(),
+		bannedBy: int(),
+		isAccountClosed: tinyint().default(0).notNull(),
+		accountClosedAt: timestamp({ mode: 'string' }),
+		warnCount: int().default(0).notNull(),
 	lastWarnedAt: timestamp({ mode: 'string' }),
 	// PayPal integration fields
 	paypalEmail: varchar({ length: 320 }),
@@ -777,6 +779,28 @@ export const accountApprovalReviews = mysqlTable("accountApprovalReviews", {
 		index("accountApprovalReviews_userId_unique").on(table.userId),
 		index("accountApprovalReviews_status_idx").on(table.status),
 		index("accountApprovalReviews_createdAt_idx").on(table.createdAt),
+	]);
+
+export const accountClosureRequests = mysqlTable("accountClosureRequests", {
+	id: int().autoincrement().notNull(),
+	userId: int().notNull().references(() => users.id),
+	status: mysqlEnum(['pending_review', 'closed', 'declined', 'withdrawn']).default('pending_review').notNull(),
+	activeRequestKey: varchar({ length: 96 }),
+	memberNote: text(),
+	blockerSummary: text(),
+	adminNote: text(),
+	reviewedBy: int().references(() => users.id),
+	requestedAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	reviewedAt: timestamp({ mode: 'string' }),
+	closedAt: timestamp({ mode: 'string' }),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+},
+	(table) => [
+		uniqueIndex("accountClosureRequests_activeRequestKey_unique").on(table.activeRequestKey),
+		index("accountClosureRequests_userId_idx").on(table.userId),
+		index("accountClosureRequests_status_idx").on(table.status),
+		index("accountClosureRequests_requestedAt_idx").on(table.requestedAt),
 	]);
 
 export const apiHealthEvents = mysqlTable("apiHealthEvents", {

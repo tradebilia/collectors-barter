@@ -21,6 +21,7 @@ import { toast } from "sonner";
 import {
   AlertDialog,
   AlertDialogAction,
+  AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogTitle,
@@ -62,6 +63,26 @@ export default function AccountSettings() {
   const membershipQuery = trpc.membership.getMyStatus.useQuery(undefined, {
     enabled: isAuthenticated,
   });
+  const accountClosureRequestQuery = trpc.accountClosure.getMyRequest.useQuery(undefined, {
+    enabled: isAuthenticated,
+  });
+  const accountClosureRequestMutation = trpc.accountClosure.request.useMutation({
+    onSuccess: async (result) => {
+      await utils.accountClosure.getMyRequest.invalidate();
+      if (result.status === "closed") {
+        toast.success("Your account has been closed. You are being signed out.");
+        await logout();
+        window.location.assign("/");
+        return;
+      }
+      if (result.status === "pending_review") {
+        toast.info("Your account closure request needs administrator review. Your account remains available while the listed items are resolved.");
+        return;
+      }
+      toast.info("Your account closure request has already been recorded.");
+    },
+    onError: (error) => toast.error(error.message),
+  });
   const saveProfileMutation = trpc.market.saveProfile.useMutation();
   const changePasswordMutation = trpc.market.changePassword.useMutation();
   const saveIntegrationsMutation = trpc.market.saveIntegrations.useMutation();
@@ -84,6 +105,8 @@ export default function AccountSettings() {
     isOpen: boolean;
     title: string;
     message: string;
+    actionLabel?: string;
+    onConfirm?: () => void;
   }>({
     isOpen: false,
     title: "",
@@ -928,18 +951,34 @@ export default function AccountSettings() {
                   <div className="border-t border-slate-200 pt-4">
                     <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                       <h3 className="font-semibold text-red-900 mb-2">Danger Zone</h3>
-                      <Button
-                        variant="destructive"
-                        className="rounded-lg"
-                        onClick={() => setConfirmationDialog({
-                          isOpen: true,
-                          title: "Account deletion review",
-                          message: "Self-service account deletion is not available while active trades, audit records, and account-safety obligations are protected. Please contact Tradebilia support to request a reviewed account closure.",
-                        })}
-                      >
-                        Request Account Deletion Review
-                      </Button>
-                      <p className="text-xs text-red-800 mt-2">A reviewed closure request avoids deleting active trade records or required account history unexpectedly.</p>
+                      <div className="space-y-3">
+                        {accountClosureRequestQuery.data?.status === "pending_review" ? (
+                          <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950">
+                            <p className="font-medium">Your account closure request is awaiting review.</p>
+                            <p className="mt-1 text-xs">Your account remains available while Tradebilia resolves the listed trade, report, ticket, or account-review items.</p>
+                          </div>
+                        ) : accountClosureRequestQuery.data?.status === "declined" ? (
+                          <div className="rounded-md border border-slate-200 bg-white p-3 text-sm text-slate-800">
+                            <p className="font-medium">Your prior closure request was not approved.</p>
+                            {accountClosureRequestQuery.data.adminNote ? <p className="mt-1 text-xs">Administrator note: {accountClosureRequestQuery.data.adminNote}</p> : null}
+                          </div>
+                        ) : null}
+                        <Button
+                          variant="destructive"
+                          className="rounded-lg"
+                          disabled={accountClosureRequestMutation.isPending || accountClosureRequestQuery.data?.status === "pending_review"}
+                          onClick={() => setConfirmationDialog({
+                            isOpen: true,
+                            title: "Close your Tradebilia account?",
+                            message: "Tradebilia will immediately check for active or unresolved trades, complaints, reports, support tickets, and account holds. If none exist, your account will close now, future sign-in will be disabled, and active listings will be hidden. Trade and safety records are not erased. If an issue needs resolution, your request will be sent to administrator review.",
+                            actionLabel: "Request account closure",
+                            onConfirm: () => accountClosureRequestMutation.mutate({}),
+                          })}
+                        >
+                          {accountClosureRequestMutation.isPending ? "Checking account…" : "Request Account Closure"}
+                        </Button>
+                        <p className="text-xs text-red-800">Eligible accounts close immediately. Accounts with active trade or safety obligations are held for administrator review; protected history is retained.</p>
+                      </div>
                     </div>
                   </div>
 
@@ -1667,7 +1706,14 @@ export default function AccountSettings() {
         <AlertDialogContent>
           <AlertDialogTitle>{confirmationDialog.title}</AlertDialogTitle>
           <AlertDialogDescription>{confirmationDialog.message}</AlertDialogDescription>
-          <AlertDialogAction onClick={() => setConfirmationDialog(prev => ({ ...prev, isOpen: false }))}>OK</AlertDialogAction>
+          <div className="mt-4 flex justify-end gap-2">
+            <AlertDialogCancel onClick={() => setConfirmationDialog(prev => ({ ...prev, isOpen: false }))}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => {
+              const onConfirm = confirmationDialog.onConfirm;
+              setConfirmationDialog(prev => ({ ...prev, isOpen: false }));
+              onConfirm?.();
+            }}>{confirmationDialog.actionLabel ?? "OK"}</AlertDialogAction>
+          </div>
         </AlertDialogContent>
       </AlertDialog>
     </div>
