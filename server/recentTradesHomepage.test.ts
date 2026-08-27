@@ -20,6 +20,11 @@ describe("homepage Recent Trades carousel", () => {
     expect(carouselSource).toContain("prefers-reduced-motion: reduce");
     expect(carouselSource).toContain("buildTradeShowcaseExchange");
     expect(carouselSource).toContain("formatEstimatedValue");
+    expect(carouselSource).toContain("text-[2.45rem]");
+    expect(carouselSource).toContain('alignment="end"');
+    expect(carouselSource).toContain('alignment="start"');
+    expect(carouselSource).not.toContain("Tradebilia exchange activity");
+    expect(carouselSource).not.toContain("Completed trade");
     expect(carouselSource).not.toContain("Previous");
     expect(carouselSource).not.toContain("Next");
   });
