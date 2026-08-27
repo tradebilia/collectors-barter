@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import { COOKIE_NAME } from "../../shared/const";
 import { customAuth } from "./customAuth";
+import { hasValidProviderTokenEncryptionKey } from "./crypto";
 import { isStagingSafetyEnabled } from "./stagingSafety";
 import {
   clearProviderOauthStateCookie,
@@ -20,6 +21,7 @@ export function registerProviderOAuthCallbacks(app: Express) {
       if (!isValidState) return res.redirect(302, "/account-settings?ebay=error&reason=invalid_state");
       const user = await customAuth.getUserFromSession(cookies.get(COOKIE_NAME));
       if (!user) return res.redirect(302, "/account-settings?ebay=error&reason=not_logged_in");
+      if (!hasValidProviderTokenEncryptionKey()) return res.redirect(302, "/account-settings?ebay=error&reason=encryption_unavailable&tab=integrations");
       const { handleEbayCallback } = await import("./ebayCallback");
       await handleEbayCallback(code, user.id);
       return res.redirect(302, "/account-settings?ebay=connected&tab=integrations");
@@ -41,6 +43,7 @@ export function registerProviderOAuthCallbacks(app: Express) {
       if (!isValidState) return res.redirect(302, "/account-settings?facebook=error&reason=invalid_state&tab=integrations");
       const user = await customAuth.getUserFromSession(cookies.get(COOKIE_NAME));
       if (!user) return res.redirect(302, "/account-settings?facebook=error&reason=not_logged_in&tab=integrations");
+      if (!hasValidProviderTokenEncryptionKey()) return res.redirect(302, "/account-settings?facebook=error&reason=encryption_unavailable&tab=integrations");
       const { handleFacebookCallback } = await import("./facebookCallback");
       await handleFacebookCallback(code, user.id);
       return res.redirect(302, "/account-settings?facebook=connected&tab=integrations");
@@ -62,6 +65,7 @@ export function registerProviderOAuthCallbacks(app: Express) {
       if (!isValidState) return res.redirect(302, "/account-settings?linkedin=error&reason=invalid_state&tab=integrations");
       const user = await customAuth.getUserFromSession(cookies.get(COOKIE_NAME));
       if (!user) return res.redirect(302, "/account-settings?linkedin=error&reason=not_logged_in&tab=integrations");
+      if (!hasValidProviderTokenEncryptionKey()) return res.redirect(302, "/account-settings?linkedin=error&reason=encryption_unavailable&tab=integrations");
       const { handleLinkedInCallback } = await import("./linkedinCallback");
       await handleLinkedInCallback(code, user.id);
       return res.redirect(302, "/account-settings?linkedin=connected&tab=integrations");
