@@ -21,7 +21,7 @@ Before a future GitHub-to-WebDev reconciliation, create a fresh WebDev checkpoin
 
 ## Compatibility Boundary
 
-The canonical GitHub repository contains a future membership foundation that relies on membership schema tables and migrations. Those tables are not part of the currently restored Tradebilia runtime schema. Therefore the following GitHub paths remain **migration-gated** and must not be imported into the live WebDev runtime until a separate explicit database-migration approval is granted:
+The canonical GitHub repository contains an historical membership migration chain. The restored Tradebilia custom TiDB runtime now contains the separately approved, verified mixed-case Membership foundation, but the original GitHub migration files must not be replayed on that runtime. The following historical GitHub paths remain **migration-gated** and must not be imported or replayed as-is:
 
 - `drizzle/0007_shocking_expediter.sql`
 - `drizzle/0008_slimy_risque.sql`
@@ -35,7 +35,7 @@ The canonical GitHub repository contains a future membership foundation that rel
 - `client/src/components/SubscriptionAccessGate.tsx`
 - Membership-dependent portions of `server/routers.ts`, `client/src/App.tsx`, `client/src/pages/AccountSettings.tsx`, and `client/src/pages/AdminDashboard.tsx`
 
-No migration, seed, schema push, destructive action, or database write is authorized by this manifest. The restored custom TiDB data remains the runtime data source.
+No migration, seed, schema push, destructive action, or database write is authorized by this manifest alone. The restored custom TiDB data remains the runtime data source.
 
 ## Verified Compatible Baseline Content
 
@@ -67,3 +67,14 @@ The GitHub `0009_warm_mongu.sql` migration is the source-history upgrade path fo
 | Payment boundary | Stripe sandbox Checkout and customer portal remain administrator-only. No live key, live charge, fee enforcement, or member restriction is enabled. |
 
 The canonical commit deliberately merges the sandbox-specific behavior without replacing the existing richer Membership administration code. It validates signed raw Stripe sandbox webhooks, stores only membership/provider audit fields needed for reconciliation, rejects unconfigured prices, and keeps duplicate provider events idempotent.
+
+## Administrator Operations Pair
+
+| Record | Value |
+|---|---|
+| Canonical implementation commit | `af0fbbc9d75f0e8a26111ba8909e49a412b7713f` |
+| Paired managed WebDev checkpoint | `70942380` |
+| Custom TiDB additions | Additive, idempotent `accountApprovalReviews`, `apiHealthEvents`, and privacy-safe `adminActivityLog` tables. No seed, destructive, member, trade, Membership, payment, or scheduling-data migration was run. |
+| Operations workspace | Administrator-only Health, Action Queue, Active Trade Lifecycle, Launch & Membership Readiness, Operational Timeline, and CSV Exports. CSV values are spreadsheet-formula safe. |
+| Existing schedule repair | The existing enabled `tradebilia-shipment-reminders-daily` Heartbeat job was refreshed in place at `/api/scheduled/tradeReminders` with the existing daily UTC cadence; its next run is scheduled. No new job or email was created. |
+| Preserved safeguards | Custom TiDB marketplace baseline remains 3 members, 16 active listings, and $147,530. Free Launch remains active; Stripe live mode and payment enforcement remain inactive. |
