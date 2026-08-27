@@ -23,6 +23,8 @@ describe("Stripe Membership test Checkout safeguards", () => {
     expect(billingSource).toContain("Stripe Membership subscription does not use a configured test price.");
     expect(billingSource).toContain("const existingMembership");
     expect(billingSource).toContain("Stripe Membership event could not update the member record.");
+    expect(billingSource).toContain("subscriptionItem?.current_period_start ?? subscriptionData.current_period_start");
+    expect(billingSource).toContain("subscriptionItem?.current_period_end ?? subscriptionData.current_period_end");
     expect(billingSource).not.toContain("card_number");
     expect(routerSource).toContain("startTestCheckout");
     expect(routerSource).toContain("openTestPortal");
