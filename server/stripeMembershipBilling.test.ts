@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { shouldRetryFailedMembershipEvent } from "./stripeMembershipBilling";
 
 const projectRoot = join(import.meta.dirname, "..");
 const read = (relativePath: string) => readFileSync(join(projectRoot, relativePath), "utf8");
@@ -41,5 +42,17 @@ describe("Stripe Membership test Checkout safeguards", () => {
     expect(accountSettingsSource).toContain("hasExistingSandboxMembership");
     expect(accountSettingsSource).toContain("prevent a duplicate subscription");
     expect(accountSettingsSource).toContain('window.open(url, "_blank", "noopener,noreferrer")');
+  });
+
+  it("retries only a previously failed provider event while preserving terminal duplicate protection", () => {
+    expect(shouldRetryFailedMembershipEvent("failed")).toBe(true);
+    expect(shouldRetryFailedMembershipEvent("received")).toBe(false);
+    expect(shouldRetryFailedMembershipEvent("processed")).toBe(false);
+    expect(shouldRetryFailedMembershipEvent("ignored")).toBe(false);
+
+    const billingSource = read("server/stripeMembershipBilling.ts");
+    expect(billingSource).toContain('shouldRetryFailedMembershipEvent(existingEvent.processingStatus)');
+    expect(billingSource).toContain('eq(membershipProviderEvents.processingStatus, "failed")');
+    expect(billingSource).toContain('failureReason: null');
   });
 });

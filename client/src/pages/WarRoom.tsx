@@ -2144,8 +2144,6 @@ export default function WarRoom() {
                                   verifyPaymentMutation.mutate({
                                     proposalId,
                                     transactionId: transactionIdInput.trim(),
-                                    payeeUserId: (otherUser as any)?.id,
-                                    amount: cashAmount,
                                   });
                                 }}
                                 disabled={verifyPaymentMutation.isPending || !transactionIdInput.trim()}

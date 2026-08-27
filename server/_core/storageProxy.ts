@@ -18,8 +18,9 @@ export function canAccessPrivateReportEvidence(
 }
 
 export function registerStorageProxy(app: Express) {
-  app.get("/manus-storage/*", async (req, res) => {
-    const key = (req.params as Record<string, string>)[0];
+  app.get("/manus-storage/*key", async (req, res) => {
+    const keyParam = (req.params as Record<string, string | string[]>).key;
+    const key = Array.isArray(keyParam) ? keyParam.join("/") : keyParam;
     if (!key) {
       res.status(400).send("Missing storage key");
       return;

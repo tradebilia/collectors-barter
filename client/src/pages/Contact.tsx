@@ -59,7 +59,6 @@ export default function Contact() {
       subject: subjectText,
       message,
       category: categoryMap[category] ?? "general",
-      priority: category === "bug" ? "high" : "medium",
     });
   };
 

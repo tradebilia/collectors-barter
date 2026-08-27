@@ -1,0 +1,21 @@
+packages:
+  - "."
+
+patchedDependencies:
+  wouter@3.7.1: patches/wouter@3.7.1.patch
+
+overrides:
+  tailwindcss>nanoid: 3.3.7
+  qs: 6.15.2
+  path-to-regexp: 0.1.13
+  lodash: 4.18.1
+  body-parser: 1.20.6
+  recharts>lodash: 4.18.1
+  express>qs: 6.15.2
+
+ignoredBuiltDependencies:
+  - bcrypt
+
+onlyBuiltDependencies:
+  - "@tailwindcss/oxide"
+  - esbuild
