@@ -153,6 +153,17 @@ The canonical commit deliberately merges the sandbox-specific behavior without r
 | Outcome | P2A—truthful account-closure policy copy—is the recommended next approval. P2B—trusted return origins—must precede any future live-billing proposal. The other three items remain intentionally separate and lower-risk. |
 | Preserved safeguards | No application behavior, custom TiDB data/schema, marketplace record, Stripe setting/action, provider action, schedule, or secret changed. |
 
+## Hybrid Account-Closure Workflow Pair
+
+| Record | Value |
+|---|---|
+| Canonical implementation commit | `c6a1d972` — normal push to GitHub `main`; no force push or history replacement. |
+| Paired managed WebDev checkpoint | `30d4e799` |
+| Scope | Guarded member account-closure request, additive custom-TiDB request/state schema, immediate closure only for clean non-administrator accounts, disabled future custom sessions, hidden active listings/public profile, and an administrator-only closure-request queue with count-only audit and documented close/decline decisions. |
+| Custom TiDB outcome | The reviewed `0014_p2_account_closure_requests.sql` migration added two additive account-state fields and one request table. Aggregate postcheck confirmed 0 closure requests and 0 closed accounts during implementation, with 3 members, 16 active listings, $147,530 value, and all retained-record counts unchanged. |
+| Validation | Focused account-closure/logout tests passed 8/8. WebDev full suite passed 147 files / 456 tests with four intended skips; TypeScript, production build, production dependency audit, whitespace review, and startup database validation passed. Fresh canonical focused account-closure/logout/reliability tests, TypeScript, build, audit, and whitespace checks passed. The canonical complete suite did not finish within the bounded run because slow external credential probes remained in progress; no account-closure regression was identified. |
+| Preserved safeguards | No account, listing, trade, message, report, complaint, payment, provider, schedule, or secret was deleted or changed by validation. Free Launch remains active, Stripe remains sandbox-only, and payment enforcement remains inactive. |
+
 ## Synchronization Rules
 
 Before future GitHub-to-WebDev reconciliation, create a recovery checkpoint and an immutable GitHub backup tag. Before a reviewed WebDev change becomes canonical, merge only the relevant content into the current GitHub `main`, preserve any newer canonical work, use a normal commit/push, and record the associated checkpoint. Never force-push or replace the canonical repository wholesale.
