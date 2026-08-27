@@ -94,9 +94,12 @@ const frequentlyAskedQuestions = [
 ] as const;
 
 const tradeRoomScreenshots = [
-  { title: "1. Review the proposal", description: "A development-only capture of the actual Trade Room review layout, using an illustrative exchange between fictional collectors.", image: "/manus-storage/trade-room-review_91abd2a2.png", alt: "Development-only Trade Room capture showing fictional Avery Cole and Morgan Reed reviewing a proposal." },
-  { title: "2. Confirm the exchange", description: "A development-only capture of the actual confirmation layout, showing the next shipping step after fictional collectors agree to the terms.", image: "/manus-storage/trade-room-confirm_e64c3760.png", alt: "Development-only Trade Room capture showing fictional Avery Cole and Morgan Reed confirming an exchange." },
-  { title: "3. Confirm receipt", description: "A development-only capture of the actual completion layout, showing where fictional collectors record receipt after an exchange.", image: "/manus-storage/trade-room-complete_8eb0811a.png", alt: "Development-only Trade Room capture showing fictional Avery Cole and Morgan Reed confirming receipt." },
+  { title: "1. Propose", description: "Start a structured offer by choosing what you are offering and reviewing the collectible you want.", image: "/manus-storage/trade-room-propose-v3_447c36ed.png", alt: "Development-only Trade Room capture showing a fictional new trade proposal." },
+  { title: "2. Negotiate", description: "Use the Trade Room to discuss condition, adjust an offer, and send a counteroffer when needed.", image: "/manus-storage/trade-room-negotiate-v3_caf89355.png", alt: "Development-only Trade Room capture showing a fictional collector counteroffer." },
+  { title: "3. Review", description: "Compare every proposed item and confirm that both collectors understand the current exchange terms.", image: "/manus-storage/trade-room-review-v3_8fdf4e4b.png", alt: "Development-only Trade Room capture showing a fictional trade proposal under review." },
+  { title: "4. Shipping", description: "After agreement, each collector records shipping progress for the collectible they are sending.", image: "/manus-storage/trade-room-shipping-v3_bec62ed5.png", alt: "Development-only Trade Room capture showing fictional shipping progress." },
+  { title: "5. Confirm", description: "When both sides agree, the trade is accepted and the agreed items are locked for the exchange.", image: "/manus-storage/trade-room-confirm-v3_19ad33b4.png", alt: "Development-only Trade Room capture showing a fictional accepted and locked exchange." },
+  { title: "6. Complete", description: "Both collectors confirm receipt after the exchange, completing the Trade Room process.", image: "/manus-storage/trade-room-complete-v3_9a6fc26b.png", alt: "Development-only Trade Room capture showing a fictional completed trade." },
 ] as const;
 
 const safetyChecklist = [
@@ -209,7 +212,7 @@ export default function HowTradebiliaWorks() {
             <div className="mx-auto max-w-3xl text-center">
               <p className="text-xs font-bold uppercase tracking-[0.24em] text-violet-700">A closer look</p>
               <h2 className="mt-3 font-serif text-4xl font-medium tracking-[-0.035em] text-[#2d241e] sm:text-5xl">Inside the Trade Room</h2>
-              <p className="mt-4 text-base leading-8 text-[#655b53]">These development-only captures use the actual Trade Room layout with fictional collectors and collectibles. They are not live trade, member-profile, or private trade records.</p>
+              <p className="mt-4 text-base leading-8 text-[#655b53]">These six development-only captures use the actual Trade Room layout for every stage, with fictional collectors and collectibles. They are not live trade, member-profile, or private trade records.</p>
             </div>
             <div className="mt-9 grid gap-6 lg:grid-cols-3">
               {tradeRoomScreenshots.map(({ title, description, image, alt }) => (
