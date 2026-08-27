@@ -712,14 +712,16 @@
 - [x] Increase the Member Directory hero section title size by 25px without affecting other page hero titles.
 - [x] Run a check-only TiDB gateway02 host test using the existing custom database details in memory only, with secure TLS and only a read-only SELECT 1 query.
 - [x] Retry the current custom Tradebilia database connection with one read-only SELECT 1 health check without changing secrets, site configuration, or data.
-- [ ] Restore the approved Tradebilia Membership foundation that is missing from the active WebDev checkpoint, then prepare Stripe test-mode configuration with Free Launch, live charges, and payment enforcement kept inactive.
+- [x] Restore the approved Tradebilia Membership foundation that is missing from the active WebDev checkpoint, then prepare Stripe test-mode configuration with Free Launch, live charges, and payment enforcement kept inactive.
 - [x] Complete the approved Membership migration investigation against the actual custom TiDB runtime database after schema tooling was confirmed to target the separate managed project database; read-only runtime inspection confirmed the approved membership foundation already exists, so no additional custom-database migration was applied.
 - [x] Restore and validate the approved Membership source in WebDev against the existing custom TiDB foundation, including the member Membership tab and read-only Admin Billing monitor, with Free Launch and all payment controls inactive.
-- [ ] Configure Stripe Dashboard test mode first: create the Tradebilia Membership $1 monthly and $10 annual test prices, prepare a signed test webhook, and document the secure test credentials needed before connecting WebDev.
-- [ ] Recreate the Tradebilia Membership $1 monthly and $10 annual test prices in the newly claimed Manus-linked Stripe sandbox because the earlier Price IDs belong to a separate Stripe test account.
+- [x] Configure Stripe Dashboard test mode first: create the Tradebilia Membership $1 monthly and $10 annual test prices, prepare a signed test webhook, and document the secure test credentials needed before connecting WebDev.
+- [x] Recreate the Tradebilia Membership $1 monthly and $10 annual test prices in the newly claimed Manus-linked Stripe sandbox because the earlier Price IDs belong to a separate Stripe test account.
 - [x] Create and securely validate the Tradebilia Membership $1 monthly and $10 annual recurring Price IDs in the Manus-linked Stripe sandbox using a read-only Stripe API test.
-- [ ] Register the deployed `/api/stripe/webhook` endpoint with the Manus-linked Stripe sandbox, securely validate its signing secret, and verify a test event while payment enforcement remains inactive.
-- [ ] Resolve or route around the current Stripe-versus-project authentication-context blocker before connecting the project to Rich’s Stripe test account; preserve the existing test product and do not alter Tradebilia sign-in.
+- [x] Register the deployed `/api/stripe/webhook` endpoint with the Manus-linked Stripe sandbox, securely validate its signing secret, and verify a test event while payment enforcement remains inactive.
+- [x] Resolve or route around the current Stripe-versus-project authentication-context blocker before connecting the project to Rich’s Stripe test account; preserve the existing test product and do not alter Tradebilia sign-in.
+- [ ] Implement an approval-gated test Checkout and customer-portal flow for the configured Membership prices, then validate a test subscription without enabling live payments or member restrictions.
+- [ ] Synchronize the reviewed Stripe test-mode preparation and future checkout implementation to GitHub after validation, preserving the canonical repository history.
 - [x] Diagnose and repair the embedded WebDev preview sign-in flow where valid custom credentials are accepted but the browser does not establish a session, without changing the working live-domain login behavior.
 - [x] Replace the insufficient cached-query refresh fallback with an immediate embedded-preview auth-state update and durable session fallback after accepted custom sign-in.
 - [x] Reproduce the persistent embedded WebDev preview sign-in failure directly and inspect its actual session and authentication-query behavior before making further changes.
