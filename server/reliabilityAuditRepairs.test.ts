@@ -31,9 +31,10 @@ describe("verified reliability-audit repairs", () => {
     expect(dbSource).toContain("Members can remove their own photos, reorder retained photos, and add new ones.");
   });
 
-  it("replaces the misleading self-service deletion promise with a review request", () => {
+  it("uses a guarded closure request rather than promising blind self-service record deletion", () => {
     const settingsSource = source("client/src/pages/AccountSettings.tsx");
-    expect(settingsSource).toContain("Request Account Deletion Review");
-    expect(settingsSource).toContain("Self-service account deletion is not available");
+    expect(settingsSource).toContain("Request Account Closure");
+    expect(settingsSource).toContain("Eligible accounts close immediately");
+    expect(settingsSource).toContain("Trade and safety records are not erased");
   });
 });

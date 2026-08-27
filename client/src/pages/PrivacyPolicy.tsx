@@ -125,16 +125,18 @@ export default function PrivacyPolicy() {
             </div>
 
             <p className="text-slate-700 mb-4">
-              You have the right to request deletion of your personal data at any time. To delete your account and associated data:
+              You may request closure of your Tradebilia account and deletion of personal data that is no longer required for marketplace operation, safety, fraud prevention, or legal compliance. Account closure is a reviewed process, not an immediate deletion of all historical records.
             </p>
             <ol className="space-y-3 text-slate-700 ml-4 list-decimal">
               <li>Log in to your Tradebilia account</li>
               <li>Go to Account Settings → Security → Danger Zone</li>
-              <li>Click "Delete Account"</li>
-              <li>Confirm your request</li>
+              <li>Click "Request Account Closure" and confirm the request</li>
+              <li>Tradebilia checks for active trades, unresolved reports or complaints, open support matters, and other protected account obligations</li>
+              <li>If no blocker exists, the account is closed immediately: sign-in is disabled and active listings are hidden</li>
+              <li>If a blocker exists, the request is held for administrator review until the matter is resolved or a decision is recorded</li>
             </ol>
             <p className="text-slate-700 mt-4 bg-yellow-50 border border-yellow-200 rounded p-4">
-              <strong>Note:</strong> Account deletion is permanent. All your profile information, trade history, and connected OAuth accounts will be removed from our systems within 30 days. Some data may be retained for legal or compliance purposes.
+              <strong>Note:</strong> Account closure does not automatically erase trade history, report evidence, messages, or other records that Tradebilia must retain for safety, fraud prevention, dispute handling, or legal compliance. Any retained information is handled according to the applicable retention purpose; we do not promise a fixed deletion timeframe where a review or retention obligation applies.
             </p>
           </div>
 

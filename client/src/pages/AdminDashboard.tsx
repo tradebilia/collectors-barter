@@ -19,6 +19,7 @@ import { PreLaunchEmailTab } from "@/components/PreLaunchEmailTab";
 import { R2MediaMigrationTab } from "@/components/R2MediaMigrationTab";
 import { R2StorageHealthTab } from "@/components/R2StorageHealthTab";
 import { AdminOperationsTab } from "@/components/AdminOperationsTab";
+import { AccountClosureRequestsTab } from "@/components/AccountClosureRequestsTab";
 import { Link } from "wouter";
 import { DeleteConfirmationDialog } from "@/components/DeleteConfirmationDialog";
 
@@ -670,6 +671,10 @@ export default function AdminDashboard() {
               <Users className="h-4 w-4" />
               Deleted
             </TabsTrigger>
+            <TabsTrigger value="account-closures" className="flex items-center justify-center gap-1.5 text-xs font-medium py-2.5 whitespace-nowrap">
+              <ShieldOff className="h-4 w-4" />
+              Closure Requests
+            </TabsTrigger>
             <TabsTrigger value="reports" className="flex items-center justify-center gap-1.5 text-xs font-medium py-2.5 whitespace-nowrap">
               <Flag className="h-4 w-4" />
               Reports
@@ -1214,6 +1219,10 @@ export default function AdminDashboard() {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="account-closures" className="space-y-4 mt-6">
+            <AccountClosureRequestsTab />
           </TabsContent>
 
           {/* Settings Tab */}
