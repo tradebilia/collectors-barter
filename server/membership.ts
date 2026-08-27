@@ -12,6 +12,7 @@ import {
 } from "../drizzle/schema";
 import { requireDb } from "./db";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
+import { createMembershipTestCheckout, createMembershipTestPortal } from "./stripeMembershipBilling";
 
 export const FREE_LAUNCH_BILLING_MODE = "free_launch" as const;
 export const LAUNCH_GRACE_BILLING_MODE = "launch_grace" as const;
@@ -257,6 +258,20 @@ function requireAdministrator(role: string | null | undefined) {
   if (role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Only administrators can manage membership configuration." });
 }
 
+function getSafeRequestOrigin(req: { protocol: string; headers: Record<string, string | string[] | undefined>; get?: (name: string) => string | undefined }) {
+  const host = req.get?.("host") ?? req.headers.host;
+  const origin = typeof req.headers.origin === "string" ? req.headers.origin : null;
+  if (origin && host) {
+    try {
+      if (new URL(origin).host === host) return origin;
+    } catch {
+      // Fall through to the current request origin.
+    }
+  }
+  if (!host || typeof host !== "string") throw new TRPCError({ code: "BAD_REQUEST", message: "A valid Tradebilia request origin is required for Stripe test Checkout." });
+  return `${req.protocol}://${host}`;
+}
+
 export async function grantComplimentaryMembership(userId: number) {
   const db = await requireDb();
   const target = await db.select({ id: users.id }).from(users).where(eq(users.id, userId)).limit(1);
@@ -309,6 +324,22 @@ export const billingRouter = router({
       await updatePlanFeatureConfiguration(input);
       return { success: true, billing: buildBillingSummary(await getBillingSettingsRow()) };
     }),
+  startTestCheckout: protectedProcedure.input(z.object({ billingTerm: z.enum(["monthly", "annual"]) })).mutation(async ({ ctx, input }) => {
+    requireAdministrator(ctx.user.role);
+    try {
+      return await createMembershipTestCheckout({ userId: ctx.user.id, billingTerm: input.billingTerm, origin: getSafeRequestOrigin(ctx.req) });
+    } catch (error) {
+      throw new TRPCError({ code: "BAD_REQUEST", message: error instanceof Error ? error.message : "Test Checkout could not be started." });
+    }
+  }),
+  openTestPortal: protectedProcedure.mutation(async ({ ctx }) => {
+    requireAdministrator(ctx.user.role);
+    try {
+      return await createMembershipTestPortal(ctx.user.id, getSafeRequestOrigin(ctx.req));
+    } catch (error) {
+      throw new TRPCError({ code: "BAD_REQUEST", message: error instanceof Error ? error.message : "Test customer portal could not be opened." });
+    }
+  }),
   grantComplimentaryAccess: protectedProcedure
     .input(z.object({ targetUserId: z.number().int().positive() }))
     .mutation(async ({ ctx, input }) => {
