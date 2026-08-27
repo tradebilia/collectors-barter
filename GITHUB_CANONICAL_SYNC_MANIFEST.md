@@ -52,3 +52,16 @@ The Member Directory title-artwork adjustment, its regression test, and the futu
 | Later payment safety boundary | A separately approved Stripe test-mode phase is required before any payment credential, checkout, webhook, or charge is introduced. |
 
 The GitHub `0009_warm_mongu.sql` migration is the source-history upgrade path for environments that already ran GitHub’s earlier membership migrations. It must **not** be replayed on the restored custom TiDB runtime, which already received the separately reviewed WebDev migration `0007_elite_switch.sql`.
+
+## Stripe Sandbox Checkout Pair
+
+| Record | Value |
+|---|---|
+| Custom TiDB membership audit | Read-only verification confirmed the runtime mixed-case `userMemberships` table, required columns/indexes, `membershipProviderEvents` idempotency key, and the completed administrator’s monthly sandbox subscription record. No migration or marketplace-data write was required. |
+| Marketplace baseline | 3 members, 16 active listings, and $147,530 active listing value before and after the audit. |
+| Free Launch safeguards | `billingMode=free_launch`, `stripeBillingEnabled=0`, and `paymentEnforcementEnabled=0`. |
+| Canonical sandbox implementation commit | `0d45ce25d94bec3c222da929fb57832e0730442b` |
+| Paired managed WebDev checkpoint | `ca726dc7` |
+| Payment boundary | Stripe sandbox Checkout and customer portal remain administrator-only. No live key, live charge, fee enforcement, or member restriction is enabled. |
+
+The canonical commit deliberately merges the sandbox-specific behavior without replacing the existing richer Membership administration code. It validates signed raw Stripe sandbox webhooks, stores only membership/provider audit fields needed for reconciliation, rejects unconfigured prices, and keeps duplicate provider events idempotent.
