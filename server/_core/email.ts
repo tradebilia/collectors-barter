@@ -7,6 +7,9 @@ const RESEND_API_KEY = process.env.RESEND_API_KEY;
 const FROM_ADDRESS = "Tradebilia <noreply@tradebilia.com>";
 const SITE_URL = "https://tradebilia.manus.space";
 import { isStagingSafetyEnabled, stagingSafetyReason } from "./stagingSafety";
+import { classifyApiFailure, recordApiFailure } from "../apiHealth";
+
+const RESEND_REQUEST_TIMEOUT_MS = 15_000;
 
 async function sendEmail(to: string, subject: string, html: string): Promise<boolean> {
   if (isStagingSafetyEnabled()) {
@@ -29,15 +32,29 @@ async function sendEmail(to: string, subject: string, html: string): Promise<boo
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ from: FROM_ADDRESS, to, subject, html }),
+      signal: AbortSignal.timeout(RESEND_REQUEST_TIMEOUT_MS),
     });
     if (!res.ok) {
-      const detail = await res.text().catch(() => "");
-      console.warn(`[Email] Resend error ${res.status}: ${detail}`);
+      await recordApiFailure({
+        provider: "Resend",
+        operation: "transactional_email",
+        failureClass: classifyApiFailure({ statusCode: res.status }),
+        statusCode: res.status,
+        safeMessage: "Transactional email request was rejected by the provider.",
+      });
+      console.warn(`[Email] Resend transactional email request failed with HTTP ${res.status}.`);
       return false;
     }
     return true;
-  } catch (err) {
-    console.warn("[Email] Failed to send email:", err);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Resend request failed";
+    await recordApiFailure({
+      provider: "Resend",
+      operation: "transactional_email",
+      failureClass: classifyApiFailure({ message }),
+      safeMessage: "Transactional email provider is temporarily unavailable.",
+    });
+    console.warn("[Email] Transactional email provider is temporarily unavailable.");
     return false;
   }
 }

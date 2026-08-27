@@ -1,4 +1,4 @@
-import { mysqlTable, mysqlSchema, AnyMySqlColumn, index, int, mysqlEnum, varchar, text, timestamp, foreignKey, decimal, datetime, tinyint, json, uniqueIndex } from "drizzle-orm/mysql-core"
+import { mysqlTable, mysqlSchema, AnyMySqlColumn, index, uniqueIndex, int, mysqlEnum, varchar, text, timestamp, foreignKey, decimal, datetime, tinyint, json } from "drizzle-orm/mysql-core"
 import { sql } from "drizzle-orm"
 
 export const conventionCategories = mysqlTable("conventionCategories", {
@@ -114,9 +114,9 @@ export const favorites = mysqlTable("favorites", {
 	userId: int().notNull().references(() => users.id),
 	listingId: int().notNull().references(() => listings.id),
 	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
-},
-(table) => [
-	uniqueIndex("favorites_user_listing_unique").on(table.userId, table.listingId),
+	},
+	(table) => [
+		uniqueIndex("favorites_user_listing_unique").on(table.userId, table.listingId),
 	index("favorites_user_idx").on(table.userId),
 	index("favorites_listing_idx").on(table.listingId),
 ]);
@@ -182,6 +182,8 @@ export const itemInquiries = mysqlTable("itemInquiries", {
 	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
 	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
 	deletedAt: timestamp({ mode: 'string' }),
+	senderArchivedAt: timestamp({ mode: 'string' }),
+	recipientArchivedAt: timestamp({ mode: 'string' }),
 	senderIsRead: tinyint().default(0).notNull(),
 	recipientIsRead: tinyint().default(0).notNull(),
 },
@@ -438,8 +440,8 @@ export const tradePrivateNotes = mysqlTable("tradePrivateNotes", {
 	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow(),
 },
 (table) => [
-	index("unique_note_per_trade").on(table.proposalId, table.userId),
-	index("idx_tradeNotes_proposal").on(table.proposalId),
+  uniqueIndex("tradePrivateNotes_proposal_user_unique").on(table.proposalId, table.userId),
+  index("idx_tradeNotes_proposal").on(table.proposalId),
 ]);
 
 export const tradeProposalItems = mysqlTable("tradeProposalItems", {
@@ -449,9 +451,9 @@ export const tradeProposalItems = mysqlTable("tradeProposalItems", {
 	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
 },
 (table) => [
-	index("tradeProposalItems_unique_item").on(table.proposalId, table.offeredListingId),
-	index("tradeProposalItems_proposal_idx").on(table.proposalId),
-	index("tradeProposalItems_offeredListing_idx").on(table.offeredListingId),
+  uniqueIndex("tradeProposalItems_proposal_listing_unique").on(table.proposalId, table.offeredListingId),
+  index("tradeProposalItems_proposal_idx").on(table.proposalId),
+  index("tradeProposalItems_offeredListing_idx").on(table.offeredListingId),
 ]);
 
 export const tradeProposals = mysqlTable("tradeProposals", {
@@ -504,8 +506,8 @@ export const tradeReceiptConfirmation = mysqlTable("tradeReceiptConfirmation", {
 	confirmedAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP'),
 },
 (table) => [
-	index("unique_proposal_user").on(table.proposalId, table.userId),
-	index("idx_tradeReceipt_proposal").on(table.proposalId),
+  uniqueIndex("tradeReceiptConfirmation_proposal_user_unique").on(table.proposalId, table.userId),
+  index("idx_tradeReceipt_proposal").on(table.proposalId),
 ]);
 
 export const tradeReviews = mysqlTable("tradeReviews", {
@@ -525,10 +527,10 @@ export const tradeReviews = mysqlTable("tradeReviews", {
 	isVisible: tinyint().default(0),
 },
 (table) => [
-	index("tradeReviews_unique_reviewer_per_proposal").on(table.proposalId, table.reviewerId),
-	index("tradeReviews_proposal_idx").on(table.proposalId),
-	index("tradeReviews_reviewer_idx").on(table.reviewerId),
-	index("tradeReviews_reviewee_idx").on(table.revieweeId),
+  uniqueIndex("tradeReviews_proposal_reviewer_unique").on(table.proposalId, table.reviewerId),
+  index("tradeReviews_proposal_idx").on(table.proposalId),
+  index("tradeReviews_reviewer_idx").on(table.reviewerId),
+  index("tradeReviews_reviewee_idx").on(table.revieweeId),
 ]);
 
 export const tradeTrackingNumbers = mysqlTable("tradeTrackingNumbers", {
@@ -543,8 +545,9 @@ export const tradeTrackingNumbers = mysqlTable("tradeTrackingNumbers", {
 	submittedAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP'),
 },
 (table) => [
-	index("idx_tradeTracking_proposal").on(table.proposalId),
-	index("idx_tradeTracking_user").on(table.userId),
+  uniqueIndex("tradeTrackingNumbers_proposal_user_listing_unique").on(table.proposalId, table.userId, table.listingId),
+  index("idx_tradeTracking_proposal").on(table.proposalId),
+  index("idx_tradeTracking_user").on(table.userId),
 ]);
 
 export const tradeVotes = mysqlTable("tradeVotes", {
@@ -556,8 +559,8 @@ export const tradeVotes = mysqlTable("tradeVotes", {
 	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP'),
 },
 (table) => [
-	index("unique_voter_per_link").on(table.votingLinkId, table.voterUserId),
-	index("idx_tradeVotes_link").on(table.votingLinkId),
+  uniqueIndex("tradeVotes_link_voter_unique").on(table.votingLinkId, table.voterUserId),
+  index("idx_tradeVotes_link").on(table.votingLinkId),
 ]);
 
 export const tradeVotingLinks = mysqlTable("tradeVotingLinks", {
@@ -569,10 +572,9 @@ export const tradeVotingLinks = mysqlTable("tradeVotingLinks", {
 	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP'),
 },
 (table) => [
-	index("idx_tradeVoting_proposal").on(table.proposalId),
-	index("idx_tradeVoting_token").on(table.linkToken),
-	index("idx_tradeVoting_expires").on(table.expiresAt),
-	index("linkToken").on(table.linkToken),
+  uniqueIndex("tradeVotingLinks_proposal_unique").on(table.proposalId),
+  uniqueIndex("tradeVotingLinks_token_unique").on(table.linkToken),
+  index("idx_tradeVoting_expires").on(table.expiresAt),
 ]);
 
 export const userFollows = mysqlTable("userFollows", {
@@ -626,9 +628,9 @@ export const userProfiles = mysqlTable("userProfiles", {
 	phoneVerified: tinyint().default(0).notNull(),
 	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
 	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
-},
-(table) => [
-	uniqueIndex("userProfiles_userId_unique").on(table.userId),
+	},
+	(table) => [
+		uniqueIndex("userProfiles_userId_unique").on(table.userId),
 ]);
 
 export const userRatingSummary = mysqlTable("userRatingSummary", {
@@ -661,9 +663,9 @@ export const userReports = mysqlTable("userReports", {
 	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
 	reviewedAt: timestamp({ mode: 'string' }),
 	reviewedBy: int().references(() => users.id),
-},
-(table) => [
-	uniqueIndex("userReports_reportId_unique").on(table.reportId),
+	},
+	(table) => [
+		uniqueIndex("userReports_reportId_unique").on(table.reportId),
 	index("userReports_reportedUserId_idx").on(table.reportedUserId),
 	index("userReports_reporterUserId_idx").on(table.reporterUserId),
 	index("userReports_status_idx").on(table.status),
@@ -753,7 +755,7 @@ export const users = mysqlTable("users", {
 	merchantVerified: tinyint().default(0).notNull(),
 	merchantVerifiedAt: timestamp({ mode: 'string' }),
 	merchantVerifiedBy: int(),
-},
+	},
 		(table) => [
 			index("users_openId_unique").on(table.openId),
 			uniqueIndex("users_username_unique").on(table.username),
@@ -798,9 +800,9 @@ export const watchlistEntries = mysqlTable("watchlistEntries", {
 	userId: int().notNull().references(() => users.id),
 	listingId: int().notNull().references(() => listings.id),
 	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
-},
-(table) => [
-	uniqueIndex("watchlistEntries_unique_user_listing").on(table.userId, table.listingId),
+	},
+	(table) => [
+		uniqueIndex("watchlistEntries_unique_user_listing").on(table.userId, table.listingId),
 	index("watchlistEntries_user_idx").on(table.userId),
 	index("watchlistEntries_listing_idx").on(table.listingId),
 ]);
@@ -868,6 +870,8 @@ export const directMessageThreads = mysqlTable("directMessageThreads", {
 	itemId: int().references(() => listings.id, { onDelete: 'set null' }),
 	lastMessageAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
 	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	participantAArchivedAt: timestamp({ mode: 'string' }),
+	participantBArchivedAt: timestamp({ mode: 'string' }),
 },
 (table) => [
 	index("dmThreads_participantA_idx").on(table.participantAId),
@@ -911,12 +915,11 @@ export const tradePayments = mysqlTable("tradePayments", {
 	index("tradePayments_payerId_idx").on(table.payerId),
 	index("tradePayments_payeeId_idx").on(table.payeeId),
 	index("tradePayments_status_idx").on(table.status),
-]);
+	]);
 
 // ─── Membership, Billing, and Verification Foundation ───────────────────────
-// All payment-provider identifiers are nullable. Free Launch remains the
-// default state and payment enforcement stays disabled until a future manual
-// launch decision. These tables do not alter existing marketplace records.
+// Free Launch remains the default state. Payment-provider identifiers are nullable
+// and payment enforcement is disabled until a separate manual launch decision.
 export const membershipPlans = mysqlTable("membershipPlans", {
 	id: int().autoincrement().notNull().primaryKey(),
 	code: varchar({ length: 64 }).notNull(),
@@ -1017,7 +1020,9 @@ export const membershipProviderEvents = mysqlTable("membershipProviderEvents", {
 
 export const verificationOrders = mysqlTable("verificationOrders", {
 	id: int().autoincrement().notNull().primaryKey(),
-	proposalId: int().notNull().references(() => tradeProposals.id, { onDelete: 'cascade' }),
+	// The restored custom schema does not include tradeProposals. The future
+	// relational link is deferred until that trade table is restored or migrated.
+	proposalId: int().notNull(),
 	status: mysqlEnum(['awaiting_agreement', 'awaiting_payment', 'awaiting_shipment', 'received', 'matched_listing', 'forwarded', 'completed', 'admin_review', 'cancelled']).default('awaiting_agreement').notNull(),
 	requesterAgreed: tinyint().default(0).notNull(),
 	recipientAgreed: tinyint().default(0).notNull(),

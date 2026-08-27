@@ -8,8 +8,10 @@
  */
 import { ENV } from "./_core/env";
 import { isStagingSafetyEnabled, stagingSafetyReason } from "./_core/stagingSafety";
+import { classifyApiFailure, recordApiFailure } from "./apiHealth";
 
 const VERIFY_BASE = "https://verify.twilio.com/v2";
+const TWILIO_REQUEST_TIMEOUT_MS = 15_000;
 
 function twilioAuthHeader(): string {
   const raw = `${ENV.twilioAccountSid}:${ENV.twilioAuthToken}`;
@@ -18,6 +20,30 @@ function twilioAuthHeader(): string {
 
 export function isTwilioConfigured(): boolean {
   return Boolean(ENV.twilioAccountSid && ENV.twilioAuthToken && ENV.twilioVerifyServiceSid);
+}
+
+async function twilioVerifyRequest(operation: "send_verification" | "check_verification", url: string, body: URLSearchParams): Promise<Response | null> {
+  try {
+    return await fetch(url, {
+      method: "POST",
+      headers: {
+        Authorization: twilioAuthHeader(),
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: body.toString(),
+      signal: AbortSignal.timeout(TWILIO_REQUEST_TIMEOUT_MS),
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Twilio Verify request failed";
+    await recordApiFailure({
+      provider: "Twilio Verify",
+      operation,
+      failureClass: classifyApiFailure({ message }),
+      safeMessage: "SMS verification provider is temporarily unavailable.",
+    });
+    console.warn("[Twilio] SMS verification provider is temporarily unavailable.");
+    return null;
+  }
 }
 
 /**
@@ -64,25 +90,27 @@ export async function sendVerificationCode(e164Phone: string): Promise<SendCodeR
   }
 
   const body = new URLSearchParams({ To: e164Phone, Channel: "sms" });
-  const res = await fetch(`${VERIFY_BASE}/Services/${ENV.twilioVerifyServiceSid}/Verifications`, {
-    method: "POST",
-    headers: {
-      Authorization: twilioAuthHeader(),
-      "Content-Type": "application/x-www-form-urlencoded",
-    },
-    body: body.toString(),
-  });
+  const res = await twilioVerifyRequest("send_verification", `${VERIFY_BASE}/Services/${ENV.twilioVerifyServiceSid}/Verifications`, body);
+  if (!res) return { ok: false, error: "SMS verification is temporarily unavailable. Please try again shortly." };
 
   const data: any = await res.json().catch(() => ({}));
 
   if (!res.ok) {
     // Common Twilio error codes worth translating for end users
     const code = data?.code;
+    await recordApiFailure({
+      provider: "Twilio Verify",
+      operation: "send_verification",
+      failureClass: classifyApiFailure({ statusCode: res.status, code: String(code ?? "") }),
+      statusCode: res.status,
+      providerErrorCode: code ? String(code) : null,
+      safeMessage: "SMS verification request was rejected by the provider.",
+    });
     if (code === 60200) return { ok: false, error: "That phone number is not valid." };
     if (code === 60203) return { ok: false, error: "Too many code requests for this number. Please wait a few minutes." };
     if (code === 60205) return { ok: false, error: "SMS is not supported for this phone number." };
     if (code === 20429) return { ok: false, error: "Too many requests right now. Please try again shortly." };
-    return { ok: false, error: data?.message || "Could not send the verification code." };
+    return { ok: false, error: "Could not send the verification code. Please try again shortly." };
   }
 
   return { ok: true, to: data.to, channel: data.channel };
@@ -102,19 +130,21 @@ export async function checkVerificationCode(e164Phone: string, code: string): Pr
   }
 
   const body = new URLSearchParams({ To: e164Phone, Code: code });
-  const res = await fetch(`${VERIFY_BASE}/Services/${ENV.twilioVerifyServiceSid}/VerificationCheck`, {
-    method: "POST",
-    headers: {
-      Authorization: twilioAuthHeader(),
-      "Content-Type": "application/x-www-form-urlencoded",
-    },
-    body: body.toString(),
-  });
+  const res = await twilioVerifyRequest("check_verification", `${VERIFY_BASE}/Services/${ENV.twilioVerifyServiceSid}/VerificationCheck`, body);
+  if (!res) return { ok: false, error: "SMS verification is temporarily unavailable. Please try again shortly." };
 
   const data: any = await res.json().catch(() => ({}));
 
   if (!res.ok) {
     const code404 = res.status === 404;
+    await recordApiFailure({
+      provider: "Twilio Verify",
+      operation: "check_verification",
+      failureClass: classifyApiFailure({ statusCode: res.status, code: String(data?.code ?? "") }),
+      statusCode: res.status,
+      providerErrorCode: data?.code ? String(data.code) : null,
+      safeMessage: "SMS verification check was rejected by the provider.",
+    });
     if (code404) {
       // Verification expired or was already consumed
       return { ok: false, error: "That code has expired. Please request a new one." };
@@ -122,7 +152,7 @@ export async function checkVerificationCode(e164Phone: string, code: string): Pr
     if (data?.code === 60202) {
       return { ok: false, error: "Too many incorrect attempts. Please request a new code." };
     }
-    return { ok: false, error: data?.message || "Could not check the verification code." };
+    return { ok: false, error: "Could not check the verification code. Please try again shortly." };
   }
 
   return { ok: true, approved: data?.status === "approved" && data?.valid === true };

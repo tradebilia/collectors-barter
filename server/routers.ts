@@ -104,7 +104,7 @@ import { r2MediaRouter } from "./r2MediaRouter";
 import { customAuth } from "./_core/customAuth";
 import { getOrCreateDirectMessageThread, persistDirectMessage } from "./directMessagePersistence";
 import { users, userProfiles, listings, deletedAccounts, tradeProposals, tradeMessages, tradeReviews, watchlistEntries, draftListings, passwordResetTokens, referralRequests, userFollows, directMessageThreads, directMessages, tradePayments, tradeActivityLog, emailTemplates, accountApprovalReviews, apiHealthEvents, adminActivityLog } from "../drizzle/schema";
-import { eq, sql, desc, or, inArray, and } from "drizzle-orm";
+import { eq, sql, desc, or, inArray, and, isNull } from "drizzle-orm";
 import { alias } from "drizzle-orm/mysql-core";
 import { TRPCError } from "@trpc/server";
 import { ONE_YEAR_MS } from "@shared/const";
@@ -1870,8 +1870,14 @@ export const appRouter = router({
       }),
 
     getDirectMessageThreads: protectedProcedure
-      .query(async ({ ctx }) => {
+      .input(z.object({ archived: z.boolean().optional().default(false) }).optional())
+      .query(async ({ ctx, input }) => {
         const db = await requireDb();
+        const archiveFilter = input?.archived
+          ? sql`((t.participantAId = ${ctx.user.id} AND t.participantAArchivedAt IS NOT NULL)
+            OR (t.participantBId = ${ctx.user.id} AND t.participantBArchivedAt IS NOT NULL))`
+          : sql`((t.participantAId = ${ctx.user.id} AND t.participantAArchivedAt IS NULL)
+            OR (t.participantBId = ${ctx.user.id} AND t.participantBArchivedAt IS NULL))`;
         const [rows] = await db.execute(
           sql`SELECT
             t.id as threadId,
@@ -1890,7 +1896,8 @@ export const appRouter = router({
           FROM directMessageThreads t
           JOIN users u ON u.id = CASE WHEN t.participantAId = ${ctx.user.id} THEN t.participantBId ELSE t.participantAId END
           LEFT JOIN userProfiles up ON up.userId = u.id
-          WHERE t.participantAId = ${ctx.user.id} OR t.participantBId = ${ctx.user.id}
+          WHERE (t.participantAId = ${ctx.user.id} OR t.participantBId = ${ctx.user.id})
+            AND ${archiveFilter}
           ORDER BY t.lastMessageAt DESC`
         );
         const threadRows = Array.isArray(rows) ? rows : [];
@@ -1908,13 +1915,13 @@ export const appRouter = router({
       .input(z.object({ threadId: z.number().int().positive() }))
       .query(async ({ ctx, input }) => {
         const db = await requireDb();
-        // Verify user is a participant
+        // Archived threads remain readable from the caller's personal archive.
         const thread = await db
           .select({ id: directMessageThreads.id })
           .from(directMessageThreads)
           .where(and(
             eq(directMessageThreads.id, input.threadId),
-            or(eq(directMessageThreads.participantAId, ctx.user.id), eq(directMessageThreads.participantBId, ctx.user.id))
+            or(eq(directMessageThreads.participantAId, ctx.user.id), eq(directMessageThreads.participantBId, ctx.user.id)),
           ))
           .limit(1);
         if (!thread.length) throw new TRPCError({ code: 'FORBIDDEN', message: 'Thread not found.' });
@@ -1969,7 +1976,7 @@ export const appRouter = router({
           .limit(1);
         if (!thread.length) throw new TRPCError({ code: 'FORBIDDEN', message: 'Thread not found.' });
         await db.insert(directMessages).values({ threadId: input.threadId, senderId: ctx.user.id, body: input.body, isReadByRecipient: 0 });
-        await db.execute(sql`UPDATE directMessageThreads SET lastMessageAt = NOW() WHERE id = ${input.threadId}`);
+        await db.execute(sql`UPDATE directMessageThreads SET lastMessageAt = NOW(), participantAArchivedAt = NULL, participantBArchivedAt = NULL WHERE id = ${input.threadId}`);
 
         // Send email notification to the other participant if messages.email enabled (fire-and-forget)
         const senderDisplayName = await getCommunicationDisplayName(ctx.user.id);
@@ -2009,19 +2016,23 @@ export const appRouter = router({
       .input(z.object({ threadId: z.number().int().positive() }))
       .mutation(async ({ ctx, input }) => {
         const db = await requireDb();
-        // Verify user is a participant before deleting
+        // Archive only the caller's inbox view; shared history remains for the other participant and administrators.
         const thread = await db
-          .select({ id: directMessageThreads.id })
+          .select({ id: directMessageThreads.id, participantAId: directMessageThreads.participantAId, participantBId: directMessageThreads.participantBId })
           .from(directMessageThreads)
           .where(and(
             eq(directMessageThreads.id, input.threadId),
             or(eq(directMessageThreads.participantAId, ctx.user.id), eq(directMessageThreads.participantBId, ctx.user.id))
-          ))
-          .limit(1);
+        ))
+        .limit(1);
         if (!thread.length) throw new TRPCError({ code: 'FORBIDDEN', message: 'Thread not found.' });
-        // Cascade delete removes all messages too (FK ON DELETE CASCADE)
-        await db.delete(directMessageThreads).where(eq(directMessageThreads.id, input.threadId));
-        return { success: true };
+        await db
+          .update(directMessageThreads)
+          .set(thread[0].participantAId === ctx.user.id
+            ? { participantAArchivedAt: sql`NOW()` }
+            : { participantBArchivedAt: sql`NOW()` })
+          .where(eq(directMessageThreads.id, input.threadId));
+        return { success: true, archived: true };
       }),
 
     getUnreadDirectMessageCount: protectedProcedure
@@ -2031,6 +2042,8 @@ export const appRouter = router({
           sql`SELECT COUNT(*) as count FROM directMessages dm
           JOIN directMessageThreads t ON t.id = dm.threadId
           WHERE (t.participantAId = ${ctx.user.id} OR t.participantBId = ${ctx.user.id})
+          AND ((t.participantAId = ${ctx.user.id} AND t.participantAArchivedAt IS NULL)
+            OR (t.participantBId = ${ctx.user.id} AND t.participantBArchivedAt IS NULL))
           AND dm.senderId != ${ctx.user.id}
           AND dm.isReadByRecipient = 0`
         );
