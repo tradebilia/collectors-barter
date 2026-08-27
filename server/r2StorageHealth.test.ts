@@ -17,10 +17,12 @@ describe("Cloudflare storage health report", () => {
     await expect(appRouter.createCaller(contextFor("user")).r2Media.getStorageHealth()).rejects.toThrow();
   });
 
-  it("keeps the report read-only, bounded, and free of object-key fields", () => {
+  it("keeps the report read-only, bounded, and free of object-key fields while surfacing capacity context", () => {
     const source = fs.readFileSync(new URL("./r2StorageHealth.ts", import.meta.url), "utf8");
     expect(source).toContain("ListObjectsV2Command");
-    expect(source).toContain("MAX_BUCKET_SAMPLE_OBJECTS = 1_000");
+    expect(source).toContain("MAX_BUCKET_USAGE_OBJECTS = 10_000");
+    expect(source).toContain("R2_STANDARD_FREE_ALLOWANCE_BYTES");
+    expect(source).toContain('bucketCapacity: "unlimited"');
     expect(source).toContain("protectedBoundaryIntact");
     expect(source).not.toContain("PutObjectCommand");
     expect(source).not.toContain("DeleteObjectCommand");

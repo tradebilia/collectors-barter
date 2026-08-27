@@ -35,6 +35,45 @@ function parseReportEvidenceForAdmin(raw?: string) {
   return { notes: raw, listingReference: "", contactEmail: "", attachments: [] as Array<{ name: string; url: string }> };
 }
 
+type BillingMemberRecord = {
+  userId: number;
+  displayName: string;
+  planName: string;
+  membershipStatus: string;
+  billingTerm: string;
+};
+
+type BillingMemberSortField = "member" | "status" | "term";
+type BillingMemberSortDirection = "asc" | "desc";
+
+const MEMBERSHIP_STATUS_SORT_ORDER: Record<string, number> = {
+  active: 10,
+  past_due: 20,
+  unpaid: 30,
+  cancelled: 40,
+  complimentary: 50,
+  free_launch: 60,
+};
+
+const MEMBERSHIP_TERM_SORT_ORDER: Record<string, number> = {
+  annual: 10,
+  monthly: 20,
+  complimentary: 30,
+  none: 40,
+};
+
+export function sortBillingMembers(members: readonly BillingMemberRecord[], sortBy: BillingMemberSortField, sortDirection: BillingMemberSortDirection) {
+  const direction = sortDirection === "asc" ? 1 : -1;
+  return [...members].sort((left, right) => {
+    const comparison = sortBy === "status"
+      ? (MEMBERSHIP_STATUS_SORT_ORDER[left.membershipStatus] ?? 999) - (MEMBERSHIP_STATUS_SORT_ORDER[right.membershipStatus] ?? 999)
+      : sortBy === "term"
+        ? (MEMBERSHIP_TERM_SORT_ORDER[left.billingTerm] ?? 999) - (MEMBERSHIP_TERM_SORT_ORDER[right.billingTerm] ?? 999)
+        : left.displayName.localeCompare(right.displayName);
+    return comparison === 0 ? left.displayName.localeCompare(right.displayName) : comparison * direction;
+  });
+}
+
 function AdminListingsTab({ listingsQuery }: { listingsQuery: any }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState<"refId" | "title" | "category" | "date" | "value" | "views" | "status" | "owner">("refId");
@@ -434,6 +473,9 @@ export default function AdminDashboard() {
   const [userSortBy, setUserSortBy] = useState<'id' | 'username' | 'joined' | 'items' | 'status' | 'merchant'>('id');
   const [userSortOrder, setUserSortOrder] = useState<'asc' | 'desc'>('asc');
   const [userSearch, setUserSearch] = useState('');
+  const [billingSortBy, setBillingSortBy] = useState<BillingMemberSortField>("member");
+  const [billingSortDirection, setBillingSortDirection] = useState<BillingMemberSortDirection>("asc");
+  const sortedBillingMembers = sortBillingMembers(billingMembersQuery.data ?? [], billingSortBy, billingSortDirection);
 
   const handleDeleteUser = async () => {
     console.log('[handleDeleteUser] Starting delete, userToDelete:', userToDelete);
@@ -740,12 +782,32 @@ export default function AdminDashboard() {
                       ))}
                     </div>
                     <div>
-                      <h3 className="font-semibold">Member status monitoring</h3>
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <h3 className="font-semibold">Member status monitoring</h3>
+                        <div className="flex flex-wrap items-center gap-2" aria-label="Membership monitoring sort controls">
+                          <span className="text-sm text-muted-foreground">Sort by</span>
+                          <Select value={billingSortBy} onValueChange={(value) => setBillingSortBy(value as BillingMemberSortField)}>
+                            <SelectTrigger className="w-[150px] bg-white"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="member">Member</SelectItem>
+                              <SelectItem value="status">Status</SelectItem>
+                              <SelectItem value="term">Billing term</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <Select value={billingSortDirection} onValueChange={(value) => setBillingSortDirection(value as BillingMemberSortDirection)}>
+                            <SelectTrigger className="w-[130px] bg-white"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="asc">Ascending</SelectItem>
+                              <SelectItem value="desc">Descending</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
                       <div className="mt-3 overflow-x-auto rounded-lg border">
                         <table className="w-full min-w-[520px] text-sm">
                           <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500"><tr><th className="p-3">Member</th><th className="p-3">Plan</th><th className="p-3">Status</th><th className="p-3">Term</th></tr></thead>
                           <tbody>
-                            {billingMembersQuery.data?.map((member) => <tr key={member.userId} className="border-t"><td className="p-3 font-medium">{member.displayName}</td><td className="p-3">{member.planName}</td><td className="p-3">{member.membershipStatus}</td><td className="p-3">{member.billingTerm}</td></tr>)}
+                            {sortedBillingMembers.map((member) => <tr key={member.userId} className="border-t"><td className="p-3 font-medium">{member.displayName}</td><td className="p-3">{member.planName}</td><td className="p-3">{member.membershipStatus}</td><td className="p-3">{member.billingTerm}</td></tr>)}
                           </tbody>
                         </table>
                       </div>
@@ -1032,8 +1094,8 @@ export default function AdminDashboard() {
                         {(tradesQuery.data as any[])?.map((trade: any) => (
                           <tr key={trade.id} className="border-b border-border hover:bg-accent/50">
                             <td className="py-2 px-4 font-mono text-xs">{trade.id}</td>
-                            <td className="py-2 px-4">{trade.requesterUsername || "-"}</td>
-                            <td className="py-2 px-4">{(trade as any).recipientUsername || "-"}</td>
+                            <td className="py-2 px-4">{trade.requesterDisplayName || "-"}</td>
+                            <td className="py-2 px-4">{trade.recipientDisplayName || "-"}</td>
                             <td className="py-2 px-4">{trade.listingTitle || "-"}</td>
                             <td className="py-2 px-4">
                               <span className={`px-2 py-1 rounded text-xs font-medium ${
@@ -1080,7 +1142,7 @@ export default function AdminDashboard() {
                 <DialogHeader>
                   <DialogTitle className="text-red-600">Delete Trade Permanently?</DialogTitle>
                   <DialogDescription>
-                    This will permanently delete trade <strong>#{tradeToDelete?.id}</strong> between <strong>{tradeToDelete?.requesterUsername || 'Unknown'}</strong> and <strong>{(tradeToDelete as any)?.recipientUsername || 'Unknown'}</strong> for item <strong>{tradeToDelete?.listingTitle || 'Unknown'}</strong>.
+                    This will permanently delete trade <strong>#{tradeToDelete?.id}</strong> between <strong>{tradeToDelete?.requesterDisplayName || 'Unknown'}</strong> and <strong>{tradeToDelete?.recipientDisplayName || 'Unknown'}</strong> for item <strong>{tradeToDelete?.listingTitle || 'Unknown'}</strong>.
                     <br /><br />
                     All associated messages, alerts, items, tracking numbers, and records will be removed. <strong>This cannot be undone.</strong>
                   </DialogDescription>

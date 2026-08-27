@@ -30,6 +30,8 @@ describe("R2 public-media migration safeguards", () => {
     const healthSource = fs.readFileSync(path.join(root, "client/src/components/R2StorageHealthTab.tsx"), "utf8");
     expect(adminSource).toContain("R2StorageHealthTab");
     expect(healthSource).toContain("getStorageHealth.useQuery");
+    expect(healthSource).toContain("Storage capacity and allowance");
+    expect(healthSource).toContain("Standard free allowance");
     expect(healthSource).toContain("The report never returns credentials, object keys, individual evidence records, or private-evidence URLs.");
   });
 });

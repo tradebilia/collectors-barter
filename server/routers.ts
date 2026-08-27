@@ -105,6 +105,7 @@ import { customAuth } from "./_core/customAuth";
 import { getOrCreateDirectMessageThread, persistDirectMessage } from "./directMessagePersistence";
 import { users, userProfiles, listings, deletedAccounts, tradeProposals, tradeMessages, tradeReviews, watchlistEntries, draftListings, passwordResetTokens, referralRequests, userFollows, directMessageThreads, directMessages, tradePayments, tradeActivityLog, emailTemplates, accountApprovalReviews, apiHealthEvents } from "../drizzle/schema";
 import { eq, sql, desc, or, inArray, and } from "drizzle-orm";
+import { alias } from "drizzle-orm/mysql-core";
 import { TRPCError } from "@trpc/server";
 import { ONE_YEAR_MS } from "@shared/const";
 import { subscribeToLaunchUpdates } from "./launchUpdates";
@@ -2609,11 +2610,15 @@ export const appRouter = router({
     getAllTrades: protectedProcedure.query(async ({ ctx }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
       const db = await requireDb();
-      const allTrades = await db.select({
+      const requesterProfiles = alias(userProfiles, "adminTradeRequesterProfiles");
+      const recipientUsers = alias(users, "adminTradeRecipients");
+      const recipientProfiles = alias(userProfiles, "adminTradeRecipientProfiles");
+      return db.select({
         id: tradeProposals.id,
         requesterId: tradeProposals.requesterId,
-        requesterUsername: users.username,
+        requesterDisplayName: sql<string>`COALESCE(NULLIF(${requesterProfiles.displayName}, ''), NULLIF(${users.displayName}, ''), NULLIF(${users.name}, ''), ${users.username}, CONCAT('Collector ', ${tradeProposals.requesterId}))`,
         recipientId: tradeProposals.recipientId,
+        recipientDisplayName: sql<string>`COALESCE(NULLIF(${recipientProfiles.displayName}, ''), NULLIF(${recipientUsers.displayName}, ''), NULLIF(${recipientUsers.name}, ''), ${recipientUsers.username}, CONCAT('Collector ', ${tradeProposals.recipientId}))`,
         requestedListingId: tradeProposals.requestedListingId,
         listingTitle: listings.title,
         listingCategory: listings.category,
@@ -2623,9 +2628,11 @@ export const appRouter = router({
         completedAt: tradeProposals.completedAt,
       }).from(tradeProposals)
         .leftJoin(users, eq(tradeProposals.requesterId, users.id))
+        .leftJoin(requesterProfiles, eq(tradeProposals.requesterId, requesterProfiles.userId))
+        .leftJoin(recipientUsers, eq(tradeProposals.recipientId, recipientUsers.id))
+        .leftJoin(recipientProfiles, eq(tradeProposals.recipientId, recipientProfiles.userId))
         .leftJoin(listings, eq(tradeProposals.requestedListingId, listings.id))
         .orderBy(desc(tradeProposals.createdAt));
-      return allTrades;
     }),
     // Reported users management
     getReportedUsers: protectedProcedure
