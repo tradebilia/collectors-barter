@@ -8,16 +8,16 @@
 
 The prior P0–P2 remediations remained materially intact: the fresh baseline passed **430 tests with four intentional skips**, TypeScript checking and the production build completed, and the production dependency audit remained clean. The review identified two critical defects—privacy controls did not govern all public/member-facing data paths, and the trade flow skipped the Review state that PayPal verification requires. Both were subsequently approved and repaired. [1] [2] [3]
 
-The audit also found one already-observed duplicate review group in the custom TiDB database and several trade workflow tables whose “unique” index names are not backed by real unique constraints. Other findings are reliability or data-retention concerns that should be repaired in a controlled follow-up batch. [4]
+The audit also found one already-observed duplicate review group in the custom TiDB database and several trade workflow tables whose “unique” index names were not backed by real unique constraints. The approved P1 remediation is now complete: all database changes were narrow and reviewed, the one newer duplicate review row was removed under the approved retention rule, and the marketplace baseline remained unchanged. [4]
 
 | Priority | Status | Finding | Practical effect |
 | --- | --- | --- | --- |
 | **P0** | **Repaired** | Profile visibility, inventory-value, and contact-request preferences were not enforced across all profile/member-search/contact APIs. | Hidden profiles were discoverable, inventory values could be inferred through directory values, and opted-out members could still receive new contacts. Full street addresses were already stripped from the member-search response; the earlier audit wording on client-address exposure was corrected. |
 | **P0** | **Repaired** | Mutual trade acceptance jumped directly to Shipping while Review and PayPal verification require `accepted`. | The Review step was bypassed, items were locked and shipping time began, and cash-trade payment verification could not be used in the normal completed-acceptance flow. |
-| **P1** | **Confirmed** | Workflow “unique” constraints are ordinary indexes; one duplicate review pair already exists. | Repeated reviews/votes/notes/receipt/tracking/item associations can be created by concurrent or repeated requests. |
-| **P1** | **Confirmed** | A participant can delete shared messages/inquiries for both people. | One member can permanently remove conversation evidence visible to the other member. |
-| **P1** | **Confirmed** | Scheduled escalation and outbound provider calls have avoidable reliability gaps. | A race can escalate a trade that just advanced; a slow email/SMS/lookup provider can hold a request indefinitely. |
-| **P1** | **Confirmed** | Defined startup validation is not executed by the server entry point. | Misconfigured dependencies can appear as later user-facing failures rather than a clear failed startup. |
+| **P1** | **Repaired** | Workflow “unique” constraints were ordinary indexes; one duplicate review pair existed. | Eight real unique indexes, duplicate-safe application behavior, and deterministic cleanup now protect one-time trade artifacts. |
+| **P1** | **Repaired** | A participant could delete shared messages/inquiries for both people. | Each participant now has an independent, read-only personal archive; shared correspondence and administrator review access remain intact. |
+| **P1** | **Repaired** | Scheduled escalation and outbound provider calls had avoidable reliability gaps. | Escalation now guards the current state and logs only successful transitions; the approved provider calls have a 15-second timeout and sanitized failure telemetry. |
+| **P1** | **Repaired** | Defined startup validation was not executed by the server entry point. | Core environment and custom-TiDB-first database validation now complete before Express starts serving requests. |
 
 ## P0 — Approved and Repaired
 
@@ -45,7 +45,7 @@ The P1 payment safeguard correctly derives an obligation from the locked proposa
 
 The approved P0 changes were checked with six privacy tests and ten trade/payment lifecycle tests, all passing. TypeScript checking, production build, and production dependency audit also passed. The complete suite recorded 434 passing tests and four intentional skips; two external carrier credential checks timed out against UPS and USPS endpoints. Those timeouts are external-provider reliability issues already listed as P1 work and are unrelated to the P0 code changes. Public homepage and profile rendering remained visually intact after the repair.[3]
 
-## P1 — Repair in the Next Controlled Batch
+## P1 — Approved and Repaired
 
 ### 3. Database constraints do not enforce several one-time trade actions
 
@@ -55,6 +55,8 @@ The aggregate duplicate scan found one real duplicate group: **two review rows f
 
 **Minimal repair:** Before migration, retain a recovery checkpoint and make an explicit, reviewed decision on the existing duplicate-review group. Then add only the real composite unique constraints needed for each business rule, use idempotent/upsert handling where appropriate, and add conflict/error tests. This should be a new small custom-TiDB migration, not a bulk schema regeneration.
 
+**Completed repair:** The approved custom-TiDB migration removed exactly one newer duplicate review row while retaining the oldest row, then added eight narrowly scoped unique indexes for private notes, proposal items, receipt confirmations, reviews, tracking records, votes, and voting links/tokens. Server procedures now reject duplicate artifacts with clear conflicts, scope private notes and tracking to trade participants, retain Review-before-Shipping, and use cryptographic voting tokens. Aggregate-only postchecks confirmed zero duplicate review groups and preserved the baseline of three members, 16 active listings, and $147,530 in active listing value.
+
 ### 4. One member can erase a shared direct-message thread or inquiry
 
 `deleteDirectThread` first verifies that the caller participates in a thread, but then hard-deletes the one shared thread record. The database cascade removes every message for both participants. [9] The direct-message persistence layer deliberately maintains a single shared thread per participant pair, so this is a real shared-data deletion effect rather than a duplicate local record. [10]
@@ -62,6 +64,8 @@ The aggregate duplicate scan found one real duplicate group: **two review rows f
 The inquiry deletion path likewise uses a single shared deletion marker. The current behavior may be a product decision, but it is unsafe for trade communications because one participant can remove evidence and the other person has no independent archive or recovery path. [11]
 
 **Minimal repair:** Replace destructive “delete conversation” behavior with caller-specific archive/hidden state. Preserve shared message history and allow administrator review when necessary. Make the UI wording clear, and retain a separate administrator-only purge policy with an audit trail.
+
+**Completed repair:** The additive communication migration added participant-specific archive timestamps to inquiries and direct-message threads. It mapped legacy shared inquiry deletes to both parties’ archives and removed no correspondence body; the runtime had zero such legacy rows. Active inboxes, read counts, and direct-message lists now apply only the caller’s archive state. Archived messages and inquiries remain available read-only to that member, new messages restore both inbox views, and the UI no longer offers a permanent-purge action.
 
 ### 5. Scheduled receipt escalation can race a newly advanced trade
 
@@ -71,17 +75,23 @@ The P2 acceptance-timeout correction is present and works differently: it repeat
 
 **Minimal repair:** Add the eligible status condition to the escalation update, increment counts/log only when it changes a row, and enforce an idempotent event key or unique constraint for system escalation logs. Add concurrent-state regression coverage.
 
+**Completed repair:** Receipt escalation now repeats its eligible `accepted`/`shipped` status, aged-tracking, and missing-receipt conditions in the update itself. It writes the system administrator event and increments the reported count only after that guarded update affects a row. The controlled handler tests include a stale-candidate scenario where a trade has advanced and confirm no overwrite or duplicate event; the existing job was not run or reconfigured.
+
 ### 6. Email, SMS, and certification lookups can wait forever for a provider
 
 The shared Resend email transport uses `fetch()` with no abort signal. The same no-timeout pattern appears in Twilio verification and PCGS lookup helpers. Those paths do catch failures, but a provider that accepts a connection and never completes the response can leave the request waiting until infrastructure-level limits intervene. [13] [14] [15]
 
 **Minimal repair:** Apply a consistent bounded `AbortSignal.timeout()` to each provider call, classify timeout errors as retryable/temporary, and add no-network timeout tests. Do not alter email/SMS policy, credentials, or production providers during this repair.
 
+**Completed repair:** The Resend transactional email, Twilio Verify, and PCGS certification adapters now use a 15-second abort signal. HTTP and transport failures record only sanitized API Health metadata and return the existing safe temporary-failure behavior. Deterministic timeout and HTTP-failure tests made no provider call, sent no email/SMS, and changed no credentials or provider policy.
+
 ### 7. Startup checks exist but the active entry point never runs them
 
 `startupChecks.ts` defines environment/database validation, but `server/_core/index.ts` starts Express, registers routes, and begins listening without importing or calling that module. The server can therefore begin running with a bad external configuration and expose delayed errors through a user action instead of failing clearly at boot. [16] [17]
 
 **Minimal repair:** Run the required configuration validation before listening, distinguish optional integrations from required core dependencies, and make startup fail non-zero for missing required configuration. This must preserve the existing custom TiDB precedence and preview cookie exceptions.
+
+**Completed repair:** The entry point now runs the existing core environment validation and a read-only runtime database check before constructing Express. Validation uses the same `CUSTOM_DATABASE_URL`-first precedence as normal runtime access and does not require optional Resend, Twilio, or PCGS settings. Development-server boot logs confirmed both checks passed before the listener started.
 
 ## P2 — Important Hardening and Product Clarifications
 
@@ -116,7 +126,7 @@ The audit did not simply repeat earlier findings. The following controls were sp
 | **B — Integrity and communication retention** | Reconcile duplicate review data, add narrowly scoped trade artifact constraints, make messaging/inquiry deletion per-user archival, and harden scheduled escalation idempotency. | Prevents repeated actions and unilateral loss of trade evidence. |
 | **C — Resilience and maintenance** | Add outbound timeouts, wire startup checks, harden trusted external return origins, clarify provider-preview behavior, update policy/comment text, and reduce manual admin-auth repetition. | Reduces operational failures without changing marketplace terms, membership mode, or payments. |
 
-The P0 portion of Batch A is complete. No P1 or P2 corrective work from this audit has begun. Please approve **Batch B**, **Batch C**, both remaining batches, or a smaller subset. Any approved repair will use a recovery checkpoint, narrow custom-TiDB preflight before database changes, focused tests, full revalidation, and normal GitHub synchronization.
+The P0 portion of Batch A and the approved P1 parts of B and C are complete. P2 items remain approval-only and were not changed by this batch. The P1 work used recovery checkpoints, narrow custom-TiDB preflight and postchecks, focused tests, full non-watch test/build/dependency validation, and a credential-safe synchronization review.
 
 ## References
 
