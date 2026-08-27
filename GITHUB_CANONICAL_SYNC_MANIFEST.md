@@ -9,6 +9,8 @@
 | Canonical repository | `tradebilia/collectors-barter` on `main` |
 | Canonical sandbox implementation commit | `0d45ce25d94bec3c222da929fb57832e0730442b` |
 | Paired managed WebDev checkpoint | `ca726dc7` |
+| Sandbox period mapping correction | Canonical commit `48003d5802ae1662465e9f8aa999eda37a07d9de`; managed checkpoint `82c76148`. |
+| Same-tab Checkout and duplicate guard | Canonical commit `d87a453bf9de22bbff6cc837dd5ffc4906044ba1`; managed checkpoint `12f56cb8`. |
 | Runtime membership schema | Read-only audit confirmed the complete mixed-case custom TiDB membership foundation, including `userMemberships` and `membershipProviderEvents`; no migration or data repair was required. |
 | Sandbox subscription audit | The completed administrator monthly sandbox Checkout persisted an active monthly membership record with Stripe customer/subscription references and processed provider events. Sensitive identifiers are intentionally not copied into this manifest. |
 | Marketplace baseline | 3 members, 16 active listings, and $147,530 active listing value before and after audit. |
