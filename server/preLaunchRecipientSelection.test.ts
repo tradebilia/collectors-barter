@@ -17,10 +17,11 @@ describe("Pre-Launch recipient selection", () => {
     expect(serviceSource).toContain("clearSegmentContacts");
   });
 
-  it("keeps recipient selection and latest-only handoff visible in the Admin tab", () => {
-    expect(tabSource).toContain("selectedRecipientIds");
-    expect(tabSource).toContain("Last sent");
-    expect(tabSource).toContain("Select all recipients");
-    expect(serviceSource).toContain(".slice(0, 1)");
+  it("keeps all opted-in recipients, explicit review, and provider-managed unsubscribe handling visible in the Admin tab", () => {
+    expect(tabSource).toContain("getPreLaunchRecipients");
+    expect(tabSource).toContain("setConfirmOpen(true)");
+    expect(tabSource).toContain("`Send to ${recipients.length}`");
+    expect(tabSource).toContain("Unsubscribed contacts are excluded automatically.");
+    expect(tabSource).toContain("sendMutation.mutate({ subject, message })");
   });
 });

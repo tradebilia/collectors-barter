@@ -51,8 +51,10 @@ describe("Tradebilia Membership Free Launch safeguards", () => {
     expect(hasMembershipAccess("unpaid")).toBe(false);
   });
 
-  it("prepares the listing-detail server boundary for future membership enforcement", () => {
+  it("keeps listing details publicly available during the current Free Launch", () => {
     const routerSource = fs.readFileSync(path.resolve(import.meta.dirname, "routers.ts"), "utf8");
-    expect(routerSource).toContain("await assertSubscriptionAccess(ctx.user?.id ?? null)");
+    expect(routerSource).toContain("listingDetail: publicProcedure");
+    expect(routerSource).toContain("getListingDetail(input.listingId, ctx.user?.id ?? null)");
+    expect(routerSource).not.toContain("assertSubscriptionAccess(ctx.user?.id ?? null)");
   });
 });

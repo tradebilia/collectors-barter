@@ -11,7 +11,10 @@ const preLaunchSource = readFileSync(resolve(root, "server/preLaunchEmail.ts"), 
 describe("Admin dashboard repairs", () => {
   it("returns both participants for Admin trade records", () => {
     expect(routerSource).toContain('alias(users, "adminTradeRecipients")');
-    expect(routerSource).toContain("recipientUsername: recipientUsers.username");
+    expect(routerSource).toContain("requesterDisplayName:");
+    expect(routerSource).toContain("recipientDisplayName:");
+    expect(adminSource).toContain("trade.requesterDisplayName");
+    expect(adminSource).toContain("trade.recipientDisplayName");
     expect(adminSource).toContain("/trade-room/${trade.id}");
   });
 
@@ -20,14 +23,17 @@ describe("Admin dashboard repairs", () => {
     expect(adminSource).not.toContain('<TabsTrigger value="conventions"');
   });
 
-  it("uses bounded referral delivery and safer support-ticket deletion", () => {
-    expect(routerSource).toContain("const concurrency = 5");
+  it("uses successful-delivery-aware referral sending and safer support-ticket deletion", () => {
+    expect(routerSource).toContain("for (const referral of unEmailedReferrals)");
+    expect(routerSource).toContain("sentIds.push(referral.id)");
+    expect(routerSource).toContain("markReferralsAsEmailed(sentIds)");
     expect(adminSource).toContain("Delete this support ticket and all of its replies permanently?");
   });
 
-  it("exposes honest Pre-Launch broadcast handoff status", () => {
-    expect(preLaunchSource).toContain("getPreLaunchBroadcastStatuses");
-    expect(preLaunchUiSource).toContain("Recent delivery handoff");
-    expect(preLaunchUiSource).toContain("Resend accepted the broadcast");
+  it("exposes explicit review and opt-in-only Pre-Launch broadcast controls", () => {
+    expect(preLaunchSource).toContain("getPreLaunchRecipients");
+    expect(preLaunchUiSource).toContain("setConfirmOpen(true)");
+    expect(preLaunchUiSource).toContain("`Send to ${recipients.length}`");
+    expect(preLaunchUiSource).toContain("Unsubscribed contacts are excluded automatically.");
   });
 });

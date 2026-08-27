@@ -13,8 +13,9 @@ describe("next-batch integrity repairs", () => {
 
   it("marks only successful referral deliveries as emailed", () => {
     const routers = source("server/routers.ts");
-    expect(routers).toContain("const concurrency = 5;");
-    expect(routers).toContain("outcomes.filter(outcome => outcome.sent).map(outcome => outcome.id)");
+    expect(routers).toContain("for (const referral of unEmailedReferrals)");
+    expect(routers).toContain("if (ok) {");
+    expect(routers).toContain("sentIds.push(referral.id)");
     expect(routers).toContain("markReferralsAsEmailed(sentIds)");
   });
 
