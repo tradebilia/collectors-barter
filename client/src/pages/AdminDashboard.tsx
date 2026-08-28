@@ -7,7 +7,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
-import { BarChart3, Users, Package, Settings, Trash2, Flag, Mail, Search, ArrowUpDown, Calendar, ExternalLink, CheckCircle, XCircle, AlertTriangle, Ban, ShieldOff, ClipboardList, MessageSquare, TicketCheck, Send, ChevronDown, ChevronUp, Store, CloudUpload } from "lucide-react";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { BarChart3, BookOpen, Users, Package, Settings, Trash2, Flag, Mail, Search, ArrowUpDown, Calendar, ExternalLink, CheckCircle, XCircle, AlertTriangle, Ban, ShieldOff, ClipboardList, MessageSquare, TicketCheck, Send, ChevronDown, ChevronUp, Store, CloudUpload } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -75,6 +76,75 @@ export function sortBillingMembers(members: readonly BillingMemberRecord[], sort
         : left.displayName.localeCompare(right.displayName);
     return comparison === 0 ? left.displayName.localeCompare(right.displayName) : comparison * direction;
   });
+}
+
+type AdminGuideEntry = {
+  tab: string;
+  summary: string;
+  purpose: string;
+  useWhen: string;
+  caution: string;
+};
+
+const adminGuideEntries: readonly AdminGuideEntry[] = [
+  { tab: "Stats", summary: "A quick picture of how the marketplace is doing.", purpose: "Shows high-level member, listing, value, and trade activity so you can understand the current size and activity of Tradebilia.", useWhen: "Use this for a fast health check, before planning a launch activity, or when you want to see whether the marketplace is growing.", caution: "This tab is for viewing information. It does not change members, listings, or trades." },
+  { tab: "Billing", summary: "Membership status and future fee-planning controls.", purpose: "Shows member membership information, lets you sort it by status or term, and contains the Fee Mode launch-control setting.", useWhen: "Use it to understand who has which membership status or to review future fee plans before any separate paid-launch decision.", caution: "Fee Mode is only a planning switch. Even when On, it does not turn on Checkout, collect a card, charge anyone, or restrict Free Launch access." },
+  { tab: "Users", summary: "The main member-management workspace.", purpose: "Lists member accounts and their account information so an administrator can review a member, update permitted account details, and use available moderation actions.", useWhen: "Use it when a member needs help, when you need to review an account, or when an Operations queue sends you here.", caution: "Review the correct member and reason before making any account-level change. Account changes can affect a member’s access and marketplace experience." },
+  { tab: "Listings", summary: "The catalogue-management workspace.", purpose: "Lists Tradebilia items and provides searching, sorting, review, and the available listing-management actions.", useWhen: "Use it to find a specific listing, investigate a report, check an item’s status, or address a listing that needs administrator attention.", caution: "Confirm the listing and the reason first. Removing or changing a listing can affect an active collector’s trade activity." },
+  { tab: "Trades", summary: "The place to monitor exchanges in progress and completed trade records.", purpose: "Shows trade information, including both collectors involved, so you can follow the lifecycle of an exchange and review a trade when an issue is raised.", useWhen: "Use it for a trade dispute, a shipping or confirmation question, or when Operations identifies a trade follow-up item.", caution: "Trades involve two collectors. Check both sides and the current trade stage before taking any available administrative action." },
+  { tab: "Settings", summary: "Site-level administrative settings.", purpose: "Provides the available controls for Tradebilia configuration that affect how the platform is presented or managed.", useWhen: "Use it only when you intentionally need to review or update a saved platform setting.", caution: "Settings can have broad effects. Read the field description, confirm the intended value, and save only a deliberate change." },
+  { tab: "Deleted", summary: "A reference view for deleted-account records.", purpose: "Helps you review accounts that have been deleted or closed so you can understand their prior platform status when handling a related question.", useWhen: "Use it when a former member contacts support or when you need to distinguish a deleted account from an active one.", caution: "A deleted or closed account is not the same as an open support request. Use Closure Requests for requests that still need a decision." },
+  { tab: "Closure Requests", summary: "The controlled review queue for member account-closure requests.", purpose: "Shows closure requests, the count-only safety review, and the available approve-or-decline decision with a documented reason.", useWhen: "Use it when a member asks to close an account and the request appears in the queue.", caution: "Approve closure only after reviewing the account’s pending trade and safety context. Closure hides the profile and listings and blocks future sign-in; retained trade, report, and safety history is not erased." },
+  { tab: "Reports", summary: "Member-submitted concerns that need review.", purpose: "Shows reports about members or trade-related concerns and their authorized details so you can review what was reported.", useWhen: "Use it when the Operations queue shows Member reports or when a collector reports a concern directly.", caution: "Treat reports as review items, not automatic proof. Use only the relevant authorized context and avoid exposing private information." },
+  { tab: "Referrals", summary: "Referral requests and invitation management.", purpose: "Lets you manage the referral invitation template, review requests, select recipients, and use the available sending or deletion controls.", useWhen: "Use it when following up on referral requests or preparing the approved referral invitation message.", caution: "Email sending and deletion are real actions. Review selected recipients and the message before confirming a bulk action." },
+  { tab: "Pre-Launch Email", summary: "A controlled launch-update email workspace.", purpose: "Lets you prepare a message for opted-in Coming Soon contacts, review the eligible recipient list, preview the email, and confirm a send.", useWhen: "Use it only when you are ready to communicate a launch update to contacts who chose to receive it.", caution: "A preview does not send email, but the final confirmed send does. Check the wording, recipient count, and opt-in audience carefully." },
+  { tab: "Media Storage", summary: "Storage health and public-media maintenance.", purpose: "Shows safe storage-usage and health information for public photos and artwork, plus the separately controlled public-media migration tools.", useWhen: "Use it to monitor storage capacity, investigate public image coverage, or perform an approved public-media maintenance task.", caution: "The health report does not expose credentials or private evidence. Use migration controls only after reviewing their scope; they are not a general-purpose file browser." },
+  { tab: "Conventions", summary: "Convention and event administration.", purpose: "Provides the workspace for maintaining convention information that Tradebilia members may use when planning collector activity.", useWhen: "Use it when you need to add, review, or maintain a convention/event entry.", caution: "Verify event details before publishing or changing them so members receive accurate dates, locations, and information." },
+  { tab: "Mod Log", summary: "The history of moderation decisions.", purpose: "Shows a chronological record of administrator moderation actions, who performed them, the target, and the recorded reason.", useWhen: "Use it before handling a repeat issue, answering an internal question, or confirming what action was already taken.", caution: "This is an audit trail. It explains past actions but does not replace reviewing the current facts before making a new decision." },
+  { tab: "Tickets", summary: "Support requests that need a response or resolution.", purpose: "Organizes incoming support tickets so administrators can review their status, priority, and available follow-up actions.", useWhen: "Use it when the Operations queue shows urgent support or when a member needs help that is not a report or trade case.", caution: "Use the ticket’s details to guide the response and keep sensitive information out of any unnecessary notes or messages." },
+  { tab: "Flagged", summary: "Content flags and Feedback Safety review in one workspace.", purpose: "Shows reported content for review and a separate Feedback Safety queue for low-feedback safety records, with deliberate review outcomes.", useWhen: "Use it when Operations shows Content flags or Feedback safety, or when reviewing a moderation concern about public content.", caution: "A flag identifies something to review; it is not an automatic conclusion. Choose Reviewed, Dismissed, or Action taken only after checking the appropriate context." },
+  { tab: "Approvals", summary: "Marketplace-access approval queue.", purpose: "Shows accounts that can finish setup but require an administrator decision before they can use marketplace actions.", useWhen: "Use it when Operations shows Pending approvals or when reviewing an account awaiting marketplace access.", caution: "Approve or decline based on the account information shown. This decision affects whether the account can participate in marketplace activity." },
+  { tab: "API Health", summary: "Sanitized diagnostic records for external-service failures.", purpose: "Shows recent provider/API failures without secrets, raw request data, or raw provider responses. You can select and clear only records you have reviewed.", useWhen: "Use it when a feature relying on an external service appears unavailable or when monitoring recurring technical failures.", caution: "Clear removes only the selected diagnostic records after confirmation and records the administrator action. It does not fix an external provider problem or alter marketplace records." },
+  { tab: "Operations", summary: "A read-only command center for the main administrator work queues.", purpose: "Combines system health, action counts, trade follow-up, timeline, launch readiness, and safe internal exports, then links you to the correct tab for action.", useWhen: "Start here for a daily review, to see what needs attention, or to open the related workspace from an action-queue count.", caution: "Operations summarizes and routes work; it does not itself resolve a report, change a trade, or send a message. Follow the link to the proper tab before acting." },
+];
+
+function AdminGuideTab() {
+  return (
+    <div className="space-y-5">
+      <Card className="border-violet-200 bg-[linear-gradient(135deg,#f5f3ff_0%,#ffffff_58%,#f0f9ff_100%)]">
+        <CardHeader>
+          <div className="flex items-start gap-3">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-violet-100 text-violet-700"><BookOpen className="h-5 w-5" aria-hidden="true" /></div>
+            <div><CardTitle>Admin Guide</CardTitle><CardDescription className="mt-1 max-w-3xl text-slate-700">A plain-language reference for the administrator dashboard. Open any section to see what that tab is for, when to use it, and what to double-check before you act.</CardDescription></div>
+          </div>
+        </CardHeader>
+        <CardContent><p className="rounded-lg border border-violet-100 bg-white/80 p-4 text-sm leading-6 text-slate-700"><strong className="text-slate-950">A simple way to use this dashboard:</strong> start with <strong className="text-slate-950">Operations</strong> for the day’s priorities, then open the listed workspace to review and act. Use the other tabs when you already know the type of task you need to complete.</p></CardContent>
+      </Card>
+      <Card>
+        <CardHeader><CardTitle className="text-xl">What each tab does</CardTitle><CardDescription>There are {adminGuideEntries.length} current administrator workspaces. This guide describes the tabs you can select in the dashboard navigation.</CardDescription></CardHeader>
+        <CardContent>
+          <Accordion type="multiple" className="rounded-xl border bg-card px-4">
+            {adminGuideEntries.map((entry) => (
+              <AccordionItem key={entry.tab} value={entry.tab} className="border-border">
+                <AccordionTrigger className="py-5 hover:no-underline"><span><span className="block text-base font-semibold text-foreground">{entry.tab}</span><span className="mt-1 block text-sm font-normal leading-6 text-muted-foreground">{entry.summary}</span></span></AccordionTrigger>
+                <AccordionContent className="pb-5">
+                  <dl className="grid gap-4 rounded-lg bg-muted/45 p-4 text-sm leading-6 md:grid-cols-3">
+                    <div><dt className="font-semibold text-foreground">What it does</dt><dd className="mt-1 text-muted-foreground">{entry.purpose}</dd></div>
+                    <div><dt className="font-semibold text-foreground">When to use it</dt><dd className="mt-1 text-muted-foreground">{entry.useWhen}</dd></div>
+                    <div><dt className="font-semibold text-foreground">Before you act</dt><dd className="mt-1 text-muted-foreground">{entry.caution}</dd></div>
+                  </dl>
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader><CardTitle className="text-xl">Quick tools above the tabs</CardTitle><CardDescription>These are shortcuts, not administrator tabs.</CardDescription></CardHeader>
+        <CardContent className="grid gap-4 md:grid-cols-2"><div className="rounded-lg border p-4"><p className="font-semibold">Test AI Sandbox</p><p className="mt-1 text-sm leading-6 text-muted-foreground">A separate administrator workspace for testing future Trade AI Analyzer work. It is not the live member-facing trade workflow.</p></div><div className="rounded-lg border p-4"><p className="font-semibold">Coming Soon Preview</p><p className="mt-1 text-sm leading-6 text-muted-foreground">A preview of the public Coming Soon experience. Use it to review presentation, not to manage members, trades, or platform records.</p></div></CardContent>
+      </Card>
+    </div>
+  );
 }
 
 function AdminListingsTab({ listingsQuery }: { listingsQuery: any }) {
@@ -744,6 +814,10 @@ export default function AdminDashboard() {
             <TabsTrigger value="operations" className="flex items-center justify-center gap-1.5 text-xs font-medium py-2.5 whitespace-nowrap">
               <ClipboardList className="h-4 w-4" />
               Operations
+            </TabsTrigger>
+            <TabsTrigger value="admin-guide" className="flex items-center justify-center gap-1.5 text-xs font-medium py-2.5 whitespace-nowrap">
+              <BookOpen className="h-4 w-4" />
+              Admin Guide
             </TabsTrigger>
           </TabsList>
 
@@ -1564,6 +1638,9 @@ export default function AdminDashboard() {
           </TabsContent>
           <TabsContent value="operations" className="space-y-4 mt-6">
             <AdminOperationsTab onNavigate={setActiveTab} />
+          </TabsContent>
+          <TabsContent value="admin-guide" className="space-y-4 mt-6">
+            <AdminGuideTab />
           </TabsContent>
         </Tabs>
       </div>
