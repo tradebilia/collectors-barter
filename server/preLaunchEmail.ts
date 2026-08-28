@@ -1,6 +1,24 @@
 type FetchLike = typeof fetch;
 
 import { classifyApiFailure, recordApiFailure } from "./apiHealth";
+import { isStagingSafetyEnabled, stagingSafetyReason } from "./_core/stagingSafety";
+import {
+  markPreLaunchDeliverySent,
+  markPreLaunchDeliveryUncertain,
+  reservePreLaunchDelivery,
+} from "./preLaunchDelivery";
+
+export type PreLaunchDeliveryStore = {
+  reserve: typeof reservePreLaunchDelivery;
+  markSent: typeof markPreLaunchDeliverySent;
+  markUncertain: typeof markPreLaunchDeliveryUncertain;
+};
+
+const databaseDeliveryStore: PreLaunchDeliveryStore = {
+  reserve: reservePreLaunchDelivery,
+  markSent: markPreLaunchDeliverySent,
+  markUncertain: markPreLaunchDeliveryUncertain,
+};
 
 const RESEND_API_BASE = "https://api.resend.com";
 const PRE_LAUNCH_SEGMENT_NAME = "Tradebilia Pre-Launch Updates";
@@ -206,6 +224,7 @@ async function getReusableDeliverySegment(fetcher: FetchLike, apiKey: string) {
 }
 
 export async function getPreLaunchRecipients(fetcher: FetchLike = fetch): Promise<PreLaunchRecipient[]> {
+  if (isStagingSafetyEnabled()) throw new Error(stagingSafetyReason("Pre-Launch recipient retrieval"));
   const apiKey = getResendContactsApiKey();
   if (!apiKey) throw new Error("Pre-Launch Email is not configured yet.");
   try {
@@ -249,57 +268,80 @@ export async function getPreLaunchBroadcastStatuses(fetcher: FetchLike = fetch) 
 }
 
 export async function sendPreLaunchUpdate(
-  input: { subject: string; message: string; recipientIds?: string[] },
+  input: { subject: string; message: string; recipientIds?: string[]; deliveryKey: string; requestedBy: number },
   fetcher: FetchLike = fetch,
+  deliveryStore: PreLaunchDeliveryStore = databaseDeliveryStore,
 ) {
+  if (isStagingSafetyEnabled()) throw new Error(stagingSafetyReason("Pre-Launch Email delivery"));
   const contactsApiKey = getResendContactsApiKey();
   const broadcastApiKey = getResendBroadcastApiKey();
   if (!contactsApiKey || !broadcastApiKey) throw new Error("Pre-Launch Email is not configured yet.");
 
-  const contacts = await listAllContacts(fetcher, contactsApiKey);
-  const requestedIds = input.recipientIds ? new Set(input.recipientIds) : null;
-  const selectedContacts = requestedIds ? contacts.filter(contact => requestedIds.has(contact.id)) : contacts;
-  if (selectedContacts.length === 0) return { recipientCount: 0, broadcastId: null as string | null };
-
-  const segmentId = await getReusableDeliverySegment(fetcher, contactsApiKey);
-  await clearSegmentContacts(fetcher, contactsApiKey, segmentId);
-  await enrollContactsInSegment(selectedContacts, segmentId, fetcher, contactsApiKey);
-
-  const broadcast = await fetcher(`${RESEND_API_BASE}/broadcasts`, {
-    method: "POST",
-    headers: headers(broadcastApiKey),
-    body: JSON.stringify({
-      segment_id: segmentId,
-      from: FROM_ADDRESS,
-      subject: input.subject.trim(),
-      name: `Tradebilia pre-launch update ${new Date().toISOString()}`,
-      html: buildPreLaunchEmailHtml(input.message),
-      text: `${input.message.trim()}\n\nUnsubscribe: {{{RESEND_UNSUBSCRIBE_URL}}}`,
-      send: true,
-    }),
-    signal: AbortSignal.timeout(15_000),
-  }) as ResendFetchResponse;
-  if (!broadcast.ok) throw new Error("Resend could not deliver the Pre-Launch Email update.");
-  const payload = await broadcast.json();
-  const sentAt = new Date().toISOString();
-  const propertyResponse = await fetcher(`${RESEND_API_BASE}/contact-properties`, {
-    method: "POST",
-    headers: headers(contactsApiKey),
-    body: JSON.stringify({ key: LAST_SENT_PROPERTY, type: "string", fallback_value: "" }),
-    signal: AbortSignal.timeout(10_000),
-  }) as ResendFetchResponse;
-  if (!propertyResponse.ok && propertyResponse.status !== 409) {
-    await recordApiFailure({ provider: "Resend", operation: "pre_launch_last_sent_property", failureClass: "upstream", safeMessage: "Pre-Launch recipient timestamp tracking could not be prepared." });
-  } else {
-    await Promise.all(selectedContacts.map(async contact => {
-      const update = await fetcher(`${RESEND_API_BASE}/contacts/${encodeURIComponent(contact.id)}`, {
-        method: "PATCH",
-        headers: headers(contactsApiKey),
-        body: JSON.stringify({ properties: { [LAST_SENT_PROPERTY]: sentAt } }),
-        signal: AbortSignal.timeout(10_000),
-      }) as ResendFetchResponse;
-      if (!update.ok) throw new Error("Unable to record recipient send timestamp.");
-    }));
+  const reservation = await deliveryStore.reserve(input);
+  if (reservation.kind === "sent") {
+    return { recipientCount: reservation.recipientCount, broadcastId: reservation.broadcastId, reused: true };
   }
-  return { recipientCount: selectedContacts.length, broadcastId: payload?.id ?? null };
+  if (reservation.kind === "uncertain") {
+    throw new Error("The prior Pre-Launch delivery outcome is still being confirmed. It was not resent automatically.");
+  }
+
+  try {
+    const contacts = await listAllContacts(fetcher, contactsApiKey);
+    const requestedIds = input.recipientIds ? new Set(input.recipientIds) : null;
+    const selectedContacts = requestedIds ? contacts.filter(contact => requestedIds.has(contact.id)) : contacts;
+    if (selectedContacts.length === 0) {
+      await deliveryStore.markSent({ deliveryId: reservation.deliveryId, recipientCount: 0, broadcastId: null });
+      return { recipientCount: 0, broadcastId: null as string | null, reused: false };
+    }
+
+    const segmentId = await getReusableDeliverySegment(fetcher, contactsApiKey);
+    await clearSegmentContacts(fetcher, contactsApiKey, segmentId);
+    await enrollContactsInSegment(selectedContacts, segmentId, fetcher, contactsApiKey);
+
+    const broadcast = await fetcher(`${RESEND_API_BASE}/broadcasts`, {
+      method: "POST",
+      headers: headers(broadcastApiKey),
+      body: JSON.stringify({
+        segment_id: segmentId,
+        from: FROM_ADDRESS,
+        subject: input.subject.trim(),
+        name: `Tradebilia pre-launch update ${new Date().toISOString()}`,
+        html: buildPreLaunchEmailHtml(input.message),
+        text: `${input.message.trim()}\n\nUnsubscribe: {{{RESEND_UNSUBSCRIBE_URL}}}`,
+        send: true,
+      }),
+      signal: AbortSignal.timeout(15_000),
+    }) as ResendFetchResponse;
+    if (!broadcast.ok) throw new Error("Resend could not deliver the Pre-Launch Email update.");
+    const payload = await broadcast.json();
+    if (!payload?.id) throw new Error("Resend did not confirm the Pre-Launch Email delivery.");
+    await deliveryStore.markSent({ deliveryId: reservation.deliveryId, recipientCount: selectedContacts.length, broadcastId: payload.id });
+
+    const sentAt = new Date().toISOString();
+    const propertyResponse = await fetcher(`${RESEND_API_BASE}/contact-properties`, {
+      method: "POST",
+      headers: headers(contactsApiKey),
+      body: JSON.stringify({ key: LAST_SENT_PROPERTY, type: "string", fallback_value: "" }),
+      signal: AbortSignal.timeout(10_000),
+    }) as ResendFetchResponse;
+    if (!propertyResponse.ok && propertyResponse.status !== 409) {
+      await recordApiFailure({ provider: "Resend", operation: "pre_launch_last_sent_property", failureClass: "upstream", safeMessage: "Pre-Launch recipient timestamp tracking could not be prepared." });
+    } else {
+      await Promise.all(selectedContacts.map(async contact => {
+        const update = await fetcher(`${RESEND_API_BASE}/contacts/${encodeURIComponent(contact.id)}`, {
+          method: "PATCH",
+          headers: headers(contactsApiKey),
+          body: JSON.stringify({ properties: { [LAST_SENT_PROPERTY]: sentAt } }),
+          signal: AbortSignal.timeout(10_000),
+        }) as ResendFetchResponse;
+        if (!update.ok) {
+          await recordApiFailure({ provider: "Resend", operation: "pre_launch_last_sent_contact", failureClass: "upstream", safeMessage: "Pre-Launch recipient timestamp tracking could not be completed for every recipient." });
+        }
+      }));
+    }
+    return { recipientCount: selectedContacts.length, broadcastId: payload.id, reused: false };
+  } catch (error) {
+    await deliveryStore.markUncertain(reservation.deliveryId);
+    throw error;
+  }
 }

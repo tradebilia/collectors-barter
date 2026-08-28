@@ -3,7 +3,6 @@
  * Sends transactional emails to users for key events.
  */
 
-const RESEND_API_KEY = process.env.RESEND_API_KEY;
 const FROM_ADDRESS = "Tradebilia <noreply@tradebilia.com>";
 const SITE_URL = "https://tradebilia.manus.space";
 import { isStagingSafetyEnabled, stagingSafetyReason } from "./stagingSafety";
@@ -11,12 +10,32 @@ import { classifyApiFailure, recordApiFailure } from "../apiHealth";
 
 const RESEND_REQUEST_TIMEOUT_MS = 15_000;
 
+/** Treat all template values as plain text before inserting them into email HTML. */
+export function escapeEmailHtml(value: string | number): string {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+export function escapeEmailTextWithBreaks(value: string): string {
+  return escapeEmailHtml(value).replace(/\r?\n/g, "<br>");
+}
+
+/** Remove characters that could otherwise be interpreted as a second mail header. */
+export function toSafeEmailSubject(value: string): string {
+  return value.replace(/[\r\n\u0000-\u001f\u007f]+/g, " ").replace(/\s+/g, " ").trim();
+}
+
 async function sendEmail(to: string, subject: string, html: string): Promise<boolean> {
+  const resendApiKey = process.env.RESEND_API_KEY;
   if (isStagingSafetyEnabled()) {
     console.warn(`[Email] ${stagingSafetyReason("Email delivery")}`);
     return false;
   }
-  if (!RESEND_API_KEY) {
+  if (!resendApiKey) {
     console.warn("[Email] RESEND_API_KEY not configured — skipping email notification");
     return false;
   }
@@ -28,10 +47,10 @@ async function sendEmail(to: string, subject: string, html: string): Promise<boo
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${RESEND_API_KEY}`,
+        Authorization: `Bearer ${resendApiKey}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ from: FROM_ADDRESS, to, subject, html }),
+      body: JSON.stringify({ from: FROM_ADDRESS, to, subject: toSafeEmailSubject(subject), html }),
       signal: AbortSignal.timeout(RESEND_REQUEST_TIMEOUT_MS),
     });
     if (!res.ok) {
@@ -100,7 +119,7 @@ export async function sendAccountEmailVerificationCode(params: {
     <h2 style="margin:0 0 8px;font-size:22px;color:#0a0d22;">Verify your Tradebilia email</h2>
     <p style="color:#666;font-size:14px;margin:0 0 24px;">Use this code to complete your Tradebilia account setup. It expires in 10 minutes.</p>
     <div style="background:#f8f8f6;border-radius:12px;padding:20px;margin-bottom:24px;text-align:center;">
-      <p style="margin:0;font-size:28px;font-weight:700;letter-spacing:0.24em;color:#0a0d22;">${params.code}</p>
+      <p style="margin:0;font-size:28px;font-weight:700;letter-spacing:0.24em;color:#0a0d22;">${escapeEmailHtml(params.code)}</p>
     </div>
     <p style="color:#666;font-size:13px;margin:0;">If you did not start account setup, you can ignore this email.</p>
   `);
@@ -136,14 +155,14 @@ export async function sendNewDirectMessageEmail(params: {
     : params.bodyPreview;
 
   const html = emailWrapper(`
-    <h2 style="margin:0 0 8px;font-size:22px;color:#0a0d22;">New message from ${params.senderName}</h2>
+    <h2 style="margin:0 0 8px;font-size:22px;color:#0a0d22;">New message from ${escapeEmailHtml(params.senderName)}</h2>
     <p style="color:#666;font-size:14px;margin:0 0 24px;">You have a new direct message on Tradebilia.</p>
 
     <div style="background:#f8f8f6;border-radius:12px;padding:20px;margin-bottom:24px;">
       <p style="margin:0 0 6px;font-size:11px;color:#999;text-transform:uppercase;letter-spacing:0.1em;">Subject</p>
-      <p style="margin:0 0 16px;font-size:15px;font-weight:600;color:#0a0d22;">${params.subject}</p>
+      <p style="margin:0 0 16px;font-size:15px;font-weight:600;color:#0a0d22;">${escapeEmailHtml(params.subject)}</p>
       <p style="margin:0 0 6px;font-size:11px;color:#999;text-transform:uppercase;letter-spacing:0.1em;">Message</p>
-      <p style="margin:0;font-size:14px;color:#444;line-height:1.6;">${preview}</p>
+      <p style="margin:0;font-size:14px;color:#444;line-height:1.6;">${escapeEmailTextWithBreaks(preview)}</p>
     </div>
 
     <a href="${SITE_URL}/messages" style="display:inline-block;background:#7f31ff;color:#ffffff;text-decoration:none;padding:14px 28px;border-radius:10px;font-weight:600;font-size:14px;">View Message &amp; Reply</a>
@@ -181,13 +200,13 @@ export async function sendTradeInitiatedEmail(params: {
   tradeRef: string;
 }): Promise<boolean> {
   const html = emailWrapper(`
-    <h2 style="margin:0 0 8px;font-size:22px;color:#0a0d22;">New Trade Proposal from ${params.senderName}</h2>
+    <h2 style="margin:0 0 8px;font-size:22px;color:#0a0d22;">New Trade Proposal from ${escapeEmailHtml(params.senderName)}</h2>
     <p style="color:#666;font-size:14px;margin:0 0 24px;">Someone wants to trade with you on Tradebilia.</p>
     <div style="background:#f8f8f6;border-radius:12px;padding:20px;margin-bottom:24px;">
       <p style="margin:0 0 6px;font-size:11px;color:#999;text-transform:uppercase;letter-spacing:0.1em;">Item</p>
-      <p style="margin:0 0 16px;font-size:15px;font-weight:600;color:#0a0d22;">${params.itemTitle}</p>
+      <p style="margin:0 0 16px;font-size:15px;font-weight:600;color:#0a0d22;">${escapeEmailHtml(params.itemTitle)}</p>
       <p style="margin:0 0 6px;font-size:11px;color:#999;text-transform:uppercase;letter-spacing:0.1em;">Trade Reference</p>
-      <p style="margin:0;font-size:14px;color:#444;">TR-${params.tradeRef}</p>
+      <p style="margin:0;font-size:14px;color:#444;">TR-${escapeEmailHtml(params.tradeRef)}</p>
     </div>
     <a href="${SITE_URL}/trade-hub" style="display:inline-block;background:#7f31ff;color:#ffffff;text-decoration:none;padding:14px 28px;border-radius:10px;font-weight:600;font-size:14px;">View Trade Proposal</a>
   `);
@@ -204,8 +223,8 @@ export async function sendCounterProposalEmail(params: {
   tradeRef: string;
 }): Promise<boolean> {
   const html = emailWrapper(`
-    <h2 style="margin:0 0 8px;font-size:22px;color:#0a0d22;">Counter Proposal from ${params.senderName}</h2>
-    <p style="color:#666;font-size:14px;margin:0 0 24px;">A counter proposal has been submitted for your trade (TR-${params.tradeRef}).</p>
+    <h2 style="margin:0 0 8px;font-size:22px;color:#0a0d22;">Counter Proposal from ${escapeEmailHtml(params.senderName)}</h2>
+    <p style="color:#666;font-size:14px;margin:0 0 24px;">A counter proposal has been submitted for your trade (TR-${escapeEmailHtml(params.tradeRef)}).</p>
     <a href="${SITE_URL}/trade-hub" style="display:inline-block;background:#7f31ff;color:#ffffff;text-decoration:none;padding:14px 28px;border-radius:10px;font-weight:600;font-size:14px;">Review Counter Proposal</a>
   `);
   return sendEmail(params.recipientEmail, `Counter proposal from ${params.senderName} — TR-${params.tradeRef}`, html);
@@ -223,9 +242,9 @@ export async function sendProposalAcceptedEmail(params: {
 }): Promise<boolean> {
   const html = emailWrapper(`
     <h2 style="margin:0 0 8px;font-size:22px;color:#0a0d22;">🎉 Trade Proposal Accepted!</h2>
-    <p style="color:#666;font-size:14px;margin:0 0 24px;">${params.otherPartyName} accepted your trade proposal for <strong>${params.itemTitle}</strong>.</p>
+    <p style="color:#666;font-size:14px;margin:0 0 24px;">${escapeEmailHtml(params.otherPartyName)} accepted your trade proposal for <strong>${escapeEmailHtml(params.itemTitle)}</strong>.</p>
     <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:20px;margin-bottom:24px;">
-      <p style="margin:0;font-size:14px;color:#166534;">Trade Reference: TR-${params.tradeRef}</p>
+      <p style="margin:0;font-size:14px;color:#166534;">Trade Reference: TR-${escapeEmailHtml(params.tradeRef)}</p>
     </div>
     <a href="${SITE_URL}/trade-hub" style="display:inline-block;background:#7f31ff;color:#ffffff;text-decoration:none;padding:14px 28px;border-radius:10px;font-weight:600;font-size:14px;">Go to Trade Hub</a>
   `);
@@ -244,8 +263,8 @@ export async function sendProposalRejectedEmail(params: {
 }): Promise<boolean> {
   const html = emailWrapper(`
     <h2 style="margin:0 0 8px;font-size:22px;color:#0a0d22;">Trade Proposal Declined</h2>
-    <p style="color:#666;font-size:14px;margin:0 0 24px;">${params.otherPartyName} declined your trade proposal (TR-${params.tradeRef}).</p>
-    ${params.reason ? `<div style="background:#f8f8f6;border-radius:12px;padding:20px;margin-bottom:24px;"><p style="margin:0 0 6px;font-size:11px;color:#999;text-transform:uppercase;letter-spacing:0.1em;">Reason</p><p style="margin:0;font-size:14px;color:#444;">${params.reason}</p></div>` : ''}
+    <p style="color:#666;font-size:14px;margin:0 0 24px;">${escapeEmailHtml(params.otherPartyName)} declined your trade proposal (TR-${escapeEmailHtml(params.tradeRef)}).</p>
+    ${params.reason ? `<div style="background:#f8f8f6;border-radius:12px;padding:20px;margin-bottom:24px;"><p style="margin:0 0 6px;font-size:11px;color:#999;text-transform:uppercase;letter-spacing:0.1em;">Reason</p><p style="margin:0;font-size:14px;color:#444;">${escapeEmailTextWithBreaks(params.reason)}</p></div>` : ''}
     <a href="${SITE_URL}/trade-hub" style="display:inline-block;background:#7f31ff;color:#ffffff;text-decoration:none;padding:14px 28px;border-radius:10px;font-weight:600;font-size:14px;">Browse Other Items</a>
   `);
   return sendEmail(params.recipientEmail, `Trade proposal declined — TR-${params.tradeRef}`, html);
@@ -263,8 +282,8 @@ export async function sendItemsShippedEmail(params: {
 }): Promise<boolean> {
   const html = emailWrapper(`
     <h2 style="margin:0 0 8px;font-size:22px;color:#0a0d22;">📦 Items Shipped!</h2>
-    <p style="color:#666;font-size:14px;margin:0 0 24px;">${params.senderName} has shipped their items for trade TR-${params.tradeRef}.</p>
-    ${params.trackingNumber ? `<div style="background:#f8f8f6;border-radius:12px;padding:20px;margin-bottom:24px;"><p style="margin:0 0 6px;font-size:11px;color:#999;text-transform:uppercase;letter-spacing:0.1em;">Tracking Number</p><p style="margin:0;font-size:15px;font-weight:600;color:#0a0d22;">${params.trackingNumber}</p></div>` : ''}
+    <p style="color:#666;font-size:14px;margin:0 0 24px;">${escapeEmailHtml(params.senderName)} has shipped their items for trade TR-${escapeEmailHtml(params.tradeRef)}.</p>
+    ${params.trackingNumber ? `<div style="background:#f8f8f6;border-radius:12px;padding:20px;margin-bottom:24px;"><p style="margin:0 0 6px;font-size:11px;color:#999;text-transform:uppercase;letter-spacing:0.1em;">Tracking Number</p><p style="margin:0;font-size:15px;font-weight:600;color:#0a0d22;">${escapeEmailHtml(params.trackingNumber)}</p></div>` : ''}
     <a href="${SITE_URL}/trade-hub" style="display:inline-block;background:#7f31ff;color:#ffffff;text-decoration:none;padding:14px 28px;border-radius:10px;font-weight:600;font-size:14px;">View Trade Details</a>
   `);
   return sendEmail(params.recipientEmail, `Items shipped for trade TR-${params.tradeRef}`, html);
@@ -279,8 +298,8 @@ export async function sendShippingDeadlineReminderEmail(params: {
 }): Promise<boolean> {
   const heading = params.overdue ? "Shipping Deadline Overdue" : "Shipping Deadline Approaching";
   const detail = params.overdue
-    ? `Your tracking information is overdue for trade TR-${params.tradeRef}. Please ship your items and add tracking as soon as possible.`
-    : `Please ship your items and add tracking for trade TR-${params.tradeRef} by ${params.deadline}.`;
+    ? `Your tracking information is overdue for trade TR-${escapeEmailHtml(params.tradeRef)}. Please ship your items and add tracking as soon as possible.`
+    : `Please ship your items and add tracking for trade TR-${escapeEmailHtml(params.tradeRef)} by ${escapeEmailHtml(params.deadline)}.`;
   const html = emailWrapper(`<h2 style="margin:0 0 8px;font-size:22px;color:#0a0d22;">${heading}</h2><p style="color:#666;font-size:14px;margin:0 0 24px;">${detail}</p><a href="${SITE_URL}/trade-hub" style="display:inline-block;background:#7f31ff;color:#ffffff;text-decoration:none;padding:14px 28px;border-radius:10px;font-weight:600;font-size:14px;">Open Trade Room</a>`);
   return sendEmail(params.recipientEmail, `${heading} — TR-${params.tradeRef}`, html);
 }
@@ -296,7 +315,7 @@ export async function sendItemsReceivedEmail(params: {
 }): Promise<boolean> {
   const html = emailWrapper(`
     <h2 style="margin:0 0 8px;font-size:22px;color:#0a0d22;">✅ Items Received!</h2>
-    <p style="color:#666;font-size:14px;margin:0 0 24px;">${params.otherPartyName} has confirmed receipt of items for trade TR-${params.tradeRef}.</p>
+    <p style="color:#666;font-size:14px;margin:0 0 24px;">${escapeEmailHtml(params.otherPartyName)} has confirmed receipt of items for trade TR-${escapeEmailHtml(params.tradeRef)}.</p>
     <a href="${SITE_URL}/trade-hub" style="display:inline-block;background:#7f31ff;color:#ffffff;text-decoration:none;padding:14px 28px;border-radius:10px;font-weight:600;font-size:14px;">Leave Feedback</a>
   `);
   return sendEmail(params.recipientEmail, `Items received confirmed — TR-${params.tradeRef}`, html);
@@ -315,7 +334,7 @@ export async function sendFeedbackReceivedEmail(params: {
   const stars = '★'.repeat(Math.round(params.rating)) + '☆'.repeat(5 - Math.round(params.rating));
   const html = emailWrapper(`
     <h2 style="margin:0 0 8px;font-size:22px;color:#0a0d22;">New Feedback Received</h2>
-    <p style="color:#666;font-size:14px;margin:0 0 24px;">${params.reviewerName} left you feedback for trade TR-${params.tradeRef}.</p>
+    <p style="color:#666;font-size:14px;margin:0 0 24px;">${escapeEmailHtml(params.reviewerName)} left you feedback for trade TR-${escapeEmailHtml(params.tradeRef)}.</p>
     <div style="background:#f8f8f6;border-radius:12px;padding:20px;margin-bottom:24px;text-align:center;">
       <p style="margin:0;font-size:28px;color:#f59e0b;letter-spacing:4px;">${stars}</p>
       <p style="margin:8px 0 0;font-size:18px;font-weight:700;color:#0a0d22;">${params.rating.toFixed(1)} / 5.0</p>
@@ -336,7 +355,7 @@ export async function sendTradeCancelledEmail(params: {
 }): Promise<boolean> {
   const html = emailWrapper(`
     <h2 style="margin:0 0 8px;font-size:22px;color:#0a0d22;">Trade Cancelled</h2>
-    <p style="color:#666;font-size:14px;margin:0 0 24px;">${params.cancelledByName} has cancelled trade TR-${params.tradeRef}.</p>
+    <p style="color:#666;font-size:14px;margin:0 0 24px;">${escapeEmailHtml(params.cancelledByName)} has cancelled trade TR-${escapeEmailHtml(params.tradeRef)}.</p>
     <a href="${SITE_URL}/trade-hub" style="display:inline-block;background:#7f31ff;color:#ffffff;text-decoration:none;padding:14px 28px;border-radius:10px;font-weight:600;font-size:14px;">Browse Other Items</a>
   `);
   return sendEmail(params.recipientEmail, `Trade cancelled — TR-${params.tradeRef}`, html);
@@ -356,12 +375,12 @@ export async function sendDirectMessageReplyEmail(params: {
     : params.bodyPreview;
 
   const html = emailWrapper(`
-    <h2 style="margin:0 0 8px;font-size:22px;color:#0a0d22;">${params.senderName} replied to your message</h2>
+    <h2 style="margin:0 0 8px;font-size:22px;color:#0a0d22;">${escapeEmailHtml(params.senderName)} replied to your message</h2>
     <p style="color:#666;font-size:14px;margin:0 0 24px;">You have a new reply in your Tradebilia inbox.</p>
 
     <div style="background:#f8f8f6;border-radius:12px;padding:20px;margin-bottom:24px;">
       <p style="margin:0 0 6px;font-size:11px;color:#999;text-transform:uppercase;letter-spacing:0.1em;">Reply</p>
-      <p style="margin:0;font-size:14px;color:#444;line-height:1.6;">${preview}</p>
+      <p style="margin:0;font-size:14px;color:#444;line-height:1.6;">${escapeEmailTextWithBreaks(preview)}</p>
     </div>
 
     <a href="${SITE_URL}/messages" style="display:inline-block;background:#7f31ff;color:#ffffff;text-decoration:none;padding:14px 28px;border-radius:10px;font-weight:600;font-size:14px;">View Conversation</a>
@@ -385,11 +404,7 @@ export async function sendReferralInviteEmail(params: {
   const firstName = params.recipientName.split(' ')[0];
   const bodyWithName = params.body.replace(/\{\{name\}\}/g, firstName);
   
-  const bodyHtml = bodyWithName
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/\n/g, '<br>');
+  const bodyHtml = escapeEmailTextWithBreaks(bodyWithName);
 
   // Use a dedicated wrapper with the official Tradebilia logo image
   const html = `<!DOCTYPE html>

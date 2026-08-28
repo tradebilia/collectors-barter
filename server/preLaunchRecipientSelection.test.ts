@@ -22,6 +22,6 @@ describe("Pre-Launch recipient selection", () => {
     expect(tabSource).toContain("setConfirmOpen(true)");
     expect(tabSource).toContain("`Send to ${recipients.length}`");
     expect(tabSource).toContain("Unsubscribed contacts are excluded automatically.");
-    expect(tabSource).toContain("sendMutation.mutate({ subject, message })");
+    expect(tabSource).toContain("sendMutation.mutate({ subject, message, deliveryKey })");
   });
 });

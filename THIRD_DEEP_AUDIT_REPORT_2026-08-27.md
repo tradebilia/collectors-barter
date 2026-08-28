@@ -40,6 +40,23 @@ All existing public sign-in buttons now keep the visitor on their current Tradeb
 | **P1-4** | **PayPal payee verification is fail-open when the provider response omits payee information.** | `verifyPayPalTransaction()` accepts a transaction after status/amount checks when `payeeEmail` is null because the mismatch condition runs only when that field is present (`server/paypal.ts`, lines 143–189). | Before any PayPal/cash obligation is enabled, an unrelated successful transaction could satisfy verification if the provider response is incomplete. Current Free Launch and inactive payment enforcement limit present exposure. | When an expected payee is defined, require a non-empty returned payee and case-insensitive match; otherwise fail closed. Add provider-response omission and mismatch tests before enabling payment enforcement. |
 | **P1-5** | **Public market-data endpoints can trigger expensive external work without bounded input shape or local admission control.** | Five market-data procedures are public (`server/_core/marketDataRouter.ts`, lines 41–203). `sources`, search terms, cache age, and some result inputs lack tight allowlists/size bounds. Cache misses invoke eBay work; the provider adapter retries up to three 30-second requests (`server/_core/ebayDataAcquisition.ts`, lines 14–52). | Anonymous traffic can amplify upstream calls and hold server capacity, particularly on repeated cache misses or unusual request combinations. | Require authentication or add endpoint-specific IP/user rate limits, strict source enum/max length/max sources, bounded search text/cache age, and an absolute request budget. Preserve normal public browsing, which does not require this acquisition API. |
 
+## P1-A remediation status — completed 2026-08-28
+
+The approved P1-A repair resolved **P1-1 through P1-3**. Transactional notification HTML now renders every dynamic member or administrator-supplied value through shared plain-text escaping helpers, preserves deliberate line breaks, and normalizes every provider-boundary subject to remove CR/LF and other control characters. The Tradebilia logo/template structure and existing Resend failure behavior remain unchanged.
+
+Pre-Launch delivery now records a unique administrator delivery key, content hash, requested-by account, confirmed broadcast identity, recipient count, and state before a provider broadcast is attempted. A confirmed retry returns the recorded result without contacting Resend; `sending` or `uncertain` records deliberately fail closed rather than sending again. This local ledger is necessary because Resend documents idempotency for single and batch email endpoints, not broadcast creation/send. [1] [2] [3]
+
+The public Coming Soon signup, Pre-Launch recipient lookup, and Pre-Launch delivery all stop before any provider request when staging safety is enabled. Public signup is additionally limited per normalized email and request source in the local process. The live administrator UI retains its existing preview and explicit confirmation; its UUID delivery key remains stable for a confirmed send/retry and renews only when draft content changes or a delivery is confirmed.
+
+| Post-remediation validation | Result |
+|---|---|
+| Focused outbound-safety tests | **22 passed** across transactional email, launch-update, and Pre-Launch delivery suites; providers were mocked or blocked. |
+| Complete non-watch suite | **149 files passed, 1 skipped; 470 tests passed, 4 skipped.** |
+| TypeScript, production build, dependency audit, whitespace review | **Passed.** |
+| Custom-TiDB preflight/postcheck | Dedicated 10-column delivery ledger was absent before, present after, and had **0 records** after validation. The baseline remained 3 members, 16 active listings, $147,530 active value, 7 trade messages, and zero inquiries/direct messages/reports/complaints. |
+
+The remaining P1 items are **P1-4 PayPal fail-closed payee verification** and **P1-5 public market-data admission controls**. They require a separate approval because they affect payment-verification and public data-acquisition contracts.
+
 ## Confirmed P2 findings
 
 | ID | Finding | Evidence | Impact | Recommended disposition |
@@ -74,4 +91,10 @@ No new secret value was printed, logged, committed, or placed in audit output. T
 
 P0-A should be implemented as one focused, tested batch because both faults undermine expected public entry and privacy behavior. It should not alter trade data, membership policy, payment settings, or provider credentials. The batch should add behavior-level tests for direct inactive listing access, hidden/closed profile discovery, public trade history, merchant cards, online-status lookups, and public sign-in redirects.
 
-After P0-A, the recommended order is P1-A (email escaping plus pre-launch idempotency/staging guard), P1-B (PayPal fail-closed verification and public market-data admission controls), and P2B (trusted configured origins before any live billing). P2 reliability cleanup can then proceed in small provider-specific batches to avoid a broad integration refactor.
+P0-A and P1-A are complete. The recommended next order is P1-B (PayPal fail-closed verification and public market-data admission controls), then P2B (trusted configured origins before any live billing). P2 reliability cleanup can proceed in small provider-specific batches to avoid a broad integration refactor.
+
+## References
+
+1. [Resend — Idempotency Keys](https://resend.com/docs/dashboard/emails/idempotency-keys)
+2. [Resend — Create Broadcast](https://resend.com/docs/api-reference/broadcasts/create-broadcast)
+3. [Resend — Send Broadcast](https://resend.com/docs/api-reference/broadcasts/send-broadcast)
