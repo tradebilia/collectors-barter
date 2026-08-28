@@ -285,6 +285,17 @@ The canonical commit deliberately merges the sandbox-specific behavior without r
 | Validation | Existing focused administrator regressions passed 6 files / 13 tests; TypeScript, production build, and whitespace passed. No live provider, email, payment, schedule, setting, database, or administrator action was exercised. |
 | Preserved safeguards | No application behavior, custom TiDB schema/data, marketplace record, membership record, payment/provider action, schedule, setting, or secret changed. |
 
+## Retained-Record Administrator Safety and Closure Requests Operations Pair
+
+| Record | Value |
+|---|---|
+| Canonical implementation commit | `a02c856a7ff4d3cc7a5fed24084724de71d7c166` — normal push to GitHub `main`; no force push or history replacement. |
+| Paired managed WebDev recovery checkpoint | `43da9001` |
+| Scope | Disabled ordinary permanent deletion controls and legacy user/trade/ticket deletion procedures. Added reason-and-exact-phrase protected retained Account Archive, terminal Trade Archive, and Ticket Close & Retain procedures with central administrator activity entries and archive-visible filters. Added a read-only pending Closure Requests Operations count and direct link. |
+| Record protection | No schema migration, database cleanup, or destructive action was used. Member archive reuses guarded closure safeguards; trade/ticket archive retains associated history. Ordinary permanent purge remains disabled and requires a separate exception-only approval. |
+| Validation | Focused source and canonical retained-removal, account-closure, Operations, administrator-audit, participant, and guide regressions passed 7 files / 24 tests. TypeScript, production build, production dependency audit, and whitespace passed in both workspaces. |
+| Preserved safeguards | No custom TiDB record/schema, marketplace record, membership record, payment/provider configuration or action, schedule, or secret changed. Free Launch remains active and payment enforcement remains inactive. |
+
 ## Synchronization Rules
 
 Before future GitHub-to-WebDev reconciliation, create a recovery checkpoint and an immutable GitHub backup tag. Before a reviewed WebDev change becomes canonical, merge only the relevant content into the current GitHub `main`, preserve any newer canonical work, use a normal commit/push, and record the associated checkpoint. Never force-push or replace the canonical repository wholesale.
