@@ -44,10 +44,11 @@ describe("homepage Recent Trades carousel", () => {
     expect(carouselSource).toContain("items-center justify-center gap-2 text-left");
     expect(carouselSource).toContain("<ArrowLeft");
     expect(carouselSource).toContain("<ArrowRight");
-    expect(carouselSource).toContain('src="/manus-storage/trade-complete-stamp-transparent_9ec4b748.png"');
+    expect(carouselSource).toContain('src="/manus-storage/trade-complete-stamp-translucent_3f4e25b7.png"');
     expect(carouselSource).toContain('alt="Trade complete"');
     expect(carouselSource).toContain('className="h-28 w-32');
     expect(carouselSource).not.toContain("mix-blend-multiply");
+    expect(carouselSource).not.toContain("trade-complete-stamp-transparent_9ec4b748.png");
     expect(carouselSource).toContain("verificationLabels");
     expect(carouselSource).toContain("averageRating");
     expect(carouselSource).not.toContain('title="You gave"');
