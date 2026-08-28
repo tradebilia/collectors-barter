@@ -230,6 +230,17 @@ The canonical commit deliberately merges the sandbox-specific behavior without r
 | External-test qualification | The WebDev complete suite recorded 482 passing tests, 4 intentional skips, and one skipped file. Its only failure was the external UPS OAuth readiness probe timing out at the harness’s five-second limit; a single isolated retry also timed out. The probe and its production behavior were not changed or masked. |
 | Preserved safeguards | No custom TiDB schema/data, marketplace record, membership record, payment action, provider configuration/action, schedule, or secret changed. |
 
+## Feedback Safety Queue Visibility Repair Pair
+
+| Record | Value |
+|---|---|
+| Canonical implementation commit | `5ccd1ac1d48257f2d99a102fc91236cc9c37c818` — normal push to GitHub `main`; no force push or history replacement. |
+| Paired managed WebDev recovery checkpoint | `004ffda8` |
+| Root cause | Operations counted one pending `lowFeedbackFlags` record whose original member row no longer exists. The prior visible-queue query used an inner join and omitted that record. |
+| Repair | The administrator queue now left-joins the member row, preserves the pending safety record, and identifies an orphaned record as **Archived member record** so an administrator can review or dismiss it deliberately. |
+| Validation | Read-only aggregate diagnosis confirmed 1 pending record, 1 without a matching user, and 0 with a matching user. Focused WebDev and canonical administrator regressions passed 2 files / 6 tests; TypeScript, production build, and whitespace checks passed. |
+| Preserved safeguards | No custom TiDB schema/data, marketplace record, membership record, payment action, provider configuration/action, schedule, or secret changed. |
+
 ## Synchronization Rules
 
 Before future GitHub-to-WebDev reconciliation, create a recovery checkpoint and an immutable GitHub backup tag. Before a reviewed WebDev change becomes canonical, merge only the relevant content into the current GitHub `main`, preserve any newer canonical work, use a normal commit/push, and record the associated checkpoint. Never force-push or replace the canonical repository wholesale.
