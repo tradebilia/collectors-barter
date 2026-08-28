@@ -1,7 +1,7 @@
 # Tradebilia Administrator Dashboard Audit
 
-**Date:** 2026-08-28  
-**Scope:** Read-only review of the administrator dashboard’s 20 visible tabs, their client wiring, supporting administrator procedures, and existing focused regressions.  
+**Date:** 2026-08-28
+**Scope:** Read-only review of the administrator dashboard’s 20 visible tabs, their client wiring, supporting administrator procedures, and existing focused regressions.
 **Out of scope:** No database records, payment settings, external providers, emails, schedules, secrets, or administrator actions were invoked or changed.
 
 ## Executive assessment

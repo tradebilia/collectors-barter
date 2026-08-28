@@ -274,6 +274,17 @@ The canonical commit deliberately merges the sandbox-specific behavior without r
 | Validation | Focused source and canonical Admin Guide, Operations, and administrator-control regressions passed 3 files / 9 tests; TypeScript, production build, unauthenticated access-boundary review, and whitespace passed. |
 | Preserved safeguards | No custom TiDB schema/data, marketplace record, membership record, payment action, provider configuration/action, schedule, or secret changed. |
 
+## Administrator Dashboard Audit Pair
+
+| Record | Value |
+|---|---|
+| Canonical documentation commit | `6cc0f2dd3d1ad0b02746a94761ed7ef339814b32` — normal push to GitHub `main`; no force push or history replacement. |
+| Paired managed WebDev audit checkpoint | `a48d4f74` |
+| Scope | Read-only `ADMIN_DASHBOARD_AUDIT_2026-08-28.md` covering all 20 visible administrator tabs, their supporting procedures, safe navigation consolidation, and prioritized missing capabilities. |
+| Top findings | A data-migration-aware safe-deletion/retention policy is P1; add the existing Closure Requests queue to Operations as a separate narrow P1 read-only count/link; reframe/hide Settings placeholder and improve support/safety case ownership, pagination, and audit coverage as P2 work. |
+| Validation | Existing focused administrator regressions passed 6 files / 13 tests; TypeScript, production build, and whitespace passed. No live provider, email, payment, schedule, setting, database, or administrator action was exercised. |
+| Preserved safeguards | No application behavior, custom TiDB schema/data, marketplace record, membership record, payment/provider action, schedule, setting, or secret changed. |
+
 ## Synchronization Rules
 
 Before future GitHub-to-WebDev reconciliation, create a recovery checkpoint and an immutable GitHub backup tag. Before a reviewed WebDev change becomes canonical, merge only the relevant content into the current GitHub `main`, preserve any newer canonical work, use a normal commit/push, and record the associated checkpoint. Never force-push or replace the canonical repository wholesale.
