@@ -387,3 +387,10 @@ Before future GitHub-to-WebDev reconciliation, create a recovery checkpoint and 
 | Scope | The ticket card now uses a subtle green surface matching the completion stamp, a stronger contrasting green footer, functional previous/next arrows, no visible From/To labels, and larger 96–112px item images. |
 | Preserved behavior | Username-first member identity, full non-cropped avatars, stored ratings, truthful verification badges, dotted ticket separators, direct item presentation, listing links, completed-trade eligibility, and five-second rotation remain intact. |
 | Validation | Focused homepage and movement tests passed 3/3; TypeScript, production build, dependency audit, whitespace, and desktop/mobile visual checks passed. No database, payment, provider, schedule, setting, or secret changed. |
+
+## Homepage Loading Resilience Pair
+| Record | Value |
+|---|---|
+| Issue | A slow marketplace feed could leave the entire homepage behind a blank loading spinner while other page content was ready to render. |
+| Repair | Removed the homepage-wide `marketplaceQuery.isLoading` gate and retained section-level loading behavior, including Recent Trades’ own loading state. |
+| Validation | Focused homepage and movement tests passed 3/3; TypeScript, production build, dependency audit, whitespace, and live desktop preview checks passed. No database, payment, provider, schedule, setting, or secret changed. |

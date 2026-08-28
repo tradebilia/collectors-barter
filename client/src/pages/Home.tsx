@@ -631,12 +631,7 @@ export default function Home() {
         </section>
 
         <section className="py-0">
-          {marketplaceQuery.isLoading ? (
-            <div className="flex justify-center py-20">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-          ) : (
-            <div className="space-y-0">
+          <div className="space-y-0">
               <div className="grid grid-cols-1 gap-0 md:grid-cols-[200px_minmax(0,1fr)] md:grid-rows-[auto_1fr]">
                 <aside className="flex flex-col justify-between bg-gradient-to-b from-blue-900 via-purple-900 to-indigo-900 px-4 py-6 text-white shadow-lg md:col-start-1 md:row-span-2">
                   <div className="space-y-4">
@@ -892,8 +887,7 @@ export default function Home() {
                 </Card>
                 </div>
               </div>
-            </div>
-          )}
+          </div>
         </section>
 
         {/* Warning Banner — shown to users who have received admin warnings */}
