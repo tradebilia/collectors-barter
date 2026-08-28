@@ -22,7 +22,9 @@ function formatEstimatedValue(value: TradeShowcaseItem["estimatedValue"]) {
 function formatConditionOrGrade(item: TradeShowcaseItem) {
   const numericGrade = Number(item.grade);
   if (Number.isFinite(numericGrade) && numericGrade > 0) {
-    return `Grade ${numericGrade.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
+    const gradingCompany = item.certificationCompany?.trim();
+    const formattedGrade = numericGrade.toLocaleString(undefined, { maximumFractionDigits: 2 });
+    return gradingCompany ? `${gradingCompany} ${formattedGrade}` : `Grade ${formattedGrade}`;
   }
 
   const condition = item.condition?.trim();

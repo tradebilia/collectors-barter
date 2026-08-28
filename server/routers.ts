@@ -3587,6 +3587,7 @@ export const appRouter = router({
             l.category as requestedListingCategory,
             l.condition as requestedListingCondition,
             l.grade as requestedListingGrade,
+            l.certificationCompany as requestedListingCertificationCompany,
             l.estimatedValue as requestedListingValue,
             (SELECT imageUrl FROM listingPhotos WHERE listingId = l.id ORDER BY sortOrder ASC LIMIT 1) as requestedListingImage,
             -- Item count and total value
@@ -3612,7 +3613,7 @@ export const appRouter = router({
         // Return every offered item for each completed exchange so public trade summaries are complete.
         const enriched = await Promise.all(trades.map(async (trade: any) => {
           const [offeredRows] = await db.execute(
-            sql`SELECT ol.id, ol.title, ol.category, ol.condition, ol.grade, ol.estimatedValue,
+            sql`SELECT ol.id, ol.title, ol.category, ol.condition, ol.grade, ol.certificationCompany, ol.estimatedValue,
               (SELECT imageUrl FROM listingPhotos WHERE listingId = ol.id ORDER BY sortOrder ASC LIMIT 1) as imageUrl
             FROM listings ol
             JOIN tradeProposalItems tpi ON tpi.offeredListingId = ol.id
