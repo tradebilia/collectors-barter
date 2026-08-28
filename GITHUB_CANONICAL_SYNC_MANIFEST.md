@@ -241,6 +241,17 @@ The canonical commit deliberately merges the sandbox-specific behavior without r
 | Validation | Read-only aggregate diagnosis confirmed 1 pending record, 1 without a matching user, and 0 with a matching user. Focused WebDev and canonical administrator regressions passed 2 files / 6 tests; TypeScript, production build, and whitespace checks passed. |
 | Preserved safeguards | No custom TiDB schema/data, marketplace record, membership record, payment action, provider configuration/action, schedule, or secret changed. |
 
+## Full-Width Trade Room Guide Pair
+
+| Record | Value |
+|---|---|
+| Canonical implementation commit | `715a7badd6ff79e5f4bf146b410297435b784d39` — normal push to GitHub `main`; no force push or history replacement. |
+| Paired managed WebDev recovery checkpoint | `2bd397cd` |
+| Scope | All six fictional development-only Trade Room captures now use a near-full-page-width single-column sequence rather than a two-column card grid. The accessible enlargement dialog and fictional-data disclosure remain intact. |
+| Readability handling | The on-page **Select to enlarge** affordance remains visible, and every capture loads eagerly so the complete sequence is available when the guide opens. |
+| Validation | Desktop visual review confirmed all six stages render as large, readable full-width captures. Focused WebDev and canonical guide/control regressions passed 2 files / 8 tests; TypeScript, production build, and whitespace passed. |
+| Preserved safeguards | No custom TiDB schema/data, marketplace record, membership record, payment action, provider configuration/action, schedule, or secret changed. |
+
 ## Synchronization Rules
 
 Before future GitHub-to-WebDev reconciliation, create a recovery checkpoint and an immutable GitHub backup tag. Before a reviewed WebDev change becomes canonical, merge only the relevant content into the current GitHub `main`, preserve any newer canonical work, use a normal commit/push, and record the associated checkpoint. Never force-push or replace the canonical repository wholesale.
