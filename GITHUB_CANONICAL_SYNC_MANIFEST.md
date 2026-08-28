@@ -351,6 +351,16 @@ The canonical commit deliberately merges the sandbox-specific behavior without r
 | Validation | Source full suite passed 156 files / 495 tests with four intended skips and one skipped file; canonical focused Recent Trades tests, TypeScript, production build, dependency audit, and whitespace passed. Source desktop and mobile visual reviews passed. |
 | Preserved safeguards | No database record/schema, payment/provider action, schedule, setting, or secret changed. Existing public eligibility, five-second rotation, reduced-motion behavior, and item-detail links are retained. |
 
+## Recent Trades Reference-Matched Layout Pair
+| Record | Value |
+|---|---|
+| Canonical implementation commit | This pairing record, the reference-matched Recent Trades component, focused visual-contract regression update, and matching tracker entry are included together in one normal GitHub `main` commit. No force push or history replacement is used. |
+| Paired managed WebDev recovery checkpoint | `43d69954` |
+| Scope | Recent Trades now closely matches the supplied compact reference: From → You Gave → green trade-complete badge → You Received → To, with matching desktop arrow placement and a compact existing trade/date/value/verified footer. |
+| Validation | Focused Recent Trades tests passed 5/5; complete source non-provider suite passed 151 files / 490 tests with three intended skips. Source TypeScript, production build, dependency audit, whitespace, and desktop/mobile visual checks passed. Canonical focused tests, TypeScript, production build, dependency audit, and whitespace passed. |
+| Qualification | A separate source all-tests attempt did not emit a completion summary while external credential probes were in progress; it produced no assertion failure and was not treated as validation. |
+| Preserved safeguards | No database record/schema, payment/provider action, schedule, setting, or secret changed. Existing public eligibility, five-second rotation, reduced-motion behavior, and listing links are retained. |
+
 ## Synchronization Rules
 
 Before future GitHub-to-WebDev reconciliation, create a recovery checkpoint and an immutable GitHub backup tag. Before a reviewed WebDev change becomes canonical, merge only the relevant content into the current GitHub `main`, preserve any newer canonical work, use a normal commit/push, and record the associated checkpoint. Never force-push or replace the canonical repository wholesale.
