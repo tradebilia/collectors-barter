@@ -147,8 +147,13 @@ describe("P1 email and Pre-Launch delivery safety", () => {
     const fetcher = vi.fn(async (url: string) => {
       if (url === "https://api.resend.com/segments?limit=100") return response({ data: [{ id: "segment-1", name: "Tradebilia Pre-Launch Updates" }] });
       if (url.startsWith("https://api.resend.com/segments/segment-1/contacts?")) return response({ has_more: false, data: [{ id: "contact-1", email: "member@example.com" }] });
+      if (url === "https://api.resend.com/segments") return response({ id: "delivery-segment" });
+      if (url.startsWith("https://api.resend.com/segments/delivery-segment/contacts?")) return response({ has_more: false, data: [] });
+      if (url.includes("/contacts/contact-1/segments/delivery-segment")) return response({ id: "delivery-segment" });
       if (url.includes("/contacts/contact-1/segments/segment-1")) return response({ id: "segment-1" });
       if (url === "https://api.resend.com/broadcasts") return response({ id: "broadcast-9" });
+      if (url === "https://api.resend.com/contact-properties") return response({ id: "tradebilia_prelaunch_last_sent_at" });
+      if (url === "https://api.resend.com/contacts/contact-1") return response({ id: "contact-1" });
       throw new Error(`Unexpected request: ${url}`);
     });
     await expect(sendPreLaunchUpdate({ subject: "Update", message: "Ready", deliveryKey: "66666666-6666-4666-8666-666666666666", requestedBy: 1 }, fetcher, store)).resolves.toEqual({ recipientCount: 1, broadcastId: "broadcast-9", reused: false });

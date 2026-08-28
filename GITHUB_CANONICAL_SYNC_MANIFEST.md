@@ -185,6 +185,18 @@ The canonical commit deliberately merges the sandbox-specific behavior without r
 | Validation | Focused P0/privacy/account-closure/session suite passed 18 tests. Full WebDev suite passed 149 files / 459 tests with four intentional skips and one skipped credential-probe file. Fresh canonical full suite passed 150 files / 471 tests with four intentional skips and one skipped credential-probe file. TypeScript, production build, `pnpm audit --prod`, whitespace review, startup checks, and public visual smoke passed. |
 | Preserved safeguards | No custom TiDB schema/data, marketplace record, payment setting/action, provider action, schedule, or secret changed. Free Launch remains active; Stripe remains sandbox-only; payment enforcement remains inactive. |
 
+## Third Deep-Audit P1 Email Safety Remediation Pair
+
+| Record | Value |
+|---|---|
+| Canonical implementation commit | `ce1364fc` — normal push to GitHub `main`; no force push or history replacement. |
+| Paired managed WebDev checkpoint | `282268db` |
+| Scope | Shared transactional email HTML/text and header-safe subject encoding; additive `preLaunchBroadcastDeliveries` retry ledger with unique delivery key; stable administrator delivery-key UI; staging-safe public signup, recipient lookup, and delivery; and a process-local normalized email/source signup limiter. |
+| Custom TiDB outcome | Reviewed additive `0015_p1_prelaunch_delivery_safety.sql` migration created the 10-column delivery ledger. Aggregate postcheck found 0 delivery records and retained 3 members, 16 active listings, $147,530 active value, 7 trade messages, and zero inquiries/direct messages/reports/complaints. |
+| Validation | WebDev focused suite passed 22 tests; full suite passed 149 files / 470 tests with four intentional skips, plus TypeScript, production build, `pnpm audit --prod`, whitespace review, and clean runtime logs. Fresh canonical full suite passed 151 files / 482 tests with four intentional skips, plus TypeScript, build, audit, and whitespace checks. |
+| Compatibility handling | The content-level merge retained newer canonical Pre-Launch recipient-selection and send-history behavior while applying the same delivery ledger, staging safeguards, encoding, and regression coverage. A canonical-only UI test was updated for the approved stable `deliveryKey` mutation shape. |
+| Preserved safeguards | No email or broadcast was sent; no provider credential, payment setting/action, schedule, marketplace record, or secret changed. Free Launch remains active; Stripe remains sandbox-only; payment enforcement remains inactive. |
+
 ## Synchronization Rules
 
 Before future GitHub-to-WebDev reconciliation, create a recovery checkpoint and an immutable GitHub backup tag. Before a reviewed WebDev change becomes canonical, merge only the relevant content into the current GitHub `main`, preserve any newer canonical work, use a normal commit/push, and record the associated checkpoint. Never force-push or replace the canonical repository wholesale.
