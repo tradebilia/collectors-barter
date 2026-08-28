@@ -425,3 +425,11 @@ Before future GitHub-to-WebDev reconciliation, create a recovery checkpoint and 
 | Implementation | Recently Added now uses denser reference-inspired cards with tighter spacing, flatter corners, slightly shorter image areas, and compact typography; existing Recent Trades, ranking panels, data contracts, and interactions remain intact. |
 | Baseline | Stable pre-change WebDev checkpoint `1bc26b2a` preserved before implementation; changes are reversible through version history. |
 | Validation | Focused homepage and movement tests passed 3/3; TypeScript, production build, dependency audit, whitespace, and desktop visual verification passed. No database, payment, provider, schedule, setting, or secret changed. |
+
+## Full Reference Treatment Pair
+| Record | Value |
+|---|---|
+| Scope | Apply the supplied reference’s below-hero visual language while leaving the hero, top bar, stats strip, centered headings, and Recent Trades ticket unchanged. |
+| Implementation | The public content shell now uses a warm content canvas, a full-height dark navy-to-purple collector-tools rail spanning the public three-row grid, violet rail hover states, and a materially denser Recently Added shelf with 126px/136px/146px responsive cards, 2px gaps, compact typography, flatter corners, and shorter image proportions. |
+| Validation | Focused homepage and movement tests passed 3/3; TypeScript, production build, dependency audit, whitespace, and desktop/mobile visual reviews passed. No database, payment, provider, schedule, setting, or secret changed. |
+| Reversibility | Prior stable checkpoint `1bc26b2a` remains available for rollback. |
