@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { ArrowLeft, ArrowLeftRight, ArrowRight, BadgeCheck, CalendarDays, Hash, Package, UserRound } from "lucide-react";
+import { BadgeCheck, CalendarDays, Hash, Package, ShieldCheck, Star, UserRound } from "lucide-react";
 import { Link } from "wouter";
-import { buildTradeShowcaseExchange, type TradeShowcaseItem, type TradeShowcaseTrade } from "@/lib/tradeShowcaseMovements";
+import { buildTradeShowcaseExchange, type TradeShowcaseItem, type TradeShowcaseParty, type TradeShowcaseTrade } from "@/lib/tradeShowcaseMovements";
 
 type RecentTrade = TradeShowcaseTrade & {
   id: number;
@@ -42,26 +42,78 @@ function formatTradeDate(value: RecentTrade["completedAt"]) {
     : new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric", year: "numeric" }).format(date);
 }
 
-function TradeItemList({ items, title }: { items: TradeShowcaseItem[]; title: string }) {
-  if (!items.length) return <p className="text-center text-xs text-slate-500">No public item details available.</p>;
+function formatMemberRating(value: TradeShowcaseParty["averageRating"]) {
+  const numberValue = Number(value);
+  return Number.isFinite(numberValue) && numberValue > 0 ? numberValue.toFixed(1) : null;
+}
+
+function getMemberName(member: TradeShowcaseParty) {
+  return member.username?.trim() || member.displayName?.trim() || "Member";
+}
+
+function TradeItemList({ items, side }: { items: TradeShowcaseItem[]; side: "left" | "right" }) {
+  if (!items.length) return <p className="text-center text-xs italic text-slate-500">No public item details available.</p>;
 
   return (
-    <section aria-label={`${title} items`} className="min-w-0">
-      <p className="mb-1.5 text-center text-[0.6rem] font-bold uppercase tracking-[0.14em] text-violet-700">{title}</p>
-      <div className="flex flex-wrap justify-center gap-1.5">
-        {items.map((item, index) => {
-          const content = <><div className="h-[4.5rem] w-[4.5rem] shrink-0 overflow-hidden rounded-md bg-slate-100 sm:h-20 sm:w-20">{item.imageUrl ? <img src={item.imageUrl} alt={item.title || "Traded collectible"} className="h-full w-full object-contain" loading="lazy" /> : <div className="flex h-full w-full items-center justify-center"><Package className="h-6 w-6 text-slate-400" aria-hidden="true" /></div>}</div><div className="min-w-0 text-left"><p className="max-w-36 text-sm font-semibold leading-snug text-slate-900 sm:max-w-40">{item.title || "Collectible"}</p><p className="mt-0.5 text-xs font-semibold text-violet-700">{formatConditionOrGrade(item)}</p><p className="mt-0.5 text-sm font-bold text-violet-800">{formatEstimatedValue(item.estimatedValue)}</p></div></>;
-          const className = "flex max-w-full items-center gap-2 rounded-lg border border-slate-200 bg-white p-2 shadow-sm transition hover:-translate-y-0.5 hover:border-violet-300 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-600";
-          return item.id ? <Link key={`${item.id}-${index}`} href={`/listings/${item.id}`} className={className}>{content}</Link> : <div key={`${item.title}-${index}`} className={className}>{content}</div>;
-        })}
+    <div className={`flex min-w-0 flex-wrap items-center justify-center gap-x-4 gap-y-2 ${side === "right" ? "md:justify-start" : "md:justify-end"}`}>
+      {items.map((item, index) => {
+        const content = (
+          <>
+            <div className="h-20 w-20 shrink-0 overflow-hidden bg-slate-50 sm:h-24 sm:w-24">
+              {item.imageUrl ? (
+                <img src={item.imageUrl} alt={item.title || "Traded collectible"} className="h-full w-full object-contain" loading="lazy" />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center"><Package className="h-7 w-7 text-slate-400" aria-hidden="true" /></div>
+              )}
+            </div>
+            <div className="min-w-0 text-left">
+              <p className="max-w-40 text-sm font-semibold leading-snug text-slate-900">{item.title || "Collectible"}</p>
+              <p className="mt-0.5 text-xs font-semibold text-violet-700">{formatConditionOrGrade(item)}</p>
+              <p className="mt-0.5 text-sm font-bold text-emerald-700">{formatEstimatedValue(item.estimatedValue)}</p>
+            </div>
+          </>
+        );
+        const className = "group flex min-w-0 max-w-full items-center gap-2 rounded-md p-1 transition hover:bg-white/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-600";
+        return item.id ? <Link key={`${item.id}-${index}`} href={`/listings/${item.id}`} className={className}>{content}</Link> : <div key={`${item.title}-${index}`} className={className}>{content}</div>;
+      })}
+    </div>
+  );
+}
+
+function TradeMember({ label, member }: { label: "From" | "To"; member: TradeShowcaseParty }) {
+  const memberName = getMemberName(member);
+  const rating = formatMemberRating(member.averageRating);
+  const initials = memberName.slice(0, 2).toUpperCase();
+
+  return (
+    <section className="min-w-0 text-center" aria-label={`${label} member ${memberName}`}>
+      <p className="mb-1.5 text-[0.6rem] font-bold uppercase tracking-[0.16em] text-slate-500">{label}</p>
+      <div className="flex items-center justify-center gap-2">
+        {member.avatarUrl ? (
+          <img src={member.avatarUrl} alt={`${memberName} avatar`} className="h-11 w-11 shrink-0 rounded-full border border-slate-200 bg-slate-100 object-contain p-0.5" loading="lazy" />
+        ) : (
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-xs font-bold text-slate-500" aria-label={`${memberName} avatar unavailable`}>{initials || <UserRound className="h-4 w-4" aria-hidden="true" />}</div>
+        )}
+        <p className="max-w-32 truncate text-sm font-bold text-slate-900" title={memberName}>{memberName}</p>
+      </div>
+      <p className="mt-1 flex items-center justify-center gap-1 text-xs font-semibold text-emerald-700">
+        <Star className="h-3 w-3 fill-emerald-500 text-emerald-500" aria-hidden="true" />
+        {rating ? `${rating} rating` : "No rating yet"}
+      </p>
+      <div className="mt-2 flex flex-wrap justify-center gap-1">
+        {member.verificationLabels?.length ? member.verificationLabels.map((verification) => (
+          <span key={verification} className="inline-flex items-center gap-0.5 rounded-full bg-violet-50 px-1.5 py-0.5 text-[0.58rem] font-semibold text-violet-700" title={verification}>
+            <ShieldCheck className="h-2.5 w-2.5" aria-hidden="true" />
+            {verification}
+          </span>
+        )) : <span className="text-[0.58rem] text-slate-400">No verifications shown</span>}
       </div>
     </section>
   );
 }
 
-function TradeMember({ label, name, avatarUrl, side }: { label: "From" | "To"; name?: string | null; avatarUrl?: string | null; side: "left" | "right" }) {
-  const displayName = name || "Member";
-  return <section className={`min-w-0 ${side === "left" ? "lg:text-right" : "lg:text-left"}`}><p className="mb-1.5 text-center text-[0.6rem] font-bold uppercase tracking-[0.14em] text-slate-500 lg:text-inherit">{label}</p><div className={`flex items-center justify-center gap-2 ${side === "left" ? "lg:justify-end" : "lg:justify-start"}`}><div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-slate-100 text-slate-500">{avatarUrl ? <img src={avatarUrl} alt="" className="h-full w-full object-cover" /> : <UserRound className="h-4 w-4" aria-hidden="true" />}</div><p className="max-w-24 truncate text-sm font-semibold text-slate-900">{displayName}</p></div></section>;
+function TicketDivider() {
+  return <div className="h-px w-full border-t border-dashed border-slate-300 md:h-full md:w-px md:border-l md:border-t-0" aria-hidden="true" />;
 }
 
 export function RecentTradesCarousel({ trades, isLoading = false }: { trades: RecentTrade[]; isLoading?: boolean }) {
@@ -104,21 +156,24 @@ export function RecentTradesCarousel({ trades, isLoading = false }: { trades: Re
   const completionDate = trade ? formatTradeDate(trade.completedAt) : null;
 
   return (
-    <section aria-labelledby="recent-trades-heading" className="mx-4 mb-6 py-3 sm:mx-0 lg:mx-8">
+    <section aria-labelledby="recent-trades-heading" className="mx-2 mb-6 py-3 sm:mx-0 lg:mx-3">
       <h2 id="recent-trades-heading" className="text-center font-serif text-[2.45rem] font-medium tracking-[-0.035em] text-[#2d241e] sm:text-[2.8rem]">Recent Trades</h2>
 
-      {isLoading ? <div className="mt-4 h-40 animate-pulse rounded-2xl bg-white/80" aria-label="Loading recent trades" /> : !trade || !exchange ? <div className="mt-4 rounded-2xl border border-dashed border-violet-200 bg-white/80 p-8 text-center text-sm text-slate-600">Completed exchanges will appear here as collectors confirm their trades.</div> : <article key={trade.id} className={`mx-auto mt-4 max-w-[74rem] overflow-hidden rounded-xl border border-slate-200 bg-white p-2.5 shadow-sm transition-opacity duration-300 motion-reduce:transition-none sm:p-3 ${isFading ? "opacity-0" : "opacity-100"}`} aria-live="off">
-        <div className="grid gap-3 rounded-lg bg-slate-50/80 px-3 py-3 lg:grid-cols-[minmax(5rem,0.65fr)_minmax(10rem,1fr)_auto_auto_auto_minmax(10rem,1fr)_minmax(5rem,0.65fr)] lg:items-center lg:gap-2">
-          <TradeMember label="From" name={exchange.left.member.displayName} avatarUrl={exchange.left.member.avatarUrl} side="left" />
-          <TradeItemList items={exchange.left.items} title="You gave" />
-          <ArrowRight className="mx-auto hidden h-6 w-6 text-violet-600 lg:block" strokeWidth={2.4} aria-label="Items moved from the left collector to the right collector" />
-          <div className="flex flex-col items-center justify-center gap-0.5 text-emerald-700"><img src="/manus-storage/trade-complete-stamp_e8860371.png" alt="Trade complete" className="h-14 w-16 object-contain" /></div>
-          <ArrowLeft className="mx-auto hidden h-6 w-6 text-sky-600 lg:block" strokeWidth={2.4} aria-label="Items moved from the right collector to the left collector" />
-          <TradeItemList items={exchange.right.items} title="You received" />
-          <TradeMember label="To" name={exchange.right.member.displayName} avatarUrl={exchange.right.member.avatarUrl} side="right" />
+      {isLoading ? <div className="mt-4 h-40 animate-pulse rounded-2xl bg-white/80" aria-label="Loading recent trades" /> : !trade || !exchange ? <div className="mt-4 rounded-2xl border border-dashed border-violet-200 bg-white/80 p-8 text-center text-sm text-slate-600">Completed exchanges will appear here as collectors confirm their trades.</div> : <article key={trade.id} className={`ticket-card mx-auto mt-4 w-full max-w-none overflow-hidden border border-slate-200 bg-white shadow-sm transition-opacity duration-300 motion-reduce:transition-none ${isFading ? "opacity-0" : "opacity-100"}`} aria-live="off">
+        <div className="grid gap-3 px-5 py-4 md:grid-cols-[minmax(10rem,0.9fr)_1px_minmax(14rem,1.2fr)_1px_minmax(10rem,0.8fr)_1px_minmax(14rem,1.2fr)_1px_minmax(10rem,0.9fr)] md:items-center md:gap-4 lg:px-8 lg:py-5">
+          <TradeMember label="From" member={exchange.left.member} />
+          <TicketDivider />
+          <TradeItemList items={exchange.left.items} side="left" />
+          <TicketDivider />
+          <div className="flex items-center justify-center py-2" aria-label="Trade complete">
+            <img src="/manus-storage/trade-complete-stamp_e8860371.png" alt="Trade complete" className="h-28 w-32 object-contain sm:h-32 sm:w-36" />
+          </div>
+          <TicketDivider />
+          <TradeItemList items={exchange.right.items} side="right" />
+          <TicketDivider />
+          <TradeMember label="To" member={exchange.right.member} />
         </div>
-        <footer className="mt-2 flex flex-wrap items-center justify-center gap-x-5 gap-y-1 border-t border-slate-100 px-2 pt-2 text-xs text-slate-600"><span className="inline-flex items-center gap-1.5"><Hash className="h-3.5 w-3.5 text-emerald-700" aria-hidden="true" />Trade ID: <strong className="text-slate-800">{trade.tradeReferenceNumber || "Reference unavailable"}</strong></span>{completionDate ? <span className="inline-flex items-center gap-1.5"><CalendarDays className="h-3.5 w-3.5 text-slate-500" aria-hidden="true" />{completionDate}</span> : null}<span className="inline-flex items-center gap-1.5">Total Trade Value: <strong className="text-emerald-700">{formatEstimatedValue(trade.totalValue)}</strong></span><span className="inline-flex items-center gap-1.5"><BadgeCheck className="h-3.5 w-3.5 text-emerald-700" aria-hidden="true" />Verified trade</span></footer>
-        <div className="mt-2 flex items-center justify-center gap-2 text-xs font-semibold text-slate-500 lg:hidden"><ArrowLeftRight className="h-4 w-4 text-violet-600" aria-hidden="true" /> Items moved in both directions</div>
+        <footer className="flex flex-wrap items-center justify-center gap-x-6 gap-y-1 border-t border-slate-100 px-4 py-2 text-xs text-slate-600"><span className="inline-flex items-center gap-1.5"><Hash className="h-3.5 w-3.5 text-emerald-700" aria-hidden="true" />Trade ID: <strong className="text-slate-800">{trade.tradeReferenceNumber || "Reference unavailable"}</strong></span>{completionDate ? <span className="inline-flex items-center gap-1.5"><CalendarDays className="h-3.5 w-3.5 text-slate-500" aria-hidden="true" />{completionDate}</span> : null}<span className="inline-flex items-center gap-1.5">Total Trade Value: <strong className="text-emerald-700">{formatEstimatedValue(trade.totalValue)}</strong></span><span className="inline-flex items-center gap-1.5"><BadgeCheck className="h-3.5 w-3.5 text-emerald-700" aria-hidden="true" />Verified trade</span></footer>
       </article>}
     </section>
   );

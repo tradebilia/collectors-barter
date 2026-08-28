@@ -372,3 +372,11 @@ Before future GitHub-to-WebDev reconciliation, create a recovery checkpoint and 
 | Durable WebDev URL | `/manus-storage/trade-complete-stamp_e8860371.png` |
 | Use | Center completion marker in `RecentTradesCarousel.tsx`; accessible alt text is `Trade complete`; the footer's small generic verification icon remains unchanged. |
 | Asset policy | The binary is kept outside the application repository and referenced only through the durable WebDev storage path. |
+
+## Recent Trades Ticket-Style Redesign Pair
+| Record | Value |
+|---|---|
+| Scope | The homepage Recent Trades card now uses a wider scalloped ticket treatment, full non-cropped member avatars, username-first identity labels, stored average ratings, truthful connected-platform/Tradebilia verification badges, dotted separators around the item and completion sections, direct item presentation without item bubbles or You Gave/You Received labels, and the larger supplied Trade Complete stamp. |
+| Data contract | The public completed-trade query now returns existing usernames, visible average ratings/review counts, and existing eBay/Facebook/LinkedIn/PayPal/Tradebilia verification flags for both participants. No new schema or records were created. |
+| Validation | Focused homepage and movement tests passed 3/3; TypeScript, production build, dependency audit, whitespace, and desktop/mobile visual checks passed. |
+| Preserved behavior | Completed-trade eligibility, truthful item grade/company-or-condition/value data, listing links, and five-second rotation remain intact. No payment, provider, schedule, setting, secret, or database write changed. |

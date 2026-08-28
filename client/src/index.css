@@ -287,3 +287,34 @@
     -moz-appearance: textfield;
   }
 }
+
+@layer components {
+  .ticket-card {
+    position: relative;
+    border-radius: 0.75rem;
+    isolation: isolate;
+  }
+
+  .ticket-card::before,
+  .ticket-card::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    z-index: 2;
+    width: 0.8rem;
+    pointer-events: none;
+    background-repeat: repeat-y;
+    background-size: 100% 1rem;
+  }
+
+  .ticket-card::before {
+    left: -0.05rem;
+    background-image: radial-gradient(circle at 100% 50%, #f7f4ee 0 0.38rem, transparent 0.4rem);
+  }
+
+  .ticket-card::after {
+    right: -0.05rem;
+    background-image: radial-gradient(circle at 0 50%, #f7f4ee 0 0.38rem, transparent 0.4rem);
+  }
+}
