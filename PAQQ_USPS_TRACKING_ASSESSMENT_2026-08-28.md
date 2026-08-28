@@ -1,7 +1,7 @@
 # Paqq USPS Tracking Assessment for Tradebilia
 
-**Date:** 2026-08-28  
-**Scope:** Read-only technical, operational, and policy assessment of [Paqq](https://github.com/doprdele/paqq) for a possible Tradebilia USPS package-tracking feature.  
+**Date:** 2026-08-28
+**Scope:** Read-only technical, operational, and policy assessment of [Paqq](https://github.com/doprdele/paqq) for a possible Tradebilia USPS package-tracking feature.
 **Decision requested:** Whether Paqq should be used on Tradebilia to track USPS packages.
 
 ## Decision summary
@@ -122,17 +122,17 @@ This assessment did **not** install or run Paqq, execute its containers, connect
 
 ## References
 
-[1]: [Paqq repository and README](https://github.com/doprdele/paqq)  
-[2]: [Paqq USPS scraper implementation](https://github.com/doprdele/paqq/blob/main/usps-scraper/src/scrape.ts)  
-[3]: [Paqq session-state implementation](https://github.com/doprdele/paqq/blob/main/usps-scraper/src/session-state.ts)  
-[4]: [Tradebilia USPS Tracking API Access-Control Review](./USPS_ACCESS_CONTROL_RESEARCH.md)  
-[5]: [USPS API Access — Tracking API Access Control Changes](https://www.usps.com/business/api-access.htm)  
-[6]: [Paqq USPS backend adapter](https://github.com/doprdele/paqq/blob/main/backend/src/sources/implementations/usps.ts)  
-[7]: [Paqq scraper server](https://github.com/doprdele/paqq/blob/main/usps-scraper/src/server-app.ts)  
-[8]: [USPS API Terms and Conditions](https://developers.usps.com/terms-and-conditions)  
-[9]: [Tradebilia official USPS helper](./server/uspsTracking.ts)  
-[10]: [Paqq notice](https://github.com/doprdele/paqq/blob/main/NOTICE.md) and [MPL-2.0 license](https://github.com/doprdele/paqq/blob/main/LICENSE)  
-[11]: [USPS Tracking 3.2 API](https://developers.usps.com/trackingv3r2)  
-[12]: [USPS API Getting Started](https://developers.usps.com/getting-started)  
-[13]: [Tradebilia Test AI USPS procedure](./server/testAIRouter.ts)  
+[1]: [Paqq repository and README](https://github.com/doprdele/paqq)
+[2]: [Paqq USPS scraper implementation](https://github.com/doprdele/paqq/blob/main/usps-scraper/src/scrape.ts)
+[3]: [Paqq session-state implementation](https://github.com/doprdele/paqq/blob/main/usps-scraper/src/session-state.ts)
+[4]: [Tradebilia USPS Tracking API Access-Control Review](./USPS_ACCESS_CONTROL_RESEARCH.md)
+[5]: [USPS API Access — Tracking API Access Control Changes](https://www.usps.com/business/api-access.htm)
+[6]: [Paqq USPS backend adapter](https://github.com/doprdele/paqq/blob/main/backend/src/sources/implementations/usps.ts)
+[7]: [Paqq scraper server](https://github.com/doprdele/paqq/blob/main/usps-scraper/src/server-app.ts)
+[8]: [USPS API Terms and Conditions](https://developers.usps.com/terms-and-conditions)
+[9]: [Tradebilia official USPS helper](./server/uspsTracking.ts)
+[10]: [Paqq notice](https://github.com/doprdele/paqq/blob/main/NOTICE.md) and [MPL-2.0 license](https://github.com/doprdele/paqq/blob/main/LICENSE)
+[11]: [USPS Tracking 3.2 API](https://developers.usps.com/trackingv3r2)
+[12]: [USPS API Getting Started](https://developers.usps.com/getting-started)
+[13]: [Tradebilia Test AI USPS procedure](./server/testAIRouter.ts)
 [14]: [Tradebilia official USPS tracking-link helper](./shared/uspsTrackingLink.ts)
