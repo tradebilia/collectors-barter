@@ -49,15 +49,13 @@ describe("recovered administrator and guide controls", () => {
     expect(adminSource).toContain("No pending feedback safety records.");
   });
 
-  it("removes only administrator search and provides keyboard-accessible larger guide captures", () => {
+  it("removes only administrator search and keeps written image-ready Trade Room stages without fictional captures", () => {
     expect(adminSource).toContain("<TopBar hideSearch />");
-    expect(guideSource).toContain("max-w-[96rem]");
-    expect(guideSource).toContain('className="mt-9 grid gap-10"');
-    expect(guideSource).not.toContain("mt-9 grid gap-8 md:grid-cols-2");
-    expect(guideSource).toContain('loading="eager"');
-    expect(guideSource).toContain("Select to enlarge");
-    expect(guideSource).toContain("Enlarge ${title} Trade Room capture");
-    expect(guideSource).toContain("selectedTradeRoomCapture");
-    expect(guideSource).toContain("Development-only capture — fictional collectors and items");
+    expect(guideSource).toContain("tradeRoomStages");
+    expect(guideSource).toContain('aria-label="Trade Room stages"');
+    expect(guideSource).toContain("Actual Trade Room screenshot to be added");
+    expect(guideSource).not.toContain("tradeRoomScreenshots");
+    expect(guideSource).not.toContain("selectedTradeRoomCapture");
+    expect(guideSource).not.toContain("/manus-storage/trade-room-");
   });
 });
