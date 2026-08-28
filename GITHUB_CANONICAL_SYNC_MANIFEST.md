@@ -325,7 +325,14 @@ The canonical commit deliberately merges the sandbox-specific behavior without r
 | Scope | Read-only assessment of Paqq’s scraper-first USPS approach, license notices, Docker/browser/scheduler requirements, security boundaries, maintenance signal, USPS terms fit, Tradebilia’s existing official USPS helper, and alternatives. |
 | Recommendation | Do not install, embed, fork, or use Paqq for Tradebilia. Keep the official USPS outbound link now; treat any in-site official USPS API tracking as a separately authorized future scope. |
 | Preserved safeguards | No Paqq code was installed or run. No USPS/provider call, application behavior, database record/schema, payment, schedule, setting, or secret changed. |
-
+## Recent Trades Metadata and Readability Pair
+| Record | Value |
+|---|---|
+| Canonical implementation commit | This pairing record, the homepage query/type/UI refinement, regression update, and matching tracker entry are included together in one normal GitHub `main` commit. No force push or history replacement is used. |
+| Paired managed WebDev recovery checkpoint | `414cb76f` |
+| Scope | Enlarged Recent Trades thumbnails to 96–112px and shows a stored positive grade, or otherwise normalized condition, with the stated listing value beside it beneath each exchanged-item title. |
+| Validation | Full source suite passed 157 files / 495 tests with four intended skips and one skipped file; canonical focused Recent Trades tests, TypeScript, production build, production dependency audit, and whitespace passed. Desktop and mobile public homepage visual checks passed. |
+| Preserved safeguards | Existing completed-trade, public-visibility, five-second rotation, reduced-motion, and item-detail click-through behavior remain intact. No database record/schema, payment/provider action, schedule, setting, or secret changed. |
 ## Synchronization Rules
 
 Before future GitHub-to-WebDev reconciliation, create a recovery checkpoint and an immutable GitHub backup tag. Before a reviewed WebDev change becomes canonical, merge only the relevant content into the current GitHub `main`, preserve any newer canonical work, use a normal commit/push, and record the associated checkpoint. Never force-push or replace the canonical repository wholesale.
