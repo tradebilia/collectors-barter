@@ -1,6 +1,6 @@
 # Tradebilia Administrator Record Retention Policy
 
-**Effective date:** 2026-08-28  
+**Effective date:** 2026-08-28
 **Scope:** Administrator removal actions for member accounts, trade records, and support tickets.
 
 ## Plain-language rule
