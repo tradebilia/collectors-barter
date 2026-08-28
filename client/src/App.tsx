@@ -1,9 +1,10 @@
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
+import { SignInModal } from "./components/SignInModal";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
 import ItemDetail from "./pages/ItemDetail";
@@ -57,6 +58,27 @@ const TradeRoomGuideCapture = lazy(() => import("./pages/TradeRoomGuideCapture")
 
 function RouteLoadingFallback() {
   return <main role="status" aria-live="polite" className="grid min-h-[50vh] place-items-center text-slate-600">Loading Tradebilia…</main>;
+}
+
+function GlobalSignInModal() {
+  const [isOpen, setIsOpen] = useState(() => new URLSearchParams(window.location.search).get("signin") === "1");
+
+  useEffect(() => {
+    const syncFromLocation = () => {
+      setIsOpen(new URLSearchParams(window.location.search).get("signin") === "1");
+    };
+    window.addEventListener("popstate", syncFromLocation);
+    return () => window.removeEventListener("popstate", syncFromLocation);
+  }, []);
+
+  const close = () => {
+    const location = new URL(window.location.href);
+    location.searchParams.delete("signin");
+    window.history.replaceState({}, "", `${location.pathname}${location.search}${location.hash}`);
+    setIsOpen(false);
+  };
+
+  return <SignInModal isOpen={isOpen} onClose={close} />;
 }
 
 function Router() {
@@ -184,6 +206,7 @@ function App() {
           <Suspense fallback={<RouteLoadingFallback />}>
             <Router />
           </Suspense>
+          <GlobalSignInModal />
         </TooltipProvider>
       </ThemeProvider>
     </ErrorBoundary>

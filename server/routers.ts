@@ -107,6 +107,7 @@ import { users, userProfiles, listings, deletedAccounts, tradeProposals, tradeMe
 import { eq, sql, desc, or, inArray, and, isNull } from "drizzle-orm";
 import { alias } from "drizzle-orm/mysql-core";
 import { TRPCError } from "@trpc/server";
+import { isPublicMemberEligible } from "./publicVisibility";
 import { ONE_YEAR_MS } from "@shared/const";
 import { subscribeToLaunchUpdates } from "./launchUpdates";
 import { getPreLaunchRecipients, sendPreLaunchUpdate } from "./preLaunchEmail";
@@ -701,6 +702,7 @@ export const appRouter = router({
         FROM users u
         LEFT JOIN userProfiles up ON up.userId = u.id
         WHERE u.merchantVerified = 1
+          AND ${isPublicMemberEligible(sql`u.id`)}
         ORDER BY u.merchantVerifiedAt DESC`
       );
       return Array.isArray(rows) ? rows as any[] : [];
@@ -2141,6 +2143,8 @@ export const appRouter = router({
           WHERE tp.status = 'completed'
             AND tp.completedAt IS NOT NULL
             AND (tp.requesterId = ${input.userId} OR tp.recipientId = ${input.userId})
+            AND ${isPublicMemberEligible(sql`tp.requesterId`)}
+            AND ${isPublicMemberEligible(sql`tp.recipientId`)}
           ORDER BY tp.completedAt DESC
           LIMIT ${input.limit}`
         );
@@ -2177,6 +2181,8 @@ export const appRouter = router({
           WHERE tp.status = 'completed'
             AND tp.completedAt IS NOT NULL
             AND req_item.id IS NOT NULL
+            AND ${isPublicMemberEligible(sql`tp.requesterId`)}
+            AND ${isPublicMemberEligible(sql`tp.recipientId`)}
           ORDER BY tp.completedAt DESC
           LIMIT ${limit}`
         );
@@ -3588,7 +3594,16 @@ export const appRouter = router({
       .input(z.object({ sellerId: z.number().int().positive() }))
       .query(async ({ input }) => {
         const db = await requireDb();
-        const seller = await db.select({ lastActivityAt: users.lastActivityAt, id: users.id, name: users.name }).from(users).where(eq(users.id, input.sellerId)).limit(1);
+        const seller = await db
+          .select({ lastActivityAt: users.lastActivityAt, id: users.id })
+          .from(users)
+          .innerJoin(userProfiles, eq(userProfiles.userId, users.id))
+          .where(and(
+            eq(users.id, input.sellerId),
+            eq(users.isAccountClosed, 0),
+            eq(userProfiles.showProfile, 1),
+          ))
+          .limit(1);
         if (!seller.length) return { isOnline: false };
         const lastActivity = seller[0].lastActivityAt;
         const now = new Date();
@@ -3596,22 +3611,29 @@ export const appRouter = router({
         const ONLINE_STATUS_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
         const isOnline = timeSinceActivity < ONLINE_STATUS_TIMEOUT_MS;
         // Removed verbose logging to reduce I/O overhead during high request volume
-        return { isOnline, lastActivityAt: lastActivity };
+        return { isOnline };
       }),
     getMultipleSellerOnlineStatus: publicProcedure
       .input(z.object({ sellerIds: z.array(z.number().int().positive()) }))
       .query(async ({ input }) => {
         if (!input.sellerIds.length) return {};
         const db = await requireDb();
-        const sellers = await db.select({ id: users.id, lastActivityAt: users.lastActivityAt }).from(users).where(inArray(users.id, input.sellerIds));
+        const sellers = await db
+          .select({ id: users.id, lastActivityAt: users.lastActivityAt })
+          .from(users)
+          .innerJoin(userProfiles, eq(userProfiles.userId, users.id))
+          .where(and(
+            inArray(users.id, input.sellerIds),
+            eq(users.isAccountClosed, 0),
+            eq(userProfiles.showProfile, 1),
+          ));
         const ONLINE_STATUS_TIMEOUT_MS = 5 * 60 * 1000;
         const now = new Date();
-        const result: Record<number, { isOnline: boolean; lastActivityAt: string | null }> = {};
+        const result: Record<number, { isOnline: boolean }> = {};
         sellers.forEach(seller => {
           const timeSinceActivity = now.getTime() - new Date(seller.lastActivityAt).getTime();
           result[seller.id] = {
             isOnline: timeSinceActivity < ONLINE_STATUS_TIMEOUT_MS,
-            lastActivityAt: seller.lastActivityAt
           };
         });
         return result;
