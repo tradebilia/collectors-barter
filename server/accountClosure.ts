@@ -120,7 +120,7 @@ export async function getAccountClosureAudit(db: DatabaseHandle, userId: number)
   return { ...metrics, blockers: buildBlockers(metrics) };
 }
 
-async function closeEligibleAccount(db: DatabaseHandle, userId: number) {
+export async function closeEligibleAccount(db: DatabaseHandle, userId: number) {
   const closedAt = nowForMysql();
   const [result] = await db.execute(sql`
     UPDATE users u

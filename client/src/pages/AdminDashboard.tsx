@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { BarChart3, BookOpen, Users, Package, Settings, Trash2, Flag, Mail, Search, ArrowUpDown, Calendar, ExternalLink, CheckCircle, XCircle, AlertTriangle, Ban, ShieldOff, ClipboardList, MessageSquare, TicketCheck, Send, ChevronDown, ChevronUp, Store, CloudUpload } from "lucide-react";
+import { Archive, BarChart3, BookOpen, Users, Package, Settings, Trash2, Flag, Mail, Search, ArrowUpDown, Calendar, ExternalLink, CheckCircle, XCircle, AlertTriangle, Ban, ShieldOff, ClipboardList, MessageSquare, TicketCheck, Send, ChevronDown, ChevronUp, Store, CloudUpload } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -89,9 +89,9 @@ type AdminGuideEntry = {
 const adminGuideEntries: readonly AdminGuideEntry[] = [
   { tab: "Stats", summary: "A quick picture of how the marketplace is doing.", purpose: "Shows high-level member, listing, value, and trade activity so you can understand the current size and activity of Tradebilia.", useWhen: "Use this for a fast health check, before planning a launch activity, or when you want to see whether the marketplace is growing.", caution: "This tab is for viewing information. It does not change members, listings, or trades." },
   { tab: "Billing", summary: "Membership status and future fee-planning controls.", purpose: "Shows member membership information, lets you sort it by status or term, and contains the Fee Mode launch-control setting.", useWhen: "Use it to understand who has which membership status or to review future fee plans before any separate paid-launch decision.", caution: "Fee Mode is only a planning switch. Even when On, it does not turn on Checkout, collect a card, charge anyone, or restrict Free Launch access." },
-  { tab: "Users", summary: "The main member-management workspace.", purpose: "Lists member accounts and their account information so an administrator can review a member, update permitted account details, and use available moderation actions.", useWhen: "Use it when a member needs help, when you need to review an account, or when an Operations queue sends you here.", caution: "Review the correct member and reason before making any account-level change. Account changes can affect a member’s access and marketplace experience." },
+  { tab: "Users", summary: "The main member-management workspace.", purpose: "Lists member accounts and their account information so an administrator can review a member, update permitted account details, and use available moderation actions.", useWhen: "Use it when a member needs help, when you need to review an account, or when an Operations queue sends you here.", caution: "Archive is not deletion: it requires a reason and the exact confirmation phrase, rechecks current blockers, closes sign-in access, and retains trade, support, and safety history." },
   { tab: "Listings", summary: "The catalogue-management workspace.", purpose: "Lists Tradebilia items and provides searching, sorting, review, and the available listing-management actions.", useWhen: "Use it to find a specific listing, investigate a report, check an item’s status, or address a listing that needs administrator attention.", caution: "Confirm the listing and the reason first. Removing or changing a listing can affect an active collector’s trade activity." },
-  { tab: "Trades", summary: "The place to monitor exchanges in progress and completed trade records.", purpose: "Shows trade information, including both collectors involved, so you can follow the lifecycle of an exchange and review a trade when an issue is raised.", useWhen: "Use it for a trade dispute, a shipping or confirmation question, or when Operations identifies a trade follow-up item.", caution: "Trades involve two collectors. Check both sides and the current trade stage before taking any available administrative action." },
+  { tab: "Trades", summary: "The place to monitor exchanges in progress and completed trade records.", purpose: "Shows trade information, including both collectors involved, so you can follow the lifecycle of an exchange and review a trade when an issue is raised.", useWhen: "Use it for a trade dispute, a shipping or confirmation question, or when Operations identifies a trade follow-up item.", caution: "Only completed, declined, or cancelled trades may be archived. Archive requires a reason and exact phrase, retains every trade record, and keeps archived records available through the filter." },
   { tab: "Settings", summary: "Site-level administrative settings.", purpose: "Provides the available controls for Tradebilia configuration that affect how the platform is presented or managed.", useWhen: "Use it only when you intentionally need to review or update a saved platform setting.", caution: "Settings can have broad effects. Read the field description, confirm the intended value, and save only a deliberate change." },
   { tab: "Deleted", summary: "A reference view for deleted-account records.", purpose: "Helps you review accounts that have been deleted or closed so you can understand their prior platform status when handling a related question.", useWhen: "Use it when a former member contacts support or when you need to distinguish a deleted account from an active one.", caution: "A deleted or closed account is not the same as an open support request. Use Closure Requests for requests that still need a decision." },
   { tab: "Closure Requests", summary: "The controlled review queue for member account-closure requests.", purpose: "Shows closure requests, the count-only safety review, and the available approve-or-decline decision with a documented reason.", useWhen: "Use it when a member asks to close an account and the request appears in the queue.", caution: "Approve closure only after reviewing the account’s pending trade and safety context. Closure hides the profile and listings and blocks future sign-in; retained trade, report, and safety history is not erased." },
@@ -101,11 +101,11 @@ const adminGuideEntries: readonly AdminGuideEntry[] = [
   { tab: "Media Storage", summary: "Storage health and public-media maintenance.", purpose: "Shows safe storage-usage and health information for public photos and artwork, plus the separately controlled public-media migration tools.", useWhen: "Use it to monitor storage capacity, investigate public image coverage, or perform an approved public-media maintenance task.", caution: "The health report does not expose credentials or private evidence. Use migration controls only after reviewing their scope; they are not a general-purpose file browser." },
   { tab: "Conventions", summary: "Convention and event administration.", purpose: "Provides the workspace for maintaining convention information that Tradebilia members may use when planning collector activity.", useWhen: "Use it when you need to add, review, or maintain a convention/event entry.", caution: "Verify event details before publishing or changing them so members receive accurate dates, locations, and information." },
   { tab: "Mod Log", summary: "The history of moderation decisions.", purpose: "Shows a chronological record of administrator moderation actions, who performed them, the target, and the recorded reason.", useWhen: "Use it before handling a repeat issue, answering an internal question, or confirming what action was already taken.", caution: "This is an audit trail. It explains past actions but does not replace reviewing the current facts before making a new decision." },
-  { tab: "Tickets", summary: "Support requests that need a response or resolution.", purpose: "Organizes incoming support tickets so administrators can review their status, priority, and available follow-up actions.", useWhen: "Use it when the Operations queue shows urgent support or when a member needs help that is not a report or trade case.", caution: "Use the ticket’s details to guide the response and keep sensitive information out of any unnecessary notes or messages." },
+  { tab: "Tickets", summary: "Support requests that need a response or resolution.", purpose: "Organizes incoming support tickets so administrators can review their status, priority, and available follow-up actions.", useWhen: "Use it when the Operations queue shows urgent support or when a member needs help that is not a report or trade case.", caution: "Close & retain requires a reason and exact phrase. It closes the ticket and removes it from the ordinary list, but keeps the original request and every reply available through the retained-ticket filter." },
   { tab: "Flagged", summary: "Content flags and Feedback Safety review in one workspace.", purpose: "Shows reported content for review and a separate Feedback Safety queue for low-feedback safety records, with deliberate review outcomes.", useWhen: "Use it when Operations shows Content flags or Feedback safety, or when reviewing a moderation concern about public content.", caution: "A flag identifies something to review; it is not an automatic conclusion. Choose Reviewed, Dismissed, or Action taken only after checking the appropriate context." },
   { tab: "Approvals", summary: "Marketplace-access approval queue.", purpose: "Shows accounts that can finish setup but require an administrator decision before they can use marketplace actions.", useWhen: "Use it when Operations shows Pending approvals or when reviewing an account awaiting marketplace access.", caution: "Approve or decline based on the account information shown. This decision affects whether the account can participate in marketplace activity." },
   { tab: "API Health", summary: "Sanitized diagnostic records for external-service failures.", purpose: "Shows recent provider/API failures without secrets, raw request data, or raw provider responses. You can select and clear only records you have reviewed.", useWhen: "Use it when a feature relying on an external service appears unavailable or when monitoring recurring technical failures.", caution: "Clear removes only the selected diagnostic records after confirmation and records the administrator action. It does not fix an external provider problem or alter marketplace records." },
-  { tab: "Operations", summary: "A read-only command center for the main administrator work queues.", purpose: "Combines system health, action counts, trade follow-up, timeline, launch readiness, and safe internal exports, then links you to the correct tab for action.", useWhen: "Start here for a daily review, to see what needs attention, or to open the related workspace from an action-queue count.", caution: "Operations summarizes and routes work; it does not itself resolve a report, change a trade, or send a message. Follow the link to the proper tab before acting." },
+  { tab: "Operations", summary: "A read-only command center for the main administrator work queues.", purpose: "Combines system health, action counts, Closure Requests, trade follow-up, timeline, launch readiness, and safe internal exports, then links you to the correct tab for action.", useWhen: "Start here for a daily review, to see what needs attention, or to open the related workspace from an action-queue count.", caution: "Operations summarizes and routes work; it does not itself resolve a closure request, report, change a trade, or send a message. Follow the link to the proper tab before acting." },
 ];
 
 function AdminGuideTab() {
@@ -459,6 +459,7 @@ export default function AdminDashboard() {
   const [reportResolutionNotes, setReportResolutionNotes] = useState("");
   const [editMode, setEditMode] = useState(false);
   const [editFormData, setEditFormData] = useState<any>(null);
+  const [includeArchivedTrades, setIncludeArchivedTrades] = useState(false);
   const statsQuery = trpc.admin.getPlatformStatistics.useQuery(undefined, {
     enabled: user?.role === "admin",
     refetchOnWindowFocus: true,
@@ -475,7 +476,7 @@ export default function AdminDashboard() {
     enabled: user?.role === "admin",
     refetchOnWindowFocus: true,
   });
-  const tradesQuery = trpc.admin.getAllTrades.useQuery(undefined, {
+  const tradesQuery = trpc.admin.getAllTrades.useQuery({ includeArchived: includeArchivedTrades }, {
     enabled: user?.role === "admin",
     refetchOnWindowFocus: true,
   });
@@ -494,20 +495,24 @@ export default function AdminDashboard() {
     enabled: user?.role === "admin",
     refetchOnWindowFocus: true,
   });
-  const deleteUserMutation = trpc.admin.deleteUser.useMutation();
-  const deleteTradesMutation = trpc.admin.deleteTrade.useMutation({
+  const archiveUserMutation = trpc.admin.archiveUser.useMutation();
+  const archiveTradesMutation = trpc.admin.archiveTrade.useMutation({
     onSuccess: () => {
       tradesQuery.refetch();
       setTradeDeleteConfirmOpen(false);
       setTradeToDelete(null);
-      toast.success('Trade deleted successfully. All associated records have been removed.');
+      setTradeArchiveReason("");
+      setTradeArchivePhrase("");
+      toast.success('Trade archived. Its records were retained.');
     },
     onError: (err) => {
-      toast.error('Failed to delete trade: ' + err.message);
+      toast.error('Failed to archive trade: ' + err.message);
     },
   });
   const [tradeDeleteConfirmOpen, setTradeDeleteConfirmOpen] = useState(false);
   const [tradeToDelete, setTradeToDelete] = useState<any>(null);
+  const [tradeArchiveReason, setTradeArchiveReason] = useState("");
+  const [tradeArchivePhrase, setTradeArchivePhrase] = useState("");
   const updateReportStatusMutation = trpc.admin.updateReportStatus.useMutation();
   const updateUserMutation = trpc.admin.updateUser.useMutation();
   const updateReferralStatusMutation = trpc.admin.updateReferralStatus.useMutation();
@@ -554,6 +559,8 @@ export default function AdminDashboard() {
   });
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<any>(null);
+  const [userArchiveReason, setUserArchiveReason] = useState("");
+  const [userArchivePhrase, setUserArchivePhrase] = useState("");
   const [selectedReferral, setSelectedReferral] = useState<any>(null);
   const [referralStatusDialogOpen, setReferralStatusDialogOpen] = useState(false);
   const [referralStatus, setReferralStatus] = useState<string>("pending");
@@ -583,14 +590,13 @@ export default function AdminDashboard() {
     }
     try {
       const userId = parseInt(userToDelete.id, 10);
-      console.log('[handleDeleteUser] Calling mutation with userId:', userId);
-      const result = await deleteUserMutation.mutateAsync({ userId });
-      console.log('[handleDeleteUser] Mutation result:', result);
+      await archiveUserMutation.mutateAsync({ userId, reason: userArchiveReason, confirmationPhrase: userArchivePhrase as "ARCHIVE MEMBER ACCOUNT" });
       setDeleteConfirmOpen(false);
       setUserToDelete(null);
-      console.log('[handleDeleteUser] Refetching users and deleted accounts');
+      setUserArchiveReason("");
+      setUserArchivePhrase("");
       usersQuery.refetch();
-      deletedAccountsQuery.refetch();
+      toast.success("Account archived. Trade, support, and safety history was retained.");
     } catch (error) {
       console.error('[handleDeleteUser] Failed to delete user', error);
     }
@@ -968,6 +974,7 @@ export default function AdminDashboard() {
                       <option value="active">Active</option>
                       <option value="suspended">Suspended</option>
                       <option value="banned">Banned</option>
+                      <option value="closed">Archived</option>
                     </select>
                     {/* Merchant Filter */}
                     <select
@@ -1011,7 +1018,7 @@ export default function AdminDashboard() {
                     const matchSearch = !userSearch || [
                       u.id?.toString(), u.username, u.firstName, u.lastName, u.contactEmail
                     ].some(f => f?.toLowerCase().includes(userSearch.toLowerCase()));
-                    const accountStatus = u.isBanned ? 'banned' : u.isSuspended ? 'suspended' : 'active';
+                    const accountStatus = u.isAccountClosed ? 'closed' : u.isBanned ? 'banned' : u.isSuspended ? 'suspended' : 'active';
                     const matchStatus = userStatusFilter === 'all' || accountStatus === userStatusFilter;
                     const merchantState = !u.isMerchant ? 'none' : u.merchantVerified ? 'verified' : 'pending';
                     const matchMerchant = userMerchantFilter === 'all' || merchantState === userMerchantFilter;
@@ -1024,9 +1031,9 @@ export default function AdminDashboard() {
                     else if (userSortBy === 'joined') { aVal = a.createdAt; bVal = b.createdAt; }
                     else if (userSortBy === 'items') { aVal = a.itemsListed || 0; bVal = b.itemsListed || 0; }
                     else if (userSortBy === 'status') {
-                      const order = { active: 0, suspended: 1, banned: 2 };
-                      aVal = order[a.isBanned ? 'banned' : a.isSuspended ? 'suspended' : 'active'];
-                      bVal = order[b.isBanned ? 'banned' : b.isSuspended ? 'suspended' : 'active'];
+                      const order = { active: 0, suspended: 1, banned: 2, closed: 3 };
+                      aVal = order[a.isAccountClosed ? 'closed' : a.isBanned ? 'banned' : a.isSuspended ? 'suspended' : 'active'];
+                      bVal = order[b.isAccountClosed ? 'closed' : b.isBanned ? 'banned' : b.isSuspended ? 'suspended' : 'active'];
                     }
                     else if (userSortBy === 'merchant') {
                       // Pending first so the admin action queue surfaces at the top
@@ -1069,10 +1076,10 @@ export default function AdminDashboard() {
                       </thead>
                       <tbody>
                         {sorted.map((u: any) => {
-                          const accountStatus = u.isBanned ? 'banned' : u.isSuspended ? 'suspended' : 'active';
+                          const accountStatus = u.isAccountClosed ? 'closed' : u.isBanned ? 'banned' : u.isSuspended ? 'suspended' : 'active';
                           return (
                           <tr key={u.id} className={`border-b border-border hover:bg-accent/50 ${
-                            accountStatus === 'banned' ? 'bg-red-50/50' : accountStatus === 'suspended' ? 'bg-yellow-50/50' : ''
+                            accountStatus === 'banned' ? 'bg-red-50/50' : accountStatus === 'suspended' ? 'bg-yellow-50/50' : accountStatus === 'closed' ? 'bg-slate-50/70' : ''
                           }`}>
                             <td className="py-2 px-4 font-mono text-xs">{u.id}</td>
                             <td className="py-2 px-4">
@@ -1101,11 +1108,12 @@ export default function AdminDashboard() {
                             </td>
                             <td className="py-2 px-4">
                               <span className={`px-2 py-1 rounded text-xs font-bold ${
+                                accountStatus === 'closed' ? 'bg-slate-100 text-slate-700 border border-slate-200' :
                                 accountStatus === 'banned' ? 'bg-red-100 text-red-700 border border-red-200' :
                                 accountStatus === 'suspended' ? 'bg-yellow-100 text-yellow-700 border border-yellow-200' :
                                 'bg-green-100 text-green-700 border border-green-200'
                               }`}>
-                                {accountStatus === 'banned' ? '🚫 Banned' : accountStatus === 'suspended' ? '⏸ Suspended' : '✅ Active'}
+                                {accountStatus === 'closed' ? 'Archived' : accountStatus === 'banned' ? '🚫 Banned' : accountStatus === 'suspended' ? '⏸ Suspended' : '✅ Active'}
                               </span>
                             </td>
                             <td className="py-2 px-4">
@@ -1128,7 +1136,7 @@ export default function AdminDashboard() {
                             <td className="py-2 px-4">
                               <div className="flex flex-wrap gap-1">
                                 <Button size="sm" variant="outline" onClick={() => setSelectedUser(u)}>Edit</Button>
-                                {u.role !== 'admin' && (
+                                {u.role !== 'admin' && accountStatus !== 'closed' && (
                                   <>
                                     {accountStatus !== 'banned' && (
                                       accountStatus === 'suspended' ? (
@@ -1156,9 +1164,9 @@ export default function AdminDashboard() {
                                         Ban
                                       </Button>
                                     )}
-                                    <Button size="sm" variant="destructive" className="bg-gray-700 hover:bg-gray-800"
+                                    <Button size="sm" variant="outline" className="border-slate-600 text-slate-700 hover:bg-slate-50"
                                       onClick={() => { setUserToDelete(u); setDeleteConfirmOpen(true); }}>
-                                      Delete
+                                      Archive
                                     </Button>
                                   </>
                                 )}
@@ -1189,8 +1197,11 @@ export default function AdminDashboard() {
               <CardHeader>
                 <CardTitle>All Trades</CardTitle>
                 <CardDescription>
-                  Audit and manage all trades between users. Deleting a trade permanently removes all associated messages, alerts, and records.
+                  Review trade records. Archiving retains every message, alert, tracking record, and history item while removing an eligible finished trade from the normal list.
                 </CardDescription>
+                <Button variant="outline" size="sm" className="mt-3 w-fit" onClick={() => setIncludeArchivedTrades((current) => !current)}>
+                  {includeArchivedTrades ? "Hide archived records" : "Show archived records"}
+                </Button>
               </CardHeader>
               <CardContent>
                 {tradesQuery.isLoading ? (
@@ -1238,11 +1249,11 @@ export default function AdminDashboard() {
                                 variant="destructive"
                                 size="sm"
                                 onClick={() => { setTradeToDelete(trade); setTradeDeleteConfirmOpen(true); }}
-                                disabled={deleteTradesMutation.isPending}
+                                disabled={archiveTradesMutation.isPending || trade.isArchived}
                                 className="h-7 px-2 text-xs"
                               >
-                                <Trash2 className="h-3 w-3 mr-1" />
-                                Delete
+                                <Archive className="h-3 w-3 mr-1" />
+                                {trade.isArchived ? "Archived" : "Archive"}
                               </Button>
                             </td>
                           </tr>
@@ -1256,27 +1267,30 @@ export default function AdminDashboard() {
               </CardContent>
             </Card>
 
-            {/* Trade Delete Confirmation Dialog */}
+            {/* Trade Archive Confirmation Dialog */}
             <Dialog open={tradeDeleteConfirmOpen} onOpenChange={setTradeDeleteConfirmOpen}>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle className="text-red-600">Delete Trade Permanently?</DialogTitle>
+                  <DialogTitle>Archive Trade Record?</DialogTitle>
                   <DialogDescription>
-                    This will permanently delete trade <strong>#{tradeToDelete?.id}</strong> between <strong>{tradeToDelete?.requesterDisplayName || 'Unknown'}</strong> and <strong>{tradeToDelete?.recipientDisplayName || 'Unknown'}</strong> for item <strong>{tradeToDelete?.listingTitle || 'Unknown'}</strong>.
+                    This will archive trade <strong>#{tradeToDelete?.id}</strong> between <strong>{tradeToDelete?.requesterDisplayName || 'Unknown'}</strong> and <strong>{tradeToDelete?.recipientDisplayName || 'Unknown'}</strong> for item <strong>{tradeToDelete?.listingTitle || 'Unknown'}</strong>.
                     <br /><br />
-                    All associated messages, alerts, items, tracking numbers, and records will be removed. <strong>This cannot be undone.</strong>
+                    It retains messages, alerts, items, tracking numbers, and all existing history. Only completed, declined, or cancelled trades are eligible.
                   </DialogDescription>
                 </DialogHeader>
+                <div className="space-y-3">
+                  <div><label className="text-sm font-medium" htmlFor="trade-archive-reason">Reason</label><Textarea id="trade-archive-reason" value={tradeArchiveReason} onChange={(event) => setTradeArchiveReason(event.target.value)} maxLength={180} placeholder="Record why this finished trade should be archived." /></div>
+                  <div><label className="text-sm font-medium" htmlFor="trade-archive-phrase">Type ARCHIVE TRADE RECORD to confirm</label><Input id="trade-archive-phrase" value={tradeArchivePhrase} onChange={(event) => setTradeArchivePhrase(event.target.value)} autoComplete="off" /></div>
+                </div>
                 <div className="flex gap-3 justify-end mt-4">
-                  <Button variant="outline" onClick={() => setTradeDeleteConfirmOpen(false)} disabled={deleteTradesMutation.isPending}>
+                  <Button variant="outline" onClick={() => setTradeDeleteConfirmOpen(false)} disabled={archiveTradesMutation.isPending}>
                     Cancel
                   </Button>
                   <Button
-                    variant="destructive"
-                    onClick={() => tradeToDelete && deleteTradesMutation.mutate({ tradeId: tradeToDelete.id })}
-                    disabled={deleteTradesMutation.isPending}
+                    onClick={() => tradeToDelete && archiveTradesMutation.mutate({ tradeId: tradeToDelete.id, reason: tradeArchiveReason, confirmationPhrase: tradeArchivePhrase as "ARCHIVE TRADE RECORD" })}
+                    disabled={archiveTradesMutation.isPending || tradeArchiveReason.trim().length < 10 || tradeArchivePhrase !== "ARCHIVE TRADE RECORD"}
                   >
-                    {deleteTradesMutation.isPending ? 'Deleting...' : 'Yes, Delete Trade'}
+                    {archiveTradesMutation.isPending ? 'Archiving...' : 'Archive & retain'}
                   </Button>
                 </div>
               </DialogContent>
@@ -2203,23 +2217,27 @@ export default function AdminDashboard() {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
+      {/* Retained Account Archive Confirmation Dialog */}
       <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete User Account</DialogTitle>
+            <DialogTitle>Archive Member Account</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete this user account? This action will:
+              This protected action closes sign-in access and hides the member profile and active listings while retaining trade, support, and safety history. It will not delete the account or records.
               <ul className="list-disc list-inside mt-2 space-y-1">
-                <li>Delete the user profile</li>
-                <li>Delete all listings owned by this user</li>
-                <li>Log the deletion for audit purposes</li>
+                <li>Re-check current closure blockers before archiving</li>
+                <li>Refuse active, disputed, suspended, banned, or administrator accounts</li>
+                <li>Write the reason to the administrator activity log</li>
               </ul>
             </DialogDescription>
           </DialogHeader>
           <div className="bg-destructive/10 border border-destructive/20 rounded p-3 my-4">
             <p className="text-sm font-semibold">User: {userToDelete?.username}</p>
             <p className="text-sm text-muted-foreground">Email: {userToDelete?.contactEmail}</p>
+          </div>
+          <div className="space-y-3">
+            <div><label className="text-sm font-medium" htmlFor="member-archive-reason">Reason</label><Textarea id="member-archive-reason" value={userArchiveReason} onChange={(event) => setUserArchiveReason(event.target.value)} maxLength={180} placeholder="Record why this account should be archived." /></div>
+            <div><label className="text-sm font-medium" htmlFor="member-archive-phrase">Type ARCHIVE MEMBER ACCOUNT to confirm</label><Input id="member-archive-phrase" value={userArchivePhrase} onChange={(event) => setUserArchivePhrase(event.target.value)} autoComplete="off" /></div>
           </div>
           <div className="flex gap-3 justify-end">
             <Button 
@@ -2234,9 +2252,9 @@ export default function AdminDashboard() {
             <Button 
               variant="destructive" 
               onClick={handleDeleteUser}
-              disabled={deleteUserMutation.isPending}
+              disabled={archiveUserMutation.isPending || userArchiveReason.trim().length < 10 || userArchivePhrase !== "ARCHIVE MEMBER ACCOUNT"}
             >
-              {deleteUserMutation.isPending ? "Deleting..." : "Delete Account"}
+              {archiveUserMutation.isPending ? "Archiving..." : "Archive & retain"}
             </Button>
           </div>
         </DialogContent>
@@ -2474,10 +2492,14 @@ function StatCard({
 
 // ─── Support Tickets Tab ──────────────────────────────────────────────────────
 function SupportTicketsTab() {
-  const ticketsQuery = trpc.admin.getAllTickets.useQuery();
+  const [includeArchivedTickets, setIncludeArchivedTickets] = useState(false);
+  const ticketsQuery = trpc.admin.getAllTickets.useQuery({ includeArchived: includeArchivedTickets });
   const [selectedTicket, setSelectedTicket] = useState<any>(null);
   const [replyText, setReplyText] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [ticketArchiveOpen, setTicketArchiveOpen] = useState(false);
+  const [ticketArchiveReason, setTicketArchiveReason] = useState("");
+  const [ticketArchivePhrase, setTicketArchivePhrase] = useState("");
 
   const repliesQuery = trpc.admin.getTicketReplies.useQuery(
     { ticketId: selectedTicket?.id ?? 0 },
@@ -2503,13 +2525,16 @@ function SupportTicketsTab() {
     onError: (e) => toast.error("Failed to update status: " + e.message),
   });
 
-  const deleteTicketMutation = trpc.admin.deleteTicket.useMutation({
+  const archiveTicketMutation = trpc.admin.archiveTicket.useMutation({
     onSuccess: () => {
       ticketsQuery.refetch();
       setSelectedTicket(null);
-      toast.success("Ticket deleted.");
+      setTicketArchiveOpen(false);
+      setTicketArchiveReason("");
+      setTicketArchivePhrase("");
+      toast.success("Ticket closed and retained.");
     },
-    onError: (e) => toast.error("Failed to delete ticket: " + e.message),
+    onError: (e) => toast.error("Failed to close ticket: " + e.message),
   });
 
   const priorityColor: Record<string, string> = {
@@ -2554,6 +2579,9 @@ function SupportTicketsTab() {
                 <SelectItem value="closed">Closed</SelectItem>
               </SelectContent>
             </Select>
+            <Button variant="outline" size="sm" className="mt-2 w-full" onClick={() => setIncludeArchivedTickets((current) => !current)}>
+              {includeArchivedTickets ? "Hide retained tickets" : "Show retained tickets"}
+            </Button>
           </CardHeader>
           <CardContent className="p-0">
             {ticketsQuery.isLoading ? (
@@ -2628,12 +2656,14 @@ function SupportTicketsTab() {
                     </SelectContent>
                   </Select>
                   <Button
-                    variant="destructive"
+                    variant="outline"
                     size="sm"
-                    className="h-8 text-xs"
-                    onClick={() => deleteTicketMutation.mutate({ ticketId: selectedTicket.id })}
+                    className="h-8 text-xs border-slate-600 text-slate-700"
+                    onClick={() => setTicketArchiveOpen(true)}
+                    disabled={selectedTicket.isArchived}
                   >
-                    <Trash2 className="h-3 w-3" />
+                    <Archive className="h-3 w-3 mr-1" />
+                    {selectedTicket.isArchived ? "Retained" : "Close & retain"}
                   </Button>
                 </div>
               </div>
@@ -2710,6 +2740,19 @@ function SupportTicketsTab() {
           </Card>
         )}
       </div>
+      <Dialog open={ticketArchiveOpen} onOpenChange={setTicketArchiveOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Close & Retain Ticket</DialogTitle>
+            <DialogDescription>This closes the ticket and removes it from the ordinary queue while retaining the original request and every reply. It cannot be used to erase support history.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div><label className="text-sm font-medium" htmlFor="ticket-archive-reason">Reason</label><Textarea id="ticket-archive-reason" value={ticketArchiveReason} onChange={(event) => setTicketArchiveReason(event.target.value)} maxLength={180} placeholder="Record why this resolved ticket should be retained outside the normal queue." /></div>
+            <div><label className="text-sm font-medium" htmlFor="ticket-archive-phrase">Type CLOSE AND RETAIN TICKET to confirm</label><Input id="ticket-archive-phrase" value={ticketArchivePhrase} onChange={(event) => setTicketArchivePhrase(event.target.value)} autoComplete="off" /></div>
+          </div>
+          <div className="flex justify-end gap-3"><Button variant="outline" onClick={() => setTicketArchiveOpen(false)} disabled={archiveTicketMutation.isPending}>Cancel</Button><Button onClick={() => selectedTicket && archiveTicketMutation.mutate({ ticketId: selectedTicket.id, reason: ticketArchiveReason, confirmationPhrase: ticketArchivePhrase as "CLOSE AND RETAIN TICKET" })} disabled={archiveTicketMutation.isPending || ticketArchiveReason.trim().length < 10 || ticketArchivePhrase !== "CLOSE AND RETAIN TICKET"}>{archiveTicketMutation.isPending ? "Closing..." : "Close & retain"}</Button></div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
