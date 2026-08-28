@@ -584,15 +584,36 @@ export const tradeFlowRouter = router({
         // Both have now accepted — keep the trade in Review while locking its
         // agreed items. Shipping and its deadline begin only once both people
         // confirm this final review through proceedToShipping.
+        const [offeredListingRows] = await db.execute(
+          sql`SELECT offeredListingId FROM tradeProposalItems WHERE proposalId = ${input.proposalId}`
+        );
+        const involvedListingIds = [...new Set([
+          proposal.requestedListingId,
+          ...((offeredListingRows as any[]) || []).map((row) => row.offeredListingId),
+        ])].sort((left, right) => Number(left) - Number(right));
+
+        if (involvedListingIds.length === 0) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Trade must include an active listing' });
+        }
+
+        // Stable all-listing locks serialize competing acceptances that share
+        // any item; the losing proposal rechecks and returns a neutral conflict.
+        const [lockedListingRows] = await db.execute(
+          sql`SELECT id FROM listings WHERE id IN (${sql.join(involvedListingIds.map((id) => sql`${id}`), sql`, `)}) AND isActive = 1 AND status = 'active' ORDER BY id FOR UPDATE`
+        );
+        if (((lockedListingRows as any[]) || []).length !== involvedListingIds.length) {
+          throw new TRPCError({ code: 'CONFLICT', message: 'One or more trade items are no longer available' });
+        }
+
+        const [listingLockResult] = await db.execute(
+          sql`UPDATE listings SET status = 'traded' WHERE id IN (${sql.join(involvedListingIds.map((id) => sql`${id}`), sql`, `)}) AND isActive = 1 AND status = 'active'`
+        );
+        if (Number((listingLockResult as any)?.affectedRows ?? 0) !== involvedListingIds.length) {
+          throw new TRPCError({ code: 'CONFLICT', message: 'One or more trade items are no longer available' });
+        }
+
         await db.execute(
           sql`UPDATE tradeProposals SET status = 'accepted', acceptedAt = ${now}, shippingAt = NULL, shippingDeadline = NULL, lastActivityAt = ${now}, updatedAt = ${now} WHERE id = ${input.proposalId}`
-        );
-        // Lock all items in this trade (mark as 'traded' in listings)
-        await db.execute(
-          sql`UPDATE listings SET status = 'traded' WHERE id IN (SELECT offeredListingId FROM tradeProposalItems WHERE proposalId = ${input.proposalId})`
-        );
-        await db.execute(
-          sql`UPDATE listings SET status = 'traded' WHERE id = ${proposal.requestedListingId}`
         );
           await createTradeAlert(db, input.proposalId, otherUserId, 'accepted', `Both parties have accepted trade (TR-${proposal.tradeReferenceNumber})! Please review the final terms and confirm when ready to ship.`, now);
         await db.execute(
