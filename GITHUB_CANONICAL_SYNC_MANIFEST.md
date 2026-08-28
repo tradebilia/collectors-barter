@@ -409,3 +409,11 @@ Before future GitHub-to-WebDev reconciliation, create a recovery checkpoint and 
 | Implementation | The live card now uses the reference’s shallow ticket structure: full member/avatar-detail panels, ratings and truthful verification rows, dotted dividers, direct larger item presentation, centered transparent Trade Complete mark, distinct footer, arrows, and full main-column width. |
 | Reference asset | Standalone mockup retained at `/home/ubuntu/webdev-static-assets/recent-trades-ticket-mockup.png` with reserved URL `/manus-storage/recent-trades-ticket-mockup_2144c0cd.png`; it is not used as production UI. |
 | Validation | Focused homepage and movement tests passed 3/3; TypeScript, production build, dependency audit, whitespace, and desktop/mobile visual checks passed. No data, payment, provider, schedule, setting, or secret changed. |
+
+## Trade Complete Translucent Stamp Pair
+| Record | Value |
+|---|---|
+| Request | Make the white interior areas of the Trade Complete logo translucent so the Recent Trades ticket surface shows through. |
+| Asset | `/manus-storage/trade-complete-stamp-translucent_3f4e25b7.png` replaces the prior opaque-interior stamp asset. |
+| Implementation | Recent Trades references the durable translucent PNG; its exterior remains transparent and the green stamp artwork/text is preserved. |
+| Validation | Focused homepage and movement tests passed 3/3; TypeScript, production build, dependency audit, whitespace, and desktop visual verification passed. No database, payment, provider, schedule, setting, or secret changed. |
