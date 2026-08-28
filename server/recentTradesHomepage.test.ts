@@ -13,6 +13,9 @@ describe("homepage Recent Trades carousel", () => {
     ]);
     expect(homeSource).toContain('getCompletedTrades.useQuery({ limit: 10, offset: 0, sortBy: "recent" }');
     expect(homeSource).toContain("<RecentTradesCarousel");
+    expect(homeSource).toContain("<RecentlyAddedCarousel");
+    expect(homeSource).not.toContain("{marketplaceQuery.isLoading ? (");
+    expect(homeSource).toContain("isLoading={recentTradesQuery.isLoading}");
     expect(routerSource).toContain("Return every offered item for each completed exchange");
     expect(routerSource).not.toContain("WHERE tpi.proposalId = ${trade.id}\n            LIMIT 4");
     expect(carouselSource).toContain("ROTATION_INTERVAL_MS = 5_000");
