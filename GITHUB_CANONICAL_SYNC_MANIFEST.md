@@ -197,6 +197,17 @@ The canonical commit deliberately merges the sandbox-specific behavior without r
 | Compatibility handling | The content-level merge retained newer canonical Pre-Launch recipient-selection and send-history behavior while applying the same delivery ledger, staging safeguards, encoding, and regression coverage. A canonical-only UI test was updated for the approved stable `deliveryKey` mutation shape. |
 | Preserved safeguards | No email or broadcast was sent; no provider credential, payment setting/action, schedule, marketplace record, or secret changed. Free Launch remains active; Stripe remains sandbox-only; payment enforcement remains inactive. |
 
+## Shared Market-Data Hardening Pair
+
+| Record | Value |
+|---|---|
+| Canonical implementation commit | `6df16b19` — normal push to GitHub `main`; no force push or history replacement. |
+| Paired managed WebDev checkpoint | `d388e864` |
+| Scope | Shared market-data router now requires a signed-in Tradebilia member, preserves a larger administrator allowance, permits only the eBay source, bounds identifiers/search/source/cache/sales parameters, applies per-member and per-IP admission limits, and propagates one 15-second abort budget through eBay attempts and retry waits. |
+| Test AI compatibility | The existing administrator-only Test AI Sandbox uses its separate protected router and is unchanged. The future Trade AI Analyzer can use this protected shared boundary. |
+| Validation | No-provider-call focused tests passed 4/4. WebDev full suite passed 150 files / 474 tests with four intentional skips after a successful UPS retry. Fresh canonical full suite passed 152 files / 486 tests with four intentional skips. TypeScript, production build, `pnpm audit --prod`, and whitespace checks passed in both workspaces. |
+| Preserved safeguards | No custom TiDB schema/data, marketplace record, payment setting/action, provider credential/action, schedule, or secret changed. Free Launch remains active; Stripe remains sandbox-only; payment enforcement remains inactive. |
+
 ## Synchronization Rules
 
 Before future GitHub-to-WebDev reconciliation, create a recovery checkpoint and an immutable GitHub backup tag. Before a reviewed WebDev change becomes canonical, merge only the relevant content into the current GitHub `main`, preserve any newer canonical work, use a normal commit/push, and record the associated checkpoint. Never force-push or replace the canonical repository wholesale.
