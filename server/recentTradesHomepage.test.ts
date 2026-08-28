@@ -30,7 +30,8 @@ describe("homepage Recent Trades carousel", () => {
     expect(carouselSource).toContain('<TradeMember label="To"');
     expect(carouselSource).toContain('<ArrowRight');
     expect(carouselSource).toContain('<ArrowLeft');
-    expect(carouselSource).toContain("Trade complete");
+    expect(carouselSource).toContain('src="/manus-storage/trade-complete-stamp_e8860371.png"');
+    expect(carouselSource).toContain('alt="Trade complete"');
     expect(carouselSource).toContain("Items moved in both directions");
     expect(carouselSource).toContain('title="You gave"');
     expect(carouselSource).toContain('title="You received"');

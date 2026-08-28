@@ -112,7 +112,7 @@ export function RecentTradesCarousel({ trades, isLoading = false }: { trades: Re
           <TradeMember label="From" name={exchange.left.member.displayName} avatarUrl={exchange.left.member.avatarUrl} side="left" />
           <TradeItemList items={exchange.left.items} title="You gave" />
           <ArrowRight className="mx-auto hidden h-6 w-6 text-violet-600 lg:block" strokeWidth={2.4} aria-label="Items moved from the left collector to the right collector" />
-          <div className="flex flex-col items-center justify-center gap-0.5 text-emerald-700"><BadgeCheck className="h-12 w-12" strokeWidth={1.8} aria-hidden="true" /><span className="whitespace-nowrap text-[0.58rem] font-bold uppercase tracking-[0.11em]">Trade complete</span></div>
+          <div className="flex flex-col items-center justify-center gap-0.5 text-emerald-700"><img src="/manus-storage/trade-complete-stamp_e8860371.png" alt="Trade complete" className="h-14 w-16 object-contain" /></div>
           <ArrowLeft className="mx-auto hidden h-6 w-6 text-sky-600 lg:block" strokeWidth={2.4} aria-label="Items moved from the right collector to the left collector" />
           <TradeItemList items={exchange.right.items} title="You received" />
           <TradeMember label="To" name={exchange.right.member.displayName} avatarUrl={exchange.right.member.avatarUrl} side="right" />

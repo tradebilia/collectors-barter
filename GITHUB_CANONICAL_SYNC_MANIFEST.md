@@ -364,3 +364,11 @@ The canonical commit deliberately merges the sandbox-specific behavior without r
 ## Synchronization Rules
 
 Before future GitHub-to-WebDev reconciliation, create a recovery checkpoint and an immutable GitHub backup tag. Before a reviewed WebDev change becomes canonical, merge only the relevant content into the current GitHub `main`, preserve any newer canonical work, use a normal commit/push, and record the associated checkpoint. Never force-push or replace the canonical repository wholesale.
+
+## Trade Complete Stamp Asset Pair
+| Record | Value |
+|---|---|
+| Source asset | User-supplied `/home/ubuntu/upload/pasted_file_RLnXkh_image.png`, preserved as `/home/ubuntu/webdev-static-assets/trade-complete-stamp.png` and copied to the project shared-files directory. |
+| Durable WebDev URL | `/manus-storage/trade-complete-stamp_e8860371.png` |
+| Use | Center completion marker in `RecentTradesCarousel.tsx`; accessible alt text is `Trade complete`; the footer's small generic verification icon remains unchanged. |
+| Asset policy | The binary is kept outside the application repository and referenced only through the durable WebDev storage path. |
