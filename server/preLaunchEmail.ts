@@ -1,6 +1,24 @@
 type FetchLike = typeof fetch;
 
 import { classifyApiFailure, recordApiFailure } from "./apiHealth";
+import { isStagingSafetyEnabled, stagingSafetyReason } from "./_core/stagingSafety";
+import {
+  markPreLaunchDeliverySent,
+  markPreLaunchDeliveryUncertain,
+  reservePreLaunchDelivery,
+} from "./preLaunchDelivery";
+
+export type PreLaunchDeliveryStore = {
+  reserve: typeof reservePreLaunchDelivery;
+  markSent: typeof markPreLaunchDeliverySent;
+  markUncertain: typeof markPreLaunchDeliveryUncertain;
+};
+
+const databaseDeliveryStore: PreLaunchDeliveryStore = {
+  reserve: reservePreLaunchDelivery,
+  markSent: markPreLaunchDeliverySent,
+  markUncertain: markPreLaunchDeliveryUncertain,
+};
 
 const RESEND_API_BASE = "https://api.resend.com";
 const PRE_LAUNCH_SEGMENT_NAME = "Tradebilia Pre-Launch Updates";
@@ -137,6 +155,7 @@ export async function ensurePreLaunchSegment(fetcher: FetchLike, apiKey: string)
 }
 
 export async function getPreLaunchRecipients(fetcher: FetchLike = fetch): Promise<PreLaunchRecipient[]> {
+  if (isStagingSafetyEnabled()) throw new Error(stagingSafetyReason("Pre-Launch recipient retrieval"));
   const apiKey = getResendApiKey();
   if (!apiKey) throw new Error("Pre-Launch Email is not configured yet.");
   try {
@@ -158,33 +177,53 @@ export async function getPreLaunchRecipients(fetcher: FetchLike = fetch): Promis
 }
 
 export async function sendPreLaunchUpdate(
-  input: { subject: string; message: string },
+  input: { subject: string; message: string; deliveryKey: string; requestedBy: number },
   fetcher: FetchLike = fetch,
+  deliveryStore: PreLaunchDeliveryStore = databaseDeliveryStore,
 ) {
+  if (isStagingSafetyEnabled()) throw new Error(stagingSafetyReason("Pre-Launch Email delivery"));
   const apiKey = getResendApiKey();
   if (!apiKey) throw new Error("Pre-Launch Email is not configured yet.");
 
-  const contacts = await listAllContacts(fetcher, apiKey);
-  if (contacts.length === 0) return { recipientCount: 0, broadcastId: null as string | null };
+  const reservation = await deliveryStore.reserve(input);
+  if (reservation.kind === "sent") {
+    return { recipientCount: reservation.recipientCount, broadcastId: reservation.broadcastId, reused: true };
+  }
+  if (reservation.kind === "uncertain") {
+    throw new Error("The prior Pre-Launch delivery outcome is still being confirmed. It was not resent automatically.");
+  }
 
-  const segmentId = await ensurePreLaunchSegment(fetcher, apiKey);
-  await enrollContactsInSegment(contacts, segmentId, fetcher, apiKey);
+  try {
+    const contacts = await listAllContacts(fetcher, apiKey);
+    if (contacts.length === 0) {
+      await deliveryStore.markSent({ deliveryId: reservation.deliveryId, recipientCount: 0, broadcastId: null });
+      return { recipientCount: 0, broadcastId: null as string | null, reused: false };
+    }
 
-  const broadcast = await fetcher(`${RESEND_API_BASE}/broadcasts`, {
-    method: "POST",
-    headers: headers(apiKey),
-    body: JSON.stringify({
-      segment_id: segmentId,
-      from: FROM_ADDRESS,
-      subject: input.subject.trim(),
-      name: `Tradebilia pre-launch update ${new Date().toISOString()}`,
-      html: buildPreLaunchEmailHtml(input.message),
-      text: `${input.message.trim()}\n\nUnsubscribe: {{{RESEND_UNSUBSCRIBE_URL}}}`,
-      send: true,
-    }),
-    signal: AbortSignal.timeout(15_000),
-  }) as ResendFetchResponse;
-  if (!broadcast.ok) throw new Error("Resend could not deliver the Pre-Launch Email update.");
-  const payload = await broadcast.json();
-  return { recipientCount: contacts.length, broadcastId: payload?.id ?? null };
+    const segmentId = await ensurePreLaunchSegment(fetcher, apiKey);
+    await enrollContactsInSegment(contacts, segmentId, fetcher, apiKey);
+
+    const broadcast = await fetcher(`${RESEND_API_BASE}/broadcasts`, {
+      method: "POST",
+      headers: headers(apiKey),
+      body: JSON.stringify({
+        segment_id: segmentId,
+        from: FROM_ADDRESS,
+        subject: input.subject.trim(),
+        name: `Tradebilia pre-launch update ${new Date().toISOString()}`,
+        html: buildPreLaunchEmailHtml(input.message),
+        text: `${input.message.trim()}\n\nUnsubscribe: {{{RESEND_UNSUBSCRIBE_URL}}}`,
+        send: true,
+      }),
+      signal: AbortSignal.timeout(15_000),
+    }) as ResendFetchResponse;
+    if (!broadcast.ok) throw new Error("Resend could not deliver the Pre-Launch Email update.");
+    const payload = await broadcast.json();
+    if (!payload?.id) throw new Error("Resend did not confirm the Pre-Launch Email delivery.");
+    await deliveryStore.markSent({ deliveryId: reservation.deliveryId, recipientCount: contacts.length, broadcastId: payload.id });
+    return { recipientCount: contacts.length, broadcastId: payload.id, reused: false };
+  } catch (error) {
+    await deliveryStore.markUncertain(reservation.deliveryId);
+    throw error;
+  }
 }

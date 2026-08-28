@@ -16,12 +16,14 @@ export function PreLaunchEmailTab() {
   const [message, setMessage] = useState("");
   const [previewOpen, setPreviewOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [deliveryKey, setDeliveryKey] = useState(() => crypto.randomUUID());
   const sendMutation = trpc.admin.sendPreLaunchUpdate.useMutation({
     onSuccess: result => {
       toast.success(result.recipientCount > 0
         ? `Pre-Launch Email sent to ${result.recipientCount} opted-in recipient${result.recipientCount === 1 ? "" : "s"}.`
         : "There are no opted-in Pre-Launch Email recipients yet.");
       setConfirmOpen(false);
+      setDeliveryKey(crypto.randomUUID());
     },
     onError: error => toast.error(error.message),
   });
@@ -32,7 +34,7 @@ export function PreLaunchEmailTab() {
 
   const confirmSend = () => {
     if (!canPrepareSend || sendMutation.isPending) return;
-    sendMutation.mutate({ subject, message });
+    sendMutation.mutate({ subject, message, deliveryKey });
   };
 
   return (
@@ -45,7 +47,7 @@ export function PreLaunchEmailTab() {
         <CardContent className="grid gap-4 md:grid-cols-[minmax(0,1fr)_220px]">
           <div className="space-y-2">
             <label className="text-sm font-medium" htmlFor="pre-launch-subject">Email subject</label>
-            <Input id="pre-launch-subject" value={subject} onChange={event => setSubject(event.target.value)} maxLength={160} className="border-white/15 bg-black/20 text-white" />
+            <Input id="pre-launch-subject" value={subject} onChange={event => { setSubject(event.target.value); setDeliveryKey(crypto.randomUUID()); }} maxLength={160} className="border-white/15 bg-black/20 text-white" />
           </div>
           <div className="rounded-xl border border-white/10 bg-black/20 p-4">
             <div className="flex items-center gap-2 text-sm font-semibold"><Users className="h-4 w-4 text-[#18B57A]" />Opted-in recipients</div>
@@ -54,7 +56,7 @@ export function PreLaunchEmailTab() {
           </div>
           <div className="space-y-2 md:col-span-2">
             <label className="text-sm font-medium" htmlFor="pre-launch-message">Status update</label>
-            <Textarea id="pre-launch-message" value={message} onChange={event => setMessage(event.target.value)} maxLength={5000} rows={10} placeholder="Write the update collectors should receive…" className="resize-y border-white/15 bg-black/20 text-white placeholder:text-white/35" />
+            <Textarea id="pre-launch-message" value={message} onChange={event => { setMessage(event.target.value); setDeliveryKey(crypto.randomUUID()); }} maxLength={5000} rows={10} placeholder="Write the update collectors should receive…" className="resize-y border-white/15 bg-black/20 text-white placeholder:text-white/35" />
             <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-white/55"><span>Every update includes the Tradebilia logo and a provider-managed unsubscribe link.</span><span>{message.length}/5000</span></div>
           </div>
           <div className="flex flex-wrap justify-end gap-2 md:col-span-2">

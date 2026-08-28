@@ -819,6 +819,30 @@ export const apiHealthEvents = mysqlTable("apiHealthEvents", {
 		index("apiHealthEvents_occurredAt_idx").on(table.occurredAt),
 	]);
 
+/**
+ * An administrator-initiated Pre-Launch broadcast attempt. A stable delivery
+ * key lets a browser retry receive the prior result without issuing a second
+ * provider broadcast after an uncertain network outcome.
+ */
+export const preLaunchBroadcastDeliveries = mysqlTable("preLaunchBroadcastDeliveries", {
+	id: int().autoincrement().notNull(),
+	deliveryKey: varchar({ length: 96 }).notNull(),
+	requestedBy: int().notNull().references(() => users.id),
+	payloadHash: varchar({ length: 64 }).notNull(),
+	subject: varchar({ length: 160 }).notNull(),
+	recipientCount: int(),
+	broadcastId: varchar({ length: 128 }),
+	status: mysqlEnum(['prepared', 'sending', 'sent', 'uncertain']).default('prepared').notNull(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+},
+	(table) => [
+		uniqueIndex("preLaunchBroadcastDeliveries_deliveryKey_unique").on(table.deliveryKey),
+		index("preLaunchBroadcastDeliveries_requestedBy_idx").on(table.requestedBy),
+		index("preLaunchBroadcastDeliveries_status_idx").on(table.status),
+		index("preLaunchBroadcastDeliveries_createdAt_idx").on(table.createdAt),
+	]);
+
 export const watchlistEntries = mysqlTable("watchlistEntries", {
 	id: int().autoincrement().notNull(),
 	userId: int().notNull().references(() => users.id),

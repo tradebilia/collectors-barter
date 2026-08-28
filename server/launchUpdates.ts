@@ -2,6 +2,9 @@ import { ensurePreLaunchSegment } from "./preLaunchEmail";
 
 type FetchLike = typeof fetch;
 
+import { isStagingSafetyEnabled, stagingSafetyReason } from "./_core/stagingSafety";
+import { normalizeLaunchUpdateEmail } from "./launchUpdatesRateLimit";
+
 const RESEND_CONTACTS_URL = "https://api.resend.com/contacts";
 const RESEND_AUDIENCES_URL = "https://api.resend.com/audiences";
 
@@ -28,12 +31,15 @@ export async function subscribeToLaunchUpdates(
   email: string,
   fetcher: FetchLike = fetch,
 ): Promise<LaunchUpdateSubscriptionResult> {
+  if (isStagingSafetyEnabled()) {
+    throw new Error(stagingSafetyReason("Launch-update signup"));
+  }
   const apiKey = process.env.RESEND_CONTACTS_API_KEY;
   if (!apiKey) {
     throw new Error("Email updates are not configured yet. Please try again later.");
   }
 
-  const normalizedEmail = email.trim().toLowerCase();
+  const normalizedEmail = normalizeLaunchUpdateEmail(email);
   const createContact = (body: Record<string, unknown>) => fetcher(RESEND_CONTACTS_URL, {
     method: "POST",
     headers: {

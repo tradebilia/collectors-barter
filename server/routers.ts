@@ -110,6 +110,7 @@ import { TRPCError } from "@trpc/server";
 import { isPublicMemberEligible } from "./publicVisibility";
 import { ONE_YEAR_MS } from "@shared/const";
 import { subscribeToLaunchUpdates } from "./launchUpdates";
+import { isLaunchUpdateRequestAllowed, normalizeLaunchUpdateEmail } from "./launchUpdatesRateLimit";
 import { getPreLaunchRecipients, sendPreLaunchUpdate } from "./preLaunchEmail";
 import { validateFirstTimeSetupRequirements } from "./accountSetupRequirements";
 import { PASSWORD_RECOVERY_TOKEN_TTL_MS, createOpaqueRecoveryToken, createSixDigitCode, hashRecoveryToken, isRecoveryRequestAllowed, isRecoveryTokenExpired, normalizeRecoveryEmail, timingSafeTextEquals } from "./accountRecovery";
@@ -228,7 +229,14 @@ export const appRouter = router({
   launchUpdates: router({
     subscribe: publicProcedure
       .input(z.object({ email: z.string().trim().email().max(320) }))
-      .mutation(async ({ input }) => subscribeToLaunchUpdates(input.email)),
+      .mutation(async ({ ctx, input }) => {
+        const source = ctx.req.ip || ctx.req.socket.remoteAddress || "unknown";
+        const key = `${source}:${normalizeLaunchUpdateEmail(input.email)}`;
+        if (!isLaunchUpdateRequestAllowed(key)) {
+          throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: "Please wait before submitting another email-update request." });
+        }
+        return subscribeToLaunchUpdates(input.email);
+      }),
   }),
   auth: router({
     me: publicProcedure.query(async opts => {
@@ -2910,12 +2918,12 @@ export const appRouter = router({
       return getPreLaunchRecipients();
     }),
     sendPreLaunchUpdate: protectedProcedure
-      .input(z.object({ subject: z.string().trim().min(1).max(160), message: z.string().trim().min(1).max(5000) }))
+      .input(z.object({ subject: z.string().trim().min(1).max(160), message: z.string().trim().min(1).max(5000), deliveryKey: z.string().uuid() }))
       .mutation(async ({ ctx, input }) => {
         if (ctx.user.role !== 'admin') {
           throw new TRPCError({ code: 'FORBIDDEN', message: 'Only admins can send Pre-Launch Email updates' });
         }
-        return sendPreLaunchUpdate(input);
+        return sendPreLaunchUpdate({ ...input, requestedBy: ctx.user.id });
       }),
     updateReferralStatus: protectedProcedure
       .input(z.object({
