@@ -208,6 +208,16 @@ The canonical commit deliberately merges the sandbox-specific behavior without r
 | Validation | No-provider-call focused tests passed 4/4. WebDev full suite passed 150 files / 474 tests with four intentional skips after a successful UPS retry. Fresh canonical full suite passed 152 files / 486 tests with four intentional skips. TypeScript, production build, `pnpm audit --prod`, and whitespace checks passed in both workspaces. |
 | Preserved safeguards | No custom TiDB schema/data, marketplace record, payment setting/action, provider credential/action, schedule, or secret changed. Free Launch remains active; Stripe remains sandbox-only; payment enforcement remains inactive. |
 
+## Fourth-Audit P0 Privacy, SQL, and Consent Remediation Pair
+
+| Record | Value |
+|---|---|
+| Canonical implementation commit | `cbff5297` — normal push to GitHub `main`; no force push or history replacement. |
+| Paired managed WebDev checkpoint | `44e21dea` |
+| Scope | Parameterized completed-trade category filtering with an explicit category enum; shared public-member eligibility for top-rated and completed-trade outputs; and a locked counterproposal comparison that clears both stale acceptances only when offered items or cash terms change. |
+| Validation | Focused fourth-audit P0 suite passed 7 tests. WebDev full suite passed 151 files / 478 tests with four intentional skips; fresh canonical full suite passed 153 files / 490 tests with four intentional skips. TypeScript, production build, `pnpm audit --prod`, whitespace, secret-pattern review, and startup checks passed. |
+| Preserved safeguards | No custom TiDB schema/data, marketplace record, payment setting/action, provider action, schedule, configuration, or secret changed. Free Launch remains active, Stripe remains sandbox-only, and payment enforcement remains inactive. |
+
 ## Synchronization Rules
 
 Before future GitHub-to-WebDev reconciliation, create a recovery checkpoint and an immutable GitHub backup tag. Before a reviewed WebDev change becomes canonical, merge only the relevant content into the current GitHub `main`, preserve any newer canonical work, use a normal commit/push, and record the associated checkpoint. Never force-push or replace the canonical repository wholesale.
