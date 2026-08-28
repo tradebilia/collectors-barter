@@ -80,6 +80,19 @@ function LinkedInProfileImage({ pictureUrl, name }: { pictureUrl?: string | null
   return <img src={pictureUrl!} alt={name || "LinkedIn profile"} referrerPolicy="no-referrer" onError={() => setFailedPictureUrl(pictureUrl!)} className="h-12 w-12 shrink-0 rounded-full bg-slate-100 object-contain border-2 border-white shadow-sm" />;
 }
 
+function ConnectionDate({ connectedAt }: { connectedAt?: string | number | Date | null }) {
+  if (!connectedAt) return null;
+  const date = new Date(connectedAt);
+  if (Number.isNaN(date.getTime())) return null;
+
+  return (
+    <div className="flex items-center gap-1.5 text-[10px] text-slate-400 font-medium">
+      <CheckCircle2 className="h-3 w-3 text-green-500" />
+      <span>Connected {date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>
+    </div>
+  );
+}
+
 function HistogramRow({ stars, count, total }: { stars: number; count: number; total: number }) {
   return (
     <div className="flex items-center gap-3 text-[10px] font-bold">
@@ -541,6 +554,7 @@ export default function PublicProfile() {
                           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Since {new Date(user.ebayMemberSince).getFullYear()}</span>
                         )}
                       </div>
+                      <ConnectionDate connectedAt={user.ebayConnectedAt} />
 
                       {/* Score + Percentage */}
                       <div className="flex items-center justify-between bg-slate-50/50 rounded-xl p-3 border border-slate-100">
@@ -626,6 +640,7 @@ export default function PublicProfile() {
                           <p className="text-sm font-black text-slate-900 tracking-tight truncate">{user.facebookName}</p>
                         </div>
                       </div>
+                      <ConnectionDate connectedAt={user.facebookConnectedAt} />
 
                       {/* Location */}
                       {user.facebookLocation && (
@@ -679,14 +694,7 @@ export default function PublicProfile() {
 
                         </div>
                       </div>
-                      {/* Email */}
-                      {/* Connected since */}
-                      {user.linkedinConnectedAt && (
-                        <div className="flex items-center gap-1.5 text-[10px] text-slate-400 font-medium">
-                          <CheckCircle2 className="h-3 w-3 text-green-500" />
-                          <span>Connected {new Date(user.linkedinConnectedAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</span>
-                        </div>
-                      )}
+                      <ConnectionDate connectedAt={user.linkedinConnectedAt} />
 
                     </div>
                   </div>

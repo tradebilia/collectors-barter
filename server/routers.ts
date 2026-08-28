@@ -750,6 +750,7 @@ export const appRouter = router({
             u.facebookLocation,
             u.facebookLink,
             u.facebookLikes,
+            u.facebookConnectedAt,
             u.linkedinId,
             u.linkedinName,
             u.linkedinPicture,
