@@ -40,6 +40,7 @@ describe("homepage Recent Trades carousel", () => {
     expect(recentlyAddedSource).toContain("aspect-[0.86]");
     expect(recentlyAddedSource).toContain("rounded-[0.6rem]");
     expect(carouselSource).toContain("ROTATION_INTERVAL_MS = 5_000");
+    expect(carouselSource).toContain("window.setInterval");
     expect(carouselSource).toContain("requestAnimationFrame");
     expect(carouselSource).toContain("prefers-reduced-motion: reduce");
     expect(carouselSource).toContain("buildTradeShowcaseExchange");
@@ -62,8 +63,8 @@ describe("homepage Recent Trades carousel", () => {
     expect(carouselSource).toContain('<TradeMember member={exchange.left.member} />');
     expect(carouselSource).toContain("<TradeMember member={exchange.right.member} />");
     expect(carouselSource).toContain("items-center justify-center gap-2 text-left");
-    expect(carouselSource).toContain("<ArrowLeft");
-    expect(carouselSource).toContain("<ArrowRight");
+    expect(carouselSource).not.toContain("<ArrowLeft");
+    expect(carouselSource).not.toContain("<ArrowRight");
     expect(carouselSource).toContain('src="/manus-storage/trade-complete-stamp-translucent_3f4e25b7.png"');
     expect(carouselSource).toContain('alt="Trade complete"');
     expect(carouselSource).toContain('className="h-28 w-32');
@@ -89,7 +90,7 @@ describe("homepage Recent Trades carousel", () => {
     expect(routerSource).toContain("ol.condition, ol.grade, ol.certificationCompany, ol.estimatedValue");
     expect(carouselSource).not.toContain("Tradebilia exchange activity");
     expect(carouselSource).not.toContain("Completed trade");
-    expect(carouselSource).toContain("Previous recent trade");
-    expect(carouselSource).toContain("Next recent trade");
+    expect(carouselSource).not.toContain("Previous recent trade");
+    expect(carouselSource).not.toContain("Next recent trade");
   });
 });
