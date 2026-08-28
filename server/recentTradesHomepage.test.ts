@@ -24,6 +24,9 @@ describe("homepage Recent Trades carousel", () => {
     expect(carouselSource).toContain("border-dashed");
     expect(carouselSource).toContain("TicketDivider");
     expect(carouselSource).toContain("object-contain p-0.5");
+    expect(carouselSource).toContain("h-24 w-24");
+    expect(carouselSource).toContain("bg-[#f1f7ef]");
+    expect(carouselSource).toContain("bg-[#e1efdc]");
     expect(carouselSource).toContain("formatEstimatedValue");
     expect(carouselSource).toContain("formatConditionOrGrade");
     expect(carouselSource).toContain("item.certificationCompany?.trim()");
@@ -31,8 +34,10 @@ describe("homepage Recent Trades carousel", () => {
     expect(carouselSource).toContain("Grade ${formattedGrade}");
     expect(carouselSource).toContain("Condition: ${condition.replaceAll");
     expect(carouselSource).toContain("text-[2.45rem]");
-    expect(carouselSource).toContain('<TradeMember label="From"');
-    expect(carouselSource).toContain('<TradeMember label="To"');
+    expect(carouselSource).toContain('<TradeMember member={exchange.left.member} />');
+    expect(carouselSource).toContain('<TradeMember member={exchange.right.member} />');
+    expect(carouselSource).toContain("<ArrowLeft");
+    expect(carouselSource).toContain("<ArrowRight");
     expect(carouselSource).toContain('src="/manus-storage/trade-complete-stamp_e8860371.png"');
     expect(carouselSource).toContain('alt="Trade complete"');
     expect(carouselSource).toContain('className="h-28 w-32');
@@ -56,7 +61,7 @@ describe("homepage Recent Trades carousel", () => {
     expect(routerSource).toContain("ol.condition, ol.grade, ol.certificationCompany, ol.estimatedValue");
     expect(carouselSource).not.toContain("Tradebilia exchange activity");
     expect(carouselSource).not.toContain("Completed trade");
-    expect(carouselSource).not.toContain("Previous");
-    expect(carouselSource).not.toContain("Next");
+    expect(carouselSource).toContain("Previous recent trade");
+    expect(carouselSource).toContain("Next recent trade");
   });
 });

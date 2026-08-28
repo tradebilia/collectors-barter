@@ -380,3 +380,10 @@ Before future GitHub-to-WebDev reconciliation, create a recovery checkpoint and 
 | Data contract | The public completed-trade query now returns existing usernames, visible average ratings/review counts, and existing eBay/Facebook/LinkedIn/PayPal/Tradebilia verification flags for both participants. No new schema or records were created. |
 | Validation | Focused homepage and movement tests passed 3/3; TypeScript, production build, dependency audit, whitespace, and desktop/mobile visual checks passed. |
 | Preserved behavior | Completed-trade eligibility, truthful item grade/company-or-condition/value data, listing links, and five-second rotation remain intact. No payment, provider, schedule, setting, secret, or database write changed. |
+
+## Recent Trades Ticket Refinement Pair
+| Record | Value |
+|---|---|
+| Scope | The ticket card now uses a subtle green surface matching the completion stamp, a stronger contrasting green footer, functional previous/next arrows, no visible From/To labels, and larger 96–112px item images. |
+| Preserved behavior | Username-first member identity, full non-cropped avatars, stored ratings, truthful verification badges, dotted ticket separators, direct item presentation, listing links, completed-trade eligibility, and five-second rotation remain intact. |
+| Validation | Focused homepage and movement tests passed 3/3; TypeScript, production build, dependency audit, whitespace, and desktop/mobile visual checks passed. No database, payment, provider, schedule, setting, or secret changed. |
