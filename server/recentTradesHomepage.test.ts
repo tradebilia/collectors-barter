@@ -32,7 +32,13 @@ describe("homepage Recent Trades carousel", () => {
     expect(carouselSource).toContain('<ArrowLeft');
     expect(carouselSource).toContain("Trade complete");
     expect(carouselSource).toContain("Items moved in both directions");
-    expect(carouselSource).toContain('className="h-16 w-16');
+    expect(carouselSource).toContain('title="You gave"');
+    expect(carouselSource).toContain('title="You received"');
+    expect(carouselSource).toContain('className="h-[4.5rem] w-[4.5rem]');
+    expect(carouselSource).toContain("Trade ID:");
+    expect(carouselSource).toContain("Total Trade Value:");
+    expect(carouselSource).toContain("Verified trade");
+    expect(carouselSource).toContain("formatTradeDate");
     expect(carouselSource).toContain("text-violet-700");
     expect(routerSource).toContain("l.condition as requestedListingCondition");
     expect(routerSource).toContain("l.grade as requestedListingGrade");
