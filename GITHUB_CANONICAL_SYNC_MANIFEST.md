@@ -252,6 +252,17 @@ The canonical commit deliberately merges the sandbox-specific behavior without r
 | Validation | Desktop visual review confirmed all six stages render as large, readable full-width captures. Focused WebDev and canonical guide/control regressions passed 2 files / 8 tests; TypeScript, production build, and whitespace passed. |
 | Preserved safeguards | No custom TiDB schema/data, marketplace record, membership record, payment action, provider configuration/action, schedule, or secret changed. |
 
+## Image-Ready Trade Room Guide Pair
+
+| Record | Value |
+|---|---|
+| Canonical implementation commit | `ef17a5ff1f5d839792b6ebc74792e66f4c2c0e5f` — normal push to GitHub `main`; no force push or history replacement. |
+| Paired managed WebDev recovery checkpoint | `29f12266` |
+| Scope | Removed all fictional Trade Room images, image URLs, and enlargement controls after review established they were not actual Trade Room snapshots. The six written stage titles and descriptions remain as an ordered, image-ready guide. |
+| Presentation safety | Every stage states **Actual Trade Room screenshot to be added**, and the page states that screenshots will be added only after Tradebilia supplies them. No placeholder is represented as a real Trade Room capture. |
+| Validation | Focused WebDev and canonical guide/control regressions passed 2 files / 8 tests; TypeScript, production build, desktop visual review, and whitespace passed. |
+| Preserved safeguards | No custom TiDB schema/data, marketplace record, membership record, payment action, provider configuration/action, schedule, or secret changed. |
+
 ## Synchronization Rules
 
 Before future GitHub-to-WebDev reconciliation, create a recovery checkpoint and an immutable GitHub backup tag. Before a reviewed WebDev change becomes canonical, merge only the relevant content into the current GitHub `main`, preserve any newer canonical work, use a normal commit/push, and record the associated checkpoint. Never force-push or replace the canonical repository wholesale.
