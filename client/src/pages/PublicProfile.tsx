@@ -64,6 +64,22 @@ function StarRow({ value }: { value: number }) {
   );
 }
 
+function LinkedInProfileImage({ pictureUrl, name }: { pictureUrl?: string | null; name?: string | null }) {
+  const [failedPictureUrl, setFailedPictureUrl] = useState<string | null>(null);
+  const displayExternalImage = Boolean(pictureUrl) && pictureUrl !== failedPictureUrl;
+  const initial = name?.trim().charAt(0).toUpperCase() || "L";
+
+  if (!displayExternalImage) {
+    return (
+      <div className="h-12 w-12 shrink-0 rounded-full border-2 border-white bg-[#0A66C2]/10 shadow-sm flex items-center justify-center" role="img" aria-label={`${name || "LinkedIn member"} profile image unavailable`}>
+        <span className="text-[#0A66C2] font-black text-lg">{initial}</span>
+      </div>
+    );
+  }
+
+  return <img src={pictureUrl!} alt={name || "LinkedIn profile"} referrerPolicy="no-referrer" onError={() => setFailedPictureUrl(pictureUrl!)} className="h-12 w-12 shrink-0 rounded-full bg-slate-100 object-contain border-2 border-white shadow-sm" />;
+}
+
 function HistogramRow({ stars, count, total }: { stars: number; count: number; total: number }) {
   return (
     <div className="flex items-center gap-3 text-[10px] font-bold">
@@ -657,13 +673,7 @@ export default function PublicProfile() {
                     <div className="p-4 space-y-3">
                       {/* Picture + Name + Headline */}
                       <div className="flex items-center gap-3">
-                        {user.linkedinPicture ? (
-                          <img src={user.linkedinPicture} alt={user.linkedinName} className="h-12 w-12 rounded-full bg-slate-100 object-contain border-2 border-white shadow-sm" />
-                        ) : (
-                          <div className="h-12 w-12 rounded-full bg-[#0A66C2]/10 flex items-center justify-center">
-                            <span className="text-[#0A66C2] font-black text-lg">{user.linkedinName?.charAt(0) ?? 'L'}</span>
-                          </div>
-                        )}
+                        <LinkedInProfileImage pictureUrl={user.linkedinPicture} name={user.linkedinName} />
                         <div className="min-w-0 flex-1">
                           <p className="text-sm font-black text-slate-900 tracking-tight truncate">{user.linkedinName}</p>
 
