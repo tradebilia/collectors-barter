@@ -218,6 +218,18 @@ The canonical commit deliberately merges the sandbox-specific behavior without r
 | Validation | Focused fourth-audit P0 suite passed 7 tests. WebDev full suite passed 151 files / 478 tests with four intentional skips; fresh canonical full suite passed 153 files / 490 tests with four intentional skips. TypeScript, production build, `pnpm audit --prod`, whitespace, secret-pattern review, and startup checks passed. |
 | Preserved safeguards | No custom TiDB schema/data, marketplace record, payment setting/action, provider action, schedule, configuration, or secret changed. Free Launch remains active, Stripe remains sandbox-only, and payment enforcement remains inactive. |
 
+## Fifth-Audit P0 and Administrator-Control Pair
+
+| Record | Value |
+|---|---|
+| Canonical implementation commit | `d6816efcda46449f75752b6955752c7663d7ae3e` — normal push to GitHub `main`; no force push or history replacement. |
+| Paired managed WebDev recovery checkpoint | `2843b0c8` |
+| Scope | Stable, de-duplicated all-listing locks and guarded active-state transitions for mutual trade acceptance; administrator-selected API Health clearing with audit logging; separated Operations queues and pending Feedback Safety review; intent-only administrator Fee Mode switch; admin-only search removal; larger accessible fictional guide captures. |
+| Fee Mode safety | Defaults to Free Launch/Off and requires the current administrator password plus the exact state-specific phrase. Either position keeps `paymentEnforcementEnabled=0`; it cannot activate Checkout, collect cards, charge members, or restrict access. Existing Stripe sandbox behavior and canonical duplicate-subscription safeguards remain intact. |
+| Validation | WebDev focused regression suite passed 4 files / 14 tests, TypeScript, production build, production dependency audit, and whitespace. Fresh canonical focused no-provider suite passed 8 files / 26 tests, including existing billing, sandbox Stripe, membership, and guide contracts; canonical TypeScript, production build, production dependency audit, and whitespace passed. |
+| External-test qualification | The WebDev complete suite recorded 482 passing tests, 4 intentional skips, and one skipped file. Its only failure was the external UPS OAuth readiness probe timing out at the harness’s five-second limit; a single isolated retry also timed out. The probe and its production behavior were not changed or masked. |
+| Preserved safeguards | No custom TiDB schema/data, marketplace record, membership record, payment action, provider configuration/action, schedule, or secret changed. |
+
 ## Synchronization Rules
 
 Before future GitHub-to-WebDev reconciliation, create a recovery checkpoint and an immutable GitHub backup tag. Before a reviewed WebDev change becomes canonical, merge only the relevant content into the current GitHub `main`, preserve any newer canonical work, use a normal commit/push, and record the associated checkpoint. Never force-push or replace the canonical repository wholesale.
