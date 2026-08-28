@@ -306,6 +306,16 @@ The canonical commit deliberately merges the sandbox-specific behavior without r
 | Validation | Focused source and canonical LinkedIn fallback/avatar-fit regressions passed 2 files / 5 tests; TypeScript, production build, production dependency audit, whitespace, and public Administrator profile visual review passed. |
 | Preserved safeguards | No profile or LinkedIn connection data, database record/schema, marketplace record, payment/provider action, schedule, or secret changed. |
 
+## Public External-Account Connection-Date Pair
+
+| Record | Value |
+|---|---|
+| Canonical implementation commit | `647cf9888f0e13bc3fe16b5ca3c5f70ec261a36d` — normal push to GitHub `main`; no force push or history replacement. |
+| Paired managed WebDev recovery checkpoint | `c2420aab` |
+| Scope | The public-profile query now includes the existing Facebook connection timestamp, and connected eBay, Facebook, and LinkedIn cards consistently show a full Connected date when one is available. |
+| Validation | Focused public-profile connection-date, LinkedIn fallback, and avatar-fit regressions passed 3 files / 7 tests; TypeScript, production build, production dependency audit, whitespace, and Administrator-profile visual review passed. |
+| Preserved safeguards | No external account connection, profile value, database schema, marketplace record, payment/provider action, schedule, or secret changed. |
+
 ## Synchronization Rules
 
 Before future GitHub-to-WebDev reconciliation, create a recovery checkpoint and an immutable GitHub backup tag. Before a reviewed WebDev change becomes canonical, merge only the relevant content into the current GitHub `main`, preserve any newer canonical work, use a normal commit/push, and record the associated checkpoint. Never force-push or replace the canonical repository wholesale.
