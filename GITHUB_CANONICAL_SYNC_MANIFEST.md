@@ -342,6 +342,15 @@ The canonical commit deliberately merges the sandbox-specific behavior without r
 | Validation | Full source suite passed 156 files / 495 tests with four intended skips and one skipped file; canonical focused Recent Trades tests and TypeScript passed. Source production build, dependency audit, whitespace, and homepage visual review passed. |
 | Preserved safeguards | No database record/schema, payment/provider action, schedule, setting, or secret changed. Existing public visibility, rotation, reduced-motion, and item-detail link behavior is unchanged. |
 
+## Recent Trades Directional Layout Pair
+| Record | Value |
+|---|---|
+| Canonical implementation commit | This pairing record, the compact Recent Trades directional-layout component, focused regression update, and matching tracker entry are included together in one normal GitHub `main` commit. No force push or history replacement is used. |
+| Paired managed WebDev recovery checkpoint | `1c93c3d2` |
+| Scope | Homepage Recent Trades now presents a compact From/To exchange summary with truthful item metadata, a trade-complete marker, desktop arrows that show both movement directions, and a mobile bidirectional cue. |
+| Validation | Source full suite passed 156 files / 495 tests with four intended skips and one skipped file; canonical focused Recent Trades tests, TypeScript, production build, dependency audit, and whitespace passed. Source desktop and mobile visual reviews passed. |
+| Preserved safeguards | No database record/schema, payment/provider action, schedule, setting, or secret changed. Existing public eligibility, five-second rotation, reduced-motion behavior, and item-detail links are retained. |
+
 ## Synchronization Rules
 
 Before future GitHub-to-WebDev reconciliation, create a recovery checkpoint and an immutable GitHub backup tag. Before a reviewed WebDev change becomes canonical, merge only the relevant content into the current GitHub `main`, preserve any newer canonical work, use a normal commit/push, and record the associated checkpoint. Never force-push or replace the canonical repository wholesale.
