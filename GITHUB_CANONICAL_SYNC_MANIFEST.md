@@ -164,6 +164,17 @@ The canonical commit deliberately merges the sandbox-specific behavior without r
 | Validation | Focused account-closure/logout tests passed 8/8. WebDev full suite passed 147 files / 456 tests with four intended skips; TypeScript, production build, production dependency audit, whitespace review, and startup database validation passed. Fresh canonical focused account-closure/logout/reliability tests, TypeScript, build, audit, and whitespace checks passed. The canonical complete suite did not finish within the bounded run because slow external credential probes remained in progress; no account-closure regression was identified. |
 | Preserved safeguards | No account, listing, trade, message, report, complaint, payment, provider, schedule, or secret was deleted or changed by validation. Free Launch remains active, Stripe remains sandbox-only, and payment enforcement remains inactive. |
 
+## Third Deep-Audit Documentation Pair
+
+| Record | Value |
+|---|---|
+| Canonical documentation commit | `09a293a3` — normal push to GitHub `main`; no force push or history replacement. |
+| Paired managed WebDev checkpoint | `60e902cc` |
+| Scope | Evidence-based read-only third whole-code audit after the completed second-audit P0/P1 and hybrid account-closure work. |
+| Outcome | The report identifies two P0 items (public visibility/closed-account read-path bypasses and the incompatible public OAuth session flow), five P1 safeguards, and five P2 hardening/testing items. |
+| Validation | TypeScript, production build, production dependency audit, whitespace review, startup logs, and public-route smoke passed. The full local suite retained one environment-dependent IPQS credential-probe timeout. |
+| Preserved safeguards | No runtime code, custom TiDB schema/data, marketplace record, payment setting/action, provider action, schedule, or secret changed during this audit. |
+
 ## Synchronization Rules
 
 Before future GitHub-to-WebDev reconciliation, create a recovery checkpoint and an immutable GitHub backup tag. Before a reviewed WebDev change becomes canonical, merge only the relevant content into the current GitHub `main`, preserve any newer canonical work, use a normal commit/push, and record the associated checkpoint. Never force-push or replace the canonical repository wholesale.
