@@ -1,51 +1,77 @@
 /**
  * Market Data TRPC Router
- * 
- * Exposes market data acquisition functionality to the frontend.
- * Provides endpoints for fetching market data for items, certifications, and sales analysis.
+ *
+ * A shared, authenticated market-data boundary for future member-facing Trade
+ * AI features. The administrator Test AI Sandbox uses its own protected router.
  */
 
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
-import { publicProcedure, protectedProcedure, router } from './trpc';
+import { protectedProcedure, router } from './trpc';
 import { marketDataOrchestrator } from './marketDataOrchestrator';
 import { DataAcquisitionRequest } from './marketDataTypes';
+import { isMarketDataAdmissionAllowed, MARKET_DATA_REQUEST_BUDGET_MS } from './marketDataAdmission';
 
-/**
- * Input validation schemas
- */
+const supportedSourceSchema = z.enum(['ebay']);
+const categorySchema = z.enum([
+  'comics', 'sports_cards', 'vintage_toys', 'video_games', 'stamps', 'coins', 'pokemon', 'movies', 'autographs', 'disney_pins',
+]);
+const identifierRefinement = { message: 'Provide an item ID, certification number, or at least two search characters.' };
+
 const acquireMarketDataSchema = z.object({
-  itemId: z.string().optional(),
-  certificationNumber: z.string().optional(),
-  category: z.enum([
-    'comics',
-    'sports_cards',
-    'vintage_toys',
-    'video_games',
-    'stamps',
-    'coins',
-    'pokemon',
-    'movies',
-    'autographs',
-    'disney_pins',
-  ]).optional(),
-  searchTerm: z.string().optional(),
-  sources: z.array(z.string()).optional(),
+  itemId: z.string().trim().min(1).max(128).optional(),
+  certificationNumber: z.string().trim().min(1).max(128).optional(),
+  category: categorySchema.optional(),
+  searchTerm: z.string().trim().min(2).max(160).optional(),
+  sources: z.array(supportedSourceSchema).min(1).max(1).optional(),
   includeHistorical: z.boolean().optional(),
-  cacheMaxAgeMinutes: z.number().optional(),
-});
+  cacheMaxAgeMinutes: z.number().int().min(5).max(1_440).optional(),
+}).refine(input => Boolean(input.itemId || input.certificationNumber || input.searchTerm), identifierRefinement);
 
-/**
- * Market Data Router
- */
+const salesHistorySchema = z.object({
+  searchTerm: z.string().trim().min(2).max(160).optional(),
+  certificationNumber: z.string().trim().min(1).max(128).optional(),
+  itemId: z.string().trim().min(1).max(128).optional(),
+  sources: z.array(supportedSourceSchema).min(1).max(1).optional(),
+  limit: z.number().int().min(1).max(50).optional(),
+}).refine(input => Boolean(input.searchTerm || input.certificationNumber || input.itemId), identifierRefinement);
+
+const marketStatisticsSchema = z.object({
+  searchTerm: z.string().trim().min(2).max(160).optional(),
+  certificationNumber: z.string().trim().min(1).max(128).optional(),
+  itemId: z.string().trim().min(1).max(128).optional(),
+  sources: z.array(supportedSourceSchema).min(1).max(1).optional(),
+}).refine(input => Boolean(input.searchTerm || input.certificationNumber || input.itemId), identifierRefinement);
+
+async function acquireForMember(request: DataAcquisitionRequest, input: { userId: number; isAdmin: boolean; ip: string }) {
+  if (!isMarketDataAdmissionAllowed(input)) {
+    throw new TRPCError({ code: 'TOO_MANY_REQUESTS', message: 'Market-data research is temporarily limited. Please wait a minute and try again.' });
+  }
+
+  const controller = new AbortController();
+  let timeout: ReturnType<typeof setTimeout> | undefined;
+  const timeoutResult = new Promise<never>((_resolve, reject) => {
+    timeout = setTimeout(() => {
+      controller.abort(new Error('Market-data request time budget exceeded.'));
+      reject(new TRPCError({ code: 'TIMEOUT', message: 'Market-data research took too long. Please try again.' }));
+    }, MARKET_DATA_REQUEST_BUDGET_MS);
+  });
+
+  try {
+    return await Promise.race([marketDataOrchestrator.acquireMarketData(request, { signal: controller.signal }), timeoutResult]);
+  } finally {
+    if (timeout) clearTimeout(timeout);
+  }
+}
+
+function callerAdmission(ctx: { user: { id: number; role: string }; req: { ip?: string } }) {
+  return { userId: ctx.user.id, isAdmin: ctx.user.role === 'admin', ip: ctx.req.ip || 'unknown' };
+}
+
 export const marketDataRouter = router({
-  /**
-   * Acquire market data for an item
-   * Can search by item ID, certification number, or keywords
-   */
-  acquireMarketData: publicProcedure
+  acquireMarketData: protectedProcedure
     .input(acquireMarketDataSchema)
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
       const request: DataAcquisitionRequest = {
         itemId: input.itemId,
         certificationNumber: input.certificationNumber,
@@ -55,169 +81,79 @@ export const marketDataRouter = router({
         includeHistorical: input.includeHistorical,
         cacheMaxAgeMinutes: input.cacheMaxAgeMinutes,
       };
-
-      const response = await marketDataOrchestrator.acquireMarketData(request);
-      return response;
+      return acquireForMember(request, callerAdmission(ctx));
     }),
 
-  /**
-   * Search for items by keyword
-   * Returns a list of matching items with basic information
-   */
-  searchItems: publicProcedure
-    .input(
-      z.object({
-        searchTerm: z.string().min(1),
-        category: z.string().optional(),
-        maxResults: z.number().optional(),
-      })
-    )
-    .query(async ({ input }) => {
-      const request: DataAcquisitionRequest = {
+  searchItems: protectedProcedure
+    .input(z.object({
+      searchTerm: z.string().trim().min(2).max(160),
+      category: categorySchema.optional(),
+      maxResults: z.number().int().min(1).max(10).optional(),
+    }))
+    .query(async ({ input, ctx }) => {
+      const response = await acquireForMember({
         searchTerm: input.searchTerm,
         category: input.category,
         sources: ['ebay'],
-      };
+      }, callerAdmission(ctx));
 
-      const response = await marketDataOrchestrator.acquireMarketData(request);
-      
       if (response.success && response.data) {
-        return {
-          success: true,
-          items: [response.data.item],
-          totalResults: 1,
-          executionTimeMs: response.executionTimeMs,
-        };
+        return { success: true, items: [response.data.item], totalResults: 1, executionTimeMs: response.executionTimeMs };
       }
-
-      return {
-        success: false,
-        items: [],
-        totalResults: 0,
-        error: response.error,
-        executionTimeMs: response.executionTimeMs,
-      };
+      return { success: false, items: [], totalResults: 0, error: response.error, executionTimeMs: response.executionTimeMs };
     }),
 
-  /**
-   * Get sales history for an item
-   * Returns recent sales with price trends
-   */
-  getSalesHistory: publicProcedure
-    .input(
-      z.object({
-        searchTerm: z.string().optional(),
-        certificationNumber: z.string().optional(),
-        itemId: z.string().optional(),
-        sources: z.array(z.string()).optional(),
-        limit: z.number().min(1).max(500).optional(),
-      })
-    )
-    .query(async ({ input }) => {
-      const request: DataAcquisitionRequest = {
+  getSalesHistory: protectedProcedure
+    .input(salesHistorySchema)
+    .query(async ({ input, ctx }) => {
+      const response = await acquireForMember({
         searchTerm: input.searchTerm,
         certificationNumber: input.certificationNumber,
         itemId: input.itemId,
         sources: input.sources,
-      };
-
-      const response = await marketDataOrchestrator.acquireMarketData(request);
+      }, callerAdmission(ctx));
 
       if (response.success && response.data) {
         const sales = response.data.recentSales.slice(0, input.limit || 50);
-        return {
-          success: true,
-          sales,
-          statistics: response.data.statistics,
-          totalSales: response.data.recentSales.length,
-          executionTimeMs: response.executionTimeMs,
-        };
+        return { success: true, sales, statistics: response.data.statistics, totalSales: response.data.recentSales.length, executionTimeMs: response.executionTimeMs };
       }
-
-      return {
-        success: false,
-        sales: [],
-        error: response.error,
-        executionTimeMs: response.executionTimeMs,
-      };
+      return { success: false, sales: [], error: response.error, executionTimeMs: response.executionTimeMs };
     }),
 
-  /**
-   * Get market statistics for an item
-   * Returns price trends, confidence levels, and data quality metrics
-   */
-  getMarketStatistics: publicProcedure
-    .input(
-      z.object({
-        searchTerm: z.string().optional(),
-        certificationNumber: z.string().optional(),
-        itemId: z.string().optional(),
-        sources: z.array(z.string()).optional(),
-      })
-    )
-    .query(async ({ input }) => {
-      const request: DataAcquisitionRequest = {
+  getMarketStatistics: protectedProcedure
+    .input(marketStatisticsSchema)
+    .query(async ({ input, ctx }) => {
+      const response = await acquireForMember({
         searchTerm: input.searchTerm,
         certificationNumber: input.certificationNumber,
         itemId: input.itemId,
         sources: input.sources,
-      };
-
-      const response = await marketDataOrchestrator.acquireMarketData(request);
+      }, callerAdmission(ctx));
 
       if (response.success && response.data) {
-        return {
-          success: true,
-          statistics: response.data.statistics,
-          dataQuality: response.data.dataQuality,
-          executionTimeMs: response.executionTimeMs,
-        };
+        return { success: true, statistics: response.data.statistics, dataQuality: response.data.dataQuality, executionTimeMs: response.executionTimeMs };
       }
-
-      return {
-        success: false,
-        error: response.error,
-        executionTimeMs: response.executionTimeMs,
-      };
+      return { success: false, error: response.error, executionTimeMs: response.executionTimeMs };
     }),
 
-  /**
-   * Get complete market data package
-   * Returns all available data: item info, sales, certifications, population, statistics
-   */
-  getCompleteMarketData: publicProcedure
+  getCompleteMarketData: protectedProcedure
     .input(acquireMarketDataSchema)
-    .query(async ({ input }) => {
-      const request: DataAcquisitionRequest = {
-        itemId: input.itemId,
-        certificationNumber: input.certificationNumber,
-        category: input.category,
-        searchTerm: input.searchTerm,
-        sources: input.sources,
-        includeHistorical: input.includeHistorical,
-        cacheMaxAgeMinutes: input.cacheMaxAgeMinutes,
-      };
+    .query(async ({ input, ctx }) => acquireForMember({
+      itemId: input.itemId,
+      certificationNumber: input.certificationNumber,
+      category: input.category,
+      searchTerm: input.searchTerm,
+      sources: input.sources,
+      includeHistorical: input.includeHistorical,
+      cacheMaxAgeMinutes: input.cacheMaxAgeMinutes,
+    }, callerAdmission(ctx))),
 
-      const response = await marketDataOrchestrator.acquireMarketData(request);
-      return response;
-    }),
-
-  /**
-   * Clear cache (admin only)
-   * Useful for testing and forcing fresh data acquisition
-   */
   clearCache: protectedProcedure
-    .input(z.object({ source: z.string().optional() }).optional())
-    .mutation(async ({ input, ctx }) => {
+    .input(z.object({ source: supportedSourceSchema.optional() }).optional())
+    .mutation(async ({ ctx }) => {
       if (ctx.user.role !== 'admin') {
         throw new TRPCError({ code: 'FORBIDDEN', message: 'Only administrators can manage market-data caches.' });
       }
-
-      // The current market-data orchestrator has no exposed cache invalidation API.
-      // Return an honest unavailable state rather than reporting a cache clear that did not occur.
-      return {
-        success: false,
-        message: 'Market-data cache clearing is not available in this deployment.',
-      };
+      return { success: false, message: 'Market-data cache clearing is not available in this deployment.' };
     }),
 });

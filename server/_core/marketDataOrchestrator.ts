@@ -31,7 +31,7 @@ export class MarketDataOrchestrator {
   /**
    * Acquire market data for an item
    */
-  async acquireMarketData(request: DataAcquisitionRequest): Promise<DataAcquisitionResponse> {
+  async acquireMarketData(request: DataAcquisitionRequest, options?: { signal?: AbortSignal }): Promise<DataAcquisitionResponse> {
     this.startTime = Date.now();
 
     try {
@@ -56,9 +56,9 @@ export class MarketDataOrchestrator {
       }
 
       // Acquire data from each source
-      const item = await this.acquireItem(request);
+      const item = await this.acquireItem(request, options);
       const certifications = await this.acquireCertifications(request, sources);
-      const sales = await this.acquireSales(request, sources);
+      const sales = await this.acquireSales(request, sources, options);
       const populationData = await this.acquirePopulation(request, sources);
 
       // Calculate statistics from sales data
@@ -100,10 +100,10 @@ export class MarketDataOrchestrator {
   /**
    * Acquire item information from sources
    */
-  private async acquireItem(request: DataAcquisitionRequest): Promise<StandardizedItem | null> {
+  private async acquireItem(request: DataAcquisitionRequest, options?: { signal?: AbortSignal }): Promise<StandardizedItem | null> {
     try {
       if (request.searchTerm) {
-        const items = await searchEbayForItem(request.searchTerm);
+        const items = await searchEbayForItem(request.searchTerm, { signal: options?.signal });
         return items.length > 0 ? items[0] : null;
       }
 
@@ -145,7 +145,8 @@ export class MarketDataOrchestrator {
    */
   private async acquireSales(
     request: DataAcquisitionRequest,
-    sources: string[]
+    sources: string[],
+    options?: { signal?: AbortSignal }
   ): Promise<StandardizedSale[]> {
     const allSales: StandardizedSale[] = [];
 
@@ -155,6 +156,7 @@ export class MarketDataOrchestrator {
           const ebaySales = await fetchEbaySalesData(request.searchTerm, {
             maxResults: 100,
             sortOrder: 'EndTimeNewest',
+            signal: options?.signal,
           });
           allSales.push(...ebaySales);
         }

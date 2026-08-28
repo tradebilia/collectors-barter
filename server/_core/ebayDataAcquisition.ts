@@ -1,6 +1,6 @@
 /**
  * eBay Data Acquisition Module
- * 
+ *
  * Fetches sales data from eBay API and converts it to standardized format.
  * Handles eBay-specific API calls and data transformation.
  */
@@ -8,53 +8,62 @@
 import { StandardizedSale, StandardizedItem, DataSourceConfig } from './marketDataTypes';
 import { ENV } from './env';
 
-/**
- * eBay Data Source Configuration
- */
 export const ebayDataSourceConfig: DataSourceConfig = {
   sourceKey: 'ebay',
   sourceName: 'eBay',
   sourceType: 'sales_data',
   isActive: true,
-  rateLimit: 100, // requests per minute
-  cacheDurationMinutes: 1440, // 24 hours
+  rateLimit: 100,
+  cacheDurationMinutes: 1440,
   retryAttempts: 3,
-  timeout: 30000, // 30 seconds
+  timeout: 30000,
 };
 
 const retryableEbayStatuses = new Set([408, 429, 500, 502, 503, 504]);
 const ebayRetryAttempts = ebayDataSourceConfig.retryAttempts ?? 3;
 const ebayTimeoutMs = ebayDataSourceConfig.timeout ?? 30000;
 
-function waitForEbayRetry(attempt: number) {
-  return new Promise<void>(resolve => setTimeout(resolve, 250 * attempt));
+function waitForEbayRetry(attempt: number, signal?: AbortSignal) {
+  return new Promise<void>((resolve, reject) => {
+    const abortError = () => signal?.reason ?? new Error('eBay request was aborted.');
+    if (signal?.aborted) {
+      reject(abortError());
+      return;
+    }
+    const onAbort = () => {
+      clearTimeout(timer);
+      signal?.removeEventListener('abort', onAbort);
+      reject(abortError());
+    };
+    const timer = setTimeout(() => {
+      signal?.removeEventListener('abort', onAbort);
+      resolve();
+    }, 250 * attempt);
+    signal?.addEventListener('abort', onAbort, { once: true });
+  });
 }
 
-export async function fetchEbayWithRetry(url: string, fetcher: typeof fetch = fetch): Promise<Response> {
+export async function fetchEbayWithRetry(url: string, fetcher: typeof fetch = fetch, signal?: AbortSignal): Promise<Response> {
   let lastError: unknown;
   for (let attempt = 1; attempt <= ebayRetryAttempts; attempt += 1) {
+    if (signal?.aborted) throw signal.reason ?? new Error('eBay request was aborted.');
     try {
       const response = await fetcher(url, {
         method: 'GET',
         headers: { Accept: 'application/json' },
-        signal: AbortSignal.timeout(ebayTimeoutMs),
+        signal: signal ?? AbortSignal.timeout(ebayTimeoutMs),
       });
-      if (response.ok || !retryableEbayStatuses.has(response.status) || attempt === ebayRetryAttempts) {
-        return response;
-      }
+      if (response.ok || !retryableEbayStatuses.has(response.status) || attempt === ebayRetryAttempts) return response;
       lastError = new Error(`eBay API error: ${response.status} ${response.statusText}`);
     } catch (error) {
       lastError = error;
       if (attempt === ebayRetryAttempts) break;
     }
-    await waitForEbayRetry(attempt);
+    await waitForEbayRetry(attempt, signal);
   }
   throw lastError instanceof Error ? lastError : new Error('eBay request failed after retry attempts.');
 }
 
-/**
- * eBay API Response Types
- */
 interface EbaySearchResult {
   itemId: string;
   title: string;
@@ -70,71 +79,49 @@ interface EbaySearchResult {
 
 interface EbaySearchResponse {
   searchResult: EbaySearchResult[];
-  paginationOutput?: {
-    totalEntries: number;
-    pageNumber: number;
-    entriesPerPage: number;
-  };
+  paginationOutput?: { totalEntries: number; pageNumber: number; entriesPerPage: number };
 }
 
-/**
- * Fetch completed sales from eBay for a given search term
- * Uses eBay Shopping API (public, no auth required for basic searches)
- */
 export async function fetchEbaySalesData(
   searchTerm: string,
   options?: {
     maxResults?: number;
     sortOrder?: 'EndTimeSoonest' | 'EndTimeNewest' | 'PricePlusShippingLowest' | 'PricePlusShippingHighest';
+    signal?: AbortSignal;
   }
 ): Promise<StandardizedSale[]> {
   try {
     const maxResults = options?.maxResults || 100;
     const sortOrder = options?.sortOrder || 'EndTimeNewest';
-
-    // Use eBay Shopping API to search for completed listings
-    // Note: This is a simplified example. In production, you'd want to use the Browse API
-    // with proper OAuth tokens for authenticated requests.
-    
     const params = new URLSearchParams({
       'OPERATION-NAME': 'FindCompletedItems',
       'SERVICE-VERSION': '1.0.0',
       'SECURITY-APPNAME': ENV.ebayClientId || '',
       'RESPONSE-DATA-FORMAT': 'JSON',
       'REST-PAYLOAD': 'true',
-      'keywords': searchTerm,
-      'sortOrder': sortOrder,
+      keywords: searchTerm,
+      sortOrder,
       'paginationInput.entriesPerPage': maxResults.toString(),
     });
-
     const response = await fetchEbayWithRetry(
       `https://svcs.sandbox.ebay.com/services/search/FindingService/v1?${params.toString()}`,
+      fetch,
+      options?.signal,
     );
-
-    if (!response.ok) {
-      throw new Error(`eBay API error: ${response.status} ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    const sales = normalizeEbaySalesData(data, searchTerm);
-    return sales;
+    if (!response.ok) throw new Error(`eBay API error: ${response.status} ${response.statusText}`);
+    return normalizeEbaySalesData(await response.json(), searchTerm);
   } catch (error) {
     console.error('Error fetching eBay sales data:', error);
     return [];
   }
 }
 
-/**
- * Normalize eBay API response to standardized sales format
- */
 function normalizeEbaySalesData(ebayResponse: any, searchTerm: string): StandardizedSale[] {
   const sales: StandardizedSale[] = [];
-
   try {
     const items = ebayResponse?.findCompletedItemsResponse?.[0]?.searchResult?.[0]?.item || [];
-
     for (const item of items) {
-      const sale: StandardizedSale = {
+      sales.push({
         saleId: `ebay_${item.itemId?.[0] || ''}`,
         itemId: `ebay_${item.itemId?.[0] || ''}`,
         sourceKey: 'ebay',
@@ -147,30 +134,19 @@ function normalizeEbaySalesData(ebayResponse: any, searchTerm: string): Standard
         imageUrl: item.galleryURL?.[0],
         rawData: item,
         lastUpdated: new Date(),
-      };
-
-      sales.push(sale);
+      });
     }
   } catch (error) {
     console.error('Error normalizing eBay sales data:', error);
   }
-
   return sales;
 }
 
-/**
- * Fetch user's eBay feedback and convert to sales data insights
- * This gives us historical information about what the user has sold
- */
 export async function fetchEbayUserSalesHistory(
   accessToken: string,
   ebayUserId: string
 ): Promise<StandardizedSale[]> {
   try {
-    // This would use the eBay Trading API or Browse API to get user's sold items
-    // For now, returning empty array as this requires authenticated requests
-    // In production, integrate with the existing getUserFeedback function
-    
     return [];
   } catch (error) {
     console.error('Error fetching eBay user sales history:', error);
@@ -178,9 +154,6 @@ export async function fetchEbayUserSalesHistory(
   }
 }
 
-/**
- * Search eBay for a specific item by keywords and return standardized data
- */
 export async function searchEbayForItem(
   keywords: string,
   options?: {
@@ -188,6 +161,7 @@ export async function searchEbayForItem(
     condition?: 'New' | 'Used' | 'Refurbished';
     minPrice?: number;
     maxPrice?: number;
+    signal?: AbortSignal;
   }
 ): Promise<StandardizedItem[]> {
   try {
@@ -197,88 +171,60 @@ export async function searchEbayForItem(
       'SECURITY-APPNAME': ENV.ebayClientId || '',
       'RESPONSE-DATA-FORMAT': 'JSON',
       'REST-PAYLOAD': 'true',
-      'keywords': keywords,
+      keywords,
       'paginationInput.entriesPerPage': '50',
     });
-
     if (options?.condition) {
       params.append('itemFilter(0).name', 'Condition');
       params.append('itemFilter(0).value', options.condition);
     }
-
     if (options?.minPrice) {
       params.append('itemFilter(1).name', 'MinPrice');
       params.append('itemFilter(1).value', options.minPrice.toString());
     }
-
     if (options?.maxPrice) {
       params.append('itemFilter(2).name', 'MaxPrice');
       params.append('itemFilter(2).value', options.maxPrice.toString());
     }
-
     const response = await fetchEbayWithRetry(
       `https://svcs.sandbox.ebay.com/services/search/FindingService/v1?${params.toString()}`,
+      fetch,
+      options?.signal,
     );
-
-    if (!response.ok) {
-      throw new Error(`eBay API error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    const items = normalizeEbayItemsData(data, keywords);
-    return items;
+    if (!response.ok) throw new Error(`eBay API error: ${response.status}`);
+    return normalizeEbayItemsData(await response.json(), keywords);
   } catch (error) {
     console.error('Error searching eBay for items:', error);
     return [];
   }
 }
 
-/**
- * Normalize eBay items to standardized format
- */
 function normalizeEbayItemsData(ebayResponse: any, searchTerm: string): StandardizedItem[] {
   const items: StandardizedItem[] = [];
-
   try {
     const ebayItems = ebayResponse?.findItemsResponse?.[0]?.searchResult?.[0]?.item || [];
-
     for (const item of ebayItems) {
-      const standardItem: StandardizedItem = {
+      items.push({
         itemId: `ebay_${item.itemId?.[0] || ''}`,
-        category: 'sports_cards', // Default, would need to map from eBay category
+        category: 'sports_cards',
         itemName: item.title?.[0] || '',
         sourceKey: 'ebay',
         sourceItemId: item.itemId?.[0],
         imageUrl: item.galleryURL?.[0],
         description: item.title?.[0],
         lastUpdated: new Date(),
-      };
-
-      items.push(standardItem);
+      });
     }
   } catch (error) {
     console.error('Error normalizing eBay items:', error);
   }
-
   return items;
 }
 
-/**
- * Get eBay category mapping
- * Maps eBay category IDs to Tradebilia categories
- */
-function mapEbayCategoryToTradebilia(ebayCategory: string): 
+function mapEbayCategoryToTradebilia(ebayCategory: string):
   'comics' | 'sports_cards' | 'vintage_toys' | 'video_games' | 'stamps' | 'coins' | 'pokemon' | 'movies' | 'autographs' | 'disney_pins' {
-  // This would contain a mapping of eBay category IDs to Tradebilia categories
-  // For now, defaulting to sports_cards
   const categoryMap: Record<string, any> = {
-    '261': 'sports_cards',
-    '262': 'sports_cards',
-    '263': 'sports_cards',
-    '220': 'comics',
-    '1000': 'vintage_toys',
-    '1001': 'video_games',
+    '261': 'sports_cards', '262': 'sports_cards', '263': 'sports_cards', '220': 'comics', '1000': 'vintage_toys', '1001': 'video_games',
   };
-
   return categoryMap[ebayCategory] || 'sports_cards';
 }
