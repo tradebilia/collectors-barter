@@ -19,14 +19,26 @@ function formatEstimatedValue(value: TradeShowcaseItem["estimatedValue"]) {
     : "Value unavailable";
 }
 
+function formatConditionOrGrade(item: TradeShowcaseItem) {
+  const numericGrade = Number(item.grade);
+  if (Number.isFinite(numericGrade) && numericGrade > 0) {
+    return `Grade ${numericGrade.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
+  }
+
+  const condition = item.condition?.trim();
+  return condition
+    ? `Condition: ${condition.replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase())}`
+    : "Condition unavailable";
+}
+
 function TradeItemList({ items, alignment }: { items: TradeShowcaseItem[]; alignment: "start" | "end" }) {
   if (!items.length) return <p className="text-sm text-slate-500">No public item details available.</p>;
 
   return (
     <div className={`flex flex-wrap justify-center gap-2 ${alignment === "end" ? "lg:justify-end" : "lg:justify-start"}`}>
       {items.map((item, index) => {
-        const content = <><div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-slate-100">{item.imageUrl ? <img src={item.imageUrl} alt={item.title || "Traded collectible"} className="h-full w-full object-contain" loading="lazy" /> : <div className="flex h-full w-full items-center justify-center"><Package className="h-5 w-5 text-slate-400" aria-hidden="true" /></div>}</div><div className="min-w-0 text-left"><p className="max-w-48 truncate text-sm font-semibold text-slate-900">{item.title || "Collectible"}</p><p className="mt-0.5 text-xs text-slate-500">{formatEstimatedValue(item.estimatedValue)}</p></div></>;
-        return item.id ? <Link key={`${item.id}-${index}`} href={`/listings/${item.id}`} className="flex max-w-full items-center gap-2 rounded-xl border border-slate-200 bg-white p-2.5 shadow-sm transition hover:-translate-y-0.5 hover:border-violet-300 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-600">{content}</Link> : <div key={`${item.title}-${index}`} className="flex max-w-full items-center gap-2 rounded-xl border border-slate-200 bg-white p-2.5 shadow-sm">{content}</div>;
+        const content = <><div className="h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-slate-100 sm:h-28 sm:w-28">{item.imageUrl ? <img src={item.imageUrl} alt={item.title || "Traded collectible"} className="h-full w-full object-contain" loading="lazy" /> : <div className="flex h-full w-full items-center justify-center"><Package className="h-7 w-7 text-slate-400" aria-hidden="true" /></div>}</div><div className="min-w-0 text-left"><p className="max-w-56 text-base font-semibold leading-snug text-slate-900">{item.title || "Collectible"}</p><div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm"><span className="font-medium text-slate-600">{formatConditionOrGrade(item)}</span><span className="font-semibold text-violet-700">{formatEstimatedValue(item.estimatedValue)}</span></div></div></>;
+        return item.id ? <Link key={`${item.id}-${index}`} href={`/listings/${item.id}`} className="flex max-w-full items-center gap-3 rounded-xl border border-slate-200 bg-white p-3 shadow-sm transition hover:-translate-y-0.5 hover:border-violet-300 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-600">{content}</Link> : <div key={`${item.title}-${index}`} className="flex max-w-full items-center gap-3 rounded-xl border border-slate-200 bg-white p-3 shadow-sm">{content}</div>;
       })}
     </div>
   );
