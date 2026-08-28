@@ -469,6 +469,30 @@ export const tradeFlowRouter = router({
           }
         }
 
+        const [currentOfferRows] = await tx.execute(
+          sql`SELECT tpi.offeredListingId AS id
+              FROM tradeProposalItems tpi
+              JOIN listings l ON l.id = tpi.offeredListingId
+              WHERE tpi.proposalId = ${input.proposalId} AND l.ownerId = ${userId}
+              FOR UPDATE`
+        );
+        const currentOfferIds = ((currentOfferRows as unknown as Array<{ id: number }>) || [])
+          .map((row) => row.id)
+          .sort((left, right) => left - right);
+        const nextOfferIds = [...offeredListingIds].sort((left, right) => left - right);
+        const offeredItemsChanged = currentOfferIds.length !== nextOfferIds.length
+          || currentOfferIds.some((listingId, index) => listingId !== nextOfferIds[index]);
+
+        const senderIsRequester = proposal.requesterId === userId;
+        const newCashFromRequester = senderIsRequester ? (input.cashFromProposer ?? 0) : (input.cashFromRecipient ?? 0);
+        const newCashFromRecipient = senderIsRequester ? (input.cashFromRecipient ?? 0) : (input.cashFromProposer ?? 0);
+        const cashTermsWereSubmitted = input.cashFromProposer !== undefined || input.cashFromRecipient !== undefined;
+        const cashTermsChanged = cashTermsWereSubmitted && (
+          Number(proposal.cashFromRequester ?? 0) !== newCashFromRequester
+          || Number(proposal.cashFromRecipient ?? 0) !== newCashFromRecipient
+        );
+        const termsChanged = offeredItemsChanged || cashTermsChanged;
+
         await tx.execute(
           sql`DELETE FROM tradeProposalItems WHERE proposalId = ${input.proposalId} AND offeredListingId IN (SELECT id FROM listings WHERE ownerId = ${userId})`
         );
@@ -476,10 +500,7 @@ export const tradeFlowRouter = router({
           await tx.insert(tradeProposalItems).values({ proposalId: input.proposalId, offeredListingId: listingId, createdAt: now });
         }
 
-        const senderIsRequester = proposal.requesterId === userId;
-        const newCashFromRequester = senderIsRequester ? (input.cashFromProposer ?? 0) : (input.cashFromRecipient ?? 0);
-        const newCashFromRecipient = senderIsRequester ? (input.cashFromRecipient ?? 0) : (input.cashFromProposer ?? 0);
-        if (input.cashFromProposer !== undefined || input.cashFromRecipient !== undefined) {
+        if (cashTermsWereSubmitted) {
           await tx.execute(sql`UPDATE tradeProposals SET status = 'negotiating', cashFromRequester = ${newCashFromRequester}, cashFromRecipient = ${newCashFromRecipient}, lastProposedBy = ${userId}, lastActivityAt = ${now}, updatedAt = ${now} WHERE id = ${input.proposalId}`);
         } else {
           await tx.execute(sql`UPDATE tradeProposals SET status = 'negotiating', lastProposedBy = ${userId}, lastActivityAt = ${now}, updatedAt = ${now} WHERE id = ${input.proposalId}`);
@@ -492,6 +513,14 @@ export const tradeFlowRouter = router({
         const otherUserId = proposal.requesterId === userId ? proposal.recipientId : proposal.requesterId;
         await createTradeAlert(tx, input.proposalId, otherUserId, 'counterProposal', `A new counter proposal has been submitted for your trade (TR-${proposal.tradeReferenceNumber}).`, now);
         const actorName = await getUserDisplayName(tx, userId);
+        if (termsChanged) {
+          await tx.execute(
+            sql`DELETE FROM tradeReceiptConfirmation WHERE proposalId = ${input.proposalId} AND confirmationType = 'accepted'`
+          );
+          await tx.execute(
+            sql`INSERT INTO tradeActivityLog (proposalId, actorId, actorName, eventType, details, createdAt) VALUES (${input.proposalId}, ${userId}, ${actorName}, 'acceptance_reset', 'Trade terms changed; both members must accept the updated terms.', ${now})`
+          );
+        }
         for (const item of itemRows) {
           await tx.execute(sql`INSERT INTO tradeActivityLog (proposalId, actorId, actorName, eventType, details, createdAt) VALUES (${input.proposalId}, ${userId}, ${actorName}, 'item_added', ${`Added: ${item.title}`}, ${now})`);
         }

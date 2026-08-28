@@ -2,7 +2,7 @@ import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { TopBar } from "@/components/TopBar";
 import { CategoryBar } from "@/components/CategoryBar";
-import { tradebiliaCategories } from "@/lib/tradebilia";
+import { tradebiliaCategories, type TradebiliaCategorySlug } from "@/lib/tradebilia";
 import { Handshake, ArrowLeftRight, ArrowUpDown } from "lucide-react";
 import { buildTradeShowcaseExchange, type TradeShowcaseItem, type TradeShowcaseParty } from "@/lib/tradeShowcaseMovements";
 
@@ -128,7 +128,7 @@ function TradeCard({ trade }: { trade: any }) {
 }
 
 export default function TradeShowcase() {
-  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [selectedCategory, setSelectedCategory] = useState<"all" | TradebiliaCategorySlug>("all");
   const [sortBy, setSortBy] = useState<"recent" | "items">("recent");
 
   const tradesQuery = trpc.favorites.getCompletedTrades.useQuery({
