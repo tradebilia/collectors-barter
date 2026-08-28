@@ -41,6 +41,9 @@ describe("recovered administrator and guide controls", () => {
     expect(routerSource).toContain("Feedback safety");
     expect(routerSource).toContain("getLowFeedbackFlags");
     expect(routerSource).toContain("reviewLowFeedbackFlag");
+    expect(routerSource).toContain(".from(lowFeedbackFlags).leftJoin(users, eq(users.id, lowFeedbackFlags.userId))");
+    expect(routerSource).toContain("'Archived member record'");
+    expect(routerSource).not.toContain(".from(lowFeedbackFlags).innerJoin(users, eq(users.id, lowFeedbackFlags.userId))");
     expect(operationsSource).toContain("onNavigate(item.tab as AdminTab)");
     expect(adminSource).toContain("Feedback Safety");
     expect(adminSource).toContain("No pending feedback safety records.");

@@ -3374,8 +3374,8 @@ export const appRouter = router({
         feedbackPercentage: lowFeedbackFlags.feedbackPercentage,
         flaggedReason: lowFeedbackFlags.flaggedReason,
         flaggedAt: lowFeedbackFlags.flaggedAt,
-        memberDisplayName: sql<string>`COALESCE(NULLIF(${memberProfile.displayName}, ''), NULLIF(${users.displayName}, ''), ${users.username}, CONCAT('Collector ', ${users.id}))`,
-      }).from(lowFeedbackFlags).innerJoin(users, eq(users.id, lowFeedbackFlags.userId)).leftJoin(memberProfile, eq(memberProfile.userId, users.id)).where(eq(lowFeedbackFlags.status, 'pending')).orderBy(desc(lowFeedbackFlags.flaggedAt)).limit(200);
+        memberDisplayName: sql<string>`COALESCE(NULLIF(${memberProfile.displayName}, ''), NULLIF(${users.displayName}, ''), ${users.username}, 'Archived member record')`,
+      }).from(lowFeedbackFlags).leftJoin(users, eq(users.id, lowFeedbackFlags.userId)).leftJoin(memberProfile, eq(memberProfile.userId, users.id)).where(eq(lowFeedbackFlags.status, 'pending')).orderBy(desc(lowFeedbackFlags.flaggedAt)).limit(200);
     }),
     reviewLowFeedbackFlag: protectedProcedure
       .input(z.object({ flagId: z.number().int().positive(), action: z.enum(['reviewed', 'dismissed', 'action_taken']), adminNotes: z.string().max(2000).optional() }))
