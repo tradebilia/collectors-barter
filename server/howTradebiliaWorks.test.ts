@@ -46,11 +46,11 @@ describe("How Tradebilia Works guide", () => {
     expect(guide).toContain("No live Membership payment or access enforcement is active during Free Launch.");
   });
 
-  it("includes an accurate labeled Trade Room guide, practical safety checklist, and public glossary", () => {
+  it("includes an accurate written Trade Room guide ready for supplied screenshots, practical safety checklist, and public glossary", () => {
     for (const label of [
       "Inside the Trade Room",
-      "Development-only capture — fictional collectors and items",
-      "These six development-only captures use the actual Trade Room layout",
+      "Actual Trade Room screenshot to be added",
+      "The written stages below explain how collectors progress through a Trade Room exchange.",
       "1. Propose",
       "2. Negotiate",
       "3. Review",
@@ -66,12 +66,8 @@ describe("How Tradebilia Works guide", () => {
       expect(guide).toContain(term);
     }
     expect(guide).toContain("Keep private details private.");
-    expect(guide).toContain("Development-only capture — fictional collectors and items");
-    expect(guide).toContain("trade-room-propose-v3_447c36ed.png");
-    expect(guide).toContain("trade-room-negotiate-v3_caf89355.png");
-    expect(guide).toContain("trade-room-review-v3_8fdf4e4b.png");
-    expect(guide).toContain("trade-room-shipping-v3_bec62ed5.png");
-    expect(guide).toContain("trade-room-confirm-v3_19ad33b4.png");
-    expect(guide).toContain("trade-room-complete-v3_9a6fc26b.png");
+    expect(guide).toContain("Actual Trade Room screenshots will be added here after they are supplied by Tradebilia.");
+    expect(guide).not.toContain("/manus-storage/trade-room-");
+    expect(guide).not.toContain("Development-only capture — fictional collectors and items");
   });
 });

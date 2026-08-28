@@ -1,5 +1,4 @@
 import { Link } from "wouter";
-import { useState } from "react";
 import {
   ArrowRight,
   CheckCircle2,
@@ -13,12 +12,10 @@ import {
   Star,
   Truck,
   UserRoundPlus,
-  ZoomIn,
 } from "lucide-react";
 import { TopBar } from "@/components/TopBar";
 import { CategoryBar } from "@/components/CategoryBar";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 const TRADEBILIA_LOGO_URL = "https://assets.tradebilia.com/tradebilia_final_transparent_8a1981e6.svg";
 
@@ -96,21 +93,14 @@ const frequentlyAskedQuestions = [
   },
 ] as const;
 
-const tradeRoomScreenshots = [
-  { title: "1. Propose", description: "Start a structured offer by choosing what you are offering and reviewing the collectible you want.", image: "/manus-storage/trade-room-propose-v3_447c36ed.png", alt: "Development-only Trade Room capture showing a fictional new trade proposal." },
-  { title: "2. Negotiate", description: "Use the Trade Room to discuss condition, adjust an offer, and send a counteroffer when needed.", image: "/manus-storage/trade-room-negotiate-v3_caf89355.png", alt: "Development-only Trade Room capture showing a fictional collector counteroffer." },
-  { title: "3. Review", description: "Compare every proposed item and confirm that both collectors understand the current exchange terms.", image: "/manus-storage/trade-room-review-v3_8fdf4e4b.png", alt: "Development-only Trade Room capture showing a fictional trade proposal under review." },
-  { title: "4. Shipping", description: "After agreement, each collector records shipping progress for the collectible they are sending.", image: "/manus-storage/trade-room-shipping-v3_bec62ed5.png", alt: "Development-only Trade Room capture showing fictional shipping progress." },
-  { title: "5. Confirm", description: "When both sides agree, the trade is accepted and the agreed items are locked for the exchange.", image: "/manus-storage/trade-room-confirm-v3_19ad33b4.png", alt: "Development-only Trade Room capture showing a fictional accepted and locked exchange." },
-  { title: "6. Complete", description: "Both collectors confirm receipt after the exchange, completing the Trade Room process.", image: "/manus-storage/trade-room-complete-v3_9a6fc26b.png", alt: "Development-only Trade Room capture showing a fictional completed trade." },
+const tradeRoomStages = [
+  { title: "1. Propose", description: "Start a structured offer by choosing what you are offering and reviewing the collectible you want." },
+  { title: "2. Negotiate", description: "Use the Trade Room to discuss condition, adjust an offer, and send a counteroffer when needed." },
+  { title: "3. Review", description: "Compare every proposed item and confirm that both collectors understand the current exchange terms." },
+  { title: "4. Shipping", description: "After agreement, each collector records shipping progress for the collectible they are sending." },
+  { title: "5. Confirm", description: "When both sides agree, the trade is accepted and the agreed items are locked for the exchange." },
+  { title: "6. Complete", description: "Both collectors confirm receipt after the exchange, completing the Trade Room process." },
 ] as const;
-
-type TradeRoomCapture = {
-  title: string;
-  description: string;
-  image: string;
-  alt: string;
-};
 
 const safetyChecklist = [
   "Use current, clear listing photos and describe condition, grade, and known issues accurately.",
@@ -167,8 +157,6 @@ function TradeFlowIllustration() {
 }
 
 export default function HowTradebiliaWorks() {
-  const [selectedTradeRoomCapture, setSelectedTradeRoomCapture] = useState<TradeRoomCapture | null>(null);
-
   return (
     <div className="min-h-screen bg-[#f7f4ee] text-[#2d241e]">
       <TopBar logoUrl={TRADEBILIA_LOGO_URL} searchPlaceholder="Search Tradebilia..." />
@@ -220,23 +208,21 @@ export default function HowTradebiliaWorks() {
         </section>
 
         <section className="border-y border-[#ddd5cb] bg-[#ede9f7] px-4 py-14 sm:py-18">
-          <div className="mx-auto max-w-[96rem] px-0 sm:px-2">
+          <div className="mx-auto max-w-5xl">
             <div className="mx-auto max-w-3xl text-center">
-              <p className="text-xs font-bold uppercase tracking-[0.24em] text-violet-700">A closer look</p>
+              <p className="text-xs font-bold uppercase tracking-[0.24em] text-violet-700">Trade Room process</p>
               <h2 className="mt-3 font-serif text-4xl font-medium tracking-[-0.035em] text-[#2d241e] sm:text-5xl">Inside the Trade Room</h2>
-              <p className="mt-4 text-base leading-8 text-[#655b53]">These six development-only captures use the actual Trade Room layout for every stage, with fictional collectors and collectibles. They are not live trade, member-profile, or private trade records.</p>
+              <p className="mt-4 text-base leading-8 text-[#655b53]">The written stages below explain how collectors progress through a Trade Room exchange. Actual Trade Room screenshots will be added here after they are supplied by Tradebilia.</p>
             </div>
-            <div className="mt-9 grid gap-10">
-              {tradeRoomScreenshots.map(({ title, description, image, alt }) => (
-                <figure key={title} className="group overflow-hidden rounded-[1.5rem] border border-violet-200 bg-white shadow-[0_18px_38px_-30px_rgba(45,36,30,0.7)]">
-                  <button type="button" onClick={() => setSelectedTradeRoomCapture({ title, description, image, alt })} className="relative block w-full overflow-hidden text-left focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-violet-500 focus-visible:ring-offset-2" aria-label={`Enlarge ${title} Trade Room capture`}>
-                    <img src={image} alt={alt} className="aspect-video w-full border-b border-violet-100 object-cover transition-transform duration-200 group-hover:scale-[1.025]" loading="eager" />
-                    <span className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-2 bg-[#101b3c]/88 px-4 py-3 text-sm font-semibold text-white"><ZoomIn className="h-4 w-4" aria-hidden="true" /> Select to enlarge</span>
-                  </button>
-                  <figcaption className="p-5"><p className="font-serif text-xl font-medium text-[#2d241e]">{title}</p><p className="mt-2 text-sm leading-6 text-[#655b53]">{description}</p><p className="mt-3 text-xs font-semibold uppercase tracking-[0.12em] text-violet-700">Development-only capture — fictional collectors and items</p></figcaption>
-                </figure>
+            <ol className="mt-9 grid gap-4" aria-label="Trade Room stages">
+              {tradeRoomStages.map(({ title, description }) => (
+                <li key={title} className="rounded-[1.5rem] border border-violet-200 bg-white px-6 py-5 shadow-[0_16px_36px_-30px_rgba(45,36,30,0.7)] sm:px-8 sm:py-6">
+                  <h3 className="font-serif text-2xl font-medium text-[#2d241e] sm:text-3xl">{title}</h3>
+                  <p className="mt-2 max-w-3xl text-sm leading-7 text-[#655b53] sm:text-base">{description}</p>
+                  <p className="mt-4 border-t border-violet-100 pt-3 text-xs font-semibold uppercase tracking-[0.12em] text-violet-700">Actual Trade Room screenshot to be added</p>
+                </li>
               ))}
-            </div>
+            </ol>
           </div>
         </section>
 
@@ -326,13 +312,6 @@ export default function HowTradebiliaWorks() {
           </div>
         </div>
       </footer>
-      <Dialog open={Boolean(selectedTradeRoomCapture)} onOpenChange={(open) => !open && setSelectedTradeRoomCapture(null)}>
-        <DialogContent className="max-h-[94vh] max-w-6xl overflow-y-auto p-4 sm:p-6">
-          <DialogHeader><DialogTitle>{selectedTradeRoomCapture?.title}</DialogTitle><DialogDescription>{selectedTradeRoomCapture?.description}</DialogDescription></DialogHeader>
-          {selectedTradeRoomCapture ? <img src={selectedTradeRoomCapture.image} alt={selectedTradeRoomCapture.alt} className="max-h-[76vh] w-full rounded-lg border border-violet-100 object-contain" /> : null}
-          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-violet-700">Development-only capture — fictional collectors and items</p>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
