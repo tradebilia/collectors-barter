@@ -296,6 +296,16 @@ The canonical commit deliberately merges the sandbox-specific behavior without r
 | Validation | Focused source and canonical retained-removal, account-closure, Operations, administrator-audit, participant, and guide regressions passed 7 files / 24 tests. TypeScript, production build, production dependency audit, and whitespace passed in both workspaces. |
 | Preserved safeguards | No custom TiDB record/schema, marketplace record, membership record, payment/provider configuration or action, schedule, or secret changed. Free Launch remains active and payment enforcement remains inactive. |
 
+## LinkedIn Public-Profile Image Resilience Pair
+
+| Record | Value |
+|---|---|
+| Canonical implementation commit | `4825a0fdec0afa8b8e085f4a64fadf09e0c1906a` — normal push to GitHub `main`; no force push or history replacement. |
+| Paired managed WebDev recovery checkpoint | `4f6ef8b3` |
+| Scope | Public profile LinkedIn card now asks a provider image for no referrer and replaces a failed/expired/hotlink-blocked image with an accessible connected-member initials avatar. |
+| Validation | Focused source and canonical LinkedIn fallback/avatar-fit regressions passed 2 files / 5 tests; TypeScript, production build, production dependency audit, whitespace, and public Administrator profile visual review passed. |
+| Preserved safeguards | No profile or LinkedIn connection data, database record/schema, marketplace record, payment/provider action, schedule, or secret changed. |
+
 ## Synchronization Rules
 
 Before future GitHub-to-WebDev reconciliation, create a recovery checkpoint and an immutable GitHub backup tag. Before a reviewed WebDev change becomes canonical, merge only the relevant content into the current GitHub `main`, preserve any newer canonical work, use a normal commit/push, and record the associated checkpoint. Never force-push or replace the canonical repository wholesale.
