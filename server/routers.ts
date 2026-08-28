@@ -3501,7 +3501,7 @@ export const appRouter = router({
           FROM users u
           LEFT JOIN userProfiles up ON up.userId = u.id
           INNER JOIN tradeReviews tr ON tr.revieweeId = u.id AND tr.isVisible = 1
-          WHERE u.isBanned = 0 AND u.isSuspended = 0
+          WHERE ${isPublicMemberEligible(sql`u.id`)}
           GROUP BY u.id, up.displayName, up.avatarUrl
           HAVING COUNT(tr.id) > 0
           ORDER BY averageRating DESC, reviewCount DESC
@@ -3512,7 +3512,7 @@ export const appRouter = router({
 
     getCompletedTrades: publicProcedure
       .input(z.object({
-        category: z.string().optional(),
+        category: z.enum(["all", ...collectibleCategories]).optional(),
         sortBy: z.enum(['recent', 'value', 'items']).default('recent'),
         limit: z.number().min(1).max(100).default(20),
         offset: z.number().min(0).default(0),
@@ -3531,8 +3531,16 @@ export const appRouter = router({
           : 'ORDER BY tp.completedAt DESC';
 
         const categoryFilter = category && category !== 'all'
-          ? `AND (l.category = '${category}' OR EXISTS (SELECT 1 FROM listings ol JOIN tradeProposalItems tpi ON tpi.offeredListingId = ol.id WHERE tpi.proposalId = tp.id AND ol.category = '${category}'))`
-          : '';
+          ? sql`AND (
+              l.category = ${category}
+              OR EXISTS (
+                SELECT 1
+                FROM listings ol
+                JOIN tradeProposalItems tpi ON tpi.offeredListingId = ol.id
+                WHERE tpi.proposalId = tp.id AND ol.category = ${category}
+              )
+            )`
+          : sql``;
 
         const [rows] = await db.execute(
           sql`SELECT
@@ -3564,7 +3572,9 @@ export const appRouter = router({
           LEFT JOIN listings l ON l.id = tp.requestedListingId
           WHERE tp.status = 'completed'
             AND tp.completedAt IS NOT NULL
-            ${sql.raw(categoryFilter)}
+            AND ${isPublicMemberEligible(sql`tp.requesterId`)}
+            AND ${isPublicMemberEligible(sql`tp.recipientId`)}
+            ${categoryFilter}
           ${sql.raw(orderClause)}
           LIMIT ${limit} OFFSET ${offset}`
         );
