@@ -175,6 +175,16 @@ The canonical commit deliberately merges the sandbox-specific behavior without r
 | Validation | TypeScript, production build, production dependency audit, whitespace review, startup logs, and public-route smoke passed. The full local suite retained one environment-dependent IPQS credential-probe timeout. |
 | Preserved safeguards | No runtime code, custom TiDB schema/data, marketplace record, payment setting/action, provider action, schedule, or secret changed during this audit. |
 
+## Third Deep-Audit P0 Privacy and Sign-In Remediation Pair
+
+| Record | Value |
+|---|---|
+| Canonical implementation commit | `0a42d5f067d65f673a3589eb2bc16bb584a06972` — normal push to GitHub `main`; no force push or history replacement. |
+| Paired managed WebDev checkpoint | `372e9b4e` |
+| Scope | Central `isPublicMemberEligible` helper applied to public listing feeds/details/similar/ranking cards, marketplace statistics, verified merchants, public completed-trade surfaces, and seller presence; explicit public-only formatting preserves private owner inventory/watchlists. Public sign-in controls now open the current-route custom credential modal rather than the incompatible legacy OAuth flow. |
+| Validation | Focused P0/privacy/account-closure/session suite passed 18 tests. Full WebDev suite passed 149 files / 459 tests with four intentional skips and one skipped credential-probe file. Fresh canonical full suite passed 150 files / 471 tests with four intentional skips and one skipped credential-probe file. TypeScript, production build, `pnpm audit --prod`, whitespace review, startup checks, and public visual smoke passed. |
+| Preserved safeguards | No custom TiDB schema/data, marketplace record, payment setting/action, provider action, schedule, or secret changed. Free Launch remains active; Stripe remains sandbox-only; payment enforcement remains inactive. |
+
 ## Synchronization Rules
 
 Before future GitHub-to-WebDev reconciliation, create a recovery checkpoint and an immutable GitHub backup tag. Before a reviewed WebDev change becomes canonical, merge only the relevant content into the current GitHub `main`, preserve any newer canonical work, use a normal commit/push, and record the associated checkpoint. Never force-push or replace the canonical repository wholesale.
