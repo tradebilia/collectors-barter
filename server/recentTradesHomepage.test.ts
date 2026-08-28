@@ -6,11 +6,12 @@ const root = path.resolve(import.meta.dirname, "..");
 
 describe("homepage Recent Trades carousel", () => {
   it("uses the ten newest completed trades and preserves complete exchanged-item data", async () => {
-    const [homeSource, routerSource, carouselSource, recentlyAddedSource] = await Promise.all([
+    const [homeSource, routerSource, carouselSource, recentlyAddedSource, categoryBarSource] = await Promise.all([
       readFile(path.join(root, "client/src/pages/Home.tsx"), "utf8"),
       readFile(path.join(root, "server/routers.ts"), "utf8"),
       readFile(path.join(root, "client/src/components/RecentTradesCarousel.tsx"), "utf8"),
       readFile(path.join(root, "client/src/components/RecentlyAddedCarousel.tsx"), "utf8"),
+      readFile(path.join(root, "client/src/components/CategoryBar.tsx"), "utf8"),
     ]);
     expect(homeSource).toContain('getCompletedTrades.useQuery({ limit: 10, offset: 0, sortBy: "recent" }');
     expect(homeSource).toContain("<RecentTradesCarousel");
@@ -26,10 +27,17 @@ describe("homepage Recent Trades carousel", () => {
     expect(homeSource).toContain('from-[#080c28] via-[#21104d] to-[#3b1d78]');
     expect(homeSource).toContain('className="min-w-0 bg-[#f4f1ea] py-3 md:col-start-2 md:row-start-1"');
     expect(homeSource).toContain('text-center font-serif text-[2.45rem]');
-    expect(recentlyAddedSource).toContain("w-[126px]");
-    expect(recentlyAddedSource).toContain("sm:w-[136px]");
-    expect(recentlyAddedSource).toContain("lg:w-[146px]");
-    expect(recentlyAddedSource).toContain("aspect-[0.95]");
+    expect(homeSource).toContain('from-[#11183f] via-[#4b1db7] to-[#761df2]');
+    expect(homeSource).toContain('className="h-8 w-8"');
+    expect(categoryBarSource).toContain('bg-[#0b102d]');
+    expect(categoryBarSource).toContain('House');
+    expect(categoryBarSource).toContain('Explore All');
+    expect(categoryBarSource).toContain('gap-1 border-r border-white/10');
+    expect(categoryBarSource).toContain('bg-[#3b267c]');
+    expect(recentlyAddedSource).toContain("w-[150px]");
+    expect(recentlyAddedSource).toContain("sm:w-[160px]");
+    expect(recentlyAddedSource).toContain("lg:w-[172px]");
+    expect(recentlyAddedSource).toContain("aspect-[0.86]");
     expect(recentlyAddedSource).toContain("rounded-[0.6rem]");
     expect(carouselSource).toContain("ROTATION_INTERVAL_MS = 5_000");
     expect(carouselSource).toContain("requestAnimationFrame");

@@ -433,3 +433,11 @@ Before future GitHub-to-WebDev reconciliation, create a recovery checkpoint and 
 | Implementation | The public content shell now uses a warm content canvas, a full-height dark navy-to-purple collector-tools rail spanning the public three-row grid, violet rail hover states, and a materially denser Recently Added shelf with 126px/136px/146px responsive cards, 2px gaps, compact typography, flatter corners, and shorter image proportions. |
 | Validation | Focused homepage and movement tests passed 3/3; TypeScript, production build, dependency audit, whitespace, and desktop/mobile visual reviews passed. No database, payment, provider, schedule, setting, or secret changed. |
 | Reversibility | Prior stable checkpoint `1bc26b2a` remains available for rollback. |
+
+## Category, Stats, and Carousel Pair
+| Record | Value |
+|---|---|
+| Scope | Match the uploaded reference’s category and stats bars while preserving the existing hero and top bar; improve Recently Added item visibility without changing the Recent Trades ticket. |
+| Implementation | Category navigation now uses a compact icon-led dark navy bar with existing routes and active states preserved. Homepage statistics now use a deeper navy-to-purple gradient, brighter separators, compact white metrics, and full comma-formatted values. Recently Added items now use 150px/160px/172px responsive widths with larger image areas and readable metadata while retaining compact shelf density. |
+| Validation | Focused homepage and movement tests passed 3/3; TypeScript, production build, dependency audit, whitespace, and desktop/mobile visual reviews passed. No database, payment, provider, schedule, setting, or secret changed. |
+| Protected | Hero, existing top bar, and centered Recently Added/Recent Trades headings remain unchanged. |

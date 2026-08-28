@@ -58,11 +58,11 @@ export function RecentlyAddedCarousel({
   return (
     <div className="mt-1 relative overflow-hidden group">
       {/* Marquee Container */}
-      <div className="flex gap-2 animate-scroll whitespace-nowrap py-2">
+      <div className="flex gap-3 animate-scroll whitespace-nowrap py-2">
         {displayItems.map((item, index) => (
           <div 
             key={`${item.id}-${index}`} 
-            className="inline-block w-[126px] flex-shrink-0 sm:w-[136px] lg:w-[146px]"
+            className="inline-block w-[150px] flex-shrink-0 sm:w-[160px] lg:w-[172px]"
           >
             <Card 
               className="overflow-hidden rounded-[0.6rem] border border-slate-200 bg-white shadow-sm hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200 cursor-pointer h-full"
@@ -73,7 +73,7 @@ export function RecentlyAddedCarousel({
                   <OnlineIndicator sellerId={item.ownerId} />
                 </div>
               )}
-              <div className="aspect-[0.95] overflow-hidden bg-[#fbfaf7] relative group/img">
+              <div className="aspect-[0.86] overflow-hidden bg-[#fbfaf7] relative group/img">
                 <img
                   src={item.imageUrl}
                   alt={item.title}
@@ -84,16 +84,16 @@ export function RecentlyAddedCarousel({
                 <div className="absolute inset-0 bg-black/0 group-hover/img:bg-black/5 transition-colors" />
               </div>
               
-              <CardContent className="p-2 space-y-1">
-                <div className="min-h-[30px]">
-                  <p className="line-clamp-2 text-[10px] font-bold leading-tight text-slate-900 whitespace-normal">
+              <CardContent className="p-2.5 space-y-1.5">
+                <div className="min-h-[34px]">
+                  <p className="line-clamp-2 text-[11px] font-bold leading-tight text-slate-900 whitespace-normal">
                     {item.title}
                   </p>
                 </div>
                 
                 <div className="flex items-center justify-between">
-                  <p className="text-[11px] font-black text-[#6f3de8]">{item.price}</p>
-                  <p className="text-[8px] font-medium text-slate-400">{item.subtitle}</p>
+                  <p className="text-xs font-black text-[#6f3de8]">{item.price}</p>
+                  <p className="text-[9px] font-medium text-slate-400">{item.subtitle}</p>
                 </div>
 
                 <div className="flex gap-1.5 pt-0.5">

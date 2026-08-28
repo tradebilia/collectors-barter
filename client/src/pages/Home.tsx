@@ -603,7 +603,7 @@ export default function Home() {
 
         <CategoryBar />
 
-        <section className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 py-1 text-white border-y border-blue-700">
+        <section className="border-y border-[#332c78] bg-gradient-to-r from-[#11183f] via-[#4b1db7] to-[#761df2] py-1.5 text-white shadow-[0_3px_12px_rgba(37,19,116,0.24)]">
           <div className="grid grid-cols-2 items-center gap-0 sm:grid-cols-4">
             {[
               ["users", "Total Members", siteStatisticsQuery.data?.totalMembers ? `${siteStatisticsQuery.data.totalMembers}` : "0"],
@@ -612,17 +612,17 @@ export default function Home() {
               ["handshake", "Successful Trades", siteStatisticsQuery.data?.totalTrades ? `${siteStatisticsQuery.data.totalTrades}` : "0"],
             ].map(([iconType, label, value]) => {
               const iconMap: Record<string, React.ReactNode> = {
-                users: <Users className="w-10 h-10" />,
-                list: <ListTodo className="w-10 h-10" />,
-                dollar: <DollarSign className="w-10 h-10" />,
-                handshake: <Handshake className="w-10 h-10" />,
+                users: <Users className="h-8 w-8" />,
+                list: <ListTodo className="h-8 w-8" />,
+                dollar: <DollarSign className="h-8 w-8" />,
+                handshake: <Handshake className="h-8 w-8" />,
               };
               return (
-                <div key={label as string} className="flex items-center justify-center gap-2 px-3 py-1 border-r border-white/20 last:border-r-0 transition-all duration-500 h-full">
+                <div key={label as string} className="flex h-full items-center justify-center gap-2 border-r border-white/25 px-3 py-1.5 transition-all duration-500 last:border-r-0">
                   <div className="flex-shrink-0 text-white flex items-center justify-center">{iconMap[iconType as string]}</div>
                   <div className="flex flex-col text-center justify-center">
-                    <p className="text-xs leading-none text-white/80">{label as string}</p>
-                    <p className="text-xl font-semibold leading-none text-white">{value as string}</p>
+                    <p className="text-[0.65rem] leading-none text-white/75">{label as string}</p>
+                    <p className="text-lg font-bold leading-none text-white sm:text-xl">{value as string}</p>
                   </div>
                 </div>
               );
