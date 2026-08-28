@@ -417,3 +417,11 @@ Before future GitHub-to-WebDev reconciliation, create a recovery checkpoint and 
 | Asset | `/manus-storage/trade-complete-stamp-translucent_3f4e25b7.png` replaces the prior opaque-interior stamp asset. |
 | Implementation | Recent Trades references the durable translucent PNG; its exterior remains transparent and the green stamp artwork/text is preserved. |
 | Validation | Focused homepage and movement tests passed 3/3; TypeScript, production build, dependency audit, whitespace, and desktop visual verification passed. No database, payment, provider, schedule, setting, or secret changed. |
+
+## Below-Hero Homepage Refinement Pair
+| Record | Value |
+|---|---|
+| Scope | Refine the public homepage content below the hero while keeping the hero, top bar, stats strip, and centered Recently Added/Recent Trades headings unchanged. |
+| Implementation | Recently Added now uses denser reference-inspired cards with tighter spacing, flatter corners, slightly shorter image areas, and compact typography; existing Recent Trades, ranking panels, data contracts, and interactions remain intact. |
+| Baseline | Stable pre-change WebDev checkpoint `1bc26b2a` preserved before implementation; changes are reversible through version history. |
+| Validation | Focused homepage and movement tests passed 3/3; TypeScript, production build, dependency audit, whitespace, and desktop visual verification passed. No database, payment, provider, schedule, setting, or secret changed. |
