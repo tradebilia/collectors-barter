@@ -6,10 +6,11 @@ const root = path.resolve(import.meta.dirname, "..");
 
 describe("homepage Recent Trades carousel", () => {
   it("uses the ten newest completed trades and preserves complete exchanged-item data", async () => {
-    const [homeSource, routerSource, carouselSource] = await Promise.all([
+    const [homeSource, routerSource, carouselSource, recentlyAddedSource] = await Promise.all([
       readFile(path.join(root, "client/src/pages/Home.tsx"), "utf8"),
       readFile(path.join(root, "server/routers.ts"), "utf8"),
       readFile(path.join(root, "client/src/components/RecentTradesCarousel.tsx"), "utf8"),
+      readFile(path.join(root, "client/src/components/RecentlyAddedCarousel.tsx"), "utf8"),
     ]);
     expect(homeSource).toContain('getCompletedTrades.useQuery({ limit: 10, offset: 0, sortBy: "recent" }');
     expect(homeSource).toContain("<RecentTradesCarousel");
@@ -19,6 +20,13 @@ describe("homepage Recent Trades carousel", () => {
     expect(homeSource).toContain('<div className="min-w-0 md:col-start-2">');
     expect(routerSource).toContain("Return every offered item for each completed exchange");
     expect(routerSource).not.toContain("WHERE tpi.proposalId = ${trade.id}\n            LIMIT 4");
+    expect(homeSource).toContain('className="py-3 md:col-start-2 md:row-start-1"');
+    expect(homeSource).toContain('text-center font-serif text-[2.45rem]');
+    expect(recentlyAddedSource).toContain("w-[168px]");
+    expect(recentlyAddedSource).toContain("sm:w-[178px]");
+    expect(recentlyAddedSource).toContain("lg:w-[188px]");
+    expect(recentlyAddedSource).toContain("aspect-[0.86]");
+    expect(recentlyAddedSource).toContain("rounded-lg");
     expect(carouselSource).toContain("ROTATION_INTERVAL_MS = 5_000");
     expect(carouselSource).toContain("requestAnimationFrame");
     expect(carouselSource).toContain("prefers-reduced-motion: reduce");
