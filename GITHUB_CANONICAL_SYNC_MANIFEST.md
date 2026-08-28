@@ -316,6 +316,16 @@ The canonical commit deliberately merges the sandbox-specific behavior without r
 | Validation | Focused public-profile connection-date, LinkedIn fallback, and avatar-fit regressions passed 3 files / 7 tests; TypeScript, production build, production dependency audit, whitespace, and Administrator-profile visual review passed. |
 | Preserved safeguards | No external account connection, profile value, database schema, marketplace record, payment/provider action, schedule, or secret changed. |
 
+## Paqq USPS Tracking Assessment Pair
+
+| Record | Value |
+|---|---|
+| Canonical documentation commit | This pairing record, the Paqq assessment, and the matching tracker update are included together in one normal GitHub `main` commit. No force push or history replacement is used. |
+| Paired managed WebDev research checkpoint | `d86ed846` |
+| Scope | Read-only assessment of Paqq’s scraper-first USPS approach, license notices, Docker/browser/scheduler requirements, security boundaries, maintenance signal, USPS terms fit, Tradebilia’s existing official USPS helper, and alternatives. |
+| Recommendation | Do not install, embed, fork, or use Paqq for Tradebilia. Keep the official USPS outbound link now; treat any in-site official USPS API tracking as a separately authorized future scope. |
+| Preserved safeguards | No Paqq code was installed or run. No USPS/provider call, application behavior, database record/schema, payment, schedule, setting, or secret changed. |
+
 ## Synchronization Rules
 
 Before future GitHub-to-WebDev reconciliation, create a recovery checkpoint and an immutable GitHub backup tag. Before a reviewed WebDev change becomes canonical, merge only the relevant content into the current GitHub `main`, preserve any newer canonical work, use a normal commit/push, and record the associated checkpoint. Never force-push or replace the canonical repository wholesale.
