@@ -35,6 +35,7 @@ import { makeRequest, type GeocodingResult } from "./_core/map";
 import { filterListingsByOwnerDistance, getApproximateDistanceBand, orderListingsByOwnerDistance, type LocationDistanceStatus, type NearestLocationSortStatus } from "../shared/nearestLocationSort";
 import bcrypt from 'bcryptjs';
 import { encrypt } from "./_core/crypto";
+import { isPublicMemberEligible } from "./publicVisibility";
 
 export const collectibleCategories = ['comics', 'sports_cards', 'vintage_toys', 'video_games', 'stamps', 'coins', 'pokemon', 'movies', 'autographs', 'disney_pins'] as const;
 export const itemConditions = ['mint', 'near_mint', 'excellent', 'very_good', 'good', 'fair', 'poor'] as const;
@@ -349,19 +350,30 @@ async function uploadImage(folder: string, userId: number, input: PhotoUploadInp
   }
 }
 
-async function getProfileMap(userIds: number[]) {
+async function getProfileMap(userIds: number[], publicOnly = false) {
   if (userIds.length === 0) return new Map();
   const db = await requireDb();
-  const profiles = await db
-    .select({
-      userId: userProfiles.userId,
-      displayName: userProfiles.displayName,
-      avatarUrl: userProfiles.avatarUrl,
-      firstName: userProfiles.firstName,
-      lastName: userProfiles.lastName,
-    })
-    .from(userProfiles)
-    .where(inArray(userProfiles.userId, userIds));
+  const profileFields = {
+    userId: userProfiles.userId,
+    displayName: userProfiles.displayName,
+    avatarUrl: userProfiles.avatarUrl,
+    firstName: userProfiles.firstName,
+    lastName: userProfiles.lastName,
+  };
+  const profiles = publicOnly
+    ? await db
+        .select(profileFields)
+        .from(userProfiles)
+        .innerJoin(users, eq(users.id, userProfiles.userId))
+        .where(and(
+          inArray(userProfiles.userId, userIds),
+          eq(userProfiles.showProfile, 1),
+          eq(users.isAccountClosed, 0),
+        ))
+    : await db
+        .select(profileFields)
+        .from(userProfiles)
+        .where(inArray(userProfiles.userId, userIds));
   
   return new Map(profiles.map(p => [p.userId, p]));
 }
@@ -390,11 +402,21 @@ async function getRatingStatsMap(userIds: number[]) {
   );
 }
 
-async function formatListings(listingRows: any[], viewerId: number | null) {
+async function formatListings(
+  listingRows: any[],
+  viewerId: number | null,
+  options: { publicOnly?: boolean } = {},
+) {
   if (listingRows.length === 0) return [];
 
   const ownerIds = Array.from(new Set(listingRows.map(r => r.ownerId)));
-  const profileMap = await getProfileMap(ownerIds);
+  const profileMap = await getProfileMap(ownerIds, options.publicOnly === true);
+  const visibleListingRows = options.publicOnly
+    ? listingRows.filter(row =>
+        profileMap.has(row.ownerId) && row.status === "active" && Number(row.isActive) === 1,
+      )
+    : listingRows;
+  if (visibleListingRows.length === 0) return [];
   const ratingMap = await getRatingStatsMap(ownerIds);
   const watchlistRows = viewerId
     ? await (
@@ -406,7 +428,7 @@ async function formatListings(listingRows: any[], viewerId: number | null) {
     : [];
   const savedListingIds = new Set(watchlistRows.map(r => r.listingId));
 
-  return listingRows.map(row => ({
+  return visibleListingRows.map(row => ({
     id: row.id,
     ownerId: row.ownerId,
     title: row.title,
@@ -491,7 +513,11 @@ export async function getMarketplaceFeed(
   const db = await requireDb();
 
   // Build where clauses for filtering
-  const whereClauses = [eq(listings.status, "active"), eq(listings.isActive, 1)];
+  const whereClauses = [
+    eq(listings.status, "active"),
+    eq(listings.isActive, 1),
+    isPublicMemberEligible(listings.ownerId),
+  ];
   if (filters.category) {
     whereClauses.push(eq(listings.category, filters.category));
   }
@@ -856,7 +882,7 @@ export async function getMarketplaceFeed(
     },
     locationSort,
     distanceFilter,
-    listings: (await formatListings(listingRows, viewerId)).map(listing => ({
+    listings: (await formatListings(listingRows, viewerId, { publicOnly: true })).map(listing => ({
       ...listing,
       distanceBand: distanceBandByListingId.get(listing.id) ?? null,
     })),
@@ -870,18 +896,27 @@ export async function getSiteStatistics() {
   const totalListingsResult = await db
     .select({ value: sql<number>`count(*)` })
     .from(listings)
-    .where(eq(listings.status, "active"));
+    .where(and(
+      eq(listings.status, "active"),
+      eq(listings.isActive, 1),
+      isPublicMemberEligible(listings.ownerId),
+    ));
 
   // Get total registered members (all users with accounts)
   const totalCollectorsResult = await db
     .select({ value: sql<number>`count(*)` })
-    .from(users);
+    .from(users)
+    .where(eq(users.isAccountClosed, 0));
 
   // Get total value of all active listings (sum of estimatedValue)
   const totalValueResult = await db
     .select({ value: sql<number>`coalesce(sum(cast(estimatedValue as decimal(12,2))), 0)` })
     .from(listings)
-    .where(eq(listings.status, "active"));
+    .where(and(
+      eq(listings.status, "active"),
+      eq(listings.isActive, 1),
+      isPublicMemberEligible(listings.ownerId),
+    ));
 
   // Get total completed trades
   const totalTradesResult = await db
@@ -1024,7 +1059,12 @@ export async function getListingDetail(listingId: number, viewerId: number | nul
       updatedAt: listings.updatedAt,
     })
     .from(listings)
-    .where(eq(listings.id, listingId))
+    .where(and(
+      eq(listings.id, listingId),
+      eq(listings.status, "active"),
+      eq(listings.isActive, 1),
+      isPublicMemberEligible(listings.ownerId),
+    ))
     .limit(1);
 
   if (!detailCard[0]) {
@@ -1075,7 +1115,13 @@ export async function getListingDetail(listingId: number, viewerId: number | nul
       updatedAt: listings.updatedAt,
     })
     .from(listings)
-    .where(and(eq(listings.category, detailCard[0].category), ne(listings.id, listingId), eq(listings.status, "active")))
+    .where(and(
+      eq(listings.category, detailCard[0].category),
+      ne(listings.id, listingId),
+      eq(listings.status, "active"),
+      eq(listings.isActive, 1),
+      isPublicMemberEligible(listings.ownerId),
+    ))
     .orderBy(desc(listings.createdAt))
     .limit(6);
 
@@ -1155,7 +1201,7 @@ export async function getListingDetail(listingId: number, viewerId: number | nul
       altText: p.altText,
     })),
     primaryPhotoUrl: photoRows.length > 0 ? photoRows[0].imageUrl : null,
-    similarListings: await formatListings(similarRowsWithPhotos, viewerId),
+    similarListings: await formatListings(similarRowsWithPhotos, viewerId, { publicOnly: true }),
     savedToWatchlist: isSaved,
   };
 }
@@ -4097,7 +4143,7 @@ export async function getTopHighestValueItems(viewerId: number | null = null) {
     .orderBy(desc(listings.estimatedValue))
     .limit(10);
 
-  return formatListings(listingRows, viewerId);
+  return formatListings(listingRows, viewerId, { publicOnly: true });
 }
 
 
@@ -4196,7 +4242,7 @@ export async function getTopMostFavoritedItems(viewerId?: number | null) {
   .orderBy(desc(sql`COUNT(${favorites.id})`))
   .limit(10);
 
-  return formatListings(listingRows, viewerId ?? null);
+  return formatListings(listingRows, viewerId ?? null, { publicOnly: true });
 }
 
 // Get top 10 most viewed items
@@ -4252,7 +4298,7 @@ export async function getTopMostViewedItems(viewerId?: number | null) {
   .orderBy(desc(listings.viewCount))
   .limit(10);
 
-  return formatListings(listingRows, viewerId ?? null);
+  return formatListings(listingRows, viewerId ?? null, { publicOnly: true });
 }
 
 
