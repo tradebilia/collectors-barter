@@ -6,21 +6,50 @@ describe("buildTradeShowcaseMovements", () => {
     const movements = buildTradeShowcaseMovements({
       requestedListingId: 11,
       requestedListingTitle: "Recipient's coin",
-      requesterDisplayName: "Administrator",
-      recipientDisplayName: "Rtavani",
+      requesterDisplayName: "Administrator Profile",
+      requesterUsername: "Administrator",
+      requesterAvatarUrl: "https://example.com/admin.png",
+      requesterAverageRating: "4.8",
+      requesterReviewCount: 3,
+      requesterEbayVerified: 1,
+      requesterMerchantVerified: 1,
+      recipientDisplayName: "Rtavani Profile",
+      recipientUsername: "RTavani",
+      recipientAvatarUrl: "https://example.com/rtavani.png",
+      recipientAverageRating: 4.9,
+      recipientReviewCount: 4,
+      recipientEbayVerified: 1,
       offeredItems: [{ id: 22, title: "Administrator's card" }],
     });
 
     expect(movements).toEqual([
       expect.objectContaining({
         title: "Recipient's coin",
-        originalOwner: expect.objectContaining({ displayName: "Rtavani" }),
-        receivingMember: expect.objectContaining({ displayName: "Administrator" }),
+        originalOwner: expect.objectContaining({
+          displayName: "Rtavani Profile",
+          username: "RTavani",
+          averageRating: 4.9,
+          verificationLabels: ["eBay Verified"],
+        }),
+        receivingMember: expect.objectContaining({
+          displayName: "Administrator Profile",
+          username: "Administrator",
+          averageRating: "4.8",
+          verificationLabels: ["eBay Verified", "Tradebilia Verified"],
+        }),
       }),
       expect.objectContaining({
         title: "Administrator's card",
-        originalOwner: expect.objectContaining({ displayName: "Administrator" }),
-        receivingMember: expect.objectContaining({ displayName: "Rtavani" }),
+        originalOwner: expect.objectContaining({
+          displayName: "Administrator Profile",
+          username: "Administrator",
+          avatarUrl: "https://example.com/admin.png",
+        }),
+        receivingMember: expect.objectContaining({
+          displayName: "Rtavani Profile",
+          username: "RTavani",
+          avatarUrl: "https://example.com/rtavani.png",
+        }),
       }),
     ]);
   });
