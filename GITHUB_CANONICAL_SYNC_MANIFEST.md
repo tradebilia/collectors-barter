@@ -441,3 +441,11 @@ Before future GitHub-to-WebDev reconciliation, create a recovery checkpoint and 
 | Implementation | Category navigation now uses a compact icon-led dark navy bar with existing routes and active states preserved. Homepage statistics now use a deeper navy-to-purple gradient, brighter separators, compact white metrics, and full comma-formatted values. Recently Added items now use 150px/160px/172px responsive widths with larger image areas and readable metadata while retaining compact shelf density. |
 | Validation | Focused homepage and movement tests passed 3/3; TypeScript, production build, dependency audit, whitespace, and desktop/mobile visual reviews passed. No database, payment, provider, schedule, setting, or secret changed. |
 | Protected | Hero, existing top bar, and centered Recently Added/Recent Trades headings remain unchanged. |
+
+## Arrow-Free Recent Trades Pair
+| Record | Value |
+|---|---|
+| Scope | Remove the left and right end controls from Recent Trades; automatic five-second fade rotation is the only navigation method. |
+| Implementation | Removed ArrowLeft/ArrowRight imports, manual movement handler, and both end buttons. Preserved automatic interval rotation, fade transition timing, cleanup timers, reduced-motion handling, ticket layout, and item links. |
+| Validation | Focused homepage and movement tests passed 3/3; TypeScript, production build, dependency audit, whitespace, and desktop/mobile visual checks passed. |
+| Protected | No database, payment, provider, schedule, setting, or secret changed. Hero, top bar, category bar, stats strip, centered headings, and ticket content remain unchanged. |
