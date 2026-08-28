@@ -263,6 +263,17 @@ The canonical commit deliberately merges the sandbox-specific behavior without r
 | Validation | Focused WebDev and canonical guide/control regressions passed 2 files / 8 tests; TypeScript, production build, desktop visual review, and whitespace passed. |
 | Preserved safeguards | No custom TiDB schema/data, marketplace record, membership record, payment action, provider configuration/action, schedule, or secret changed. |
 
+## Administrator Guide Pair
+
+| Record | Value |
+|---|---|
+| Canonical implementation commit | `c25a8ac5b246216e0006a658f0be904ee4abda72` — normal push to GitHub `main`; no force push or history replacement. |
+| Paired managed WebDev recovery checkpoint | `7ab529b2` |
+| Scope | Added the static administrator-only Admin Guide tab to the existing dashboard using the shared accessible accordion component. It does not add a database query, mutation, administrative action, or a new route. |
+| Content | Explains all 19 visible administrator workspaces plus Test AI Sandbox and Coming Soon Preview in plain language: what each area does, when to use it, and what to confirm before acting. |
+| Validation | Focused source and canonical Admin Guide, Operations, and administrator-control regressions passed 3 files / 9 tests; TypeScript, production build, unauthenticated access-boundary review, and whitespace passed. |
+| Preserved safeguards | No custom TiDB schema/data, marketplace record, membership record, payment action, provider configuration/action, schedule, or secret changed. |
+
 ## Synchronization Rules
 
 Before future GitHub-to-WebDev reconciliation, create a recovery checkpoint and an immutable GitHub backup tag. Before a reviewed WebDev change becomes canonical, merge only the relevant content into the current GitHub `main`, preserve any newer canonical work, use a normal commit/push, and record the associated checkpoint. Never force-push or replace the canonical repository wholesale.
