@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
 
-type AdminTab = "approvals" | "users" | "reports" | "flagged" | "tickets" | "trades" | "api-health" | "billing";
+type AdminTab = "approvals" | "account-closures" | "users" | "reports" | "flagged" | "tickets" | "trades" | "api-health" | "billing";
 type ExportKind = "listings" | "trades" | "members" | "support_metrics";
 
 function displayDate(value?: string | null) { return value ? new Date(value).toLocaleString() : "Not available"; }

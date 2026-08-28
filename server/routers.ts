@@ -103,7 +103,7 @@ import { testAIRouter } from "./testAIRouter";
 import { r2MediaRouter } from "./r2MediaRouter";
 import { customAuth } from "./_core/customAuth";
 import { getOrCreateDirectMessageThread, persistDirectMessage } from "./directMessagePersistence";
-import { users, userProfiles, listings, deletedAccounts, tradeProposals, tradeMessages, tradeReviews, watchlistEntries, draftListings, passwordResetTokens, referralRequests, userFollows, directMessageThreads, directMessages, tradePayments, tradeActivityLog, emailTemplates, accountApprovalReviews, apiHealthEvents, adminActivityLog, lowFeedbackFlags } from "../drizzle/schema";
+import { users, userProfiles, listings, deletedAccounts, tradeProposals, tradeMessages, tradeReviews, watchlistEntries, draftListings, passwordResetTokens, referralRequests, userFollows, directMessageThreads, directMessages, tradePayments, tradeActivityLog, emailTemplates, accountApprovalReviews, accountClosureRequests, apiHealthEvents, adminActivityLog, lowFeedbackFlags } from "../drizzle/schema";
 import { eq, sql, desc, or, inArray, and, isNull } from "drizzle-orm";
 import { alias } from "drizzle-orm/mysql-core";
 import { TRPCError } from "@trpc/server";
@@ -120,7 +120,11 @@ import { createProviderOauthState, setProviderOauthStateCookie } from "./_core/p
 import { getPaymentVerificationObligation, isAuthorizedPaymentVerification } from "./paymentAuthorization";
 import { billingRouter, membershipRouter } from "./membership";
 import { listHeartbeatJobs } from "./_core/heartbeat";
-import { getAccountClosureAudit, getAccountClosureRequestsForAdmin, getMyAccountClosureRequest, requestAccountClosure, reviewAccountClosureRequest } from "./accountClosure";
+import { closeEligibleAccount, getAccountClosureAudit, getAccountClosureRequestsForAdmin, getMyAccountClosureRequest, requestAccountClosure, reviewAccountClosureRequest } from "./accountClosure";
+
+const ADMIN_ARCHIVE_MEMBER_PHRASE = "ARCHIVE MEMBER ACCOUNT";
+const ADMIN_ARCHIVE_TRADE_PHRASE = "ARCHIVE TRADE RECORD";
+const ADMIN_CLOSE_TICKET_PHRASE = "CLOSE AND RETAIN TICKET";
 
 // The R2 adapter enforces decoded per-kind limits (10MB listing, 5MB avatar).
 // This ceiling stops an oversized base64 request before its payload is decoded.
@@ -2476,6 +2480,7 @@ export const appRouter = router({
       const [queueRows] = await db.execute(sql`
         SELECT
           (SELECT COUNT(*) FROM accountApprovalReviews WHERE status = 'pending') AS pendingApprovals,
+          (SELECT COUNT(*) FROM accountClosureRequests WHERE status = 'pending_review') AS pendingClosureRequests,
           (SELECT COUNT(*) FROM userProfiles up INNER JOIN users u ON u.id = up.userId WHERE up.isMerchant = 1 AND COALESCE(u.merchantVerified, 0) = 0) AS unverifiedMerchants,
           (SELECT COUNT(*) FROM userReports WHERE status = 'pending') AS pendingReports,
           (SELECT COUNT(*) FROM flaggedContent WHERE status = 'pending') AS pendingFlags,
@@ -2503,6 +2508,7 @@ export const appRouter = router({
         recentApiFailures: Number(counts.recentApiFailures ?? 0),
         actionQueue: [
           { key: 'approvals', label: 'Pending approvals', count: Number(counts.pendingApprovals ?? 0), description: 'Accounts awaiting marketplace approval.', tab: 'approvals' },
+          { key: 'closureRequests', label: 'Closure requests', count: Number(counts.pendingClosureRequests ?? 0), description: 'Member account-closure requests awaiting review.', tab: 'account-closures' },
           { key: 'merchants', label: 'Unverified merchants', count: Number(counts.unverifiedMerchants ?? 0), description: 'Merchant profiles awaiting verification.', tab: 'users' },
           { key: 'reports', label: 'Member reports', count: Number(counts.pendingReports ?? 0), description: 'Community reports awaiting review.', tab: 'reports' },
           { key: 'flags', label: 'Content flags', count: Number(counts.pendingFlags ?? 0), description: 'Flagged content awaiting review.', tab: 'flagged' },
@@ -2611,6 +2617,7 @@ export const appRouter = router({
         isBanned: users.isBanned,
         bannedAt: users.bannedAt,
         banReason: users.banReason,
+        isAccountClosed: users.isAccountClosed,
         warnCount: users.warnCount,
         lastWarnedAt: users.lastWarnedAt,
         contactFullName: userProfiles.contactFullName,
@@ -2646,6 +2653,7 @@ export const appRouter = router({
       lastActivityAt: string;
       isSuspended: number;
       suspendedAt: string | null;
+      isAccountClosed: number;
       contactFullName: string | null;
       contactEmail: string | null;
       contactPhone: string | null;
@@ -2692,95 +2700,35 @@ export const appRouter = router({
     deleteUser: protectedProcedure
       .input(z.object({ userId: z.number().int().positive() }))
       .mutation(async ({ ctx, input }) => {
-        console.log(`[deleteUser] Starting deletion for userId: ${input.userId}`);
         if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
-        if (input.userId === ctx.user.id) throw new TRPCError({ code: 'BAD_REQUEST', message: 'Cannot delete yourself' });
+        throw new TRPCError({ code: 'BAD_REQUEST', message: 'Permanent administrator deletion is disabled. Use the retained Archive Account workflow instead.' });
+      }),
+    archiveUser: protectedProcedure
+      .input(z.object({
+        userId: z.number().int().positive(),
+        reason: z.string().trim().min(10).max(180),
+        confirmationPhrase: z.literal(ADMIN_ARCHIVE_MEMBER_PHRASE),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+        if (input.userId === ctx.user.id) throw new TRPCError({ code: 'BAD_REQUEST', message: 'Administrators cannot archive their own account.' });
         const db = await requireDb();
-        
-        // Get user info before deletion
-        const userToDelete = await db.select().from(users).where(eq(users.id, input.userId)).limit(1);
-        const userProfile = await db.select().from(userProfiles).where(eq(userProfiles.userId, input.userId)).limit(1);
-        
-        if (!userToDelete.length) throw new TRPCError({ code: 'NOT_FOUND', message: 'User not found' });
-
-        // Q23: Block deletion if user has active trades
-        const [activeTrades] = await db.execute(
-          sql`SELECT COUNT(*) as cnt FROM tradeProposals WHERE (requesterId = ${input.userId} OR recipientId = ${input.userId}) AND status IN ('pending', 'negotiating', 'accepted', 'shipped')`
-        );
-        if ((activeTrades as any)?.[0]?.cnt > 0) {
-          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Cannot delete account: user has active trades. Please resolve all active trades first.' });
-        }
-        
-        const user = userToDelete[0];
-        const profile = userProfile[0];
-        console.log(`[deleteUser] Found user: ${user.username}, profile exists: ${!!profile}`);
-        
-        // Delete all dependent records in the correct order (respecting foreign key constraints)
-        
-        // Delete trade messages where user is the sender
-        console.log(`[deleteUser] Deleting trade messages...`);
-        await db.delete(tradeMessages).where(eq(tradeMessages.senderId, input.userId));
-        
-        // Delete trade reviews where user is the reviewer or reviewee
-        console.log(`[deleteUser] Deleting trade reviews...`);
-        await db.delete(tradeReviews).where(or(
-          eq(tradeReviews.reviewerId, input.userId),
-          eq(tradeReviews.revieweeId, input.userId)
-        ));
-        
-        // Delete trade proposals where user is the requester or recipient
-        console.log(`[deleteUser] Deleting trade proposals...`);
-        await db.delete(tradeProposals).where(or(
-          eq(tradeProposals.requesterId, input.userId),
-          eq(tradeProposals.recipientId, input.userId)
-        ));
-        
-        // Delete watchlist entries
-        console.log(`[deleteUser] Deleting watchlist entries...`);
-        await db.delete(watchlistEntries).where(eq(watchlistEntries.userId, input.userId));
-        
-        // Delete draft listings
-        console.log(`[deleteUser] Deleting draft listings...`);
-        await db.delete(draftListings).where(eq(draftListings.userId, input.userId));
-        
-        // Delete password reset tokens (has cascade delete but we'll delete explicitly)
-        console.log(`[deleteUser] Deleting password reset tokens...`);
-        await db.delete(passwordResetTokens).where(eq(passwordResetTokens.userId, input.userId));
-        
-        // Delete all listings owned by the user
-        console.log(`[deleteUser] Deleting listings...`);
-        const listingsDeleted = await db.delete(listings).where(eq(listings.ownerId, input.userId));
-        console.log(`[deleteUser] Deleted listings, result:`, listingsDeleted);
-        
-        // Log the deletion
-        console.log(`[deleteUser] Inserting into deletedAccounts...`);
-        try {
-          await db.insert(deletedAccounts).values({
-            userId: input.userId,
-            username: user.username || `user_${input.userId}`,
-            email: profile?.contactEmail || null,
-            displayName: profile?.displayName || user.displayName || null,
-            firstName: profile?.firstName || null,
-            lastName: profile?.lastName || null,
-            deletedBy: ctx.user.id,
-            reason: 'Admin deletion',
-          } as any);
-        } catch (err) {
-          console.log(`[deleteUser] Error inserting into deletedAccounts:`, err);
-          throw err;
-        }
-        
-        // Delete user profile
-        console.log(`[deleteUser] Deleting profile...`);
-        const profileDeleted = await db.delete(userProfiles).where(eq(userProfiles.userId, input.userId));
-        console.log(`[deleteUser] Deleted profile, result:`, profileDeleted);
-        
-        // Delete user
-        console.log(`[deleteUser] Deleting user...`);
-        const deleteResult = await db.delete(users).where(eq(users.id, input.userId));
-        console.log(`[deleteUser] Deleted user ${input.userId}, result:`, deleteResult);
-        
-        return { success: true };
+        return db.transaction(async (tx: any) => {
+          const audit = await getAccountClosureAudit(tx, input.userId);
+          if (audit.blockers.length > 0) {
+            throw new TRPCError({ code: 'BAD_REQUEST', message: 'This account has unresolved items. Use the existing Closure Requests workflow after resolving its blockers.' });
+          }
+          const archived = await closeEligibleAccount(tx, input.userId);
+          if (!archived) throw new TRPCError({ code: 'CONFLICT', message: 'The account could not be archived because its eligibility changed. Refresh and review it again.' });
+          await tx.insert(adminActivityLog).values({
+            adminId: ctx.user.id,
+            action: 'member_account_archived',
+            targetType: 'member_account',
+            targetReference: String(input.userId),
+            summary: `Archived member account: ${input.reason}`,
+          });
+          return { success: true };
+        });
       }),
     updateUserRole: protectedProcedure
       .input(z.object({ userId: z.number().int().positive(), role: z.enum(['user', 'admin']) }))
@@ -2859,7 +2807,7 @@ export const appRouter = router({
         .orderBy(desc(listings.createdAt));
       return allListings;
     }),
-    getAllTrades: protectedProcedure.query(async ({ ctx }) => {
+    getAllTrades: protectedProcedure.input(z.object({ includeArchived: z.boolean().optional() }).optional()).query(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
       const db = await requireDb();
       const requesterProfiles = alias(userProfiles, "adminTradeRequesterProfiles");
@@ -2878,12 +2826,14 @@ export const appRouter = router({
         createdAt: tradeProposals.createdAt,
         respondedAt: tradeProposals.respondedAt,
         completedAt: tradeProposals.completedAt,
+        isArchived: sql<number>`EXISTS(SELECT 1 FROM adminActivityLog archiveLog WHERE archiveLog.action = 'trade_record_archived' AND archiveLog.targetType = 'trade_proposal' AND archiveLog.targetReference = CAST(${tradeProposals.id} AS CHAR))`,
       }).from(tradeProposals)
         .leftJoin(users, eq(tradeProposals.requesterId, users.id))
         .leftJoin(requesterProfiles, eq(tradeProposals.requesterId, requesterProfiles.userId))
         .leftJoin(recipientUsers, eq(tradeProposals.recipientId, recipientUsers.id))
         .leftJoin(recipientProfiles, eq(tradeProposals.recipientId, recipientProfiles.userId))
         .leftJoin(listings, eq(tradeProposals.requestedListingId, listings.id))
+        .where(input?.includeArchived ? undefined : sql`NOT EXISTS(SELECT 1 FROM adminActivityLog archiveLog WHERE archiveLog.action = 'trade_record_archived' AND archiveLog.targetType = 'trade_proposal' AND archiveLog.targetReference = CAST(${tradeProposals.id} AS CHAR))`)
         .orderBy(desc(tradeProposals.createdAt));
     }),
     // Reported users management
@@ -3253,17 +3203,19 @@ export const appRouter = router({
     }),
 
     // Support Tickets
-    getAllTickets: protectedProcedure.query(async ({ ctx }) => {
+    getAllTickets: protectedProcedure.input(z.object({ includeArchived: z.boolean().optional() }).optional()).query(async ({ ctx, input }) => {
       if (ctx.user?.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
       const db = await requireDb();
       const [rows] = await db.execute(
         sql`SELECT st.*, u.username, u.displayName, u.email,
                    COALESCE(NULLIF(u.displayName, ''), u.username, st.submittedByName, 'Anonymous visitor') AS submitterDisplayName,
                    COALESCE(u.email, st.submittedByEmail) AS submitterEmail,
-                   a.username as assignedAdminUsername
+                   a.username as assignedAdminUsername,
+                   EXISTS(SELECT 1 FROM adminActivityLog archiveLog WHERE archiveLog.action = 'support_ticket_closed_retained' AND archiveLog.targetType = 'support_ticket' AND archiveLog.targetReference = CAST(st.id AS CHAR)) AS isArchived
             FROM supportTickets st
             LEFT JOIN users u ON u.id = st.userId
             LEFT JOIN users a ON a.id = st.assignedAdminId
+            ${input?.includeArchived ? sql`` : sql`WHERE NOT EXISTS(SELECT 1 FROM adminActivityLog archiveLog WHERE archiveLog.action = 'support_ticket_closed_retained' AND archiveLog.targetType = 'support_ticket' AND archiveLog.targetReference = CAST(st.id AS CHAR))`}
             ORDER BY
               CASE st.priority WHEN 'urgent' THEN 1 WHEN 'high' THEN 2 WHEN 'medium' THEN 3 ELSE 4 END,
               CASE st.status WHEN 'open' THEN 1 WHEN 'in_progress' THEN 2 ELSE 3 END,
@@ -3317,11 +3269,28 @@ export const appRouter = router({
       }),
     deleteTicket: protectedProcedure
       .input(z.object({ ticketId: z.number() }))
+      .mutation(async ({ ctx }) => {
+        if (ctx.user?.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+        throw new TRPCError({ code: 'BAD_REQUEST', message: 'Permanent ticket deletion is disabled. Use Close & Retain Ticket instead.' });
+      }),
+    archiveTicket: protectedProcedure
+      .input(z.object({
+        ticketId: z.number().int().positive(),
+        reason: z.string().trim().min(10).max(180),
+        confirmationPhrase: z.literal(ADMIN_CLOSE_TICKET_PHRASE),
+      }))
       .mutation(async ({ ctx, input }) => {
         if (ctx.user?.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
         const db = await requireDb();
-        await db.execute(sql`DELETE FROM supportTicketReplies WHERE ticketId = ${input.ticketId}`);
-        await db.execute(sql`DELETE FROM supportTickets WHERE id = ${input.ticketId}`);
+        const [result] = await db.execute(sql`UPDATE supportTickets SET status = 'closed', updatedAt = NOW(), resolvedAt = COALESCE(resolvedAt, NOW()) WHERE id = ${input.ticketId}`);
+        if (!Number((result as any)?.affectedRows ?? 0)) throw new TRPCError({ code: 'NOT_FOUND', message: 'Ticket not found.' });
+        await db.insert(adminActivityLog).values({
+          adminId: ctx.user.id,
+          action: 'support_ticket_closed_retained',
+          targetType: 'support_ticket',
+          targetReference: String(input.ticketId),
+          summary: `Closed and retained support ticket: ${input.reason}`,
+        });
         return { success: true };
       }),
     // Flagged Content
@@ -3436,25 +3405,37 @@ export const appRouter = router({
     // Admin trade deletion — full cascade
     deleteTrade: protectedProcedure
       .input(z.object({ tradeId: z.number().int().positive() }))
+      .mutation(async ({ ctx }) => {
+        if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+        throw new TRPCError({ code: 'BAD_REQUEST', message: 'Permanent trade deletion is disabled. Use Archive Trade Record instead.' });
+      }),
+    archiveTrade: protectedProcedure
+      .input(z.object({
+        tradeId: z.number().int().positive(),
+        reason: z.string().trim().min(10).max(180),
+        confirmationPhrase: z.literal(ADMIN_ARCHIVE_TRADE_PHRASE),
+      }))
       .mutation(async ({ ctx, input }) => {
         if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
         const db = await requireDb();
-        const { tradeId } = input;
-        // Delete all child records in dependency order before removing the proposal
-        await db.execute(sql`DELETE FROM proposalReadStatus WHERE proposalId = ${tradeId}`);
-        await db.execute(sql`DELETE FROM tradeActivityLog WHERE proposalId = ${tradeId}`);
-        await db.execute(sql`DELETE FROM tradeAdminLog WHERE proposalId = ${tradeId}`);
-        await db.execute(sql`DELETE FROM tradeAlerts WHERE proposalId = ${tradeId}`);
-        await db.execute(sql`DELETE FROM tradeComplaints WHERE proposalId = ${tradeId}`);
-        await db.execute(sql`DELETE FROM tradeMessages WHERE proposalId = ${tradeId}`);
-        await db.execute(sql`DELETE FROM tradePrivateNotes WHERE proposalId = ${tradeId}`);
-        await db.execute(sql`DELETE FROM tradeProposalItems WHERE proposalId = ${tradeId}`);
-        await db.execute(sql`DELETE FROM tradeReceiptConfirmation WHERE proposalId = ${tradeId}`);
-        await db.execute(sql`DELETE FROM tradeReviews WHERE proposalId = ${tradeId}`);
-        await db.execute(sql`DELETE FROM tradeTrackingNumbers WHERE proposalId = ${tradeId}`);
-        await db.execute(sql`DELETE FROM tradeVotingLinks WHERE proposalId = ${tradeId}`);
-        // Finally delete the proposal itself
-        await db.execute(sql`DELETE FROM tradeProposals WHERE id = ${tradeId}`);
+        const [trade] = await db.select({ id: tradeProposals.id, status: tradeProposals.status }).from(tradeProposals).where(eq(tradeProposals.id, input.tradeId)).limit(1);
+        if (!trade) throw new TRPCError({ code: 'NOT_FOUND', message: 'Trade not found.' });
+        if (!['completed', 'declined', 'cancelled'].includes(trade.status)) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Only completed, declined, or cancelled trades may be archived. Resolve active, shipping, frozen, or disputed trades through their existing workflow.' });
+        }
+        const [alreadyArchived] = await db.select({ id: adminActivityLog.id }).from(adminActivityLog).where(and(
+          eq(adminActivityLog.action, 'trade_record_archived'),
+          eq(adminActivityLog.targetType, 'trade_proposal'),
+          eq(adminActivityLog.targetReference, String(input.tradeId)),
+        )).limit(1);
+        if (alreadyArchived) throw new TRPCError({ code: 'CONFLICT', message: 'This trade record is already archived.' });
+        await db.insert(adminActivityLog).values({
+          adminId: ctx.user.id,
+          action: 'trade_record_archived',
+          targetType: 'trade_proposal',
+          targetReference: String(input.tradeId),
+          summary: `Archived retained trade record: ${input.reason}`,
+        });
         return { success: true };
       }),
     // Get moderation audit log
