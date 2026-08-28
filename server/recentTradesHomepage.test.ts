@@ -21,7 +21,9 @@ describe("homepage Recent Trades carousel", () => {
     expect(carouselSource).toContain("buildTradeShowcaseExchange");
     expect(carouselSource).toContain("formatEstimatedValue");
     expect(carouselSource).toContain("formatConditionOrGrade");
-    expect(carouselSource).toContain("Grade ${numericGrade.toLocaleString");
+    expect(carouselSource).toContain("item.certificationCompany?.trim()");
+    expect(carouselSource).toContain("${gradingCompany} ${formattedGrade}");
+    expect(carouselSource).toContain("Grade ${formattedGrade}");
     expect(carouselSource).toContain("Condition: ${condition.replaceAll");
     expect(carouselSource).toContain("text-[2.45rem]");
     expect(carouselSource).toContain('alignment="end"');
@@ -30,7 +32,8 @@ describe("homepage Recent Trades carousel", () => {
     expect(carouselSource).toContain("text-violet-700");
     expect(routerSource).toContain("l.condition as requestedListingCondition");
     expect(routerSource).toContain("l.grade as requestedListingGrade");
-    expect(routerSource).toContain("ol.condition, ol.grade, ol.estimatedValue");
+    expect(routerSource).toContain("l.certificationCompany as requestedListingCertificationCompany");
+    expect(routerSource).toContain("ol.condition, ol.grade, ol.certificationCompany, ol.estimatedValue");
     expect(carouselSource).toContain('className="h-10 w-10 text-violet-600"');
     expect(carouselSource).not.toContain("Tradebilia exchange activity");
     expect(carouselSource).not.toContain("Completed trade");

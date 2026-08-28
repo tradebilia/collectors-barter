@@ -9,6 +9,7 @@ export type TradeShowcaseItem = {
   category?: string | null;
   condition?: string | null;
   grade?: string | number | null;
+  certificationCompany?: string | null;
   imageUrl?: string | null;
   estimatedValue?: string | number | null;
 };
@@ -19,6 +20,7 @@ export type TradeShowcaseTrade = {
   requestedListingCategory?: string | null;
   requestedListingCondition?: string | null;
   requestedListingGrade?: string | number | null;
+  requestedListingCertificationCompany?: string | null;
   requestedListingImage?: string | null;
   requestedListingValue?: string | number | null;
   offeredItems?: TradeShowcaseItem[] | null;
@@ -66,6 +68,7 @@ export function buildTradeShowcaseMovements(trade: TradeShowcaseTrade): TradeSho
           category: trade.requestedListingCategory,
           condition: trade.requestedListingCondition,
           grade: trade.requestedListingGrade,
+          certificationCompany: trade.requestedListingCertificationCompany,
           imageUrl: trade.requestedListingImage,
           estimatedValue: trade.requestedListingValue,
           originalOwner: recipient,
@@ -105,6 +108,7 @@ export function buildTradeShowcaseExchange(trade: TradeShowcaseTrade): TradeShow
           category: trade.requestedListingCategory,
           condition: trade.requestedListingCondition,
           grade: trade.requestedListingGrade,
+          certificationCompany: trade.requestedListingCertificationCompany,
           imageUrl: trade.requestedListingImage,
           estimatedValue: trade.requestedListingValue,
         }]
