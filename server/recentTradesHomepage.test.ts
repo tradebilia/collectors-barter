@@ -16,6 +16,7 @@ describe("homepage Recent Trades carousel", () => {
     expect(homeSource).toContain("<RecentlyAddedCarousel");
     expect(homeSource).not.toContain("{marketplaceQuery.isLoading ? (");
     expect(homeSource).toContain("isLoading={recentTradesQuery.isLoading}");
+    expect(homeSource).toContain('<div className="min-w-0 md:col-start-2">');
     expect(routerSource).toContain("Return every offered item for each completed exchange");
     expect(routerSource).not.toContain("WHERE tpi.proposalId = ${trade.id}\n            LIMIT 4");
     expect(carouselSource).toContain("ROTATION_INTERVAL_MS = 5_000");
@@ -27,7 +28,8 @@ describe("homepage Recent Trades carousel", () => {
     expect(carouselSource).toContain("border-dashed");
     expect(carouselSource).toContain("TicketDivider");
     expect(carouselSource).toContain("object-contain p-0.5");
-    expect(carouselSource).toContain("h-24 w-24");
+    expect(carouselSource).toContain("h-32 w-24");
+    expect(carouselSource).toContain("sm:h-36 sm:w-28");
     expect(carouselSource).toContain("bg-[#f1f7ef]");
     expect(carouselSource).toContain("bg-[#e1efdc]");
     expect(carouselSource).toContain("formatEstimatedValue");
@@ -38,7 +40,8 @@ describe("homepage Recent Trades carousel", () => {
     expect(carouselSource).toContain("Condition: ${condition.replaceAll");
     expect(carouselSource).toContain("text-[2.45rem]");
     expect(carouselSource).toContain('<TradeMember member={exchange.left.member} />');
-    expect(carouselSource).toContain('<TradeMember member={exchange.right.member} />');
+    expect(carouselSource).toContain("<TradeMember member={exchange.right.member} />");
+    expect(carouselSource).toContain("items-center justify-center gap-2 text-left");
     expect(carouselSource).toContain("<ArrowLeft");
     expect(carouselSource).toContain("<ArrowRight");
     expect(carouselSource).toContain('src="/manus-storage/trade-complete-stamp-transparent_9ec4b748.png"');

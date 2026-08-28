@@ -59,7 +59,7 @@ function TradeItemList({ items, side }: { items: TradeShowcaseItem[]; side: "lef
       {items.map((item, index) => {
         const content = (
           <>
-            <div className="h-24 w-24 shrink-0 overflow-hidden bg-slate-50 sm:h-28 sm:w-28">
+            <div className="h-32 w-24 shrink-0 overflow-hidden bg-slate-50 sm:h-36 sm:w-28">
               {item.imageUrl ? (
                 <img src={item.imageUrl} alt={item.title || "Traded collectible"} className="h-full w-full object-contain" loading="lazy" />
               ) : (
@@ -67,7 +67,7 @@ function TradeItemList({ items, side }: { items: TradeShowcaseItem[]; side: "lef
               )}
             </div>
             <div className="min-w-0 text-left">
-              <p className="max-w-44 text-sm font-semibold leading-snug text-slate-900">{item.title || "Collectible"}</p>
+              <p className="max-w-44 text-[0.8rem] font-semibold leading-snug text-slate-900 sm:text-sm">{item.title || "Collectible"}</p>
               <p className="mt-0.5 text-xs font-semibold text-violet-700">{formatConditionOrGrade(item)}</p>
               <p className="mt-0.5 text-sm font-bold text-emerald-700">{formatEstimatedValue(item.estimatedValue)}</p>
             </div>
@@ -86,26 +86,26 @@ function TradeMember({ member }: { member: TradeShowcaseParty }) {
   const initials = memberName.slice(0, 2).toUpperCase();
 
   return (
-    <section className="min-w-0 text-center" aria-label={`Trade member ${memberName}`}>
-      <div className="flex items-center justify-center gap-2">
-        {member.avatarUrl ? (
-          <img src={member.avatarUrl} alt={`${memberName} avatar`} className="h-11 w-11 shrink-0 rounded-full border border-slate-200 bg-slate-100 object-contain p-0.5" loading="lazy" />
-        ) : (
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-xs font-bold text-slate-500" aria-label={`${memberName} avatar unavailable`}>{initials || <UserRound className="h-4 w-4" aria-hidden="true" />}</div>
-        )}
+    <section className="flex min-w-0 items-center justify-center gap-2 text-left" aria-label={`Trade member ${memberName}`}>
+      {member.avatarUrl ? (
+        <img src={member.avatarUrl} alt={`${memberName} avatar`} className="h-12 w-12 shrink-0 rounded-full border border-slate-200 bg-slate-100 object-contain p-0.5" loading="lazy" />
+      ) : (
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-xs font-bold text-slate-500" aria-label={`${memberName} avatar unavailable`}>{initials || <UserRound className="h-4 w-4" aria-hidden="true" />}</div>
+      )}
+      <div className="min-w-0">
         <p className="max-w-32 truncate text-sm font-bold text-slate-900" title={memberName}>{memberName}</p>
-      </div>
-      <p className="mt-1 flex items-center justify-center gap-1 text-xs font-semibold text-emerald-700">
-        <Star className="h-3 w-3 fill-emerald-500 text-emerald-500" aria-hidden="true" />
-        {rating ? `${rating} rating` : "No rating yet"}
-      </p>
-      <div className="mt-2 flex flex-wrap justify-center gap-1">
-        {member.verificationLabels?.length ? member.verificationLabels.map((verification) => (
-          <span key={verification} className="inline-flex items-center gap-0.5 rounded-full bg-violet-50 px-1.5 py-0.5 text-[0.58rem] font-semibold text-violet-700" title={verification}>
-            <ShieldCheck className="h-2.5 w-2.5" aria-hidden="true" />
-            {verification}
-          </span>
-        )) : <span className="text-[0.58rem] text-slate-400">No verifications shown</span>}
+        <p className="mt-0.5 flex items-center gap-1 text-xs font-semibold text-emerald-700">
+          <Star className="h-3 w-3 fill-emerald-500 text-emerald-500" aria-hidden="true" />
+          {rating || "No rating yet"}
+        </p>
+        <div className="mt-1.5 space-y-1">
+          {member.verificationLabels?.length ? member.verificationLabels.map((verification) => (
+            <span key={verification} className="flex items-center gap-1 whitespace-nowrap text-[0.58rem] font-semibold text-slate-600" title={verification}>
+              <ShieldCheck className="h-2.5 w-2.5 shrink-0 text-violet-700" aria-hidden="true" />
+              {verification}
+            </span>
+          )) : <span className="text-[0.58rem] text-slate-400">No verifications shown</span>}
+        </div>
       </div>
     </section>
   );
