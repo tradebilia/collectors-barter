@@ -51,7 +51,10 @@ describe("recovered administrator and guide controls", () => {
 
   it("removes only administrator search and provides keyboard-accessible larger guide captures", () => {
     expect(adminSource).toContain("<TopBar hideSearch />");
-    expect(guideSource).toContain("md:grid-cols-2");
+    expect(guideSource).toContain("max-w-[96rem]");
+    expect(guideSource).toContain('className="mt-9 grid gap-10"');
+    expect(guideSource).not.toContain("mt-9 grid gap-8 md:grid-cols-2");
+    expect(guideSource).toContain('loading="eager"');
     expect(guideSource).toContain("Select to enlarge");
     expect(guideSource).toContain("Enlarge ${title} Trade Room capture");
     expect(guideSource).toContain("selectedTradeRoomCapture");
