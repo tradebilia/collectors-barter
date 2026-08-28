@@ -394,3 +394,10 @@ Before future GitHub-to-WebDev reconciliation, create a recovery checkpoint and 
 | Issue | A slow marketplace feed could leave the entire homepage behind a blank loading spinner while other page content was ready to render. |
 | Repair | Removed the homepage-wide `marketplaceQuery.isLoading` gate and retained section-level loading behavior, including Recent Trades’ own loading state. |
 | Validation | Focused homepage and movement tests passed 3/3; TypeScript, production build, dependency audit, whitespace, and live desktop preview checks passed. No database, payment, provider, schedule, setting, or secret changed. |
+
+## Recent Trades Transparent Stamp Pair
+| Record | Value |
+|---|---|
+| Issue | The supplied Trade Complete stamp’s original opaque white canvas created a visible rectangle against the ticket’s light-green surface. |
+| Repair | Generated a transparent-background derivative from the supplied stamp, uploaded it as `/manus-storage/trade-complete-stamp-transparent_9ec4b748.png`, and updated the component to use it without blend-mode styling. |
+| Validation | Focused homepage and movement tests passed 3/3; TypeScript, production build, dependency audit, whitespace, and desktop visual checks passed. No database, payment, provider, schedule, setting, or secret changed. |
