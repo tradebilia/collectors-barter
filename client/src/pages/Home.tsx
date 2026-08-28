@@ -733,7 +733,7 @@ export default function Home() {
                   />
                 </div>
 
-                <div className="md:col-start-2">
+                <div className="min-w-0 md:col-start-2">
                   <RecentTradesCarousel trades={recentTradesQuery.data?.trades ?? []} isLoading={recentTradesQuery.isLoading} />
                 </div>
 

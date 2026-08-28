@@ -401,3 +401,11 @@ Before future GitHub-to-WebDev reconciliation, create a recovery checkpoint and 
 | Issue | The supplied Trade Complete stamp’s original opaque white canvas created a visible rectangle against the ticket’s light-green surface. |
 | Repair | Generated a transparent-background derivative from the supplied stamp, uploaded it as `/manus-storage/trade-complete-stamp-transparent_9ec4b748.png`, and updated the component to use it without blend-mode styling. |
 | Validation | Focused homepage and movement tests passed 3/3; TypeScript, production build, dependency audit, whitespace, and desktop visual checks passed. No database, payment, provider, schedule, setting, or secret changed. |
+
+## Recent Trades Mockup-to-Live Pair
+| Record | Value |
+|---|---|
+| Request | Apply the supplied wide Recent Trades visual mockup’s exact ticket format and style to the live homepage section. |
+| Implementation | The live card now uses the reference’s shallow ticket structure: full member/avatar-detail panels, ratings and truthful verification rows, dotted dividers, direct larger item presentation, centered transparent Trade Complete mark, distinct footer, arrows, and full main-column width. |
+| Reference asset | Standalone mockup retained at `/home/ubuntu/webdev-static-assets/recent-trades-ticket-mockup.png` with reserved URL `/manus-storage/recent-trades-ticket-mockup_2144c0cd.png`; it is not used as production UI. |
+| Validation | Focused homepage and movement tests passed 3/3; TypeScript, production build, dependency audit, whitespace, and desktop/mobile visual checks passed. No data, payment, provider, schedule, setting, or secret changed. |
