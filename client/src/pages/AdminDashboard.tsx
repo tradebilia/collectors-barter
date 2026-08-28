@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
 import { BarChart3, Users, Package, Settings, Trash2, Flag, Mail, Search, ArrowUpDown, Calendar, ExternalLink, CheckCircle, XCircle, AlertTriangle, Ban, ShieldOff, ClipboardList, MessageSquare, TicketCheck, Send, ChevronDown, ChevronUp, Store, CloudUpload } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
@@ -450,8 +451,33 @@ export default function AdminDashboard() {
   const moderationLogQuery = trpc.admin.getModerationLog.useQuery(undefined, { enabled: user?.role === 'admin' });
   const pendingApprovalsQuery = trpc.admin.getPendingAccountApprovals.useQuery(undefined, { enabled: user?.role === 'admin', refetchOnWindowFocus: true });
   const apiHealthQuery = trpc.admin.getApiHealthEvents.useQuery(undefined, { enabled: user?.role === 'admin', refetchOnWindowFocus: true });
+  const [selectedApiHealthEventIds, setSelectedApiHealthEventIds] = useState<Set<number>>(new Set());
+  const [apiHealthClearConfirmOpen, setApiHealthClearConfirmOpen] = useState(false);
+  const clearApiHealthEventsMutation = trpc.admin.clearApiHealthEvents.useMutation({
+    onSuccess: (result) => {
+      setSelectedApiHealthEventIds(new Set());
+      setApiHealthClearConfirmOpen(false);
+      apiHealthQuery.refetch();
+      toast.success(`${result.clearedCount} API health event${result.clearedCount === 1 ? '' : 's'} cleared.`);
+    },
+    onError: (error) => toast.error(error.message),
+  });
   const billingOverviewQuery = trpc.billing.getOverview.useQuery(undefined, { enabled: user?.role === "admin", refetchOnWindowFocus: true });
   const billingMembersQuery = trpc.billing.getMembers.useQuery(undefined, { enabled: user?.role === "admin", refetchOnWindowFocus: true });
+  const [feeModeDialogOpen, setFeeModeDialogOpen] = useState(false);
+  const [pendingFeeModeEnabled, setPendingFeeModeEnabled] = useState(false);
+  const [feeModePassword, setFeeModePassword] = useState("");
+  const [feeModePhrase, setFeeModePhrase] = useState("");
+  const updateFeeModeMutation = trpc.billing.updateFeeMode.useMutation({
+    onSuccess: (result) => {
+      setFeeModeDialogOpen(false);
+      setFeeModePassword("");
+      setFeeModePhrase("");
+      billingOverviewQuery.refetch();
+      toast.success(`Fee Mode launch control is now ${result.enabled ? "On" : "Off"}. Payment enforcement remains inactive.`);
+    },
+    onError: (error) => toast.error(error.message),
+  });
   const reviewApprovalMutation = trpc.admin.reviewAccountApproval.useMutation({
     onSuccess: () => pendingApprovalsQuery.refetch(),
     onError: (error) => toast.error(error.message),
@@ -619,7 +645,7 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-background">
-      <TopBar />
+      <TopBar hideSearch />
       <div className="w-full px-6 py-6">
         <div className="mb-8">
           <h1 className="text-3xl font-bold tracking-tight">Admin Dashboard</h1>
@@ -782,6 +808,16 @@ export default function AdminDashboard() {
                       <p className="text-xs font-bold uppercase tracking-[0.14em] text-violet-700">Current status</p>
                       <p className="mt-1 text-lg font-semibold text-slate-900">{billingOverviewQuery.data?.billing.statusLabel}</p>
                       <p className="mt-1 text-sm text-slate-700">{billingOverviewQuery.data?.billing.statusMessage}</p>
+                    </div>
+                    <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                        <div>
+                          <p className="text-xs font-bold uppercase tracking-[0.14em] text-amber-800">Fee Mode launch control</p>
+                          <p className="mt-1 text-base font-semibold text-slate-900">{billingOverviewQuery.data?.billing.feeModeEnabled ? "On" : "Off"}</p>
+                          <p className="mt-1 max-w-2xl text-sm text-slate-700">This records future fee-mode intent only. It does not enable Stripe Checkout, charge anyone, or restrict access. A separate launch-readiness decision is required before payment enforcement.</p>
+                        </div>
+                        <div className="flex items-center gap-3 rounded-lg bg-white p-3 shadow-sm"><span className="text-sm font-medium">Fee Mode</span><Switch checked={Boolean(billingOverviewQuery.data?.billing.feeModeEnabled)} onCheckedChange={(enabled) => { setPendingFeeModeEnabled(enabled); setFeeModePassword(""); setFeeModePhrase(""); setFeeModeDialogOpen(true); }} aria-label="Change Fee Mode launch control" /></div>
+                      </div>
                     </div>
                     <div className="grid gap-3 sm:grid-cols-2">
                       {billingOverviewQuery.data?.billing.futureSubscriptionTerms.map((term) => (
@@ -1521,15 +1557,31 @@ export default function AdminDashboard() {
             <Card>
               <CardHeader><CardTitle>API Health</CardTitle><CardDescription>Recent sanitized external API failures. Keys, request payloads, and raw provider responses are never displayed.</CardDescription></CardHeader>
               <CardContent>
-                {apiHealthQuery.isLoading ? <p className="text-sm text-muted-foreground">Loading API health…</p> : (apiHealthQuery.data?.length ?? 0) === 0 ? <p className="text-sm text-muted-foreground">No recorded API failures.</p> : <div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className="border-b text-left"><th className="p-2">Provider</th><th className="p-2">Operation</th><th className="p-2">Likely cause</th><th className="p-2">Status</th><th className="p-2">When</th></tr></thead><tbody>{apiHealthQuery.data?.map((event: any) => <tr key={event.id} className="border-b"><td className="p-2 font-medium">{event.provider}</td><td className="p-2">{event.operation}</td><td className="p-2 capitalize">{event.failureClass.replaceAll('_', ' ')}</td><td className="p-2">{event.statusCode ?? '—'}</td><td className="p-2 whitespace-nowrap">{new Date(event.occurredAt).toLocaleString()}</td></tr>)}</tbody></table></div>}
+                {apiHealthQuery.isLoading ? <p className="text-sm text-muted-foreground">Loading API health…</p> : (apiHealthQuery.data?.length ?? 0) === 0 ? <p className="text-sm text-muted-foreground">No recorded API failures.</p> : <><div className="mb-3 flex flex-wrap items-center justify-between gap-2"><label className="flex items-center gap-2 text-sm"><Checkbox checked={selectedApiHealthEventIds.size === (apiHealthQuery.data?.length ?? 0)} onCheckedChange={(checked) => setSelectedApiHealthEventIds(checked ? new Set((apiHealthQuery.data ?? []).map((event: any) => event.id)) : new Set())} aria-label="Select all API health events" />Select all visible</label><Button variant="destructive" size="sm" disabled={selectedApiHealthEventIds.size === 0 || clearApiHealthEventsMutation.isPending} onClick={() => setApiHealthClearConfirmOpen(true)}>Clear selected ({selectedApiHealthEventIds.size})</Button></div><div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className="border-b text-left"><th className="p-2">Select</th><th className="p-2">Provider</th><th className="p-2">Operation</th><th className="p-2">Likely cause</th><th className="p-2">Status</th><th className="p-2">When</th></tr></thead><tbody>{apiHealthQuery.data?.map((event: any) => <tr key={event.id} className="border-b"><td className="p-2"><Checkbox checked={selectedApiHealthEventIds.has(event.id)} onCheckedChange={(checked) => setSelectedApiHealthEventIds((current) => { const next = new Set(current); checked ? next.add(event.id) : next.delete(event.id); return next; })} aria-label={`Select API health event ${event.id}`} /></td><td className="p-2 font-medium">{event.provider}</td><td className="p-2">{event.operation}</td><td className="p-2 capitalize">{event.failureClass.replaceAll('_', ' ')}</td><td className="p-2">{event.statusCode ?? '—'}</td><td className="p-2 whitespace-nowrap">{new Date(event.occurredAt).toLocaleString()}</td></tr>)}</tbody></table></div></>}
               </CardContent>
             </Card>
+            <Dialog open={apiHealthClearConfirmOpen} onOpenChange={setApiHealthClearConfirmOpen}><DialogContent><DialogHeader><DialogTitle>Clear selected API health events?</DialogTitle><DialogDescription>This permanently removes only the {selectedApiHealthEventIds.size} selected sanitized health record{selectedApiHealthEventIds.size === 1 ? '' : 's'}. The administrator action is retained in the audit log.</DialogDescription></DialogHeader><div className="flex justify-end gap-2"><Button variant="outline" onClick={() => setApiHealthClearConfirmOpen(false)}>Cancel</Button><Button variant="destructive" disabled={clearApiHealthEventsMutation.isPending} onClick={() => clearApiHealthEventsMutation.mutate({ eventIds: [...selectedApiHealthEventIds] })}>Clear selected records</Button></div></DialogContent></Dialog>
           </TabsContent>
           <TabsContent value="operations" className="space-y-4 mt-6">
             <AdminOperationsTab onNavigate={setActiveTab} />
           </TabsContent>
         </Tabs>
       </div>
+
+      <Dialog open={feeModeDialogOpen} onOpenChange={setFeeModeDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Turn Fee Mode {pendingFeeModeEnabled ? "On" : "Off"}?</DialogTitle>
+            <DialogDescription>This records the site’s future fee-mode intent only. It does not enable Stripe Checkout, charge members, or enforce paid access.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">For safety, verify your current administrator password and type <strong>{pendingFeeModeEnabled ? "ENABLE TRADEBILIA FEE MODE" : "DISABLE TRADEBILIA FEE MODE"}</strong> exactly.</div>
+            <div className="space-y-2"><label className="text-sm font-medium" htmlFor="fee-mode-password">Current administrator password</label><Input id="fee-mode-password" type="password" value={feeModePassword} onChange={(event) => setFeeModePassword(event.target.value)} autoComplete="current-password" /></div>
+            <div className="space-y-2"><label className="text-sm font-medium" htmlFor="fee-mode-phrase">Confirmation phrase</label><Input id="fee-mode-phrase" value={feeModePhrase} onChange={(event) => setFeeModePhrase(event.target.value)} /></div>
+            <div className="flex justify-end gap-2"><Button variant="outline" onClick={() => setFeeModeDialogOpen(false)}>Cancel</Button><Button disabled={!feeModePassword || feeModePhrase.trim() !== (pendingFeeModeEnabled ? "ENABLE TRADEBILIA FEE MODE" : "DISABLE TRADEBILIA FEE MODE") || updateFeeModeMutation.isPending} onClick={() => updateFeeModeMutation.mutate({ enabled: pendingFeeModeEnabled, currentPassword: feeModePassword, confirmationPhrase: feeModePhrase })}>{updateFeeModeMutation.isPending ? "Verifying…" : `Confirm Fee Mode ${pendingFeeModeEnabled ? "On" : "Off"}`}</Button></div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* User Profile Modal */}
       <Dialog open={!!selectedUser} onOpenChange={(open) => !open && setSelectedUser(null)}>
@@ -2592,6 +2644,7 @@ function FlaggedContentTab() {
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
 
   const flagsQuery = trpc.admin.getFlaggedContent.useQuery({ status: statusFilter });
+  const lowFeedbackFlagsQuery = trpc.admin.getLowFeedbackFlags.useQuery();
 
   const reviewMutation = trpc.admin.reviewFlaggedContent.useMutation({
     onSuccess: () => {
@@ -2599,6 +2652,13 @@ function FlaggedContentTab() {
       toast.success("Flag updated.");
     },
     onError: (e) => toast.error("Failed to update flag: " + e.message),
+  });
+  const reviewLowFeedbackMutation = trpc.admin.reviewLowFeedbackFlag.useMutation({
+    onSuccess: () => {
+      lowFeedbackFlagsQuery.refetch();
+      toast.success("Feedback safety record updated.");
+    },
+    onError: (error) => toast.error(error.message),
   });
 
   const contentTypeColor: Record<string, string> = {
@@ -2608,6 +2668,7 @@ function FlaggedContentTab() {
   };
 
   const flags = (flagsQuery.data ?? []) as any[];
+  const lowFeedbackFlags = (lowFeedbackFlagsQuery.data ?? []) as any[];
 
   const toggleExpand = (id: number) => {
     setExpanded((prev) => {
@@ -2753,6 +2814,15 @@ function FlaggedContentTab() {
               ))}
             </div>
           )}
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2"><AlertTriangle className="h-4 w-4" /> Feedback Safety <span className="text-xs font-normal text-muted-foreground">({lowFeedbackFlags.length})</span></CardTitle>
+          <CardDescription>Marketplace feedback records that require safety review. Operations lists these separately from member reports and content flags.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {lowFeedbackFlagsQuery.isLoading ? <p className="text-sm text-muted-foreground">Loading feedback safety records…</p> : lowFeedbackFlags.length === 0 ? <p className="text-sm text-muted-foreground">No pending feedback safety records.</p> : <div className="space-y-2">{lowFeedbackFlags.map((flag: any) => <div key={flag.id} className="rounded-lg border p-3 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between"><div><p className="font-medium">{flag.memberDisplayName}</p><p className="text-sm text-muted-foreground">Feedback score: {flag.feedbackScore} · {flag.feedbackPercentage}% positive</p>{flag.flaggedReason ? <p className="mt-1 text-xs text-muted-foreground">{flag.flaggedReason}</p> : null}<p className="mt-1 text-xs text-muted-foreground">Flagged {new Date(flag.flaggedAt).toLocaleString()}</p></div><div className="flex flex-wrap gap-2"><Button size="sm" variant="outline" onClick={() => reviewLowFeedbackMutation.mutate({ flagId: flag.id, action: 'dismissed' })} disabled={reviewLowFeedbackMutation.isPending}>Dismiss</Button><Button size="sm" variant="outline" onClick={() => reviewLowFeedbackMutation.mutate({ flagId: flag.id, action: 'reviewed' })} disabled={reviewLowFeedbackMutation.isPending}>Reviewed</Button><Button size="sm" variant="destructive" onClick={() => reviewLowFeedbackMutation.mutate({ flagId: flag.id, action: 'action_taken' })} disabled={reviewLowFeedbackMutation.isPending}>Action taken</Button></div></div>)}</div>}
         </CardContent>
       </Card>
     </div>

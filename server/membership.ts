@@ -1,9 +1,10 @@
 import { TRPCError } from "@trpc/server";
 import { and, asc, eq, inArray } from "drizzle-orm";
 import { z } from "zod";
-import { billingSettings, membershipFeatures, membershipPlanFeatures, membershipPlans, userMemberships, userProfiles, users } from "../drizzle/schema";
+import { adminActivityLog, billingSettings, membershipFeatures, membershipPlanFeatures, membershipPlans, userMemberships, userProfiles, users } from "../drizzle/schema";
 import { requireDb } from "./db";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
+import { verifyPassword } from "./_core/auth";
 import { createMembershipTestCheckout, createMembershipTestPortal } from "./stripeMembershipBilling";
 
 export const FREE_LAUNCH_BILLING_MODE = "free_launch" as const;
@@ -27,8 +28,10 @@ export function hasMembershipAccess(status: MembershipStatus | null | undefined,
 
 export function buildBillingSummary(settings?: { billingMode: string; paymentEnforcementEnabled: number } | null) {
   const freeLaunchOverride = settings?.billingMode === FREE_LAUNCH_BILLING_MODE || !settings?.paymentEnforcementEnabled;
+  const feeModeEnabled = settings?.billingMode === "membership_required";
   return {
     billingMode: settings?.billingMode ?? FREE_LAUNCH_BILLING_MODE,
+    feeModeEnabled,
     freeLaunchOverride,
     stripeBillingEnabled: false,
     checkoutAvailable: false,
@@ -36,9 +39,11 @@ export function buildBillingSummary(settings?: { billingMode: string; paymentEnf
     paymentRequired: false,
     paymentEnforcementEnabled: false,
     futureSubscriptionTerms: FUTURE_SUBSCRIPTION_PAYMENT_TERMS,
-    statusLabel: freeLaunchOverride ? "Free Launch Access" : "Membership model prepared",
+    statusLabel: feeModeEnabled ? "Fee Mode On — launch control only" : freeLaunchOverride ? "Free Launch Access" : "Membership model prepared",
     statusMessage: freeLaunchOverride
-      ? "No credit card is required. All current Tradebilia features are available at no charge during the Free Launch."
+      ? feeModeEnabled
+        ? "Fee Mode is recorded as On, but checkout, card collection, and payment enforcement remain inactive until a separately approved launch-readiness activation."
+        : "No credit card is required. All current Tradebilia features are available at no charge during the Free Launch."
       : "Payment enforcement is intentionally inactive. Checkout, card collection, and charges remain unavailable.",
   };
 }
@@ -163,6 +168,38 @@ export const billingRouter = router({
     await db.update(membershipPlanFeatures).set({ isEnabled: input.isEnabled ? 1 : 0, limitValue: input.limitValue }).where(and(eq(membershipPlanFeatures.planId, input.planId), eq(membershipPlanFeatures.featureId, input.featureId)));
     return { success: true };
   }),
+  updateFeeMode: protectedProcedure
+    .input(z.object({ enabled: z.boolean(), currentPassword: z.string().min(1).max(200), confirmationPhrase: z.string().min(1).max(100) }))
+    .mutation(async ({ ctx, input }) => {
+      requireAdministrator(ctx.user.role);
+      const expectedPhrase = input.enabled ? "ENABLE TRADEBILIA FEE MODE" : "DISABLE TRADEBILIA FEE MODE";
+      if (input.confirmationPhrase.trim() !== expectedPhrase) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: `Type exactly: ${expectedPhrase}` });
+      }
+
+      const db = await requireDb();
+      const [administrator] = await db.select({ passwordHash: users.passwordHash }).from(users).where(eq(users.id, ctx.user.id)).limit(1);
+      if (!administrator?.passwordHash || !(await verifyPassword(input.currentPassword, administrator.passwordHash))) {
+        throw new TRPCError({ code: "UNAUTHORIZED", message: "Current administrator password verification failed." });
+      }
+
+      const settings = await getSettings();
+      if (!settings) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Billing settings are unavailable." });
+      const billingMode = input.enabled ? "membership_required" : FREE_LAUNCH_BILLING_MODE;
+      await db.update(billingSettings).set({
+        billingMode,
+        paymentEnforcementEnabled: 0,
+        updatedBy: ctx.user.id,
+      }).where(eq(billingSettings.id, settings.id));
+      await db.insert(adminActivityLog).values({
+        adminId: ctx.user.id,
+        action: "fee_mode_launch_control_changed",
+        targetType: "billing_settings",
+        targetReference: String(settings.id),
+        summary: `Fee Mode launch control turned ${input.enabled ? "On" : "Off"}; checkout and payment enforcement remain inactive`,
+      });
+      return { success: true, enabled: input.enabled, paymentEnforcementEnabled: false };
+    }),
   startTestCheckout: protectedProcedure.input(z.object({ billingTerm: z.enum(["monthly", "annual"]) })).mutation(async ({ ctx, input }) => {
     requireAdministrator(ctx.user.role);
     try {

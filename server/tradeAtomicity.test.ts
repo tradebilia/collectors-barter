@@ -31,4 +31,15 @@ describe("Trade Room atomicity and retry-safety contracts", () => {
     expect(acceptance).toContain("alreadyAccepted: true");
     expect(acceptance).toContain("!acceptance.alreadyAccepted && acceptance.notification === 'mutual'");
   });
+
+  it("locks every shared listing in deterministic order before mutual acceptance", () => {
+    const acceptance = source.slice(source.indexOf("acceptTradeProposal:"), source.indexOf("rejectTradeProposal:"));
+    expect(acceptance).toContain("const involvedListingIds = [...new Set([");
+    expect(acceptance).toContain(".sort((left, right) => Number(left) - Number(right))");
+    expect(acceptance).toContain("SELECT id FROM listings WHERE id IN");
+    expect(acceptance).toContain("AND isActive = 1 AND status = 'active' ORDER BY id FOR UPDATE");
+    expect(acceptance).toContain("UPDATE listings SET status = 'traded'");
+    expect(acceptance).toContain("affectedRows ?? 0) !== involvedListingIds.length");
+    expect(acceptance).toContain("One or more trade items are no longer available");
+  });
 });

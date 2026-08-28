@@ -103,7 +103,7 @@ import { testAIRouter } from "./testAIRouter";
 import { r2MediaRouter } from "./r2MediaRouter";
 import { customAuth } from "./_core/customAuth";
 import { getOrCreateDirectMessageThread, persistDirectMessage } from "./directMessagePersistence";
-import { users, userProfiles, listings, deletedAccounts, tradeProposals, tradeMessages, tradeReviews, watchlistEntries, draftListings, passwordResetTokens, referralRequests, userFollows, directMessageThreads, directMessages, tradePayments, tradeActivityLog, emailTemplates, accountApprovalReviews, apiHealthEvents, adminActivityLog } from "../drizzle/schema";
+import { users, userProfiles, listings, deletedAccounts, tradeProposals, tradeMessages, tradeReviews, watchlistEntries, draftListings, passwordResetTokens, referralRequests, userFollows, directMessageThreads, directMessages, tradePayments, tradeActivityLog, emailTemplates, accountApprovalReviews, apiHealthEvents, adminActivityLog, lowFeedbackFlags } from "../drizzle/schema";
 import { eq, sql, desc, or, inArray, and, isNull } from "drizzle-orm";
 import { alias } from "drizzle-orm/mysql-core";
 import { TRPCError } from "@trpc/server";
@@ -2453,6 +2453,23 @@ export const appRouter = router({
       const db = await requireDb();
       return db.select().from(apiHealthEvents).orderBy(desc(apiHealthEvents.occurredAt)).limit(100);
     }),
+    clearApiHealthEvents: protectedProcedure
+      .input(z.object({ eventIds: z.array(z.number().int().positive()).min(1).max(100) }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+        const db = await requireDb();
+        const uniqueEventIds = [...new Set(input.eventIds)];
+        const result = await db.delete(apiHealthEvents).where(inArray(apiHealthEvents.id, uniqueEventIds));
+        const clearedCount = Number((result as any)?.[0]?.affectedRows ?? (result as any)?.affectedRows ?? 0);
+        await db.insert(adminActivityLog).values({
+          adminId: ctx.user.id,
+          action: 'api_health_events_cleared',
+          targetType: 'api_health_events',
+          targetReference: uniqueEventIds.join(','),
+          summary: `Cleared ${clearedCount} selected API health event${clearedCount === 1 ? '' : 's'}`,
+        });
+        return { success: true, clearedCount };
+      }),
     getOperationsSnapshot: protectedProcedure.query(async ({ ctx }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
       const db = await requireDb();
@@ -2487,7 +2504,9 @@ export const appRouter = router({
         actionQueue: [
           { key: 'approvals', label: 'Pending approvals', count: Number(counts.pendingApprovals ?? 0), description: 'Accounts awaiting marketplace approval.', tab: 'approvals' },
           { key: 'merchants', label: 'Unverified merchants', count: Number(counts.unverifiedMerchants ?? 0), description: 'Merchant profiles awaiting verification.', tab: 'users' },
-          { key: 'reports', label: 'Reports & flags', count: Number(counts.pendingReports ?? 0) + Number(counts.pendingFlags ?? 0) + Number(counts.pendingFeedbackFlags ?? 0), description: 'Pending community and feedback-safety review.', tab: 'reports' },
+          { key: 'reports', label: 'Member reports', count: Number(counts.pendingReports ?? 0), description: 'Community reports awaiting review.', tab: 'reports' },
+          { key: 'flags', label: 'Content flags', count: Number(counts.pendingFlags ?? 0), description: 'Flagged content awaiting review.', tab: 'flagged' },
+          { key: 'feedbackFlags', label: 'Feedback safety', count: Number(counts.pendingFeedbackFlags ?? 0), description: 'Low-feedback safety records awaiting review.', tab: 'flagged' },
           { key: 'tickets', label: 'Urgent support', count: Number(counts.urgentTickets ?? 0), description: 'Open or in-progress high-priority tickets.', tab: 'tickets' },
           { key: 'trades', label: 'Trade follow-up', count: Number(counts.disputedTrades ?? 0) + Number(counts.overdueTradeMilestones ?? 0), description: 'Disputed or overdue trade milestones.', tab: 'trades' },
         ],
@@ -3342,6 +3361,31 @@ export const appRouter = router({
                   reviewedAt = NOW()
               WHERE id = ${input.flagId}`
         );
+        return { success: true };
+      }),
+    getLowFeedbackFlags: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user?.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      const db = await requireDb();
+      const memberProfile = alias(userProfiles, 'lowFeedbackMemberProfile');
+      return db.select({
+        id: lowFeedbackFlags.id,
+        userId: lowFeedbackFlags.userId,
+        feedbackScore: lowFeedbackFlags.feedbackScore,
+        feedbackPercentage: lowFeedbackFlags.feedbackPercentage,
+        flaggedReason: lowFeedbackFlags.flaggedReason,
+        flaggedAt: lowFeedbackFlags.flaggedAt,
+        memberDisplayName: sql<string>`COALESCE(NULLIF(${memberProfile.displayName}, ''), NULLIF(${users.displayName}, ''), ${users.username}, CONCAT('Collector ', ${users.id}))`,
+      }).from(lowFeedbackFlags).innerJoin(users, eq(users.id, lowFeedbackFlags.userId)).leftJoin(memberProfile, eq(memberProfile.userId, users.id)).where(eq(lowFeedbackFlags.status, 'pending')).orderBy(desc(lowFeedbackFlags.flaggedAt)).limit(200);
+    }),
+    reviewLowFeedbackFlag: protectedProcedure
+      .input(z.object({ flagId: z.number().int().positive(), action: z.enum(['reviewed', 'dismissed', 'action_taken']), adminNotes: z.string().max(2000).optional() }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user?.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+        const db = await requireDb();
+        const result = await db.update(lowFeedbackFlags).set({ status: input.action, adminNotes: input.adminNotes?.trim() || null, reviewedBy: ctx.user.id, reviewedAt: new Date().toISOString().slice(0, 19).replace('T', ' ') }).where(and(eq(lowFeedbackFlags.id, input.flagId), eq(lowFeedbackFlags.status, 'pending')));
+        const updatedCount = Number((result as any)?.[0]?.affectedRows ?? (result as any)?.affectedRows ?? 0);
+        if (updatedCount !== 1) throw new TRPCError({ code: 'NOT_FOUND', message: 'That feedback safety record is no longer pending.' });
+        await db.insert(adminActivityLog).values({ adminId: ctx.user.id, action: 'low_feedback_flag_reviewed', targetType: 'low_feedback_flag', targetReference: String(input.flagId), summary: `Feedback safety record marked ${input.action}` });
         return { success: true };
       }),
     flagContent: protectedProcedure

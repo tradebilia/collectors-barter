@@ -16,6 +16,14 @@ However, the P0 remediation cycle is **not yet closed**. One concrete concurrenc
 | P1 | Session lifetime/revocation refinement and closure-versus-future-paid-membership behavior. | Deferred; no present Free Launch exploit was verified. | Separate future hardening decision. |
 | P2 | Incremental guard consolidation, test ergonomics, and performance maintenance. | Deferred. | Schedule independently after P0 closure. |
 
+## Remediation Addendum — 2026-08-28
+
+The approved narrow repair is now implemented. In mutual trade acceptance, `acceptTradeProposal` derives every requested and offered listing, de-duplicates and locks those rows in stable ID order, verifies that every row remains active under that lock, and requires guarded active-state transitions before the proposal can advance. A competing proposal that loses the listing lock receives a neutral item-unavailable conflict; the existing later competitor cancellation remains only non-authoritative cleanup.
+
+The repaired path has deterministic regression coverage for stable locking, the affected-row losing-conflict case, and normal acceptance behavior. The focused fifth-/fourth-audit, atomicity, administrator-controls, and Operations regressions passed: **4 files / 14 tests**. TypeScript, production build, production dependency audit, and whitespace review also passed. The complete suite passed **482 tests**, with **4 intentional skips** and one skipped file; its only failure was the pre-existing external UPS OAuth readiness probe, which timed out at the test harness's five-second limit. One isolated retry also timed out. No UPS application behavior was changed or masked, and no further provider calls were made.
+
+> **Finding status:** the verified competing-listing P0 race is resolved in the recovered WebDev workspace, subject to the recorded external UPS test qualification and the pending normal canonical synchronization. No custom TiDB schema/data, marketplace record, membership record, Stripe/payment setting or action, provider configuration, schedule, or secret changed during this remediation.
+
 ## Verified P0 — Competing Trade Acceptance Race
 
 `acceptTradeProposal` locks the selected `tradeProposals` row and that proposal’s `tradeReceiptConfirmation` rows. On mutual acceptance it marks involved listings as `traded`, then cancels other pending/negotiating proposals that reference those listings. The listing updates do not lock or conditionally require the `active` state before the acceptance is committed; competing-proposal cancellation occurs after status advancement.
