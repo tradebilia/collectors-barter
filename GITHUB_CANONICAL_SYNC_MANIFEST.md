@@ -470,3 +470,7 @@ Before future GitHub-to-WebDev reconciliation, create a recovery checkpoint and 
 - Member avatars, usernames, ratings, verification rows, item imagery, metadata, and completion mark are larger. Recently Added restores the earlier 150px/160px/172px responsive item sizing.
 - Automatic five-second fade-only rotation and reduced-motion handling remain unchanged; hero, top bar, category bar, stats strip, and other homepage areas remain unchanged.
 - No database, payment, provider, schedule, setting, or secret changed.
+
+## Final Recent Trades readability correction
+
+The final card correction uses canonical display-name priority, aligned directional arrows, blue image surfaces, larger readable item imagery, the true-alpha high-resolution blue Trade Complete seal, and blue ticket outlines over repeated perforations. Member columns preserve full names, item details stack below their images, and the existing automatic five-second fade rotation and reduced-motion handling remain unchanged. No hero, top-bar, database, payment, provider, schedule, or secret changes were made.

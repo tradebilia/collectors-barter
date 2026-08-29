@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { BadgeCheck, CalendarDays, Hash, Package, ShieldCheck, Star, UserRound } from "lucide-react";
+import { ArrowLeft, ArrowRight, BadgeCheck, CalendarDays, Hash, Package, ShieldCheck, Star, UserRound } from "lucide-react";
 import { Link } from "wouter";
 import { buildTradeShowcaseExchange, type TradeShowcaseItem, type TradeShowcaseParty, type TradeShowcaseTrade } from "@/lib/tradeShowcaseMovements";
 
@@ -48,32 +48,43 @@ function formatMemberRating(value: TradeShowcaseParty["averageRating"]) {
 }
 
 function getMemberName(member: TradeShowcaseParty) {
-  return member.username?.trim() || member.displayName?.trim() || "Member";
+  return member.displayName?.trim() || member.username?.trim() || "Member";
 }
 
-function TradeItemList({ items, side }: { items: TradeShowcaseItem[]; side: "left" | "right" }) {
+function DirectionMarker({ side }: { side: "left" | "right" }) {
+  const DirectionIcon = side === "left" ? ArrowRight : ArrowLeft;
+  const directionLabel = side === "left" ? "Item moves toward the right member" : "Item moves toward the left member";
+
+  return (
+    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#3974bb]/60 bg-[#d7e6fb]/70 text-[#2458a6]" aria-label={directionLabel} title={directionLabel}>
+      <DirectionIcon className="h-5 w-5" aria-hidden="true" />
+    </span>
+  );
+}
+
+function TradeItemList({ items }: { items: TradeShowcaseItem[] }) {
   if (!items.length) return <p className="text-center text-xs italic text-slate-500">No public item details available.</p>;
 
   return (
-    <div className={`flex min-w-0 flex-wrap items-center justify-center gap-x-4 gap-y-2 ${side === "right" ? "md:justify-start" : "md:justify-end"}`}>
+    <div className="grid w-full min-w-0 grid-cols-1 items-center justify-items-center gap-2 text-center">
       {items.map((item, index) => {
         const content = (
           <>
-            <div className="h-44 w-32 shrink-0 overflow-hidden bg-[#f5f8fd] sm:h-52 sm:w-40">
+            <div className="h-44 w-32 shrink-0 overflow-hidden rounded bg-transparent sm:h-48 sm:w-36">
               {item.imageUrl ? (
                 <img src={item.imageUrl} alt={item.title || "Traded collectible"} className="h-full w-full object-contain" loading="lazy" />
               ) : (
                 <div className="flex h-full w-full items-center justify-center"><Package className="h-7 w-7 text-slate-400" aria-hidden="true" /></div>
               )}
             </div>
-            <div className="min-w-0 text-left">
-              <p className="max-w-48 text-sm font-semibold leading-snug text-slate-900 sm:text-base">{item.title || "Collectible"}</p>
-              <p className="mt-0.5 text-sm font-semibold text-[#315ea7]">{formatConditionOrGrade(item)}</p>
-              <p className="mt-0.5 text-base font-bold text-[#2458a6]">{formatEstimatedValue(item.estimatedValue)}</p>
+            <div className="min-w-0 max-w-full text-center">
+              <p className="line-clamp-3 break-words text-sm font-bold leading-snug text-[#153d7a] sm:text-base">{item.title || "Collectible"}</p>
+              <p className="mt-1 break-words text-sm font-semibold text-[#315ea7]">{formatConditionOrGrade(item)}</p>
+              <p className="mt-1 text-base font-bold text-[#2458a6]">{formatEstimatedValue(item.estimatedValue)}</p>
             </div>
           </>
         );
-        const className = "group flex min-w-0 max-w-full items-center gap-2 rounded-md p-1 transition hover:bg-white/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-600";
+        const className = "group grid w-full min-w-0 grid-cols-1 justify-items-center gap-2 overflow-hidden rounded-md p-1 text-center transition hover:bg-white/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-600";
         return item.id ? <Link key={`${item.id}-${index}`} href={`/listings/${item.id}`} className={className}>{content}</Link> : <div key={`${item.title}-${index}`} className={className}>{content}</div>;
       })}
     </div>
@@ -86,25 +97,25 @@ function TradeMember({ member }: { member: TradeShowcaseParty }) {
   const initials = memberName.slice(0, 2).toUpperCase();
 
   return (
-    <section className="flex min-w-0 items-center justify-center gap-2 text-left" aria-label={`Trade member ${memberName}`}>
+    <section className="flex min-w-0 max-w-full items-center justify-center gap-2 text-left" aria-label={`Trade member ${memberName}`}>
       {member.avatarUrl ? (
-        <img src={member.avatarUrl} alt={`${memberName} avatar`} className="h-16 w-16 shrink-0 rounded-full border border-[#c8d7ee] bg-[#f3f7ff] object-contain p-0.5 sm:h-20 sm:w-20" loading="lazy" />
+        <img src={member.avatarUrl} alt={`${memberName} avatar`} className="h-16 w-16 shrink-0 rounded-full border-2 border-[#3974bb] bg-[#d7e6fb] object-contain p-0.5 sm:h-16 sm:w-16" loading="lazy" />
       ) : (
-        <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full border border-[#c8d7ee] bg-[#f3f7ff] text-sm font-bold text-slate-500 sm:h-20 sm:w-20" aria-label={`${memberName} avatar unavailable`}>{initials || <UserRound className="h-4 w-4" aria-hidden="true" />}</div>
+        <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full border-2 border-[#3974bb] bg-[#d7e6fb] text-base font-bold text-[#2458a6]" aria-label={`${memberName} avatar unavailable`}>{initials || <UserRound className="h-4 w-4" aria-hidden="true" />}</div>
       )}
-      <div className="min-w-0">
-        <p className="max-w-40 truncate text-base font-bold text-slate-900 sm:text-lg" title={memberName}>{memberName}</p>
-        <p className="mt-0.5 flex items-center gap-1 text-sm font-semibold text-[#2458a6] sm:text-base">
-          <Star className="h-3.5 w-3.5 fill-[#4f84d1] text-[#4f84d1]" aria-hidden="true" />
+      <div className="min-w-0 max-w-[8rem]">
+        <p className="whitespace-nowrap text-[0.95rem] font-bold leading-tight text-[#153d7a] sm:text-base" title={memberName}>{memberName}</p>
+        <p className="mt-1 flex items-center gap-1 text-base font-semibold text-[#2458a6] sm:text-lg">
+          <Star className="h-4 w-4 fill-[#3974bb] text-[#3974bb]" aria-hidden="true" />
           {rating || "No rating yet"}
         </p>
-        <div className="mt-1.5 space-y-1">
+        <div className="mt-2 space-y-1.5">
           {member.verificationLabels?.length ? member.verificationLabels.map((verification) => (
-            <span key={verification} className="flex items-center gap-1 whitespace-nowrap text-[0.72rem] font-semibold text-slate-600 sm:text-xs" title={verification}>
-              <ShieldCheck className="h-3.5 w-3.5 shrink-0 text-[#315ea7]" aria-hidden="true" />
+            <span key={verification} className="flex items-center gap-1 whitespace-normal break-words text-sm font-semibold text-[#31568f] sm:text-base" title={verification}>
+              <ShieldCheck className="h-4 w-4 shrink-0 text-[#3974bb]" aria-hidden="true" />
               {verification}
             </span>
-          )) : <span className="text-[0.72rem] text-slate-400 sm:text-xs">No verifications shown</span>}
+          )) : <span className="text-sm text-[#6a82a4] sm:text-base">No verifications shown</span>}
         </div>
       </div>
     </section>
@@ -164,20 +175,22 @@ export function RecentTradesCarousel({ trades, isLoading = false }: { trades: Re
 
   return (
     <section aria-labelledby="recent-trades-heading" className="mx-2 mb-6 py-3 sm:mx-0 lg:mx-3">
-      <h2 id="recent-trades-heading" className="text-center font-serif text-[2.45rem] font-medium tracking-[-0.035em] text-[#2d241e] sm:text-[2.8rem]">Recent Trades</h2>
+      <h2 id="recent-trades-heading" className="text-center font-serif text-[2.45rem] font-medium tracking-[-0.035em] text-[#153d7a] sm:text-[2.8rem]">Recent Trades</h2>
 
-      {isLoading ? <div className="mt-4 h-40 animate-pulse rounded-2xl bg-white/80" aria-label="Loading recent trades" /> : !trade || !exchange ? <div className="mt-4 rounded-2xl border border-dashed border-violet-200 bg-white/80 p-8 text-center text-sm text-slate-600">Completed exchanges will appear here as collectors confirm their trades.</div> : <div className="relative mt-4 px-1 sm:px-5 lg:px-8">
-        <article key={trade.id} className={`ticket-card mx-auto w-full max-w-none overflow-hidden border border-[#c5d7ef] bg-[#edf3ff] shadow-sm transition-opacity duration-300 motion-reduce:transition-none ${isFading ? "opacity-0" : "opacity-100"}`} aria-live="off">
-        <div className="grid gap-3 px-5 py-4 md:grid-cols-[minmax(10rem,0.9fr)_1px_minmax(14rem,1.2fr)_1px_minmax(10rem,0.8fr)_1px_minmax(14rem,1.2fr)_1px_minmax(10rem,0.9fr)] md:items-center md:gap-4 lg:px-8 lg:py-5">
+      {isLoading ? <div className="mt-4 h-40 animate-pulse rounded-2xl bg-white/80" aria-label="Loading recent trades" /> : !trade || !exchange ? <div className="mt-4 rounded-2xl border border-dashed border-violet-200 bg-white/80 p-8 text-center text-sm text-slate-600">Completed exchanges will appear here as collectors confirm their trades.</div> : <div className="relative mt-4 px-0 sm:px-2 lg:px-3">
+        <article key={trade.id} className={`ticket-card mx-auto w-full max-w-none overflow-hidden border-2 border-[#3974bb] bg-[#d7e6fb] shadow-sm transition-opacity duration-300 motion-reduce:transition-none ${isFading ? "opacity-0" : "opacity-100"}`} aria-live="off">
+        <div className="grid gap-2 px-4 py-4 md:grid-cols-[minmax(12rem,1fr)_1px_minmax(10rem,1fr)_auto_1px_minmax(8rem,0.75fr)_1px_auto_minmax(10rem,1fr)_1px_minmax(12rem,1fr)] md:items-center md:gap-2 lg:px-6 lg:py-5">
           <TradeMember member={exchange.left.member} />
           <TicketDivider />
-          <TradeItemList items={exchange.left.items} side="left" />
+          <TradeItemList items={exchange.left.items} />
+          <DirectionMarker side="left" />
           <TicketDivider />
           <div className="flex items-center justify-center py-2" aria-label="Trade complete">
-            <img src="/manus-storage/trade-complete-seal-blue-final_7bd19559.png" alt="Trade complete" className="h-40 w-44 object-contain sm:h-44 sm:w-48" />
+            <img src="/manus-storage/trade-complete-seal-blue-hd-true-alpha_85e7f1a1.png" alt="Trade complete" className="h-44 w-48 object-contain sm:h-48 sm:w-52" />
           </div>
           <TicketDivider />
-          <TradeItemList items={exchange.right.items} side="right" />
+          <DirectionMarker side="right" />
+          <TradeItemList items={exchange.right.items} />
           <TicketDivider />
           <TradeMember member={exchange.right.member} />
         </div>
