@@ -305,7 +305,7 @@
     width: 1.8rem;
     pointer-events: none;
     background-repeat: repeat-y;
-    background-size: 100% 1.15rem;
+    background-size: 100% 1.8rem;
   }
 
   .ticket-card::before {

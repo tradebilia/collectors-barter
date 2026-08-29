@@ -178,7 +178,7 @@ export function RecentTradesCarousel({ trades, isLoading = false }: { trades: Re
       <h2 id="recent-trades-heading" className="text-center font-serif text-[2.45rem] font-medium tracking-[-0.035em] text-[#153d7a] sm:text-[2.8rem]">Recent Trades</h2>
 
       {isLoading ? <div className="mt-4 h-40 animate-pulse rounded-2xl bg-white/80" aria-label="Loading recent trades" /> : !trade || !exchange ? <div className="mt-4 rounded-2xl border border-dashed border-violet-200 bg-white/80 p-8 text-center text-sm text-slate-600">Completed exchanges will appear here as collectors confirm their trades.</div> : <div className="relative mt-4 px-0 sm:px-2 lg:px-3">
-        <article key={trade.id} className={`ticket-card mx-auto w-full max-w-none overflow-hidden border-2 border-[#3974bb] bg-[#f8fafc] shadow-sm transition-opacity duration-300 motion-reduce:transition-none ${isFading ? "opacity-0" : "opacity-100"}`} aria-live="off">
+        <article key={trade.id} className={`ticket-card mx-auto w-full max-w-none overflow-hidden border-y-2 border-x-0 border-[#3974bb] bg-[#f8fafc] shadow-sm transition-opacity duration-300 motion-reduce:transition-none ${isFading ? "opacity-0" : "opacity-100"}`} aria-live="off">
         <div className="grid min-w-0 gap-1 px-4 py-4 md:grid-cols-[minmax(10rem,0.95fr)_1px_minmax(12rem,1.1fr)_auto_1px_minmax(7rem,0.7fr)_1px_auto_minmax(12rem,1.1fr)_1px_minmax(10rem,0.95fr)] md:items-center md:gap-1 lg:px-4 lg:py-5">
           <TradeMember member={exchange.left.member} />
           <TicketDivider />
@@ -186,18 +186,7 @@ export function RecentTradesCarousel({ trades, isLoading = false }: { trades: Re
           <DirectionMarker side="left" />
           <TicketDivider />
           <div className="flex items-center justify-center py-2" aria-label="Trade complete">
-            <svg viewBox="0 0 240 220" role="img" aria-labelledby="trade-complete-title trade-complete-desc" className="h-44 w-48 text-[#315ea7] sm:h-48 sm:w-52">
-              <title id="trade-complete-title">Trade complete</title>
-              <desc id="trade-complete-desc">Blue Trade Completed seal with a checkmark.</desc>
-              <path d="M120 8l10 12 15-7 7 14 17-2 3 16 16 4-2 16 15 8-7 15 12 10-10 13 9 14-13 10 7 15-15 8 2 16-16 4-3 16-17-2-7 14-15-7-10 12-10-12-15 7-7-14-17 2-3-16-16-4 2-16-15-8 7-15-12-10 10-13-9-14 13-10-7-15 15-8-2-16 16-4 3-16 17 2 7-14 15 7z" fill="#f5f8fc" stroke="currentColor" strokeWidth="4" strokeLinejoin="round" />
-              <circle cx="120" cy="110" r="71" fill="none" stroke="currentColor" strokeWidth="3" />
-              <circle cx="120" cy="110" r="51" fill="none" stroke="currentColor" strokeWidth="3" />
-              <path d="M87 111l23 23 48-55" fill="none" stroke="currentColor" strokeWidth="9" strokeLinecap="round" strokeLinejoin="round" />
-              <circle cx="58" cy="110" r="4" fill="currentColor" />
-              <circle cx="182" cy="110" r="4" fill="currentColor" />
-              <text x="120" y="53" fill="currentColor" fontFamily="Georgia, serif" fontSize="19" fontWeight="700" letterSpacing="2" textAnchor="middle">TRADE</text>
-              <text x="120" y="177" fill="currentColor" fontFamily="Georgia, serif" fontSize="16" fontWeight="700" letterSpacing="1" textAnchor="middle">COMPLETED</text>
-            </svg>
+            <img src="/manus-storage/trade-quality-seal-transparent_53490773.png" alt="Trade Quality seal" className="h-44 w-48 object-contain sm:h-48 sm:w-52" loading="eager" />
           </div>
           <TicketDivider />
           <DirectionMarker side="right" />

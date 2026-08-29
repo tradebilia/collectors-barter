@@ -69,14 +69,11 @@ describe("homepage Recent Trades carousel", () => {
     expect(carouselSource).toContain("const DirectionIcon = side === \"left\" ? ArrowRight : ArrowLeft;");
     expect(carouselSource).toContain("Item moves toward the right member");
     expect(carouselSource).toContain("Item moves toward the left member");
-    expect(carouselSource).toContain('<svg viewBox="0 0 240 220"');
-    expect(carouselSource).toContain('aria-labelledby="trade-complete-title trade-complete-desc"');
-    expect(carouselSource).toContain("COMPLETED");
-    expect(carouselSource).toContain('x="120" y="177"');
-    expect(carouselSource).toContain('textAnchor="middle"');
+    expect(carouselSource).toContain('/manus-storage/trade-quality-seal-transparent_53490773.png');
+    expect(carouselSource).toContain('alt="Trade Quality seal"');
+    expect(carouselSource).toContain('className="h-44 w-48 object-contain');
+    expect(carouselSource).not.toContain('<svg viewBox="0 0 240 220"');
     expect(carouselSource).not.toContain("textPath");
-    expect(carouselSource).toContain('<title id="trade-complete-title">Trade complete</title>');
-    expect(carouselSource).toContain('className="h-44 w-48');
     expect(carouselSource).toContain("bg-transparent");
     expect(carouselSource).toContain('className="h-40 w-24');
     expect(carouselSource).toContain('sm:h-44 sm:w-28');
@@ -89,7 +86,8 @@ describe("homepage Recent Trades carousel", () => {
     expect(ticketCss).toContain("width: 1.8rem");
     expect(ticketCss).toContain("M1 1 L29 9 L1 17 Z");
     expect(ticketCss).toContain("M29 1 L1 9 L29 17 Z");
-    expect(ticketCss).toContain("background-size: 100% 1.15rem");
+    expect(ticketCss).toContain("background-size: 100% 1.8rem");
+    expect(carouselSource).toContain("border-y-2 border-x-0 border-[#3974bb]");
     expect(carouselSource).toContain("verificationLabels");
     expect(carouselSource).toContain("averageRating");
     expect(carouselSource).not.toContain('title="You gave"');
