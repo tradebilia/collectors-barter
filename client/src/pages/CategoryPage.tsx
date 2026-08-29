@@ -258,7 +258,7 @@ export default function CategoryPage() {
   const [, params] = useRoute("/category/:slug");
   const slug = params?.slug as TradebiliaCategorySlug | undefined;
   const theme = getTradebiliaCategoryTheme(slug ?? "");
-  const { isAuthenticated } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const utils = trpc.useUtils();
 
   const [keyword, setKeyword] = useState("");
@@ -1482,7 +1482,7 @@ export default function CategoryPage() {
                                 <span className="font-semibold">Seller:</span> {listing.owner.displayName}
                               </div>
                               <div className="flex items-center gap-1">
-                                <span className="font-semibold">Trust:</span>
+                                <span className="font-semibold">Trader Rating:</span>
                                 <Star className="fill-current h-3 w-3" />
                                 <span>{listing.ownerRating.averageRating.toFixed(1)}</span>
                               </div>
@@ -1507,10 +1507,10 @@ export default function CategoryPage() {
                             </div>
                             {listing.featured ? <Badge className={`rounded-full text-[0.5rem] px-1 py-0 ${theme.chipClassName}`}>Featured</Badge> : null}
                           </div>
-                          <div className="rounded-md border border-current/10 bg-black/5 p-3 grid grid-cols-2 gap-1 p-1 text-[0.5rem]">
+                          <div className="grid grid-cols-2 gap-1 rounded-md border border-current/10 bg-black/5 p-1 text-[0.5rem]">
                             <div>
-                              <p className="uppercase tracking-[0.1em] opacity-60 text-[0.45rem]">{listing.grade && parseFloat(String(listing.grade)) > 0 ? "Grade" : "Condition"}</p>
-                              <p className="mt-1 font-semibold truncate mt-0 text-[0.55rem]">
+                              <p className="text-[0.55rem] uppercase tracking-[0.08em] opacity-60">{listing.grade && parseFloat(String(listing.grade)) > 0 ? "Grade" : "Condition"}</p>
+                              <p className="mt-0 truncate text-[0.75rem] font-bold leading-tight">
                                 {listing.grade && parseFloat(String(listing.grade)) > 0
                                   ? `${listing.certificationCompany ? `${listing.certificationCompany} ` : ""}${formatGrade(listing.grade)}`
                                   : listing.conditionLabel}
@@ -1525,7 +1525,7 @@ export default function CategoryPage() {
                               <p className="mt-1 font-semibold truncate mt-0 text-[0.55rem]">{listing.owner.displayName}</p>
                             </div>
                             <div>
-                              <p className="uppercase tracking-[0.1em] opacity-60 text-[0.45rem]">Trust</p>
+                              <p className="whitespace-nowrap text-[0.42rem] uppercase tracking-[0.07em] opacity-60">Trader Rating</p>
                               <div className="mt-1 flex items-center gap-0.5 font-semibold mt-0 gap-0.5">
                                 <Star className="fill-current h-2 w-2" />
                                 <span className="truncate text-[0.55rem]">{listing.ownerRating.averageRating.toFixed(1)}</span>
@@ -1541,9 +1541,17 @@ export default function CategoryPage() {
                         </>
                       )}
                       <div className="flex flex-wrap gap-0.5">
-                        <Dialog open={proposalListingId === listing.id} onOpenChange={open => setProposalListingId(open ? listing.id : null)}>
+                        <Dialog open={proposalListingId === listing.id} onOpenChange={open => {
+                          setProposalListingId(open ? listing.id : null);
+                          if (!open) setProposalNote("");
+                        }}>
                           <DialogTrigger asChild>
-                            <Button variant="outline" className="rounded-full bg-transparent px-1 py-0 text-xs h-auto" disabled={!isAuthenticated}>
+                            <Button
+                              variant="outline"
+                              className="rounded-full bg-transparent px-1 py-0 text-xs h-auto"
+                              disabled={!isAuthenticated || listing.ownerId === user?.id}
+                              title={listing.ownerId === user?.id ? "You cannot message or trade with your own item" : "Start a trade proposal"}
+                            >
                               <MessageSquareText className="h-2 w-2" />
                             </Button>
                           </DialogTrigger>
@@ -1560,10 +1568,10 @@ export default function CategoryPage() {
                                 <Input value={listing.title} readOnly />
                               </div>
                               <div className="space-y-2">
-                                <Label>Opening note</Label>
-                                <Textarea value={proposalNote} onChange={event => setProposalNote(event.target.value)} placeholder="Share why this collectible fits your collection goals." />
+                                <Label>Your personalized message</Label>
+                                <Textarea value={proposalNote} onChange={event => setProposalNote(event.target.value)} placeholder="Share why you would like to trade for this collectible." maxLength={1000} />
                               </div>
-                              <Button className="w-full rounded-full" disabled={createProposalMutation.isPending} onClick={() => createProposalMutation.mutate({ requestedListingId: listing.id, note: proposalNote })}>
+                              <Button className="w-full rounded-full" disabled={createProposalMutation.isPending || !proposalNote.trim()} onClick={() => createProposalMutation.mutate({ requestedListingId: listing.id, note: proposalNote.trim() })}>
                                 {createProposalMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                                 Send Trade Proposal
                               </Button>

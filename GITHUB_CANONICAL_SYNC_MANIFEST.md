@@ -500,7 +500,17 @@ The final card correction uses canonical display-name priority, aligned directio
 | Record | Value |
 |---|---|
 | Managed WebDev checkpoint | `f2e4aef2` |
-| Canonical implementation commit | `658949bc1531075c120bc979898786cc13eccc48` — normal credential-safe push to GitHub `main`; no force push or history replacement. |
+| Canonical implementation commit | `5ef820e94c1fa5b42e791635ff7a7e0428db0ed1` — normal credential-safe push to GitHub `main`; no force push or history replacement. |
 | Scope | Standardized all member-avatar renderers to use a blurred enlarged copy of the same source image behind a sharp, frame-filling foreground. The shared Avatar primitive now updates nine consumer files, and bespoke paths in Public Profile, Verified Merchants, Traders Showcase, and every Trade Room context use the same treatment. |
 | Accessibility and safety | The decorative background is hidden from assistive technologies; the foreground retains meaningful alt text; no-photo fallbacks remain intact; image-error backgrounds hide safely. Listing media, provider logos, category graphics, and other non-avatar images are excluded. |
 | Validation | Focused avatar, homepage, and responsive-layout regressions passed 15/15; TypeScript, production build, production dependency audit, source-diff whitespace check, and desktop/mobile representative visual reviews passed. |
+
+## Owner-Safe Proposals and Category Card Refinement Pair
+
+| Record | Value |
+|---|---|
+| Managed WebDev checkpoint | `9daa4122` |
+| Canonical implementation commit | `ff6d30f84305058f3976a7a0b6abbe9171c90232` — normal credential-safe push to GitHub `main`; no force push or history replacement. |
+| Scope | Category and Item Detail owners cannot initiate a trade proposal or message themselves. Both trade-proposal entry points now collect a personalized message rather than submitting a default sentence. Category cards display a larger grade/condition value and use Trader Rating terminology. |
+| Safeguards | Server-side trade and direct-message self-action guards remain authoritative. Personalized messages are trimmed, limited to 1,000 characters, reset when the dialog closes, and required before submission. No data model, payment, provider, schedule, setting, or secret changed. |
+| Validation | Focused listing-interaction and category tests, TypeScript, production build, production dependency audit, source-diff whitespace, and desktop/mobile category-card visual checks passed. |
