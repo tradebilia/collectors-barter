@@ -1,5 +1,6 @@
 -- Custom TiDB runtime addition for the approved administrator audit trail.
--- Additive and idempotent; no private content, payment data, or provider payloads.
+-- This is additive and idempotent. It records only administrator identity,
+-- action category, generic target reference, and a non-sensitive summary.
 
 CREATE TABLE IF NOT EXISTS `adminActivityLog` (
   `id` int NOT NULL AUTO_INCREMENT,

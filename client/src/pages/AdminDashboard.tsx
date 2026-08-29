@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Archive, BarChart3, BookOpen, Users, Package, Settings, Trash2, Flag, Mail, Search, ArrowUpDown, Calendar, ExternalLink, CheckCircle, XCircle, AlertTriangle, Ban, ShieldOff, ClipboardList, MessageSquare, TicketCheck, Send, ChevronDown, ChevronUp, Store, CloudUpload, CreditCard, ShieldCheck } from "lucide-react";
+import { Archive, BarChart3, BookOpen, Users, Package, Settings, Trash2, Flag, Mail, Search, ArrowUpDown, Calendar, ExternalLink, CheckCircle, XCircle, AlertTriangle, Ban, ShieldOff, ClipboardList, MessageSquare, TicketCheck, Send, ChevronDown, ChevronUp, Store, CloudUpload } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -78,34 +78,73 @@ export function sortBillingMembers(members: readonly BillingMemberRecord[], sort
   });
 }
 
-const adminGuideEntries = [
-  { tab: "Stats", what: "Shows the main marketplace totals, activity, listing value, and trade indicators.", when: "Use it for a quick daily health check or to understand whether Tradebilia is growing.", caution: "It is view-only and does not change any record." },
-  { tab: "Billing", what: "Shows membership information, status and billing-term sorting, complimentary grants, and future fee-planning controls.", when: "Use it to understand membership status or review future fee plans.", caution: "Fee Mode is only a planning switch. It cannot turn on Checkout, collect a card, charge a member, or restrict Free Launch access." },
-  { tab: "Users", what: "Lists member accounts and available account-review and moderation controls.", when: "Use it to help a member, investigate an account, or follow an Operations queue link.", caution: "Archive is not deletion: it requires a reason and the exact confirmation phrase, rechecks current blockers, closes sign-in access, and retains trade, support, and safety history." },
-  { tab: "Listings", what: "Lists items in the marketplace with searching, sorting, review, and available listing-management actions.", when: "Use it to find an item, investigate a report, or address a listing needing attention.", caution: "A listing change can affect an active collector or trade, so confirm the item first." },
-  { tab: "Trades", what: "Shows trade records and both collectors involved so you can follow an exchange lifecycle.", when: "Use it for disputes, shipping/confirmation questions, or trade follow-up work.", caution: "Only completed, declined, or cancelled trades may be archived. Archive requires a reason and exact phrase, retains every trade record, and keeps archived records available through the filter." },
-  { tab: "Settings", what: "Provides available site-level administration settings.", when: "Use it only when you deliberately need to review or update a platform setting.", caution: "Settings can have broad effects; read the description and confirm the value before saving." },
-  { tab: "Deleted", what: "Provides a reference view for deleted or closed account records.", when: "Use it when answering a former-member question or distinguishing an inactive account from an active one.", caution: "Use Closure Requests for an account-closure request that still needs a decision." },
-  { tab: "Closure Requests", what: "Shows pending member account-closure requests, a safety review, and documented approve/decline actions.", when: "Use it when a member asks to close an account and the request is in the queue.", caution: "Review pending trade and safety context first. Closure blocks future sign-in and hides profile/listings; retained trade, report, and safety history is not erased." },
-  { tab: "Reports", what: "Shows member-submitted reports and their authorized review details.", when: "Use it when Operations shows Member reports or a collector raises a concern.", caution: "A report is something to investigate, not automatic proof. Protect private information." },
-  { tab: "Referrals", what: "Manages the referral invitation template and referral requests, including selected sends and deletions.", when: "Use it to follow up on referrals or prepare an approved referral invitation.", caution: "Sending and deletion are real actions. Check the selected recipients and message before confirming." },
-  { tab: "Pre-Launch Email", what: "Prepares, previews, and confirms launch updates for opted-in Coming Soon contacts.", when: "Use it only when ready to communicate a launch update to opted-in contacts.", caution: "Preview does not send, but the final confirmed action does. Check wording, count, and audience." },
-  { tab: "Media Storage", what: "Shows safe storage-health and capacity information for public media, plus controlled public-media maintenance.", when: "Use it to monitor capacity or review an approved public-media maintenance task.", caution: "It excludes credentials and private evidence; maintenance controls are not a general file browser." },
-  { tab: "Conventions", what: "Maintains collector convention and event information.", when: "Use it when adding, reviewing, or correcting an event entry.", caution: "Verify dates, location, and details before saving so members receive accurate information." },
-  { tab: "Mod Log", what: "Shows the time-ordered history of administrator moderation decisions and their recorded reasons.", when: "Use it before handling a repeat issue or confirming what action was already taken.", caution: "It is an audit trail, not a substitute for reviewing the current facts." },
-  { tab: "Tickets", what: "Organizes support requests by status and priority for follow-up.", when: "Use it when Operations shows urgent support or a member needs non-report support.", caution: "Close & retain requires a reason and exact phrase. It closes the ticket and removes it from the ordinary list, but keeps the original request and every reply available through the retained-ticket filter." },
-  { tab: "Flagged", what: "Shows content flags and a separate Feedback Safety queue for low-feedback records.", when: "Use it when Operations shows Content flags or Feedback safety.", caution: "A flag identifies something to review; it is not an automatic conclusion. Choose a deliberate outcome after checking context." },
-  { tab: "Approvals", what: "Shows accounts that require an administrator decision before marketplace actions are enabled.", when: "Use it when Operations shows Pending approvals.", caution: "Approval or decline affects marketplace access, so base it on the displayed account information." },
-  { tab: "API Health", what: "Shows sanitized external-service diagnostic records without secrets or raw provider data.", when: "Use it when an external-service feature appears unavailable or failures recur.", caution: "Clear removes only the selected diagnostic records after confirmation and does not fix a provider issue." },
-  { tab: "Operations", what: "Combines health, action counts, Closure Requests, trade follow-up, timeline, launch readiness, and safe exports, then links to the correct working tab.", when: "Start here for a daily review or to see what needs attention.", caution: "Operations summarizes and routes work; open the related tab before resolving a closure request, report, trade, or support item." },
-] as const;
+type AdminGuideEntry = {
+  tab: string;
+  summary: string;
+  purpose: string;
+  useWhen: string;
+  caution: string;
+};
+
+const adminGuideEntries: readonly AdminGuideEntry[] = [
+  { tab: "Stats", summary: "A quick picture of how the marketplace is doing.", purpose: "Shows high-level member, listing, value, and trade activity so you can understand the current size and activity of Tradebilia.", useWhen: "Use this for a fast health check, before planning a launch activity, or when you want to see whether the marketplace is growing.", caution: "This tab is for viewing information. It does not change members, listings, or trades." },
+  { tab: "Billing", summary: "Membership status, future fee-planning, and direct cash-adjustment monitoring.", purpose: "Shows member membership information, lets you sort it by status or term, contains the Fee Mode launch-control setting, and shows masked PayPal, Venmo, Cash App, and Zelle cash-adjustment status for active trades.", useWhen: "Use it to understand membership status, review future fee plans, or investigate a direct-payment dispute. A payment destination can be revealed only with the exact confirmation phrase, and that access is written to the trade activity log.", caution: "Fee Mode is only a planning switch. Even when On, it does not turn on Checkout, collect a card, charge anyone, or restrict Free Launch access. Tradebilia does not process, hold, insure, refund, or guarantee member-to-member direct payments." },
+  { tab: "Users", summary: "The main member-management workspace.", purpose: "Lists member accounts and their account information so an administrator can review a member, update permitted account details, and use available moderation actions.", useWhen: "Use it when a member needs help, when you need to review an account, or when an Operations queue sends you here.", caution: "Archive is not deletion: it requires a reason and the exact confirmation phrase, rechecks current blockers, closes sign-in access, and retains trade, support, and safety history." },
+  { tab: "Listings", summary: "The catalogue-management workspace.", purpose: "Lists Tradebilia items and provides searching, sorting, review, and the available listing-management actions.", useWhen: "Use it to find a specific listing, investigate a report, check an item’s status, or address a listing that needs administrator attention.", caution: "Confirm the listing and the reason first. Removing or changing a listing can affect an active collector’s trade activity." },
+  { tab: "Trades", summary: "The place to monitor exchanges in progress and completed trade records.", purpose: "Shows trade information, including both collectors involved, so you can follow the lifecycle of an exchange and review a trade when an issue is raised.", useWhen: "Use it for a trade dispute, a shipping or confirmation question, or when Operations identifies a trade follow-up item.", caution: "Only completed, declined, or cancelled trades may be archived. Archive requires a reason and exact phrase, retains every trade record, and keeps archived records available through the filter." },
+  { tab: "Settings", summary: "Site-level administrative settings.", purpose: "Provides the available controls for Tradebilia configuration that affect how the platform is presented or managed.", useWhen: "Use it only when you intentionally need to review or update a saved platform setting.", caution: "Settings can have broad effects. Read the field description, confirm the intended value, and save only a deliberate change." },
+  { tab: "Deleted", summary: "A reference view for deleted-account records.", purpose: "Helps you review accounts that have been deleted or closed so you can understand their prior platform status when handling a related question.", useWhen: "Use it when a former member contacts support or when you need to distinguish a deleted account from an active one.", caution: "A deleted or closed account is not the same as an open support request. Use Closure Requests for requests that still need a decision." },
+  { tab: "Closure Requests", summary: "The controlled review queue for member account-closure requests.", purpose: "Shows closure requests, the count-only safety review, and the available approve-or-decline decision with a documented reason.", useWhen: "Use it when a member asks to close an account and the request appears in the queue.", caution: "Approve closure only after reviewing the account’s pending trade and safety context. Closure hides the profile and listings and blocks future sign-in; retained trade, report, and safety history is not erased." },
+  { tab: "Reports", summary: "Member-submitted concerns that need review.", purpose: "Shows reports about members or trade-related concerns and their authorized details so you can review what was reported.", useWhen: "Use it when the Operations queue shows Member reports or when a collector reports a concern directly.", caution: "Treat reports as review items, not automatic proof. Use only the relevant authorized context and avoid exposing private information." },
+  { tab: "Referrals", summary: "Referral requests and invitation management.", purpose: "Lets you manage the referral invitation template, review requests, select recipients, and use the available sending or deletion controls.", useWhen: "Use it when following up on referral requests or preparing the approved referral invitation message.", caution: "Email sending and deletion are real actions. Review selected recipients and the message before confirming a bulk action." },
+  { tab: "Pre-Launch Email", summary: "A controlled launch-update email workspace.", purpose: "Lets you prepare a message for opted-in Coming Soon contacts, review the eligible recipient list, preview the email, and confirm a send.", useWhen: "Use it only when you are ready to communicate a launch update to contacts who chose to receive it.", caution: "A preview does not send email, but the final confirmed send does. Check the wording, recipient count, and opt-in audience carefully." },
+  { tab: "Media Storage", summary: "Storage health and public-media maintenance.", purpose: "Shows safe storage-usage and health information for public photos and artwork, plus the separately controlled public-media migration tools.", useWhen: "Use it to monitor storage capacity, investigate public image coverage, or perform an approved public-media maintenance task.", caution: "The health report does not expose credentials or private evidence. Use migration controls only after reviewing their scope; they are not a general-purpose file browser." },
+  { tab: "Conventions", summary: "Convention and event administration.", purpose: "Provides the workspace for maintaining convention information that Tradebilia members may use when planning collector activity.", useWhen: "Use it when you need to add, review, or maintain a convention/event entry.", caution: "Verify event details before publishing or changing them so members receive accurate dates, locations, and information." },
+  { tab: "Mod Log", summary: "The history of moderation decisions.", purpose: "Shows a chronological record of administrator moderation actions, who performed them, the target, and the recorded reason.", useWhen: "Use it before handling a repeat issue, answering an internal question, or confirming what action was already taken.", caution: "This is an audit trail. It explains past actions but does not replace reviewing the current facts before making a new decision." },
+  { tab: "Tickets", summary: "Support requests that need a response or resolution.", purpose: "Organizes incoming support tickets so administrators can review their status, priority, and available follow-up actions.", useWhen: "Use it when the Operations queue shows urgent support or when a member needs help that is not a report or trade case.", caution: "Close & retain requires a reason and exact phrase. It closes the ticket and removes it from the ordinary list, but keeps the original request and every reply available through the retained-ticket filter." },
+  { tab: "Flagged", summary: "Content flags and Feedback Safety review in one workspace.", purpose: "Shows reported content for review and a separate Feedback Safety queue for low-feedback safety records, with deliberate review outcomes.", useWhen: "Use it when Operations shows Content flags or Feedback safety, or when reviewing a moderation concern about public content.", caution: "A flag identifies something to review; it is not an automatic conclusion. Choose Reviewed, Dismissed, or Action taken only after checking the appropriate context." },
+  { tab: "Approvals", summary: "Marketplace-access approval queue.", purpose: "Shows accounts that can finish setup but require an administrator decision before they can use marketplace actions.", useWhen: "Use it when Operations shows Pending approvals or when reviewing an account awaiting marketplace access.", caution: "Approve or decline based on the account information shown. This decision affects whether the account can participate in marketplace activity." },
+  { tab: "API Health", summary: "Sanitized diagnostic records for external-service failures.", purpose: "Shows recent provider/API failures without secrets, raw request data, or raw provider responses. You can select and clear only records you have reviewed.", useWhen: "Use it when a feature relying on an external service appears unavailable or when monitoring recurring technical failures.", caution: "Clear removes only the selected diagnostic records after confirmation and records the administrator action. It does not fix an external provider problem or alter marketplace records." },
+  { tab: "Operations", summary: "A read-only command center for the main administrator work queues.", purpose: "Combines system health, action counts, Closure Requests, trade follow-up, timeline, launch readiness, and safe internal exports, then links you to the correct tab for action.", useWhen: "Start here for a daily review, to see what needs attention, or to open the related workspace from an action-queue count.", caution: "Operations summarizes and routes work; it does not itself resolve a closure request, report, change a trade, or send a message. Follow the link to the proper tab before acting." },
+];
 
 function AdminGuideTab() {
-  return <div className="space-y-5">
-    <Card className="border-violet-200 bg-[linear-gradient(135deg,#f5f3ff_0%,#ffffff_58%,#f0f9ff_100%)]"><CardHeader><div className="flex items-start gap-3"><div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-violet-100 text-violet-700"><BookOpen className="h-5 w-5" aria-hidden="true" /></div><div><CardTitle>Admin Guide</CardTitle><CardDescription className="mt-1 max-w-3xl text-slate-700">A plain-language reference for the administrator dashboard. Open a section to learn what the tab does, when to use it, and what to double-check before acting.</CardDescription></div></div></CardHeader><CardContent><p className="rounded-lg border border-violet-100 bg-white/80 p-4 text-sm leading-6 text-slate-700"><strong className="text-slate-950">Simple daily workflow:</strong> start with <strong className="text-slate-950">Operations</strong> to see priorities, then use its link to open the correct workspace.</p></CardContent></Card>
-    <Card><CardHeader><CardTitle className="text-xl">What each tab does</CardTitle><CardDescription>There are {adminGuideEntries.length} current administrator workspaces. Every entry explains the purpose, best use, and an important caution in plain language.</CardDescription></CardHeader><CardContent><Accordion type="multiple" className="rounded-xl border bg-card px-4">{adminGuideEntries.map((entry) => <AccordionItem key={entry.tab} value={entry.tab} className="border-border"><AccordionTrigger className="py-5 hover:no-underline"><span><span className="block text-base font-semibold text-foreground">{entry.tab}</span><span className="mt-1 block text-sm font-normal leading-6 text-muted-foreground">{entry.what}</span></span></AccordionTrigger><AccordionContent className="pb-5"><dl className="grid gap-4 rounded-lg bg-muted/45 p-4 text-sm leading-6 md:grid-cols-3"><div><dt className="font-semibold text-foreground">What it does</dt><dd className="mt-1 text-muted-foreground">{entry.what}</dd></div><div><dt className="font-semibold text-foreground">When to use it</dt><dd className="mt-1 text-muted-foreground">{entry.when}</dd></div><div><dt className="font-semibold text-foreground">Before you act</dt><dd className="mt-1 text-muted-foreground">{entry.caution}</dd></div></dl></AccordionContent></AccordionItem>)}</Accordion></CardContent></Card>
-    <Card><CardHeader><CardTitle className="text-xl">Quick tools above the tabs</CardTitle><CardDescription>These are shortcuts, not normal admin tabs.</CardDescription></CardHeader><CardContent className="grid gap-4 md:grid-cols-2"><div className="rounded-lg border p-4"><p className="font-semibold">Test AI Sandbox</p><p className="mt-1 text-sm leading-6 text-muted-foreground">A separate administrator space for future Trade AI Analyzer testing. It is not the member-facing trade workflow.</p></div><div className="rounded-lg border p-4"><p className="font-semibold">Coming Soon Preview</p><p className="mt-1 text-sm leading-6 text-muted-foreground">A preview of the public Coming Soon experience, not a workspace for managing member or trade records.</p></div></CardContent></Card>
-  </div>;
+  return (
+    <div className="space-y-5">
+      <Card className="border-violet-200 bg-[linear-gradient(135deg,#f5f3ff_0%,#ffffff_58%,#f0f9ff_100%)]">
+        <CardHeader>
+          <div className="flex items-start gap-3">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-violet-100 text-violet-700"><BookOpen className="h-5 w-5" aria-hidden="true" /></div>
+            <div><CardTitle>Admin Guide</CardTitle><CardDescription className="mt-1 max-w-3xl text-slate-700">A plain-language reference for the administrator dashboard. Open any section to see what that tab is for, when to use it, and what to double-check before you act.</CardDescription></div>
+          </div>
+        </CardHeader>
+        <CardContent><p className="rounded-lg border border-violet-100 bg-white/80 p-4 text-sm leading-6 text-slate-700"><strong className="text-slate-950">A simple way to use this dashboard:</strong> start with <strong className="text-slate-950">Operations</strong> for the day’s priorities, then open the listed workspace to review and act. Use the other tabs when you already know the type of task you need to complete.</p></CardContent>
+      </Card>
+      <Card>
+        <CardHeader><CardTitle className="text-xl">What each tab does</CardTitle><CardDescription>There are {adminGuideEntries.length} current administrator workspaces. This guide describes the tabs you can select in the dashboard navigation.</CardDescription></CardHeader>
+        <CardContent>
+          <Accordion type="multiple" className="rounded-xl border bg-card px-4">
+            {adminGuideEntries.map((entry) => (
+              <AccordionItem key={entry.tab} value={entry.tab} className="border-border">
+                <AccordionTrigger className="py-5 hover:no-underline"><span><span className="block text-base font-semibold text-foreground">{entry.tab}</span><span className="mt-1 block text-sm font-normal leading-6 text-muted-foreground">{entry.summary}</span></span></AccordionTrigger>
+                <AccordionContent className="pb-5">
+                  <dl className="grid gap-4 rounded-lg bg-muted/45 p-4 text-sm leading-6 md:grid-cols-3">
+                    <div><dt className="font-semibold text-foreground">What it does</dt><dd className="mt-1 text-muted-foreground">{entry.purpose}</dd></div>
+                    <div><dt className="font-semibold text-foreground">When to use it</dt><dd className="mt-1 text-muted-foreground">{entry.useWhen}</dd></div>
+                    <div><dt className="font-semibold text-foreground">Before you act</dt><dd className="mt-1 text-muted-foreground">{entry.caution}</dd></div>
+                  </dl>
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader><CardTitle className="text-xl">Quick tools above the tabs</CardTitle><CardDescription>These are shortcuts, not administrator tabs.</CardDescription></CardHeader>
+        <CardContent className="grid gap-4 md:grid-cols-2"><div className="rounded-lg border p-4"><p className="font-semibold">Test AI Sandbox</p><p className="mt-1 text-sm leading-6 text-muted-foreground">A separate administrator workspace for testing future Trade AI Analyzer work. It is not the live member-facing trade workflow.</p></div><div className="rounded-lg border p-4"><p className="font-semibold">Coming Soon Preview</p><p className="mt-1 text-sm leading-6 text-muted-foreground">A preview of the public Coming Soon experience. Use it to review presentation, not to manage members, trades, or platform records.</p></div></CardContent>
+      </Card>
+    </div>
+  );
 }
 
 function AdminListingsTab({ listingsQuery }: { listingsQuery: any }) {
@@ -412,362 +451,6 @@ function AdminListingsTab({ listingsQuery }: { listingsQuery: any }) {
   );
 }
 
-function BillingPreviewTab() {
-  const utils = trpc.useUtils();
-  const overviewQuery = trpc.billing.getOverview.useQuery(undefined, {
-    refetchOnWindowFocus: true,
-  });
-  const membersQuery = trpc.billing.getMembers.useQuery(undefined, {
-    refetchOnWindowFocus: true,
-  });
-  const updatePlanFeatureMutation = trpc.billing.updatePlanFeature.useMutation({
-    onSuccess: async () => {
-      await utils.billing.getOverview.invalidate();
-      toast.success("Future plan setting saved. Free Launch access remains open for every member.");
-    },
-    onError: (error) => toast.error(error.message || "The plan setting could not be saved."),
-  });
-  const [feeModeDialogOpen, setFeeModeDialogOpen] = useState(false);
-  const [pendingFeeModeEnabled, setPendingFeeModeEnabled] = useState(false);
-  const [feeModePassword, setFeeModePassword] = useState("");
-  const [feeModePhrase, setFeeModePhrase] = useState("");
-  const updateFeeModeMutation = trpc.billing.updateFeeMode.useMutation({
-    onSuccess: async (result) => {
-      setFeeModeDialogOpen(false);
-      setFeeModePassword("");
-      setFeeModePhrase("");
-      await utils.billing.getOverview.invalidate();
-      toast.success(`Fee Mode launch control is now ${result.enabled ? "On" : "Off"}. Payment enforcement remains inactive.`);
-    },
-    onError: (error) => toast.error(error.message || "Fee Mode could not be updated."),
-  });
-
-  const overview = overviewQuery.data;
-  const expectedFeeModePhrase = pendingFeeModeEnabled ? "ENABLE TRADEBILIA FEE MODE" : "DISABLE TRADEBILIA FEE MODE";
-  const matrixByPlanFeature = new Map(
-    (overview?.matrix ?? []).map((entry) => [`${entry.planId}:${entry.featureId}`, entry]),
-  );
-
-  return (
-    <div className="space-y-4">
-      <Card className={overview?.billing.feeModeEnabled ? "border-amber-200 bg-[linear-gradient(135deg,#fffbeb_0%,#fff7ed_56%,#eff6ff_100%)]" : "border-emerald-200 bg-[linear-gradient(135deg,#ecfdf5_0%,#f0fdf4_56%,#eff6ff_100%)]"}>
-        <CardHeader>
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <div className="flex gap-3">
-              <div className="rounded-xl bg-emerald-600 p-2.5 text-white">
-                <ShieldCheck className="h-6 w-6" />
-              </div>
-              <div>
-                <CardTitle>{overview?.billing.statusLabel ?? "Free Launch Access"}</CardTitle>
-                <CardDescription className="mt-1 max-w-3xl text-slate-700">
-                  {overview?.billing.statusMessage ?? "Tradebilia remains in Free Launch mode while billing status is loading."}
-                </CardDescription>
-              </div>
-            </div>
-            <Badge className={overview?.billing.feeModeEnabled ? "w-fit border border-amber-200 bg-white text-amber-900 hover:bg-white" : "w-fit border border-emerald-200 bg-white text-emerald-800 hover:bg-white"}>
-              {overview?.billing.feeModeEnabled ? "Fee Mode On — no enforcement" : "Free Launch override enabled"}
-            </Badge>
-          </div>
-        </CardHeader>
-        <CardContent className="grid gap-3 text-sm sm:grid-cols-4">
-          <div className="rounded-xl border border-emerald-100 bg-white/80 p-4"><p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Checkout</p><p className="mt-1 font-semibold text-slate-950">Disabled</p></div>
-          <div className="rounded-xl border border-emerald-100 bg-white/80 p-4"><p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Card collection</p><p className="mt-1 font-semibold text-slate-950">Disabled</p></div>
-          <div className="rounded-xl border border-emerald-100 bg-white/80 p-4"><p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Stripe billing</p><p className="mt-1 font-semibold text-slate-950">Disabled</p></div>
-          <div className="rounded-xl border border-amber-200 bg-white/80 p-4">
-            <div className="flex items-center justify-between gap-3">
-              <div><p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Fee Mode</p><p className="mt-1 font-semibold text-slate-950">{overview?.billing.feeModeEnabled ? "On" : "Off"}</p></div>
-              <Switch
-                checked={Boolean(overview?.billing.feeModeEnabled)}
-                disabled={overviewQuery.isLoading || overviewQuery.isError || updateFeeModeMutation.isPending}
-                aria-label="Change Fee Mode launch control"
-                onCheckedChange={(enabled) => {
-                  setPendingFeeModeEnabled(enabled);
-                  setFeeModePassword("");
-                  setFeeModePhrase("");
-                  setFeeModeDialogOpen(true);
-                }}
-              />
-            </div>
-            <p className="mt-2 text-xs leading-5 text-slate-600">Planning only; it cannot activate Checkout, charge members, or restrict access.</p>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Dialog open={feeModeDialogOpen} onOpenChange={(open) => {
-        setFeeModeDialogOpen(open);
-        if (!open) {
-          setFeeModePassword("");
-          setFeeModePhrase("");
-        }
-      }}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Turn Fee Mode {pendingFeeModeEnabled ? "On" : "Off"}?</DialogTitle>
-            <DialogDescription>This records the site's future fee-mode intent only. It does not enable Stripe Checkout, charge members, or enforce paid access.</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">For safety, verify your current administrator password and type <strong>{expectedFeeModePhrase}</strong> exactly.</div>
-            <div className="space-y-2"><label className="text-sm font-medium" htmlFor="fee-mode-password">Current administrator password</label><Input id="fee-mode-password" type="password" value={feeModePassword} onChange={(event) => setFeeModePassword(event.target.value)} autoComplete="current-password" /></div>
-            <div className="space-y-2"><label className="text-sm font-medium" htmlFor="fee-mode-phrase">Confirmation phrase</label><Input id="fee-mode-phrase" value={feeModePhrase} onChange={(event) => setFeeModePhrase(event.target.value)} /></div>
-            <div className="flex justify-end gap-2"><Button variant="outline" onClick={() => setFeeModeDialogOpen(false)}>Cancel</Button><Button disabled={!feeModePassword || feeModePhrase.trim() !== expectedFeeModePhrase || updateFeeModeMutation.isPending} onClick={() => updateFeeModeMutation.mutate({ enabled: pendingFeeModeEnabled, currentPassword: feeModePassword, confirmationPhrase: feeModePhrase })}>{updateFeeModeMutation.isPending ? "Verifying…" : `Confirm Fee Mode ${pendingFeeModeEnabled ? "On" : "Off"}`}</Button></div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      <Card className="border-indigo-200 bg-indigo-50/50">
-        <CardHeader>
-          <CardTitle>Future member payment terms</CardTitle>
-          <CardDescription>
-            Members will choose one payment term for the same Subscription Membership. Both terms provide identical access; this is planning information only and is not available for purchase.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-3 sm:grid-cols-2">
-          {(overview?.billing.futureSubscriptionTerms ?? []).map((term) => (
-            <div key={term.code} className="rounded-xl border border-indigo-100 bg-white p-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-indigo-700">{term.label} option</p>
-              <p className="mt-1 text-xl font-semibold text-slate-950">{term.displayPrice}</p>
-              <p className="mt-2 text-sm leading-5 text-slate-600">Same Subscription Membership access. A member will select this term only after a separate billing activation project is approved.</p>
-            </div>
-          ))}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Free and Subscription feature matrix</CardTitle>
-          <CardDescription>
-            These settings prepare Free Launch and one future Subscription Membership only. Changing a checkbox does not remove access while the Free Launch override is active, and this page has no control to activate billing.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {overviewQuery.isLoading ? (
-            <p className="text-sm text-muted-foreground">Loading membership plans…</p>
-          ) : overviewQuery.isError ? (
-            <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-              Billing details could not be loaded. The billing system remains inactive and member access is unchanged.
-            </div>
-          ) : (
-            <div className="overflow-x-auto rounded-xl border">
-              <table className="w-full min-w-[900px] text-sm">
-                <thead className="bg-slate-50 text-left">
-                  <tr className="border-b">
-                    <th className="sticky left-0 z-10 min-w-[240px] bg-slate-50 px-4 py-3 font-semibold text-slate-700">Feature</th>
-                    {(overview?.plans ?? []).map((plan) => (
-                      <th key={plan.id} className="min-w-[150px] px-4 py-3 align-top font-semibold text-slate-700">
-                        <div>{plan.name}</div>
-                        <div className="mt-1 text-xs font-normal text-slate-500">
-                          {plan.isFreeLaunch ? "Active free mode" : "One future paid option"}
-                        </div>
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {(overview?.features ?? []).map((feature) => (
-                    <tr key={feature.id} className="border-b last:border-b-0">
-                      <td className="sticky left-0 z-10 bg-white px-4 py-3">
-                        <p className="font-medium text-slate-900">{feature.name}</p>
-                        {feature.description && <p className="mt-1 max-w-xs text-xs leading-5 text-slate-500">{feature.description}</p>}
-                      </td>
-                      {(overview?.plans ?? []).map((plan) => {
-                        const entry = matrixByPlanFeature.get(`${plan.id}:${feature.id}`);
-                        const isPending = updatePlanFeatureMutation.isPending
-                          && updatePlanFeatureMutation.variables?.planId === plan.id
-                          && updatePlanFeatureMutation.variables?.featureId === feature.id;
-                        return (
-                          <td key={plan.id} className="px-4 py-3 text-center">
-                            <div className="flex flex-col items-center gap-2">
-                              <Checkbox
-                                checked={Boolean(entry?.isEnabled)}
-                                disabled={!entry || updatePlanFeatureMutation.isPending}
-                                aria-label={`${feature.name} for ${plan.name}`}
-                                onCheckedChange={(checked) => {
-                                  if (!entry) return;
-                                  updatePlanFeatureMutation.mutate({
-                                    planId: plan.id,
-                                    featureId: feature.id,
-                                    isEnabled: checked === true,
-                                    limitValue: entry.limitValue,
-                                  });
-                                }}
-                              />
-                              <span className="text-xs text-emerald-700">{isPending ? "Saving…" : "Open at launch"}</span>
-                            </div>
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      <ComplimentaryMembershipAccessCard membersQuery={membersQuery} />
-
-      <Card className="border-slate-200 bg-slate-50">
-        <CardContent className="flex gap-3 pt-6 text-sm leading-6 text-slate-700">
-          <CreditCard className="mt-0.5 h-5 w-5 shrink-0 text-slate-500" />
-          <p><strong className="text-slate-900">Stripe readiness only:</strong> No Stripe secret, checkout session, billing portal, payment method, invoice, webhook, subscription activation, or charge has been added. Those items require a separate reviewed activation project later.</p>
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
-function ComplimentaryMembershipAccessCard({ membersQuery }: { membersQuery: any }) {
-  const utils = trpc.useUtils();
-  const [memberToGrant, setMemberToGrant] = useState<any>(null);
-  const [memberToRevoke, setMemberToRevoke] = useState<any>(null);
-  const [billingSortBy, setBillingSortBy] = useState<BillingMemberSortField>("member");
-  const [billingSortDirection, setBillingSortDirection] = useState<BillingMemberSortDirection>("asc");
-  const sortedBillingMembers = useMemo(() => sortBillingMembers(membersQuery.data ?? [], billingSortBy, billingSortDirection), [membersQuery.data, billingSortBy, billingSortDirection]);
-  const grantComplimentaryMutation = trpc.billing.grantComplimentaryAccess.useMutation({
-    onSuccess: async () => {
-      await Promise.all([utils.billing.getMembers.invalidate(), utils.billing.getOverview.invalidate()]);
-      setMemberToGrant(null);
-      toast.success("Complimentary access granted. Billing remains inactive.");
-    },
-    onError: (error) => toast.error(error.message || "Complimentary access could not be granted."),
-  });
-  const revokeComplimentaryMutation = trpc.billing.revokeComplimentaryAccess.useMutation({
-    onSuccess: async () => {
-      await Promise.all([utils.billing.getMembers.invalidate(), utils.billing.getOverview.invalidate()]);
-      setMemberToRevoke(null);
-      toast.success("Complimentary access grant removed. Free Launch access remains open for every member.");
-    },
-    onError: (error) => toast.error(error.message || "Complimentary access could not be removed."),
-  });
-
-  return (
-    <>
-      <Card className="border-violet-200 bg-violet-50/30">
-        <CardHeader>
-          <div className="flex gap-3">
-            <div className="rounded-xl bg-violet-600 p-2.5 text-white">
-              <Users className="h-5 w-5" />
-            </div>
-            <div>
-              <CardTitle>Complimentary membership access</CardTitle>
-              <CardDescription className="mt-1 max-w-3xl text-slate-700">
-                Selected members can retain Subscription Membership access at no charge if subscriptions are introduced later. This administrator-only grant does not activate Stripe, collect a card, or charge anyone.
-              </CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {membersQuery.isLoading ? (
-            <p className="text-sm text-muted-foreground">Loading members…</p>
-          ) : membersQuery.isError ? (
-            <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-              Member access controls could not be loaded. Billing remains inactive and no membership grant was changed.
-            </div>
-          ) : (
-            <div className="space-y-3">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <p className="text-sm font-medium text-slate-800">Membership status monitoring</p>
-                <div className="flex flex-wrap items-center gap-2" aria-label="Membership monitoring sort controls">
-                  <span className="text-sm text-muted-foreground">Sort by</span>
-                  <Select value={billingSortBy} onValueChange={(value) => setBillingSortBy(value as BillingMemberSortField)}>
-                    <SelectTrigger className="w-[150px] bg-white"><SelectValue /></SelectTrigger>
-                    <SelectContent><SelectItem value="member">Member</SelectItem><SelectItem value="status">Status</SelectItem><SelectItem value="term">Billing term</SelectItem></SelectContent>
-                  </Select>
-                  <Select value={billingSortDirection} onValueChange={(value) => setBillingSortDirection(value as BillingMemberSortDirection)}>
-                    <SelectTrigger className="w-[130px] bg-white"><SelectValue /></SelectTrigger>
-                    <SelectContent><SelectItem value="asc">Ascending</SelectItem><SelectItem value="desc">Descending</SelectItem></SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div className="overflow-x-auto rounded-xl border border-violet-100 bg-white">
-              <table className="w-full min-w-[840px] text-sm">
-                <thead className="border-b bg-violet-50/70 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">
-                  <tr>
-                    <th className="px-4 py-3">Tradebilia member</th>
-                    <th className="px-4 py-3">Current access</th>
-                    <th className="px-4 py-3">Status</th>
-                    <th className="px-4 py-3">Billing term</th>
-                    <th className="px-4 py-3 text-right">Complimentary access</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {sortedBillingMembers.map((member: any) => {
-                    const isPending = grantComplimentaryMutation.isPending || revokeComplimentaryMutation.isPending;
-                    return (
-                      <tr key={member.userId} className="border-b last:border-b-0">
-                        <td className="px-4 py-3">
-                          <p className="font-medium text-slate-900">{member.displayName}</p>
-                          {member.username && <p className="mt-0.5 text-xs text-slate-500">@{member.username}</p>}
-                        </td>
-                        <td className="px-4 py-3">
-                          {member.isComplimentary ? (
-                            <Badge className="border border-violet-200 bg-violet-100 text-violet-800 hover:bg-violet-100">Complimentary Membership</Badge>
-                          ) : (
-                            <Badge variant="outline" className="border-slate-200 text-slate-700">{member.planName}</Badge>
-                          )}
-                        </td>
-                        <td className="px-4 py-3"><Badge variant="outline" className="border-slate-200 text-slate-700">{member.membershipStatus || "free_launch"}</Badge></td>
-                        <td className="px-4 py-3 text-slate-700">{member.billingTerm || "none"}</td>
-                        <td className="px-4 py-3 text-right">
-                          {member.isComplimentary ? (
-                            <Button type="button" size="sm" variant="outline" className="border-violet-200 text-violet-800 hover:bg-violet-50" disabled={isPending} onClick={() => setMemberToRevoke(member)}>
-                              Remove grant
-                            </Button>
-                          ) : (
-                            <Button type="button" size="sm" className="bg-violet-700 text-white hover:bg-violet-800" disabled={isPending} onClick={() => setMemberToGrant(member)}>
-                              Grant complimentary access
-                            </Button>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      <Dialog open={Boolean(memberToGrant)} onOpenChange={(open) => !open && setMemberToGrant(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Grant complimentary membership?</DialogTitle>
-            <DialogDescription>
-              {memberToGrant?.displayName} will be recorded as a Complimentary Membership member. This does not activate billing, request payment details, or charge the member. The grant will preserve Subscription Membership access if Tradebilia enables subscriptions later.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex justify-end gap-3 pt-2">
-            <Button type="button" variant="outline" onClick={() => setMemberToGrant(null)} disabled={grantComplimentaryMutation.isPending}>Cancel</Button>
-            <Button type="button" className="bg-violet-700 text-white hover:bg-violet-800" disabled={grantComplimentaryMutation.isPending} onClick={() => memberToGrant && grantComplimentaryMutation.mutate({ targetUserId: memberToGrant.userId })}>
-              {grantComplimentaryMutation.isPending ? "Granting…" : "Grant access"}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={Boolean(memberToRevoke)} onOpenChange={(open) => !open && setMemberToRevoke(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Remove complimentary access?</DialogTitle>
-            <DialogDescription>
-              {memberToRevoke?.displayName} will return to the standard Free Launch record. During Free Launch, this does not remove any current feature access. If subscriptions are introduced later, the member would no longer have a complimentary grant.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex justify-end gap-3 pt-2">
-            <Button type="button" variant="outline" onClick={() => setMemberToRevoke(null)} disabled={revokeComplimentaryMutation.isPending}>Cancel</Button>
-            <Button type="button" variant="destructive" disabled={revokeComplimentaryMutation.isPending} onClick={() => memberToRevoke && revokeComplimentaryMutation.mutate({ targetUserId: memberToRevoke.userId })}>
-              {revokeComplimentaryMutation.isPending ? "Removing…" : "Remove grant"}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </>
-  );
-}
-
 export default function AdminDashboard() {
   const { user, loading } = useAuth();
   const [activeTab, setActiveTab] = useState("statistics");
@@ -842,7 +525,7 @@ export default function AdminDashboard() {
   const bannedUsersQuery = trpc.admin.getBannedUsers.useQuery(undefined, { enabled: user?.role === 'admin' });
   const moderationLogQuery = trpc.admin.getModerationLog.useQuery(undefined, { enabled: user?.role === 'admin' });
   const pendingApprovalsQuery = trpc.admin.getPendingAccountApprovals.useQuery(undefined, { enabled: user?.role === 'admin', refetchOnWindowFocus: true });
-  const apiHealthQuery = trpc.admin.getApiHealthEvents.useQuery(undefined, { enabled: user?.role === 'admin', retry: 2, retryDelay: 800, refetchOnWindowFocus: true });
+  const apiHealthQuery = trpc.admin.getApiHealthEvents.useQuery(undefined, { enabled: user?.role === 'admin', refetchOnWindowFocus: true });
   const [selectedApiHealthEventIds, setSelectedApiHealthEventIds] = useState<Set<number>>(new Set());
   const [apiHealthClearConfirmOpen, setApiHealthClearConfirmOpen] = useState(false);
   const clearApiHealthEventsMutation = trpc.admin.clearApiHealthEvents.useMutation({
@@ -850,7 +533,32 @@ export default function AdminDashboard() {
       setSelectedApiHealthEventIds(new Set());
       setApiHealthClearConfirmOpen(false);
       apiHealthQuery.refetch();
-      toast.success(`${result.clearedCount} API health event${result.clearedCount === 1 ? "" : "s"} cleared.`);
+      toast.success(`${result.clearedCount} API health event${result.clearedCount === 1 ? '' : 's'} cleared.`);
+    },
+    onError: (error) => toast.error(error.message),
+  });
+  const billingOverviewQuery = trpc.billing.getOverview.useQuery(undefined, { enabled: user?.role === "admin", refetchOnWindowFocus: true });
+  const billingMembersQuery = trpc.billing.getMembers.useQuery(undefined, { enabled: user?.role === "admin", refetchOnWindowFocus: true });
+  const externalCashAdjustmentsQuery = trpc.payment.listExternalCashAdjustmentsForAdmin.useQuery(undefined, { enabled: user?.role === "admin", refetchOnWindowFocus: true });
+  const [cashRevealDialogOpen, setCashRevealDialogOpen] = useState(false);
+  const [cashRevealPaymentId, setCashRevealPaymentId] = useState<number | null>(null);
+  const [cashRevealPhrase, setCashRevealPhrase] = useState("");
+  const [revealedCashIdentifier, setRevealedCashIdentifier] = useState<{ method: string; identifier: string } | null>(null);
+  const revealCashIdentifierMutation = trpc.payment.revealExternalCashIdentifierForAdmin.useMutation({
+    onSuccess: (result) => { setRevealedCashIdentifier(result); setCashRevealPhrase(""); toast.success("Payment identifier revealed and recorded in the trade activity log."); },
+    onError: (error) => toast.error(error.message),
+  });
+  const [feeModeDialogOpen, setFeeModeDialogOpen] = useState(false);
+  const [pendingFeeModeEnabled, setPendingFeeModeEnabled] = useState(false);
+  const [feeModePassword, setFeeModePassword] = useState("");
+  const [feeModePhrase, setFeeModePhrase] = useState("");
+  const updateFeeModeMutation = trpc.billing.updateFeeMode.useMutation({
+    onSuccess: (result) => {
+      setFeeModeDialogOpen(false);
+      setFeeModePassword("");
+      setFeeModePhrase("");
+      billingOverviewQuery.refetch();
+      toast.success(`Fee Mode launch control is now ${result.enabled ? "On" : "Off"}. Payment enforcement remains inactive.`);
     },
     onError: (error) => toast.error(error.message),
   });
@@ -874,11 +582,14 @@ export default function AdminDashboard() {
   const [suspendDialogOpen, setSuspendDialogOpen] = useState(false);
   const [suspendReason, setSuspendReason] = useState("");
   const [userToAction, setUserToAction] = useState<any>(null);
-  const [userStatusFilter, setUserStatusFilter] = useState<'all' | 'active' | 'suspended' | 'banned' | 'closed'>('all');
+  const [userStatusFilter, setUserStatusFilter] = useState<'all' | 'active' | 'suspended' | 'banned'>('all');
   const [userMerchantFilter, setUserMerchantFilter] = useState<'all' | 'pending' | 'verified' | 'none'>('all');
   const [userSortBy, setUserSortBy] = useState<'id' | 'username' | 'joined' | 'items' | 'status' | 'merchant'>('id');
   const [userSortOrder, setUserSortOrder] = useState<'asc' | 'desc'>('asc');
   const [userSearch, setUserSearch] = useState('');
+  const [billingSortBy, setBillingSortBy] = useState<BillingMemberSortField>("member");
+  const [billingSortDirection, setBillingSortDirection] = useState<BillingMemberSortDirection>("asc");
+  const sortedBillingMembers = sortBillingMembers(billingMembersQuery.data ?? [], billingSortBy, billingSortDirection);
 
   const handleDeleteUser = async () => {
     console.log('[handleDeleteUser] Starting delete, userToDelete:', userToDelete);
@@ -1047,6 +758,10 @@ export default function AdminDashboard() {
               <BarChart3 className="h-4 w-4" />
               Stats
             </TabsTrigger>
+            <TabsTrigger value="billing" className="flex items-center justify-center gap-1.5 text-xs font-medium py-2.5 whitespace-nowrap">
+              <Settings className="h-4 w-4" />
+              Billing
+            </TabsTrigger>
             <TabsTrigger value="users" className="flex items-center justify-center gap-1.5 text-xs font-medium py-2.5 whitespace-nowrap">
               <Users className="h-4 w-4" />
               Users
@@ -1062,10 +777,6 @@ export default function AdminDashboard() {
             <TabsTrigger value="settings" className="flex items-center justify-center gap-1.5 text-xs font-medium py-2.5 whitespace-nowrap">
               <Settings className="h-4 w-4" />
               Settings
-            </TabsTrigger>
-            <TabsTrigger value="billing" className="flex items-center justify-center gap-1.5 text-xs font-medium py-2.5 whitespace-nowrap">
-              <CreditCard className="h-4 w-4" />
-              Billing
             </TabsTrigger>
             <TabsTrigger value="deleted" className="flex items-center justify-center gap-1.5 text-xs font-medium py-2.5 whitespace-nowrap">
               <Users className="h-4 w-4" />
@@ -1091,6 +802,10 @@ export default function AdminDashboard() {
               <CloudUpload className="h-4 w-4" />
               Media Storage
             </TabsTrigger>
+            <TabsTrigger value="conventions" className="flex items-center justify-center gap-1.5 text-xs font-medium py-2.5 whitespace-nowrap">
+              <Calendar className="h-4 w-4" />
+              Conventions
+            </TabsTrigger>
             <TabsTrigger value="modlog" className="flex items-center justify-center gap-1.5 text-xs font-medium py-2.5 whitespace-nowrap">
               <ClipboardList className="h-4 w-4" />
               Mod Log
@@ -1112,7 +827,7 @@ export default function AdminDashboard() {
               API Health
             </TabsTrigger>
             <TabsTrigger value="operations" className="flex items-center justify-center gap-1.5 text-xs font-medium py-2.5 whitespace-nowrap">
-              <ShieldCheck className="h-4 w-4" />
+              <ClipboardList className="h-4 w-4" />
               Operations
             </TabsTrigger>
             <TabsTrigger value="admin-guide" className="flex items-center justify-center gap-1.5 text-xs font-medium py-2.5 whitespace-nowrap">
@@ -1120,17 +835,6 @@ export default function AdminDashboard() {
               Admin Guide
             </TabsTrigger>
           </TabsList>
-
-          <TabsContent value="billing" className="space-y-4 mt-6">
-            <BillingPreviewTab />
-          </TabsContent>
-
-          <TabsContent value="operations" className="space-y-4 mt-6">
-            <AdminOperationsTab onNavigate={setActiveTab} />
-          </TabsContent>
-          <TabsContent value="admin-guide" className="space-y-4 mt-6">
-            <AdminGuideTab />
-          </TabsContent>
 
           {/* Statistics Tab */}
           <TabsContent value="statistics" className="space-y-4 mt-6">
@@ -1162,20 +866,102 @@ export default function AdminDashboard() {
             </div>
             <Card>
               <CardHeader>
-                <CardTitle>Marketplace ratios</CardTitle>
+                <CardTitle>Platform Overview</CardTitle>
                 <CardDescription>
-                  Derived from the current member, listing, trade, and inventory-value totals.
+                  Key metrics and statistics about the Tradebilia platform
                 </CardDescription>
               </CardHeader>
-              <CardContent className="grid gap-4 sm:grid-cols-3">
-                <div className="rounded-lg border p-4"><p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Average listing value</p><p className="mt-2 text-2xl font-semibold">{statsQuery.data?.totalListings ? `$${Math.round(statsQuery.data.totalValue / statsQuery.data.totalListings).toLocaleString()}` : "—"}</p></div>
-                <div className="rounded-lg border p-4"><p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Listings per member</p><p className="mt-2 text-2xl font-semibold">{statsQuery.data?.totalMembers ? (statsQuery.data.totalListings / statsQuery.data.totalMembers).toFixed(1) : "—"}</p></div>
-                <div className="rounded-lg border p-4"><p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Trade proposals per member</p><p className="mt-2 text-2xl font-semibold">{statsQuery.data?.totalMembers ? (statsQuery.data.totalTrades / statsQuery.data.totalMembers).toFixed(1) : "—"}</p></div>
+              <CardContent>
+                <div className="text-sm text-muted-foreground">
+                  Platform overview data will be displayed here with charts and detailed analytics.
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
 
           {/* Users Tab */}
+          <TabsContent value="billing" className="space-y-4 mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Membership &amp; Billing</CardTitle>
+                <CardDescription>Free Launch is active. Stripe, checkout, card collection, and payment enforcement remain unavailable.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-5">
+                {billingOverviewQuery.isLoading ? (
+                  <p className="text-sm text-muted-foreground">Loading membership configuration…</p>
+                ) : billingOverviewQuery.error ? (
+                  <p className="rounded-lg bg-red-50 p-4 text-sm text-red-700">Membership configuration is temporarily unavailable. Free Launch access remains unchanged.</p>
+                ) : (
+                  <>
+                    <div className="rounded-xl border border-violet-100 bg-violet-50 p-4">
+                      <p className="text-xs font-bold uppercase tracking-[0.14em] text-violet-700">Current status</p>
+                      <p className="mt-1 text-lg font-semibold text-slate-900">{billingOverviewQuery.data?.billing.statusLabel}</p>
+                      <p className="mt-1 text-sm text-slate-700">{billingOverviewQuery.data?.billing.statusMessage}</p>
+                    </div>
+                    <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                        <div>
+                          <p className="text-xs font-bold uppercase tracking-[0.14em] text-amber-800">Fee Mode launch control</p>
+                          <p className="mt-1 text-base font-semibold text-slate-900">{billingOverviewQuery.data?.billing.feeModeEnabled ? "On" : "Off"}</p>
+                          <p className="mt-1 max-w-2xl text-sm text-slate-700">This records future fee-mode intent only. It does not enable Stripe Checkout, charge anyone, or restrict access. A separate launch-readiness decision is required before payment enforcement.</p>
+                        </div>
+                        <div className="flex items-center gap-3 rounded-lg bg-white p-3 shadow-sm"><span className="text-sm font-medium">Fee Mode</span><Switch checked={Boolean(billingOverviewQuery.data?.billing.feeModeEnabled)} onCheckedChange={(enabled) => { setPendingFeeModeEnabled(enabled); setFeeModePassword(""); setFeeModePhrase(""); setFeeModeDialogOpen(true); }} aria-label="Change Fee Mode launch control" /></div>
+                      </div>
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {billingOverviewQuery.data?.billing.futureSubscriptionTerms.map((term) => (
+                        <div key={term.code} className="rounded-lg border p-4">
+                          <p className="font-semibold">{term.label}</p>
+                          <p className="text-sm text-muted-foreground">Future Tradebilia Membership: {term.displayPrice}</p>
+                        </div>
+                      ))}
+                    </div>
+                    <div>
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <h3 className="font-semibold">Member status monitoring</h3>
+                        <div className="flex flex-wrap items-center gap-2" aria-label="Membership monitoring sort controls">
+                          <span className="text-sm text-muted-foreground">Sort by</span>
+                          <Select value={billingSortBy} onValueChange={(value) => setBillingSortBy(value as BillingMemberSortField)}>
+                            <SelectTrigger className="w-[150px] bg-white"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="member">Member</SelectItem>
+                              <SelectItem value="status">Status</SelectItem>
+                              <SelectItem value="term">Billing term</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <Select value={billingSortDirection} onValueChange={(value) => setBillingSortDirection(value as BillingMemberSortDirection)}>
+                            <SelectTrigger className="w-[130px] bg-white"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="asc">Ascending</SelectItem>
+                              <SelectItem value="desc">Descending</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      <div className="mt-3 overflow-x-auto rounded-lg border">
+                        <table className="w-full min-w-[520px] text-sm">
+                          <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500"><tr><th className="p-3">Member</th><th className="p-3">Plan</th><th className="p-3">Status</th><th className="p-3">Term</th></tr></thead>
+                          <tbody>
+                            {sortedBillingMembers.map((member) => <tr key={member.userId} className="border-t"><td className="p-3 font-medium">{member.displayName}</td><td className="p-3">{member.planName}</td><td className="p-3">{member.membershipStatus}</td><td className="p-3">{member.billingTerm}</td></tr>)}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle>External Cash Adjustments</CardTitle>
+                <CardDescription>Monitor direct PayPal, Venmo, Cash App, and Zelle cash adjustments. Tradebilia does not process, hold, or guarantee these payments; destinations remain masked unless an administrator records a dispute-related need to view them.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {externalCashAdjustmentsQuery.isLoading ? <p className="text-sm text-muted-foreground">Loading external cash adjustments…</p> : externalCashAdjustmentsQuery.error ? <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">Cash-adjustment monitoring is temporarily unavailable.</p> : (externalCashAdjustmentsQuery.data?.length ?? 0) === 0 ? <p className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">No cash adjustments have been selected for a trade yet.</p> : <div className="overflow-x-auto rounded-lg border"><table className="w-full min-w-[760px] text-sm"><thead className="bg-slate-50 text-left text-xs uppercase text-slate-500"><tr><th className="p-3">Trade</th><th className="p-3">Payer → Payee</th><th className="p-3">Amount</th><th className="p-3">Method</th><th className="p-3">Status</th><th className="p-3">Destination</th><th className="p-3">Action</th></tr></thead><tbody>{externalCashAdjustmentsQuery.data?.map((adjustment: any) => <tr key={adjustment.paymentId} className="border-t"><td className="p-3 font-medium">TR-{adjustment.proposalId}</td><td className="p-3">{adjustment.payerName} → {adjustment.payeeName}</td><td className="p-3">${Number(adjustment.amount).toLocaleString()}</td><td className="p-3 capitalize">{String(adjustment.paymentMethod ?? "Not selected").replace("_", " ")}</td><td className="p-3 capitalize">{String(adjustment.status).replace("_", " ")}</td><td className="p-3 font-mono text-xs">{adjustment.paymentIdentifier}</td><td className="p-3"><Button variant="outline" size="sm" onClick={() => { setCashRevealPaymentId(adjustment.paymentId); setCashRevealPhrase(""); setRevealedCashIdentifier(null); setCashRevealDialogOpen(true); }} disabled={!adjustment.paymentMethod || adjustment.paymentIdentifier === "Not set"}>Audited reveal</Button></td></tr>)}</tbody></table></div>}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           <TabsContent value="users" className="space-y-4 mt-6">
             <Card>
               <CardHeader>
@@ -1456,7 +1242,7 @@ export default function AdminDashboard() {
                       <tbody>
                         {(tradesQuery.data as any[])?.map((trade: any) => (
                           <tr key={trade.id} className="border-b border-border hover:bg-accent/50">
-                            <td className="py-2 px-4 font-mono text-xs"><a href={`/trade-room/${trade.id}`} className="font-semibold text-primary underline-offset-2 hover:underline" title={`Open trade ${trade.id} details`}>#{trade.id}</a></td>
+                            <td className="py-2 px-4 font-mono text-xs">{trade.id}</td>
                             <td className="py-2 px-4">{trade.requesterDisplayName || "-"}</td>
                             <td className="py-2 px-4">{trade.recipientDisplayName || "-"}</td>
                             <td className="py-2 px-4">{trade.listingTitle || "-"}</td>
@@ -1587,16 +1373,21 @@ export default function AdminDashboard() {
               <CardHeader>
                 <CardTitle>Platform Settings</CardTitle>
                 <CardDescription>
-                  Fee and commission controls will be added only if Tradebilia adopts a fee-based model.
+                  Configure platform parameters and features
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="text-sm text-muted-foreground">
-                  <p>No platform fees are active. This area is reserved for future fee-based settings and other explicitly approved platform controls.</p>
+                  <p>Platform settings interface coming soon. You'll be able to:</p>
+                  <ul className="list-disc list-inside mt-2 space-y-1">
+                    <li>Configure platform parameters</li>
+                    <li>Manage email templates</li>
+                    <li>Set trading fees or commissions</li>
+                    <li>Configure notification settings</li>
+                  </ul>
                 </div>
               </CardContent>
             </Card>
-            <ConventionsAdminTab />
           </TabsContent>
 
           {/* Reported Users Tab */}
@@ -1801,8 +1592,6 @@ export default function AdminDashboard() {
               <CardContent>
                 {moderationLogQuery.isLoading ? (
                   <div className="text-sm text-muted-foreground">Loading...</div>
-                ) : moderationLogQuery.isError ? (
-                  <div className="text-sm text-rose-700">Moderation history could not be loaded. Refresh the page and try again.</div>
                 ) : moderationLogQuery.data && moderationLogQuery.data.length > 0 ? (
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
@@ -1860,7 +1649,7 @@ export default function AdminDashboard() {
                 <CardDescription>Accounts with an IPQS email-history estimate under one year can finish setup but need approval before marketplace actions.</CardDescription>
               </CardHeader>
               <CardContent>
-                {pendingApprovalsQuery.isLoading ? <p className="text-sm text-muted-foreground">Loading approval queue…</p> : pendingApprovalsQuery.isError ? <p className="text-sm text-rose-700">Account approvals could not be loaded. Refresh the page and try again.</p> : (pendingApprovalsQuery.data?.length ?? 0) === 0 ? <p className="text-sm text-muted-foreground">No pending account approvals.</p> : <div className="space-y-3">
+                {pendingApprovalsQuery.isLoading ? <p className="text-sm text-muted-foreground">Loading approval queue…</p> : (pendingApprovalsQuery.data?.length ?? 0) === 0 ? <p className="text-sm text-muted-foreground">No pending account approvals.</p> : <div className="space-y-3">
                   {pendingApprovalsQuery.data?.map((review: any) => <div key={review.id} className="rounded-lg border p-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                     <div><p className="font-medium">{review.displayName || review.username || `User #${review.userId}`}</p><p className="text-sm text-muted-foreground">{review.email || "Email unavailable"} · Email history estimate: under one year</p><p className="text-xs text-muted-foreground mt-1">Email verified: {review.emailVerified ? "Yes" : "No"} · Phone verified: {review.phoneVerified ? "Yes" : "No"}</p></div>
                     <div className="flex gap-2"><Button size="sm" onClick={() => reviewApprovalMutation.mutate({ reviewId: review.id, status: 'approved' })} disabled={reviewApprovalMutation.isPending}>Approve marketplace access</Button><Button size="sm" variant="outline" onClick={() => reviewApprovalMutation.mutate({ reviewId: review.id, status: 'declined' })} disabled={reviewApprovalMutation.isPending}>Decline</Button></div>
@@ -1874,13 +1663,47 @@ export default function AdminDashboard() {
             <Card>
               <CardHeader><CardTitle>API Health</CardTitle><CardDescription>Recent sanitized external API failures. Keys, request payloads, and raw provider responses are never displayed.</CardDescription></CardHeader>
               <CardContent>
-                {apiHealthQuery.isLoading ? <p className="text-sm text-muted-foreground">Loading API health…</p> : apiHealthQuery.isError ? <p className="text-sm text-rose-700">API Health could not be loaded. Refresh the page and try again.</p> : (apiHealthQuery.data?.length ?? 0) === 0 ? <p className="text-sm text-muted-foreground">No recorded API failures.</p> : <><div className="mb-3 flex flex-wrap items-center justify-between gap-2"><label className="flex items-center gap-2 text-sm"><Checkbox checked={selectedApiHealthEventIds.size === (apiHealthQuery.data?.length ?? 0)} onCheckedChange={(checked) => setSelectedApiHealthEventIds(checked ? new Set((apiHealthQuery.data ?? []).map((event: any) => event.id)) : new Set())} aria-label="Select all API health events" />Select all visible</label><Button variant="destructive" size="sm" disabled={selectedApiHealthEventIds.size === 0 || clearApiHealthEventsMutation.isPending} onClick={() => setApiHealthClearConfirmOpen(true)}>Clear selected ({selectedApiHealthEventIds.size})</Button></div><div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className="border-b text-left"><th className="p-2">Select</th><th className="p-2">Provider</th><th className="p-2">Operation</th><th className="p-2">Likely cause</th><th className="p-2">Status</th><th className="p-2">When</th></tr></thead><tbody>{apiHealthQuery.data?.map((event: any) => <tr key={event.id} className="border-b"><td className="p-2"><Checkbox checked={selectedApiHealthEventIds.has(event.id)} onCheckedChange={(checked) => setSelectedApiHealthEventIds((current) => { const next = new Set(current); checked ? next.add(event.id) : next.delete(event.id); return next; })} aria-label={`Select API health event ${event.id}`} /></td><td className="p-2 font-medium">{event.provider}</td><td className="p-2">{event.operation}</td><td className="p-2 capitalize">{event.failureClass.replaceAll('_', ' ')}</td><td className="p-2">{event.statusCode ?? '—'}</td><td className="p-2 whitespace-nowrap">{new Date(event.occurredAt).toLocaleString()}</td></tr>)}</tbody></table></div></>}
+                {apiHealthQuery.isLoading ? <p className="text-sm text-muted-foreground">Loading API health…</p> : (apiHealthQuery.data?.length ?? 0) === 0 ? <p className="text-sm text-muted-foreground">No recorded API failures.</p> : <><div className="mb-3 flex flex-wrap items-center justify-between gap-2"><label className="flex items-center gap-2 text-sm"><Checkbox checked={selectedApiHealthEventIds.size === (apiHealthQuery.data?.length ?? 0)} onCheckedChange={(checked) => setSelectedApiHealthEventIds(checked ? new Set((apiHealthQuery.data ?? []).map((event: any) => event.id)) : new Set())} aria-label="Select all API health events" />Select all visible</label><Button variant="destructive" size="sm" disabled={selectedApiHealthEventIds.size === 0 || clearApiHealthEventsMutation.isPending} onClick={() => setApiHealthClearConfirmOpen(true)}>Clear selected ({selectedApiHealthEventIds.size})</Button></div><div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className="border-b text-left"><th className="p-2">Select</th><th className="p-2">Provider</th><th className="p-2">Operation</th><th className="p-2">Likely cause</th><th className="p-2">Status</th><th className="p-2">When</th></tr></thead><tbody>{apiHealthQuery.data?.map((event: any) => <tr key={event.id} className="border-b"><td className="p-2"><Checkbox checked={selectedApiHealthEventIds.has(event.id)} onCheckedChange={(checked) => setSelectedApiHealthEventIds((current) => { const next = new Set(current); checked ? next.add(event.id) : next.delete(event.id); return next; })} aria-label={`Select API health event ${event.id}`} /></td><td className="p-2 font-medium">{event.provider}</td><td className="p-2">{event.operation}</td><td className="p-2 capitalize">{event.failureClass.replaceAll('_', ' ')}</td><td className="p-2">{event.statusCode ?? '—'}</td><td className="p-2 whitespace-nowrap">{new Date(event.occurredAt).toLocaleString()}</td></tr>)}</tbody></table></div></>}
               </CardContent>
             </Card>
-            <Dialog open={apiHealthClearConfirmOpen} onOpenChange={setApiHealthClearConfirmOpen}><DialogContent><DialogHeader><DialogTitle>Clear selected API health events?</DialogTitle><DialogDescription>This permanently removes only the {selectedApiHealthEventIds.size} selected sanitized health record{selectedApiHealthEventIds.size === 1 ? "" : "s"}. The administrator action is retained in the audit log.</DialogDescription></DialogHeader><div className="flex justify-end gap-2"><Button variant="outline" onClick={() => setApiHealthClearConfirmOpen(false)}>Cancel</Button><Button variant="destructive" disabled={clearApiHealthEventsMutation.isPending} onClick={() => clearApiHealthEventsMutation.mutate({ eventIds: [...selectedApiHealthEventIds] })}>Clear selected records</Button></div></DialogContent></Dialog>
+            <Dialog open={apiHealthClearConfirmOpen} onOpenChange={setApiHealthClearConfirmOpen}><DialogContent><DialogHeader><DialogTitle>Clear selected API health events?</DialogTitle><DialogDescription>This permanently removes only the {selectedApiHealthEventIds.size} selected sanitized health record{selectedApiHealthEventIds.size === 1 ? '' : 's'}. The administrator action is retained in the audit log.</DialogDescription></DialogHeader><div className="flex justify-end gap-2"><Button variant="outline" onClick={() => setApiHealthClearConfirmOpen(false)}>Cancel</Button><Button variant="destructive" disabled={clearApiHealthEventsMutation.isPending} onClick={() => clearApiHealthEventsMutation.mutate({ eventIds: [...selectedApiHealthEventIds] })}>Clear selected records</Button></div></DialogContent></Dialog>
+          </TabsContent>
+          <TabsContent value="operations" className="space-y-4 mt-6">
+            <AdminOperationsTab onNavigate={setActiveTab} />
+          </TabsContent>
+          <TabsContent value="admin-guide" className="space-y-4 mt-6">
+            <AdminGuideTab />
           </TabsContent>
         </Tabs>
       </div>
+
+      <Dialog open={feeModeDialogOpen} onOpenChange={setFeeModeDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Turn Fee Mode {pendingFeeModeEnabled ? "On" : "Off"}?</DialogTitle>
+            <DialogDescription>This records the site’s future fee-mode intent only. It does not enable Stripe Checkout, charge members, or enforce paid access.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">For safety, verify your current administrator password and type <strong>{pendingFeeModeEnabled ? "ENABLE TRADEBILIA FEE MODE" : "DISABLE TRADEBILIA FEE MODE"}</strong> exactly.</div>
+            <div className="space-y-2"><label className="text-sm font-medium" htmlFor="fee-mode-password">Current administrator password</label><Input id="fee-mode-password" type="password" value={feeModePassword} onChange={(event) => setFeeModePassword(event.target.value)} autoComplete="current-password" /></div>
+            <div className="space-y-2"><label className="text-sm font-medium" htmlFor="fee-mode-phrase">Confirmation phrase</label><Input id="fee-mode-phrase" value={feeModePhrase} onChange={(event) => setFeeModePhrase(event.target.value)} /></div>
+            <div className="flex justify-end gap-2"><Button variant="outline" onClick={() => setFeeModeDialogOpen(false)}>Cancel</Button><Button disabled={!feeModePassword || feeModePhrase.trim() !== (pendingFeeModeEnabled ? "ENABLE TRADEBILIA FEE MODE" : "DISABLE TRADEBILIA FEE MODE") || updateFeeModeMutation.isPending} onClick={() => updateFeeModeMutation.mutate({ enabled: pendingFeeModeEnabled, currentPassword: feeModePassword, confirmationPhrase: feeModePhrase })}>{updateFeeModeMutation.isPending ? "Verifying…" : `Confirm Fee Mode ${pendingFeeModeEnabled ? "On" : "Off"}`}</Button></div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={cashRevealDialogOpen} onOpenChange={setCashRevealDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reveal a private payment destination?</DialogTitle>
+            <DialogDescription>Use this only when a cash-adjustment dispute requires it. The reveal is recorded in the trade activity log. Tradebilia does not process or guarantee the payment.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            {revealedCashIdentifier ? <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950"><strong>{revealedCashIdentifier.method.replace("_", " ")}</strong><code className="mt-1 block break-all rounded bg-white px-2 py-1 font-mono text-xs">{revealedCashIdentifier.identifier}</code></div> : <><div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950">Type <strong>REVEAL CASH PAYMENT IDENTIFIER</strong> exactly to continue. Do not share the identifier outside the active dispute review.</div><div className="space-y-2"><label htmlFor="cash-reveal-phrase" className="text-sm font-medium">Confirmation phrase</label><Input id="cash-reveal-phrase" value={cashRevealPhrase} onChange={(event) => setCashRevealPhrase(event.target.value)} /></div></>}
+            <div className="flex justify-end gap-2"><Button variant="outline" onClick={() => setCashRevealDialogOpen(false)}>Close</Button>{!revealedCashIdentifier && <Button disabled={cashRevealPaymentId === null || cashRevealPhrase.trim() !== "REVEAL CASH PAYMENT IDENTIFIER" || revealCashIdentifierMutation.isPending} onClick={() => cashRevealPaymentId && revealCashIdentifierMutation.mutate({ paymentId: cashRevealPaymentId, confirmationPhrase: "REVEAL CASH PAYMENT IDENTIFIER" })}>{revealCashIdentifierMutation.isPending ? "Revealing…" : "Reveal and record access"}</Button>}</div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* User Profile Modal */}
       <Dialog open={!!selectedUser} onOpenChange={(open) => !open && setSelectedUser(null)}>
@@ -2575,7 +2398,7 @@ function ConventionsAdminTab() {
       setScrapeResult(result);
       pendingQuery.refetch();
     },
-    onError: (e) => toast.error(`Convention refresh failed: ${e.message}`),
+    onError: (e) => alert('Scrape failed: ' + e.message),
   });
 
   const pending = pendingQuery.data ?? [];
@@ -2610,17 +2433,7 @@ function ConventionsAdminTab() {
         <h3 className="text-lg font-semibold">Pending Convention Submissions</h3>
         <span className="text-sm text-gray-500">{pending.length} pending</span>
       </div>
-      {pendingQuery.isLoading ? (
-        <div className="text-center py-12 text-gray-400">
-          <Calendar className="w-12 h-12 mx-auto mb-3 opacity-40" />
-          <p>Loading pending convention submissions…</p>
-        </div>
-      ) : pendingQuery.isError ? (
-        <div className="text-center py-12 text-rose-600">
-          <Calendar className="w-12 h-12 mx-auto mb-3 opacity-40" />
-          <p>Pending convention submissions could not be loaded.</p>
-        </div>
-      ) : pending.length === 0 ? (
+      {pending.length === 0 ? (
         <div className="text-center py-12 text-gray-400">
           <Calendar className="w-12 h-12 mx-auto mb-3 opacity-40" />
           <p>No pending convention submissions.</p>
@@ -2804,8 +2617,6 @@ function SupportTicketsTab() {
           <CardContent className="p-0">
             {ticketsQuery.isLoading ? (
               <div className="p-4 text-sm text-muted-foreground">Loading tickets...</div>
-            ) : ticketsQuery.isError ? (
-              <div className="p-4 text-sm text-rose-700">Support tickets could not be loaded. Refresh the page and try again.</div>
             ) : filtered.length === 0 ? (
               <div className="p-4 text-sm text-muted-foreground">No tickets found.</div>
             ) : (
@@ -2906,8 +2717,6 @@ function SupportTicketsTab() {
               {/* Replies */}
               {repliesQuery.isLoading ? (
                 <div className="text-sm text-muted-foreground">Loading replies...</div>
-              ) : repliesQuery.isError ? (
-                <div className="text-sm text-rose-700">Ticket replies could not be loaded.</div>
               ) : (repliesQuery.data ?? []).length > 0 ? (
                 <div className="space-y-2">
                   <div className="text-xs font-medium text-muted-foreground">Conversation</div>
@@ -3050,8 +2859,6 @@ function FlaggedContentTab() {
         <CardContent>
           {flagsQuery.isLoading ? (
             <div className="text-sm text-muted-foreground">Loading flagged content...</div>
-          ) : flagsQuery.isError ? (
-            <div className="text-sm text-rose-700">Flagged content could not be loaded. Refresh the page and try again.</div>
           ) : flags.length === 0 ? (
             <div className="flex flex-col items-center py-10 text-muted-foreground">
               <CheckCircle className="h-8 w-8 mb-2 opacity-30" />
@@ -3166,7 +2973,7 @@ function FlaggedContentTab() {
           <CardDescription>Marketplace feedback records that require safety review. Operations lists these separately from member reports and content flags.</CardDescription>
         </CardHeader>
         <CardContent>
-          {lowFeedbackFlagsQuery.isLoading ? <p className="text-sm text-muted-foreground">Loading feedback safety records…</p> : lowFeedbackFlagsQuery.isError ? <p className="text-sm text-rose-700">Feedback safety records could not be loaded. Refresh the page and try again.</p> : lowFeedbackFlags.length === 0 ? <p className="text-sm text-muted-foreground">No pending feedback safety records.</p> : <div className="space-y-2">{lowFeedbackFlags.map((flag: any) => <div key={flag.id} className="rounded-lg border p-3 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between"><div><p className="font-medium">{flag.memberDisplayName}</p><p className="text-sm text-muted-foreground">Feedback score: {flag.feedbackScore} · {flag.feedbackPercentage}% positive</p>{flag.flaggedReason ? <p className="mt-1 text-xs text-muted-foreground">{flag.flaggedReason}</p> : null}<p className="mt-1 text-xs text-muted-foreground">Flagged {new Date(flag.flaggedAt).toLocaleString()}</p></div><div className="flex flex-wrap gap-2"><Button size="sm" variant="outline" onClick={() => reviewLowFeedbackMutation.mutate({ flagId: flag.id, action: "dismissed" })} disabled={reviewLowFeedbackMutation.isPending}>Dismiss</Button><Button size="sm" variant="outline" onClick={() => reviewLowFeedbackMutation.mutate({ flagId: flag.id, action: "reviewed" })} disabled={reviewLowFeedbackMutation.isPending}>Reviewed</Button><Button size="sm" variant="destructive" onClick={() => reviewLowFeedbackMutation.mutate({ flagId: flag.id, action: "action_taken" })} disabled={reviewLowFeedbackMutation.isPending}>Action taken</Button></div></div>)}</div>}
+          {lowFeedbackFlagsQuery.isLoading ? <p className="text-sm text-muted-foreground">Loading feedback safety records…</p> : lowFeedbackFlags.length === 0 ? <p className="text-sm text-muted-foreground">No pending feedback safety records.</p> : <div className="space-y-2">{lowFeedbackFlags.map((flag: any) => <div key={flag.id} className="rounded-lg border p-3 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between"><div><p className="font-medium">{flag.memberDisplayName}</p><p className="text-sm text-muted-foreground">Feedback score: {flag.feedbackScore} · {flag.feedbackPercentage}% positive</p>{flag.flaggedReason ? <p className="mt-1 text-xs text-muted-foreground">{flag.flaggedReason}</p> : null}<p className="mt-1 text-xs text-muted-foreground">Flagged {new Date(flag.flaggedAt).toLocaleString()}</p></div><div className="flex flex-wrap gap-2"><Button size="sm" variant="outline" onClick={() => reviewLowFeedbackMutation.mutate({ flagId: flag.id, action: 'dismissed' })} disabled={reviewLowFeedbackMutation.isPending}>Dismiss</Button><Button size="sm" variant="outline" onClick={() => reviewLowFeedbackMutation.mutate({ flagId: flag.id, action: 'reviewed' })} disabled={reviewLowFeedbackMutation.isPending}>Reviewed</Button><Button size="sm" variant="destructive" onClick={() => reviewLowFeedbackMutation.mutate({ flagId: flag.id, action: 'action_taken' })} disabled={reviewLowFeedbackMutation.isPending}>Action taken</Button></div></div>)}</div>}
         </CardContent>
       </Card>
     </div>

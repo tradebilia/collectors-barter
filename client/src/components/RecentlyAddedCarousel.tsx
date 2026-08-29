@@ -7,6 +7,7 @@ import { Heart, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { getLoginUrl } from "@/const";
 import { OnlineIndicator } from "./OnlineIndicator";
+import { formatGrade } from "@/lib/tradebilia";
 
 interface CarouselItem {
   id: number;
@@ -19,6 +20,9 @@ interface CarouselItem {
   savedToWatchlist: boolean;
   ownerId: number | null;
   estimatedValue?: number | null;
+  category?: string | null;
+  certificationCompany?: string | null;
+  grade?: string | null;
 }
 
 interface RecentlyAddedCarouselProps {
@@ -51,6 +55,23 @@ export function RecentlyAddedCarousel({
       </div>
     );
   }
+
+  const formatWholeDollar = (value?: number | null, fallback = "$0") => {
+    const numericValue = Number(value);
+    return Number.isFinite(numericValue) ? `$${Math.round(numericValue).toLocaleString("en-US")}` : fallback;
+  };
+
+  const getCategoryBadgeClass = (category?: string | null) => {
+    const normalized = category?.trim().toLowerCase() || "";
+    if (normalized.includes("sport")) return "bg-red-100 text-red-800 ring-red-200";
+    if (normalized.includes("comic")) return "bg-violet-100 text-violet-800 ring-violet-200";
+    if (normalized.includes("pokemon")) return "bg-yellow-100 text-yellow-900 ring-yellow-200";
+    if (normalized.includes("coin")) return "bg-amber-100 text-amber-900 ring-amber-200";
+    if (normalized.includes("stamp")) return "bg-sky-100 text-sky-800 ring-sky-200";
+    if (normalized.includes("movie")) return "bg-rose-100 text-rose-800 ring-rose-200";
+    if (normalized.includes("autograph")) return "bg-purple-100 text-purple-800 ring-purple-200";
+    return "bg-blue-100 text-blue-800 ring-blue-200";
+  };
 
   // Duplicate items once for seamless loop
   const displayItems = [...items, ...items];
@@ -85,14 +106,19 @@ export function RecentlyAddedCarousel({
               </div>
 
               <CardContent className="p-3 space-y-2">
-                <div className="min-h-[40px]">
+                <div className="min-h-[40px] space-y-0.5">
                   <p className="line-clamp-2 text-xs font-bold leading-tight text-slate-900 whitespace-normal">
                     {item.title}
                   </p>
+                  {item.grade && Number(item.grade) > 0 ? (
+                    <span className={`inline-flex max-w-full items-center rounded-md px-1.5 py-0 text-[9px] font-extrabold leading-4 ring-1 ${getCategoryBadgeClass(item.category)}`} title={`${item.certificationCompany?.trim() || "Graded"} ${formatGrade(item.grade)}`}>
+                      {item.certificationCompany?.trim() || "Graded"} {formatGrade(item.grade)}
+                    </span>
+                  ) : null}
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <p className="text-sm font-black text-[#2458a6]">{item.price}</p>
+                  <p className="text-sm font-black text-[#2458a6]">{formatWholeDollar(item.estimatedValue, item.price)}</p>
                   <p className="text-[10px] font-medium text-slate-400">{item.subtitle}</p>
                 </div>
 

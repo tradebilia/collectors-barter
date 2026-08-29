@@ -16,11 +16,10 @@ import { useQueryClient } from "@tanstack/react-query";
 
 const TRADEBILIA_LOGO_URL = "https://assets.tradebilia.com/tradebilia_final_transparent_8a1981e6.svg";
 
-type AccountSource = "ebay" | "paypal" | "facebook" | "linkedin" | "whatnot";
+type AccountSource = "ebay" | "facebook" | "linkedin" | "whatnot";
 
 const accountSources: { value: AccountSource; label: string; icon: string }[] = [
   { value: "ebay", label: "eBay", icon: "🏪" },
-  { value: "paypal", label: "PayPal", icon: "💳" },
   { value: "facebook", label: "Facebook", icon: "f" },
   { value: "linkedin", label: "LinkedIn", icon: "in" },
   { value: "whatnot", label: "WhatNot", icon: "🔴" },
@@ -60,6 +59,13 @@ export default function AccountSetup() {
   });
   const [showMerchantFields, setShowMerchantFields] = useState(false);
   const [selectedSources, setSelectedSources] = useState<AccountSource[]>([]);
+  const [externalPaymentForm, setExternalPaymentForm] = useState({
+    paypalEmail: "",
+    venmoUsername: "",
+    cashAppCashtag: "",
+    zelleEmail: "",
+    zellePhone: "",
+  });
   const [isEmailVerified, setIsEmailVerified] = useState(false);
   const [emailVerificationCode, setEmailVerificationCode] = useState("");
   const [showEmailVerification, setShowEmailVerification] = useState(false);
@@ -114,6 +120,7 @@ export default function AccountSetup() {
       toast.error(`Failed to save profile: ${error.message}`);
     },
   });
+  const saveExternalPaymentMethodsMutation = trpc.payment.saveExternalPaymentMethods.useMutation();
 
   useEffect(() => {
     if (dashboardQuery.data?.profile) {
@@ -393,6 +400,14 @@ export default function AccountSetup() {
         reader.readAsDataURL(avatarFile);
       });
     }
+
+    await saveExternalPaymentMethodsMutation.mutateAsync({
+      paypalEmail: externalPaymentForm.paypalEmail.trim() || null,
+      venmoUsername: externalPaymentForm.venmoUsername.trim() || null,
+      cashAppCashtag: externalPaymentForm.cashAppCashtag.trim() || null,
+      zelleEmail: externalPaymentForm.zelleEmail.trim() || null,
+      zellePhone: externalPaymentForm.zellePhone.trim() || null,
+    });
 
     await saveProfileMutation.mutateAsync({
       displayName: formData.userName || (user as any)?.username || user?.name || "New Collector",
@@ -885,6 +900,21 @@ export default function AccountSetup() {
                   <p className="text-xs text-slate-500 mt-4">
                     You can skip this step and add accounts later from your account settings.
                   </p>
+
+                  <div className="border-t border-slate-200 pt-6 mt-6 space-y-4">
+                    <div>
+                      <h3 className="font-semibold text-slate-900">Direct Cash Payment Methods <span className="text-slate-400 font-normal">(optional)</span></h3>
+                      <p className="mt-1 text-sm text-slate-600">Add destinations you are comfortable using for a cash adjustment in a trade. They remain private and are shared only with an accepted cash-trade partner.</p>
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div className="space-y-1"><Label htmlFor="setup-paypal">PayPal email</Label><Input id="setup-paypal" type="email" placeholder="you@example.com" value={externalPaymentForm.paypalEmail} onChange={(event) => setExternalPaymentForm((current) => ({ ...current, paypalEmail: event.target.value }))} /></div>
+                      <div className="space-y-1"><Label htmlFor="setup-venmo">Venmo username</Label><Input id="setup-venmo" placeholder="username or @username" value={externalPaymentForm.venmoUsername} onChange={(event) => setExternalPaymentForm((current) => ({ ...current, venmoUsername: event.target.value }))} /></div>
+                      <div className="space-y-1"><Label htmlFor="setup-cashapp">Cash App $cashtag</Label><Input id="setup-cashapp" placeholder="$yourcashtag" value={externalPaymentForm.cashAppCashtag} onChange={(event) => setExternalPaymentForm((current) => ({ ...current, cashAppCashtag: event.target.value }))} /></div>
+                      <div className="space-y-1"><Label htmlFor="setup-zelle-email">Zelle email</Label><Input id="setup-zelle-email" type="email" placeholder="Use email or mobile below" value={externalPaymentForm.zelleEmail} onChange={(event) => setExternalPaymentForm((current) => ({ ...current, zelleEmail: event.target.value, zellePhone: event.target.value ? "" : current.zellePhone }))} /></div>
+                      <div className="space-y-1"><Label htmlFor="setup-zelle-phone">Zelle U.S. mobile</Label><Input id="setup-zelle-phone" inputMode="tel" placeholder="Use email or mobile above" value={externalPaymentForm.zellePhone} onChange={(event) => setExternalPaymentForm((current) => ({ ...current, zellePhone: event.target.value, zelleEmail: event.target.value ? "" : current.zelleEmail }))} /></div>
+                    </div>
+                    <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-relaxed text-amber-950"><strong>Important:</strong> Tradebilia does not process, hold, insure, refund, or guarantee direct payments. Choose a method for each accepted cash trade before it is shared.</p>
+                  </div>
 
                   {/* Verified recovery methods */}
                   <div className="border-t border-slate-200 pt-6 mt-6">

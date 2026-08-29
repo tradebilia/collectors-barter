@@ -1,8 +1,8 @@
 {
   "version": "5",
   "dialect": "mysql",
-  "id": "c640bdbd-fabd-4c2e-a5f4-eb36e2c6ad19",
-  "prevId": "6c62dbc3-da4f-4696-9e40-ae465371d734",
+  "id": "725a9a0f-fb67-48fc-9dce-ace1b70364d9",
+  "prevId": "7d2ec745-bb95-450c-8612-1a9686654822",
   "tables": {
     "accountApprovalReviews": {
       "name": "accountApprovalReviews",
@@ -238,7 +238,7 @@
         },
         "billingMode": {
           "name": "billingMode",
-          "type": "enum('free_launch','subscription')",
+          "type": "enum('free_launch','launch_grace','membership_required')",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
@@ -251,6 +251,28 @@
           "notNull": true,
           "autoincrement": false,
           "default": 0
+        },
+        "paymentEnforcementEnabled": {
+          "name": "paymentEnforcementEnabled",
+          "type": "tinyint",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "feeLaunchStartsAt": {
+          "name": "feeLaunchStartsAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "feeLaunchGraceEndsAt": {
+          "name": "feeLaunchGraceEndsAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
         },
         "updatedBy": {
           "name": "updatedBy",
@@ -2744,8 +2766,15 @@
           "autoincrement": false,
           "default": 0
         },
-        "stripePriceId": {
-          "name": "stripePriceId",
+        "stripeMonthlyPriceId": {
+          "name": "stripeMonthlyPriceId",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "stripeAnnualPriceId": {
+          "name": "stripeAnnualPriceId",
           "type": "varchar(255)",
           "primaryKey": false,
           "notNull": false,
@@ -2797,6 +2826,106 @@
       "compositePrimaryKeys": {
         "membershipPlans_id": {
           "name": "membershipPlans_id",
+          "columns": [
+            "id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraint": {}
+    },
+    "membershipProviderEvents": {
+      "name": "membershipProviderEvents",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "provider": {
+          "name": "provider",
+          "type": "varchar(32)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "providerEventId": {
+          "name": "providerEventId",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "eventType": {
+          "name": "eventType",
+          "type": "varchar(120)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "processedAt": {
+          "name": "processedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "processingStatus": {
+          "name": "processingStatus",
+          "type": "enum('received','processed','ignored','failed')",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'received'"
+        },
+        "failureReason": {
+          "name": "failureReason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'CURRENT_TIMESTAMP'"
+        },
+        "updatedAt": {
+          "name": "updatedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "onUpdate": true,
+          "default": "(now())"
+        }
+      },
+      "indexes": {
+        "membershipProviderEvents_unique": {
+          "name": "membershipProviderEvents_unique",
+          "columns": [
+            "provider",
+            "providerEventId"
+          ],
+          "isUnique": true
+        },
+        "membershipProviderEvents_status_idx": {
+          "name": "membershipProviderEvents_status_idx",
+          "columns": [
+            "processingStatus"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "membershipProviderEvents_id": {
+          "name": "membershipProviderEvents_id",
           "columns": [
             "id"
           ]
@@ -5557,11 +5686,19 @@
         },
         "status": {
           "name": "status",
-          "type": "enum('free_launch','trialing','active','past_due','cancelled','complimentary')",
+          "type": "enum('free_launch','active','past_due','cancelled','complimentary','unpaid')",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
           "default": "'free_launch'"
+        },
+        "billingTerm": {
+          "name": "billingTerm",
+          "type": "enum('none','monthly','annual','complimentary')",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'none'"
         },
         "stripeCustomerId": {
           "name": "stripeCustomerId",
@@ -5591,6 +5728,13 @@
           "notNull": false,
           "autoincrement": false
         },
+        "paymentGraceEndsAt": {
+          "name": "paymentGraceEndsAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
         "cancelAtPeriodEnd": {
           "name": "cancelAtPeriodEnd",
           "type": "tinyint",
@@ -5598,6 +5742,13 @@
           "notNull": true,
           "autoincrement": false,
           "default": 0
+        },
+        "accessOverrideNote": {
+          "name": "accessOverrideNote",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
         },
         "freeLaunchGrantedAt": {
           "name": "freeLaunchGrantedAt",
@@ -5651,6 +5802,13 @@
           "name": "userMemberships_status_idx",
           "columns": [
             "status"
+          ],
+          "isUnique": false
+        },
+        "userMemberships_grace_idx": {
+          "name": "userMemberships_grace_idx",
+          "columns": [
+            "paymentGraceEndsAt"
           ],
           "isUnique": false
         }
@@ -6852,6 +7010,286 @@
       },
       "foreignKeys": {},
       "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraint": {}
+    },
+    "verificationOrderShipments": {
+      "name": "verificationOrderShipments",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "verificationOrderId": {
+          "name": "verificationOrderId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "memberId": {
+          "name": "memberId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "direction": {
+          "name": "direction",
+          "type": "enum('to_tradebilia','to_member')",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "trackingNumber": {
+          "name": "trackingNumber",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "carrier": {
+          "name": "carrier",
+          "type": "varchar(80)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "receivedAt": {
+          "name": "receivedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "forwardedAt": {
+          "name": "forwardedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "evidenceUrl": {
+          "name": "evidenceUrl",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'CURRENT_TIMESTAMP'"
+        },
+        "updatedAt": {
+          "name": "updatedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "onUpdate": true,
+          "default": "(now())"
+        }
+      },
+      "indexes": {
+        "verificationOrderShipments_order_member_direction_unique": {
+          "name": "verificationOrderShipments_order_member_direction_unique",
+          "columns": [
+            "verificationOrderId",
+            "memberId",
+            "direction"
+          ],
+          "isUnique": true
+        },
+        "verificationOrderShipments_member_idx": {
+          "name": "verificationOrderShipments_member_idx",
+          "columns": [
+            "memberId"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "verificationOrderShipments_verificationOrderId_verificationOrders_id_fk": {
+          "name": "verificationOrderShipments_verificationOrderId_verificationOrders_id_fk",
+          "tableFrom": "verificationOrderShipments",
+          "tableTo": "verificationOrders",
+          "columnsFrom": [
+            "verificationOrderId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "verificationOrderShipments_memberId_users_id_fk": {
+          "name": "verificationOrderShipments_memberId_users_id_fk",
+          "tableFrom": "verificationOrderShipments",
+          "tableTo": "users",
+          "columnsFrom": [
+            "memberId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "verificationOrderShipments_id": {
+          "name": "verificationOrderShipments_id",
+          "columns": [
+            "id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraint": {}
+    },
+    "verificationOrders": {
+      "name": "verificationOrders",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "proposalId": {
+          "name": "proposalId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "status": {
+          "name": "status",
+          "type": "enum('awaiting_agreement','awaiting_payment','awaiting_shipment','received','matched_listing','forwarded','completed','admin_review','cancelled')",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'awaiting_agreement'"
+        },
+        "requesterAgreed": {
+          "name": "requesterAgreed",
+          "type": "tinyint",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "recipientAgreed": {
+          "name": "recipientAgreed",
+          "type": "tinyint",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "requesterPaymentStatus": {
+          "name": "requesterPaymentStatus",
+          "type": "enum('not_required','unpaid','paid','failed','refunded')",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'unpaid'"
+        },
+        "recipientPaymentStatus": {
+          "name": "recipientPaymentStatus",
+          "type": "enum('not_required','unpaid','paid','failed','refunded')",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'unpaid'"
+        },
+        "feeCentsPerMember": {
+          "name": "feeCentsPerMember",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 2000
+        },
+        "requesterPaymentReference": {
+          "name": "requesterPaymentReference",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "recipientPaymentReference": {
+          "name": "recipientPaymentReference",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "shipByAt": {
+          "name": "shipByAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "adminNote": {
+          "name": "adminNote",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'CURRENT_TIMESTAMP'"
+        },
+        "updatedAt": {
+          "name": "updatedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "onUpdate": true,
+          "default": "(now())"
+        }
+      },
+      "indexes": {
+        "verificationOrders_proposal_unique": {
+          "name": "verificationOrders_proposal_unique",
+          "columns": [
+            "proposalId"
+          ],
+          "isUnique": true
+        },
+        "verificationOrders_status_idx": {
+          "name": "verificationOrders_status_idx",
+          "columns": [
+            "status"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "verificationOrders_id": {
+          "name": "verificationOrders_id",
+          "columns": [
+            "id"
+          ]
+        }
+      },
       "uniqueConstraints": {},
       "checkConstraint": {}
     },

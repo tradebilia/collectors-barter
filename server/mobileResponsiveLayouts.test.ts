@@ -38,5 +38,11 @@ describe("mobile-only responsive layout contracts", () => {
     const source = read("client/src/components/CategoryBar.tsx");
     expect(source).toContain("snap-x");
     expect(source).toContain("overflow-x-auto");
+    expect(source).toContain("function PostageStampIcon");
+    expect(source).toContain("stamps: PostageStampIcon");
+    expect(source).toContain("function PokemonSilhouetteIcon");
+    expect(source).toContain("pokemon: PokemonSilhouetteIcon");
+    expect(source).toContain("autographs: PenLine");
+    expect(source).not.toContain("stamps: PenLine");
   });
 });

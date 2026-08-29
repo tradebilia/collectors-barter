@@ -112,11 +112,6 @@ export function SearchResults() {
 
   const hasFilters = submittedFilters.category !== "all" || submittedFilters.condition !== "all" || submittedFilters.valueMin !== "" || submittedFilters.valueMax !== "" || submittedFilters.verifiedMerchantsOnly;
   const listings = resultsQuery.data?.listings ?? [];
-  const sellerIds = useMemo(() => [...new Set(listings.map(listing => listing.owner.id))], [listings]);
-  const sellerStatusQuery = trpc.onlineStatus.getMultipleSellerOnlineStatus.useQuery(
-    { sellerIds },
-    { enabled: sellerIds.length > 0, refetchInterval: 60_000 }
-  );
 
   return (
     <div className={`min-h-screen ${searchTheme.pageClassName}`}>
@@ -225,12 +220,9 @@ export function SearchResults() {
               <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
                 {listings.map(listing => (
                   <Card key={listing.id} className="overflow-hidden rounded-md border border-gray-200 bg-white text-[#153746] shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
-                    <div className="flex h-5 items-center justify-center gap-1 bg-white text-[0.55rem] font-medium" aria-live="polite">
-                      {sellerStatusQuery.data?.[listing.owner.id] ? <><span className={`h-2 w-2 rounded-full ${sellerStatusQuery.data[listing.owner.id].isOnline ? "bg-emerald-500" : "bg-red-500"}`} /><span className={sellerStatusQuery.data[listing.owner.id].isOnline ? "text-emerald-700" : "text-red-600"}>Member {sellerStatusQuery.data[listing.owner.id].isOnline ? "Online" : "Offline"}</span></> : <span className="text-slate-400">Checking member status…</span>}
-                    </div>
-                    <Link href={`/listings/${listing.id}`} className="block aspect-[7/9] bg-white p-0"><img src={resolveTradebiliaListingImage({ title: listing.title, category: listing.category, primaryPhotoUrl: listing.primaryPhotoUrl })} alt={listing.title} className="h-full w-full object-contain" /></Link>
+                    <Link href={`/listings/${listing.id}`} className="block aspect-[7/9] border-b border-current/10 bg-white p-0"><img src={resolveTradebiliaListingImage({ title: listing.title, category: listing.category, primaryPhotoUrl: listing.primaryPhotoUrl })} alt={listing.title} className="h-full w-full object-contain" /></Link>
                     <CardContent className="space-y-1 p-1.5">
-                      <div className="flex min-h-[3rem] items-start justify-between gap-2"><div className="min-w-0"><p className="truncate text-[0.5rem] font-semibold uppercase tracking-[0.12em] opacity-60">{listing.categoryLabel}</p><Link href={`/listings/${listing.id}`} className="mt-1 block min-h-[2rem] line-clamp-2 text-xs font-semibold leading-tight hover:opacity-75">{listing.title}</Link></div>{listing.featured ? <Badge className="rounded-full bg-[#0f5563] px-1 py-0 text-[0.5rem] text-[#fff1d2]">Featured</Badge> : null}</div>
+                      <div className="flex items-start justify-between gap-2"><div className="min-w-0"><p className="truncate text-[0.5rem] font-semibold uppercase tracking-[0.12em] opacity-60">{listing.categoryLabel}</p><Link href={`/listings/${listing.id}`} className="mt-1 block min-h-[2rem] line-clamp-2 text-xs font-semibold leading-tight hover:opacity-75">{listing.title}</Link></div>{listing.featured ? <Badge className="rounded-full bg-[#0f5563] px-1 py-0 text-[0.5rem] text-[#fff1d2]">Featured</Badge> : null}</div>
                        <div className="grid grid-cols-2 gap-1 rounded-md border border-current/10 bg-black/5 p-1 text-[0.5rem]"><div><p className="uppercase tracking-[0.1em] opacity-60">{listing.grade && Number(listing.grade) > 0 ? "Grade" : "Condition"}</p><p className="mt-0 font-semibold truncate text-[0.55rem]">{listing.grade && Number(listing.grade) > 0 ? `${listing.certificationCompany ? `${listing.certificationCompany} ` : ""}${formatGrade(listing.grade)}` : listing.conditionLabel}</p></div><div><p className="uppercase tracking-[0.1em] opacity-60">Value</p><p className="mt-0 font-semibold truncate text-[0.55rem]">{listing.estimatedValue === null ? "—" : `$${listing.estimatedValue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</p></div><div><p className="uppercase tracking-[0.1em] opacity-60">Collector</p><p className="mt-0 font-semibold truncate text-[0.55rem]">{listing.owner.displayName}</p></div><div><p className="uppercase tracking-[0.1em] opacity-60">Trust</p><p className="mt-0 flex items-center gap-0.5 font-semibold text-[0.55rem]"><Star className="h-2 w-2 fill-current" />{listing.ownerRating.averageRating.toFixed(1)}</p></div></div>
                        {listing.distanceBand && <p className="flex items-center gap-1 text-[0.55rem] font-semibold text-teal-700"><MapPin className="h-2.5 w-2.5" /><span>{listing.distanceBand}</span></p>}
                     </CardContent>

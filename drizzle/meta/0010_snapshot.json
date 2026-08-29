@@ -1,8 +1,8 @@
 {
   "version": "5",
   "dialect": "mysql",
-  "id": "7d2ec745-bb95-450c-8612-1a9686654822",
-  "prevId": "e52fbbaf-b5c1-425b-b65b-cf70e146f199",
+  "id": "92c31ae3-ae04-48e2-87a3-fc259f5332cf",
+  "prevId": "e8638b38-68a7-49b4-9e9a-5ef55297e2f3",
   "tables": {
     "accountApprovalReviews": {
       "name": "accountApprovalReviews",
@@ -134,6 +134,265 @@
         }
       },
       "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraint": {}
+    },
+    "accountClosureRequests": {
+      "name": "accountClosureRequests",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "userId": {
+          "name": "userId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "status": {
+          "name": "status",
+          "type": "enum('pending_review','closed','declined','withdrawn')",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'pending_review'"
+        },
+        "activeRequestKey": {
+          "name": "activeRequestKey",
+          "type": "varchar(96)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "memberNote": {
+          "name": "memberNote",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "blockerSummary": {
+          "name": "blockerSummary",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "adminNote": {
+          "name": "adminNote",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "reviewedBy": {
+          "name": "reviewedBy",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "requestedAt": {
+          "name": "requestedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'CURRENT_TIMESTAMP'"
+        },
+        "reviewedAt": {
+          "name": "reviewedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "closedAt": {
+          "name": "closedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'CURRENT_TIMESTAMP'"
+        },
+        "updatedAt": {
+          "name": "updatedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "onUpdate": true,
+          "default": "(now())"
+        }
+      },
+      "indexes": {
+        "accountClosureRequests_activeRequestKey_unique": {
+          "name": "accountClosureRequests_activeRequestKey_unique",
+          "columns": [
+            "activeRequestKey"
+          ],
+          "isUnique": true
+        },
+        "accountClosureRequests_userId_idx": {
+          "name": "accountClosureRequests_userId_idx",
+          "columns": [
+            "userId"
+          ],
+          "isUnique": false
+        },
+        "accountClosureRequests_status_idx": {
+          "name": "accountClosureRequests_status_idx",
+          "columns": [
+            "status"
+          ],
+          "isUnique": false
+        },
+        "accountClosureRequests_requestedAt_idx": {
+          "name": "accountClosureRequests_requestedAt_idx",
+          "columns": [
+            "requestedAt"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "accountClosureRequests_userId_users_id_fk": {
+          "name": "accountClosureRequests_userId_users_id_fk",
+          "tableFrom": "accountClosureRequests",
+          "tableTo": "users",
+          "columnsFrom": [
+            "userId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "accountClosureRequests_reviewedBy_users_id_fk": {
+          "name": "accountClosureRequests_reviewedBy_users_id_fk",
+          "tableFrom": "accountClosureRequests",
+          "tableTo": "users",
+          "columnsFrom": [
+            "reviewedBy"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraint": {}
+    },
+    "adminActivityLog": {
+      "name": "adminActivityLog",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "adminId": {
+          "name": "adminId",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "action": {
+          "name": "action",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "targetType": {
+          "name": "targetType",
+          "type": "varchar(80)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "targetReference": {
+          "name": "targetReference",
+          "type": "varchar(120)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "summary": {
+          "name": "summary",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'CURRENT_TIMESTAMP'"
+        }
+      },
+      "indexes": {
+        "adminActivityLog_admin_idx": {
+          "name": "adminActivityLog_admin_idx",
+          "columns": [
+            "adminId"
+          ],
+          "isUnique": false
+        },
+        "adminActivityLog_target_idx": {
+          "name": "adminActivityLog_target_idx",
+          "columns": [
+            "targetType",
+            "targetReference"
+          ],
+          "isUnique": false
+        },
+        "adminActivityLog_action_idx": {
+          "name": "adminActivityLog_action_idx",
+          "columns": [
+            "action"
+          ],
+          "isUnique": false
+        },
+        "adminActivityLog_createdAt_idx": {
+          "name": "adminActivityLog_createdAt_idx",
+          "columns": [
+            "createdAt"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "adminActivityLog_id": {
+          "name": "adminActivityLog_id",
+          "columns": [
+            "id"
+          ]
+        }
+      },
       "uniqueConstraints": {},
       "checkConstraint": {}
     },
@@ -722,6 +981,20 @@
           "notNull": true,
           "autoincrement": false,
           "default": "'CURRENT_TIMESTAMP'"
+        },
+        "participantAArchivedAt": {
+          "name": "participantAArchivedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "participantBArchivedAt": {
+          "name": "participantBArchivedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
         }
       },
       "indexes": {
@@ -1350,7 +1623,7 @@
             "userId",
             "listingId"
           ],
-          "isUnique": false
+          "isUnique": true
         },
         "favorites_user_idx": {
           "name": "favorites_user_idx",
@@ -1977,6 +2250,20 @@
         },
         "deletedAt": {
           "name": "deletedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "senderArchivedAt": {
+          "name": "senderArchivedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "recipientArchivedAt": {
+          "name": "recipientArchivedAt",
           "type": "timestamp",
           "primaryKey": false,
           "notNull": false,
@@ -3167,6 +3454,133 @@
       "uniqueConstraints": {},
       "checkConstraint": {}
     },
+    "preLaunchBroadcastDeliveries": {
+      "name": "preLaunchBroadcastDeliveries",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "deliveryKey": {
+          "name": "deliveryKey",
+          "type": "varchar(96)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "requestedBy": {
+          "name": "requestedBy",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "payloadHash": {
+          "name": "payloadHash",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "subject": {
+          "name": "subject",
+          "type": "varchar(160)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "recipientCount": {
+          "name": "recipientCount",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "broadcastId": {
+          "name": "broadcastId",
+          "type": "varchar(128)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "status": {
+          "name": "status",
+          "type": "enum('prepared','sending','sent','uncertain')",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'prepared'"
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'CURRENT_TIMESTAMP'"
+        },
+        "updatedAt": {
+          "name": "updatedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "onUpdate": true,
+          "default": "(now())"
+        }
+      },
+      "indexes": {
+        "preLaunchBroadcastDeliveries_deliveryKey_unique": {
+          "name": "preLaunchBroadcastDeliveries_deliveryKey_unique",
+          "columns": [
+            "deliveryKey"
+          ],
+          "isUnique": true
+        },
+        "preLaunchBroadcastDeliveries_requestedBy_idx": {
+          "name": "preLaunchBroadcastDeliveries_requestedBy_idx",
+          "columns": [
+            "requestedBy"
+          ],
+          "isUnique": false
+        },
+        "preLaunchBroadcastDeliveries_status_idx": {
+          "name": "preLaunchBroadcastDeliveries_status_idx",
+          "columns": [
+            "status"
+          ],
+          "isUnique": false
+        },
+        "preLaunchBroadcastDeliveries_createdAt_idx": {
+          "name": "preLaunchBroadcastDeliveries_createdAt_idx",
+          "columns": [
+            "createdAt"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "preLaunchBroadcastDeliveries_requestedBy_users_id_fk": {
+          "name": "preLaunchBroadcastDeliveries_requestedBy_users_id_fk",
+          "tableFrom": "preLaunchBroadcastDeliveries",
+          "tableTo": "users",
+          "columnsFrom": [
+            "requestedBy"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraint": {}
+    },
     "proposalReadStatus": {
       "name": "proposalReadStatus",
       "columns": {
@@ -3611,7 +4025,21 @@
           "name": "userId",
           "type": "int",
           "primaryKey": false,
-          "notNull": true,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "submittedByName": {
+          "name": "submittedByName",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "submittedByEmail": {
+          "name": "submittedByEmail",
+          "type": "varchar(320)",
+          "primaryKey": false,
+          "notNull": false,
           "autoincrement": false
         },
         "subject": {
@@ -3793,7 +4221,7 @@
         },
         "eventType": {
           "name": "eventType",
-          "type": "enum('trade_created','partner_joined','item_added','item_removed','cash_added','cash_removed','proposal_sent','proposal_accepted','proposal_declined','trade_cancelled','tracking_submitted','items_received','trade_completed','payment_step_started','payment_verification_started','payment_verified','payment_verification_failed')",
+          "type": "enum('trade_created','partner_joined','item_added','item_removed','cash_added','cash_removed','proposal_sent','proposal_accepted','proposal_declined','trade_cancelled','tracking_submitted','items_received','trade_completed','payment_step_started','payment_verification_started','payment_verified','payment_verification_failed','cash_payment_method_selected','cash_payment_marked_sent','cash_payment_received_confirmed','cash_payment_dispute_opened','cash_payment_terms_reset')",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
@@ -4359,7 +4787,28 @@
           "name": "paypalEmail",
           "type": "varchar(320)",
           "primaryKey": false,
-          "notNull": true,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "paymentMethod": {
+          "name": "paymentMethod",
+          "type": "enum('paypal','venmo','cash_app','zelle')",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "paymentIdentifier": {
+          "name": "paymentIdentifier",
+          "type": "varchar(320)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "paymentMethodSelectedAt": {
+          "name": "paymentMethodSelectedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
           "autoincrement": false
         },
         "transactionId": {
@@ -4371,7 +4820,7 @@
         },
         "status": {
           "name": "status",
-          "type": "enum('pending','submitted','verified','failed')",
+          "type": "enum('pending','method_selected','sent','received','disputed','submitted','verified','failed')",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
@@ -4387,6 +4836,41 @@
         "verifiedAt": {
           "name": "verifiedAt",
           "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "sentAt": {
+          "name": "sentAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "receivedAt": {
+          "name": "receivedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "disputeOpenedAt": {
+          "name": "disputeOpenedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "disputeOpenedBy": {
+          "name": "disputeOpenedBy",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "disputeReason": {
+          "name": "disputeReason",
+          "type": "varchar(500)",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
@@ -4541,13 +5025,13 @@
         }
       },
       "indexes": {
-        "unique_note_per_trade": {
-          "name": "unique_note_per_trade",
+        "tradePrivateNotes_proposal_user_unique": {
+          "name": "tradePrivateNotes_proposal_user_unique",
           "columns": [
             "proposalId",
             "userId"
           ],
-          "isUnique": false
+          "isUnique": true
         },
         "idx_tradeNotes_proposal": {
           "name": "idx_tradeNotes_proposal",
@@ -4623,13 +5107,13 @@
         }
       },
       "indexes": {
-        "tradeProposalItems_unique_item": {
-          "name": "tradeProposalItems_unique_item",
+        "tradeProposalItems_proposal_listing_unique": {
+          "name": "tradeProposalItems_proposal_listing_unique",
           "columns": [
             "proposalId",
             "offeredListingId"
           ],
-          "isUnique": false
+          "isUnique": true
         },
         "tradeProposalItems_proposal_idx": {
           "name": "tradeProposalItems_proposal_idx",
@@ -5036,13 +5520,13 @@
         }
       },
       "indexes": {
-        "unique_proposal_user": {
-          "name": "unique_proposal_user",
+        "tradeReceiptConfirmation_proposal_user_unique": {
+          "name": "tradeReceiptConfirmation_proposal_user_unique",
           "columns": [
             "proposalId",
             "userId"
           ],
-          "isUnique": false
+          "isUnique": true
         },
         "idx_tradeReceipt_proposal": {
           "name": "idx_tradeReceipt_proposal",
@@ -5189,13 +5673,13 @@
         }
       },
       "indexes": {
-        "tradeReviews_unique_reviewer_per_proposal": {
-          "name": "tradeReviews_unique_reviewer_per_proposal",
+        "tradeReviews_proposal_reviewer_unique": {
+          "name": "tradeReviews_proposal_reviewer_unique",
           "columns": [
             "proposalId",
             "reviewerId"
           ],
-          "isUnique": false
+          "isUnique": true
         },
         "tradeReviews_proposal_idx": {
           "name": "tradeReviews_proposal_idx",
@@ -5333,6 +5817,15 @@
         }
       },
       "indexes": {
+        "tradeTrackingNumbers_proposal_user_listing_unique": {
+          "name": "tradeTrackingNumbers_proposal_user_listing_unique",
+          "columns": [
+            "proposalId",
+            "userId",
+            "listingId"
+          ],
+          "isUnique": true
+        },
         "idx_tradeTracking_proposal": {
           "name": "idx_tradeTracking_proposal",
           "columns": [
@@ -5441,13 +5934,13 @@
         }
       },
       "indexes": {
-        "unique_voter_per_link": {
-          "name": "unique_voter_per_link",
+        "tradeVotes_link_voter_unique": {
+          "name": "tradeVotes_link_voter_unique",
           "columns": [
             "votingLinkId",
             "voterUserId"
           ],
-          "isUnique": false
+          "isUnique": true
         },
         "idx_tradeVotes_link": {
           "name": "idx_tradeVotes_link",
@@ -5537,31 +6030,24 @@
         }
       },
       "indexes": {
-        "idx_tradeVoting_proposal": {
-          "name": "idx_tradeVoting_proposal",
+        "tradeVotingLinks_proposal_unique": {
+          "name": "tradeVotingLinks_proposal_unique",
           "columns": [
             "proposalId"
           ],
-          "isUnique": false
+          "isUnique": true
         },
-        "idx_tradeVoting_token": {
-          "name": "idx_tradeVoting_token",
+        "tradeVotingLinks_token_unique": {
+          "name": "tradeVotingLinks_token_unique",
           "columns": [
             "linkToken"
           ],
-          "isUnique": false
+          "isUnique": true
         },
         "idx_tradeVoting_expires": {
           "name": "idx_tradeVoting_expires",
           "columns": [
             "expiresAt"
-          ],
-          "isUnique": false
-        },
-        "linkToken": {
-          "name": "linkToken",
-          "columns": [
-            "linkToken"
           ],
           "isUnique": false
         }
@@ -6138,7 +6624,7 @@
           "columns": [
             "userId"
           ],
-          "isUnique": false
+          "isUnique": true
         }
       },
       "foreignKeys": {
@@ -6375,7 +6861,7 @@
           "columns": [
             "reportId"
           ],
-          "isUnique": false
+          "isUnique": true
         },
         "userReports_reportedUserId_idx": {
           "name": "userReports_reportedUserId_idx",
@@ -6932,6 +7418,21 @@
           "notNull": false,
           "autoincrement": false
         },
+        "isAccountClosed": {
+          "name": "isAccountClosed",
+          "type": "tinyint",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "accountClosedAt": {
+          "name": "accountClosedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
         "warnCount": {
           "name": "warnCount",
           "type": "int",
@@ -6964,6 +7465,41 @@
         },
         "paypalVerifiedAt": {
           "name": "paypalVerifiedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "venmoUsername": {
+          "name": "venmoUsername",
+          "type": "varchar(80)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "cashAppCashtag": {
+          "name": "cashAppCashtag",
+          "type": "varchar(80)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "zelleEmail": {
+          "name": "zelleEmail",
+          "type": "varchar(320)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "zellePhone": {
+          "name": "zellePhone",
+          "type": "varchar(32)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "externalPaymentMethodsUpdatedAt": {
+          "name": "externalPaymentMethodsUpdatedAt",
           "type": "timestamp",
           "primaryKey": false,
           "notNull": false,
@@ -7005,7 +7541,7 @@
           "columns": [
             "username"
           ],
-          "isUnique": false
+          "isUnique": true
         }
       },
       "foreignKeys": {},
@@ -7281,21 +7817,7 @@
           "isUnique": false
         }
       },
-      "foreignKeys": {
-        "verificationOrders_proposalId_tradeProposals_id_fk": {
-          "name": "verificationOrders_proposalId_tradeProposals_id_fk",
-          "tableFrom": "verificationOrders",
-          "tableTo": "tradeProposals",
-          "columnsFrom": [
-            "proposalId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
+      "foreignKeys": {},
       "compositePrimaryKeys": {
         "verificationOrders_id": {
           "name": "verificationOrders_id",
@@ -7347,7 +7869,7 @@
             "userId",
             "listingId"
           ],
-          "isUnique": false
+          "isUnique": true
         },
         "watchlistEntries_user_idx": {
           "name": "watchlistEntries_user_idx",

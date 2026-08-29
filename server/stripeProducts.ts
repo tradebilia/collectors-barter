@@ -13,6 +13,6 @@ export function hasStripeMembershipTestConfiguration() {
     process.env.STRIPE_SECRET_KEY &&
       process.env.STRIPE_WEBHOOK_SECRET &&
       stripeMembershipPrices.monthly?.startsWith("price_") &&
-      stripeMembershipPrices.annual?.startsWith("price_"),
+      stripeMembershipPrices.annual?.startsWith("price_")
   );
 }

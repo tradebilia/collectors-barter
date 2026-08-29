@@ -15,7 +15,7 @@ import { EbayConnection } from "@/components/EbayConnection";
 import { FacebookConnection } from "@/components/FacebookConnection";
 import { LinkedInConnection } from "@/components/LinkedInConnection";
 import { trpc } from "@/lib/trpc";
-import { Bell, Lock, Mail, Loader2, Save, Shield, Link as LinkIcon, Upload, Eye, EyeOff, Cog, CheckCircle2, CreditCard, ExternalLink, Sparkles } from "lucide-react";
+import { Bell, Lock, Mail, Loader2, Save, Shield, Link as LinkIcon, Upload, Eye, EyeOff, Cog, CreditCard, ExternalLink } from "lucide-react";
 import { FormEvent, useEffect, useState, useRef } from "react";
 import { toast } from "sonner";
 import {
@@ -60,6 +60,11 @@ export default function AccountSettings() {
   const dashboardQuery = trpc.market.dashboard.useQuery(undefined, {
     enabled: isAuthenticated,
   });
+  const saveProfileMutation = trpc.market.saveProfile.useMutation();
+  const changePasswordMutation = trpc.market.changePassword.useMutation();
+  const saveIntegrationsMutation = trpc.market.saveIntegrations.useMutation();
+  const saveCommunicationsMutation = trpc.market.saveCommunications.useMutation();
+  const savePreferencesMutation = trpc.market.savePreferences.useMutation();
   const membershipQuery = trpc.membership.getMyStatus.useQuery(undefined, {
     enabled: isAuthenticated,
   });
@@ -83,22 +88,17 @@ export default function AccountSettings() {
     },
     onError: (error) => toast.error(error.message),
   });
-  const saveProfileMutation = trpc.market.saveProfile.useMutation();
-  const changePasswordMutation = trpc.market.changePassword.useMutation();
-  const saveIntegrationsMutation = trpc.market.saveIntegrations.useMutation();
-  const saveCommunicationsMutation = trpc.market.saveCommunications.useMutation();
-  const savePreferencesMutation = trpc.market.savePreferences.useMutation();
   const startTestCheckoutMutation = trpc.billing.startTestCheckout.useMutation();
   const openTestPortalMutation = trpc.billing.openTestPortal.useMutation();
-  // PayPal
-  const paypalQuery = trpc.payment.getPayPalEmail.useQuery();
-  const savePayPalEmailMutation = trpc.payment.savePayPalEmail.useMutation();
+  // Private external cash-adjustment destinations. These are never public-profile fields.
+  const externalPaymentMethodsQuery = trpc.payment.getExternalPaymentMethods.useQuery();
+  const saveExternalPaymentMethodsMutation = trpc.payment.saveExternalPaymentMethods.useMutation();
 
   // Read ?tab= from URL to support redirects (e.g., from eBay OAuth callback)
-  const validTabs = ["profile", "security", "integrations", "communications", "preferences", "membership"] as const;
+  const validTabs = ["profile", "membership", "security", "integrations", "communications", "preferences"] as const;
   const urlTab = new URLSearchParams(window.location.search).get("tab");
   const initialTab = validTabs.includes(urlTab as any) ? (urlTab as typeof validTabs[number]) : "profile";
-  const [activeTab, setActiveTab] = useState<"profile" | "security" | "integrations" | "communications" | "preferences" | "membership">(initialTab);
+  const [activeTab, setActiveTab] = useState<"profile" | "membership" | "security" | "integrations" | "communications" | "preferences">(initialTab);
   
   // Profile Form State
   const [confirmationDialog, setConfirmationDialog] = useState<{
@@ -164,9 +164,27 @@ export default function AccountSettings() {
   // Integrations State
   const [connectedAccounts, setConnectedAccounts] = useState<AccountSource[]>([]);
 
-  // PayPal State
-  const [paypalEmailInput, setPaypalEmailInput] = useState("");
-  const [paypalSaving, setPaypalSaving] = useState(false);
+  // Direct cash-adjustment destinations
+  const [externalPaymentForm, setExternalPaymentForm] = useState({
+    paypalEmail: "",
+    venmoUsername: "",
+    cashAppCashtag: "",
+    zelleEmail: "",
+    zellePhone: "",
+  });
+  const [externalPaymentSaving, setExternalPaymentSaving] = useState(false);
+
+  useEffect(() => {
+    const methods = externalPaymentMethodsQuery.data;
+    if (!methods) return;
+    setExternalPaymentForm({
+      paypalEmail: methods.paypalEmail ?? "",
+      venmoUsername: methods.venmoUsername ?? "",
+      cashAppCashtag: methods.cashAppCashtag ?? "",
+      zelleEmail: methods.zelleEmail ?? "",
+      zellePhone: methods.zellePhone ?? "",
+    });
+  }, [externalPaymentMethodsQuery.data]);
   // Communications State
   const [communicationPrefs, setCommunicationPrefs] = useState<{
     tradeInitiated: { email: boolean; text: boolean };
@@ -577,20 +595,22 @@ export default function AccountSettings() {
     }
   };
 
-  const handleSavePayPalEmail = async () => {
-    if (!paypalEmailInput.trim()) {
-      toast.error("Please enter a valid PayPal email address.");
-      return;
-    }
-    setPaypalSaving(true);
+  const handleSaveExternalPaymentMethods = async () => {
+    setExternalPaymentSaving(true);
     try {
-      await savePayPalEmailMutation.mutateAsync({ email: paypalEmailInput.trim() });
-      await paypalQuery.refetch();
-      toast.success("PayPal email saved successfully!");
+      const result = await saveExternalPaymentMethodsMutation.mutateAsync({
+        paypalEmail: externalPaymentForm.paypalEmail.trim() || null,
+        venmoUsername: externalPaymentForm.venmoUsername.trim() || null,
+        cashAppCashtag: externalPaymentForm.cashAppCashtag.trim() || null,
+        zelleEmail: externalPaymentForm.zelleEmail.trim() || null,
+        zellePhone: externalPaymentForm.zellePhone.trim() || null,
+      });
+      await externalPaymentMethodsQuery.refetch();
+      toast.success(result.resetTradeCount ? `Payment destinations saved. ${result.resetTradeCount} active cash trade${result.resetTradeCount === 1 ? "" : "s"} must select a method again.` : "Payment destinations saved privately.");
     } catch (err: any) {
-      toast.error(err?.message || "Failed to save PayPal email.");
+      toast.error(err?.message || "Failed to save payment destinations.");
     } finally {
-      setPaypalSaving(false);
+      setExternalPaymentSaving(false);
     }
   };
 
@@ -680,13 +700,13 @@ export default function AccountSettings() {
       <main className="px-4 py-10 lg:px-8">
         <div className="mx-auto max-w-4xl space-y-8">
           <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
-            <TabsList className="flex w-full justify-start gap-1 overflow-x-auto rounded-lg bg-slate-200 p-1 sm:grid sm:grid-cols-6 sm:gap-0">
+            <TabsList className="flex w-full justify-start gap-1 overflow-x-auto overflow-y-hidden rounded-lg bg-slate-200 p-1 sm:grid sm:grid-cols-6 sm:gap-0">
               <TabsTrigger className="flex-none sm:flex-1" value="profile">Profile</TabsTrigger>
+              <TabsTrigger className="flex-none sm:flex-1" value="membership">Membership</TabsTrigger>
               <TabsTrigger className="flex-none sm:flex-1" value="security">Security</TabsTrigger>
               <TabsTrigger className="flex-none sm:flex-1" value="integrations">Integrations</TabsTrigger>
               <TabsTrigger className="flex-none sm:flex-1" value="communications">Communications</TabsTrigger>
               <TabsTrigger className="flex-none sm:flex-1" value="preferences">Preferences</TabsTrigger>
-              <TabsTrigger className="flex-none sm:flex-1" value="membership">Membership &amp; Billing</TabsTrigger>
             </TabsList>
 
             {/* Profile Tab */}
@@ -1141,7 +1161,6 @@ export default function AccountSettings() {
               {(() => {
                 const allPlatforms = [
                   { key: 'facebook', label: 'Facebook', logo: 'https://assets.tradebilia.com/Facebooklogo_0c02c2d1.png', isConnected: !!user?.facebookId },
-                  { key: 'paypal', label: 'PayPal', logo: 'https://assets.tradebilia.com/Paypal_25ebc114.png', isConnected: !!user?.paypalEmail },
                   { key: 'linkedin', label: 'LinkedIn', logo: 'https://assets.tradebilia.com/LinkedIn_df1e2c1e.webp', isConnected: !!user?.linkedinId },
                   { key: 'ebay', label: 'eBay', logo: 'https://assets.tradebilia.com/Ebaylogo_12a10426.png', isConnected: !!user?.ebayUsername },
                   { key: 'whatnot', label: 'WhatNot', logo: 'https://assets.tradebilia.com/WhatNot_ab669ac9.png', isConnected: false },
@@ -1169,47 +1188,27 @@ export default function AccountSettings() {
                 ) : null;
               })()}
 
-              {/* PayPal Email Card */}
+              {/* Private direct-payment destinations */}
               <Card className="rounded-[1.5rem] border-slate-200 bg-white shadow-sm">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <img src="https://assets.tradebilia.com/Paypal_25ebc114.png" alt="PayPal" className="h-6 w-auto object-contain" />
-                    PayPal Email
+                    <CreditCard className="h-5 w-5 text-blue-700" />
+                    Direct Cash Payment Methods
                   </CardTitle>
                   <CardDescription>
-                    Add your PayPal email so trading partners can send you payments directly. Tradebilia does not process or hold any payments.
+                    Add only the destinations you are willing to use. These details stay private and are shown only to your accepted cash-trade partner.
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  {paypalQuery.data?.paypalEmail && (
-                    <div className="flex items-center gap-2 text-sm text-slate-600 bg-slate-50 rounded-lg px-3 py-2 border border-slate-200">
-                      <span className="font-medium">Current:</span>
-                      <span>{paypalQuery.data.paypalEmail}</span>
-                      {paypalQuery.data.paypalVerified === 1 && (
-                        <span className="ml-auto text-xs text-green-700 bg-green-100 rounded-full px-2 py-0.5 font-medium">Verified</span>
-                      )}
-                    </div>
-                  )}
-                  <div className="flex gap-2">
-                    <Input
-                      type="email"
-                      placeholder="your-paypal@email.com"
-                      value={paypalEmailInput}
-                      onChange={(e) => setPaypalEmailInput(e.target.value)}
-                      className="rounded-lg"
-                    />
-                    <Button
-                      onClick={handleSavePayPalEmail}
-                      disabled={paypalSaving || !paypalEmailInput.trim()}
-                      className="rounded-lg shrink-0"
-                    >
-                      {paypalSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                      <span className="ml-1">Save</span>
-                    </Button>
+                <CardContent className="space-y-5">
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-1.5"><Label htmlFor="payment-paypal">PayPal email</Label><Input id="payment-paypal" type="email" placeholder="you@example.com" value={externalPaymentForm.paypalEmail} onChange={(event) => setExternalPaymentForm((current) => ({ ...current, paypalEmail: event.target.value }))} /></div>
+                    <div className="space-y-1.5"><Label htmlFor="payment-venmo">Venmo username</Label><Input id="payment-venmo" placeholder="username or @username" value={externalPaymentForm.venmoUsername} onChange={(event) => setExternalPaymentForm((current) => ({ ...current, venmoUsername: event.target.value }))} /></div>
+                    <div className="space-y-1.5"><Label htmlFor="payment-cashapp">Cash App $cashtag</Label><Input id="payment-cashapp" placeholder="$yourcashtag" value={externalPaymentForm.cashAppCashtag} onChange={(event) => setExternalPaymentForm((current) => ({ ...current, cashAppCashtag: event.target.value }))} /></div>
+                    <div className="space-y-1.5"><Label htmlFor="payment-zelle-email">Zelle email</Label><Input id="payment-zelle-email" type="email" placeholder="Use email or mobile below" value={externalPaymentForm.zelleEmail} onChange={(event) => setExternalPaymentForm((current) => ({ ...current, zelleEmail: event.target.value, zellePhone: event.target.value ? "" : current.zellePhone }))} /></div>
+                    <div className="space-y-1.5"><Label htmlFor="payment-zelle-phone">Zelle U.S. mobile</Label><Input id="payment-zelle-phone" inputMode="tel" placeholder="Use email or mobile above" value={externalPaymentForm.zellePhone} onChange={(event) => setExternalPaymentForm((current) => ({ ...current, zellePhone: event.target.value, zelleEmail: event.target.value ? "" : current.zelleEmail }))} /></div>
                   </div>
-                  <p className="text-xs text-slate-500">
-                    ⚠️ Tradebilia is not responsible for any payments made between users. All transactions are between buyers and sellers directly via PayPal.
-                  </p>
+                  <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs leading-relaxed text-amber-950"><strong>Important:</strong> Tradebilia does not process, hold, insure, refund, or guarantee direct payments. Your destination is private, and it is shown only when an accepted trade includes cash. Changing a destination resets any active cash-trade method selection so both members can confirm the new terms.</div>
+                  <div className="flex flex-wrap items-center justify-between gap-3"><p className="text-xs text-slate-500">Zelle accepts one private destination: an email address <em>or</em> a U.S. mobile number.</p><Button onClick={handleSaveExternalPaymentMethods} disabled={externalPaymentSaving || externalPaymentMethodsQuery.isLoading} className="rounded-lg">{externalPaymentSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}<span className="ml-1">Save methods</span></Button></div>
                 </CardContent>
               </Card>
             </TabsContent>
@@ -1566,133 +1565,78 @@ export default function AccountSettings() {
             </TabsContent>
 
             <TabsContent value="membership" className="space-y-6">
-              <Card className="overflow-hidden rounded-[1.5rem] border-emerald-200 bg-white shadow-sm">
-                <div className="border-b border-emerald-100 bg-[linear-gradient(135deg,#ecfdf5_0%,#f0fdf4_55%,#eff6ff_100%)] px-6 py-6">
-                  <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                    <div className="flex items-start gap-3">
-                      <div className="rounded-2xl bg-emerald-600 p-3 text-white shadow-sm">
-                        <Sparkles className="h-6 w-6" />
+              <Card className="rounded-[1.5rem] border-slate-200 bg-white shadow-sm">
+                <CardHeader>
+                  <CardTitle>Membership &amp; Billing</CardTitle>
+                  <CardDescription>Tradebilia is currently in Free Launch. No card is required and no payment is being collected.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-5">
+                  {membershipQuery.isLoading ? (
+                    <p className="text-sm text-slate-600">Loading your membership status…</p>
+                  ) : membershipQuery.error ? (
+                    <p className="rounded-lg bg-red-50 p-4 text-sm text-red-700">Your membership status is temporarily unavailable. Free Launch access remains unchanged.</p>
+                  ) : (
+                    <>
+                      <div className="rounded-xl border border-violet-100 bg-violet-50 p-5">
+                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-violet-700">Current status</p>
+                        <p className="mt-1 text-xl font-semibold text-slate-900">{membershipQuery.data?.billing.statusLabel ?? "Free Launch Access"}</p>
+                        <p className="mt-2 text-sm leading-6 text-slate-700">{membershipQuery.data?.billing.statusMessage}</p>
                       </div>
-                      <div>
-                        <p className="text-sm font-semibold uppercase tracking-[0.16em] text-emerald-700">Current membership</p>
-                        <h2 className="mt-1 text-2xl font-semibold text-slate-950">
-                          {membershipQuery.data?.membership.planName ?? "Free Launch Access"}
-                        </h2>
-                        <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-700">
-                          {membershipQuery.data?.billing.statusMessage ?? "No credit card is required. All current Tradebilia features are available at no charge during the free launch."}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="inline-flex w-fit items-center gap-2 rounded-full border border-emerald-200 bg-white/85 px-3 py-1.5 text-sm font-medium text-emerald-800">
-                      <CheckCircle2 className="h-4 w-4" />
-                      {membershipQuery.data?.membership.isComplimentary ? "Complimentary access" : "Active at no charge"}
-                    </div>
-                  </div>
-                </div>
-
-                <CardContent className="space-y-6 pt-6">
-                  <div className="grid gap-4 sm:grid-cols-3">
-                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Plan</p>
-                      <p className="mt-1 font-semibold text-slate-900">{membershipQuery.data?.membership.planName ?? "Free Launch Access"}</p>
-                    </div>
-                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Payment</p>
-                      <p className="mt-1 font-semibold text-slate-900">No credit card required</p>
-                    </div>
-                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Billing status</p>
-                      <p className="mt-1 font-semibold text-slate-900">
-                        {membershipQuery.data?.membership.isComplimentary
-                          ? "Complimentary access granted"
-                          : membershipQuery.data?.billing.freeLaunchOverride !== false
-                            ? "Billing not active"
-                            : "Subscription billing prepared"}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="rounded-xl border border-blue-100 bg-blue-50/70 p-4 text-sm leading-6 text-slate-700">
-                    <div className="flex gap-3">
-                      <CreditCard className="mt-0.5 h-5 w-5 shrink-0 text-blue-700" />
-                      <div>
-                        <p className="font-semibold text-slate-900">No payment method is being collected</p>
-                        <p className="mt-1">
-                          {membershipQuery.data?.membership.isComplimentary
-                            ? "Your complimentary membership is an administrator-granted access status. It does not require a card and does not create a charge."
-                            : "Tradebilia has not activated subscriptions, checkout, invoices, or card collection. If a single subscription option is introduced later, you will receive clear notice before any billing change."}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="flex items-end justify-between gap-4">
-                      <div>
-                        <h3 className="font-semibold text-slate-900">
-                          {membershipQuery.data?.membership.isComplimentary ? "Included with your complimentary membership" : "Included during free launch"}
-                        </h3>
-                        <p className="mt-1 text-sm text-slate-600">
-                          {membershipQuery.data?.membership.isComplimentary
-                            ? "Your administrator-granted access will continue if Tradebilia later offers a Subscription Membership."
-                            : "All current Tradebilia features remain available at no charge."}
-                        </p>
-                      </div>
-                      {membershipQuery.isLoading && <Loader2 className="h-5 w-5 animate-spin text-slate-400" aria-label="Loading membership access" />}
-                    </div>
-
-                    {membershipQuery.isError ? (
-                      <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-                        Membership details could not be loaded right now. Your free-launch access remains available; please refresh the page to try again.
-                      </div>
-                    ) : (
-                      <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                        {(membershipQuery.data?.entitlements ?? []).map((feature) => (
-                          <div key={feature.featureKey} className="flex gap-3 rounded-xl border border-slate-200 bg-white p-4">
-                            <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
-                            <div>
-                              <p className="font-medium text-slate-900">{feature.name}</p>
-                              {feature.description && <p className="mt-1 text-sm leading-5 text-slate-600">{feature.description}</p>}
-                            </div>
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        {membershipQuery.data?.billing.futureSubscriptionTerms.map((term) => (
+                          <div key={term.code} className="rounded-xl border border-slate-200 p-4">
+                            <p className="font-semibold text-slate-900">{term.label}</p>
+                            <p className="mt-1 text-sm text-slate-600">Future Tradebilia Membership: {term.displayPrice}</p>
                           </div>
                         ))}
                       </div>
-                    )}
-                  </div>
-                  {user?.role === "admin" && (
-                    <div className="rounded-xl border border-dashed border-violet-300 bg-violet-50/70 p-5">
-                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                        <div>
-                          <p className="flex items-center gap-2 text-sm font-bold text-violet-950"><CreditCard className="h-4 w-4" />Sandbox administrator tools</p>
-                          <p className="mt-1 max-w-2xl text-sm leading-6 text-violet-900">These test-only controls are visible only to administrators. They create Stripe sandbox sessions for validation; Free Launch, live charges, and member restrictions remain inactive.</p>
+                      <div>
+                        <h3 className="font-semibold text-slate-900">Included during Free Launch</h3>
+                        <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                          {membershipQuery.data?.entitlements.map((feature) => (
+                            <div key={feature.featureKey} className="rounded-lg border border-slate-100 bg-slate-50 p-3">
+                              <p className="text-sm font-medium text-slate-900">{feature.name}</p>
+                              <p className="mt-1 text-xs leading-5 text-slate-600">{feature.description}</p>
+                            </div>
+                          ))}
                         </div>
-                        <span className="w-fit rounded-full bg-violet-200 px-3 py-1 text-xs font-semibold text-violet-900">Test mode only</span>
                       </div>
-                      <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+                      {user?.role === "admin" && (
+                        <div className="rounded-xl border border-dashed border-violet-300 bg-violet-50/70 p-5">
+                          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                            <div>
+                              <p className="flex items-center gap-2 text-sm font-bold text-violet-950"><CreditCard className="h-4 w-4" />Sandbox administrator tools</p>
+                              <p className="mt-1 max-w-2xl text-sm leading-6 text-violet-900">These test-only controls are visible only to administrators. They create Stripe sandbox sessions for validation; Free Launch, live charges, and member restrictions remain inactive.</p>
+                            </div>
+                            <span className="w-fit rounded-full bg-violet-200 px-3 py-1 text-xs font-semibold text-violet-900">Test mode only</span>
+                          </div>
+                          <div className="mt-4 flex flex-col gap-3 sm:flex-row">
                             <Button type="button" className="bg-violet-700 hover:bg-violet-800" disabled={hasExistingSandboxMembership || startTestCheckoutMutation.isPending} onClick={() => handleStartTestCheckout("monthly")}>
-                          <ExternalLink className="mr-2 h-4 w-4" />Test $1 monthly Checkout
-                        </Button>
+                              <ExternalLink className="mr-2 h-4 w-4" />Test $1 monthly Checkout
+                            </Button>
                             <Button type="button" variant="outline" className="border-violet-300 bg-white text-violet-900 hover:bg-violet-100" disabled={hasExistingSandboxMembership || startTestCheckoutMutation.isPending} onClick={() => handleStartTestCheckout("annual")}>
-                          <ExternalLink className="mr-2 h-4 w-4" />Test $10 annual Checkout
-                        </Button>
-                        <Button type="button" variant="outline" className="border-violet-300 bg-white text-violet-900 hover:bg-violet-100" disabled={openTestPortalMutation.isPending} onClick={handleOpenTestPortal}>
-                          <ExternalLink className="mr-2 h-4 w-4" />Open test portal
-                        </Button>
+                              <ExternalLink className="mr-2 h-4 w-4" />Test $10 annual Checkout
+                            </Button>
+                            <Button type="button" variant="outline" className="border-violet-300 bg-white text-violet-900 hover:bg-violet-100" disabled={openTestPortalMutation.isPending} onClick={handleOpenTestPortal}>
+                              <ExternalLink className="mr-2 h-4 w-4" />Open test portal
+                            </Button>
                           </div>
                           {hasExistingSandboxMembership && (
                             <p className="mt-3 rounded-lg border border-violet-200 bg-white px-3 py-2 text-sm text-violet-950">A sandbox Membership is already active for this administrator account. The Checkout buttons are disabled to prevent a duplicate subscription. Use the test portal to review it; do not cancel or change it unless you intend to test that action.</p>
                           )}
                           {testBillingTerm && (
-                        <div className="mt-4 rounded-lg border border-violet-300 bg-white p-4" role="status">
-                          <p className="text-sm font-semibold text-slate-900">Open the Stripe sandbox {testBillingTerm} Checkout?</p>
-                          <p className="mt-1 text-sm leading-6 text-slate-700">This creates a test-only Membership subscription for administrator validation. It does not create a live charge, change Free Launch, or restrict any member.</p>
-                          <div className="mt-3 flex flex-wrap gap-2">
+                            <div className="mt-4 rounded-lg border border-violet-300 bg-white p-4" role="status">
+                              <p className="text-sm font-semibold text-slate-900">Open the Stripe sandbox {testBillingTerm} Checkout?</p>
+                              <p className="mt-1 text-sm leading-6 text-slate-700">This creates a test-only Membership subscription for administrator validation. It does not create a live charge, change Free Launch, or restrict any member.</p>
+                              <div className="mt-3 flex flex-wrap gap-2">
                                 <Button type="button" size="sm" className="bg-violet-700 hover:bg-violet-800" disabled={hasExistingSandboxMembership || startTestCheckoutMutation.isPending} onClick={confirmTestCheckout}>Open sandbox Checkout</Button>
-                            <Button type="button" size="sm" variant="outline" onClick={() => setTestBillingTerm(null)}>Cancel</Button>
-                          </div>
+                                <Button type="button" size="sm" variant="outline" onClick={() => setTestBillingTerm(null)}>Cancel</Button>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       )}
-                    </div>
+                    </>
                   )}
                 </CardContent>
               </Card>

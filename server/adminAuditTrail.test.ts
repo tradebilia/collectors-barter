@@ -13,7 +13,7 @@ describe("administrator activity audit trail", () => {
     expect(migration).toContain("CREATE TABLE IF NOT EXISTS `adminActivityLog`");
     expect(migration).not.toContain("DROP ");
     expect(migration).not.toContain("stripe");
-    expect(migration).not.toContain("`payload`");
+    expect(migration).not.toContain("payload");
   });
 
   it("records approved reviews and exports while rendering aggregated timeline events", () => {

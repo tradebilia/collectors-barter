@@ -1,5 +1,7 @@
--- Custom TiDB runtime additions for existing approved administrator workflows.
--- Additive only: no seed data, data changes, deletes, or billing/member changes.
+-- Custom TiDB runtime repair for pre-existing administrator contracts.
+-- This migration is intentionally additive and idempotent: it creates only the
+-- two source-defined tables missing from the restored custom runtime schema.
+-- No existing row, member, listing, trade, payment, or billing setting changes.
 
 CREATE TABLE IF NOT EXISTS `accountApprovalReviews` (
   `id` int NOT NULL AUTO_INCREMENT,

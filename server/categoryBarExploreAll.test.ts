@@ -9,7 +9,8 @@ describe("Category Bar Explore All navigation", () => {
     expect(source).toContain('const isGlobalSearchPage = useRoute("/search")[0];');
     expect(source).toContain('href="/search"');
     expect(source).toContain("Explore All");
-    expect(source).toContain('isGlobalSearchPage === true ? "bg-white text-slate-950" : "text-white"');
+    expect(source).toContain('className={linkClass(isGlobalSearchPage === true)}');
+    expect(source).toContain('active ? "bg-[#3b267c] text-white');
     expect(source).toContain('href={`/category/${category.value}`}');
   });
 });

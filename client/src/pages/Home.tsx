@@ -437,8 +437,11 @@ export default function Home() {
     ? (marketplaceQuery.data?.listings ?? []).slice(0, 15).map(listing => ({
         id: listing.id,
         title: listing.title,
-        price: listing.estimatedValue ? `$${listing.estimatedValue.toFixed(2)}` : "$0.00",
+        price: listing.estimatedValue ? `$${Math.round(listing.estimatedValue).toLocaleString("en-US")}` : "$0",
         subtitle: `${listing.ownerRating.averageRating.toFixed(1)} ★ · ${listing.ownerRating.reviewCount} reviews`,
+        category: listing.category,
+        certificationCompany: listing.certificationCompany,
+        grade: listing.grade,
         imageUrl: resolveTradebiliaListingImage({ title: listing.title, category: listing.category, primaryPhotoUrl: listing.primaryPhotoUrl }),
         href: `/listings/${listing.id}`,
         tradeListingId: listing.id,

@@ -149,6 +149,8 @@ export default function WarRoom() {
   // Payment step state
   const [transactionIdInput, setTransactionIdInput] = useState('');
   const [paymentStepStarted, setPaymentStepStarted] = useState(false);
+  const [selectedCashMethod, setSelectedCashMethod] = useState<'paypal' | 'venmo' | 'cash_app' | 'zelle'>('paypal');
+  const [cashDisputeReason, setCashDisputeReason] = useState('');
 
   // ── tRPC queries ──────────────────────────────────────────────────────────
   const tradeDetailsQuery = trpc.tradeFlow.getTradeDetails.useQuery(
@@ -281,23 +283,16 @@ export default function WarRoom() {
   const dismissVideoCallMutation = trpc.tradeFlow.dismissVideoCall.useMutation();
   const endVideoCallMutation = trpc.tradeFlow.endVideoCall.useMutation();
   const joinVideoCallMutation = trpc.tradeFlow.joinVideoCall.useMutation();
-  // PayPal payment step
-  const myPaypalQuery = trpc.payment.getPayPalEmail.useQuery();
-  const paymentStatusQuery = trpc.payment.getPaymentStatus.useQuery(
+  // External cash-adjustment step. Identifiers are returned only to accepted-trade participants who owe cash.
+  const cashAdjustmentContextQuery = trpc.payment.getCashAdjustmentContext.useQuery(
     { proposalId },
     { enabled: proposalId > 0 }
   );
-  const verifyPaymentMutation = trpc.payment.verifyPayment.useMutation({
-    onSuccess: (result) => {
-      if (result.verified) {
-        toast.success('Payment verified successfully!');
-      } else {
-        toast.error(`Verification failed: ${result.reason || 'Transaction not found or amount mismatch.'}`);
-      }
-      utils.payment.getPaymentStatus.invalidate({ proposalId });
-    },
-    onError: (err) => toast.error(err.message),
-  });
+  const invalidateCashAdjustment = () => cashAdjustmentContextQuery.refetch();
+  const selectCashAdjustmentMethodMutation = trpc.payment.selectCashAdjustmentMethod.useMutation({ onSuccess: () => { toast.success('Payment method selected for this trade.'); invalidateCashAdjustment(); }, onError: (err) => toast.error(err.message) });
+  const markCashAdjustmentSentMutation = trpc.payment.markCashAdjustmentSent.useMutation({ onSuccess: () => { toast.success('Marked as sent. Your trade partner must confirm receipt.'); invalidateCashAdjustment(); }, onError: (err) => toast.error(err.message) });
+  const confirmCashAdjustmentReceivedMutation = trpc.payment.confirmCashAdjustmentReceived.useMutation({ onSuccess: () => { toast.success('Receipt confirmed.'); invalidateCashAdjustment(); }, onError: (err) => toast.error(err.message) });
+  const openCashAdjustmentDisputeMutation = trpc.payment.openCashAdjustmentDispute.useMutation({ onSuccess: () => { toast.success('Cash-adjustment dispute opened for administrator review.'); setCashDisputeReason(''); invalidateCashAdjustment(); }, onError: (err) => toast.error(err.message) });
 
   // ── Effects ───────────────────────────────────────────────────────────────
   // Mark alerts as read when entering the Trade Room; do NOT auto-transition stage
@@ -1366,24 +1361,7 @@ export default function WarRoom() {
                       >
                         + Add Item
                       </button>
-                      {myCash === 0 && (
-                        myPaypalQuery.data?.paypalEmail ? (
-                          <button
-                            onClick={() => { setCashInput(''); setShowCashModal('my'); }}
-                            className="flex-1 py-2.5 border border-dashed border-green-700/50 rounded-lg text-green-500 hover:text-green-400 hover:border-green-500 transition text-sm flex items-center justify-center gap-2"
-                          >
-                            💵 Add Cash
-                          </button>
-                        ) : (
-                          <button
-                            onClick={() => toast.info('Add your PayPal email in Account Settings → Integrations before adding cash to a trade.')}
-                            className="flex-1 py-2.5 border border-dashed border-gray-700/50 rounded-lg text-gray-500 cursor-not-allowed transition text-sm flex items-center justify-center gap-2"
-                            title="Add your PayPal email first"
-                          >
-                            💵 Add Cash
-                          </button>
-                        )
-                      )}
+                      {myCash === 0 && <button onClick={() => { setCashInput(''); setShowCashModal('my'); }} className="flex-1 py-2.5 border border-dashed border-green-700/50 rounded-lg text-green-500 hover:text-green-400 hover:border-green-500 transition text-sm flex items-center justify-center gap-2">💵 Add Cash</button>}
                     </div>
                   )}
                 </div>
@@ -1849,24 +1827,7 @@ export default function WarRoom() {
                       >
                         + Browse User Items
                       </button>
-                      {theirCash === 0 && (
-                        myPaypalQuery.data?.paypalEmail ? (
-                          <button
-                            onClick={() => { setCashInput(''); setShowCashModal('their'); }}
-                            className="flex-1 py-2.5 border border-dashed border-green-700/50 rounded-lg text-green-500 hover:text-green-400 hover:border-green-500 transition text-sm flex items-center justify-center gap-2"
-                          >
-                            💵 Add Cash
-                          </button>
-                        ) : (
-                          <button
-                            onClick={() => toast.info('Add your PayPal email in Account Settings → Integrations before adding cash to a trade.')}
-                            className="flex-1 py-2.5 border border-dashed border-gray-700/50 rounded-lg text-gray-500 cursor-not-allowed transition text-sm flex items-center justify-center gap-2"
-                            title="Add your PayPal email first"
-                          >
-                            💵 Add Cash
-                          </button>
-                        )
-                      )}
+                      {theirCash === 0 && <button onClick={() => { setCashInput(''); setShowCashModal('their'); }} className="flex-1 py-2.5 border border-dashed border-green-700/50 rounded-lg text-green-500 hover:text-green-400 hover:border-green-500 transition text-sm flex items-center justify-center gap-2">💵 Add Cash</button>}
                     </div>
                   )}
                 </div>
@@ -2087,95 +2048,26 @@ export default function WarRoom() {
           {/* Stage 3: Review (accepted) — print + confirm and proceed to shipping */}
           {currentStage === 'accepted' && (
             <>
-              {/* PayPal Payment Step — shown when cash is involved */}
+              {/* Direct external cash adjustment — shown only for accepted trades with cash */}
               {(myCash > 0 || theirCash > 0) && (() => {
-                const iAmPayer = myCash > 0;
-                const cashAmount = iAmPayer ? myCash : theirCash;
-                const payeePaypalEmail = iAmPayer ? (otherUser as any)?.paypalEmail : myPaypalQuery.data?.paypalEmail;
-                const existingPayment = paymentStatusQuery.data;
-                const isVerified = existingPayment?.status === 'verified';
-                return (
-                  <div className="w-full mb-3 flex flex-col gap-2">
-                    {/* Liability Disclaimer Banner */}
-                    <div className="bg-amber-900/30 border border-amber-600/50 rounded-lg px-4 py-2.5 flex items-start gap-2">
-                      <span className="text-amber-400 text-base mt-0.5">⚠️</span>
-                      <p className="text-amber-200 text-xs leading-relaxed">
-                        <strong>Tradebilia does not process payments.</strong> All cash transfers are made directly between users via PayPal. Tradebilia is not responsible for any payment disputes or losses.
-                      </p>
-                    </div>
-                    {/* Payment Card */}
-                    <div className={`bg-[#16213e] border rounded-xl p-4 shadow-xl ${isVerified ? 'border-green-500/50' : 'border-blue-500/40'}`}>
-                      <div className="flex items-center gap-2 mb-3">
-                        <span className="text-lg">💵</span>
-                        <h3 className="text-white font-bold text-sm">
-                          {iAmPayer
-                            ? `Send $${cashAmount.toLocaleString()} to ${theirDisplayName}`
-                            : `Awaiting $${cashAmount.toLocaleString()} from ${theirDisplayName}`}
-                        </h3>
-                        {isVerified && (
-                          <span className="ml-auto text-xs text-green-400 bg-green-900/40 border border-green-600/50 rounded-full px-2 py-0.5 font-medium">✓ Verified</span>
-                        )}
-                      </div>
-                      {iAmPayer ? (
-                        <>
-                          {payeePaypalEmail ? (
-                            <div className="bg-[#0f0f1a] border border-gray-600 rounded-lg px-3 py-2 mb-3 flex items-center gap-2">
-                              <span className="text-blue-400 text-xs font-bold">PayPal</span>
-                              <span className="text-gray-300 text-xs">Send to:</span>
-                              <span className="text-white text-xs font-mono font-bold">{payeePaypalEmail}</span>
-                            </div>
-                          ) : (
-                            <div className="bg-red-900/20 border border-red-600/40 rounded-lg px-3 py-2 mb-3">
-                              <p className="text-red-300 text-xs">⚠️ The seller has not set up a PayPal email yet. Ask them to add it in Account Settings → Integrations.</p>
-                            </div>
-                          )}
-                          {!isVerified && payeePaypalEmail && (
-                            <div className="flex gap-2">
-                              <input
-                                type="text"
-                                placeholder="PayPal Transaction ID (e.g. 1AB23456CD789012E)"
-                                value={transactionIdInput}
-                                onChange={(e) => setTransactionIdInput(e.target.value)}
-                                className="flex-1 px-3 py-2 bg-[#0f0f1a] border border-gray-600 rounded-lg text-white text-xs focus:border-blue-500 focus:outline-none"
-                              />
-                              <button
-                                onClick={() => {
-                                  if (!transactionIdInput.trim()) { toast.error('Please enter your PayPal transaction ID.'); return; }
-                                  verifyPaymentMutation.mutate({
-                                    proposalId,
-                                    transactionId: transactionIdInput.trim(),
-                                  });
-                                }}
-                                disabled={verifyPaymentMutation.isPending || !transactionIdInput.trim()}
-                                className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition disabled:opacity-50 flex items-center gap-1 shrink-0"
-                              >
-                                {verifyPaymentMutation.isPending ? (
-                                  <svg className="animate-spin h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                  </svg>
-                                ) : '✓'} Verify
-                              </button>
-                            </div>
-                          )}
-                          {isVerified && (
-                            <p className="text-green-400 text-xs">✓ Payment of ${cashAmount.toLocaleString()} verified via transaction {existingPayment?.transactionId}</p>
-                          )}
-                          {existingPayment?.status === 'failed' && (
-                            <p className="text-red-400 text-xs mt-1">⚠️ Last verification failed. Please check your transaction ID and try again.</p>
-                          )}
-                        </>
-                      ) : (
-                        <p className="text-gray-400 text-xs">
-                          {isVerified
-                            ? `✓ ${theirDisplayName} has verified their payment of $${cashAmount.toLocaleString()}.`
-                            : `${theirDisplayName} needs to send $${cashAmount.toLocaleString()} to your PayPal${myPaypalQuery.data?.paypalEmail ? ` (${myPaypalQuery.data.paypalEmail})` : ' — add your PayPal email in Account Settings → Integrations'} and submit their transaction ID.`
-                          }
-                        </p>
-                      )}
-                    </div>
+                const context = cashAdjustmentContextQuery.data;
+                const payment = context?.payment as any;
+                const paymentStatus = payment?.status ?? 'pending';
+                const iAmPayer = context?.role === 'payer';
+                const iAmPayee = context?.role === 'payee';
+                const cashAmount = context?.amount ?? (iAmPayer ? myCash : theirCash);
+                const providerUrl = payment?.paymentMethod === 'paypal' ? 'https://www.paypal.com/' : payment?.paymentMethod === 'venmo' ? 'https://venmo.com/' : payment?.paymentMethod === 'cash_app' ? 'https://cash.app/' : payment?.paymentMethod === 'zelle' ? 'https://www.zellepay.com/' : null;
+                const statusLabel = paymentStatus === 'received' ? 'Recipient confirmed received' : paymentStatus === 'sent' ? 'Awaiting receipt confirmation' : paymentStatus === 'disputed' ? 'Dispute open' : paymentStatus === 'method_selected' ? 'Method selected' : 'Method needed';
+                return <div className="mb-3 flex w-full flex-col gap-2">
+                  <div className="flex items-start gap-2 rounded-lg border border-amber-600/50 bg-amber-900/30 px-4 py-2.5"><span className="mt-0.5 text-base text-amber-400">⚠️</span><p className="text-xs leading-relaxed text-amber-200"><strong>Tradebilia does not process payments.</strong> PayPal, Venmo, Cash App, and Zelle transfers are made directly between members. Tradebilia does not hold, insure, refund, or guarantee direct payments.</p></div>
+                  <div className={`rounded-xl border p-4 shadow-xl ${paymentStatus === 'received' ? 'border-green-500/50 bg-[#16213e]' : paymentStatus === 'disputed' ? 'border-red-500/60 bg-[#241b2a]' : 'border-blue-500/40 bg-[#16213e]'}`}>
+                    <div className="mb-3 flex items-center gap-2"><span className="text-lg">💵</span><h3 className="text-sm font-bold text-white">{iAmPayer ? `Send $${Number(cashAmount).toLocaleString()} to ${theirDisplayName}` : `Receive $${Number(cashAmount).toLocaleString()} from ${theirDisplayName}`}</h3><span className="ml-auto rounded-full border border-slate-600 bg-slate-950/40 px-2 py-0.5 text-[11px] font-medium text-slate-200">{statusLabel}</span></div>
+                    {iAmPayee && <div className="space-y-3"><p className="text-xs text-slate-300">Choose the private method your partner may use for this trade. Your selected destination is locked once the payer marks it sent.</p>{context?.availableMethods?.length ? <div className="flex flex-wrap gap-2">{context.availableMethods.map((method: any) => <button key={method.method} onClick={() => { setSelectedCashMethod(method.method); selectCashAdjustmentMethodMutation.mutate({ proposalId, method: method.method }); }} disabled={paymentStatus === 'sent' || paymentStatus === 'received' || paymentStatus === 'disputed' || selectCashAdjustmentMethodMutation.isPending} className={`rounded-lg border px-3 py-2 text-left text-xs transition disabled:opacity-50 ${payment?.paymentMethod === method.method ? 'border-blue-400 bg-blue-500/20 text-white' : 'border-slate-600 bg-slate-950/40 text-slate-200 hover:border-blue-400'}`}><span className="block font-bold">{method.label}</span><span className="block text-slate-400">{method.identifier}</span></button>)}</div> : <p className="rounded-lg border border-red-600/40 bg-red-900/20 px-3 py-2 text-xs text-red-200">Add at least one payment destination in Account Settings → Integrations before selecting a method for this trade.</p>}{paymentStatus === 'sent' && <button onClick={() => confirmCashAdjustmentReceivedMutation.mutate({ proposalId })} disabled={confirmCashAdjustmentReceivedMutation.isPending} className="rounded-lg bg-green-600 px-3 py-2 text-xs font-bold text-white hover:bg-green-700 disabled:opacity-50">Confirm receipt of $${Number(cashAmount).toLocaleString()}</button>}{paymentStatus === 'received' && <p className="text-xs font-medium text-green-300">✓ You confirmed receipt. The cash adjustment is member-confirmed, not provider-verified.</p>}</div>}
+                    {iAmPayer && <div className="space-y-3">{payment?.paymentMethod && payment?.paymentIdentifier ? <><div className="flex flex-wrap items-center gap-2 rounded-lg border border-slate-600 bg-slate-950/40 px-3 py-2"><span className="text-xs font-bold text-blue-300">{String(payment.paymentMethod).replace('_', ' ').replace(/\b\w/g, (letter: string) => letter.toUpperCase())}</span><span className="text-xs text-slate-300">Send to:</span><code className="text-xs font-bold text-white">{payment.paymentIdentifier}</code><button onClick={() => { void navigator.clipboard?.writeText(payment.paymentIdentifier); toast.success('Payment destination copied.'); }} className="ml-auto text-xs font-semibold text-blue-300 hover:text-blue-200">Copy</button>{providerUrl && <a href={providerUrl} target="_blank" rel="noreferrer" className="text-xs font-semibold text-blue-300 hover:text-blue-200">Open provider</a>}</div>{paymentStatus === 'method_selected' && <div className="flex flex-wrap gap-2"><input type="text" placeholder="Optional payment reference" value={transactionIdInput} onChange={(event) => setTransactionIdInput(event.target.value)} className="min-w-[13rem] flex-1 rounded-lg border border-gray-600 bg-[#0f0f1a] px-3 py-2 text-xs text-white focus:border-blue-500 focus:outline-none" /><button onClick={() => markCashAdjustmentSentMutation.mutate({ proposalId, transactionReference: transactionIdInput.trim() || undefined })} disabled={markCashAdjustmentSentMutation.isPending} className="rounded-lg bg-blue-600 px-3 py-2 text-xs font-bold text-white hover:bg-blue-700 disabled:opacity-50">I sent it</button></div>}{paymentStatus === 'sent' && <p className="text-xs text-amber-200">Waiting for {theirDisplayName} to confirm receipt.</p>}{paymentStatus === 'received' && <p className="text-xs font-medium text-green-300">✓ {theirDisplayName} confirmed receipt. This is a member confirmation, not provider verification.</p>}</> : <p className="rounded-lg border border-slate-600 bg-slate-950/40 px-3 py-2 text-xs text-slate-300">Waiting for {theirDisplayName} to select a private payment method for this trade.</p>}</div>}
+                    {payment?.paymentMethod && paymentStatus !== 'received' && paymentStatus !== 'disputed' && <div className="mt-3 border-t border-slate-700 pt-3"><div className="flex flex-wrap gap-2"><input value={cashDisputeReason} onChange={(event) => setCashDisputeReason(event.target.value)} placeholder="Describe a payment issue for admin review" className="min-w-[13rem] flex-1 rounded-lg border border-slate-600 bg-slate-950/40 px-3 py-2 text-xs text-white" /><button onClick={() => openCashAdjustmentDisputeMutation.mutate({ proposalId, reason: cashDisputeReason.trim() })} disabled={cashDisputeReason.trim().length < 5 || openCashAdjustmentDisputeMutation.isPending} className="rounded-lg border border-red-500/60 px-3 py-2 text-xs font-bold text-red-200 hover:bg-red-900/30 disabled:opacity-50">Open dispute</button></div></div>}
+                    {paymentStatus === 'disputed' && <p className="mt-2 text-xs text-red-200">A cash-adjustment dispute is open for administrator review. Do not continue shipping until it is resolved.</p>}
                   </div>
-                );
+                </div>;
               })()}
               <button
                 onClick={() => window.open(`/trade-print/${proposalId}`, '_blank')}

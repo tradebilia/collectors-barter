@@ -18,9 +18,10 @@ import {
   tradeProposals,
   tradeProposalItems,
   tradeMessages,
-  tradeReviews,
-  tradeActivityLog,
-  tradeAdminLog,
+	tradeReviews,
+	tradeActivityLog,
+	tradeAdminLog,
+	tradePayments,
 } from "../drizzle/schema";
 
 import { eq, sql, desc, or, and, inArray, asc } from "drizzle-orm";
@@ -1210,7 +1211,7 @@ export const tradeFlowRouter = router({
       // Get other user info
       const otherUserId = proposal.requesterId === userId ? proposal.recipientId : proposal.requesterId;
       const [otherUserResult] = await db.execute(
-        sql`SELECT u.id, u.username, u.name, u.paypalEmail, u.paypalVerified, up.displayName, up.avatarUrl, up.bio,
+		  sql`SELECT u.id, u.username, u.name, u.paypalVerified, up.displayName, up.avatarUrl, up.bio,
           (SELECT AVG(rating) FROM tradeReviews WHERE revieweeId = u.id) as avgRating,
           (SELECT COUNT(*) FROM tradeReviews WHERE revieweeId = u.id) as reviewCount
         FROM users u
@@ -1452,11 +1453,29 @@ export const tradeFlowRouter = router({
       if (proposal.recipientId !== userId && proposal.requesterId !== userId) {
         throw new TRPCError({ code: 'FORBIDDEN', message: 'Not authorized' });
       }
-      if ((proposal.status as string) !== 'accepted') {
-        throw new TRPCError({ code: 'BAD_REQUEST', message: 'Trade must be in accepted (Review) stage to proceed to shipping' });
-      }
+			if ((proposal.status as string) !== 'accepted') {
+				throw new TRPCError({ code: 'BAD_REQUEST', message: 'Trade must be in accepted (Review) stage to proceed to shipping' });
+			}
 
-      const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
+			const cashObligations = [
+				{ payerId: proposal.requesterId, amount: Number(proposal.cashFromRequester ?? 0) },
+				{ payerId: proposal.recipientId, amount: Number(proposal.cashFromRecipient ?? 0) },
+			].filter((obligation) => Number.isFinite(obligation.amount) && obligation.amount > 0);
+			for (const obligation of cashObligations) {
+				const paymentRows = await db.select({ status: tradePayments.status })
+					.from(tradePayments)
+					.where(and(eq(tradePayments.proposalId, input.proposalId), eq(tradePayments.payerId, obligation.payerId)))
+					.limit(1);
+				const paymentStatus = paymentRows[0]?.status;
+				if (paymentStatus === 'disputed') {
+					throw new TRPCError({ code: 'CONFLICT', message: 'A cash-adjustment dispute is open. Shipping remains blocked until administrator review resolves it.' });
+				}
+				if (paymentStatus !== 'received' && paymentStatus !== 'verified') {
+					throw new TRPCError({ code: 'CONFLICT', message: 'The cash adjustment must be marked sent and confirmed received before shipping can begin.' });
+				}
+			}
+
+			const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
       const otherUserId = proposal.requesterId === userId ? proposal.recipientId : proposal.requesterId;
 
       // Check if the other party has already confirmed proceeding to shipping
