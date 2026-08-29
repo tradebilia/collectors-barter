@@ -175,7 +175,7 @@ export function RecentTradesCarousel({ trades, isLoading = false }: { trades: Re
 
   return (
     <section aria-labelledby="recent-trades-heading" className="mx-2 mb-6 py-3 sm:mx-0 lg:mx-3">
-      <h2 id="recent-trades-heading" className="text-center font-serif text-[2.45rem] font-medium tracking-[-0.035em] text-[#153d7a] sm:text-[2.8rem]">Recent Trades</h2>
+      <h2 id="recent-trades-heading" className="text-center font-serif text-[2.45rem] font-medium tracking-[-0.035em] text-black sm:text-[2.8rem]">Recent Trades</h2>
 
       {isLoading ? <div className="mt-4 h-40 animate-pulse rounded-2xl bg-white/80" aria-label="Loading recent trades" /> : !trade || !exchange ? <div className="mt-4 rounded-2xl border border-dashed border-violet-200 bg-white/80 p-8 text-center text-sm text-slate-600">Completed exchanges will appear here as collectors confirm their trades.</div> : <div className="relative mt-4 px-0 sm:px-2 lg:px-3">
         <article key={trade.id} className={`ticket-card mx-auto w-full max-w-none overflow-hidden border-4 border-[#3974bb] bg-[#f8fafc] shadow-sm transition-opacity duration-300 motion-reduce:transition-none ${isFading ? "opacity-0" : "opacity-100"}`} aria-live="off">

@@ -27,6 +27,10 @@ describe("homepage Recent Trades carousel", () => {
     expect(homeSource).toContain('from-[#080c28] via-[#21104d] to-[#3b1d78]');
     expect(homeSource).toContain('className="min-w-0 bg-[#f4f1ea] py-3 md:col-start-2 md:row-start-1"');
     expect(homeSource).toContain('text-center font-serif text-[2.45rem]');
+    expect(carouselSource).toContain('text-center font-serif text-[2.45rem] font-medium tracking-[-0.035em] text-black sm:text-[2.8rem]');
+    expect(homeSource).toContain('className="container relative flex h-[400px] items-center justify-center py-0"');
+    expect(homeSource).toContain('className="flex w-full max-w-5xl -translate-x-[6.5%] items-center justify-center px-4"');
+    expect(homeSource).toContain("<CategoryBar />");
     expect(homeSource).toContain('from-[#11183f] via-[#4b1db7] to-[#761df2]');
     expect(homeSource).toContain('className="h-8 w-8"');
     expect(categoryBarSource).toContain('bg-[#0b102d]');
