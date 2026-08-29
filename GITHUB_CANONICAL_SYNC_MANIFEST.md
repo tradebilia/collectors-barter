@@ -574,3 +574,13 @@ The final card correction uses canonical display-name priority, aligned directio
 | Scope | Removed legacy negative-margin offsets from all identified non-Category and non-Explore All hero title wrappers so their title artwork is centered by equal flex spacing at desktop and mobile widths. Report a Member’s injected mobile offset style was removed. The homepage’s measured lockup treatment, Category page, and Explore All page were preserved. |
 | Validation | Focused hero, responsive, Report a Member, and Recent Trades regressions passed 12/12; TypeScript, production build, production dependency audit, and changed-file whitespace checks passed. Desktop and mobile representative public routes were visually reviewed; protected routes redirected to the public homepage when unauthenticated. |
 | Safeguards | No database, payment, provider, schedule, secret, asset, or marketplace-data behavior changed. |
+
+## Payment Logos, Cash Guidance, and PSA Feed Correction Pair
+| Record | Value |
+|---|---|
+| Managed WebDev checkpoint | `3934f971` |
+| Canonical implementation commit | `e9a38b99bc47885144aef206ebcf10bd91a0111e` — normal credential-safe push to GitHub `main`; no force push or history replacement. |
+| Scope | Account Settings now renders PayPal, Venmo, Cash App, and Zelle in equal PayPal-sized logo frames. Account Settings and Account Setup explain that at least one destination must be filled before cash can be included in a trade. The marketplace feed parser accepts parsed and serialized itemDetails so PSA is retained in Recently Added when Item Detail has the PSA value. |
+| Verification assessment | Official provider documentation did not establish a reliable universal no-payment existence or ownership lookup for arbitrary PayPal emails, Venmo usernames, Cash App cashtags, or Zelle destinations. Existing syntax validation and member-confirmed cash workflow remain in place; no unsupported provider-verified status was added. |
+| Validation | Focused payment, grading-feed, and Recent Trades regressions passed 10/10 in both WebDev and canonical checkout; TypeScript, production build, production dependency audit, and changed-file whitespace checks passed. Public homepage visual verification passed; Account Settings visual inspection remained limited by the signed-out preview redirect. |
+| Data safety | No database schema, stored payment contract, payment-provider connection, schedule, secret, or marketplace interaction guard changed. |
