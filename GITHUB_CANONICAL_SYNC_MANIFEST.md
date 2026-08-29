@@ -544,3 +544,13 @@ The final card correction uses canonical display-name priority, aligned directio
 | Scope | Explore All listing cards now include the same heart favorite action as category cards, and Category trade actions now show the Trade label alongside the icon so both pages use familiar, consistent controls. |
 | Safeguards | Existing login redirect and optimistic watchlist refresh behavior are preserved; members cannot favorite their own listings, and existing self-trade restrictions remain intact. |
 | Validation | Focused listing interaction and global search tests, TypeScript, production build, dependency audit, changed-file whitespace, and desktop/mobile Category and Explore All visual checks passed. |
+
+## Profile Payment Destination Presentation Pair
+
+| Record | Value |
+|---|---|
+| Managed WebDev checkpoint | `a4fd3923` |
+| Canonical implementation commit | Recorded after the normal, credential-safe GitHub push that accompanies this manifest update. |
+| Scope | Profile integrations presents one private Zelle destination field that accepts either an email address or U.S. mobile number, and labels PayPal, Venmo, Cash App, and Zelle destinations with the supplied official provider assets. |
+| Data safety | The one Zelle field maps to the existing mutually exclusive protected email-or-phone server contract. Stored values, validation, privacy scope, direct-payment disclosure, and cash-trade safeguards remain unchanged. |
+| Validation | Focused external-cash safeguards test, TypeScript, production build, dependency audit, changed-file whitespace, and source-level form review passed. |
