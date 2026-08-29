@@ -500,7 +500,7 @@ The final card correction uses canonical display-name priority, aligned directio
 | Record | Value |
 |---|---|
 | Managed WebDev checkpoint | `f2e4aef2` |
-| Canonical implementation commit | Recorded after the normal, credential-safe GitHub push that accompanies this manifest update. |
+| Canonical implementation commit | `5ef820e94c1fa5b42e791635ff7a7e0428db0ed1` — normal credential-safe push to GitHub `main`; no force push or history replacement. |
 | Scope | Standardized all member-avatar renderers to use a blurred enlarged copy of the same source image behind a sharp, frame-filling foreground. The shared Avatar primitive now updates nine consumer files, and bespoke paths in Public Profile, Verified Merchants, Traders Showcase, and every Trade Room context use the same treatment. |
 | Accessibility and safety | The decorative background is hidden from assistive technologies; the foreground retains meaningful alt text; no-photo fallbacks remain intact; image-error backgrounds hide safely. Listing media, provider logos, category graphics, and other non-avatar images are excluded. |
 | Validation | Focused avatar, homepage, and responsive-layout regressions passed 15/15; TypeScript, production build, production dependency audit, source-diff whitespace check, and desktop/mobile representative visual reviews passed. |
