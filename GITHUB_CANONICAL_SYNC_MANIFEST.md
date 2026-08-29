@@ -564,3 +564,13 @@ The final card correction uses canonical display-name priority, aligned directio
 | Scope | All reviewed listing surfaces now prefer the stored custom grading-company name when the selected company is Other and use a safe non-Other fallback for legacy rows without a custom value. The affected Item Detail title uses lining numerals so digits such as 3 align consistently with surrounding characters. Video Games inventory grading options include PSA and display WATA instead of WATA Games (PSA Video Games). |
 | Data safety | The custom-company value continues to come from structured item details; no listing data, database schema, payment, provider, schedule, or secret changed. Existing owner-safe and self-trade safeguards remain untouched. |
 | Validation | Focused grading, Video Games option, and Recent Trades regressions passed 6/6; TypeScript, production build, production dependency audit, changed-file whitespace, and desktop/mobile public listing visual checks passed. The full suite was attempted but stalled on unrelated external DHL/RAWG credential checks and was stopped after timeout. |
+
+## Non-Marketplace Hero Title Centering Pair
+
+| Record | Value |
+|---|---|
+| Managed WebDev implementation checkpoint | `faf924d3` |
+| Canonical implementation commit | `4ae0982` — normal credential-safe push to GitHub `main`; no force push or history replacement. |
+| Scope | Removed legacy negative-margin offsets from all identified non-Category and non-Explore All hero title wrappers so their title artwork is centered by equal flex spacing at desktop and mobile widths. Report a Member’s injected mobile offset style was removed. The homepage’s measured lockup treatment, Category page, and Explore All page were preserved. |
+| Validation | Focused hero, responsive, Report a Member, and Recent Trades regressions passed 12/12; TypeScript, production build, production dependency audit, and changed-file whitespace checks passed. Desktop and mobile representative public routes were visually reviewed; protected routes redirected to the public homepage when unauthenticated. |
+| Safeguards | No database, payment, provider, schedule, secret, asset, or marketplace-data behavior changed. |
