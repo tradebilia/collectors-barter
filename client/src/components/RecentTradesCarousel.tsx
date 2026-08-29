@@ -59,7 +59,7 @@ function TradeItemList({ items, side }: { items: TradeShowcaseItem[]; side: "lef
       {items.map((item, index) => {
         const content = (
           <>
-            <div className="h-32 w-24 shrink-0 overflow-hidden bg-slate-50 sm:h-36 sm:w-28">
+            <div className="h-40 w-28 shrink-0 overflow-hidden bg-slate-50 sm:h-48 sm:w-36">
               {item.imageUrl ? (
                 <img src={item.imageUrl} alt={item.title || "Traded collectible"} className="h-full w-full object-contain" loading="lazy" />
               ) : (
@@ -174,7 +174,7 @@ export function RecentTradesCarousel({ trades, isLoading = false }: { trades: Re
           <TradeItemList items={exchange.left.items} side="left" />
           <TicketDivider />
           <div className="flex items-center justify-center py-2" aria-label="Trade complete">
-            <img src="/manus-storage/trade-complete-stamp-translucent_3f4e25b7.png" alt="Trade complete" className="h-28 w-32 object-contain sm:h-32 sm:w-36" />
+            <img src="/manus-storage/trade-complete-seal-blue-final_7bd19559.png" alt="Trade complete" className="h-36 w-40 object-contain sm:h-40 sm:w-44" />
           </div>
           <TicketDivider />
           <TradeItemList items={exchange.right.items} side="right" />

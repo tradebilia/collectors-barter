@@ -449,3 +449,17 @@ Before future GitHub-to-WebDev reconciliation, create a recovery checkpoint and 
 | Implementation | Removed ArrowLeft/ArrowRight imports, manual movement handler, and both end buttons. Preserved automatic interval rotation, fade transition timing, cleanup timers, reduced-motion handling, ticket layout, and item links. |
 | Validation | Focused homepage and movement tests passed 3/3; TypeScript, production build, dependency audit, whitespace, and desktop/mobile visual checks passed. |
 | Protected | No database, payment, provider, schedule, setting, or secret changed. Hero, top bar, category bar, stats strip, centered headings, and ticket content remain unchanged. |
+
+## 2026-08-29 Recent Trades blue seal and sizing refinement
+
+- Live Recent Trades now references the user-supplied transparent blue seal at `/manus-storage/trade-complete-seal-blue-final_7bd19559.png`.
+- Recent Trades item slots and completion seal are larger; the existing five-second fade-only rotation remains.
+- Ticket outer edges use a stronger repeated perforation pattern matching the supplied reference.
+- No database, payment, provider, schedule, setting, or secret changed.
+
+## 2026-08-29 Recent Trades blue seal and sizing refinement
+
+- Live Recent Trades now references the user-supplied transparent blue seal at `/manus-storage/trade-complete-seal-blue-final_7bd19559.png`.
+- Recent Trades item slots and completion seal are larger; the existing five-second fade-only rotation remains.
+- Ticket outer edges use a stronger repeated perforation pattern matching the supplied reference.
+- No database, payment, provider, schedule, setting, or secret changed.
