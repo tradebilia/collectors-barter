@@ -69,8 +69,10 @@ describe("homepage Recent Trades carousel", () => {
     expect(carouselSource).toContain("const DirectionIcon = side === \"left\" ? ArrowRight : ArrowLeft;");
     expect(carouselSource).toContain("Item moves toward the right member");
     expect(carouselSource).toContain("Item moves toward the left member");
-    expect(carouselSource).toContain('src="/manus-storage/trade-complete-seal-blue-hd-true-alpha_85e7f1a1.png"');
-    expect(carouselSource).toContain('alt="Trade complete"');
+    expect(carouselSource).toContain('<svg viewBox="0 0 240 220"');
+    expect(carouselSource).toContain('aria-labelledby="trade-complete-title trade-complete-desc"');
+    expect(carouselSource).toContain("COMPLETED");
+    expect(carouselSource).toContain('<title id="trade-complete-title">Trade complete</title>');
     expect(carouselSource).toContain('className="h-44 w-48');
     expect(carouselSource).toContain("bg-transparent");
     expect(carouselSource).toContain('className="h-40 w-24');
@@ -79,8 +81,9 @@ describe("homepage Recent Trades carousel", () => {
     expect(carouselSource).not.toContain("trade-complete-stamp-transparent_9ec4b748.png");
     expect(carouselSource).toContain("ticket-card");
     expect(await readFile(path.join(root, "client/src/index.css"), "utf8")).toContain("radial-gradient");
-    expect(await readFile(path.join(root, "client/src/index.css"), "utf8")).toContain("border-left: 3px solid #3974bb");
-    expect(await readFile(path.join(root, "client/src/index.css"), "utf8")).toContain("border-right: 3px solid #3974bb");
+    expect(await readFile(path.join(root, "client/src/index.css"), "utf8")).toContain("width: 1.8rem");
+    expect(await readFile(path.join(root, "client/src/index.css"), "utf8")).toContain("#3974bb 0.5rem 0.65rem");
+    expect(await readFile(path.join(root, "client/src/index.css"), "utf8")).toContain("background-size: 100% 1.15rem");
     expect(carouselSource).toContain("verificationLabels");
     expect(carouselSource).toContain("averageRating");
     expect(carouselSource).not.toContain('title="You gave"');
