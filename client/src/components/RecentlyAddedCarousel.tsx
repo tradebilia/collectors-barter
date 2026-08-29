@@ -78,9 +78,10 @@ export function RecentlyAddedCarousel({
   const getGradeOrConditionPresentation = (item: CarouselItem) => {
     const hasGrade = Boolean(item.grade && Number(item.grade) > 0);
     if (!hasGrade) {
+      const condition = item.conditionLabel?.trim() || "Ungraded";
       return {
-        text: `Condition: ${item.conditionLabel?.trim() || "Ungraded"}`,
-        title: `Condition: ${item.conditionLabel?.trim() || "Ungraded"}`,
+        text: condition,
+        title: condition,
       };
     }
     const declaredCompany = item.certificationCompany?.trim() || "";

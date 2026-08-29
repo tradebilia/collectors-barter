@@ -54,7 +54,9 @@ describe("homepage Recent Trades carousel", () => {
     expect(recentlyAddedSource).toContain("getGradeOrConditionPresentation");
     expect(recentlyAddedSource).toContain('declaredCompany.toLowerCase() === "other"');
     expect(recentlyAddedSource).toContain("item.customGradingCompany?.trim() || declaredCompany");
-    expect(recentlyAddedSource).toContain("Condition: ${item.conditionLabel?.trim() || \"Ungraded\"}");
+    expect(recentlyAddedSource).toContain('const condition = item.conditionLabel?.trim() || "Ungraded";');
+    expect(recentlyAddedSource).toContain("text: condition");
+    expect(recentlyAddedSource).not.toContain("Condition: ${item.conditionLabel");
     expect(databaseSource).toContain("customGradingCompany: getCustomGradingCompany(row.itemDetails)");
     expect(carouselSource).toContain("border-4 border-[#3974bb]");
     expect(carouselSource).toContain("ROTATION_INTERVAL_MS = 5_000");
