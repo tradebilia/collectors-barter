@@ -124,14 +124,12 @@ function TradeMember({ member }: { member: TradeShowcaseParty }) {
         ) : (
           <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border-2 border-[#3974bb] bg-white text-base font-bold text-[#2458a6] sm:h-14 sm:w-14" aria-label={`${memberName} avatar unavailable`}>{initials || <UserRound className="h-4 w-4" aria-hidden="true" />}</div>
         )}
-        <div className="min-w-0 flex-1 text-left">
-          <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1">
-            <p className="min-w-0 break-words text-[0.95rem] font-bold leading-tight text-[#153d7a] sm:text-base" title={memberName}>{memberName}</p>
-            <p className="inline-flex shrink-0 items-center gap-1 text-base font-semibold text-[#2458a6] sm:text-lg">
-              <Star className="h-4 w-4 fill-[#3974bb] text-[#3974bb]" aria-hidden="true" />
-              {rating || "No rating yet"}
-            </p>
-          </div>
+        <div className="min-w-0 text-left">
+          <p className="break-words text-[0.95rem] font-bold leading-tight text-[#153d7a] sm:text-base" title={memberName}>{memberName}</p>
+          <p className="mt-1 inline-flex items-center gap-1 text-base font-semibold text-[#2458a6] sm:text-lg">
+            <Star className="h-4 w-4 fill-[#3974bb] text-[#3974bb]" aria-hidden="true" />
+            {rating || "No rating yet"}
+          </p>
         </div>
       </div>
       <div className="mt-2 w-fit max-w-full space-y-1.5 text-left">
