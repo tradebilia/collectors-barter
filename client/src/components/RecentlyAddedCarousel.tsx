@@ -60,11 +60,11 @@ export function RecentlyAddedCarousel({
       {/* Marquee Container */}
       <div className="flex gap-4 animate-scroll whitespace-nowrap py-2">
         {displayItems.map((item, index) => (
-          <div 
-            key={`${item.id}-${index}`} 
+          <div
+            key={`${item.id}-${index}`}
             className="inline-block w-[220px] flex-shrink-0"
           >
-            <Card 
+            <Card
               className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer h-full"
               onClick={() => item.href && (window.location.href = item.href)}
             >
@@ -73,7 +73,7 @@ export function RecentlyAddedCarousel({
                   <OnlineIndicator sellerId={item.ownerId} />
                 </div>
               )}
-              <div className="aspect-[0.75] overflow-hidden bg-[#d7e6fb] relative group/img">
+              <div className="aspect-[0.75] overflow-hidden bg-transparent relative group/img">
                 <img
                   src={item.imageUrl}
                   alt={item.title}
@@ -83,14 +83,14 @@ export function RecentlyAddedCarousel({
                 />
                 <div className="absolute inset-0 bg-black/0 group-hover/img:bg-black/5 transition-colors" />
               </div>
-              
+
               <CardContent className="p-3 space-y-2">
                 <div className="min-h-[40px]">
                   <p className="line-clamp-2 text-xs font-bold leading-tight text-slate-900 whitespace-normal">
                     {item.title}
                   </p>
                 </div>
-                
+
                 <div className="flex items-center justify-between">
                   <p className="text-sm font-black text-[#2458a6]">{item.price}</p>
                   <p className="text-[10px] font-medium text-slate-400">{item.subtitle}</p>
@@ -147,7 +147,7 @@ export function RecentlyAddedCarousel({
                       )}
                     </Dialog>
                   )}
-                  
+
                   {isAuthenticated && (
                     <Button
                       size="sm"

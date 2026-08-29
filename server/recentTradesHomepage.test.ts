@@ -37,7 +37,7 @@ describe("homepage Recent Trades carousel", () => {
     expect(recentlyAddedSource).toContain("w-[220px]");
     expect(recentlyAddedSource).toContain("gap-4 animate-scroll");
     expect(recentlyAddedSource).toContain("aspect-[0.75]");
-    expect(recentlyAddedSource).toContain("bg-[#d7e6fb]");
+    expect(recentlyAddedSource).toContain("bg-transparent relative group/img");
     expect(recentlyAddedSource).toContain("rounded-xl");
     expect(carouselSource).toContain("ROTATION_INTERVAL_MS = 5_000");
     expect(carouselSource).toContain("window.setInterval");
@@ -49,9 +49,9 @@ describe("homepage Recent Trades carousel", () => {
     expect(carouselSource).toContain("border-dashed");
     expect(carouselSource).toContain("TicketDivider");
     expect(carouselSource).toContain("object-contain p-0.5");
-    expect(carouselSource).toContain("h-44 w-32");
-    expect(carouselSource).toContain("sm:h-48 sm:w-36");
-    expect(carouselSource).toContain("bg-[#d7e6fb]");
+    expect(carouselSource).toContain("h-40 w-24");
+    expect(carouselSource).toContain("sm:h-44 sm:w-28");
+    expect(carouselSource).toContain("bg-[#f8fafc]");
     expect(carouselSource).toContain("bg-[#dce8f7]");
     expect(carouselSource).toContain("formatEstimatedValue");
     expect(carouselSource).toContain("formatConditionOrGrade");
@@ -62,7 +62,7 @@ describe("homepage Recent Trades carousel", () => {
     expect(carouselSource).toContain("text-[2.45rem]");
     expect(carouselSource).toContain('<TradeMember member={exchange.left.member} />');
     expect(carouselSource).toContain("<TradeMember member={exchange.right.member} />");
-    expect(carouselSource).toContain("items-center justify-center gap-2 text-left");
+    expect(carouselSource).toContain("w-full min-w-0 items-center justify-start gap-3 text-left");
     expect(carouselSource).toContain("return member.displayName?.trim() || member.username?.trim() || \"Member\";");
     expect(carouselSource).toContain("ArrowLeft");
     expect(carouselSource).toContain("ArrowRight");
@@ -73,8 +73,8 @@ describe("homepage Recent Trades carousel", () => {
     expect(carouselSource).toContain('alt="Trade complete"');
     expect(carouselSource).toContain('className="h-44 w-48');
     expect(carouselSource).toContain("bg-transparent");
-    expect(carouselSource).toContain('className="h-44 w-32');
-    expect(carouselSource).toContain('sm:h-48 sm:w-36');
+    expect(carouselSource).toContain('className="h-40 w-24');
+    expect(carouselSource).toContain('sm:h-44 sm:w-28');
     expect(carouselSource).not.toContain("mix-blend-multiply");
     expect(carouselSource).not.toContain("trade-complete-stamp-transparent_9ec4b748.png");
     expect(carouselSource).toContain("ticket-card");
