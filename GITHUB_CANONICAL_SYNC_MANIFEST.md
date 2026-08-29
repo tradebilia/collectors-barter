@@ -510,7 +510,7 @@ The final card correction uses canonical display-name priority, aligned directio
 | Record | Value |
 |---|---|
 | Managed WebDev checkpoint | `9daa4122` |
-| Canonical implementation commit | Recorded after the normal, credential-safe GitHub push that accompanies this manifest update. |
+| Canonical implementation commit | `746c114fe98e97bb887dbe56ee4c7e40e1208419` — normal credential-safe push to GitHub `main`; no force push or history replacement. |
 | Scope | Category and Item Detail owners cannot initiate a trade proposal or message themselves. Both trade-proposal entry points now collect a personalized message rather than submitting a default sentence. Category cards display a larger grade/condition value and use Trader Rating terminology. |
 | Safeguards | Server-side trade and direct-message self-action guards remain authoritative. Personalized messages are trimmed, limited to 1,000 characters, reset when the dialog closes, and required before submission. No data model, payment, provider, schedule, setting, or secret changed. |
 | Validation | Focused listing-interaction and category tests, TypeScript, production build, production dependency audit, source-diff whitespace, and desktop/mobile category-card visual checks passed. |
