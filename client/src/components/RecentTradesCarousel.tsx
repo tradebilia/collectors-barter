@@ -189,18 +189,14 @@ export function RecentTradesCarousel({ trades, isLoading = false }: { trades: Re
             <svg viewBox="0 0 240 220" role="img" aria-labelledby="trade-complete-title trade-complete-desc" className="h-44 w-48 text-[#315ea7] sm:h-48 sm:w-52">
               <title id="trade-complete-title">Trade complete</title>
               <desc id="trade-complete-desc">Blue Trade Completed seal with a checkmark.</desc>
-              <defs>
-                <path id="trade-complete-top-arc" d="M 47 108 A 73 73 0 0 1 193 108" />
-                <path id="trade-complete-bottom-arc" d="M 193 112 A 73 73 0 0 1 47 112" />
-              </defs>
               <path d="M120 8l10 12 15-7 7 14 17-2 3 16 16 4-2 16 15 8-7 15 12 10-10 13 9 14-13 10 7 15-15 8 2 16-16 4-3 16-17-2-7 14-15-7-10 12-10-12-15 7-7-14-17 2-3-16-16-4 2-16-15-8 7-15-12-10 10-13-9-14 13-10-7-15 15-8-2-16 16-4 3-16 17 2 7-14 15 7z" fill="#f5f8fc" stroke="currentColor" strokeWidth="4" strokeLinejoin="round" />
               <circle cx="120" cy="110" r="71" fill="none" stroke="currentColor" strokeWidth="3" />
               <circle cx="120" cy="110" r="51" fill="none" stroke="currentColor" strokeWidth="3" />
               <path d="M87 111l23 23 48-55" fill="none" stroke="currentColor" strokeWidth="9" strokeLinecap="round" strokeLinejoin="round" />
               <circle cx="58" cy="110" r="4" fill="currentColor" />
               <circle cx="182" cy="110" r="4" fill="currentColor" />
-              <text fill="currentColor" fontFamily="Georgia, serif" fontSize="17" fontWeight="700" letterSpacing="2"><textPath href="#trade-complete-top-arc" startOffset="50%" textAnchor="middle">TRADE</textPath></text>
-              <text fill="currentColor" fontFamily="Georgia, serif" fontSize="14" fontWeight="700" letterSpacing="1"><textPath href="#trade-complete-bottom-arc" startOffset="50%" textAnchor="middle">COMPLETED</textPath></text>
+              <text x="120" y="53" fill="currentColor" fontFamily="Georgia, serif" fontSize="19" fontWeight="700" letterSpacing="2" textAnchor="middle">TRADE</text>
+              <text x="120" y="177" fill="currentColor" fontFamily="Georgia, serif" fontSize="16" fontWeight="700" letterSpacing="1" textAnchor="middle">COMPLETED</text>
             </svg>
           </div>
           <TicketDivider />
