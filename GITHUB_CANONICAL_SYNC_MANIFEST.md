@@ -550,7 +550,7 @@ The final card correction uses canonical display-name priority, aligned directio
 | Record | Value |
 |---|---|
 | Managed WebDev checkpoint | `a4fd3923` |
-| Canonical implementation commit | Recorded after the normal, credential-safe GitHub push that accompanies this manifest update. |
+| Canonical implementation commit | `85350f60de91defa2a0a0973917cad683840a6cc` — normal credential-safe push to GitHub `main`; no force push or history replacement. |
 | Scope | Profile integrations presents one private Zelle destination field that accepts either an email address or U.S. mobile number, and labels PayPal, Venmo, Cash App, and Zelle destinations with the supplied official provider assets. |
 | Data safety | The one Zelle field maps to the existing mutually exclusive protected email-or-phone server contract. Stored values, validation, privacy scope, direct-payment disclosure, and cash-trade safeguards remain unchanged. |
 | Validation | Focused external-cash safeguards test, TypeScript, production build, dependency audit, changed-file whitespace, and source-level form review passed. |
