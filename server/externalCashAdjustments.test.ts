@@ -72,8 +72,10 @@ describe("External cash-adjustment safeguards", () => {
     expect(settingsSource).toContain('/manus-storage/venmo-official-logo_37a969df.png');
     expect(settingsSource).toContain('/manus-storage/cash-app-official-logo_72e2eb83.webp');
     expect(settingsSource).toContain('/manus-storage/zelle-official-logo_3b446c40.png');
-    expect(settingsSource).toContain('className="h-8 w-28 object-contain object-left"');
-    expect(settingsSource).toContain('className="h-8 w-8 object-contain"');
+    expect((settingsSource.match(/className="h-8 w-28 object-contain object-left"/g) ?? []).length).toBeGreaterThanOrEqual(4);
+    expect(settingsSource).not.toContain('className="h-8 w-8 object-contain"');
+    expect(settingsSource).toContain("Fill in at least one destination below before cash can be included in a trade.");
+    expect(setupSource).toContain("Fill in at least one destination before cash can be included in a trade.");
     expect(settingsSource).toContain('className="sr-only">PayPal email</span>');
     expect(settingsSource).not.toContain('<span>PayPal email</span>');
     expect(settingsSource).not.toContain('<span>Venmo username</span>');

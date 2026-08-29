@@ -408,16 +408,29 @@ async function getRatingStatsMap(userIds: number[]) {
 }
 
 export function getCustomGradingCompany(itemDetails: unknown): string | null {
-  if (typeof itemDetails !== "string" || !itemDetails.trim()) return null;
-  try {
-    const parsed = JSON.parse(itemDetails) as { customGradingCompany?: unknown };
-    const customGradingCompany = typeof parsed.customGradingCompany === "string"
-      ? parsed.customGradingCompany.trim().slice(0, 50)
-      : "";
-    return customGradingCompany || null;
-  } catch {
+  if (itemDetails === null || itemDetails === undefined) return null;
+
+  let parsed: { customGradingCompany?: unknown; [key: string]: unknown };
+  if (typeof itemDetails === "string") {
+    if (!itemDetails.trim()) return null;
+    try {
+      parsed = JSON.parse(itemDetails) as { customGradingCompany?: unknown; [key: string]: unknown };
+    } catch {
+      return null;
+    }
+  } else if (typeof itemDetails === "object") {
+    parsed = itemDetails as { customGradingCompany?: unknown; [key: string]: unknown };
+  } else {
     return null;
   }
+
+  const candidates = [
+    parsed.customGradingCompany,
+    parsed["Custom Grading Company"],
+    parsed.custom_grading_company,
+  ];
+  const customGradingCompany = candidates.find((value): value is string => typeof value === "string" && value.trim().length > 0)?.trim().slice(0, 50) ?? "";
+  return customGradingCompany && customGradingCompany.toLowerCase() !== "other" ? customGradingCompany : null;
 }
 
 async function formatListings(
