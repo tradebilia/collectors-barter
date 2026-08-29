@@ -120,7 +120,10 @@ function TradeMember({ member }: { member: TradeShowcaseParty }) {
     <section className="flex w-full min-w-0 flex-col items-center text-left" aria-label={`Trade member ${memberName}`}>
       <div className="flex w-fit max-w-full min-w-0 items-center justify-center gap-3 text-left">
         {member.avatarUrl ? (
-          <img src={member.avatarUrl} alt={`${memberName} avatar`} className="h-12 w-12 shrink-0 rounded-full border-2 border-[#3974bb] bg-white object-contain sm:h-14 sm:w-14" loading="lazy" />
+          <span className="relative h-12 w-12 shrink-0 overflow-hidden rounded-full border-2 border-[#3974bb] bg-white sm:h-14 sm:w-14" aria-label={`${memberName} avatar`}>
+            <img src={member.avatarUrl} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full scale-125 object-cover opacity-70 blur-md" loading="lazy" />
+            <img src={member.avatarUrl} alt={`${memberName} avatar`} className="relative z-10 h-full w-full object-fill" loading="lazy" />
+          </span>
         ) : (
           <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border-2 border-[#3974bb] bg-white text-base font-bold text-[#2458a6] sm:h-14 sm:w-14" aria-label={`${memberName} avatar unavailable`}>{initials || <UserRound className="h-4 w-4" aria-hidden="true" />}</div>
         )}

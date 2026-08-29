@@ -56,7 +56,8 @@ describe("homepage Recent Trades carousel", () => {
     expect(carouselSource).toContain("ticket-card");
     expect(carouselSource).toContain("border-dashed");
     expect(carouselSource).toContain("TicketDivider");
-    expect(carouselSource).toContain("object-contain sm:h-14 sm:w-14");
+    expect(carouselSource).toContain("absolute inset-0 h-full w-full scale-125 object-cover opacity-70 blur-md");
+    expect(carouselSource).toContain("relative z-10 h-full w-full object-fill");
     expect(carouselSource).toContain("h-40 w-24");
     expect(carouselSource).toContain("sm:h-44 sm:w-28");
     expect(carouselSource).toContain("bg-[#f8fafc]");
