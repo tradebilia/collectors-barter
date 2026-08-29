@@ -88,7 +88,7 @@ type AdminGuideEntry = {
 
 const adminGuideEntries: readonly AdminGuideEntry[] = [
   { tab: "Stats", summary: "A quick picture of how the marketplace is doing.", purpose: "Shows high-level member, listing, value, and trade activity so you can understand the current size and activity of Tradebilia.", useWhen: "Use this for a fast health check, before planning a launch activity, or when you want to see whether the marketplace is growing.", caution: "This tab is for viewing information. It does not change members, listings, or trades." },
-  { tab: "Billing", summary: "Membership status and future fee-planning controls.", purpose: "Shows member membership information, lets you sort it by status or term, and contains the Fee Mode launch-control setting.", useWhen: "Use it to understand who has which membership status or to review future fee plans before any separate paid-launch decision.", caution: "Fee Mode is only a planning switch. Even when On, it does not turn on Checkout, collect a card, charge anyone, or restrict Free Launch access." },
+  { tab: "Billing", summary: "Membership status, future fee-planning, and direct cash-adjustment monitoring.", purpose: "Shows member membership information, lets you sort it by status or term, contains the Fee Mode launch-control setting, and shows masked PayPal, Venmo, Cash App, and Zelle cash-adjustment status for active trades.", useWhen: "Use it to understand membership status, review future fee plans, or investigate a direct-payment dispute. A payment destination can be revealed only with the exact confirmation phrase, and that access is written to the trade activity log.", caution: "Fee Mode is only a planning switch. Even when On, it does not turn on Checkout, collect a card, charge anyone, or restrict Free Launch access. Tradebilia does not process, hold, insure, refund, or guarantee member-to-member direct payments." },
   { tab: "Users", summary: "The main member-management workspace.", purpose: "Lists member accounts and their account information so an administrator can review a member, update permitted account details, and use available moderation actions.", useWhen: "Use it when a member needs help, when you need to review an account, or when an Operations queue sends you here.", caution: "Archive is not deletion: it requires a reason and the exact confirmation phrase, rechecks current blockers, closes sign-in access, and retains trade, support, and safety history." },
   { tab: "Listings", summary: "The catalogue-management workspace.", purpose: "Lists Tradebilia items and provides searching, sorting, review, and the available listing-management actions.", useWhen: "Use it to find a specific listing, investigate a report, check an item’s status, or address a listing that needs administrator attention.", caution: "Confirm the listing and the reason first. Removing or changing a listing can affect an active collector’s trade activity." },
   { tab: "Trades", summary: "The place to monitor exchanges in progress and completed trade records.", purpose: "Shows trade information, including both collectors involved, so you can follow the lifecycle of an exchange and review a trade when an issue is raised.", useWhen: "Use it for a trade dispute, a shipping or confirmation question, or when Operations identifies a trade follow-up item.", caution: "Only completed, declined, or cancelled trades may be archived. Archive requires a reason and exact phrase, retains every trade record, and keeps archived records available through the filter." },
@@ -539,6 +539,15 @@ export default function AdminDashboard() {
   });
   const billingOverviewQuery = trpc.billing.getOverview.useQuery(undefined, { enabled: user?.role === "admin", refetchOnWindowFocus: true });
   const billingMembersQuery = trpc.billing.getMembers.useQuery(undefined, { enabled: user?.role === "admin", refetchOnWindowFocus: true });
+  const externalCashAdjustmentsQuery = trpc.payment.listExternalCashAdjustmentsForAdmin.useQuery(undefined, { enabled: user?.role === "admin", refetchOnWindowFocus: true });
+  const [cashRevealDialogOpen, setCashRevealDialogOpen] = useState(false);
+  const [cashRevealPaymentId, setCashRevealPaymentId] = useState<number | null>(null);
+  const [cashRevealPhrase, setCashRevealPhrase] = useState("");
+  const [revealedCashIdentifier, setRevealedCashIdentifier] = useState<{ method: string; identifier: string } | null>(null);
+  const revealCashIdentifierMutation = trpc.payment.revealExternalCashIdentifierForAdmin.useMutation({
+    onSuccess: (result) => { setRevealedCashIdentifier(result); setCashRevealPhrase(""); toast.success("Payment identifier revealed and recorded in the trade activity log."); },
+    onError: (error) => toast.error(error.message),
+  });
   const [feeModeDialogOpen, setFeeModeDialogOpen] = useState(false);
   const [pendingFeeModeEnabled, setPendingFeeModeEnabled] = useState(false);
   const [feeModePassword, setFeeModePassword] = useState("");
@@ -940,6 +949,15 @@ export default function AdminDashboard() {
                     </div>
                   </>
                 )}
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle>External Cash Adjustments</CardTitle>
+                <CardDescription>Monitor direct PayPal, Venmo, Cash App, and Zelle cash adjustments. Tradebilia does not process, hold, or guarantee these payments; destinations remain masked unless an administrator records a dispute-related need to view them.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {externalCashAdjustmentsQuery.isLoading ? <p className="text-sm text-muted-foreground">Loading external cash adjustments…</p> : externalCashAdjustmentsQuery.error ? <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">Cash-adjustment monitoring is temporarily unavailable.</p> : (externalCashAdjustmentsQuery.data?.length ?? 0) === 0 ? <p className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">No cash adjustments have been selected for a trade yet.</p> : <div className="overflow-x-auto rounded-lg border"><table className="w-full min-w-[760px] text-sm"><thead className="bg-slate-50 text-left text-xs uppercase text-slate-500"><tr><th className="p-3">Trade</th><th className="p-3">Payer → Payee</th><th className="p-3">Amount</th><th className="p-3">Method</th><th className="p-3">Status</th><th className="p-3">Destination</th><th className="p-3">Action</th></tr></thead><tbody>{externalCashAdjustmentsQuery.data?.map((adjustment: any) => <tr key={adjustment.paymentId} className="border-t"><td className="p-3 font-medium">TR-{adjustment.proposalId}</td><td className="p-3">{adjustment.payerName} → {adjustment.payeeName}</td><td className="p-3">${Number(adjustment.amount).toLocaleString()}</td><td className="p-3 capitalize">{String(adjustment.paymentMethod ?? "Not selected").replace("_", " ")}</td><td className="p-3 capitalize">{String(adjustment.status).replace("_", " ")}</td><td className="p-3 font-mono text-xs">{adjustment.paymentIdentifier}</td><td className="p-3"><Button variant="outline" size="sm" onClick={() => { setCashRevealPaymentId(adjustment.paymentId); setCashRevealPhrase(""); setRevealedCashIdentifier(null); setCashRevealDialogOpen(true); }} disabled={!adjustment.paymentMethod || adjustment.paymentIdentifier === "Not set"}>Audited reveal</Button></td></tr>)}</tbody></table></div>}
               </CardContent>
             </Card>
           </TabsContent>
@@ -1670,6 +1688,19 @@ export default function AdminDashboard() {
             <div className="space-y-2"><label className="text-sm font-medium" htmlFor="fee-mode-password">Current administrator password</label><Input id="fee-mode-password" type="password" value={feeModePassword} onChange={(event) => setFeeModePassword(event.target.value)} autoComplete="current-password" /></div>
             <div className="space-y-2"><label className="text-sm font-medium" htmlFor="fee-mode-phrase">Confirmation phrase</label><Input id="fee-mode-phrase" value={feeModePhrase} onChange={(event) => setFeeModePhrase(event.target.value)} /></div>
             <div className="flex justify-end gap-2"><Button variant="outline" onClick={() => setFeeModeDialogOpen(false)}>Cancel</Button><Button disabled={!feeModePassword || feeModePhrase.trim() !== (pendingFeeModeEnabled ? "ENABLE TRADEBILIA FEE MODE" : "DISABLE TRADEBILIA FEE MODE") || updateFeeModeMutation.isPending} onClick={() => updateFeeModeMutation.mutate({ enabled: pendingFeeModeEnabled, currentPassword: feeModePassword, confirmationPhrase: feeModePhrase })}>{updateFeeModeMutation.isPending ? "Verifying…" : `Confirm Fee Mode ${pendingFeeModeEnabled ? "On" : "Off"}`}</Button></div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={cashRevealDialogOpen} onOpenChange={setCashRevealDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reveal a private payment destination?</DialogTitle>
+            <DialogDescription>Use this only when a cash-adjustment dispute requires it. The reveal is recorded in the trade activity log. Tradebilia does not process or guarantee the payment.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            {revealedCashIdentifier ? <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950"><strong>{revealedCashIdentifier.method.replace("_", " ")}</strong><code className="mt-1 block break-all rounded bg-white px-2 py-1 font-mono text-xs">{revealedCashIdentifier.identifier}</code></div> : <><div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950">Type <strong>REVEAL CASH PAYMENT IDENTIFIER</strong> exactly to continue. Do not share the identifier outside the active dispute review.</div><div className="space-y-2"><label htmlFor="cash-reveal-phrase" className="text-sm font-medium">Confirmation phrase</label><Input id="cash-reveal-phrase" value={cashRevealPhrase} onChange={(event) => setCashRevealPhrase(event.target.value)} /></div></>}
+            <div className="flex justify-end gap-2"><Button variant="outline" onClick={() => setCashRevealDialogOpen(false)}>Close</Button>{!revealedCashIdentifier && <Button disabled={cashRevealPaymentId === null || cashRevealPhrase.trim() !== "REVEAL CASH PAYMENT IDENTIFIER" || revealCashIdentifierMutation.isPending} onClick={() => cashRevealPaymentId && revealCashIdentifierMutation.mutate({ paymentId: cashRevealPaymentId, confirmationPhrase: "REVEAL CASH PAYMENT IDENTIFIER" })}>{revealCashIdentifierMutation.isPending ? "Revealing…" : "Reveal and record access"}</Button>}</div>
           </div>
         </DialogContent>
       </Dialog>

@@ -90,9 +90,9 @@ export default function AccountSettings() {
   });
   const startTestCheckoutMutation = trpc.billing.startTestCheckout.useMutation();
   const openTestPortalMutation = trpc.billing.openTestPortal.useMutation();
-  // PayPal
-  const paypalQuery = trpc.payment.getPayPalEmail.useQuery();
-  const savePayPalEmailMutation = trpc.payment.savePayPalEmail.useMutation();
+  // Private external cash-adjustment destinations. These are never public-profile fields.
+  const externalPaymentMethodsQuery = trpc.payment.getExternalPaymentMethods.useQuery();
+  const saveExternalPaymentMethodsMutation = trpc.payment.saveExternalPaymentMethods.useMutation();
 
   // Read ?tab= from URL to support redirects (e.g., from eBay OAuth callback)
   const validTabs = ["profile", "membership", "security", "integrations", "communications", "preferences"] as const;
@@ -164,9 +164,27 @@ export default function AccountSettings() {
   // Integrations State
   const [connectedAccounts, setConnectedAccounts] = useState<AccountSource[]>([]);
 
-  // PayPal State
-  const [paypalEmailInput, setPaypalEmailInput] = useState("");
-  const [paypalSaving, setPaypalSaving] = useState(false);
+  // Direct cash-adjustment destinations
+  const [externalPaymentForm, setExternalPaymentForm] = useState({
+    paypalEmail: "",
+    venmoUsername: "",
+    cashAppCashtag: "",
+    zelleEmail: "",
+    zellePhone: "",
+  });
+  const [externalPaymentSaving, setExternalPaymentSaving] = useState(false);
+
+  useEffect(() => {
+    const methods = externalPaymentMethodsQuery.data;
+    if (!methods) return;
+    setExternalPaymentForm({
+      paypalEmail: methods.paypalEmail ?? "",
+      venmoUsername: methods.venmoUsername ?? "",
+      cashAppCashtag: methods.cashAppCashtag ?? "",
+      zelleEmail: methods.zelleEmail ?? "",
+      zellePhone: methods.zellePhone ?? "",
+    });
+  }, [externalPaymentMethodsQuery.data]);
   // Communications State
   const [communicationPrefs, setCommunicationPrefs] = useState<{
     tradeInitiated: { email: boolean; text: boolean };
@@ -577,20 +595,22 @@ export default function AccountSettings() {
     }
   };
 
-  const handleSavePayPalEmail = async () => {
-    if (!paypalEmailInput.trim()) {
-      toast.error("Please enter a valid PayPal email address.");
-      return;
-    }
-    setPaypalSaving(true);
+  const handleSaveExternalPaymentMethods = async () => {
+    setExternalPaymentSaving(true);
     try {
-      await savePayPalEmailMutation.mutateAsync({ email: paypalEmailInput.trim() });
-      await paypalQuery.refetch();
-      toast.success("PayPal email saved successfully!");
+      const result = await saveExternalPaymentMethodsMutation.mutateAsync({
+        paypalEmail: externalPaymentForm.paypalEmail.trim() || null,
+        venmoUsername: externalPaymentForm.venmoUsername.trim() || null,
+        cashAppCashtag: externalPaymentForm.cashAppCashtag.trim() || null,
+        zelleEmail: externalPaymentForm.zelleEmail.trim() || null,
+        zellePhone: externalPaymentForm.zellePhone.trim() || null,
+      });
+      await externalPaymentMethodsQuery.refetch();
+      toast.success(result.resetTradeCount ? `Payment destinations saved. ${result.resetTradeCount} active cash trade${result.resetTradeCount === 1 ? "" : "s"} must select a method again.` : "Payment destinations saved privately.");
     } catch (err: any) {
-      toast.error(err?.message || "Failed to save PayPal email.");
+      toast.error(err?.message || "Failed to save payment destinations.");
     } finally {
-      setPaypalSaving(false);
+      setExternalPaymentSaving(false);
     }
   };
 
@@ -1141,7 +1161,6 @@ export default function AccountSettings() {
               {(() => {
                 const allPlatforms = [
                   { key: 'facebook', label: 'Facebook', logo: 'https://assets.tradebilia.com/Facebooklogo_0c02c2d1.png', isConnected: !!user?.facebookId },
-                  { key: 'paypal', label: 'PayPal', logo: 'https://assets.tradebilia.com/Paypal_25ebc114.png', isConnected: !!user?.paypalEmail },
                   { key: 'linkedin', label: 'LinkedIn', logo: 'https://assets.tradebilia.com/LinkedIn_df1e2c1e.webp', isConnected: !!user?.linkedinId },
                   { key: 'ebay', label: 'eBay', logo: 'https://assets.tradebilia.com/Ebaylogo_12a10426.png', isConnected: !!user?.ebayUsername },
                   { key: 'whatnot', label: 'WhatNot', logo: 'https://assets.tradebilia.com/WhatNot_ab669ac9.png', isConnected: false },
@@ -1169,47 +1188,27 @@ export default function AccountSettings() {
                 ) : null;
               })()}
 
-              {/* PayPal Email Card */}
+              {/* Private direct-payment destinations */}
               <Card className="rounded-[1.5rem] border-slate-200 bg-white shadow-sm">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <img src="https://assets.tradebilia.com/Paypal_25ebc114.png" alt="PayPal" className="h-6 w-auto object-contain" />
-                    PayPal Email
+                    <CreditCard className="h-5 w-5 text-blue-700" />
+                    Direct Cash Payment Methods
                   </CardTitle>
                   <CardDescription>
-                    Add your PayPal email so trading partners can send you payments directly. Tradebilia does not process or hold any payments.
+                    Add only the destinations you are willing to use. These details stay private and are shown only to your accepted cash-trade partner.
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  {paypalQuery.data?.paypalEmail && (
-                    <div className="flex items-center gap-2 text-sm text-slate-600 bg-slate-50 rounded-lg px-3 py-2 border border-slate-200">
-                      <span className="font-medium">Current:</span>
-                      <span>{paypalQuery.data.paypalEmail}</span>
-                      {paypalQuery.data.paypalVerified === 1 && (
-                        <span className="ml-auto text-xs text-green-700 bg-green-100 rounded-full px-2 py-0.5 font-medium">Verified</span>
-                      )}
-                    </div>
-                  )}
-                  <div className="flex gap-2">
-                    <Input
-                      type="email"
-                      placeholder="your-paypal@email.com"
-                      value={paypalEmailInput}
-                      onChange={(e) => setPaypalEmailInput(e.target.value)}
-                      className="rounded-lg"
-                    />
-                    <Button
-                      onClick={handleSavePayPalEmail}
-                      disabled={paypalSaving || !paypalEmailInput.trim()}
-                      className="rounded-lg shrink-0"
-                    >
-                      {paypalSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                      <span className="ml-1">Save</span>
-                    </Button>
+                <CardContent className="space-y-5">
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-1.5"><Label htmlFor="payment-paypal">PayPal email</Label><Input id="payment-paypal" type="email" placeholder="you@example.com" value={externalPaymentForm.paypalEmail} onChange={(event) => setExternalPaymentForm((current) => ({ ...current, paypalEmail: event.target.value }))} /></div>
+                    <div className="space-y-1.5"><Label htmlFor="payment-venmo">Venmo username</Label><Input id="payment-venmo" placeholder="username or @username" value={externalPaymentForm.venmoUsername} onChange={(event) => setExternalPaymentForm((current) => ({ ...current, venmoUsername: event.target.value }))} /></div>
+                    <div className="space-y-1.5"><Label htmlFor="payment-cashapp">Cash App $cashtag</Label><Input id="payment-cashapp" placeholder="$yourcashtag" value={externalPaymentForm.cashAppCashtag} onChange={(event) => setExternalPaymentForm((current) => ({ ...current, cashAppCashtag: event.target.value }))} /></div>
+                    <div className="space-y-1.5"><Label htmlFor="payment-zelle-email">Zelle email</Label><Input id="payment-zelle-email" type="email" placeholder="Use email or mobile below" value={externalPaymentForm.zelleEmail} onChange={(event) => setExternalPaymentForm((current) => ({ ...current, zelleEmail: event.target.value, zellePhone: event.target.value ? "" : current.zellePhone }))} /></div>
+                    <div className="space-y-1.5"><Label htmlFor="payment-zelle-phone">Zelle U.S. mobile</Label><Input id="payment-zelle-phone" inputMode="tel" placeholder="Use email or mobile above" value={externalPaymentForm.zellePhone} onChange={(event) => setExternalPaymentForm((current) => ({ ...current, zellePhone: event.target.value, zelleEmail: event.target.value ? "" : current.zelleEmail }))} /></div>
                   </div>
-                  <p className="text-xs text-slate-500">
-                    ⚠️ Tradebilia is not responsible for any payments made between users. All transactions are between buyers and sellers directly via PayPal.
-                  </p>
+                  <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs leading-relaxed text-amber-950"><strong>Important:</strong> Tradebilia does not process, hold, insure, refund, or guarantee direct payments. Your destination is private, and it is shown only when an accepted trade includes cash. Changing a destination resets any active cash-trade method selection so both members can confirm the new terms.</div>
+                  <div className="flex flex-wrap items-center justify-between gap-3"><p className="text-xs text-slate-500">Zelle accepts one private destination: an email address <em>or</em> a U.S. mobile number.</p><Button onClick={handleSaveExternalPaymentMethods} disabled={externalPaymentSaving || externalPaymentMethodsQuery.isLoading} className="rounded-lg">{externalPaymentSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}<span className="ml-1">Save methods</span></Button></div>
                 </CardContent>
               </Card>
             </TabsContent>

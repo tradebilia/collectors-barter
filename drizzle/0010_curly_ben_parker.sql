@@ -1,0 +1,1 @@
+-- Intentionally empty. The generated foreign-key removal was not applied because the approved external-payment design does not require that constraint.

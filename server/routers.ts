@@ -125,6 +125,82 @@ import { closeEligibleAccount, getAccountClosureAudit, getAccountClosureRequests
 const ADMIN_ARCHIVE_MEMBER_PHRASE = "ARCHIVE MEMBER ACCOUNT";
 const ADMIN_ARCHIVE_TRADE_PHRASE = "ARCHIVE TRADE RECORD";
 const ADMIN_CLOSE_TICKET_PHRASE = "CLOSE AND RETAIN TICKET";
+const ADMIN_REVEAL_CASH_IDENTIFIER_PHRASE = "REVEAL CASH PAYMENT IDENTIFIER";
+
+const externalPaymentMethodSchema = z.enum(["paypal", "venmo", "cash_app", "zelle"]);
+type ExternalPaymentMethod = z.infer<typeof externalPaymentMethodSchema>;
+
+const externalPaymentMethodsInputSchema = z.object({
+  paypalEmail: z.string().trim().email().max(320).nullable().optional(),
+  venmoUsername: z.string().trim().min(1).max(80).nullable().optional(),
+  cashAppCashtag: z.string().trim().min(1).max(80).nullable().optional(),
+  zelleEmail: z.string().trim().email().max(320).nullable().optional(),
+  zellePhone: z.string().trim().min(7).max(32).nullable().optional(),
+}).superRefine((input, ctx) => {
+  if (input.zelleEmail && input.zellePhone) {
+    ctx.addIssue({ code: "custom", message: "Use one Zelle destination: an email address or a U.S. mobile number, not both.", path: ["zellePhone"] });
+  }
+  if (input.venmoUsername && !/^[A-Za-z0-9_-]{3,30}$/.test(input.venmoUsername.replace(/^@+/, ""))) {
+    ctx.addIssue({ code: "custom", message: "Enter a valid Venmo username using 3–30 letters, numbers, underscores, or hyphens.", path: ["venmoUsername"] });
+  }
+  if (input.cashAppCashtag && !/^\$?[A-Za-z][A-Za-z0-9_]{0,19}$/.test(input.cashAppCashtag)) {
+    ctx.addIssue({ code: "custom", message: "Enter a valid Cash App $cashtag starting with a letter and using up to 20 letters, numbers, or underscores.", path: ["cashAppCashtag"] });
+  }
+  if (input.zellePhone && input.zellePhone.replace(/\D/g, "").length !== 10) {
+    ctx.addIssue({ code: "custom", message: "Enter a valid 10-digit U.S. mobile number for Zelle.", path: ["zellePhone"] });
+  }
+});
+
+function normalizeOptionalText(value?: string | null) {
+  const normalized = value?.trim() ?? "";
+  return normalized || null;
+}
+
+function normalizeVenmoUsername(value?: string | null) {
+  const normalized = normalizeOptionalText(value);
+  return normalized ? normalized.replace(/^@+/, "") : null;
+}
+
+function normalizeCashAppCashtag(value?: string | null) {
+  const normalized = normalizeOptionalText(value);
+  return normalized ? `$${normalized.replace(/^\$+/, "")}` : null;
+}
+
+function normalizeExternalPaymentMethods(input: z.infer<typeof externalPaymentMethodsInputSchema>) {
+  return {
+    paypalEmail: normalizeOptionalText(input.paypalEmail)?.toLowerCase() ?? null,
+    venmoUsername: normalizeVenmoUsername(input.venmoUsername),
+    cashAppCashtag: normalizeCashAppCashtag(input.cashAppCashtag),
+    zelleEmail: normalizeOptionalText(input.zelleEmail)?.toLowerCase() ?? null,
+    zellePhone: normalizeOptionalText(input.zellePhone)?.replace(/[^\d+]/g, "") ?? null,
+  };
+}
+
+function getExternalPaymentMethodLabel(method: ExternalPaymentMethod) {
+  return method === "paypal" ? "PayPal" : method === "venmo" ? "Venmo" : method === "cash_app" ? "Cash App" : "Zelle";
+}
+
+function getExternalPaymentIdentifier(method: ExternalPaymentMethod, profile: {
+  paypalEmail?: string | null;
+  venmoUsername?: string | null;
+  cashAppCashtag?: string | null;
+  zelleEmail?: string | null;
+  zellePhone?: string | null;
+}) {
+  if (method === "paypal") return profile.paypalEmail ?? null;
+  if (method === "venmo") return profile.venmoUsername ? `@${profile.venmoUsername.replace(/^@+/, "")}` : null;
+  if (method === "cash_app") return profile.cashAppCashtag ?? null;
+  return profile.zelleEmail ?? profile.zellePhone ?? null;
+}
+
+function maskExternalPaymentIdentifier(identifier?: string | null) {
+  if (!identifier) return "Not set";
+  if (identifier.includes("@")) {
+    const [local, domain] = identifier.split("@");
+    return `${local.slice(0, 1)}•••@${domain}`;
+  }
+  return identifier.length <= 4 ? "••••" : `${identifier.slice(0, 2)}•••${identifier.slice(-2)}`;
+}
 
 // The R2 adapter enforces decoded per-kind limits (10MB listing, 5MB avatar).
 // This ceiling stops an oversized base64 request before its payload is decoded.
@@ -3801,6 +3877,88 @@ export const appRouter = router({
       return result[0] ?? { paypalEmail: null, paypalVerified: 0, paypalVerifiedAt: null };
     }),
 
+    /** Private member-only setup data. Direct-payment identifiers are never returned by public profile routes. */
+    getExternalPaymentMethods: protectedProcedure.query(async ({ ctx }) => {
+      const db = await requireDb();
+      const result = await db.select({
+        paypalEmail: users.paypalEmail,
+        paypalVerified: users.paypalVerified,
+        paypalVerifiedAt: users.paypalVerifiedAt,
+        venmoUsername: users.venmoUsername,
+        cashAppCashtag: users.cashAppCashtag,
+        zelleEmail: users.zelleEmail,
+        zellePhone: users.zellePhone,
+        updatedAt: users.externalPaymentMethodsUpdatedAt,
+      }).from(users).where(eq(users.id, ctx.user.id)).limit(1);
+      return result[0] ?? { paypalEmail: null, paypalVerified: 0, paypalVerifiedAt: null, venmoUsername: null, cashAppCashtag: null, zelleEmail: null, zellePhone: null, updatedAt: null };
+    }),
+
+    /** Saves private direct-payment identifiers and invalidates any not-yet-confirmed cash terms that used the prior destination. */
+    saveExternalPaymentMethods: protectedProcedure
+      .input(externalPaymentMethodsInputSchema)
+      .mutation(async ({ ctx, input }) => {
+        const db = await requireDb();
+        const nextMethods = normalizeExternalPaymentMethods(input);
+        const currentRows = await db.select({
+          paypalEmail: users.paypalEmail,
+          venmoUsername: users.venmoUsername,
+          cashAppCashtag: users.cashAppCashtag,
+          zelleEmail: users.zelleEmail,
+          zellePhone: users.zellePhone,
+        }).from(users).where(eq(users.id, ctx.user.id)).limit(1);
+        const current = currentRows[0];
+        if (!current) throw new TRPCError({ code: "NOT_FOUND", message: "Member account not found." });
+
+        const methodChanged = current.paypalEmail !== nextMethods.paypalEmail
+          || current.venmoUsername !== nextMethods.venmoUsername
+          || current.cashAppCashtag !== nextMethods.cashAppCashtag
+          || current.zelleEmail !== nextMethods.zelleEmail
+          || current.zellePhone !== nextMethods.zellePhone;
+        const now = mysqlNow();
+
+        const activeRows = methodChanged ? await db.select({ id: tradePayments.id, proposalId: tradePayments.proposalId, payerId: tradePayments.payerId, status: tradePayments.status })
+          .from(tradePayments)
+          .where(and(eq(tradePayments.payeeId, ctx.user.id), inArray(tradePayments.status, ["method_selected", "sent"]))) : [];
+        if (activeRows.some((payment) => payment.status === "sent")) {
+          throw new TRPCError({ code: "CONFLICT", message: "You cannot change a payment destination after a partner marks a cash adjustment sent. Confirm receipt or open a trade dispute first." });
+        }
+
+        await db.update(users).set({
+          ...nextMethods,
+          paypalVerified: current.paypalEmail === nextMethods.paypalEmail ? undefined : 0,
+          paypalVerifiedAt: current.paypalEmail === nextMethods.paypalEmail ? undefined : null,
+          externalPaymentMethodsUpdatedAt: now,
+        }).where(eq(users.id, ctx.user.id));
+
+        let resetTradeCount = 0;
+        if (methodChanged) {
+          for (const payment of activeRows) {
+            await db.update(tradePayments).set({
+              paymentMethod: null,
+              paymentIdentifier: null,
+              paymentMethodSelectedAt: null,
+              transactionId: null,
+              sentAt: null,
+              receivedAt: null,
+              status: "pending",
+              verificationResult: JSON.stringify({ reason: "Payee changed a direct-payment identifier; choose and confirm a payment method again." }),
+              verifiedAt: null,
+            }).where(eq(tradePayments.id, payment.id));
+            await db.insert(tradeActivityLog).values({
+              proposalId: payment.proposalId,
+              actorId: ctx.user.id,
+              actorName: ctx.user.name ?? ctx.user.username ?? "Member",
+              eventType: "cash_payment_terms_reset",
+              details: JSON.stringify({ payerId: payment.payerId, reason: "Payee updated an external payment identifier." }),
+              createdAt: now,
+            });
+            resetTradeCount += 1;
+          }
+        }
+
+        return { success: true, resetTradeCount };
+      }),
+
     /**
      * Save or update the current user's PayPal email address.
      */
@@ -3953,6 +4111,181 @@ export const appRouter = router({
         }
 
         return result;
+      }),
+
+    /** Returns the active cash obligation and only the selected payee's private identifier to an accepted-trade participant who owes cash. */
+    getCashAdjustmentContext: protectedProcedure
+      .input(z.object({ proposalId: z.number().int().positive() }))
+      .query(async ({ ctx, input }) => {
+        const db = await requireDb();
+        const proposalRows = await db.select({
+          requesterId: tradeProposals.requesterId,
+          recipientId: tradeProposals.recipientId,
+          status: tradeProposals.status,
+          cashFromRequester: tradeProposals.cashFromRequester,
+          cashFromRecipient: tradeProposals.cashFromRecipient,
+        }).from(tradeProposals).where(eq(tradeProposals.id, input.proposalId)).limit(1);
+        const proposal = proposalRows[0];
+        if (!proposal) throw new TRPCError({ code: "NOT_FOUND", message: "Trade proposal not found." });
+        if (proposal.requesterId !== ctx.user.id && proposal.recipientId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN", message: "Cash adjustment details are limited to trade participants." });
+        if (proposal.status !== "accepted") return { role: "not_available" as const, payment: null, availableMethods: [] as Array<{ method: ExternalPaymentMethod; label: string; identifier: string }> };
+
+        const ownObligation = getPaymentVerificationObligation(proposal, ctx.user.id);
+        const otherUserId = ctx.user.id === proposal.requesterId ? proposal.recipientId : proposal.requesterId;
+        const otherObligation = getPaymentVerificationObligation(proposal, otherUserId);
+        const role = ownObligation ? "payer" as const : otherObligation ? "payee" as const : "not_required" as const;
+        const paymentRows = await db.select().from(tradePayments).where(and(eq(tradePayments.proposalId, input.proposalId), eq(tradePayments.payerId, ownObligation?.payerId ?? otherObligation?.payerId ?? -1))).limit(1);
+        const payment = paymentRows[0] ?? null;
+
+        if (role === "payee" && otherObligation) {
+          const payeeRows = await db.select({
+            paypalEmail: users.paypalEmail,
+            venmoUsername: users.venmoUsername,
+            cashAppCashtag: users.cashAppCashtag,
+            zelleEmail: users.zelleEmail,
+            zellePhone: users.zellePhone,
+          }).from(users).where(eq(users.id, ctx.user.id)).limit(1);
+          const payee = payeeRows[0] ?? {};
+          const availableMethods = (["paypal", "venmo", "cash_app", "zelle"] as ExternalPaymentMethod[])
+            .map((method) => ({ method, label: getExternalPaymentMethodLabel(method), identifier: getExternalPaymentIdentifier(method, payee) }))
+            .filter((entry): entry is { method: ExternalPaymentMethod; label: string; identifier: string } => Boolean(entry.identifier))
+            .map((entry) => ({ ...entry, identifier: maskExternalPaymentIdentifier(entry.identifier) }));
+          return { role, amount: otherObligation.amount, payment, availableMethods };
+        }
+
+        if (role !== "payer" || !ownObligation) return {
+          role,
+          payment,
+          availableMethods: [] as Array<{ method: ExternalPaymentMethod; label: string; identifier: string }>,
+          amount: null,
+        };
+
+        return { role, amount: ownObligation.amount, payment, availableMethods: [] as Array<{ method: ExternalPaymentMethod; label: string; identifier: string }> };
+      }),
+
+    selectCashAdjustmentMethod: protectedProcedure
+      .input(z.object({ proposalId: z.number().int().positive(), method: externalPaymentMethodSchema }))
+      .mutation(async ({ ctx, input }) => {
+        const db = await requireDb();
+        const proposalRows = await db.select({ requesterId: tradeProposals.requesterId, recipientId: tradeProposals.recipientId, status: tradeProposals.status, cashFromRequester: tradeProposals.cashFromRequester, cashFromRecipient: tradeProposals.cashFromRecipient })
+          .from(tradeProposals).where(eq(tradeProposals.id, input.proposalId)).limit(1);
+        const proposal = proposalRows[0];
+        if (!proposal) throw new TRPCError({ code: "NOT_FOUND", message: "Trade proposal not found." });
+        const payerId = ctx.user.id === proposal.requesterId ? proposal.recipientId : proposal.requesterId;
+        const obligation = getPaymentVerificationObligation(proposal, payerId);
+        if (!obligation || obligation.payeeId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN", message: "Only the trade participant receiving cash can choose the payment method." });
+
+        const payeeRows = await db.select({ paypalEmail: users.paypalEmail, venmoUsername: users.venmoUsername, cashAppCashtag: users.cashAppCashtag, zelleEmail: users.zelleEmail, zellePhone: users.zellePhone })
+          .from(users).where(eq(users.id, ctx.user.id)).limit(1);
+        const identifier = getExternalPaymentIdentifier(input.method, payeeRows[0] ?? {});
+        if (!identifier) throw new TRPCError({ code: "BAD_REQUEST", message: `Add your ${getExternalPaymentMethodLabel(input.method)} destination in Account Settings before selecting it for a trade.` });
+
+        const existingRows = await db.select({ id: tradePayments.id, status: tradePayments.status }).from(tradePayments)
+          .where(and(eq(tradePayments.proposalId, input.proposalId), eq(tradePayments.payerId, obligation.payerId))).limit(1);
+        if (existingRows[0]?.status === "sent" || existingRows[0]?.status === "received") throw new TRPCError({ code: "CONFLICT", message: "A payment method cannot be changed after the payer marks it sent. Open a dispute if the details are wrong." });
+        const now = mysqlNow();
+        const paymentData = {
+          proposalId: input.proposalId,
+          payerId: obligation.payerId,
+          payeeId: ctx.user.id,
+          amount: obligation.amount.toFixed(2),
+          paypalEmail: input.method === "paypal" ? identifier : null,
+          paymentMethod: input.method,
+          paymentIdentifier: identifier,
+          paymentMethodSelectedAt: now,
+          transactionId: null,
+          status: "method_selected" as const,
+          verificationResult: JSON.stringify({ source: "payee_selected_external_method", directPaymentDisclosureAcknowledged: true }),
+          verifiedAt: null,
+          sentAt: null,
+          receivedAt: null,
+          disputeOpenedAt: null,
+          disputeOpenedBy: null,
+          disputeReason: null,
+        };
+        if (existingRows[0]) await db.update(tradePayments).set(paymentData).where(eq(tradePayments.id, existingRows[0].id));
+        else await db.insert(tradePayments).values(paymentData);
+        await db.insert(tradeActivityLog).values({ proposalId: input.proposalId, actorId: ctx.user.id, actorName: ctx.user.name ?? ctx.user.username ?? "Member", eventType: "cash_payment_method_selected", details: JSON.stringify({ method: input.method, amount: obligation.amount, identifierMasked: maskExternalPaymentIdentifier(identifier) }), createdAt: now });
+        return { success: true, status: "method_selected" as const, method: input.method };
+      }),
+
+    markCashAdjustmentSent: protectedProcedure
+      .input(z.object({ proposalId: z.number().int().positive(), transactionReference: z.string().trim().max(255).optional() }))
+      .mutation(async ({ ctx, input }) => {
+        const db = await requireDb();
+        const proposalRows = await db.select({ requesterId: tradeProposals.requesterId, recipientId: tradeProposals.recipientId, status: tradeProposals.status, cashFromRequester: tradeProposals.cashFromRequester, cashFromRecipient: tradeProposals.cashFromRecipient })
+          .from(tradeProposals).where(eq(tradeProposals.id, input.proposalId)).limit(1);
+        const obligation = proposalRows[0] ? getPaymentVerificationObligation(proposalRows[0], ctx.user.id) : null;
+        if (!obligation) throw new TRPCError({ code: "FORBIDDEN", message: "You do not have a payable cash adjustment for this accepted trade." });
+        const paymentRows = await db.select({ id: tradePayments.id, status: tradePayments.status, paymentMethod: tradePayments.paymentMethod }).from(tradePayments)
+          .where(and(eq(tradePayments.proposalId, input.proposalId), eq(tradePayments.payerId, ctx.user.id))).limit(1);
+        const payment = paymentRows[0];
+        if (!payment || payment.status !== "method_selected") throw new TRPCError({ code: "CONFLICT", message: "Wait for your partner to choose a payment method before marking payment sent." });
+        const now = mysqlNow();
+        await db.update(tradePayments).set({ status: "sent", transactionId: normalizeOptionalText(input.transactionReference), sentAt: now, verificationResult: JSON.stringify({ source: "payer_marked_sent", externalVerification: "not_available" }) }).where(eq(tradePayments.id, payment.id));
+        await db.insert(tradeActivityLog).values({ proposalId: input.proposalId, actorId: ctx.user.id, actorName: ctx.user.name ?? ctx.user.username ?? "Member", eventType: "cash_payment_marked_sent", details: JSON.stringify({ method: payment.paymentMethod, amount: obligation.amount, transactionReferenceProvided: Boolean(normalizeOptionalText(input.transactionReference)) }), createdAt: now });
+        return { success: true, status: "sent" as const };
+      }),
+
+    confirmCashAdjustmentReceived: protectedProcedure
+      .input(z.object({ proposalId: z.number().int().positive() }))
+      .mutation(async ({ ctx, input }) => {
+        const db = await requireDb();
+        const paymentRows = await db.select({ id: tradePayments.id, payerId: tradePayments.payerId, payeeId: tradePayments.payeeId, status: tradePayments.status, paymentMethod: tradePayments.paymentMethod, amount: tradePayments.amount })
+          .from(tradePayments).where(and(eq(tradePayments.proposalId, input.proposalId), eq(tradePayments.payeeId, ctx.user.id))).limit(1);
+        const payment = paymentRows[0];
+        if (!payment) throw new TRPCError({ code: "NOT_FOUND", message: "No cash adjustment is awaiting your receipt confirmation." });
+        if (payment.status !== "sent") throw new TRPCError({ code: "CONFLICT", message: "The payer must mark the cash adjustment sent before you can confirm receipt." });
+        const now = mysqlNow();
+        await db.update(tradePayments).set({ status: "received", receivedAt: now, verifiedAt: now, verificationResult: JSON.stringify({ source: "payee_confirmed_received", externalVerification: "member_confirmed" }) }).where(eq(tradePayments.id, payment.id));
+        await db.insert(tradeActivityLog).values({ proposalId: input.proposalId, actorId: ctx.user.id, actorName: ctx.user.name ?? ctx.user.username ?? "Member", eventType: "cash_payment_received_confirmed", details: JSON.stringify({ method: payment.paymentMethod, amount: payment.amount, payerId: payment.payerId }), createdAt: now });
+        return { success: true, status: "received" as const };
+      }),
+
+    openCashAdjustmentDispute: protectedProcedure
+      .input(z.object({ proposalId: z.number().int().positive(), reason: z.string().trim().min(5).max(500) }))
+      .mutation(async ({ ctx, input }) => {
+        const db = await requireDb();
+        const paymentRows = await db.select({ id: tradePayments.id, payerId: tradePayments.payerId, payeeId: tradePayments.payeeId, status: tradePayments.status, paymentMethod: tradePayments.paymentMethod })
+          .from(tradePayments).where(eq(tradePayments.proposalId, input.proposalId)).limit(1);
+        const payment = paymentRows[0];
+        if (!payment || (payment.payerId !== ctx.user.id && payment.payeeId !== ctx.user.id)) throw new TRPCError({ code: "FORBIDDEN", message: "Only a trade participant may open a cash-adjustment dispute." });
+        const now = mysqlNow();
+        await db.update(tradePayments).set({ status: "disputed", disputeOpenedAt: now, disputeOpenedBy: ctx.user.id, disputeReason: input.reason }).where(eq(tradePayments.id, payment.id));
+        await db.insert(tradeActivityLog).values({ proposalId: input.proposalId, actorId: ctx.user.id, actorName: ctx.user.name ?? ctx.user.username ?? "Member", eventType: "cash_payment_dispute_opened", details: JSON.stringify({ method: payment.paymentMethod, reason: input.reason }), createdAt: now });
+        return { success: true, status: "disputed" as const };
+      }),
+
+    listExternalCashAdjustmentsForAdmin: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+      const db = await requireDb();
+      const [rows] = await db.execute(sql`
+        SELECT tp.id AS paymentId, tp.proposalId, tp.amount, tp.paymentMethod, tp.status, tp.paymentIdentifier, tp.transactionId, tp.sentAt, tp.receivedAt, tp.disputeOpenedAt,
+          COALESCE(NULLIF(payer_profile.displayName, ''), NULLIF(payer.name, ''), NULLIF(payer.username, ''), 'Member') AS payerName,
+          COALESCE(NULLIF(payee_profile.displayName, ''), NULLIF(payee.name, ''), NULLIF(payee.username, ''), 'Member') AS payeeName
+        FROM tradePayments tp
+        JOIN users payer ON payer.id = tp.payerId
+        JOIN users payee ON payee.id = tp.payeeId
+        LEFT JOIN userProfiles payer_profile ON payer_profile.userId = payer.id
+        LEFT JOIN userProfiles payee_profile ON payee_profile.userId = payee.id
+        ORDER BY COALESCE(tp.updatedAt, tp.createdAt) DESC
+        LIMIT 100
+      `);
+      return (rows as unknown as Array<any>).map((row) => ({ ...row, paymentIdentifier: maskExternalPaymentIdentifier(row.paymentIdentifier), transactionId: row.transactionId ? maskExternalPaymentIdentifier(row.transactionId) : null }));
+    }),
+
+    revealExternalCashIdentifierForAdmin: protectedProcedure
+      .input(z.object({ paymentId: z.number().int().positive(), confirmationPhrase: z.literal(ADMIN_REVEAL_CASH_IDENTIFIER_PHRASE) }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+        const db = await requireDb();
+        const rows = await db.select({ proposalId: tradePayments.proposalId, method: tradePayments.paymentMethod, identifier: tradePayments.paymentIdentifier })
+          .from(tradePayments).where(eq(tradePayments.id, input.paymentId)).limit(1);
+        const payment = rows[0];
+        if (!payment?.identifier || !payment.method) throw new TRPCError({ code: "NOT_FOUND", message: "A selected external payment identifier was not found." });
+        const now = mysqlNow();
+        await db.insert(tradeActivityLog).values({ proposalId: payment.proposalId, actorId: ctx.user.id, actorName: ctx.user.name ?? ctx.user.username ?? "Administrator", eventType: "cash_payment_terms_reset", details: JSON.stringify({ adminAction: "identifier_revealed", paymentId: input.paymentId, method: payment.method }), createdAt: now });
+        return { method: payment.method, identifier: payment.identifier };
       }),
 
     /**
