@@ -82,9 +82,12 @@ export default function VerifiedMerchants() {
               >
                   {/* Avatar + Name */}
                   <div className="flex items-center gap-4 mb-4">
-                    <div className="w-14 h-14 rounded-full bg-emerald-50 border-2 border-emerald-200 flex items-center justify-center overflow-hidden shrink-0">
+                    <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-full border-2 border-emerald-200 bg-emerald-50 flex items-center justify-center">
                       {merchant.avatarUrl ? (
-                        <img src={merchant.avatarUrl} alt={merchant.displayName} className="w-full h-full bg-emerald-50 object-contain" />
+                        <>
+                          <img src={merchant.avatarUrl} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full scale-125 object-cover opacity-60 blur-md" onError={(event) => { event.currentTarget.style.display = "none"; }} />
+                          <img src={merchant.avatarUrl} alt={merchant.displayName} className="relative z-10 h-full w-full object-fill" />
+                        </>
                       ) : (
                         <Store className="h-6 w-6 text-emerald-600" />
                       )}
