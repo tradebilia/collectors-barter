@@ -81,8 +81,9 @@ function TradeItemList({ items }: { items: TradeShowcaseItem[] }) {
   if (!items.length) return <p className="text-center text-xs italic text-slate-500">No public item details available.</p>;
 
   return (
-    <div className="grid w-full min-w-0 grid-cols-1 items-center gap-2">
+    <div className="mx-auto grid w-full min-w-0 grid-cols-1 justify-items-center items-center gap-2">
       {items.map((item, index) => {
+        const grade = getGradePresentation(item);
         const content = (
           <>
             <div className="h-40 w-24 shrink-0 overflow-hidden rounded bg-transparent sm:h-44 sm:w-28">
@@ -94,17 +95,16 @@ function TradeItemList({ items }: { items: TradeShowcaseItem[] }) {
             </div>
             <div className="min-w-0 max-w-full text-left">
               <p className="break-words text-sm font-bold leading-snug text-[#153d7a] sm:text-base">{item.title || "Collectible"}</p>
-              {getGradePresentation(item) ? (
-                <div className="mt-2 flex flex-wrap items-center gap-1.5" aria-label={`${getGradePresentation(item)?.company} grade ${getGradePresentation(item)?.grade}`}>
-                  <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-sm font-extrabold ring-1 ${getCategoryBadgeClass(item.category)}`}>{getGradePresentation(item)?.company}</span>
-                  <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-sm font-extrabold ring-1 ${getCategoryBadgeClass(item.category)}`}>{getGradePresentation(item)?.grade}</span>
+              {grade ? (
+                <div className="mt-2 flex flex-wrap items-center gap-1.5" aria-label={`${grade.company} grade ${grade.grade}`}>
+                  <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-sm font-extrabold ring-1 ${getCategoryBadgeClass(item.category)}`}>{grade.company} {grade.grade}</span>
                 </div>
               ) : <p className="mt-2 break-words text-sm font-semibold text-[#315ea7]">{formatCondition(item)}</p>}
               <p className="mt-1 text-base font-bold text-[#2458a6]">{formatEstimatedValue(item.estimatedValue)}</p>
             </div>
           </>
         );
-        const className = "group grid w-full min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-3 overflow-hidden rounded-md p-1 text-left transition hover:bg-white/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-600";
+        const className = "group grid w-fit max-w-full min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-3 overflow-hidden rounded-md p-1 text-left transition hover:bg-white/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-600";
         return item.id ? <Link key={`${item.id}-${index}`} href={`/listings/${item.id}`} className={className}>{content}</Link> : <div key={`${item.title}-${index}`} className={className}>{content}</div>;
       })}
     </div>
@@ -118,7 +118,7 @@ function TradeMember({ member }: { member: TradeShowcaseParty }) {
 
   return (
     <section className="flex w-full min-w-0 flex-col items-center text-left" aria-label={`Trade member ${memberName}`}>
-      <div className="flex w-full min-w-0 items-center justify-center gap-3 text-left">
+      <div className="flex w-fit max-w-full min-w-0 items-center justify-center gap-3 text-left">
         {member.avatarUrl ? (
           <img src={member.avatarUrl} alt={`${memberName} avatar`} className="h-12 w-12 shrink-0 rounded-full border-2 border-[#3974bb] bg-white object-contain p-0.5 sm:h-14 sm:w-14" loading="lazy" />
         ) : (
@@ -134,7 +134,7 @@ function TradeMember({ member }: { member: TradeShowcaseParty }) {
           </div>
         </div>
       </div>
-      <div className="mt-2 w-full space-y-1.5 text-left">
+      <div className="mt-2 w-fit max-w-full space-y-1.5 text-left">
         {member.verificationLabels?.length ? member.verificationLabels.map((verification) => (
           <span key={verification} className="flex items-center gap-1 whitespace-normal break-words text-sm font-semibold text-[#31568f] sm:text-base" title={verification}>
             <ShieldCheck className="h-4 w-4 shrink-0 text-[#3974bb]" aria-hidden="true" />

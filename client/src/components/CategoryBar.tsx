@@ -1,18 +1,29 @@
 import { Link, useRoute } from "wouter";
-import { BookOpen, Clapperboard, Coins, Gamepad2, Grid3X3, Heart, House, LucideIcon, Medal, Package, PenLine, Search, Sparkles } from "lucide-react";
+import { BookOpen, Clapperboard, Coins, Gamepad2, Grid3X3, House, LucideIcon, Medal, Package, PenLine, Search, Sparkles, Stamp } from "lucide-react";
+import type { SVGProps } from "react";
 import { tradebiliaCategories } from "@/lib/tradebilia";
 
-const categoryIcons: Record<string, LucideIcon> = {
+function MickeyEarsIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <circle cx="7.5" cy="7.5" r="4.25" />
+      <circle cx="16.5" cy="7.5" r="4.25" />
+      <circle cx="12" cy="14" r="6.25" fill="none" />
+    </svg>
+  );
+}
+
+const categoryIcons: Record<string, LucideIcon | typeof MickeyEarsIcon> = {
   comics: BookOpen,
   sports_cards: Medal,
   vintage_toys: Package,
   video_games: Gamepad2,
-  stamps: PenLine,
+  stamps: Stamp,
   coins: Coins,
   pokemon: Sparkles,
   movies: Clapperboard,
   autographs: PenLine,
-  disney_pins: Heart,
+  disney_pins: MickeyEarsIcon,
 };
 
 function CategoryIcon({ slug }: { slug: string }) {

@@ -72,8 +72,8 @@ describe("homepage Recent Trades carousel", () => {
     expect(carouselSource).toContain('<TradeMember member={exchange.left.member} />');
     expect(carouselSource).toContain("<TradeMember member={exchange.right.member} />");
     expect(carouselSource).toContain("flex w-full min-w-0 flex-col items-center text-left");
-    expect(carouselSource).toContain("flex w-full min-w-0 items-center justify-center gap-3 text-left");
-    expect(carouselSource).toContain("mt-2 w-full space-y-1.5 text-left");
+    expect(carouselSource).toContain("flex w-fit max-w-full min-w-0 items-center justify-center gap-3 text-left");
+    expect(carouselSource).toContain("mt-2 w-fit max-w-full space-y-1.5 text-left");
     expect(carouselSource).toContain("return member.displayName?.trim() || member.username?.trim() || \"Member\";");
     expect(carouselSource).toContain("ArrowLeft");
     expect(carouselSource).toContain("ArrowRight");
@@ -99,8 +99,8 @@ describe("homepage Recent Trades carousel", () => {
     expect(ticketCss).not.toContain("M1 1 L29 9 L1 17 Z");
     expect(ticketCss).not.toContain("M29 1 L1 9 L29 17 Z");
     expect(carouselSource).toContain("border-4 border-[#3974bb]");
-    expect(carouselSource).toContain("flex w-full min-w-0 items-center justify-center gap-3 text-left");
-    expect(carouselSource).toContain("mt-2 w-full space-y-1.5 text-left");
+    expect(carouselSource).toContain("flex w-fit max-w-full min-w-0 items-center justify-center gap-3 text-left");
+    expect(carouselSource).toContain("mt-2 w-fit max-w-full space-y-1.5 text-left");
     expect(carouselSource).toContain("text-base text-slate-700");
     expect(carouselSource).toContain("verificationLabels");
     expect(carouselSource).toContain("averageRating");
