@@ -72,6 +72,9 @@ describe("homepage Recent Trades carousel", () => {
     expect(carouselSource).toContain('<svg viewBox="0 0 240 220"');
     expect(carouselSource).toContain('aria-labelledby="trade-complete-title trade-complete-desc"');
     expect(carouselSource).toContain("COMPLETED");
+    expect(carouselSource).toContain('x="120" y="177"');
+    expect(carouselSource).toContain('textAnchor="middle"');
+    expect(carouselSource).not.toContain("textPath");
     expect(carouselSource).toContain('<title id="trade-complete-title">Trade complete</title>');
     expect(carouselSource).toContain('className="h-44 w-48');
     expect(carouselSource).toContain("bg-transparent");
@@ -80,10 +83,13 @@ describe("homepage Recent Trades carousel", () => {
     expect(carouselSource).not.toContain("mix-blend-multiply");
     expect(carouselSource).not.toContain("trade-complete-stamp-transparent_9ec4b748.png");
     expect(carouselSource).toContain("ticket-card");
-    expect(await readFile(path.join(root, "client/src/index.css"), "utf8")).toContain("radial-gradient");
-    expect(await readFile(path.join(root, "client/src/index.css"), "utf8")).toContain("width: 1.8rem");
-    expect(await readFile(path.join(root, "client/src/index.css"), "utf8")).toContain("#3974bb 0.5rem 0.65rem");
-    expect(await readFile(path.join(root, "client/src/index.css"), "utf8")).toContain("background-size: 100% 1.15rem");
+    const indexCss = await readFile(path.join(root, "client/src/index.css"), "utf8");
+    const ticketCss = indexCss.slice(indexCss.indexOf("  .ticket-card {"));
+    expect(ticketCss).not.toContain("radial-gradient");
+    expect(ticketCss).toContain("width: 1.8rem");
+    expect(ticketCss).toContain("M1 1 L29 9 L1 17 Z");
+    expect(ticketCss).toContain("M29 1 L1 9 L29 17 Z");
+    expect(ticketCss).toContain("background-size: 100% 1.15rem");
     expect(carouselSource).toContain("verificationLabels");
     expect(carouselSource).toContain("averageRating");
     expect(carouselSource).not.toContain('title="You gave"');

@@ -310,13 +310,13 @@
 
   .ticket-card::before {
     left: -0.1rem;
-    background-image: radial-gradient(circle at 0.92rem 0.575rem, transparent 0 0.47rem, #3974bb 0.5rem 0.65rem, transparent 0.68rem);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 18'%3E%3Cpath d='M1 1 L29 9 L1 17 Z' fill='%23f8fafc' stroke='%233974bb' stroke-width='2.4' stroke-linejoin='round'/%3E%3C/svg%3E");
     background-position: left center;
   }
 
   .ticket-card::after {
     right: -0.1rem;
-    background-image: radial-gradient(circle at 0.88rem 0.575rem, transparent 0 0.47rem, #3974bb 0.5rem 0.65rem, transparent 0.68rem);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 18'%3E%3Cpath d='M29 1 L1 9 L29 17 Z' fill='%23f8fafc' stroke='%233974bb' stroke-width='2.4' stroke-linejoin='round'/%3E%3C/svg%3E");
     background-position: right center;
   }
 }
