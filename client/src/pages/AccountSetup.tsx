@@ -904,7 +904,7 @@ export default function AccountSetup() {
                   <div className="border-t border-slate-200 pt-6 mt-6 space-y-4">
                     <div>
                       <h3 className="font-semibold text-slate-900">Direct Cash Payment Methods <span className="text-slate-400 font-normal">(optional)</span></h3>
-                      <p className="mt-1 text-sm text-slate-600">Add destinations you are comfortable using for a cash adjustment in a trade. They remain private and are shared only with an accepted cash-trade partner.</p>
+                      <p className="mt-1 text-sm text-slate-600">Add destinations you are comfortable using for a cash adjustment in a trade. Fill in at least one destination before cash can be included in a trade. They remain private and are shared only with an accepted cash-trade partner.</p>
                     </div>
                     <div className="grid gap-3 sm:grid-cols-2">
                       <div className="space-y-1"><Label htmlFor="setup-paypal">PayPal email</Label><Input id="setup-paypal" type="email" placeholder="you@example.com" value={externalPaymentForm.paypalEmail} onChange={(event) => setExternalPaymentForm((current) => ({ ...current, paypalEmail: event.target.value }))} /></div>
