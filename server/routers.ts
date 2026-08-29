@@ -87,6 +87,7 @@ import {
   suspendUser,
   unsuspendUser,
   getSuspendedUsers,
+  getCustomGradingCompany,
 } from "./db";
 import { ownsReportAttachment, serializeReportEvidence } from "./reportEvidence";
 import { getSessionCookieOptions } from "./_core/cookies";
@@ -3680,6 +3681,7 @@ export const appRouter = router({
             l.condition as requestedListingCondition,
             l.grade as requestedListingGrade,
             l.certificationCompany as requestedListingCertificationCompany,
+            l.itemDetails as requestedListingItemDetails,
             l.estimatedValue as requestedListingValue,
             (SELECT imageUrl FROM listingPhotos WHERE listingId = l.id ORDER BY sortOrder ASC LIMIT 1) as requestedListingImage,
             -- Item count and total value
@@ -3705,15 +3707,20 @@ export const appRouter = router({
         // Return every offered item for each completed exchange so public trade summaries are complete.
         const enriched = await Promise.all(trades.map(async (trade: any) => {
           const [offeredRows] = await db.execute(
-            sql`SELECT ol.id, ol.title, ol.category, ol.condition, ol.grade, ol.certificationCompany, ol.estimatedValue,
+            sql`SELECT ol.id, ol.title, ol.category, ol.condition, ol.grade, ol.certificationCompany, ol.itemDetails, ol.estimatedValue,
               (SELECT imageUrl FROM listingPhotos WHERE listingId = ol.id ORDER BY sortOrder ASC LIMIT 1) as imageUrl
             FROM listings ol
             JOIN tradeProposalItems tpi ON tpi.offeredListingId = ol.id
             WHERE tpi.proposalId = ${trade.id}`
           );
+          const offeredItems = ((offeredRows as unknown as any[]) || []).map((item: any) => ({
+            ...item,
+            customGradingCompany: getCustomGradingCompany(item.itemDetails),
+          }));
           return {
             ...trade,
-            offeredItems: (offeredRows as unknown as any[]) || [],
+            requestedListingCustomGradingCompany: getCustomGradingCompany(trade.requestedListingItemDetails),
+            offeredItems,
           };
         }));
 

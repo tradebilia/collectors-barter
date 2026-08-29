@@ -441,7 +441,7 @@ export const gradingCompanyConfigs: GradingCompanyConfig[] = [
 
   // VIDEO GAMES
   {
-    name: "WATA Games",
+    name: "WATA",
     categories: ["video_games"],
     gradeScale: "1-10 + seal grade",
     validGrades: ["0.5", "1.0", "1.5", "2.0", "2.5", "3.0", "3.5", "4.0", "4.5", "5.0", "5.5", "6.0", "6.5", "7.0", "7.5", "8.0", "8.5", "9.0", "9.5", "10.0"],
@@ -449,6 +449,16 @@ export const gradingCompanyConfigs: GradingCompanyConfig[] = [
     hasSubgrades: false,
     hasSealGrade: true,
     specialDesignations: ["Seal grades: A++, A+, A, B+, B, C"],
+  },
+  {
+    name: "PSA",
+    categories: ["video_games"],
+    gradeScale: "1-10",
+    validGrades: ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"],
+    increment: "Integer only",
+    hasSubgrades: false,
+    hasSealGrade: false,
+    specialDesignations: [],
   },
   {
     name: "CGC Video Games",

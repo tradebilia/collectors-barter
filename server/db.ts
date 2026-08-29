@@ -402,7 +402,7 @@ async function getRatingStatsMap(userIds: number[]) {
   );
 }
 
-function getCustomGradingCompany(itemDetails: unknown): string | null {
+export function getCustomGradingCompany(itemDetails: unknown): string | null {
   if (typeof itemDetails !== "string" || !itemDetails.trim()) return null;
   try {
     const parsed = JSON.parse(itemDetails) as { customGradingCompany?: unknown };
