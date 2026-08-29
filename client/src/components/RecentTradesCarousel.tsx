@@ -20,18 +20,33 @@ function formatEstimatedValue(value: TradeShowcaseItem["estimatedValue"] | Recen
     : "Value unavailable";
 }
 
-function formatConditionOrGrade(item: TradeShowcaseItem) {
+function getGradePresentation(item: TradeShowcaseItem) {
   const numericGrade = Number(item.grade);
-  if (Number.isFinite(numericGrade) && numericGrade > 0) {
-    const gradingCompany = item.certificationCompany?.trim();
-    const formattedGrade = numericGrade.toLocaleString(undefined, { maximumFractionDigits: 2 });
-    return gradingCompany ? `${gradingCompany} ${formattedGrade}` : `Grade ${formattedGrade}`;
-  }
+  if (!Number.isFinite(numericGrade) || numericGrade <= 0) return null;
+  const formattedGrade = numericGrade.toLocaleString(undefined, { maximumFractionDigits: 2 });
+  return { company: item.certificationCompany?.trim() || "Graded", grade: formattedGrade };
+}
 
+function formatCondition(item: TradeShowcaseItem) {
   const condition = item.condition?.trim();
   return condition
     ? `Condition: ${condition.replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase())}`
     : "Condition unavailable";
+}
+
+function getCategoryBadgeClass(category?: string | null) {
+  const normalized = category?.trim().toLowerCase() || "";
+  if (normalized.includes("sport")) return "bg-red-100 text-red-800 ring-red-200";
+  if (normalized.includes("comic")) return "bg-violet-100 text-violet-800 ring-violet-200";
+  if (normalized.includes("toy")) return "bg-amber-100 text-amber-900 ring-amber-200";
+  if (normalized.includes("game")) return "bg-indigo-100 text-indigo-800 ring-indigo-200";
+  if (normalized.includes("stamp")) return "bg-teal-100 text-teal-800 ring-teal-200";
+  if (normalized.includes("coin")) return "bg-yellow-100 text-yellow-900 ring-yellow-200";
+  if (normalized.includes("pokemon")) return "bg-cyan-100 text-cyan-800 ring-cyan-200";
+  if (normalized.includes("movie")) return "bg-rose-100 text-rose-800 ring-rose-200";
+  if (normalized.includes("autograph")) return "bg-purple-100 text-purple-800 ring-purple-200";
+  if (normalized.includes("disney")) return "bg-pink-100 text-pink-800 ring-pink-200";
+  return "bg-blue-100 text-blue-800 ring-blue-200";
 }
 
 function formatTradeDate(value: RecentTrade["completedAt"]) {
@@ -79,7 +94,12 @@ function TradeItemList({ items }: { items: TradeShowcaseItem[] }) {
             </div>
             <div className="min-w-0 max-w-full text-left">
               <p className="break-words text-sm font-bold leading-snug text-[#153d7a] sm:text-base">{item.title || "Collectible"}</p>
-              <p className="mt-1 break-words text-sm font-semibold text-[#315ea7]">{formatConditionOrGrade(item)}</p>
+              {getGradePresentation(item) ? (
+                <div className="mt-2 flex flex-wrap items-center gap-1.5" aria-label={`${getGradePresentation(item)?.company} grade ${getGradePresentation(item)?.grade}`}>
+                  <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-sm font-extrabold ring-1 ${getCategoryBadgeClass(item.category)}`}>{getGradePresentation(item)?.company}</span>
+                  <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-sm font-extrabold ring-1 ${getCategoryBadgeClass(item.category)}`}>{getGradePresentation(item)?.grade}</span>
+                </div>
+              ) : <p className="mt-2 break-words text-sm font-semibold text-[#315ea7]">{formatCondition(item)}</p>}
               <p className="mt-1 text-base font-bold text-[#2458a6]">{formatEstimatedValue(item.estimatedValue)}</p>
             </div>
           </>
@@ -97,26 +117,30 @@ function TradeMember({ member }: { member: TradeShowcaseParty }) {
   const initials = memberName.slice(0, 2).toUpperCase();
 
   return (
-    <section className="flex w-full min-w-0 items-center justify-center gap-3 text-center" aria-label={`Trade member ${memberName}`}>
-      {member.avatarUrl ? (
-        <img src={member.avatarUrl} alt={`${memberName} avatar`} className="h-12 w-12 shrink-0 rounded-full border-2 border-[#3974bb] bg-white object-contain p-0.5 sm:h-14 sm:w-14" loading="lazy" />
-      ) : (
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border-2 border-[#3974bb] bg-white text-base font-bold text-[#2458a6] sm:h-14 sm:w-14" aria-label={`${memberName} avatar unavailable`}>{initials || <UserRound className="h-4 w-4" aria-hidden="true" />}</div>
-      )}
-      <div className="min-w-0 max-w-[8rem] text-center">
-        <p className="whitespace-nowrap text-[0.95rem] font-bold leading-tight text-[#153d7a] sm:text-base" title={memberName}>{memberName}</p>
-        <p className="mt-1 flex items-center gap-1 text-base font-semibold text-[#2458a6] sm:text-lg">
-          <Star className="h-4 w-4 fill-[#3974bb] text-[#3974bb]" aria-hidden="true" />
-          {rating || "No rating yet"}
-        </p>
-        <div className="mt-2 space-y-1.5">
-          {member.verificationLabels?.length ? member.verificationLabels.map((verification) => (
-            <span key={verification} className="flex items-center justify-center gap-1 whitespace-normal break-words text-sm font-semibold text-[#31568f] sm:text-base" title={verification}>
-              <ShieldCheck className="h-4 w-4 shrink-0 text-[#3974bb]" aria-hidden="true" />
-              {verification}
-            </span>
-          )) : <span className="text-sm text-[#6a82a4] sm:text-base">No verifications shown</span>}
+    <section className="flex w-full min-w-0 flex-col items-center text-left" aria-label={`Trade member ${memberName}`}>
+      <div className="flex w-full min-w-0 items-center justify-center gap-3 text-left">
+        {member.avatarUrl ? (
+          <img src={member.avatarUrl} alt={`${memberName} avatar`} className="h-12 w-12 shrink-0 rounded-full border-2 border-[#3974bb] bg-white object-contain p-0.5 sm:h-14 sm:w-14" loading="lazy" />
+        ) : (
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border-2 border-[#3974bb] bg-white text-base font-bold text-[#2458a6] sm:h-14 sm:w-14" aria-label={`${memberName} avatar unavailable`}>{initials || <UserRound className="h-4 w-4" aria-hidden="true" />}</div>
+        )}
+        <div className="min-w-0 flex-1 text-left">
+          <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1">
+            <p className="min-w-0 break-words text-[0.95rem] font-bold leading-tight text-[#153d7a] sm:text-base" title={memberName}>{memberName}</p>
+            <p className="inline-flex shrink-0 items-center gap-1 text-base font-semibold text-[#2458a6] sm:text-lg">
+              <Star className="h-4 w-4 fill-[#3974bb] text-[#3974bb]" aria-hidden="true" />
+              {rating || "No rating yet"}
+            </p>
+          </div>
         </div>
+      </div>
+      <div className="mt-2 w-full space-y-1.5 text-left">
+        {member.verificationLabels?.length ? member.verificationLabels.map((verification) => (
+          <span key={verification} className="flex items-center gap-1 whitespace-normal break-words text-sm font-semibold text-[#31568f] sm:text-base" title={verification}>
+            <ShieldCheck className="h-4 w-4 shrink-0 text-[#3974bb]" aria-hidden="true" />
+            {verification}
+          </span>
+        )) : <span className="text-sm text-[#6a82a4] sm:text-base">No verifications shown</span>}
       </div>
     </section>
   );
