@@ -301,8 +301,10 @@
     position: absolute;
     top: 0;
     bottom: 0;
-    z-index: 2;
+    z-index: 3;
     width: 1rem;
+    border-top: 1px solid rgba(57, 116, 187, 0.35);
+    border-bottom: 1px solid rgba(57, 116, 187, 0.35);
     pointer-events: none;
     background-repeat: repeat-y;
     background-size: 100% 0.9rem;
@@ -310,11 +312,19 @@
 
   .ticket-card::before {
     left: -0.05rem;
-    background-image: radial-gradient(circle at 100% 50%, #f4f1ea 0 0.46rem, transparent 0.48rem);
+    border-left: 3px solid #3974bb;
+    background-image: radial-gradient(circle at 100% 50%, #f4f1ea 0 0.42rem, transparent 0.44rem), linear-gradient(#3974bb, #3974bb);
+    background-position: center, left center;
+    background-size: 100% 0.9rem, 3px 100%;
+    background-repeat: repeat-y, no-repeat;
   }
 
   .ticket-card::after {
     right: -0.05rem;
-    background-image: radial-gradient(circle at 0 50%, #f4f1ea 0 0.46rem, transparent 0.48rem);
+    border-right: 3px solid #3974bb;
+    background-image: radial-gradient(circle at 0 50%, #f4f1ea 0 0.42rem, transparent 0.44rem), linear-gradient(#3974bb, #3974bb);
+    background-position: center, right center;
+    background-size: 100% 0.9rem, 3px 100%;
+    background-repeat: repeat-y, no-repeat;
   }
 }
