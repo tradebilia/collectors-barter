@@ -45,7 +45,9 @@ describe("authenticated mobile-only responsive layout contracts", () => {
     for (const page of ["AccountSetup.tsx", "AddInventory.tsx", "PublicProfile.tsx", "ReferralRequest.tsx"]) {
       expect(read(`client/src/pages/${page}`)).toContain("lg:-ml-32");
     }
-    expect(read("client/src/pages/PublicProfile.tsx")).toContain("grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-slate-100 sm:grid-cols-4");
+    const publicProfile = read("client/src/pages/PublicProfile.tsx");
+    expect(publicProfile).toContain("grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-slate-100 sm:grid-cols-4");
+    expect(publicProfile).toContain("relative z-10 mx-auto mt-8 max-w-5xl px-4 lg:px-8");
     expect(read("client/src/pages/AccountSetup.tsx")).toContain("grid grid-cols-1 gap-3 sm:grid-cols-3");
   });
 
