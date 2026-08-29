@@ -56,8 +56,8 @@ function DirectionMarker({ side }: { side: "left" | "right" }) {
   const directionLabel = side === "left" ? "Item moves toward the right member" : "Item moves toward the left member";
 
   return (
-    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#3974bb]/60 bg-[#d7e6fb]/70 text-[#2458a6]" aria-label={directionLabel} title={directionLabel}>
-      <DirectionIcon className="h-5 w-5" aria-hidden="true" />
+    <span className="flex h-7 w-7 shrink-0 items-center justify-center text-[#3974bb]" aria-label={directionLabel} title={directionLabel}>
+      <DirectionIcon className="h-6 w-6" strokeWidth={2} aria-hidden="true" />
     </span>
   );
 }
@@ -66,25 +66,25 @@ function TradeItemList({ items }: { items: TradeShowcaseItem[] }) {
   if (!items.length) return <p className="text-center text-xs italic text-slate-500">No public item details available.</p>;
 
   return (
-    <div className="grid w-full min-w-0 grid-cols-1 items-center justify-items-center gap-2 text-center">
+    <div className="grid w-full min-w-0 grid-cols-1 items-center gap-2">
       {items.map((item, index) => {
         const content = (
           <>
-            <div className="h-44 w-32 shrink-0 overflow-hidden rounded bg-transparent sm:h-48 sm:w-36">
+            <div className="h-40 w-24 shrink-0 overflow-hidden rounded bg-transparent sm:h-44 sm:w-28">
               {item.imageUrl ? (
                 <img src={item.imageUrl} alt={item.title || "Traded collectible"} className="h-full w-full object-contain" loading="lazy" />
               ) : (
                 <div className="flex h-full w-full items-center justify-center"><Package className="h-7 w-7 text-slate-400" aria-hidden="true" /></div>
               )}
             </div>
-            <div className="min-w-0 max-w-full text-center">
-              <p className="line-clamp-3 break-words text-sm font-bold leading-snug text-[#153d7a] sm:text-base">{item.title || "Collectible"}</p>
+            <div className="min-w-0 max-w-full text-left">
+              <p className="break-words text-sm font-bold leading-snug text-[#153d7a] sm:text-base">{item.title || "Collectible"}</p>
               <p className="mt-1 break-words text-sm font-semibold text-[#315ea7]">{formatConditionOrGrade(item)}</p>
               <p className="mt-1 text-base font-bold text-[#2458a6]">{formatEstimatedValue(item.estimatedValue)}</p>
             </div>
           </>
         );
-        const className = "group grid w-full min-w-0 grid-cols-1 justify-items-center gap-2 overflow-hidden rounded-md p-1 text-center transition hover:bg-white/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-600";
+        const className = "group grid w-full min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-3 overflow-hidden rounded-md p-1 text-left transition hover:bg-white/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-600";
         return item.id ? <Link key={`${item.id}-${index}`} href={`/listings/${item.id}`} className={className}>{content}</Link> : <div key={`${item.title}-${index}`} className={className}>{content}</div>;
       })}
     </div>
@@ -97,11 +97,11 @@ function TradeMember({ member }: { member: TradeShowcaseParty }) {
   const initials = memberName.slice(0, 2).toUpperCase();
 
   return (
-    <section className="flex min-w-0 max-w-full items-center justify-center gap-2 text-left" aria-label={`Trade member ${memberName}`}>
+    <section className="flex w-full min-w-0 items-center justify-start gap-3 text-left" aria-label={`Trade member ${memberName}`}>
       {member.avatarUrl ? (
-        <img src={member.avatarUrl} alt={`${memberName} avatar`} className="h-16 w-16 shrink-0 rounded-full border-2 border-[#3974bb] bg-[#d7e6fb] object-contain p-0.5 sm:h-16 sm:w-16" loading="lazy" />
+        <img src={member.avatarUrl} alt={`${memberName} avatar`} className="h-12 w-12 shrink-0 rounded-full border-2 border-[#3974bb] bg-white object-contain p-0.5 sm:h-14 sm:w-14" loading="lazy" />
       ) : (
-        <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full border-2 border-[#3974bb] bg-[#d7e6fb] text-base font-bold text-[#2458a6]" aria-label={`${memberName} avatar unavailable`}>{initials || <UserRound className="h-4 w-4" aria-hidden="true" />}</div>
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border-2 border-[#3974bb] bg-white text-base font-bold text-[#2458a6] sm:h-14 sm:w-14" aria-label={`${memberName} avatar unavailable`}>{initials || <UserRound className="h-4 w-4" aria-hidden="true" />}</div>
       )}
       <div className="min-w-0 max-w-[8rem]">
         <p className="whitespace-nowrap text-[0.95rem] font-bold leading-tight text-[#153d7a] sm:text-base" title={memberName}>{memberName}</p>
@@ -178,8 +178,8 @@ export function RecentTradesCarousel({ trades, isLoading = false }: { trades: Re
       <h2 id="recent-trades-heading" className="text-center font-serif text-[2.45rem] font-medium tracking-[-0.035em] text-[#153d7a] sm:text-[2.8rem]">Recent Trades</h2>
 
       {isLoading ? <div className="mt-4 h-40 animate-pulse rounded-2xl bg-white/80" aria-label="Loading recent trades" /> : !trade || !exchange ? <div className="mt-4 rounded-2xl border border-dashed border-violet-200 bg-white/80 p-8 text-center text-sm text-slate-600">Completed exchanges will appear here as collectors confirm their trades.</div> : <div className="relative mt-4 px-0 sm:px-2 lg:px-3">
-        <article key={trade.id} className={`ticket-card mx-auto w-full max-w-none overflow-hidden border-2 border-[#3974bb] bg-[#d7e6fb] shadow-sm transition-opacity duration-300 motion-reduce:transition-none ${isFading ? "opacity-0" : "opacity-100"}`} aria-live="off">
-        <div className="grid gap-2 px-4 py-4 md:grid-cols-[minmax(12rem,1fr)_1px_minmax(10rem,1fr)_auto_1px_minmax(8rem,0.75fr)_1px_auto_minmax(10rem,1fr)_1px_minmax(12rem,1fr)] md:items-center md:gap-2 lg:px-6 lg:py-5">
+        <article key={trade.id} className={`ticket-card mx-auto w-full max-w-none overflow-hidden border-2 border-[#3974bb] bg-[#f8fafc] shadow-sm transition-opacity duration-300 motion-reduce:transition-none ${isFading ? "opacity-0" : "opacity-100"}`} aria-live="off">
+        <div className="grid min-w-0 gap-1 px-4 py-4 md:grid-cols-[minmax(10rem,0.95fr)_1px_minmax(12rem,1.1fr)_auto_1px_minmax(7rem,0.7fr)_1px_auto_minmax(12rem,1.1fr)_1px_minmax(10rem,0.95fr)] md:items-center md:gap-1 lg:px-4 lg:py-5">
           <TradeMember member={exchange.left.member} />
           <TicketDivider />
           <TradeItemList items={exchange.left.items} />

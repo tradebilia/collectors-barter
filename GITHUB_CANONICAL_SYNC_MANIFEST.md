@@ -474,3 +474,10 @@ Before future GitHub-to-WebDev reconciliation, create a recovery checkpoint and 
 ## Final Recent Trades readability correction
 
 The final card correction uses canonical display-name priority, aligned directional arrows, blue image surfaces, larger readable item imagery, the true-alpha high-resolution blue Trade Complete seal, and blue ticket outlines over repeated perforations. Member columns preserve full names, item details stack below their images, and the existing automatic five-second fade rotation and reduced-motion handling remain unchanged. No hero, top-bar, database, payment, provider, schedule, or secret changes were made.
+
+## 2026-08-29 Recent Trades reference cleanup follow-up
+- Removed the unrequested blue backing behind item images in both Recent Trades and Recently Added; image surfaces now inherit their intended light canvas/background.
+- Kept item titles and metadata to the right of images on desktop, rebalanced member panels, and retained simple aligned directional arrows with truthful canonical display names.
+- Refined ticket ends with repeated frayed/perforation cut-ins and a continuous blue outline over the outer edge.
+- Preserved the high-resolution true-alpha blue Trade Complete seal, five-second fade-only rotation, reduced-motion behavior, locked hero/top bar, and all marketplace data.
+- Focused homepage and movement tests passed 3/3; TypeScript, production build, dependency audit, whitespace, and desktop/mobile visual checks passed. No database, payment, provider, schedule, setting, or secret changed.

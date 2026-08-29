@@ -311,20 +311,22 @@
   }
 
   .ticket-card::before {
-    left: -0.05rem;
+    left: 0;
+    width: 0.9rem;
     border-left: 3px solid #3974bb;
-    background-image: radial-gradient(circle at 100% 50%, #f4f1ea 0 0.42rem, transparent 0.44rem), linear-gradient(#3974bb, #3974bb);
-    background-position: center, left center;
-    background-size: 100% 0.9rem, 3px 100%;
-    background-repeat: repeat-y, no-repeat;
+    background-image: radial-gradient(circle at 0 50%, #f4f1ea 0 0.38rem, transparent 0.4rem);
+    background-position: left center;
+    background-size: 100% 0.82rem;
+    background-repeat: repeat-y;
   }
 
   .ticket-card::after {
-    right: -0.05rem;
+    right: 0;
+    width: 0.9rem;
     border-right: 3px solid #3974bb;
-    background-image: radial-gradient(circle at 0 50%, #f4f1ea 0 0.42rem, transparent 0.44rem), linear-gradient(#3974bb, #3974bb);
-    background-position: center, right center;
-    background-size: 100% 0.9rem, 3px 100%;
-    background-repeat: repeat-y, no-repeat;
+    background-image: radial-gradient(circle at 100% 50%, #f4f1ea 0 0.38rem, transparent 0.4rem);
+    background-position: right center;
+    background-size: 100% 0.82rem;
+    background-repeat: repeat-y;
   }
 }
