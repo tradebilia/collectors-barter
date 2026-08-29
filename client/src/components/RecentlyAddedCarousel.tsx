@@ -65,7 +65,7 @@ export function RecentlyAddedCarousel({
             className="inline-block w-[220px] flex-shrink-0"
           >
             <Card
-              className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer h-full"
+              className="overflow-hidden rounded-xl border-4 border-[#3974bb] bg-white shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer h-full"
               onClick={() => item.href && (window.location.href = item.href)}
             >
               {item.ownerId && (

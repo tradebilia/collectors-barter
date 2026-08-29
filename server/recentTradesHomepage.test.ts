@@ -44,6 +44,7 @@ describe("homepage Recent Trades carousel", () => {
     expect(recentlyAddedSource).toContain("aspect-[0.75]");
     expect(recentlyAddedSource).toContain("bg-transparent relative group/img");
     expect(recentlyAddedSource).toContain("rounded-xl");
+    expect(recentlyAddedSource).toContain("border-4 border-[#3974bb]");
     expect(carouselSource).toContain("ROTATION_INTERVAL_MS = 5_000");
     expect(carouselSource).toContain("window.setInterval");
     expect(carouselSource).toContain("requestAnimationFrame");
