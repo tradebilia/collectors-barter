@@ -49,8 +49,8 @@ describe("homepage Recent Trades carousel", () => {
     expect(carouselSource).toContain("border-dashed");
     expect(carouselSource).toContain("TicketDivider");
     expect(carouselSource).toContain("object-contain p-0.5");
-    expect(carouselSource).toContain("h-32 w-24");
-    expect(carouselSource).toContain("sm:h-36 sm:w-28");
+    expect(carouselSource).toContain("h-40 w-28");
+    expect(carouselSource).toContain("sm:h-48 sm:w-36");
     expect(carouselSource).toContain("bg-[#f1f7ef]");
     expect(carouselSource).toContain("bg-[#e1efdc]");
     expect(carouselSource).toContain("formatEstimatedValue");
@@ -65,11 +65,13 @@ describe("homepage Recent Trades carousel", () => {
     expect(carouselSource).toContain("items-center justify-center gap-2 text-left");
     expect(carouselSource).not.toContain("<ArrowLeft");
     expect(carouselSource).not.toContain("<ArrowRight");
-    expect(carouselSource).toContain('src="/manus-storage/trade-complete-stamp-translucent_3f4e25b7.png"');
+    expect(carouselSource).toContain('src="/manus-storage/trade-complete-seal-blue-final_7bd19559.png"');
     expect(carouselSource).toContain('alt="Trade complete"');
-    expect(carouselSource).toContain('className="h-28 w-32');
+    expect(carouselSource).toContain('className="h-36 w-40');
     expect(carouselSource).not.toContain("mix-blend-multiply");
     expect(carouselSource).not.toContain("trade-complete-stamp-transparent_9ec4b748.png");
+    expect(carouselSource).toContain("ticket-card");
+    expect(await readFile(path.join(root, "client/src/index.css"), "utf8")).toContain("radial-gradient");
     expect(carouselSource).toContain("verificationLabels");
     expect(carouselSource).toContain("averageRating");
     expect(carouselSource).not.toContain('title="You gave"');
