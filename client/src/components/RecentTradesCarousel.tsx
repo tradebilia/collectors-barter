@@ -97,13 +97,13 @@ function TradeMember({ member }: { member: TradeShowcaseParty }) {
   const initials = memberName.slice(0, 2).toUpperCase();
 
   return (
-    <section className="flex w-full min-w-0 items-center justify-start gap-3 text-left" aria-label={`Trade member ${memberName}`}>
+    <section className="flex w-full min-w-0 items-center justify-center gap-3 text-center" aria-label={`Trade member ${memberName}`}>
       {member.avatarUrl ? (
         <img src={member.avatarUrl} alt={`${memberName} avatar`} className="h-12 w-12 shrink-0 rounded-full border-2 border-[#3974bb] bg-white object-contain p-0.5 sm:h-14 sm:w-14" loading="lazy" />
       ) : (
         <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border-2 border-[#3974bb] bg-white text-base font-bold text-[#2458a6] sm:h-14 sm:w-14" aria-label={`${memberName} avatar unavailable`}>{initials || <UserRound className="h-4 w-4" aria-hidden="true" />}</div>
       )}
-      <div className="min-w-0 max-w-[8rem]">
+      <div className="min-w-0 max-w-[8rem] text-center">
         <p className="whitespace-nowrap text-[0.95rem] font-bold leading-tight text-[#153d7a] sm:text-base" title={memberName}>{memberName}</p>
         <p className="mt-1 flex items-center gap-1 text-base font-semibold text-[#2458a6] sm:text-lg">
           <Star className="h-4 w-4 fill-[#3974bb] text-[#3974bb]" aria-hidden="true" />
@@ -111,7 +111,7 @@ function TradeMember({ member }: { member: TradeShowcaseParty }) {
         </p>
         <div className="mt-2 space-y-1.5">
           {member.verificationLabels?.length ? member.verificationLabels.map((verification) => (
-            <span key={verification} className="flex items-center gap-1 whitespace-normal break-words text-sm font-semibold text-[#31568f] sm:text-base" title={verification}>
+            <span key={verification} className="flex items-center justify-center gap-1 whitespace-normal break-words text-sm font-semibold text-[#31568f] sm:text-base" title={verification}>
               <ShieldCheck className="h-4 w-4 shrink-0 text-[#3974bb]" aria-hidden="true" />
               {verification}
             </span>
@@ -178,7 +178,7 @@ export function RecentTradesCarousel({ trades, isLoading = false }: { trades: Re
       <h2 id="recent-trades-heading" className="text-center font-serif text-[2.45rem] font-medium tracking-[-0.035em] text-[#153d7a] sm:text-[2.8rem]">Recent Trades</h2>
 
       {isLoading ? <div className="mt-4 h-40 animate-pulse rounded-2xl bg-white/80" aria-label="Loading recent trades" /> : !trade || !exchange ? <div className="mt-4 rounded-2xl border border-dashed border-violet-200 bg-white/80 p-8 text-center text-sm text-slate-600">Completed exchanges will appear here as collectors confirm their trades.</div> : <div className="relative mt-4 px-0 sm:px-2 lg:px-3">
-        <article key={trade.id} className={`ticket-card mx-auto w-full max-w-none overflow-hidden border-y-2 border-x-0 border-[#3974bb] bg-[#f8fafc] shadow-sm transition-opacity duration-300 motion-reduce:transition-none ${isFading ? "opacity-0" : "opacity-100"}`} aria-live="off">
+        <article key={trade.id} className={`ticket-card mx-auto w-full max-w-none overflow-hidden border-4 border-[#3974bb] bg-[#f8fafc] shadow-sm transition-opacity duration-300 motion-reduce:transition-none ${isFading ? "opacity-0" : "opacity-100"}`} aria-live="off">
         <div className="grid min-w-0 gap-1 px-4 py-4 md:grid-cols-[minmax(10rem,0.95fr)_1px_minmax(12rem,1.1fr)_auto_1px_minmax(7rem,0.7fr)_1px_auto_minmax(12rem,1.1fr)_1px_minmax(10rem,0.95fr)] md:items-center md:gap-1 lg:px-4 lg:py-5">
           <TradeMember member={exchange.left.member} />
           <TicketDivider />
@@ -186,7 +186,7 @@ export function RecentTradesCarousel({ trades, isLoading = false }: { trades: Re
           <DirectionMarker side="left" />
           <TicketDivider />
           <div className="flex items-center justify-center py-2" aria-label="Trade complete">
-            <img src="/manus-storage/trade-quality-seal-transparent_53490773.png" alt="Trade Quality seal" className="h-44 w-48 object-contain sm:h-48 sm:w-52" loading="eager" />
+            <img src="/manus-storage/trade-quality-seal-transparent_fdff2d58.png" alt="Trade Quality seal" className="h-44 w-48 object-contain sm:h-48 sm:w-52" loading="eager" />
           </div>
           <TicketDivider />
           <DirectionMarker side="right" />
@@ -194,7 +194,7 @@ export function RecentTradesCarousel({ trades, isLoading = false }: { trades: Re
           <TicketDivider />
           <TradeMember member={exchange.right.member} />
         </div>
-        <footer className="flex flex-wrap items-center justify-center gap-x-6 gap-y-1 border-t border-[#cbdaf0] bg-[#dce8f7] px-4 py-3 text-sm text-slate-700"><span className="inline-flex items-center gap-1.5"><Hash className="h-3.5 w-3.5 text-[#315ea7]" aria-hidden="true" />Trade ID: <strong className="text-slate-800">{trade.tradeReferenceNumber || "Reference unavailable"}</strong></span>{completionDate ? <span className="inline-flex items-center gap-1.5"><CalendarDays className="h-3.5 w-3.5 text-slate-500" aria-hidden="true" />{completionDate}</span> : null}<span className="inline-flex items-center gap-1.5">Total Trade Value: <strong className="text-[#2458a6]">{formatEstimatedValue(trade.totalValue)}</strong></span><span className="inline-flex items-center gap-1.5"><BadgeCheck className="h-3.5 w-3.5 text-[#315ea7]" aria-hidden="true" />Verified trade</span></footer>
+        <footer className="flex flex-wrap items-center justify-center gap-x-8 gap-y-2 border-t border-[#b5cbe5] bg-[#dce8f7] px-4 py-4 text-base text-slate-700"><span className="inline-flex items-center gap-1.5"><Hash className="h-4 w-4 text-[#315ea7]" aria-hidden="true" />Trade ID: <strong className="text-slate-800">{trade.tradeReferenceNumber || "Reference unavailable"}</strong></span>{completionDate ? <span className="inline-flex items-center gap-1.5"><CalendarDays className="h-4 w-4 text-slate-500" aria-hidden="true" />{completionDate}</span> : null}<span className="inline-flex items-center gap-1.5">Total Trade Value: <strong className="text-[#2458a6]">{formatEstimatedValue(trade.totalValue)}</strong></span><span className="inline-flex items-center gap-1.5"><BadgeCheck className="h-4 w-4 text-[#315ea7]" aria-hidden="true" />Verified trade</span></footer>
         </article>
 
       </div>}
