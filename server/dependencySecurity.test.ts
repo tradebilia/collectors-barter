@@ -14,4 +14,3 @@ describe("dependency security configuration", () => {
     expect(workspace).toContain("wouter@3.7.1: patches/wouter@3.7.1.patch");
   });
 });
-

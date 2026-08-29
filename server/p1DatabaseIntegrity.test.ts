@@ -25,4 +25,3 @@ describe("P1 database integrity protections", () => {
     expect(database).toContain('if (isDuplicateKeyError(error)) throw new Error("Username already taken")');
   });
 });
-

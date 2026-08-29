@@ -29,4 +29,3 @@ describe("public contact intake safeguards", () => {
     expect(admin).toContain("submitterEmail");
   });
 });
-

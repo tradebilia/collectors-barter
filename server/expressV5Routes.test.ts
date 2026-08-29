@@ -15,4 +15,3 @@ describe("Express v5 route compatibility", () => {
     expect(vite).not.toContain('app.use("*"');
   });
 });
-

@@ -1,7 +1,7 @@
 # Future Tradebilia Membership, Billing, and Verification Plan
 
-**Author:** Manus AI  
-**Date:** 2026-08-26  
+**Author:** Manus AI
+**Date:** 2026-08-26
 **Status:** Planning document only. No Stripe integration, database schema change, access-control enforcement, or live-site behavior change has been implemented from this document.
 
 ## 1. Executive Summary
@@ -167,7 +167,7 @@ The core business plan is complete enough to preserve for future execution. The 
 
 ## References
 
-[1]: https://docs.stripe.com/customer-management "Stripe Docs — Provide a customer portal to your customers"  
-[2]: https://docs.stripe.com/receipts "Stripe Docs — Receipts and paid invoices"  
-[3]: https://docs.stripe.com/connect "Stripe Docs — Platforms and marketplaces with Stripe Connect"  
+[1]: https://docs.stripe.com/customer-management "Stripe Docs — Provide a customer portal to your customers"
+[2]: https://docs.stripe.com/receipts "Stripe Docs — Receipts and paid invoices"
+[3]: https://docs.stripe.com/connect "Stripe Docs — Platforms and marketplaces with Stripe Connect"
 [4]: https://docs.stripe.com/tax "Stripe Docs — Stripe Tax"
