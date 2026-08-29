@@ -82,7 +82,7 @@ const TRADE_VALUE_FIELD: FieldDefinition = {
   label: 'Trade Value',
   inputType: 'currency',
   requirement: 'required',
-  validation: { min: 0 },
+  validation: { min: 1 },
   gridColumn: 'half',
 };
 

@@ -1,5 +1,5 @@
 import { resolveTradebiliaListingImage } from "@/lib/listingImages";
-import { getTradebiliaCategoryLabel, getAvatarInitials } from "@/lib/tradebilia";
+import { getTradebiliaCategoryLabel, getAvatarInitials, formatItemValue } from "@/lib/tradebilia";
 import { trpc } from "@/lib/trpc";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -298,7 +298,7 @@ export function AllHighestTradeValuesRankings() {
                           <p className="text-sm text-gray-600">{getTradebiliaCategoryLabel(item.category)}</p>
                         </div>
                         <div className="text-right">
-                          <div className="text-2xl font-bold text-primary">${item.estimatedValue}</div>
+                          <div className="text-2xl font-bold text-primary">{formatItemValue(item.estimatedValue)}</div>
                           <div className="text-xs text-gray-500">trade value</div>
                         </div>
                       </div>

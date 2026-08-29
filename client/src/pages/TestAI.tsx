@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { trpc } from '@/lib/trpc';
+import { formatItemValue, formatWholeDollar } from '@/lib/tradebilia';
 import { useAuth } from '@/_core/hooks/useAuth';
 import { useLocation } from 'wouter';
 import { Spinner } from '@/components/ui/spinner';
@@ -356,7 +357,7 @@ function ItemPanel({ side, item, onItemChange, onSourceChange, inventory, invent
             <option value="">— Select an item —</option>
             {inventory.map((i: any) => (
               <option key={i.id} value={i.id}>
-                {i.title}{i.grade ? ` (Grade ${i.grade})` : ''}{i.estimatedValue ? ` — $${Number(i.estimatedValue).toLocaleString()}` : ''}
+                {i.title}{i.grade ? ` (Grade ${i.grade})` : ''}{i.estimatedValue != null ? ` — ${formatItemValue(i.estimatedValue)}` : ''}
               </option>
             ))}
           </select>
@@ -390,7 +391,7 @@ function ItemPanel({ side, item, onItemChange, onSourceChange, inventory, invent
               {item.grade && <Badge variant="outline" className="text-[10px]">Grade {item.grade}</Badge>}
               {item.certificationCompany && <Badge variant="outline" className="text-[10px]">{item.certificationCompany}</Badge>}
             </div>
-            {item.estimatedValue && <p className="text-green-400 text-sm font-semibold mt-1">${Number(item.estimatedValue).toLocaleString()}</p>}
+            {item.estimatedValue != null && <p className="text-green-400 text-sm font-semibold mt-1">{formatItemValue(item.estimatedValue)}</p>}
           </div>
           <button onClick={() => { onItemChange(null); setSelectedInventoryId(null); setCertId(''); }} className="text-gray-500 hover:text-red-400 text-lg leading-none flex-shrink-0">×</button>
         </div>
@@ -418,9 +419,9 @@ function SoldCompsSection({ item, side }: { item: SelectedItem; side: 'left' | '
       {data?.metrics && (
         <div className="grid grid-cols-4 gap-2 text-[11px]">
           {[
-            { label: 'Avg Sold', value: `$${data.metrics.avg.toLocaleString()}` },
-            { label: 'Median', value: `$${data.metrics.median.toLocaleString()}` },
-            { label: 'Range', value: `$${data.metrics.min.toLocaleString()}–$${data.metrics.max.toLocaleString()}` },
+            { label: 'Avg Sold', value: formatWholeDollar(data.metrics.avg) },
+            { label: 'Median', value: formatWholeDollar(data.metrics.median) },
+            { label: 'Range', value: `${formatWholeDollar(data.metrics.min)}–${formatWholeDollar(data.metrics.max)}` },
             { label: 'Confidence', value: data.metrics.confidence.toUpperCase() },
           ].map(m => (
             <div key={m.label} className="bg-gray-900/40 rounded p-1.5 text-center">
@@ -442,7 +443,7 @@ function SoldCompsSection({ item, side }: { item: SelectedItem; side: 'left' | '
                   <p className="text-[10px] text-gray-500">{l.condition} · {l.endedAt ? `Sold ${l.endedAt}` : ''}</p>
                 </div>
               </div>
-              <p className="text-green-400 font-semibold text-sm flex-shrink-0">${l.price.toLocaleString()}</p>
+              <p className="text-green-400 font-semibold text-sm flex-shrink-0">{formatWholeDollar(l.price)}</p>
             </div>
           ))}
         </div>
@@ -471,9 +472,9 @@ function EbayActiveSection({ item, side }: { item: SelectedItem; side: 'left' | 
       {data?.metrics && (
         <div className="grid grid-cols-4 gap-2 text-[11px]">
           {[
-            { label: 'Avg', value: `$${data.metrics.avg.toLocaleString()}` },
-            { label: 'Median', value: `$${data.metrics.median.toLocaleString()}` },
-            { label: 'Range', value: `$${data.metrics.min.toLocaleString()}–$${data.metrics.max.toLocaleString()}` },
+            { label: 'Avg', value: formatWholeDollar(data.metrics.avg) },
+            { label: 'Median', value: formatWholeDollar(data.metrics.median) },
+            { label: 'Range', value: `${formatWholeDollar(data.metrics.min)}–${formatWholeDollar(data.metrics.max)}` },
             { label: 'Confidence', value: data.metrics.confidence.toUpperCase() },
           ].map(m => (
             <div key={m.label} className="bg-gray-900/40 rounded p-1.5 text-center">
@@ -495,7 +496,7 @@ function EbayActiveSection({ item, side }: { item: SelectedItem; side: 'left' | 
                   <p className="text-[10px] text-gray-500">{l.condition} · {l.seller}</p>
                 </div>
               </div>
-              <p className="text-green-400 font-semibold text-sm flex-shrink-0">${l.price.toLocaleString()}</p>
+              <p className="text-green-400 font-semibold text-sm flex-shrink-0">{formatWholeDollar(l.price)}</p>
             </div>
           ))}
         </div>
@@ -632,7 +633,7 @@ function PSASection({ item, side }: { item: SelectedItem; side: 'left' | 'right'
                     <a href={sale.url} target="_blank" rel="noopener noreferrer" className="text-[10px] text-blue-400 hover:underline truncate block">{sale.title || 'View listing'}</a>
                     <p className="text-[9px] text-gray-500">{sale.dateSold}</p>
                   </div>
-                  <p className="text-green-400 font-semibold text-[11px] flex-shrink-0">${sale.price.toLocaleString()}</p>
+                  <p className="text-green-400 font-semibold text-[11px] flex-shrink-0">{formatWholeDollar(sale.price)}</p>
                 </div>
               ))}
             </div>
@@ -855,7 +856,7 @@ function PcgsSection({ item, side }: { item: SelectedItem; side: 'left' | 'right
             <div><p className="text-[9px] uppercase text-gray-500">Grade</p><p className="font-bold text-cyan-300">{data.data.grade || 'N/A'}</p></div>
             <div><p className="text-[9px] uppercase text-gray-500">Population</p><p className="font-semibold text-white">{data.data.population?.toLocaleString() ?? 'N/A'}</p></div>
             <div><p className="text-[9px] uppercase text-gray-500">Higher</p><p className="font-semibold text-white">{data.data.popHigher?.toLocaleString() ?? 'N/A'}</p></div>
-            <div><p className="text-[9px] uppercase text-gray-500">Guide Value</p><p className="font-semibold text-green-400">{data.data.priceGuideValue != null ? `$${Number(data.data.priceGuideValue).toLocaleString()}` : 'N/A'}</p></div>
+            <div><p className="text-[9px] uppercase text-gray-500">Guide Value</p><p className="font-semibold text-green-400">{data.data.priceGuideValue != null ? formatWholeDollar(data.data.priceGuideValue) : 'N/A'}</p></div>
           </div>
           <div className="grid grid-cols-2 gap-2 text-[10px]">
             <div><p className="text-[9px] uppercase text-gray-500">PCGS No.</p><p className="font-semibold text-white">{data.data.pcgsNo || 'N/A'}</p></div>
@@ -907,7 +908,7 @@ function PriceChartingSection({ item, side }: { item: SelectedItem; side: 'left'
             {Object.entries(prices).slice(0, 6).map(([grade, value]) => (
               <div key={grade} className="rounded bg-gray-800/60 p-1.5 text-center">
                 <p className="text-[8px] uppercase text-gray-500">{grade.replace(/_/g, ' ')}</p>
-                <p className="font-semibold text-green-400">{typeof value === 'number' ? `$${value.toLocaleString()}` : String(value ?? 'N/A')}</p>
+                <p className="font-semibold text-green-400">{typeof value === 'number' ? formatWholeDollar(value) : String(value ?? 'N/A')}</p>
               </div>
             ))}
           </div>
@@ -930,7 +931,7 @@ function OneThirtyPointSection({ item, side }: { item: SelectedItem; side: 'left
   const SaleRows = ({ sales }: { sales: any[] }) => <div className="max-h-48 space-y-1 overflow-y-auto">{sales.map((sale: any) => (
     <div key={sale.id || `${sale.title}-${sale.date}`} className="flex items-center justify-between gap-2 border-b border-gray-700/20 py-1 last:border-0">
       <div className="min-w-0"><a href={sale.url || undefined} target="_blank" rel="noopener noreferrer" className="block truncate text-[10px] text-blue-400 hover:underline">{sale.title}</a><p className="text-[9px] text-gray-500">{[sale.marketplace, sale.saleType, sale.date || 'Date unavailable'].filter(Boolean).join(' · ')}</p></div>
-      <p className="shrink-0 text-[11px] font-semibold text-green-400">{sale.price != null ? `${sale.currency || 'USD'} ${Number(sale.price).toLocaleString()}` : 'Price N/A'}</p>
+      <p className="shrink-0 text-[11px] font-semibold text-green-400">{sale.price != null ? `${sale.currency || 'USD'} ${formatWholeDollar(sale.price)}` : 'Price N/A'}</p>
     </div>
   ))}</div>;
 
@@ -1069,7 +1070,7 @@ function PwccSection({ item, side }: { item: SelectedItem; side: 'left' | 'right
     <div className="flex items-center justify-between"><p className={`text-[11px] font-bold uppercase ${accentColor}`}>🧩 PWCC / Fanatics Collect</p>{isLoading && <Spinner className="w-3 h-3" />}</div>
     <p className="text-gray-500 text-[10px]">Read-only Parse.bot sold listings. No current average or valuation is calculated; verify exact card, grade, and certification before comparing.</p>
     {data?.status === 'error' && <p className="rounded border border-red-700/30 bg-red-900/20 p-2 text-[10px] text-red-400">{data.message}</p>}
-    {data?.status === 'success' && <div className="space-y-3">{buckets.map(([label, bucket, color]) => bucket.length > 0 && <div key={label}><p className={`mb-1 text-[10px] font-semibold uppercase ${color}`}>{label}</p>{bucket.map((sale: any) => <div key={sale.id || sale.title} className="flex items-center justify-between gap-2 border-b border-gray-700/20 py-1 last:border-0"><div className="min-w-0"><a href={sale.url || undefined} target="_blank" rel="noopener noreferrer" className="block truncate text-[10px] text-blue-400 hover:underline">{sale.title}</a><p className="text-[9px] text-gray-500">{[sale.marketplace, sale.grade ? `${sale.certificationCompany || ''} ${sale.grade}`.trim() : null, sale.date || 'Date unavailable'].filter(Boolean).join(' · ')}</p></div><p className="shrink-0 text-[11px] font-semibold text-green-400">{sale.price != null ? `USD ${Number(sale.price).toLocaleString()}` : 'Price N/A'}</p></div>)}</div>)}{!sales.length && <p className="text-[10px] text-gray-500">No sold PWCC / Fanatics Collect listings were returned for this query.</p>}</div>}
+    {data?.status === 'success' && <div className="space-y-3">{buckets.map(([label, bucket, color]) => bucket.length > 0 && <div key={label}><p className={`mb-1 text-[10px] font-semibold uppercase ${color}`}>{label}</p>{bucket.map((sale: any) => <div key={sale.id || sale.title} className="flex items-center justify-between gap-2 border-b border-gray-700/20 py-1 last:border-0"><div className="min-w-0"><a href={sale.url || undefined} target="_blank" rel="noopener noreferrer" className="block truncate text-[10px] text-blue-400 hover:underline">{sale.title}</a><p className="text-[9px] text-gray-500">{[sale.marketplace, sale.grade ? `${sale.certificationCompany || ''} ${sale.grade}`.trim() : null, sale.date || 'Date unavailable'].filter(Boolean).join(' · ')}</p></div><p className="shrink-0 text-[11px] font-semibold text-green-400">{sale.price != null ? `${sale.currency || 'USD'} ${formatWholeDollar(sale.price)}` : 'Price N/A'}</p></div>)}</div>)}{!sales.length && <p className="text-[10px] text-gray-500">No sold PWCC / Fanatics Collect listings were returned for this query.</p>}</div>}
   </div>;
 }
 

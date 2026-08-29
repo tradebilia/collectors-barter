@@ -3,6 +3,7 @@ import { ArrowLeft, ArrowRight, BadgeCheck, CalendarDays, Hash, Package, ShieldC
 import { Link } from "wouter";
 import { buildTradeShowcaseExchange, type TradeShowcaseItem, type TradeShowcaseParty, type TradeShowcaseTrade } from "@/lib/tradeShowcaseMovements";
 import { getDisplayedGradingCompany } from "@/lib/gradingDisplay";
+import { formatItemValue } from "@/lib/tradebilia";
 
 type RecentTrade = TradeShowcaseTrade & {
   id: number;
@@ -15,10 +16,7 @@ const FADE_DURATION_MS = 350;
 const ROTATION_INTERVAL_MS = 5_000;
 
 function formatEstimatedValue(value: TradeShowcaseItem["estimatedValue"] | RecentTrade["totalValue"]) {
-  const numberValue = Number(value);
-  return Number.isFinite(numberValue) && numberValue > 0
-    ? `$${numberValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}`
-    : "Value unavailable";
+  return formatItemValue(value, "Value unavailable");
 }
 
 function getGradePresentation(item: TradeShowcaseItem) {

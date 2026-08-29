@@ -137,8 +137,8 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({
               value={value || ''}
               onChange={(e) => onChange(e.target.value ? Number(e.target.value) : '')}
               disabled={disabled}
-              min={field.validation?.min}
-              placeholder="0.00"
+              min={field.validation?.min ?? 1}
+              placeholder="1.00"
               className={`pl-7 bg-white text-black ${hasError ? 'border-red-500' : ''} w-full`}
             />
           </div>

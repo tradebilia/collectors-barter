@@ -16,6 +16,7 @@ import { VideoChatPanel } from "@/components/VideoChatPanel";
 import { getNegotiationTurnState } from "@/lib/tradeNegotiationTurn";
 import { deriveShippingDeadline, downloadTradeReceipt } from "@/lib/tradeReceipt";
 import { buildUspsTrackingUrl } from "@shared/uspsTrackingLink";
+import { formatItemValue, formatWholeDollar } from "@/lib/tradebilia";
 
 type TradeStage = 'proposed' | 'negotiating' | 'accepted' | 'shipping' | 'shipped' | 'completed' | 'disputed';
 
@@ -784,7 +785,7 @@ export default function WarRoom() {
                         </div>
                       ))}
                       {myCash > 0 && (
-                        <p className="text-green-400 text-sm font-bold pl-2">+ ${myCash.toLocaleString()} Cash</p>
+                        <p className="text-green-400 text-sm font-bold pl-2">+ {formatWholeDollar(myCash)} Cash</p>
                       )}
                     </div>
                     {/* Exchange Arrow */}
@@ -813,7 +814,7 @@ export default function WarRoom() {
                         </div>
                       ))}
                       {theirCash > 0 && (
-                        <p className="text-green-400 text-sm font-bold pl-2">+ ${theirCash.toLocaleString()} Cash</p>
+                        <p className="text-green-400 text-sm font-bold pl-2">+ {formatWholeDollar(theirCash)} Cash</p>
                       )}
                     </div>
                   </div>
@@ -1304,7 +1305,7 @@ export default function WarRoom() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-white text-2xl font-black tracking-tight leading-none">${myTotalValue.toLocaleString()}</p>
+                      <p className="text-white text-2xl font-black tracking-tight leading-none">{formatWholeDollar(myTotalValue)}</p>
                       <p className="text-blue-400/60 text-[10px] font-bold uppercase tracking-widest mt-1">Total Value</p>
                     </div>
                   </div>
@@ -1329,7 +1330,7 @@ export default function WarRoom() {
                             <div className={`w-full ${getImgHeight(myItems.length)} bg-gray-800 rounded mb-2 flex items-center justify-center text-gray-600 text-xs`}>No Image</div>
                           )}
                           <p className="text-white text-[11px] font-medium line-clamp-2 leading-tight">{item.title}</p>
-                          <p className="text-blue-400 text-sm font-bold mt-1">${parseFloat(item.estimatedValue || '0').toLocaleString()}</p>
+                          <p className="text-blue-400 text-sm font-bold mt-1">{formatItemValue(item.estimatedValue)}</p>
                           {!isLocked && (currentStage === 'proposed' || currentStage === 'negotiating') && (
                             <button
                               onClick={() => handleRemoveItemFromTrade(item.id)}
@@ -1348,7 +1349,7 @@ export default function WarRoom() {
                       <div className="flex items-center gap-2">
                         <span className="text-green-400 text-lg">💵</span>
                         <div>
-                          <p className="text-green-400 text-xs font-bold">+ ${myCash.toLocaleString()} Cash</p>
+                          <p className="text-green-400 text-xs font-bold">+ {formatWholeDollar(myCash)} Cash</p>
                           <p className="text-gray-500 text-[10px]">Added to sweeten the deal</p>
                         </div>
                       </div>
@@ -1453,11 +1454,11 @@ export default function WarRoom() {
                         <div className="flex justify-between text-xs border-t border-gray-800 pt-3">
                           <div className="text-left">
                             <p className="text-gray-500 text-[10px] mb-0.5">You Give</p>
-                            <p className="text-blue-400 font-bold">${myTotalValue.toLocaleString()}</p>
+                            <p className="text-blue-400 font-bold">{formatWholeDollar(myTotalValue)}</p>
                           </div>
                           <div className="text-right">
                             <p className="text-gray-500 text-[10px] mb-0.5">You Receive</p>
-                            <p className="text-blue-400 font-bold">${theirTotalValue.toLocaleString()}</p>
+                            <p className="text-blue-400 font-bold">{formatWholeDollar(theirTotalValue)}</p>
                           </div>
                         </div>
                       </>
@@ -1600,15 +1601,15 @@ export default function WarRoom() {
                               <div className="grid grid-cols-3 gap-2 text-[11px]">
                                 <div>
                                   <p className="text-gray-500 uppercase text-[9px] mb-1">Your Total</p>
-                                  <p className="text-cyan-300 font-semibold">${myTotal.toLocaleString('en-US', {maximumFractionDigits: 0})}</p>
+                                  <p className="text-cyan-300 font-semibold">{formatWholeDollar(myTotal)}</p>
                                 </div>
                                 <div>
                                   <p className="text-gray-500 uppercase text-[9px] mb-1">Their Total</p>
-                                  <p className="text-amber-300 font-semibold">${theirTotal.toLocaleString('en-US', {maximumFractionDigits: 0})}</p>
+                                  <p className="text-amber-300 font-semibold">{formatWholeDollar(theirTotal)}</p>
                                 </div>
                                 <div>
                                   <p className="text-gray-500 uppercase text-[9px] mb-1">Gap</p>
-                                  <p className={gap > 0 ? 'text-green-300 font-semibold' : gap < 0 ? 'text-red-300 font-semibold' : 'text-blue-300 font-semibold'}>${gap.toLocaleString('en-US', {maximumFractionDigits: 0})}</p>
+                                  <p className={gap > 0 ? 'text-green-300 font-semibold' : gap < 0 ? 'text-red-300 font-semibold' : 'text-blue-300 font-semibold'}>{formatWholeDollar(gap)}</p>
                                 </div>
                               </div>
                             </div>
@@ -1769,7 +1770,7 @@ export default function WarRoom() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-white text-2xl font-black tracking-tight leading-none">${theirTotalValue.toLocaleString()}</p>
+                      <p className="text-white text-2xl font-black tracking-tight leading-none">{formatWholeDollar(theirTotalValue)}</p>
                       <p className="text-blue-400/60 text-[10px] font-bold uppercase tracking-widest mt-1">Total Value</p>
                     </div>
                   </div>
@@ -1794,7 +1795,7 @@ export default function WarRoom() {
                             <div className={`w-full ${getImgHeight(theirItems.length)} bg-gray-800 rounded mb-2 flex items-center justify-center text-gray-600 text-xs`}>No Image</div>
                           )}
                           <p className="text-white text-[11px] font-medium line-clamp-2 leading-tight">{item.title}</p>
-                          <p className="text-blue-400 text-sm font-bold mt-1">${parseFloat(item.estimatedValue || '0').toLocaleString()}</p>
+                          <p className="text-blue-400 text-sm font-bold mt-1">{formatItemValue(item.estimatedValue)}</p>
                           {!isLocked && (currentStage === 'proposed' || currentStage === 'negotiating') && (
                             <button
                               onClick={() => handleRemoveItemFromTrade(item.id)}
@@ -1814,7 +1815,7 @@ export default function WarRoom() {
                       <div className="flex items-center gap-2">
                         <span className="text-green-400 text-lg">💵</span>
                         <div>
-                          <p className="text-green-400 text-xs font-bold">+ ${theirCash.toLocaleString()} Cash</p>
+                          <p className="text-green-400 text-xs font-bold">+ {formatWholeDollar(theirCash)} Cash</p>
                           <p className="text-gray-500 text-[10px]">Added to sweeten the deal</p>
                         </div>
                       </div>
@@ -2070,8 +2071,8 @@ export default function WarRoom() {
                 return <div className="mb-3 flex w-full flex-col gap-2">
                   <div className="flex items-start gap-2 rounded-lg border border-amber-600/50 bg-amber-900/30 px-4 py-2.5"><span className="mt-0.5 text-base text-amber-400">⚠️</span><p className="text-xs leading-relaxed text-amber-200"><strong>Tradebilia does not process payments.</strong> PayPal, Venmo, Cash App, and Zelle transfers are made directly between members. Tradebilia does not hold, insure, refund, or guarantee direct payments.</p></div>
                   <div className={`rounded-xl border p-4 shadow-xl ${paymentStatus === 'received' ? 'border-green-500/50 bg-[#16213e]' : paymentStatus === 'disputed' ? 'border-red-500/60 bg-[#241b2a]' : 'border-blue-500/40 bg-[#16213e]'}`}>
-                    <div className="mb-3 flex items-center gap-2"><span className="text-lg">💵</span><h3 className="text-sm font-bold text-white">{iAmPayer ? `Send $${Number(cashAmount).toLocaleString()} to ${theirDisplayName}` : `Receive $${Number(cashAmount).toLocaleString()} from ${theirDisplayName}`}</h3><span className="ml-auto rounded-full border border-slate-600 bg-slate-950/40 px-2 py-0.5 text-[11px] font-medium text-slate-200">{statusLabel}</span></div>
-                    {iAmPayee && <div className="space-y-3"><p className="text-xs text-slate-300">Choose the private method your partner may use for this trade. Your selected destination is locked once the payer marks it sent.</p>{context?.availableMethods?.length ? <div className="flex flex-wrap gap-2">{context.availableMethods.map((method: any) => <button key={method.method} onClick={() => { setSelectedCashMethod(method.method); selectCashAdjustmentMethodMutation.mutate({ proposalId, method: method.method }); }} disabled={paymentStatus === 'sent' || paymentStatus === 'received' || paymentStatus === 'disputed' || selectCashAdjustmentMethodMutation.isPending} className={`rounded-lg border px-3 py-2 text-left text-xs transition disabled:opacity-50 ${payment?.paymentMethod === method.method ? 'border-blue-400 bg-blue-500/20 text-white' : 'border-slate-600 bg-slate-950/40 text-slate-200 hover:border-blue-400'}`}><span className="block font-bold">{method.label}</span><span className="block text-slate-400">{method.identifier}</span></button>)}</div> : <p className="rounded-lg border border-red-600/40 bg-red-900/20 px-3 py-2 text-xs text-red-200">Add at least one payment destination in Account Settings → Integrations before selecting a method for this trade.</p>}{paymentStatus === 'sent' && <button onClick={() => confirmCashAdjustmentReceivedMutation.mutate({ proposalId })} disabled={confirmCashAdjustmentReceivedMutation.isPending} className="rounded-lg bg-green-600 px-3 py-2 text-xs font-bold text-white hover:bg-green-700 disabled:opacity-50">Confirm receipt of $${Number(cashAmount).toLocaleString()}</button>}{paymentStatus === 'received' && <p className="text-xs font-medium text-green-300">✓ You confirmed receipt. The cash adjustment is member-confirmed, not provider-verified.</p>}</div>}
+                    <div className="mb-3 flex items-center gap-2"><span className="text-lg">💵</span><h3 className="text-sm font-bold text-white">{iAmPayer ? `Send ${formatWholeDollar(cashAmount)} to ${theirDisplayName}` : `Receive ${formatWholeDollar(cashAmount)} from ${theirDisplayName}`}</h3><span className="ml-auto rounded-full border border-slate-600 bg-slate-950/40 px-2 py-0.5 text-[11px] font-medium text-slate-200">{statusLabel}</span></div>
+                    {iAmPayee && <div className="space-y-3"><p className="text-xs text-slate-300">Choose the private method your partner may use for this trade. Your selected destination is locked once the payer marks it sent.</p>{context?.availableMethods?.length ? <div className="flex flex-wrap gap-2">{context.availableMethods.map((method: any) => <button key={method.method} onClick={() => { setSelectedCashMethod(method.method); selectCashAdjustmentMethodMutation.mutate({ proposalId, method: method.method }); }} disabled={paymentStatus === 'sent' || paymentStatus === 'received' || paymentStatus === 'disputed' || selectCashAdjustmentMethodMutation.isPending} className={`rounded-lg border px-3 py-2 text-left text-xs transition disabled:opacity-50 ${payment?.paymentMethod === method.method ? 'border-blue-400 bg-blue-500/20 text-white' : 'border-slate-600 bg-slate-950/40 text-slate-200 hover:border-blue-400'}`}><span className="block font-bold">{method.label}</span><span className="block text-slate-400">{method.identifier}</span></button>)}</div> : <p className="rounded-lg border border-red-600/40 bg-red-900/20 px-3 py-2 text-xs text-red-200">Add at least one payment destination in Account Settings → Integrations before selecting a method for this trade.</p>}{paymentStatus === 'sent' && <button onClick={() => confirmCashAdjustmentReceivedMutation.mutate({ proposalId })} disabled={confirmCashAdjustmentReceivedMutation.isPending} className="rounded-lg bg-green-600 px-3 py-2 text-xs font-bold text-white hover:bg-green-700 disabled:opacity-50">Confirm receipt of {formatWholeDollar(cashAmount)}</button>}{paymentStatus === 'received' && <p className="text-xs font-medium text-green-300">✓ You confirmed receipt. The cash adjustment is member-confirmed, not provider-verified.</p>}</div>}
                     {iAmPayer && <div className="space-y-3">{payment?.paymentMethod && payment?.paymentIdentifier ? <><div className="flex flex-wrap items-center gap-2 rounded-lg border border-slate-600 bg-slate-950/40 px-3 py-2"><span className="text-xs font-bold text-blue-300">{String(payment.paymentMethod).replace('_', ' ').replace(/\b\w/g, (letter: string) => letter.toUpperCase())}</span><span className="text-xs text-slate-300">Send to:</span><code className="text-xs font-bold text-white">{payment.paymentIdentifier}</code><button onClick={() => { void navigator.clipboard?.writeText(payment.paymentIdentifier); toast.success('Payment destination copied.'); }} className="ml-auto text-xs font-semibold text-blue-300 hover:text-blue-200">Copy</button>{providerUrl && <a href={providerUrl} target="_blank" rel="noreferrer" className="text-xs font-semibold text-blue-300 hover:text-blue-200">Open provider</a>}</div>{paymentStatus === 'method_selected' && <div className="flex flex-wrap gap-2"><input type="text" placeholder="Optional payment reference" value={transactionIdInput} onChange={(event) => setTransactionIdInput(event.target.value)} className="min-w-[13rem] flex-1 rounded-lg border border-gray-600 bg-[#0f0f1a] px-3 py-2 text-xs text-white focus:border-blue-500 focus:outline-none" /><button onClick={() => markCashAdjustmentSentMutation.mutate({ proposalId, transactionReference: transactionIdInput.trim() || undefined })} disabled={markCashAdjustmentSentMutation.isPending} className="rounded-lg bg-blue-600 px-3 py-2 text-xs font-bold text-white hover:bg-blue-700 disabled:opacity-50">I sent it</button></div>}{paymentStatus === 'sent' && <p className="text-xs text-amber-200">Waiting for {theirDisplayName} to confirm receipt.</p>}{paymentStatus === 'received' && <p className="text-xs font-medium text-green-300">✓ {theirDisplayName} confirmed receipt. This is a member confirmation, not provider verification.</p>}</> : <p className="rounded-lg border border-slate-600 bg-slate-950/40 px-3 py-2 text-xs text-slate-300">Waiting for {theirDisplayName} to select a private payment method for this trade.</p>}</div>}
                     {payment?.paymentMethod && paymentStatus !== 'received' && paymentStatus !== 'disputed' && <div className="mt-3 border-t border-slate-700 pt-3"><div className="flex flex-wrap gap-2"><input value={cashDisputeReason} onChange={(event) => setCashDisputeReason(event.target.value)} placeholder="Describe a payment issue for admin review" className="min-w-[13rem] flex-1 rounded-lg border border-slate-600 bg-slate-950/40 px-3 py-2 text-xs text-white" /><button onClick={() => openCashAdjustmentDisputeMutation.mutate({ proposalId, reason: cashDisputeReason.trim() })} disabled={cashDisputeReason.trim().length < 5 || openCashAdjustmentDisputeMutation.isPending} className="rounded-lg border border-red-500/60 px-3 py-2 text-xs font-bold text-red-200 hover:bg-red-900/30 disabled:opacity-50">Open dispute</button></div></div>}
                     {paymentStatus === 'disputed' && <p className="mt-2 text-xs text-red-200">A cash-adjustment dispute is open for administrator review. Do not continue shipping until it is resolved.</p>}
@@ -2378,7 +2379,7 @@ export default function WarRoom() {
                           {/* Title */}
                           <p className="text-white text-xs font-semibold line-clamp-2 leading-tight mb-1">{item.title}</p>
                           {/* Value */}
-                          <p className="text-blue-400 text-sm font-bold mt-auto">${parseFloat(item.estimatedValue || '0').toLocaleString()}</p>
+                          <p className="text-blue-400 text-sm font-bold mt-auto">{formatItemValue(item.estimatedValue)}</p>
                         </div>
                       );
                     })}
@@ -2606,7 +2607,7 @@ export default function WarRoom() {
                             </p>
                           )}
                           {/* Value */}
-                          <p className="text-blue-400 text-sm font-bold mt-auto">${parseFloat(item.estimatedValue || '0').toLocaleString()}</p>
+                          <p className="text-blue-400 text-sm font-bold mt-auto">{formatItemValue(item.estimatedValue)}</p>
                         </div>
                       );
                     })}
@@ -2717,7 +2718,7 @@ export default function WarRoom() {
                   else setCashReceive(String(amount));
                   setShowCashModal(null);
                   setCashInput('');
-                  toast.success(`$${amount.toLocaleString()} cash added to the trade.`);
+                  toast.success(`${formatWholeDollar(amount)} cash added to the trade.`);
                 }}
                 className="flex-1 px-4 py-2.5 bg-green-600 text-white rounded-lg text-sm font-bold hover:bg-green-700 transition"
               >Confirm</button>

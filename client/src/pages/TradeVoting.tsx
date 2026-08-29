@@ -14,6 +14,7 @@ import { trpc } from "@/lib/trpc";
 import { TopBar } from "@/components/TopBar";
 import { CategoryBar } from "@/components/CategoryBar";
 import { toast } from "sonner";
+import { formatItemValue, formatWholeDollar } from "@/lib/tradebilia";
 import { useAuth } from "@/_core/hooks/useAuth";
 
 export default function TradeVoting() {
@@ -121,7 +122,7 @@ export default function TradeVoting() {
                         results.tradeDetails.traderA.items.map((item: any, i: number) => (
                           <div key={i} className="bg-[#0a0a2a] rounded p-2 flex items-center justify-between">
                             <span className="text-white text-sm truncate">{item.title}</span>
-                            <span className="text-green-400 text-xs font-medium">${parseFloat(item.value || '0').toLocaleString()}</span>
+                            <span className="text-green-400 text-xs font-medium">{formatItemValue(item.value)}</span>
                           </div>
                         ))
                       ) : (
@@ -130,7 +131,7 @@ export default function TradeVoting() {
                       {results.tradeDetails?.traderA?.cash > 0 && (
                         <div className="bg-[#0a0a2a] rounded p-2 flex items-center justify-between">
                           <span className="text-white text-sm">Cash</span>
-                          <span className="text-green-400 text-xs font-medium">${parseFloat(results.tradeDetails.traderA.cash).toLocaleString()}</span>
+                          <span className="text-green-400 text-xs font-medium">{formatWholeDollar(results.tradeDetails.traderA.cash)}</span>
                         </div>
                       )}
                     </div>
@@ -142,7 +143,7 @@ export default function TradeVoting() {
                         results.tradeDetails.traderB.items.map((item: any, i: number) => (
                           <div key={i} className="bg-[#0a0a2a] rounded p-2 flex items-center justify-between">
                             <span className="text-white text-sm truncate">{item.title}</span>
-                            <span className="text-green-400 text-xs font-medium">${parseFloat(item.value || '0').toLocaleString()}</span>
+                            <span className="text-green-400 text-xs font-medium">{formatItemValue(item.value)}</span>
                           </div>
                         ))
                       ) : (
@@ -151,7 +152,7 @@ export default function TradeVoting() {
                       {results.tradeDetails?.traderB?.cash > 0 && (
                         <div className="bg-[#0a0a2a] rounded p-2 flex items-center justify-between">
                           <span className="text-white text-sm">Cash</span>
-                          <span className="text-green-400 text-xs font-medium">${parseFloat(results.tradeDetails.traderB.cash).toLocaleString()}</span>
+                          <span className="text-green-400 text-xs font-medium">{formatWholeDollar(results.tradeDetails.traderB.cash)}</span>
                         </div>
                       )}
                     </div>

@@ -199,6 +199,17 @@ export function getTradebiliaCategoryLabel(slug: string) {
  * Strips trailing zeros: "9.40" -> "9.4", "10.0" -> "10", "9.5" -> "9.5".
  * Non-numeric grades (e.g. "NM", "ungraded") are returned unchanged.
  */
+export function formatWholeDollar(value: string | number | null | undefined, minimum = 0, fallback = "N/A"): string {
+  if (value === null || value === undefined || value === "") return fallback;
+  const numericValue = Number(value);
+  if (!Number.isFinite(numericValue)) return fallback;
+  return `$${Math.max(minimum, Math.round(numericValue)).toLocaleString("en-US")}`;
+}
+
+export function formatItemValue(value: string | number | null | undefined, fallback = "N/A"): string {
+  return formatWholeDollar(value, 1, fallback);
+}
+
 export function formatGrade(grade: string | null | undefined): string {
   if (!grade || grade === 'ungraded' || grade === '0') return '';
   const num = parseFloat(grade);

@@ -7,7 +7,7 @@ import { Heart, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { getLoginUrl } from "@/const";
 import { OnlineIndicator } from "./OnlineIndicator";
-import { formatGrade } from "@/lib/tradebilia";
+import { formatGrade, formatItemValue } from "@/lib/tradebilia";
 import { getDisplayedGradingCompany } from "@/lib/gradingDisplay";
 
 interface CarouselItem {
@@ -58,11 +58,6 @@ export function RecentlyAddedCarousel({
       </div>
     );
   }
-
-  const formatWholeDollar = (value?: number | null, fallback = "$0") => {
-    const numericValue = Number(value);
-    return Number.isFinite(numericValue) ? `$${Math.round(numericValue).toLocaleString("en-US")}` : fallback;
-  };
 
   const getCategoryBadgeClass = (category?: string | null) => {
     const normalized = category?.trim().toLowerCase() || "";
@@ -133,7 +128,7 @@ export function RecentlyAddedCarousel({
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <p className="text-sm font-black text-[#2458a6]">{formatWholeDollar(item.estimatedValue, item.price)}</p>
+                  <p className="text-sm font-black text-[#2458a6]">{formatItemValue(item.estimatedValue, item.price || "$1")}</p>
                   <p className="text-[10px] font-medium text-slate-400">{item.subtitle}</p>
                 </div>
 

@@ -40,6 +40,11 @@ import { isPublicMemberEligible } from "./publicVisibility";
 export const collectibleCategories = ['comics', 'sports_cards', 'vintage_toys', 'video_games', 'stamps', 'coins', 'pokemon', 'movies', 'autographs', 'disney_pins'] as const;
 export const itemConditions = ['mint', 'near_mint', 'excellent', 'very_good', 'good', 'fair', 'poor'] as const;
 
+export function normalizeListingEstimatedValue(value?: number | null): number | null {
+  if (value === undefined || value === null || !Number.isFinite(Number(value))) return null;
+  return Math.max(1, Number(value));
+}
+
 let _db: ReturnType<typeof drizzle> | null = null;
 let _dbLastError: Error | null = null;
 let _dbErrorCount = 0;
@@ -1947,7 +1952,7 @@ export async function saveDraft(
     grade: String(input.grade || 'ungraded'),
     graderCompany: input.graderCompany || null,
     certificationNumber: input.certificationNumber || null,
-    estimatedValue: input.estimatedValue ? String(parseFloat(String(input.estimatedValue))) : null,
+    estimatedValue: normalizeListingEstimatedValue(input.estimatedValue)?.toString() ?? null,
   });
   const draftId = getInsertId(insertResult);
 
@@ -2140,7 +2145,7 @@ export async function updateDraft(
       grade: String(input.grade || 'ungraded'),
       graderCompany: input.graderCompany || null,
       certificationNumber: input.certificationNumber || null,
-      estimatedValue: input.estimatedValue ? String(parseFloat(String(input.estimatedValue))) : null,
+      estimatedValue: normalizeListingEstimatedValue(input.estimatedValue)?.toString() ?? null,
       categoryFields: input.categoryFields ? JSON.stringify(input.categoryFields) : null,
       additionalNotes: input.additionalNotes || null,
       updatedAt: mysqlNow(),
@@ -2651,7 +2656,7 @@ export async function createListing(
     itemType: input.itemType,
     condition: input.condition,
     description: input.description.trim(),
-    estimatedValue: input.estimatedValue ? String(parseFloat(String(input.estimatedValue))) : null,
+    estimatedValue: normalizeListingEstimatedValue(input.estimatedValue)?.toString() ?? null,
     itemDetails: input.itemDetails ? JSON.stringify(input.itemDetails) : null,
     certificationCompany: input.certificationCompany || undefined,
     certificationNumber: input.certificationNumber || undefined,
@@ -2721,7 +2726,7 @@ export async function updateListing(
       category: input.category,
       condition: input.condition,
       description: input.description.trim(),
-      estimatedValue: input.estimatedValue ? String(parseFloat(String(input.estimatedValue))) : null,
+      estimatedValue: normalizeListingEstimatedValue(input.estimatedValue)?.toString() ?? null,
       itemDetails: input.itemDetails ? JSON.stringify(input.itemDetails) : null,
       certificationCompany: input.certificationCompany || null,
       certificationNumber: input.certificationNumber || null,
