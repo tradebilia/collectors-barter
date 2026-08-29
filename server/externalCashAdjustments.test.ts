@@ -34,7 +34,8 @@ describe("External cash-adjustment safeguards", () => {
     const context = routerSource.slice(routerSource.indexOf("getCashAdjustmentContext:"), routerSource.indexOf("selectCashAdjustmentMethod:", routerSource.indexOf("getCashAdjustmentContext:")));
     expect(context).toContain('proposal.status !== "accepted"');
     expect(context).toContain('role === "payee"');
-    expect(context).toContain("maskExternalPaymentIdentifier");
+    expect(routerSource).toContain("maskExternalPaymentIdentifier");
+    expect(context).toContain("getAvailableExternalPaymentMethods(payee)");
     expect(context).toContain("role !== \"payer\" || !ownObligation");
     expect(context).toContain("availableMethods: []");
   });
@@ -70,9 +71,11 @@ describe("External cash-adjustment safeguards", () => {
     expect(settingsSource).toContain("For Zelle, enter either one email address or one U.S. mobile number.");
     expect(settingsSource).toContain('/manus-storage/paypal-official-logo_f5abda0f.png');
     expect(settingsSource).toContain('/manus-storage/venmo-official-logo_37a969df.png');
-    expect(settingsSource).toContain('/manus-storage/cash-app-official-logo_72e2eb83.webp');
-    expect(settingsSource).toContain('/manus-storage/zelle-official-logo_3b446c40.png');
-    expect((settingsSource.match(/className="h-8 w-28 object-contain object-left"/g) ?? []).length).toBeGreaterThanOrEqual(4);
+    expect(settingsSource).toContain('/manus-storage/cash-app-official-logo-normalized_342b45be.webp');
+    expect(settingsSource).toContain('/manus-storage/zelle-official-logo-normalized_9845a118.png');
+    expect((settingsSource.match(/className="h-8 w-auto max-w-\[11rem\] object-contain object-left"/g) ?? []).length).toBe(4);
+    expect(settingsSource).not.toContain('/manus-storage/cash-app-official-logo_72e2eb83.webp');
+    expect(settingsSource).not.toContain('/manus-storage/zelle-official-logo_3b446c40.png');
     expect(settingsSource).not.toContain('className="h-8 w-8 object-contain"');
     expect(settingsSource).toContain("Fill in at least one destination below before cash can be included in a trade.");
     expect(setupSource).toContain("Fill in at least one destination before cash can be included in a trade.");
@@ -81,6 +84,7 @@ describe("External cash-adjustment safeguards", () => {
     expect(settingsSource).not.toContain('<span>Venmo username</span>');
     expect(settingsSource).not.toContain('<span>Cash App $cashtag</span>');
     expect(settingsSource).not.toContain('<span>Zelle destination</span>');
+    expect(routerSource).toContain("getAvailableExternalPaymentMethods(payee)");
     expect(warRoomSource).toContain("getCashAdjustmentContext");
     expect(warRoomSource).toContain("I sent it");
     expect(warRoomSource).toContain("Confirm receipt");

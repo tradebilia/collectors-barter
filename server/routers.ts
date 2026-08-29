@@ -119,6 +119,7 @@ import { createPendingEmailHistoryApproval, requireMarketplaceApproval } from ".
 import { getIpqsEmailHistory } from "./ipqs";
 import { createProviderOauthState, setProviderOauthStateCookie } from "./_core/providerOauthState";
 import { getPaymentVerificationObligation, isAuthorizedPaymentVerification } from "./paymentAuthorization";
+import { EXTERNAL_PAYMENT_METHODS, type ExternalPaymentMethod, getAvailableExternalPaymentMethods, getExternalPaymentIdentifier, getExternalPaymentMethodLabel, maskExternalPaymentIdentifier } from "./externalPaymentMethods";
 import { billingRouter, membershipRouter } from "./membership";
 import { listHeartbeatJobs } from "./_core/heartbeat";
 import { closeEligibleAccount, getAccountClosureAudit, getAccountClosureRequestsForAdmin, getMyAccountClosureRequest, requestAccountClosure, reviewAccountClosureRequest } from "./accountClosure";
@@ -128,8 +129,7 @@ const ADMIN_ARCHIVE_TRADE_PHRASE = "ARCHIVE TRADE RECORD";
 const ADMIN_CLOSE_TICKET_PHRASE = "CLOSE AND RETAIN TICKET";
 const ADMIN_REVEAL_CASH_IDENTIFIER_PHRASE = "REVEAL CASH PAYMENT IDENTIFIER";
 
-const externalPaymentMethodSchema = z.enum(["paypal", "venmo", "cash_app", "zelle"]);
-type ExternalPaymentMethod = z.infer<typeof externalPaymentMethodSchema>;
+const externalPaymentMethodSchema = z.enum(EXTERNAL_PAYMENT_METHODS);
 
 const externalPaymentMethodsInputSchema = z.object({
   paypalEmail: z.string().trim().email().max(320).nullable().optional(),
@@ -175,32 +175,6 @@ function normalizeExternalPaymentMethods(input: z.infer<typeof externalPaymentMe
     zelleEmail: normalizeOptionalText(input.zelleEmail)?.toLowerCase() ?? null,
     zellePhone: normalizeOptionalText(input.zellePhone)?.replace(/[^\d+]/g, "") ?? null,
   };
-}
-
-function getExternalPaymentMethodLabel(method: ExternalPaymentMethod) {
-  return method === "paypal" ? "PayPal" : method === "venmo" ? "Venmo" : method === "cash_app" ? "Cash App" : "Zelle";
-}
-
-function getExternalPaymentIdentifier(method: ExternalPaymentMethod, profile: {
-  paypalEmail?: string | null;
-  venmoUsername?: string | null;
-  cashAppCashtag?: string | null;
-  zelleEmail?: string | null;
-  zellePhone?: string | null;
-}) {
-  if (method === "paypal") return profile.paypalEmail ?? null;
-  if (method === "venmo") return profile.venmoUsername ? `@${profile.venmoUsername.replace(/^@+/, "")}` : null;
-  if (method === "cash_app") return profile.cashAppCashtag ?? null;
-  return profile.zelleEmail ?? profile.zellePhone ?? null;
-}
-
-function maskExternalPaymentIdentifier(identifier?: string | null) {
-  if (!identifier) return "Not set";
-  if (identifier.includes("@")) {
-    const [local, domain] = identifier.split("@");
-    return `${local.slice(0, 1)}•••@${domain}`;
-  }
-  return identifier.length <= 4 ? "••••" : `${identifier.slice(0, 2)}•••${identifier.slice(-2)}`;
 }
 
 // The R2 adapter enforces decoded per-kind limits (10MB listing, 5MB avatar).
@@ -4153,10 +4127,7 @@ export const appRouter = router({
             zellePhone: users.zellePhone,
           }).from(users).where(eq(users.id, ctx.user.id)).limit(1);
           const payee = payeeRows[0] ?? {};
-          const availableMethods = (["paypal", "venmo", "cash_app", "zelle"] as ExternalPaymentMethod[])
-            .map((method) => ({ method, label: getExternalPaymentMethodLabel(method), identifier: getExternalPaymentIdentifier(method, payee) }))
-            .filter((entry): entry is { method: ExternalPaymentMethod; label: string; identifier: string } => Boolean(entry.identifier))
-            .map((entry) => ({ ...entry, identifier: maskExternalPaymentIdentifier(entry.identifier) }));
+          const availableMethods = getAvailableExternalPaymentMethods(payee);
           return { role, amount: otherObligation.amount, payment, availableMethods };
         }
 
