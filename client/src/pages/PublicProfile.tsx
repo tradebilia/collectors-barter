@@ -28,6 +28,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { Link } from "wouter";
 import { resolveTradebiliaListingImage } from "@/lib/listingImages";
 import { tradebiliaConditionOptions, formatGrade } from "@/lib/tradebilia";
+import { getDisplayedGradingCompany } from "@/lib/gradingDisplay";
 import { EbayFeedbackPreview } from "@/components/EbayFeedbackPreview";
 import { TopBar } from "@/components/TopBar";
 import { CategoryBar } from "@/components/CategoryBar";
@@ -748,7 +749,7 @@ export default function PublicProfile() {
                             <span>
                               <span className="font-semibold">{hasGrade ? 'Grade:' : 'Condition:'}</span>{' '}
                               {hasGrade
-                                ? `${listing.certificationCompany ? `${listing.certificationCompany} ` : ''}${formatGrade(listing.grade)}`
+                                ? `${getDisplayedGradingCompany(listing.certificationCompany, listing.customGradingCompany)} ${formatGrade(listing.grade)}`
                                 : conditionLabel}
                             </span>
                             {listing.estimatedValue && (

@@ -31,6 +31,7 @@ import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { toast } from "sonner";
 import { Link, useRoute } from "wouter";
 import { getGradingCompanyNamesForCategory, getValidGradesForCompany, getGradingCompanyByName } from "@shared/gradingCompanyConfig";
+import { getDisplayedGradingCompany } from "@/lib/gradingDisplay";
 import {
   autographsMediumOptions,
   countryOptions,
@@ -1470,7 +1471,7 @@ export default function CategoryPage() {
                               <div>
                                 <span className="font-semibold">{listing.grade && parseFloat(String(listing.grade)) > 0 ? "Grade:" : "Condition:"}</span>{" "}
                                 {listing.grade && parseFloat(String(listing.grade)) > 0
-                                  ? `${listing.certificationCompany ? `${listing.certificationCompany} ` : ""}${formatGrade(listing.grade)}`
+                                  ? `${getDisplayedGradingCompany(listing.certificationCompany, listing.customGradingCompany)} ${formatGrade(listing.grade)}`
                                   : listing.conditionLabel}
                               </div>
                               {listing.estimatedValue && (
@@ -1512,7 +1513,7 @@ export default function CategoryPage() {
                               <p className="text-[0.55rem] font-semibold uppercase tracking-[0.08em] opacity-80">{listing.grade && parseFloat(String(listing.grade)) > 0 ? "Grade" : "Condition"}</p>
                               <p className="mt-0 truncate text-[0.75rem] font-bold leading-tight">
                                 {listing.grade && parseFloat(String(listing.grade)) > 0
-                                  ? `${listing.certificationCompany ? `${listing.certificationCompany} ` : ""}${formatGrade(listing.grade)}`
+                                  ? `${getDisplayedGradingCompany(listing.certificationCompany, listing.customGradingCompany)} ${formatGrade(listing.grade)}`
                                   : listing.conditionLabel}
                               </p>
                             </div>

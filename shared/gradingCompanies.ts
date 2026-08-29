@@ -61,7 +61,8 @@ export const gradingCompanies: GradingCompany[] = [
   { name: "UKG", categories: ["vintage_toys"], gradeScale: "1–100" },
 
   // Video Games
-  { name: "WATA Games", categories: ["video_games"], gradeScale: "1–10" },
+  { name: "WATA", categories: ["video_games"], gradeScale: "1–10" },
+  { name: "PSA", categories: ["video_games"], gradeScale: "1–10" },
   { name: "CGC Video Games", categories: ["video_games"], gradeScale: "1–10" },
   { name: "VGA", categories: ["video_games"], gradeScale: "0–100" },
   { name: "CGC Home Video", categories: ["video_games", "movies"], gradeScale: "1–10" },

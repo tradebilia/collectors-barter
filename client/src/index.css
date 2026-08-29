@@ -198,6 +198,11 @@
     line-height: 1.1;
   }
 
+  .title-lining-nums {
+    font-variant-numeric: lining-nums;
+    font-feature-settings: "lnum" 1;
+  }
+
   .surface-card {
     border: 1px solid color-mix(in oklab, var(--border) 80%, transparent);
     border-radius: 1.5rem;

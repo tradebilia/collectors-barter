@@ -21,6 +21,7 @@ import { getLoginUrl } from "@/const";
 import { resolveTradebiliaListingImage } from "@/lib/listingImages";
 import { trpc } from "@/lib/trpc";
 import { getTradebiliaCategoryLabel, formatGrade } from "@/lib/tradebilia";
+import { getDisplayedGradingCompany } from "@/lib/gradingDisplay";
 import { Download, Loader2, Menu, MessageSquareText, Pencil, Plus, Search, Share2, Trash2, Eye, EyeOff } from "lucide-react";
 import { TopRightIcons } from "@/components/TopRightIcons";
 import { TopBar } from "@/components/TopBar";
@@ -797,7 +798,7 @@ export default function Inventory() {
                         <div><span className="text-slate-600"><strong>Category:</strong> {listing.categoryLabel}</span></div>
                         <div><span className="text-slate-600"><strong>Grade:</strong> {listing.grade && listing.grade !== 'ungraded' ? formatGrade(listing.grade) : 'Not graded'}</span></div>
                         {listing.certificationCompany ? (
-                          <div><span className="text-slate-600"><strong>Certification:</strong> {listing.certificationCompany}</span></div>
+                          <div><span className="text-slate-600"><strong>Certification:</strong> {getDisplayedGradingCompany(listing.certificationCompany, listing.customGradingCompany)}</span></div>
                         ) : (
                           <div><span className="text-slate-600"><strong>Condition:</strong> {listing.condition.replace(/_/g, ' ').charAt(0).toUpperCase() + listing.condition.replace(/_/g, ' ').slice(1)}</span></div>
                         )}

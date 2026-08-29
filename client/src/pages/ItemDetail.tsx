@@ -29,6 +29,7 @@ import { resolveTradebiliaListingImage } from "@/lib/listingImages";
 import { trpc } from "@/lib/trpc";
 import { getLoginUrl } from "@/const";
 import { getTradebiliaCategoryTheme, getTradebiliaCategoryLabel, formatGrade } from "@/lib/tradebilia";
+import { getDisplayedGradingCompany } from "@/lib/gradingDisplay";
 
 const getItemDetailPageClassName = (category: string): string => {
   // For item detail pages, use the content portion of the category page gradient
@@ -377,7 +378,7 @@ export default function ItemDetail() {
                     <p className="mt-1 text-lg font-semibold text-gray-900">#{listing.id}</p>
                   </div>
                 </div>
-                <h1 className="mt-6 text-5xl font-semibold leading-[1.05] tracking-tight text-gray-900">{listing.title}</h1>
+                <h1 className="title-lining-nums mt-6 text-5xl font-semibold leading-[1.05] tracking-tight text-gray-900">{listing.title}</h1>
                 <div className="mt-6 grid gap-4 text-lg text-gray-700 sm:grid-cols-2">
                   {listing.grade && listing.grade !== 'ungraded' && parseFloat(listing.grade) > 0 ? (
                     <div>
@@ -393,7 +394,7 @@ export default function ItemDetail() {
                   {listing.certificationCompany && (
                     <div>
                       <p className="text-base font-bold uppercase tracking-[0.25em] text-gray-800">Grading Company</p>
-                      <p className="mt-2 text-sm font-medium text-gray-500">{listing.certificationCompany}</p>
+                      <p className="mt-2 text-sm font-medium text-gray-500">{getDisplayedGradingCompany(listing.certificationCompany, listing.itemDetails?.customGradingCompany)}</p>
                     </div>
                   )}
                   {listing.estimatedValue && (
@@ -629,7 +630,7 @@ export default function ItemDetail() {
               // Core fields first
               allFields.push({ label: 'Category', value: getTradebiliaCategoryLabel(listing.category) });
               if (!isGradedListing && listing.condition) allFields.push({ label: 'Condition', value: getConditionDisplayName(listing.condition) });
-              if (listing.certificationCompany) allFields.push({ label: 'Grading Company', value: listing.certificationCompany });
+              if (listing.certificationCompany) allFields.push({ label: 'Grading Company', value: getDisplayedGradingCompany(listing.certificationCompany, listing.itemDetails?.customGradingCompany) });
               if (listing.estimatedValue) allFields.push({ label: 'Estimated Value', value: `$${listing.estimatedValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` });
               if (listing.itemType) allFields.push({ label: 'Item Type', value: listing.itemType.replace(/_/g, ' ').split(' ').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') });
               if (listing.signatures && listing.signatures.length > 0) allFields.push({ label: 'Signatures', value: listing.signatures.join(', ') });

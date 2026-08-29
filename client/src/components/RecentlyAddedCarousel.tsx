@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { getLoginUrl } from "@/const";
 import { OnlineIndicator } from "./OnlineIndicator";
 import { formatGrade } from "@/lib/tradebilia";
+import { getDisplayedGradingCompany } from "@/lib/gradingDisplay";
 
 interface CarouselItem {
   id: number;
@@ -84,10 +85,7 @@ export function RecentlyAddedCarousel({
         title: condition,
       };
     }
-    const declaredCompany = item.certificationCompany?.trim() || "";
-    const company = declaredCompany.toLowerCase() === "other"
-      ? item.customGradingCompany?.trim() || declaredCompany
-      : declaredCompany || "Graded";
+    const company = getDisplayedGradingCompany(item.certificationCompany, item.customGradingCompany);
     const grade = formatGrade(item.grade!);
     return { text: `${company} ${grade}`, title: `${company} ${grade}` };
   };

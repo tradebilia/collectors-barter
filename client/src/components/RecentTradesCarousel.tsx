@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, BadgeCheck, CalendarDays, Hash, Package, ShieldCheck, Star, UserRound } from "lucide-react";
 import { Link } from "wouter";
 import { buildTradeShowcaseExchange, type TradeShowcaseItem, type TradeShowcaseParty, type TradeShowcaseTrade } from "@/lib/tradeShowcaseMovements";
+import { getDisplayedGradingCompany } from "@/lib/gradingDisplay";
 
 type RecentTrade = TradeShowcaseTrade & {
   id: number;
@@ -24,7 +25,7 @@ function getGradePresentation(item: TradeShowcaseItem) {
   const numericGrade = Number(item.grade);
   if (!Number.isFinite(numericGrade) || numericGrade <= 0) return null;
   const formattedGrade = numericGrade.toLocaleString(undefined, { maximumFractionDigits: 2 });
-  return { company: item.certificationCompany?.trim() || "Graded", grade: formattedGrade };
+  return { company: getDisplayedGradingCompany(item.certificationCompany, item.customGradingCompany), grade: formattedGrade };
 }
 
 function formatCondition(item: TradeShowcaseItem) {

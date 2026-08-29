@@ -52,8 +52,8 @@ describe("homepage Recent Trades carousel", () => {
     expect(recentlyAddedSource).toContain("customGradingCompany?: string | null");
     expect(recentlyAddedSource).toContain("conditionLabel?: string | null");
     expect(recentlyAddedSource).toContain("getGradeOrConditionPresentation");
-    expect(recentlyAddedSource).toContain('declaredCompany.toLowerCase() === "other"');
-    expect(recentlyAddedSource).toContain("item.customGradingCompany?.trim() || declaredCompany");
+    expect(recentlyAddedSource).toContain("getDisplayedGradingCompany");
+    expect(recentlyAddedSource).toContain("item.customGradingCompany");
     expect(recentlyAddedSource).toContain('const condition = item.conditionLabel?.trim() || "Ungraded";');
     expect(recentlyAddedSource).toContain("text: condition");
     expect(recentlyAddedSource).not.toContain("Condition: ${item.conditionLabel");
@@ -77,8 +77,8 @@ describe("homepage Recent Trades carousel", () => {
     expect(carouselSource).toContain("formatEstimatedValue");
     expect(carouselSource).toContain("getGradePresentation");
     expect(carouselSource).toContain("getCategoryBadgeClass");
-    expect(carouselSource).toContain("item.certificationCompany?.trim()");
-    expect(carouselSource).toContain('company: item.certificationCompany?.trim() || "Graded"');
+    expect(carouselSource).toContain("getDisplayedGradingCompany");
+    expect(carouselSource).toContain("item.customGradingCompany");
     expect(carouselSource).toContain("inline-flex items-center rounded-md px-2 py-0.5 text-sm font-extrabold ring-1");
     expect(carouselSource).toContain("Condition: ${condition.replaceAll");
     expect(carouselSource).toContain("text-[2.45rem]");
@@ -129,12 +129,15 @@ describe("homepage Recent Trades carousel", () => {
     expect(routerSource).toContain("l.condition as requestedListingCondition");
     expect(routerSource).toContain("l.grade as requestedListingGrade");
     expect(routerSource).toContain("l.certificationCompany as requestedListingCertificationCompany");
+    expect(routerSource).toContain("l.itemDetails as requestedListingItemDetails");
+    expect(routerSource).toContain("requestedListingCustomGradingCompany: getCustomGradingCompany(trade.requestedListingItemDetails)");
     expect(routerSource).toContain("req_u.username as requesterUsername");
     expect(routerSource).toContain("rec_u.username as recipientUsername");
     expect(routerSource).toContain("AVG(overallRating)");
     expect(routerSource).toContain("requesterEbayVerified");
     expect(routerSource).toContain("requesterMerchantVerified");
-    expect(routerSource).toContain("ol.condition, ol.grade, ol.certificationCompany, ol.estimatedValue");
+    expect(routerSource).toContain("ol.condition, ol.grade, ol.certificationCompany, ol.itemDetails, ol.estimatedValue");
+    expect(routerSource).toContain("customGradingCompany: getCustomGradingCompany(item.itemDetails)");
     expect(carouselSource).not.toContain("Tradebilia exchange activity");
     expect(carouselSource).not.toContain("Completed trade");
     expect(carouselSource).not.toContain("Previous recent trade");

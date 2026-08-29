@@ -183,7 +183,7 @@ export const GRADING_COMPANIES_BY_CATEGORY: Record<CollectibleCategory, string[]
   comics: ['CGC Comics', 'CBCS', 'PGX Comics'],
   coins: ['PCGS', 'NGC', 'ANACS', 'ICG', 'SEGS', 'SGS'],
   stamps: ['PSE', 'ASG', 'PSAG'],
-  video_games: ['WATA Games (PSA Video Games)', 'CGC Video Games', 'VGA', 'CGC Home Video', 'IGS'],
+  video_games: ['WATA', 'PSA', 'CGC Video Games', 'VGA', 'CGC Home Video', 'IGS'],
   movies: ['CGC Home Video', 'VHS Grading', 'IGS'],
   autographs: [], // Autographs don't have grading companies for Signed Item
   vintage_toys: ['AFA', 'CAS', 'UKG'],
