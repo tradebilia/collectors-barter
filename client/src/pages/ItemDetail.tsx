@@ -19,6 +19,8 @@ function useTrackView(listingId: number) {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
@@ -156,6 +158,8 @@ export default function ItemDetail() {
   const listingId = Number(params?.listingId ?? 0);
   const { user, isAuthenticated } = useAuth();
   const utils = trpc.useUtils();
+  const [isProposalDialogOpen, setIsProposalDialogOpen] = useState(false);
+  const [proposalMessage, setProposalMessage] = useState("");
   
   // Track view when page loads
   useTrackView(listingId);
@@ -167,6 +171,8 @@ export default function ItemDetail() {
 
   const createProposalMutation = trpc.tradeFlow.initiateTradeProposal.useMutation({
     onSuccess: async () => {
+      setIsProposalDialogOpen(false);
+      setProposalMessage("");
       toast.success('Trade inquiry sent! The owner has been notified.');
       await Promise.all([
         utils.market.listingDetail.invalidate({ listingId }),
@@ -186,6 +192,7 @@ export default function ItemDetail() {
 
   const listing = listingDetailQuery.data?.listing;
   const similarListings = listing?.similarListings ?? [];
+  const isOwnListing = Boolean(listing && user && listing.ownerId === user.id);
 
   const [activePhotoIndex, setActivePhotoIndex] = useState(0);
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
@@ -208,10 +215,17 @@ export default function ItemDetail() {
       window.location.href = getLoginUrl();
       return;
     }
-    createProposalMutation.mutate({
-      listingId: listing.id,
-      message: `I am interested in your ${listing.title} and would like to review a possible trade.`,
-    });
+    if (isOwnListing) {
+      toast.error("You cannot message or trade with your own item.");
+      return;
+    }
+    setProposalMessage("");
+    setIsProposalDialogOpen(true);
+  };
+
+  const submitTradeProposal = () => {
+    if (!listing || isOwnListing || !proposalMessage.trim()) return;
+    createProposalMutation.mutate({ listingId: listing.id, message: proposalMessage.trim() });
   };
 
   const toggleWatchlist = () => {
@@ -455,7 +469,8 @@ export default function ItemDetail() {
                 <div className="mt-8 grid gap-4 sm:grid-cols-3">
                   <Button 
                     onClick={startTradeProposal} 
-                    disabled={createProposalMutation.isPending}
+                    disabled={createProposalMutation.isPending || isOwnListing}
+                    title={isOwnListing ? "You cannot message or trade with your own item" : "Start a trade proposal"}
                     className={`h-12 rounded-[1rem] text-sm font-semibold text-white ${
                       createProposalMutation.isSuccess 
                         ? 'bg-yellow-600 hover:bg-yellow-700 cursor-default' 
@@ -463,11 +478,11 @@ export default function ItemDetail() {
                     }`}
                   >
                     <MessageCircleMore className="mr-0.5 h-4 w-4" />
-                    {createProposalMutation.isSuccess ? 'Negotiating in Process' : createProposalMutation.isPending ? 'Sending...' : 'Trade Proposal'}
+                    {isOwnListing ? 'Your Listing' : createProposalMutation.isSuccess ? 'Negotiating in Process' : createProposalMutation.isPending ? 'Sending...' : 'Trade Proposal'}
                   </Button>
-                  <Button onClick={() => setIsEmailModalOpen(true)} className="h-12 rounded-[1rem] bg-blue-600 text-sm font-semibold text-white hover:bg-blue-700">
+                  <Button onClick={() => { if (!isOwnListing) setIsEmailModalOpen(true); }} disabled={isOwnListing} title={isOwnListing ? "You cannot message your own item" : "Message owner"} className="h-12 rounded-[1rem] bg-blue-600 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300">
                     <MessageCircleMore className="mr-0.5 h-4 w-4" />
-                    Message Owner
+                    {isOwnListing ? 'Your Listing' : 'Message Owner'}
                   </Button>
                   <Button 
                     onClick={toggleWatchlist} 
@@ -484,6 +499,37 @@ export default function ItemDetail() {
                     {listing.ownerId === user?.id ? "Cannot Favorite Own Item" : (listing.savedToWatchlist ? "Saved" : "Add to Watchlist")}
                   </Button>
                 </div>
+
+                <Dialog open={isProposalDialogOpen} onOpenChange={open => {
+                  setIsProposalDialogOpen(open);
+                  if (!open) setProposalMessage("");
+                }}>
+                  <DialogContent className="sm:max-w-lg">
+                    <DialogHeader>
+                      <DialogTitle>Start a Trade Proposal</DialogTitle>
+                      <DialogDescription>
+                        Add a personal message for the listing owner before opening a trade discussion.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-3">
+                      <label htmlFor="proposal-message" className="text-sm font-semibold text-gray-900">Your personalized message</label>
+                      <Textarea
+                        id="proposal-message"
+                        value={proposalMessage}
+                        onChange={event => setProposalMessage(event.target.value)}
+                        placeholder={`Share why you would like to trade for ${listing.title}.`}
+                        maxLength={1000}
+                        className="min-h-28 resize-y"
+                        autoFocus
+                      />
+                      <p className="text-right text-xs text-gray-500">{proposalMessage.length}/1000</p>
+                      <Button className="w-full" onClick={submitTradeProposal} disabled={createProposalMutation.isPending || !proposalMessage.trim()}>
+                        {createProposalMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                        Send Trade Proposal
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
 
                 {/* Social Share Row */}
                 <div className="mt-5 pt-5 border-t border-gray-100">
