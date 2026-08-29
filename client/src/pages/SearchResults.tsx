@@ -1,17 +1,22 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { Link, useLocation, useSearch } from "wouter";
-import { Filter, Loader2, MapPin, Search, Sparkles, Star, X } from "lucide-react";
+import { Filter, Loader2, MapPin, MessageSquareText, Search, Sparkles, Star, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { useAuth } from "@/_core/hooks/useAuth";
 import { CategoryBar } from "@/components/CategoryBar";
 import AnimatedLogoSmall70 from "@/components/AnimatedLogoSmall70";
 import { TopBar } from "@/components/TopBar";
+import { getLoginUrl } from "@/const";
 import { resolveTradebiliaListingImage } from "@/lib/listingImages";
 import { trpc } from "@/lib/trpc";
+import { toast } from "sonner";
 import {
   formatGrade,
   tradebiliaCategories,
@@ -48,6 +53,8 @@ const globalSearchHeroCollageUrl = "/manus-storage/tradebilia-warm-archival-hero
 export function SearchResults() {
   const rawSearch = useSearch();
   const [, setLocation] = useLocation();
+  const { user, isAuthenticated } = useAuth();
+  const utils = trpc.useUtils();
   const urlQuery = useMemo(() => getGlobalSearchQuery(rawSearch), [rawSearch]);
   const lastHandledUrlQuery = useRef(urlQuery);
   const [pendingQuery, setPendingQuery] = useState(urlQuery);
@@ -56,6 +63,18 @@ export function SearchResults() {
   const [submittedFilters, setSubmittedFilters] = useState<SearchFilters>(emptySearchFilters);
   const [resultsPerPage, setResultsPerPage] = useState(24);
   const [currentPage, setCurrentPage] = useState(1);
+  const [proposalListingId, setProposalListingId] = useState<number | null>(null);
+  const [proposalNote, setProposalNote] = useState("");
+
+  const createProposalMutation = trpc.market.createTradeProposal.useMutation({
+    onSuccess: async () => {
+      setProposalListingId(null);
+      setProposalNote("");
+      toast.success("Trade Proposal sent.");
+      await utils.market.search.invalidate();
+    },
+    onError: error => toast.error(error.message),
+  });
 
   useEffect(() => {
     if (lastHandledUrlQuery.current === urlQuery) return;
@@ -222,9 +241,39 @@ export function SearchResults() {
                   <Card key={listing.id} className="overflow-hidden rounded-md border border-gray-200 bg-white text-[#153746] shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
                     <Link href={`/listings/${listing.id}`} className="block aspect-[7/9] border-b border-current/10 bg-white p-0"><img src={resolveTradebiliaListingImage({ title: listing.title, category: listing.category, primaryPhotoUrl: listing.primaryPhotoUrl })} alt={listing.title} className="h-full w-full object-contain" /></Link>
                     <CardContent className="space-y-1 p-1.5">
-                      <div className="flex items-start justify-between gap-2"><div className="min-w-0"><p className="truncate text-[0.5rem] font-semibold uppercase tracking-[0.12em] opacity-60">{listing.categoryLabel}</p><Link href={`/listings/${listing.id}`} className="mt-1 block min-h-[2rem] line-clamp-2 text-xs font-semibold leading-tight hover:opacity-75">{listing.title}</Link></div>{listing.featured ? <Badge className="rounded-full bg-[#0f5563] px-1 py-0 text-[0.5rem] text-[#fff1d2]">Featured</Badge> : null}</div>
-                       <div className="grid grid-cols-2 gap-1 rounded-md border border-current/10 bg-black/5 p-1 text-[0.5rem]"><div><p className="uppercase tracking-[0.1em] opacity-60">{listing.grade && Number(listing.grade) > 0 ? "Grade" : "Condition"}</p><p className="mt-0 font-semibold truncate text-[0.55rem]">{listing.grade && Number(listing.grade) > 0 ? `${listing.certificationCompany ? `${listing.certificationCompany} ` : ""}${formatGrade(listing.grade)}` : listing.conditionLabel}</p></div><div><p className="uppercase tracking-[0.1em] opacity-60">Value</p><p className="mt-0 font-semibold truncate text-[0.55rem]">{listing.estimatedValue === null ? "—" : `$${listing.estimatedValue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</p></div><div><p className="uppercase tracking-[0.1em] opacity-60">Collector</p><p className="mt-0 font-semibold truncate text-[0.55rem]">{listing.owner.displayName}</p></div><div><p className="uppercase tracking-[0.1em] opacity-60">Trust</p><p className="mt-0 flex items-center gap-0.5 font-semibold text-[0.55rem]"><Star className="h-2 w-2 fill-current" />{listing.ownerRating.averageRating.toFixed(1)}</p></div></div>
+                      <div className="flex items-start justify-between gap-2"><div className="min-w-0"><p className="truncate text-[0.55rem] font-bold uppercase tracking-[0.1em] text-slate-600">{listing.categoryLabel}</p><Link href={`/listings/${listing.id}`} className="mt-1 block min-h-[2rem] line-clamp-2 text-xs font-semibold leading-tight hover:opacity-75">{listing.title}</Link></div>{listing.featured ? <Badge className="rounded-full bg-[#0f5563] px-1 py-0 text-[0.5rem] text-[#fff1d2]">Featured</Badge> : null}</div>
+                       <div className="grid grid-cols-2 gap-1 rounded-md border border-current/10 bg-black/5 p-1 text-[0.5rem]"><div><p className="text-[0.55rem] font-semibold uppercase tracking-[0.08em] text-slate-600">{listing.grade && Number(listing.grade) > 0 ? "Grade" : "Condition"}</p><p className="mt-0 truncate text-[0.75rem] font-bold leading-tight">{listing.grade && Number(listing.grade) > 0 ? `${listing.certificationCompany ? `${listing.certificationCompany} ` : ""}${formatGrade(listing.grade)}` : listing.conditionLabel}</p></div><div><p className="text-[0.55rem] font-semibold uppercase tracking-[0.08em] text-slate-600">Value</p><p className="mt-0 truncate text-[0.75rem] font-bold leading-tight">{listing.estimatedValue === null ? "—" : `$${listing.estimatedValue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</p></div><div><p className="text-[0.55rem] font-semibold uppercase tracking-[0.08em] text-slate-600">Collector</p><p className="mt-0 truncate text-[0.65rem] font-semibold">{listing.owner.displayName}</p></div><div><p className="whitespace-nowrap text-[0.42rem] font-semibold uppercase tracking-[0.06em] text-slate-600">Trader Rating</p><p className="mt-0 flex items-center gap-0.5 font-semibold text-[0.65rem]"><Star className="h-2 w-2 fill-current" />{listing.ownerRating.averageRating.toFixed(1)}</p></div></div>
                        {listing.distanceBand && <p className="flex items-center gap-1 text-[0.55rem] font-semibold text-teal-700"><MapPin className="h-2.5 w-2.5" /><span>{listing.distanceBand}</span></p>}
+                       <Dialog open={proposalListingId === listing.id} onOpenChange={open => {
+                         setProposalListingId(open ? listing.id : null);
+                         if (!open) setProposalNote("");
+                       }}>
+                         <DialogTrigger asChild>
+                           <Button
+                             size="sm"
+                             variant="outline"
+                             className="h-7 w-full rounded-full border-[#0f5563]/30 px-2 text-[10px] font-bold uppercase tracking-wider text-[#0f5563] hover:bg-[#0f5563]/10"
+                             disabled={!isAuthenticated || listing.ownerId === user?.id}
+                             title={listing.ownerId === user?.id ? "You cannot message or trade with your own item" : "Start a trade proposal"}
+                           >
+                             <MessageSquareText className="mr-1 h-3 w-3" /> Trade
+                           </Button>
+                         </DialogTrigger>
+                         <DialogContent className="sm:max-w-lg">
+                           <DialogHeader>
+                             <DialogTitle>Start a Trade Proposal</DialogTitle>
+                             <DialogDescription>Add a personal message for the listing owner before opening a trade discussion.</DialogDescription>
+                           </DialogHeader>
+                           <div className="space-y-3">
+                             <Label htmlFor={`search-proposal-${listing.id}`}>Your personalized message</Label>
+                             <Textarea id={`search-proposal-${listing.id}`} value={proposalNote} onChange={event => setProposalNote(event.target.value)} placeholder={`Share why you would like to trade for ${listing.title}.`} maxLength={1000} className="min-h-28 resize-y" />
+                             <p className="text-right text-xs text-slate-500">{proposalNote.length}/1000</p>
+                             <Button className="w-full bg-[#0f5563] hover:bg-[#0b4652]" disabled={createProposalMutation.isPending || !proposalNote.trim()} onClick={() => createProposalMutation.mutate({ requestedListingId: listing.id, note: proposalNote.trim() })}>
+                               {createProposalMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null} Send Trade Proposal
+                             </Button>
+                           </div>
+                         </DialogContent>
+                       </Dialog>
                     </CardContent>
                   </Card>
                 ))}

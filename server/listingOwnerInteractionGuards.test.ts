@@ -45,6 +45,7 @@ describe("listing owner interaction safeguards", () => {
     expect(categorySource).toContain("Trader Rating:");
     expect(categorySource).toContain(">Trader Rating</p>");
     expect(categorySource).toContain('text-[0.75rem] font-bold leading-tight');
-    expect(categorySource).toContain('text-[0.55rem] uppercase tracking-[0.08em]');
+    expect(categorySource).toContain('text-[0.55rem] font-semibold uppercase tracking-[0.08em] opacity-80');
+    expect(categorySource).toContain('text-[0.5rem] font-semibold uppercase tracking-[0.06em] opacity-80');
   });
 });

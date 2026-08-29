@@ -402,6 +402,19 @@ async function getRatingStatsMap(userIds: number[]) {
   );
 }
 
+function getCustomGradingCompany(itemDetails: unknown): string | null {
+  if (typeof itemDetails !== "string" || !itemDetails.trim()) return null;
+  try {
+    const parsed = JSON.parse(itemDetails) as { customGradingCompany?: unknown };
+    const customGradingCompany = typeof parsed.customGradingCompany === "string"
+      ? parsed.customGradingCompany.trim().slice(0, 50)
+      : "";
+    return customGradingCompany || null;
+  } catch {
+    return null;
+  }
+}
+
 async function formatListings(
   listingRows: any[],
   viewerId: number | null,
@@ -436,6 +449,7 @@ async function formatListings(
     condition: row.condition,
     grade: row.grade ?? null,
     certificationCompany: row.certificationCompany ?? null,
+    customGradingCompany: getCustomGradingCompany(row.itemDetails),
     estimatedValue: row.estimatedValue ? Number(row.estimatedValue) : null,
     description: row.description,
     status: row.status,

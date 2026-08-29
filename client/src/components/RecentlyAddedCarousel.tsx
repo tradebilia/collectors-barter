@@ -22,7 +22,9 @@ interface CarouselItem {
   estimatedValue?: number | null;
   category?: string | null;
   certificationCompany?: string | null;
+  customGradingCompany?: string | null;
   grade?: string | null;
+  conditionLabel?: string | null;
 }
 
 interface RecentlyAddedCarouselProps {
@@ -73,6 +75,22 @@ export function RecentlyAddedCarousel({
     return "bg-blue-100 text-blue-800 ring-blue-200";
   };
 
+  const getGradeOrConditionPresentation = (item: CarouselItem) => {
+    const hasGrade = Boolean(item.grade && Number(item.grade) > 0);
+    if (!hasGrade) {
+      return {
+        text: `Condition: ${item.conditionLabel?.trim() || "Ungraded"}`,
+        title: `Condition: ${item.conditionLabel?.trim() || "Ungraded"}`,
+      };
+    }
+    const declaredCompany = item.certificationCompany?.trim() || "";
+    const company = declaredCompany.toLowerCase() === "other"
+      ? item.customGradingCompany?.trim() || declaredCompany
+      : declaredCompany || "Graded";
+    const grade = formatGrade(item.grade!);
+    return { text: `${company} ${grade}`, title: `${company} ${grade}` };
+  };
+
   // Duplicate items once for seamless loop
   const displayItems = [...items, ...items];
 
@@ -110,11 +128,9 @@ export function RecentlyAddedCarousel({
                   <p className="line-clamp-2 text-xs font-bold leading-tight text-slate-900 whitespace-normal">
                     {item.title}
                   </p>
-                  {item.grade && Number(item.grade) > 0 ? (
-                    <span className={`inline-flex max-w-full items-center rounded-md px-1.5 py-0 text-[9px] font-extrabold leading-4 ring-1 ${getCategoryBadgeClass(item.category)}`} title={`${item.certificationCompany?.trim() || "Graded"} ${formatGrade(item.grade)}`}>
-                      {item.certificationCompany?.trim() || "Graded"} {formatGrade(item.grade)}
-                    </span>
-                  ) : null}
+                  <span className={`inline-flex max-w-full items-center rounded-md px-1.5 py-0 text-[9px] font-extrabold leading-4 ring-1 ${getCategoryBadgeClass(item.category)}`} title={getGradeOrConditionPresentation(item).title}>
+                    {getGradeOrConditionPresentation(item).text}
+                  </span>
                 </div>
 
                 <div className="flex items-center justify-between">
