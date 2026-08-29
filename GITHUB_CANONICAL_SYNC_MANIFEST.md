@@ -463,3 +463,10 @@ Before future GitHub-to-WebDev reconciliation, create a recovery checkpoint and 
 - Recent Trades item slots and completion seal are larger; the existing five-second fade-only rotation remains.
 - Ticket outer edges use a stronger repeated perforation pattern matching the supplied reference.
 - No database, payment, provider, schedule, setting, or secret changed.
+
+## 2026-08-29 Recent Trades blue-only readability refinement
+
+- Recent Trades now uses blue-only UI colors with no green UI accents; the user-supplied transparent seal remains blue.
+- Member avatars, usernames, ratings, verification rows, item imagery, metadata, and completion mark are larger. Recently Added restores the earlier 150px/160px/172px responsive item sizing.
+- Automatic five-second fade-only rotation and reduced-motion handling remain unchanged; hero, top bar, category bar, stats strip, and other homepage areas remain unchanged.
+- No database, payment, provider, schedule, setting, or secret changed.

@@ -49,10 +49,10 @@ describe("homepage Recent Trades carousel", () => {
     expect(carouselSource).toContain("border-dashed");
     expect(carouselSource).toContain("TicketDivider");
     expect(carouselSource).toContain("object-contain p-0.5");
-    expect(carouselSource).toContain("h-40 w-28");
-    expect(carouselSource).toContain("sm:h-48 sm:w-36");
-    expect(carouselSource).toContain("bg-[#f1f7ef]");
-    expect(carouselSource).toContain("bg-[#e1efdc]");
+    expect(carouselSource).toContain("h-44 w-32");
+    expect(carouselSource).toContain("sm:h-52 sm:w-40");
+    expect(carouselSource).toContain("bg-[#edf3ff]");
+    expect(carouselSource).toContain("bg-[#dce8f7]");
     expect(carouselSource).toContain("formatEstimatedValue");
     expect(carouselSource).toContain("formatConditionOrGrade");
     expect(carouselSource).toContain("item.certificationCompany?.trim()");
@@ -67,7 +67,7 @@ describe("homepage Recent Trades carousel", () => {
     expect(carouselSource).not.toContain("<ArrowRight");
     expect(carouselSource).toContain('src="/manus-storage/trade-complete-seal-blue-final_7bd19559.png"');
     expect(carouselSource).toContain('alt="Trade complete"');
-    expect(carouselSource).toContain('className="h-36 w-40');
+    expect(carouselSource).toContain('className="h-40 w-44');
     expect(carouselSource).not.toContain("mix-blend-multiply");
     expect(carouselSource).not.toContain("trade-complete-stamp-transparent_9ec4b748.png");
     expect(carouselSource).toContain("ticket-card");
@@ -80,7 +80,7 @@ describe("homepage Recent Trades carousel", () => {
     expect(carouselSource).toContain("Total Trade Value:");
     expect(carouselSource).toContain("Verified trade");
     expect(carouselSource).toContain("formatTradeDate");
-    expect(carouselSource).toContain("text-violet-700");
+    expect(carouselSource).toContain("text-[#315ea7]");
     expect(routerSource).toContain("l.condition as requestedListingCondition");
     expect(routerSource).toContain("l.grade as requestedListingGrade");
     expect(routerSource).toContain("l.certificationCompany as requestedListingCertificationCompany");
