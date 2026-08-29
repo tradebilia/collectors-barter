@@ -78,7 +78,7 @@ export default function Watchlist() {
         backgroundRepeat: 'no-repeat'
       }}>
         <div className="container relative flex h-64 items-center justify-center py-0 sm:h-72 sm:py-0 lg:h-80 lg:py-0">
-          <div className="flex w-full max-w-4xl items-center justify-center -ml-32">
+          <div className="flex w-full max-w-4xl items-center justify-center">
             <img src="https://assets.tradebilia.com/Watchlist_c968bddd.svg" alt="Watchlist" className="h-auto w-full" />
           </div>
         </div>

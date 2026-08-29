@@ -41,9 +41,11 @@ describe("authenticated mobile-only responsive layout contracts", () => {
     expect(source).toContain("grid grid-cols-1 gap-3 sm:grid-cols-2");
   });
 
-  it("centers account-flow hero artwork on phones while preserving the desktop offset", () => {
+  it("centers account-flow hero artwork with equal edge spacing at every breakpoint", () => {
     for (const page of ["AccountSetup.tsx", "AddInventory.tsx", "PublicProfile.tsx", "ReferralRequest.tsx"]) {
-      expect(read(`client/src/pages/${page}`)).toContain("lg:-ml-32");
+      const source = read(`client/src/pages/${page}`);
+      expect(source).toContain("items-center justify-center");
+      expect(source).not.toContain("-ml-32");
     }
     const publicProfile = read("client/src/pages/PublicProfile.tsx");
     expect(publicProfile).toContain("grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-slate-100 sm:grid-cols-4");
@@ -51,10 +53,11 @@ describe("authenticated mobile-only responsive layout contracts", () => {
     expect(read("client/src/pages/AccountSetup.tsx")).toContain("grid grid-cols-1 gap-3 sm:grid-cols-3");
   });
 
-  it("applies the Report a Member hero correction only below the desktop breakpoint", () => {
+  it("keeps the Report a Member hero centered at every breakpoint without injected offset styles", () => {
     const source = read("client/src/pages/ReportUser.tsx");
-    expect(source).toContain("@media (max-width: 1023px)");
-    expect(source).toContain("mobileHeroStyle.dataset.reportUserMobileHero");
-    expect(source).toContain("items-center justify-center -ml-32");
+    expect(source).toContain("max-w-7xl items-center justify-center");
+    expect(source).not.toContain("@media (max-width: 1023px)");
+    expect(source).not.toContain("mobileHeroStyle.dataset.reportUserMobileHero");
+    expect(source).not.toContain("-ml-32");
   });
 });

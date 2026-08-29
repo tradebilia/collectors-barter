@@ -281,7 +281,7 @@ export default function PublicProfile() {
         backgroundRepeat: 'no-repeat'
       }}>
         <div className="container relative flex h-64 items-center justify-center py-0 sm:h-72 lg:h-80">
-          <div className="flex w-full max-w-6xl items-center justify-center lg:-ml-32">
+          <div className="flex w-full max-w-6xl items-center justify-center">
             <img src="https://assets.tradebilia.com/Profile_97aeba0f.svg" alt="Profile" className="h-auto w-full" />
           </div>
         </div>
