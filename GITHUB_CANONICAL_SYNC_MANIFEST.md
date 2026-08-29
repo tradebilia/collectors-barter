@@ -554,3 +554,13 @@ The final card correction uses canonical display-name priority, aligned directio
 | Scope | Profile integrations presents one private Zelle destination field that accepts either an email address or U.S. mobile number, and labels PayPal, Venmo, Cash App, and Zelle destinations with the supplied official provider assets. |
 | Data safety | The one Zelle field maps to the existing mutually exclusive protected email-or-phone server contract. Stored values, validation, privacy scope, direct-payment disclosure, and cash-trade safeguards remain unchanged. |
 | Validation | Focused external-cash safeguards test, TypeScript, production build, dependency audit, changed-file whitespace, and source-level form review passed. |
+
+## Truthful Grading Display and Video Games Options Pair
+
+| Record | Value |
+|---|---|
+| Managed WebDev checkpoint | `d3eb8e98` |
+| Canonical implementation commit | `6988cea` — normal credential-safe push to GitHub `main`; no force push or history replacement. |
+| Scope | All reviewed listing surfaces now prefer the stored custom grading-company name when the selected company is Other and use a safe non-Other fallback for legacy rows without a custom value. The affected Item Detail title uses lining numerals so digits such as 3 align consistently with surrounding characters. Video Games inventory grading options include PSA and display WATA instead of WATA Games (PSA Video Games). |
+| Data safety | The custom-company value continues to come from structured item details; no listing data, database schema, payment, provider, schedule, or secret changed. Existing owner-safe and self-trade safeguards remain untouched. |
+| Validation | Focused grading, Video Games option, and Recent Trades regressions passed 6/6; TypeScript, production build, production dependency audit, changed-file whitespace, and desktop/mobile public listing visual checks passed. The full suite was attempted but stalled on unrelated external DHL/RAWG credential checks and was stopped after timeout. |
