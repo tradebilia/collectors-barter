@@ -494,3 +494,13 @@ The final card correction uses canonical display-name priority, aligned directio
 | Data change | Reviewed additive custom TiDB columns/enums and cash-adjustment activity events only. No marketplace, listing, existing trade, membership, subscription, provider account, schedule, or secret was changed. |
 | Validation | Focused external cash-adjustment, review-before-shipping, and category-navigation tests passed 10/10; TypeScript, production build, production dependency audit, whitespace, and database startup health passed. Credential-dependent UPS, Daily, and IPQS probes in a broader suite remain outside this feature validation. |
 | Payment boundary | Tradebilia does not initiate, process, hold, insure, refund, or guarantee PayPal, Venmo, Cash App, or Zelle transfers. The Trade Room and Account Setup include this disclosure. |
+
+## Global Member Avatar Treatment Pair
+
+| Record | Value |
+|---|---|
+| Managed WebDev checkpoint | `f2e4aef2` |
+| Canonical implementation commit | Recorded after the normal, credential-safe GitHub push that accompanies this manifest update. |
+| Scope | Standardized all member-avatar renderers to use a blurred enlarged copy of the same source image behind a sharp, frame-filling foreground. The shared Avatar primitive now updates nine consumer files, and bespoke paths in Public Profile, Verified Merchants, Traders Showcase, and every Trade Room context use the same treatment. |
+| Accessibility and safety | The decorative background is hidden from assistive technologies; the foreground retains meaningful alt text; no-photo fallbacks remain intact; image-error backgrounds hide safely. Listing media, provider logos, category graphics, and other non-avatar images are excluded. |
+| Validation | Focused avatar, homepage, and responsive-layout regressions passed 15/15; TypeScript, production build, production dependency audit, source-diff whitespace check, and desktop/mobile representative visual reviews passed. |
