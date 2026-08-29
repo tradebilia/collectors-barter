@@ -410,6 +410,11 @@ export const useAddInventoryForm = (photos: any[] = []): UseAddInventoryFormRetu
       }
     });
 
+    const tradeValue = Number(formData.tradeValue);
+    if (formData.tradeValue !== undefined && formData.tradeValue !== null && formData.tradeValue !== '' && (!Number.isFinite(tradeValue) || tradeValue < 1)) {
+      newErrors.tradeValue = 'Trade Value must be at least $1';
+    }
+
     // Check shipping
     if (formData.shippingAvailable === undefined || formData.shippingAvailable === null || formData.shippingAvailable === '') {
       newErrors.shippingAvailable = 'Shipping availability is required';

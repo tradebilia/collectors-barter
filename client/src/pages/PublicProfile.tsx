@@ -27,7 +27,7 @@ import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Link } from "wouter";
 import { resolveTradebiliaListingImage } from "@/lib/listingImages";
-import { tradebiliaConditionOptions, formatGrade } from "@/lib/tradebilia";
+import { tradebiliaConditionOptions, formatGrade, formatItemValue } from "@/lib/tradebilia";
 import { getDisplayedGradingCompany } from "@/lib/gradingDisplay";
 import { EbayFeedbackPreview } from "@/components/EbayFeedbackPreview";
 import { TopBar } from "@/components/TopBar";
@@ -755,7 +755,7 @@ export default function PublicProfile() {
                             {listing.estimatedValue && (
                               <span>
                                 <span className="font-semibold">Value:</span>{' '}
-                                ${parseFloat(listing.estimatedValue).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                {formatItemValue(listing.estimatedValue)}
                               </span>
                             )}
                           </div>

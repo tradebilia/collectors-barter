@@ -15,6 +15,7 @@ import { getCategoryPaginationState } from "@shared/categoryPagination";
 import {
   TRADEBILIA_LOGO_URL,
   formatGrade,
+  formatItemValue,
   getTradebiliaCategoryBenchmark,
   getTradebiliaCategoryLabel,
   getTradebiliaCategoryTheme,
@@ -1476,7 +1477,7 @@ export default function CategoryPage() {
                               </div>
                               {listing.estimatedValue && (
                                 <div>
-                                  <span className="font-semibold">Value:</span> ${listing.estimatedValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                  <span className="font-semibold">Value:</span> {formatItemValue(listing.estimatedValue)}
                                 </div>
                               )}
                               <div>
@@ -1519,7 +1520,7 @@ export default function CategoryPage() {
                             </div>
                             <div>
                               <p className="text-[0.55rem] font-semibold uppercase tracking-[0.08em] opacity-80">Value</p>
-                              <p className="mt-1 font-semibold truncate mt-0 text-[0.55rem]">{listing.estimatedValue ? `$${listing.estimatedValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—"}</p>
+                              <p className="mt-1 font-semibold truncate mt-0 text-[0.55rem]">{listing.estimatedValue ? formatItemValue(listing.estimatedValue) : "—"}</p>
                             </div>
                             <div>
                               <p className="text-[0.55rem] font-semibold uppercase tracking-[0.08em] opacity-80">Collector</p>

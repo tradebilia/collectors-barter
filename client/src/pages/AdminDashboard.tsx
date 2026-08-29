@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
+import { formatItemValue, formatWholeDollar } from "@/lib/tradebilia";
 import { TopBar } from "@/components/TopBar";
 import { ReferralsTab } from "@/components/ReferralsTab";
 import { PreLaunchEmailTab } from "@/components/PreLaunchEmailTab";
@@ -391,7 +392,7 @@ function AdminListingsTab({ listingsQuery }: { listingsQuery: any }) {
                     <td className="py-2 px-4">{listing.category}</td>
                     <td className="py-2 px-4 truncate max-w-xs">{listing.title}</td>
                     <td className="py-2 px-4">{new Date(listing.createdAt).toLocaleDateString()}</td>
-                    <td className="py-2 px-4">${(listing.estimatedValue || 0).toLocaleString()}</td>
+                    <td className="py-2 px-4">{formatItemValue(listing.estimatedValue)}</td>
                     <td className="py-2 px-4">{listing.viewCount || 0}</td>
                     <td className="py-2 px-4">
                       <span className={`px-2 py-1 rounded text-xs font-semibold ${
@@ -859,7 +860,7 @@ export default function AdminDashboard() {
               />
               <StatCard
                 title="Platform Value"
-                value={statsQuery.data ? `$${statsQuery.data.totalValue.toLocaleString()}` : "Loading..."}
+                value={statsQuery.data ? formatWholeDollar(statsQuery.data.totalValue) : "Loading..."}
                 description="Total inventory value"
                 icon={<BarChart3 className="h-4 w-4" />}
               />
@@ -957,7 +958,7 @@ export default function AdminDashboard() {
                 <CardDescription>Monitor direct PayPal, Venmo, Cash App, and Zelle cash adjustments. Tradebilia does not process, hold, or guarantee these payments; destinations remain masked unless an administrator records a dispute-related need to view them.</CardDescription>
               </CardHeader>
               <CardContent>
-                {externalCashAdjustmentsQuery.isLoading ? <p className="text-sm text-muted-foreground">Loading external cash adjustments…</p> : externalCashAdjustmentsQuery.error ? <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">Cash-adjustment monitoring is temporarily unavailable.</p> : (externalCashAdjustmentsQuery.data?.length ?? 0) === 0 ? <p className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">No cash adjustments have been selected for a trade yet.</p> : <div className="overflow-x-auto rounded-lg border"><table className="w-full min-w-[760px] text-sm"><thead className="bg-slate-50 text-left text-xs uppercase text-slate-500"><tr><th className="p-3">Trade</th><th className="p-3">Payer → Payee</th><th className="p-3">Amount</th><th className="p-3">Method</th><th className="p-3">Status</th><th className="p-3">Destination</th><th className="p-3">Action</th></tr></thead><tbody>{externalCashAdjustmentsQuery.data?.map((adjustment: any) => <tr key={adjustment.paymentId} className="border-t"><td className="p-3 font-medium">TR-{adjustment.proposalId}</td><td className="p-3">{adjustment.payerName} → {adjustment.payeeName}</td><td className="p-3">${Number(adjustment.amount).toLocaleString()}</td><td className="p-3 capitalize">{String(adjustment.paymentMethod ?? "Not selected").replace("_", " ")}</td><td className="p-3 capitalize">{String(adjustment.status).replace("_", " ")}</td><td className="p-3 font-mono text-xs">{adjustment.paymentIdentifier}</td><td className="p-3"><Button variant="outline" size="sm" onClick={() => { setCashRevealPaymentId(adjustment.paymentId); setCashRevealPhrase(""); setRevealedCashIdentifier(null); setCashRevealDialogOpen(true); }} disabled={!adjustment.paymentMethod || adjustment.paymentIdentifier === "Not set"}>Audited reveal</Button></td></tr>)}</tbody></table></div>}
+                {externalCashAdjustmentsQuery.isLoading ? <p className="text-sm text-muted-foreground">Loading external cash adjustments…</p> : externalCashAdjustmentsQuery.error ? <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">Cash-adjustment monitoring is temporarily unavailable.</p> : (externalCashAdjustmentsQuery.data?.length ?? 0) === 0 ? <p className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">No cash adjustments have been selected for a trade yet.</p> : <div className="overflow-x-auto rounded-lg border"><table className="w-full min-w-[760px] text-sm"><thead className="bg-slate-50 text-left text-xs uppercase text-slate-500"><tr><th className="p-3">Trade</th><th className="p-3">Payer → Payee</th><th className="p-3">Amount</th><th className="p-3">Method</th><th className="p-3">Status</th><th className="p-3">Destination</th><th className="p-3">Action</th></tr></thead><tbody>{externalCashAdjustmentsQuery.data?.map((adjustment: any) => <tr key={adjustment.paymentId} className="border-t"><td className="p-3 font-medium">TR-{adjustment.proposalId}</td><td className="p-3">{adjustment.payerName} → {adjustment.payeeName}</td><td className="p-3">{formatWholeDollar(adjustment.amount)}</td><td className="p-3 capitalize">{String(adjustment.paymentMethod ?? "Not selected").replace("_", " ")}</td><td className="p-3 capitalize">{String(adjustment.status).replace("_", " ")}</td><td className="p-3 font-mono text-xs">{adjustment.paymentIdentifier}</td><td className="p-3"><Button variant="outline" size="sm" onClick={() => { setCashRevealPaymentId(adjustment.paymentId); setCashRevealPhrase(""); setRevealedCashIdentifier(null); setCashRevealDialogOpen(true); }} disabled={!adjustment.paymentMethod || adjustment.paymentIdentifier === "Not set"}>Audited reveal</Button></td></tr>)}</tbody></table></div>}
               </CardContent>
             </Card>
           </TabsContent>

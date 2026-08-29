@@ -1,6 +1,6 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { resolveTradebiliaListingImage } from "@/lib/listingImages";
-import { getTradebiliaCategoryLabel, getAvatarInitials, formatGrade } from "@/lib/tradebilia";
+import { getTradebiliaCategoryLabel, getAvatarInitials, formatGrade, formatWholeDollar, formatItemValue } from "@/lib/tradebilia";
 import { getDisplayedGradingCompany } from "@/lib/gradingDisplay";
 import { trpc } from "@/lib/trpc";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -192,7 +192,7 @@ function RankingListingItem({ item, index, imageUrl, metricsType, metrics }: { i
               <img src={imageUrl} alt={item.title} className="max-h-96 w-auto object-contain" />
             </div>
             <div className="mt-4 text-center font-semibold">
-              Estimated Value: ${item.estimatedValue?.toFixed(0) ?? 'N/A'}
+              Estimated Value: {formatItemValue(item.estimatedValue)}
             </div>
           </DialogContent>
         </Dialog>
@@ -206,7 +206,7 @@ function RankingListingItem({ item, index, imageUrl, metricsType, metrics }: { i
               <span className={metricsType === 'views' ? 'text-blue-400' : metricsType === 'value' ? 'text-emerald-400' : 'text-pink-400'}>
                 {metricsType === 'views' ? <TrendingUp className="w-3.5 h-3.5" /> : metricsType === 'value' ? '$' : <Heart className="w-3.5 h-3.5 fill-current" />}
               </span>
-              <span>{metricsType === 'value' ? `${Number(metrics).toLocaleString()}` : Number(metrics).toLocaleString()}</span>
+              <span>{metricsType === 'value' ? formatWholeDollar(metrics, 1).replace(/^\$/, '') : Number(metrics).toLocaleString()}</span>
             </div>
           )}
         </div>
@@ -438,7 +438,7 @@ export default function Home() {
     ? (marketplaceQuery.data?.listings ?? []).slice(0, 15).map(listing => ({
         id: listing.id,
         title: listing.title,
-        price: listing.estimatedValue ? `$${Math.round(listing.estimatedValue).toLocaleString("en-US")}` : "$0",
+        price: formatItemValue(listing.estimatedValue, "$0"),
         subtitle: `${listing.ownerRating.averageRating.toFixed(1)} ★ · ${listing.ownerRating.reviewCount} reviews`,
         category: listing.category,
         certificationCompany: listing.certificationCompany,
@@ -614,7 +614,7 @@ export default function Home() {
             {[
               ["users", "Total Members", siteStatisticsQuery.data?.totalMembers ? `${siteStatisticsQuery.data.totalMembers}` : "0"],
               ["list", "Active Listings", siteStatisticsQuery.data?.totalItems ? `${siteStatisticsQuery.data.totalItems.toLocaleString()}` : "0"],
-              ["dollar", "Total Items Value", siteStatisticsQuery.data?.totalValue ? `$${Math.floor(siteStatisticsQuery.data.totalValue).toLocaleString('en-US')}` : "$0"],
+              ["dollar", "Total Items Value", formatWholeDollar(siteStatisticsQuery.data?.totalValue ?? 0)],
               ["handshake", "Successful Trades", siteStatisticsQuery.data?.totalTrades ? `${siteStatisticsQuery.data.totalTrades}` : "0"],
             ].map(([iconType, label, value]) => {
               const iconMap: Record<string, React.ReactNode> = {

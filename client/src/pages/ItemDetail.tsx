@@ -28,7 +28,7 @@ import { Separator } from "@/components/ui/separator";
 import { resolveTradebiliaListingImage } from "@/lib/listingImages";
 import { trpc } from "@/lib/trpc";
 import { getLoginUrl } from "@/const";
-import { getTradebiliaCategoryTheme, getTradebiliaCategoryLabel, formatGrade } from "@/lib/tradebilia";
+import { getTradebiliaCategoryTheme, getTradebiliaCategoryLabel, formatGrade, formatItemValue } from "@/lib/tradebilia";
 import { getDisplayedGradingCompany } from "@/lib/gradingDisplay";
 
 const getItemDetailPageClassName = (category: string): string => {
@@ -400,7 +400,7 @@ export default function ItemDetail() {
                   {listing.estimatedValue && (
                     <div>
                       <p className="text-base font-bold uppercase tracking-[0.25em] text-gray-800">Estimated Value</p>
-                      <p className="mt-2 text-sm font-medium text-gray-500">${Math.round(listing.estimatedValue).toLocaleString('en-US')}</p>
+                      <p className="mt-2 text-sm font-medium text-gray-500">{formatItemValue(listing.estimatedValue)}</p>
                     </div>
                   )}
                   <div>
@@ -585,7 +585,7 @@ export default function ItemDetail() {
                     </a>
                     {/* Email */}
                     <a
-                      href={`mailto:?subject=${encodeURIComponent(`Check out this listing: ${listing.title}`)}&body=${encodeURIComponent(`I found this listing on Tradebilia and thought you might be interested:\n\n${listing.title}\nEstimated Value: $${listing.estimatedValue ? Math.round(listing.estimatedValue).toLocaleString('en-US') : 'N/A'}\n\n${typeof window !== 'undefined' ? window.location.href : ''}`)}`}
+                      href={`mailto:?subject=${encodeURIComponent(`Check out this listing: ${listing.title}`)}&body=${encodeURIComponent(`I found this listing on Tradebilia and thought you might be interested:\n\n${listing.title}\nEstimated Value: ${listing.estimatedValue ? formatItemValue(listing.estimatedValue) : 'N/A'}\n\n${typeof window !== 'undefined' ? window.location.href : ''}`)}`}
                       className="flex items-center gap-1.5 px-2.5 py-2 rounded-full bg-gray-600 text-white text-xs font-semibold hover:bg-gray-700 transition whitespace-nowrap"
                       title="Share via Email"
                     >
@@ -631,7 +631,7 @@ export default function ItemDetail() {
               allFields.push({ label: 'Category', value: getTradebiliaCategoryLabel(listing.category) });
               if (!isGradedListing && listing.condition) allFields.push({ label: 'Condition', value: getConditionDisplayName(listing.condition) });
               if (listing.certificationCompany) allFields.push({ label: 'Grading Company', value: getDisplayedGradingCompany(listing.certificationCompany, listing.itemDetails?.customGradingCompany) });
-              if (listing.estimatedValue) allFields.push({ label: 'Estimated Value', value: `$${listing.estimatedValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` });
+              if (listing.estimatedValue) allFields.push({ label: 'Estimated Value', value: formatItemValue(listing.estimatedValue) });
               if (listing.itemType) allFields.push({ label: 'Item Type', value: listing.itemType.replace(/_/g, ' ').split(' ').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') });
               if (listing.signatures && listing.signatures.length > 0) allFields.push({ label: 'Signatures', value: listing.signatures.join(', ') });
 

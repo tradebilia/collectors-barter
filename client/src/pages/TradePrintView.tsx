@@ -2,6 +2,7 @@ import { useParams } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { useEffect } from "react";
+import { formatWholeDollar } from "@/lib/tradebilia";
 
 export default function TradePrintView() {
   const params = useParams<{ id: string }>();
@@ -149,7 +150,7 @@ export default function TradePrintView() {
               {myItems.map((item: any) => item && <ItemCard key={item.id} item={item} />)}
               {serverMyCash > 0 && (
                 <div className="text-center">
-                  <p className="text-green-700 font-extrabold text-lg mt-2">+ ${serverMyCash.toLocaleString()} Cash</p>
+                  <p className="text-green-700 font-extrabold text-lg mt-2">+ {formatWholeDollar(serverMyCash)} Cash</p>
                 </div>
               )}
             </div>
@@ -166,7 +167,7 @@ export default function TradePrintView() {
               {theirItems.map((item: any) => item && <ItemCard key={item.id} item={item} />)}
               {serverTheirCash > 0 && (
                 <div className="text-center">
-                  <p className="text-green-700 font-extrabold text-lg mt-2">+ ${serverTheirCash.toLocaleString()} Cash</p>
+                  <p className="text-green-700 font-extrabold text-lg mt-2">+ {formatWholeDollar(serverTheirCash)} Cash</p>
                 </div>
               )}
             </div>

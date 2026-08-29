@@ -20,7 +20,7 @@ import { getLoginUrl } from "@/const";
 
 import { resolveTradebiliaListingImage } from "@/lib/listingImages";
 import { trpc } from "@/lib/trpc";
-import { getTradebiliaCategoryLabel, formatGrade } from "@/lib/tradebilia";
+import { getTradebiliaCategoryLabel, formatGrade, formatWholeDollar, formatItemValue } from "@/lib/tradebilia";
 import { getDisplayedGradingCompany } from "@/lib/gradingDisplay";
 import { Download, Loader2, Menu, MessageSquareText, Pencil, Plus, Search, Share2, Trash2, Eye, EyeOff } from "lucide-react";
 import { TopRightIcons } from "@/components/TopRightIcons";
@@ -662,7 +662,7 @@ export default function Inventory() {
                   </div>
                   <div className="bg-green-50 rounded-lg p-6 border border-green-200 min-w-48">
                     <p className="text-xs font-semibold text-green-600 uppercase">Total Value</p>
-                    <p className="text-2xl font-bold text-green-900 mt-1">${filteredListings.reduce((sum: number, l: any) => sum + (Number(l.estimatedValue) || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                    <p className="text-2xl font-bold text-green-900 mt-1">{formatWholeDollar(filteredListings.reduce((sum: number, l: any) => sum + (Number(l.estimatedValue) || 0), 0))}</p>
                   </div>
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
@@ -802,7 +802,7 @@ export default function Inventory() {
                         ) : (
                           <div><span className="text-slate-600"><strong>Condition:</strong> {listing.condition.replace(/_/g, ' ').charAt(0).toUpperCase() + listing.condition.replace(/_/g, ' ').slice(1)}</span></div>
                         )}
-                        <div><span className="text-slate-600"><strong>Value:</strong> {listing.estimatedValue ? `$${Number(listing.estimatedValue).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : 'Not specified'}</span></div>
+                        <div><span className="text-slate-600"><strong>Value:</strong> {listing.estimatedValue !== null && listing.estimatedValue !== undefined ? formatItemValue(listing.estimatedValue) : 'Not specified'}</span></div>
                       </div>
                       <div className="flex gap-2 mt-3">
                         <Link href={`/inventory/edit/${listing.id}`} className="flex-1">

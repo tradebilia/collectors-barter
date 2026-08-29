@@ -15,6 +15,7 @@ import { trpc } from "@/lib/trpc";
 import { TopBar } from "@/components/TopBar";
 import { CategoryBar } from "@/components/CategoryBar";
 import { resolveTradebiliaListingImage } from "@/lib/listingImages";
+import { formatItemValue } from "@/lib/tradebilia";
 
 const TRADE_HUB_LOGO_URL = "https://assets.tradebilia.com/TradeHub_5b3c2442.svg";
 
@@ -319,7 +320,7 @@ export default function TradeHub() {
                         <h4 className="text-white font-semibold">{selectedTrade.listing?.title || 'Unknown Item'}</h4>
                         <div className="flex items-center gap-3 mt-1">
                           <span className="text-green-400 font-bold">
-                            ${parseFloat(selectedTrade.listing?.value || '0').toLocaleString()}
+                            {formatItemValue(selectedTrade.listing?.value)}
                           </span>
                           <span className="text-xs text-gray-400 capitalize">
                             {selectedTrade.listing?.category?.replace('_', ' ')}

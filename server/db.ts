@@ -748,6 +748,7 @@ export async function getMarketplaceFeed(
       grade: listings.grade,
       certificationCompany: listings.certificationCompany,
       estimatedValue: listings.estimatedValue,
+      itemDetails: listings.itemDetails,
       description: listings.description,
       status: listings.status,
       featured: listings.featured,

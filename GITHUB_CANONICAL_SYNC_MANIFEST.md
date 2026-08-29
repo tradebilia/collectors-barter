@@ -550,7 +550,37 @@ The final card correction uses canonical display-name priority, aligned directio
 | Record | Value |
 |---|---|
 | Managed WebDev checkpoint | `a4fd3923` |
-| Canonical implementation commit | Recorded after the normal, credential-safe GitHub push that accompanies this manifest update. |
+| Canonical implementation commit | `85350f60de91defa2a0a0973917cad683840a6cc` — normal credential-safe push to GitHub `main`; no force push or history replacement. |
 | Scope | Profile integrations presents one private Zelle destination field that accepts either an email address or U.S. mobile number, and labels PayPal, Venmo, Cash App, and Zelle destinations with the supplied official provider assets. |
 | Data safety | The one Zelle field maps to the existing mutually exclusive protected email-or-phone server contract. Stored values, validation, privacy scope, direct-payment disclosure, and cash-trade safeguards remain unchanged. |
 | Validation | Focused external-cash safeguards test, TypeScript, production build, dependency audit, changed-file whitespace, and source-level form review passed. |
+
+## Truthful Grading Display and Video Games Options Pair
+
+| Record | Value |
+|---|---|
+| Managed WebDev checkpoint | `d3eb8e98` |
+| Canonical implementation commit | `6988cea` — normal credential-safe push to GitHub `main`; no force push or history replacement. |
+| Scope | All reviewed listing surfaces now prefer the stored custom grading-company name when the selected company is Other and use a safe non-Other fallback for legacy rows without a custom value. The affected Item Detail title uses lining numerals so digits such as 3 align consistently with surrounding characters. Video Games inventory grading options include PSA and display WATA instead of WATA Games (PSA Video Games). |
+| Data safety | The custom-company value continues to come from structured item details; no listing data, database schema, payment, provider, schedule, or secret changed. Existing owner-safe and self-trade safeguards remain untouched. |
+| Validation | Focused grading, Video Games option, and Recent Trades regressions passed 6/6; TypeScript, production build, production dependency audit, changed-file whitespace, and desktop/mobile public listing visual checks passed. The full suite was attempted but stalled on unrelated external DHL/RAWG credential checks and was stopped after timeout. |
+
+## Non-Marketplace Hero Title Centering Pair
+
+| Record | Value |
+|---|---|
+| Managed WebDev implementation checkpoint | `faf924d3` |
+| Canonical implementation commit | `4ae0982` — normal credential-safe push to GitHub `main`; no force push or history replacement. |
+| Scope | Removed legacy negative-margin offsets from all identified non-Category and non-Explore All hero title wrappers so their title artwork is centered by equal flex spacing at desktop and mobile widths. Report a Member’s injected mobile offset style was removed. The homepage’s measured lockup treatment, Category page, and Explore All page were preserved. |
+| Validation | Focused hero, responsive, Report a Member, and Recent Trades regressions passed 12/12; TypeScript, production build, production dependency audit, and changed-file whitespace checks passed. Desktop and mobile representative public routes were visually reviewed; protected routes redirected to the public homepage when unauthenticated. |
+| Safeguards | No database, payment, provider, schedule, secret, asset, or marketplace-data behavior changed. |
+
+## Payment Logos, Cash Guidance, and PSA Feed Correction Pair
+| Record | Value |
+|---|---|
+| Managed WebDev checkpoint | `3934f971` |
+| Canonical implementation commit | `e9a38b99bc47885144aef206ebcf10bd91a0111e` — normal credential-safe push to GitHub `main`; no force push or history replacement. |
+| Scope | Account Settings now renders PayPal, Venmo, Cash App, and Zelle in equal PayPal-sized logo frames. Account Settings and Account Setup explain that at least one destination must be filled before cash can be included in a trade. The marketplace feed parser accepts parsed and serialized itemDetails so PSA is retained in Recently Added when Item Detail has the PSA value. |
+| Verification assessment | Official provider documentation did not establish a reliable universal no-payment existence or ownership lookup for arbitrary PayPal emails, Venmo usernames, Cash App cashtags, or Zelle destinations. Existing syntax validation and member-confirmed cash workflow remain in place; no unsupported provider-verified status was added. |
+| Validation | Focused payment, grading-feed, and Recent Trades regressions passed 10/10 in both WebDev and canonical checkout; TypeScript, production build, production dependency audit, and changed-file whitespace checks passed. Public homepage visual verification passed; Account Settings visual inspection remained limited by the signed-out preview redirect. |
+| Data safety | No database schema, stored payment contract, payment-provider connection, schedule, secret, or marketplace interaction guard changed. |

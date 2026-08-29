@@ -1,0 +1,5 @@
+# Super Mario Bros. 3 PSA feed verification
+
+Read-only comparison for listing `690002` showed Item Detail returning `certificationCompany: Other` with `itemDetails.customGradingCompany: PSA`. The marketplace feed returned the same listing with `customGradingCompany: null` because `getMarketplaceFeed` did not project `listings.itemDetails` before invoking the custom-company parser. Adding `itemDetails: listings.itemDetails` corrected the feed response; the live feed now returns `customGradingCompany: PSA` for listing `690002`.
+
+The new regression test verifies that the marketplace feed projection includes `itemDetails: listings.itemDetails` and that parsed and serialized itemDetails resolve PSA. Focused grading-feed, Recent Trades, and external-cash regressions passed 11/11. Full-page homepage visual verification was performed after the fix; the card rotation did not show listing 690002 in the captured frame, so the exact PSA assertion is backed by the live read-only feed response and regression test rather than that screenshot frame.
