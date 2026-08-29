@@ -62,6 +62,16 @@ describe("External cash-adjustment safeguards", () => {
       expect(source).toContain("Zelle");
       expect(source).toContain("does not process, hold, insure, refund, or guarantee direct payments");
     }
+    expect(settingsSource).toContain("const zelleDestination = externalPaymentForm.zelleEmail || externalPaymentForm.zellePhone;");
+    expect(settingsSource).toContain('id="payment-zelle"');
+    expect(settingsSource).not.toContain('id="payment-zelle-email"');
+    expect(settingsSource).not.toContain('id="payment-zelle-phone"');
+    expect(settingsSource).toContain("Email address or U.S. mobile number");
+    expect(settingsSource).toContain("For Zelle, enter either one email address or one U.S. mobile number.");
+    expect(settingsSource).toContain('/manus-storage/paypal-official-logo_f5abda0f.png');
+    expect(settingsSource).toContain('/manus-storage/venmo-official-logo_37a969df.png');
+    expect(settingsSource).toContain('/manus-storage/cash-app-official-logo_72e2eb83.webp');
+    expect(settingsSource).toContain('/manus-storage/zelle-official-logo_3b446c40.png');
     expect(warRoomSource).toContain("getCashAdjustmentContext");
     expect(warRoomSource).toContain("I sent it");
     expect(warRoomSource).toContain("Confirm receipt");
