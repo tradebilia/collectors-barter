@@ -524,3 +524,13 @@ The final card correction uses canonical display-name priority, aligned directio
 | Scope | Explore All receives the same owner-safe Trade control, required personalized proposal message, larger grade value, and Trader Rating wording as category pages. Category and Explore All gray-panel labels have stronger contrast. Recently Added displays a custom grading-company name in place of Other when stored and shows a Condition badge for ungraded items. |
 | Data safety | The formatter exposes only the saved `customGradingCompany` value from structured item details; no fields are fabricated, and card values, existing listing navigation, and card height remain intact. |
 | Validation | Focused Explore All, homepage, category-card, and listing-interaction tests, TypeScript, production build, dependency audit, changed-file whitespace, and desktop/mobile visual checks passed. |
+
+## Simplified Ungraded Carousel Badge Pair
+
+| Record | Value |
+|---|---|
+| Managed WebDev checkpoint | `d37d00bc` |
+| Canonical implementation commit | Recorded after the normal, credential-safe GitHub push that accompanies this manifest update. |
+| Scope | Recently Added keeps category-colored metadata badges but removes the redundant Condition prefix for ungraded listings. The badge now presents only the stored condition value, such as Near Mint. |
+| Data safety | Graded-item company and grade display, custom-company fallback, values, imagery, and card-height contract remain unchanged. No listing data, database schema, payment, provider, schedule, setting, or secret changed. |
+| Validation | Focused homepage regression, TypeScript, production build, dependency audit, changed-file whitespace, and full homepage visual check passed. |
