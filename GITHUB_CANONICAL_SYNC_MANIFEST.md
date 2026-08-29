@@ -534,3 +534,13 @@ The final card correction uses canonical display-name priority, aligned directio
 | Scope | Recently Added keeps category-colored metadata badges but removes the redundant Condition prefix for ungraded listings. The badge now presents only the stored condition value, such as Near Mint. |
 | Data safety | Graded-item company and grade display, custom-company fallback, values, imagery, and card-height contract remain unchanged. No listing data, database schema, payment, provider, schedule, setting, or secret changed. |
 | Validation | Focused homepage regression, TypeScript, production build, dependency audit, changed-file whitespace, and full homepage visual check passed. |
+
+## Cross-Page Listing Actions Pair
+
+| Record | Value |
+|---|---|
+| Managed WebDev checkpoint | `c2258544` |
+| Canonical implementation commit | Recorded after the normal, credential-safe GitHub push that accompanies this manifest update. |
+| Scope | Explore All listing cards now include the same heart favorite action as category cards, and Category trade actions now show the Trade label alongside the icon so both pages use familiar, consistent controls. |
+| Safeguards | Existing login redirect and optimistic watchlist refresh behavior are preserved; members cannot favorite their own listings, and existing self-trade restrictions remain intact. |
+| Validation | Focused listing interaction and global search tests, TypeScript, production build, dependency audit, changed-file whitespace, and desktop/mobile Category and Explore All visual checks passed. |
