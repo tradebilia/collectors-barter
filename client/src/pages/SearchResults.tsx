@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { Link, useLocation, useSearch } from "wouter";
-import { Filter, Loader2, MapPin, MessageSquareText, Search, Sparkles, Star, X } from "lucide-react";
+import { Filter, Heart, Loader2, MapPin, MessageSquareText, Search, Sparkles, Star, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -71,6 +71,12 @@ export function SearchResults() {
       setProposalListingId(null);
       setProposalNote("");
       toast.success("Trade Proposal sent.");
+      await utils.market.search.invalidate();
+    },
+    onError: error => toast.error(error.message),
+  });
+  const watchlistMutation = trpc.market.toggleWatchlist.useMutation({
+    onSuccess: async () => {
       await utils.market.search.invalidate();
     },
     onError: error => toast.error(error.message),
@@ -244,15 +250,16 @@ export function SearchResults() {
                       <div className="flex items-start justify-between gap-2"><div className="min-w-0"><p className="truncate text-[0.55rem] font-bold uppercase tracking-[0.1em] text-slate-600">{listing.categoryLabel}</p><Link href={`/listings/${listing.id}`} className="mt-1 block min-h-[2rem] line-clamp-2 text-xs font-semibold leading-tight hover:opacity-75">{listing.title}</Link></div>{listing.featured ? <Badge className="rounded-full bg-[#0f5563] px-1 py-0 text-[0.5rem] text-[#fff1d2]">Featured</Badge> : null}</div>
                        <div className="grid grid-cols-2 gap-1 rounded-md border border-current/10 bg-black/5 p-1 text-[0.5rem]"><div><p className="text-[0.55rem] font-semibold uppercase tracking-[0.08em] text-slate-600">{listing.grade && Number(listing.grade) > 0 ? "Grade" : "Condition"}</p><p className="mt-0 truncate text-[0.75rem] font-bold leading-tight">{listing.grade && Number(listing.grade) > 0 ? `${listing.certificationCompany ? `${listing.certificationCompany} ` : ""}${formatGrade(listing.grade)}` : listing.conditionLabel}</p></div><div><p className="text-[0.55rem] font-semibold uppercase tracking-[0.08em] text-slate-600">Value</p><p className="mt-0 truncate text-[0.75rem] font-bold leading-tight">{listing.estimatedValue === null ? "—" : `$${listing.estimatedValue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</p></div><div><p className="text-[0.55rem] font-semibold uppercase tracking-[0.08em] text-slate-600">Collector</p><p className="mt-0 truncate text-[0.65rem] font-semibold">{listing.owner.displayName}</p></div><div><p className="whitespace-nowrap text-[0.42rem] font-semibold uppercase tracking-[0.06em] text-slate-600">Trader Rating</p><p className="mt-0 flex items-center gap-0.5 font-semibold text-[0.65rem]"><Star className="h-2 w-2 fill-current" />{listing.ownerRating.averageRating.toFixed(1)}</p></div></div>
                        {listing.distanceBand && <p className="flex items-center gap-1 text-[0.55rem] font-semibold text-teal-700"><MapPin className="h-2.5 w-2.5" /><span>{listing.distanceBand}</span></p>}
-                       <Dialog open={proposalListingId === listing.id} onOpenChange={open => {
-                         setProposalListingId(open ? listing.id : null);
-                         if (!open) setProposalNote("");
-                       }}>
+                       <div className="flex items-center gap-1">
+                         <Dialog open={proposalListingId === listing.id} onOpenChange={open => {
+                           setProposalListingId(open ? listing.id : null);
+                           if (!open) setProposalNote("");
+                         }}>
                          <DialogTrigger asChild>
                            <Button
                              size="sm"
                              variant="outline"
-                             className="h-7 w-full rounded-full border-[#0f5563]/30 px-2 text-[10px] font-bold uppercase tracking-wider text-[#0f5563] hover:bg-[#0f5563]/10"
+                             className="h-7 min-w-0 flex-1 rounded-full border-[#0f5563]/30 px-2 text-[10px] font-bold uppercase tracking-wider text-[#0f5563] hover:bg-[#0f5563]/10"
                              disabled={!isAuthenticated || listing.ownerId === user?.id}
                              title={listing.ownerId === user?.id ? "You cannot message or trade with your own item" : "Start a trade proposal"}
                            >
@@ -272,8 +279,25 @@ export function SearchResults() {
                                {createProposalMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null} Send Trade Proposal
                              </Button>
                            </div>
-                         </DialogContent>
-                       </Dialog>
+                           </DialogContent>
+                         </Dialog>
+                         <Button
+                           size="sm"
+                           variant="outline"
+                           className="h-7 w-7 rounded-full border-red-200 p-0 text-red-500 hover:bg-red-50"
+                           disabled={isAuthenticated && listing.ownerId === user?.id}
+                           title={listing.ownerId === user?.id ? "You cannot favorite your own item" : listing.savedToWatchlist ? "Remove from favorites" : "Save to favorites"}
+                           onClick={() => {
+                             if (!isAuthenticated) {
+                               window.location.href = getLoginUrl();
+                               return;
+                             }
+                             watchlistMutation.mutate({ listingId: listing.id });
+                           }}
+                         >
+                           <Heart className={`h-4 w-4 ${listing.savedToWatchlist ? "fill-red-500 text-red-500" : "text-red-500"}`} />
+                         </Button>
+                       </div>
                     </CardContent>
                   </Card>
                 ))}

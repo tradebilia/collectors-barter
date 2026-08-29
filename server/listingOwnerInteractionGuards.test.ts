@@ -25,6 +25,21 @@ describe("listing owner interaction safeguards", () => {
     expect(categorySource).toContain("Your personalized message");
     expect(categorySource).toContain("!proposalNote.trim()");
     expect(categorySource).toContain("note: proposalNote.trim()");
+    expect(categorySource).toContain('<MessageSquareText className="mr-1 h-2 w-2" /> Trade');
+    expect(categorySource).toContain('disabled={isAuthenticated && listing.ownerId === user?.id}');
+    expect(categorySource).toContain("You cannot favorite your own item");
+  });
+
+  it("gives Explore All the same favorite action and owner restriction as category cards", () => {
+    const exploreAllSource = read("client/src/pages/SearchResults.tsx");
+
+    expect(exploreAllSource).toContain('import { Filter, Heart, Loader2, MapPin, MessageSquareText, Search, Sparkles, Star, X } from "lucide-react";');
+    expect(exploreAllSource).toContain("trpc.market.toggleWatchlist.useMutation");
+    expect(exploreAllSource).toContain('window.location.href = getLoginUrl();');
+    expect(exploreAllSource).toContain('disabled={isAuthenticated && listing.ownerId === user?.id}');
+    expect(exploreAllSource).toContain("You cannot favorite your own item");
+    expect(exploreAllSource).toContain('listing.savedToWatchlist ? "fill-red-500 text-red-500" : "text-red-500"');
+    expect(exploreAllSource).toContain('className="h-7 min-w-0 flex-1 rounded-full border-[#0f5563]/30');
   });
 
   it("uses an ownership-aware personalized proposal dialog on item detail", () => {

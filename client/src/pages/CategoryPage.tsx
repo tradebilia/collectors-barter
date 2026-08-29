@@ -1548,11 +1548,11 @@ export default function CategoryPage() {
                           <DialogTrigger asChild>
                             <Button
                               variant="outline"
-                              className="rounded-full bg-transparent px-1 py-0 text-xs h-auto"
+                              className="rounded-full bg-transparent px-2 py-0 text-xs h-auto"
                               disabled={!isAuthenticated || listing.ownerId === user?.id}
                               title={listing.ownerId === user?.id ? "You cannot message or trade with your own item" : "Start a trade proposal"}
                             >
-                              <MessageSquareText className="h-2 w-2" />
+                              <MessageSquareText className="mr-1 h-2 w-2" /> Trade
                             </Button>
                           </DialogTrigger>
                           <DialogContent>
@@ -1581,6 +1581,8 @@ export default function CategoryPage() {
                         <Button
                           variant="outline"
                           className="rounded-full bg-transparent px-1 py-0 text-xs h-auto"
+                          disabled={isAuthenticated && listing.ownerId === user?.id}
+                          title={listing.ownerId === user?.id ? "You cannot favorite your own item" : listing.savedToWatchlist ? "Remove from favorites" : "Save to favorites"}
                           onClick={() => {
                             if (!isAuthenticated) {
                               window.location.href = getLoginUrl();
