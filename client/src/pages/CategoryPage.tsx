@@ -1509,7 +1509,7 @@ export default function CategoryPage() {
                           </div>
                           <div className="grid grid-cols-2 gap-1 rounded-md border border-current/10 bg-black/5 p-1 text-[0.5rem]">
                             <div>
-                              <p className="text-[0.55rem] uppercase tracking-[0.08em] opacity-60">{listing.grade && parseFloat(String(listing.grade)) > 0 ? "Grade" : "Condition"}</p>
+                              <p className="text-[0.55rem] font-semibold uppercase tracking-[0.08em] opacity-80">{listing.grade && parseFloat(String(listing.grade)) > 0 ? "Grade" : "Condition"}</p>
                               <p className="mt-0 truncate text-[0.75rem] font-bold leading-tight">
                                 {listing.grade && parseFloat(String(listing.grade)) > 0
                                   ? `${listing.certificationCompany ? `${listing.certificationCompany} ` : ""}${formatGrade(listing.grade)}`
@@ -1517,15 +1517,15 @@ export default function CategoryPage() {
                               </p>
                             </div>
                             <div>
-                              <p className="uppercase tracking-[0.1em] opacity-60 text-[0.45rem]">Value</p>
+                              <p className="text-[0.55rem] font-semibold uppercase tracking-[0.08em] opacity-80">Value</p>
                               <p className="mt-1 font-semibold truncate mt-0 text-[0.55rem]">{listing.estimatedValue ? `$${listing.estimatedValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—"}</p>
                             </div>
                             <div>
-                              <p className="uppercase tracking-[0.1em] opacity-60 text-[0.45rem]">Collector</p>
+                              <p className="text-[0.55rem] font-semibold uppercase tracking-[0.08em] opacity-80">Collector</p>
                               <p className="mt-1 font-semibold truncate mt-0 text-[0.55rem]">{listing.owner.displayName}</p>
                             </div>
                             <div>
-                              <p className="whitespace-nowrap text-[0.42rem] uppercase tracking-[0.07em] opacity-60">Trader Rating</p>
+                              <p className="whitespace-nowrap text-[0.5rem] font-semibold uppercase tracking-[0.06em] opacity-80">Trader Rating</p>
                               <div className="mt-1 flex items-center gap-0.5 font-semibold mt-0 gap-0.5">
                                 <Star className="fill-current h-2 w-2" />
                                 <span className="truncate text-[0.55rem]">{listing.ownerRating.averageRating.toFixed(1)}</span>

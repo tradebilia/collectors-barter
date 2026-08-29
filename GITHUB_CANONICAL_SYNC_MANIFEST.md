@@ -510,7 +510,17 @@ The final card correction uses canonical display-name priority, aligned directio
 | Record | Value |
 |---|---|
 | Managed WebDev checkpoint | `9daa4122` |
-| Canonical implementation commit | `ff6d30f84305058f3976a7a0b6abbe9171c90232` — normal credential-safe push to GitHub `main`; no force push or history replacement. |
+| Canonical implementation commit | `746c114fe98e97bb887dbe56ee4c7e40e1208419` — normal credential-safe push to GitHub `main`; no force push or history replacement. |
 | Scope | Category and Item Detail owners cannot initiate a trade proposal or message themselves. Both trade-proposal entry points now collect a personalized message rather than submitting a default sentence. Category cards display a larger grade/condition value and use Trader Rating terminology. |
 | Safeguards | Server-side trade and direct-message self-action guards remain authoritative. Personalized messages are trimmed, limited to 1,000 characters, reset when the dialog closes, and required before submission. No data model, payment, provider, schedule, setting, or secret changed. |
 | Validation | Focused listing-interaction and category tests, TypeScript, production build, production dependency audit, source-diff whitespace, and desktop/mobile category-card visual checks passed. |
+
+## Explore All Parity and Truthful Carousel Metadata Pair
+
+| Record | Value |
+|---|---|
+| Managed WebDev checkpoint | `7d3aa2b0` |
+| Canonical implementation commit | Recorded after the normal, credential-safe GitHub push that accompanies this manifest update. |
+| Scope | Explore All receives the same owner-safe Trade control, required personalized proposal message, larger grade value, and Trader Rating wording as category pages. Category and Explore All gray-panel labels have stronger contrast. Recently Added displays a custom grading-company name in place of Other when stored and shows a Condition badge for ungraded items. |
+| Data safety | The formatter exposes only the saved `customGradingCompany` value from structured item details; no fields are fabricated, and card values, existing listing navigation, and card height remain intact. |
+| Validation | Focused Explore All, homepage, category-card, and listing-interaction tests, TypeScript, production build, dependency audit, changed-file whitespace, and desktop/mobile visual checks passed. |

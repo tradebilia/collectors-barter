@@ -38,6 +38,15 @@ describe("unified global search contracts", () => {
     expect(searchPage).toContain("resolveTradebiliaListingImage");
     expect(searchPage).toContain("Verified merchants only");
     expect(searchPage).toContain("grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6");
+    expect(searchPage).toContain('const { user, isAuthenticated } = useAuth();');
+    expect(searchPage).toContain("trpc.market.createTradeProposal.useMutation");
+    expect(searchPage).toContain("disabled={!isAuthenticated || listing.ownerId === user?.id}");
+    expect(searchPage).toContain("You cannot message or trade with your own item");
+    expect(searchPage).toContain("Your personalized message");
+    expect(searchPage).toContain("!proposalNote.trim()");
+    expect(searchPage).toContain("Trader Rating");
+    expect(searchPage).toContain("text-slate-600");
+    expect(searchPage).toContain('text-[0.75rem] font-bold leading-tight');
   });
 
   it("uses a typed, paginated all-category server contract and searches all persisted listing fields", () => {

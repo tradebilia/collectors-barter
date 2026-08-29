@@ -6,12 +6,13 @@ const root = path.resolve(import.meta.dirname, "..");
 
 describe("homepage Recent Trades carousel", () => {
   it("uses the ten newest completed trades and preserves complete exchanged-item data", async () => {
-    const [homeSource, routerSource, carouselSource, recentlyAddedSource, categoryBarSource] = await Promise.all([
+    const [homeSource, routerSource, carouselSource, recentlyAddedSource, categoryBarSource, databaseSource] = await Promise.all([
       readFile(path.join(root, "client/src/pages/Home.tsx"), "utf8"),
       readFile(path.join(root, "server/routers.ts"), "utf8"),
       readFile(path.join(root, "client/src/components/RecentTradesCarousel.tsx"), "utf8"),
       readFile(path.join(root, "client/src/components/RecentlyAddedCarousel.tsx"), "utf8"),
       readFile(path.join(root, "client/src/components/CategoryBar.tsx"), "utf8"),
+      readFile(path.join(root, "server/db.ts"), "utf8"),
     ]);
     expect(homeSource).toContain('getCompletedTrades.useQuery({ limit: 10, offset: 0, sortBy: "recent" }');
     expect(homeSource).toContain("<RecentTradesCarousel");
@@ -46,6 +47,15 @@ describe("homepage Recent Trades carousel", () => {
     expect(recentlyAddedSource).toContain("rounded-xl");
     expect(recentlyAddedSource).toContain("border border-slate-200");
     expect(recentlyAddedSource).not.toContain("border-4 border-[#3974bb]");
+    expect(homeSource).toContain("customGradingCompany: listing.customGradingCompany");
+    expect(homeSource).toContain("conditionLabel: listing.conditionLabel");
+    expect(recentlyAddedSource).toContain("customGradingCompany?: string | null");
+    expect(recentlyAddedSource).toContain("conditionLabel?: string | null");
+    expect(recentlyAddedSource).toContain("getGradeOrConditionPresentation");
+    expect(recentlyAddedSource).toContain('declaredCompany.toLowerCase() === "other"');
+    expect(recentlyAddedSource).toContain("item.customGradingCompany?.trim() || declaredCompany");
+    expect(recentlyAddedSource).toContain("Condition: ${item.conditionLabel?.trim() || \"Ungraded\"}");
+    expect(databaseSource).toContain("customGradingCompany: getCustomGradingCompany(row.itemDetails)");
     expect(carouselSource).toContain("border-4 border-[#3974bb]");
     expect(carouselSource).toContain("ROTATION_INTERVAL_MS = 5_000");
     expect(carouselSource).toContain("window.setInterval");
