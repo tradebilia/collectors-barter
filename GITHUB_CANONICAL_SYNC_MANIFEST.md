@@ -584,3 +584,12 @@ The final card correction uses canonical display-name priority, aligned directio
 | Verification assessment | Official provider documentation did not establish a reliable universal no-payment existence or ownership lookup for arbitrary PayPal emails, Venmo usernames, Cash App cashtags, or Zelle destinations. Existing syntax validation and member-confirmed cash workflow remain in place; no unsupported provider-verified status was added. |
 | Validation | Focused payment, grading-feed, and Recent Trades regressions passed 10/10 in both WebDev and canonical checkout; TypeScript, production build, production dependency audit, and changed-file whitespace checks passed. Public homepage visual verification passed; Account Settings visual inspection remained limited by the signed-out preview redirect. |
 | Data safety | No database schema, stored payment contract, payment-provider connection, schedule, secret, or marketplace interaction guard changed. |
+
+## Complete Verified Development-State Backup Pair
+| Record | Value |
+|---|---|
+| Managed WebDev checkpoint before backup | `e2e6a596` |
+| Canonical GitHub commit | `f4321bd6158d8a37ff83f30a5209118988f0b2f7` — full credential-safe synchronization pushed to GitHub `main`; no force push or history replacement. |
+| Scope | Complete current source, tests, project tracker, synchronization manifest, and verification documentation were copied to the canonical checkout. Sandbox runtime files, caches, generated build output, project metadata, and secrets were excluded. |
+| Validation | Canonical focused feature regressions passed; TypeScript, production build, production dependency audit, and diff-whitespace checks passed. The complete suite remains subject to unrelated live-provider credential checks that can time out. |
+| Backup status | Canonical checkout was clean and `origin/main` matched commit `f4321bd6158d8a37ff83f30a5209118988f0b2f7` before this manifest record was added. |
