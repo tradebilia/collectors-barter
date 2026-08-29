@@ -487,10 +487,20 @@ The final card correction uses canonical display-name priority, aligned directio
 | Record | Value |
 |---|---|
 | Managed WebDev checkpoint | `dac254de` |
-| Canonical implementation commit | `5a0a8737eb424c385e7bc05457fe3d40e42e0d82` — normal credential-safe push to GitHub `main`; no force push or history replacement. |
+| Canonical implementation commit | `cfe38ff68809337c36208dce16fdcb0bc9b13ee9` — normal credential-safe push to GitHub `main`; no force push or history replacement. |
 | Scope | Added private PayPal email, Venmo username, Cash App $cashtag, and one Zelle email or U.S. mobile destination to Account Setup and Account Settings. Accepted cash trades require payee method selection before disclosure to the payer, then payer Sent and payee Received confirmations. |
 | Privacy and safeguards | Payment identifiers remain private from public profiles and ordinary Trade Room details. Only the payer sees the payee’s one selected destination after acceptance. Destination changes reset only pre-send terms and are blocked after Sent. Shipping is blocked until member-confirmed receipt; a dispute also blocks shipping for administrator review. |
 | Administrator handling | Admin Billing displays masked cash-adjustment records. A phrase-confirmed identifier reveal is limited to active dispute review and is written to the trade activity log. |
 | Data change | Reviewed additive custom TiDB columns/enums and cash-adjustment activity events only. No marketplace, listing, existing trade, membership, subscription, provider account, schedule, or secret was changed. |
 | Validation | Focused external cash-adjustment, review-before-shipping, and category-navigation tests passed 10/10; TypeScript, production build, production dependency audit, whitespace, and database startup health passed. Credential-dependent UPS, Daily, and IPQS probes in a broader suite remain outside this feature validation. |
 | Payment boundary | Tradebilia does not initiate, process, hold, insure, refund, or guarantee PayPal, Venmo, Cash App, or Zelle transfers. The Trade Room and Account Setup include this disclosure. |
+
+## Global Member Avatar Treatment Pair
+
+| Record | Value |
+|---|---|
+| Managed WebDev checkpoint | `f2e4aef2` |
+| Canonical implementation commit | `658949bc1531075c120bc979898786cc13eccc48` — normal credential-safe push to GitHub `main`; no force push or history replacement. |
+| Scope | Standardized all member-avatar renderers to use a blurred enlarged copy of the same source image behind a sharp, frame-filling foreground. The shared Avatar primitive now updates nine consumer files, and bespoke paths in Public Profile, Verified Merchants, Traders Showcase, and every Trade Room context use the same treatment. |
+| Accessibility and safety | The decorative background is hidden from assistive technologies; the foreground retains meaningful alt text; no-photo fallbacks remain intact; image-error backgrounds hide safely. Listing media, provider logos, category graphics, and other non-avatar images are excluded. |
+| Validation | Focused avatar, homepage, and responsive-layout regressions passed 15/15; TypeScript, production build, production dependency audit, source-diff whitespace check, and desktop/mobile representative visual reviews passed. |

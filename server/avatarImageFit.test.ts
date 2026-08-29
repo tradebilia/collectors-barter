@@ -14,36 +14,40 @@ function collectTsxFiles(directory: string): string[] {
 }
 
 describe("avatar image fit", () => {
-  it("uses contain fitting in the shared AvatarImage renderer", () => {
+  it("uses a blurred same-image background and a sharp frame-filling foreground in the shared AvatarImage renderer", () => {
     const source = readFileSync(join(clientRoot, "components", "ui", "avatar.tsx"), "utf8");
-    expect(source).toContain("object-contain");
-    expect(source).not.toContain("object-cover");
+    expect(source).toContain('data-slot="avatar-background"');
+    expect(source).toContain("object-cover opacity-60 blur-md");
+    expect(source).toContain("object-fill");
+    expect(source).toContain('aria-hidden="true"');
   });
 
-  it("does not retain crop-prone circular image classes anywhere in the client", () => {
-    const cropProneLines = collectTsxFiles(clientRoot).flatMap((path) =>
+  it("uses cover only for decorative blurred avatar backgrounds and uses object-fill for avatar foregrounds", () => {
+    const invalidAvatarFitLines = collectTsxFiles(clientRoot).flatMap((path) =>
       readFileSync(path, "utf8")
         .split("\n")
         .map((line, index) => ({ path, line: index + 1, value: line }))
-        .filter(({ value }) => /rounded-full[^"`]*object-cover|object-cover[^"`]*rounded-full/.test(value))
+        .filter(({ value }) => /avatarUrl|AvatarImage|theirAvatarUrl|myAvatarUrl/.test(value))
+        .filter(({ value }) => value.includes("object-contain"))
         .map(({ path: file, line, value }) => `${file}:${line}: ${value.trim()}`),
     );
 
-    expect(cropProneLines).toEqual([]);
+    expect(invalidAvatarFitLines).toEqual([]);
   });
 
-  it("keeps the audited direct avatar views on full-image containment", () => {
+  it("keeps every audited direct avatar view on the layered frame-filling treatment", () => {
     const paths = [
+      "components/RecentTradesCarousel.tsx",
       "pages/TradeShowcase.tsx",
       "pages/PublicProfile.tsx",
       "pages/VerifiedMerchants.tsx",
       "pages/WarRoom.tsx",
-      "pages/AccountSetup.tsx",
-      "pages/ForumTopic.tsx",
     ];
 
     for (const relativePath of paths) {
-      expect(readFileSync(join(clientRoot, relativePath), "utf8")).toContain("object-contain");
+      const source = readFileSync(join(clientRoot, relativePath), "utf8");
+      expect(source).toContain("object-fill");
+      expect(source).toContain("blur-md");
     }
   });
 });

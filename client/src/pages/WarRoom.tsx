@@ -42,6 +42,15 @@ const stages: { key: TradeStage; label: string; sub: string }[] = [
   { key: 'disputed',    label: 'Disputed',  sub: 'Under Review'    },
 ];
 
+function TradeRoomAvatar({ src, alt, className }: { src: string; alt: string; className: string }) {
+  return (
+    <div className={`relative overflow-hidden ${className}`}>
+      <img src={src} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full scale-125 object-cover opacity-60 blur-md" onError={(event) => { event.currentTarget.style.display = "none"; }} />
+      <img src={src} alt={alt} className="relative z-10 h-full w-full object-fill" />
+    </div>
+  );
+}
+
 // ── Event type config ────────────────────────────────────────────────────────
 const eventConfig: Record<string, { color: string; icon: string; label: string }> = {
   trade_created:      { color: 'bg-blue-500',   icon: '🤝', label: 'Trade Created' },
@@ -758,7 +767,7 @@ export default function WarRoom() {
                     {/* Your Items */}
                     <div className="flex-1 space-y-2">
                       <div className="flex items-center gap-2 mb-3">
-                        {myAvatarUrl ? <img src={myAvatarUrl} className="w-6 h-6 rounded-full bg-slate-800 object-contain" alt="" /> : <div className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center text-white text-[10px] font-bold">{myInitial}</div>}
+                        {myAvatarUrl ? <TradeRoomAvatar src={myAvatarUrl} alt="" className="h-6 w-6 rounded-full bg-slate-800" /> : <div className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center text-white text-[10px] font-bold">{myInitial}</div>}
                         <p className="text-blue-400 text-xs font-bold uppercase tracking-wide">{myDisplayName}</p>
                       </div>
                       {myItems.map((item: any) => (
@@ -787,7 +796,7 @@ export default function WarRoom() {
                     {/* Their Items */}
                     <div className="flex-1 space-y-2">
                       <div className="flex items-center gap-2 mb-3">
-                        {theirAvatarUrl ? <img src={theirAvatarUrl} className="w-6 h-6 rounded-full bg-slate-800 object-contain" alt="" /> : <div className="w-6 h-6 rounded-full bg-gray-600 flex items-center justify-center text-white text-[10px] font-bold">{theirInitial}</div>}
+                        {theirAvatarUrl ? <TradeRoomAvatar src={theirAvatarUrl} alt="" className="h-6 w-6 rounded-full bg-slate-800" /> : <div className="w-6 h-6 rounded-full bg-gray-600 flex items-center justify-center text-white text-[10px] font-bold">{theirInitial}</div>}
                         <p className="text-gray-300 text-xs font-bold uppercase tracking-wide">{theirDisplayName}</p>
                       </div>
                       {theirItems.map((item: any) => (
@@ -905,7 +914,7 @@ export default function WarRoom() {
                         {/* LEFT: Your shipment */}
                         <div className="p-5">
                           <div className="flex items-center gap-2 mb-4">
-                            {myAvatarUrl ? <img src={myAvatarUrl} className="w-6 h-6 rounded-full bg-slate-800 object-contain" alt="" /> : <div className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center text-white text-[10px] font-bold">{myInitial}</div>}
+                            {myAvatarUrl ? <TradeRoomAvatar src={myAvatarUrl} alt="" className="h-6 w-6 rounded-full bg-slate-800" /> : <div className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center text-white text-[10px] font-bold">{myInitial}</div>}
                             <p className="text-blue-400 text-xs font-bold uppercase tracking-wide">You — {myDisplayName}</p>
                             {myTracking.length > 0 && <span className="ml-auto text-green-400 text-xs font-bold">✓ Shipped</span>}
                           </div>
@@ -986,7 +995,7 @@ export default function WarRoom() {
                         {/* RIGHT: Their shipment */}
                         <div className="p-5">
                           <div className="flex items-center gap-2 mb-4">
-                            {theirAvatarUrl ? <img src={theirAvatarUrl} className="w-6 h-6 rounded-full bg-slate-800 object-contain" alt="" /> : <div className="w-6 h-6 rounded-full bg-gray-600 flex items-center justify-center text-white text-[10px] font-bold">{theirInitial}</div>}
+                            {theirAvatarUrl ? <TradeRoomAvatar src={theirAvatarUrl} alt="" className="h-6 w-6 rounded-full bg-slate-800" /> : <div className="w-6 h-6 rounded-full bg-gray-600 flex items-center justify-center text-white text-[10px] font-bold">{theirInitial}</div>}
                             <p className="text-gray-300 text-xs font-bold uppercase tracking-wide">{theirDisplayName}</p>
                             {theirTracking.length > 0 && <span className="ml-auto text-green-400 text-xs font-bold">✓ Shipped</span>}
                           </div>
@@ -1282,7 +1291,7 @@ export default function WarRoom() {
                     <div className="flex items-center gap-2">
                       {/* Avatar */}
                       {myAvatarUrl ? (
-                        <img src={myAvatarUrl} alt={myDisplayName} className="w-8 h-8 rounded-full bg-slate-800 object-contain border border-blue-500/40" />
+                        <TradeRoomAvatar src={myAvatarUrl} alt={myDisplayName} className="h-8 w-8 rounded-full border border-blue-500/40 bg-slate-800" />
                       ) : (
                         <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white text-xs font-bold border border-blue-500/40">{myInitial}</div>
                       )}
@@ -1747,7 +1756,7 @@ export default function WarRoom() {
                     <div className="flex items-center gap-2">
                       {/* Avatar */}
                       {theirAvatarUrl ? (
-                        <img src={theirAvatarUrl} alt={theirDisplayName} className="w-8 h-8 rounded-full bg-slate-800 object-contain border border-gray-600" />
+                        <TradeRoomAvatar src={theirAvatarUrl} alt={theirDisplayName} className="h-8 w-8 rounded-full border border-gray-600 bg-slate-800" />
                       ) : (
                         <div className="w-8 h-8 rounded-full bg-gradient-to-br from-gray-600 to-gray-700 flex items-center justify-center text-white text-xs font-bold border border-gray-600">{theirInitial}</div>
                       )}
@@ -1858,7 +1867,7 @@ export default function WarRoom() {
               <div className="p-4 border-b border-gray-600 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   {theirAvatarUrl ? (
-                    <img src={theirAvatarUrl} alt={theirDisplayName} className="w-9 h-9 rounded-full bg-slate-800 object-contain border border-gray-600" />
+                    <TradeRoomAvatar src={theirAvatarUrl} alt={theirDisplayName} className="h-9 w-9 rounded-full border border-gray-600 bg-slate-800" />
                   ) : (
                     <div className="w-9 h-9 rounded-full bg-gradient-to-br from-gray-600 to-gray-700 flex items-center justify-center text-white text-sm font-bold">
                       {theirInitial}
@@ -1898,7 +1907,7 @@ export default function WarRoom() {
                         <div className="w-7 h-7 flex-shrink-0 mb-0.5">
                           {isLastInGroup ? (
                             theirAvatarUrl
-                              ? <img src={theirAvatarUrl} alt={theirDisplayName} className="w-7 h-7 rounded-full bg-slate-800 object-contain border border-gray-600" />
+                              ? <div className="relative h-7 w-7 overflow-hidden rounded-full border border-gray-600 bg-slate-800"><img src={theirAvatarUrl} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full scale-125 object-cover opacity-60 blur-md" onError={(event) => { event.currentTarget.style.display = "none"; }} /><img src={theirAvatarUrl} alt={theirDisplayName} className="relative z-10 h-full w-full object-fill" /></div>
                               : <div className="w-7 h-7 rounded-full bg-gray-600 flex items-center justify-center text-white text-[10px] font-bold border border-gray-500">{theirInitial}</div>
                           ) : (
                             <div className="w-7 h-7" /> /* spacer to keep alignment */
@@ -1918,7 +1927,7 @@ export default function WarRoom() {
                         <div className="w-7 h-7 flex-shrink-0 mb-0.5">
                           {isLastInGroup ? (
                             myAvatarUrl
-                              ? <img src={myAvatarUrl} alt={myDisplayName} className="w-7 h-7 rounded-full bg-slate-800 object-contain border border-blue-500/60" />
+                              ? <div className="relative h-7 w-7 overflow-hidden rounded-full border border-blue-500/60 bg-slate-800"><img src={myAvatarUrl} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full scale-125 object-cover opacity-60 blur-md" onError={(event) => { event.currentTarget.style.display = "none"; }} /><img src={myAvatarUrl} alt={myDisplayName} className="relative z-10 h-full w-full object-fill" /></div>
                               : <div className="w-7 h-7 rounded-full bg-blue-600 flex items-center justify-center text-white text-[10px] font-bold border border-blue-500/60">{myInitial}</div>
                           ) : (
                             <div className="w-7 h-7" /> /* spacer */
@@ -2267,7 +2276,7 @@ export default function WarRoom() {
               <div className="flex items-center justify-between px-6 py-4 border-b border-gray-700 flex-shrink-0">
                 <div className="flex items-center gap-3">
                   {theirAvatarUrl ? (
-                    <img src={theirAvatarUrl} alt={theirDisplayName} className="w-10 h-10 rounded-full bg-slate-800 object-contain border border-gray-600" />
+                    <TradeRoomAvatar src={theirAvatarUrl} alt={theirDisplayName} className="h-10 w-10 rounded-full border border-gray-600 bg-slate-800" />
                   ) : (
                     <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gray-600 to-gray-700 flex items-center justify-center text-white text-sm font-bold">{theirInitial}</div>
                   )}
@@ -2490,7 +2499,7 @@ export default function WarRoom() {
               <div className="flex items-center justify-between px-6 py-4 border-b border-gray-700 flex-shrink-0">
                 <div className="flex items-center gap-3">
                   {myAvatarUrl ? (
-                    <img src={myAvatarUrl} alt={myDisplayName} className="w-10 h-10 rounded-full bg-slate-800 object-contain border border-blue-500/40" />
+                    <TradeRoomAvatar src={myAvatarUrl} alt={myDisplayName} className="h-10 w-10 rounded-full border border-blue-500/40 bg-slate-800" />
                   ) : (
                     <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white text-sm font-bold">{myInitial}</div>
                   )}

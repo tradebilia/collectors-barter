@@ -77,7 +77,12 @@ function LinkedInProfileImage({ pictureUrl, name }: { pictureUrl?: string | null
     );
   }
 
-  return <img src={pictureUrl!} alt={name || "LinkedIn profile"} referrerPolicy="no-referrer" onError={() => setFailedPictureUrl(pictureUrl!)} className="h-12 w-12 shrink-0 rounded-full bg-slate-100 object-contain border-2 border-white shadow-sm" />;
+  return (
+    <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-full border-2 border-white bg-slate-100 shadow-sm">
+      <img src={pictureUrl!} alt="" aria-hidden="true" referrerPolicy="no-referrer" className="absolute inset-0 h-full w-full scale-125 object-cover opacity-60 blur-md" onError={(event) => { event.currentTarget.style.display = "none"; }} />
+      <img src={pictureUrl!} alt={name || "LinkedIn profile"} referrerPolicy="no-referrer" onError={() => setFailedPictureUrl(pictureUrl!)} className="relative z-10 h-full w-full object-fill" />
+    </div>
+  );
 }
 
 function ConnectionDate({ connectedAt }: { connectedAt?: string | number | Date | null }) {
@@ -287,11 +292,17 @@ export default function PublicProfile() {
         <div className="bg-white rounded-3xl p-6 lg:p-8 shadow-sm border border-slate-100">
           <div className="flex flex-col md:flex-row gap-6 items-start">
             {/* Avatar — falls back to Facebook picture if no Tradebilia avatar */}
-            <div className="h-28 w-28 rounded-3xl bg-slate-100 border-4 border-white shadow-md overflow-hidden shrink-0 flex items-center justify-center">
+            <div className="relative h-28 w-28 shrink-0 overflow-hidden rounded-3xl border-4 border-white bg-slate-100 shadow-md flex items-center justify-center">
               {profile?.avatarUrl ? (
-                <img src={profile.avatarUrl} alt={displayName} className="h-full w-full bg-slate-100 object-contain" />
+                <>
+                  <img src={profile.avatarUrl} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full scale-125 object-cover opacity-60 blur-md" onError={(event) => { event.currentTarget.style.display = "none"; }} />
+                  <img src={profile.avatarUrl} alt={displayName} className="relative z-10 h-full w-full object-fill" />
+                </>
               ) : user.facebookPicture ? (
-                <img src={user.facebookPicture} alt={displayName} className="h-full w-full bg-slate-100 object-contain" />
+                <>
+                  <img src={user.facebookPicture} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full scale-125 object-cover opacity-60 blur-md" onError={(event) => { event.currentTarget.style.display = "none"; }} />
+                  <img src={user.facebookPicture} alt={displayName} className="relative z-10 h-full w-full object-fill" />
+                </>
               ) : (
                 <User className="h-12 w-12 text-slate-300" />
               )}
@@ -634,7 +645,10 @@ export default function PublicProfile() {
                       {/* Name + picture */}
                       <div className="flex items-center gap-3">
                         {user.facebookPicture && (
-                          <img src={user.facebookPicture} alt={user.facebookName} className="h-10 w-10 rounded-full bg-slate-100 object-contain border-2 border-white shadow-sm" />
+                          <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full border-2 border-white bg-slate-100 shadow-sm">
+                            <img src={user.facebookPicture} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full scale-125 object-cover opacity-60 blur-md" onError={(event) => { event.currentTarget.style.display = "none"; }} />
+                            <img src={user.facebookPicture} alt={user.facebookName} className="relative z-10 h-full w-full object-fill" />
+                          </div>
                         )}
                         <div className="min-w-0">
                           <p className="text-sm font-black text-slate-900 tracking-tight truncate">{user.facebookName}</p>
