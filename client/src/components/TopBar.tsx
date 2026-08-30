@@ -57,10 +57,8 @@ export function TopBar({
       const value = (e.target as HTMLInputElement).value;
       onSearchChange?.(value);
 
-      if (value.trim().length > 0) {
-        // Navigate to search results page
-        setLocation(`/search?q=${encodeURIComponent(value)}`);
-      }
+      const trimmedValue = value.trim();
+      setLocation(trimmedValue ? `/search?q=${encodeURIComponent(trimmedValue)}` : "/search");
     }
   };
 
@@ -69,10 +67,9 @@ export function TopBar({
   };
 
   const handleSearchClick = () => {
-    if (searchQuery.trim().length > 0) {
-      onSearchChange?.(searchQuery);
-      setLocation(`/search?q=${encodeURIComponent(searchQuery)}`);
-    }
+    const trimmedValue = searchQuery.trim();
+    onSearchChange?.(trimmedValue);
+    setLocation(trimmedValue ? `/search?q=${encodeURIComponent(trimmedValue)}` : "/search");
   };
 
   if (hideSearch) {
@@ -178,8 +175,7 @@ export function TopBar({
           />
           <button
             onClick={handleSearchClick}
-            disabled={searchQuery.trim().length === 0}
-            className="hidden sm:block flex-shrink-0 ml-2 px-3 py-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-xs font-semibold rounded transition"
+            className="hidden sm:block flex-shrink-0 ml-2 px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded transition"
             aria-label="Search"
           >
             Search

@@ -10,13 +10,16 @@ describe("unified global search contracts", () => {
     const topBar = read("client/src/components/TopBar.tsx");
     const app = read("client/src/App.tsx");
 
-    expect(topBar).toContain('setLocation(`/search?q=${encodeURIComponent(value)}`)');
+    expect(topBar).toContain('setLocation(trimmedValue ? `/search?q=${encodeURIComponent(trimmedValue)}` : "/search")');
     expect(app).toContain('<Route path="/search" component={SearchResults} />');
   });
 
   it("reads URL queries, displays Category Page-aligned controls, and links each result to its item detail", () => {
+    const topBar = read("client/src/components/TopBar.tsx");
     const searchPage = read("client/src/pages/SearchResults.tsx");
 
+    expect(topBar).toContain('setLocation(trimmedValue ? `/search?q=${encodeURIComponent(trimmedValue)}` : "/search")');
+    expect(topBar).not.toContain('disabled={searchQuery.trim().length === 0}');
     expect(searchPage).toContain("useSearch()");
     expect(searchPage).toContain("getGlobalSearchQuery(rawSearch)");
     expect(searchPage).toContain("query: submittedQuery,");
