@@ -7,7 +7,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CategoryBar } from "@/components/CategoryBar";
-import { AnimatedHeroTitleArtwork } from "@/components/AnimatedHeroTitleArtwork";
 import { TopBar } from "@/components/TopBar";
 import { trpc } from "@/lib/trpc";
 import { Award, Crown, Filter, HelpCircle, Loader2, MapPin, Search, SlidersHorizontal, Sparkles, Star, UserRound, X } from "lucide-react";
@@ -185,7 +184,7 @@ export default function MemberSearch() {
       <TopBar searchPlaceholder="Search Tradebilia..." />
       <section className="relative z-0 w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden text-white" style={{ backgroundImage: "url(https://assets.tradebilia.com/Background_23084d14.jpg)", backgroundSize: "cover", backgroundPosition: "center", backgroundRepeat: "no-repeat" }}>
         <div className="container flex h-52 items-center justify-center sm:h-60 lg:h-72">
-          <AnimatedHeroTitleArtwork src="/manus-storage/MemberDirectory_a9b883f2.webp" alt="Member Directory" className="max-w-[1049px] px-4" />
+          <img src="/manus-storage/MemberDirectory2_c8de2e96.svg" alt="Member Directory" className="h-auto w-full max-w-[1049px] object-contain px-4" />
         </div>
       </section>
       <CategoryBar />
