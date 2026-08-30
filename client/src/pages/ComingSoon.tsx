@@ -65,12 +65,14 @@ export default function ComingSoon() {
               <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-[#7b4f2f] sm:text-[10px]">The Collectors Trading Exchange</p>
               <h1 className="mt-2 font-serif text-4xl leading-[0.92] tracking-[-0.04em] text-[#2b2119] sm:mt-3 sm:text-6xl">Why Buy or Sell<br />When You Can Trade?</h1>
               <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-[#4d3c2e]/80 sm:mt-5 sm:text-base">A home for remarkable collectibles—and the collectors who know their worth.</p>
-              <div className="mx-auto mt-5 grid max-w-xl grid-cols-1 gap-2 text-left sm:mt-6 sm:grid-cols-2 sm:gap-x-5 sm:gap-y-2" aria-label="Why collectors will use Tradebilia">
-                <p className="border-l-2 border-[#184b92]/55 pl-3 text-[11px] leading-4 text-[#4d3c2e]/85 sm:text-xs"><strong className="font-bold text-[#2b2119]">Free for collectors.</strong> No money is taken to complete a trade.</p>
-                <p className="border-l-2 border-[#184b92]/55 pl-3 text-[11px] leading-4 text-[#4d3c2e]/85 sm:text-xs"><strong className="font-bold text-[#2b2119]">Build trust.</strong> Add verification platforms to support referrals.</p>
-                <p className="border-l-2 border-[#184b92]/55 pl-3 text-[11px] leading-4 text-[#4d3c2e]/85 sm:text-xs"><strong className="font-bold text-[#2b2119]">Organized and easy to operate.</strong> Keep your collecting activity in one place.</p>
-                <p className="border-l-2 border-[#184b92]/55 pl-3 text-[11px] leading-4 text-[#4d3c2e]/85 sm:text-xs"><strong className="font-bold text-[#2b2119]">Trade across categories.</strong> Sports cards for comics, and more.</p>
+              <div className="relative mx-auto mt-5 grid max-w-xl grid-cols-1 gap-2 text-left sm:mt-6 sm:grid-cols-2 sm:gap-x-5 sm:gap-y-2" aria-label="Why collectors will use Tradebilia">
+                <span className="pointer-events-none absolute -left-40 top-1/2 hidden -translate-y-1/2 rotate-[-4deg] rounded-sm border-2 border-[#184b92]/60 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.18em] text-[#184b92] shadow-[0_2px_0_rgba(24,75,146,0.15)] sm:block">Launching Soon</span>
+                <p className="border-l-2 border-[#184b92]/55 pl-3 text-[11px] leading-4 text-[#4d3c2e]/85 sm:text-xs"><strong className="font-bold text-[#2b2119]">Trade without fees.</strong> No money is taken to complete a trade.</p>
+                <p className="border-l-2 border-[#184b92]/55 pl-3 text-[11px] leading-4 text-[#4d3c2e]/85 sm:text-xs"><strong className="font-bold text-[#2b2119]">Build trust faster.</strong> Connect more verified accounts to strengthen referrals.</p>
+                <p className="border-l-2 border-[#184b92]/55 pl-3 text-[11px] leading-4 text-[#4d3c2e]/85 sm:text-xs"><strong className="font-bold text-[#2b2119]">Everything in one place.</strong> Keep your collection and trades organized.</p>
+                <p className="border-l-2 border-[#184b92]/55 pl-3 text-[11px] leading-4 text-[#4d3c2e]/85 sm:text-xs"><strong className="font-bold text-[#2b2119]">Trade across categories.</strong> Swap sports cards for comics, toys, games, and more.</p>
               </div>
+              <span className="mx-auto mt-3 inline-flex rotate-[-2deg] rounded-sm border-2 border-[#184b92]/60 px-3 py-1.5 text-[9px] font-bold uppercase tracking-[0.18em] text-[#184b92] sm:hidden">Launching Soon</span>
               <div aria-label="Collections on the exchange" className="mx-auto mt-2 grid max-w-md grid-cols-2 gap-x-5 gap-y-1 border-y border-[#6c503c]/20 py-2 text-[8px] font-bold uppercase tracking-[0.12em] text-[#4d3c2e]/72 sm:mt-6 sm:max-w-2xl sm:grid-cols-5 sm:gap-x-3 sm:gap-y-1.5 sm:py-3 sm:text-[9px]">
                 <span>Comics</span>
                 <span>Sports Cards</span>
