@@ -65,6 +65,12 @@ export default function ComingSoon() {
               <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-[#7b4f2f] sm:text-[10px]">The Collectors Trading Exchange</p>
               <h1 className="mt-2 font-serif text-4xl leading-[0.92] tracking-[-0.04em] text-[#2b2119] sm:mt-3 sm:text-6xl">Every collection<br />has a next chapter.</h1>
               <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-[#4d3c2e]/80 sm:mt-5 sm:text-base">A home for remarkable collectibles—and the collectors who know their worth.</p>
+              <div className="mx-auto mt-5 grid max-w-xl grid-cols-1 gap-2 text-left sm:mt-6 sm:grid-cols-2 sm:gap-x-5 sm:gap-y-2" aria-label="Why collectors will use Tradebilia">
+                <p className="border-l-2 border-[#184b92]/55 pl-3 text-[11px] leading-4 text-[#4d3c2e]/85 sm:text-xs"><strong className="font-bold text-[#2b2119]">Free for collectors.</strong> No money is taken to complete a trade.</p>
+                <p className="border-l-2 border-[#184b92]/55 pl-3 text-[11px] leading-4 text-[#4d3c2e]/85 sm:text-xs"><strong className="font-bold text-[#2b2119]">Build trust.</strong> Add verification platforms to support referrals.</p>
+                <p className="border-l-2 border-[#184b92]/55 pl-3 text-[11px] leading-4 text-[#4d3c2e]/85 sm:text-xs"><strong className="font-bold text-[#2b2119]">Organized and easy to operate.</strong> Keep your collecting activity in one place.</p>
+                <p className="border-l-2 border-[#184b92]/55 pl-3 text-[11px] leading-4 text-[#4d3c2e]/85 sm:text-xs"><strong className="font-bold text-[#2b2119]">Trade across categories.</strong> Sports cards for comics, and more.</p>
+              </div>
               <div aria-label="Collections on the exchange" className="mx-auto mt-2 grid max-w-md grid-cols-2 gap-x-5 gap-y-1 border-y border-[#6c503c]/20 py-2 text-[8px] font-bold uppercase tracking-[0.12em] text-[#4d3c2e]/72 sm:mt-6 sm:max-w-2xl sm:grid-cols-5 sm:gap-x-3 sm:gap-y-1.5 sm:py-3 sm:text-[9px]">
                 <span>Comics</span>
                 <span>Sports Cards</span>

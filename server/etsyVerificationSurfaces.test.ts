@@ -7,7 +7,7 @@ const projectRoot = resolve(import.meta.dirname, "..");
 describe("Etsy verification display coverage", () => {
   it("keeps Etsy verification on each existing public member-verification surface", () => {
     const surfaces = [
-      ["client/src/pages/PublicProfile.tsx", "Etsy Verified"],
+      ["client/src/pages/PublicProfile.tsx", "user.etsyVerified"],
       ["client/src/pages/ItemDetail.tsx", "ownerProfile.etsyVerified"],
       ["client/src/pages/MemberSearch.tsx", "Etsy Verified"],
       ["client/src/pages/TradeHub.tsx", "otherUser?.etsyVerified"],
@@ -34,6 +34,8 @@ describe("Etsy verification display coverage", () => {
     expect(source).toContain("user.etsyShopName");
     expect(source).toContain("This verified Etsy account does not have a shop linked.");
     expect(source).not.toContain("user.etsyEmail");
+    const headerSource = source.slice(source.indexOf("{/* User Info */"), source.indexOf("{/* Navigation Tabs */"));
+    expect(headerSource).not.toContain("Etsy Verified");
   });
 
   it("does not expose saved Etsy OAuth credentials through public-profile data", () => {

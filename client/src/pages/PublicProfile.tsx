@@ -321,12 +321,6 @@ export default function PublicProfile() {
                    Merchant Verified
                  </span>
                )}
-               {user.etsyVerified && (
-                 <span className="inline-flex items-center gap-1 rounded-full border border-orange-200 bg-orange-50 px-2 py-0.5 text-[10px] font-bold uppercase text-orange-700 shrink-0 mt-1">
-                   <CheckCircle2 className="h-3 w-3" />
-                   Etsy Verified
-                 </span>
-               )}
              </div>
               <div className="flex flex-wrap items-center gap-y-1 gap-x-4 text-slate-500 text-sm font-medium">
                 <div className="flex items-center gap-1.5">

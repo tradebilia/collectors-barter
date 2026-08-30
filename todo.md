@@ -980,3 +980,7 @@
 - [x] Replace the Refer a Collector hero title with the exact animated SVG from ReferralRequest.zip at /manus-storage/ReferralRequest_89fadd07.svg.
 - [x] Add focused regression coverage, TypeScript/build/audit/whitespace checks, and document the protected-route visual verification limitation; canonical synchronization completed at commit bfdb440.
 - [x] Synchronize the Admin Trades and Refer a Collector enhancement to canonical GitHub at commit bfdb440 and save the final project checkpoint.
+
+- [x] Remove the redundant Etsy Verified badge beside the public-profile username while preserving the Overview and Verified Accts displays.
+- [x] Add Coming Soon preview messaging covering free membership, additional verification platforms, no money taken to complete trades, organized/easy operation, and cross-collectible trading.
+- [x] Add regression coverage, visually verify both surfaces, and synchronize the refinements to canonical GitHub at commit a475573.
