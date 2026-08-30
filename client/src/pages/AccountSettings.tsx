@@ -14,6 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EbayConnection } from "@/components/EbayConnection";
 import { FacebookConnection } from "@/components/FacebookConnection";
 import { LinkedInConnection } from "@/components/LinkedInConnection";
+import { EtsyConnection } from "@/components/EtsyConnection";
 import { trpc } from "@/lib/trpc";
 import { Bell, Lock, Mail, Loader2, Save, Shield, Link as LinkIcon, Upload, Eye, EyeOff, Cog, CreditCard, ExternalLink } from "lucide-react";
 import { FormEvent, useEffect, useState, useRef } from "react";
@@ -1126,6 +1127,7 @@ export default function AccountSettings() {
                     <EbayConnection />
                     <FacebookConnection />
                     <LinkedInConnection />
+                    <EtsyConnection />
                     {accountSources.map((source) => (
                       <div
                         key={source.value}

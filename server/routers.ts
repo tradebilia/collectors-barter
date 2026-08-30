@@ -46,6 +46,8 @@ import {
   flagLowFeedback,
   getUserFacebookInfo,
   getUserLinkedInInfo,
+  getUserEtsyInfo,
+  clearUserEtsyInfo,
   getLowFeedbackFlags,
   sendItemInquiry,
   getUnreadInquiries,
@@ -118,6 +120,7 @@ import { PASSWORD_RECOVERY_TOKEN_TTL_MS, createOpaqueRecoveryToken, createSixDig
 import { createPendingEmailHistoryApproval, requireMarketplaceApproval } from "./accountApproval";
 import { getIpqsEmailHistory } from "./ipqs";
 import { createProviderOauthState, setProviderOauthStateCookie } from "./_core/providerOauthState";
+import { getEtsyAuthUrl, createEtsyPkceVerifier } from "./_core/etsy";
 import { getPaymentVerificationObligation, isAuthorizedPaymentVerification } from "./paymentAuthorization";
 import { EXTERNAL_PAYMENT_METHODS, type ExternalPaymentMethod, getAvailableExternalPaymentMethods, getExternalPaymentIdentifier, getExternalPaymentMethodLabel, maskExternalPaymentIdentifier } from "./externalPaymentMethods";
 import { billingRouter, membershipRouter } from "./membership";
@@ -1159,14 +1162,22 @@ export const appRouter = router({
     saveIntegrations: protectedProcedure
       .input(
         z.object({
-          connectedAccounts: z.array(z.enum(["ebay", "paypal", "facebook", "linkedin", "whatnot"])),
+          connectedAccounts: z.array(z.enum(["ebay", "paypal", "facebook", "linkedin", "whatnot", "etsy"])),
         }),
       )
       .mutation(async ({ ctx, input }) => {
-        // Store integrations in userProfiles table
+        // Store integrations in userProfiles while preserving Etsy metadata.
         const db = await requireDb();
+        const existing = await db.select({ connectedAccounts: userProfiles.connectedAccounts }).from(userProfiles).where(eq(userProfiles.userId, ctx.user.id)).limit(1);
+        let etsy: unknown;
+        try {
+          const parsed = existing[0]?.connectedAccounts ? JSON.parse(existing[0].connectedAccounts) : null;
+          etsy = Array.isArray(parsed) ? undefined : parsed?.etsy;
+        } catch {
+          etsy = undefined;
+        }
         await db.update(userProfiles).set({
-          connectedAccounts: JSON.stringify(input.connectedAccounts),
+          connectedAccounts: JSON.stringify(etsy ? { accounts: input.connectedAccounts, etsy } : input.connectedAccounts),
         }).where(eq(userProfiles.userId, ctx.user.id));
         return { success: true };
       }),
@@ -2439,6 +2450,18 @@ export const appRouter = router({
       return { success: true };
     }),
   }),
+  etsy: router({
+    getAuthUrl: protectedProcedure.query(({ ctx }) => {
+      const state = createProviderOauthState();
+      const { verifier, challenge } = createEtsyPkceVerifier();
+      setProviderOauthStateCookie(ctx.res, "etsy", state);
+      ctx.res.cookie("tradebilia_etsy_pkce_verifier", verifier, { httpOnly: true, secure: true, sameSite: "lax", path: "/api", maxAge: 600000 });
+      return getEtsyAuthUrl(state, challenge);
+    }),
+    getInfo: protectedProcedure.query(({ ctx }) => getUserEtsyInfo(ctx.user.id)),
+    disconnect: protectedProcedure.mutation(async ({ ctx }) => { await clearUserEtsyInfo(ctx.user.id); return { success: true }; }),
+  }),
+
   admin: router({
     // Platform statistics
 	    getPlatformStatistics: protectedProcedure.query(async ({ ctx }) => {

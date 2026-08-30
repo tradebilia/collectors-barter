@@ -3673,6 +3673,37 @@ export async function getUserLinkedInInfo(userId: number): Promise<{
   };
 }
 
+
+export async function getUserEtsyInfo(userId: number) {
+  const db = await requireDb();
+  const rows = await db.select({ connectedAccounts: userProfiles.connectedAccounts }).from(userProfiles).where(eq(userProfiles.userId, userId)).limit(1);
+  let parsed: any = {};
+  try { parsed = rows[0]?.connectedAccounts ? JSON.parse(rows[0].connectedAccounts) : {}; } catch {}
+  const e = Array.isArray(parsed) ? null : parsed.etsy;
+  if (!e?.etsyUserId) return null;
+  return { ...e, etsyConnectedAt: e.etsyConnectedAt ? new Date(e.etsyConnectedAt) : null };
+}
+
+export async function updateUserEtsyInfo(input: any) {
+  const db = await requireDb();
+  const rows = await db.select({ connectedAccounts: userProfiles.connectedAccounts }).from(userProfiles).where(eq(userProfiles.userId, input.userId)).limit(1);
+  let parsed: any = {};
+  try { parsed = rows[0]?.connectedAccounts ? JSON.parse(rows[0].connectedAccounts) : {}; } catch {}
+  const accounts = Array.isArray(parsed) ? parsed : (Array.isArray(parsed.accounts) ? parsed.accounts : []);
+  const etsy = { ...input, etsyTokenExpiresAt: input.etsyTokenExpiresAt?.toISOString() ?? null, etsyConnectedAt: new Date().toISOString() };
+  delete etsy.userId;
+  await db.update(userProfiles).set({ connectedAccounts: JSON.stringify({ accounts, etsy }) }).where(eq(userProfiles.userId, input.userId));
+}
+
+export async function clearUserEtsyInfo(userId: number) {
+  const db = await requireDb();
+  const rows = await db.select({ connectedAccounts: userProfiles.connectedAccounts }).from(userProfiles).where(eq(userProfiles.userId, userId)).limit(1);
+  let parsed: any = {};
+  try { parsed = rows[0]?.connectedAccounts ? JSON.parse(rows[0].connectedAccounts) : {}; } catch {}
+  const accounts = Array.isArray(parsed) ? parsed : (Array.isArray(parsed.accounts) ? parsed.accounts : []);
+  await db.update(userProfiles).set({ connectedAccounts: JSON.stringify(accounts) }).where(eq(userProfiles.userId, userId));
+}
+
 // Item Inquiry Functions
 export async function sendItemInquiry(
   user: Pick<User, "id" | "name">,

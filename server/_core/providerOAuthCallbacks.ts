@@ -75,6 +75,31 @@ export function registerProviderOAuthCallbacks(app: Express) {
     }
   });
 
+  app.get("/api/etsy/callback", async (req: any, res: any) => {
+    if (isStagingSafetyEnabled()) return res.redirect(302, "/account-settings?etsy=error&reason=staging_disabled&tab=integrations");
+    if (req.query.error) return res.redirect(302, "/account-settings?etsy=error&reason=access_denied&tab=integrations");
+    const code = req.query.code as string | undefined;
+    if (!code) return res.redirect(302, "/account-settings?etsy=error&reason=no_code&tab=integrations");
+    try {
+      const cookies = customAuth.parseCookies(req.headers?.cookie || "");
+      const isValidState = isValidProviderOauthState(cookies.get(providerOauthStateCookieName("etsy")), req.query.state);
+      clearProviderOauthStateCookie(res, "etsy");
+      if (!isValidState) return res.redirect(302, "/account-settings?etsy=error&reason=invalid_state&tab=integrations");
+      const user = await customAuth.getUserFromSession(cookies.get(COOKIE_NAME));
+      if (!user) return res.redirect(302, "/account-settings?etsy=error&reason=not_logged_in&tab=integrations");
+      if (!hasValidProviderTokenEncryptionKey()) return res.redirect(302, "/account-settings?etsy=error&reason=encryption_unavailable&tab=integrations");
+      const verifier = cookies.get("tradebilia_etsy_pkce_verifier");
+      if (!verifier) return res.redirect(302, "/account-settings?etsy=error&reason=missing_pkce&tab=integrations");
+      res.clearCookie("tradebilia_etsy_pkce_verifier", { httpOnly: true, secure: true, sameSite: "lax", path: "/api" });
+      const { handleEtsyCallback } = await import("./etsyCallback");
+      await handleEtsyCallback(code, verifier, user.id);
+      return res.redirect(302, "/account-settings?etsy=connected&tab=integrations");
+    } catch (err) {
+      console.error("[Etsy Callback] Error:", err);
+      return res.redirect(302, "/account-settings?etsy=error&reason=callback_failed&tab=integrations");
+    }
+  });
+
   // Reserved UPS OAuth return URL. Token exchange remains disabled until the UPS
   // client credentials are securely configured for Tradebilia.
   app.get("/api/ups/callback", async (_req: any, res: any) => {

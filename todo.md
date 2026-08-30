@@ -938,3 +938,14 @@
 - [x] Remove the horizontal gray divider lines directly below item images on Explore All only, preserve card metadata/actions/responsive layout, add regression coverage, verify against the supplied reference, and checkpoint the change. Removed only the image link’s `border-b` class; card borders, metadata borders, Trade/favorite actions, and responsive layout remain. Focused global-search UI regression, TypeScript, build, audit, whitespace, and desktop/mobile visual checks passed.
 
 - [x] Keep the top-bar Search control visibly available with an empty query, make empty submission open all active listings, preserve typed-query searching, add regression coverage, and checkpoint the change. The Search button is enabled when empty; Enter or click routes to `/search`, while typed values route to `/search?q=...`. Focused global-search regressions passed, with TypeScript, build, audit, whitespace, and desktop/mobile verification passing.
+
+- [x] Research Etsy’s current OAuth/API capabilities and identify the exact identity, shop, and approved metadata available for verification.
+- [x] Inspect existing eBay/Facebook/LinkedIn verification architecture and project connector configuration, then securely configure Etsy credentials and redirect settings without exposing secrets.
+- [x] Implement Etsy OAuth-backed verification and safe profile/shop metadata import, add tests, validate security and compatibility, checkpoint, and synchronize the verified integration to canonical GitHub.
+
+- [x] Add Etsy OAuth and metadata verification implementation using secure configuration placeholders; request the Etsy keystring and shared secret only after code, tests, and visual checks are complete.
+- [x] Add Etsy user/shop metadata persistence with encrypted token handling and least-privilege read scopes.
+- [x] Add the Etsy connection card, official logo treatment, imported shop/profile details, and Etsy Verified badge behavior to Account Settings.
+- [x] Add Etsy verification regression tests, run TypeScript/build/dependency/whitespace checks, and visually verify the integrations UI.
+- [x] Securely request and configure Etsy credentials last, validate the OAuth start/metadata health path without exposing secrets, and document any provider-side setup remaining.
+- [ ] Commit and push the completed Etsy feature to the canonical GitHub repository and save the synchronized project checkpoint.
