@@ -32,6 +32,11 @@ describe("Coming Soon experience", () => {
     expect(pageSource).toContain("Every collection<br />has a next chapter.");
     expect(pageSource).toContain("The Collectors Trading Exchange");
     expect(pageSource).toContain("A home for remarkable collectibles—and the collectors who know their worth.");
+    expect(pageSource).toContain("Free for collectors.");
+    expect(pageSource).toContain("No money is taken to complete a trade.");
+    expect(pageSource).toContain("Add verification platforms to support referrals.");
+    expect(pageSource).toContain("Organized and easy to operate.");
+    expect(pageSource).toContain("Sports cards for comics, and more.");
     expect(pageSource).not.toContain("A deliberate place to discover, value, and trade across all ten collector categories.");
     expect(pageSource).toContain('"Notify me"');
     expect(pageSource).toContain("Yes, I&apos;d like to receive launch updates");
