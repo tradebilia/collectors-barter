@@ -11,11 +11,10 @@ export async function handleEtsyCallback(
   const encryptedAccessToken = encrypt(tokenData.access_token);
   if (!encryptedAccessToken) throw new Error("Etsy token encryption unavailable");
   const etsyUser = await getEtsyUser(tokenData.access_token);
-  const shopData = await getEtsyUserShops(
+  const shop = await getEtsyUserShops(
     etsyUser.user_id,
     tokenData.access_token
   );
-  const shop = shopData.results?.[0] ?? null;
   const shopUrl =
     shop?.url ||
     (shop?.shop_name

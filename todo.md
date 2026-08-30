@@ -949,3 +949,9 @@
 - [x] Add Etsy verification regression tests, run TypeScript/build/dependency/whitespace checks, and visually verify the integrations UI.
 - [x] Securely request and configure Etsy credentials last, validate the OAuth start/metadata health path without exposing secrets, and document any provider-side setup remaining.
 - [x] Commit and push the completed Etsy feature to the canonical GitHub repository and save the synchronized project checkpoint.
+
+- [x] Resolve Etsy OAuth warning where the registered app domain is www.tradebilia.com but the isolated project redirects to tradebilia-d-bnuiylsx.manus.space; confirm the target environment, align the developer-console registration or callback setting safely, and retest without granting access during the mismatch.
+
+- [x] Verify that the Etsy API keystring/shared secret belong to the edited Etsy app and that Etsy’s separate application-domain setting is saved consistently with the isolated callback host; OAuth consent reached the deployed callback, confirming the app credentials and domain registration now align.
+
+- [x] Diagnose and fix the post-consent Etsy callback failure shown in Account Settings, preserving existing provider connections and avoiding secret exposure; Etsy’s documented 404 for an account without a shop is now treated as identity-only verification, while valid shop responses are handled as a single shop object.

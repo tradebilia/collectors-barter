@@ -70,6 +70,7 @@ async function etsyGet<T>(path: string, accessToken: string): Promise<T> {
 
 export type EtsyUser = {
   user_id: number;
+  shop_id?: number;
   primary_email?: string;
   first_name?: string;
   last_name?: string;
@@ -94,9 +95,18 @@ export async function getEtsyUser(accessToken: string) {
   return etsyGet<EtsyUser>("/users/me", accessToken);
 }
 
-export async function getEtsyUserShops(userId: number, accessToken: string) {
-  return etsyGet<{ count?: number; results?: EtsyShop[] }>(
-    `/users/${userId}/shops`,
-    accessToken
-  );
+export async function getEtsyUserShops(
+  userId: number,
+  accessToken: string
+): Promise<EtsyShop | null> {
+  try {
+    return await etsyGet<EtsyShop>(`/users/${userId}/shops`, accessToken);
+  } catch (error) {
+    // Etsy returns 404 when an authorized account has no shop. That should
+    // not prevent us from verifying the Etsy identity itself.
+    if (error instanceof Error && error.message.includes("Etsy API request failed: 404")) {
+      return null;
+    }
+    throw error;
+  }
 }
