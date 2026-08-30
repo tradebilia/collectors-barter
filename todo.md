@@ -994,3 +994,6 @@
 - [x] Add the final completed-deal Trade Room state to Admin Trades Details, including completion, shipping, receipt, cash, messages, and final timestamps, while keeping the view read-only.
 - [x] Correct the Coming Soon logo placement so it remains on the parchment without overlapping the kicker or tagline, and preserve the approved tagline “Why Buy or Sell When You Can Trade?”.
 - [x] Run focused tests, TypeScript, production build, whitespace, and desktop/mobile visual checks; canonical synchronization completed at commit f6ec81a.
+
+- [x] Move the Coming Soon logo and content upward together, balance the parchment’s top and bottom spacing, and provide more room around the email field at desktop and mobile widths.
+- [x] Add regression coverage, visually verify spacing at both widths, and synchronize the Coming Soon spacing refinement to canonical GitHub at commit bb391bc.
