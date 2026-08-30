@@ -961,3 +961,13 @@
 - [x] Add Etsy Verified status to the public profile and every existing Tradebilia member-verification display, preserving other provider badges and private Etsy metadata boundaries. Verified live for the connected member on the Member Directory and Public Profile; listings, Trade Room, and completed-trade labels use the same server-provided flag.
 
 - [x] Diagnose and fix the repeated post-consent Etsy failure after the account-only verification deployment, using the exact live endpoint/error response and preserving all existing provider connections. Replaced the shop-dependent identity request with Etsy's authenticated-user profile lookup using the numeric user-ID prefix embedded in the OAuth token.
+
+- [x] Document the exact Etsy fields imported, stored, and publicly displayed, including the account-only case without a shop.
+- [x] Replace vertically stacked public-profile provider cards with a compact, scalable verification presentation that remains clear as members connect more accounts.
+- [x] Add regression coverage and visually verify desktop/mobile public profiles for the compact verification refinement; canonical GitHub synchronization remains pending.
+
+- [x] Research the currently supported account-age or member-since fields for eBay, Facebook, and LinkedIn using official provider documentation; document only fields that can be truthfully imported and displayed.
+- [x] Extend the public Etsy profile details to show Etsy user ID, display name when available, and shop details only when supplied by Etsy.
+- [x] Implement and validate the approved compact provider-verification layout without fabricating account-age signals or exposing private provider data.
+
+- [x] Build the approved compact expandable Verified Accounts strip, retain the eBay feedback card, and show Etsy user ID/name plus optional Etsy shop details in the selected provider panel.

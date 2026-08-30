@@ -201,6 +201,7 @@ export default function PublicProfile() {
 
   const numericUserId = parseInt(userId || "0", 10);
   const [composeOpen, setComposeOpen] = useState(false);
+  const [selectedVerification, setSelectedVerification] = useState<"ebay" | "facebook" | "linkedin" | "etsy" | null>(null);
   const { data: profileData, isLoading } = trpc.market.getUserProfile.useQuery(
     { userId: numericUserId },
     { enabled: numericUserId > 0 }
@@ -549,9 +550,48 @@ export default function PublicProfile() {
 
               {/* Right column: Trust Sidebar */}
               <div className="lg:col-span-4 space-y-6">
+                {(user.ebayUsername || user.facebookId || user.linkedinId || user.etsyVerified) && (
+                  <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm" aria-labelledby="verified-accounts-heading">
+                    <div className="border-b border-slate-100 bg-slate-50 px-5 py-3">
+                      <h2 id="verified-accounts-heading" className="text-sm font-bold uppercase tracking-wider text-slate-900">Verified Accounts</h2>
+                      <p className="mt-0.5 text-[11px] font-medium text-slate-500">Select an account to view its verified details.</p>
+                    </div>
+                    <div className="flex flex-wrap gap-2 p-4">
+                      {user.ebayUsername && (
+                        <button type="button" onClick={() => setSelectedVerification(selectedVerification === "ebay" ? null : "ebay")} aria-pressed={selectedVerification === "ebay"} aria-controls="verified-account-details" className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-xs font-bold transition-[transform,background-color,border-color,color] duration-150 ease-out active:scale-[0.97] ${selectedVerification === "ebay" ? "border-blue-200 bg-blue-50 text-blue-700" : "border-slate-200 bg-white text-slate-600 hover:border-blue-200 hover:bg-blue-50"}`}>
+                          <img src="https://assets.tradebilia.com/public-profile-logos/EBay_logo_0494719f.svg" alt="" className="h-4 w-8 object-contain" />
+                          eBay
+                          <CheckCircle2 className="h-3.5 w-3.5 text-green-600" aria-hidden="true" />
+                        </button>
+                      )}
+                      {user.facebookId && (
+                        <button type="button" onClick={() => setSelectedVerification(selectedVerification === "facebook" ? null : "facebook")} aria-pressed={selectedVerification === "facebook"} aria-controls="verified-account-details" className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-xs font-bold transition-[transform,background-color,border-color,color] duration-150 ease-out active:scale-[0.97] ${selectedVerification === "facebook" ? "border-blue-200 bg-blue-50 text-blue-700" : "border-slate-200 bg-white text-slate-600 hover:border-blue-200 hover:bg-blue-50"}`}>
+                          <img src="https://assets.tradebilia.com/public-profile-logos/Facebook_Logo_2019_9f37233f.png" alt="" className="h-4 w-4 object-contain" />
+                          Facebook
+                          <CheckCircle2 className="h-3.5 w-3.5 text-blue-600" aria-hidden="true" />
+                        </button>
+                      )}
+                      {user.linkedinId && (
+                        <button type="button" onClick={() => setSelectedVerification(selectedVerification === "linkedin" ? null : "linkedin")} aria-pressed={selectedVerification === "linkedin"} aria-controls="verified-account-details" className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-xs font-bold transition-[transform,background-color,border-color,color] duration-150 ease-out active:scale-[0.97] ${selectedVerification === "linkedin" ? "border-sky-200 bg-sky-50 text-sky-700" : "border-slate-200 bg-white text-slate-600 hover:border-sky-200 hover:bg-sky-50"}`}>
+                          <img src="https://assets.tradebilia.com/public-profile-logos/LinkedIn_logo_initials_290575a9.png" alt="" className="h-4 w-4 object-contain" />
+                          LinkedIn
+                          <CheckCircle2 className="h-3.5 w-3.5 text-sky-600" aria-hidden="true" />
+                        </button>
+                      )}
+                      {user.etsyVerified && (
+                        <button type="button" onClick={() => setSelectedVerification(selectedVerification === "etsy" ? null : "etsy")} aria-pressed={selectedVerification === "etsy"} aria-controls="verified-account-details" className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-xs font-bold transition-[transform,background-color,border-color,color] duration-150 ease-out active:scale-[0.97] ${selectedVerification === "etsy" ? "border-orange-200 bg-orange-50 text-orange-700" : "border-slate-200 bg-white text-slate-600 hover:border-orange-200 hover:bg-orange-50"}`}>
+                          <img src="/manus-storage/etsy-mark_2dee1a0f.png" alt="" className="h-4 w-4 rounded object-contain" />
+                          Etsy
+                          <CheckCircle2 className="h-3.5 w-3.5 text-orange-600" aria-hidden="true" />
+                        </button>
+                      )}
+                    </div>
+                  </section>
+                )}
+
                 {/* eBay Reputation Card */}
-                {user?.ebayUsername && (
-                  <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-sm">
+                {selectedVerification === "ebay" && user?.ebayUsername && (
+                  <div id="verified-account-details" className="rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-sm">
                     <div className="bg-slate-50 border-b border-slate-100 px-5 py-3 flex items-center justify-between">
                       <img src="https://assets.tradebilia.com/public-profile-logos/EBay_logo_0494719f.svg" alt="eBay" className="h-5" />
                       <div className="flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-[9px] font-black text-green-700 uppercase tracking-tight">
@@ -637,8 +677,8 @@ export default function PublicProfile() {
                 )}
 
                 {/* Facebook Card — shown only if connected */}
-                {user.facebookId && (
-                  <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-sm">
+                {selectedVerification === "facebook" && user.facebookId && (
+                  <div id="verified-account-details" className="rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-sm">
                     {/* Header */}
                     <div className="bg-[#1877F2]/5 border-b border-[#1877F2]/10 px-5 py-3 flex items-center justify-between">
                       <img src="https://assets.tradebilia.com/public-profile-logos/Facebook_Logo_2019_9f37233f.png" alt="Facebook" className="h-5" />
@@ -696,8 +736,8 @@ export default function PublicProfile() {
                 )}
 
                 {/* LinkedIn Card — shown only if connected */}
-                {user.linkedinId && (
-                  <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-sm">
+                {selectedVerification === "linkedin" && user.linkedinId && (
+                  <div id="verified-account-details" className="rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-sm">
                     {/* Header */}
                     <div className="bg-[#0A66C2]/5 border-b border-[#0A66C2]/10 px-5 py-3 flex items-center justify-between">
                       <img src="https://assets.tradebilia.com/public-profile-logos/LinkedIn_logo_initials_290575a9.png" alt="LinkedIn" className="h-5 object-contain" />
@@ -720,8 +760,8 @@ export default function PublicProfile() {
                     </div>
                   </div>
                 )}
-                {user.etsyVerified && (
-                  <div className="overflow-hidden rounded-2xl border border-orange-100 bg-white shadow-sm">
+                {selectedVerification === "etsy" && user.etsyVerified && (
+                  <div id="verified-account-details" className="overflow-hidden rounded-2xl border border-orange-100 bg-white shadow-sm">
                     <div className="flex items-center justify-between border-b border-orange-100 bg-orange-50 px-5 py-3">
                       <img src="/manus-storage/etsy-mark_2dee1a0f.png" alt="Etsy" className="h-5 w-5 rounded object-contain" />
                       <div className="flex items-center gap-1 rounded-full bg-orange-100 px-2 py-0.5 text-[9px] font-black uppercase tracking-tight text-orange-700">
@@ -729,9 +769,29 @@ export default function PublicProfile() {
                         Verified Account
                       </div>
                     </div>
-                    <div className="space-y-2 p-4">
-                      <p className="text-sm font-black tracking-tight text-slate-900">Connected Etsy account</p>
+                    <div className="space-y-3 p-4">
+                      <div className="flex items-start gap-3">
+                        {user.etsyShopAvatarUrl && (
+                          <img src={user.etsyShopAvatarUrl} alt="" className="h-11 w-11 rounded-xl border border-orange-100 bg-orange-50 object-cover" />
+                        )}
+                        <div className="min-w-0">
+                          <p className="text-sm font-black tracking-tight text-slate-900">{user.etsyDisplayName || "Connected Etsy account"}</p>
+                          <p className="mt-0.5 text-[10px] font-bold uppercase tracking-wide text-orange-700">Etsy user ID: {user.etsyUserId}</p>
+                        </div>
+                      </div>
                       <ConnectionDate connectedAt={user.etsyConnectedAt} />
+                      {user.etsyShopName && (
+                        <div className="rounded-xl border border-orange-100 bg-orange-50/60 p-3">
+                          <p className="text-[9px] font-bold uppercase tracking-widest text-orange-700">Etsy shop</p>
+                          <p className="mt-1 text-sm font-black text-slate-900">{user.etsyShopName}</p>
+                          {user.etsyShopStatus && <p className="mt-0.5 text-[10px] font-semibold capitalize text-slate-500">{String(user.etsyShopStatus).replace(/_/g, " ")}</p>}
+                          {user.etsyShopUrl && (
+                            <a href={user.etsyShopUrl} target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center gap-1 text-[10px] font-bold text-orange-700 underline-offset-2 hover:underline">
+                              Visit Etsy shop <ExternalLink className="h-3 w-3" />
+                            </a>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}

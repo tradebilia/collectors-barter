@@ -30,11 +30,16 @@ describe("Etsy OAuth integration", () => {
     );
   });
 
-  it("exposes only a boolean and timestamp from persisted Etsy data", async () => {
+  it("exposes only approved public Etsy verification, identity, and optional shop fields", async () => {
     const { getPublicEtsyVerification } = await import("./db");
     const verification = getPublicEtsyVerification(JSON.stringify({
       etsy: {
         etsyUserId: "12345678",
+        etsyDisplayName: "Etsy Collector",
+        etsyShopName: "Collector Shop",
+        etsyShopUrl: "https://www.etsy.com/shop/CollectorShop",
+        etsyShopAvatarUrl: "https://i.etsystatic.com/avatar.jpg",
+        etsyShopStatus: "active",
         etsyConnectedAt: "2026-08-30T18:00:00.000Z",
         etsyAccessToken: "encrypted-token-must-not-leave-the-server",
         etsyEmail: "private@example.com",
@@ -44,9 +49,29 @@ describe("Etsy OAuth integration", () => {
     expect(verification).toEqual({
       etsyVerified: true,
       etsyConnectedAt: "2026-08-30T18:00:00.000Z",
+      etsyUserId: "12345678",
+      etsyDisplayName: "Etsy Collector",
+      etsyShopName: "Collector Shop",
+      etsyShopUrl: "https://www.etsy.com/shop/CollectorShop",
+      etsyShopAvatarUrl: "https://i.etsystatic.com/avatar.jpg",
+      etsyShopStatus: "active",
     });
     expect(JSON.stringify(verification)).not.toContain("encrypted-token");
     expect(JSON.stringify(verification)).not.toContain("private@example.com");
+  });
+
+  it("rejects non-HTTPS shop URLs from the public profile payload", async () => {
+    const { getPublicEtsyVerification } = await import("./db");
+    const verification = getPublicEtsyVerification(JSON.stringify({
+      etsy: {
+        etsyUserId: "12345678",
+        etsyShopUrl: "javascript:alert('unsafe')",
+        etsyShopAvatarUrl: "http://example.test/avatar.jpg",
+      },
+    }));
+
+    expect(verification.etsyShopUrl).toBeNull();
+    expect(verification.etsyShopAvatarUrl).toBeNull();
   });
 
   it("treats a documented no-shop response as an identity-only connection", async () => {

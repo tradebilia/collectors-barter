@@ -20,6 +20,17 @@ describe("Etsy verification display coverage", () => {
     }
   });
 
+  it("keeps public-profile provider accounts compact and expands Etsy details on demand", () => {
+    const source = readFileSync(resolve(projectRoot, "client/src/pages/PublicProfile.tsx"), "utf8");
+
+    expect(source).toContain("Verified Accounts");
+    expect(source).toContain("setSelectedVerification");
+    expect(source).toContain("Etsy user ID:");
+    expect(source).toContain("user.etsyDisplayName");
+    expect(source).toContain("user.etsyShopName");
+    expect(source).not.toContain("user.etsyEmail");
+  });
+
   it("does not expose saved Etsy OAuth credentials through public-profile data", () => {
     const routerSource = readFileSync(resolve(projectRoot, "server/routers.ts"), "utf8");
     const profileStart = routerSource.indexOf("getUserProfile: publicProcedure");

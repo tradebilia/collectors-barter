@@ -26,3 +26,11 @@ A successful OAuth response proves that the member authorized the connected Etsy
 ## Account-only connection clarification
 
 Etsy's `getMe` endpoint is authorized through `shops_r` and may return `404` for a valid Etsy account without a shop. Etsy OAuth access tokens begin with the authenticated member's numeric Etsy user ID, separated from the token value by a period. Tradebilia therefore uses that user-ID prefix with the documented `GET /v3/application/users/{user_id}` endpoint after consent, then treats the optional shop lookup independently. A connected account without a shop is truthfully presented as **Etsy Verified** without inventing shop metadata or merchant status. Public verification payloads expose only the boolean connection fact and connection timestamp; encrypted OAuth tokens and Etsy email remain server-side.
+
+## Provider account-tenure fields
+
+eBay's official `GetUser` response documents a `RegistrationDate`, so Tradebilia can truthfully preserve and display an eBay “Member since” date when it is returned. Meta's current Graph API User reference does not list an account-creation, registration-date, or member-since field for an authenticated personal Facebook profile; Tradebilia must not infer account age from the OAuth connection time. LinkedIn's current OpenID Connect profile claims are limited to identity and profile fields such as subject ID, name, profile picture, locale, and optional email/email verification; no account-creation or member-since field is available. Facebook and LinkedIn can therefore show only the date the account was connected to Tradebilia, not the age of the external account.
+
+## Compact public-profile verification presentation
+
+The public profile now presents connected providers in a compact wrapping **Verified Accounts** selector rather than as a vertical stack of full-size cards. The user can select one provider to inspect that provider's verified details; the eBay panel retains its meaningful reputation metrics. Etsy's panel displays the approved Etsy user ID, display name when returned, connection date, and optional shop name, status, avatar, and HTTPS shop link. Desktop and mobile visual checks confirmed that four connected providers remain compact and readable without crowding the profile.
