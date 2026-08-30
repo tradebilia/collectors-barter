@@ -1,6 +1,11 @@
 import { updateUserEtsyInfo } from "../db";
 import { encrypt } from "./crypto";
-import { exchangeEtsyCode, getEtsyUser, getEtsyUserShops } from "./etsy";
+import {
+  exchangeEtsyCode,
+  getEtsyUser,
+  getEtsyUserIdFromAccessToken,
+  getEtsyUserShops,
+} from "./etsy";
 
 export async function handleEtsyCallback(
   code: string,
@@ -10,7 +15,8 @@ export async function handleEtsyCallback(
   const tokenData = await exchangeEtsyCode(code, codeVerifier);
   const encryptedAccessToken = encrypt(tokenData.access_token);
   if (!encryptedAccessToken) throw new Error("Etsy token encryption unavailable");
-  const etsyUser = await getEtsyUser(tokenData.access_token);
+  const etsyUserId = getEtsyUserIdFromAccessToken(tokenData.access_token);
+  const etsyUser = await getEtsyUser(etsyUserId, tokenData.access_token);
   const shop = await getEtsyUserShops(
     etsyUser.user_id,
     tokenData.access_token

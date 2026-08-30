@@ -957,3 +957,5 @@
 - [x] Diagnose and fix the post-consent Etsy callback failure shown in Account Settings, preserving existing provider connections and avoiding secret exposure; Etsy’s documented 404 for an account without a shop is now treated as identity-only verification, while valid shop responses are handled as a single shop object.
 
 - [x] Fix the remaining Etsy callback failure for a valid account without a shop, verify the account-only Etsy Verified result, and synchronize the correction without exposing credentials; corrected the API host, documented 404 handling, and pushed commit e46d26b.
+
+- [ ] Diagnose and fix the repeated post-consent Etsy failure after the account-only verification deployment, using the exact live endpoint/error response and preserving all existing provider connections.
