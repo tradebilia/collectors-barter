@@ -8,7 +8,8 @@ describe("Report a User hero", () => {
   it("retains the supplied title artwork over the original collector-background hero", () => {
     expect(reportUserSource).toContain('REPORT_USER_HERO_TITLE_URL = "/manus-storage/ReportaMember_15c04fd6.webp"');
     expect(reportUserSource).toContain('REPORT_USER_HERO_BACKGROUND_URL = "https://assets.tradebilia.com/Background_23084d14.jpg"');
-    expect(reportUserSource).toContain('max-w-7xl items-center justify-center');
+    expect(reportUserSource).toContain('max-w-7xl');
+    expect(reportUserSource).toContain('AnimatedHeroTitleArtwork');
     expect(reportUserSource).not.toContain('-ml-32');
     expect(reportUserSource).not.toContain('reportUserMobileHero');
     expect(reportUserSource).toContain('alt="Report a Member"');

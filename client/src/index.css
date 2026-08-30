@@ -217,8 +217,16 @@
     will-change: transform;
   }
 
+  .tradebilia-wheel-rotor {
+    animation: tradebilia-wheel-spin 12s linear infinite;
+    transform-box: view-box;
+    transform-origin: center;
+    will-change: transform;
+  }
+
   @media (prefers-reduced-motion: reduce) {
-    .tradebilia-wheel-home {
+    .tradebilia-wheel-home,
+    .tradebilia-wheel-rotor {
       animation: none;
     }
   }

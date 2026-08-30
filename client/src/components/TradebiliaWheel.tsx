@@ -16,7 +16,7 @@ export function TradebiliaWheel({ className = "" }: { className?: string }) {
       role="img"
       xmlns="http://www.w3.org/2000/svg"
     >
-      <g className="origin-center animate-[spin_12s_linear_infinite]">
+      <g className="tradebilia-wheel-rotor" style={{ transformBox: "view-box", transformOrigin: "center" }}>
         {SEGMENTS.map(({ color, rotation }) => (
           <g key={rotation} transform={`rotate(${rotation} 110 110)`} fill={color}>
             <path d="M99 104 64 69h19V42h14v62H99Z" />

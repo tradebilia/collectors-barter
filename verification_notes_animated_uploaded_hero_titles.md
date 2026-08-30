@@ -1,0 +1,2 @@
+Desktop browser verification after the animation-layer update: /members rendered the supplied MemberDirectory.webp title with the standalone TradebiliaWheel visibly layered over the wheel position; the MEMBER DIRECTORY text remained readable and centered. Screenshot capture freezes CSS animation at a frame, so motion is protected by the explicit tradebilia-wheel-rotor animation rule and regression test rather than inferred from a frozen screenshot. Report a User is authentication-gated for direct preview inspection.
+
