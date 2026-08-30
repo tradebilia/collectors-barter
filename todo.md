@@ -958,4 +958,6 @@
 
 - [x] Fix the remaining Etsy callback failure for a valid account without a shop, verify the account-only Etsy Verified result, and synchronize the correction without exposing credentials; corrected the API host, documented 404 handling, and pushed commit e46d26b.
 
-- [ ] Diagnose and fix the repeated post-consent Etsy failure after the account-only verification deployment, using the exact live endpoint/error response and preserving all existing provider connections.
+- [x] Add Etsy Verified status to the public profile and every existing Tradebilia member-verification display, preserving other provider badges and private Etsy metadata boundaries. Verified live for the connected member on the Member Directory and Public Profile; listings, Trade Room, and completed-trade labels use the same server-provided flag.
+
+- [x] Diagnose and fix the repeated post-consent Etsy failure after the account-only verification deployment, using the exact live endpoint/error response and preserving all existing provider connections. Replaced the shop-dependent identity request with Etsy's authenticated-user profile lookup using the numeric user-ID prefix embedded in the OAuth token.

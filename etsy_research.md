@@ -22,3 +22,7 @@ The project will need an Etsy API keystring/shared secret pair, an Etsy OAuth cl
 ## Verification boundary
 
 A successful OAuth response proves that the member authorized the connected Etsy account and that Etsy returned the account identity. It does not prove that the member owns every shop, listing, or external contact they may later type elsewhere. Tradebilia should keep provider-connected status separate from any manually entered Etsy URL or username.
+
+## Account-only connection clarification
+
+Etsy's `getMe` endpoint is authorized through `shops_r` and may return `404` for a valid Etsy account without a shop. Etsy OAuth access tokens begin with the authenticated member's numeric Etsy user ID, separated from the token value by a period. Tradebilia therefore uses that user-ID prefix with the documented `GET /v3/application/users/{user_id}` endpoint after consent, then treats the optional shop lookup independently. A connected account without a shop is truthfully presented as **Etsy Verified** without inventing shop metadata or merchant status. Public verification payloads expose only the boolean connection fact and connection timestamp; encrypted OAuth tokens and Etsy email remain server-side.

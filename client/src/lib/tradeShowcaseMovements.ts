@@ -40,6 +40,7 @@ export type TradeShowcaseTrade = {
   requesterLinkedinVerified?: boolean | number | null;
   requesterPaypalVerified?: boolean | number | null;
   requesterMerchantVerified?: boolean | number | null;
+  requesterEtsyVerified?: boolean | number | null;
   recipientDisplayName?: string | null;
   recipientUsername?: string | null;
   recipientAvatarUrl?: string | null;
@@ -50,6 +51,7 @@ export type TradeShowcaseTrade = {
   recipientLinkedinVerified?: boolean | number | null;
   recipientPaypalVerified?: boolean | number | null;
   recipientMerchantVerified?: boolean | number | null;
+  recipientEtsyVerified?: boolean | number | null;
 };
 
 export type TradeShowcaseMovement = TradeShowcaseItem & {
@@ -74,6 +76,7 @@ function buildVerificationLabels(trade: TradeShowcaseTrade, role: "requester" | 
   if (isVerified(`${role}FacebookVerified` as keyof TradeShowcaseTrade)) labels.push("Facebook Verified");
   if (isVerified(`${role}LinkedinVerified` as keyof TradeShowcaseTrade)) labels.push("LinkedIn Verified");
   if (isVerified(`${role}PaypalVerified` as keyof TradeShowcaseTrade)) labels.push("PayPal Verified");
+  if (isVerified(`${role}EtsyVerified` as keyof TradeShowcaseTrade)) labels.push("Etsy Verified");
   if (isVerified(`${role}MerchantVerified` as keyof TradeShowcaseTrade)) labels.push("Tradebilia Verified");
   return labels;
 }

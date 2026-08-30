@@ -320,6 +320,12 @@ export default function PublicProfile() {
                    Merchant Verified
                  </span>
                )}
+               {user.etsyVerified && (
+                 <span className="inline-flex items-center gap-1 rounded-full border border-orange-200 bg-orange-50 px-2 py-0.5 text-[10px] font-bold uppercase text-orange-700 shrink-0 mt-1">
+                   <CheckCircle2 className="h-3 w-3" />
+                   Etsy Verified
+                 </span>
+               )}
              </div>
               <div className="flex flex-wrap items-center gap-y-1 gap-x-4 text-slate-500 text-sm font-medium">
                 <div className="flex items-center gap-1.5">
@@ -711,6 +717,21 @@ export default function PublicProfile() {
                       </div>
                       <ConnectionDate connectedAt={user.linkedinConnectedAt} />
 
+                    </div>
+                  </div>
+                )}
+                {user.etsyVerified && (
+                  <div className="overflow-hidden rounded-2xl border border-orange-100 bg-white shadow-sm">
+                    <div className="flex items-center justify-between border-b border-orange-100 bg-orange-50 px-5 py-3">
+                      <img src="/manus-storage/etsy-mark_2dee1a0f.png" alt="Etsy" className="h-5 w-5 rounded object-contain" />
+                      <div className="flex items-center gap-1 rounded-full bg-orange-100 px-2 py-0.5 text-[9px] font-black uppercase tracking-tight text-orange-700">
+                        <CheckCircle2 className="h-2.5 w-2.5" />
+                        Verified Account
+                      </div>
+                    </div>
+                    <div className="space-y-2 p-4">
+                      <p className="text-sm font-black tracking-tight text-slate-900">Connected Etsy account</p>
+                      <ConnectionDate connectedAt={user.etsyConnectedAt} />
                     </div>
                   </div>
                 )}

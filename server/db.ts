@@ -1109,6 +1109,7 @@ export async function getListingDetail(listingId: number, viewerId: number | nul
       bio: userProfiles.bio,
       displayName: userProfiles.displayName,
       avatarUrl: userProfiles.avatarUrl,
+      connectedAccounts: userProfiles.connectedAccounts,
     })
     .from(userProfiles)
     .where(eq(userProfiles.userId, detailCard[0].ownerId))
@@ -1199,6 +1200,7 @@ export async function getListingDetail(listingId: number, viewerId: number | nul
 
   const ratingMap = await getRatingStatsMap([detailCard[0].ownerId]);
   const ownerRating = ratingMap.get(detailCard[0].ownerId) ?? { averageRating: 0, reviewCount: 0 };
+  const ownerEtsyVerification = getPublicEtsyVerification(ownerProfileRows[0]?.connectedAccounts);
 
   return {
     id: detailCard[0].id,
@@ -1227,6 +1229,7 @@ export async function getListingDetail(listingId: number, viewerId: number | nul
       facebookVerified: !!(ownerUserRows[0]?.facebookId) || ownerUserRows[0]?.facebookVerified === 1,
       linkedinVerified: !!(ownerUserRows[0]?.linkedinId),
       merchantVerified: ownerUserRows[0]?.merchantVerified === 1,
+      etsyVerified: ownerEtsyVerification.etsyVerified,
     },
     ownerRating,
     photos: photoRows.map(p => ({
@@ -1571,6 +1574,7 @@ export async function searchMembers(input: {
       profileCreatedAt: userProfiles.createdAt,
       merchantVerified: users.merchantVerified,
       username: users.username,
+      connectedAccounts: userProfiles.connectedAccounts,
     })
     .from(userProfiles)
     .innerJoin(users, eq(users.id, userProfiles.userId))
@@ -1666,6 +1670,7 @@ export async function searchMembers(input: {
       firstListingId: firstListingMap.get(m.userId) ?? null,
       joinedAt: new Date(m.profileCreatedAt).getTime(),
       isVerifiedMerchant: m.merchantVerified === 1,
+      etsyVerified: getPublicEtsyVerification(m.connectedAccounts).etsyVerified,
       standingKey: standing.key,
       verificationLevel: standing.label,
       privateLocation: {
@@ -3674,14 +3679,45 @@ export async function getUserLinkedInInfo(userId: number): Promise<{
 }
 
 
+function getEtsyConnectionData(connectedAccounts: unknown): Record<string, unknown> | null {
+  let parsed: unknown = null;
+  try {
+    parsed = typeof connectedAccounts === "string"
+      ? JSON.parse(connectedAccounts)
+      : connectedAccounts;
+  } catch {
+    return null;
+  }
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return null;
+  const etsy = (parsed as { etsy?: unknown }).etsy;
+  return etsy && typeof etsy === "object" && !Array.isArray(etsy)
+    ? etsy as Record<string, unknown>
+    : null;
+}
+
+export function getPublicEtsyVerification(connectedAccounts: unknown) {
+  const etsy = getEtsyConnectionData(connectedAccounts);
+  const etsyUserId = typeof etsy?.etsyUserId === "string" ? etsy.etsyUserId.trim() : "";
+  return {
+    etsyVerified: Boolean(etsyUserId),
+    etsyConnectedAt: typeof etsy?.etsyConnectedAt === "string" ? etsy.etsyConnectedAt : null,
+  };
+}
+
 export async function getUserEtsyInfo(userId: number) {
   const db = await requireDb();
   const rows = await db.select({ connectedAccounts: userProfiles.connectedAccounts }).from(userProfiles).where(eq(userProfiles.userId, userId)).limit(1);
-  let parsed: any = {};
-  try { parsed = rows[0]?.connectedAccounts ? JSON.parse(rows[0].connectedAccounts) : {}; } catch {}
-  const e = Array.isArray(parsed) ? null : parsed.etsy;
-  if (!e?.etsyUserId) return null;
-  return { ...e, etsyConnectedAt: e.etsyConnectedAt ? new Date(e.etsyConnectedAt) : null };
+  const etsy = getEtsyConnectionData(rows[0]?.connectedAccounts);
+  if (typeof etsy?.etsyUserId !== "string" || !etsy.etsyUserId.trim()) return null;
+  return {
+    etsyUserId: etsy.etsyUserId,
+    etsyDisplayName: typeof etsy.etsyDisplayName === "string" ? etsy.etsyDisplayName : null,
+    etsyShopName: typeof etsy.etsyShopName === "string" ? etsy.etsyShopName : null,
+    etsyShopUrl: typeof etsy.etsyShopUrl === "string" ? etsy.etsyShopUrl : null,
+    etsyShopAvatarUrl: typeof etsy.etsyShopAvatarUrl === "string" ? etsy.etsyShopAvatarUrl : null,
+    etsyShopStatus: typeof etsy.etsyShopStatus === "string" ? etsy.etsyShopStatus : null,
+    etsyConnectedAt: typeof etsy.etsyConnectedAt === "string" ? new Date(etsy.etsyConnectedAt) : null,
+  };
 }
 
 export async function updateUserEtsyInfo(input: any) {
