@@ -11,7 +11,8 @@ describe("uploaded hero title wheel animation", () => {
     const artwork = read("client/src/components/AnimatedHeroTitleArtwork.tsx");
     const wheel = read("client/src/components/TradebiliaWheel.tsx");
 
-    expect(reportUser).toContain("AnimatedHeroTitleArtwork");
+    expect(reportUser).toContain("/manus-storage/ReportaMember_d6e803c4.svg");
+    expect(reportUser).not.toContain("AnimatedHeroTitleArtwork");
     expect(memberDirectory).toContain("/manus-storage/MemberDirectory2_c8de2e96.svg");
     expect(memberDirectory).not.toContain("AnimatedHeroTitleArtwork");
     expect(artwork).toContain("TradebiliaWheel");
