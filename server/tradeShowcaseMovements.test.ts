@@ -73,4 +73,17 @@ describe("buildTradeShowcaseMovements", () => {
       "Administrator's comic",
     ]);
   });
+
+  it("includes Etsy Verified only for the member with a connected Etsy account", () => {
+    const exchange = buildTradeShowcaseExchange({
+      requestedListingTitle: "Collector's coin",
+      requesterDisplayName: "Etsy member",
+      requesterEtsyVerified: 1,
+      recipientDisplayName: "Unconnected member",
+      offeredItems: [{ title: "Card" }],
+    });
+
+    expect(exchange.right.member.verificationLabels).toEqual(["Etsy Verified"]);
+    expect(exchange.left.member.verificationLabels).toEqual([]);
+  });
 });

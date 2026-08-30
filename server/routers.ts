@@ -47,6 +47,7 @@ import {
   getUserFacebookInfo,
   getUserLinkedInInfo,
   getUserEtsyInfo,
+  getPublicEtsyVerification,
   clearUserEtsyInfo,
   getLowFeedbackFlags,
   sendItemInquiry,
@@ -825,7 +826,7 @@ export const appRouter = router({
         }
 
         const [profileRows] = await db.execute(
-          sql`SELECT displayName, avatarUrl, bio, contactTown, contactState, preferredCategories, showProfile, hideInventoryValue FROM userProfiles WHERE userId = ${input.userId}`
+          sql`SELECT displayName, avatarUrl, bio, contactTown, contactState, preferredCategories, connectedAccounts, showProfile, hideInventoryValue FROM userProfiles WHERE userId = ${input.userId}`
         );
         const profileRow = Array.isArray(profileRows) ? (profileRows as any[])[0] : profileRows;
         const viewerMayBypassProfilePrivacy = ctx.user?.id === input.userId || ctx.user?.role === "admin";
@@ -877,8 +878,10 @@ export const appRouter = router({
         );
         const reviews = Array.isArray(reviewsRows) ? reviewsRows : [];
 
+        const etsyVerification = getPublicEtsyVerification(profileRow?.connectedAccounts);
+
         return {
-          user: userRow,
+          user: { ...userRow, ...etsyVerification },
           profile: profileRow ? {
             displayName: profileRow.displayName,
             avatarUrl: profileRow.avatarUrl,
@@ -3660,6 +3663,7 @@ export const appRouter = router({
             (req_u.linkedinId IS NOT NULL AND req_u.linkedinId != '') as requesterLinkedinVerified,
             req_u.paypalVerified as requesterPaypalVerified,
             req_u.merchantVerified as requesterMerchantVerified,
+            (COALESCE(JSON_UNQUOTE(JSON_EXTRACT(req_up.connectedAccounts, '$.etsy.etsyUserId')), '') != '') as requesterEtsyVerified,
             -- Public recipient identity with display-name-first fallback
             COALESCE(NULLIF(rec_up.displayName, ''), NULLIF(rec_u.displayName, ''), NULLIF(rec_u.name, ''), rec_u.username, 'Collector') as recipientDisplayName,
             rec_u.username as recipientUsername,
@@ -3671,6 +3675,7 @@ export const appRouter = router({
             (rec_u.linkedinId IS NOT NULL AND rec_u.linkedinId != '') as recipientLinkedinVerified,
             rec_u.paypalVerified as recipientPaypalVerified,
             rec_u.merchantVerified as recipientMerchantVerified,
+            (COALESCE(JSON_UNQUOTE(JSON_EXTRACT(rec_up.connectedAccounts, '$.etsy.etsyUserId')), '') != '') as recipientEtsyVerified,
             -- Requested listing (the item that started the trade)
             l.id as requestedListingId,
             l.title as requestedListingTitle,

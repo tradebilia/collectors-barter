@@ -30,6 +30,25 @@ describe("Etsy OAuth integration", () => {
     );
   });
 
+  it("exposes only a boolean and timestamp from persisted Etsy data", async () => {
+    const { getPublicEtsyVerification } = await import("./db");
+    const verification = getPublicEtsyVerification(JSON.stringify({
+      etsy: {
+        etsyUserId: "12345678",
+        etsyConnectedAt: "2026-08-30T18:00:00.000Z",
+        etsyAccessToken: "encrypted-token-must-not-leave-the-server",
+        etsyEmail: "private@example.com",
+      },
+    }));
+
+    expect(verification).toEqual({
+      etsyVerified: true,
+      etsyConnectedAt: "2026-08-30T18:00:00.000Z",
+    });
+    expect(JSON.stringify(verification)).not.toContain("encrypted-token");
+    expect(JSON.stringify(verification)).not.toContain("private@example.com");
+  });
+
   it("treats a documented no-shop response as an identity-only connection", async () => {
     const originalFetch = globalThis.fetch;
     vi.stubGlobal(

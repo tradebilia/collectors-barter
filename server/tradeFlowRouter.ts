@@ -1088,6 +1088,7 @@ export const tradeFlowRouter = router({
           ou.facebookVerified as otherFacebookVerified,
           (ou.linkedinId IS NOT NULL AND ou.linkedinId != '') as otherLinkedinVerified,
           ou.paypalVerified as otherPaypalVerified,
+          (COALESCE(JSON_UNQUOTE(JSON_EXTRACT(oup.connectedAccounts, '$.etsy.etsyUserId')), '') != '') as otherEtsyVerified,
           -- Decline reason
           tp.declineReason
         FROM tradeProposals tp
@@ -1121,6 +1122,7 @@ export const tradeFlowRouter = router({
           facebookVerified: !!row.otherFacebookVerified,
           linkedinVerified: !!row.otherLinkedinVerified,
           paypalVerified: !!row.otherPaypalVerified,
+          etsyVerified: !!row.otherEtsyVerified,
         },
         listing: {
           id: row.requestedListingId,
