@@ -971,3 +971,6 @@
 - [x] Implement and validate the approved compact provider-verification layout without fabricating account-age signals or exposing private provider data.
 
 - [x] Build the approved compact expandable Verified Accounts strip, retain the eBay feedback card, and show Etsy user ID/name plus optional Etsy shop details in the selected provider panel.
+
+- [x] Add a Verified Accts tab after Reviews with detailed, privacy-safe cards for every connected provider; keep Overview compact and retain the existing eBay reputation details.
+- [x] Synchronize the Verified Accts tab enhancement to canonical GitHub at commit 5bf70c8 and save the final project checkpoint.

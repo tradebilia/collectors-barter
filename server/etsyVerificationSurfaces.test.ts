@@ -25,9 +25,14 @@ describe("Etsy verification display coverage", () => {
 
     expect(source).toContain("Verified Accounts");
     expect(source).toContain("setSelectedVerification");
+    expect(source).toContain("[\"overview\", \"collection\", \"trades\", \"reviews\", \"verified\"]");
+    expect(source).toContain("Verified Accts");
+    expect(source).toContain('activeTab === "verified"');
     expect(source).toContain("Etsy user ID:");
+    expect(source).toContain("user.etsyUserId");
     expect(source).toContain("user.etsyDisplayName");
     expect(source).toContain("user.etsyShopName");
+    expect(source).toContain("This verified Etsy account does not have a shop linked.");
     expect(source).not.toContain("user.etsyEmail");
   });
 

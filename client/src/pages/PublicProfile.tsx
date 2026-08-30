@@ -429,7 +429,7 @@ export default function PublicProfile() {
         {/* Navigation Tabs */}
         <div id="profile-tabs" className="mt-6 border-b border-slate-200">
           <div className="flex gap-8 overflow-x-auto no-scrollbar">
-            {["overview", "collection", "trades", "reviews"].map(tab => (
+            {["overview", "collection", "trades", "reviews", "verified"].map(tab => (
               <button
                 key={tab}
                 onClick={(e) => {
@@ -448,7 +448,7 @@ export default function PublicProfile() {
                     : "border-transparent text-slate-400 hover:text-slate-600"
                 }`}
               >
-                {tab}
+                {tab === "verified" ? "Verified Accts" : tab}
               </button>
             ))}
           </div>
@@ -884,6 +884,152 @@ export default function PublicProfile() {
                   </div>
                 )}
               </div>
+            </div>
+          )}
+
+          {activeTab === "verified" && (
+            <div className="space-y-6">
+              <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <ShieldCheck className="h-5 w-5 text-[#7f31ff]" aria-hidden="true" />
+                      <h2 className="text-lg font-black uppercase tracking-wide text-slate-950">Verified Accounts</h2>
+                    </div>
+                    <p className="mt-1 max-w-2xl text-sm leading-relaxed text-slate-500">These accounts were connected through their provider’s authorization flow. Details below are limited to information the provider makes available for public trust signals.</p>
+                  </div>
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">{[user.ebayUsername, user.facebookId, user.linkedinId, user.etsyVerified].filter(Boolean).length} connected</span>
+                </div>
+              </div>
+
+              <div className="grid gap-5 lg:grid-cols-2">
+                {user.ebayUsername && (
+                  <section className="overflow-hidden rounded-2xl border border-blue-100 bg-white shadow-sm" aria-labelledby="verified-ebay-heading">
+                    <div className="flex items-center justify-between border-b border-blue-100 bg-blue-50/60 px-5 py-4">
+                      <div className="flex items-center gap-3">
+                        <img src="https://assets.tradebilia.com/public-profile-logos/EBay_logo_0494719f.svg" alt="eBay" className="h-6 w-12 object-contain" />
+                        <div>
+                          <h3 id="verified-ebay-heading" className="text-sm font-black text-slate-950">eBay</h3>
+                          <p className="text-[10px] font-bold uppercase tracking-widest text-blue-700">Verified account</p>
+                        </div>
+                      </div>
+                      <CheckCircle2 className="h-5 w-5 text-green-600" aria-label="eBay verified" />
+                    </div>
+                    <div className="space-y-4 p-5">
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <div>
+                          <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Username</p>
+                          <p className="mt-1 break-all text-sm font-black text-slate-900">{user.ebayUsername}</p>
+                        </div>
+                        {user.ebayMemberSince && (
+                          <div>
+                            <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Member since</p>
+                            <p className="mt-1 text-sm font-black text-slate-900">{new Date(user.ebayMemberSince).getFullYear()}</p>
+                          </div>
+                        )}
+                      </div>
+                      <ConnectionDate connectedAt={user.ebayConnectedAt} />
+                      <div className="grid grid-cols-2 gap-3 rounded-xl border border-slate-100 bg-slate-50/70 p-3">
+                        <div><p className="text-lg font-black text-slate-950">{user.ebayFeedbackPercentage}%</p><p className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Positive</p></div>
+                        <div><p className="text-lg font-black text-slate-950">{user.ebayFeedbackScore}</p><p className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Feedback score</p></div>
+                      </div>
+                      <a href={`https://www.ebay.com/usr/${encodeURIComponent(user.ebayUsername)}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-700 underline-offset-2 hover:underline">View eBay profile <ExternalLink className="h-3 w-3" /></a>
+                    </div>
+                  </section>
+                )}
+
+                {user.facebookId && (
+                  <section className="overflow-hidden rounded-2xl border border-blue-100 bg-white shadow-sm" aria-labelledby="verified-facebook-heading">
+                    <div className="flex items-center justify-between border-b border-blue-100 bg-blue-50/60 px-5 py-4">
+                      <div className="flex items-center gap-3">
+                        <img src="https://assets.tradebilia.com/public-profile-logos/Facebook_Logo_2019_9f37233f.png" alt="Facebook" className="h-6 w-6 object-contain" />
+                        <div>
+                          <h3 id="verified-facebook-heading" className="text-sm font-black text-slate-950">Facebook</h3>
+                          <p className="text-[10px] font-bold uppercase tracking-widest text-blue-700">Verified account</p>
+                        </div>
+                      </div>
+                      <CheckCircle2 className="h-5 w-5 text-blue-600" aria-label="Facebook verified" />
+                    </div>
+                    <div className="space-y-4 p-5">
+                      <div className="flex items-center gap-3">
+                        {user.facebookPicture && <img src={user.facebookPicture} alt="" className="h-12 w-12 rounded-full border border-blue-100 object-cover" />}
+                        <div className="min-w-0">
+                          <p className="text-sm font-black text-slate-900">{user.facebookName || "Connected Facebook account"}</p>
+                          <p className="mt-1 text-[10px] font-semibold text-slate-500">Facebook account identity confirmed through OAuth</p>
+                        </div>
+                      </div>
+                      <ConnectionDate connectedAt={user.facebookConnectedAt} />
+                      {user.facebookLocation && <div><p className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Location</p><p className="mt-1 text-sm font-semibold text-slate-700">{user.facebookLocation}</p></div>}
+                    </div>
+                  </section>
+                )}
+
+                {user.linkedinId && (
+                  <section className="overflow-hidden rounded-2xl border border-sky-100 bg-white shadow-sm" aria-labelledby="verified-linkedin-heading">
+                    <div className="flex items-center justify-between border-b border-sky-100 bg-sky-50/60 px-5 py-4">
+                      <div className="flex items-center gap-3">
+                        <img src="https://assets.tradebilia.com/public-profile-logos/LinkedIn_logo_initials_290575a9.png" alt="LinkedIn" className="h-6 w-6 object-contain" />
+                        <div>
+                          <h3 id="verified-linkedin-heading" className="text-sm font-black text-slate-950">LinkedIn</h3>
+                          <p className="text-[10px] font-bold uppercase tracking-widest text-sky-700">Verified account</p>
+                        </div>
+                      </div>
+                      <CheckCircle2 className="h-5 w-5 text-sky-600" aria-label="LinkedIn verified" />
+                    </div>
+                    <div className="space-y-4 p-5">
+                      <div className="flex items-center gap-3">
+                        <LinkedInProfileImage pictureUrl={user.linkedinPicture} name={user.linkedinName} />
+                        <div className="min-w-0">
+                          <p className="text-sm font-black text-slate-900">{user.linkedinName || "Connected LinkedIn account"}</p>
+                          <p className="mt-1 text-[10px] font-semibold text-slate-500">Professional identity confirmed through OAuth</p>
+                        </div>
+                      </div>
+                      <ConnectionDate connectedAt={user.linkedinConnectedAt} />
+                    </div>
+                  </section>
+                )}
+
+                {user.etsyVerified && (
+                  <section className="overflow-hidden rounded-2xl border border-orange-100 bg-white shadow-sm" aria-labelledby="verified-etsy-heading">
+                    <div className="flex items-center justify-between border-b border-orange-100 bg-orange-50/70 px-5 py-4">
+                      <div className="flex items-center gap-3">
+                        <img src="/manus-storage/etsy-mark_2dee1a0f.png" alt="Etsy" className="h-6 w-6 rounded object-contain" />
+                        <div>
+                          <h3 id="verified-etsy-heading" className="text-sm font-black text-slate-950">Etsy</h3>
+                          <p className="text-[10px] font-bold uppercase tracking-widest text-orange-700">Verified account</p>
+                        </div>
+                      </div>
+                      <CheckCircle2 className="h-5 w-5 text-orange-600" aria-label="Etsy verified" />
+                    </div>
+                    <div className="space-y-4 p-5">
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <div><p className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Etsy user ID</p><p className="mt-1 break-all text-sm font-black text-slate-900">{user.etsyUserId || "Not provided"}</p></div>
+                        <div><p className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Account name</p><p className="mt-1 break-words text-sm font-black text-slate-900">{user.etsyDisplayName || "Not provided"}</p></div>
+                      </div>
+                      <ConnectionDate connectedAt={user.etsyConnectedAt} />
+                      {user.etsyShopName ? (
+                        <div className="rounded-xl border border-orange-100 bg-orange-50/60 p-3">
+                          <p className="text-[9px] font-bold uppercase tracking-widest text-orange-700">Shop information</p>
+                          <div className="mt-2 flex items-center gap-3">
+                            {user.etsyShopAvatarUrl && <img src={user.etsyShopAvatarUrl} alt="" className="h-10 w-10 rounded-lg border border-orange-100 object-cover" />}
+                            <div className="min-w-0"><p className="text-sm font-black text-slate-900">{user.etsyShopName}</p>{user.etsyShopStatus && <p className="text-[10px] font-semibold capitalize text-slate-500">{String(user.etsyShopStatus).replace(/_/g, " ")}</p>}</div>
+                          </div>
+                          {user.etsyShopUrl && <a href={user.etsyShopUrl} target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-orange-700 underline-offset-2 hover:underline">Visit Etsy shop <ExternalLink className="h-3 w-3" /></a>}
+                        </div>
+                      ) : (
+                        <div className="rounded-xl border border-slate-100 bg-slate-50 p-3 text-sm text-slate-600">This verified Etsy account does not have a shop linked.</div>
+                      )}
+                    </div>
+                  </section>
+                )}
+              </div>
+
+              {!user.ebayUsername && !user.facebookId && !user.linkedinId && !user.etsyVerified && (
+                <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-12 text-center text-slate-500">
+                  <ShieldCheck className="mx-auto mb-3 h-8 w-8 text-slate-300" />
+                  <p className="text-sm font-semibold">No external accounts have been verified yet.</p>
+                </div>
+              )}
             </div>
           )}
         </div>
