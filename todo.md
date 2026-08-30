@@ -975,7 +975,7 @@
 - [x] Add a Verified Accts tab after Reviews with detailed, privacy-safe cards for every connected provider; keep Overview compact and retain the existing eBay reputation details.
 - [x] Synchronize the Verified Accts tab enhancement to canonical GitHub at commit 5bf70c8 and save the final project checkpoint.
 
-- [x] Expand the administrator Trades tab to show every trade stage, participant IDs and names, references, requested value, offered-item count, lifecycle timestamps, cash adjustments, messages, status reasons, and archive state through an administrator-only details view.
+- [x] Expand the administrator Trades tab to show every trade stage, participant IDs and names, references, requested value, offered-item count, lifecycle timestamps, cash adjustments, messages, status reasons, and archive state through an administrator-only details view, including final fulfillment fields for completed deals.
 - [x] Add Admin Trades search, stage filtering, sort-by controls, sort direction, and archived-record inclusion while preserving existing archive behavior.
 - [x] Replace the Refer a Collector hero title with the exact animated SVG from ReferralRequest.zip at /manus-storage/ReferralRequest_89fadd07.svg.
 - [x] Add focused regression coverage, TypeScript/build/audit/whitespace checks, and document the protected-route visual verification limitation; canonical synchronization completed at commit bfdb440.
@@ -987,3 +987,10 @@
 
 - [x] Change Admin Trades Details to open the corresponding Trade Room in read-only inspection mode, preserving filters/sorting and preventing edits or trade actions from the admin path.
 - [x] Add regression coverage for Trade Room navigation, administrator-only read access, and disabled participant actions; canonical synchronization completed at commit 9f9e517.
+
+- [x] Make Admin Trades Details show the final completed-deal Trade Room state for completed trades, including final items, cash, shipment/receipt history, messages, and completion timestamps, while remaining read-only.
+- [x] Add regression coverage for the completed-deal inspection and Coming Soon logo/tagline update; canonical synchronization completed at commit f6ec81a.
+
+- [x] Add the final completed-deal Trade Room state to Admin Trades Details, including completion, shipping, receipt, cash, messages, and final timestamps, while keeping the view read-only.
+- [x] Correct the Coming Soon logo placement so it remains on the parchment without overlapping the kicker or tagline, and preserve the approved tagline “Why Buy or Sell When You Can Trade?”.
+- [x] Run focused tests, TypeScript, production build, whitespace, and desktop/mobile visual checks; canonical synchronization completed at commit f6ec81a.
