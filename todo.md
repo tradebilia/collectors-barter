@@ -997,3 +997,7 @@
 
 - [x] Move the Coming Soon logo and content upward together, balance the parchment’s top and bottom spacing, and provide more room around the email field at desktop and mobile widths.
 - [x] Add regression coverage, visually verify spacing at both widths, and synchronize the Coming Soon spacing refinement to canonical GitHub at commit bb391bc.
+
+- [x] Add the approved Launching Soon badge in the desktop parchment whitespace with a mobile fallback above the email form.
+- [x] Replace the Coming Soon highlights with the approved concise wording about fee-free trades, trust-building verification, organized collecting, and cross-category trading.
+- [x] Add regression coverage, visually verify desktop/mobile spacing, and synchronize the Coming Soon refinement to canonical GitHub at commit 31986a5.
