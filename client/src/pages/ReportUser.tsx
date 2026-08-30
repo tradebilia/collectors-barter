@@ -15,7 +15,7 @@ import { toast } from "sonner";
 
 const concernTypes = ["Counterfeit or inaccurate item description", "Harassment or abusive conduct", "Spam, solicitation, or scam activity", "Unsafe trade behavior", "Trade issue: item, shipment, or delivery", "Unauthorized contact information sharing", "Other community concern"] as const;
 const allowedTypes = new Set(["image/jpeg", "image/png", "image/webp", "application/pdf", "text/plain"]);
-const REPORT_USER_HERO_TITLE_URL = "https://assets.tradebilia.com/ReportaMember-wide_998d1169.webp";
+const REPORT_USER_HERO_TITLE_URL = "/manus-storage/ReportaMember_15c04fd6.webp";
 const REPORT_USER_HERO_BACKGROUND_URL = "https://assets.tradebilia.com/Background_23084d14.jpg";
 type UploadedEvidence = { key: string; url: string; name: string; type: string; size: number };
 

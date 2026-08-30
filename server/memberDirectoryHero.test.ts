@@ -9,7 +9,7 @@ describe("Member Directory hero integration", () => {
     expect(source).toContain('import { TopBar } from "@/components/TopBar"');
     expect(source).toContain('import { CategoryBar } from "@/components/CategoryBar"');
     expect(source).toContain('backgroundImage: "url(https://assets.tradebilia.com/Background_23084d14.jpg)"');
-    expect(source).toContain('src="https://assets.tradebilia.com/MemberDirectory_de7393cf.webp"');
+    expect(source).toContain('src="/manus-storage/MemberDirectory_a9b883f2.webp"');
     expect(source).toContain('max-w-[1049px]');
     expect(source).toContain('<CategoryBar />');
   });

@@ -1,0 +1,2 @@
+Desktop visual verification: /members rendered the uploaded /manus-storage/MemberDirectory_a9b883f2.webp asset, with the MEMBER DIRECTORY artwork centered in the existing background hero and category bar alignment preserved. The first screenshot attempt failed, but direct browser navigation succeeded. Report a User remains protected and requires authentication for direct visual inspection; its supplied asset path is covered by source regression tests.
+
