@@ -55,7 +55,7 @@ export default function ComingSoon() {
       <div className="absolute inset-0 bg-[#24160f]/10" aria-hidden="true" />
 
       <section className="relative flex min-h-screen items-center justify-center px-5 py-12 sm:px-10 sm:py-16">
-        <div className="w-full max-w-xl text-center sm:max-w-2xl">
+        <div className="w-full max-w-xl -translate-y-6 text-center sm:max-w-2xl sm:-translate-y-8">
           <div className="mx-auto h-24 w-full max-w-[34rem] translate-y-20 overflow-hidden px-2 sm:h-28 sm:max-w-[42rem] sm:translate-y-24 sm:px-4">
             <AnimatedLogoSmall70 fontSize={196} wheelScale={2.24} wheelOffsetX={-65} wheelOffsetY={-30} dividerScale={1.55} dividerOffsetY={-20} wordmarkColor="#2b2119" neutralCategoryColor="#2b2119" categoryColorOverrides={COMING_SOON_CATEGORY_COLORS} wheelColors={COMING_SOON_WHEEL_COLORS} wheelStrokeWidth={6} dividerStrokeWidth={3.6} fixedCategoryMetrics centerLockup centeredViewBoxWidth={3000} canvasWidthScale={1} />
           </div>

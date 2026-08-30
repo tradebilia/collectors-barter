@@ -17,6 +17,7 @@ describe("Coming Soon experience", () => {
     expect(pageSource).toContain('"SPORTS CARDS": "#b0221a"');
     expect(pageSource).toContain('const COMING_SOON_WHEEL_COLORS = [');
     expect(pageSource).not.toContain('tradebilia-coming-soon-dense-category-workbench_c64ac671.png');
+    expect(pageSource).toContain('className="w-full max-w-xl -translate-y-6 text-center sm:max-w-2xl sm:-translate-y-8"');
     expect(pageSource).toContain('className="mx-auto h-24 w-full max-w-[34rem] translate-y-20 overflow-hidden px-2 sm:h-28 sm:max-w-[42rem] sm:translate-y-24 sm:px-4"');
     expect(pageSource).not.toContain("Collector&apos;s Workbench");
     expect(pageSource).toContain('className="translate-y-0 pt-12 sm:-translate-y-1 sm:pt-8"');
