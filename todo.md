@@ -922,12 +922,36 @@
 
 - [x] Perform a complete credential-safe backup of the current verified WebDev state and documentation, validate the project, commit and push the full synchronized state to canonical GitHub, update the pairing manifest, and save a final checkpoint. Full source synchronization pushed as canonical commit f4321bd6158d8a37ff83f30a5209118988f0b2f7; manifest and tracker alignment are being finalized in the paired release checkpoint.
 
+- [x] Replace the Report a User hero title with the exact user-provided ReportaMember.webp asset, preserve transparent rendering and centered responsive geometry, add regression coverage, verify desktop/mobile rendering, and checkpoint the update. The durable storage path is wired into ReportUser and the asset is preserved exactly.
+
+- [x] Replace the Member Directory hero title with the exact user-provided MemberDirectory.webp asset while preserving transparent rendering, centered geometry, and responsive behavior. The page now references `/manus-storage/MemberDirectory_a9b883f2.webp`; desktop and mobile rendering were visually verified.
+- [x] Complete the pending Report a User ReportaMember.webp asset replacement, add regression coverage for both supplied hero assets, verify desktop/mobile rendering, and checkpoint the paired update. Report a User references `/manus-storage/ReportaMember_15c04fd6.webp`; source regressions cover both assets, and the paired validation suite passed. Report a User direct screenshots remain auth-gated.
+
+- [x] Layer the standalone animated SVG wheel over the exact WebP title artwork on Report a User and Member Directory so the wheel visibly rotates while the uploaded title text remains unchanged; add animation regression coverage, verify actual movement at desktop/mobile widths, and checkpoint the fix. Shared AnimatedHeroTitleArtwork masks the static wheel and layers TradebiliaWheel with the explicit `tradebilia-wheel-rotor` animation; reduced-motion disables it. Focused tests passed 13/13, TypeScript/build/audit/whitespace checks passed, and Member Directory desktop/mobile rendering was visually reviewed.
+
+- [x] Locate the exact standalone SVG supplied by the user, replace the approximate TradebiliaWheel overlay on Member Directory and Report a User with that file, verify its rotation and responsive positioning, add regression coverage, and checkpoint the update. The ZIP contained `Member Directory 2.svg` with embedded animateTransform; Member Directory now references the unchanged durable SVG directly. Report a User continues using the supplied WebP title plus its existing shared overlay because no Report a User SVG was included in the ZIP. Focused tests passed, TypeScript/build/audit/whitespace passed, and Member Directory desktop/mobile visuals were verified.
+
+- [x] Inspect MemberDirectory2.zip, preserve any original SVG inside it without conversion, wire the exact SVG into Member Directory, verify the animation and page rendering, and checkpoint the update. The archive contained the original SVG; it was uploaded unchanged and rendered directly in the page.
+
+- [x] Inspect ReportaMember.zip, preserve the original SVG without conversion, wire it directly into the Report a Member hero, verify embedded animation and protected-route rendering, and checkpoint the update. The archive contained `Report a Member.svg` with embedded animateTransform; it was uploaded unchanged as `/manus-storage/ReportaMember_d6e803c4.svg` and wired directly into ReportUser. Focused hero tests passed 8/8, TypeScript, build, audit, and whitespace checks passed; protected-route visual inspection remains sign-in gated.
+
+- [x] Remove the horizontal gray divider lines directly below item images on Explore All only, preserve card metadata/actions/responsive layout, add regression coverage, verify against the supplied reference, and checkpoint the change. Removed only the image link’s `border-b` class; card borders, metadata borders, Trade/favorite actions, and responsive layout remain. Focused global-search UI regression, TypeScript, build, audit, whitespace, and desktop/mobile visual checks passed.
+
+- [x] Keep the top-bar Search control visibly available with an empty query, make empty submission open all active listings, preserve typed-query searching, add regression coverage, and checkpoint the change. The Search button is enabled when empty; Enter or click routes to `/search`, while typed values route to `/search?q=...`. Focused global-search regressions passed, with TypeScript, build, audit, whitespace, and desktop/mobile verification passing.
+
 - [x] Research Etsy’s current OAuth/API capabilities and identify the exact identity, shop, and approved metadata available for verification.
 - [x] Inspect existing eBay/Facebook/LinkedIn verification architecture and project connector configuration, then securely configure Etsy credentials and redirect settings without exposing secrets.
-- [x] Implement Etsy OAuth-backed verification and safe profile/shop metadata import, add tests, validate security and compatibility, and synchronize the verified integration to canonical GitHub.
+- [x] Implement Etsy OAuth-backed verification and safe profile/shop metadata import, add tests, validate security and compatibility, checkpoint, and synchronize the verified integration to canonical GitHub.
+
 - [x] Add Etsy OAuth and metadata verification implementation using secure configuration placeholders; request the Etsy keystring and shared secret only after code, tests, and visual checks are complete.
 - [x] Add Etsy user/shop metadata persistence with encrypted token handling and least-privilege read scopes.
 - [x] Add the Etsy connection card, official logo treatment, imported shop/profile details, and Etsy Verified badge behavior to Account Settings.
 - [x] Add Etsy verification regression tests, run TypeScript/build/dependency/whitespace checks, and visually verify the integrations UI.
-- [x] Securely request and configure Etsy credentials last, validate the Etsy application key against a read-only shop-search endpoint without exposing secret values, and document provider-side OAuth testing limitations.
+- [x] Securely request and configure Etsy credentials last, validate the OAuth start/metadata health path without exposing secrets, and document any provider-side setup remaining.
 - [x] Commit and push the completed Etsy feature to the canonical GitHub repository and save the synchronized project checkpoint.
+
+- [x] Resolve Etsy OAuth warning where the registered app domain is www.tradebilia.com but the isolated project redirects to tradebilia-d-bnuiylsx.manus.space; confirm the target environment, align the developer-console registration or callback setting safely, and retest without granting access during the mismatch.
+
+- [x] Verify that the Etsy API keystring/shared secret belong to the edited Etsy app and that Etsy’s separate application-domain setting is saved consistently with the isolated callback host; OAuth consent reached the deployed callback, confirming the app credentials and domain registration now align.
+
+- [x] Diagnose and fix the post-consent Etsy callback failure shown in Account Settings, preserving existing provider connections and avoiding secret exposure; Etsy’s documented 404 for an account without a shop is now treated as identity-only verification, while valid shop responses are handled as a single shop object.
