@@ -79,6 +79,69 @@ export function sortBillingMembers(members: readonly BillingMemberRecord[], sort
   });
 }
 
+type AdminTradeSortField = "createdAt" | "lastActivityAt" | "status" | "requester" | "recipient" | "item";
+type AdminTradeSortDirection = "asc" | "desc";
+
+const ADMIN_TRADE_STATUS_ORDER: Record<string, number> = {
+  pending: 10,
+  negotiating: 20,
+  accepted: 30,
+  shipping: 40,
+  shipped: 50,
+  frozen: 60,
+  disputed: 70,
+  completed: 80,
+  declined: 90,
+  cancelled: 100,
+};
+
+export function filterAdminTrades(trades: readonly any[], searchTerm: string, statusFilter: string) {
+  const query = searchTerm.trim().toLowerCase();
+  return trades.filter((trade) => {
+    const matchesStatus = statusFilter === "all" || String(trade.status ?? "") === statusFilter;
+    const searchText = [
+      trade.id,
+      trade.tradeReferenceNumber,
+      trade.referenceNumber,
+      trade.requesterDisplayName,
+      trade.recipientDisplayName,
+      trade.listingTitle,
+      trade.listingCategory,
+      trade.status,
+    ].filter(Boolean).join(" ").toLowerCase();
+    return matchesStatus && (!query || searchText.includes(query));
+  });
+}
+
+export function sortAdminTrades(trades: readonly any[], sortBy: AdminTradeSortField, sortDirection: AdminTradeSortDirection) {
+  const direction = sortDirection === "asc" ? 1 : -1;
+  return [...trades].sort((left, right) => {
+    let comparison = 0;
+    if (sortBy === "status") {
+      comparison = (ADMIN_TRADE_STATUS_ORDER[String(left.status)] ?? 999) - (ADMIN_TRADE_STATUS_ORDER[String(right.status)] ?? 999);
+    } else if (sortBy === "requester") {
+      comparison = String(left.requesterDisplayName ?? "").localeCompare(String(right.requesterDisplayName ?? ""));
+    } else if (sortBy === "recipient") {
+      comparison = String(left.recipientDisplayName ?? "").localeCompare(String(right.recipientDisplayName ?? ""));
+    } else if (sortBy === "item") {
+      comparison = String(left.listingTitle ?? "").localeCompare(String(right.listingTitle ?? ""));
+    } else {
+      const leftTime = new Date(left[sortBy] ?? 0).getTime();
+      const rightTime = new Date(right[sortBy] ?? 0).getTime();
+      comparison = leftTime - rightTime;
+    }
+    return comparison === 0 ? Number(left.id ?? 0) - Number(right.id ?? 0) : comparison * direction;
+  });
+}
+
+function formatAdminTradeStatus(status: unknown) {
+  return String(status ?? "unknown").replace(/_/g, " ").replace(/\b\w/g, (character) => character.toUpperCase());
+}
+
+function formatAdminTradeDate(value: unknown) {
+  return value ? new Date(String(value)).toLocaleString() : "Not recorded";
+}
+
 type AdminGuideEntry = {
   tab: string;
   summary: string;
@@ -461,6 +524,11 @@ export default function AdminDashboard() {
   const [editMode, setEditMode] = useState(false);
   const [editFormData, setEditFormData] = useState<any>(null);
   const [includeArchivedTrades, setIncludeArchivedTrades] = useState(false);
+  const [tradeSearchTerm, setTradeSearchTerm] = useState("");
+  const [tradeStatusFilter, setTradeStatusFilter] = useState("all");
+  const [tradeSortBy, setTradeSortBy] = useState<AdminTradeSortField>("lastActivityAt");
+  const [tradeSortDirection, setTradeSortDirection] = useState<AdminTradeSortDirection>("desc");
+  const [selectedTrade, setSelectedTrade] = useState<any>(null);
   const statsQuery = trpc.admin.getPlatformStatistics.useQuery(undefined, {
     enabled: user?.role === "admin",
     refetchOnWindowFocus: true,
@@ -481,6 +549,10 @@ export default function AdminDashboard() {
     enabled: user?.role === "admin",
     refetchOnWindowFocus: true,
   });
+  const visibleAdminTrades = useMemo(() => {
+    const filtered = filterAdminTrades((tradesQuery.data as any[]) ?? [], tradeSearchTerm, tradeStatusFilter);
+    return sortAdminTrades(filtered, tradeSortBy, tradeSortDirection);
+  }, [tradesQuery.data, tradeSearchTerm, tradeStatusFilter, tradeSortBy, tradeSortDirection]);
   const reportsQuery = trpc.admin.getReportedUsers.useQuery(
     { status: undefined, limit: 50, offset: 0 },
     {
@@ -1223,58 +1295,67 @@ export default function AdminDashboard() {
                 </Button>
               </CardHeader>
               <CardContent>
+                <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_190px_210px_auto]">
+                  <Input value={tradeSearchTerm} onChange={(event) => setTradeSearchTerm(event.target.value)} placeholder="Search trade ID, participant, item, or reference" aria-label="Search admin trades" />
+                  <Select value={tradeStatusFilter} onValueChange={setTradeStatusFilter}>
+                    <SelectTrigger aria-label="Filter trades by status"><SelectValue placeholder="All stages" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All stages</SelectItem>
+                      {Object.keys(ADMIN_TRADE_STATUS_ORDER).map((status) => <SelectItem key={status} value={status}>{formatAdminTradeStatus(status)}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  <Select value={tradeSortBy} onValueChange={(value) => setTradeSortBy(value as AdminTradeSortField)}>
+                    <SelectTrigger aria-label="Sort trades by"><SelectValue placeholder="Sort trades" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="lastActivityAt">Last activity</SelectItem>
+                      <SelectItem value="createdAt">Created date</SelectItem>
+                      <SelectItem value="status">Stage</SelectItem>
+                      <SelectItem value="requester">Requester</SelectItem>
+                      <SelectItem value="recipient">Recipient</SelectItem>
+                      <SelectItem value="item">Requested item</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button variant="outline" onClick={() => setTradeSortDirection((current) => current === "asc" ? "desc" : "asc")} aria-label={`Sort ${tradeSortDirection === "asc" ? "descending" : "ascending"}`}><ArrowUpDown className="mr-2 h-4 w-4" />{tradeSortDirection === "asc" ? "Ascending" : "Descending"}</Button>
+                </div>
+                <div className="mt-3 text-xs text-muted-foreground">Showing {visibleAdminTrades.length} of {(tradesQuery.data as any[] | undefined)?.length ?? 0} loaded trade records. Use “Show archived records” to include retained archived trades.</div>
                 {tradesQuery.isLoading ? (
                   <div className="text-sm text-muted-foreground">Loading trades...</div>
-                ) : tradesQuery.data && tradesQuery.data.length > 0 ? (
+                ) : visibleAdminTrades.length > 0 ? (
                   <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
+                    <table className="w-full min-w-[1180px] text-sm">
                       <thead className="border-b border-border">
                         <tr>
-                          <th className="text-left py-2 px-4">ID</th>
+                          <th className="text-left py-2 px-4">ID / Reference</th>
                           <th className="text-left py-2 px-4">Requester</th>
                           <th className="text-left py-2 px-4">Recipient</th>
-                          <th className="text-left py-2 px-4">Item</th>
-                          <th className="text-left py-2 px-4">Status</th>
-                          <th className="text-left py-2 px-4">Created</th>
-                          <th className="text-left py-2 px-4">Completed</th>
+                          <th className="text-left py-2 px-4">Requested item</th>
+                          <th className="text-left py-2 px-4">Stage</th>
+                          <th className="text-left py-2 px-4">Last activity</th>
+                          <th className="text-left py-2 px-4">Value / offered</th>
                           <th className="text-left py-2 px-4">Actions</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {(tradesQuery.data as any[])?.map((trade: any) => (
+                        {visibleAdminTrades.map((trade: any) => (
                           <tr key={trade.id} className="border-b border-border hover:bg-accent/50">
-                            <td className="py-2 px-4 font-mono text-xs">{trade.id}</td>
-                            <td className="py-2 px-4">{trade.requesterDisplayName || "-"}</td>
-                            <td className="py-2 px-4">{trade.recipientDisplayName || "-"}</td>
-                            <td className="py-2 px-4">{trade.listingTitle || "-"}</td>
+                            <td className="py-2 px-4 font-mono text-xs"><div>#{trade.id}</div><div className="mt-1 text-[10px] text-muted-foreground">{trade.tradeReferenceNumber || trade.referenceNumber || "No reference"}</div></td>
+                            <td className="py-2 px-4">{trade.requesterDisplayName || "-"}<div className="text-[10px] text-muted-foreground">ID {trade.requesterId}</div></td>
+                            <td className="py-2 px-4">{trade.recipientDisplayName || "-"}<div className="text-[10px] text-muted-foreground">ID {trade.recipientId}</div></td>
+                            <td className="py-2 px-4"><div>{trade.listingTitle || "-"}</div><div className="text-[10px] capitalize text-muted-foreground">{String(trade.listingCategory || "").replace(/_/g, " ") || "Category unavailable"}</div></td>
                             <td className="py-2 px-4">
-                              <span className={`px-2 py-1 rounded text-xs font-medium ${
+                              <span className={`inline-flex rounded px-2 py-1 text-xs font-medium ${
                                 trade.status === 'completed' ? 'bg-green-100 text-green-800' :
-                                trade.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                                trade.status === 'declined' ? 'bg-red-100 text-red-800' :
+                                trade.status === 'pending' || trade.status === 'negotiating' ? 'bg-yellow-100 text-yellow-800' :
+                                trade.status === 'declined' || trade.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                                trade.status === 'disputed' || trade.status === 'frozen' ? 'bg-orange-100 text-orange-800' :
                                 'bg-gray-100 text-gray-800'
                               }`}>
-                                {trade.status}
+                                {formatAdminTradeStatus(trade.status)}
                               </span>
                             </td>
-                            <td className="py-2 px-4 text-xs">
-                              {trade.createdAt ? new Date(trade.createdAt).toLocaleDateString() : "-"}
-                            </td>
-                            <td className="py-2 px-4 text-xs">
-                              {trade.completedAt ? new Date(trade.completedAt).toLocaleDateString() : "-"}
-                            </td>
-                            <td className="py-2 px-4">
-                              <Button
-                                variant="destructive"
-                                size="sm"
-                                onClick={() => { setTradeToDelete(trade); setTradeDeleteConfirmOpen(true); }}
-                                disabled={archiveTradesMutation.isPending || trade.isArchived}
-                                className="h-7 px-2 text-xs"
-                              >
-                                <Archive className="h-3 w-3 mr-1" />
-                                {trade.isArchived ? "Archived" : "Archive"}
-                              </Button>
-                            </td>
+                            <td className="py-2 px-4 text-xs">{formatAdminTradeDate(trade.lastActivityAt || trade.updatedAt || trade.createdAt)}</td>
+                            <td className="py-2 px-4 text-xs"><div>{trade.requestedListingValue != null ? formatWholeDollar(Number(trade.requestedListingValue)) : "Value unavailable"}</div><div className="text-muted-foreground">{Number(trade.offeredItemCount || 0)} offered item{Number(trade.offeredItemCount || 0) === 1 ? "" : "s"}</div></td>
+                            <td className="py-2 px-4"><div className="flex flex-wrap gap-2"><Button variant="outline" size="sm" onClick={() => setSelectedTrade(trade)} className="h-7 px-2 text-xs">Details</Button><Button variant="destructive" size="sm" onClick={() => { setTradeToDelete(trade); setTradeDeleteConfirmOpen(true); }} disabled={archiveTradesMutation.isPending || trade.isArchived} className="h-7 px-2 text-xs"><Archive className="mr-1 h-3 w-3" />{trade.isArchived ? "Archived" : "Archive"}</Button></div></td>
                           </tr>
                         ))}
                       </tbody>
@@ -1286,6 +1367,47 @@ export default function AdminDashboard() {
               </CardContent>
             </Card>
 
+            {/* Trade Details Dialog */}
+            <Dialog open={Boolean(selectedTrade)} onOpenChange={(open) => { if (!open) setSelectedTrade(null); }}>
+              <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Trade #{selectedTrade?.id} details</DialogTitle>
+                  <DialogDescription>Administrator-only view of the complete trade record, including its current stage and recorded lifecycle events.</DialogDescription>
+                </DialogHeader>
+                {selectedTrade && (
+                  <div className="space-y-5 text-sm">
+                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                      <div><p className="text-xs font-medium uppercase text-muted-foreground">Stage</p><p className="mt-1 font-semibold">{formatAdminTradeStatus(selectedTrade.status)}</p></div>
+                      <div><p className="text-xs font-medium uppercase text-muted-foreground">Trade reference</p><p className="mt-1 font-mono">{selectedTrade.tradeReferenceNumber || selectedTrade.referenceNumber || "Not assigned"}</p></div>
+                      <div><p className="text-xs font-medium uppercase text-muted-foreground">Record state</p><p className="mt-1">{selectedTrade.isArchived ? "Archived record" : "Active record"}</p></div>
+                      <div><p className="text-xs font-medium uppercase text-muted-foreground">Requester</p><p className="mt-1">{selectedTrade.requesterDisplayName || "Unknown"} <span className="text-muted-foreground">(ID {selectedTrade.requesterId})</span></p></div>
+                      <div><p className="text-xs font-medium uppercase text-muted-foreground">Recipient</p><p className="mt-1">{selectedTrade.recipientDisplayName || "Unknown"} <span className="text-muted-foreground">(ID {selectedTrade.recipientId})</span></p></div>
+                      <div><p className="text-xs font-medium uppercase text-muted-foreground">Requested item</p><p className="mt-1">{selectedTrade.listingTitle || "Unavailable"} <span className="text-muted-foreground">({String(selectedTrade.listingCategory || "").replace(/_/g, " ") || "category unavailable"})</span></p></div>
+                    </div>
+                    <div className="grid gap-3 rounded-lg border bg-muted/30 p-4 sm:grid-cols-3">
+                      <div><p className="text-xs font-medium uppercase text-muted-foreground">Requested item value</p><p className="mt-1 font-semibold">{selectedTrade.requestedListingValue != null ? formatWholeDollar(Number(selectedTrade.requestedListingValue)) : "Unavailable"}</p></div>
+                      <div><p className="text-xs font-medium uppercase text-muted-foreground">Offered items</p><p className="mt-1 font-semibold">{Number(selectedTrade.offeredItemCount || 0)}</p></div>
+                      <div><p className="text-xs font-medium uppercase text-muted-foreground">Cash adjustment</p><p className="mt-1 font-semibold">{formatWholeDollar(Number(selectedTrade.cashFromRequester || 0) + Number(selectedTrade.cashFromRecipient || 0))}</p></div>
+                    </div>
+                    <div>
+                      <h4 className="mb-2 font-semibold">Lifecycle dates</h4>
+                      <div className="grid gap-x-5 gap-y-2 sm:grid-cols-2">
+                        {[['Created', selectedTrade.createdAt], ['Updated', selectedTrade.updatedAt], ['Last activity', selectedTrade.lastActivityAt], ['Responded', selectedTrade.respondedAt], ['Negotiating', selectedTrade.negotiatingAt], ['Accepted', selectedTrade.acceptedAt], ['Shipping', selectedTrade.shippingAt], ['Shipped', selectedTrade.shippedAt], ['Shipping deadline', selectedTrade.shippingDeadline], ['Receipt deadline', selectedTrade.receiptDeadline], ['Feedback deadline', selectedTrade.feedbackDeadline], ['Completed', selectedTrade.completedAt], ['Frozen', selectedTrade.frozenAt]].map(([label, value]) => <div key={label} className="flex justify-between gap-4 border-b py-1.5"><span className="text-muted-foreground">{label}</span><span className="text-right">{formatAdminTradeDate(value)}</span></div>)}
+                      </div>
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div><h4 className="mb-1 font-semibold">Member message</h4><p className="whitespace-pre-wrap rounded-lg border bg-muted/20 p-3">{selectedTrade.note || selectedTrade.initiatorMessage || "No member message recorded."}</p></div>
+                      <div><h4 className="mb-1 font-semibold">Status or freeze reason</h4><p className="whitespace-pre-wrap rounded-lg border bg-muted/20 p-3">{selectedTrade.declineReason || selectedTrade.frozenReason || "No status reason recorded."}</p></div>
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-3">
+                      <div><p className="text-xs font-medium uppercase text-muted-foreground">Requester cash</p><p className="mt-1">{formatWholeDollar(Number(selectedTrade.cashFromRequester || 0))}</p></div>
+                      <div><p className="text-xs font-medium uppercase text-muted-foreground">Recipient cash</p><p className="mt-1">{formatWholeDollar(Number(selectedTrade.cashFromRecipient || 0))}</p></div>
+                      <div><p className="text-xs font-medium uppercase text-muted-foreground">Middleman</p><p className="mt-1">{selectedTrade.middleManRequested ? (selectedTrade.middleManApproved ? "Requested and approved" : "Requested; pending approval") : "Not requested"}</p></div>
+                    </div>
+                  </div>
+                )}
+              </DialogContent>
+            </Dialog>
             {/* Trade Archive Confirmation Dialog */}
             <Dialog open={tradeDeleteConfirmOpen} onOpenChange={setTradeDeleteConfirmOpen}>
               <DialogContent>
