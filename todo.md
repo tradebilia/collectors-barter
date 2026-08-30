@@ -948,4 +948,4 @@
 - [x] Add the Etsy connection card, official logo treatment, imported shop/profile details, and Etsy Verified badge behavior to Account Settings.
 - [x] Add Etsy verification regression tests, run TypeScript/build/dependency/whitespace checks, and visually verify the integrations UI.
 - [x] Securely request and configure Etsy credentials last, validate the OAuth start/metadata health path without exposing secrets, and document any provider-side setup remaining.
-- [ ] Commit and push the completed Etsy feature to the canonical GitHub repository and save the synchronized project checkpoint.
+- [x] Commit and push the completed Etsy feature to the canonical GitHub repository and save the synchronized project checkpoint.
