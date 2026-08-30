@@ -984,3 +984,6 @@
 - [x] Remove the redundant Etsy Verified badge beside the public-profile username while preserving the Overview and Verified Accts displays.
 - [x] Add Coming Soon preview messaging covering free membership, additional verification platforms, no money taken to complete trades, organized/easy operation, and cross-collectible trading.
 - [x] Add regression coverage, visually verify both surfaces, and synchronize the refinements to canonical GitHub at commit a475573.
+
+- [x] Change Admin Trades Details to open the corresponding Trade Room in read-only inspection mode, preserving filters/sorting and preventing edits or trade actions from the admin path.
+- [x] Add regression coverage for Trade Room navigation, administrator-only read access, and disabled participant actions; canonical synchronization completed at commit 9f9e517.
