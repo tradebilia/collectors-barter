@@ -964,10 +964,13 @@
 
 - [x] Document the exact Etsy fields imported, stored, and publicly displayed, including the account-only case without a shop.
 - [x] Replace vertically stacked public-profile provider cards with a compact, scalable verification presentation that remains clear as members connect more accounts.
-- [x] Add regression coverage and visually verify desktop/mobile public profiles for the compact verification refinement; canonical GitHub synchronization remains pending.
+- [x] Add regression coverage, visually verify desktop/mobile public profiles, and synchronize the compact verification refinement to canonical GitHub at commit d43aeac.
 
 - [x] Research the currently supported account-age or member-since fields for eBay, Facebook, and LinkedIn using official provider documentation; document only fields that can be truthfully imported and displayed.
 - [x] Extend the public Etsy profile details to show Etsy user ID, display name when available, and shop details only when supplied by Etsy.
 - [x] Implement and validate the approved compact provider-verification layout without fabricating account-age signals or exposing private provider data.
 
 - [x] Build the approved compact expandable Verified Accounts strip, retain the eBay feedback card, and show Etsy user ID/name plus optional Etsy shop details in the selected provider panel.
+
+- [x] Add a Verified Accts tab after Reviews with detailed, privacy-safe cards for every connected provider; keep Overview compact and retain the existing eBay reputation details.
+- [ ] Synchronize the Verified Accts tab enhancement to canonical GitHub and save the final project checkpoint.

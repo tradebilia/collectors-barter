@@ -34,3 +34,11 @@ eBay's official `GetUser` response documents a `RegistrationDate`, so Tradebilia
 ## Compact public-profile verification presentation
 
 The public profile now presents connected providers in a compact wrapping **Verified Accounts** selector rather than as a vertical stack of full-size cards. The user can select one provider to inspect that provider's verified details; the eBay panel retains its meaningful reputation metrics. Etsy's panel displays the approved Etsy user ID, display name when returned, connection date, and optional shop name, status, avatar, and HTTPS shop link. Desktop and mobile visual checks confirmed that four connected providers remain compact and readable without crowding the profile.
+
+## Verified Accts tab visual baseline
+
+The pre-change public profile at desktop width kept Overview active, showed the compact Verified Accounts selector in the right column, and retained the existing profile header and overview layout. This baseline was captured before previewing the new Verified Accts tab. The new tab is implemented in `client/src/pages/PublicProfile.tsx` after Reviews and uses the existing privacy-filtered public provider fields.
+
+## Verified Accts tab visual verification
+
+The new Verified Accts tab rendered correctly at desktop width with four provider cards in a two-column grid, showing the eBay username/member year/feedback, Facebook identity, LinkedIn identity, and Etsy user ID/name plus the truthful no-shop message. At mobile width the cards stacked into readable full-width sections, and the tab navigation remained horizontally usable. Overview was restored as the default tab after the temporary visual checks.
