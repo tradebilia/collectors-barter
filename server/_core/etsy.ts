@@ -91,8 +91,16 @@ export function createEtsyPkceVerifier() {
   return { verifier, challenge };
 }
 
-export async function getEtsyUser(accessToken: string) {
-  return etsyGet<EtsyUser>("/users/me", accessToken);
+export function getEtsyUserIdFromAccessToken(accessToken: string): number {
+  const match = /^(\d+)\./.exec(accessToken);
+  if (!match) {
+    throw new Error("Etsy access token is missing its required user ID prefix");
+  }
+  return Number(match[1]);
+}
+
+export async function getEtsyUser(userId: number, accessToken: string) {
+  return etsyGet<EtsyUser>(`/users/${userId}`, accessToken);
 }
 
 export async function getEtsyUserShops(

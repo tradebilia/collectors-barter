@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { createEtsyPkceVerifier, ETSY_SCOPES, getEtsyAuthUrl, getEtsyUserShops } from "./_core/etsy";
+import {
+  createEtsyPkceVerifier,
+  ETSY_SCOPES,
+  getEtsyAuthUrl,
+  getEtsyUserIdFromAccessToken,
+  getEtsyUserShops,
+} from "./_core/etsy";
 import { vi } from "vitest";
 
 describe("Etsy OAuth integration", () => {
@@ -15,6 +21,13 @@ describe("Etsy OAuth integration", () => {
 
   it("uses only read scopes needed for identity and shop verification", () => {
     expect(ETSY_SCOPES).toEqual(["email_r", "profile_r", "shops_r"]);
+  });
+
+  it("uses the documented numeric user-ID prefix from an OAuth access token", () => {
+    expect(getEtsyUserIdFromAccessToken("12345678.token-value")).toBe(12345678);
+    expect(() => getEtsyUserIdFromAccessToken("token-without-prefix")).toThrow(
+      "user ID prefix"
+    );
   });
 
   it("treats a documented no-shop response as an identity-only connection", async () => {
