@@ -47,6 +47,8 @@ describe("unified global search contracts", () => {
     expect(searchPage).toContain("Trader Rating");
     expect(searchPage).toContain("text-slate-600");
     expect(searchPage).toContain('text-[0.75rem] font-bold leading-tight');
+    expect(searchPage).toContain('className="block aspect-[7/9] bg-white p-0"');
+    expect(searchPage).not.toContain('className="block aspect-[7/9] border-b border-current/10 bg-white p-0"');
   });
 
   it("uses a typed, paginated all-category server contract and searches all persisted listing fields", () => {
