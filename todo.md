@@ -955,3 +955,5 @@
 - [x] Verify that the Etsy API keystring/shared secret belong to the edited Etsy app and that Etsy’s separate application-domain setting is saved consistently with the isolated callback host; OAuth consent reached the deployed callback, confirming the app credentials and domain registration now align.
 
 - [x] Diagnose and fix the post-consent Etsy callback failure shown in Account Settings, preserving existing provider connections and avoiding secret exposure; Etsy’s documented 404 for an account without a shop is now treated as identity-only verification, while valid shop responses are handled as a single shop object.
+
+- [ ] Fix the remaining Etsy callback failure for a valid account without a shop, verify the account-only Etsy Verified result, and synchronize the correction without exposing credentials.

@@ -1,9 +1,9 @@
-import { createHash } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import { ENV } from "./env";
 
 const ETSY_AUTHORIZE_URL = "https://www.etsy.com/oauth/connect";
 const ETSY_TOKEN_URL = "https://openapi.etsy.com/v3/public/oauth/token";
-const ETSY_API_BASE = "https://openapi.etsy.com/v3/application";
+const ETSY_API_BASE = "https://api.etsy.com/v3/application";
 
 export const ETSY_SCOPES = ["email_r", "profile_r", "shops_r"] as const;
 
@@ -64,7 +64,7 @@ async function etsyGet<T>(path: string, accessToken: string): Promise<T> {
     },
   });
   if (!response.ok)
-    throw new Error(`Etsy API request failed: ${response.status}`);
+    throw new Error(`Etsy API request failed for ${path}: ${response.status}`);
   return (await response.json()) as T;
 }
 
@@ -86,7 +86,7 @@ export type EtsyShop = {
 };
 
 export function createEtsyPkceVerifier() {
-  const verifier = Buffer.from(`${Date.now()}-${Math.random()}-${Math.random()}`).toString("base64url");
+  const verifier = randomBytes(32).toString("base64url");
   const challenge = createHash("sha256").update(verifier).digest("base64url");
   return { verifier, challenge };
 }
@@ -104,7 +104,7 @@ export async function getEtsyUserShops(
   } catch (error) {
     // Etsy returns 404 when an authorized account has no shop. That should
     // not prevent us from verifying the Etsy identity itself.
-    if (error instanceof Error && error.message.includes("Etsy API request failed: 404")) {
+    if (error instanceof Error && error.message.includes(": 404")) {
       return null;
     }
     throw error;
