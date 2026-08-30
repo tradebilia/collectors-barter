@@ -33,6 +33,9 @@ function getStageFromStatus(status: string): TradeStage {
   }
 }
 
+const formatTradeRoomDate = (value: unknown) => value ? new Date(String(value)).toLocaleString() : 'Not recorded';
+const formatTradeRoomStatus = (status: unknown) => String(status ?? 'unknown').replace(/_/g, ' ').replace(/\b\w/g, (character) => character.toUpperCase());
+
 const stages: { key: TradeStage; label: string; sub: string }[] = [
   { key: 'proposed',    label: 'Propose',   sub: 'Trade Created'   },
   { key: 'negotiating', label: 'Negotiate', sub: 'Refine Details'  },
@@ -72,9 +75,9 @@ const eventConfig: Record<string, { color: string; icon: string; label: string }
   system_message:     { color: 'bg-slate-400',  icon: 'ℹ️', label: 'System Notice' },
 };
 
-function TimelineTab({ proposalId }: { proposalId: number }) {
+function TimelineTab({ proposalId, adminView = false }: { proposalId: number; adminView?: boolean }) {
   const timelineQuery = trpc.tradeFlow.getTimeline.useQuery(
-    { proposalId },
+    { proposalId, adminView },
     { enabled: proposalId > 0, refetchInterval: 10000 }
   );
   const events: any[] = timelineQuery.data?.events || [];
@@ -113,10 +116,40 @@ function TimelineTab({ proposalId }: { proposalId: number }) {
   );
 }
 
+function AdminReadOnlyTradeRoom({ trade, messages, proposalId, onBack }: { trade: any; messages: any[]; proposalId: number; onBack: () => void }) {
+  const proposal = trade.proposal;
+  const requester = trade.requesterUser || {};
+  const recipient = trade.otherUser || {};
+  const requestedListing = trade.requestedListing;
+  const requesterItems = (trade.offeredListings || []).filter((item: any) => item.ownerId === proposal.requesterId);
+  const recipientItems = [requestedListing, ...(trade.offeredListings || []).filter((item: any) => item.ownerId === proposal.recipientId)].filter(Boolean);
+  const displayName = (person: any, fallback: string) => person.displayName || person.name || person.username || fallback;
+  const itemCard = (item: any) => <div key={item.id} className="rounded-lg border border-gray-600 bg-[#0f0f1a] p-3"><p className="font-semibold text-white">{item.title || 'Untitled item'}</p><p className="mt-1 text-xs text-gray-400">{item.category || 'Uncategorized'} · {formatWholeDollar(Number(item.estimatedValue || 0))}</p></div>;
+
+  return (
+    <div className="min-h-screen bg-[#0f0f1a] text-white">
+      <TopBar hideSearch />
+      <div className="border-b border-amber-500/40 bg-amber-950/40 px-4 py-2 text-center text-xs font-semibold text-amber-200">Administrator read-only view — trade actions, messages, payments, and edits are disabled.</div>
+      <main className="mx-auto max-w-6xl space-y-5 p-4 lg:p-8">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div><p className="text-xs uppercase tracking-widest text-blue-300">Trade Room inspection</p><h1 className="mt-1 text-2xl font-black">{proposal.tradeReferenceNumber || `Trade #${proposalId}`}</h1><p className="mt-1 text-sm text-gray-400">Current stage: <span className="font-semibold text-white">{formatTradeRoomStatus(proposal.status)}</span></p></div>
+          <button type="button" onClick={onBack} className="rounded-lg border border-gray-600 px-4 py-2 text-sm font-semibold text-gray-200 hover:bg-gray-800">Back to Admin Trades</button>
+        </div>
+        <section className="grid gap-4 md:grid-cols-2">
+          {[{ label: 'Requester', person: requester, items: requesterItems }, { label: 'Recipient', person: recipient, items: recipientItems }].map(({ label, person, items }) => <div key={label} className="rounded-xl border border-gray-600 bg-[#16213e] p-5"><div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-slate-700 text-sm font-bold">{person.avatarUrl ? <img src={person.avatarUrl} alt="" className="h-full w-full object-cover" /> : displayName(person, label).charAt(0).toUpperCase()}</div><div><p className="text-xs uppercase tracking-wide text-gray-400">{label}</p><p className="font-bold">{displayName(person, label)}</p><p className="text-xs text-gray-500">User ID: {person.id || (label === 'Requester' ? proposal.requesterId : proposal.recipientId)}</p></div></div><div className="mt-4 space-y-2">{items.length ? items.map(itemCard) : <p className="text-sm text-gray-500">No items recorded for this side.</p>}</div></div>)}
+        </section>
+        <section className="rounded-xl border border-gray-600 bg-[#16213e] p-5"><h2 className="text-lg font-bold">Trade record</h2><div className="mt-4 grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4"><div><p className="text-xs uppercase text-gray-500">Created</p><p>{formatTradeRoomDate(proposal.createdAt)}</p></div><div><p className="text-xs uppercase text-gray-500">Updated</p><p>{formatTradeRoomDate(proposal.updatedAt)}</p></div><div><p className="text-xs uppercase text-gray-500">Last activity</p><p>{formatTradeRoomDate(proposal.lastActivityAt)}</p></div><div><p className="text-xs uppercase text-gray-500">Cash adjustment</p><p>{formatWholeDollar(Number(proposal.cashFromRequester || 0) + Number(proposal.cashFromRecipient || 0))}</p></div></div><div className="mt-4 grid gap-3 sm:grid-cols-2"><div><p className="text-xs uppercase text-gray-500">Member message</p><p className="mt-1 whitespace-pre-wrap rounded-lg border border-gray-700 bg-[#0f0f1a] p-3 text-sm text-gray-200">{proposal.note || proposal.initiatorMessage || 'No member message recorded.'}</p></div><div><p className="text-xs uppercase text-gray-500">Status reason</p><p className="mt-1 whitespace-pre-wrap rounded-lg border border-gray-700 bg-[#0f0f1a] p-3 text-sm text-gray-200">{proposal.declineReason || proposal.frozenReason || 'No status reason recorded.'}</p></div></div></section>
+        <section className="rounded-xl border border-gray-600 bg-[#16213e] p-5"><h2 className="text-lg font-bold">Trade messages</h2>{messages.length ? <div className="mt-3 space-y-2">{messages.map((message: any) => <div key={message.id} className="rounded-lg border border-gray-700 bg-[#0f0f1a] p-3"><div className="flex justify-between gap-3 text-xs text-gray-500"><span>{message.senderDisplayName || message.senderUsername || 'Member'}</span><span>{formatTradeRoomDate(message.createdAt)}</span></div><p className="mt-1 whitespace-pre-wrap text-sm text-gray-200">{message.message || message.content}</p></div>)}</div> : <p className="mt-3 text-sm text-gray-500">No messages recorded.</p>}</section>
+      </main>
+    </div>
+  );
+}
+
 export default function WarRoom() {
   const params = useParams<{ proposalId: string }>();
   const [, navigate] = useLocation();
   const proposalId = Number(params.proposalId);
+  const adminViewRequested = new URLSearchParams(window.location.search).get('adminView') === '1';
   const utils = trpc.useUtils();
 
   const [isTheirInventoryOpen, setIsTheirInventoryOpen] = useState(false);
@@ -164,12 +197,12 @@ export default function WarRoom() {
 
   // ── tRPC queries ──────────────────────────────────────────────────────────
   const tradeDetailsQuery = trpc.tradeFlow.getTradeDetails.useQuery(
-    { proposalId },
+    { proposalId, adminView: adminViewRequested },
     { enabled: proposalId > 0, refetchInterval: 10000 }
   );
 
   const messagesQuery = trpc.tradeFlow.getMessages.useQuery(
-    { proposalId, limit: 100, offset: 0 },
+    { proposalId, limit: 100, offset: 0, adminView: adminViewRequested },
     { enabled: proposalId > 0, refetchInterval: 5000 }
   );
 
@@ -296,7 +329,7 @@ export default function WarRoom() {
   // External cash-adjustment step. Identifiers are returned only to accepted-trade participants who owe cash.
   const cashAdjustmentContextQuery = trpc.payment.getCashAdjustmentContext.useQuery(
     { proposalId },
-    { enabled: proposalId > 0 }
+    { enabled: proposalId > 0 && !adminViewRequested }
   );
   const invalidateCashAdjustment = () => cashAdjustmentContextQuery.refetch();
   const selectCashAdjustmentMethodMutation = trpc.payment.selectCashAdjustmentMethod.useMutation({ onSuccess: () => { toast.success('Payment method selected for this trade.'); invalidateCashAdjustment(); }, onError: (err) => toast.error(err.message) });
@@ -307,7 +340,7 @@ export default function WarRoom() {
   // ── Effects ───────────────────────────────────────────────────────────────
   // Mark alerts as read when entering the Trade Room; do NOT auto-transition stage
   useEffect(() => {
-    if (proposalId > 0) {
+    if (proposalId > 0 && !adminViewRequested) {
       markAlertsAsReadMutation.mutate({ proposalId });
     }
   }, [proposalId]);
@@ -319,6 +352,7 @@ export default function WarRoom() {
 
   // ── Derived data ──────────────────────────────────────────────────────────
   const { user: currentUser } = useAuth();
+  const isAdminReadOnly = adminViewRequested && currentUser?.role === 'admin';
   const trade = tradeDetailsQuery.data;
   const hasOfferedItems = (trade?.offeredListings?.length ?? 0) > 0;
   const currentStage = trade ? getStageFromStatus(trade.proposal.status) : 'proposed';
@@ -357,7 +391,7 @@ export default function WarRoom() {
       return () => clearTimeout(timer);
     }
   }, [messages]);
-  const myUserId = trade ? (isRequester ? trade.proposal.requesterId : trade.proposal.recipientId) : null;
+  const myUserId = trade ? (isAdminReadOnly ? trade.proposal.requesterId : (isRequester ? trade.proposal.requesterId : trade.proposal.recipientId)) : null;
   const partnerHasAccepted = (trade as any)?.partnerHasAccepted ?? false;
   const myHasAccepted = (trade as any)?.myHasAccepted ?? false;
 
@@ -366,8 +400,9 @@ export default function WarRoom() {
   const lastProposedBy = (trade?.proposal as any)?.lastProposedBy;
 
   // Current user display info
-  const myDisplayName = (currentUser as any)?.displayName || currentUser?.name || currentUser?.username || 'You';
-  const myAvatarUrl = (currentUser as any)?.avatarUrl || null;
+  const adminRequester = isAdminReadOnly ? (trade as any)?.requesterUser : null;
+  const myDisplayName = adminRequester?.displayName || adminRequester?.name || adminRequester?.username || (currentUser as any)?.displayName || currentUser?.name || currentUser?.username || 'You';
+  const myAvatarUrl = adminRequester?.avatarUrl || ((currentUser as any)?.avatarUrl || null);
   const myInitial = myDisplayName.charAt(0).toUpperCase();
 
   // Other user display info
@@ -643,11 +678,20 @@ export default function WarRoom() {
     );
   }
 
+  if (isAdminReadOnly && trade) {
+    return <AdminReadOnlyTradeRoom trade={trade} messages={messages} proposalId={proposalId} onBack={() => navigate('/admin')} />;
+  }
+
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-[#0f0f1a] flex flex-col overflow-x-hidden lg:h-screen lg:overflow-hidden">
       {/* Top Bar — compact mode (no search) */}
       <TopBar hideSearch />
+      {isAdminReadOnly && (
+        <div className="border-b border-amber-500/40 bg-amber-950/40 px-4 py-2 text-center text-xs font-semibold text-amber-200">
+          Administrator read-only view — trade actions, messages, payments, and edits are disabled.
+        </div>
+      )}
 
       {/* Progress Tracker Header */}
       <header className="border-b border-gray-600 bg-[#16213e] px-4 py-3 lg:px-6">
@@ -1977,7 +2021,7 @@ export default function WarRoom() {
           )}
 
           {activeTab === 'timeline' && (
-            <TimelineTab proposalId={proposalId} />
+            <TimelineTab proposalId={proposalId} adminView={isAdminReadOnly} />
           )}
           </div>
         </div>

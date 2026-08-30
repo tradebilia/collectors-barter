@@ -23,7 +23,7 @@ import { R2MediaMigrationTab } from "@/components/R2MediaMigrationTab";
 import { R2StorageHealthTab } from "@/components/R2StorageHealthTab";
 import { AdminOperationsTab } from "@/components/AdminOperationsTab";
 import { AccountClosureRequestsTab } from "@/components/AccountClosureRequestsTab";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { DeleteConfirmationDialog } from "@/components/DeleteConfirmationDialog";
 
 function parseReportEvidenceForAdmin(raw?: string) {
@@ -517,6 +517,7 @@ function AdminListingsTab({ listingsQuery }: { listingsQuery: any }) {
 
 export default function AdminDashboard() {
   const { user, loading } = useAuth();
+  const [, navigate] = useLocation();
   const [activeTab, setActiveTab] = useState("statistics");
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [selectedReport, setSelectedReport] = useState<any>(null);
@@ -1355,7 +1356,7 @@ export default function AdminDashboard() {
                             </td>
                             <td className="py-2 px-4 text-xs">{formatAdminTradeDate(trade.lastActivityAt || trade.updatedAt || trade.createdAt)}</td>
                             <td className="py-2 px-4 text-xs"><div>{trade.requestedListingValue != null ? formatWholeDollar(Number(trade.requestedListingValue)) : "Value unavailable"}</div><div className="text-muted-foreground">{Number(trade.offeredItemCount || 0)} offered item{Number(trade.offeredItemCount || 0) === 1 ? "" : "s"}</div></td>
-                            <td className="py-2 px-4"><div className="flex flex-wrap gap-2"><Button variant="outline" size="sm" onClick={() => setSelectedTrade(trade)} className="h-7 px-2 text-xs">Details</Button><Button variant="destructive" size="sm" onClick={() => { setTradeToDelete(trade); setTradeDeleteConfirmOpen(true); }} disabled={archiveTradesMutation.isPending || trade.isArchived} className="h-7 px-2 text-xs"><Archive className="mr-1 h-3 w-3" />{trade.isArchived ? "Archived" : "Archive"}</Button></div></td>
+                            <td className="py-2 px-4"><div className="flex flex-wrap gap-2"><Button variant="outline" size="sm" onClick={() => navigate(`/trade-room/${trade.id}?adminView=1`)} className="h-7 px-2 text-xs">Trade Room</Button><Button variant="destructive" size="sm" onClick={() => { setTradeToDelete(trade); setTradeDeleteConfirmOpen(true); }} disabled={archiveTradesMutation.isPending || trade.isArchived} className="h-7 px-2 text-xs"><Archive className="mr-1 h-3 w-3" />{trade.isArchived ? "Archived" : "Archive"}</Button></div></td>
                           </tr>
                         ))}
                       </tbody>

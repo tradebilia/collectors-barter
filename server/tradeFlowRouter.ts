@@ -1177,17 +1177,20 @@ export const tradeFlowRouter = router({
     }),
 
   getTradeDetails: protectedProcedure
-    .input(z.object({ proposalId: z.number().int().positive() }))
+    .input(z.object({ proposalId: z.number().int().positive(), adminView: z.boolean().optional() }))
     .query(async ({ ctx, input }) => {
       const db = await requireDb();
       const userId = ctx.user.id;
+      const isAdminReadOnly = input.adminView === true && ctx.user.role === 'admin';
 
       // Get the proposal
       const [proposal] = await db.select().from(tradeProposals).where(eq(tradeProposals.id, input.proposalId)).limit(1);
       if (!proposal) throw new TRPCError({ code: 'NOT_FOUND', message: 'Trade not found' });
-      if (proposal.recipientId !== userId && proposal.requesterId !== userId) {
+      if (!isAdminReadOnly && proposal.recipientId !== userId && proposal.requesterId !== userId) {
         throw new TRPCError({ code: 'FORBIDDEN', message: 'Not authorized' });
       }
+      // Admin inspection uses the requester as the display perspective, never as the authenticated actor.
+      const viewerUserId = isAdminReadOnly ? proposal.requesterId : userId;
 
       // Get the requested listing (the item being inquired about)
       const [requestedListing] = await db.select().from(listings).where(eq(listings.id, proposal.requestedListingId)).limit(1);
@@ -1211,7 +1214,7 @@ export const tradeFlowRouter = router({
       }
 
       // Get other user info
-      const otherUserId = proposal.requesterId === userId ? proposal.recipientId : proposal.requesterId;
+      const otherUserId = proposal.requesterId === viewerUserId ? proposal.recipientId : proposal.requesterId;
       const [otherUserResult] = await db.execute(
 		  sql`SELECT u.id, u.username, u.name, u.paypalVerified, up.displayName, up.avatarUrl, up.bio,
           (SELECT AVG(rating) FROM tradeReviews WHERE revieweeId = u.id) as avgRating,
@@ -1220,11 +1223,20 @@ export const tradeFlowRouter = router({
         LEFT JOIN userProfiles up ON up.userId = u.id
         WHERE u.id = ${otherUserId}`
       );
+      let requesterUser: any = null;
+      if (isAdminReadOnly) {
+        const [requesterResult] = await db.execute(
+          sql`SELECT u.id, u.username, u.name, up.displayName, up.avatarUrl
+              FROM users u LEFT JOIN userProfiles up ON up.userId = u.id
+              WHERE u.id = ${proposal.requesterId}`
+        );
+        requesterUser = (requesterResult as any)?.[0] || null;
+      }
 
       // For accepted/shipped/completed stages, also fetch contact info for both parties
       let myContactInfo: any = null;
       let theirContactInfo: any = null;
-      if (['accepted', 'shipping', 'shipped', 'completed', 'disputed'].includes(proposal.status as string)) {
+      if (!isAdminReadOnly && ['accepted', 'shipping', 'shipped', 'completed', 'disputed'].includes(proposal.status as string)) {
         const [myContact] = await db.execute(
           sql`SELECT u.name, u.username, up.contactFullName, up.firstName, up.lastName, up.contactEmail, up.contactPhone,
             up.contactAddress, up.contactTown, up.contactState, up.contactZipCode, up.contactCountry
@@ -1242,7 +1254,7 @@ export const tradeFlowRouter = router({
       }
 
       const [myReviewRows] = await db.execute(
-        sql`SELECT id, rating, review, createdAt FROM tradeReviews WHERE proposalId = ${input.proposalId} AND reviewerId = ${userId} LIMIT 1`
+        sql`SELECT id, rating, review, createdAt FROM tradeReviews WHERE proposalId = ${input.proposalId} AND reviewerId = ${viewerUserId} LIMIT 1`
       );
       const myReview = (myReviewRows as unknown as any[])?.[0] || null;
 
@@ -1267,7 +1279,7 @@ export const tradeFlowRouter = router({
         );
         partnerHasAccepted = ((pendingAccept as unknown as any[])?.length || 0) > 0;
         const [myAccept] = await db.execute(
-          sql`SELECT id FROM tradeReceiptConfirmation WHERE proposalId = ${input.proposalId} AND userId = ${userId} AND confirmationType = 'accepted'`
+          sql`SELECT id FROM tradeReceiptConfirmation WHERE proposalId = ${input.proposalId} AND userId = ${viewerUserId} AND confirmationType = 'accepted'`
         );
         myHasAccepted = ((myAccept as unknown as any[])?.length || 0) > 0;
       }
@@ -1280,7 +1292,7 @@ export const tradeFlowRouter = router({
           sql`SELECT userId FROM tradeReceiptConfirmation WHERE proposalId = ${input.proposalId} AND confirmationType IN ('received', 'damaged')`
         );
         const confirmedUserIds = ((receiptResult as any) || []).map((r: any) => r.userId);
-        myReceiptConfirmed = confirmedUserIds.includes(userId);
+        myReceiptConfirmed = confirmedUserIds.includes(viewerUserId);
         theirReceiptConfirmed = confirmedUserIds.includes(otherUserId);
       }
 
@@ -1304,7 +1316,9 @@ export const tradeFlowRouter = router({
           photos: (l as any).photos || [],
         })),
         otherUser: (otherUserResult as any)?.[0] || null,
-        isRequester: proposal.requesterId === userId,
+        requesterUser,
+        isRequester: proposal.requesterId === viewerUserId,
+        isAdminReadOnly,
         myContactInfo,
         theirContactInfo,
         trackingNumbers,
@@ -1404,14 +1418,15 @@ export const tradeFlowRouter = router({
   // ==========================================================================
 
   getTimeline: protectedProcedure
-    .input(z.object({ proposalId: z.number().int().positive() }))
+    .input(z.object({ proposalId: z.number().int().positive(), adminView: z.boolean().optional() }))
     .query(async ({ ctx, input }) => {
       const db = await requireDb();
       const userId = ctx.user.id;
+      const isAdminReadOnly = input.adminView === true && ctx.user.role === 'admin';
 
       const [proposal] = await db.select().from(tradeProposals).where(eq(tradeProposals.id, input.proposalId)).limit(1);
       if (!proposal) throw new TRPCError({ code: 'NOT_FOUND', message: 'Trade not found' });
-      if (proposal.recipientId !== userId && proposal.requesterId !== userId) {
+      if (!isAdminReadOnly && proposal.recipientId !== userId && proposal.requesterId !== userId) {
         throw new TRPCError({ code: 'FORBIDDEN', message: 'Not authorized' });
       }
 
@@ -1572,14 +1587,16 @@ export const tradeFlowRouter = router({
       proposalId: z.number().int().positive(),
       limit: z.number().int().min(1).max(100).default(50),
       offset: z.number().int().min(0).default(0),
+      adminView: z.boolean().optional(),
     }))
     .query(async ({ ctx, input }) => {
       const db = await requireDb();
       const userId = ctx.user.id;
+      const isAdminReadOnly = input.adminView === true && ctx.user.role === 'admin';
 
       const [proposal] = await db.select().from(tradeProposals).where(eq(tradeProposals.id, input.proposalId)).limit(1);
       if (!proposal) throw new TRPCError({ code: 'NOT_FOUND', message: 'Trade not found' });
-      if (proposal.recipientId !== userId && proposal.requesterId !== userId) {
+      if (!isAdminReadOnly && proposal.recipientId !== userId && proposal.requesterId !== userId) {
         throw new TRPCError({ code: 'FORBIDDEN', message: 'Not authorized' });
       }
 

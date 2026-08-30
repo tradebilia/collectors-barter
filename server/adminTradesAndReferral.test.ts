@@ -24,7 +24,7 @@ describe("Admin Trades and Refer a Collector refinements", () => {
     expect(routerSource).toContain("tradeProposals.declineReason");
     expect(routerSource).toContain("tradeProposalItems offeredItems");
     expect(dashboardSource).toContain("SelectItem value=\"all\">All stages");
-    expect(dashboardSource).toContain("setSelectedTrade(trade)");
+    expect(dashboardSource).toContain("navigate(`/trade-room/${trade.id}?adminView=1`)");
     expect(dashboardSource).toContain("Lifecycle dates");
   });
 
