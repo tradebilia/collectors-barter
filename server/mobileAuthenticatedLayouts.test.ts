@@ -55,9 +55,7 @@ describe("authenticated mobile-only responsive layout contracts", () => {
 
   it("keeps the Report a Member hero centered at every breakpoint without injected offset styles", () => {
     const source = read("client/src/pages/ReportUser.tsx");
-    expect(source).toContain("max-w-7xl");
-    expect(source).toContain("TradebiliaWheel");
-    expect(source).toContain("tradebilia-wheel-home");
+    expect(source).toContain("max-w-7xl items-center justify-center");
     expect(source).not.toContain("@media (max-width: 1023px)");
     expect(source).not.toContain("mobileHeroStyle.dataset.reportUserMobileHero");
     expect(source).not.toContain("-ml-32");

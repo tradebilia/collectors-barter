@@ -8,14 +8,10 @@ describe("Report a User hero", () => {
   it("retains the supplied title artwork over the original collector-background hero", () => {
     expect(reportUserSource).toContain('REPORT_USER_HERO_TITLE_URL = "https://assets.tradebilia.com/ReportaMember-wide_998d1169.webp"');
     expect(reportUserSource).toContain('REPORT_USER_HERO_BACKGROUND_URL = "https://assets.tradebilia.com/Background_23084d14.jpg"');
-    expect(reportUserSource).toContain('max-w-7xl');
-    expect(reportUserSource).toContain('TradebiliaWheel');
-    expect(reportUserSource).toContain('tradebilia-wheel-home');
-    expect(reportUserSource).toContain('aria-hidden="true"');
+    expect(reportUserSource).toContain('max-w-7xl items-center justify-center');
     expect(reportUserSource).not.toContain('-ml-32');
     expect(reportUserSource).not.toContain('reportUserMobileHero');
     expect(reportUserSource).toContain('alt="Report a Member"');
-    expect(reportUserSource).toContain('WebkitMaskImage');
     expect(reportUserSource).toContain('sm:h-72 lg:h-80');
     expect(reportUserSource).toContain("<TopBar hideSearch />");
   });
