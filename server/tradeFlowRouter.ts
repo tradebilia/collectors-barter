@@ -1287,18 +1287,20 @@ export const tradeFlowRouter = router({
       // Check if current user has confirmed receipt
       let myReceiptConfirmed = false;
       let theirReceiptConfirmed = false;
+      let receiptConfirmations: any[] = [];
       if (['shipped', 'completed'].includes(proposal.status)) {
         const [receiptResult] = await db.execute(
-          sql`SELECT userId FROM tradeReceiptConfirmation WHERE proposalId = ${input.proposalId} AND confirmationType IN ('received', 'damaged')`
+          sql`SELECT userId, confirmationType, confirmedAt FROM tradeReceiptConfirmation WHERE proposalId = ${input.proposalId} AND confirmationType IN ('received', 'damaged') ORDER BY confirmedAt ASC`
         );
-        const confirmedUserIds = ((receiptResult as any) || []).map((r: any) => r.userId);
+        receiptConfirmations = (receiptResult as any) || [];
+        const confirmedUserIds = receiptConfirmations.map((r: any) => r.userId);
         myReceiptConfirmed = confirmedUserIds.includes(viewerUserId);
         theirReceiptConfirmed = confirmedUserIds.includes(otherUserId);
       }
 
       // Get trade reference number and other new fields via raw SQL
       const [tradeExtra] = await db.execute(
-        sql`SELECT tradeReferenceNumber, negotiatingAt, acceptedAt, shippedAt, lastActivityAt, cashFromRequester, cashFromRecipient, middleManRequested, middleManApproved, declineReason, lastProposedBy, dailyRoomName, dailyRoomUrl, dailyRoomStartedBy FROM tradeProposals WHERE id = ${input.proposalId}`
+        sql`SELECT tradeReferenceNumber, negotiatingAt, acceptedAt, shippingAt, shippedAt, completedAt, lastActivityAt, cashFromRequester, cashFromRecipient, middleManRequested, middleManApproved, declineReason, lastProposedBy, dailyRoomName, dailyRoomUrl, dailyRoomStartedBy FROM tradeProposals WHERE id = ${input.proposalId}`
       );
 
       return {
@@ -1322,6 +1324,7 @@ export const tradeFlowRouter = router({
         myContactInfo,
         theirContactInfo,
         trackingNumbers,
+        receiptConfirmations,
         myReceiptConfirmed,
         theirReceiptConfirmed,
         partnerHasAccepted,
