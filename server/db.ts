@@ -3697,10 +3697,28 @@ function getEtsyConnectionData(connectedAccounts: unknown): Record<string, unkno
 
 export function getPublicEtsyVerification(connectedAccounts: unknown) {
   const etsy = getEtsyConnectionData(connectedAccounts);
-  const etsyUserId = typeof etsy?.etsyUserId === "string" ? etsy.etsyUserId.trim() : "";
+  const readText = (value: unknown) =>
+    typeof value === "string" && value.trim() ? value.trim() : null;
+  const readHttpsUrl = (value: unknown) => {
+    const raw = readText(value);
+    if (!raw) return null;
+    try {
+      const url = new URL(raw);
+      return url.protocol === "https:" ? url.toString() : null;
+    } catch {
+      return null;
+    }
+  };
+  const etsyUserId = readText(etsy?.etsyUserId) ?? "";
   return {
     etsyVerified: Boolean(etsyUserId),
     etsyConnectedAt: typeof etsy?.etsyConnectedAt === "string" ? etsy.etsyConnectedAt : null,
+    etsyUserId: etsyUserId || null,
+    etsyDisplayName: readText(etsy?.etsyDisplayName),
+    etsyShopName: readText(etsy?.etsyShopName),
+    etsyShopUrl: readHttpsUrl(etsy?.etsyShopUrl),
+    etsyShopAvatarUrl: readHttpsUrl(etsy?.etsyShopAvatarUrl),
+    etsyShopStatus: readText(etsy?.etsyShopStatus),
   };
 }
 
