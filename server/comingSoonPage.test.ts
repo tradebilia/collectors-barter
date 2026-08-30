@@ -17,11 +17,12 @@ describe("Coming Soon experience", () => {
     expect(pageSource).toContain('"SPORTS CARDS": "#b0221a"');
     expect(pageSource).toContain('const COMING_SOON_WHEEL_COLORS = [');
     expect(pageSource).not.toContain('tradebilia-coming-soon-dense-category-workbench_c64ac671.png');
-    expect(pageSource).toContain('className="w-full max-w-xl -translate-y-6 text-center sm:max-w-2xl sm:-translate-y-8"');
-    expect(pageSource).toContain('className="mx-auto h-24 w-full max-w-[34rem] translate-y-20 overflow-hidden px-2 sm:h-28 sm:max-w-[42rem] sm:translate-y-24 sm:px-4"');
+    expect(pageSource).toContain('className="w-full max-w-xl -translate-y-8 text-center sm:max-w-2xl sm:-translate-y-8"');
+    expect(pageSource).toContain('className="mx-auto h-20 w-full max-w-[34rem] translate-y-14 overflow-hidden px-2 sm:h-28 sm:max-w-[42rem] sm:translate-y-24 sm:px-4"');
     expect(pageSource).not.toContain("Collector&apos;s Workbench");
-    expect(pageSource).toContain('className="translate-y-0 pt-12 sm:-translate-y-1 sm:pt-8"');
-    expect(pageSource).toContain('className="mx-auto mt-2 max-w-md sm:mt-3"');
+    expect(pageSource).toContain('className="translate-y-0 pt-8 sm:-translate-y-1 sm:pt-8"');
+    expect(pageSource).toContain('className="mx-auto mt-3 max-w-md sm:-mt-2"');
+    expect(pageSource).toContain('/manus-storage/launching-soon-navy-clean_0cf4707a.png');
     expect(pageSource).toContain('<div className="relative">');
     expect(pageSource).toContain('role="alert" aria-live="polite" className="absolute inset-x-0 top-full mt-3');
     expect(pageSource).toContain('/invalid email|invalid_format/i.test(subscribeMutation.error.message)');
@@ -34,8 +35,8 @@ describe("Coming Soon experience", () => {
     expect(pageSource).toContain("The Collectors Trading Exchange");
     expect(pageSource).toContain("A home for remarkable collectibles—and the collectors who know their worth.");
     expect(pageSource).toContain("Launching Soon");
-    expect(pageSource).toContain("hidden -translate-y-1/2");
-    expect(pageSource).toContain("sm:hidden");
+    expect(pageSource).toContain("hidden w-44 -translate-y-1/2");
+    expect(pageSource).toContain("w-36 rotate-[-2deg] object-contain");
     expect(pageSource).toContain("Trade without fees.");
     expect(pageSource).toContain("No money is taken to complete a trade.");
     expect(pageSource).toContain("Connect more verified accounts to strengthen referrals.");
@@ -45,7 +46,8 @@ describe("Coming Soon experience", () => {
     expect(pageSource).toContain('"Notify me"');
     expect(pageSource).toContain("Yes, I&apos;d like to receive launch updates");
     expect(pageSource).toContain('aria-label="Collections on the exchange"');
-    expect(pageSource).toContain('border-y border-[#6c503c]/20 py-2');
+    expect(pageSource).toContain('order-1 mt-0 flex cursor-pointer items-start justify-center gap-2 text-left text-[10px] leading-4 text-[#2b2119]/90 sm:mt-0 sm:text-center');
+    expect(pageSource).toContain('border-y border-[#6c503c]/20 py-0');
     expect(pageSource).toContain('sm:grid-cols-5');
     expect(pageSource).toContain("<span>Vintage Toys</span>");
     expect(pageSource).toContain("<span>Disney Pins</span>");

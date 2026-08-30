@@ -1001,3 +1001,7 @@
 - [x] Add the approved Launching Soon badge in the desktop parchment whitespace with a mobile fallback above the email form.
 - [x] Replace the Coming Soon highlights with the approved concise wording about fee-free trades, trust-building verification, organized collecting, and cross-category trading.
 - [x] Add regression coverage, visually verify desktop/mobile spacing, and synchronize the Coming Soon refinement to canonical GitHub at commit 31986a5.
+
+- [x] Replace the small text Launching Soon label with the user-provided stamp artwork, recolored to a suitable ink/navy tone and scaled noticeably while remaining contained in the parchment.
+- [x] Reposition and recolor the email consent checkbox/text so it remains fully visible and readable inside the parchment at desktop and mobile widths.
+- [x] Add regression coverage, visually verify both responsive layouts, and synchronize the Coming Soon refinement to canonical GitHub.

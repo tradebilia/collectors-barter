@@ -46,7 +46,7 @@ export default function ComingSoon() {
   };
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[#332218] text-[#2b2119]">
+    <main className="relative min-h-screen overflow-x-hidden bg-[#332218] text-[#2b2119]">
       <div
         className="absolute inset-0 bg-cover bg-center"
         style={{ backgroundImage: "url('/manus-storage/tradebilia-coming-soon-scattered-mixed-grade-workbench-extra-wide-parchment_9f77d258.png')" }}
@@ -54,26 +54,26 @@ export default function ComingSoon() {
       />
       <div className="absolute inset-0 bg-[#24160f]/10" aria-hidden="true" />
 
-      <section className="relative flex min-h-screen items-center justify-center px-5 py-12 sm:px-10 sm:py-16">
-        <div className="w-full max-w-xl -translate-y-6 text-center sm:max-w-2xl sm:-translate-y-8">
-          <div className="mx-auto h-24 w-full max-w-[34rem] translate-y-20 overflow-hidden px-2 sm:h-28 sm:max-w-[42rem] sm:translate-y-24 sm:px-4">
+      <section className="relative flex min-h-screen items-center justify-center px-5 py-8 sm:px-10 sm:py-16">
+        <div className="w-full max-w-xl -translate-y-8 text-center sm:max-w-2xl sm:-translate-y-8">
+          <div className="mx-auto h-20 w-full max-w-[34rem] translate-y-14 overflow-hidden px-2 sm:h-28 sm:max-w-[42rem] sm:translate-y-24 sm:px-4">
             <AnimatedLogoSmall70 fontSize={196} wheelScale={2.24} wheelOffsetX={-65} wheelOffsetY={-30} dividerScale={1.55} dividerOffsetY={-20} wordmarkColor="#2b2119" neutralCategoryColor="#2b2119" categoryColorOverrides={COMING_SOON_CATEGORY_COLORS} wheelColors={COMING_SOON_WHEEL_COLORS} wheelStrokeWidth={6} dividerStrokeWidth={3.6} fixedCategoryMetrics centerLockup centeredViewBoxWidth={3000} canvasWidthScale={1} />
           </div>
 
-          <div className="translate-y-0 pt-12 sm:-translate-y-1 sm:pt-8">
+          <div className="translate-y-0 pt-8 sm:-translate-y-1 sm:pt-8">
             <div className="mx-auto mt-2 max-w-lg sm:mt-10">
               <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-[#7b4f2f] sm:text-[10px]">The Collectors Trading Exchange</p>
               <h1 className="mt-2 font-serif text-4xl leading-[0.92] tracking-[-0.04em] text-[#2b2119] sm:mt-3 sm:text-6xl">Why Buy or Sell<br />When You Can Trade?</h1>
               <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-[#4d3c2e]/80 sm:mt-5 sm:text-base">A home for remarkable collectibles—and the collectors who know their worth.</p>
               <div className="relative mx-auto mt-5 grid max-w-xl grid-cols-1 gap-2 text-left sm:mt-6 sm:grid-cols-2 sm:gap-x-5 sm:gap-y-2" aria-label="Why collectors will use Tradebilia">
-                <span className="pointer-events-none absolute -left-40 top-1/2 hidden -translate-y-1/2 rotate-[-4deg] rounded-sm border-2 border-[#184b92]/60 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.18em] text-[#184b92] shadow-[0_2px_0_rgba(24,75,146,0.15)] sm:block">Launching Soon</span>
+                <img src="/manus-storage/launching-soon-navy-clean_0cf4707a.png" alt="Launching Soon" className="pointer-events-none absolute -left-44 top-1/2 hidden w-44 -translate-y-1/2 rotate-[-4deg] object-contain drop-shadow-[0_3px_2px_rgba(43,33,25,0.12)] sm:block" />
                 <p className="border-l-2 border-[#184b92]/55 pl-3 text-[11px] leading-4 text-[#4d3c2e]/85 sm:text-xs"><strong className="font-bold text-[#2b2119]">Trade without fees.</strong> No money is taken to complete a trade.</p>
                 <p className="border-l-2 border-[#184b92]/55 pl-3 text-[11px] leading-4 text-[#4d3c2e]/85 sm:text-xs"><strong className="font-bold text-[#2b2119]">Build trust faster.</strong> Connect more verified accounts to strengthen referrals.</p>
                 <p className="border-l-2 border-[#184b92]/55 pl-3 text-[11px] leading-4 text-[#4d3c2e]/85 sm:text-xs"><strong className="font-bold text-[#2b2119]">Everything in one place.</strong> Keep your collection and trades organized.</p>
                 <p className="border-l-2 border-[#184b92]/55 pl-3 text-[11px] leading-4 text-[#4d3c2e]/85 sm:text-xs"><strong className="font-bold text-[#2b2119]">Trade across categories.</strong> Swap sports cards for comics, toys, games, and more.</p>
               </div>
-              <span className="mx-auto mt-3 inline-flex rotate-[-2deg] rounded-sm border-2 border-[#184b92]/60 px-3 py-1.5 text-[9px] font-bold uppercase tracking-[0.18em] text-[#184b92] sm:hidden">Launching Soon</span>
-              <div aria-label="Collections on the exchange" className="mx-auto mt-2 grid max-w-md grid-cols-2 gap-x-5 gap-y-1 border-y border-[#6c503c]/20 py-2 text-[8px] font-bold uppercase tracking-[0.12em] text-[#4d3c2e]/72 sm:mt-6 sm:max-w-2xl sm:grid-cols-5 sm:gap-x-3 sm:gap-y-1.5 sm:py-3 sm:text-[9px]">
+              <img src="/manus-storage/launching-soon-navy-clean_0cf4707a.png" alt="Launching Soon" className="mx-auto -mt-1 block w-36 rotate-[-2deg] object-contain drop-shadow-[0_2px_2px_rgba(43,33,25,0.12)] sm:hidden" />
+              <div aria-label="Collections on the exchange" className="mx-auto mt-0 grid max-w-md grid-cols-2 gap-x-5 gap-y-0 border-y border-[#6c503c]/20 py-0 text-[8px] font-bold uppercase tracking-[0.12em] text-[#4d3c2e]/72 sm:mt-2 sm:max-w-2xl sm:grid-cols-5 sm:gap-x-3 sm:gap-y-1 sm:py-1.5 sm:text-[9px]">
                 <span>Comics</span>
                 <span>Sports Cards</span>
                 <span>Vintage Toys</span>
@@ -87,12 +87,12 @@ export default function ComingSoon() {
               </div>
             </div>
 
-            <div className="mx-auto mt-2 max-w-md sm:mt-3">
+            <div className="mx-auto mt-3 max-w-md sm:-mt-2">
               <div className="relative">
                 <div className={submitted ? "invisible" : undefined} aria-hidden={submitted || undefined}>
                   <div className="relative">
-                <form onSubmit={handleSubmit} noValidate>
-                  <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
+                <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-2">
+                  <div className="order-2 flex flex-col gap-2 sm:flex-row sm:items-stretch">
                     <div className="relative flex-1 border border-[#6c503c]/35 bg-[#fffaf0]/80">
                       <Mail className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#5a4536]/50" aria-hidden="true" />
                       <Input id={emailId} type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="Enter your email for early access" autoComplete="email" required className="h-10 border-0 bg-transparent pl-8 text-xs text-[#2b2119] placeholder:text-[#5a4536]/50 focus-visible:ring-0" />
@@ -102,7 +102,7 @@ export default function ComingSoon() {
                       {!subscribeMutation.isPending && <ArrowRight className="ml-2 h-3.5 w-3.5" aria-hidden="true" />}
                     </Button>
                   </div>
-                  <label htmlFor={consentId} className="mt-3 flex cursor-pointer items-start justify-center gap-2 text-left text-[11px] leading-4 text-[#4d3c2e]/75 sm:text-center">
+                  <label htmlFor={consentId} className="order-1 mt-0 flex cursor-pointer items-start justify-center gap-2 text-left text-[10px] leading-4 text-[#2b2119]/90 sm:mt-0 sm:text-center">
                     <Checkbox id={consentId} checked={consent} onCheckedChange={(checked) => setConsent(checked === true)} className="mt-px border-[#6c503c]/45 data-[state=checked]:border-[#184b92] data-[state=checked]:bg-[#184b92]" />
                     <span>Yes, I&apos;d like to receive launch updates and future collector features.</span>
                   </label>
