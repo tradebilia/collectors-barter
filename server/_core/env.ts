@@ -19,6 +19,10 @@ export const ENV = {
   linkedinClientId: process.env.LINKEDIN_CLIENT_ID ?? "",
   linkedinClientSecret: process.env.LINKEDIN_CLIENT_SECRET ?? "",
   linkedinRedirectUri: process.env.LINKEDIN_REDIRECT_URI ?? "",
+  // Etsy Open API v3 OAuth
+  etsyApiKeystring: process.env.ETSY_API_KEYSTRING ?? "",
+  etsySharedSecret: process.env.ETSY_SHARED_SECRET ?? "",
+  etsyRedirectUri: process.env.ETSY_REDIRECT_URI ?? "",
   // Encryption key for OAuth tokens at rest
   encryptionKey: process.env.ENCRYPTION_KEY ?? "",
   // OpenAI for trade analysis

@@ -1,7 +1,7 @@
 import { randomBytes, timingSafeEqual } from "node:crypto";
 
 export const PROVIDER_OAUTH_STATE_TTL_MS = 10 * 60 * 1000;
-export type ProviderOauthName = "ebay" | "facebook" | "linkedin";
+export type ProviderOauthName = "ebay" | "facebook" | "linkedin" | "etsy";
 
 export function providerOauthStateCookieName(provider: ProviderOauthName): string {
   return `tradebilia_${provider}_oauth_state`;

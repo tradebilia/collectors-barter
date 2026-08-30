@@ -921,3 +921,13 @@
 - [x] Add regression coverage for saved-method availability and logo sizing, run TypeScript/build/audit/whitespace checks, visually verify the payment card and Trade Room, checkpoint the refinement, and synchronize it to canonical GitHub. Focused payment regressions passed 9/9; TypeScript, production build, dependency audit, and whitespace checks passed. Desktop/mobile route checks passed; signed-out payment-card inspection limitation is documented.
 
 - [x] Perform a complete credential-safe backup of the current verified WebDev state and documentation, validate the project, commit and push the full synchronized state to canonical GitHub, update the pairing manifest, and save a final checkpoint. Full source synchronization pushed as canonical commit f4321bd6158d8a37ff83f30a5209118988f0b2f7; manifest and tracker alignment are being finalized in the paired release checkpoint.
+
+- [x] Research Etsy’s current OAuth/API capabilities and identify the exact identity, shop, and approved metadata available for verification.
+- [x] Inspect existing eBay/Facebook/LinkedIn verification architecture and project connector configuration, then securely configure Etsy credentials and redirect settings without exposing secrets.
+- [x] Implement Etsy OAuth-backed verification and safe profile/shop metadata import, add tests, validate security and compatibility, and synchronize the verified integration to canonical GitHub.
+- [x] Add Etsy OAuth and metadata verification implementation using secure configuration placeholders; request the Etsy keystring and shared secret only after code, tests, and visual checks are complete.
+- [x] Add Etsy user/shop metadata persistence with encrypted token handling and least-privilege read scopes.
+- [x] Add the Etsy connection card, official logo treatment, imported shop/profile details, and Etsy Verified badge behavior to Account Settings.
+- [x] Add Etsy verification regression tests, run TypeScript/build/dependency/whitespace checks, and visually verify the integrations UI.
+- [x] Securely request and configure Etsy credentials last, validate the Etsy application key against a read-only shop-search endpoint without exposing secret values, and document provider-side OAuth testing limitations.
+- [x] Commit and push the completed Etsy feature to the canonical GitHub repository and save the synchronized project checkpoint.
