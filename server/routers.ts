@@ -107,7 +107,7 @@ import { testAIRouter } from "./testAIRouter";
 import { r2MediaRouter } from "./r2MediaRouter";
 import { customAuth } from "./_core/customAuth";
 import { getOrCreateDirectMessageThread, persistDirectMessage } from "./directMessagePersistence";
-import { users, userProfiles, listings, deletedAccounts, tradeProposals, tradeMessages, tradeReviews, watchlistEntries, draftListings, passwordResetTokens, referralRequests, userFollows, directMessageThreads, directMessages, tradePayments, tradeActivityLog, emailTemplates, accountApprovalReviews, accountClosureRequests, apiHealthEvents, adminActivityLog, lowFeedbackFlags } from "../drizzle/schema";
+import { users, userProfiles, listings, deletedAccounts, tradeProposals, tradeProposalItems, tradeMessages, tradeReviews, watchlistEntries, draftListings, passwordResetTokens, referralRequests, userFollows, directMessageThreads, directMessages, tradePayments, tradeActivityLog, emailTemplates, accountApprovalReviews, accountClosureRequests, apiHealthEvents, adminActivityLog, lowFeedbackFlags } from "../drizzle/schema";
 import { eq, sql, desc, or, inArray, and, isNull } from "drizzle-orm";
 import { alias } from "drizzle-orm/mysql-core";
 import { TRPCError } from "@trpc/server";
@@ -2900,9 +2900,32 @@ export const appRouter = router({
         requestedListingId: tradeProposals.requestedListingId,
         listingTitle: listings.title,
         listingCategory: listings.category,
+        requestedListingValue: listings.estimatedValue,
+        offeredItemCount: sql<number>`(SELECT COUNT(*) FROM tradeProposalItems offeredItems WHERE offeredItems.proposalId = ${tradeProposals.id})`,
         status: tradeProposals.status,
+        tradeReferenceNumber: tradeProposals.tradeReferenceNumber,
+        referenceNumber: tradeProposals.referenceNumber,
+        note: tradeProposals.note,
+        initiatorMessage: tradeProposals.initiatorMessage,
+        declineReason: tradeProposals.declineReason,
+        frozenReason: tradeProposals.frozenReason,
+        preFreezeStatus: tradeProposals.preFreezStatus,
+        cashFromRequester: tradeProposals.cashFromRequester,
+        cashFromRecipient: tradeProposals.cashFromRecipient,
+        middleManRequested: tradeProposals.middleManRequested,
+        middleManApproved: tradeProposals.middleManApproved,
         createdAt: tradeProposals.createdAt,
+        updatedAt: tradeProposals.updatedAt,
+        lastActivityAt: tradeProposals.lastActivityAt,
         respondedAt: tradeProposals.respondedAt,
+        negotiatingAt: tradeProposals.negotiatingAt,
+        acceptedAt: tradeProposals.acceptedAt,
+        shippingAt: tradeProposals.shippingAt,
+        shippedAt: tradeProposals.shippedAt,
+        shippingDeadline: tradeProposals.shippingDeadline,
+        receiptDeadline: tradeProposals.receiptDeadline,
+        feedbackDeadline: tradeProposals.feedbackDeadline,
+        frozenAt: tradeProposals.frozenAt,
         completedAt: tradeProposals.completedAt,
         isArchived: sql<number>`EXISTS(SELECT 1 FROM adminActivityLog archiveLog WHERE archiveLog.action = 'trade_record_archived' AND archiveLog.targetType = 'trade_proposal' AND archiveLog.targetReference = CAST(${tradeProposals.id} AS CHAR))`,
       }).from(tradeProposals)

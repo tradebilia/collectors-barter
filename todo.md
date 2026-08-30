@@ -973,4 +973,9 @@
 - [x] Build the approved compact expandable Verified Accounts strip, retain the eBay feedback card, and show Etsy user ID/name plus optional Etsy shop details in the selected provider panel.
 
 - [x] Add a Verified Accts tab after Reviews with detailed, privacy-safe cards for every connected provider; keep Overview compact and retain the existing eBay reputation details.
-- [ ] Synchronize the Verified Accts tab enhancement to canonical GitHub and save the final project checkpoint.
+- [x] Synchronize the Verified Accts tab enhancement to canonical GitHub at commit 5bf70c8 and save the final project checkpoint.
+- [x] Expand the administrator Trades tab to show every trade stage, participant IDs and names, references, requested value, offered-item count, lifecycle timestamps, cash adjustments, messages, status reasons, and archive state through an administrator-only details view.
+- [x] Add Admin Trades search, stage filtering, sort-by controls, sort direction, and archived-record inclusion while preserving existing archive behavior.
+- [x] Replace the Refer a Collector hero title with the exact animated SVG from ReferralRequest.zip at /manus-storage/ReferralRequest_89fadd07.svg.
+- [x] Add focused regression coverage, TypeScript/build/audit/whitespace checks, and document the protected-route visual verification limitation; canonical synchronization remains pending.
+- [ ] Synchronize the Admin Trades and Refer a Collector enhancement to canonical GitHub and save the final project checkpoint.
