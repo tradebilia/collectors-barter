@@ -1018,3 +1018,10 @@
 - [x] Change the verification highlight wording to “Connect more verified accounts to strengthen user authenticity” and update its regression assertion.
 
 - [x] Remove “Launch updates only · unsubscribe anytime.” from the Coming Soon signup area and update its regression assertion.
+
+- [x] Add more vertical space between the Coming Soon signup form and its divider/category line to match the supplied reference.
+- [x] Trace the inquiry-to-Trade-Room lifecycle and identify the current propose, decline, withdraw, and response authorization paths.
+- [x] Prevent the initiating member from proposing a new trade while their inquiry awaits the recipient response, while preserving decline/withdraw capability.
+- [x] Add server and UI regression coverage for inquiry waiting-state authorization and verify the Coming Soon responsive spacing.
+
+- [x] Add intentional vertical space between “Why Buy or Sell” and “When You Can Trade?” while preserving mathematical centering and responsive balance.

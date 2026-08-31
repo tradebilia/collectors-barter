@@ -19,8 +19,10 @@ describe("trade negotiation responder turn", () => {
     });
 
     expect(initial.status).toBe("your-turn");
+    expect(initial.canSubmitProposal).toBe(true);
     expect(initial.canAcceptCurrentProposal).toBe(true);
     expect(draftEdited.status).toBe("your-turn");
+    expect(draftEdited.canSubmitProposal).toBe(true);
     expect(draftEdited.canAcceptCurrentProposal).toBe(false);
   });
 
@@ -34,6 +36,27 @@ describe("trade negotiation responder turn", () => {
     });
 
     expect(afterSubmission.status).toBe("awaiting-their-response");
+    expect(afterSubmission.canSubmitProposal).toBe(false);
     expect(afterSubmission.canAcceptCurrentProposal).toBe(false);
+  });
+
+  it("allows only the listing owner to submit the first proposal for a pending inquiry", () => {
+    const requester = getNegotiationTurnState({
+      currentStage: "proposed",
+      lastProposedBy: null,
+      myUserId: 30002,
+      isRequester: true,
+      hasLocalChanges: false,
+    });
+    const recipient = getNegotiationTurnState({
+      currentStage: "proposed",
+      lastProposedBy: null,
+      myUserId: 60003,
+      isRequester: false,
+      hasLocalChanges: false,
+    });
+
+    expect(requester.canSubmitProposal).toBe(false);
+    expect(recipient.canSubmitProposal).toBe(true);
   });
 });

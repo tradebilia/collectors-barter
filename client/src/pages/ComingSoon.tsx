@@ -60,7 +60,7 @@ export default function ComingSoon() {
           <div className="translate-y-0 pt-8 sm:-translate-y-1 sm:pt-6">
             <div className="mx-auto mt-2 max-w-lg sm:mt-8">
               <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-[#7b4f2f] sm:text-[10px]">The Collectors Trading Exchange</p>
-              <h1 className="mt-2 font-serif text-4xl leading-[0.92] tracking-[-0.04em] text-[#2b2119] sm:mt-3 sm:text-6xl">Why Buy or Sell<br />When You Can Trade?</h1>
+              <h1 className="mt-2 font-serif text-4xl leading-[0.92] tracking-[-0.04em] text-[#2b2119] sm:mt-3 sm:text-6xl"><span>Why Buy or Sell</span><span className="mt-1 block sm:mt-2">When You Can Trade?</span></h1>
               <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-[#4d3c2e]/80 sm:mt-5 sm:text-base">A home for remarkable collectibles—and the collectors who know their worth.</p>
               <div className="relative mx-auto mt-6 grid max-w-xl grid-cols-1 gap-2 text-left sm:mt-5 sm:grid-cols-2 sm:gap-x-5 sm:gap-y-2" aria-label="Why collectors will use Tradebilia">
                 <img src="/manus-storage/launching-soon-navy-clean_0cf4707a.png" alt="Launching Soon" className="pointer-events-none absolute -left-52 top-[38%] hidden w-44 -translate-y-1/2 rotate-[-4deg] object-contain drop-shadow-[0_3px_2px_rgba(43,33,25,0.12)] sm:block" />
@@ -84,7 +84,7 @@ export default function ComingSoon() {
               </div>
             </div>
 
-            <div className="mx-auto mt-4 max-w-md sm:mt-0">
+            <div className="mx-auto mt-6 max-w-md sm:mt-4">
               <div className="relative">
                 <div className={submitted ? "invisible" : undefined} aria-hidden={submitted || undefined}>
                   <div className="relative">

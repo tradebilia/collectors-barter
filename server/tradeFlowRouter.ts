@@ -450,6 +450,12 @@ export const tradeFlowRouter = router({
         if (!['pending', 'negotiating'].includes(proposal.status)) {
           throw new TRPCError({ code: 'BAD_REQUEST', message: 'Trade can only be updated while pending or negotiating' });
         }
+        if (proposal.status === 'pending' && proposal.requesterId === userId) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Your inquiry is awaiting the listing owner’s response. You can decline it, but you cannot submit a trade proposal yet.' });
+        }
+        if (proposal.status === 'negotiating' && proposal.lastProposedBy === userId) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Your proposal is awaiting the other member’s response. You can decline it, but you cannot submit another proposal yet.' });
+        }
 
         const offeredListingIds = [...new Set(input.offeredListingIds)];
         if (offeredListingIds.length !== input.offeredListingIds.length) {

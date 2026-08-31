@@ -19,8 +19,15 @@ export function getNegotiationTurnState({
       : isRequester
   );
 
+  const canSubmitProposal = currentStage === "proposed"
+    ? !isRequester
+    : currentStage === "negotiating"
+      ? otherPartyProposed
+      : false;
+
   return {
     otherPartyProposed,
+    canSubmitProposal,
     canAcceptCurrentProposal: otherPartyProposed && !hasLocalChanges,
     status: otherPartyProposed ? "your-turn" : "awaiting-their-response",
   } as const;

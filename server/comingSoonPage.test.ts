@@ -21,7 +21,7 @@ describe("Coming Soon experience", () => {
     expect(pageSource).toContain('className="mx-auto h-20 w-full max-w-[34rem] translate-y-14 overflow-hidden px-2 sm:h-28 sm:max-w-[42rem] sm:translate-y-24 sm:px-4"');
     expect(pageSource).not.toContain("Collector&apos;s Workbench");
     expect(pageSource).toContain('className="translate-y-0 pt-8 sm:-translate-y-1 sm:pt-6"');
-    expect(pageSource).toContain('className="mx-auto mt-4 max-w-md sm:mt-0"');
+    expect(pageSource).toContain('className="mx-auto mt-6 max-w-md sm:mt-4"');
     expect(pageSource).toContain('/manus-storage/launching-soon-navy-clean_0cf4707a.png');
     expect(pageSource).toContain('<div className="relative">');
     expect(pageSource).toContain('role="alert" aria-live="polite" className="absolute inset-x-0 top-full mt-3');
@@ -31,7 +31,7 @@ describe("Coming Soon experience", () => {
     expect(pageSource).toContain('className={submitted ? "invisible" : undefined}');
     expect(pageSource).toContain('role="status" aria-live="polite" className="absolute inset-x-0 top-0');
     expect(pageSource).not.toContain("Background_23084d14.jpg");
-    expect(pageSource).toContain("Why Buy or Sell<br />When You Can Trade?");
+    expect(pageSource).toContain('<span>Why Buy or Sell</span><span className="mt-1 block sm:mt-2">When You Can Trade?</span>');
     expect(pageSource).toContain("The Collectors Trading Exchange");
     expect(pageSource).toContain("A home for remarkable collectibles—and the collectors who know their worth.");
     expect(pageSource).toContain("Launching Soon");
@@ -49,6 +49,7 @@ describe("Coming Soon experience", () => {
     expect(pageSource).not.toContain("Checkbox");
     expect(pageSource).toContain('aria-label="Collections on the exchange"');
     expect(pageSource).toContain('border-y border-[#6c503c]/20 py-0 text-[8px]');
+    expect(pageSource).toContain('className="mx-auto mt-6 max-w-md sm:mt-4"');
     expect(pageSource).toContain('sm:grid-cols-5');
     expect(pageSource).toContain("<span>Vintage Toys</span>");
     expect(pageSource).toContain("<span>Disney Pins</span>");

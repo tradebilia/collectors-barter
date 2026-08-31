@@ -13,6 +13,19 @@ describe("Trade Room atomicity and retry-safety contracts", () => {
     expect(counteroffer).toContain("await tx.insert(tradeProposalItems)");
   });
 
+  it("blocks the inquiry sender from submitting before the listing owner responds", () => {
+    const counteroffer = source.slice(source.indexOf("sendTradeProposal:"), source.indexOf("acceptTradeProposal:"));
+    expect(counteroffer).toContain("proposal.status === 'pending' && proposal.requesterId === userId");
+    expect(counteroffer).toContain("Your inquiry is awaiting the listing owner’s response");
+    expect(counteroffer).toContain("You can decline it");
+  });
+
+  it("blocks a member from submitting another proposal while their latest proposal awaits a response", () => {
+    const counteroffer = source.slice(source.indexOf("sendTradeProposal:"), source.indexOf("acceptTradeProposal:"));
+    expect(counteroffer).toContain("proposal.status === 'negotiating' && proposal.lastProposedBy === userId");
+    expect(counteroffer).toContain("Your proposal is awaiting the other member’s response");
+  });
+
   it("validates offered counteroffer items before replacing the active terms", () => {
     const proposalSchema = source.slice(source.indexOf("sendProposalSchema"), source.indexOf("acceptProposalSchema"));
     const counteroffer = source.slice(source.indexOf("sendTradeProposal:"), source.indexOf("acceptTradeProposal:"));

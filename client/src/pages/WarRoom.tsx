@@ -508,6 +508,7 @@ export default function WarRoom() {
     hasLocalChanges,
   });
   const iCanAccept = negotiationTurn.canAcceptCurrentProposal;
+  const canSubmitProposal = negotiationTurn.canSubmitProposal;
 
   // Calculate total values (items + cash)
   const myItemsValue = myItems.reduce((sum: number, l: any) => sum + parseFloat(l?.estimatedValue || '0'), 0);
@@ -1379,7 +1380,7 @@ export default function WarRoom() {
                           )}
                           <p className="text-white text-[11px] font-medium line-clamp-2 leading-tight">{item.title}</p>
                           <p className="text-blue-400 text-sm font-bold mt-1">{formatItemValue(item.estimatedValue)}</p>
-                          {!isLocked && (currentStage === 'proposed' || currentStage === 'negotiating') && (
+                          {!isLocked && canSubmitProposal && (currentStage === 'proposed' || currentStage === 'negotiating') && (
                             <button
                               onClick={() => handleRemoveItemFromTrade(item.id)}
                               className="absolute -top-1.5 -right-1.5 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
@@ -1401,7 +1402,7 @@ export default function WarRoom() {
                           <p className="text-gray-500 text-[10px]">Added to sweeten the deal</p>
                         </div>
                       </div>
-                      {(currentStage === 'proposed' || currentStage === 'negotiating') && (
+                      {canSubmitProposal && (currentStage === 'proposed' || currentStage === 'negotiating') && (
                         <button
                           onClick={() => { setCashInput(String(myCash)); setShowCashModal('my'); }}
                           className="text-gray-500 hover:text-white text-xs transition"
@@ -1411,7 +1412,7 @@ export default function WarRoom() {
                     </div>
                   )}
 
-                  {(currentStage === 'proposed' || currentStage === 'negotiating') && (
+                  {canSubmitProposal && (currentStage === 'proposed' || currentStage === 'negotiating') && (
                     <div className="flex gap-2 mt-4">
                       <button
                         onClick={() => { setInventorySearch(''); setIsMyInventoryOpen(true); }}
@@ -1419,7 +1420,7 @@ export default function WarRoom() {
                       >
                         + Add Item
                       </button>
-                      {myCash === 0 && <button onClick={() => { setCashInput(''); setShowCashModal('my'); }} className="flex-1 py-2.5 border border-dashed border-green-700/50 rounded-lg text-green-500 hover:text-green-400 hover:border-green-500 transition text-sm flex items-center justify-center gap-2">💵 Add Cash</button>}
+                      {canSubmitProposal && myCash === 0 && <button onClick={() => { setCashInput(''); setShowCashModal('my'); }} className="flex-1 py-2.5 border border-dashed border-green-700/50 rounded-lg text-green-500 hover:text-green-400 hover:border-green-500 transition text-sm flex items-center justify-center gap-2">💵 Add Cash</button>}
                     </div>
                   )}
                 </div>
@@ -1844,7 +1845,7 @@ export default function WarRoom() {
                           )}
                           <p className="text-white text-[11px] font-medium line-clamp-2 leading-tight">{item.title}</p>
                           <p className="text-blue-400 text-sm font-bold mt-1">{formatItemValue(item.estimatedValue)}</p>
-                          {!isLocked && (currentStage === 'proposed' || currentStage === 'negotiating') && (
+                          {!isLocked && canSubmitProposal && (currentStage === 'proposed' || currentStage === 'negotiating') && (
                             <button
                               onClick={() => handleRemoveItemFromTrade(item.id)}
                               className="absolute -top-1.5 -right-1.5 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
@@ -1867,7 +1868,7 @@ export default function WarRoom() {
                           <p className="text-gray-500 text-[10px]">Added to sweeten the deal</p>
                         </div>
                       </div>
-                      {(currentStage === 'proposed' || currentStage === 'negotiating') && (
+                      {canSubmitProposal && (currentStage === 'proposed' || currentStage === 'negotiating') && (
                         <button
                           onClick={() => { setCashInput(String(theirCash)); setShowCashModal('their'); }}
                           className="text-gray-500 hover:text-white text-xs transition"
@@ -1877,7 +1878,7 @@ export default function WarRoom() {
                     </div>
                   )}
 
-                  {(currentStage === 'proposed' || currentStage === 'negotiating') && (
+                  {canSubmitProposal && (currentStage === 'proposed' || currentStage === 'negotiating') && (
                     <div className="flex gap-2 mt-4">
                       <button
                         onClick={() => { setInventorySearch(''); setInventoryCategory('All'); setIsTheirInventoryOpen(true); }}
@@ -1885,7 +1886,7 @@ export default function WarRoom() {
                       >
                         + Browse User Items
                       </button>
-                      {theirCash === 0 && <button onClick={() => { setCashInput(''); setShowCashModal('their'); }} className="flex-1 py-2.5 border border-dashed border-green-700/50 rounded-lg text-green-500 hover:text-green-400 hover:border-green-500 transition text-sm flex items-center justify-center gap-2">💵 Add Cash</button>}
+                      {canSubmitProposal && theirCash === 0 && <button onClick={() => { setCashInput(''); setShowCashModal('their'); }} className="flex-1 py-2.5 border border-dashed border-green-700/50 rounded-lg text-green-500 hover:text-green-400 hover:border-green-500 transition text-sm flex items-center justify-center gap-2">💵 Add Cash</button>}
                     </div>
                   )}
                 </div>
@@ -2047,15 +2048,19 @@ export default function WarRoom() {
                 </svg>
                 Decline
               </button>
-              <button
-                onClick={handleUpdateProposal}
-                className="px-14 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg font-bold transition flex items-center gap-2 shadow-[0_0_15px_rgba(59,130,246,0.4)]"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" />
-                </svg>
-                Send Proposal
-              </button>
+              {canSubmitProposal ? (
+                <button
+                  onClick={handleUpdateProposal}
+                  className="px-14 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg font-bold transition flex items-center gap-2 shadow-[0_0_15px_rgba(59,130,246,0.4)]"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" />
+                  </svg>
+                  Send Proposal
+                </button>
+              ) : (
+                <p className="max-w-sm text-center text-sm text-gray-400">Waiting for the listing owner to respond. You can decline this inquiry at any time.</p>
+              )}
             </>
           )}
 
@@ -2071,20 +2076,24 @@ export default function WarRoom() {
                 </svg>
                 Decline
               </button>
-              <button
-                onClick={handleUpdateProposal}
-                disabled={!hasLocalChanges}
-                className={`px-14 py-3 rounded-lg font-bold transition flex items-center gap-2 ${
-                  hasLocalChanges
-                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-[0_0_15px_rgba(59,130,246,0.4)]'
-                    : 'bg-gray-700 text-gray-500 cursor-not-allowed border border-gray-600'
-                }`}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" />
-                </svg>
-                Counter Offer
-              </button>
+              {canSubmitProposal ? (
+                <button
+                  onClick={handleUpdateProposal}
+                  disabled={!hasLocalChanges}
+                  className={`px-14 py-3 rounded-lg font-bold transition flex items-center gap-2 ${
+                    hasLocalChanges
+                      ? 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-[0_0_15px_rgba(59,130,246,0.4)]'
+                      : 'bg-gray-700 text-gray-500 cursor-not-allowed border border-gray-600'
+                  }`}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" />
+                  </svg>
+                  Counter Offer
+                </button>
+              ) : (
+                <p className="max-w-sm text-center text-sm text-gray-400">Your proposal is awaiting the other member’s response. You can decline this trade at any time.</p>
+              )}
               {(iCanAccept || partnerHasAccepted) && !myHasAccepted && (
                 <button
                   onClick={handleAccept}
