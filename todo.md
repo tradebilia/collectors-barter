@@ -1074,3 +1074,7 @@
 - [x] Restore counterparty inventory selection so a member can request an additional item owned by the other member.
 - [x] Persist and validate own offered items separately from counterparty requested items in a Trade Room counterproposal.
 - [x] Add a two-account regression for Rtavani selecting an Administrator-owned requested item and verify the restored checkboxes.
+
+- [x] Trace and repair the Trade Room `tradeActivityLog` insert that fails after a counterproposal terms update.
+- [x] Keep counterproposal term updates and activity records atomic without exposing database error details to members.
+- [x] Add a regression for the Admin/Rtavani counterproposal activity-log path and verify the user-facing result.

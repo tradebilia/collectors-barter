@@ -36,6 +36,8 @@ describe("Trade Room atomicity and retry-safety contracts", () => {
     expect(counteroffer).toContain("ownerId = ${userId} AND isActive = 1 AND status = 'active'");
     expect(counteroffer).toContain("Every requested item must be an active listing owned by the other member");
     expect(counteroffer).toContain("ownerId = ${otherUserId} AND isActive = 1 AND status = 'active'");
+    expect(counteroffer).not.toContain("'acceptance_reset'");
+    expect(counteroffer).toContain("if (!termsChanged)");
   });
 
   it("serializes mutual acceptance and treats a completed retry as safe", () => {

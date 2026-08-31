@@ -45,7 +45,8 @@ describe("fourth deep-audit P0 regression contract", () => {
     expect(counterproposal).toContain("const termsChanged = offeredItemsChanged || cashTermsChanged");
     expect(counterproposal).toContain("if (termsChanged)");
     expect(counterproposal).toContain("DELETE FROM tradeReceiptConfirmation WHERE proposalId = ${input.proposalId} AND confirmationType = 'accepted'");
-    expect(counterproposal).toContain("'acceptance_reset'");
+    expect(counterproposal).toContain("'proposal_sent', 'Trade terms changed; both members must accept the updated terms.'");
+    expect(counterproposal).not.toContain("'acceptance_reset'");
     expect(counterproposal.indexOf("if (termsChanged)")).toBeLessThan(counterproposal.indexOf("'proposal_sent'"));
   });
 

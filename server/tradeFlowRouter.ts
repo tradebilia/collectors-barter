@@ -541,7 +541,7 @@ export const tradeFlowRouter = router({
             sql`DELETE FROM tradeReceiptConfirmation WHERE proposalId = ${input.proposalId} AND confirmationType = 'accepted'`
           );
           await tx.execute(
-            sql`INSERT INTO tradeActivityLog (proposalId, actorId, actorName, eventType, details, createdAt) VALUES (${input.proposalId}, ${userId}, ${actorName}, 'acceptance_reset', 'Trade terms changed; both members must accept the updated terms.', ${now})`
+            sql`INSERT INTO tradeActivityLog (proposalId, actorId, actorName, eventType, details, createdAt) VALUES (${input.proposalId}, ${userId}, ${actorName}, 'proposal_sent', 'Trade terms changed; both members must accept the updated terms.', ${now})`
           );
         }
         for (const item of [...itemRows, ...requestedItemRows]) {
@@ -553,7 +553,9 @@ export const tradeFlowRouter = router({
         if (input.cashFromRecipient && input.cashFromRecipient > 0) {
           await tx.execute(sql`INSERT INTO tradeActivityLog (proposalId, actorId, actorName, eventType, details, createdAt) VALUES (${input.proposalId}, ${userId}, ${actorName}, 'cash_added', ${`Added $${input.cashFromRecipient} cash`}, ${now})`);
         }
-        await tx.execute(sql`INSERT INTO tradeActivityLog (proposalId, actorId, actorName, eventType, details, createdAt) VALUES (${input.proposalId}, ${userId}, ${actorName}, 'proposal_sent', 'Counter offer submitted', ${now})`);
+        if (!termsChanged) {
+          await tx.execute(sql`INSERT INTO tradeActivityLog (proposalId, actorId, actorName, eventType, details, createdAt) VALUES (${input.proposalId}, ${userId}, ${actorName}, 'proposal_sent', 'Counter offer submitted', ${now})`);
+        }
 
         return { otherUserId, actorName, tradeReferenceNumber: proposal.tradeReferenceNumber };
       });
