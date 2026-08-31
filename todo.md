@@ -1085,3 +1085,7 @@
 - [x] Add safe automatic incoming-proposal detection in an open Trade Room, preserving unsent local edits and offering a clear load-incoming-terms action.
 - [x] Allow the responding member to adjust either side’s cash amount during negotiation while retaining turn-based submission safeguards.
 - [x] Add regression coverage and verify automatic incoming-proposal synchronization plus two-sided cash editing.
+
+- [x] Update counterproposal cash timeline details to distinguish added, adjusted, and removed amounts.
+- [x] Name the affected member side in every cash timeline entry.
+- [x] Add regression coverage and verify the improved cash timeline wording.

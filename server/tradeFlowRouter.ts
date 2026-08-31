@@ -40,6 +40,7 @@ import { buildLegacyTradeTimeline, isMissingTradeActivityLogError } from "./trad
 import { getReviewSubmissionBlocker, resolveTradeContactName } from "./tradeRoomSafeguards";
 import { buildCompletedTradeExchange } from "../shared/completedTradeExchange";
 import { requireMarketplaceApproval } from "./accountApproval";
+import { describeTradeCashChange } from "./tradeCashTimeline";
 
 // ============================================================================
 // HELPER: Check notification preference and get user email
@@ -536,6 +537,7 @@ export const tradeFlowRouter = router({
 
         await createTradeAlert(tx, input.proposalId, otherUserId, 'counterProposal', `A new counter proposal has been submitted for your trade (TR-${proposal.tradeReferenceNumber}).`, now);
         const actorName = await getUserDisplayName(tx, userId);
+        const otherMemberName = await getUserDisplayName(tx, otherUserId);
         if (termsChanged) {
           await tx.execute(
             sql`DELETE FROM tradeReceiptConfirmation WHERE proposalId = ${input.proposalId} AND confirmationType = 'accepted'`
@@ -547,11 +549,17 @@ export const tradeFlowRouter = router({
         for (const item of [...itemRows, ...requestedItemRows]) {
           await tx.execute(sql`INSERT INTO tradeActivityLog (proposalId, actorId, actorName, eventType, details, createdAt) VALUES (${input.proposalId}, ${userId}, ${actorName}, 'item_added', ${`Added: ${item.title}`}, ${now})`);
         }
-        if (input.cashFromProposer && input.cashFromProposer > 0) {
-          await tx.execute(sql`INSERT INTO tradeActivityLog (proposalId, actorId, actorName, eventType, details, createdAt) VALUES (${input.proposalId}, ${userId}, ${actorName}, 'cash_added', ${`Added $${input.cashFromProposer} cash`}, ${now})`);
-        }
-        if (input.cashFromRecipient && input.cashFromRecipient > 0) {
-          await tx.execute(sql`INSERT INTO tradeActivityLog (proposalId, actorId, actorName, eventType, details, createdAt) VALUES (${input.proposalId}, ${userId}, ${actorName}, 'cash_added', ${`Added $${input.cashFromRecipient} cash`}, ${now})`);
+        if (cashTermsChanged) {
+          const requesterName = senderIsRequester ? actorName : otherMemberName;
+          const recipientName = senderIsRequester ? otherMemberName : actorName;
+          const cashTimelineChanges = [
+            describeTradeCashChange(requesterName, Number(proposal.cashFromRequester ?? 0), newCashFromRequester),
+            describeTradeCashChange(recipientName, Number(proposal.cashFromRecipient ?? 0), newCashFromRecipient),
+          ].filter((change): change is NonNullable<typeof change> => change !== null);
+
+          for (const change of cashTimelineChanges) {
+            await tx.execute(sql`INSERT INTO tradeActivityLog (proposalId, actorId, actorName, eventType, details, createdAt) VALUES (${input.proposalId}, ${userId}, ${actorName}, ${change.eventType}, ${change.details}, ${now})`);
+          }
         }
         if (!termsChanged) {
           await tx.execute(sql`INSERT INTO tradeActivityLog (proposalId, actorId, actorName, eventType, details, createdAt) VALUES (${input.proposalId}, ${userId}, ${actorName}, 'proposal_sent', 'Counter offer submitted', ${now})`);
