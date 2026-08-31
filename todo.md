@@ -1098,3 +1098,9 @@
 - [x] Vertically center the printable confirmation exchange arrow between both trade sides.
 - [x] Trace and repair the shipping confirmation failure caused by the `tradePayments` status query.
 - [x] Add regression coverage and verify the corrected printable confirmation and shipping transition.
+
+- [x] Verify the cash-payment send and receipt-confirmation controls required before cash-inclusive trades can enter Shipping.
+- [x] Improve unclear Trade Room guidance or blocked-action messaging for the cash confirmation steps.
+- [x] Support both direct-cash obligations when each trade participant owes cash, including method selection, sent confirmation, and receipt confirmation for each side.
+- [x] Clarify the accepted-stage shipping block with a checklist that names the remaining cash confirmation step or steps.
+- [x] Add regression coverage and verify the safe cash-to-shipping transition.

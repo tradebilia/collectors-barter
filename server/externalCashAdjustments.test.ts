@@ -33,11 +33,12 @@ describe("External cash-adjustment safeguards", () => {
   it("reveals an external identifier only to an accepted-trade payer after payee selection", () => {
     const context = routerSource.slice(routerSource.indexOf("getCashAdjustmentContext:"), routerSource.indexOf("selectCashAdjustmentMethod:", routerSource.indexOf("getCashAdjustmentContext:")));
     expect(context).toContain('proposal.status !== "accepted"');
-    expect(context).toContain('role === "payee"');
+    expect(context).toContain("getPaymentVerificationObligations(proposal)");
+    expect(context).toContain("paymentByPayerId");
     expect(routerSource).toContain("maskExternalPaymentIdentifier");
-    expect(context).toContain("getAvailableExternalPaymentMethods(payee)");
-    expect(context).toContain("role !== \"payer\" || !ownObligation");
-    expect(context).toContain("availableMethods: []");
+    expect(context).toContain("getAvailableExternalPaymentMethods(payeeRows[0] ?? {})");
+    expect(context).toContain('role: obligation.payerId === ctx.user.id ? "payer"');
+    expect(context).toContain("availableMethods: obligation.payeeId === ctx.user.id");
   });
 
   it("requires member-confirmed sent and received statuses instead of claiming provider verification", () => {
@@ -84,7 +85,7 @@ describe("External cash-adjustment safeguards", () => {
     expect(settingsSource).not.toContain('<span>Venmo username</span>');
     expect(settingsSource).not.toContain('<span>Cash App $cashtag</span>');
     expect(settingsSource).not.toContain('<span>Zelle destination</span>');
-    expect(routerSource).toContain("getAvailableExternalPaymentMethods(payee)");
+    expect(routerSource).toContain("getAvailableExternalPaymentMethods(payeeRows[0] ?? {})");
     expect(warRoomSource).toContain("getCashAdjustmentContext");
     expect(warRoomSource).toContain("I sent it");
     expect(warRoomSource).toContain("Confirm receipt");

@@ -122,7 +122,7 @@ import { createPendingEmailHistoryApproval, requireMarketplaceApproval } from ".
 import { getIpqsEmailHistory } from "./ipqs";
 import { createProviderOauthState, setProviderOauthStateCookie } from "./_core/providerOauthState";
 import { getEtsyAuthUrl, createEtsyPkceVerifier } from "./_core/etsy";
-import { getPaymentVerificationObligation, isAuthorizedPaymentVerification } from "./paymentAuthorization";
+import { getPaymentVerificationObligation, getPaymentVerificationObligations, isAuthorizedPaymentVerification } from "./paymentAuthorization";
 import { EXTERNAL_PAYMENT_METHODS, type ExternalPaymentMethod, getAvailableExternalPaymentMethods, getExternalPaymentIdentifier, getExternalPaymentMethodLabel, maskExternalPaymentIdentifier } from "./externalPaymentMethods";
 import { billingRouter, membershipRouter } from "./membership";
 import { listHeartbeatJobs } from "./_core/heartbeat";
@@ -4160,36 +4160,33 @@ export const appRouter = router({
         const proposal = proposalRows[0];
         if (!proposal) throw new TRPCError({ code: "NOT_FOUND", message: "Trade proposal not found." });
         if (proposal.requesterId !== ctx.user.id && proposal.recipientId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN", message: "Cash adjustment details are limited to trade participants." });
-        if (proposal.status !== "accepted") return { role: "not_available" as const, payment: null, availableMethods: [] as Array<{ method: ExternalPaymentMethod; label: string; identifier: string }> };
+        if (proposal.status !== "accepted") return { obligations: [] as Array<{ payerId: number; payeeId: number; amount: number; role: "payer" | "payee"; payment: null; availableMethods: Array<{ method: ExternalPaymentMethod; label: string; identifier: string }> }> };
 
-        const ownObligation = getPaymentVerificationObligation(proposal, ctx.user.id);
-        const otherUserId = ctx.user.id === proposal.requesterId ? proposal.recipientId : proposal.requesterId;
-        const otherObligation = getPaymentVerificationObligation(proposal, otherUserId);
-        const role = ownObligation ? "payer" as const : otherObligation ? "payee" as const : "not_required" as const;
-        const paymentRows = await db.select().from(tradePayments).where(and(eq(tradePayments.proposalId, input.proposalId), eq(tradePayments.payerId, ownObligation?.payerId ?? otherObligation?.payerId ?? -1))).limit(1);
-        const payment = paymentRows[0] ?? null;
+        const obligations = getPaymentVerificationObligations(proposal);
+        const paymentRows = obligations.length
+          ? await db.select().from(tradePayments).where(and(eq(tradePayments.proposalId, input.proposalId), inArray(tradePayments.payerId, obligations.map((obligation) => obligation.payerId))))
+          : [];
+        const paymentByPayerId = new Map(paymentRows.map((payment) => [payment.payerId, payment]));
+        const memberReceivesCash = obligations.some((obligation) => obligation.payeeId === ctx.user.id);
+        const payeeRows = memberReceivesCash
+          ? await db.select({
+              paypalEmail: users.paypalEmail,
+              venmoUsername: users.venmoUsername,
+              cashAppCashtag: users.cashAppCashtag,
+              zelleEmail: users.zelleEmail,
+              zellePhone: users.zellePhone,
+            }).from(users).where(eq(users.id, ctx.user.id)).limit(1)
+          : [];
+        const availableMethods = memberReceivesCash ? getAvailableExternalPaymentMethods(payeeRows[0] ?? {}) : [];
 
-        if (role === "payee" && otherObligation) {
-          const payeeRows = await db.select({
-            paypalEmail: users.paypalEmail,
-            venmoUsername: users.venmoUsername,
-            cashAppCashtag: users.cashAppCashtag,
-            zelleEmail: users.zelleEmail,
-            zellePhone: users.zellePhone,
-          }).from(users).where(eq(users.id, ctx.user.id)).limit(1);
-          const payee = payeeRows[0] ?? {};
-          const availableMethods = getAvailableExternalPaymentMethods(payee);
-          return { role, amount: otherObligation.amount, payment, availableMethods };
-        }
-
-        if (role !== "payer" || !ownObligation) return {
-          role,
-          payment,
-          availableMethods: [] as Array<{ method: ExternalPaymentMethod; label: string; identifier: string }>,
-          amount: null,
+        return {
+          obligations: obligations.map((obligation) => ({
+            ...obligation,
+            role: obligation.payerId === ctx.user.id ? "payer" as const : "payee" as const,
+            payment: paymentByPayerId.get(obligation.payerId) ?? null,
+            availableMethods: obligation.payeeId === ctx.user.id ? availableMethods : [] as Array<{ method: ExternalPaymentMethod; label: string; identifier: string }>,
+          })),
         };
-
-        return { role, amount: ownObligation.amount, payment, availableMethods: [] as Array<{ method: ExternalPaymentMethod; label: string; identifier: string }> };
       }),
 
     selectCashAdjustmentMethod: protectedProcedure
@@ -4272,11 +4269,11 @@ export const appRouter = router({
       }),
 
     openCashAdjustmentDispute: protectedProcedure
-      .input(z.object({ proposalId: z.number().int().positive(), reason: z.string().trim().min(5).max(500) }))
+      .input(z.object({ proposalId: z.number().int().positive(), payerId: z.number().int().positive(), reason: z.string().trim().min(5).max(500) }))
       .mutation(async ({ ctx, input }) => {
         const db = await requireDb();
         const paymentRows = await db.select({ id: tradePayments.id, payerId: tradePayments.payerId, payeeId: tradePayments.payeeId, status: tradePayments.status, paymentMethod: tradePayments.paymentMethod })
-          .from(tradePayments).where(eq(tradePayments.proposalId, input.proposalId)).limit(1);
+          .from(tradePayments).where(and(eq(tradePayments.proposalId, input.proposalId), eq(tradePayments.payerId, input.payerId))).limit(1);
         const payment = paymentRows[0];
         if (!payment || (payment.payerId !== ctx.user.id && payment.payeeId !== ctx.user.id)) throw new TRPCError({ code: "FORBIDDEN", message: "Only a trade participant may open a cash-adjustment dispute." });
         const now = mysqlNow();

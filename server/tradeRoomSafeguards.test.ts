@@ -36,6 +36,14 @@ describe("Trade Room safeguards", () => {
     expect(warRoomSource).toContain("myCash > 0 ? 'Adjust Cash' : 'Add Cash'");
     expect(warRoomSource).toContain("theirCash > 0 ? 'Adjust Cash' : 'Add Cash'");
   });
+
+  it("renders every accepted-trade cash obligation separately before shipping", () => {
+    expect(warRoomSource).toContain("const obligations = (cashAdjustmentContextQuery.data?.obligations ?? [])");
+    expect(warRoomSource).toContain("Before Shipping");
+    expect(warRoomSource).toContain("Shipping unlocks after every cash amount is member-confirmed received.");
+    expect(warRoomSource).toContain("transactionReferenceByPayer");
+    expect(warRoomSource).toContain("payerId: context.payerId");
+  });
   it("rejects review resubmission while allowing a first completed-trade review", () => {
     expect(getReviewSubmissionBlocker({ isParticipant: true, tradeStatus: "completed", alreadyReviewed: false })).toBeNull();
     expect(getReviewSubmissionBlocker({ isParticipant: true, tradeStatus: "completed", alreadyReviewed: true })).toBe("already-reviewed");

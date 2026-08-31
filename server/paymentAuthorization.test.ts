@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getPaymentVerificationObligation, isAuthorizedPaymentVerification } from "./paymentAuthorization";
+import { getPaymentVerificationObligation, getPaymentVerificationObligations, isAuthorizedPaymentVerification } from "./paymentAuthorization";
 
 describe("payment verification authorization", () => {
   const proposal = { requesterId: 10, recipientId: 20 };
@@ -26,5 +26,12 @@ describe("payment verification authorization", () => {
     expect(getPaymentVerificationObligation({ requesterId: 10, recipientId: 20, status: "shipping", cashFromRequester: "10", cashFromRecipient: "0" }, 10)).toBeNull();
     expect(getPaymentVerificationObligation({ requesterId: 10, recipientId: 20, status: "accepted", cashFromRequester: "not-a-number", cashFromRecipient: "0" }, 10)).toBeNull();
     expect(getPaymentVerificationObligation({ requesterId: 10, recipientId: 20, status: "accepted", cashFromRequester: "10", cashFromRecipient: "0" }, 99)).toBeNull();
+  });
+
+  it("derives both direct-cash obligations when each accepted-trade participant owes cash", () => {
+    expect(getPaymentVerificationObligations({ requesterId: 10, recipientId: 20, status: "accepted", cashFromRequester: "270", cashFromRecipient: "25" })).toEqual([
+      { payerId: 10, payeeId: 20, amount: 270 },
+      { payerId: 20, payeeId: 10, amount: 25 },
+    ]);
   });
 });

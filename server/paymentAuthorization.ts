@@ -37,3 +37,17 @@ export function getPaymentVerificationObligation(
 
   return { payerId, payeeId, amount };
 }
+
+/**
+ * Derives every direct-cash obligation on an accepted trade. A trade can have
+ * one obligation or, when both members add cash, one obligation in each
+ * direction. Amounts and participants remain derived from persisted terms.
+ */
+export function getPaymentVerificationObligations(
+  proposal: PaymentProposalObligation,
+): Array<{ payerId: number; payeeId: number; amount: number }> {
+  return [
+    getPaymentVerificationObligation(proposal, proposal.requesterId),
+    getPaymentVerificationObligation(proposal, proposal.recipientId),
+  ].filter((obligation): obligation is { payerId: number; payeeId: number; amount: number } => obligation !== null);
+}
