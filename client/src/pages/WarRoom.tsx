@@ -19,6 +19,7 @@ import { buildUspsTrackingUrl } from "@shared/uspsTrackingLink";
 import { formatItemValue, formatWholeDollar } from "@/lib/tradebilia";
 import { buildTradeProposalItemPayload } from "@/lib/tradeProposalItems";
 import { getTradeProposalRevision, isIncomingProposalRevision } from "@/lib/tradeRoomSync";
+import { getLockedShipmentItems } from "@/lib/shippingItems";
 
 type TradeStage = 'proposed' | 'negotiating' | 'accepted' | 'shipping' | 'shipped' | 'completed' | 'disputed';
 
@@ -994,7 +995,11 @@ export default function WarRoom() {
 
                 {/* ── SHIPPING STAGE: Focused two-column tracking layout ── */}
                 {currentStage === 'shipping' && (() => {
-                  const myShippingItems = allItems.filter((item: any) => item.ownerId === myUserId);
+                  const { myItems: myShippingItems, theirItems: theirShippingItems } = getLockedShipmentItems({
+                    requestedListing,
+                    offeredListings: trade?.offeredListings || [],
+                    viewerUserId: myUserId,
+                  });
                   const hasNewTracking = trackingInputs.some(t => t.trackingNumber.trim().length > 0);
                   return (
                     <div className="bg-[#16213e] border border-orange-500/40 rounded-xl shadow-[0_0_30px_rgba(249,115,22,0.1)] overflow-hidden">
@@ -1024,6 +1029,11 @@ export default function WarRoom() {
                             <p className="text-blue-400 text-xs font-bold uppercase tracking-wide">You — {myDisplayName}</p>
                             {myTracking.length > 0 && <span className="ml-auto text-green-400 text-xs font-bold">✓ Shipped</span>}
                           </div>
+
+                          {myTracking.length > 0 && <div data-testid="shipping-my-locked-items" className="mb-3 space-y-1.5 rounded-lg border border-blue-500/20 bg-blue-950/10 p-2.5">
+                            <p className="text-[10px] font-bold uppercase tracking-wide text-blue-300">Items you are sending</p>
+                            {myShippingItems.map((item: any) => <p key={item.id} className="text-xs text-gray-200">{item.title}</p>)}
+                          </div>}
 
                           {myTracking.length > 0 ? (
                             // Already submitted — show submitted tracking
@@ -1104,6 +1114,14 @@ export default function WarRoom() {
                             {theirAvatarUrl ? <TradeRoomAvatar src={theirAvatarUrl} alt="" className="h-6 w-6 rounded-full bg-slate-800" /> : <div className="w-6 h-6 rounded-full bg-gray-600 flex items-center justify-center text-white text-[10px] font-bold">{theirInitial}</div>}
                             <p className="text-gray-300 text-xs font-bold uppercase tracking-wide">{theirDisplayName}</p>
                             {theirTracking.length > 0 && <span className="ml-auto text-green-400 text-xs font-bold">✓ Shipped</span>}
+                          </div>
+
+                          <div data-testid="shipping-counterparty-locked-items" className="mb-3 space-y-1.5 rounded-lg border border-gray-700 bg-[#0f0f1a] p-2.5">
+                            <p className="text-[10px] font-bold uppercase tracking-wide text-gray-400">Items {theirDisplayName} is sending</p>
+                            {theirShippingItems.length > 0 ? theirShippingItems.map((item: any) => {
+                              const itemTracking = theirTracking.find((tracking: any) => tracking.listingId === item.id);
+                              return <div key={item.id} className="flex items-center justify-between gap-2 text-xs"><span className="min-w-0 truncate text-gray-200">{item.title}</span><span className={itemTracking ? "shrink-0 text-green-400" : "shrink-0 text-gray-500"}>{itemTracking ? "Tracking submitted" : "Awaiting tracking"}</span></div>;
+                            }) : <p className="text-xs italic text-gray-600">No locked items recorded for this side.</p>}
                           </div>
 
                           {theirTracking.length > 0 ? (

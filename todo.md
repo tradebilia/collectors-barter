@@ -1119,3 +1119,9 @@
 - [x] Add regression coverage and verify the repaired Shipping payment-context request before checkpointing.
 
 - [x] Add the missing nullable `verificationResult` column to the secured Trade Payments table after explicit approval, then verify the live Shipping payment-context query.
+
+- [x] Verify read-only whether the current Admin/Rtavani trade contains all intended Administrator-owned items and explain any recorded difference.
+
+- [x] Repair Shipping-stage item grouping so every locked Administrator-owned item appears to Rtavani and every Rtavani-owned item appears to Administrator.
+- [x] Verify tracking forms remain limited to the current member’s own complete set of outgoing trade items.
+- [x] Add regression coverage for the complete two-sided Shipping item display and owner-specific tracking lists.
