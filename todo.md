@@ -1162,5 +1162,5 @@
 - [x] Keep payment destinations private from public pages, directory cards, notification previews, activity text, review, and print receipt; accurately describe methods as member-provided rather than platform-verified.
 - [x] Add focused regression coverage and TypeScript/build/whitespace validation for Profile, Account Setup, two-party cash, cash-only, and late-stage Trade Room flows. Unauthenticated visual capture confirmed the access gate; an authenticated two-member manual test remains required.
 - [ ] Perform an authenticated two-member manual test for item-only, cash-only, and item-plus-cash exchanges before treating the redesigned flow as production-ready.
-- [ ] Push the verified direct-cash workflow commit to a safe dedicated branch in the canonical Tradebilia GitHub repository for source backup; do not overwrite its divergent main branch.
+- [x] Push the verified direct-cash workflow commit to a safe dedicated branch in the canonical Tradebilia GitHub repository for source backup; do not overwrite its divergent main branch. Pushed commit 9bd0073 to `manus/direct-cash-workflow-20260831`.
 - [ ] Save the updated managed WebDev version so Rich can perform the authenticated two-member test.
