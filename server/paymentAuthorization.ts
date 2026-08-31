@@ -20,14 +20,15 @@ export function isAuthorizedPaymentVerification(
 }
 
 /**
- * Derives the only allowed direct-payment obligation from an accepted trade.
+ * Derives the only allowed direct-payment obligation from a trade in Review or
+ * Shipping. Direct cash settlement is completed during the Shipping stage.
  * Caller input must never select the recipient or amount.
  */
 export function getPaymentVerificationObligation(
   proposal: PaymentProposalObligation,
   payerId: number,
 ): { payerId: number; payeeId: number; amount: number } | null {
-  if (proposal.status !== "accepted") return null;
+  if (proposal.status !== "accepted" && proposal.status !== "shipping") return null;
   if (payerId !== proposal.requesterId && payerId !== proposal.recipientId) return null;
 
   const payeeId = payerId === proposal.requesterId ? proposal.recipientId : proposal.requesterId;
@@ -39,7 +40,7 @@ export function getPaymentVerificationObligation(
 }
 
 /**
- * Derives every direct-cash obligation on an accepted trade. A trade can have
+ * Derives every direct-cash obligation on a Review or Shipping trade. A trade can have
  * one obligation or, when both members add cash, one obligation in each
  * direction. Amounts and participants remain derived from persisted terms.
  */

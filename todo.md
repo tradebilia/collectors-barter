@@ -1108,3 +1108,8 @@
 - [x] Keep Step 3 Review limited to the final item and cash terms, without direct cash settlement controls.
 - [x] Move direct cash settlement cards and their before-shipping checklist into Step 4 Shipping.
 - [x] Keep Step 5 Confirm Receipt focused on physical-item receipt and update stage regressions accordingly.
+
+- [x] Move Trade Room receipt, report, and dispute actions into a consistent bottom action area beginning with Step 3.
+- [x] Repair Step 4 tracking validation so each member can submit tracking for the listings they are actually sending.
+- [x] Repair the Step 4 cash-obligation context so payment cards load instead of remaining on the loading message.
+- [x] Add regression coverage and verify the revised action area, tracking submission, and payment-step loading.

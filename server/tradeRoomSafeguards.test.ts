@@ -44,6 +44,21 @@ describe("Trade Room safeguards", () => {
     expect(warRoomSource).toContain("transactionReferenceByPayer");
     expect(warRoomSource).toContain("payerId: context.payerId");
   });
+
+  it("uses owner-derived tracking items and distinguishes payment loading from a cash-free trade", () => {
+    expect(warRoomSource).toContain("const myShippingItems = allItems.filter((item: any) => item.ownerId === myUserId)");
+    expect(warRoomSource).toContain("cashAdjustmentContextQuery.isLoading");
+    expect(warRoomSource).toContain("cashAdjustmentContextQuery.isError");
+    expect(warRoomSource).toContain("No direct cash settlement is required for this trade.");
+  });
+
+  it("places receipt, report, and dispute actions in the sticky footer from Review onward", () => {
+    const footer = warRoomSource.slice(warRoomSource.indexOf("Sticky Footer Action Bar"), warRoomSource.indexOf("{/* MODALS */}"));
+    expect(footer).toContain('aria-label="Trade documents and support actions"');
+    expect(footer).toContain("Download Trade Receipt (PDF)");
+    expect(footer).toContain("Report a Trade Issue");
+    expect(footer).toContain("Request Dispute Review");
+  });
   it("rejects review resubmission while allowing a first completed-trade review", () => {
     expect(getReviewSubmissionBlocker({ isParticipant: true, tradeStatus: "completed", alreadyReviewed: false })).toBeNull();
     expect(getReviewSubmissionBlocker({ isParticipant: true, tradeStatus: "completed", alreadyReviewed: true })).toBe("already-reviewed");

@@ -838,12 +838,14 @@ export const tradeFlowRouter = router({
         throw new TRPCError({ code: 'BAD_REQUEST', message: 'Both members must complete Review before tracking can be submitted.' });
       }
 
-      const expectedListingIds = proposal.requesterId === userId
-        ? [proposal.requestedListingId]
-        : (await db.select({ listingId: tradeProposalItems.offeredListingId })
-          .from(tradeProposalItems)
-          .where(eq(tradeProposalItems.proposalId, input.proposalId)))
-          .map((item) => item.listingId);
+			const proposalItemRows = await db.select({ listingId: tradeProposalItems.offeredListingId })
+				.from(tradeProposalItems)
+				.where(eq(tradeProposalItems.proposalId, input.proposalId));
+			const tradeListingIds = [...new Set([proposal.requestedListingId, ...proposalItemRows.map((item) => item.listingId)].filter((listingId): listingId is number => Number.isInteger(listingId)))];
+			const tradeListings = tradeListingIds.length
+				? await db.select({ id: listings.id, ownerId: listings.ownerId }).from(listings).where(inArray(listings.id, tradeListingIds))
+				: [];
+			const expectedListingIds = tradeListings.filter((listing) => listing.ownerId === userId).map((listing) => listing.id);
       const submittedListingIds = input.trackingNumbers.map((tracking) => tracking.listingId);
       if (new Set(submittedListingIds).size !== submittedListingIds.length || submittedListingIds.some((listingId) => !expectedListingIds.includes(listingId))) {
         throw new TRPCError({ code: 'BAD_REQUEST', message: 'Tracking can only be submitted once for each item you are sending in this trade.' });

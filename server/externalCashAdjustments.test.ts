@@ -30,9 +30,9 @@ describe("External cash-adjustment safeguards", () => {
     expect(routerSource).toContain("Payee changed a direct-payment identifier");
   });
 
-  it("reveals an external identifier only to an accepted-trade payer after payee selection", () => {
+  it("reveals an external identifier only to a Review- or Shipping-stage payer after payee selection", () => {
     const context = routerSource.slice(routerSource.indexOf("getCashAdjustmentContext:"), routerSource.indexOf("selectCashAdjustmentMethod:", routerSource.indexOf("getCashAdjustmentContext:")));
-    expect(context).toContain('proposal.status !== "accepted"');
+    expect(context).toContain('proposal.status !== "accepted" && proposal.status !== "shipping"');
     expect(context).toContain("getPaymentVerificationObligations(proposal)");
     expect(context).toContain("paymentByPayerId");
     expect(routerSource).toContain("maskExternalPaymentIdentifier");

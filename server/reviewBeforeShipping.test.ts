@@ -36,6 +36,12 @@ describe("Review-before-Shipping trade lifecycle", () => {
     expect(cashReceipt).toContain("proposal?.status === \"shipping\" && cashSettlementComplete && bothMembersShipped");
   });
 
+  it("derives tracking eligibility from persisted item ownership rather than proposal-side assumptions", () => {
+    const tracking = source.slice(source.indexOf("submitTrackingNumbers:"), source.indexOf("confirmItemsReceived:", source.indexOf("submitTrackingNumbers:")));
+    expect(tracking).toContain("const tradeListings = tradeListingIds.length");
+    expect(tracking).toContain("tradeListings.filter((listing) => listing.ownerId === userId)");
+  });
+
   it("maps payment payer and payee fields to the established live database columns", () => {
     expect(schemaSource).toContain('payerId: int("payerUserId")');
     expect(schemaSource).toContain('payeeId: int("payeeUserId")');

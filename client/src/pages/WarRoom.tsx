@@ -335,9 +335,13 @@ export default function WarRoom() {
   // External cash-adjustment step. Identifiers are returned only to accepted-trade participants who owe cash.
   const cashAdjustmentContextQuery = trpc.payment.getCashAdjustmentContext.useQuery(
     { proposalId },
-    { enabled: proposalId > 0 && !adminViewRequested }
+    { enabled: proposalId > 0 && !adminViewRequested, refetchInterval: 10000, refetchOnWindowFocus: true }
   );
-  const invalidateCashAdjustment = () => cashAdjustmentContextQuery.refetch();
+  const invalidateCashAdjustment = () => {
+    void cashAdjustmentContextQuery.refetch();
+    void utils.tradeFlow.getTradeDetails.invalidate({ proposalId });
+    void utils.tradeFlow.getTimeline.invalidate({ proposalId });
+  };
   const selectCashAdjustmentMethodMutation = trpc.payment.selectCashAdjustmentMethod.useMutation({ onSuccess: () => { toast.success('Payment method selected for this trade.'); invalidateCashAdjustment(); }, onError: (err) => toast.error(err.message) });
   const markCashAdjustmentSentMutation = trpc.payment.markCashAdjustmentSent.useMutation({ onSuccess: () => { toast.success('Marked as sent. Your trade partner must confirm receipt.'); invalidateCashAdjustment(); }, onError: (err) => toast.error(err.message) });
   const confirmCashAdjustmentReceivedMutation = trpc.payment.confirmCashAdjustmentReceived.useMutation({ onSuccess: () => { toast.success('Receipt confirmed.'); invalidateCashAdjustment(); }, onError: (err) => toast.error(err.message) });
@@ -990,7 +994,7 @@ export default function WarRoom() {
 
                 {/* ── SHIPPING STAGE: Focused two-column tracking layout ── */}
                 {currentStage === 'shipping' && (() => {
-                  const myShippingItems = allItems.filter((item: any) => item.ownerId === myUserId || (isRequester ? false : item.id === requestedListing?.id));
+                  const myShippingItems = allItems.filter((item: any) => item.ownerId === myUserId);
                   const hasNewTracking = trackingInputs.some(t => t.trackingNumber.trim().length > 0);
                   return (
                     <div className="bg-[#16213e] border border-orange-500/40 rounded-xl shadow-[0_0_30px_rgba(249,115,22,0.1)] overflow-hidden">
@@ -1160,41 +1164,6 @@ export default function WarRoom() {
                     </div>
                   );
                 })()}
-
-                {receiptAvailable && (
-                  <section
-                    aria-label="Trade documents and support actions"
-                    className="relative z-10 flex w-full flex-none flex-wrap items-center gap-2 rounded-xl border border-blue-500/15 bg-[#0f0f1a]/60 p-2 sm:p-3"
-                  >
-                    <button
-                      type="button"
-                      onClick={downloadCurrentReceipt}
-                      className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-blue-500/40 bg-blue-900/20 px-3 py-2 text-xs font-semibold text-blue-200 transition hover:bg-blue-900/40 sm:w-auto"
-                    >
-                      <span aria-hidden="true">↓</span> Download Trade Receipt (PDF)
-                    </button>
-                    {canReportTradeIssue && (
-                      <>
-                        <button
-                          type="button"
-                          onClick={openTradeIssueReport}
-                          className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-amber-400/35 bg-amber-500/10 px-3 py-2 text-xs font-semibold text-amber-100 transition hover:bg-amber-500/20 sm:w-auto"
-                        >
-                          <span aria-hidden="true">!</span> Report a Trade Issue
-                        </button>
-                        {canRequestDisputeReview && (
-                          <button
-                            type="button"
-                            onClick={() => setShowDisputeModal(true)}
-                            className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-red-400/45 bg-red-500/10 px-3 py-2 text-xs font-semibold text-red-100 transition hover:bg-red-500/20 sm:w-auto"
-                          >
-                            <span aria-hidden="true">⚠</span> Request Dispute Review
-                          </button>
-                        )}
-                      </>
-                    )}
-                  </section>
-                )}
 
                 {/* ── SHIPPED / COMPLETED: Compact tracking summary + receipt confirmation ── */}
                 {(currentStage === 'shipped' || currentStage === 'completed') && (
@@ -2086,7 +2055,8 @@ export default function WarRoom() {
 
       {/* Sticky Footer Action Bar */}
       <div className="sticky bottom-0 z-30 bg-[#0f0f1a] border-t border-gray-700 px-6 py-4">
-        <div className="flex items-center justify-center gap-4">
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-wrap items-center justify-center gap-4">
 
           {/* Stage 1: Propose — only Decline + Send Proposal */}
           {currentStage === 'proposed' && (
@@ -2177,7 +2147,9 @@ export default function WarRoom() {
                 return <div className="mb-3 flex w-full flex-col gap-3">
                   <div className="flex items-start gap-2 rounded-lg border border-amber-600/50 bg-amber-900/30 px-4 py-2.5"><span className="mt-0.5 text-base text-amber-400">⚠️</span><p className="text-xs leading-relaxed text-amber-200"><strong>Tradebilia does not process payments.</strong> PayPal, Venmo, Cash App, and Zelle transfers are made directly between members. Tradebilia does not hold, insure, refund, or guarantee direct payments.</p></div>
                   <div className="rounded-lg border border-slate-600 bg-slate-950/40 px-4 py-3 text-xs text-slate-200"><p className="font-bold text-white">Cash Settlement During Shipping</p><ul className="mt-1 list-disc space-y-1 pl-4 text-slate-300">{obligations.map((obligation) => { const status = obligation.payment?.status ?? 'pending'; const direction = obligation.role === 'payer' ? `Send ${formatWholeDollar(obligation.amount)} to ${theirDisplayName}` : `Receive ${formatWholeDollar(obligation.amount)} from ${theirDisplayName}`; const step = status === 'received' || status === 'verified' ? 'Complete' : status === 'sent' ? `Waiting for ${obligation.role === 'payer' ? theirDisplayName : 'you'} to confirm receipt` : status === 'method_selected' ? obligation.role === 'payer' ? 'Mark payment sent after transferring funds' : `Waiting for ${theirDisplayName} to send payment` : obligation.role === 'payee' ? 'Choose a payment destination' : `Waiting for ${theirDisplayName} to choose a payment destination`; return <li key={obligation.payerId}><span className="font-medium text-white">{direction}:</span> {step}</li>; })}</ul>{pendingObligations.length > 0 && <p className="mt-2 text-amber-200">Complete each cash confirmation during Shipping before the trade moves to item receipt confirmation.</p>}</div>
-                  {obligations.length === 0 && <p className="rounded-lg border border-slate-600 bg-slate-950/40 px-4 py-3 text-xs text-slate-300">Loading the payment steps for this accepted trade…</p>}
+                  {cashAdjustmentContextQuery.isLoading && <p className="rounded-lg border border-slate-600 bg-slate-950/40 px-4 py-3 text-xs text-slate-300">Loading payment steps…</p>}
+                  {cashAdjustmentContextQuery.isError && <p className="rounded-lg border border-red-600/40 bg-red-900/20 px-4 py-3 text-xs text-red-200">Payment steps could not be loaded. Please refresh the Trade Room or try again.</p>}
+                  {cashAdjustmentContextQuery.isSuccess && obligations.length === 0 && <p className="rounded-lg border border-slate-600 bg-slate-950/40 px-4 py-3 text-xs text-slate-300">No direct cash settlement is required for this trade.</p>}
                   <div className="grid w-full gap-3 xl:grid-cols-2">{obligations.map((context) => {
                     const payment = context.payment as any;
                     const paymentStatus = payment?.status ?? 'pending';
@@ -2337,7 +2309,14 @@ export default function WarRoom() {
               <span aria-hidden="true">⚠</span> This trade is under administrator dispute review. Trade changes and completion actions are paused.
             </p>
           )}
-
+          </div>
+          {receiptAvailable && (
+            <section aria-label="Trade documents and support actions" className="flex w-full flex-wrap items-center justify-center gap-2 rounded-xl border border-blue-500/15 bg-[#0a0a14] p-2 sm:justify-start sm:p-3">
+              <button type="button" onClick={downloadCurrentReceipt} className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-blue-500/40 bg-blue-900/20 px-3 py-2 text-xs font-semibold text-blue-200 transition hover:bg-blue-900/40 sm:w-auto"><span aria-hidden="true">↓</span> Download Trade Receipt (PDF)</button>
+              {canReportTradeIssue && <button type="button" onClick={openTradeIssueReport} className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-amber-400/35 bg-amber-500/10 px-3 py-2 text-xs font-semibold text-amber-100 transition hover:bg-amber-500/20 sm:w-auto"><span aria-hidden="true">!</span> Report a Trade Issue</button>}
+              {canRequestDisputeReview && <button type="button" onClick={() => setShowDisputeModal(true)} className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-red-400/45 bg-red-500/10 px-3 py-2 text-xs font-semibold text-red-100 transition hover:bg-red-500/20 sm:w-auto"><span aria-hidden="true">⚠</span> Request Dispute Review</button>}
+            </section>
+          )}
         </div>
         <p className="text-center mt-2 text-gray-600 text-xs flex items-center justify-center gap-1.5">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-3.5 h-3.5 text-green-500">

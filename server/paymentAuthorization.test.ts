@@ -21,9 +21,10 @@ describe("payment verification authorization", () => {
     expect(getPaymentVerificationObligation(cashTrade, 20)).toBeNull();
   });
 
-  it("rejects no-cash, non-accepted, malformed, and outsider payment obligations", () => {
+  it("rejects no-cash, pre-Review, malformed, and outsider payment obligations", () => {
     expect(getPaymentVerificationObligation({ requesterId: 10, recipientId: 20, status: "accepted", cashFromRequester: "0", cashFromRecipient: "0" }, 10)).toBeNull();
-    expect(getPaymentVerificationObligation({ requesterId: 10, recipientId: 20, status: "shipping", cashFromRequester: "10", cashFromRecipient: "0" }, 10)).toBeNull();
+    expect(getPaymentVerificationObligation({ requesterId: 10, recipientId: 20, status: "proposed", cashFromRequester: "10", cashFromRecipient: "0" }, 10)).toBeNull();
+    expect(getPaymentVerificationObligation({ requesterId: 10, recipientId: 20, status: "shipping", cashFromRequester: "10", cashFromRecipient: "0" }, 10)).toEqual({ payerId: 10, payeeId: 20, amount: 10 });
     expect(getPaymentVerificationObligation({ requesterId: 10, recipientId: 20, status: "accepted", cashFromRequester: "not-a-number", cashFromRecipient: "0" }, 10)).toBeNull();
     expect(getPaymentVerificationObligation({ requesterId: 10, recipientId: 20, status: "accepted", cashFromRequester: "10", cashFromRecipient: "0" }, 99)).toBeNull();
   });

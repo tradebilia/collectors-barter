@@ -4160,7 +4160,7 @@ export const appRouter = router({
         const proposal = proposalRows[0];
         if (!proposal) throw new TRPCError({ code: "NOT_FOUND", message: "Trade proposal not found." });
         if (proposal.requesterId !== ctx.user.id && proposal.recipientId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN", message: "Cash adjustment details are limited to trade participants." });
-        if (proposal.status !== "accepted") return { obligations: [] as Array<{ payerId: number; payeeId: number; amount: number; role: "payer" | "payee"; payment: null; availableMethods: Array<{ method: ExternalPaymentMethod; label: string; identifier: string }> }> };
+        if (proposal.status !== "accepted" && proposal.status !== "shipping") return { obligations: [] as Array<{ payerId: number; payeeId: number; amount: number; role: "payer" | "payee"; payment: null; availableMethods: Array<{ method: ExternalPaymentMethod; label: string; identifier: string }> }> };
 
         const obligations = getPaymentVerificationObligations(proposal);
         const paymentRows = obligations.length
