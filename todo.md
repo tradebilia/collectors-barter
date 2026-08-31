@@ -1027,3 +1027,9 @@
 - [x] Add intentional vertical space between “Why Buy or Sell” and “When You Can Trade?” while preserving mathematical centering and responsive balance.
 
 - [x] Move the Coming Soon Tradebilia logo slightly upward and enlarge it modestly without overflowing the parchment or colliding with the headline/divider.
+
+- [x] Identify which Resend audience segment receives Tradebilia pre-launch subscribers and recommend a safe segment cleanup action without deleting data.
+
+- [x] Show every connected account verification in the Member Directory verification area, including Etsy, eBay, Facebook, and LinkedIn when connected.
+- [x] Display Verified Merchant as a separate reviewed designation beside the member name rather than mixing it with account verifications.
+- [x] Add regression coverage and visually verify the Member Directory layout across desktop and mobile.

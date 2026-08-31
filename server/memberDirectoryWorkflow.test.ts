@@ -71,6 +71,22 @@ describe("Member Directory discovery workflow", () => {
     expect(directorySource).toContain("reviewed and approved by Tradebilia");
   });
 
+  it("shows all account verifications separately from the reviewed merchant designation", () => {
+    const searchMembersSource = dbSource.slice(dbSource.indexOf("export async function searchMembers"), dbSource.indexOf("export async function toggleListingStatus"));
+    expect(searchMembersSource).toContain("accountVerifications:");
+    expect(searchMembersSource).toContain("ebay: hasEbayPlatformVerification");
+    expect(searchMembersSource).toContain("facebook: Boolean(m.facebookId) || m.facebookVerified === 1");
+    expect(searchMembersSource).toContain("linkedin: Boolean(m.linkedinId)");
+    expect(searchMembersSource).toContain("etsy: getPublicEtsyVerification(m.connectedAccounts).etsyVerified");
+    expect(directorySource).toContain("Account verifications");
+    expect(directorySource).toContain("Verified Merchant");
+    expect(directorySource).toContain("eBay Verified");
+    expect(directorySource).toContain("Facebook Verified");
+    expect(directorySource).toContain("LinkedIn Verified");
+    expect(directorySource).toContain("Etsy Verified");
+    expect(directorySource).toContain("member.isVerifiedMerchant ?");
+  });
+
   it("uses usernames rather than member numbers on directory cards", () => {
     expect(directorySource).toContain("member.username ? `@${member.username}` : \"Tradebilia collector\"");
     expect(directorySource).not.toContain("Member #{member.userId}");
