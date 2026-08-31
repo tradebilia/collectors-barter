@@ -1066,3 +1066,7 @@
 - [x] Rebuild the self-contained email header to match the uploaded Tradebilia logo proportions and wordmark appearance.
 - [x] Ensure “Collectors Trading Exchange” is rendered in white in the email header.
 - [x] Update regression coverage, inspect the asset, and verify the production email and admin preview before checkpointing.
+
+- [x] Reproduce and trace the Trade Room error where Rtavani’s proposal is rejected because an offered item is reported as inactive.
+- [x] Correct item ownership and active-listing state handling without weakening proposal validation or inquiry waiting-state safeguards.
+- [x] Add a two-account regression test and verify the corrected Trade Room workflow.

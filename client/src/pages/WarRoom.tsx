@@ -608,20 +608,18 @@ export default function WarRoom() {
   };
 
   const handleAddItemToTrade = (itemId: number, itemData?: any) => {
+    if (itemData && itemData.ownerId !== myUserId) {
+      toast.error('Only items from your inventory can be offered.');
+      return;
+    }
     if (selectedItemIds.includes(itemId)) {
       toast.error('Item already in trade');
       return;
     }
     setSelectedItemIds(prev => [...prev, itemId]);
-    // Add to pending display immediately so it appears in the trade table
+    // Add to pending display immediately so it appears in the trade table.
     if (itemData) {
-      // Determine which side based on item ownership
-      const isMyItem = itemData.ownerId === myUserId;
-      if (isMyItem) {
-        setPendingMyItems(prev => [...prev.filter(i => i.id !== itemId), itemData]);
-      } else {
-        setPendingTheirItems(prev => [...prev.filter(i => i.id !== itemId), itemData]);
-      }
+      setPendingMyItems(prev => [...prev.filter(i => i.id !== itemId), itemData]);
     }
     toast.success('Item added to trade table!');
   };
@@ -638,14 +636,14 @@ export default function WarRoom() {
   };
 
   const handleUpdateProposal = () => {
-    // Build the full list of ALL item IDs currently on the trade table:
-    // server-persisted offered items (excluding requestedListing which is not an offeredItem)
-    // + newly pending items, minus any items the user removed locally
+    // Submit only listings owned by the acting member. The trade table renders
+    // both sides, but counterparty items are context/requested terms, not items
+    // the acting member is authorized to offer.
     const removedIds = new Set(removedItemIds);
-    const serverItemIds = (trade?.offeredListings || [])
+    const serverItemIds = myOfferedItems
       .map((l: any) => l.id)
       .filter((id: number) => !removedIds.has(id));
-    const pendingItemIds = [...pendingMyItems, ...pendingTheirItems].map(i => i.id);
+    const pendingItemIds = pendingMyItems.map(i => i.id);
     const allItemIds = Array.from(new Set([...serverItemIds, ...pendingItemIds]));
 
     if (allItemIds.length === 0 && !cashPay && !cashReceive && serverMyCash === 0 && serverTheirCash === 0) {
@@ -2299,28 +2297,6 @@ export default function WarRoom() {
           return matchesCat && matchesSearch;
         });
 
-        const toggleItem = (id: number) => {
-          setSelectedInventoryItems(prev =>
-            prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
-          );
-        };
-
-        const handleAddSelected = () => {
-          if (selectedInventoryItems.length === 0) {
-            toast.error('Please select at least one item.');
-            return;
-          }
-          selectedInventoryItems.forEach(id => {
-            // Full item data now includes photos array from backend
-            const itemData = allItems.find((i: any) => i.id === id);
-            handleAddItemToTrade(id, itemData);
-          });
-          setSelectedInventoryItems([]);
-          setIsTheirInventoryOpen(false);
-          setInventorySearch('');
-          setInventoryCategory('All');
-        };
-
         const qvItem = quickViewItemId !== null ? allItems.find((i: any) => i.id === quickViewItemId) : null;
 
         return (
@@ -2340,7 +2316,7 @@ export default function WarRoom() {
                   )}
                   <div>
                     <h2 className="text-white text-lg font-bold">{theirDisplayName}'s Inventory</h2>
-                    <p className="text-gray-400 text-xs mt-0.5">Select items you want, then click "Add To Trade"</p>
+                    <p className="text-gray-400 text-xs mt-0.5">View-only — only items from your inventory can be offered.</p>
                   </div>
                 </div>
                 <button
@@ -2402,21 +2378,6 @@ export default function WarRoom() {
                                 : 'border-gray-700 hover:border-gray-500'
                           }`}
                         >
-                          {/* Checkbox top-right */}
-                          <div className="flex justify-end mb-1">
-                            <div
-                              onClick={(e) => { e.stopPropagation(); toggleItem(item.id); }}
-                              className={`w-5 h-5 rounded border-2 flex items-center justify-center cursor-pointer transition ${
-                                isSelected ? 'bg-blue-600 border-blue-500' : 'border-gray-600 bg-transparent hover:border-gray-400'
-                              }`}
-                            >
-                              {isSelected && (
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-3 h-3 text-white">
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
-                                </svg>
-                              )}
-                            </div>
-                          </div>
                           {/* Image — click to open item detail popup */}
                           <div
                             className="cursor-pointer group/img relative"
@@ -2444,35 +2405,15 @@ export default function WarRoom() {
                 )}
               </div>
 
-              {/* Footer: Add To Trade button */}
-              <div className="px-6 py-4 border-t border-gray-700 flex-shrink-0 flex items-center justify-between bg-[#0f0f1a]">
-                <p className="text-gray-400 text-sm">
-                  {selectedInventoryItems.length > 0
-                    ? <span className="text-blue-400 font-semibold">{selectedInventoryItems.length} item{selectedInventoryItems.length > 1 ? 's' : ''} selected</span>
-                    : 'Click items to select them'}
-                </p>
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => setSelectedInventoryItems([])}
-                    className="px-4 py-2 border border-gray-700 text-gray-400 rounded-lg text-sm hover:bg-gray-800 transition"
-                  >
-                    Clear
-                  </button>
-                  <button
-                    onClick={handleAddSelected}
-                    disabled={selectedInventoryItems.length === 0}
-                    className={`px-8 py-2 rounded-lg text-sm font-bold transition flex items-center gap-2 ${
-                      selectedInventoryItems.length > 0
-                        ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-[0_0_10px_rgba(59,130,246,0.4)]'
-                        : 'bg-gray-700 text-gray-500 cursor-not-allowed'
-                    }`}
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                    </svg>
-                    Add To Trade
-                  </button>
-                </div>
+              {/* Footer: view-only inventory */}
+              <div className="px-6 py-4 border-t border-gray-700 flex-shrink-0 flex items-center justify-end bg-[#0f0f1a]">
+                <button
+                  type="button"
+                  onClick={() => { setIsTheirInventoryOpen(false); setInventorySearch(''); setInventoryCategory('All'); }}
+                  className="px-6 py-2 border border-gray-600 text-gray-200 rounded-lg text-sm font-semibold hover:bg-gray-800 transition"
+                >
+                  Close
+                </button>
               </div>
 
               </div>{/* end main browser */}

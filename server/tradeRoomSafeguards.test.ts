@@ -18,6 +18,15 @@ describe("Trade Room safeguards", () => {
     expect(warRoomSource).toContain("Your proposal is awaiting the other member’s response.");
     expect(warRoomSource).toContain("onClick={() => setShowDeclineModal(true)}");
   });
+  it("submits only the acting member’s own items and keeps counterparty inventory view-only", () => {
+    const theirInventory = warRoomSource.slice(warRoomSource.indexOf("Their Inventory Modal"), warRoomSource.indexOf("Item Detail Popup Modal"));
+    expect(warRoomSource).toContain("const pendingItemIds = pendingMyItems.map(i => i.id);");
+    expect(warRoomSource).not.toContain("const pendingItemIds = [...pendingMyItems, ...pendingTheirItems].map(i => i.id);");
+    expect(warRoomSource).toContain("Only items from your inventory can be offered.");
+    expect(theirInventory).toContain("View-only — only items from your inventory can be offered.");
+    expect(theirInventory).not.toContain("handleAddSelected");
+    expect(theirInventory).not.toContain("Add To Trade");
+  });
   it("rejects review resubmission while allowing a first completed-trade review", () => {
     expect(getReviewSubmissionBlocker({ isParticipant: true, tradeStatus: "completed", alreadyReviewed: false })).toBeNull();
     expect(getReviewSubmissionBlocker({ isParticipant: true, tradeStatus: "completed", alreadyReviewed: true })).toBe("already-reviewed");
