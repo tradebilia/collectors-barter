@@ -1014,3 +1014,5 @@
 - [x] Move the Launching Soon stamp farther left and upward on desktop while keeping it visible and balanced on mobile.
 - [x] Decide whether the launch-update consent checkbox is necessary for the preview signup and preserve compliant opt-in behavior if it remains.
 - [x] Update regression coverage, visually verify both responsive layouts, and save the final signup refinement checkpoint.
+
+- [x] Change the verification highlight wording to “Connect more verified accounts to strengthen user authenticity” and update its regression assertion.

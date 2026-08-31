@@ -39,7 +39,7 @@ describe("Coming Soon experience", () => {
     expect(pageSource).toContain("w-36 rotate-[-2deg] object-contain");
     expect(pageSource).toContain("Trade without fees.");
     expect(pageSource).toContain("No fees are charged to complete a trade.");
-    expect(pageSource).toContain("Connect more verified accounts to strengthen authenticity.");
+    expect(pageSource).toContain("Connect more verified accounts to strengthen user authenticity.");
     expect(pageSource).toContain("Everything in one place.");
     expect(pageSource).toContain("Swap sports cards for comics, toys, games, and more.");
     expect(pageSource).not.toContain("A deliberate place to discover, value, and trade across all ten collector categories.");
