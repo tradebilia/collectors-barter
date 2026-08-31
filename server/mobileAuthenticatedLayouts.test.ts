@@ -19,11 +19,11 @@ describe("authenticated mobile-only responsive layout contracts", () => {
     expect(tradeHub).toContain("lg:col-span-5");
   });
 
-  it("stacks Trade Room panels and retains the desktop rail and eleven-column negotiation workspace", () => {
+  it("stacks Trade Room panels until wide desktop space is available for the rail and eleven-column negotiation workspace", () => {
     const source = read("client/src/pages/WarRoom.tsx");
-    expect(source).toContain("flex min-h-0 flex-1 flex-col overflow-visible lg:flex-row lg:items-stretch lg:overflow-hidden");
+    expect(source).toContain("flex min-h-0 flex-1 flex-col overflow-visible xl:flex-row xl:items-stretch xl:overflow-hidden");
     expect(source).toContain("grid min-h-0 flex-1 grid-cols-1 gap-5 lg:grid-cols-11");
-    expect(source).toContain("min-h-[34rem] w-full flex-shrink-0 flex-col p-4 lg:min-h-0 lg:w-[360px]");
+    expect(source).toContain("min-h-[34rem] w-full flex-shrink-0 flex-col p-4 xl:h-full xl:min-h-0 xl:w-[360px]");
     expect(source).toContain("overflow-x-auto pb-2 lg:pb-0");
   });
 

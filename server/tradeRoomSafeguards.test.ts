@@ -63,7 +63,7 @@ describe("Trade Room safeguards", () => {
     expect(warRoomSource).toContain("Items {theirDisplayName} is sending");
     expect(warRoomSource).toContain("lg:grid-cols-2 lg:divide-x lg:divide-y-0");
     expect(warRoomSource).toContain("myTrackingByListingId");
-    expect(warRoomSource).toContain("lg:h-full lg:min-h-0 lg:w-[360px]");
+    expect(warRoomSource).toContain("xl:h-full xl:min-h-0 xl:w-[360px]");
     expect(warRoomSource).toContain("each required cash payment is marked sent");
     expect(warRoomSource).toContain("pendingCashSteps");
     expect(warRoomSource).toContain("cashAdjustmentContextQuery.isLoading");

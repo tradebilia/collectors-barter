@@ -1166,3 +1166,6 @@
 - [x] Save the updated managed WebDev version so Rich can perform the authenticated two-member test. Checkpoint version 3ef077d8 was saved and automatically published under the current project setting.
 - [x] Make a single proposed item in Trade Room Step 1 use a larger, prominent card while automatically retaining compact cards after additional items are added.
 - [x] Add regression coverage and verify the single-item and multi-item Step 1 proposal layouts without changing the Chat/Timeline dimensions. Focused responsive tests, TypeScript, production build, and whitespace validation passed; authenticated visual testing remains available to Rich.
+- [x] Audit and replace fixed Trade Room sizing that can clip negotiation, fulfillment, actions, or Chat/Timeline content at normal desktop, tablet, mobile, and browser-zoom widths.
+- [x] Add viewport-adaptive height, stacking, and scrolling safeguards that preserve the Trade Room workflow and essential controls without changing their meaning.
+- [x] Add responsive regression coverage and validate the Trade Room at desktop, tablet, and mobile target viewports. Focused Trade Room tests passed (14/14), as did TypeScript, production build, and whitespace validation; the unauthenticated browser check correctly redirected to sign-in.

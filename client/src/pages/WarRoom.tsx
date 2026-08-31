@@ -754,7 +754,7 @@ export default function WarRoom() {
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-[#0f0f1a] flex flex-col overflow-x-hidden lg:h-screen lg:overflow-hidden">
+    <div className="flex min-h-[100dvh] flex-col overflow-x-hidden bg-[#0f0f1a] xl:h-[100dvh] xl:overflow-hidden">
       {/* Top Bar — compact mode (no search) */}
       <TopBar hideSearch />
       {isAdminReadOnly && (
@@ -765,9 +765,9 @@ export default function WarRoom() {
 
       {/* Progress Tracker Header */}
       <header className="border-b border-gray-600 bg-[#16213e] px-4 py-3 lg:px-6">
-        <div className="mx-auto flex max-w-[1600px] flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="mx-auto flex max-w-[1600px] flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
           {/* Left: Trade ID */}
-          <div className="flex min-w-0 items-center gap-3 lg:min-w-[200px]">
+          <div className="flex min-w-0 items-center gap-3 xl:min-w-[200px]">
             <span className="text-gray-400 text-sm">Trade ID:</span>
             <span className="text-white font-mono text-sm font-bold">
               {trade?.proposal?.tradeReferenceNumber || `#TB-${String(proposalId).padStart(5, '0')}`}
@@ -805,7 +805,7 @@ export default function WarRoom() {
           </div>
 
           {/* Right: Leave + Settings */}
-          <div className="flex min-w-0 items-center gap-3 lg:min-w-[200px] lg:justify-end">
+          <div className="flex min-w-0 items-center gap-3 xl:min-w-[200px] xl:justify-end">
             <button
               onClick={() => navigate('/trade-hub')}
               className="px-4 py-2 border border-gray-700 text-gray-300 rounded-lg hover:bg-gray-800 transition text-sm flex items-center gap-2"
@@ -821,10 +821,10 @@ export default function WarRoom() {
       </header>
 
       {/* Main Layout: Trade Table (left) + Chat/Timeline (right) */}
-      <div className="flex min-h-0 flex-1 flex-col overflow-visible lg:flex-row lg:items-stretch lg:overflow-hidden">
+      <div className="flex min-h-0 flex-1 flex-col overflow-visible xl:flex-row xl:items-stretch xl:overflow-hidden">
 
         {/* Center: Trade Table or Post-Acceptance View */}
-        <div className="flex flex-1 flex-col overflow-visible p-4 lg:overflow-y-auto custom-scrollbar">
+        <div className="flex flex-1 flex-col overflow-visible p-4 xl:overflow-y-auto custom-scrollbar">
           {incomingProposalNotice && (
             <div data-testid="incoming-proposal-notice" className="mb-4 flex flex-col gap-3 rounded-xl border border-amber-400/50 bg-amber-500/10 px-4 py-3 text-amber-100 shadow-[0_0_18px_rgba(251,191,36,0.12)] sm:flex-row sm:items-center sm:justify-between">
               <div>
@@ -1944,8 +1944,8 @@ export default function WarRoom() {
         </div>
 
         {/* Right Column: Chat + Timeline as a card */}
-        <div className="flex min-h-[34rem] w-full flex-shrink-0 flex-col p-4 lg:h-full lg:min-h-0 lg:w-[360px]">
-          <div className="bg-[#16213e] border border-gray-600 rounded-xl flex flex-col flex-1 overflow-hidden shadow-xl lg:h-full">
+        <div className="flex min-h-[34rem] w-full flex-shrink-0 flex-col p-4 xl:h-full xl:min-h-0 xl:w-[360px]">
+          <div className="bg-[#16213e] border border-gray-600 rounded-xl flex flex-col flex-1 overflow-hidden shadow-xl xl:h-full">
           {/* Tabs */}
           <div className="flex border-b border-gray-600 rounded-t-xl overflow-hidden">
             <button
@@ -2080,7 +2080,7 @@ export default function WarRoom() {
       </div>
 
       {currentStage === 'negotiating' && (myCash > 0 || theirCash > 0) && (
-        <section className="mx-6 mb-4 rounded-xl border border-blue-500/40 bg-[#16213e] p-4 shadow-xl">
+        <section className="mx-4 mb-4 rounded-xl border border-blue-500/40 bg-[#16213e] p-4 shadow-xl sm:mx-6">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <p className="text-sm font-bold text-white">Cash payment method</p>
@@ -2100,7 +2100,7 @@ export default function WarRoom() {
       )}
 
       {/* Sticky Footer Action Bar */}
-      <div className="sticky bottom-0 z-30 bg-[#0f0f1a] border-t border-gray-700 px-6 py-4">
+      <div className="sticky bottom-0 z-30 border-t border-gray-700 bg-[#0f0f1a] px-3 py-3 sm:px-6 sm:py-4">
         <div className="flex flex-col gap-4">
           <div className="flex flex-wrap items-center justify-center gap-4">
 

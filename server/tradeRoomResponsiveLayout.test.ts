@@ -19,4 +19,12 @@ describe("Trade Room responsive completed-trade layout", () => {
     expect(warRoomSource).toContain('{allItems.length > 0 && <div className="grid grid-cols-1 gap-4 mb-4 lg:grid-cols-2">');
     expect(warRoomSource).toContain('flex flex-col gap-3 sm:flex-row');
   });
+
+  it("uses a fixed-height rail only on wide desktops and otherwise lets the entire workspace scroll naturally", () => {
+    expect(warRoomSource).toContain('min-h-[100dvh] flex-col overflow-x-hidden bg-[#0f0f1a] xl:h-[100dvh] xl:overflow-hidden');
+    expect(warRoomSource).toContain('flex min-h-0 flex-1 flex-col overflow-visible xl:flex-row xl:items-stretch xl:overflow-hidden');
+    expect(warRoomSource).toContain('flex flex-1 flex-col overflow-visible p-4 xl:overflow-y-auto custom-scrollbar');
+    expect(warRoomSource).toContain('flex min-h-[34rem] w-full flex-shrink-0 flex-col p-4 xl:h-full xl:min-h-0 xl:w-[360px]');
+    expect(warRoomSource).toContain('px-3 py-3 sm:px-6 sm:py-4');
+  });
 });
