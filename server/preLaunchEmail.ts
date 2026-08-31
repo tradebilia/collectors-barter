@@ -24,8 +24,7 @@ const RESEND_API_BASE = "https://api.resend.com";
 const PRE_LAUNCH_SEGMENT_NAME = "Tradebilia Pre-Launch Updates";
 const FROM_ADDRESS = "Tradebilia <noreply@tradebilia.com>";
 const SITE_URL = "https://tradebilia.manus.space";
-const EMAIL_LOGO_URL = "https://tradebilia.manus.space/manus-storage/tradebilia_email_spaced_dfb4be7e.svg";
-const EMAIL_BACKGROUND_URL = "https://assets.tradebilia.com/Background_23084d14.jpg";
+const EMAIL_HEADER_URL = "https://tradebilia.manus.space/manus-storage/tradebilia_email_hero_header_4abcf727.png";
 const SEGMENT_ENROLLMENT_CONCURRENCY = 5;
 
 type ResendContact = {
@@ -135,9 +134,9 @@ export function buildPreLaunchEmailHtml(message: string) {
 <body style="margin:0;padding:0;background-color:#f7f4ee;font-family:Arial,sans-serif;">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="#f7f4ee" style="background-color:#f7f4ee;padding:40px 20px;"><tr><td align="center">
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#f7f4ee;border:1px solid #ded6c8;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(15,23,42,.12);">
-      <tr><td style="background-color:#0a0d22;background-image:url('${EMAIL_BACKGROUND_URL}');background-size:cover;background-position:center;background-repeat:no-repeat;padding:28px 16px;text-align:center;"><img src="${EMAIL_LOGO_URL}" alt="Tradebilia" width="520" style="display:block;margin:0 auto;width:100%;max-width:520px;height:auto;"></td></tr>
+      <tr><td style="padding:0;text-align:center;"><img src="${EMAIL_HEADER_URL}" alt="Tradebilia" width="600" style="display:block;margin:0 auto;width:100%;max-width:600px;height:auto;"></td></tr>
       <tr><td style="padding:36px 32px 40px;">${paragraphs}<a href="${SITE_URL}" style="color:#4b1db7;text-decoration:underline;text-underline-offset:3px;font-weight:700;font-size:14px;">Visit Tradebilia</a></td></tr>
-      <tr><td style="background:#f1ece3;padding:20px 32px;text-align:center;border-top:1px solid #ded6c8;"><p style="color:#6b665f;font-size:12px;line-height:1.6;margin:0;">You are receiving this because you opted in for Tradebilia pre-launch updates. <a href="{{{RESEND_UNSUBSCRIBE_URL}}}" style="color:#4b1db7;text-decoration:underline;text-underline-offset:3px;font-weight:700;">Unsubscribe from pre-launch updates</a></p></td></tr>
+      <tr><td style="background:#f1ece3;padding:20px 32px;text-align:center;border-top:1px solid #ded6c8;"><p style="color:#6b665f;font-size:12px;line-height:1.6;margin:0;">You are receiving this because you opted in for Tradebilia pre-launch updates.<br><a href="{{{RESEND_UNSUBSCRIBE_URL}}}" style="display:block;margin-top:8px;color:#4b1db7;text-decoration:underline;text-underline-offset:3px;font-weight:700;">Unsubscribe from pre-launch updates</a></p></td></tr>
     </table>
   </td></tr></table>
 </body></html>`;

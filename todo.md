@@ -1055,3 +1055,7 @@
 - [x] Explain and verify the Resend-managed unsubscribe destination and its effect on future pre-launch mail.
 - [x] Diagnose the API Health alert showing Resend `pre_launch_recipient_list` and determine whether it was a transient or actionable failure.
 - [x] Add regression coverage and verify the corrected email HTML and related admin behavior.
+
+- [x] Create a self-contained email-safe header image with the main-page hero background behind the exact Tradebilia logo.
+- [x] Place “Unsubscribe from pre-launch updates” on its own line in the production email and admin preview.
+- [x] Add regression coverage, verify the asset reaches the sent email, and save the corrected email checkpoint.
