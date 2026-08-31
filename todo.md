@@ -1062,3 +1062,7 @@
 
 - [x] Remove the extra dark overlay from the self-contained email header or reduce it to the minimum needed for logo readability.
 - [x] Compare the brighter asset with the main-page hero, update the production email and admin preview, and verify the result before checkpointing.
+
+- [x] Rebuild the self-contained email header to match the uploaded Tradebilia logo proportions and wordmark appearance.
+- [x] Ensure “Collectors Trading Exchange” is rendered in white in the email header.
+- [x] Update regression coverage, inspect the asset, and verify the production email and admin preview before checkpointing.
