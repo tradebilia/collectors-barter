@@ -11,7 +11,7 @@ describe("Member Directory discovery workflow", () => {
     const searchMembersSource = dbSource.slice(dbSource.indexOf("export async function searchMembers"), dbSource.indexOf("export async function toggleListingStatus"));
     expect(searchMembersSource).toContain("userProfiles.contactState");
     expect(searchMembersSource).toContain("geocodePrivateLocation");
-    expect(searchMembersSource).toContain("members: orderedMembers.map(({ privateLocation, ...member }) => member)");
+    expect(searchMembersSource).toContain("members: orderedMembers.map(({ privateLocation, username: _username, ...member }) => member)");
     expect(directorySource).not.toContain("contactAddress");
     expect(directorySource).toContain("Calculated privately from saved account locations. Addresses are never shown.");
   });
@@ -85,10 +85,21 @@ describe("Member Directory discovery workflow", () => {
     expect(directorySource).toContain("LinkedIn Verified");
     expect(directorySource).toContain("Etsy Verified");
     expect(directorySource).toContain("member.isVerifiedMerchant ?");
+    expect(searchMembersSource).toContain("preferredCategories: userProfiles.preferredCategories");
+    expect(searchMembersSource).toContain("const collectingInterests = preferredCategories.length");
+    expect(directorySource).toContain("Collecting interests");
+    expect(directorySource).toContain("Categories this collector has selected.");
+    expect(directorySource).toContain("member.topCategories.map");
   });
 
-  it("uses usernames rather than member numbers on directory cards", () => {
-    expect(directorySource).toContain("member.username ? `@${member.username}` : \"Tradebilia collector\"");
+  it("does not expose account usernames on directory cards or in the public card payload", () => {
+    const searchMembersSource = dbSource.slice(dbSource.indexOf("export async function searchMembers"), dbSource.indexOf("export async function toggleListingStatus"));
+    expect(directorySource).not.toContain("@${member.username}");
+    expect(directorySource).not.toContain("member.username");
+    expect(searchMembersSource).toContain("username: m.username");
+    expect(searchMembersSource).toContain("username: _username");
+    expect(directorySource).toContain("Find a collector by username");
+    expect(directorySource).toContain("setOpenExactMatch(Boolean(query))");
     expect(directorySource).not.toContain("Member #{member.userId}");
   });
 });

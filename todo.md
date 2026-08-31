@@ -1033,3 +1033,9 @@
 - [x] Show every connected account verification in the Member Directory verification area, including Etsy, eBay, Facebook, and LinkedIn when connected.
 - [x] Display Verified Merchant as a separate reviewed designation beside the member name rather than mixing it with account verifications.
 - [x] Add regression coverage and visually verify the Member Directory layout across desktop and mobile.
+
+- [x] Remove public @username labels from Member Directory cards while preserving intentional username search and profile navigation.
+- [x] Add privacy regression coverage and visually verify the updated directory cards on desktop and mobile.
+
+- [x] Add a clear title explaining that category chips represent each collector’s active collecting interests.
+- [x] Show every available category when a member has all categories selected; reserve “Multi-category collector” for members with no category data.

@@ -252,7 +252,6 @@ export default function MemberSearch() {
                               <h3 className="truncate text-2xl font-semibold text-slate-950">{member.displayName}</h3>
                               {member.isVerifiedMerchant ? <Badge className="inline-flex items-center gap-1 rounded-full bg-emerald-700 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.08em] text-white hover:bg-emerald-700"><Award className="h-3 w-3" aria-hidden="true" />Verified Merchant</Badge> : null}
                             </div>
-                            <p className="mt-1 text-sm font-medium text-slate-500">{member.username ? `@${member.username}` : "Tradebilia collector"}</p>
                             <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-slate-600">
                               <span className="inline-flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{member.regionLabel}</span>
                               {member.distanceMiles !== null ? <span className="inline-flex items-center gap-1 font-medium text-violet-800">{member.distanceMiles} miles away</span> : null}
@@ -277,8 +276,12 @@ export default function MemberSearch() {
                           ) : <p className="mt-1 text-sm text-slate-500">No account verifications</p>}
                         </div>
                       </div>
-                      <div className="mt-4 flex flex-wrap gap-2">
-                        {member.topCategories.length ? member.topCategories.slice(0, 4).map(category => <Badge key={category} variant="secondary" className="rounded-full bg-violet-50 px-3 py-1 text-violet-800">{category.replace(/_/g, " ")}</Badge>) : <span className="text-sm text-slate-500">Multi-category collector</span>}
+                      <div className="mt-4 border-t border-slate-100 pt-4">
+                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Collecting interests</p>
+                        <p className="mt-1 text-xs text-slate-500">Categories this collector has selected.</p>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {member.topCategories.length ? member.topCategories.map(category => <Badge key={category} variant="secondary" className="rounded-full bg-violet-50 px-3 py-1 text-violet-800">{category.replace(/_/g, " ")}</Badge>) : <span className="text-sm text-slate-500">Multi-category collector</span>}
+                        </div>
                       </div>
                     </CardContent>
                   </Card>

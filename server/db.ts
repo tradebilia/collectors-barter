@@ -1570,6 +1570,7 @@ export async function searchMembers(input: {
       contactAddress: userProfiles.contactAddress,
       contactZipCode: userProfiles.contactZipCode,
       contactCountry: userProfiles.contactCountry,
+      preferredCategories: userProfiles.preferredCategories,
       hideInventoryValue: userProfiles.hideInventoryValue,
       profileCreatedAt: userProfiles.createdAt,
       merchantVerified: users.merchantVerified,
@@ -1654,6 +1655,11 @@ export async function searchMembers(input: {
       completedTradeCount,
       reviewCount: rating.reviewCount,
     });
+    const preferredCategories = safeJsonParse<unknown[]>(m.preferredCategories, [])
+      .filter((category): category is (typeof collectibleCategories)[number] => typeof category === "string" && (collectibleCategories as readonly string[]).includes(category));
+    const collectingInterests = preferredCategories.length
+      ? preferredCategories
+      : (topCategoriesMap.get(m.userId) ?? []);
     return {
       userId: m.userId,
       displayName: m.displayName,
@@ -1671,7 +1677,7 @@ export async function searchMembers(input: {
       // inferred through directory value filters or sorting.
       activeListingValue: m.hideInventoryValue === 1 ? null : (listingValueMap.get(m.userId) ?? 0),
       completedTradeCount,
-      topCategories: topCategoriesMap.get(m.userId) ?? [],
+      topCategories: collectingInterests,
       firstListingId: firstListingMap.get(m.userId) ?? null,
       joinedAt: new Date(m.profileCreatedAt).getTime(),
       isVerifiedMerchant: m.merchantVerified === 1,
@@ -1773,13 +1779,13 @@ export async function searchMembers(input: {
   const exactMatchMemberId = trimmedQuery ? orderedMembers.find(isExactMatch)?.userId ?? null : null;
   
   return {
-    members: orderedMembers.map(({ privateLocation, ...member }) => member),
+    members: orderedMembers.map(({ privateLocation, username: _username, ...member }) => member),
     rankings: {
-      topRated: topRated.map(({ privateLocation, ...member }) => member),
-      mostActive: mostActive.map(({ privateLocation, ...member }) => member),
+      topRated: topRated.map(({ privateLocation, username: _username, ...member }) => member),
+      mostActive: mostActive.map(({ privateLocation, username: _username, ...member }) => member),
     },
-    topRated: topRated.map(({ privateLocation, ...member }) => member),
-    mostActive: mostActive.map(({ privateLocation, ...member }) => member),
+    topRated: topRated.map(({ privateLocation, username: _username, ...member }) => member),
+    mostActive: mostActive.map(({ privateLocation, username: _username, ...member }) => member),
     regions: uniqueRegions,
     searchedQuery: trimmedQuery,
     exactMatchMemberId,
