@@ -29,4 +29,18 @@ describe("locked Shipping item grouping", () => {
 
     expect(result.allItems.map((item) => item.id)).toEqual([1170010, 690002]);
   });
+
+  it("groups locked items correctly when a database response serializes owner IDs as strings", () => {
+    const result = getLockedShipmentItems({
+      viewerUserId: 60003,
+      requestedListing: { id: 1170010, ownerId: "60003" },
+      offeredListings: [
+        { id: 690002, ownerId: "30002" },
+        { id: 690006, ownerId: "30002" },
+      ],
+    });
+
+    expect(result.myItems.map((item) => item.id)).toEqual([1170010]);
+    expect(result.theirItems.map((item) => item.id)).toEqual([690002, 690006]);
+  });
 });

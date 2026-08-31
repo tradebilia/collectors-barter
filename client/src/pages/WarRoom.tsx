@@ -995,7 +995,7 @@ export default function WarRoom() {
 
                 {/* ── SHIPPING STAGE: Focused two-column tracking layout ── */}
                 {currentStage === 'shipping' && (() => {
-                  const { myItems: myShippingItems, theirItems: theirShippingItems } = getLockedShipmentItems({
+                  const { allItems: lockedShipmentItems, myItems: myShippingItems, theirItems: theirShippingItems } = getLockedShipmentItems({
                     requestedListing,
                     offeredListings: trade?.offeredListings || [],
                     viewerUserId: myUserId,
@@ -1017,6 +1017,16 @@ export default function WarRoom() {
                           </div>
                         </div>
                         <span className="px-3 py-1 bg-orange-500/20 border border-orange-500/40 text-orange-300 text-xs font-bold rounded-full animate-pulse">ACTION REQUIRED</span>
+                      </div>
+
+                      <div data-testid="shipping-locked-trade-contents" className="border-b border-orange-500/15 bg-[#10182d] px-6 py-3">
+                        <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-orange-300">Locked trade contents</p>
+                        <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                          {lockedShipmentItems.map((item: any) => {
+                            const itemOwnerName = Number(item.ownerId) === Number(myUserId) ? myDisplayName : theirDisplayName;
+                            return <div key={item.id} className="flex min-w-0 items-center justify-between gap-3 rounded-md border border-slate-700/80 bg-slate-950/45 px-3 py-2"><span className="min-w-0 truncate text-xs font-medium text-slate-100">{item.title}</span><span className="shrink-0 text-[10px] text-slate-400">Sent by {itemOwnerName}</span></div>;
+                          })}
+                        </div>
                       </div>
 
                       {/* Two-column tracking area */}

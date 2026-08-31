@@ -1125,3 +1125,7 @@
 - [x] Repair Shipping-stage item grouping so every locked Administrator-owned item appears to Rtavani and every Rtavani-owned item appears to Administrator.
 - [x] Verify tracking forms remain limited to the current member’s own complete set of outgoing trade items.
 - [x] Add regression coverage for the complete two-sided Shipping item display and owner-specific tracking lists.
+
+- [x] Trace why the browser still omits locked counterparty items after the saved Trade Room payload confirmed they exist.
+- [x] Render the immutable locked item set directly in Shipping and bypass stale editable draft state.
+- [x] Verify both participant views of the current Shipping trade before checkpointing the repair.
