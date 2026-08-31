@@ -1164,3 +1164,5 @@
 - [ ] Perform an authenticated two-member manual test for item-only, cash-only, and item-plus-cash exchanges before treating the redesigned flow as production-ready.
 - [x] Push the verified direct-cash workflow commit to a safe dedicated branch in the canonical Tradebilia GitHub repository for source backup; do not overwrite its divergent main branch. Pushed commit 9bd0073 to `manus/direct-cash-workflow-20260831`.
 - [x] Save the updated managed WebDev version so Rich can perform the authenticated two-member test. Checkpoint version 3ef077d8 was saved and automatically published under the current project setting.
+- [x] Make a single proposed item in Trade Room Step 1 use a larger, prominent card while automatically retaining compact cards after additional items are added.
+- [x] Add regression coverage and verify the single-item and multi-item Step 1 proposal layouts without changing the Chat/Timeline dimensions. Focused responsive tests, TypeScript, production build, and whitespace validation passed; authenticated visual testing remains available to Rich.

@@ -627,12 +627,20 @@ export default function WarRoom() {
   // Returns Tailwind image height class based on item count
   // 1 item = very tall, more items = progressively shorter
   const getImgHeight = (count: number) => {
-    if (count === 1) return 'h-72';   // ~288px - nearly full panel
+    if (count === 1) return 'h-72 sm:h-96 lg:h-[24rem]'; // single item fills its proposal side before the grid becomes multi-item
     if (count === 2) return 'h-48';   // ~192px
     if (count <= 4) return 'h-36';   // ~144px
     if (count <= 6) return 'h-28';   // ~112px
     return 'h-20';                    // ~80px for 7+
   };
+
+  const getItemCardSpacing = (count: number) => count === 1 ? 'min-h-[31rem] p-4' : 'p-2.5';
+  const getItemTitleClass = (count: number) => count === 1
+    ? 'text-base font-semibold leading-snug line-clamp-3'
+    : 'text-[11px] font-medium leading-tight line-clamp-2';
+  const getItemValueClass = (count: number) => count === 1
+    ? 'text-xl font-black mt-2'
+    : 'text-sm font-bold mt-1';
 
   // ── Handlers ──────────────────────────────────────────────────────────────
   const handleSendMessage = () => {
@@ -1404,7 +1412,7 @@ export default function WarRoom() {
                         const isLocked = false;
                         const isOriginalRequestedItem = item.id === requestedListing?.id;
                         return (
-                        <div key={item.id} className={`bg-[#0f3460] border rounded-lg p-2.5 relative group ${isOriginalRequestedItem ? 'border-blue-500/40' : 'border-gray-600'}`}>
+                        <div key={item.id} className={`bg-[#0f3460] border rounded-lg relative group ${getItemCardSpacing(myItems.length)} ${isOriginalRequestedItem ? 'border-blue-500/40' : 'border-gray-600'}`}>
                           {isOriginalRequestedItem && (
                             <div className="absolute top-1.5 left-1.5 bg-blue-600/80 text-white text-[9px] font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5 z-10">
                               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-2.5 h-2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" /></svg>
@@ -1416,8 +1424,8 @@ export default function WarRoom() {
                           ) : (
                             <div className={`w-full ${getImgHeight(myItems.length)} bg-gray-800 rounded mb-2 flex items-center justify-center text-gray-600 text-xs`}>No Image</div>
                           )}
-                          <p className="text-white text-[11px] font-medium line-clamp-2 leading-tight">{item.title}</p>
-                          <p className="text-blue-400 text-sm font-bold mt-1">{formatItemValue(item.estimatedValue)}</p>
+                          <p className={`text-white ${getItemTitleClass(myItems.length)}`}>{item.title}</p>
+                          <p className={`text-blue-400 ${getItemValueClass(myItems.length)}`}>{formatItemValue(item.estimatedValue)}</p>
                           {!isLocked && canSubmitProposal && (currentStage === 'proposed' || currentStage === 'negotiating') && (
                             <button
                               onClick={() => handleRemoveItemFromTrade(item.id)}
@@ -1870,7 +1878,7 @@ export default function WarRoom() {
                         const isLocked = false;
                         const isOriginalRequestedItem = item.id === requestedListing?.id;
                         return (
-                        <div key={item.id} className={`bg-[#0f3460] border rounded-lg p-2.5 relative group ${isOriginalRequestedItem ? 'border-blue-500/40' : 'border-gray-600'}`}>
+                        <div key={item.id} className={`bg-[#0f3460] border rounded-lg relative group ${getItemCardSpacing(theirItems.length)} ${isOriginalRequestedItem ? 'border-blue-500/40' : 'border-gray-600'}`}>
                           {isOriginalRequestedItem && (
                             <div className="absolute top-1.5 left-1.5 bg-blue-600/80 text-white text-[9px] font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5 z-10">
                               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-2.5 h-2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" /></svg>
@@ -1882,8 +1890,8 @@ export default function WarRoom() {
                           ) : (
                             <div className={`w-full ${getImgHeight(theirItems.length)} bg-gray-800 rounded mb-2 flex items-center justify-center text-gray-600 text-xs`}>No Image</div>
                           )}
-                          <p className="text-white text-[11px] font-medium line-clamp-2 leading-tight">{item.title}</p>
-                          <p className="text-blue-400 text-sm font-bold mt-1">{formatItemValue(item.estimatedValue)}</p>
+                          <p className={`text-white ${getItemTitleClass(theirItems.length)}`}>{item.title}</p>
+                          <p className={`text-blue-400 ${getItemValueClass(theirItems.length)}`}>{formatItemValue(item.estimatedValue)}</p>
                           {!isLocked && canSubmitProposal && (currentStage === 'proposed' || currentStage === 'negotiating') && (
                             <button
                               onClick={() => handleRemoveItemFromTrade(item.id)}
