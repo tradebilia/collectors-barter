@@ -1050,3 +1050,8 @@
 - [x] Remove the highlighted styling from the Visit Tradebilia link while keeping it usable.
 - [x] Make the unsubscribe control functional for pre-launch recipients and use the main Tradebilia background treatment in the email template.
 - [x] Add template regression coverage and verify the generated email HTML before saving the checkpoint.
+
+- [x] Move the main-page hero background image behind the Tradebilia logo inside the email header, and synchronize the admin preview.
+- [x] Explain and verify the Resend-managed unsubscribe destination and its effect on future pre-launch mail.
+- [x] Diagnose the API Health alert showing Resend `pre_launch_recipient_list` and determine whether it was a transient or actionable failure.
+- [x] Add regression coverage and verify the corrected email HTML and related admin behavior.

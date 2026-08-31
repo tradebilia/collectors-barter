@@ -78,7 +78,7 @@ describe("Pre-Launch Email", () => {
     const html = buildPreLaunchEmailHtml("<b>Hello</b>");
     expect(html).toContain("&lt;b&gt;Hello&lt;/b&gt;");
     expect(html).toContain("tradebilia_email_spaced_dfb4be7e.svg");
-    expect(html).toContain("Background_23084d14.jpg");
+    expect(html).toContain("background-color:#0a0d22;background-image:url('https://assets.tradebilia.com/Background_23084d14.jpg')");
     expect(html).toContain('text-decoration:underline');
     expect(html).toContain("Unsubscribe from pre-launch updates");
     expect(html).toContain("{{{RESEND_UNSUBSCRIBE_URL}}}");
@@ -87,7 +87,12 @@ describe("Pre-Launch Email", () => {
 
   it("records only a safe operational classification when recipient retrieval fails", async () => {
     process.env.RESEND_CONTACTS_API_KEY = "test-key";
-    await expect(getPreLaunchRecipients(async () => response(false, {}, 503) as any)).rejects.toThrow("Unable to prepare the Pre-Launch Email recipient group.");
+    const failureRecorder = vi.fn().mockResolvedValue(undefined);
+    const fetcher = vi.fn()
+      .mockResolvedValueOnce(response(true, { data: [{ id: "segment-1", name: "Tradebilia Pre-Launch Updates" }] }))
+      .mockResolvedValueOnce(response(false, {}, 503));
+    await expect(getPreLaunchRecipients(fetcher as any, failureRecorder as any)).rejects.toThrow("Unable to retrieve Pre-Launch Email recipients.");
+    expect(failureRecorder).toHaveBeenCalledWith(expect.objectContaining({ provider: "Resend", operation: "pre_launch_recipient_list", failureClass: "upstream", statusCode: 503 }));
   });
 
   process.env.RESEND_CONTACTS_API_KEY = originalKey;
