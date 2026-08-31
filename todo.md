@@ -1041,3 +1041,7 @@
 - [x] Show every available category when a member has all categories selected; reserve “Multi-category collector” for members with no category data.
 
 - [x] Remove “Categories this collector has selected” beneath the Collecting interests title and update its regression assertion.
+
+- [x] Add recognizable provider icons to Member Directory account-verification badges.
+- [x] Add a concise tooltip explaining that account verification confirms a connected external account, while Verified Merchant is a separate Tradebilia-reviewed designation.
+- [x] Add regression coverage and visually verify the updated badges and tooltip on desktop and mobile.

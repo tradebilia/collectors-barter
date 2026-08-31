@@ -10,6 +10,7 @@ import { CategoryBar } from "@/components/CategoryBar";
 import { TopBar } from "@/components/TopBar";
 import { trpc } from "@/lib/trpc";
 import { Award, Crown, Filter, HelpCircle, Loader2, MapPin, Search, SlidersHorizontal, Sparkles, Star, UserRound, X } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { FormEvent, useDeferredValue, useEffect, useMemo, useState } from "react";
 import { useLocation } from "wouter";
 
@@ -265,13 +266,25 @@ export default function MemberSearch() {
                         <div><p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Completed trades</p><p className="mt-1 text-lg font-semibold text-slate-900">{member.completedTradeCount}</p></div>
                         <div><p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Active listings</p><p className="mt-1 text-lg font-semibold text-slate-900">{member.listingCount}</p></div>
                         <div>
-                          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Account verifications</p>
+                          <div className="flex items-center gap-1.5">
+                            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Account verifications</p>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <button type="button" className="inline-flex rounded-full text-slate-400 transition-colors hover:text-violet-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500" aria-label="Learn about account verification and Verified Merchant">
+                                  <HelpCircle className="h-3.5 w-3.5" aria-hidden="true" />
+                                </button>
+                              </TooltipTrigger>
+                              <TooltipContent className="max-w-xs text-center text-xs leading-relaxed">
+                                Account verification confirms a connected external account. Verified Merchant is a separate Tradebilia-reviewed designation.
+                              </TooltipContent>
+                            </Tooltip>
+                          </div>
                           {Object.values(member.accountVerifications).some(Boolean) ? (
                             <div className="mt-1 flex flex-wrap gap-1.5">
-                              {member.accountVerifications.ebay ? <Badge className="rounded-full border border-sky-200 bg-sky-50 text-sky-700 hover:bg-sky-50">eBay Verified</Badge> : null}
-                              {member.accountVerifications.facebook ? <Badge className="rounded-full border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-50">Facebook Verified</Badge> : null}
-                              {member.accountVerifications.linkedin ? <Badge className="rounded-full border border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-50">LinkedIn Verified</Badge> : null}
-                              {member.accountVerifications.etsy ? <Badge className="rounded-full border border-orange-200 bg-orange-50 text-orange-700 hover:bg-orange-50">Etsy Verified</Badge> : null}
+                              {member.accountVerifications.ebay ? <Badge className="inline-flex items-center gap-1 rounded-full border border-sky-200 bg-sky-50 text-sky-700 hover:bg-sky-50"><span className="grid h-4 w-4 place-items-center rounded-full bg-sky-600 text-[9px] font-black lowercase text-white" aria-hidden="true">e</span>eBay Verified</Badge> : null}
+                              {member.accountVerifications.facebook ? <Badge className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-50"><span className="grid h-4 w-4 place-items-center rounded-full bg-blue-600 text-[10px] font-black text-white" aria-hidden="true">f</span>Facebook Verified</Badge> : null}
+                              {member.accountVerifications.linkedin ? <Badge className="inline-flex items-center gap-1 rounded-full border border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-50"><span className="grid h-4 w-4 place-items-center rounded-sm bg-indigo-700 text-[9px] font-black text-white" aria-hidden="true">in</span>LinkedIn Verified</Badge> : null}
+                              {member.accountVerifications.etsy ? <Badge className="inline-flex items-center gap-1 rounded-full border border-orange-200 bg-orange-50 text-orange-700 hover:bg-orange-50"><span className="grid h-4 w-4 place-items-center rounded-full bg-orange-600 text-[9px] font-black text-white" aria-hidden="true">E</span>Etsy Verified</Badge> : null}
                             </div>
                           ) : <p className="mt-1 text-sm text-slate-500">No account verifications</p>}
                         </div>

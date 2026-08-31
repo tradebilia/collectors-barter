@@ -84,6 +84,12 @@ describe("Member Directory discovery workflow", () => {
     expect(directorySource).toContain("Facebook Verified");
     expect(directorySource).toContain("LinkedIn Verified");
     expect(directorySource).toContain("Etsy Verified");
+    expect(directorySource).toContain("Account verification confirms a connected external account. Verified Merchant is a separate Tradebilia-reviewed designation.");
+    expect(directorySource).toContain("aria-label=\"Learn about account verification and Verified Merchant\"");
+    expect(directorySource).toContain("bg-sky-600");
+    expect(directorySource).toContain("bg-blue-600");
+    expect(directorySource).toContain("bg-indigo-700");
+    expect(directorySource).toContain("bg-orange-600");
     expect(directorySource).toContain("member.isVerifiedMerchant ?");
     expect(searchMembersSource).toContain("preferredCategories: userProfiles.preferredCategories");
     expect(searchMembersSource).toContain("const collectingInterests = preferredCategories.length");
