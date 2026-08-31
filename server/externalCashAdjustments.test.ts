@@ -50,11 +50,14 @@ describe("External cash-adjustment safeguards", () => {
     expect(routerSource).toContain("REVEAL CASH PAYMENT IDENTIFIER");
   });
 
-  it("blocks shipping until cash receipt confirmation and keeps disputes blocked", () => {
+  it("moves cash settlement into Shipping while retaining dispute safeguards before physical-item receipt confirmation", () => {
     const shipping = tradeFlowSource.slice(tradeFlowSource.indexOf("proceedToShipping:"), tradeFlowSource.indexOf("// ==========================================================================\n  // COMMUNICATION", tradeFlowSource.indexOf("proceedToShipping:")));
-    expect(shipping).toContain("cashObligations");
-    expect(shipping).toContain("paymentStatus === 'disputed'");
-    expect(shipping).toContain("paymentStatus !== 'received' && paymentStatus !== 'verified'");
+    expect(shipping).not.toContain("The cash adjustment must be marked sent and confirmed received before shipping can begin.");
+    expect(tradeFlowSource).toContain("cashSettlementComplete");
+    expect(tradeFlowSource).toContain("bothShipped && cashSettlementComplete");
+    expect(warRoomSource).toContain("currentStage === 'shipping'");
+    expect(warRoomSource).toContain("Cash Settlement During Shipping");
+    expect(warRoomSource).toContain("Complete each cash confirmation during Shipping before the trade moves to item receipt confirmation.");
   });
 
   it("provides private setup and settings forms plus Trade Room and masked admin controls", () => {

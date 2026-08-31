@@ -4265,7 +4265,24 @@ export const appRouter = router({
         const now = mysqlNow();
         await db.update(tradePayments).set({ status: "received", receivedAt: now, verifiedAt: now, verificationResult: JSON.stringify({ source: "payee_confirmed_received", externalVerification: "member_confirmed" }) }).where(eq(tradePayments.id, payment.id));
         await db.insert(tradeActivityLog).values({ proposalId: input.proposalId, actorId: ctx.user.id, actorName: ctx.user.name ?? ctx.user.username ?? "Member", eventType: "cash_payment_received_confirmed", details: JSON.stringify({ method: payment.paymentMethod, amount: payment.amount, payerId: payment.payerId }), createdAt: now });
-        return { success: true, status: "received" as const };
+
+        const proposalRows = await db.select({ requesterId: tradeProposals.requesterId, recipientId: tradeProposals.recipientId, status: tradeProposals.status, cashFromRequester: tradeProposals.cashFromRequester, cashFromRecipient: tradeProposals.cashFromRecipient })
+          .from(tradeProposals).where(eq(tradeProposals.id, input.proposalId)).limit(1);
+        const proposal = proposalRows[0];
+        const cashObligations = proposal ? getPaymentVerificationObligations(proposal) : [];
+        const allPaymentRows = cashObligations.length
+          ? await db.select({ payerId: tradePayments.payerId, status: tradePayments.status }).from(tradePayments)
+            .where(and(eq(tradePayments.proposalId, input.proposalId), inArray(tradePayments.payerId, cashObligations.map((obligation) => obligation.payerId))))
+          : [];
+        const paymentStatusByPayerId = new Map(allPaymentRows.map((row) => [row.payerId, row.status]));
+        const cashSettlementComplete = cashObligations.every((obligation) => ["received", "verified"].includes(paymentStatusByPayerId.get(obligation.payerId) ?? "pending"));
+        const [trackingRows] = await db.execute(sql`SELECT COUNT(DISTINCT userId) AS userCount FROM tradeTrackingNumbers WHERE proposalId = ${input.proposalId}`);
+        const bothMembersShipped = (trackingRows as unknown as Array<{ userCount?: number }>)?.[0]?.userCount !== undefined && Number((trackingRows as unknown as Array<{ userCount?: number }>)[0]?.userCount) >= 2;
+        const readyForReceiptConfirmation = proposal?.status === "shipping" && cashSettlementComplete && bothMembersShipped;
+        if (readyForReceiptConfirmation) {
+          await db.execute(sql`UPDATE tradeProposals SET status = 'shipped', shippedAt = ${now}, lastActivityAt = ${now}, updatedAt = ${now} WHERE id = ${input.proposalId} AND status = 'shipping'`);
+        }
+        return { success: true, status: "received" as const, readyForReceiptConfirmation };
       }),
 
     openCashAdjustmentDispute: protectedProcedure

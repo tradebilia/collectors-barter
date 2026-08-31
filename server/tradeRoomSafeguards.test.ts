@@ -37,10 +37,10 @@ describe("Trade Room safeguards", () => {
     expect(warRoomSource).toContain("theirCash > 0 ? 'Adjust Cash' : 'Add Cash'");
   });
 
-  it("renders every accepted-trade cash obligation separately before shipping", () => {
+  it("renders every Shipping-stage cash obligation separately before item receipt confirmation", () => {
     expect(warRoomSource).toContain("const obligations = (cashAdjustmentContextQuery.data?.obligations ?? [])");
-    expect(warRoomSource).toContain("Before Shipping");
-    expect(warRoomSource).toContain("Shipping unlocks after every cash amount is member-confirmed received.");
+    expect(warRoomSource).toContain("Cash Settlement During Shipping");
+    expect(warRoomSource).toContain("Complete each cash confirmation during Shipping before the trade moves to item receipt confirmation.");
     expect(warRoomSource).toContain("transactionReferenceByPayer");
     expect(warRoomSource).toContain("payerId: context.payerId");
   });

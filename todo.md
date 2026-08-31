@@ -1104,3 +1104,7 @@
 - [x] Support both direct-cash obligations when each trade participant owes cash, including method selection, sent confirmation, and receipt confirmation for each side.
 - [x] Clarify the accepted-stage shipping block with a checklist that names the remaining cash confirmation step or steps.
 - [x] Add regression coverage and verify the safe cash-to-shipping transition.
+
+- [x] Keep Step 3 Review limited to the final item and cash terms, without direct cash settlement controls.
+- [x] Move direct cash settlement cards and their before-shipping checklist into Step 4 Shipping.
+- [x] Keep Step 5 Confirm Receipt focused on physical-item receipt and update stage regressions accordingly.

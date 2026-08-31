@@ -2164,17 +2164,19 @@ export default function WarRoom() {
             </>
           )}
 
-          {/* Stage 3: Review (accepted) — print + confirm and proceed to shipping */}
-          {currentStage === 'accepted' && (
+          {/* Step 3: Review — final terms and mutual approval only. */}
+          {(currentStage === 'accepted' || currentStage === 'shipping') && (
             <>
-              {/* Direct external cash adjustments — one card per accepted-trade obligation. */}
+              {currentStage === 'shipping' && (
+              <>
+              {/* Step 4: Shipping — direct cash settlement and shipment fulfilment. */}
               {(myCash > 0 || theirCash > 0) && (() => {
                 const obligations = (cashAdjustmentContextQuery.data?.obligations ?? []) as Array<any>;
                 const pendingObligations = obligations.filter((obligation) => !['received', 'verified'].includes(obligation.payment?.status ?? 'pending'));
 
                 return <div className="mb-3 flex w-full flex-col gap-3">
                   <div className="flex items-start gap-2 rounded-lg border border-amber-600/50 bg-amber-900/30 px-4 py-2.5"><span className="mt-0.5 text-base text-amber-400">⚠️</span><p className="text-xs leading-relaxed text-amber-200"><strong>Tradebilia does not process payments.</strong> PayPal, Venmo, Cash App, and Zelle transfers are made directly between members. Tradebilia does not hold, insure, refund, or guarantee direct payments.</p></div>
-                  <div className="rounded-lg border border-slate-600 bg-slate-950/40 px-4 py-3 text-xs text-slate-200"><p className="font-bold text-white">Before Shipping</p><ul className="mt-1 list-disc space-y-1 pl-4 text-slate-300">{obligations.map((obligation) => { const status = obligation.payment?.status ?? 'pending'; const direction = obligation.role === 'payer' ? `Send ${formatWholeDollar(obligation.amount)} to ${theirDisplayName}` : `Receive ${formatWholeDollar(obligation.amount)} from ${theirDisplayName}`; const step = status === 'received' || status === 'verified' ? 'Complete' : status === 'sent' ? `Waiting for ${obligation.role === 'payer' ? theirDisplayName : 'you'} to confirm receipt` : status === 'method_selected' ? obligation.role === 'payer' ? 'Mark payment sent after transferring funds' : `Waiting for ${theirDisplayName} to send payment` : obligation.role === 'payee' ? 'Choose a payment destination' : `Waiting for ${theirDisplayName} to choose a payment destination`; return <li key={obligation.payerId}><span className="font-medium text-white">{direction}:</span> {step}</li>; })}</ul>{pendingObligations.length > 0 && <p className="mt-2 text-amber-200">Shipping unlocks after every cash amount is member-confirmed received.</p>}</div>
+                  <div className="rounded-lg border border-slate-600 bg-slate-950/40 px-4 py-3 text-xs text-slate-200"><p className="font-bold text-white">Cash Settlement During Shipping</p><ul className="mt-1 list-disc space-y-1 pl-4 text-slate-300">{obligations.map((obligation) => { const status = obligation.payment?.status ?? 'pending'; const direction = obligation.role === 'payer' ? `Send ${formatWholeDollar(obligation.amount)} to ${theirDisplayName}` : `Receive ${formatWholeDollar(obligation.amount)} from ${theirDisplayName}`; const step = status === 'received' || status === 'verified' ? 'Complete' : status === 'sent' ? `Waiting for ${obligation.role === 'payer' ? theirDisplayName : 'you'} to confirm receipt` : status === 'method_selected' ? obligation.role === 'payer' ? 'Mark payment sent after transferring funds' : `Waiting for ${theirDisplayName} to send payment` : obligation.role === 'payee' ? 'Choose a payment destination' : `Waiting for ${theirDisplayName} to choose a payment destination`; return <li key={obligation.payerId}><span className="font-medium text-white">{direction}:</span> {step}</li>; })}</ul>{pendingObligations.length > 0 && <p className="mt-2 text-amber-200">Complete each cash confirmation during Shipping before the trade moves to item receipt confirmation.</p>}</div>
                   {obligations.length === 0 && <p className="rounded-lg border border-slate-600 bg-slate-950/40 px-4 py-3 text-xs text-slate-300">Loading the payment steps for this accepted trade…</p>}
                   <div className="grid w-full gap-3 xl:grid-cols-2">{obligations.map((context) => {
                     const payment = context.payment as any;
@@ -2197,6 +2199,10 @@ export default function WarRoom() {
                   })}</div>
                 </div>;
               })()}
+              </>
+              )}
+              {currentStage === 'accepted' && (
+              <>
               <button
                 onClick={() => window.open(`/trade-print/${proposalId}`, '_blank')}
                 className="px-6 py-3 border border-gray-600 text-gray-300 rounded-lg font-semibold hover:bg-gray-800 transition flex items-center gap-2"
@@ -2232,6 +2238,8 @@ export default function WarRoom() {
                   Waiting for partner to confirm...
                 </div>
               )}
+              </>
+              )}
             </>
           )}
 
@@ -2245,7 +2253,7 @@ export default function WarRoom() {
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-orange-400">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 18.75a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 0 1-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 0 0-3.213-9.193 2.056 2.056 0 0 0-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 0 0-10.026 0 1.106 1.106 0 0 0-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12" />
                   </svg>
-                  {myTracking.length > 0 ? 'Tracking submitted — waiting for partner to ship' : 'Ship your items and enter your tracking number above'}
+                  {myTracking.length > 0 ? 'Tracking submitted — complete any remaining cash settlement above' : 'Ship your items and enter your tracking number above'}
                 </p>
                 {myTracking.length === 0 && (
                   <button

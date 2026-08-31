@@ -41,6 +41,7 @@ import { getReviewSubmissionBlocker, resolveTradeContactName } from "./tradeRoom
 import { buildCompletedTradeExchange } from "../shared/completedTradeExchange";
 import { requireMarketplaceApproval } from "./accountApproval";
 import { describeTradeCashChange } from "./tradeCashTimeline";
+import { getPaymentVerificationObligations } from "./paymentAuthorization";
 
 // ============================================================================
 // HELPER: Check notification preference and get user email
@@ -861,13 +862,21 @@ export const tradeFlowRouter = router({
         );
       }
 
-      // Check if both parties have submitted tracking
-      const [trackingCounts] = await db.execute(
-        sql`SELECT COUNT(DISTINCT userId) as userCount FROM tradeTrackingNumbers WHERE proposalId = ${input.proposalId}`
-      );
-      const bothShipped = (trackingCounts as any)?.[0]?.userCount >= 2;
+			// Item receipt confirmation starts only after both members have shipped
+			// and every direct cash obligation has been confirmed in Shipping.
+			const [trackingCounts] = await db.execute(
+				sql`SELECT COUNT(DISTINCT userId) as userCount FROM tradeTrackingNumbers WHERE proposalId = ${input.proposalId}`
+			);
+			const bothShipped = (trackingCounts as any)?.[0]?.userCount >= 2;
+			const cashObligations = getPaymentVerificationObligations(proposal);
+			const paymentRows = cashObligations.length
+				? await db.select({ payerId: tradePayments.payerId, status: tradePayments.status }).from(tradePayments)
+					.where(and(eq(tradePayments.proposalId, input.proposalId), inArray(tradePayments.payerId, cashObligations.map((obligation) => obligation.payerId))))
+				: [];
+			const paymentStatusByPayerId = new Map(paymentRows.map((payment) => [payment.payerId, payment.status]));
+			const cashSettlementComplete = cashObligations.every((obligation) => ['received', 'verified'].includes(paymentStatusByPayerId.get(obligation.payerId) ?? 'pending'));
 
-      if (bothShipped) {
+			if (bothShipped && cashSettlementComplete) {
         await db.execute(
           sql`UPDATE tradeProposals SET status = 'shipped', shippedAt = ${now}, lastActivityAt = ${now}, updatedAt = ${now} WHERE id = ${input.proposalId}`
         );
@@ -899,7 +908,7 @@ export const tradeFlowRouter = router({
         }).catch(err => console.warn('[Email] Items shipped email failed:', err));
       }
 
-      return { success: true, bothShipped };
+			return { success: true, bothShipped, awaitingCashSettlement: bothShipped && !cashSettlementComplete };
     }),
   confirmItemsReceived: protectedProcedure
     .input(confirmReceiptSchema)
@@ -1507,24 +1516,6 @@ export const tradeFlowRouter = router({
       }
 			if ((proposal.status as string) !== 'accepted') {
 				throw new TRPCError({ code: 'BAD_REQUEST', message: 'Trade must be in accepted (Review) stage to proceed to shipping' });
-			}
-
-			const cashObligations = [
-				{ payerId: proposal.requesterId, amount: Number(proposal.cashFromRequester ?? 0) },
-				{ payerId: proposal.recipientId, amount: Number(proposal.cashFromRecipient ?? 0) },
-			].filter((obligation) => Number.isFinite(obligation.amount) && obligation.amount > 0);
-			for (const obligation of cashObligations) {
-				const paymentRows = await db.select({ status: tradePayments.status })
-					.from(tradePayments)
-					.where(and(eq(tradePayments.proposalId, input.proposalId), eq(tradePayments.payerId, obligation.payerId)))
-					.limit(1);
-				const paymentStatus = paymentRows[0]?.status;
-				if (paymentStatus === 'disputed') {
-					throw new TRPCError({ code: 'CONFLICT', message: 'A cash-adjustment dispute is open. Shipping remains blocked until administrator review resolves it.' });
-				}
-				if (paymentStatus !== 'received' && paymentStatus !== 'verified') {
-					throw new TRPCError({ code: 'CONFLICT', message: 'The cash adjustment must be marked sent and confirmed received before shipping can begin.' });
-				}
 			}
 
 			const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
