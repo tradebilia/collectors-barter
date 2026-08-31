@@ -1005,3 +1005,8 @@
 - [x] Replace the small text Launching Soon label with the user-provided stamp artwork, recolored to a suitable ink/navy tone and scaled noticeably while remaining contained in the parchment.
 - [x] Reposition and recolor the email consent checkbox/text so it remains fully visible and readable inside the parchment at desktop and mobile widths.
 - [x] Add regression coverage, visually verify both responsive layouts, and synchronize the Coming Soon refinement to canonical GitHub.
+
+- [x] Rephrase the Trade without fees supporting statement for clearer wording.
+- [x] Change the verification highlight wording to “Connect more verified accounts to strengthen authenticity”.
+- [x] Improve Coming Soon hierarchy by separating the Launching Soon stamp, highlights, category labels, consent notice, and signup form while preserving the existing wallpaper, hero scale, and stats treatment.
+- [x] Add or update regression coverage, visually verify desktop/mobile layouts, and save the revised checkpoint.

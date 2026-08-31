@@ -60,20 +60,20 @@ export default function ComingSoon() {
             <AnimatedLogoSmall70 fontSize={196} wheelScale={2.24} wheelOffsetX={-65} wheelOffsetY={-30} dividerScale={1.55} dividerOffsetY={-20} wordmarkColor="#2b2119" neutralCategoryColor="#2b2119" categoryColorOverrides={COMING_SOON_CATEGORY_COLORS} wheelColors={COMING_SOON_WHEEL_COLORS} wheelStrokeWidth={6} dividerStrokeWidth={3.6} fixedCategoryMetrics centerLockup centeredViewBoxWidth={3000} canvasWidthScale={1} />
           </div>
 
-          <div className="translate-y-0 pt-8 sm:-translate-y-1 sm:pt-8">
-            <div className="mx-auto mt-2 max-w-lg sm:mt-10">
+          <div className="translate-y-0 pt-8 sm:-translate-y-1 sm:pt-6">
+            <div className="mx-auto mt-2 max-w-lg sm:mt-8">
               <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-[#7b4f2f] sm:text-[10px]">The Collectors Trading Exchange</p>
               <h1 className="mt-2 font-serif text-4xl leading-[0.92] tracking-[-0.04em] text-[#2b2119] sm:mt-3 sm:text-6xl">Why Buy or Sell<br />When You Can Trade?</h1>
               <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-[#4d3c2e]/80 sm:mt-5 sm:text-base">A home for remarkable collectibles—and the collectors who know their worth.</p>
-              <div className="relative mx-auto mt-5 grid max-w-xl grid-cols-1 gap-2 text-left sm:mt-6 sm:grid-cols-2 sm:gap-x-5 sm:gap-y-2" aria-label="Why collectors will use Tradebilia">
+              <div className="relative mx-auto mt-6 grid max-w-xl grid-cols-1 gap-2 text-left sm:mt-5 sm:grid-cols-2 sm:gap-x-5 sm:gap-y-2" aria-label="Why collectors will use Tradebilia">
                 <img src="/manus-storage/launching-soon-navy-clean_0cf4707a.png" alt="Launching Soon" className="pointer-events-none absolute -left-44 top-1/2 hidden w-44 -translate-y-1/2 rotate-[-4deg] object-contain drop-shadow-[0_3px_2px_rgba(43,33,25,0.12)] sm:block" />
-                <p className="border-l-2 border-[#184b92]/55 pl-3 text-[11px] leading-4 text-[#4d3c2e]/85 sm:text-xs"><strong className="font-bold text-[#2b2119]">Trade without fees.</strong> No money is taken to complete a trade.</p>
-                <p className="border-l-2 border-[#184b92]/55 pl-3 text-[11px] leading-4 text-[#4d3c2e]/85 sm:text-xs"><strong className="font-bold text-[#2b2119]">Build trust faster.</strong> Connect more verified accounts to strengthen referrals.</p>
+                <p className="border-l-2 border-[#184b92]/55 pl-3 text-[11px] leading-4 text-[#4d3c2e]/85 sm:text-xs"><strong className="font-bold text-[#2b2119]">Trade without fees.</strong> No fees are charged to complete a trade.</p>
+                <p className="border-l-2 border-[#184b92]/55 pl-3 text-[11px] leading-4 text-[#4d3c2e]/85 sm:text-xs"><strong className="font-bold text-[#2b2119]">Build trust faster.</strong> Connect more verified accounts to strengthen authenticity.</p>
                 <p className="border-l-2 border-[#184b92]/55 pl-3 text-[11px] leading-4 text-[#4d3c2e]/85 sm:text-xs"><strong className="font-bold text-[#2b2119]">Everything in one place.</strong> Keep your collection and trades organized.</p>
                 <p className="border-l-2 border-[#184b92]/55 pl-3 text-[11px] leading-4 text-[#4d3c2e]/85 sm:text-xs"><strong className="font-bold text-[#2b2119]">Trade across categories.</strong> Swap sports cards for comics, toys, games, and more.</p>
               </div>
-              <img src="/manus-storage/launching-soon-navy-clean_0cf4707a.png" alt="Launching Soon" className="mx-auto -mt-1 block w-36 rotate-[-2deg] object-contain drop-shadow-[0_2px_2px_rgba(43,33,25,0.12)] sm:hidden" />
-              <div aria-label="Collections on the exchange" className="mx-auto mt-0 grid max-w-md grid-cols-2 gap-x-5 gap-y-0 border-y border-[#6c503c]/20 py-0 text-[8px] font-bold uppercase tracking-[0.12em] text-[#4d3c2e]/72 sm:mt-2 sm:max-w-2xl sm:grid-cols-5 sm:gap-x-3 sm:gap-y-1 sm:py-1.5 sm:text-[9px]">
+              <img src="/manus-storage/launching-soon-navy-clean_0cf4707a.png" alt="Launching Soon" className="mx-auto -mt-2 block w-36 rotate-[-2deg] object-contain drop-shadow-[0_2px_2px_rgba(43,33,25,0.12)] sm:hidden" />
+              <div aria-label="Collections on the exchange" className="mx-auto mt-3 grid max-w-md grid-cols-2 gap-x-5 gap-y-0 border-y border-[#6c503c]/20 py-0 text-[8px] font-bold uppercase tracking-[0.12em] text-[#4d3c2e]/72 sm:mt-1 sm:max-w-2xl sm:grid-cols-5 sm:gap-x-3 sm:gap-y-1 sm:py-1.5 sm:text-[9px]">
                 <span>Comics</span>
                 <span>Sports Cards</span>
                 <span>Vintage Toys</span>
@@ -87,7 +87,7 @@ export default function ComingSoon() {
               </div>
             </div>
 
-            <div className="mx-auto mt-3 max-w-md sm:-mt-2">
+            <div className="mx-auto mt-4 max-w-md sm:mt-0">
               <div className="relative">
                 <div className={submitted ? "invisible" : undefined} aria-hidden={submitted || undefined}>
                   <div className="relative">
@@ -102,7 +102,7 @@ export default function ComingSoon() {
                       {!subscribeMutation.isPending && <ArrowRight className="ml-2 h-3.5 w-3.5" aria-hidden="true" />}
                     </Button>
                   </div>
-                  <label htmlFor={consentId} className="order-1 mt-0 flex cursor-pointer items-start justify-center gap-2 text-left text-[10px] leading-4 text-[#2b2119]/90 sm:mt-0 sm:text-center">
+                  <label htmlFor={consentId} className="order-1 mt-0 flex cursor-pointer items-start justify-center gap-2 rounded-sm bg-[#fbf2e1]/80 px-2 text-left text-[11px] font-medium leading-4 text-[#2b2119]/90 shadow-sm sm:mt-0 sm:text-center">
                     <Checkbox id={consentId} checked={consent} onCheckedChange={(checked) => setConsent(checked === true)} className="mt-px border-[#6c503c]/45 data-[state=checked]:border-[#184b92] data-[state=checked]:bg-[#184b92]" />
                     <span>Yes, I&apos;d like to receive launch updates and future collector features.</span>
                   </label>
